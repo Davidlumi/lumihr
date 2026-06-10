@@ -37,13 +37,13 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
             <${Chip}>${data.org.hq_region || "Region not declared"}<//>
             <${Chip} title="Organisations contributing to this benchmark"><${Term} word="peer group">peer group<//>: ${data.peer_pool.responding_orgs} organisations<//>
             <${Chip}>${data.snapshot.window}<//>
-            <${Chip} kind=${cut.dim === "all" ? "" : "accent"}>filter: ${cutLabelOf(cut, cuts)}<//>
+            ${cut.dim !== "all" && html`<${Chip} kind="accent">filter: ${cutLabelOf(cut, cuts)}<//>`}
           </div>
         </div>
       </div>
 
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
-        <div style=${{ flex: "1", minWidth: "260px" }}>
+        <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
             You sit above the peer <${Term} word="median">median<//> on
             <span style=${{ color: "var(--brand-ink)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
@@ -102,8 +102,8 @@ function jumpToItem(item) { if (item) nav("/superpower/" + item.superpower + "?f
 window.OpportunityTile = function ({ opp }) {
   if (!opp) return null;
   return html`
-    <div style=${{ minWidth: "230px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
-      <div class="caption" style=${{ fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>Total identified opportunity</div>
+    <div style=${{ flex: "1.1 1 230px", minWidth: "230px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
+      <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Total identified opportunity</div>
       ${opp.fte_known ? html`
         <div class="metric-value" style=${{ color: "var(--brand-ink)" }}>
           ${fmtGBPCompact(opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp)}<span class="unit">/yr</span></div>
@@ -121,11 +121,11 @@ window.OpportunityTile = function ({ opp }) {
 
 window.TrajectoryTile = function ({ movement }) {
   return html`
-    <div style=${{ minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
-      <div class="caption" style=${{ fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>Trajectory</div>
+    <div style=${{ flex: "1 1 190px", minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
+      <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Trajectory</div>
       <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "6px 0" }}>
-        <polyline points="4,30 40,30" stroke="var(--brand)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="40" cy="30" r="4" fill="var(--brand)"/>
+        <polyline points="4,30 40,30" stroke="var(--you)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="30" r="4" fill="var(--you)"/>
         <polyline points="40,30 80,24 120,20 160,14" stroke="var(--border)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
         <circle cx="160" cy="14" r="3.5" fill="none" stroke="var(--border)" stroke-width="1.5"/>
       </svg>
