@@ -1,0 +1,122 @@
+/* lumi core: htm binding, API client, formatters, shared atoms, hash router. */
+/* global React, ReactDOM, htm */
+window.html = htm.bind(React.createElement);
+window.h = React.createElement;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+window.useState = useState; window.useEffect = useEffect; window.useRef = useRef;
+window.useMemo = useMemo; window.useCallback = useCallback;
+
+// ------------------------------------------------------------------ API ----
+window.api = async function (path, opts) {
+  opts = opts || {};
+  const init = { method: opts.method || "GET", headers: {}, credentials: "same-origin" };
+  if (opts.body !== undefined) {
+    init.headers["Content-Type"] = "application/json";
+    init.body = JSON.stringify(opts.body);
+  }
+  const res = await fetch(path, init);
+  if (res.status === 401) { window.dispatchEvent(new Event("lumi:unauth")); throw new ApiError(401, "Not signed in"); }
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* non-JSON */ }
+  if (!res.ok) throw new ApiError(res.status, (data && data.detail) || "Something went wrong");
+  return data;
+};
+class ApiError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+window.ApiError = ApiError;
+
+// ----------------------------------------------------------- formatters ----
+window.fmtValue = function (v, unit) {
+  if (v === null || v === undefined) return "—";
+  const ut = (unit && unit.type) || "none";
+  if (ut === "currency") return "£" + Math.round(v).toLocaleString("en-GB");
+  let s = (Math.round(v * 10) / 10).toLocaleString("en-GB", { maximumFractionDigits: 1 });
+  if (ut === "percentage") return s + "%";
+  if (ut === "days" || ut === "hours" || ut === "weeks") return s + " " + ut;
+  return s;
+};
+window.fmtGBP = v => "£" + Math.round(v).toLocaleString("en-GB");
+window.fmtGBPCompact = v => {
+  const a = Math.abs(v);
+  if (a >= 1e6) return "£" + (v / 1e6).toFixed(1).replace(/\.0$/, "") + "m";
+  if (a >= 1e3) return "£" + Math.round(v / 1e3) + "k";
+  return "£" + Math.round(v);
+};
+window.pLabel = r => "P" + Math.round(r);
+
+// glossary used for first-use tooltips (plain-English, UK gov style register)
+window.GLOSSARY = {
+  percentile: "If you lined all organisations up from lowest to highest, the percentile tells you where a value sits. P75 means three quarters of organisations are at or below it.",
+  median: "The middle value: half of organisations are above it, half below. We show medians (P50) rather than averages so one unusual organisation can't skew the picture.",
+  quartile: "Quarter of the peer group. The top quartile is the highest 25% of values; the interquartile range (P25–P75) is the middle half.",
+  suppressed: "When fewer than 5 organisations are behind a number we don't show it, so no individual organisation's data can be worked out.",
+  "peer group": "The organisations you're being compared with. Use the filter to compare against everyone, your industry, organisations your size, or organisations like you.",
+  n: "The number of organisations behind this comparison. A benchmark without its sample size isn't publishable — so n is always shown.",
+  indicative: "A modelled, directional figure built on the stated assumptions — useful for sizing a conversation, not for budgeting.",
+};
+
+// ------------------------------------------------------------- atoms -------
+window.Term = function ({ word, children }) {
+  const key = (word || (typeof children === "string" ? children : "")).toLowerCase();
+  const def = GLOSSARY[key];
+  if (!def) return html`<span>${children}</span>`;
+  return html`<span class="term">${children}<span class="tip">${def}</span></span>`;
+};
+
+window.Chip = ({ kind, title, children }) =>
+  html`<span class=${"chip " + (kind || "")} title=${title || ""}>${children}</span>`;
+
+window.NBadge = ({ n, cutLabel }) => html`
+  <span class="chip" title="Number of organisations behind this comparison">
+    <${Term} word="n">n=${n}<//>${cutLabel ? html` · ${cutLabel}` : null}
+  </span>`;
+
+window.Spinner = () => html`<span class="spinner"></span>`;
+
+window.Modal = function ({ onClose, children, width }) {
+  return html`
+    <div class="modal-back" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div class="modal" style=${width ? { width } : null}>${children}</div>
+    </div>`;
+};
+
+window.EmptyState = ({ icon, title, body, action }) => html`
+  <div class="suppressed-box" style=${{ minHeight: "140px" }}>
+    <div style=${{ fontSize: "22px" }}>${icon || "○"}</div>
+    <div style=${{ fontWeight: 650, color: "var(--ink)" }}>${title}</div>
+    ${body ? html`<div>${body}</div>` : null}
+    ${action || null}
+  </div>`;
+
+// ------------------------------------------------------------- router ------
+window.useRoute = function () {
+  const [route, setRoute] = useState(window.location.hash.slice(1) || "/overview");
+  useEffect(() => {
+    const f = () => setRoute(window.location.hash.slice(1) || "/overview");
+    window.addEventListener("hashchange", f);
+    return () => window.removeEventListener("hashchange", f);
+  }, []);
+  return route;
+};
+window.nav = path => { window.location.hash = path; };
+
+// ------------------------------------------------- chart-type compatibility -
+// Never offer a chart type that misrepresents the data shape.
+window.chartAlternatives = function (card) {
+  if (card.type === "numeric") return ["quartile_band", "histogram", "box"];
+  if (card.type === "matrix") return ["heatmap", "grouped_bars"];
+  if (card.type === "multi_select") return ["bar"];
+  if (card.type === "single_select" || card.type === "yes_no") return ["bar", "stacked_bar", "donut"];
+  return ["bar"];
+};
+window.normaliseChart = function (card, pref) {
+  const alts = chartAlternatives(card);
+  let def = card.chart_default;
+  if (def === "quartile") def = "quartile_band";
+  if (!alts.includes(def)) def = alts[0];
+  return (pref && alts.includes(pref)) ? pref : def;
+};
+window.CHART_LABELS = {
+  quartile_band: "Percentile band", histogram: "Histogram", box: "Box plot",
+  bar: "Bars", stacked_bar: "Stacked bar", donut: "Donut",
+  heatmap: "Heatmap", grouped_bars: "Grouped bars",
+};

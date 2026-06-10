@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -q -o \"lumi_seeded_1_company_per_file \\(1\\).zip\" -d data/responses)",
+      "Bash(python3 -c ' *)",
+      "Bash(npm --version)",
+      "Bash(python3 -c \"import fastapi, uvicorn; print\\('fastapi ok'\\)\")",
+      "Bash(python3 -c \"import bcrypt; print\\('bcrypt ok'\\)\")",
+      "Bash(python3 -c \"import httpx; print\\('httpx ok'\\)\")",
+      "Bash(python3 -c \"import requests; print\\('requests ok'\\)\")",
+      "Read(//usr/local/bin/**)",
+      "Bash(python3 -c \"import bcrypt, httpx, uvicorn; print\\('all deps ok'\\)\")",
+      "Bash(curl -sL -o web/vendor/react.min.js https://unpkg.com/react@18.3.1/umd/react.production.min.js)",
+      "Bash(curl -sL -o web/vendor/react-dom.min.js https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js)",
+      "Bash(curl -sL -o web/vendor/htm.js https://unpkg.com/htm@3.1.1/dist/htm.umd.js)",
+      "Bash(python3 seed_import.py --fresh)",
+      "Bash(python3 seed_import.py)",
+      "Bash(time python3 aggregate.py)",
+      "Bash(python3)",
+      "Bash(curl -s -m 15 https://api.anthropic.com/v1/messages -H \"content-type: application/json\" -H \"anthropic-version: 2023-06-01\" -d '{\"model\":\"claude-sonnet-4-20250514\",\"max_tokens\":32,\"messages\":[{\"role\":\"user\",\"content\":\"Say OK\"}]}')",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s -c /tmp/lumi-cookies.txt -X POST http://localhost:8060/api/auth/login -H 'content-type: application/json' -d '{\"email\":\"director@thornbridge.example\",\"password\":\"lumi-demo-2026\"}')",
+      "Bash(curl -s -b /tmp/lumi-cookies.txt http://localhost:8060/api/me)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -b lumi-cookies.txt \"http://localhost:8060/api/overview\" -o ov.json)",
+      "Bash(curl -s -b lumi-cookies.txt \"http://localhost:8060/api/benchmark/REW_BEN_PENS_EMP_MAX_01\")",
+      "Bash(curl -s -b lumi-cookies.txt http://localhost:8060/api/peer-twin)",
+      "Bash(curl -s -b lumi-cookies.txt \"http://localhost:8060/api/benchmark/PROP_9e3b1d18?cut=twin\")",
+      "Bash(curl -s -b lumi-cookies.txt \"http://localhost:8060/api/gap-register\")",
+      "Bash(curl -s -b lumi-cookies.txt -X POST http://localhost:8060/api/analyst -H 'content-type: application/json' -d '{\"question\":\"How does our employer pension contribution compare?\"}')",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pkill -f \"uvicorn app:app\")",
+      "Bash(python3 verify.py)"
+    ]
+  }
+}

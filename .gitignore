@@ -1,0 +1,5 @@
+lumi.db
+lumi.db-wal
+lumi.db-shm
+data/responses/
+__pycache__/

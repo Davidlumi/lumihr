@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lumi",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "app:app", "--port", "8060"],
+      "cwd": "server",
+      "port": 8060
+    }
+  ]
+}
