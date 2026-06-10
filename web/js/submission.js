@@ -6,7 +6,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   const refresh = () => api("/api/submission/state").then(setState);
   useEffect(() => { refresh(); }, []);
   if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  if (!state.is_admin) return html`<${EmptyState} icon="🔒" title="Submission is an admin task"
+  if (!state.is_admin) return html`<${EmptyState} icon="lock" title="Submission is an admin task"
     body="Only admins can enter or edit your organisation's data. Ask your lumi admin for access." />`;
   if (!state.firmographics_done) return html`<${FirmographicsStep} state=${state} onDone=${() => { refresh(); refreshMe(); }} />`;
   if (section === "review") return html`<${ReviewStep} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
@@ -34,7 +34,7 @@ function SubmissionHome({ state }) {
         <div key=${s.superpower} class="card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)", cursor: "pointer" }}
           onClick=${() => nav("/submission/" + s.superpower)}>
           <div class="row spread">
-            <b>${SP_ICONS[s.superpower]} ${s.superpower}</b>
+            <b style=${{ display: "inline-flex", alignItems: "center", gap: "8px" }}><${SpIcon} sp=${s.superpower} /> ${s.superpower}</b>
             <span class="caption num">${s.answered}/${s.questions} answered · ${s.core_answered}/${s.core_questions} core</span>
           </div>
           <div class="progressbar" style=${{ marginTop: "6px" }}>
@@ -130,13 +130,13 @@ function SectionForm({ sp, state, refresh }) {
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <button class="btn quiet" onClick=${() => nav("/submission")}>← All sections</button>
-          <h1 class="display-title" style=${{ marginTop: "6px" }}>${SP_ICONS[sp]} ${sp}</h1>
+          <h1 class="display-title" style=${{ marginTop: "6px", display: "flex", alignItems: "center", gap: "10px" }}><${SpIcon} sp=${sp} size=${20} /> ${sp}</h1>
         </div>
         <div class="caption">${savedAt ? "All changes autosaved · " + savedAt.toLocaleTimeString("en-GB") : "Changes autosave as you type"}</div>
       </div>
       ${bySub.map(g => html`
         <div key=${g.sub} class="card" style=${{ marginBottom: "var(--s4)" }}>
-          <div style=${{ padding: "var(--s3) var(--s4)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: "var(--r2) var(--r2) 0 0" }}>
+          <div style=${{ padding: "var(--s3) var(--s4)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: "var(--radius) var(--radius) 0 0" }}>
             <b>${g.sub}</b> <span class="caption">· ${g.qs.length} questions</span>
           </div>
           ${g.qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts} issues=${issues} save=${save} />`)}
@@ -240,7 +240,7 @@ function DebouncedNumber({ value, onSave, unitName, compact }) {
   };
   return html`
     <span class="row" style=${{ gap: "6px", display: "inline-flex" }}>
-      <input style=${compact ? null : { width: "150px", padding: "7px 9px", border: "1px solid var(--border-2)", borderRadius: "var(--r1)", textAlign: "right" }}
+      <input style=${compact ? null : { width: "150px", padding: "7px 9px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", textAlign: "right" }}
         inputmode="decimal" value=${v} onInput=${e => change(e.target.value)} onBlur=${() => { clearTimeout(t.current); onSave(v); }} />
       ${unitName && !compact && html`<span class="caption">${unitName}</span>`}
     </span>`;

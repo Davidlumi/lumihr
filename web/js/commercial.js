@@ -41,8 +41,8 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
           const mt = data.maturity[s];
           return html`
           <div key=${s} class="card sp-card" onClick=${() => setSp(sp === s ? "" : s)}
-            style=${sp === s ? { borderColor: "var(--accent)" } : null}>
-            <div class="row spread"><b style=${{ fontSize: "13px" }}>${SP_ICONS[s]} ${s}</b></div>
+            style=${sp === s ? { borderColor: "var(--brand)" } : null}>
+            <div class="row spread"><span class="sp-name"><${SpIcon} sp=${s} size=${14} /> ${s}</span></div>
             <div class="row spread" style=${{ marginTop: "6px" }}>
               <div><div class="metric-value" style=${{ fontSize: "20px" }}>${mt.org_score == null ? "—" : mt.org_score}</div><div class="caption">your maturity</div></div>
               <div style=${{ textAlign: "right" }}><div class="metric-value" style=${{ fontSize: "20px", color: "var(--ink-2)" }}>${mt.peer_median_score == null ? "—" : mt.peer_median_score}</div><div class="caption">peer median</div></div>
@@ -52,7 +52,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
         })}
       </div>
 
-      ${rows.length === 0 ? html`<${EmptyState} icon="✓" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
+      ${rows.length === 0 ? html`<${EmptyState} icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
         body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
       html`<div class="card" style=${{ padding: "var(--s4)" }}>
         <table class="data">
@@ -62,7 +62,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
             ${rows.slice(0, 80).map(r => html`
               <tr key=${r.question_id}>
                 <td><b>${r.name}</b></td>
-                <td>${SP_ICONS[r.superpower]} ${r.superpower}</td>
+                <td>${r.superpower}</td>
                 <td>${r.org_answered ? html`<span class=${"chip " + (r.in_place ? "good" : "bad")}>${r.in_place ? "In place" : "Not in place"}</span>
                   <div class="caption" style=${{ marginTop: "2px", maxWidth: "220px" }}>${r.org_status}</div>` :
                   html`<span class="chip">Not answered</span>`}</td>
@@ -153,7 +153,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--accent-ink)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
+          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--brand-ink)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
           <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "12px 0 6px", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
           <div style=${{ fontSize: "16px", color: "var(--ink-2)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "18px" }}>
@@ -289,7 +289,7 @@ window.AnalystPane = function ({ onClose }) {
               <div>${m.chips.map((c, j) => html`
                 <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
                   <span>${c.label}</span><b>${c.value}</b><span>${c.sub}</span>
-                  ${c.question_id && html`<span style=${{ color: "var(--accent-ink)" }}>View metric →</span>`}
+                  ${c.question_id && html`<span style=${{ color: "var(--brand-ink)" }}>View metric →</span>`}
                 </div>`)}</div>`}
           </div>`)}
         ${busy && html`<div class="msg bot"><${Spinner} /> Checking the benchmark…</div>`}
@@ -367,7 +367,7 @@ window.SharesPage = function () {
           <button class="btn" onClick=${() => createDash(90)}>90 days</button>
         </div>
       </div>
-      ${data.shares.length === 0 ? html`<${EmptyState} icon="🔗" title="No share links yet"
+      ${data.shares.length === 0 ? html`<${EmptyState} icon="link" title="No share links yet"
         body="Create a dashboard share above, or share a board pack from its page." />` :
       html`<div class="card" style=${{ padding: "var(--s4)" }}>
         <table class="data">

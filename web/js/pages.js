@@ -5,9 +5,8 @@
 const SUPERPOWERS = ["Reward", "Processes", "Wellbeing", "Growth", "Capability",
   "Inclusivity", "Attract", "Leadership", "Purpose", "Change"];
 window.SUPERPOWERS = SUPERPOWERS;
-const SP_ICONS = { Reward: "◆", Processes: "⚙", Wellbeing: "❤", Growth: "↗", Capability: "✦",
-  Inclusivity: "◐", Attract: "✚", Leadership: "▲", Purpose: "★", Change: "↻" };
-window.SP_ICONS = SP_ICONS;
+/* SpIcon: the one consistent superpower glyph (line-icon family from icons.js) */
+window.SpIcon = ({ sp, size = 15 }) => html`<${Icon} name=${SP_ICON[sp] || "target"} size=${size} />`;
 
 // ------------------------------------------------------------ overview -----
 window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
@@ -18,7 +17,13 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
     api("/api/overview?" + cutQS(cut)).then(setData).catch(e => setErr(e.message));
   }, [cutKeyOf(cut)]);
   if (err) return html`<${EmptyState} title="Couldn't load the overview" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`
+    <div>
+      <div class="skel" style=${{ height: "30px", width: "320px", marginBottom: "10px" }}></div>
+      <div class="skel" style=${{ height: "20px", width: "480px", marginBottom: "16px" }}></div>
+      <div class="skel" style=${{ height: "180px", marginBottom: "16px", borderRadius: "var(--radius)" }}></div>
+      <${SkeletonGrid} count=${3} />
+    </div>`;
   const h = data.headline;
   const pctAbove = h.comparable_metrics ? Math.round(100 * h.above_median / h.comparable_metrics) : 0;
   return html`
@@ -41,7 +46,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         <div style=${{ flex: "1", minWidth: "260px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
             You sit above the peer <${Term} word="median">median<//> on
-            <span style=${{ color: "var(--accent-ink)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
+            <span style=${{ color: "var(--brand-ink)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
           </div>
           <div class="caption">${h.below_median} below · ${h.broadly_in_line} broadly in line · polarity-adjusted, ${cutLabelOf(cut, cuts)} · suppressed metrics excluded</div>
           <div style=${{ marginTop: "12px" }}>
@@ -75,8 +80,8 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
           return html`
           <div key=${sp} class="card sp-card" onClick=${() => nav("/superpower/" + sp)}>
             <div class="row spread" style=${{ marginBottom: "6px" }}>
-              <b style=${{ fontSize: "14px" }}>${SP_ICONS[sp]} ${sp}</b>
-              <span class="caption num">${c.available} metrics</span>
+              <span class="sp-name"><${SpIcon} sp=${sp} /> ${sp}</span>
+              <span class="caption">${c.available} metrics</span>
             </div>
             ${c.available ? html`
               <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
@@ -100,7 +105,7 @@ window.OpportunityTile = function ({ opp }) {
     <div style=${{ minWidth: "230px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
       <div class="caption" style=${{ fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>Total identified opportunity</div>
       ${opp.fte_known ? html`
-        <div class="metric-value" style=${{ color: "var(--accent-ink)" }}>
+        <div class="metric-value" style=${{ color: "var(--brand-ink)" }}>
           ${fmtGBPCompact(opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp)}<span class="unit">/yr</span></div>
         <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
           html`potential savings at peer median${opp.total_investment_to_p50_gbp ? html` · plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
@@ -119,10 +124,10 @@ window.TrajectoryTile = function ({ movement }) {
     <div style=${{ minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
       <div class="caption" style=${{ fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>Trajectory</div>
       <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "6px 0" }}>
-        <polyline points="4,30 40,30" stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="40" cy="30" r="4" fill="var(--accent)"/>
-        <polyline points="40,30 80,24 120,20 160,14" stroke="var(--border-2)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
-        <circle cx="160" cy="14" r="3.5" fill="none" stroke="var(--border-2)" stroke-width="1.5"/>
+        <polyline points="4,30 40,30" stroke="var(--brand)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="30" r="4" fill="var(--brand)"/>
+        <polyline points="40,30 80,24 120,20 160,14" stroke="var(--border)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
+        <circle cx="160" cy="14" r="3.5" fill="none" stroke="var(--border)" stroke-width="1.5"/>
       </svg>
       <div class="caption">${movement.message}</div>
     </div>`;
@@ -145,7 +150,16 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     }
   }, [data, focusQ]);
   if (err) return html`<${EmptyState} title="Couldn't load this section" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`
+    <div>
+      <div class="page-head">
+        <div class="titleblock">
+          <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
+          <div><h1 class="display-title">${sp}</h1><div class="caption meta">Loading benchmarks…</div></div>
+        </div>
+      </div>
+      <${SkeletonGrid} count=${6} />
+    </div>`;
   let cards = data.cards;
   if (cat) cards = cards.filter(c => c.category === cat);
   if (tier) cards = cards.filter(c => (tier === "Core" ? c.tier === "Core" : c.tier !== "Core"));
@@ -158,12 +172,15 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   bySub.sort((a, b) => a.order - b.order);
   return html`
     <div>
-      <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
-        <div>
-          <h1 class="display-title">${SP_ICONS[sp]} ${sp}</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>${data.cards.length} benchmarks · peer group: ${cutLabelOf(cut, cuts)}</div>
+      <div class="page-head">
+        <div class="titleblock">
+          <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
+          <div>
+            <h1 class="display-title">${sp}</h1>
+            <div class="caption meta">${data.cards.length} benchmarks · peer group: ${cutLabelOf(cut, cuts)}</div>
+          </div>
         </div>
-        <div class="row">
+        <div class="controls">
           <select class="ctl" value=${cat} onChange=${e => setCat(e.target.value)}>
             <option value="">All categories</option>
             <option value="metric">Metrics</option><option value="practice">Practices</option>
@@ -247,7 +264,7 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
           ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members will inherit this layout">Save as team default</button>`}
         </div>
       </div>
-      ${layout.length === 0 && html`<${EmptyState} icon="☆" title="Nothing pinned yet"
+      ${layout.length === 0 && html`<${EmptyState} icon="star" title="Nothing pinned yet"
         body="Use the star on any benchmark card to pin it here."
         action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Back to overview</button>`} />`}
       <div class="bench-grid">
@@ -257,7 +274,7 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
           <div key=${slotKey(slot)} draggable="true" class=${drag === i ? "dragging" : ""}
             onDragStart=${() => setDrag(i)} onDragOver=${e => e.preventDefault()} onDrop=${() => onDrop(i)}
             style=${slot.size === 2 ? { gridColumn: "span 2" } : null}>
-            ${!c ? html`<div class="card bench-card"><div class="row" style=${{ justifyContent: "center", padding: "50px" }}><${Spinner} /></div></div>` :
+            ${!c ? html`<${SkeletonCard} />` :
             c.error ? html`<div class="card bench-card"><${EmptyState} title="Couldn't load this card" /></div>` :
             html`<div style=${{ position: "relative" }}>
               <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
@@ -300,7 +317,7 @@ window.MyDataPage = function () {
       ${rows.length === 0 && html`<${EmptyState} title="No answers match" body="Try a different search term." />`}
       ${bySp.map(g => html`
         <div key=${g.sp} class="card" style=${{ marginBottom: "var(--s4)", padding: "var(--s4)" }}>
-          <h2 class="section-title">${SP_ICONS[g.sp] || ""} ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
+          <h2 class="section-title" style=${{ display: "flex", alignItems: "center", gap: "8px" }}><${SpIcon} sp=${g.sp} /> ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
           <table class="data">
             <thead><tr><th>Benchmark</th><th>Level / row</th><th class="num">Your answer</th><th>Tier</th></tr></thead>
             <tbody>

@@ -81,7 +81,7 @@ window.Modal = function ({ onClose, children, width }) {
 
 window.EmptyState = ({ icon, title, body, action }) => html`
   <div class="suppressed-box" style=${{ minHeight: "140px" }}>
-    <div style=${{ fontSize: "22px" }}>${icon || "○"}</div>
+    <div style=${{ color: "var(--ink-3)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>
     <div style=${{ fontWeight: 650, color: "var(--ink)" }}>${title}</div>
     ${body ? html`<div>${body}</div>` : null}
     ${action || null}
@@ -105,7 +105,8 @@ window.chartAlternatives = function (card) {
   if (card.type === "numeric") return ["quartile_band", "histogram", "box"];
   if (card.type === "matrix") return ["heatmap", "grouped_bars"];
   if (card.type === "multi_select") return ["bar"];
-  if (card.type === "single_select" || card.type === "yes_no") return ["bar", "stacked_bar", "donut"];
+  // donut retired: bars for few-option categoricals, segmented band for scales
+  if (card.type === "single_select" || card.type === "yes_no") return ["bar", "stacked_bar"];
   return ["bar"];
 };
 window.normaliseChart = function (card, pref) {
@@ -117,6 +118,6 @@ window.normaliseChart = function (card, pref) {
 };
 window.CHART_LABELS = {
   quartile_band: "Percentile band", histogram: "Histogram", box: "Box plot",
-  bar: "Bars", stacked_bar: "Stacked bar", donut: "Donut",
+  bar: "Bars", stacked_bar: "Distribution band",
   heatmap: "Heatmap", grouped_bars: "Grouped bars",
 };

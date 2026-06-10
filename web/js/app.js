@@ -90,32 +90,33 @@ function App() {
       <nav class="sidebar no-print">
         <a class="logo" href="#/overview">lumi<span>.benchmark</span></a>
         <div class="nav-group">
-          <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}>⌂ Executive overview</button>
-          <button class=${navCls(route, "/myview")} onClick=${() => nav("/myview")}>★ My view</button>
-          <button class=${navCls(route, "/gap-register")} onClick=${() => nav("/gap-register")}>≡ Gap register</button>
-          <button class=${navCls(route, "/boardpack")} onClick=${() => nav("/boardpack")}>▤ Board pack</button>
+          <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}><${Icon} name="home" size=${15} /> Executive overview</button>
+          <button class=${navCls(route, "/myview")} onClick=${() => nav("/myview")}><${Icon} name="star" size=${15} /> My view</button>
+          <button class=${navCls(route, "/gap-register")} onClick=${() => nav("/gap-register")}><${Icon} name="list-checks" size=${15} /> Gap register</button>
+          <button class=${navCls(route, "/boardpack")} onClick=${() => nav("/boardpack")}><${Icon} name="file-text" size=${15} /> Board pack</button>
         </div>
         <div class="nav-group">
           <div class="nav-label">Superpowers</div>
           ${SUPERPOWERS.map(sp => html`
             <button key=${sp} class=${navCls(route, "/superpower/" + sp)} onClick=${() => nav("/superpower/" + sp)}>
-              ${SP_ICONS[sp]} ${sp}
+              <${SpIcon} sp=${sp} /> ${sp}
               ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => q.superpower === sp && !q.locked).length}</span>`}
             </button>`)}
         </div>
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
-          <button class=${navCls(route, "/mydata")} onClick=${() => nav("/mydata")}>▦ My data</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/submission")} onClick=${() => nav("/submission")}>✎ Submit data</button>`}
-          <button class=${navCls(route, "/team")} onClick=${() => nav("/team")}>◉ Team</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/shares")} onClick=${() => nav("/shares")}>🔗 Manage shares</button>`}
-          <button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}>⚙ Settings</button>
-          <button class=${navCls(route, "/methodology")} onClick=${() => nav("/methodology")}>§ Methodology</button>
+          <button class=${navCls(route, "/mydata")} onClick=${() => nav("/mydata")}><${Icon} name="table" size=${15} /> My data</button>
+          ${me.user.role === "admin" && html`<button class=${navCls(route, "/submission")} onClick=${() => nav("/submission")}><${Icon} name="pencil" size=${15} /> Submit data</button>`}
+          <button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>
+          ${me.user.role === "admin" && html`<button class=${navCls(route, "/shares")} onClick=${() => nav("/shares")}><${Icon} name="link" size=${15} /> Manage shares</button>`}
+          <button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>
+          <button class=${navCls(route, "/methodology")} onClick=${() => nav("/methodology")}><${Icon} name="book-open" size=${15} /> Methodology</button>
         </div>
-        <div class="nav-group" style=${{ marginTop: "auto" }}>
-          <div class="caption" style=${{ padding: "0 8px 6px" }}>${me.user.display_name || me.user.email}<br/>${me.org.name}
-            ${me.user.preview_as_core && html`<div><span class="chip warn" style=${{ marginTop: "4px" }}>Previewing as Core</span></div>`}</div>
-          <button class="nav-item" onClick=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }}>↩ Sign out</button>
+        <div class="nav-group nav-id" style=${{ marginTop: "auto" }}>
+          <div class="who">${me.user.display_name || me.user.email}</div>
+          <div class="org">${me.org.name}</div>
+          ${me.user.preview_as_core && html`<div style=${{ marginBottom: "4px" }}><span class="chip warn">Previewing as Core</span></div>`}
+          <button class="nav-item" onClick=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }}><${Icon} name="log-out" size=${15} /> Sign out</button>
         </div>
       </nav>
       <div class="main">
@@ -133,11 +134,12 @@ function App() {
           </select>
           ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
           <div style=${{ position: "relative", flex: 1, maxWidth: "380px" }}>
-            <input class="ctl" style=${{ width: "100%", maxWidth: "none" }} placeholder="Search 778 benchmarks…"
+            <span style=${{ position: "absolute", left: "10px", top: "9px", color: "var(--ink-3)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
+            <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search 778 benchmarks…"
               value=${search} onInput=${e => setSearch(e.target.value)} />
             ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
           </div>
-          <button class="btn" onClick=${() => setAnalystOpen(true)}>✨ Ask lumi</button>
+          <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
         </div>
         <main class="content">
           ${gated && benchRoute ?
@@ -168,7 +170,7 @@ function SearchPop({ qIndex, search, onGo }) {
       ${hits.length === 0 && html`<div class="search-hit caption">No benchmarks match “${search}”.</div>`}
       ${hits.map(q => html`
         <div key=${q.id} class="search-hit" onClick=${() => onGo(q)}>
-          <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && "🔒"}
+          <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-3)" }} />`}
           <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
         </div>`)}
     </div>`;
