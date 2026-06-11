@@ -81,7 +81,7 @@ window.Modal = function ({ onClose, children, width }) {
 
 window.EmptyState = ({ icon, title, body, action }) => html`
   <div class="suppressed-box" style=${{ minHeight: "140px" }}>
-    <div style=${{ color: "var(--ink-3)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>
+    <div style=${{ color: "var(--ink-faint)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>
     <div style=${{ fontWeight: 650, color: "var(--ink)" }}>${title}</div>
     ${body ? html`<div>${body}</div>` : null}
     ${action || null}

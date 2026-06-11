@@ -41,11 +41,11 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
           const mt = data.maturity[s];
           return html`
           <div key=${s} class="card sp-card" onClick=${() => setSp(sp === s ? "" : s)}
-            style=${sp === s ? { borderColor: "var(--brand)" } : null}>
+            style=${sp === s ? { borderColor: "var(--plum)" } : null}>
             <div class="row spread"><span class="sp-name"><${SpIcon} sp=${s} size=${14} /> ${s}</span></div>
             <div class="row spread" style=${{ marginTop: "6px" }}>
               <div><div class="metric-value" style=${{ fontSize: "20px" }}>${mt.org_score == null ? "—" : mt.org_score}</div><div class="caption">your maturity</div></div>
-              <div style=${{ textAlign: "right" }}><div class="metric-value" style=${{ fontSize: "20px", color: "var(--ink-2)" }}>${mt.peer_median_score == null ? "—" : mt.peer_median_score}</div><div class="caption">peer median</div></div>
+              <div style=${{ textAlign: "right" }}><div class="metric-value" style=${{ fontSize: "20px", color: "var(--ink-soft)" }}>${mt.peer_median_score == null ? "—" : mt.peer_median_score}</div><div class="caption">peer median</div></div>
             </div>
             <div class="progressbar" style=${{ marginTop: "8px" }}><div style=${{ width: (mt.org_score || 0) + "%" }}></div></div>
           </div>`;
@@ -153,9 +153,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--brand-ink)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
+          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--plum-deep)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
           <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "12px 0 6px", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
-          <div style=${{ fontSize: "16px", color: "var(--ink-2)" }}>Board pack · ${p.collection_window}</div>
+          <div style=${{ fontSize: "16px", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "18px" }}>
             <${Chip} kind="accent">${p.organisation.industry || "Unclassified"}<//>
             <${Chip}>${p.organisation.fte_band ? p.organisation.fte_band + " FTE" : ""}<//>
@@ -289,7 +289,7 @@ window.AnalystPane = function ({ onClose }) {
               <div>${m.chips.map((c, j) => html`
                 <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
                   <span>${c.label}</span><b>${c.value}</b><span>${c.sub}</span>
-                  ${c.question_id && html`<span style=${{ color: "var(--brand-ink)" }}>View metric →</span>`}
+                  ${c.question_id && html`<span style=${{ color: "var(--plum-deep)" }}>View metric →</span>`}
                 </div>`)}</div>`}
           </div>`)}
         ${busy && html`<div class="msg bot"><${Spinner} /> Checking the benchmark…</div>`}

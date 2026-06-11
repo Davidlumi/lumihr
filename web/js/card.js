@@ -223,10 +223,10 @@ window.OpportunityPanel = function ({ opp }) {
     ? `Closing to median ≈ ${fmtGBPCompact(opp.to_p50_gbp)}/yr`
     : `Reaching median ≈ ${fmtGBPCompact(opp.to_p50_gbp)}/yr investment`;
   return html`
-    <div style=${{ background: "var(--brand-soft)", borderRadius: "var(--radius-sm)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0", fontSize: "var(--fs-label)" }}>
+    <div style=${{ background: "var(--plum-tint)", borderRadius: "var(--radius-sm)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0", fontSize: "var(--fs-label)" }}>
       <div class="row spread">
         <b>${main}</b>
-        <span class="hastip" style=${{ position: "relative", cursor: "help", color: "var(--brand-ink)" }}>
+        <span class="hastip" style=${{ position: "relative", cursor: "help", color: "var(--plum-deep)" }}>
           formula
           <span class="tip">${opp.formula}. All figures are <b>indicative</b> and rest on the assumptions in Settings.</span>
         </span>

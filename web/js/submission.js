@@ -136,7 +136,7 @@ function SectionForm({ sp, state, refresh }) {
       </div>
       ${bySub.map(g => html`
         <div key=${g.sub} class="card" style=${{ marginBottom: "var(--s4)" }}>
-          <div style=${{ padding: "var(--s3) var(--s4)", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", borderRadius: "var(--radius) var(--radius) 0 0" }}>
+          <div style=${{ padding: "var(--s3) var(--s4)", borderBottom: "1px solid var(--border)", background: "var(--surface-sunk)", borderRadius: "var(--radius) var(--radius) 0 0" }}>
             <b>${g.sub}</b> <span class="caption">· ${g.qs.length} questions</span>
           </div>
           ${g.qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts} issues=${issues} save=${save} />`)}
@@ -157,7 +157,7 @@ function QuestionInput({ q, drafts, issues, save }) {
     <div class="q-block">
       <div class="row spread" style=${{ marginBottom: "4px", alignItems: "flex-start" }}>
         <div style=${{ fontWeight: 600, fontSize: "13.5px", flex: 1 }}>${q.text}
-          ${q.is_required && html`<span style=${{ color: "var(--bad)" }}> *</span>`}</div>
+          ${q.is_required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</div>
         <${Chip}>${q.tier}<//>
       </div>
       ${q.help_text && html`<div class="caption" style=${{ marginBottom: "8px" }}>${q.help_text}</div>`}
@@ -277,8 +277,8 @@ function ReviewStep({ state, refresh, refreshMe }) {
       <button class="btn quiet" onClick=${() => nav("/submission")}>← All sections</button>
       <h1 class="display-title" style=${{ margin: "6px 0 12px" }}>Review and submit</h1>
       ${val.problems.length > 0 && html`
-        <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", borderColor: "var(--bad)" }}>
-          <b style=${{ color: "var(--bad)" }}>Fix these before submitting</b>
+        <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", borderColor: "var(--unfavourable)" }}>
+          <b style=${{ color: "var(--unfavourable)" }}>Fix these before submitting</b>
           ${val.problems.map((p, i) => html`
             <div key=${i} style=${{ marginTop: "6px" }}>${p.title}${p.matrix_row_id ? " — " + p.matrix_row_id.replace(/_/g, " ") : ""}: ${p.errors.join("; ")}</div>`)}
         </div>`}

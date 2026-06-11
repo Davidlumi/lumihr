@@ -11,18 +11,20 @@ const CHART_W = 420;
 const CAT_COLOURS = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)"];
 
 function youColour(fav) {
-  if (fav === "good") return "var(--good)";
-  if (fav === "bad") return "var(--bad)";
-  if (fav === "mid") return "var(--mid)";
+  if (fav === "good") return "var(--favourable)";
+  if (fav === "bad") return "var(--unfavourable)";
+  if (fav === "mid") return "var(--neutral-perf)";
   return "var(--you)";   // neutral polarity: the plain "you" accent
 }
 
-/* The single "you" marker: ring dot + label. Same treatment on every chart. */
+/* The single "you" marker: a filled plum diamond (performance-coloured where
+   polarity applies) with a value label. Same treatment on every chart. */
 function YouDot({ x, y, fav, label, labelY, anchor }) {
+  const r = 7;
   return html`
     <g>
-      <circle cx=${x} cy=${y} r="6.5" fill=${youColour(fav)} stroke="#fff" stroke-width="2"/>
-      <circle cx=${x} cy=${y} r="2.2" fill="#fff"/>
+      <path d=${`M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`}
+        fill=${youColour(fav)} stroke="#fff" stroke-width="1.8"/>
       ${label && html`<text x=${x} y=${labelY} text-anchor=${anchor || "middle"} font-size="10.5"
         font-weight="700" fill=${youColour(fav)}>${label}</text>`}
     </g>`;
@@ -45,11 +47,11 @@ window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = tr
       ${showP1090 && html`<rect x=${x(block.p10)} y=${barY} width=${Math.max(1, x(block.p90) - x(block.p10))} height=${barH} rx="6" fill="var(--chart-band)" />`}
       <rect x=${x(block.p25)} y=${barY} width=${Math.max(1, x(block.p75) - x(block.p25))} height=${barH} rx="6" fill="var(--chart-band-mid)" />
       <rect x=${x(block.p50) - 1} y=${barY - 5} width="2.5" height=${barH + 10} rx="1.25" fill="var(--chart-median)" />
-      <text x=${x(block.p50)} y=${barY + barH + 18} text-anchor="middle" font-size="9.5" fill="var(--ink-2)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
+      <text x=${x(block.p50)} y=${barY + barH + 18} text-anchor="middle" font-size="9.5" fill="var(--ink-soft)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
       ${marks.map(([lbl, v]) => html`
         <g key=${lbl}>
           <line x1=${x(v)} x2=${x(v)} y1=${barY - 2} y2=${barY + barH + 2} stroke="var(--chart-axis)" stroke-width="1"/>
-          <text x=${x(v)} y=${barY + barH + 18} text-anchor="middle" font-size="9" fill="var(--ink-3)">${lbl}</text>
+          <text x=${x(v)} y=${barY + barH + 18} text-anchor="middle" font-size="9" fill="var(--ink-faint)">${lbl}</text>
         </g>`)}
       ${you != null && html`<${YouDot} x=${x(you)} y=${barY + barH / 2} fav=${favourable}
         label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - 14} />`}
@@ -69,8 +71,8 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, showValue
         <rect key=${i} x=${padL + i * bw + 1} width=${Math.max(1, bw - 2)}
           y=${padT + (1 - c / maxC) * (H - padT - padB)} height=${(c / maxC) * (H - padT - padB)}
           rx="2" fill="var(--chart-band-mid)" />`)}
-      <text x=${padL} y=${H - 4} font-size="9" fill="var(--ink-3)">${fmtValue(hist.min, unit)}</text>
-      <text x=${W - padL} y=${H - 4} text-anchor="end" font-size="9" fill="var(--ink-3)">${fmtValue(hist.max, unit)}</text>
+      <text x=${padL} y=${H - 4} font-size="9" fill="var(--ink-faint)">${fmtValue(hist.min, unit)}</text>
+      <text x=${W - padL} y=${H - 4} text-anchor="end" font-size="9" fill="var(--ink-faint)">${fmtValue(hist.max, unit)}</text>
       ${you != null && html`
         <g>
           <line x1=${x(you)} x2=${x(you)} y1=${padT - 2} y2=${H - padB} stroke=${youColour(favourable)} stroke-width="2" />
@@ -95,9 +97,9 @@ window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, wi
       <rect x=${x(block.p25)} y=${midY - boxH / 2} width=${Math.max(1, x(block.p75) - x(block.p25))} height=${boxH}
         rx="4" fill="var(--chart-band)" stroke="var(--chart-band-mid)"/>
       <rect x=${x(block.p50) - 1.25} y=${midY - boxH / 2} width="2.5" height=${boxH} fill="var(--chart-median)"/>
-      <text x=${x(block.p10)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-3)">P10</text>
-      <text x=${x(block.p50)} y=${midY + 28} text-anchor="middle" font-size="9.5" fill="var(--ink-2)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
-      <text x=${x(block.p90)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-3)">P90</text>
+      <text x=${x(block.p10)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P10</text>
+      <text x=${x(block.p50)} y=${midY + 28} text-anchor="middle" font-size="9.5" fill="var(--ink-soft)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
+      <text x=${x(block.p90)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P90</text>
       ${you != null && html`<${YouDot} x=${x(you)} y=${midY} fav=${favourable}
         label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${midY - boxH / 2 - 8} />`}
     </svg>`;
@@ -128,13 +130,13 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
         return html`
         <g key=${o.code}>
           <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs}
-            fill=${sel ? "var(--ink)" : "var(--ink-2)"} font-weight=${sel ? 700 : 400}>
+            fill=${sel ? "var(--ink)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 400}>
             ${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
           <rect x=${labelW} y=${y + Math.max(2, rowH * 0.16)} width=${Math.max(2, bw)}
             height=${Math.max(8, rowH - Math.max(4, rowH * 0.32))} rx="3.5"
-            fill=${sel ? "var(--you)" : "var(--cat-5)"}/>
+            fill=${sel ? "var(--you)" : "var(--cat-4)"}/>
           ${showValues && html`<text x=${labelW + Math.max(2, bw) + 6} y=${y + rowH / 2 + fs * 0.34} font-size=${fs}
-            fill=${sel ? "var(--you)" : "var(--ink-2)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
+            fill=${sel ? "var(--you)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
         </g>`;
       })}
     </svg>`;
@@ -160,7 +162,7 @@ window.StackedDist = function ({ options, youLabels, showValues = true, width = 
             opacity=${youSeg && !s.sel ? 0.55 : 1}
             stroke=${s.sel ? "var(--you)" : "none"} stroke-width=${s.sel ? 2 : 0}/>
           ${showValues && s.w > 36 && html`<text x=${s.x0 + s.w / 2} y=${barY + barH / 2 + 3.5} text-anchor="middle"
-            font-size="10" font-weight="600" fill=${s.sel || segs.indexOf(s) < 3 ? "#fff" : "var(--ink-2)"}>${Math.round(s.pct)}%</text>`}
+            font-size="10" font-weight="600" fill=${s.sel || segs.indexOf(s) < 3 ? "#fff" : "var(--ink-soft)"}>${Math.round(s.pct)}%</text>`}
         </g>`)}
       ${youSeg && html`
         <g>
@@ -172,10 +174,10 @@ window.StackedDist = function ({ options, youLabels, showValues = true, width = 
       ${segs.slice(0, segs.length > 4 ? 3 : 4).map((s, i) => html`
         <g key=${"lg" + s.code}>
           <rect x=${i * (W / 4)} y=${barY + barH + 14} width="8" height="8" rx="2" fill=${s.colour}/>
-          <text x=${i * (W / 4) + 12} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-2)">
+          <text x=${i * (W / 4) + 12} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-soft)">
             ${s.label.length > 18 ? s.label.slice(0, 17) + "…" : s.label}</text>
         </g>`)}
-      ${segs.length > 4 && html`<text x=${3 * (W / 4)} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-3)">+${segs.length - 3} more</text>`}
+      ${segs.length > 4 && html`<text x=${3 * (W / 4)} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-faint)">+${segs.length - 3} more</text>`}
     </svg>`;
 };
 
@@ -189,20 +191,20 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width =
   const usedH = rows.length * rowH + 18;
   const cellW = (W - labelW - 10) / 3;
   const deltaCol = (you, p50) => {
-    if (you == null || p50 == null) return "var(--surface-2)";
+    if (you == null || p50 == null) return "var(--surface-sunk)";
     const rel = p50 !== 0 ? (you - p50) / Math.abs(p50) : (you ? 1 : 0);
     let state = rel > 0.02 ? (polarity === "lower_is_better" ? "bad" : polarity === "higher_is_better" ? "good" : null)
       : rel < -0.02 ? (polarity === "lower_is_better" ? "good" : polarity === "higher_is_better" ? "bad" : null) : "mid";
-    if (state === "good") return "var(--good-soft)";
-    if (state === "bad") return "var(--bad-soft)";
-    if (state === "mid") return "var(--surface-2)";
+    if (state === "good") return "var(--favourable-tint)";
+    if (state === "bad") return "var(--unfavourable-tint)";
+    if (state === "mid") return "var(--surface-sunk)";
     return "var(--you-soft)";   // neutral polarity: plain "you" tint, no judgement
   };
   return html`
     <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
-      <text x=${labelW + cellW / 2} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-3)" font-weight="650">PEER P50</text>
-      <text x=${labelW + cellW * 1.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-3)" font-weight="650">YOU</text>
-      <text x=${labelW + cellW * 2.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-3)" font-weight="650">PERCENTILE</text>
+      <text x=${labelW + cellW / 2} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PEER P50</text>
+      <text x=${labelW + cellW * 1.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">YOU</text>
+      <text x=${labelW + cellW * 2.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PERCENTILE</text>
       ${rows.map((r, i) => {
         const y = 16 + i * rowH;
         const you = r.you ? r.you.value : null;
@@ -210,15 +212,15 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width =
         const maxChars = Math.floor(labelW / (fs * 0.52));
         return html`
         <g key=${r.row_id}>
-          <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs} fill="var(--ink-2)">
+          <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs} fill="var(--ink-soft)">
             ${r.label.length > maxChars ? r.label.slice(0, maxChars - 1) + "…" : r.label}</text>
-          <rect x=${labelW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill="var(--surface-2)"/>
-          <text x=${labelW + cellW / 2 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-2)" font-weight="500">
+          <rect x=${labelW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill="var(--surface-sunk)"/>
+          <text x=${labelW + cellW / 2 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-soft)" font-weight="500">
             ${r.suppressed ? "n<5" : (showValues ? fmtValue(p50, unit) : "")}</text>
-          <rect x=${labelW + cellW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill=${r.suppressed ? "var(--surface-2)" : deltaCol(you, p50)}/>
+          <rect x=${labelW + cellW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill=${r.suppressed ? "var(--surface-sunk)" : deltaCol(you, p50)}/>
           <text x=${labelW + cellW * 1.5 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} font-weight="700" fill="var(--ink)">
             ${you == null ? "—" : (showValues ? fmtValue(you, unit) : "")}</text>
-          <text x=${labelW + cellW * 2.5 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-2)">
+          <text x=${labelW + cellW * 2.5 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-soft)">
             ${r.suppressed || !r.you || r.you.percentile == null ? "—" : pLabel(r.you.percentile)}</text>
         </g>`;
       })}
@@ -243,20 +245,20 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
         const you = r.you ? r.you.value : null;
         return html`
         <g key=${r.row_id}>
-          <text x=${labelW - 8} y=${y + rowH / 2 - 2} text-anchor="end" font-size="9.5" fill="var(--ink-2)">
+          <text x=${labelW - 8} y=${y + rowH / 2 - 2} text-anchor="end" font-size="9.5" fill="var(--ink-soft)">
             ${r.label.length > 22 ? r.label.slice(0, 21) + "…" : r.label}</text>
           ${p50 != null ? html`<rect x=${labelW} y=${y} width=${bw(p50)} height=${bh} rx="2.5" fill="var(--chart-band-mid)"/>` :
-          html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-3)">n<5 — suppressed</text>`}
-          ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-3)">${fmtValue(p50, unit)}</text>`}
+          html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">n<5 — suppressed</text>`}
+          ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">${fmtValue(p50, unit)}</text>`}
           ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill="var(--you)"/>`}
           ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill="var(--you)">${fmtValue(you, unit)} · You</text>`}
         </g>`;
       })}
       <g>
         <rect x=${labelW} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--chart-band-mid)"/>
-        <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-2)">Peer P50</text>
+        <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">Peer P50</text>
         <rect x=${labelW + 70} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--you)"/>
-        <text x=${labelW + 82} y=${usedH - 3} font-size="9" fill="var(--ink-2)">You</text>
+        <text x=${labelW + 82} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">You</text>
       </g>
     </svg>`;
 };
@@ -268,7 +270,7 @@ window.QuartileDots = function ({ quartiles }) {
     <div class="qdots" title="Where your metrics fall across peer quartiles (Q1 lowest → Q4 highest)">
       ${quartiles.map((c, i) => html`
         <div key=${i} class="qdot" style=${{
-          background: c ? `color-mix(in srgb, var(--cat-1) ${Math.round(22 + 78 * c / total)}%, var(--surface-2))` : "var(--surface-2)",
+          background: c ? `color-mix(in srgb, var(--cat-1) ${Math.round(22 + 78 * c / total)}%, var(--surface-sunk))` : "var(--surface-sunk)",
         }}></div>`)}
     </div>`;
 };

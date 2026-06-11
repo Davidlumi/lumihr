@@ -134,7 +134,7 @@ function App() {
           </select>
           ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
           <div style=${{ position: "relative", flex: 1, maxWidth: "380px" }}>
-            <span style=${{ position: "absolute", left: "10px", top: "9px", color: "var(--ink-3)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
+            <span style=${{ position: "absolute", left: "10px", top: "9px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
             <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search 778 benchmarks…"
               value=${search} onInput=${e => setSearch(e.target.value)} />
             ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
@@ -170,7 +170,7 @@ function SearchPop({ qIndex, search, onGo }) {
       ${hits.length === 0 && html`<div class="search-hit caption">No benchmarks match “${search}”.</div>`}
       ${hits.map(q => html`
         <div key=${q.id} class="search-hit" onClick=${() => onGo(q)}>
-          <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-3)" }} />`}
+          <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
           <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
         </div>`)}
     </div>`;

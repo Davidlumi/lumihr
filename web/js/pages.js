@@ -50,7 +50,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
             You sit above the peer <${Term} word="median">median<//> on
-            <span style=${{ color: "var(--brand-ink)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
+            <span style=${{ color: "var(--plum-deep)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
           </div>
           <div class="caption">${h.below_median} below · ${h.broadly_in_line} broadly in line · polarity-adjusted, ${cutLabelOf(cut, cuts)} · suppressed metrics excluded</div>
           <div style=${{ marginTop: "12px" }}>
@@ -109,7 +109,7 @@ window.OpportunityTile = function ({ opp }) {
     <div style=${{ flex: "1.1 1 230px", minWidth: "230px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
       <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Total identified opportunity</div>
       ${opp.fte_known ? html`
-        <div class="metric-value" style=${{ color: "var(--brand-ink)" }}>
+        <div class="metric-value lg" style=${{ color: "var(--plum)" }}>
           ${fmtGBPCompact(opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp)}<span class="unit">/yr</span></div>
         <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
           html`potential savings at peer median${opp.total_investment_to_p50_gbp ? html` · plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
@@ -359,7 +359,7 @@ window.MethodologyPage = function () {
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Who you're compared with</h2>
         ${m.synthetic_pool && html`
-          <div style=${{ background: "var(--mid-soft)", borderRadius: "var(--radius-sm)", padding: "var(--s3) var(--s4)", marginBottom: "var(--s3)", fontSize: "var(--fs-body)" }}>
+          <div style=${{ background: "var(--neutral-perf-tint)", borderRadius: "var(--radius-sm)", padding: "var(--s3) var(--s4)", marginBottom: "var(--s3)", fontSize: "var(--fs-body)" }}>
             <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: 220 simulated
             organisations whose answers were generated from published UK HR and reward norms and each organisation's
             firmographic profile, pending real member submissions. It is designed to behave believably for
