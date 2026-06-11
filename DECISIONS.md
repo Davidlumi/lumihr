@@ -412,3 +412,38 @@ FLAGGED, NOT BUILT (need David's direction, not unsupervised builds):
 - D5 Collapsible sidebar. D6 Bespoke dashboards beyond share-links +
   My View pinned layouts.
 Also outstanding: master QA pass v2 phases 6-7 (the pre-demo gate).
+
+## Master QA v2 — phases 6 & 7 complete (2026-06-11, pre-demo gate)
+
+Phase 6 (AI surfaces, deterministic state + safety machinery): all three
+surfaces deterministic-correct and grounded (40-metric commentary scan +
+board-pack narrative scan: ZERO ungrounded numbers; analyst clearly
+labelled '(AI analyst is not configured…)' with an honest no-match path);
+validator proven live (invented £, polarity flip, suppressed-figures all
+REJECTED with reasons); kill switches proven (403s when off, defaults on,
+exposed in features); injection via hostile group names/definitions inert.
+TWO DEFECTS FOUND AND FIXED:
+- 6-D1: scored selects lost their direction-corrected percentile in the
+  commentary payload (an ahead P96 metric read as positionless prevalence).
+  Fixed: payload falls back to card.score percentile+polarity (the pill's
+  source). Re-verified: 'ahead of most similar organisations' at P96.
+- 6-D2: the commentary endpoint silently mapped group/twin cuts to All
+  peers (mixed-cut bug class). Fixed: dim whitelist + org-scoped group
+  resolution (foreign ids still fall back to all). Re-verified: cites
+  'My competitor set, n=28, P98'; tiny group gets the too-small note.
+All gates re-run clean after the fix: qa_commentary 40/40, qa_hero 25/25,
+qa_focus 23/23.
+
+Phase 7 (robustness): 0%-org sweep across 10 routes (no raw errors, all
+welcoming); partial-completion state intentional; unanswered metric
+peers-only on all four cuts; search-no-match offers request-a-metric;
+3-org group suppressed on card/overview/hero/register simultaneously;
+exact n=5 serves values while n=4 suppresses (boundary proven); forced
+network error and bad metric ids give friendly recovery; override
+sequence unanswered->suppressed->reset never shows a stale value; rapid
+cut flips settle cleanly; long/special-char org name renders; the same
+metric reads '▼ Behind · P57' identically on its card and its full page.
+NOTE for David (not a defect): the card pill band (±5pts of median) and
+the hero market band (quartiles, configurable) are intentionally
+different granularities; set LUMI_MARKET_BAND=45-55 if you'd rather they
+align exactly.

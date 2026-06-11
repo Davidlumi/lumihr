@@ -1929,21 +1929,38 @@ def build_commentary_payload(conn, org, user, qid, dim, value):
     if dim == "fte_band" and not value:
         value = org.get("fte_band")
     cut = {"dim": dim, "value": value}
-    tb = twin_blocks_if_needed(conn, org, cut)
+    if dim == "group":
+        row = conn.execute("SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+                           (value or "", org["org_id"])).fetchone()
+        if row is None:
+            cut = {"dim": "all", "value": None}   # foreign/stale id: never another org's group
+        else:
+            cut["label"] = row["name"]
+            cut["criteria"] = uj(row["criteria_json"], {})
+    tb = twin_blocks_if_needed(conn, org, cut) if cut["dim"] in ("twin", "group") else None
     card = assemble_card(q, p, org, org_answers_for(org), cut,
                          {qid: tb.get(qid)} if tb else None, make_entitled(user, org))
     blk = card.get("block") or {}
     you = card.get("you") or {}
+    # scored selects carry their direction-corrected percentile in card.score
+    # (the same source the pill uses) — without this, an ahead/behind scored
+    # metric would read as positionless prevalence (QA phase-6 defect 6-D1)
+    pctl = you.get("percentile")
+    pol = card.get("polarity")
+    sc = card.get("score") or {}
+    if pctl is None and (you.get("display") or you.get("label")) and sc.get("percentile") is not None:
+        pctl = sc["percentile"]
+        pol = sc.get("polarity") or pol
     payload = {
         "metric": card["title"],
         "definition": card.get("definition") or "",
         "cut_label": card["cut"]["label"],
         "n": card["n"],
         "suppressed": bool(card.get("suppressed")),
-        "polarity": card.get("polarity"),
+        "polarity": pol,
         "you": you.get("display") or you.get("label"),
-        "percentile": you.get("percentile"),
-        "stance": _commentary_stance(you.get("percentile"), card.get("polarity")),
+        "percentile": pctl,
+        "stance": _commentary_stance(pctl, pol),
         "illustrative_sample_data": bool(get_meta("synthetic_pool", True)),
     }
     if blk.get("p50") is not None:
@@ -1972,7 +1989,7 @@ async def metric_commentary(request: Request):
     body = await request.json()
     qid = body.get("question_id")
     conn = get_conn()
-    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin") else "all"
+    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
     value = body.get("cut_value")
     payload = build_commentary_payload(conn, org, user, qid, dim, value)
     if payload is None:
