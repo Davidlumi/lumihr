@@ -23,6 +23,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import get_conn, uj
+from aggregate import score_direction
 from library import load_questions
 from regen_priors import (SELECT_PRIORS, MULTI_PRIORS, MATRIX_DRIVERS,
                           NUMERIC_DRIVERS, LEVELS)
@@ -148,14 +149,27 @@ def resolve_weights(q, spec):
     return out
 
 
-def tilt_by_score(q, weights, F, k):
-    """Generic formality tilt: reweight options by their library score ladder."""
+def option_points(q):
+    """{label: direction-corrected maturity points 0-100 (higher = better)}.
+    None when the option ladder's direction can't be determined safely."""
     cfg = q.scoring_config or {}
     scores = cfg.get("option_scores") or {}
-    by_label = {o["label"]: scores.get(o["code"]) for o in (q.options or [])}
+    d = score_direction(q)
+    if d == 0:
+        return None
+    return {o["label"]: (100.0 - float(scores[o["code"]])) if d == -1 else float(scores[o["code"]])
+            for o in (q.options or []) if o["code"] in scores}
+
+
+def tilt_by_score(q, weights, F, k):
+    """Generic formality tilt over direction-corrected points: high-F orgs
+    drift toward the genuinely better-practice options."""
+    pts = option_points(q)
+    if pts is None:
+        return weights
     out = {}
     for lbl, w in weights.items():
-        s = by_label.get(lbl)
+        s = pts.get(lbl)
         if s is None:
             out[lbl] = w
         else:
@@ -411,7 +425,9 @@ def template_weights(q, prof, rng):
       benefit questions      -> richness R
     """
     cfg = q.scoring_config or {}
-    scores = cfg.get("option_scores") or {}
+    pts_by_label = option_points(q)
+    if pts_by_label is None:
+        return None   # no safe direction reading -> question is skipped
     na_codes = set(cfg.get("na_codes") or [])
     base = prof.F
     if q.category == "benefit":
@@ -430,7 +446,7 @@ def template_weights(q, prof, rng):
     weights = {}
     subst = []
     for o in (q.options or []):
-        s = scores.get(o["code"])
+        s = pts_by_label.get(o["label"])
         if o["code"] in na_codes or s is None:
             weights[o["label"]] = None  # NA fill below
         else:

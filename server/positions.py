@@ -10,8 +10,8 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import get_conn, uj, get_meta
 from library import load_questions
-from aggregate import (aggregate_question_for_orgs, score_answer, coerce_number,
-                       SUPPRESSION_FLOOR, DEFAULT_ASSUMPTIONS)
+from aggregate import (aggregate_question_for_orgs, score_answer, score_polarity,
+                       coerce_number, SUPPRESSION_FLOOR, DEFAULT_ASSUMPTIONS)
 
 # ---------------------------------------------------------------- formatting
 
@@ -159,9 +159,9 @@ def position_items(org_id, cut, questions, payloads, org_answers,
 
 
 def _item(q, row, value, rank, blk, cut_label, kind):
-    # scoring polarity: scores are encoded so the configured polarity applies
+    # score items live on the direction-corrected points scale (higher = better)
     if kind == "score":
-        pol = (q.scoring_config or {}).get("polarity", "neutral")
+        pol = score_polarity(q)
     else:
         pol = q.polarity
     favourable = None
@@ -455,7 +455,7 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
         blk, cut_label = score_block_for(p, cut, (twin_blocks_by_q or {}).get(qid))
         raw = org_answers.get((qid, ""))
         s = score_answer(q, raw) if raw is not None else None
-        in_place = (s is not None and s >= 50)
+        in_place = (s >= 50) if s is not None else None
         adoption = None if is_suppressed(blk) else blk.get("adoption_pct")
         sector_adoption = None
         if sector_cut:
@@ -466,13 +466,13 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
             sp_scores[q.superpower].append(s)
         if not is_suppressed(blk) and blk.get("p50") is not None:
             sp_peer_p50[q.superpower].append(blk["p50"])
-        gap = (adoption - (100.0 if in_place else 0.0)) if adoption is not None else None
+        gap = (adoption - (100.0 if in_place else 0.0)) if (adoption is not None and in_place is not None) else None
         rows.append({
             "question_id": qid, "name": q.display_title, "superpower": q.superpower,
             "subpower": q.sub_power, "category": q.category, "tier": q.lumi_tier,
             "org_status": raw if raw is not None else "Not answered",
             "org_answered": raw is not None,
-            "in_place": in_place if raw is not None else None,
+            "in_place": in_place,
             "org_score": round(s, 1) if s is not None else None,
             "peer_adoption_pct": adoption,
             "sector_adoption_pct": sector_adoption,

@@ -152,10 +152,77 @@ def multi_block(q, raw_answers):
 
 
 # ----------------------------------------------------------------- scoring ---
+# The library's option_scores are option-ORDER ranks scaled 0-100 (95% of
+# scored selects match the rank pattern exactly), not quality scores: for most
+# practice questions the BEST answer is listed first and so scores 0. Every
+# consumer therefore works in direction-corrected "maturity points" (always
+# higher = better) via score_direction():
+#   -1  inverted: first option best (Yes/Always/Within last 12 months...)
+#   +1  ascending: last option best (Not at all -> Embedded; banded % where
+#       the question's polarity says higher is better)
+#    0  unknown: no safe reading — excluded from in-place/favourability calls.
+
+_AFF = re.compile(
+    r"^(yes\b|always|fully|embedded|within last|within 2|formal\b|provided and 75|routinely|"
+    r"consistently|all\b|strong\b|very (clear|fair|effective|confident|broad|well)|structured|"
+    r"monthly or more|ongoing|continuous|almost always|regularly|comprehensive|identified and|"
+    r"enhanced|both buy and sell|no waiting period)", re.I)
+_NEG = re.compile(
+    r"^(no\b|none\b|never|not\b|don'?t|no formal|statutory( sick pay)? only|no specific|"
+    r"not provided|not reviewed|not offered|no regular|rarely|very (unclear|unfair|limited)|"
+    r"unstructured|ad hoc|mostly unstructured)", re.I)
+_NUMBAND = re.compile(r"^(<|under|less than|up to|within)?\s*[\d£%]", re.I)
+
+_direction_cache = {}
+
+
+def score_direction(q):
+    """+1 raw scores already run worst->best; -1 inverted (best first); 0 unknown."""
+    if q.id in _direction_cache:
+        return _direction_cache[q.id]
+    d = _score_direction(q)
+    _direction_cache[q.id] = d
+    return d
+
+
+def _score_direction(q):
+    cfg = q.scoring_config or {}
+    if q.type == "multi_select":
+        return 1  # count-based: more selected = more in place
+    sc = cfg.get("option_scores") or {}
+    na = set(cfg.get("na_codes") or [])
+    opts = [o for o in sorted(q.options or [], key=lambda o: o.get("order", 0))
+            if o["code"] in sc and o["code"] not in na]
+    if len(opts) < 2:
+        return 0
+    first, last = opts[0]["label"], opts[-1]["label"]
+    if _AFF.search(first) or _NEG.search(last):
+        return -1
+    if _NEG.search(first) or _AFF.search(last):
+        return 1
+    if _NUMBAND.search(first) and _NUMBAND.search(last):
+        # ascending numeric bands: the question's own polarity gives direction
+        if q.polarity == "higher_is_better":
+            return 1
+        if q.polarity == "lower_is_better":
+            return -1
+        return 0
+    if cfg.get("polarity") == "lower_is_better":
+        return -1
+    return 0
+
+
+def score_polarity(q):
+    """Polarity of the corrected points scale for favourability judgements."""
+    if (q.scoring_config or {}).get("polarity") == "neutral":
+        return "neutral"
+    return "higher_is_better" if score_direction(q) != 0 else "neutral"
+
 
 def score_answer(q, value):
-    """Score one org's answer on the question's 0-100 scale.
-    Returns None when unscorable or the answer is an NA code."""
+    """One org's answer as direction-corrected maturity points (0-100, higher
+    = more in place / more mature). Returns None when unscorable, NA, or the
+    direction is unknown for select questions."""
     cfg = q.scoring_config or {}
     method = cfg.get("scoring_method")
     option_scores = cfg.get("option_scores") or {}
@@ -167,7 +234,12 @@ def score_answer(q, value):
         if code is None or code in na_codes:
             return None
         s = option_scores.get(code)
-        return float(s) if s is not None else None
+        if s is None:
+            return None
+        d = score_direction(q)
+        if d == 0:
+            return None
+        return 100.0 - float(s) if d == -1 else float(s)
 
     if method == "multi_select_count" and q.type == "multi_select":
         scoreable = [c for c in option_scores if c not in na_codes]

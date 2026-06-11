@@ -539,6 +539,7 @@
   "CAP_CAP_032",
   "CAP_CR_01",
   "CAP_CR_03",
+  "CAP_EFF_037",
   "CAP_EFF_GRADES_cf89ff3e",
   "CAP_EFF_LAYERS_aec2d095",
   "CAP_ENA_033",
@@ -547,7 +548,6 @@
   "CAP_SKI_022",
   "CAP_SKI_023",
   "CAP_SKI_025",
-  "CAP_SKI_026",
   "CAP_SKL_QUAL_LVL_b6c7c667",
   "CAP_SV_02",
   "CAP_WP_03",
@@ -566,8 +566,11 @@
   "CHG_EI_02",
   "CHG_EI_04",
   "CHG_LT_01",
+  "ER_02",
+  "EXT_REW_GAP_002",
   "EXT_REW_GAP_003",
   "EXT_REW_GAP_006",
+  "EXT_REW_GAP_007",
   "EXT_REW_GAP_010",
   "EXT_REW_GAP_012",
   "EXT_REW_GAP_013",
@@ -592,6 +595,7 @@
   "GRO_TM_01",
   "GRO_TM_02",
   "GRO_TM_03",
+  "HR_OP_04",
   "INC_BEL_022",
   "INC_DA_04",
   "INC_EOO_01",
@@ -624,6 +628,8 @@
   "LEA_TRU_023",
   "MET_99444f98",
   "MET_e6310eed",
+  "ONB_02",
+  "PERF_07",
   "PROC_CF_01",
   "PROC_CF_02",
   "PROC_DE_01",
@@ -656,6 +662,7 @@
   "PROP_721d05fe",
   "PROP_790479de",
   "PROP_7cdfcc7b",
+  "PROP_87f0bef3",
   "PROP_9c083073",
   "PROP_a38afbdd",
   "PROP_aa4061d5",
@@ -671,6 +678,7 @@
   "PROP_cd33d547",
   "PROP_ce860eb0",
   "PROP_d8172935",
+  "PROP_f3e18d69",
   "PROP_f3f5460d",
   "PROP_f6502a33",
   "PROP_fdf70b92",
@@ -707,6 +715,11 @@
   "PUR_VE_02",
   "PUR_VE_03",
   "PUR_VE_04",
+  "RED_COST_01",
+  "RED_NOTICE_01",
+  "RED_PAY_01",
+  "RED_TERM_02",
+  "RED_TERM_03",
   "REW_BEN_039",
   "REW_BEN_046",
   "REW_BEN_047",
@@ -715,6 +728,7 @@
   "REW_BEN_058",
   "REW_BEN_100",
   "REW_BEN_FLEX_ALLOW_01",
+  "REW_BEN_HOL_002",
   "REW_BEN_REM_PAY_001",
   "REW_BEN_REM_PAY_002",
   "REW_BEN_REM_PAY_003",
@@ -749,6 +763,7 @@
   "REW_PAY_022",
   "REW_PAY_097",
   "REW_PAY_126",
+  "REW_PAY_HOURLY_MIN_1c6e096f",
   "REW_PAY_MKT_POS_01",
   "REW_PAY_TIPS_EXIST_7c80c508",
   "REW_PRO_030",
@@ -795,7 +810,7 @@
  "counts": {
   "curated": 109,
   "pattern": 398,
-  "skipped": 271
+  "skipped": 287
  },
  "rationales": {
   "PROP_8e0b6316": {
@@ -1163,8 +1178,12 @@
  },
  "moved_to_skip_by_validation": [
   [
-   "CAP_SKI_026",
-   "near-uniform"
+   "RED_TERM_02",
+   "na-dominates 51%"
+  ],
+  [
+   "RED_TERM_03",
+   "na-dominates 53%"
   ]
  ]
 }

@@ -33,7 +33,7 @@ from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
 import positions as pos
 import peer_twin
-from aggregate import run_snapshot, coerce_number, SUPPRESSION_FLOOR
+from aggregate import run_snapshot, coerce_number, score_polarity, SUPPRESSION_FLOOR
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 CURRENT_SNAPSHOT = 1
@@ -219,7 +219,7 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled):
                     "you": round(s, 1),
                     "percentile": round(pos.percentile_rank(sc_blk["_scores"], s), 1),
                     "peer_p50": sc_blk.get("p50"),
-                    "polarity": (q.scoring_config or {}).get("polarity", "neutral"),
+                    "polarity": score_polarity(q),
                 }
 
     elif q.type == "matrix":

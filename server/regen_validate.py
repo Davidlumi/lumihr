@@ -137,9 +137,10 @@ def main():
         q = questions.get(qid)
         if not q or q.type not in ("single_select", "yes_no"):
             continue
-        cfg = q.scoring_config or {}
-        sc = cfg.get("option_scores") or {}
-        by_label = {o["label"]: sc.get(o["code"]) for o in (q.options or [])}
+        from regenerate import option_points
+        by_label = option_points(q)
+        if by_label is None:
+            continue
         qscore[qid] = by_label
     for qid, omap in new.items():
         bl = qscore.get(qid)
