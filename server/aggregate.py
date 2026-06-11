@@ -404,7 +404,11 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
         top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
         return top, mr, None, None
 
-    per_org = {oid: v for (oid, rid), v in answers_for_q.items() if oid in org_ids}
+    # Non-matrix answers live at matrix_row_id='' by schema. Row-keyed answers
+    # under a non-matrix question are a schema violation (seed-import artefact,
+    # e.g. REW_INC_061) and must be IGNORED — never silently collapsed into a
+    # single arbitrary row's distribution (integrity-review Phase A fix).
+    per_org = {oid: v for (oid, rid), v in answers_for_q.items() if oid in org_ids and not rid}
     raw = list(per_org.values())
 
     if q.type == "numeric":

@@ -447,3 +447,60 @@ NOTE for David (not a defect): the card pill band (±5pts of median) and
 the hero market band (quartiles, configurable) are intentionally
 different granularities; set LUMI_MARKET_BAND=45-55 if you'd rather they
 align exactly.
+
+## Per-metric data integrity review (2026-06-11) — firewall-compliant
+
+Scope: the 180 live reward metrics (NOT the hidden 446/778 library — a
+separate pass if David wants it). Reference engine: qa_integrity.py —
+fresh implementations of linear-interpolation percentiles, midrank
+position and option shares, computed straight from raw answers in
+SQLite, compared against production payloads. (Its own first run had a
+reference bug — reading row['block'] instead of row['all'] — which
+flagged 75 false mismatches; investigated before convicting production.)
+
+PHASE A (computation): 180/180 clean after ONE genuine bug:
+- aggregate.py collapsed row-keyed answers for NON-matrix questions into
+  one arbitrary row's value per org. Only REW_INC_061 was affected (its
+  seed data is matrix-shaped — 7 per-level rows — under a single_select
+  schema; the 2026 regen pass had skipped it). The displayed distribution
+  was one level's data presented as the org answer. FIX: non-matrix
+  aggregation ignores matrix_row_id != '' (schema violations can never
+  silently distort again). The malformed rows are left in the DB, inert —
+  not deleted, not edited. The metric now reads n=0 suppressed, honestly.
+Also re-screened with fresh regexes: cadence/property gap-register
+statuses ZERO false negatives; suppression sweep over EVERY payload block
+(all cuts, matrix rows): ZERO blocks under n=5 serving values.
+
+PHASE B (plausibility, high bar): range vs the library's own declared
+bounds: ZERO violations. Sector-median outliers: ZERO. Don't-know
+dominance: ZERO. Cross-metric contradiction pairs (long-service gate,
+LTI eligibility): ZERO. Full numeric-medians table professionally
+reviewed (PMI £1,095/£2,035/£2,850; exec car allowance £11,250; salary
+budget 3.7%; LTI board max 125%; pension typical 8-10%) — all defensible.
+ONE implausible metric: REW_INC_072 sign-on bonuses at 99.5% "Not used"
+(import-era data the regen pass skipped) — indefensible vs UK practice
+surveys.
+
+PHASE C: REW_INC_072 regenerated WHOLE-METRIC via regen_rew_inc_072.py:
+documented baseline (~60/18/17/5), conditioned on firmographics only
+(existing Profile latents + Talent_Competition), seeded
+("REW_INC_072|2026-06-11|org_id"), reproducible, org-blind. Result
+65.0/12.3/17.3/5.5 across all 220 orgs at once. Org-blindness shown:
+demo org + two fixed-rule watch orgs all KEPT "Not used" — no standing
+improved; the demo org's answer simply moved from near-universal
+(219/220) to modal (143/220). All gates re-run clean on the new data:
+qa_integrity 0 mismatches, status audit zero, qa_focus 23/23,
+qa_hero 25/25.
+
+FLAGGED FOR DAVID (not improvised):
+- REW_INC_061 "Typical individual/business % split of main bonus": now
+  honestly empty (n=0 suppressed). Regenerating needs a curated org-level
+  prior the original curators declined to invent (the question's
+  awkwardness is why it was seeded per-level). Options: curate a prior,
+  reword the question per-level (matrix), or hide it from the live set.
+- My-data still lists the org's stored (inert) per-level rows for
+  REW_INC_061 — cosmetic; remove if the question is rewormed/hidden.
+
+INTEGRITY STATEMENT: no value was hand-tuned anywhere; the demo org
+received no special handling; changes were exactly one code fix and one
+whole-metric, documented, seeded, org-blind regeneration.
