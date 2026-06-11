@@ -35,7 +35,7 @@ from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
 import positions as pos
 import peer_twin
-from aggregate import run_snapshot, coerce_number, score_polarity, SUPPRESSION_FLOOR
+from aggregate import run_snapshot, coerce_number, score_polarity, SUPPRESSION_FLOOR, matrix_value
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 CURRENT_SNAPSHOT = 1
@@ -419,15 +419,24 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled):
         rows = []
         for row in p.get("matrix_rows", []):
             rblk, _ = pos.matrix_row_block_for(row, cut, tb)
-            v = coerce_number(org_answers.get((q.id, row["row_id"])))
+            raw_v = org_answers.get((q.id, row["row_id"]))
+            v = matrix_value(raw_v)   # same tolerant parser as the peer side ("1.5x")
             r_out = {
                 "row_id": row["row_id"], "label": row["label"],
                 "suppressed": bool(pos.is_suppressed(rblk)),
                 "block": None if pos.is_suppressed(rblk) else strip_internal(rblk),
             }
-            if v is not None:
-                r_out["you"] = {"value": v, "display": pos.fmt_value(v, q.unit_block())}
+            categorical = bool(rblk) and rblk.get("kind") == "select"
+            if categorical and raw_v not in (None, ""):
+                you = {"label": str(raw_v).strip(), "display": str(raw_v).strip()}
                 if not pos.is_suppressed(rblk):
+                    mine = next((o for o in rblk.get("options", []) if o["label"] == you["label"]), None)
+                    if mine:
+                        you["share_pct"] = mine["pct"]
+                r_out["you"] = you
+            elif v is not None:
+                r_out["you"] = {"value": v, "display": pos.fmt_value(v, q.unit_block())}
+                if not pos.is_suppressed(rblk) and "_values" in rblk:
                     r_out["you"]["percentile"] = round(pos.percentile_rank(rblk["_values"], v), 1)
             rows.append(r_out)
         base["matrix_rows"] = rows

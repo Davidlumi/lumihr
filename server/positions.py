@@ -10,7 +10,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import get_conn, uj, get_meta
 from library import load_questions
-from aggregate import (aggregate_question_for_orgs, score_answer, score_polarity,
+from aggregate import (aggregate_question_for_orgs, score_answer, score_polarity, matrix_value,
                        practice_status, STATUS_POINTS,
                        coerce_number, SUPPRESSION_FLOOR, DEFAULT_ASSUMPTIONS)
 
@@ -29,7 +29,8 @@ def fmt_value(v, unit, decimals=None):
     if ut in ("days", "hours", "weeks"):
         s = "{:.1f}".format(v).rstrip("0").rstrip(".")
         return "%s %s" % (s, ut)
-    s = "{:.1f}".format(v).rstrip("0").rstrip(".")
+    fmt = "{:.2f}" if abs(v) < 10 else "{:.1f}"
+    s = fmt.format(v).rstrip("0").rstrip(".")
     return s
 
 
@@ -143,11 +144,13 @@ def position_items(org_id, cut, questions, payloads, org_answers,
             items.append(_item(q, None, v, r, blk, cut_label, "value"))
         elif q.type == "matrix":
             for row in p.get("matrix_rows", []):
-                v = coerce_number(org_answers.get((qid, row["row_id"])))
+                v = matrix_value(org_answers.get((qid, row["row_id"])))
                 if v is None:
                     continue
                 blk, cut_label = matrix_row_block_for(row, cut, tb)
-                if is_suppressed(blk):
+                # categorical rows (select blocks) carry no value distribution —
+                # a banded answer like "12 weeks" must never become a fake rank
+                if is_suppressed(blk) or "_values" not in blk:
                     continue
                 r = percentile_rank(blk["_values"], v)
                 items.append(_item(q, row, v, r, blk, cut_label, "value"))

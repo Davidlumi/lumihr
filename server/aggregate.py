@@ -96,6 +96,44 @@ def _norm_label(s):
     return re.sub(r"\s+", " ", (s or "").strip().lower())
 
 
+# Matrix row values come in four formats (integrity fix, 2026-06-11):
+# plain numeric ("50"), suffixed numeric ("1.5x", "98%", "12 weeks" when no
+# open-ended band exists), Yes/No, and ordered bands incl. open-ended ("More
+# than 16 weeks"). A value the numeric parser can't read must NEVER silently
+# vanish into n=0 — rows aggregate numerically only when the WHOLE format is
+# numeric; otherwise they aggregate as a per-row categorical distribution.
+MATRIX_VAL_RE = re.compile(r"^(-?\d+(?:\.\d+)?)\s*(?:x|×|%|weeks?|wks?)?$", re.I)
+
+
+def matrix_value(v):
+    m = MATRIX_VAL_RE.match(str(v).strip()) if v is not None else None
+    return float(m.group(1)) if m else None
+
+
+def matrix_select_block(option_order, raw_answers):
+    """Categorical distribution for one matrix row (Yes/No, ordered bands).
+    Ordered by the column's defined option list; unexpected labels are KEPT
+    (appended, flagged) — never dropped."""
+    counts = defaultdict(int)
+    for a in raw_answers:
+        if a is not None and str(a).strip() != "":
+            counts[str(a).strip()] += 1
+    n = sum(counts.values())
+    if n < SUPPRESSION_FLOOR:
+        return suppressed(n)
+    order = [o for o in (option_order or []) if o in counts] + \
+            [l for l in counts if l not in (option_order or [])]
+    opts = [{"label": l, "count": counts[l], "pct": round(100.0 * counts[l] / n, 1)} for l in order]
+    modal = max(opts, key=lambda o: o["count"])
+    unexpected = [l for l in counts if option_order and l not in option_order]
+    blk = {"n": n, "kind": "select", "options": opts,
+           "modal_label": modal["label"], "modal_pct": modal["pct"]}
+    if unexpected:
+        blk["unexpected_labels"] = unexpected
+        print("[aggregate] WARN matrix row has labels outside its schema: %r" % unexpected[:3])
+    return blk
+
+
 def select_block(q, raw_answers):
     """raw_answers: list of option-label strings (one per org)."""
     by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
@@ -389,18 +427,36 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
                 observed[rid][oid] = v
         if not rows:  # fall back to observed ids if the library has no row list
             rows = [(rid, rid.replace("_", " ").title()) for rid in sorted(observed)]
+        # mode is a property of the QUESTION, decided from its column schema and
+        # the FULL answer set (so every cut classifies identically): numeric if
+        # the column is numeric-typed or every defined option parses numerically
+        # ("1.5x"); otherwise categorical (Yes/No, banded "More than 16 weeks").
+        col0 = ((q.matrix or {}).get("columns") or [{}])[0]
+        col_opts = col0.get("options") or []
+        numeric_mode = col0.get("type") in ("percentage", "currency", "number")
+        if not numeric_mode and col_opts:
+            numeric_mode = all(matrix_value(o) is not None for o in col_opts)
+        if not numeric_mode and not col_opts:
+            all_vals = {str(v).strip() for (oid, rid), v in answers_for_q.items()
+                        if rid and v not in (None, "")}
+            numeric_mode = bool(all_vals) and all(matrix_value(v) is not None for v in all_vals)
         mr = []
         answering = set()
         for rid, label in rows:
-            vals, excl = [], 0
+            raws = []
             for oid, v in observed.get(rid, {}).items():
-                f = coerce_number(v)
-                if f is None:
-                    excl += 1
-                else:
-                    vals.append(f)
+                if v is not None and str(v).strip() != "":
+                    raws.append(v)
                     answering.add(oid)
-            mr.append({"row_id": rid, "label": label, "block": numeric_block(vals, excl)})
+            if numeric_mode:
+                vals = [f for f in (matrix_value(v) for v in raws) if f is not None]
+                excl = len(raws) - len(vals)
+                if excl:
+                    print("[aggregate] WARN %s row %s: %d values failed numeric parse (kept as excluded count)" % (q.id, rid, excl))
+                blk = numeric_block(vals, excl)
+            else:
+                blk = matrix_select_block(col_opts, raws)
+            mr.append({"row_id": rid, "label": label, "block": blk})
         top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
         return top, mr, None, None
 

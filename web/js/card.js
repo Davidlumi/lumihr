@@ -157,6 +157,13 @@ function humanSentence(c) {
   if (c.type === "multi_select") {
     return { lead: multiSelectReadout(c), support: null };
   }
+  if (c.type === "matrix" && (c.matrix_rows || []).some(r => r.block && r.block.kind === "select")) {
+    const live = c.matrix_rows.filter(r => !r.suppressed && r.block && r.block.modal_label);
+    if (live.length) {
+      const r0 = live[0];
+      return { lead: `Level by level, the most common peer answer is shown below — e.g. ${r0.label}: “${r0.block.modal_label}” (${r0.block.modal_pct}% of ${r0.block.n} organisations).`, support: null };
+    }
+  }
   if (!c.you && !c.readout && c.type !== "matrix") {
     return { lead: "Answer this to see where you stand — the peer picture is already here.", support: null };
   }
@@ -279,11 +286,48 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
       <${Icon} name="shield" size=${18} />
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data in this peer group</div>
       <div>Fewer than 5 organisations per level — try a wider peer group.</div></div>`;
+    // categorical matrices (Yes/No participation, ordered bands like notice
+    // periods) carry per-row distributions, not quartiles
+    const isSelect = (c.matrix_rows || []).some(r => r.block && r.block.kind === "select");
+    if (isSelect) return html`<${MatrixSelect} rows=${c.matrix_rows} showValues=${showValues} />`;
     return chart === "grouped_bars"
       ? html`<${MatrixGrouped} rows=${c.matrix_rows} unit=${c.unit} showValues=${showValues} width=${W} height=${rowH} fav=${fav} />`
       : html`<${MatrixHeat} rows=${c.matrix_rows} unit=${c.unit} polarity=${c.polarity} showValues=${showValues} width=${W} height=${rowH} />`;
   }
   return null;
+};
+
+/* Categorical matrix rows: a per-level 100%-stacked band (column option
+   order), the most common answer, and the org's own answer. Information
+   prevalence — quiet peers, bold you, no fabricated quartiles. */
+window.MatrixSelect = function ({ rows, showValues }) {
+  const live = (rows || []).filter(r => !r.suppressed && r.block && r.block.options);
+  const CAT = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)"];
+  return html`
+    <table class="data matrix-grid" style=${{ fontSize: "var(--fs-label)" }}>
+      <thead><tr><th>Level</th><th style=${{ width: "38%" }}>Peer split</th><th>Most common</th><th class="num">You</th></tr></thead>
+      <tbody>
+        ${(rows || []).map(r => {
+          if (r.suppressed || !r.block) return html`
+            <tr key=${r.row_id}><td>${r.label}</td>
+              <td colspan="3" class="caption">not enough organisations to show safely</td></tr>`;
+          const opts = r.block.options || [];
+          return html`
+            <tr key=${r.row_id}>
+              <td>${r.label}</td>
+              <td title=${opts.map(o => o.label + " " + o.pct + "%").join(" · ")}>
+                <div style=${{ display: "flex", height: "12px", borderRadius: "6px", overflow: "hidden", background: "var(--surface-sunk)" }}>
+                  ${opts.map((o, i) => o.pct > 0 && html`
+                    <div key=${o.label} style=${{ width: o.pct + "%", background: CAT[Math.min(i, CAT.length - 1)] }}
+                      title=${o.label + " " + o.pct + "%"}></div>`)}
+                </div>
+              </td>
+              <td>${r.block.modal_label} <span class="caption num">${r.block.modal_pct}%</span></td>
+              <td class="num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${r.you.display}</b>${r.you.share_pct != null && showValues ? html`<span class="caption"> · ${r.you.share_pct}% of peers</span>` : ""}` : html`<span class="caption">—</span>`}</td>
+            </tr>`;
+        })}
+      </tbody>
+    </table>`;
 };
 
 function unitSuffix(unit) {

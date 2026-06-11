@@ -31,7 +31,9 @@ window.fmtValue = function (v, unit) {
   if (v === null || v === undefined) return "—";
   const ut = (unit && unit.type) || "none";
   if (ut === "currency") return "£" + Math.round(v).toLocaleString("en-GB");
-  let s = (Math.round(v * 10) / 10).toLocaleString("en-GB", { maximumFractionDigits: 1 });
+  // small decimals (multipliers like 1.25x) keep 2dp; larger values stay 1dp
+  const dp = Math.abs(v) < 10 ? 2 : 1;
+  let s = (Math.round(v * Math.pow(10, dp)) / Math.pow(10, dp)).toLocaleString("en-GB", { maximumFractionDigits: dp });
   if (ut === "percentage") return s + "%";
   if (ut === "days" || ut === "hours" || ut === "weeks") return s + " " + ut;
   return s;
@@ -184,7 +186,11 @@ window.consumeReturnScroll = function (hash) {
 // Never offer a chart type that misrepresents the data shape.
 window.chartAlternatives = function (card) {
   if (card.type === "numeric") return ["quartile_band", "histogram", "box"];
-  if (card.type === "matrix") return ["heatmap", "grouped_bars"];
+  if (card.type === "matrix") {
+    // categorical matrices have one honest representation: the per-level table
+    if ((card.matrix_rows || []).some(r => r.block && r.block.kind === "select")) return ["matrix_table"];
+    return ["heatmap", "grouped_bars"];
+  }
   if (card.type === "multi_select") return ["bar"];
   // donut retired: bars for few-option categoricals, segmented band for scales
   if (card.type === "single_select" || card.type === "yes_no") return ["bar", "stacked_bar"];
@@ -200,5 +206,5 @@ window.normaliseChart = function (card, pref) {
 window.CHART_LABELS = {
   quartile_band: "Percentile band", histogram: "Histogram", box: "Box plot",
   bar: "Bars", stacked_bar: "Distribution band",
-  heatmap: "Heatmap", grouped_bars: "Grouped bars",
+  heatmap: "Heatmap", grouped_bars: "Grouped bars", matrix_table: "Per-level table",
 };

@@ -174,23 +174,60 @@ for qid, q in qs.items():
     elif q.type == "matrix":
         rows = {r["row_id"]: r for r in (p.get("matrix_rows") or [])}
         checked += 1
+        # reference matrix-value parser (suffix-tolerant, per spec): "1.5x",
+        # "98%" are numeric; "Yes"/"More than 16 weeks" are categories
+        MREF = re.compile(r"^(-?\d+(?:\.\d+)?)\s*(?:x|×|%|weeks?|wks?)?$", re.I)
+        def mref(v):
+            m = MREF.match(str(v).strip()) if v is not None else None
+            return float(m.group(1)) if m else None
+        # the audit blind spot fix: EVERY answered row must aggregate — as
+        # numerics if the whole question's format is numeric, else as a
+        # categorical distribution. A populated row with neither is a failure.
+        all_distinct = {str(v).strip() for (q2, r2), per in raw.items() if q2 == qid and r2
+                        for v in per.values() if v not in (None, "")}
+        q_numeric = bool(all_distinct) and all(mref(v) is not None for v in all_distinct)
+        answering_ref = set()
         for (qid2, row_id), per_org in raw.items():
             if qid2 != qid or not row_id:
                 continue
-            vals = sorted(v for v in (ref_float(x) for x in per_org.values()) if v is not None)
+            raws = {o: v for o, v in per_org.items() if v not in (None, "")}
+            answering_ref |= set(raws)
             prow = rows.get(row_id)
-            # payload rows carry their main block under "all" (cuts as siblings)
             pblk = ((prow or {}).get("all")) or {}
-            if len(vals) < 5:
-                if pblk and not pblk.get("suppressed") and pblk.get("p50") is not None:
-                    mismatch.append((qid, "matrix row %s n<5 but served" % row_id))
-                continue
-            if prow is None:
+            if len(raws) >= 5 and prow is None:
                 mismatch.append((qid, "matrix row %s missing from payload" % row_id))
                 continue
-            if pblk.get("n") != len(vals) or not close(pblk.get("p50"), ref_pctl(vals, 50)):
-                mismatch.append((qid, "matrix row %s ref(n=%d p50=%.2f) vs prod(n=%s p50=%s)" % (
-                    row_id, len(vals), ref_pctl(vals, 50), pblk.get("n"), pblk.get("p50"))))
+            if q_numeric:
+                vals = sorted(v for v in (mref(x) for x in raws.values()) if v is not None)
+                if len(vals) < 5:
+                    if pblk and not pblk.get("suppressed") and pblk.get("p50") is not None:
+                        mismatch.append((qid, "matrix row %s n<5 but served" % row_id))
+                    continue
+                if pblk.get("n") != len(vals) or not close(pblk.get("p50"), ref_pctl(vals, 50)):
+                    mismatch.append((qid, "matrix row %s ref(n=%d p50=%.2f) vs prod(n=%s p50=%s)" % (
+                        row_id, len(vals), ref_pctl(vals, 50), pblk.get("n"), pblk.get("p50"))))
+            else:
+                from collections import Counter as _C
+                cnt = _C(str(v).strip() for v in raws.values())
+                n_ref = sum(cnt.values())
+                if n_ref < 5:
+                    if pblk and not pblk.get("suppressed") and pblk.get("options"):
+                        mismatch.append((qid, "matrix select row %s n<5 but served" % row_id))
+                    continue
+                if pblk.get("kind") != "select" or pblk.get("n") != n_ref:
+                    mismatch.append((qid, "matrix select row %s ref n=%d vs prod kind=%s n=%s — POPULATED ROW NOT AGGREGATED" % (
+                        row_id, n_ref, pblk.get("kind"), pblk.get("n"))))
+                    continue
+                prod_counts = {o["label"]: o["count"] for o in (pblk.get("options") or [])}
+                for label, c in cnt.items():
+                    if prod_counts.get(label) != c:
+                        mismatch.append((qid, "matrix select row %s option %r ref %d vs prod %s" % (
+                            row_id, label[:24], c, prod_counts.get(label))))
+                        break
+        # top-level matrix n must equal distinct responding orgs
+        top_n = (p.get("all") or {}).get("n")
+        if answering_ref and top_n != len(answering_ref):
+            mismatch.append((qid, "matrix top n: ref %d responders vs prod %s" % (len(answering_ref), top_n)))
 
 print("\nPHASE A.1 — reference recomputation: %d metrics checked, %d mismatches" % (checked, len(mismatch)))
 for m in mismatch:

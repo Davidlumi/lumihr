@@ -504,3 +504,50 @@ FLAGGED FOR DAVID (not improvised):
 INTEGRITY STATEMENT: no value was hand-tuned anywhere; the demo org
 received no special handling; changes were exactly one code fix and one
 whole-metric, documented, seeded, org-blind regeneration.
+
+## Matrix aggregation fix — all answer formats (2026-06-11)
+
+THE BUG: matrix row aggregation was numeric-only; values it couldn't parse
+silently became n=0. NINE of the 21 reward matrix metrics rendered "not
+enough data" with full seed data behind them: 5 Yes/No matrices (tronc
+participation, LTI/PMI/status-car eligibility, allowances pensionability),
+2 banded "N weeks" notice-period matrices, 2 "Nx" multiplier matrices.
+
+WHY THE INTEGRITY AUDIT MISSED IT: qa_integrity's reference used the SAME
+strict numeric parse as production for matrix rows — both sides dropped
+categorical rows identically, so they "matched". A false clean. The
+reference now verifies categorical rows independently (counts/percentages
+per band) and asserts every populated row aggregates and the top-level n
+equals distinct responders — a populated row that aggregates as nothing
+is a hard failure. Lesson recorded: a metric is verified when it has been
+SHOWN rendering, not when two engines that share an assumption agree.
+
+THE FIX (read/aggregate only — zero answers changed):
+- Mode per QUESTION from the column schema + full answer set: numeric when
+  the column is numeric-typed or every defined option parses as suffixed
+  numeric ("1.5x" -> 1.5); otherwise categorical, ordered by the column's
+  option list ("More than 16 weeks" keeps its place). Unrecognised values
+  in numeric mode are counted + logged, never silent; unexpected labels in
+  select mode are kept and flagged.
+- matrix_select_block: per-row distribution (counts, pct, modal) with the
+  same n>=5 suppression as everything else.
+- assemble_card: categorical rows carry the org's own label + peer share;
+  the org's own numeric matrix answers now parse with the same tolerant
+  parser as peers ("1.5x" You-values were showing as "—").
+- positions: banded answers ("12 weeks") can never produce a fake numeric
+  rank (guard on _values); the multiplier/market-position rows DO now
+  contribute positions — the hero pool grew 82 -> 94 positioned items,
+  which is recovered real data, not methodology drift.
+- Client: MatrixSelect renderer (per-level 100% band + most common + your
+  answer); categorical matrices expose a single honest chart type; small
+  none-unit values display 2dp (1.25, not 1.3).
+
+VERIFIED: all 21 matrix metrics live n == distinct responding orgs (zero
+n=0-with-data; table in the QA record); tronc renders 26 orgs with the
+sensible per-level story (frontline Yes 100%, board No 100%); hourly
+multipliers render P50 1/1.25/1.5 by band with You + per-row percentiles
+(n=191); independent recomputes match exactly (notice-band counts, tronc
+counts, weekend-multiplier p50); pension/bonus numeric matrices unchanged;
+a select matrix on an n=4 cut still suppresses. Gates re-run clean:
+qa_integrity 0/180, qa_focus 23/23, qa_hero 25/25, status audit zero,
+commentary 40/40.
