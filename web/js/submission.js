@@ -20,8 +20,8 @@ function SubmissionHome({ state }) {
   return html`
     <div style=${{ maxWidth: "760px" }}>
       <h1 class="display-title">Your submission</h1>
-      <p>lumi is a co-operative: you see the pool because you've contributed to it. Answer at least
-      <b>${state.threshold_pct}% of Core questions</b> to unlock peer comparison. Everything autosaves — come back any time.</p>
+      <p>lumi is a co-operative: you see the pool because you've contributed to it. Answer at
+      least${" "}<b>${state.threshold_pct}% of Core questions</b> to unlock peer comparison. Everything autosaves — come back any time.</p>
       <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
         <div class="row spread" style=${{ marginBottom: "6px" }}>
           <b>Core completion</b>

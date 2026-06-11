@@ -506,4 +506,29 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
             "peer_median_score": round(sum(peers) / len(peers), 1) if peers else None,
             "questions_scored": len(ours),
         }
-    return {"rows": rows, "maturity": maturity}
+    # the same rollup by section (sub_power), driving the focused-mode tiles
+    sec_scores, sec_peer = defaultdict(list), defaultdict(list)
+    sec_order = {}
+    for r in rows:
+        q = questions.get(r["question_id"])
+        if q is None or not q.sub_power:
+            continue
+        sec_order.setdefault(q.sub_power, q.sub_power_order or 999)
+        if r["org_score"] is not None:
+            sec_scores[q.sub_power].append(r["org_score"])
+        if not r["suppressed"]:
+            blk, _ = score_block_for(payloads.get(r["question_id"], {}), cut,
+                                     (twin_blocks_by_q or {}).get(r["question_id"]))
+            if blk and not is_suppressed(blk) and blk.get("p50") is not None:
+                sec_peer[q.sub_power].append(blk["p50"])
+    maturity_sections = {}
+    for sec in set(list(sec_scores) + list(sec_peer)):
+        ours = sec_scores.get(sec) or []
+        peers = sec_peer.get(sec) or []
+        maturity_sections[sec] = {
+            "org_score": round(sum(ours) / len(ours), 1) if ours else None,
+            "peer_median_score": round(sum(peers) / len(peers), 1) if peers else None,
+            "questions_scored": len(ours),
+            "order": sec_order.get(sec, 999),
+        }
+    return {"rows": rows, "maturity": maturity, "maturity_sections": maturity_sections}

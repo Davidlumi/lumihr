@@ -4,14 +4,24 @@
    EmptyState, nav, SP_ICONS, SUPERPOWERS, fmtGBPCompact, cutQS, cutLabelOf */
 
 // --------------------------------------------------------- gap register ----
+window.gapGroups = function (data) {
+  const focused = window.SCOPE && window.SCOPE.focused;
+  if (focused && data.maturity_sections) {
+    return Object.entries(data.maturity_sections)
+      .sort((a, b) => (a[1].order || 99) - (b[1].order || 99)).map(([k]) => k);
+  }
+  return SUPERPOWERS.filter(s => data.maturity && data.maturity[s]);
+};
+
 window.GapRegisterPage = function ({ me, cut, cuts }) {
   const [data, setData] = useState(null);
   const [sp, setSp] = useState("");
   const [show, setShow] = useState("gaps"); // gaps | all
   useEffect(() => { setData(null); api("/api/gap-register?" + cutQS(cut)).then(setData); }, [cutKeyOf(cut)]);
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const focused = window.SCOPE && window.SCOPE.focused;
   let rows = data.rows.filter(r => !r.suppressed);
-  if (sp) rows = rows.filter(r => r.superpower === sp);
+  if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
   if (show === "gaps") rows = rows.filter(r => r.org_answered && r.in_place === false && (r.gap || 0) > 0);
   return html`
     <div>
@@ -37,12 +47,13 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
       </div>
 
       <div class="sp-grid" style=${{ marginBottom: "var(--s4)" }}>
-        ${SUPERPOWERS.filter(s => data.maturity[s]).map(s => {
-          const mt = data.maturity[s];
+        ${gapGroups(data).map(s => {
+          const mt = focused ? data.maturity_sections[s] : data.maturity[s];
+          if (!mt) return null;
           return html`
           <div key=${s} class="card sp-card" onClick=${() => setSp(sp === s ? "" : s)}
             style=${sp === s ? { borderColor: "var(--plum)" } : null}>
-            <div class="row spread"><span class="sp-name"><${SpIcon} sp=${s} size=${14} /> ${s}</span></div>
+            <div class="row spread"><span class="sp-name">${focused ? s : html`<${SpIcon} sp=${s} size=${14} /> ${s}`}</span></div>
             <div class="row spread" style=${{ marginTop: "6px" }}>
               <div><div class="metric-value" style=${{ fontSize: "20px" }}>${mt.org_score == null ? "—" : mt.org_score}</div><div class="caption">your maturity</div></div>
               <div style=${{ textAlign: "right" }}><div class="metric-value" style=${{ fontSize: "20px", color: "var(--ink-soft)" }}>${mt.peer_median_score == null ? "—" : mt.peer_median_score}</div><div class="caption">peer median</div></div>
@@ -62,7 +73,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
             ${rows.slice(0, 80).map(r => html`
               <tr key=${r.question_id}>
                 <td><b>${r.name}</b></td>
-                <td>${r.superpower}</td>
+                <td>${focused ? (r.subpower || "—") : r.superpower}</td>
                 <td>${r.org_answered ? html`<span class=${"chip " + (r.in_place === true ? "good" : r.in_place === false ? "bad" : "")}>${r.in_place === true ? "In place" : r.in_place === false ? "Not in place" : "Recorded"}</span>
                   <div class="caption" style=${{ marginTop: "2px", maxWidth: "220px" }}>${r.org_status}</div>` :
                   html`<span class="chip">Not answered</span>`}</td>

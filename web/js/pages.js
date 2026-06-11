@@ -165,7 +165,7 @@ window.TrajectoryTile = function ({ movement }) {
 };
 
 // ----------------------------------------------------- superpower detail ---
-window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ }) {
+window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [cat, setCat] = useState("");
@@ -192,6 +192,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
       <${SkeletonGrid} count=${6} />
     </div>`;
   let cards = data.cards;
+  if (subF) cards = cards.filter(c => (c.subpower || "General") === subF);
   if (cat) cards = cards.filter(c => c.category === cat);
   if (tier) cards = cards.filter(c => (tier === "Core" ? c.tier === "Core" : c.tier !== "Core"));
   const bySub = [];
@@ -207,8 +208,8 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="titleblock">
           <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
           <div>
-            <h1 class="display-title">${sp}</h1>
-            <div class="caption meta">${data.cards.length} benchmarks · peer group: ${cutLabelOf(cut, cuts)}</div>
+            <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
+            <div class="caption meta">${cards.length} benchmarks${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}</div>
           </div>
         </div>
         <div class="controls" style=${{ alignItems: "flex-start" }}>
@@ -336,12 +337,15 @@ window.MyDataPage = function () {
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   const ql = qstr.toLowerCase();
   const rows = data.rows.filter(r => !ql || (r.title + " " + r.question + " " + (r.matrix_row || "") + " " + r.value).toLowerCase().includes(ql));
+  const focused = window.SCOPE && window.SCOPE.focused;
   const bySp = [];
   for (const r of rows) {
-    let g = bySp.find(g => g.sp === r.superpower);
-    if (!g) { g = { sp: r.superpower, rows: [] }; bySp.push(g); }
+    const key = focused ? (r.subpower || "General") : r.superpower;
+    let g = bySp.find(g => g.sp === key);
+    if (!g) { g = { sp: key, sup: r.superpower, rows: [] }; bySp.push(g); }
     g.rows.push(r);
   }
+  if (focused) bySp.sort((a, b) => secOrder(a.sp) - secOrder(b.sp));
   return html`
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
@@ -354,7 +358,7 @@ window.MyDataPage = function () {
       ${rows.length === 0 && html`<${EmptyState} title="No answers match" body="Try a different search term." />`}
       ${bySp.map(g => html`
         <div key=${g.sp} class="card" style=${{ marginBottom: "var(--s4)", padding: "var(--s4)" }}>
-          <h2 class="section-title" style=${{ display: "flex", alignItems: "center", gap: "8px" }}><${SpIcon} sp=${g.sp} /> ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
+          <h2 class="section-title" style=${{ display: "flex", alignItems: "center", gap: "8px" }}>${window.SCOPE && window.SCOPE.focused ? "" : html`<${SpIcon} sp=${g.sp} />`} ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
           <table class="data">
             <thead><tr><th>Benchmark</th><th>Level / row</th><th class="num">Your answer</th><th>Tier</th></tr></thead>
             <tbody>
