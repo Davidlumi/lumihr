@@ -566,3 +566,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .kebab-item.on { font-weight: 650; color: var(--blue-deep); }
 .kebab-check { width: 14px; flex: none; color: var(--blue); font-weight: 700; }
 .kebab-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+
+
+/* ----- metric page: controls row + chart-type switch ----- */
+.metric-controls { margin-bottom: var(--s3); align-items: flex-start; }
+.chart-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px; background: var(--surface); }
+.chart-switch-btn { border: none; background: none; cursor: pointer; padding: 6px 14px;
+  border-radius: 999px; font: 600 var(--fs-label)/1 var(--font-body); color: var(--ink-soft); }
+.chart-switch-btn.on { background: var(--blue-tint); color: var(--blue-deep); }
+.chart-switch-btn:hover:not(.on) { color: var(--ink); }

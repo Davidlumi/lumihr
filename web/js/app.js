@@ -452,38 +452,48 @@ function SearchPop({ qIndex, search, onGo }) {
 }
 
 // single-metric page (deep links from analyst chips / opportunity tile)
-function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
-  const [cards, setCards] = useState(null);   // {all, sector, size}
-  const [err, setErr] = useState(null);
+function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const org = me.org;
+  // the page's own cut — initialised from the global selector / deep link,
+  // and re-synced when the global selector changes (same semantics as cards)
+  const globalSel = cut.dim === "industry" && org.industry ? { dim: "industry", value: org.industry }
+    : cut.dim === "fte_band" && org.fte_band ? { dim: "fte_band", value: org.fte_band }
+    : cut.dim === "twin" ? { dim: "twin", value: null } : { dim: "all", value: null };
+  const [sel, setSel] = useState(globalSel);
+  const [card, setCard] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref"); } catch (e) { return null; } });
   const chartRef = useRef(null);
+  useEffect(() => { setSel(globalSel); }, [cutKeyOf(cut)]);
   useEffect(() => {
-    setCards(null); setErr(null);
-    const want = [["all", "cut=all"]];
-    if (org.industry) want.push(["sector", "cut=industry&cut_value=" + encodeURIComponent(org.industry)]);
-    if (org.fte_band) want.push(["size", "cut=fte_band&cut_value=" + encodeURIComponent(org.fte_band)]);
-    // the same per-cut aggregates the peer-cut selector uses — no new maths
-    Promise.all(want.map(([k, qs]) => api(`/api/benchmark/${qid}?` + qs).then(c => [k, c])))
-      .then(entries => setCards(Object.fromEntries(entries)))
-      .catch(e => setErr(e.message));
-  }, [qid, org.industry, org.fte_band]);
+    let dead = false;
+    setBusy(true); setErr(null);
+    const qs = "cut=" + encodeURIComponent(sel.dim) + (sel.value ? "&cut_value=" + encodeURIComponent(sel.value) : "");
+    api(`/api/benchmark/${qid}?` + qs)
+      .then(d => { if (!dead) setCard(d); })
+      .catch(e => { if (!dead) setErr(e.message); })
+      .finally(() => { if (!dead) setBusy(false); });
+    return () => { dead = true; };
+  }, [qid, sel.dim, sel.value]);
   if (err) return html`<${EmptyState} title="Couldn't load this metric"
     body=${err + " — nothing is lost; it usually works on a retry."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
-  if (!cards) return html`
+  if (!card) return html`
     <div>
       <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "10px" }}></div>
       <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "18px" }}></div>
-      <div class="skel" style=${{ height: "220px", marginBottom: "14px", borderRadius: "var(--radius)" }}></div>
-      <div class="skel" style=${{ height: "320px", borderRadius: "var(--radius)" }}></div>
+      <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
     </div>`;
 
-  // active cut for the big chart follows the global peer selector
-  const activeKey = cut.dim === "industry" && cards.sector ? "sector" : cut.dim === "fte_band" && cards.size ? "size" : "all";
-  const c = cards[activeKey] || cards.all;
+  const c = card;
   const pos = cardPosition(c);
   const sent = humanSentence(c);
-  const chart = normaliseChart(c, prefs[c.id] && prefs[c.id].chart);
+  // honest chart options only (curated per data type); the session preference
+  // applies only where valid — normaliseChart falls back to this metric's default
+  const alts = chartAlternatives(c);
+  const chart = normaliseChart(c, chartSel);
+  const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref", t); } catch (e) {} };
   const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
   const backTo = "/superpower/" + c.superpower + (c.subpower ? "?sub=" + encodeURIComponent(c.subpower) : "");
   const goBack = () => {
@@ -491,20 +501,26 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     try { hasReturn = !!sessionStorage.getItem("lumi-return"); } catch (e) {}
     if (hasReturn) window.history.back(); else nav(backTo);
   };
-  const doExport = async (mode) => {
+  const selKey = sel.dim + (sel.value ? "::" + sel.value : "");
+  const setCutKey = (k) => {
+    if (k === "all") setSel({ dim: "all", value: null });
+    else if (k === "twin") setSel({ dim: "twin", value: null });
+    else { const [dim, value] = k.split("::"); setSel({ dim, value }); }
+  };
+  const profiled = !!(org.industry && org.fte_band);
+  const doExport = async () => {
     const res = await exportCardPNG(chartRef.current, {
       title: c.title, cutLabel: c.cut.label, n: c.n, window: period,
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
-    }, mode);
-    toast(res === "downloaded" ? "Chart downloaded — includes title, n, peer group and the sample-data caveat" : res === "copied" ? "Chart copied to clipboard" : "Nothing to export yet");
+    }, "download");
+    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
   };
-  const share = () => { navigator.clipboard.writeText(window.location.href.split("#")[0] + "#" + ("/metric/" + qid)); toast("Link to this metric copied"); };
+  const share = () => {
+    const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim + "::" + (sel.value || "")) : "";
+    navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + qid + cutPart);
+    toast("Link copied — opens this metric on " + c.cut.label);
+  };
 
-  const CUT_ROWS = [
-    { key: "all", label: "All peers" },
-    { key: "sector", label: org.industry ? "Your sector: " + org.industry : null },
-    { key: "size", label: org.fte_band ? "Your size: " + org.fte_band + " FTE" : null },
-  ];
   return html`
     <div class="metric-page">
       <button class="btn quiet" onClick=${goBack}>← Back</button>
@@ -525,60 +541,53 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
         ${pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
 
-      ${sent.lead && html`<p class="metric-lead">${sent.lead}</p>`}
-
-      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>How you compare, peer group by peer group</h2>
-      <p class="caption" style=${{ marginTop: "-4px" }}>The same metric through three lenses — the nuance a single number hides.</p>
-      <div class="card" style=${{ padding: "var(--s4)" }}>
-        ${CUT_ROWS.filter(r => r.label).map(r => {
-          const rc = cards[r.key];
-          if (!rc) return null;
-          const rpos = cardPosition(rc);
-          return html`
-            <div key=${r.key} class="cut-row">
-              <div class="cut-row-label">
-                <b>${r.label}</b>
-                <div class="caption num">n=${rc.n}</div>
-                ${rpos && html`<span class=${"pos-pill " + rpos.kind} title=${rpos.tip}>${rpos.arrow} ${rpos.label}</span>`}
-              </div>
-              <div class="cut-row-chart">
-                ${rc.suppressed ? html`
-                  <div class="suppressed-box" style=${{ minHeight: "90px" }}>
-                    <b>Not enough organisations to show this safely</b>
-                    <div class="caption">Fewer than 5 organisations in this peer group answered — protecting every member's data comes first.</div>
-                  </div>` :
-                html`<${CardBody} card=${rc} chart=${normaliseChart(rc, null)} showP1090=${false} showValues=${false} fav=${rpos ? rpos.kind : null} />`}
-              </div>
-            </div>`;
-        })}
-        ${!org.industry && html`<div class="caption" style=${{ marginTop: "8px" }}>Declare your sector and size in <a href="#/submission">your submission</a> to see those comparisons.</div>`}
-      </div>
-
-      <h2 class="section-title" style=${{ marginTop: "var(--s6)" }}>The full picture — ${c.cut.label}</h2>
-      <div class="card" style=${{ padding: "var(--s5)" }} ref=${chartRef}>
-        ${c.suppressed ? html`
-          <${EmptyState} title="Not enough organisations to show this safely"
-            body="Fewer than 5 organisations in this peer group answered this question." />` : html`
-          <div class="metric-xl">
-            <${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />
+      <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+        <div class="row spread metric-controls">
+          <div class="ctlgroup">
+            <select class="ctl" aria-label="Peer group for this metric" value=${selKey} onChange=${e => setCutKey(e.target.value)}>
+              <option value="all">All peers</option>
+              ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
+              ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
+              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+            </select>
+            <div class="hint">${c.cut.label} · n=${c.n}</div>
           </div>
+          ${alts.length > 1 && html`
+            <div class="chart-switch" role="group" aria-label="Chart type">
+              ${alts.map(t => html`
+                <button key=${t} class=${"chart-switch-btn" + (chart === t ? " on" : "")}
+                  aria-pressed=${chart === t} onClick=${() => pickChart(t)}>${CHART_LABELS[t] || t}</button>`)}
+            </div>`}
+        </div>
+        ${!profiled && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>
+          Sector, size and bespoke comparisons unlock once your company profile is complete —
+          ${" "}<a href="#/submission">finish it in your submission</a>.</div>`}
+        <div class="metric-xl" ref=${chartRef} style=${busy ? { opacity: .45 } : null}
+          role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
+          ${c.suppressed ? html`
+            <${EmptyState} icon="shield" title="Not enough organisations to show this safely"
+              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question — protecting every member's data comes first. Try a broader peer group."} />` :
+          html`<${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />`}
+        </div>
+        ${!c.suppressed && html`
+          <div class="bench-lead" style=${{ marginTop: "var(--s3)" }}>${sent.lead || ""}</div>
           <${ExactFigures} card=${c} />`}
       </div>
 
-      <div class="grid2" style=${{ marginTop: "var(--s5)", gap: "var(--s4)" }}>
+      <div class="grid2" style=${{ marginTop: "var(--s4)", gap: "var(--s4)" }}>
         <div class="card" style=${{ padding: "var(--s5)" }}>
           <h2 class="section-title">What this measures</h2>
           ${c.definition && html`<p>${c.definition}</p>`}
           ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
-          <p class="caption"><${Term} word="percentile">Percentiles<//> are calculated with linear interpolation across all
-          valid peer answers; medians are used rather than averages. Any figure resting on fewer than 5 organisations is
+          <p class="caption"><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer
+          answers; medians, not averages. Figures resting on fewer than 5 organisations are
           ${" "}<${Term} word="suppressed">suppressed<//>. Full method in the <a href="#/methodology">methodology</a>.</p>
         </div>
         <div class="card" style=${{ padding: "var(--s5)" }}>
           <h2 class="section-title">What this means for you</h2>
           <${WhatThisMeans} card=${c} pos=${pos} defaultOpen=${true} />
           <div class="row" style=${{ marginTop: "var(--s3)", flexWrap: "wrap" }}>
-            <button class="btn" onClick=${() => doExport("download")}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>
+            ${!c.suppressed && c.you && html`<button class="btn" onClick=${doExport}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>`}
             <button class="btn" onClick=${share}><${Icon} name="link" size=${13} /> Copy link to this metric</button>
             <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
           </div>
