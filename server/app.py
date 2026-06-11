@@ -48,6 +48,80 @@ _asp = os.environ.get("LUMI_ACTIVE_SUPERPOWERS", "Reward").strip()
 ACTIVE_SUPERPOWERS = [] if _asp.lower() in ("", "all", "*") else [x.strip() for x in _asp.split(",") if x.strip()]
 
 
+CLOCK_DAYS = 30
+CORE_TARGET_PCT = CORE_COMPLETION_THRESHOLD * 100
+
+# Reduced (post-deadline) teaser: the first two metrics of each section stay
+# fully visible so the member remembers the value; the rest gate behind
+# completing their submission. Computed once per process from the library.
+_reduced_sample = None
+
+
+def reduced_sample_ids():
+    global _reduced_sample
+    if _reduced_sample is None:
+        per_section = {}
+        ids = set()
+        for qid, q in visible_questions().items():
+            key = q.sub_power or "general"
+            per_section.setdefault(key, 0)
+            if per_section[key] < 2:
+                per_section[key] += 1
+                ids.add(qid)
+        _reduced_sample = ids
+    return _reduced_sample
+
+
+def contribution_state(conn, org):
+    """The day-one model: explore freely for CLOCK_DAYS; hitting the Core
+    target unlocks insights; past the deadline unmet, the benchmark reduces
+    to a teaser until the submission is completed. Co-op contribution, never
+    a paywall."""
+    completion = core_completion(conn, org)
+    unlocked = bool(org["submission_complete"]) or completion >= CORE_TARGET_PCT
+    clock_start = org["clock_start"] or org["created_at"]
+    try:
+        started = datetime.strptime(clock_start[:19], "%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        started = datetime.utcnow()
+    days_used = (datetime.utcnow() - started).days
+    days_left = max(0, CLOCK_DAYS - days_used)
+    return {
+        "core_pct": completion,
+        "target_pct": CORE_TARGET_PCT,
+        "insights_unlocked": unlocked,
+        "clock_start": clock_start,
+        "days_left": days_left if not unlocked else None,
+        "reduced": (not unlocked) and days_left <= 0,
+    }
+
+
+def maybe_send_clock_reminder(conn, org, state):
+    """Gentle reminders at 7 and 1 days left. Triggers are stored so email
+    fires automatically once SMTP is configured; in-app banners are driven
+    by days_left regardless."""
+    if state["insights_unlocked"] or state["days_left"] is None:
+        return
+    due = "7d" if state["days_left"] <= 7 and state["days_left"] > 1 else \
+          "1d" if state["days_left"] <= 1 else None
+    if not due:
+        return
+    sent = uj(org["reminders_json"], [])
+    if due in sent:
+        return
+    sent.append(due)
+    conn.execute("UPDATE orgs SET reminders_json=? WHERE org_id=?", (j(sent), org["org_id"]))
+    conn.commit()
+    admins = [r["email"] for r in conn.execute(
+        "SELECT email FROM users WHERE org_id=? AND role='admin'", (org["org_id"],))]
+    send_notification(
+        "lumi: %s left to unlock your insights" % ("7 days" if due == "7d" else "1 day"),
+        "Hello %s,\n\nYour reward benchmark is waiting — you're %s%% of the way to unlocking "
+        "your insights (£ opportunities, board pack and biggest gaps). Complete your reward "
+        "questions in the next %s to unlock them.\n\n— lumi (to: %s)"
+        % (org["name"], state["core_pct"], "7 days" if due == "7d" else "day", ", ".join(admins)))
+
+
 def visible_questions():
     """The question set every user-facing route serves. THE focus filter."""
     qs = load_questions()
@@ -315,9 +389,11 @@ async def register(request: Request):
     if auth_lib.find_user(body["email"]):
         raise HTTPException(400, "That email already has an account.")
     org_id = str(uuid.uuid4())
+    # founding members: first year free with full access — the contribution
+    # clock is about data, never payment (day-one experience brief)
     conn.execute(
-        "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified) "
-        "VALUES (?,?,?,'signup','core',0)", (org_id, body["org_name"].strip(), nn))
+        "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified, clock_start) "
+        "VALUES (?,?,?,'signup','full',0,datetime('now'))", (org_id, body["org_name"].strip(), nn))
     conn.commit()
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
                                body.get("display_name"))
@@ -365,7 +441,17 @@ async def me(request: Request):
     completion = core_completion(conn, org)
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
     vis = visible_questions()
+    if not org["clock_start"] and not org["submission_complete"]:
+        conn.execute("UPDATE orgs SET clock_start=datetime('now') WHERE org_id=?", (org["org_id"],))
+        conn.commit()
+        org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone())
+    contrib = contribution_state(conn, org)
+    if contrib["insights_unlocked"] and not org["insights_unlocked_at"]:
+        conn.execute("UPDATE orgs SET insights_unlocked_at=datetime('now') WHERE org_id=?", (org["org_id"],))
+        conn.commit()
+    maybe_send_clock_reminder(conn, org, contrib)
     return {
+        "contribution": contrib,
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -495,6 +581,8 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
     answers = org_answers_for(org)
+    contrib = contribution_state(conn, org)
+    sample = reduced_sample_ids() if contrib["reduced"] else None
     cards = []
     for qid, q in visible_questions().items():
         if q.superpower != superpower:
@@ -502,9 +590,19 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
         p = payloads().get(qid)
         if p is None:
             continue
+        if sample is not None and qid not in sample:
+            cards.append({
+                "id": qid, "title": q.display_title, "question_text": q.text,
+                "superpower": q.superpower, "subpower": q.sub_power,
+                "sub_power_order": q.sub_power_order, "type": q.type,
+                "category": q.category, "tier": q.lumi_tier,
+                "cut": {"dim": cut["dim"], "value": cut.get("value"), "label": "All peers"},
+                "n": (p.get("all") or {}).get("n", 0), "reduced": True,
+            })
+            continue
         cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None, entitled))
     cards.sort(key=lambda c: (c["sub_power_order"] or 999, c["title"]))
-    return {"superpower": superpower, "cut": cut, "cards": cards}
+    return {"superpower": superpower, "cut": cut, "cards": cards, "reduced": contrib["reduced"]}
 
 
 @app.get("/api/benchmark/{qid}")
@@ -516,6 +614,14 @@ async def single_benchmark(qid: str, request: Request):
     if q is None or p is None:
         raise HTTPException(404, "Unknown metric")
     entitled = make_entitled(user, org)
+    contrib = contribution_state(conn, org)
+    if contrib["reduced"] and qid not in reduced_sample_ids():
+        return {"id": qid, "title": q.display_title, "question_text": q.text,
+                "superpower": q.superpower, "subpower": q.sub_power,
+                "sub_power_order": q.sub_power_order, "type": q.type,
+                "category": q.category, "tier": q.lumi_tier,
+                "cut": {"dim": "all", "value": None, "label": "All peers"},
+                "n": (p.get("all") or {}).get("n", 0), "reduced": True}
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
     card = assemble_card(q, p, org, org_answers_for(org), cut,
@@ -559,6 +665,7 @@ async def overview(request: Request):
     user, org = require_user(request)
     conn = get_conn()
     cut = parse_cut(request, org)
+    contrib = contribution_state(conn, org)
     items, tb = build_items(request, org, user, cut)
     summary = pos.overview_summary(items)
     co = pos.callouts(items, visible_questions(), k=3)
@@ -574,11 +681,17 @@ async def overview(request: Request):
         "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "snapshot": {"date": snap["snapshot_date"], "window": snap["collection_window"]},
         "headline": summary,
+        "contribution": contrib,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
-                     "gaps": [c["text"] for c in co["gaps"]],
+                     "gaps": [] if not contrib["insights_unlocked"] else [c["text"] for c in co["gaps"]],
+                     "gaps_locked": not contrib["insights_unlocked"],
+                     "gaps_available": len(co["gaps"]),
                      "strength_items": [c["item"] for c in co["strengths"]],
-                     "gap_items": [c["item"] for c in co["gaps"]]},
-        "opportunity": {
+                     "gap_items": [] if not contrib["insights_unlocked"] else [c["item"] for c in co["gaps"]]},
+        "opportunity": ({
+            "locked": True, "days_left": contrib["days_left"],
+            "item_count": len(money["items"]), "fte_known": money["fte_known"],
+        } if not contrib["insights_unlocked"] else {
             "total_savings_to_p50_gbp": money["total_savings_to_p50_gbp"],
             "total_investment_to_p50_gbp": money["total_investment_to_p50_gbp"],
             "items": [{"label": i["label"], "direction": i["direction"],
@@ -586,7 +699,7 @@ async def overview(request: Request):
                        "question_id": i["question_id"], "rows": i.get("rows", [])}
                       for i in money["items"]],
             "fte_known": money["fte_known"], "indicative": True,
-        },
+        }),
         "movement": {"available": False,
                      "message": "First benchmark — movement appears from your next cycle."},
     }
@@ -818,6 +931,11 @@ async def analyst(request: Request):
     if not question:
         raise HTTPException(400, "Ask a question first.")
     conn = get_conn()
+    contrib = contribution_state(conn, org)
+    if contrib["reduced"]:
+        return {"answer": "Your full benchmark is paused until your reward data is complete — "
+                          "finish your submission and I'll have every comparison ready for you again.",
+                "chips": [], "matched": [], "reduced": True}
     vis = visible_questions()
     qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
     if qids and retrieval.distinctive_coverage(question, qids) < 0.34:
@@ -982,6 +1100,9 @@ def _pack_item(i):
 @app.post("/api/boardpack/generate")
 async def boardpack_generate(request: Request):
     user, org = require_user(request)
+    contrib = contribution_state(get_conn(), org)
+    if not contrib["insights_unlocked"]:
+        raise HTTPException(403, "Your board pack unlocks once you've answered 90% of your Core reward questions.")
     body = await request.json()
     cut = {"dim": body.get("cut", "all"), "value": body.get("cut_value")}
     if cut["dim"] == "industry" and not cut["value"]:

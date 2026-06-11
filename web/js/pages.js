@@ -48,6 +48,9 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         </div>
       </div>
 
+      ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
+        html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} />`}
+
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
         <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
@@ -74,7 +77,23 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         </div>
         <div>
           <h2 class="section-title">Biggest gaps to peers</h2>
-          ${data.callouts.gaps.length ? data.callouts.gaps.map((t, i) => html`
+          ${data.callouts.gaps_locked ? html`
+            <div class="insight-lock">
+              <div class="blurred" aria-hidden="true">
+                <div class="callout bad">Your largest gap to the peer median appears here once unlocked.</div>
+                <div class="callout bad">Where peers commonly have a practice you don't yet.</div>
+                <div class="callout bad">The third-biggest gap, sized against your peer group.</div>
+              </div>
+              <div class="lock-note">
+                <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+                <div class="caption" style=${{ textAlign: "center", maxWidth: "280px" }}>
+                  ${data.callouts.gaps_available
+                    ? `We've already identified ${data.callouts.gaps_available} gap${data.callouts.gaps_available === 1 ? "" : "s"} for you. `
+                    : ""}Unlock by completing 90% of your Core reward questions${data.contribution && data.contribution.days_left != null ? ` — ${data.contribution.days_left} days left` : ""}.</div>
+                <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+              </div>
+            </div>` :
+          data.callouts.gaps.length ? data.callouts.gaps.map((t, i) => html`
             <div key=${i} class="callout bad" onClick=${() => jumpToItem(data.callouts.gap_items[i])} style=${{ cursor: "pointer" }}>${t}</div>`) :
           html`<${EmptyState} title="No comparable gaps" body="Nothing stands out below the peer median in this peer group." />`}
         </div>
@@ -82,6 +101,9 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
 
       ${window.SCOPE && window.SCOPE.focused ? html`
         <h2 class="section-title">Your position by section</h2>
+        ${Object.keys(h.by_section || {}).length === 0 && html`
+          <div class="caption" style=${{ marginBottom: "var(--s4)" }}>Your position by section appears here as your answers
+            become comparable — explore the sections in the sidebar meanwhile, every peer distribution is already open.</div>`}
         <div class="sp-grid">
           ${Object.entries(h.by_section || {}).sort((a, b) => secOrder(a[0]) - secOrder(b[0])).map(([sec, c]) => html`
             <div key=${sec} class="card sp-card" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec))}>
@@ -124,8 +146,24 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
 
 function jumpToItem(item) { if (item) nav("/superpower/" + item.superpower + "?focus=" + item.question_id); }
 
-window.OpportunityTile = function ({ opp }) {
+window.OpportunityTile = function ({ opp, contrib }) {
   if (!opp) return null;
+  if (opp.locked) return html`
+    <div class="opp-hero insight-lock">
+      <div class="eyebrow">Total identified opportunity</div>
+      <div class="blurred" aria-hidden="true">
+        <div class="metric-value lg" style=${{ color: "var(--plum)" }}>£———<span class="unit">/yr</span></div>
+        <div class="caption">what closing your gaps to the peer median is worth</div>
+        <div class="opp-row"><span>Largest opportunity</span><b>£——/yr</b></div>
+        <div class="opp-row"><span>Second opportunity</span><b>£——/yr</b></div>
+      </div>
+      <div class="lock-note">
+        <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+        <div class="caption" style=${{ textAlign: "center", maxWidth: "240px" }}>
+          ${opp.item_count ? `${opp.item_count} £-sized opportunities are waiting. ` : ""}Unlock by completing 90% of your Core reward questions${opp.days_left != null ? ` — ${opp.days_left} days left` : ""}.</div>
+        <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+      </div>
+    </div>`;
   const total = opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp;
   return html`
     <div class="opp-hero">

@@ -243,6 +243,14 @@ CREATE TABLE IF NOT EXISTS board_packs (
 def init_schema(conn=None):
     conn = conn or get_conn()
     conn.executescript(SCHEMA)
+    # migration-lite for existing databases
+    for ddl in ("ALTER TABLE orgs ADD COLUMN clock_start TEXT",
+                "ALTER TABLE orgs ADD COLUMN insights_unlocked_at TEXT",
+                "ALTER TABLE orgs ADD COLUMN reminders_json TEXT NOT NULL DEFAULT '[]'"):
+        try:
+            conn.execute(ddl)
+        except sqlite3.OperationalError:
+            pass  # column already exists
     conn.commit()
 
 

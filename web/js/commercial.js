@@ -107,6 +107,29 @@ function GapRow({ r, focused }) {
 
 // ------------------------------------------------------------ board pack ---// ------------------------------------------------------------ board pack ---
 window.BoardPackPage = function ({ me, cut }) {
+  const contrib = me.contribution;
+  if (contrib && !contrib.insights_unlocked) return html`
+    <div>
+      <div class="page-head"><div><h1 class="display-title">Board pack</h1>
+        <div class="caption">A board-ready narrative of your reward position — written from your live benchmark.</div></div></div>
+      <div class="card insight-lock" style=${{ padding: "var(--s5)", maxWidth: "720px" }}>
+        <div class="blurred" aria-hidden="true">
+          <h2 class="section-title">Executive summary</h2>
+          <p>Your organisation sits above the peer median on the majority of comparable reward metrics, with three clear opportunities…</p>
+          <h2 class="section-title">Where you lead</h2>
+          <p>Strongest positions relative to the peer group, with the evidence behind each…</p>
+          <h2 class="section-title">Priorities and the £ case</h2>
+          <p>The gaps worth closing first, sized in £ per year against the peer median…</p>
+        </div>
+        <div class="lock-note">
+          <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+          <div class="caption" style=${{ textAlign: "center", maxWidth: "320px" }}>
+            Your board pack is written from your own position — it unlocks when you've completed 90% of your
+            Core reward questions${contrib.days_left != null ? ` (${contrib.days_left} days left)` : ""}.</div>
+          <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+        </div>
+      </div>
+    </div>`;
   const [packs, setPacks] = useState(null);
   const [gen, setGen] = useState(false);
   const [err, setErr] = useState(null);

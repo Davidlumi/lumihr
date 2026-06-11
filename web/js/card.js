@@ -33,6 +33,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
   const setPref = (k, v) => onPref && onPref(card.id, { ...pref, [k]: v });
 
   if (c.locked) return html`<${LockedCard} card=${c} size=${size} />`;
+  if (c.reduced) return html`<${ReducedCard} card=${c} />`;
 
   const doExport = async (mode) => {
     const res = await exportCardPNG(ref.current, {
@@ -168,7 +169,7 @@ function humanSentence(c) {
     return { lead: multiSelectReadout(c), support: null };
   }
   if (!c.you && !c.readout && c.type !== "matrix") {
-    return { lead: "You haven't answered this question yet — the peer picture is shown for context.", support: null };
+    return { lead: "Answer this to see where you stand — the peer picture is already here.", support: null };
   }
   return { lead: c.readout, support: null };
 }
@@ -265,7 +266,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) 
             <div class="metric-value">${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
             ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
-        html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>You haven't answered this question yet — peers shown without your marker. <a href="#/submission">Add your data</a></div>`}
+        html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>Answer this to see where you stand among the peers below. <a href="#/submission">Add your data</a></div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
@@ -276,7 +277,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) 
     if (!c.block) return html`<div class="suppressed-box">No distribution available.</div>`;
     return html`
       <div>
-        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}>You haven't answered this question yet.</div>`}
+        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}><a href="#/submission" style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
         ${chart === "stacked_bar" && c.type !== "multi_select"
           ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} width=${W} fav=${fav} />`
           : html`<${OptionBars} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
@@ -331,6 +332,31 @@ window.LockedCard = function ({ card: c, size }) {
           Part of lumi's ${c.tier} set. ${c.n} organisations have contributed to it.
         </div>
         <button class="btn small primary" onClick=${() => nav("/upgrade")}>Unlock with lumi Full</button>
+      </div>
+    </div>`;
+};
+
+/* Day-30 reduced state: the metric stays visible as a shape, never as data.
+   Encouraging restore message — a contribution prompt, not a paywall. */
+window.ReducedCard = function ({ card: c }) {
+  return html`
+    <div class="card bench-card locked" id=${"q-" + c.id}>
+      <div class="bench-head"><h3 class="bench-title">${c.title}</h3><${Chip} kind="accent">Paused<//></div>
+      <div class="bench-n">n=${c.n}</div>
+      <div class="bench-chart">
+        <div class="blurred" aria-hidden="true">
+          <svg viewBox="0 0 420 96" style=${{ width: "100%" }}>
+            <rect x="20" y="44" width="380" height="12" rx="6" fill="var(--chart-band)"/>
+            <rect x="105" y="44" width="175" height="12" rx="6" fill="var(--chart-band-mid)"/>
+            <rect x="196" y="39" width="2.5" height="22" fill="var(--chart-median)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="locked-overlay">
+        <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
+          ${c.n} organisations have contributed here. Complete your reward data to restore this comparison.
+        </div>
+        <button class="btn small primary" onClick=${() => nav("/submission")}>Complete your reward data</button>
       </div>
     </div>`;
 };

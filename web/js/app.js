@@ -42,7 +42,7 @@ function App() {
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
-  const scope = me && me.scope ? me.scope : { superpowers: SUPERPOWERS, focused: false, question_count: 778 };
+  const scope = me && me.scope ? me.scope : { superpowers: window.SUPERPOWERS || [], focused: false, question_count: 778 };
   window.SCOPE = scope;
   const activeSupers = scope.superpowers;
   if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
@@ -68,7 +68,7 @@ function App() {
   };
 
   const pageProps = { me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds: layoutIds };
-  const gated = !me.benchmark_unlocked;
+  const contrib = me.contribution || null;
 
   let page = null, m;
   if (route.startsWith("/superpower/")) {
@@ -171,6 +171,7 @@ function App() {
           </div>
           <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
             <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
+              ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} />`}
               <button class="btn quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>
                 <${Icon} name="user-plus" size=${13} /> Request a metric</button>
               <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
@@ -179,7 +180,8 @@ function App() {
           </div>
         </div>
         <main class="content">
-          ${gated && benchRoute ? html`<${WelcomeGate} me=${me} qIndex=${qIndex} />` : page}
+          ${contrib && benchRoute && html`<${ContributionBanner} contrib=${contrib} />`}
+          ${page}
         </main>
       </div>
       ${analystOpen && html`<${AnalystPane} onClose=${() => setAnalystOpen(false)} />`}
@@ -216,36 +218,75 @@ window.sectionList = function (qIndex) {
   return Array.from(m.values()).sort((a, b) => a.order - b.order);
 };
 
-/* 8.1 — what a member sees before their benchmark unlocks: promising and
-   guiding, never blurred or broken. */
-window.WelcomeGate = function ({ me, qIndex }) {
-  const pct = me.core_completion_pct || 0;
-  const target = 90;
-  const secs = qIndex ? sectionList(qIndex) : [];
-  const first = secs[0];
+/* Day-one model: explore everything; insights are the carrot. The chip is the
+   persistent, quiet progress indicator — always visible, never nagging. */
+window.ClockChip = function ({ contrib }) {
+  const pct = Math.round(contrib.core_pct || 0);
+  const label = contrib.reduced
+    ? "Benchmark paused — complete to restore"
+    : `Reward data ${pct}% · ${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} to unlock insights`;
   return html`
-    <div style=${{ maxWidth: "640px", margin: "var(--s7) auto", textAlign: "center" }}>
-      <div style=${{ color: "var(--plum)", marginBottom: "var(--s3)" }}><${Icon} name="sparkle" size=${26} /></div>
-      <h1 class="display-title">Welcome to your reward benchmark</h1>
-      <p style=${{ marginTop: "var(--s3)" }}>lumi is a co-operative: you see the pool because you've contributed to it.
-        Answer your reward questions and we'll show you exactly where you stand against
-        <b> ${(me.peer_pool || {}).responding_orgs || "the"} similar organisations</b> — what you lead on,
-        where the gaps are, and what closing them is worth.</p>
-      <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s5) 0", textAlign: "left" }}>
-        <div class="row spread" style=${{ marginBottom: "var(--s2)" }}>
-          <b style=${{ fontFamily: "var(--font-head)" }}>${pct < 1 ? "Ready when you are" : "You're on your way"}</b>
-          <span class="num caption"><b>${pct}%</b> answered · unlocks at ${target}%</span>
+    <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title="Complete 90% of your Core reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps." onClick=${() => nav("/submission")}>
+      <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
+        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum-tint-2)" stroke-width="3"/>
+        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum)" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray=${Math.max(2, Math.min(100, pct / 90 * 100)) * 0.503 + " 100"} transform="rotate(-90 10 10)"/>
+      </svg></span>
+      ${label}
+    </button>`;
+};
+
+/* Gentle reminders as the deadline nears (7 days / 1 day), and the fair,
+   forewarned day-30 message. Quiet banners, never modals. */
+window.ContributionBanner = function ({ contrib }) {
+  if (contrib.insights_unlocked) return null;
+  const pct = Math.round(contrib.core_pct || 0);
+  if (contrib.reduced) return html`
+    <div class="card contrib-banner paused">
+      <div>
+        <b>Your full benchmark is paused.</b>
+        <div class="caption">The 30 days passed before your reward data reached 90% — everything you've explored is still here,
+          and a sample stays open below. Complete your reward questions to restore the full benchmark and unlock your insights. You're at ${pct}%.</div>
+      </div>
+      <button class="btn primary small" onClick=${() => nav("/submission")}>Complete your reward data</button>
+    </div>`;
+  if (contrib.days_left > 7) return null;
+  return html`
+    <div class="card contrib-banner">
+      <div>
+        <b>${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} left to unlock your insights.</b>
+        <div class="caption">You're at ${pct}% of your Core reward questions — reach 90% and the £ opportunity,
+          board pack and biggest gaps open up with your real position.</div>
+      </div>
+      <button class="btn primary small" onClick=${() => nav("/submission")}>Continue your submission</button>
+    </div>`;
+};
+
+/* The warm first-run welcome on the overview — confident and light, one
+   obvious next step. Founding members contribute data, never payment. */
+window.WelcomeHero = function ({ contrib, pool }) {
+  const pct = Math.round(contrib.core_pct || 0);
+  return html`
+    <div class="card welcome-hero">
+      <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
+        <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
+          <span style=${{ color: "var(--plum)" }}><${Icon} name="sparkle" size=${18} /></span>
+          <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>
+            ${pct < 1 ? "Welcome to lumi" : "You're on your way"}</b>
         </div>
-        <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / target * 100) + "%" }}></div></div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Everything autosaves — answer a section at a time and come back whenever suits.</div>
+        <p style=${{ margin: "2px 0 0" }}>${pct < 1
+          ? html`Explore your reward benchmark below — every metric and all ${pool.responding_orgs} peer organisations are open to you from day one. Complete your reward data within 30 days to unlock your insights: the £ opportunity, your board pack, and your biggest gaps to peers.`
+          : html`Keep going — at 90% your insights unlock immediately: the £ opportunity, your board pack, and your biggest gaps to peers. You see the pool because you're part of it.`}</p>
       </div>
-      <div class="row" style=${{ justifyContent: "center" }}>
-        <button class="btn primary" onClick=${() => nav("/submission")}>
-          ${pct < 1 ? (first ? `Start with ${first.name}` : "Start your submission") : "Continue your submission"}</button>
-        <button class="btn" onClick=${() => nav("/methodology")}>How the benchmark works</button>
+      <div style=${{ flex: "1 1 240px", minWidth: "220px" }}>
+        <div class="row spread" style=${{ marginBottom: "4px" }}>
+          <span class="caption"><b class="num">${pct}%</b> of Core reward questions</span>
+          <span class="caption num">${contrib.days_left} days left</span>
+        </div>
+        <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / 90 * 100) + "%" }}></div></div>
+        <div class="caption" style=${{ margin: "4px 0 10px" }}>Insights unlock at 90% — everything autosaves.</div>
+        <button class="btn primary" onClick=${() => nav("/submission")}>${pct < 1 ? "Submit your data" : "Continue your submission"}</button>
       </div>
-      <p class="caption" style=${{ marginTop: "var(--s4)" }}>Once unlocked, every answer you've given gets a live peer comparison —
-        and anything you haven't answered shows the peer picture with an invitation to add yours.</p>
     </div>`;
 };
 

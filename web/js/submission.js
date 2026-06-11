@@ -265,12 +265,17 @@ function ReviewStep({ state, refresh, refreshMe }) {
   if (done) return html`
     <div class="success-pop" style=${{ maxWidth: "560px", margin: "0 auto", textAlign: "center", paddingTop: "60px" }}>
       <div class="success-ring">✓</div>
-      <h1 class="display-title">Submission received</h1>
-      <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
-      Core completion: <b>${done.core_completion_pct}%</b>.</p>
-      ${done.benchmark_unlocked ?
-        html`<button class="btn primary" onClick=${() => nav("/overview")}>See your benchmark</button>` :
-        html`<p class="caption">Answer more Core questions to reach ${state.threshold_pct}% and unlock peer comparison.</p>`}
+      ${done.benchmark_unlocked ? html`
+        <h1 class="display-title">Your insights are unlocked</h1>
+        <p>${done.answers_saved} answers saved — and you've reached <b>${done.core_completion_pct}%</b> of your Core reward
+        questions. The £ opportunity, your board pack and your biggest gaps to peers are now live with your real position.
+        Thank you for contributing to the pool — that's what makes the benchmark work.</p>
+        <button class="btn primary" onClick=${() => nav("/overview")}>See where you stand</button>` : html`
+        <h1 class="display-title">Submission received</h1>
+        <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
+        Core completion: <b>${done.core_completion_pct}%</b>.</p>
+        <p class="caption">Reach ${state.threshold_pct}% of your Core reward questions to unlock your insights —
+        the £ opportunity, board pack and biggest gaps.</p>`}
     </div>`;
   if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`
