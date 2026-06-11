@@ -547,6 +547,7 @@
   "CAP_SKI_022",
   "CAP_SKI_023",
   "CAP_SKI_025",
+  "CAP_SKI_026",
   "CAP_SKL_QUAL_LVL_b6c7c667",
   "CAP_SV_02",
   "CAP_WP_03",
@@ -1159,5 +1160,11 @@
   "PROP_02c9eb9e": "Engagement score 55\u201385, Employee_Voice/Advocacy-tilted.",
   "PROP_30ae24e7": "eNPS 0\u201355 (floor 0 per library), advocacy-tilted.",
   "PROP_9e4ad87f": "Salary increase budget 2.5\u20135.5%, Budget_Flexibility-tilted."
- }
+ },
+ "moved_to_skip_by_validation": [
+  [
+   "CAP_SKI_026",
+   "near-uniform"
+  ]
+ ]
 }

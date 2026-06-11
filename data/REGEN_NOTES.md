@@ -28,7 +28,8 @@ Three tiers, per the brief:
    maturity **F** (weak coupling for banded *metric* questions, full for
    practice/policy), so the aggregate leans middle-positive rather than uniform and
    every org's answers cohere with its profile.
-3. **Skipped — 271 questions**: no defensible baseline and no ladder signal (mostly
+3. **Skipped — 272 questions** (271 by rule + 1 moved by the validation gate's
+   near-uniform heuristic, CAP_SKI_026): no defensible baseline and no ladder signal (mostly
    neutral-polarity "which approach" questions, niche multi-selects, the WEL_BMAP_*
    mega-lists, two non-curated matrices). Their previous generic answers are preserved
    unchanged and they are listed in `regen_report.json["skipped"]` for hand-curation.
@@ -51,6 +52,14 @@ weeks question.
 
 **158 orgs generated profile-driven; 62 unmatched files baseline-only** (realistic priors,
 mid-spread latent, no profile anchors), exactly per the brief.
+
+Domain-specific registry signals blended into the template tier:
+**Change questions** ← change intensity from Archetype / Business_Maturity /
+Change_Frequency / Recent_Shock / Direction_of_Travel (validated: Turnaround/
+Transformation orgs mean change-practice score 59.4 vs 49.5 for stable/no-shock orgs);
+**manager-practice questions** (Leadership/Capability/Growth) ← People_Manager_Capability;
+**voice/listening questions** (Purpose/Wellbeing/Inclusivity) ← Employee_Voice;
+engagement/eNPS/offer-acceptance numerics ← Employee_Voice/Advocacy/Brand.
 
 ## Driver map (curated questions — attribute → direction)
 

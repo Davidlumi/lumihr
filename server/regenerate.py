@@ -99,6 +99,24 @@ class Profile(object):
             self.turnover = rng.uniform(20, 34)
         else:
             self.turnover = rng.uniform(8, 22)
+        # change intensity C: orgs in active transformation exercise (and so
+        # report) far more change-management practice than stable ones —
+        # Archetype / Business_Maturity / Direction_of_Travel / Recent_Shock
+        # / Change_Frequency drive the Change-superpower questions.
+        if self.matched:
+            freq = {"Minimal": 0.1, "Incremental": 0.35, "Major": 0.7, "Constant": 0.85}.get(
+                g("Change_Frequency"), 0.45)
+            arch = 0.85 if g("Archetype") == "Turnaround / Transformation" else \
+                0.7 if g("Archetype") == "High-Growth PE-Backed" else \
+                0.3 if g("Archetype") in ("Mature Enterprise", "Established Commercial") else 0.5
+            shock = 0.2 if (g("Recent_Shock") or "").startswith("None") else 0.7
+            dot = {"Stable": 0.35, "Improving": 0.55, "Deteriorating": 0.65}.get(
+                g("Direction_of_Travel"), 0.5)
+            self.change = clamp(0.4 * freq + 0.3 * arch + 0.2 * shock + 0.1 * dot
+                                + rng.gauss(0, 0.06), 0.05, 0.95)
+        else:
+            self.change = clamp(rng.betavariate(2.4, 2.4), 0.05, 0.95)
+        self.pmc = TRI.get(g("People_Manager_Capability"), 0.5)
 
 
 def clamp(v, lo, hi):
@@ -385,11 +403,26 @@ def absence_latent(p, state, rng):
 # ------------------------------------------------- template (pattern) tier --
 
 def template_weights(q, prof, rng):
-    """Score-ladder kernel: realistic adoption curve conditioned on latent F."""
+    """Score-ladder kernel: realistic adoption curve conditioned on the org's
+    latent maturity F, blended with the domain-specific registry signal:
+      Change questions       -> change intensity (Archetype/Recent_Shock/etc.)
+      manager-practice qs    -> People_Manager_Capability
+      voice/listening qs     -> Employee_Voice
+      benefit questions      -> richness R
+    """
     cfg = q.scoring_config or {}
     scores = cfg.get("option_scores") or {}
     na_codes = set(cfg.get("na_codes") or [])
-    Fq = clamp((prof.R if q.category == "benefit" else prof.F) + rng.gauss(0, 0.16), 0.02, 0.98)
+    base = prof.F
+    if q.category == "benefit":
+        base = prof.R
+    elif q.superpower == "Change":
+        base = clamp(0.55 * prof.F + 0.45 * prof.change, 0.02, 0.98)
+    elif re.search(r"\bmanagers?\b", (q.text or ""), re.I) and q.superpower in ("Leadership", "Capability", "Growth"):
+        base = clamp(0.65 * prof.F + 0.35 * prof.pmc, 0.02, 0.98)
+    elif re.search(r"voice|listening|survey|feedback|forum", (q.text or ""), re.I) and q.superpower in ("Purpose", "Wellbeing", "Inclusivity"):
+        base = clamp(0.65 * prof.F + 0.35 * prof.voice, 0.02, 0.98)
+    Fq = clamp(base + rng.gauss(0, 0.16), 0.02, 0.98)
     if q.category == "metric":
         t, sig = 30 + 40 * Fq, 30.0   # weak coupling for banded metrics
     else:

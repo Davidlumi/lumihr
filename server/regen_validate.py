@@ -211,6 +211,28 @@ def main():
     if rate <= 0.85:
         FLAGS.append(("gpg-250", "%.2f" % rate))
 
+    # change-context conditioning: transformation orgs report more change practice
+    chg_q = [qid for qid in (pattern | curated)
+             if questions.get(qid) and questions[qid].superpower == "Change"
+             and qid in qscore]
+    def chg_score(oid):
+        vals = [qscore[qid].get(new.get(qid, {}).get(oid)) for qid in chg_q]
+        vals = [v for v in vals if v is not None]
+        return sum(vals) / len(vals) if vals else None
+    hi_chg = [oid for oid, reg, p in matched if reg.get("Archetype") == "Turnaround / Transformation"]
+    lo_chg = [oid for oid, reg, p in matched
+              if reg.get("Change_Frequency") in ("Minimal", "Incremental")
+              and (reg.get("Recent_Shock") or "").startswith("None")]
+    hi_m2 = [s for s in (chg_score(o) for o in hi_chg) if s is not None]
+    lo_m2 = [s for s in (chg_score(o) for o in lo_chg) if s is not None]
+    hm = sum(hi_m2) / max(len(hi_m2), 1)
+    lm = sum(lo_m2) / max(len(lo_m2), 1)
+    ok_chg = hm - lm > 6
+    print("Change conditioning: Turnaround/Transformation orgs mean change-practice score %.1f vs stable/no-shock %.1f -> %s"
+          % (hm, lm, "PASS" if ok_chg else "FLAG"))
+    if not ok_chg:
+        FLAGS.append(("change-conditioning", "hi %.1f lo %.1f" % (hm, lm)))
+
     # contradiction: spreadsheets orgs vs top-maturity answers
     sheets = [oid for oid, reg, p in matched if reg["HR_Systems_Maturity"] == "Spreadsheets"
               and reg["HR_Maturity"] == "Basic"]
