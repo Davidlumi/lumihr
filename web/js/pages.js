@@ -5,6 +5,8 @@
 const SUPERPOWERS = ["Reward", "Processes", "Wellbeing", "Growth", "Capability",
   "Inclusivity", "Attract", "Leadership", "Purpose", "Change"];
 window.SUPERPOWERS = SUPERPOWERS;
+window.SECTION_ORDER = { "Pay": 1, "Benefits": 2, "Incentives": 3, "Transparency": 4, "Progression": 5 };
+window.secOrder = sec => (window.SECTION_ORDER_LIVE && window.SECTION_ORDER_LIVE[sec]) || window.SECTION_ORDER[sec] || 99;
 /* SpIcon: the one consistent superpower glyph (line-icon family from icons.js) */
 window.SpIcon = ({ sp, size = 15 }) => html`<${Icon} name=${SP_ICON[sp] || "target"} size=${size} />`;
 
@@ -78,27 +80,46 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         </div>
       </div>
 
-      <h2 class="section-title">Your ten superpowers</h2>
-      <div class="sp-grid">
-        ${SUPERPOWERS.map(sp => {
-          const c = h.by_superpower[sp] || { available: 0, above: 0, below: 0, inline: 0, quartiles: [0, 0, 0, 0] };
-          return html`
-          <div key=${sp} class="card sp-card" onClick=${() => nav("/superpower/" + sp)}>
-            <div class="row spread" style=${{ marginBottom: "6px" }}>
-              <span class="sp-name"><${SpIcon} sp=${sp} /> ${sp}</span>
-              <span class="caption">${c.available} metrics</span>
-            </div>
-            ${c.available ? html`
-              <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
-                <span class="chip good">▲ ${c.above}</span>
-                <span class="chip bad">▼ ${c.below}</span>
-                ${c.inline ? html`<span class="chip">= ${c.inline}</span>` : null}
+      ${window.SCOPE && window.SCOPE.focused ? html`
+        <h2 class="section-title">Your position by section</h2>
+        <div class="sp-grid">
+          ${Object.entries(h.by_section || {}).sort((a, b) => secOrder(a[0]) - secOrder(b[0])).map(([sec, c]) => html`
+            <div key=${sec} class="card sp-card" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec))}>
+              <div class="row spread" style=${{ marginBottom: "6px" }}>
+                <span class="sp-name">${sec}</span>
+                <span class="caption">${c.available} metrics</span>
               </div>
-              <${QuartileDots} quartiles=${c.quartiles} />` :
-            html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
-          </div>`;
-        })}
-      </div>
+              ${c.available ? html`
+                <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
+                  <span class="chip good">▲ ${c.above}</span>
+                  <span class="chip bad">▼ ${c.below}</span>
+                  ${c.inline ? html`<span class="chip">= ${c.inline}</span>` : null}
+                </div>
+                <${QuartileDots} quartiles=${c.quartiles} />` :
+              html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
+            </div>`)}
+        </div>` : html`
+        <h2 class="section-title">Your position by area</h2>
+        <div class="sp-grid">
+          ${(window.SCOPE ? window.SCOPE.superpowers : SUPERPOWERS).map(sp => {
+            const c = h.by_superpower[sp] || { available: 0, above: 0, below: 0, inline: 0, quartiles: [0, 0, 0, 0] };
+            return html`
+            <div key=${sp} class="card sp-card" onClick=${() => nav("/superpower/" + sp)}>
+              <div class="row spread" style=${{ marginBottom: "6px" }}>
+                <span class="sp-name"><${SpIcon} sp=${sp} /> ${sp}</span>
+                <span class="caption">${c.available} metrics</span>
+              </div>
+              ${c.available ? html`
+                <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
+                  <span class="chip good">▲ ${c.above}</span>
+                  <span class="chip bad">▼ ${c.below}</span>
+                  ${c.inline ? html`<span class="chip">= ${c.inline}</span>` : null}
+                </div>
+                <${QuartileDots} quartiles=${c.quartiles} />` :
+              html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
+            </div>`;
+          })}
+        </div>`}
     </div>`;
 };
 

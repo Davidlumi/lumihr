@@ -25,8 +25,8 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
         </div>
         <div class="row">
           <select class="ctl" value=${sp} onChange=${e => setSp(e.target.value)}>
-            <option value="">All superpowers</option>
-            ${SUPERPOWERS.map(s => html`<option key=${s} value=${s}>${s}</option>`)}
+            <option value="">${window.SCOPE && window.SCOPE.focused ? "All sections" : "All areas"}</option>
+            ${gapGroups(data).map(s => html`<option key=${s} value=${s}>${s}</option>`)}
           </select>
           <select class="ctl" value=${show} onChange=${e => setShow(e.target.value)}>
             <option value="gaps">Gaps only</option><option value="all">Everything</option>
@@ -56,7 +56,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
         body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
       html`<div class="card" style=${{ padding: "var(--s4)" }}>
         <table class="data">
-          <thead><tr><th>Practice / policy</th><th>Superpower</th><th>Your status</th>
+          <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th>
             <th class="num">Peers with this</th><th class="num">Sector peers</th><th>Tier</th></tr></thead>
           <tbody>
             ${rows.slice(0, 80).map(r => html`
@@ -221,7 +221,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">Appendix — practices common among peers but not in place</h2>
         ${p.gap_register_top.length ? html`
           <table class="data">
-            <thead><tr><th>Practice / policy</th><th>Superpower</th><th>Your status</th><th class="num">Peer adoption</th></tr></thead>
+            <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th><th class="num">Peer adoption</th></tr></thead>
             <tbody>${p.gap_register_top.map((r, i) => html`
               <tr key=${i}><td>${r.name}</td><td>${r.superpower}</td><td class="caption">${r.your_status}</td>
               <td class="num"><b>${r.peer_adoption_pct}%</b> <span class="caption">(n=${r.n})</span></td></tr>`)}

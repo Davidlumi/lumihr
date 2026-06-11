@@ -295,6 +295,21 @@ def overview_summary(items):
             c["inline"] += 1
         qx = min(3, int(i["percentile"] // 25))
         c["quartiles"][qx] += 1
+    by_sec = defaultdict(lambda: {"available": 0, "above": 0, "below": 0, "inline": 0,
+                                  "quartiles": [0, 0, 0, 0]})
+    for i in items:
+        if not i.get("subpower"):
+            continue
+        c = by_sec[i["subpower"]]
+        c["available"] += 1
+        if i["favourable"] == "good":
+            c["above"] += 1
+        elif i["favourable"] == "bad":
+            c["below"] += 1
+        elif i["favourable"] == "mid":
+            c["inline"] += 1
+        qx = min(3, int(i["percentile"] // 25))
+        c["quartiles"][qx] += 1
     return {
         "comparable_metrics": comparable,
         "above_median": above,
@@ -302,6 +317,7 @@ def overview_summary(items):
         "broadly_in_line": inline,
         "neutral_tracked": len(items) - comparable,
         "by_superpower": dict(by_sp),
+        "by_section": dict(by_sec),
     }
 
 

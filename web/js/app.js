@@ -33,6 +33,9 @@ function App() {
   }, [me && me.org && me.org.name]);
 
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
+  const scope = me && me.scope ? me.scope : { superpowers: SUPERPOWERS, focused: false, question_count: 778 };
+  window.SCOPE = scope;
+  const activeSupers = scope.superpowers;
   if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
 
   const onPref = (qid, p) => {
@@ -61,8 +64,15 @@ function App() {
   let page = null, m;
   if (route.startsWith("/superpower/")) {
     const [sp, qs] = route.slice("/superpower/".length).split("?");
-    const focusQ = qs && new URLSearchParams(qs).get("focus");
-    page = html`<${SuperpowerPage} ...${pageProps} sp=${decodeURIComponent(sp)} focusQ=${focusQ} />`;
+    const params = new URLSearchParams(qs || "");
+    const focusQ = params.get("focus");
+    const subF = params.get("sub");
+    if (!activeSupers.includes(decodeURIComponent(sp))) {
+      page = html`<${EmptyState} title="That area isn't part of your benchmark"
+        body="Your benchmark covers reward." action=${html`<button class="btn small" onClick=${() => nav("/superpower/Reward")}>Go to your reward benchmark</button>`} />`;
+    } else {
+      page = html`<${SuperpowerPage} ...${pageProps} sp=${decodeURIComponent(sp)} focusQ=${focusQ} subF=${subF} />`;
+    }
   } else if ((m = route.match(/^\/metric\/(.+)$/))) {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
@@ -96,8 +106,14 @@ function App() {
           <button class=${navCls(route, "/boardpack")} onClick=${() => nav("/boardpack")}><${Icon} name="file-text" size=${15} /> Board pack</button>
         </div>
         <div class="nav-group">
-          <div class="nav-label">Superpowers</div>
-          ${SUPERPOWERS.map(sp => html`
+          <div class="nav-label">${scope.focused ? "Your reward benchmark" : "Benchmarks"}</div>
+          ${scope.focused && html`
+            <button class=${navCls(route, "/superpower/Reward") + (route.includes("sub=") ? "" : "")} onClick=${() => nav("/superpower/Reward")}>
+              <${SpIcon} sp="Reward" /> All reward
+              ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => !q.locked).length}</span>`}
+            </button>
+            <${SectionNav} route=${route} qIndex=${qIndex} />`}
+          ${!scope.focused && activeSupers.map(sp => html`
             <button key=${sp} class=${navCls(route, "/superpower/" + sp)} onClick=${() => nav("/superpower/" + sp)}>
               <${SpIcon} sp=${sp} /> ${sp}
               ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => q.superpower === sp && !q.locked).length}</span>`}
@@ -138,11 +154,11 @@ function App() {
           <div class="ctlgroup" style=${{ flex: 1, maxWidth: "400px" }}>
             <div style=${{ position: "relative" }}>
               <span style=${{ position: "absolute", left: "10px", top: "11px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
-              <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any metric, e.g. 'pension' or 'sick pay'"
+              <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
                 value=${search} onInput=${e => setSearch(e.target.value)} />
               ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
             </div>
-            <div class="hint">Type to find any of the 778 benchmarks.</div>
+            <div class="hint">Type to find any of the ${scope.question_count} ${scope.focused ? "reward " : ""}benchmarks.</div>
           </div>
           <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
             <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
@@ -164,6 +180,31 @@ function App() {
       ${twinOpen && html`<${PeerTwinPanel} onClose=${() => setTwinOpen(false)} onUse=${() => setGlobalCut("twin")} />`}
     </div>`;
 }
+
+window.SectionNav = function ({ route, qIndex }) {
+  if (!qIndex) return null;
+  const secs = sectionList(qIndex);
+  return html`${secs.map(sec => {
+    const active = route.includes("sub=" + encodeURIComponent(sec.name));
+    return html`
+      <button key=${sec.name} class=${"nav-item" + (active ? " active" : "")}
+        style=${{ paddingLeft: "var(--s6)" }}
+        onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec.name))}>
+        ${sec.name}
+        <span class="nav-count">${sec.count}</span>
+      </button>`;
+  })}`;
+};
+
+window.sectionList = function (qIndex) {
+  const m = new Map();
+  for (const q of qIndex.questions) {
+    if (q.locked || !q.subpower) continue;
+    if (!m.has(q.subpower)) m.set(q.subpower, { name: q.subpower, order: q.sub_power_order || 999, count: 0 });
+    m.get(q.subpower).count++;
+  }
+  return Array.from(m.values()).sort((a, b) => a.order - b.order);
+};
 
 function cutHint(cut, cuts, me) {
   const total = (me.peer_pool || {}).responding_orgs || "all";

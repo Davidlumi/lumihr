@@ -124,7 +124,8 @@ function SectionForm({ sp, state, refresh }) {
     g.qs.push(q);
   }
   bySub.sort((a, b) => a.order - b.order);
-  const idx = SUPERPOWERS.indexOf(sp);
+  const ACTIVE = (window.SCOPE && window.SCOPE.superpowers) || SUPERPOWERS;
+  const idx = ACTIVE.indexOf(sp);
   return html`
     <div style=${{ maxWidth: "780px" }}>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
@@ -142,9 +143,9 @@ function SectionForm({ sp, state, refresh }) {
           ${g.qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts} issues=${issues} save=${save} />`)}
         </div>`)}
       <div class="row spread" style=${{ marginBottom: "var(--s6)" }}>
-        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/submission/" + SUPERPOWERS[idx - 1])}>← ${SUPERPOWERS[idx - 1] || ""}</button>
-        ${idx < SUPERPOWERS.length - 1 ?
-          html`<button class="btn primary" onClick=${() => nav("/submission/" + SUPERPOWERS[idx + 1])}>${SUPERPOWERS[idx + 1]} →</button>` :
+        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/submission/" + ACTIVE[idx - 1])}>← ${ACTIVE[idx - 1] || ""}</button>
+        ${idx < ACTIVE.length - 1 ?
+          html`<button class="btn primary" onClick=${() => nav("/submission/" + ACTIVE[idx + 1])}>${ACTIVE[idx + 1]} →</button>` :
           html`<button class="btn primary" onClick=${() => nav("/submission/review")}>Review and submit →</button>`}
       </div>
     </div>`;

@@ -39,6 +39,22 @@ WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 CURRENT_SNAPSHOT = 1
 CORE_COMPLETION_THRESHOLD = 0.90
 
+# ---------------------------------------------------------------- launch focus
+# lumi launches as a reward benchmarking product. The other nine areas stay
+# fully built (data, aggregation, scoring untouched) and are hidden from every
+# user-facing surface by THIS flag alone. Set LUMI_ACTIVE_SUPERPOWERS=all (or a
+# comma list) to re-show them — nothing else needs touching.
+_asp = os.environ.get("LUMI_ACTIVE_SUPERPOWERS", "Reward").strip()
+ACTIVE_SUPERPOWERS = [] if _asp.lower() in ("", "all", "*") else [x.strip() for x in _asp.split(",") if x.strip()]
+
+
+def visible_questions():
+    """The question set every user-facing route serves. THE focus filter."""
+    qs = load_questions()
+    if not ACTIVE_SUPERPOWERS:
+        return qs
+    return {qid: q for qid, q in qs.items() if q.superpower in ACTIVE_SUPERPOWERS}
+
 app = FastAPI(title="lumi", docs_url=None, redoc_url=None)
 
 
@@ -348,7 +364,11 @@ async def me(request: Request):
     conn = get_conn()
     completion = core_completion(conn, org)
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
+    vis = visible_questions()
     return {
+        "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
+                  "focused": bool(ACTIVE_SUPERPOWERS),
+                  "question_count": len(vis)},
         "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"],
                  "preview_as_core": bool(user["preview_as_core"])},
         "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
@@ -453,7 +473,7 @@ async def questions_index(request: Request):
     answers = org_answers_for(org)
     answered_q = {k[0] for k in answers}
     out = []
-    for qid, q in load_questions().items():
+    for qid, q in visible_questions().items():
         p = payloads().get(qid, {})
         out.append({
             "id": qid, "title": q.display_title, "superpower": q.superpower,
@@ -468,13 +488,15 @@ async def questions_index(request: Request):
 @app.get("/api/benchmarks/{superpower}")
 async def benchmarks_for_superpower(superpower: str, request: Request):
     user, org = require_user(request)
+    if ACTIVE_SUPERPOWERS and superpower not in ACTIVE_SUPERPOWERS:
+        raise HTTPException(404, "This benchmark area isn't available.")
     conn = get_conn()
     entitled = make_entitled(user, org)
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
     answers = org_answers_for(org)
     cards = []
-    for qid, q in load_questions().items():
+    for qid, q in visible_questions().items():
         if q.superpower != superpower:
             continue
         p = payloads().get(qid)
@@ -489,7 +511,7 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
 async def single_benchmark(qid: str, request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    q = load_questions().get(qid)
+    q = visible_questions().get(qid)
     p = payloads().get(qid)
     if q is None or p is None:
         raise HTTPException(404, "Unknown metric")
@@ -501,7 +523,7 @@ async def single_benchmark(qid: str, request: Request):
     # opportunity panel for £-model metrics
     mm = next((m for m in pos.MONEY_METRICS if m["question_id"] == qid), None)
     if mm and not card["locked"] and q.polarity != "neutral":
-        money = pos.money_opportunities(conn, org, load_questions(), payloads(),
+        money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                         org_answers_for(org), cut, {qid: tb.get(qid)} if tb else None)
         card["opportunity"] = next((i for i in money["items"] if i["question_id"] == qid), None)
         card["assumptions"] = money["assumptions"]
@@ -528,7 +550,7 @@ def build_items(request, org, user, cut):
     conn = get_conn()
     entitled = make_entitled(user, org)
     tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") == "twin" else None
-    return pos.position_items(org["org_id"], cut, load_questions(), payloads(),
+    return pos.position_items(org["org_id"], cut, visible_questions(), payloads(),
                               org_answers_for(org), entitled, tb), tb
 
 
@@ -539,8 +561,8 @@ async def overview(request: Request):
     cut = parse_cut(request, org)
     items, tb = build_items(request, org, user, cut)
     summary = pos.overview_summary(items)
-    co = pos.callouts(items, load_questions(), k=3)
-    money = pos.money_opportunities(conn, org, load_questions(), payloads(),
+    co = pos.callouts(items, visible_questions(), k=3)
+    money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                     org_answers_for(org), cut, tb)
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
@@ -575,7 +597,7 @@ async def overview(request: Request):
 async def my_data(request: Request):
     user, org = require_user(request)
     answers = org_answers_for(org)
-    questions = load_questions()
+    questions = visible_questions()
     rows = []
     for (qid, row_id), value in answers.items():
         q = questions.get(qid)
@@ -606,7 +628,11 @@ async def methodology(request: Request):
     uncl = conn.execute("SELECT COUNT(*) c FROM orgs WHERE classified=0 AND source='seed'").fetchone()["c"]
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     assumptions = get_meta("assumptions_defaults", {})
+    vis = visible_questions()
     return {
+        "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
+                  "focused": bool(ACTIVE_SUPERPOWERS), "question_count": len(vis),
+                  "sections": sorted({q.sub_power for q in vis.values() if q.sub_power})},
         "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "composition": {k: dict(v) for k, v in sorted(comp.items())},
         "unclassified_count": uncl,
@@ -642,14 +668,19 @@ def starter_layout(request, org, user):
 async def get_myview(request: Request):
     user, org = require_user(request)
     conn = get_conn()
+    vis = visible_questions()
+
+    def keep(layout):
+        return [slot for slot in (layout or []) if slot.get("question_id") in vis]
+
     row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=?",
                        (org["org_id"], user["user_id"])).fetchone()
     if row:
-        return {"layout": uj(row["layout_json"], []), "source": "user"}
+        return {"layout": keep(uj(row["layout_json"], [])), "source": "user"}
     row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
                        (org["org_id"],)).fetchone()
     if row:
-        return {"layout": uj(row["layout_json"], []), "source": "org_default"}
+        return {"layout": keep(uj(row["layout_json"], [])), "source": "org_default"}
     return {"layout": starter_layout(request, org, user), "source": "starter"}
 
 
@@ -745,7 +776,7 @@ def build_gap_register(request, user, org, cut):
     entitled = make_entitled(user, org)
     tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") == "twin" else None
     sector_cut = {"dim": "industry", "value": org["industry"]} if org["industry"] else None
-    return pos.gap_register(conn, org, load_questions(), payloads(), org_answers_for(org),
+    return pos.gap_register(conn, org, visible_questions(), payloads(), org_answers_for(org),
                             cut, sector_cut, entitled, tb)
 
 
@@ -785,14 +816,15 @@ async def analyst(request: Request):
     if not question:
         raise HTTPException(400, "Ask a question first.")
     conn = get_conn()
-    qids = retrieval.search_questions(question, limit=6)
+    vis = visible_questions()
+    qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
     if not qids:
         return {"answer": "I couldn't match that to anything in the lumi benchmark set. "
                           "Try naming the metric, practice or benefit you're interested in.",
                 "chips": [], "matched": []}
     answers = org_answers_for(org)
     entitled = make_entitled(user, org)
-    questions = load_questions()
+    questions = vis
     data = {"organisation": {"name": org["name"], "industry": org["industry"],
                              "fte_band": org["fte_band"]},
             "metrics": []}
@@ -868,10 +900,10 @@ async def analyst_starters(request: Request):
     while len(starters) < 6:
         starters.append([
             "Where do we sit on employer pension contributions?",
-            "How common is a formal flexible working policy?",
-            "What does the peer median look like for regretted attrition?",
+            "How common are holiday purchase schemes?",
+            "What bonus eligibility is typical for organisations like ours?",
             "Which benefits are most commonly offered by organisations our size?",
-            "How does our agency usage compare with our sector?",
+            "How does our annual leave entitlement compare?",
             "What proportion of peers have a published pay transparency approach?",
         ][len(starters)])
     return {"starters": starters[:6]}
@@ -885,7 +917,7 @@ def assemble_pack_payload(request, user, org, cut):
     summary = pos.overview_summary(items)
     strengths = pos.top_strengths(items, 5)
     gaps = pos.top_gaps(items, 5)
-    money = pos.money_opportunities(conn, org, load_questions(), payloads(),
+    money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                     org_answers_for(org), cut, tb)
     reg = build_gap_register(request, user, org, cut)
     pool = get_meta("peer_pool", {})
@@ -998,8 +1030,9 @@ OWNERSHIP = ["Private (Founder/Family)", "Private Equity-backed", "Public Listed
 
 
 def core_completion(conn, org):
-    """% of Core-tier questions with an answer (matrix counts if any row answered)."""
-    questions = load_questions()
+    """% of ACTIVE-scope Core questions answered — benchmark gating follows the
+    launch focus (contribute reward data, see the reward benchmark)."""
+    questions = visible_questions()
     core_q = [q for q in questions.values() if q.lumi_tier == "Core"]
     if not core_q:
         return 100.0
@@ -1017,7 +1050,7 @@ def core_completion(conn, org):
 async def submission_state(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    questions = load_questions()
+    questions = visible_questions()
     answered = {r["question_id"] for r in conn.execute(
         "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=?",
         (org["org_id"], CURRENT_SNAPSHOT))}
@@ -1102,8 +1135,10 @@ def _encode_signup_vector(conn, org):
 @app.get("/api/submission/section/{superpower}")
 async def submission_section(superpower: str, request: Request):
     user, org = require_user(request)
+    if ACTIVE_SUPERPOWERS and superpower not in ACTIVE_SUPERPOWERS:
+        raise HTTPException(404, "This section isn't available.")
     conn = get_conn()
-    questions = load_questions()
+    questions = visible_questions()
     answers = org_answers_for(org)
     drafts = {}
     for r in conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)):
@@ -1219,7 +1254,7 @@ async def save_draft(request: Request):
 async def validate_all(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    questions = load_questions()
+    questions = visible_questions()
     drafts = {}
     for r in conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)):
         drafts[(r["question_id"], r["matrix_row_id"] or "")] = r["value"]
@@ -1379,9 +1414,9 @@ async def share_data(token: str, request: Request):
     if cut.get("dim") == "twin":
         cut = {"dim": "all"}  # twin never exposed on anonymous links
     answers = pos.get_org_answers(conn, org["org_id"], CURRENT_SNAPSHOT)
-    items = pos.position_items(org["org_id"], cut, load_questions(), payloads(), answers, entitled, None)
+    items = pos.position_items(org["org_id"], cut, visible_questions(), payloads(), answers, entitled, None)
     summary = pos.overview_summary(items)
-    co = pos.callouts(items, load_questions(), k=3)
+    co = pos.callouts(items, visible_questions(), k=3)
     cards = []
     layout_row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
                               (org["org_id"],)).fetchone()
@@ -1394,7 +1429,7 @@ async def share_data(token: str, request: Request):
         if qid in seen:
             continue
         seen.add(qid)
-        q = load_questions().get(qid)
+        q = visible_questions().get(qid)
         p = payloads().get(qid)
         if q is None or p is None or not entitled(q):
             continue
