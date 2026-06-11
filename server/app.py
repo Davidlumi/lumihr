@@ -798,7 +798,8 @@ async def gap_register_csv(request: Request):
                 "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
-                    r["org_status"], "" if r["in_place"] is None else ("Yes" if r["in_place"] else "No"),
+                    r["org_status"],
+                    {"in_place": "In place", "partial": "Partially", "not_in_place": "Not in place"}.get(r.get("status"), "Not assessable"),
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
                     r["gap"] if r["gap"] is not None else "", r["n"]])

@@ -256,6 +256,110 @@ def score_answer(q, value):
     return None
 
 
+# ------------------------------------------------- in-place status (presence)
+# THE single status-resolution function: is this practice/policy IN PLACE?
+# Presence is not quality: any real, substantive answer ("Quarterly",
+# "No - non-pensionable", "21-24 days") means the practice EXISTS. Only
+# explicit-absence options mean it doesn't; is_na options and blanks are
+# unknown/not assessable. Used by the gap register, adoption rates, maturity
+# scores and the board pack appendix — one function, one source of truth.
+
+_ABS_EXACT = re.compile(r"^(no|none|never|nothing|0|0%)$", re.I)
+_ABS_NOT = re.compile(r"^not\b", re.I)                      # "Not used", "Not monitored", ...
+_ABS_WORD = re.compile(r"^(none\b|never\b|nothing\b|mostly unstructured|statutory( sick pay| pay)? only\b|statutory minimum only)", re.I)
+_NA_LABEL = re.compile(r"^(not applicable|don'?t know|prefer not|unsure\b)", re.I)
+# "No <property>" answers that describe HOW an existing practice works rather
+# than denying it exists — the small reviewable whitelist
+_NO_PROPERTY = re.compile(r"^no (change|difference|cap\b|limit\b|maximum\b|preference|impact)", re.I)
+_NO_QUALIFIER = re.compile(r"^no\s*[\(\u2013\u2014,-]\s*(.*)$", re.I)
+_PARTIAL_RE = re.compile(
+    r"^(partial(ly)?|partly|in (development|progress)|in some\b|some (areas|roles|parts|teams|cases|groups|sites)\b|"
+    r"somewhat\b|informal(ly)?\b|ad[ -]?hoc\b|sometimes\b|occasionally\b|mixed$|under (review|development)|"
+    r"planned\b|limited\b|emerging\b|developing\b|basic\b|"
+    r"yes\s*[\u2013\u2014-]\s*(some|informal|limited|pilot|in some|but)|yes[, ]+(some|partly|partially))", re.I)
+
+
+def is_absence_label(label):
+    """Does this option label state the asked-about practice is ABSENT?
+    Generic "No ..."/"Not ..." statements are absence; "No - <property>"
+    qualifiers and the whitelist ("No change", "No cap") are real answers
+    about an existing practice."""
+    l = re.sub(r"\s+", " ", (label or "").strip().lower())
+    if _NA_LABEL.match(l):
+        return False                      # not-assessable, handled as unknown
+    if _ABS_EXACT.match(l) or _ABS_WORD.match(l) or _ABS_NOT.match(l):
+        return True
+    m = _NO_QUALIFIER.match(l)
+    if m:
+        # absence only when the qualifier itself negates the provision
+        return bool(re.search(r"statutory|unpaid|\bnone\b|nothing|\bnot\b|\bno\b|don'?t", m.group(1)))
+    if _NO_PROPERTY.match(l):
+        return False
+    if re.match(r"^no\b", l):
+        return True                       # "No minimum", "No on-site childcare", ...
+    return False
+
+
+def practice_status(q, raw):
+    """'in_place' | 'partial' | 'not_in_place' | 'unknown' for one org's answer."""
+    if raw is None or not str(raw).strip():
+        return "unknown"
+    raw = str(raw).strip()
+    cfg = q.scoring_config or {}
+    na_codes = set(cfg.get("na_codes") or [])
+    by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
+
+    if q.type == "multi_select":
+        toks = [t.strip() for t in raw.split(";") if t.strip()]
+        if not toks:
+            return "unknown"
+        subst = []
+        for t in toks:
+            o = by_label.get(_norm_label(t))
+            if o is None or o.get("is_na") or o["code"] in na_codes:
+                continue
+            subst.append(o["label"])
+        if not subst:
+            return "unknown"
+        if all(is_absence_label(l) for l in subst):
+            return "not_in_place"
+        return "in_place"
+
+    o = by_label.get(_norm_label(raw))
+    if o is None:
+        return "unknown"
+    if o.get("is_na") or o["code"] in na_codes or _NA_LABEL.match(o["label"].strip()):
+        return "unknown"
+    label = o["label"]
+    if is_absence_label(label):
+        return "not_in_place"
+    if _PARTIAL_RE.match(re.sub(r"\s+", " ", label.strip().lower())):
+        return "partial"
+    return "in_place"
+
+
+STATUS_POINTS = {"in_place": 100.0, "partial": 50.0, "not_in_place": 0.0}
+
+
+def presence_block(statuses):
+    """Peer presence for one question under one cut. Adoption counts a
+    practice that is at least partly in place; unknowns are excluded from
+    the denominator. Same n>=5 suppression as everything else."""
+    assessable = [st for st in statuses if st in STATUS_POINTS]
+    n = len(assessable)
+    if n < SUPPRESSION_FLOOR:
+        return suppressed(n)
+    in_n = sum(1 for st in assessable if st == "in_place")
+    pa_n = sum(1 for st in assessable if st == "partial")
+    return {
+        "n": n,
+        "in_place_pct": round(100.0 * in_n / n, 1),
+        "partial_pct": round(100.0 * pa_n / n, 1),
+        "adoption_pct": round(100.0 * (in_n + pa_n) / n, 1),
+        "status_mean": round(sum(STATUS_POINTS[st] for st in assessable) / n, 1),
+    }
+
+
 def score_block(scores, with_adoption):
     n = len(scores)
     if n < SUPPRESSION_FLOOR:
@@ -298,7 +402,7 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
                     answering.add(oid)
             mr.append({"row_id": rid, "label": label, "block": numeric_block(vals, excl)})
         top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
-        return top, mr, None
+        return top, mr, None, None
 
     per_org = {oid: v for (oid, rid), v in answers_for_q.items() if oid in org_ids}
     raw = list(per_org.values())
@@ -320,15 +424,18 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
         blk = suppressed(0)
 
     score_blk = None
+    presence_blk = None
     if q.is_scored and q.type in ("single_select", "yes_no", "multi_select"):
         scores = [s for s in (score_answer(q, v) for v in raw) if s is not None]
         score_blk = score_block(scores, with_adoption=q.category in ("practice", "policy", "benefit"))
-    return blk, None, score_blk
+        if q.category in ("practice", "policy"):
+            presence_blk = presence_block([practice_status(q, v) for v in raw])
+    return blk, None, score_blk, presence_blk
 
 
 def build_payload(q, cuts, answers_for_q):
     """cuts: {'all': set(org_ids), 'by_industry': {sector: set}, 'by_fte_band': {band: set}}."""
-    all_blk, mr_all, score_all = aggregate_question_for_orgs(q, cuts["all"], answers_for_q)
+    all_blk, mr_all, score_all, presence_all = aggregate_question_for_orgs(q, cuts["all"], answers_for_q)
     payload = {
         "question_id": q.id,
         "tier": q.lumi_tier,
@@ -344,6 +451,7 @@ def build_payload(q, cuts, answers_for_q):
         "by_fte_band": {},
     }
     scores = {"all": score_all, "by_industry": {}, "by_fte_band": {}} if score_all is not None else None
+    presence = {"all": presence_all, "by_industry": {}, "by_fte_band": {}} if presence_all is not None else None
     matrix_rows = None
     if q.type == "matrix":
         matrix_rows = [{"row_id": m["row_id"], "label": m["label"], "all": m["block"],
@@ -351,7 +459,7 @@ def build_payload(q, cuts, answers_for_q):
 
     for dim, key in (("by_industry", "by_industry"), ("by_fte_band", "by_fte_band")):
         for cut_val, org_set in cuts[dim].items():
-            blk, mr, sc = aggregate_question_for_orgs(q, org_set, answers_for_q)
+            blk, mr, sc, pres = aggregate_question_for_orgs(q, org_set, answers_for_q)
             payload[key][cut_val] = blk
             if matrix_rows is not None and mr is not None:
                 by_rid = {m["row_id"]: m["block"] for m in mr}
@@ -359,10 +467,14 @@ def build_payload(q, cuts, answers_for_q):
                     row[key][cut_val] = by_rid.get(row["row_id"], suppressed(0))
             if scores is not None:
                 scores[key][cut_val] = sc
+            if presence is not None:
+                presence[key][cut_val] = pres
     if matrix_rows is not None:
         payload["matrix_rows"] = matrix_rows
     if scores is not None:
         payload["scores"] = scores
+    if presence is not None:
+        payload["presence"] = presence
     return payload
 
 

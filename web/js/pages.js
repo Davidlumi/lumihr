@@ -432,9 +432,12 @@ window.MethodologyPage = function () {
         <p><b>Favourable vs peers.</b> Each question carries a polarity: higher is better (e.g. offer acceptance rate),
         lower is better (e.g. regretted attrition), or neutral (e.g. salary increase budget, where "better" depends on
         strategy). Green/amber/red colouring is polarity-adjusted and is never applied to neutral metrics.</p>
-        <p><b>Practice adoption.</b> Practice and policy questions are scored 0–100 using lumi's scoring configuration.
-        We treat a practice as "in place" when an organisation's answer scores 50 or more on that question's scale; peer
-        adoption rates use the same rule.</p>
+        <p><b>Practice adoption.</b> We treat a practice or policy as <b>in place</b> when an organisation gives a real,
+        substantive answer — any genuine frequency, approach or level counts (reviewing pay quarterly is a pay review cycle).
+        Only explicit absence answers ("No", "None", "No formal policy", "Never") count as <b>not in place</b>;
+        clearly partial answers ("Partially", "In development") count as <b>partly in place</b>; and "Don't know" or
+        "Not applicable" answers are excluded rather than counted against anyone. Peer adoption is the share of
+        assessable answers that are at least partly in place, under the same rule.</p>
         <p><b>Your percentile.</b> Your P-number is the share of peer organisations whose value sits below yours
         (ties counted half), so P63 means you are higher than about 6 in 10 peers.</p>
       </div>

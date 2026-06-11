@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db import get_conn, uj, get_meta
 from library import load_questions
 from aggregate import (aggregate_question_for_orgs, score_answer, score_polarity,
+                       practice_status, STATUS_POINTS,
                        coerce_number, SUPPRESSION_FLOOR, DEFAULT_ASSUMPTIONS)
 
 # ---------------------------------------------------------------- formatting
@@ -74,6 +75,15 @@ def score_block_for(payload, cut, twin_blocks=None):
     if cut.get("dim") == "twin":
         return (twin_blocks or {}).get("score"), "Organisations like you"
     return resolve_block(sc.get("all"), sc, cut)
+
+
+def presence_block_for(payload, cut, twin_blocks=None):
+    pr = payload.get("presence")
+    if pr is None:
+        return None, ""
+    if cut.get("dim") == "twin":
+        return (twin_blocks or {}).get("presence"), "Organisations like you"
+    return resolve_block(pr.get("all"), pr, cut)
 
 
 def matrix_row_block_for(row, cut, twin_blocks=None):
@@ -453,8 +463,11 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
 
 def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=None,
                  entitled=None, twin_blocks_by_q=None):
-    """Practice & policy maturity vs peer adoption. Adoption = the org's option
-    score >= 50 on the question's own 0-100 scale (see methodology)."""
+    """Practice & policy register on PRESENCE semantics: a substantive answer
+    (any real frequency/approach/level) means the practice is in place; only
+    explicit-absence options mean it isn't; is_na answers and blanks are not
+    assessable. practice_status() is the single source of truth — the same
+    function drives the org's own status, peer adoption and maturity."""
     rows = []
     sp_scores = defaultdict(list)
     sp_peer_p50 = defaultdict(list)
@@ -466,30 +479,33 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
         if not (q.is_scored and q.type in ("single_select", "yes_no", "multi_select")):
             continue
         p = payloads.get(qid)
-        if p is None or "scores" not in p:
+        if p is None or "presence" not in p:
             continue
-        blk, cut_label = score_block_for(p, cut, (twin_blocks_by_q or {}).get(qid))
+        blk, cut_label = presence_block_for(p, cut, (twin_blocks_by_q or {}).get(qid))
         raw = org_answers.get((qid, ""))
-        s = score_answer(q, raw) if raw is not None else None
-        in_place = (s >= 50) if s is not None else None
+        status = practice_status(q, raw)
+        own_points = STATUS_POINTS.get(status)
+        in_place = (True if status in ("in_place", "partial") else
+                    False if status == "not_in_place" else None)
         adoption = None if is_suppressed(blk) else blk.get("adoption_pct")
         sector_adoption = None
         if sector_cut:
-            sblk, _ = score_block_for(p, sector_cut, None)
+            sblk, _ = presence_block_for(p, sector_cut, None)
             if not is_suppressed(sblk):
                 sector_adoption = sblk.get("adoption_pct")
-        if s is not None:
-            sp_scores[q.superpower].append(s)
-        if not is_suppressed(blk) and blk.get("p50") is not None:
-            sp_peer_p50[q.superpower].append(blk["p50"])
-        gap = (adoption - (100.0 if in_place else 0.0)) if (adoption is not None and in_place is not None) else None
+        if own_points is not None:
+            sp_scores[q.superpower].append(own_points)
+        if not is_suppressed(blk) and blk.get("status_mean") is not None:
+            sp_peer_p50[q.superpower].append(blk["status_mean"])
+        gap = (adoption - own_points) if (adoption is not None and own_points is not None) else None
         rows.append({
             "question_id": qid, "name": q.display_title, "superpower": q.superpower,
             "subpower": q.sub_power, "category": q.category, "tier": q.lumi_tier,
             "org_status": raw if raw is not None else "Not answered",
             "org_answered": raw is not None,
+            "status": status,
             "in_place": in_place,
-            "org_score": round(s, 1) if s is not None else None,
+            "org_score": own_points,
             "peer_adoption_pct": adoption,
             "sector_adoption_pct": sector_adoption,
             "n": blk["n"] if blk else 0,
@@ -517,10 +533,10 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
         if r["org_score"] is not None:
             sec_scores[q.sub_power].append(r["org_score"])
         if not r["suppressed"]:
-            blk, _ = score_block_for(payloads.get(r["question_id"], {}), cut,
-                                     (twin_blocks_by_q or {}).get(r["question_id"]))
-            if blk and not is_suppressed(blk) and blk.get("p50") is not None:
-                sec_peer[q.sub_power].append(blk["p50"])
+            blk, _ = presence_block_for(payloads.get(r["question_id"], {}), cut,
+                                        (twin_blocks_by_q or {}).get(r["question_id"]))
+            if blk and not is_suppressed(blk) and blk.get("status_mean") is not None:
+                sec_peer[q.sub_power].append(blk["status_mean"])
     maturity_sections = {}
     for sec in set(list(sec_scores) + list(sec_peer)):
         ours = sec_scores.get(sec) or []

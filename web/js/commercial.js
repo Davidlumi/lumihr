@@ -74,7 +74,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
               <tr key=${r.question_id}>
                 <td><b>${r.name}</b></td>
                 <td>${focused ? (r.subpower || "—") : r.superpower}</td>
-                <td>${r.org_answered ? html`<span class=${"chip " + (r.in_place === true ? "good" : r.in_place === false ? "bad" : "")}>${r.in_place === true ? "In place" : r.in_place === false ? "Not in place" : "Recorded"}</span>
+                <td>${r.org_answered ? html`<span class=${"chip " + (r.status === "in_place" ? "good" : r.status === "partial" ? "warn" : r.status === "not_in_place" ? "bad" : "")}>${r.status === "in_place" ? "In place" : r.status === "partial" ? "Partially" : r.status === "not_in_place" ? "Not in place" : "Not assessable"}</span>
                   <div class="caption" style=${{ marginTop: "2px", maxWidth: "220px" }}>${r.org_status}</div>` :
                   html`<span class="chip">Not answered</span>`}</td>
                 <td class="num"><b>${r.peer_adoption_pct == null ? "—" : r.peer_adoption_pct + "%"}</b><div class="caption">n=${r.n}</div></td>

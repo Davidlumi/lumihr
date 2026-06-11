@@ -106,8 +106,8 @@ def twin_blocks(conn, org_id, snapshot_id=1):
     answers = load_answers(conn, snapshot_id)
     out = {}
     for qid, q in questions.items():
-        blk, mr, sc = aggregate_question_for_orgs(q, org_ids, answers.get(qid, {}))
-        entry = {"main": blk, "score": sc}
+        blk, mr, sc, pres = aggregate_question_for_orgs(q, org_ids, answers.get(qid, {}))
+        entry = {"main": blk, "score": sc, "presence": pres}
         if mr is not None:
             entry["rows"] = {m["row_id"]: m["block"] for m in mr}
         out[qid] = entry
