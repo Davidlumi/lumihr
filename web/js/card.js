@@ -183,7 +183,7 @@ window.WhatThisMeans = function ({ card: c, pos }) {
   if (!lines) return null;
   return html`
     <div>
-      <button class="btn quiet small" style=${{ padding: "0", height: "18px", color: "var(--teal)", fontFamily: "var(--font)" }}
+      <button class="btn quiet small" style=${{ padding: "0", height: "18px", color: "var(--blue-bright)", fontFamily: "var(--font)" }}
         onClick=${() => setOpen(!open)}>${open ? "▾" : "▸"} What this means</button>
       ${open && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>${lines}</div>`}
     </div>`;
@@ -366,10 +366,10 @@ window.OpportunityPanel = function ({ opp }) {
     ? `Closing to median ≈ ${fmtGBPCompact(opp.to_p50_gbp)}/yr`
     : `Reaching median ≈ ${fmtGBPCompact(opp.to_p50_gbp)}/yr investment`;
   return html`
-    <div style=${{ background: "var(--plum-tint)", borderRadius: "var(--radius-sm)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0", fontSize: "var(--fs-label)" }}>
+    <div style=${{ background: "var(--blue-tint)", borderRadius: "var(--radius-sm)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0", fontSize: "var(--fs-label)" }}>
       <div class="row spread">
         <b>${main}</b>
-        <span class="hastip" style=${{ position: "relative", cursor: "help", color: "var(--plum-deep)" }}>
+        <span class="hastip" style=${{ position: "relative", cursor: "help", color: "var(--blue-deep)" }}>
           formula
           <span class="tip">${opp.formula}. All figures are <b>indicative</b> and rest on the assumptions in Settings.</span>
         </span>

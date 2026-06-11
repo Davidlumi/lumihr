@@ -17,7 +17,7 @@ function youColour(fav) {
   return "var(--you)";   // neutral polarity: the plain "you" accent
 }
 
-/* The single "you" marker: a filled plum diamond (performance-coloured where
+/* The single "you" marker: a filled blue diamond (performance-coloured where
    polarity applies) with a value label. Same treatment on every chart. */
 function YouDot({ x, y, fav, label, labelY, anchor }) {
   const r = 8;

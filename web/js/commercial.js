@@ -52,7 +52,7 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
           if (!mt) return null;
           return html`
           <div key=${s} class="card sp-card" onClick=${() => setSp(sp === s ? "" : s)}
-            style=${sp === s ? { borderColor: "var(--plum)" } : null}>
+            style=${sp === s ? { borderColor: "var(--blue)" } : null}>
             <div class="row spread"><span class="sp-name">${focused ? s : html`<${SpIcon} sp=${s} size=${14} /> ${s}`}</span></div>
             <div class="row spread" style=${{ marginTop: "6px" }}>
               <div><div class="metric-value" style=${{ fontSize: "20px" }}>${mt.org_score == null ? "—" : mt.org_score}</div><div class="caption">your maturity</div></div>
@@ -204,7 +204,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--plum-deep)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
+          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
           <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "12px 0 6px", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
           <div style=${{ fontSize: "16px", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "18px" }}>
@@ -343,7 +343,7 @@ window.AnalystPane = function ({ onClose }) {
               <div>${m.chips.map((c, j) => html`
                 <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
                   <span>${c.label}</span><b>${c.value}</b><span>${c.sub}</span>
-                  ${c.question_id && html`<span style=${{ color: "var(--plum-deep)" }}>View metric →</span>`}
+                  ${c.question_id && html`<span style=${{ color: "var(--blue-deep)" }}>View metric →</span>`}
                 </div>`)}</div>`}
           </div>`)}
         ${busy && html`<div class="msg bot"><${Spinner} /> Checking the benchmark…</div>`}
@@ -634,7 +634,7 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
     <${Modal} onClose=${onClose}>
       ${done ? html`
         <div style=${{ textAlign: "center", padding: "var(--s4) 0" }}>
-          <div style=${{ color: "var(--plum)", marginBottom: "var(--s2)" }}><${Icon} name="sparkle" size=${22} /></div>
+          <div style=${{ color: "var(--blue)", marginBottom: "var(--s2)" }}><${Icon} name="sparkle" size=${22} /></div>
           <h2 class="section-title">Thanks — we'll consider this for the next benchmark cycle.</h2>
           <button class="btn" style=${{ marginTop: "var(--s3)" }} onClick=${onClose}>Close</button>
         </div>` : html`

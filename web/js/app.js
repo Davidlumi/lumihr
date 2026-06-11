@@ -169,14 +169,10 @@ function App() {
               ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
             </div>
           </div>
-          <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
-            <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
-              ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} />`}
-              <button class="btn quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>
-                <${Icon} name="user-plus" size=${13} /> Request a metric</button>
-              <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
-            </div>
-            <div class="hint" style=${{ textAlign: "right" }}>Ask in plain English.</div>
+          <div class="topbar-right">
+            ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} />`}
+            <button class="link-quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>Request a metric</button>
+            <button class="btn feature" title="Ask anything about your benchmark, in plain English" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
           </div>
         </div>
         <main class="content">
@@ -232,8 +228,8 @@ window.ClockChip = function ({ contrib }) {
       ? "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then."
       : "Complete 90% of your Core reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps."} onClick=${() => nav("/submission")}>
       <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
-        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum-tint-2)" stroke-width="3"/>
-        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum)" stroke-width="3" stroke-linecap="round"
+        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue-tint-2)" stroke-width="3"/>
+        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"
           stroke-dasharray=${Math.max(2, Math.min(100, pct / 90 * 100)) * 0.503 + " 100"} transform="rotate(-90 10 10)"/>
       </svg></span>
       ${label}
@@ -286,7 +282,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
       <div class="card welcome-hero">
         <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
           <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
-            <span style=${{ color: "var(--plum)" }}><${Icon} name="sparkle" size=${18} /></span>
+            <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
             <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>You're set up — here's what's next</b>
           </div>
           <p style=${{ margin: "2px 0 0" }}>Explore your reward benchmark below — every metric and all
@@ -312,7 +308,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
     <div class="card welcome-hero">
       <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
         <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
-          <span style=${{ color: "var(--plum)" }}><${Icon} name="sparkle" size=${18} /></span>
+          <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
           <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>
             ${pct < 1 ? "Welcome to lumi" : "You're on your way"}</b>
         </div>

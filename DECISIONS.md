@@ -144,3 +144,20 @@ reproduces by hand.
   specified, but the three documents in `legal/` are all marked
   "DRAFT — pending legal review" and the binding mechanism must be confirmed
   by a qualified solicitor before launch.
+
+## Recolour plum → blue + top-bar tidy (2026-06-11)
+
+- **One primary**: brand switched plum → warm ink-blue at the token layer only.
+  --blue #2547B0 (primary; ~7.7:1 on warm paper), --blue-deep #1E3A8A
+  (hover/pressed), --blue-bright #2E62D9 (links/interactive; ~5.2:1, AA),
+  --blue-tint/-2 for fills. Deliberately NOT default corporate navy.
+- **Teal retired**: a second cool accent would compete with the single primary.
+  Links and the one JS usage now use --blue-bright. Zero plum/teal tokens or
+  var() references remain in web/ (grep-verified).
+- **Untouched**: green/amber/red performance palette (meaning, not identity),
+  warm paper + warm neutrals, --navy structural dark (one table-header use).
+  The categorical ramp re-rooted from blue (#2547B0 → paper, 6 steps).
+- **Top bar**: one 36px baseline for all controls; the contribution clock is a
+  quiet outlined status pill (not a filled control); "Request a metric" demoted
+  to a text link; the right-side helper line removed. Peer-cut helper stays
+  quiet under its control.

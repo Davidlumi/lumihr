@@ -55,7 +55,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
             You're above the peer <${Term} word="median">median<//> on
-            <span style=${{ color: "var(--plum-deep)" }}> ${h.above_median} of ${h.comparable_metrics} </span>
+            <span style=${{ color: "var(--blue-deep)" }}> ${h.above_median} of ${h.comparable_metrics} </span>
             ${" "}<span class="hastip" style=${{ position: "relative", cursor: "help", borderBottom: "1px dotted var(--ink-faint)" }}>comparable metrics<span class="tip">Counted wherever your answer and at least 5 peers' answers can be compared, adjusted for whether higher or lower is the good direction. Anything based on fewer than 5 organisations is left out.</span></span>
           </div>
           <div class="caption">${h.below_median} sit below the median and ${h.broadly_in_line} are broadly in line — based on ${cutLabelOf(cut, cuts)}.</div>
@@ -152,7 +152,7 @@ window.OpportunityTile = function ({ opp, contrib }) {
     <div class="opp-hero insight-lock">
       <div class="eyebrow">Total identified opportunity</div>
       <div class="blurred" aria-hidden="true">
-        <div class="metric-value lg" style=${{ color: "var(--plum)" }}>£———<span class="unit">/yr</span></div>
+        <div class="metric-value lg" style=${{ color: "var(--blue)" }}>£———<span class="unit">/yr</span></div>
         <div class="caption">what closing your gaps to the peer median is worth</div>
         <div class="opp-row"><span>Largest opportunity</span><b>£——/yr</b></div>
         <div class="opp-row"><span>Second opportunity</span><b>£——/yr</b></div>
@@ -170,7 +170,7 @@ window.OpportunityTile = function ({ opp, contrib }) {
       <div class="eyebrow">Total identified opportunity</div>
       ${opp.fte_known ? html`
         <div>
-          <div class="metric-value lg" style=${{ color: "var(--plum)" }}>${fmtGBPCompact(total)}<span class="unit">/yr</span></div>
+          <div class="metric-value lg" style=${{ color: "var(--blue)" }}>${fmtGBPCompact(total)}<span class="unit">/yr</span></div>
           <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
             html`potential savings if you matched the peer median${opp.total_investment_to_p50_gbp ? html` — plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
             opp.total_investment_to_p50_gbp > 0 ? "what it would take to close your benefit gaps to the peer median" : "no gaps to the peer median identified"}</div>
@@ -204,13 +204,13 @@ window.TrajectoryTile = function ({ movement }) {
     <div style=${{ flex: "1 1 190px", minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)", display: "flex", flexDirection: "column" }}>
       <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Your journey</div>
       <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "10px 0 6px" }}>
-        <polyline points="4,30 40,30" stroke="var(--plum)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="40" cy="30" r="5" fill="var(--plum)"/>
-        <circle cx="40" cy="30" r="9" fill="none" stroke="var(--plum-tint-2)" stroke-width="2"/>
-        <polyline points="40,30 80,24 120,20 160,12" stroke="var(--plum-tint-2)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
-        <circle cx="160" cy="12" r="3.5" fill="none" stroke="var(--plum-tint-2)" stroke-width="1.5"/>
+        <polyline points="4,30 40,30" stroke="var(--blue)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="30" r="5" fill="var(--blue)"/>
+        <circle cx="40" cy="30" r="9" fill="none" stroke="var(--blue-tint-2)" stroke-width="2"/>
+        <polyline points="40,30 80,24 120,20 160,12" stroke="var(--blue-tint-2)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
+        <circle cx="160" cy="12" r="3.5" fill="none" stroke="var(--blue-tint-2)" stroke-width="1.5"/>
       </svg>
-      <div class="caption" style=${{ color: "var(--ink-soft)" }}><b style=${{ color: "var(--plum)" }}>This is your baseline.</b>${" "}
+      <div class="caption" style=${{ color: "var(--ink-soft)" }}><b style=${{ color: "var(--blue)" }}>This is your baseline.</b>${" "}
         From your next cycle you'll see exactly where you've moved — every card grows a "vs last time" story.</div>
     </div>`;
 };
