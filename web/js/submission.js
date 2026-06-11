@@ -3,16 +3,80 @@
 
 window.SubmissionPage = function ({ me, refreshMe, section }) {
   const [state, setState] = useState(null);
-  const refresh = () => api("/api/submission/state").then(setState);
+  const [err, setErr] = useState(null);
+  const refresh = () => api("/api/submission/state").then(setState).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, []);
+  if (err) return html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task"
+    body=${err} />`;
   if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  if (!state.is_admin) return html`<${EmptyState} icon="lock" title="Submission is an admin task"
-    body="Only admins can enter or edit your organisation's data. Ask your lumi admin for access." />`;
+  if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
+    onAccepted=${() => { refresh(); refreshMe(); }} />`;
   if (!state.firmographics_done) return html`<${FirmographicsStep} state=${state} onDone=${() => { refresh(); refreshMe(); }} />`;
   if (section === "review") return html`<${ReviewStep} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
   if (section) return html`<${SectionForm} sp=${section} state=${state} refresh=${refresh} />`;
   return html`<${SubmissionHome} state=${state} />`;
 };
+
+/* Layer 2 — the Data Contribution Terms. Accepted once, by an Admin, on
+   behalf of the organisation, before first submission. Starts the 30-day
+   contribution clock. */
+function DataTermsGate({ me, onAccepted }) {
+  const [terms, setTerms] = useState(null);
+  const [tick, setTick] = useState(false);
+  const [full, setFull] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  useEffect(() => { api("/api/terms").then(setTerms).catch(e => setErr(e.message)); }, []);
+  const isAdmin = me.user.role === "admin";
+  const accept = async () => {
+    setBusy(true); setErr(null);
+    try { await api("/api/terms/accept-data", { method: "POST", body: { accept: tick } }); onAccepted(); }
+    catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  return html`
+    <div style=${{ maxWidth: "680px" }}>
+      <h1 class="display-title">Data Contribution Terms</h1>
+      <p>Before your organisation's first submission, your Admin reviews and accepts the terms that
+      govern how contributed data is used. ${isAdmin ? "You accept once, on behalf of your whole organisation — your team never re-accepts." :
+      "Your Admin does this — once accepted, you can begin submitting."}</p>
+      <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
+        <h2 class="section-title">The essentials</h2>
+        <div class="terms-li">• Organisation-level data only — no employee-level or personal data.</div>
+        <div class="terms-li">• Your answers appear only inside anonymised aggregates — never shown to another member.</div>
+        <div class="terms-li">• Nothing is shown unless at least <b>5 organisations</b> contribute to it (the suppression rule).</div>
+        <div class="terms-li">• Hosted in the UK/EU. Never sold, never shared for third-party use, never used to train external AI.</div>
+        <div class="terms-li">• You can export your own data any time, and ask for it to be deleted.</div>
+        <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)" }}>
+          <a onClick=${e => { e.preventDefault(); setFull(!full); }} style=${{ cursor: "pointer" }}>
+            ${full ? "Hide the full terms" : "Read the full terms"}</a>
+          <a href="/api/terms/dpa" download>Download the full Data Sharing Agreement (DPA)</a>
+        </div>
+        ${full && terms && html`
+          <div style=${{ maxHeight: "320px", overflow: "auto", border: "1px solid var(--border)",
+                         borderRadius: "var(--radius-sm)", padding: "var(--s3)", marginTop: "var(--s3)" }}>
+            <${TermsText} text=${terms.data_contribution.text} />
+          </div>`}
+        <div class="caption" style=${{ marginTop: "var(--s3)" }}>
+          <span class="chip warn">DRAFT — pending legal review · v${terms ? terms.data_contribution.version : "…"}</span>
+        </div>
+      </div>
+      ${isAdmin ? html`
+        <div class="card" style=${{ padding: "var(--s4)" }}>
+          <label class="terms-tick">
+            <input type="checkbox" checked=${tick} onChange=${e => setTick(e.target.checked)} />
+            <span><b>I accept these Data Contribution Terms on behalf of my organisation.</b></span>
+          </label>
+          <div class="caption" style=${{ margin: "4px 0 10px" }}>Your acceptance is recorded (organisation,
+            your name, date, terms version) and starts your organisation's 30 days to contribute.</div>
+          ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+          <button class="btn primary" disabled=${!tick || busy} onClick=${accept}>
+            ${busy ? html`<${Spinner} />` : "Accept and begin"}</button>
+        </div>` : html`
+        <${EmptyState} icon="lock" title="Waiting on your Admin"
+          body="Only your organisation's Admin can accept the Data Contribution Terms. Once they have, you can start submitting here — your 30 days to contribute start at that moment, so no time is being lost." />`}
+    </div>`;
+}
 
 function SubmissionHome({ state }) {
   const totalQ = state.sections.reduce((a, s) => a + s.questions, 0);

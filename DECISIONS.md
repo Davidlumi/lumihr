@@ -113,3 +113,34 @@ reproduces by hand.
 5. **Snapshot lifecycle tooling**: open/close collection windows, recompute history,
    movement deltas and trajectory rendering when window 2 exists (schema and UI slots are
    already in place), plus automated backups of the append-only answer history.
+
+## Roles, lifecycle & layered terms (2026-06-11)
+
+- **Three roles**: Admin (full control; only role that accepts org terms),
+  Contributor (submits/edits data), Viewer (read-only). Enforced at the route
+  layer (`require_admin` / `require_editor`), not just hidden in the UI.
+- **Org-level vs user-level**: the data, benchmark, 30-day clock and Data
+  Contribution agreement belong to the organisation; identity, login, role and
+  Platform Terms acceptance belong to the user. `terms_acceptances` logs every
+  acceptance (org, user, kind, version, timestamp).
+- **Clock start superseded**: the 30-day contribution clock now starts when the
+  Admin accepts the Data Contribution Terms — not at signup or first login —
+  so setup time (reading terms, inviting the team, DPO review) never eats into
+  the 30 days. `orgs.clock_start` stays NULL until acceptance.
+- **Admins are made by promotion, not invite**: invites offer Contributor/Viewer
+  only; an Admin promotes a joined member. Sole-admin protection: the last
+  Admin cannot be demoted or removed ("Promote another Admin before removing
+  yourself"); an org can never have zero Admins.
+- **Member removal** reassigns org artifacts (invites/shares/board packs) to the
+  acting admin; the terms-acceptance log survives staff turnover by design
+  (the org's agreement outlives the accepting Admin's account).
+- **Sole-Admin account recovery**: deliberately NOT built. If a sole Admin's
+  account is lost, recovery is a manual lumi-side process (verify the
+  requester, promote a user via SQL). Flagged for David — revisit if it
+  happens more than rarely.
+- **LEGAL CAVEAT (for David)**: whether click-acceptance ("I accept these Data
+  Contribution Terms on behalf of my organisation") validly binds an
+  organisation is a legal question. The flow, wording and logging are built as
+  specified, but the three documents in `legal/` are all marked
+  "DRAFT — pending legal review" and the binding mechanism must be confirmed
+  by a qualified solicitor before launch.

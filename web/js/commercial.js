@@ -447,14 +447,21 @@ window.SharesPage = function () {
 };
 
 // ------------------------------------------------------------------ team ---
+const ROLE_DESC = {
+  admin: "Full control — data, team, sharing, and accepting the org's data terms.",
+  contributor: "Submits and edits the organisation's reward data.",
+  viewer: "Sees the benchmark and board packs — no editing.",
+};
+
 window.TeamPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("viewer");
+  const [role, setRole] = useState("contributor");
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const refresh = () => api("/api/team").then(setData);
   useEffect(() => { refresh(); }, []);
+  const isAdmin = me.user.role === "admin";
   const invite = async () => {
     setErr(null); setMsg(null);
     try {
@@ -463,38 +470,75 @@ window.TeamPage = function ({ me }) {
       setEmail(""); refresh();
     } catch (e) { setErr(e.message); }
   };
+  const setMemberRole = async (uEmail, newRole) => {
+    setErr(null); setMsg(null);
+    try {
+      await api("/api/team/role", { method: "PUT", body: { email: uEmail, role: newRole } });
+      setMsg(`${uEmail} is now ${ROLE_LABEL[newRole]}.`); refresh();
+    } catch (e) { setErr(e.message); refresh(); }
+  };
+  const remove = async (uEmail) => {
+    setErr(null); setMsg(null);
+    if (!window.confirm(`Remove ${uEmail} from your organisation? Their account is deleted; the org's data is unaffected.`)) return;
+    try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); }
+    catch (e) { setErr(e.message); }
+  };
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`
-    <div style=${{ maxWidth: "760px" }}>
+    <div style=${{ maxWidth: "800px" }}>
       <h1 class="display-title">Team</h1>
+      <p class="caption">Everyone here works on the same organisation — one dataset, one benchmark, one
+        contribution clock. Roles decide who can edit.</p>
       <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s4) 0" }}>
         <table class="data">
-          <thead><tr><th>Member</th><th>Role</th><th>Joined</th></tr></thead>
+          <thead><tr><th>Member</th><th>Role</th><th>Joined</th>${isAdmin && html`<th></th>`}</tr></thead>
           <tbody>
             ${data.users.map(u => html`
-              <tr key=${u.email}><td><b>${u.display_name || u.email}</b><div class="caption">${u.email}</div></td>
-              <td><span class=${"chip " + (u.role === "admin" ? "accent" : "")}>${u.role}</span></td>
-              <td class="caption">${new Date(u.created_at + "Z").toLocaleDateString("en-GB")}</td></tr>`)}
+              <tr key=${u.email}><td><b>${u.display_name || u.email}</b><div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
+              <td>${isAdmin ? html`
+                <select class="ctl" style=${{ minWidth: "130px" }} value=${u.role}
+                  title=${ROLE_DESC[u.role]}
+                  onChange=${e => setMemberRole(u.email, e.target.value)}>
+                  <option value="admin">Admin</option>
+                  <option value="contributor">Contributor</option>
+                  <option value="viewer">Viewer</option>
+                </select>` :
+                html`<span class=${"chip " + (u.role === "admin" ? "accent" : "")} title=${ROLE_DESC[u.role]}>${ROLE_LABEL[u.role] || u.role}</span>`}</td>
+              <td class="caption">${new Date(u.created_at + "Z").toLocaleDateString("en-GB")}</td>
+              ${isAdmin && html`<td style=${{ textAlign: "right" }}>
+                <button class="btn small quiet" onClick=${() => remove(u.email)}>Remove</button></td>`}</tr>`)}
           </tbody>
         </table>
+        ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginTop: "8px" }}>${err}</div>`}
+        <div class="caption" style=${{ marginTop: "10px" }}>
+          <b>Admin</b> — ${ROLE_DESC.admin}<br/>
+          <b>Contributor</b> — ${ROLE_DESC.contributor}<br/>
+          <b>Viewer</b> — ${ROLE_DESC.viewer}<br/>
+          Your organisation always keeps at least one Admin — promote a colleague before stepping back.
+        </div>
       </div>
-      ${me.user.role === "admin" && html`
+      ${isAdmin && html`
         <div class="card" style=${{ padding: "var(--s4)" }}>
           <h2 class="section-title">Invite a colleague</h2>
           <div class="row">
             <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" value=${email} onInput=${e => setEmail(e.target.value)} />
             <select class="ctl" value=${role} onChange=${e => setRole(e.target.value)}>
+              <option value="contributor">Contributor — fills the questionnaire</option>
               <option value="viewer">Viewer — dashboards & board packs</option>
-              <option value="admin">Admin — also submit data, share, manage team</option>
             </select>
             <button class="btn primary" onClick=${invite}>Send invite</button>
           </div>
-          ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
-          ${err && html`<div class="error-text" style=${{ marginTop: "8px" }}>${err}</div>`}
+          <div class="caption" style=${{ marginTop: "6px" }}>Invites expire after 7 days. Need another Admin?
+            Invite them as Contributor, then promote them above. Joiners accept the Platform Terms only —
+            your Data Contribution agreement covers the whole organisation.</div>
           ${data.invites.length > 0 && html`
             <h3 style=${{ fontSize: "13px", margin: "16px 0 6px" }}>Outstanding invites</h3>
             ${data.invites.map(i => html`
-              <div key=${i.token} class="caption">${i.email} (${i.role}) — expires ${new Date(i.expires_at + "Z").toLocaleDateString("en-GB")}</div>`)}`}
+              <div key=${i.token} class="caption row spread">
+                <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${new Date(i.expires_at + "Z").toLocaleDateString("en-GB")}</span>
+                <button class="btn small quiet" onClick=${async () => { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); }}>Revoke</button>
+              </div>`)}`}
         </div>`}
     </div>`;
 };
@@ -532,6 +576,21 @@ window.SettingsPage = function ({ me, refreshMe }) {
         ${editable ? html`<button class="btn primary" onClick=${save}>Save assumptions</button>` :
         html`<div class="caption">Only admins can edit assumptions.</div>`}
         ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
+      </div>
+      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Terms & agreements</h2>
+        ${me.org.data_terms && me.org.data_terms.accepted ? html`
+          <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on
+            ${" "}${new Date(me.org.data_terms.accepted_at + "Z").toLocaleDateString("en-GB")} (v${me.org.data_terms.version}).
+            This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
+          <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
+            them on the <a href="#/submission">Submit data</a> page before the first submission.</p>`}
+        <div class="row" style=${{ gap: "var(--s3)" }}>
+          <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
+        </div>
+        <div class="caption" style=${{ marginTop: "8px" }}>The DPA is optional — for members whose legal or
+          data-protection teams want the fuller instrument. All terms are
+          ${" "}<span class="chip warn">DRAFT — pending legal review</span></div>
       </div>
       ${me.org.tier_entitlement === "full" && me.user.role === "admin" && html`
         <div class="card" style=${{ padding: "var(--s5)" }}>

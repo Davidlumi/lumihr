@@ -473,3 +473,17 @@ td.num, th.num { text-align: right; }
   align-items: center; justify-content: center; gap: var(--s2); text-align: center;
   padding: var(--s3);
 }
+
+/* ----- roles, lifecycle & terms ----- */
+.terms-tick { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; cursor: pointer; font-size: var(--fs-body); }
+.terms-tick input { margin-top: 3px; accent-color: var(--plum); width: 16px; height: 16px; flex: none; }
+.terms-text h2 { font-family: var(--font-head); font-size: var(--fs-h3); margin: 0 0 6px; }
+.terms-text h3 { font-family: var(--font-head); font-size: var(--fs-body); margin: 12px 0 4px; }
+.terms-text p { margin: 4px 0; }
+.terms-li { margin: 4px 0 4px 6px; }
+.next-step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.next-step-n {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--plum-tint-2);
+  color: var(--plum-deep); font: 700 12px/1 var(--font-body);
+}

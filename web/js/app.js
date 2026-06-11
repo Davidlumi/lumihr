@@ -131,7 +131,7 @@ function App() {
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
           <button class=${navCls(route, "/mydata")} onClick=${() => nav("/mydata")}><${Icon} name="table" size=${15} /> My data</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/submission")} onClick=${() => nav("/submission")}><${Icon} name="pencil" size=${15} /> Submit data</button>`}
+          ${(me.user.role === "admin" || me.user.role === "contributor") && html`<button class=${navCls(route, "/submission")} onClick=${() => nav("/submission")}><${Icon} name="pencil" size=${15} /> Submit data</button>`}
           <button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>
           ${me.user.role === "admin" && html`<button class=${navCls(route, "/shares")} onClick=${() => nav("/shares")}><${Icon} name="link" size=${15} /> Manage shares</button>`}
           <button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>
@@ -224,9 +224,13 @@ window.ClockChip = function ({ contrib }) {
   const pct = Math.round(contrib.core_pct || 0);
   const label = contrib.reduced
     ? "Benchmark paused — complete to restore"
+    : !contrib.clock_started
+    ? "Next step: accept the data terms"
     : `Reward data ${pct}% · ${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} to unlock insights`;
   return html`
-    <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title="Complete 90% of your Core reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps." onClick=${() => nav("/submission")}>
+    <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title=${!contrib.clock_started
+      ? "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then."
+      : "Complete 90% of your Core reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps."} onClick=${() => nav("/submission")}>
       <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum-tint-2)" stroke-width="3"/>
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--plum)" stroke-width="3" stroke-linecap="round"
@@ -239,7 +243,7 @@ window.ClockChip = function ({ contrib }) {
 /* Gentle reminders as the deadline nears (7 days / 1 day), and the fair,
    forewarned day-30 message. Quiet banners, never modals. */
 window.ContributionBanner = function ({ contrib }) {
-  if (contrib.insights_unlocked) return null;
+  if (contrib.insights_unlocked || !contrib.clock_started) return null;
   const pct = Math.round(contrib.core_pct || 0);
   if (contrib.reduced) return html`
     <div class="card contrib-banner paused">
@@ -264,8 +268,46 @@ window.ContributionBanner = function ({ contrib }) {
 
 /* The warm first-run welcome on the overview — confident and light, one
    obvious next step. Founding members contribute data, never payment. */
-window.WelcomeHero = function ({ contrib, pool }) {
+window.WelcomeHero = function ({ contrib, pool, me }) {
   const pct = Math.round(contrib.core_pct || 0);
+  const role = me && me.user ? me.user.role : "viewer";
+  if (!contrib.terms_accepted) {
+    /* First-run "you're set up — next steps": welcoming, not a wizard. */
+    const steps = [
+      { n: 1, label: "Review and accept the Data Contribution Terms", done: false,
+        hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
+                               : "Your Admin does this — nothing is needed from you yet." },
+      { n: 2, label: "Complete your reward data", done: false,
+        hint: "180 questions, autosaved — insights unlock at 90% of Core." },
+      { n: 3, label: "Invite your team", done: false,
+        hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
+    ];
+    return html`
+      <div class="card welcome-hero">
+        <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
+          <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
+            <span style=${{ color: "var(--plum)" }}><${Icon} name="sparkle" size=${18} /></span>
+            <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>You're set up — here's what's next</b>
+          </div>
+          <p style=${{ margin: "2px 0 0" }}>Explore your reward benchmark below — every metric and all
+            ${" "}${pool.responding_orgs} peer organisations are open to you from day one. Your 30 days to
+            contribute only start when your Admin accepts the Data Contribution Terms — setup time is never
+            counted against you.</p>
+        </div>
+        <div style=${{ flex: "1.2 1 280px", minWidth: "260px" }}>
+          ${steps.map(st => html`
+            <div key=${st.n} class="next-step">
+              <span class="next-step-n">${st.n}</span>
+              <div><b>${st.label}</b><div class="caption">${st.hint}</div></div>
+            </div>`)}
+          <div class="row" style=${{ marginTop: "var(--s2)" }}>
+            ${role === "admin" && html`<button class="btn primary" onClick=${() => nav("/submission")}>Review the data terms</button>`}
+            ${role === "admin" && html`<button class="btn" onClick=${() => nav("/team")}>Invite your team</button>`}
+            ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/superpower/Reward")}>Explore the benchmark</button>`}
+          </div>
+        </div>
+      </div>`;
+  }
   return html`
     <div class="card welcome-hero">
       <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>

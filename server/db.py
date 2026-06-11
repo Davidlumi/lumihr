@@ -228,6 +228,19 @@ CREATE TABLE IF NOT EXISTS metric_requests (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Layered terms acceptance log: who accepted what, for which org, when, and
+-- which version. kind='platform' is user-level; kind='data_contribution' is
+-- the org-level agreement (accepted once by an Admin on the org's behalf).
+CREATE TABLE IF NOT EXISTS terms_acceptances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    kind TEXT NOT NULL,                -- platform | data_contribution
+    version TEXT NOT NULL,
+    accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_terms_org ON terms_acceptances(org_id, kind);
+
 -- Generated board packs (narrative cached so the print view is stable).
 CREATE TABLE IF NOT EXISTS board_packs (
     pack_id TEXT PRIMARY KEY,

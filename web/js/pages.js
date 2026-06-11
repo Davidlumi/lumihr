@@ -49,7 +49,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
       </div>
 
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
-        html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} />`}
+        html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
         <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>

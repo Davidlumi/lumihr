@@ -25,8 +25,9 @@ python3 -m uvicorn app:app --port 8060
 
 | Role   | Email                          | Password         |
 |--------|--------------------------------|------------------|
-| Admin  | `director@thornbridge.example` | `lumi-demo-2026` |
-| Viewer | `ceo@thornbridge.example`      | `lumi-view-2026` |
+| Admin       | `director@thornbridge.example` | `lumi-demo-2026` |
+| Contributor | `analyst@thornbridge.example`  | `lumi-data-2026` |
+| Viewer      | `ceo@thornbridge.example`      | `lumi-view-2026` |
 
 New organisations can self-register from the sign-in screen (they join at Core tier and must
 complete ≥90% of Core questions before peer comparison unlocks — the co-op rule).

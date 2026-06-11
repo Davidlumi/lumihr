@@ -76,23 +76,31 @@ def contribution_state(conn, org):
     """The day-one model: explore freely for CLOCK_DAYS; hitting the Core
     target unlocks insights; past the deadline unmet, the benchmark reduces
     to a teaser until the submission is completed. Co-op contribution, never
-    a paywall."""
+    a paywall.
+
+    The clock starts when the Admin accepts the Data Contribution Terms —
+    the moment the org can actually contribute — NOT at signup or first
+    login, so setup time never eats into the 30 days."""
     completion = core_completion(conn, org)
     unlocked = bool(org["submission_complete"]) or completion >= CORE_TARGET_PCT
-    clock_start = org["clock_start"] or org["created_at"]
-    try:
-        started = datetime.strptime(clock_start[:19], "%Y-%m-%d %H:%M:%S")
-    except (ValueError, TypeError):
-        started = datetime.utcnow()
-    days_used = (datetime.utcnow() - started).days
-    days_left = max(0, CLOCK_DAYS - days_used)
+    terms = org_data_terms(conn, org["org_id"])
+    clock_start = org["clock_start"]
+    days_left = None
+    if clock_start and not unlocked:
+        try:
+            started = datetime.strptime(clock_start[:19], "%Y-%m-%d %H:%M:%S")
+        except (ValueError, TypeError):
+            started = datetime.utcnow()
+        days_left = max(0, CLOCK_DAYS - (datetime.utcnow() - started).days)
     return {
         "core_pct": completion,
         "target_pct": CORE_TARGET_PCT,
         "insights_unlocked": unlocked,
+        "terms_accepted": terms is not None,
+        "clock_started": bool(clock_start),
         "clock_start": clock_start,
-        "days_left": days_left if not unlocked else None,
-        "reduced": (not unlocked) and days_left <= 0,
+        "days_left": days_left,
+        "reduced": bool(clock_start) and (not unlocked) and days_left <= 0,
     }
 
 
@@ -165,6 +173,54 @@ def require_admin(request):
     if user["role"] != "admin":
         raise HTTPException(403, "Admin role required")
     return user, org
+
+
+def require_editor(request):
+    """Admin or Contributor — the roles allowed to submit/edit the org's data."""
+    user, org = require_user(request)
+    if user["role"] not in ("admin", "contributor"):
+        raise HTTPException(403, "Your role (Viewer) can see the benchmark but not edit data. "
+                                 "Ask your Admin for the Contributor role if you need to submit.")
+    return user, org
+
+
+# ----------------------------------------------------------- layered terms --
+PLATFORM_TERMS_VERSION = "1.0-draft"
+DATA_TERMS_VERSION = "1.0-draft"
+LEGAL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "legal")
+LEGAL_FILES = {
+    "platform": "platform-terms-v1.0.md",
+    "data_contribution": "data-contribution-terms-v1.0.md",
+    "dpa": "data-sharing-agreement-dpa-v1.0-draft.md",
+}
+
+
+def legal_text(kind):
+    with open(os.path.join(LEGAL_DIR, LEGAL_FILES[kind]), encoding="utf-8") as f:
+        return f.read()
+
+
+def record_acceptance(conn, org_id, user_id, kind, version):
+    conn.execute("INSERT INTO terms_acceptances(org_id, user_id, kind, version) VALUES (?,?,?,?)",
+                 (org_id, user_id, kind, version))
+    conn.commit()
+
+
+def org_data_terms(conn, org_id):
+    """The org-level Data Contribution agreement (latest acceptance), or None."""
+    return conn.execute(
+        "SELECT t.*, u.email AS user_email, u.display_name AS user_name "
+        "FROM terms_acceptances t LEFT JOIN users u ON u.user_id = t.user_id "
+        "WHERE t.org_id=? AND t.kind='data_contribution' ORDER BY t.accepted_at DESC, t.id DESC LIMIT 1",
+        (org_id,)).fetchone()
+
+
+def require_data_terms(conn, org):
+    """Submission routes are blocked until the org's Admin has accepted the
+    Data Contribution Terms. Seed orgs never hit this (no users)."""
+    if org_data_terms(conn, org["org_id"]) is None:
+        raise HTTPException(403, "Review and accept the Data Contribution Terms to begin — "
+                                 "your organisation's Admin accepts them once, on the Submit data page.")
 
 
 def effective_tier(user, org):
@@ -382,6 +438,8 @@ async def register(request: Request):
             raise HTTPException(400, "Missing %s" % f)
     if len(body["password"]) < 8:
         raise HTTPException(400, "Password must be at least 8 characters.")
+    if body.get("accept_platform_terms") is not True:
+        raise HTTPException(400, "Please accept the Platform Terms of Use to create your account.")
     conn = get_conn()
     nn = re.sub(r"[^a-z0-9]", "", body["org_name"].lower())
     if conn.execute("SELECT 1 FROM orgs WHERE normalized_name=?", (nn,)).fetchone():
@@ -390,13 +448,16 @@ async def register(request: Request):
         raise HTTPException(400, "That email already has an account.")
     org_id = str(uuid.uuid4())
     # founding members: first year free with full access — the contribution
-    # clock is about data, never payment (day-one experience brief)
+    # clock is about data, never payment (day-one experience brief).
+    # clock_start stays NULL until the Admin accepts the Data Contribution
+    # Terms — setup time must not eat into the 30 days.
     conn.execute(
-        "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified, clock_start) "
-        "VALUES (?,?,?,'signup','full',0,datetime('now'))", (org_id, body["org_name"].strip(), nn))
+        "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified) "
+        "VALUES (?,?,?,'signup','full',0)", (org_id, body["org_name"].strip(), nn))
     conn.commit()
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
                                body.get("display_name"))
+    record_acceptance(conn, org_id, uid, "platform", PLATFORM_TERMS_VERSION)
     token = auth_lib.create_session(uid)
     resp = JSONResponse({"ok": True})
     resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
@@ -441,10 +502,6 @@ async def me(request: Request):
     completion = core_completion(conn, org)
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
     vis = visible_questions()
-    if not org["clock_start"] and not org["submission_complete"]:
-        conn.execute("UPDATE orgs SET clock_start=datetime('now') WHERE org_id=?", (org["org_id"],))
-        conn.commit()
-        org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone())
     contrib = contribution_state(conn, org)
     if contrib["insights_unlocked"] and not org["insights_unlocked_at"]:
         conn.execute("UPDATE orgs SET insights_unlocked_at=datetime('now') WHERE org_id=?", (org["org_id"],))
@@ -461,7 +518,13 @@ async def me(request: Request):
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
                 "tier_entitlement": org["tier_entitlement"], "source": org["source"],
-                "submission_complete": bool(org["submission_complete"])},
+                "submission_complete": bool(org["submission_complete"]),
+                "data_terms": (lambda t: {
+                    "accepted": t is not None,
+                    "accepted_by": t and (t["user_name"] or t["user_email"] or "a former Admin"),
+                    "accepted_at": t and t["accepted_at"],
+                    "version": t and t["version"],
+                })(org_data_terms(conn, org["org_id"]))},
         "effective_tier": effective_tier(user, org),
         "core_completion_pct": completion,
         "benchmark_unlocked": bool(org["submission_complete"]) or completion >= CORE_COMPLETION_THRESHOLD * 100,
@@ -505,7 +568,8 @@ async def invite(request: Request):
     user, org = require_admin(request)
     body = await request.json()
     email = (body.get("email") or "").strip()
-    role = body.get("role") if body.get("role") in ("admin", "viewer") else "viewer"
+    # Admins are made by promotion after joining, never by invite
+    role = body.get("role") if body.get("role") in ("contributor", "viewer") else "viewer"
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Please enter a valid email address.")
     if auth_lib.find_user(email):
@@ -514,6 +578,117 @@ async def invite(request: Request):
     link = "http://localhost:8060/#/invite/%s" % token
     print("\n[lumi] TEAM INVITE for %s (%s at %s):\n       %s\n" % (email, role, org["name"], link))
     return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
+
+
+@app.put("/api/team/role")
+async def change_role(request: Request):
+    """Admin promotes/demotes a member. An org can never be left without an
+    Admin: demoting the sole Admin is blocked with a clear message."""
+    user, org = require_admin(request)
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    role = body.get("role")
+    if role not in ("admin", "contributor", "viewer"):
+        raise HTTPException(400, "Role must be admin, contributor or viewer.")
+    conn = get_conn()
+    target = conn.execute("SELECT * FROM users WHERE org_id=? AND lower(email)=?",
+                          (org["org_id"], email)).fetchone()
+    if target is None:
+        raise HTTPException(404, "No member with that email in your organisation.")
+    if target["role"] == "admin" and role != "admin":
+        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin'",
+                              (org["org_id"],)).fetchone()["c"]
+        if admins <= 1:
+            raise HTTPException(400, "Promote another Admin before removing yourself — "
+                                     "your organisation must always have at least one Admin.")
+    conn.execute("UPDATE users SET role=? WHERE user_id=?", (role, target["user_id"]))
+    conn.commit()
+    return {"ok": True, "email": target["email"], "role": role}
+
+
+@app.delete("/api/team/member")
+async def remove_member(request: Request):
+    user, org = require_admin(request)
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    conn = get_conn()
+    target = conn.execute("SELECT * FROM users WHERE org_id=? AND lower(email)=?",
+                          (org["org_id"], email)).fetchone()
+    if target is None:
+        raise HTTPException(404, "No member with that email in your organisation.")
+    if target["role"] == "admin":
+        admins = conn.execute("SELECT COUNT(*) c FROM users WHERE org_id=? AND role='admin'",
+                              (org["org_id"],)).fetchone()["c"]
+        if admins <= 1:
+            raise HTTPException(400, "Promote another Admin before removing yourself — "
+                                     "your organisation must always have at least one Admin.")
+    try:
+        # org artifacts the member created stay with the org — reassigned to
+        # the acting admin so FK constraints hold. The terms-acceptance log is
+        # deliberately untouched: the org's agreement survives staff turnover.
+        for table in ("invites", "shares", "board_packs"):
+            conn.execute("UPDATE %s SET created_by=? WHERE created_by=?" % table,
+                         (user["user_id"], target["user_id"]))
+        conn.execute("DELETE FROM sessions WHERE user_id=?", (target["user_id"],))
+        conn.execute("DELETE FROM password_resets WHERE user_id=?", (target["user_id"],))
+        conn.execute("DELETE FROM pinned_views WHERE org_id=? AND user_id=?",
+                     (org["org_id"], target["user_id"]))
+        conn.execute("DELETE FROM users WHERE user_id=?", (target["user_id"],))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    return {"ok": True, "removed": target["email"]}
+
+
+@app.delete("/api/team/invite/{token}")
+async def revoke_invite(token: str, request: Request):
+    user, org = require_admin(request)
+    conn = get_conn()
+    conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
+                 (token, org["org_id"]))
+    conn.commit()
+    return {"ok": True}
+
+
+# ============================================================ LAYERED TERMS ==
+
+@app.get("/api/terms")
+async def terms_texts():
+    """Public: the signup screen shows the Platform Terms before any account
+    exists. Both documents are DRAFT — pending legal review."""
+    return {
+        "platform": {"version": PLATFORM_TERMS_VERSION, "text": legal_text("platform")},
+        "data_contribution": {"version": DATA_TERMS_VERSION, "text": legal_text("data_contribution")},
+        "dpa_available": True,
+    }
+
+
+@app.get("/api/terms/dpa")
+async def terms_dpa():
+    return Response(legal_text("dpa"), media_type="text/markdown",
+                    headers={"Content-Disposition": 'attachment; filename="lumi-data-sharing-agreement-DRAFT.md"'})
+
+
+@app.post("/api/terms/accept-data")
+async def accept_data_terms(request: Request):
+    """The Admin accepts the Data Contribution Terms on behalf of the
+    organisation — once. This logged acceptance IS the organisational
+    agreement, and it starts the 30-day contribution clock."""
+    user, org = require_admin(request)
+    body = await request.json()
+    if body.get("accept") is not True:
+        raise HTTPException(400, "Tick the acceptance box to accept the terms.")
+    conn = get_conn()
+    if org_data_terms(conn, org["org_id"]) is not None:
+        raise HTTPException(400, "Your organisation has already accepted the Data Contribution Terms.")
+    record_acceptance(conn, org["org_id"], user["user_id"], "data_contribution", DATA_TERMS_VERSION)
+    if not org["clock_start"]:
+        conn.execute("UPDATE orgs SET clock_start=datetime('now') WHERE org_id=?", (org["org_id"],))
+        conn.commit()
+    org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone())
+    return {"ok": True, "contribution": contribution_state(conn, org),
+            "version": DATA_TERMS_VERSION}
 
 
 @app.get("/api/invite/{token}")
@@ -534,9 +709,14 @@ async def accept_invite(request: Request):
         raise HTTPException(400, "This invite link has expired or already been used.")
     if len(body.get("password") or "") < 8:
         raise HTTPException(400, "Password must be at least 8 characters.")
+    if body.get("accept_platform_terms") is not True:
+        raise HTTPException(400, "Please accept the Platform Terms of Use to join.")
     conn = get_conn()
     uid = auth_lib.create_user(row["org_id"], row["email"], body["password"], row["role"],
                                body.get("display_name"))
+    # Joiners accept the Platform Terms only — the org's Data Contribution
+    # agreement was made once by the Admin and is inherited, never re-accepted.
+    record_acceptance(conn, row["org_id"], uid, "platform", PLATFORM_TERMS_VERSION)
     conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
     token = auth_lib.create_session(uid)
@@ -1174,7 +1354,7 @@ def core_completion(conn, org):
 
 @app.get("/api/submission/state")
 async def submission_state(request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)
     conn = get_conn()
     questions = visible_questions()
     answered = {r["question_id"] for r in conn.execute(
@@ -1208,12 +1388,15 @@ async def submission_state(request: Request):
         "threshold_pct": CORE_COMPLETION_THRESHOLD * 100,
         "submission_complete": bool(org["submission_complete"]),
         "is_admin": user["role"] == "admin",
+        "is_editor": user["role"] in ("admin", "contributor"),
+        "data_terms_accepted": org_data_terms(conn, org["org_id"]) is not None,
     }
 
 
 @app.put("/api/submission/firmographics")
 async def put_firmographics(request: Request):
-    user, org = require_admin(request)
+    user, org = require_editor(request)
+    require_data_terms(get_conn(), org)
     body = await request.json()
     vals = {}
     if body.get("industry") and body["industry"] not in INDUSTRIES:
@@ -1260,7 +1443,7 @@ def _encode_signup_vector(conn, org):
 
 @app.get("/api/submission/section/{superpower}")
 async def submission_section(superpower: str, request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)
     if ACTIVE_SUPERPOWERS and superpower not in ACTIVE_SUPERPOWERS:
         raise HTTPException(404, "This section isn't available.")
     conn = get_conn()
@@ -1355,7 +1538,8 @@ def validate_answer(q, value, row_id=""):
 
 @app.put("/api/submission/draft")
 async def save_draft(request: Request):
-    user, org = require_admin(request)
+    user, org = require_editor(request)
+    require_data_terms(get_conn(), org)
     body = await request.json()
     qid = body.get("question_id")
     row_id = body.get("matrix_row_id") or ""
@@ -1378,7 +1562,7 @@ async def save_draft(request: Request):
 
 @app.post("/api/submission/validate")
 async def validate_all(request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)
     conn = get_conn()
     questions = visible_questions()
     drafts = {}
@@ -1404,7 +1588,8 @@ async def validate_all(request: Request):
 
 @app.post("/api/submission/submit")
 async def submit(request: Request):
-    user, org = require_admin(request)
+    user, org = require_editor(request)
+    require_data_terms(get_conn(), org)
     conn = get_conn()
     if org["source"] == "signup" and not org["classified"]:
         raise HTTPException(400, "Complete the 'About your organisation' step before submitting.")
@@ -1644,6 +1829,35 @@ app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
 DEMO_ADMIN = ("director@thornbridge.example", "lumi-demo-2026")
 DEMO_VIEWER = ("ceo@thornbridge.example", "lumi-view-2026")
+DEMO_CONTRIBUTOR = ("analyst@thornbridge.example", "lumi-data-2026")
+
+
+def backfill_terms(conn):
+    """Map pre-existing accounts onto the layered-terms model:
+    - every existing user is treated as having accepted the Platform Terms;
+    - any org with users and contributed data is treated as having accepted
+      the Data Contribution Terms (its first admin, so demos aren't blocked)."""
+    for u in conn.execute(
+            "SELECT user_id, org_id FROM users WHERE user_id NOT IN "
+            "(SELECT user_id FROM terms_acceptances WHERE kind='platform')").fetchall():
+        conn.execute("INSERT INTO terms_acceptances(org_id, user_id, kind, version) VALUES (?,?,?,?)",
+                     (u["org_id"], u["user_id"], "platform", PLATFORM_TERMS_VERSION))
+    for o in conn.execute(
+            "SELECT o.org_id, o.clock_start FROM orgs o WHERE "
+            "EXISTS (SELECT 1 FROM users u WHERE u.org_id=o.org_id) AND "
+            "EXISTS (SELECT 1 FROM answers a WHERE a.org_id=o.org_id) AND "
+            "NOT EXISTS (SELECT 1 FROM terms_acceptances t WHERE t.org_id=o.org_id "
+            "            AND t.kind='data_contribution')").fetchall():
+        admin = conn.execute(
+            "SELECT user_id FROM users WHERE org_id=? AND role='admin' ORDER BY created_at LIMIT 1",
+            (o["org_id"],)).fetchone()
+        if admin is None:
+            continue
+        conn.execute("INSERT INTO terms_acceptances(org_id, user_id, kind, version) VALUES (?,?,?,?)",
+                     (o["org_id"], admin["user_id"], "data_contribution", DATA_TERMS_VERSION))
+        if not o["clock_start"]:
+            conn.execute("UPDATE orgs SET clock_start=datetime('now') WHERE org_id=?", (o["org_id"],))
+    conn.commit()
 
 
 @app.on_event("startup")
@@ -1659,10 +1873,13 @@ def startup():
     if demo_org is None:
         demo_org = conn.execute("SELECT * FROM orgs WHERE classified=1 LIMIT 1").fetchone()
     if demo_org is not None:
-        for (email, pw), role in ((DEMO_ADMIN, "admin"), (DEMO_VIEWER, "viewer")):
+        for (email, pw), role in ((DEMO_ADMIN, "admin"), (DEMO_VIEWER, "viewer"),
+                                  (DEMO_CONTRIBUTOR, "contributor")):
             if not auth_lib.find_user(email):
                 auth_lib.create_user(demo_org["org_id"], email, pw, role,
                                      "Demo %s" % role.title())
         print("\n[lumi] Demo accounts on org '%s':" % demo_org["name"])
-        print("       Admin : %s / %s" % DEMO_ADMIN)
-        print("       Viewer: %s / %s\n" % DEMO_VIEWER)
+        print("       Admin      : %s / %s" % DEMO_ADMIN)
+        print("       Contributor: %s / %s" % DEMO_CONTRIBUTOR)
+        print("       Viewer     : %s / %s\n" % DEMO_VIEWER)
+    backfill_terms(conn)
