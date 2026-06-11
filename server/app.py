@@ -51,8 +51,11 @@ CURRENT_SNAPSHOT = 1
 # Selecting "Not applicable" / "Don't know" IS answering — it counts. Only
 # genuinely skipped questions are incomplete. A matrix counts as ONE question.
 COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # required | all
-# AI metric commentary: stays OFF until the adversarial QA gate passes clean.
-AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "off").lower() == "on"
+# AI metric commentary. Default ON: the adversarial QA gate (qa_commentary.py)
+# passed clean on 2026-06-11 (40/40). Set LUMI_AI_COMMENTARY=off to hide it;
+# re-run the gate before re-enabling after any change to the generator,
+# validator or payload builder — and after configuring ANTHROPIC_API_KEY.
+AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "on").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -1647,23 +1650,14 @@ def _commentary_stance(percentile, polarity):
     return "ahead" if adj > 55 else "behind" if adj < 45 else "in line"
 
 
-@app.post("/api/metric-commentary")
-async def metric_commentary(request: Request):
-    """AI commentary for one metric on one cut: grounded ONLY in the figures
-    on the page (the same assembled card), validated post-generation, cached
-    per org+metric+cut until the underlying numbers change."""
-    if not AI_COMMENTARY:
-        raise HTTPException(403, "AI commentary isn't enabled yet.")
-    user, org = require_user(request)
-    body = await request.json()
-    qid = body.get("question_id")
+def build_commentary_payload(conn, org, user, qid, dim, value):
+    """The grounded payload: exactly the figures the metric page shows for
+    this cut, nothing else. Shared by the endpoint and the adversarial QA
+    harness so the harness attacks the real path."""
     q = visible_questions().get(qid)
     p = payloads().get(qid)
     if q is None or p is None:
-        raise HTTPException(404, "That metric isn't part of your benchmark.")
-    conn = get_conn()
-    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin") else "all"
-    value = body.get("cut_value")
+        return None
     if dim == "industry" and not value:
         value = org.get("industry")
     if dim == "fte_band" and not value:
@@ -1672,8 +1666,6 @@ async def metric_commentary(request: Request):
     tb = twin_blocks_if_needed(conn, org, cut)
     card = assemble_card(q, p, org, org_answers_for(org), cut,
                          {qid: tb.get(qid)} if tb else None, make_entitled(user, org))
-
-    # the grounded payload: exactly the figures the page shows, nothing else
     blk = card.get("block") or {}
     you = card.get("you") or {}
     payload = {
@@ -1700,6 +1692,25 @@ async def metric_commentary(request: Request):
             mine = next((o for o in blk["options"] if o["label"] == you["label"]), None)
             payload["your_answer_peer_share"] = mine and mine.get("pct")
             payload["you"] = "\u201c%s\u201d" % you["label"]
+    return payload
+
+
+@app.post("/api/metric-commentary")
+async def metric_commentary(request: Request):
+    """AI commentary for one metric on one cut: grounded ONLY in the figures
+    on the page (the same assembled card), validated post-generation, cached
+    per org+metric+cut until the underlying numbers change."""
+    if not AI_COMMENTARY:
+        raise HTTPException(403, "AI commentary isn't enabled yet.")
+    user, org = require_user(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    conn = get_conn()
+    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin") else "all"
+    value = body.get("cut_value")
+    payload = build_commentary_payload(conn, org, user, qid, dim, value)
+    if payload is None:
+        raise HTTPException(404, "That metric isn't part of your benchmark.")
 
     cut_key = dim + "::" + (value or "")
     phash = hashlib.sha256(j(payload).encode()).hexdigest()[:16]

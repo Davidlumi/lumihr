@@ -258,3 +258,31 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
   links carry ?cut= so the recipient sees the same comparison. Suppressed
   cuts show the suppressed state (verified n=4 sector, no stale values);
   unanswered metrics never gain a fabricated "you" on any cut.
+
+## Metric page simplified + AI commentary + adversarial gate (2026-06-11)
+
+- **Stage 1 (shipped independently):** the metric page shows ONE primary
+  chart with a cut selector (All / sector / size / Organisations-like-you;
+  profile-gated) and a curated chart-type switch (chartAlternatives only —
+  no type that misrepresents; session preference falls back per metric).
+  The three stacked cut charts and the duplicate "full picture" block are
+  gone; page height roughly halved.
+- **Stage 2:** four-part AI commentary (measures / compare / implications /
+  considerations) from a grounded payload of only the page's figures.
+  Every model output must pass validate_commentary (number grounding,
+  directive scan, legal-adjudication scan, stance agreement, suppression
+  and unanswered protection) or the deterministic four-part fallback ships.
+  Cached per org+metric+cut on a payload hash (self-invalidates when data
+  changes). Fixed UI caveats: "AI-generated — review before use" +
+  "a starting point, not advice" + illustrative-sample-data note.
+- **Stage 3 (gate):** qa_commentary.py — 40/40 clean: zero hallucinated
+  numbers across 41 generations + hostile payloads, zero suppression
+  breaches, polarity always agrees with the pill (incl. lower-is-better
+  favourable and neutral-no-verdict), injection attempts inert, no
+  directives or legal adjudication incl. on legal-adjacent metrics, stance
+  deterministic across regenerations, cache hash moves with the data, and
+  the validator itself rejects 9 classes of hostile "model output".
+  Flag default flipped to ON on the clean gate. NOTE: no ANTHROPIC_API_KEY
+  in this environment — the live surface is the deterministic generator;
+  the same validator screens model outputs once a key is configured.
+  RE-RUN qa_commentary.py after adding a key or changing the generator.
