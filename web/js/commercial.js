@@ -65,30 +65,47 @@ window.GapRegisterPage = function ({ me, cut, cuts }) {
 
       ${rows.length === 0 ? html`<${EmptyState} icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
         body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
-      html`<div class="card" style=${{ padding: "var(--s4)" }}>
-        <table class="data">
-          <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th>
-            <th class="num">Peers with this</th><th class="num">Sector peers</th><th>Tier</th></tr></thead>
-          <tbody>
-            ${rows.slice(0, 80).map(r => html`
-              <tr key=${r.question_id}>
-                <td><b>${r.name}</b></td>
-                <td>${focused ? (r.subpower || "—") : r.superpower}</td>
-                <td>${r.org_answered ? html`<span class=${"chip " + (r.status === "in_place" ? "good" : r.status === "partial" ? "warn" : r.status === "not_in_place" ? "bad" : "")}>${r.status === "in_place" ? "In place" : r.status === "partial" ? "Partially" : r.status === "not_in_place" ? "Not in place" : "Not assessable"}</span>
-                  <div class="caption" style=${{ marginTop: "2px", maxWidth: "220px" }}>${r.org_status}</div>` :
-                  html`<span class="chip">Not answered</span>`}</td>
-                <td class="num"><b>${r.peer_adoption_pct == null ? "—" : r.peer_adoption_pct + "%"}</b><div class="caption">n=${r.n}</div></td>
-                <td class="num">${r.sector_adoption_pct == null ? "—" : r.sector_adoption_pct + "%"}</td>
-                <td><span class="chip">${r.tier}</span></td>
-              </tr>`)}
-          </tbody>
-        </table>
-        ${rows.length > 80 && html`<div class="caption" style=${{ padding: "10px" }}>Showing the top 80 of ${rows.length} rows — download the CSV for the full register.</div>`}
+      html`<div class="card" style=${{ padding: "var(--s2) var(--s5)" }}>
+        ${rows.slice(0, 80).map(r => html`<${GapRow} key=${r.question_id} r=${r} focused=${focused} />`)}
+        ${rows.length > 80 && html`<div class="caption" style=${{ padding: "var(--s3) 0" }}>Showing the top 80 of ${rows.length} — download the CSV for the full register.</div>`}
       </div>`}
     </div>`;
 };
 
-// ------------------------------------------------------------ board pack ---
+/* 8.4 — each gap reads as a sentence a colleague would say, not a table row */
+function GapRow({ r, focused }) {
+  const x = r.peer_adoption_pct != null ? Math.round(r.peer_adoption_pct / 10) : null;
+  const peers = x == null ? null : x >= 10 ? "Almost all similar organisations have this"
+    : x <= 0 ? "Very few similar organisations have this"
+    : `About ${x} in 10 similar organisations have this`;
+  const you = r.status === "in_place" ? "— and so do you."
+    : r.status === "partial" ? "— you're partly there."
+    : r.status === "not_in_place" ? "— you don't yet."
+    : r.org_answered ? "— yours isn't assessable from your answer."
+    : "— you haven't answered this yet.";
+  const chip = r.status === "in_place" ? ["good", "In place"]
+    : r.status === "partial" ? ["warn", "Partially"]
+    : r.status === "not_in_place" ? ["bad", "Not in place"]
+    : ["", r.org_answered ? "Not assessable" : "Not answered"];
+  return html`
+    <div class="gap-row">
+      <div style=${{ flex: 1, minWidth: 0 }}>
+        <div class="gap-name"><a href=${"#/metric/" + r.question_id}>${r.name}</a>
+          <span class="caption" style=${{ marginLeft: "var(--s2)" }}>${focused ? (r.subpower || "") : r.superpower}</span></div>
+        <div class="caption" style=${{ marginTop: "2px" }}>
+          ${peers ? html`${peers} <b>${you}</b>` : html`Not enough peer data to compare safely. <b>${you}</b>`}
+          ${r.org_answered && r.status !== "unknown" ? html` <span class="muted">Your answer: “${String(r.org_status).slice(0, 48)}”.</span>` : null}
+        </div>
+      </div>
+      <div class="gap-side">
+        <span class=${"chip " + chip[0]}>${chip[1]}</span>
+        <span class="caption num" title="Share of assessable peer answers at least partly in place">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"} of peers
+          ${r.sector_adoption_pct != null ? html` · ${r.sector_adoption_pct}% in your sector` : null} · n=${r.n}</span>
+      </div>
+    </div>`;
+}
+
+// ------------------------------------------------------------ board pack ---// ------------------------------------------------------------ board pack ---
 window.BoardPackPage = function ({ me, cut }) {
   const [packs, setPacks] = useState(null);
   const [gen, setGen] = useState(false);

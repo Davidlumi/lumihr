@@ -14,12 +14,12 @@
 */
 :root {
   /* ---- typefaces: Poppins for headings/brand, Inter for body & data ---- */
-  --font-head: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-head: "Plus Jakarta Sans", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   /* ---- type scale (1.25 ratio, named roles) ---- */
-  --fs-display: 30px;  --lh-display: 36px;  --fw-display: 600;
-  --fs-section: 22px;  --lh-section: 28px;  --fw-section: 600;
+  --fs-display: 30px;  --lh-display: 40px;  --fw-display: 700;
+  --fs-section: 22px;  --lh-section: 30px;  --fw-section: 600;
   --fs-card-title: 16px; --lh-card-title: 22px; --fw-card-title: 600;
   --fs-metric: 28px;   --lh-metric: 32px;   --fw-metric: 600;
   --fs-metric-lg: 40px; --lh-metric-lg: 44px;
@@ -77,7 +77,7 @@
 
   /* ---- card geometry (equal-height skeleton) ---- */
   --card-pad: var(--s5);
-  --chart-h: 150px;
+  --chart-h: 170px;
 
   /* ---- motion: quick and calm ---- */
   --ease: 160ms ease;
@@ -111,7 +111,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   .content { padding: var(--s4); }
 }
 
-.logo { font-family: var(--font-head); font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+.logo { font-family: var(--font-head); font-size: 22px; font-weight: 700; letter-spacing: 0.01em;
   color: var(--plum); padding: var(--s1) var(--s2) var(--s4); display: block; }
 .logo span { color: var(--ink-faint); font-weight: 400; }
 
@@ -174,15 +174,21 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 
 select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface); font-size: var(--fs-label); max-width: 260px; }
+/* the peer-group selector is the product's core control — first-class */
+select.peer-ctl { border-radius: 999px; padding: 0 var(--s4); font-weight: 600;
+  font-family: var(--font-head); border-color: var(--plum-tint-2); max-width: 300px; }
+select.peer-ctl.narrowed { background: var(--plum-tint); color: var(--plum-deep); border-color: var(--plum); }
+.gap-cue { width: 7px; height: 7px; border-radius: 50%; background: var(--neutral-perf);
+  display: inline-block; margin-left: var(--s1); flex: 0 0 auto; }
 select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--plum) 40%, transparent);
   border-color: var(--plum); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-card); }
 .section-title { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
-  font-weight: var(--fw-section); letter-spacing: -0.01em; margin: 0 0 var(--s3); }
+  font-weight: var(--fw-section); letter-spacing: 0.005em; margin: 0 0 var(--s3); }
 .display-title { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display);
-  font-weight: var(--fw-display); letter-spacing: -0.01em; margin: 0; }
+  font-weight: var(--fw-display); letter-spacing: 0; margin: 0; }
 .caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ink-soft); }
 .label { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--ink-soft); font-weight: 570; }
 .muted { color: var(--ink-faint); }
@@ -211,10 +217,10 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 /* the card body: plain-English answer beside the chart-as-proof.
    Stacks (sentence first) when the card gets narrow. */
 .bench-body { display: flex; gap: var(--s5); align-items: stretch; flex: 1; min-height: 0; }
-.bench-words { flex: 1 1 220px; min-width: 200px; display: flex; flex-direction: column; gap: var(--s2); }
+.bench-words { flex: 1 1 190px; min-width: 180px; display: flex; flex-direction: column; gap: var(--s2); }
 .bench-n { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: auto; cursor: help; }
 .bench-lead { font-size: var(--fs-body); line-height: 23px; font-weight: 500; color: var(--ink); }
-.bench-proof { flex: 1.35 1 300px; min-width: 0; }
+.bench-proof { flex: 1.9 1 340px; min-width: 0; position: relative; }
 @media (max-width: 700px) {
   .bench-body { flex-direction: column; }
   .bench-words { min-width: 0; }
@@ -229,10 +235,13 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 .bench-chart svg { max-width: 560px; max-height: 100%; margin: 0 auto; display: block; }
 .bench-readout { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--ink-soft);
   padding-top: var(--s2); border-top: 1px solid var(--chart-grid); }
-.bench-controls { display: flex; gap: 2px; align-items: center; opacity: 0; transition: opacity .12s;
-  position: absolute; top: 10px; right: 10px; background: var(--surface); border: 1px solid var(--border);
+.bench-controls { display: flex; gap: 2px; align-items: center; opacity: 0;
+  transition: opacity var(--ease);
+  position: absolute; top: 0; right: 0; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 2px; box-shadow: var(--shadow-card); z-index: 6; }
 .bench-card:hover .bench-controls, .bench-controls:focus-within { opacity: 1; }
+.title-info { opacity: 0; transition: opacity var(--ease); color: var(--ink-faint); flex: 0 0 auto; }
+.bench-card:hover .title-info { opacity: 1; }
 .metric-value { font-size: var(--fs-metric); line-height: var(--lh-metric); font-weight: var(--fw-metric);
   letter-spacing: -0.01em; }
 .metric-value.lg { font-size: var(--fs-metric-lg); line-height: var(--lh-metric-lg); }
@@ -251,6 +260,28 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 
 .movement { font-size: var(--fs-caption); color: var(--ink-soft); display: flex; gap: var(--s1);
   align-items: center; }
+
+/* gap register rows — plain-English list, not a spreadsheet */
+.gap-row { display: flex; gap: var(--s4); align-items: flex-start; justify-content: space-between;
+  padding: var(--s3) 0; border-bottom: 1px solid var(--chart-grid); }
+.gap-row:last-of-type { border-bottom: 0; }
+.gap-name { font-family: var(--font-head); font-weight: 600; font-size: 15px; }
+.gap-name a { color: var(--ink); }
+.gap-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s1);
+  flex: 0 0 auto; text-align: right; }
+@media (max-width: 760px) { .gap-row { flex-direction: column; } .gap-side { align-items: flex-start; text-align: left; } }
+
+/* a calm, satisfying completion moment */
+@keyframes popIn { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+.success-ring { width: 72px; height: 72px; border-radius: 50%; background: var(--favourable-tint);
+  color: var(--favourable); font-size: 34px; display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--s3); border: 2px solid var(--favourable); animation: popIn 360ms ease both; }
+.success-pop h1 { animation: riseIn 240ms ease 120ms both; }
+
+/* calm entrance: cards ease rather than snap when a filter changes */
+@keyframes riseIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.bench-grid > * { animation: riseIn 160ms ease both; }
+.sp-grid > * { animation: riseIn 160ms ease both; }
 
 /* skeleton loaders — match the card skeleton, no layout shift */
 @keyframes shimmer { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }

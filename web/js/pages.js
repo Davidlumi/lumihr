@@ -139,9 +139,21 @@ window.OpportunityTile = function ({ opp }) {
         </div>
         <div style=${{ marginTop: "var(--s2)" }}>
           ${opp.items.map(i => html`
-            <div key=${i.question_id} class="opp-row">
-              <a href=${"#/metric/" + i.question_id}>${i.label}</a>
-              <b>${fmtGBPCompact(i.to_p50_gbp)}/yr <span class="caption" style=${{ fontWeight: 400 }}>${i.direction === "saving" ? "saving" : "to close"}</span></b>
+            <div key=${i.question_id}>
+              <div class="opp-row">
+                <a href=${"#/metric/" + i.question_id}>${i.label}</a>
+                <b>${fmtGBPCompact(i.to_p50_gbp)}/yr <span class="caption" style=${{ fontWeight: 400 }}>${i.direction === "saving" ? "saving" : "to close"}</span></b>
+              </div>
+              ${i.to_p75_gbp > i.to_p50_gbp && html`
+                <div class="opp-row" style=${{ borderBottom: 0, paddingTop: 0 }}>
+                  <span class="caption">…or match the upper quartile</span>
+                  <span class="caption num">${fmtGBPCompact(i.to_p75_gbp)}/yr</span>
+                </div>`}
+              ${(i.rows || []).filter(r => r.p50 != null && r.your_value < r.p50).slice(0, 3).map(r => html`
+                <div key=${r.row_id} class="opp-row" style=${{ borderBottom: 0, paddingTop: 0 }}>
+                  <span class="caption">${r.label}</span>
+                  <span class="caption num">you ${r.your_value}% · peers ${Math.round(r.p50 * 10) / 10}%</span>
+                </div>`)}
             </div>`)}
         </div>
         <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>` :
@@ -151,19 +163,21 @@ window.OpportunityTile = function ({ opp }) {
 
 window.TrajectoryTile = function ({ movement }) {
   return html`
-    <div style=${{ flex: "1 1 190px", minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
-      <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Trajectory</div>
-      <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "6px 0" }}>
-        <polyline points="4,30 40,30" stroke="var(--you)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="40" cy="30" r="4" fill="var(--you)"/>
-        <polyline points="40,30 80,24 120,20 160,14" stroke="var(--border)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
-        <circle cx="160" cy="14" r="3.5" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+    <div style=${{ flex: "1 1 190px", minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)", display: "flex", flexDirection: "column" }}>
+      <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Your journey</div>
+      <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "10px 0 6px" }}>
+        <polyline points="4,30 40,30" stroke="var(--plum)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="30" r="5" fill="var(--plum)"/>
+        <circle cx="40" cy="30" r="9" fill="none" stroke="var(--plum-tint-2)" stroke-width="2"/>
+        <polyline points="40,30 80,24 120,20 160,12" stroke="var(--plum-tint-2)" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
+        <circle cx="160" cy="12" r="3.5" fill="none" stroke="var(--plum-tint-2)" stroke-width="1.5"/>
       </svg>
-      <div class="caption">${movement.message}</div>
+      <div class="caption" style=${{ color: "var(--ink-soft)" }}><b style=${{ color: "var(--plum)" }}>This is your baseline.</b>${" "}
+        From your next cycle you'll see exactly where you've moved — every card grows a "vs last time" story.</div>
     </div>`;
 };
 
-// ----------------------------------------------------- superpower detail ---
+// ----------------------------------------------------- superpower detail ---// ----------------------------------------------------- superpower detail ---
 window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);

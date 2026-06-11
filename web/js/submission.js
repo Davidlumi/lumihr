@@ -263,8 +263,8 @@ function ReviewStep({ state, refresh, refreshMe }) {
     setBusy(false);
   };
   if (done) return html`
-    <div style=${{ maxWidth: "560px", margin: "0 auto", textAlign: "center", paddingTop: "60px" }}>
-      <div style=${{ fontSize: "40px" }}>✓</div>
+    <div class="success-pop" style=${{ maxWidth: "560px", margin: "0 auto", textAlign: "center", paddingTop: "60px" }}>
+      <div class="success-ring">✓</div>
       <h1 class="display-title">Submission received</h1>
       <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
       Core completion: <b>${done.core_completion_pct}%</b>.</p>

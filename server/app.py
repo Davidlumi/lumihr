@@ -582,7 +582,8 @@ async def overview(request: Request):
             "total_savings_to_p50_gbp": money["total_savings_to_p50_gbp"],
             "total_investment_to_p50_gbp": money["total_investment_to_p50_gbp"],
             "items": [{"label": i["label"], "direction": i["direction"],
-                       "to_p50_gbp": i["to_p50_gbp"], "question_id": i["question_id"]}
+                       "to_p50_gbp": i["to_p50_gbp"], "to_p75_gbp": i["to_p75_gbp"],
+                       "question_id": i["question_id"], "rows": i.get("rows", [])}
                       for i in money["items"]],
             "fte_known": money["fte_known"], "indicative": True,
         },

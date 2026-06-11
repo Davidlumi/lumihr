@@ -7,6 +7,7 @@
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
 window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, onCutOverride, highlight }) {
+  /* power controls (chart type, peer cut, pin) live in the zoom pop-out */
   const [expanded, setExpanded] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const [exportMsg, setExportMsg] = useState(null);
@@ -46,59 +47,43 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
   return html`
     <div class=${"card bench-card" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref}>
-      <div class="bench-controls no-print">
-        ${chartAlternatives(c).length > 1 && html`
-          <select class="ctl" style=${{ height: "22px", padding: "0 4px", fontSize: "11px", border: "none" }} value=${chart}
-            onChange=${e => setPref("chart", e.target.value)} title="Chart type">
-            ${chartAlternatives(c).map(a => html`<option key=${a} value=${a}>${CHART_LABELS[a]}</option>`)}
-          </select>`}
-        ${cuts && html`
-          <select class="ctl" style=${{ height: "22px", padding: "0 4px", fontSize: "11px", maxWidth: "110px", border: "none" }}
-            value=${pref.cut || ""} onChange=${e => setPref("cut", e.target.value || undefined)} title="Peer group for this card">
-            <option value="">Page filter</option>
-            <option value="all">All peers</option>
-            ${cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry}</option>`}
-            ${cuts.org_fte_band && html`<option value=${"fte_band::" + cuts.org_fte_band}>${cuts.org_fte_band} FTE</option>`}
-            ${cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
-          </select>`}
-        ${(c.type === "numeric") && html`
-          <button class="iconbtn" title="Show/hide P10 and P90" onClick=${() => setPref("p1090", !showP1090)}>P10/90</button>`}
-        <button class=${"iconbtn" + (showValues ? " on" : "")} title="Show/hide value labels" onClick=${() => setPref("values", !showValues)}>123</button>
-        <button class="iconbtn" title="Download PNG (title, peer group and n baked in)" onClick=${() => doExport("download")}><${Icon} name="download" size=${13} /></button>
-        <button class="iconbtn" title="Copy PNG to clipboard" onClick=${() => doExport("clipboard")}><${Icon} name="copy" size=${13} /></button>
-        ${onPin && html`<button class=${"iconbtn" + (pinned ? " on" : "")} title=${pinned ? "Remove from My view" : "Pin to My view"}
-          onClick=${() => onPin(c.id)}><${Icon} name="star" size=${13} /></button>`}
-        <button class="iconbtn" title="Expand chart" onClick=${() => setZoomed(true)}><${Icon} name="maximize" size=${13} /></button>
-        <button class="iconbtn" title="Full question, definition and method" onClick=${() => setExpanded(true)}><${Icon} name="info" size=${13} /></button>
-      </div>
-
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
+        <button class="iconbtn title-info no-print" title="Full question, definition and method"
+          onClick=${() => setExpanded(true)}><${Icon} name="info" size=${13} /></button>
         ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
         ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
       <div class="bench-body">
         <div class="bench-words">
           <div class="bench-lead">${humanSentence(c).lead || ""}</div>
+          <${WhatThisMeans} card=${c} pos=${pos} />
           ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
           <div class="bench-n" title="The number of organisations behind this comparison">
             n=${c.n}${cutNote(c)}</div>
         </div>
         <div class=${"bench-proof bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
-          onClick=${e => { if (!c.suppressed && !e.target.closest("a")) setZoomed(true); }}>
+          onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest(".bench-controls")) setZoomed(true); }}>
+          <div class="bench-controls no-print">
+            <button class="iconbtn" title="Download this chart as a PNG"
+              onClick=${e => { e.stopPropagation(); doExport("download"); }}><${Icon} name="download" size=${13} /></button>
+            <button class="iconbtn" title="Expand chart"
+              onClick=${e => { e.stopPropagation(); setZoomed(true); }}><${Icon} name="maximize" size=${13} /></button>
+          </div>
           <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
         </div>
       </div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
       ${zoomed && html`<${CardZoom} card=${c} pos=${pos} chart=${chart} pref=${pref} setPref=${setPref}
         cuts=${cuts} showP1090=${showP1090} showValues=${showValues} window=${collWindow}
+        onPin=${onPin} pinned=${pinned}
         onClose=${() => setZoomed(false)} />`}
     </div>`;
 };
 
 /* The pop-out: the same card re-rendered large in a modal, with the full
    control cluster, readout and export to hand. */
-window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP1090, showValues, window: collWindow, onClose }) {
+window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP1090, showValues, window: collWindow, onPin, pinned, onClose }) {
   const ref = useRef(null);
   const [exportMsg, setExportMsg] = useState(null);
   const doExport = async (mode) => {
@@ -145,6 +130,8 @@ window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP109
             <button class=${"iconbtn" + (showValues ? " on" : "")} title="Show/hide value labels" onClick=${() => setPref("values", !showValues)}>123</button>
             <button class="btn small" onClick=${() => doExport("download")}><${Icon} name="download" size=${12} /> PNG</button>
             <button class="btn small" onClick=${() => doExport("clipboard")}><${Icon} name="copy" size=${12} /> Copy</button>
+            ${onPin && html`<button class=${"btn small" + (pinned ? " feature" : "")} onClick=${() => onPin(c.id)}>
+              <${Icon} name="star" size=${12} /> ${pinned ? "Pinned" : "Pin to My view"}</button>`}
           </div>
         </div>
         <div class="bench-chart xl">
@@ -184,6 +171,35 @@ function humanSentence(c) {
     return { lead: "You haven't answered this question yet — the peer picture is shown for context.", support: null };
   }
   return { lead: c.readout, support: null };
+}
+
+/* 8.5 — the advisor gesture: a quiet, optional line on what good looks like.
+   Deterministic copy from existing fields only; led by gap cards. */
+window.WhatThisMeans = function ({ card: c, pos }) {
+  const [open, setOpen] = useState(false);
+  if (!pos || c.suppressed) return null;
+  const lines = meaningLines(c, pos);
+  if (!lines) return null;
+  return html`
+    <div>
+      <button class="btn quiet small" style=${{ padding: "0", height: "18px", color: "var(--teal)", fontFamily: "var(--font)" }}
+        onClick=${() => setOpen(!open)}>${open ? "▾" : "▸"} What this means</button>
+      ${open && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>${lines}</div>`}
+    </div>`;
+};
+
+function meaningLines(c, pos) {
+  const p50 = c.block && c.block.p50 != null ? fmtValue(c.block.p50, c.unit) : null;
+  if (pos.kind === "bad") {
+    if (c.category === "practice" || c.category === "policy") {
+      return "Most similar organisations are further ahead here. A typical next step is to review whether a more formal approach would fit your size and sector — your peers' position suggests it's become standard practice.";
+    }
+    return "You're behind most similar organisations on this measure." + (p50 ? ` What good looks like: the peer median is ${p50} — a realistic first milestone.` : "");
+  }
+  if (pos.kind === "good") {
+    return "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
+  }
+  return "You're broadly in line with similar organisations — no urgent action, but watch your movement from the next cycle.";
 }
 
 /* only name the peer group on the card when it differs from the page filter */

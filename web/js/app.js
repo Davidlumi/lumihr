@@ -13,6 +13,7 @@ function App() {
   const [layoutIds, setLayoutIds] = useState(new Set());
   const [analystOpen, setAnalystOpen] = useState(false);
   const [metricReq, setMetricReq] = useState(null);   // {prefill, source} | null
+  const [gapCue, setGapCue] = useState(null);          // {section, count} — nav priority cue
   const [twinOpen, setTwinOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [qIndex, setQIndex] = useState(null);
@@ -31,6 +32,12 @@ function App() {
     api("/api/prefs").then(d => setPrefs(d.prefs || {}));
     api("/api/myview").then(d => setLayoutIds(new Set((d.layout || []).map(s => s.question_id))));
     api("/api/questions").then(setQIndex);
+    api("/api/gap-register").then(d => {
+      const counts = {};
+      (d.rows || []).forEach(r => { if (r.status === "not_in_place") counts[r.subpower] = (counts[r.subpower] || 0) + 1; });
+      const top = Object.entries(counts).sort((x, y) => y[1] - x[1])[0];
+      setGapCue(top ? { section: top[0], count: top[1] } : null);
+    }).catch(() => {});
   }, [me && me.org && me.org.name]);
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
@@ -110,11 +117,11 @@ function App() {
         <div class="nav-group">
           <div class="nav-label">${scope.focused ? "Your reward benchmark" : "Benchmarks"}</div>
           ${scope.focused && html`
-            <button class=${navCls(route, "/superpower/Reward") + (route.includes("sub=") ? "" : "")} onClick=${() => nav("/superpower/Reward")}>
+            <button class=${"nav-item" + (route.startsWith("/superpower/Reward") && !route.includes("sub=") ? " active" : "")} onClick=${() => nav("/superpower/Reward")}>
               <${SpIcon} sp="Reward" /> All reward
               ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => !q.locked).length}</span>`}
             </button>
-            <${SectionNav} route=${route} qIndex=${qIndex} />`}
+            <${SectionNav} route=${route} qIndex=${qIndex} gapCue=${gapCue} />`}
           ${!scope.focused && activeSupers.map(sp => html`
             <button key=${sp} class=${navCls(route, "/superpower/" + sp)} onClick=${() => nav("/superpower/" + sp)}>
               <${SpIcon} sp=${sp} /> ${sp}
@@ -140,7 +147,8 @@ function App() {
       <div class="main">
         <div class="topbar no-print">
           <div class="ctlgroup">
-            <select class="ctl" value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
+            <select class=${"ctl peer-ctl" + (cut.dim !== "all" ? " narrowed" : "")}
+              value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
               onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
               <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
               ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} (${cuts.industries[cuts.org_industry] || "?"})</option>`}
@@ -171,14 +179,7 @@ function App() {
           </div>
         </div>
         <main class="content">
-          ${gated && benchRoute ?
-            html`<div class="watermark" style=${{ minHeight: "70vh" }} aria-hidden="false">
-              <div style=${{ filter: "blur(2px)", opacity: 0.45, pointerEvents: "none" }}>${page}</div>
-            </div>
-            <div class="row" style=${{ justifyContent: "center", marginTop: "-46vh", position: "relative", zIndex: 31 }}>
-              <button class="btn primary" onClick=${() => nav("/submission")}>Complete your submission (${me.core_completion_pct}% of Core done)</button>
-            </div>` :
-            page}
+          ${gated && benchRoute ? html`<${WelcomeGate} me=${me} qIndex=${qIndex} />` : page}
         </main>
       </div>
       ${analystOpen && html`<${AnalystPane} onClose=${() => setAnalystOpen(false)} />`}
@@ -188,16 +189,18 @@ function App() {
     </div>`;
 }
 
-window.SectionNav = function ({ route, qIndex }) {
+window.SectionNav = function ({ route, qIndex, gapCue }) {
   if (!qIndex) return null;
   const secs = sectionList(qIndex);
   return html`${secs.map(sec => {
     const active = route.includes("sub=" + encodeURIComponent(sec.name));
+    const cued = gapCue && gapCue.section === sec.name;
     return html`
       <button key=${sec.name} class=${"nav-item" + (active ? " active" : "")}
         style=${{ paddingLeft: "var(--s6)" }}
         onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec.name))}>
         ${sec.name}
+        ${cued && html`<span class="gap-cue" title=${gapCue.count + " practices your peers commonly have that you don't — your biggest opportunity area"}></span>`}
         <span class="nav-count">${sec.count}</span>
       </button>`;
   })}`;
@@ -211,6 +214,39 @@ window.sectionList = function (qIndex) {
     m.get(q.subpower).count++;
   }
   return Array.from(m.values()).sort((a, b) => a.order - b.order);
+};
+
+/* 8.1 — what a member sees before their benchmark unlocks: promising and
+   guiding, never blurred or broken. */
+window.WelcomeGate = function ({ me, qIndex }) {
+  const pct = me.core_completion_pct || 0;
+  const target = 90;
+  const secs = qIndex ? sectionList(qIndex) : [];
+  const first = secs[0];
+  return html`
+    <div style=${{ maxWidth: "640px", margin: "var(--s7) auto", textAlign: "center" }}>
+      <div style=${{ color: "var(--plum)", marginBottom: "var(--s3)" }}><${Icon} name="sparkle" size=${26} /></div>
+      <h1 class="display-title">Welcome to your reward benchmark</h1>
+      <p style=${{ marginTop: "var(--s3)" }}>lumi is a co-operative: you see the pool because you've contributed to it.
+        Answer your reward questions and we'll show you exactly where you stand against
+        <b> ${(me.peer_pool || {}).responding_orgs || "the"} similar organisations</b> — what you lead on,
+        where the gaps are, and what closing them is worth.</p>
+      <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s5) 0", textAlign: "left" }}>
+        <div class="row spread" style=${{ marginBottom: "var(--s2)" }}>
+          <b style=${{ fontFamily: "var(--font-head)" }}>${pct < 1 ? "Ready when you are" : "You're on your way"}</b>
+          <span class="num caption"><b>${pct}%</b> answered · unlocks at ${target}%</span>
+        </div>
+        <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / target * 100) + "%" }}></div></div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Everything autosaves — answer a section at a time and come back whenever suits.</div>
+      </div>
+      <div class="row" style=${{ justifyContent: "center" }}>
+        <button class="btn primary" onClick=${() => nav("/submission")}>
+          ${pct < 1 ? (first ? `Start with ${first.name}` : "Start your submission") : "Continue your submission"}</button>
+        <button class="btn" onClick=${() => nav("/methodology")}>How the benchmark works</button>
+      </div>
+      <p class="caption" style=${{ marginTop: "var(--s4)" }}>Once unlocked, every answer you've given gets a live peer comparison —
+        and anything you haven't answered shows the peer picture with an invitation to add yours.</p>
+    </div>`;
 };
 
 function cutHint(cut, cuts, me) {
