@@ -70,6 +70,8 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
               onClick=${e => { e.stopPropagation(); doExport("download"); }}><${Icon} name="download" size=${13} /></button>
             <button class="iconbtn" title="Expand chart" aria-label="Expand chart"
               onClick=${e => { e.stopPropagation(); setZoomed(true); }}><${Icon} name="maximize" size=${13} /></button>
+            <button class="iconbtn" title="Open full view" aria-label="Open full view"
+              onClick=${e => { e.stopPropagation(); openMetric(c.id); }}><${Icon} name="arrow-up-right" size=${13} /></button>
           </div>
           <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
         </div>
@@ -150,6 +152,7 @@ window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP109
 
 /* The plain-English answer that leads every card: "X in 10" phrasing first,
    the precise figures as a quiet supporting line. */
+window.humanSentence = humanSentence;
 function humanSentence(c) {
   if (c.suppressed) {
     return { lead: "There aren't enough organisations in this peer group to show this safely.", support: "We never show a figure based on fewer than 5 organisations." };
@@ -176,8 +179,8 @@ function humanSentence(c) {
 
 /* 8.5 — the advisor gesture: a quiet, optional line on what good looks like.
    Deterministic copy from existing fields only; led by gap cards. */
-window.WhatThisMeans = function ({ card: c, pos }) {
-  const [open, setOpen] = useState(false);
+window.WhatThisMeans = function ({ card: c, pos, defaultOpen }) {
+  const [open, setOpen] = useState(!!defaultOpen);
   if (!pos || c.suppressed) return null;
   const lines = meaningLines(c, pos);
   if (!lines) return null;

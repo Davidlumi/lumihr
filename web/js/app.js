@@ -60,6 +60,18 @@ function App() {
     }).catch(() => {});
   }, [me && me.org && me.org.name]);
   useEffect(() => { cutToURL(cut); }, [cutKeyOf(cut)]);
+  useEffect(() => {
+    const y = consumeReturnScroll(window.location.hash);
+    if (y != null) {
+      // the page below loads async — keep trying briefly until the height exists
+      let tries = 0;
+      const t = setInterval(() => {
+        window.scrollTo(0, y);
+        if (Math.abs(window.scrollY - y) < 4 || ++tries > 20) clearInterval(t);
+      }, 150);
+      return () => clearInterval(t);
+    }
+  }, [route]);
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
@@ -189,7 +201,7 @@ function App() {
               <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
                 aria-label="Search reward metrics" value=${search} onInput=${e => setSearch(e.target.value)}
                 onKeyDown=${e => { if (e.key === "Escape") setSearch(""); }} />
-              ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
+              ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); openMetric(q.id); }} />`}
             </div>
           </div>
           <div class="topbar-right">
@@ -441,24 +453,163 @@ function SearchPop({ qIndex, search, onGo }) {
 
 // single-metric page (deep links from analyst chips / opportunity tile)
 function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
-  const [card, setCard] = useState(null);
+  const [cards, setCards] = useState(null);   // {all, sector, size}
   const [err, setErr] = useState(null);
+  const org = me.org;
+  const chartRef = useRef(null);
   useEffect(() => {
-    setCard(null);
-    api(`/api/benchmark/${qid}?` + cutQS(cut)).then(setCard).catch(e => setErr(e.message));
-  }, [qid, cutKeyOf(cut)]);
-  if (err) return html`<${EmptyState} title="Couldn't load this metric" body=${err} />`;
-  if (!card) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+    setCards(null); setErr(null);
+    const want = [["all", "cut=all"]];
+    if (org.industry) want.push(["sector", "cut=industry&cut_value=" + encodeURIComponent(org.industry)]);
+    if (org.fte_band) want.push(["size", "cut=fte_band&cut_value=" + encodeURIComponent(org.fte_band)]);
+    // the same per-cut aggregates the peer-cut selector uses — no new maths
+    Promise.all(want.map(([k, qs]) => api(`/api/benchmark/${qid}?` + qs).then(c => [k, c])))
+      .then(entries => setCards(Object.fromEntries(entries)))
+      .catch(e => setErr(e.message));
+  }, [qid, org.industry, org.fte_band]);
+  if (err) return html`<${EmptyState} title="Couldn't load this metric"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (!cards) return html`
+    <div>
+      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "10px" }}></div>
+      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "18px" }}></div>
+      <div class="skel" style=${{ height: "220px", marginBottom: "14px", borderRadius: "var(--radius)" }}></div>
+      <div class="skel" style=${{ height: "320px", borderRadius: "var(--radius)" }}></div>
+    </div>`;
+
+  // active cut for the big chart follows the global peer selector
+  const activeKey = cut.dim === "industry" && cards.sector ? "sector" : cut.dim === "fte_band" && cards.size ? "size" : "all";
+  const c = cards[activeKey] || cards.all;
+  const pos = cardPosition(c);
+  const sent = humanSentence(c);
+  const chart = normaliseChart(c, prefs[c.id] && prefs[c.id].chart);
+  const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
+  const backTo = "/superpower/" + c.superpower + (c.subpower ? "?sub=" + encodeURIComponent(c.subpower) : "");
+  const goBack = () => {
+    let hasReturn = false;
+    try { hasReturn = !!sessionStorage.getItem("lumi-return"); } catch (e) {}
+    if (hasReturn) window.history.back(); else nav(backTo);
+  };
+  const doExport = async (mode) => {
+    const res = await exportCardPNG(chartRef.current, {
+      title: c.title, cutLabel: c.cut.label, n: c.n, window: period,
+      suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
+    }, mode);
+    toast(res === "downloaded" ? "Chart downloaded — includes title, n, peer group and the sample-data caveat" : res === "copied" ? "Chart copied to clipboard" : "Nothing to export yet");
+  };
+  const share = () => { navigator.clipboard.writeText(window.location.href.split("#")[0] + "#" + ("/metric/" + qid)); toast("Link to this metric copied"); };
+
+  const CUT_ROWS = [
+    { key: "all", label: "All peers" },
+    { key: "sector", label: org.industry ? "Your sector: " + org.industry : null },
+    { key: "size", label: org.fte_band ? "Your size: " + org.fte_band + " FTE" : null },
+  ];
   return html`
-    <div style=${{ maxWidth: "560px" }}>
-      <button class="btn quiet" onClick=${() => window.history.back()}>← Back</button>
-      <div style=${{ marginTop: "10px" }}>
-        <${BenchmarkCard} card=${card} prefs=${prefs} onPref=${onPref} onPin=${onPin}
-          pinned=${pinnedIds.has(card.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)} />
+    <div class="metric-page">
+      <button class="btn quiet" onClick=${goBack}>← Back</button>
+      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "8px", gap: "var(--s4)" }}>
+        <div style=${{ minWidth: 0 }}>
+          <h1 class="display-title" style=${{ marginBottom: "4px" }}>${c.title}</h1>
+          <p class="caption" style=${{ margin: "0 0 10px", maxWidth: "640px" }}>${c.question_text}</p>
+          <div class="row" style=${{ gap: "var(--s2)" }}>
+            <${Chip} kind="accent">${org.name}<//>
+            ${org.industry && html`<${Chip}>${org.industry}<//>`}
+            ${org.fte_band && html`<${Chip}>${org.fte_band} FTE<//>`}
+            ${org.hq_region && html`<${Chip}>${org.hq_region}<//>`}
+            ${period && html`<${Chip}>${period}<//>`}
+            <span class="chip warn hastip" style=${{ position: "relative", cursor: "help" }}>Illustrative sample data
+              <span class="tip">The current peer pool is realistic but synthetic seed data, generated to behave like a UK benchmark while real member submissions build up. It must not be read as real benchmark data.</span></span>
+          </div>
+        </div>
+        ${pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
-      <div class="caption" style=${{ marginTop: "10px" }}>
-        From <a href=${"#/superpower/" + card.superpower}>${card.superpower}</a>${card.subpower ? " · " + card.subpower : ""}.
+
+      ${sent.lead && html`<p class="metric-lead">${sent.lead}</p>`}
+
+      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>How you compare, peer group by peer group</h2>
+      <p class="caption" style=${{ marginTop: "-4px" }}>The same metric through three lenses — the nuance a single number hides.</p>
+      <div class="card" style=${{ padding: "var(--s4)" }}>
+        ${CUT_ROWS.filter(r => r.label).map(r => {
+          const rc = cards[r.key];
+          if (!rc) return null;
+          const rpos = cardPosition(rc);
+          return html`
+            <div key=${r.key} class="cut-row">
+              <div class="cut-row-label">
+                <b>${r.label}</b>
+                <div class="caption num">n=${rc.n}</div>
+                ${rpos && html`<span class=${"pos-pill " + rpos.kind} title=${rpos.tip}>${rpos.arrow} ${rpos.label}</span>`}
+              </div>
+              <div class="cut-row-chart">
+                ${rc.suppressed ? html`
+                  <div class="suppressed-box" style=${{ minHeight: "90px" }}>
+                    <b>Not enough organisations to show this safely</b>
+                    <div class="caption">Fewer than 5 organisations in this peer group answered — protecting every member's data comes first.</div>
+                  </div>` :
+                html`<${CardBody} card=${rc} chart=${normaliseChart(rc, null)} showP1090=${false} showValues=${false} fav=${rpos ? rpos.kind : null} />`}
+              </div>
+            </div>`;
+        })}
+        ${!org.industry && html`<div class="caption" style=${{ marginTop: "8px" }}>Declare your sector and size in <a href="#/submission">your submission</a> to see those comparisons.</div>`}
       </div>
+
+      <h2 class="section-title" style=${{ marginTop: "var(--s6)" }}>The full picture — ${c.cut.label}</h2>
+      <div class="card" style=${{ padding: "var(--s5)" }} ref=${chartRef}>
+        ${c.suppressed ? html`
+          <${EmptyState} title="Not enough organisations to show this safely"
+            body="Fewer than 5 organisations in this peer group answered this question." />` : html`
+          <div class="metric-xl">
+            <${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />
+          </div>
+          <${ExactFigures} card=${c} />`}
+      </div>
+
+      <div class="grid2" style=${{ marginTop: "var(--s5)", gap: "var(--s4)" }}>
+        <div class="card" style=${{ padding: "var(--s5)" }}>
+          <h2 class="section-title">What this measures</h2>
+          ${c.definition && html`<p>${c.definition}</p>`}
+          ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
+          <p class="caption"><${Term} word="percentile">Percentiles<//> are calculated with linear interpolation across all
+          valid peer answers; medians are used rather than averages. Any figure resting on fewer than 5 organisations is
+          ${" "}<${Term} word="suppressed">suppressed<//>. Full method in the <a href="#/methodology">methodology</a>.</p>
+        </div>
+        <div class="card" style=${{ padding: "var(--s5)" }}>
+          <h2 class="section-title">What this means for you</h2>
+          <${WhatThisMeans} card=${c} pos=${pos} defaultOpen=${true} />
+          <div class="row" style=${{ marginTop: "var(--s3)", flexWrap: "wrap" }}>
+            <button class="btn" onClick=${() => doExport("download")}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>
+            <button class="btn" onClick=${share}><${Icon} name="link" size=${13} /> Copy link to this metric</button>
+            <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption" style=${{ margin: "var(--s4) 0" }}>
+        From <a href=${"#" + backTo}>${c.subpower || c.superpower}</a> in your reward benchmark.
+      </div>
+    </div>`;
+}
+
+/* Exact figures: the analyst's row — your value, percentile, peer quartiles, n. */
+function ExactFigures({ card: c }) {
+  const cells = [];
+  if (c.type === "numeric" && c.block) {
+    if (c.you && c.you.display != null) cells.push(["You", c.you.display + (c.you.percentile != null ? " · " + pLabel(c.you.percentile) : "")]);
+    for (const [k, lbl] of [["p25", "Peer P25"], ["p50", "Peer median"], ["p75", "Peer P75"]]) {
+      if (c.block[k] != null) cells.push([lbl, fmtValue(c.block[k], c.unit)]);
+    }
+  } else if (c.block && c.block.options) {
+    if (c.you && c.you.label) {
+      const mine = c.block.options.find(o => o.label === c.you.label);
+      cells.push(["Your answer", c.you.label + (mine ? ` (${mine.pct}% of peers)` : "")]);
+    }
+    const top = [...c.block.options].sort((a, b) => b.pct - a.pct)[0];
+    if (top) cells.push(["Most common", `${top.label} (${top.pct}%)`]);
+  }
+  cells.push(["Organisations", "n=" + c.n]);
+  return html`
+    <div class="exact-figs">
+      ${cells.map(([k, v], i) => html`<div key=${i}><span class="caption">${k}</span><b class="num">${v}</b></div>`)}
     </div>`;
 }
 

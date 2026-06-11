@@ -146,7 +146,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
     </div>`;
 };
 
-function jumpToItem(item) { if (item) nav("/superpower/" + item.superpower + "?focus=" + item.question_id); }
+function jumpToItem(item) { if (item) openMetric(item.question_id); }
 
 window.OpportunityTile = function ({ opp, contrib }) {
   if (!opp) return null;

@@ -160,6 +160,26 @@ window.useRoute = function () {
 };
 window.nav = path => { window.location.hash = path; };
 
+/* The metric full page is each metric's home. openMetric remembers where the
+   user came from (route + scroll) so Back restores their exact position. */
+window.openMetric = function (qid) {
+  try {
+    sessionStorage.setItem("lumi-return", JSON.stringify({
+      hash: window.location.hash, y: window.scrollY || document.documentElement.scrollTop || 0 }));
+  } catch (e) {}
+  nav("/metric/" + qid);
+};
+window.consumeReturnScroll = function (hash) {
+  try {
+    const raw = sessionStorage.getItem("lumi-return");
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (saved.hash !== hash) return null;
+    sessionStorage.removeItem("lumi-return");
+    return saved.y;
+  } catch (e) { return null; }
+};
+
 // ------------------------------------------------- chart-type compatibility -
 // Never offer a chart type that misrepresents the data shape.
 window.chartAlternatives = function (card) {

@@ -513,3 +513,20 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .toast.error { background: var(--unfavourable); }
 
 .idle-count { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+
+/* ----- single-metric full page ----- */
+.metric-page { max-width: 980px; }
+.metric-lead { font-size: var(--fs-h3); font-family: var(--font-head); color: var(--ink);
+  max-width: 720px; margin: var(--s4) 0 0; line-height: 1.45; }
+.pos-pill.lg { font-size: var(--fs-body); padding: 6px 14px; flex: none; }
+.cut-row { display: flex; gap: var(--s5); align-items: center; padding: var(--s3) 0;
+  border-bottom: 1px solid var(--border); }
+.cut-row:last-of-type { border-bottom: none; }
+.cut-row-label { flex: 0 0 210px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.cut-row-chart { flex: 1; min-width: 0; --chart-h: 120px; }
+.metric-xl { --chart-h: 320px; }
+.exact-figs { display: flex; gap: var(--s6); flex-wrap: wrap; margin-top: var(--s4);
+  padding-top: var(--s3); border-top: 1px solid var(--border); }
+.exact-figs > div { display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 760px) { .cut-row { flex-direction: column; align-items: stretch; } .cut-row-label { flex: none; } }

@@ -213,3 +213,25 @@ headers carry "benchmark data: 2026 H1".
 
 Out of scope (deliberately untouched): optimistic rollback, offline
 detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
+
+## Single-metric full page (2026-06-11)
+
+- /metric/{qid} is each metric's home: standalone header (title, full
+  question, org context chips, period, sample-data caveat, status pill),
+  the plain-English readout at size, and the centrepiece — the metric
+  across All peers / your sector / your size SIMULTANEOUSLY, each row with
+  its own n, per-cut status pill and "you" marker. Suppressed cuts show
+  the suppressed state (verified: car allowance, sector n=4).
+- Below: the full-size distribution for the active cut (follows the global
+  peer selector), exact figures (you · percentile · peer P25/P50/P75 · n,
+  or your answer / most common for categoricals), definition + methodology
+  with glossary terms, What-this-means expanded, PNG export (branded with
+  title/n/cut/caveat), copy-deep-link, request-a-related-metric.
+- Entry points: a third hover icon on every card ("Open full view",
+  aria-labelled); search results, overview lead/gap callouts, gap-register
+  rows and analyst citation chips all route here. openMetric() remembers
+  route + scroll; Back restores the exact position (cold landings fall
+  back to the metric's section).
+- Reuse only: the page issues three calls to the existing per-cut
+  /api/benchmark/{qid} endpoint — same aggregates, same suppression, no
+  new calculations, no server changes.
