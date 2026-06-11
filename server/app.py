@@ -293,9 +293,18 @@ def invalidate_payloads():
 def parse_cut(request, org):
     dim = request.query_params.get("cut", "all")
     value = request.query_params.get("cut_value")
-    if dim not in ("all", "industry", "fte_band", "twin"):
+    if dim not in ("all", "industry", "fte_band", "twin", "group"):
         dim = "all"
     cut = {"dim": dim, "value": value}
+    if dim == "group":
+        row = get_conn().execute(
+            "SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+            (value or "", org["org_id"])).fetchone()
+        if row is None:
+            # another org's group id (or a stale one) never resolves — all peers
+            return {"dim": "all", "value": None}
+        cut["label"] = row["name"]
+        cut["criteria"] = uj(row["criteria_json"], {})
     if dim == "industry" and not value:
         cut["value"] = org.get("industry")
     if dim == "fte_band" and not value:
@@ -304,6 +313,17 @@ def parse_cut(request, org):
 
 
 def twin_blocks_if_needed(conn, org, cut):
+    """Bespoke peer blocks: Peer Twin or a custom group. Both run through the
+    identical engine path; a custom group below the suppression floor returns
+    None blocks per question (no aggregation ran), so every metric renders the
+    suppressed state — never data, never a partial peek."""
+    if cut.get("dim") == "group":
+        blocks, match = peer_twin.group_blocks(conn, cut.get("criteria") or {}, CURRENT_SNAPSHOT)
+        cut["match_count"] = match
+        if blocks is None:
+            cut["too_small"] = True
+            return {}  # every question resolves to a suppressed block
+        return blocks
     if cut.get("dim") != "twin":
         return None
     tb = peer_twin.twin_blocks(conn, org["org_id"], CURRENT_SNAPSHOT)
@@ -823,11 +843,14 @@ async def cuts_available(request: Request):
     pool = get_meta("peer_pool", {})
     conn = get_conn()
     twin = peer_twin.compute_twin(conn, org["org_id"])
+    groups = [group_row_out(conn, r) for r in conn.execute(
+        "SELECT * FROM peer_groups WHERE org_id=? ORDER BY created_at", (org["org_id"],))]
     return {
         "industries": pool.get("industries", {}),
         "fte_bands": pool.get("fte_bands", {}),
         "twin_available": twin is not None,
         "org_industry": org["industry"], "org_fte_band": org["fte_band"],
+        "groups": groups,
     }
 
 
@@ -836,7 +859,7 @@ async def cuts_available(request: Request):
 def build_items(request, org, user, cut):
     conn = get_conn()
     entitled = make_entitled(user, org)
-    tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") == "twin" else None
+    tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") in ("twin", "group") else None
     return pos.position_items(org["org_id"], cut, visible_questions(), payloads(),
                               org_answers_for(org), entitled, tb), tb
 
@@ -1069,7 +1092,7 @@ async def peer_twin_route(request: Request):
 def build_gap_register(request, user, org, cut):
     conn = get_conn()
     entitled = make_entitled(user, org)
-    tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") == "twin" else None
+    tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") in ("twin", "group") else None
     sector_cut = {"dim": "industry", "value": org["industry"]} if org["industry"] else None
     return pos.gap_register(conn, org, visible_questions(), payloads(), org_answers_for(org),
                             cut, sector_cut, entitled, tb)
@@ -1228,7 +1251,8 @@ def assemble_pack_payload(request, user, org, cut):
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     cut_label = "All peers" if cut["dim"] == "all" else (
         cut.get("value") if cut["dim"] == "industry" else
-        "%s FTE" % cut.get("value") if cut["dim"] == "fte_band" else "Organisations like you")
+        "%s FTE" % cut.get("value") if cut["dim"] == "fte_band" else
+        cut.get("label") if cut["dim"] == "group" else "Organisations like you")
     if cut["dim"] == "industry":
         cut_n = pool.get("industries", {}).get(cut.get("value"), 0)
     elif cut["dim"] == "fte_band":
@@ -1236,6 +1260,8 @@ def assemble_pack_payload(request, user, org, cut):
     elif cut["dim"] == "twin":
         twin = peer_twin.compute_twin(conn, org["org_id"])
         cut_n = len(twin["peer_org_ids"]) if twin else 0
+    elif cut["dim"] == "group":
+        cut_n = len(peer_twin.group_org_ids(conn, cut.get("criteria") or {}))
     else:
         cut_n = pool.get("responding_orgs", 0)
     return {
@@ -1359,6 +1385,131 @@ def completion_pct(conn, org):
         (org["org_id"],))}
     have = answered | drafted
     return round(100.0 * sum(1 for q in basis if q.id in have) / len(basis), 1)
+
+
+# ============================================================== PEER GROUPS ==
+# Filter-based custom peer groups, private to the org. The anonymity rules:
+# the same n>=5 floor as everything else, enforced in the engine path (a
+# below-floor group never aggregates at all); membership is NEVER revealed —
+# only counts; criteria fields and values are validated against the curated
+# registry sets so hand-built requests can't probe arbitrary columns.
+
+GROUP_FIELD_LABELS = [
+    ("industry", "Industry / sector"),
+    ("fte_band", "Organisation size (FTE)"),
+    ("hq_region", "HQ region"),
+    ("ownership_type", "Ownership"),
+    ("unionised_level", "Unionised workforce"),
+    ("hr_maturity", "HR maturity"),
+    ("business_maturity", "Business life stage"),
+    ("operating_model", "Operating model"),
+]
+
+
+def validate_group_criteria(criteria):
+    if not isinstance(criteria, dict) or not criteria:
+        raise HTTPException(400, "Choose at least one criterion for the group.")
+    choices = profile_choices()
+    clean = {}
+    for field, values in criteria.items():
+        if field not in peer_twin.GROUP_FIELDS:
+            raise HTTPException(400, "'%s' isn't a recognised peer-group criterion." % field)
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+            raise HTTPException(400, "Criteria values must be lists of options.")
+        values = [v for v in values if v]
+        if not values:
+            continue
+        allowed = set(choices.get(field) or [])
+        bad = [v for v in values if v not in allowed]
+        if bad:
+            raise HTTPException(400, "'%s' isn't a recognised option for %s." % (bad[0], field.replace("_", " ")))
+        clean[field] = values
+    if not clean:
+        raise HTTPException(400, "Choose at least one criterion for the group.")
+    return clean
+
+
+def group_row_out(conn, row):
+    criteria = uj(row["criteria_json"], {})
+    match = len(peer_twin.group_org_ids(conn, criteria))
+    return {"group_id": row["group_id"], "name": row["name"], "criteria": criteria,
+            "match_count": match, "min_orgs": SUPPRESSION_FLOOR,
+            "too_small": match < SUPPRESSION_FLOOR}
+
+
+@app.get("/api/peer-groups/options")
+async def peer_group_options(request: Request):
+    require_user(request)
+    choices = profile_choices()
+    return {"fields": [{"key": k, "label": lbl, "choices": choices.get(k) or []}
+                       for k, lbl in GROUP_FIELD_LABELS],
+            "min_orgs": SUPPRESSION_FLOOR}
+
+
+@app.post("/api/peer-groups/preview")
+async def peer_group_preview(request: Request):
+    """Live match count while building. Returns ONLY the count — never which
+    organisations match."""
+    user, org = require_user(request)
+    body = await request.json()
+    criteria = validate_group_criteria(body.get("criteria") or {})
+    match = len(peer_twin.group_org_ids(get_conn(), criteria))
+    return {"match_count": match, "min_orgs": SUPPRESSION_FLOOR,
+            "too_small": match < SUPPRESSION_FLOOR}
+
+
+@app.get("/api/peer-groups")
+async def peer_groups_list(request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM peer_groups WHERE org_id=? ORDER BY created_at",
+                        (org["org_id"],)).fetchall()
+    return {"groups": [group_row_out(conn, r) for r in rows]}
+
+
+@app.post("/api/peer-groups")
+async def peer_groups_create(request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    name = (body.get("name") or "").strip()
+    if not name or len(name) > 60:
+        raise HTTPException(400, "Give the group a name (up to 60 characters).")
+    criteria = validate_group_criteria(body.get("criteria") or {})
+    conn = get_conn()
+    gid = str(uuid.uuid4())
+    conn.execute("INSERT INTO peer_groups(group_id, org_id, name, criteria_json, created_by) VALUES (?,?,?,?,?)",
+                 (gid, org["org_id"], name, j(criteria), user["user_id"]))
+    conn.commit()
+    return group_row_out(conn, conn.execute("SELECT * FROM peer_groups WHERE group_id=?", (gid,)).fetchone())
+
+
+@app.put("/api/peer-groups/{gid}")
+async def peer_groups_update(gid: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+                       (gid, org["org_id"])).fetchone()
+    if row is None:
+        raise HTTPException(404, "No such peer group.")
+    body = await request.json()
+    name = (body.get("name") or row["name"]).strip()[:60] or row["name"]
+    criteria = validate_group_criteria(body["criteria"]) if body.get("criteria") else uj(row["criteria_json"], {})
+    conn.execute("UPDATE peer_groups SET name=?, criteria_json=?, updated_at=datetime('now') WHERE group_id=?",
+                 (name, j(criteria), gid))
+    conn.commit()
+    return group_row_out(conn, conn.execute("SELECT * FROM peer_groups WHERE group_id=?", (gid,)).fetchone())
+
+
+@app.delete("/api/peer-groups/{gid}")
+async def peer_groups_delete(gid: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    n = conn.execute("DELETE FROM peer_groups WHERE group_id=? AND org_id=?",
+                     (gid, org["org_id"])).rowcount
+    conn.commit()
+    if not n:
+        raise HTTPException(404, "No such peer group.")
+    return {"ok": True}
 
 
 # ============================================================ COMPANY PROFILE ==
@@ -1964,8 +2115,8 @@ async def share_data(token: str, request: Request):
                 "created_at": row["created_at"]}
     # dashboard share: overview + the org's pinned/starter cards under a fixed cut
     cut = config.get("cut") or {"dim": "all"}
-    if cut.get("dim") == "twin":
-        cut = {"dim": "all"}  # twin never exposed on anonymous links
+    if cut.get("dim") in ("twin", "group"):
+        cut = {"dim": "all"}  # bespoke groups never exposed on anonymous links
     answers = pos.get_org_answers(conn, org["org_id"], CURRENT_SNAPSHOT)
     items = pos.position_items(org["org_id"], cut, visible_questions(), payloads(), answers, entitled, None)
     summary = pos.overview_summary(items)

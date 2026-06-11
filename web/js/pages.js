@@ -549,5 +549,9 @@ window.cutLabelOf = function (cut, cuts) {
   if (cut.dim === "industry") return cut.value || (cuts && cuts.org_industry) || "Your industry";
   if (cut.dim === "fte_band") return (cut.value || (cuts && cuts.org_fte_band) || "Your size") + " FTE";
   if (cut.dim === "twin") return "Organisations like you";
+  if (cut.dim === "group") {
+    const g = cuts && (cuts.groups || []).find(g => g.group_id === cut.value);
+    return g ? g.name : "Your group";
+  }
   return "All peers";
 };

@@ -62,9 +62,9 @@ def resolve_block(payload_section_all, payload_section_cuts, cut):
 
 def block_for(payload, cut, twin_blocks=None):
     """Main (non-score) block for a question payload under a cut."""
-    if cut.get("dim") == "twin":
+    if cut.get("dim") in ("twin", "group"):
         b = (twin_blocks or {}).get("main")
-        return b, "Organisations like you"
+        return b, cut.get("label") or "Organisations like you"
     return resolve_block(payload.get("all"), payload, cut)
 
 
@@ -72,8 +72,8 @@ def score_block_for(payload, cut, twin_blocks=None):
     sc = payload.get("scores")
     if sc is None:
         return None, ""
-    if cut.get("dim") == "twin":
-        return (twin_blocks or {}).get("score"), "Organisations like you"
+    if cut.get("dim") in ("twin", "group"):
+        return (twin_blocks or {}).get("score"), cut.get("label") or "Organisations like you"
     return resolve_block(sc.get("all"), sc, cut)
 
 
@@ -81,13 +81,13 @@ def presence_block_for(payload, cut, twin_blocks=None):
     pr = payload.get("presence")
     if pr is None:
         return None, ""
-    if cut.get("dim") == "twin":
-        return (twin_blocks or {}).get("presence"), "Organisations like you"
+    if cut.get("dim") in ("twin", "group"):
+        return (twin_blocks or {}).get("presence"), cut.get("label") or "Organisations like you"
     return resolve_block(pr.get("all"), pr, cut)
 
 
 def matrix_row_block_for(row, cut, twin_blocks=None):
-    if cut.get("dim") == "twin":
+    if cut.get("dim") in ("twin", "group"):
         return ((twin_blocks or {}).get("rows", {}).get(row["row_id"]),
                 "Organisations like you")
     return resolve_block(row.get("all"), row, cut)

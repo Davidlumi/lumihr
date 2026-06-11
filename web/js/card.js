@@ -104,6 +104,7 @@ function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, p
   const choices = [{ key: "all", label: "All peers" }];
   if (cuts && cuts.org_industry) choices.push({ key: "industry::" + cuts.org_industry, label: "Your sector: " + cuts.org_industry });
   if (cuts && cuts.org_fte_band) choices.push({ key: "fte_band::" + cuts.org_fte_band, label: "Your size: " + cuts.org_fte_band + " FTE" });
+  (cuts && cuts.groups || []).forEach(g => choices.push({ key: "group::" + g.group_id, label: "Group: " + g.name }));
   const unprofiled = cuts && !cuts.org_industry && !cuts.org_fte_band;
   const exportable = !c.suppressed && !!c.you;
   const pick = (fn) => () => { setOpen(false); fn(); };

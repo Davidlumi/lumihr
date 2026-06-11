@@ -581,3 +581,18 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* the profile-gating prompt must never truncate — it's the path to peer cuts */
 .ctlgroup .hint.hint-wide { max-width: 420px; white-space: normal; line-height: 1.3; }
+
+
+/* ----- custom peer groups ----- */
+.group-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3) var(--s5);
+  max-height: 46vh; overflow-y: auto; padding-right: 6px; margin-bottom: var(--s3); }
+@media (max-width: 760px) { .group-fields { grid-template-columns: 1fr; } }
+.chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.crit-chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+  padding: 4px 10px; font: 500 12px/1.2 var(--font-body); color: var(--ink-soft); cursor: pointer; }
+.crit-chip:hover { border-color: var(--blue-tint-2); color: var(--ink); }
+.crit-chip.on { background: var(--blue-tint); border-color: var(--blue); color: var(--blue-deep); font-weight: 650; }
+.group-count { background: var(--surface-sunk); border-radius: var(--radius-sm);
+  padding: var(--s2) var(--s3); font-size: var(--fs-label); margin-bottom: var(--s3);
+  font-variant-numeric: tabular-nums; }
+.group-count.warn { background: var(--neutral-perf-tint); color: var(--neutral-perf); font-weight: 600; }

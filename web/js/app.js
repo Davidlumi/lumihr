@@ -35,6 +35,7 @@ function App() {
   const [metricReq, setMetricReq] = useState(null);   // {prefill, source} | null
   const [gapCue, setGapCue] = useState(null);          // {section, count} — nav priority cue
   const [twinOpen, setTwinOpen] = useState(false);
+  const [groupsOpen, setGroupsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [qIndex, setQIndex] = useState(null);
   const prefsTimer = useRef(null);
@@ -97,8 +98,10 @@ function App() {
   const setGlobalCut = (key) => {
     if (key === "all") setCut({ dim: "all", value: null });
     else if (key === "twin") setCut({ dim: "twin", value: null });
+    else if (key === "manage-groups") setGroupsOpen(true);
     else { const [dim, value] = key.split("::"); setCut({ dim, value }); }
   };
+  const refreshCuts = () => api("/api/cuts").then(setCuts);
 
   const pageProps = { me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds: layoutIds };
   const contrib = me.contribution || null;
@@ -192,6 +195,12 @@ function App() {
               ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
                 html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+              ${cuts && (cuts.groups || []).length > 0 && html`
+                <optgroup label="Your groups">
+                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
+                    ${g.name}${g.too_small ? " (too few orgs)" : ` (${g.match_count})`}</option>`)}
+                </optgroup>`}
+              ${me.org.classified && html`<option value="manage-groups">＋ Create / manage peer groups…</option>`}
             </select>
             <div class=${"hint" + (!me.org.classified ? " hint-wide" : "")}>${!me.org.classified
               ? html`${me.user.role === "admin"
@@ -224,6 +233,8 @@ function App() {
       ${metricReq && html`<${RequestMetricModal} prefill=${metricReq.prefill} source=${metricReq.source}
         onClose=${() => setMetricReq(null)} />`}
       ${twinOpen && html`<${PeerTwinPanel} onClose=${() => setTwinOpen(false)} onUse=${() => setGlobalCut("twin")} />`}
+      ${groupsOpen && html`<${PeerGroupsModal} onClose=${() => { setGroupsOpen(false); refreshCuts(); }}
+        onUse=${(gid) => { setCut({ dim: "group", value: gid }); setGroupsOpen(false); refreshCuts(); }} />`}
     </div>`;
 }
 
@@ -307,6 +318,130 @@ window.ProfilePage = function ({ me, refreshMe }) {
         html`<div class="caption">Only your organisation's Admin can edit the company profile.</div>`}
       </div>
     </div>`;
+};
+
+/* Custom peer groups: filter-based, private to the org. The live match count
+   keeps the user honest against the suppression floor BEFORE they save —
+   and the server enforces the same floor regardless. Membership is never
+   shown, only the count. */
+window.PeerGroupsModal = function ({ onClose, onUse }) {
+  const [options, setOptions] = useState(null);
+  const [groups, setGroups] = useState(null);
+  const [editing, setEditing] = useState(null);    // null=list | {} new | group obj
+  const [name, setName] = useState("");
+  const [criteria, setCriteria] = useState({});
+  const [count, setCount] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const previewTimer = useRef(null);
+  const refresh = () => api("/api/peer-groups").then(d => setGroups(d.groups));
+  useEffect(() => { api("/api/peer-groups/options").then(setOptions); refresh(); }, []);
+
+  const startNew = () => { setEditing({}); setName(""); setCriteria({}); setCount(null); setErr(null); };
+  const startEdit = (g) => { setEditing(g); setName(g.name); setCriteria(g.criteria); setCount({ match_count: g.match_count, too_small: g.too_small, min_orgs: g.min_orgs }); setErr(null); };
+  const toggle = (field, value) => {
+    const cur = new Set(criteria[field] || []);
+    cur.has(value) ? cur.delete(value) : cur.add(value);
+    const next = { ...criteria, [field]: Array.from(cur) };
+    if (!next[field].length) delete next[field];
+    setCriteria(next);
+    clearTimeout(previewTimer.current);
+    if (Object.keys(next).length === 0) { setCount(null); return; }
+    previewTimer.current = setTimeout(() =>
+      api("/api/peer-groups/preview", { method: "POST", body: { criteria: next } })
+        .then(setCount).catch(() => setCount(null)), 350);
+  };
+  const save = async () => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const body = { name, criteria };
+      const saved = editing.group_id
+        ? await api("/api/peer-groups/" + editing.group_id, { method: "PUT", body })
+        : await api("/api/peer-groups", { method: "POST", body });
+      toast(`Peer group “${saved.name}” saved`);
+      setEditing(null); refresh();
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  const del = async (g) => {
+    if (!window.confirm(`Delete the peer group “${g.name}”? This only removes the saved filter — no data is affected.`)) return;
+    await api("/api/peer-groups/" + g.group_id, { method: "DELETE" });
+    toast("Peer group deleted"); refresh();
+  };
+
+  if (!options || !groups) return html`<${Modal} onClose=${onClose}><${Spinner} /><//>`;
+  return html`
+    <${Modal} onClose=${onClose} xl=${true}>
+      ${editing === null ? html`
+        <div>
+          <div class="row spread">
+            <h2 class="section-title" style=${{ marginBottom: 0 }}>Your peer groups</h2>
+            <button class="btn primary small" onClick=${startNew}>＋ Create peer group</button>
+          </div>
+          <p class="caption">Build a comparison group from company facts — sector, size, region and more.
+          Private to your organisation. You'll only ever see <b>how many</b> organisations match, never which —
+          and nothing shows unless at least ${options.min_orgs} match. That's what keeps it a benchmark.</p>
+          ${groups.length === 0 && html`<${EmptyState} title="No peer groups yet"
+            body="Create one — e.g. “UK mid-size manufacturers” — and it appears in the peer-group selector." />`}
+          ${groups.map(g => html`
+            <div key=${g.group_id} class="card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)" }}>
+              <div class="row spread">
+                <div style=${{ minWidth: 0 }}>
+                  <b>${g.name}</b>
+                  <span class=${"chip " + (g.too_small ? "warn" : "")} style=${{ marginLeft: "8px" }}>
+                    ${g.too_small ? `only ${g.match_count} match — needs ${g.min_orgs}` : `${g.match_count} organisations`}</span>
+                  <div class="caption" style=${{ marginTop: "2px" }}>
+                    ${Object.entries(g.criteria).map(([f, vs]) => {
+                      const fl = (options.fields.find(x => x.key === f) || {}).label || f;
+                      return fl + ": " + vs.join(" or ");
+                    }).join(" · ")}</div>
+                </div>
+                <div class="row" style=${{ flex: "none" }}>
+                  ${!g.too_small && html`<button class="btn small" onClick=${() => onUse(g.group_id)}>Use</button>`}
+                  <button class="btn small quiet" onClick=${() => startEdit(g)}>Edit</button>
+                  <button class="btn small quiet" onClick=${() => del(g)}>Delete</button>
+                </div>
+              </div>
+            </div>`)}
+        </div>` : html`
+        <div>
+          <h2 class="section-title">${editing.group_id ? "Edit peer group" : "Create a peer group"}</h2>
+          <div class="field" style=${{ maxWidth: "360px" }}>
+            <label>Group name</label>
+            <input value=${name} autoFocus placeholder=${"e.g. UK mid-size manufacturers"}
+              onInput=${e => setName(e.target.value)} />
+          </div>
+          <p class="caption" style=${{ margin: "0 0 var(--s2)" }}>Pick the facts a peer must match — choosing
+          several options within one row means “any of these”. You'll never see which organisations match, only how many.</p>
+          <div class="group-fields">
+            ${options.fields.map(f => html`
+              <div key=${f.key} class="group-field">
+                <div class="caption" style=${{ fontWeight: 700, marginBottom: "4px" }}>${f.label}
+                  ${!(criteria[f.key] || []).length && html`<span style=${{ fontWeight: 400 }}> · any</span>`}</div>
+                <div class="chip-row">
+                  ${f.choices.map(v => html`
+                    <button key=${v} class=${"crit-chip" + ((criteria[f.key] || []).includes(v) ? " on" : "")}
+                      aria-pressed=${(criteria[f.key] || []).includes(v)}
+                      onClick=${() => toggle(f.key, v)}>${v}</button>`)}
+                </div>
+              </div>`)}
+          </div>
+          <div class=${"group-count" + (count && count.too_small ? " warn" : "")} aria-live="polite">
+            ${Object.keys(criteria).length === 0 ? "Choose at least one criterion."
+              : count === null ? html`<${Spinner} />`
+              : count.too_small
+                ? `Only ${count.match_count} organisation${count.match_count === 1 ? "" : "s"} currently match — at least ${count.min_orgs} are needed before any benchmark shows. You can still save it; it stays suppressed until enough organisations match.`
+                : `${count.match_count} organisations currently match — comfortably above the minimum of ${count.min_orgs}.`}
+          </div>
+          ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+          <div class="row">
+            <button class="btn primary" disabled=${busy || !name.trim() || Object.keys(criteria).length === 0} onClick=${save}>
+              ${busy ? html`<${Spinner} />` : "Save group"}</button>
+            <button class="btn" onClick=${() => setEditing(null)}>Back</button>
+          </div>
+        </div>`}
+    <//>`;
 };
 
 window.NotFoundPage = function ({ route }) {
@@ -504,6 +639,13 @@ function cutHint(cut, cuts, me) {
   if (cut.dim === "industry") return `Comparing against ${cut.value} only — change here.`;
   if (cut.dim === "fte_band") return `Comparing against ${cut.value}-employee organisations — change here.`;
   if (cut.dim === "twin") return "Comparing against organisations most like yours — change here.";
+  if (cut.dim === "group") {
+    const g = cuts && (cuts.groups || []).find(g => g.group_id === cut.value);
+    if (!g) return "Comparing against your custom group.";
+    return g.too_small
+      ? `Only ${g.match_count} organisation${g.match_count === 1 ? "" : "s"} match “${g.name}” — at least ${g.min_orgs} are needed before a benchmark shows.`
+      : `Comparing against “${g.name}” — ${g.match_count} organisations.`;
+  }
   return `Comparing against all ${total} organisations — change here.`;
 }
 
@@ -629,6 +771,10 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
               ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
               ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+              ${cuts && (cuts.groups || []).length > 0 && html`
+                <optgroup label="Your groups">
+                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
+                </optgroup>`}
             </select>
             <div class="hint">${c.cut.label} · n=${c.n}</div>
           </div>

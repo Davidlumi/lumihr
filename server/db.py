@@ -241,6 +241,21 @@ CREATE TABLE IF NOT EXISTS terms_acceptances (
 );
 CREATE INDEX IF NOT EXISTS idx_terms_org ON terms_acceptances(org_id, kind);
 
+-- Custom peer groups: filter-based (NEVER hand-picked orgs), private to the
+-- owning org. criteria_json maps curated firmographic fields to accepted
+-- value lists. Membership is resolved at query time and never stored or
+-- exposed — only counts and suppressed-compliant aggregates leave the server.
+CREATE TABLE IF NOT EXISTS peer_groups (
+    group_id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    name TEXT NOT NULL,
+    criteria_json TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_peer_groups_org ON peer_groups(org_id);
+
 -- AI metric commentary, cached per org+metric+cut until the underlying
 -- figures change (payload_hash). Regenerate replaces the row.
 CREATE TABLE IF NOT EXISTS metric_commentary (

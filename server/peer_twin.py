@@ -117,3 +117,96 @@ def twin_blocks(conn, org_id, snapshot_id=1):
 
 def invalidate_twin_caches():
     _twin_payload_cache.clear()
+
+
+# ============================================================ CUSTOM GROUPS ==
+# Filter-based peer groups: criteria -> org_ids -> the SAME engine path and
+# suppression as every other cut. No new aggregation maths. Membership is
+# resolved server-side and never leaves the server — only counts.
+
+from aggregate import SUPPRESSION_FLOOR
+
+# the curated criteria fields (plain-English labels live in the API layer)
+GROUP_FIELDS = ("industry", "fte_band", "hq_region", "ownership_type",
+                "unionised_level", "hr_maturity", "business_maturity", "operating_model")
+
+_REGISTRY_ATTR = {"hr_maturity": "HR_Maturity", "business_maturity": "Business_Maturity",
+                  "operating_model": "Operating_Model", "ownership_type": "Ownership_Type",
+                  "industry": "Industry", "fte_band": "FTE_Band", "hq_region": "HQ_Region"}
+
+
+def _union_band(pct):
+    if pct is None:
+        return None
+    try:
+        pct = float(pct)
+    except (TypeError, ValueError):
+        return None
+    if pct <= 0:
+        return "None (0%)"
+    if pct <= 25:
+        return "Low (1-25%)"
+    if pct <= 50:
+        return "Medium (26-50%)"
+    return "High (over 50%)"
+
+
+def org_group_value(row, reg, field):
+    """An org's value for a criteria field: declared column first (members),
+    registry attribute as fallback (seed orgs)."""
+    if field == "unionised_level":
+        return row["unionised_level"] if "unionised_level" in row.keys() and row["unionised_level"] \
+            else _union_band(reg.get("Workforce_Unionised_%"))
+    v = row[field] if field in row.keys() and row[field] else None
+    if v is None and field in _REGISTRY_ATTR:
+        v = reg.get(_REGISTRY_ATTR[field])
+    return v
+
+
+def group_org_ids(conn, criteria):
+    """Org ids matching ALL criteria fields (OR within a field's value list),
+    among organisations contributing to the benchmark. Server-side only."""
+    out = set()
+    for row in conn.execute("SELECT * FROM orgs WHERE submission_complete=1").fetchall():
+        reg = uj(row["registry_json"], {}) or {}
+        ok = True
+        for field, values in (criteria or {}).items():
+            if not values:
+                continue
+            if org_group_value(row, reg, field) not in values:
+                ok = False
+                break
+        if ok:
+            out.add(row["org_id"])
+    return out
+
+
+_group_payload_cache = {}
+
+
+def group_blocks(conn, criteria, snapshot_id=1):
+    """{question_id: {main, rows, score, presence}} for a custom group via the
+    standard engine path (identical n>=5 suppression). If the GROUP itself is
+    below the floor, no aggregation runs at all — there is no data path.
+    Returns (blocks_or_None, match_count)."""
+    org_ids = group_org_ids(conn, criteria)
+    if len(org_ids) < SUPPRESSION_FLOOR:
+        return None, len(org_ids)
+    key = (snapshot_id, j(criteria))
+    if key in _group_payload_cache:
+        return _group_payload_cache[key], len(org_ids)
+    questions = load_questions()
+    answers = load_answers(conn, snapshot_id)
+    out = {}
+    for qid, q in questions.items():
+        blk, mr, sc, pres = aggregate_question_for_orgs(q, org_ids, answers.get(qid, {}))
+        entry = {"main": blk, "score": sc, "presence": pres}
+        if mr is not None:
+            entry["rows"] = {m["row_id"]: m["block"] for m in mr}
+        out[qid] = entry
+    _group_payload_cache[key] = out
+    return out, len(org_ids)
+
+
+def invalidate_group_caches():
+    _group_payload_cache.clear()

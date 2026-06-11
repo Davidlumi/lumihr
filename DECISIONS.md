@@ -314,3 +314,36 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
   options and shows a complete-your-profile prompt (admin link / ask-your-
   admin for others); card kebab and metric page prompt likewise. Editable
   later via Settings -> Company profile (admin-only; org-level).
+
+## Custom peer groups — filter-based, suppression-first (2026-06-11)
+
+- Filter-based ONLY (never hand-picked orgs): criteria over a curated 8 of
+  the registry firmographics (industry, FTE band, region, ownership,
+  unionised band, HR maturity, business maturity, operating model), values
+  validated against the registry sets; unknown fields/values are 400s, so
+  hand-built requests can't probe arbitrary columns. OR within a field,
+  AND across fields. Stored per org (peer_groups table), private.
+- Anonymity, enforced server-side in the engine path: a group below the
+  n>=5 floor NEVER aggregates at all (group_blocks returns None per
+  question → every metric renders the standard suppressed state, n=0);
+  per-metric n>=5 suppression still applies inside valid groups;
+  membership is never revealed — previews and listings return counts only;
+  foreign/stale group ids resolve to All peers; anonymous share links
+  force group cuts to All peers (same rule as Peer Twin).
+- A group cut is just another filter into the EXISTING pipeline: it rides
+  the Peer Twin bespoke-blocks channel (aggregate_question_for_orgs), so
+  overview, cards, gap register, full-page metric and per-card override
+  all work unchanged, with the group's name as the cut label.
+- Create flow shows a live match count (count only) and an amber warning
+  below the floor; saving a too-small group is allowed (it stays
+  suppressed until enough orgs match — important at real scale).
+- **Known residual risk for David — differential attacks**: two groups
+  differing by one criterion (e.g. n=6 vs n=5) could in principle be
+  compared to infer things about the single org in the difference. The
+  n>=5 floor blunts the worst case but does not eliminate it. v1 ships
+  with the floor only; monitor usage and consider (later) overlap-aware
+  suppression or minimum-difference rules if real members build many
+  near-identical groups.
+- Synthetic-data expectation: on ~220 seed orgs, richly-filtered groups
+  often fall below the floor — that is suppression working, not a bug.
+  Do not loosen the floor for demos.
