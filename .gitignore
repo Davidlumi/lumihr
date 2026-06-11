@@ -3,3 +3,4 @@ lumi.db-wal
 lumi.db-shm
 data/responses/
 __pycache__/
+data/responses_orig/

@@ -37,6 +37,10 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
             <${Chip}>${data.org.hq_region || "Region not declared"}<//>
             <${Chip} title="Organisations contributing to this benchmark"><${Term} word="peer group">peer group<//>: ${data.peer_pool.responding_orgs} organisations<//>
             <${Chip}>${data.snapshot.window}<//>
+            ${data.synthetic_pool && html`<span class="chip warn hastip" style=${{ position: "relative", cursor: "help" }}>
+              Illustrative sample data
+              <span class="tip">The current peer pool is realistic but synthetic seed data, generated to behave like a UK benchmark while real member submissions build up. It must not be read as real benchmark data.</span>
+            </span>`}
             ${cut.dim !== "all" && html`<${Chip} kind="accent">filter: ${cutLabelOf(cut, cuts)}<//>`}
           </div>
         </div>
@@ -354,6 +358,13 @@ window.MethodologyPage = function () {
 
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Who you're compared with</h2>
+        ${m.synthetic_pool && html`
+          <div style=${{ background: "var(--mid-soft)", borderRadius: "var(--radius-sm)", padding: "var(--s3) var(--s4)", marginBottom: "var(--s3)", fontSize: "var(--fs-body)" }}>
+            <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: 220 simulated
+            organisations whose answers were generated from published UK HR and reward norms and each organisation's
+            firmographic profile, pending real member submissions. It is designed to behave believably for
+            demonstration and launch seeding — it is not real member data and must not be cited as a market statistic.
+          </div>`}
         <p>The peer group contains <b>${m.peer_pool.responding_orgs} UK organisations</b> that have completed a lumi benchmark submission.
         ${m.peer_pool.classified_orgs} carry full firmographic profiles (sector, size, region, ownership) and appear in filtered peer
         groups; ${m.unclassified_count} are awaiting classification, stay in the "All peers" group only, and are shown as "Unclassified".</p>

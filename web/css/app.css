@@ -196,7 +196,7 @@ select.ctl:focus, input.ctl:focus { outline: 2px solid var(--brand-soft-2); bord
 .bench-chart { height: var(--chart-h); display: flex; flex-direction: column; justify-content: center;
   overflow: hidden; }
 .bench-chart > * { width: 100%; }
-.bench-chart svg { max-width: 560px; margin: 0 auto; display: block; }
+.bench-chart svg { max-width: 560px; max-height: 100%; margin: 0 auto; display: block; }
 .bench-readout { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--ink-2);
   margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--chart-grid); min-height: 42px; }
 .bench-controls { display: flex; gap: 2px; align-items: center; opacity: 0; transition: opacity .12s;

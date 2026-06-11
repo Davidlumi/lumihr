@@ -549,6 +549,7 @@ async def overview(request: Request):
                 "hq_region": org["hq_region"], "classified": bool(org["classified"])},
         "cut": cut,
         "peer_pool": pool,
+        "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "snapshot": {"date": snap["snapshot_date"], "window": snap["collection_window"]},
         "headline": summary,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
@@ -606,6 +607,7 @@ async def methodology(request: Request):
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     assumptions = get_meta("assumptions_defaults", {})
     return {
+        "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "composition": {k: dict(v) for k, v in sorted(comp.items())},
         "unclassified_count": uncl,
         "fte_bands": ["50-249", "250-999", "1,000-4,999", "5,000-9,999", "10,000+"],

@@ -249,6 +249,9 @@ def run(data_dir, fresh=False):
 
     set_meta("sim_feature_names", feature_names, conn)
     set_meta("sim_feature_space", build_similarity_vectors.feature_space, conn)
+    # the seeded pool is realistic-but-synthetic illustrative data — surfaced
+    # as a label wherever the peer group is described
+    set_meta("synthetic_seed", True, conn)
     set_meta("registry_only_orgs", registry_only, conn)
     recon = {
         "files": len(files),
