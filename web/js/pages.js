@@ -87,13 +87,12 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
             <div key=${sec} class="card sp-card" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec))}>
               <div class="row spread" style=${{ marginBottom: "6px" }}>
                 <span class="sp-name">${sec}</span>
-                <span class="caption">${c.available} metrics</span>
+                <span class="caption" title="Metrics where your answer and at least 5 peers' answers can be compared">${c.available} comparable</span>
               </div>
               ${c.available ? html`
-                <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
-                  <span class="chip good">▲ ${c.above}</span>
-                  <span class="chip bad">▼ ${c.below}</span>
-                  ${c.inline ? html`<span class="chip">= ${c.inline}</span>` : null}
+                <div class="caption" style=${{ marginBottom: "8px" }}>
+                  <b style=${{ color: "var(--favourable)" }}>▲ ${c.above} ahead</b> · ${" "}
+                  <b style=${{ color: "var(--unfavourable)" }}>▼ ${c.below} behind</b>${c.inline ? html` · ${c.inline} in line` : ""}
                 </div>
                 <${QuartileDots} quartiles=${c.quartiles} />` :
               html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
@@ -233,7 +232,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         body="Try clearing the category or tier filter." action=${html`<button class="btn small" onClick=${() => { setCat(""); setTier(""); }}>Clear filters</button>`} />`}
       ${bySub.map(g => html`
         <div key=${g.sub} style=${{ marginBottom: "var(--s5)" }}>
-          <h2 class="section-title">${g.sub}</h2>
+          ${!subF && html`<h2 class="section-title">${g.sub}</h2>`}
           <div class="bench-grid">
             ${g.cards.map(c => html`
               <div key=${c.id} id=${"q-" + c.id}>

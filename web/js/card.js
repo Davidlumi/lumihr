@@ -74,22 +74,15 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
+        ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
         ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
       <div class="bench-body">
         <div class="bench-words">
           <div class="bench-lead">${humanSentence(c).lead || ""}</div>
-          ${humanSentence(c).support && html`<div class="caption">${humanSentence(c).support}</div>`}
           ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
-          <div class="bench-meta">
-            <${NBadge} n=${c.n} cutLabel=${c.cut.label} />
-            ${c.category && html`<${Chip}>${c.category}<//>`}
-            ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
-          </div>
-          <div class="movement">
-            <${Icon} name="arrow-up-right" size=${11} />
-            ${c.movement === null ? "First benchmark — movement appears from your next cycle." : ""}
-          </div>
+          <div class="bench-n" title="The number of organisations behind this comparison">
+            n=${c.n}${cutNote(c)}</div>
         </div>
         <div class=${"bench-proof bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
           onClick=${e => { if (!c.suppressed && !e.target.closest("a")) setZoomed(true); }}>
@@ -191,6 +184,11 @@ function humanSentence(c) {
     return { lead: "You haven't answered this question yet — the peer picture is shown for context.", support: null };
   }
   return { lead: c.readout, support: null };
+}
+
+/* only name the peer group on the card when it differs from the page filter */
+function cutNote(c) {
+  return c.cut && c.cut.label && c.cut.label !== "All peers" ? " · " + c.cut.label : "";
 }
 
 /* deterministic readout for multi-select cards (server sends none) */
@@ -298,8 +296,8 @@ function stripUnit(display, unit) {
 window.LockedCard = function ({ card: c, size }) {
   return html`
     <div class=${"card bench-card" + (size === 2 ? " w2" : "")}>
-      <div class="bench-head"><h3 class="bench-title">${c.title}</h3></div>
-      <div class="bench-meta"><${NBadge} n=${c.n} cutLabel=${(c.cut || {}).label || "All peers"} /><${Chip} kind="warn">${c.tier}<//></div>
+      <div class="bench-head"><h3 class="bench-title">${c.title}</h3><${Chip} kind="warn">${c.tier}<//></div>
+      <div class="bench-n">n=${c.n}</div>
       <div class="bench-chart">
         <div class="blurred" aria-hidden="true">
           <svg viewBox="0 0 420 96" style=${{ width: "100%" }}>

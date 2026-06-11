@@ -77,7 +77,7 @@
 
   /* ---- card geometry (equal-height skeleton) ---- */
   --card-pad: var(--s5);
-  --chart-h: 176px;
+  --chart-h: 150px;
 
   /* ---- motion: quick and calm ---- */
   --ease: 160ms ease;
@@ -99,11 +99,11 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   padding: var(--s4) var(--s3); position: sticky; top: 0; height: 100vh; overflow-y: auto;
   display: flex; flex-direction: column; }
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: var(--s3) var(--s5);
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: var(--s2) var(--s5);
   display: flex; align-items: flex-start; gap: var(--s4); position: sticky; top: 0; z-index: 40; flex-wrap: wrap; }
-.ctlgroup { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
-.ctlgroup .hint { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ink-soft);
-  max-width: 320px; }
+.ctlgroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ctlgroup .hint { font-size: 11px; line-height: 14px; color: var(--ink-faint);
+  max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar .ctl, .topbar .btn { height: 36px; }
 .content { padding: var(--s5); max-width: 1320px; width: 100%; margin: 0 auto; }
 @media (max-width: 900px) {
@@ -206,12 +206,13 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 .bench-card.w2 { grid-column: span 2; }
 @media (max-width: 760px) { .bench-card.w2 { grid-column: span 1; } }
 
-.bench-head { display: flex; align-items: flex-start; gap: var(--s2); margin-bottom: var(--s3); }
+.bench-head { display: flex; align-items: flex-start; gap: var(--s2); margin-bottom: var(--s2); }
 
 /* the card body: plain-English answer beside the chart-as-proof.
    Stacks (sentence first) when the card gets narrow. */
 .bench-body { display: flex; gap: var(--s5); align-items: stretch; flex: 1; min-height: 0; }
-.bench-words { flex: 1 1 220px; min-width: 200px; display: flex; flex-direction: column; gap: var(--s3); }
+.bench-words { flex: 1 1 220px; min-width: 200px; display: flex; flex-direction: column; gap: var(--s2); }
+.bench-n { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: auto; cursor: help; }
 .bench-lead { font-size: var(--fs-body); line-height: 23px; font-weight: 500; color: var(--ink); }
 .bench-proof { flex: 1.35 1 300px; min-width: 0; }
 @media (max-width: 700px) {
@@ -286,7 +287,7 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 .sp-card .sp-name svg { color: var(--ink-faint); }
 .qdots { display: flex; gap: 3px; }
 .qdot { width: 22px; height: 5px; border-radius: 3px; background: var(--surface-sunk); }
-.callout { padding: var(--s3) var(--s4); border-left: 3px solid var(--border); background: var(--surface);
+.callout { padding: var(--s2) var(--s4); border-left: 3px solid var(--border); background: var(--surface);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: var(--fs-label); line-height: 19px;
   color: var(--ink-soft); margin-bottom: var(--s2);
   border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);

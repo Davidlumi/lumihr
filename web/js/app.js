@@ -158,11 +158,10 @@ function App() {
                 value=${search} onInput=${e => setSearch(e.target.value)} />
               ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
             </div>
-            <div class="hint">Type to find any of the ${scope.question_count} ${scope.focused ? "reward " : ""}benchmarks.</div>
           </div>
           <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
             <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
-            <div class="hint" style=${{ textAlign: "right" }}>Ask in plain English, e.g. “how does our pension compare?”</div>
+            <div class="hint" style=${{ textAlign: "right" }}>Ask in plain English.</div>
           </div>
         </div>
         <main class="content">
@@ -208,10 +207,10 @@ window.sectionList = function (qIndex) {
 
 function cutHint(cut, cuts, me) {
   const total = (me.peer_pool || {}).responding_orgs || "all";
-  if (cut.dim === "industry") return `You're comparing against ${cut.value} organisations only. Change your peer group here.`;
-  if (cut.dim === "fte_band") return `You're comparing against organisations of ${cut.value} employees. Change your peer group here.`;
-  if (cut.dim === "twin") return "You're comparing against the organisations most like yours. Change your peer group here.";
-  return `You're comparing against all ${total} organisations. Change this to see only your sector or size.`;
+  if (cut.dim === "industry") return `Comparing against ${cut.value} only — change here.`;
+  if (cut.dim === "fte_band") return `Comparing against ${cut.value}-employee organisations — change here.`;
+  if (cut.dim === "twin") return "Comparing against organisations most like yours — change here.";
+  return `Comparing against all ${total} organisations — change here.`;
 }
 
 function navCls(route, path) {
