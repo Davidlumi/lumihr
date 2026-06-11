@@ -381,3 +381,34 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
   inversions), positionability census, band tunability, eligibility,
   rollup construction, day-one and the neutral palette. Run it after any
   change to the hero logic.
+
+## Delivery audit (2026-06-11) — true state + flags for David
+
+Phase-1 verdict across ~25 audited items: 18 WORKING (each with live
+evidence: actual values, responses, or DOM probes), 0 BROKEN, 3 PARTIAL,
+4 NOT BUILT, 0 UNVERIFIED. Correctness (gap-register semantics, polarity,
+suppression, unlock gate) and security (role guards, cross-tenant
+isolation, AI grounding validator) were audited fully and passed with
+evidence; the falsification probes (foreign group ids, hostile validator
+outputs, viewer-by-URL, cadence labels) all held.
+
+Fixed in Phase 2:
+- D3: per-surface AI kill switches — LUMI_AI_ANALYST / LUMI_AI_BOARDPACK
+  (default on; verified 403 when off) joining LUMI_AI_COMMENTARY; exposed
+  in /api/me features.
+- D7: verify.py marked DEPRECATED with a refusal guard (pre-dates the
+  reward-only flag; misleading). Current evidence suites: qa_focus,
+  qa_status_audit, qa_hero, qa_commentary.
+
+FLAGGED, NOT BUILT (need David's direction, not unsupervised builds):
+- D1 Market-context medians with historical-dedupe / staged-once /
+  re-pooling: requires a multi-cycle snapshot model; today there is ONE
+  snapshot and no staging code.
+- D2 Back office / superadmin console, 2FA, audit logging UI, pay-deals
+  upload/refresh: a separate surface + auth model; nothing exists
+  (/admin is 404 by absence).
+- D4 Persona features (density toggle, multi-select export — the
+  show-only-gaps status filter DOES exist and persists).
+- D5 Collapsible sidebar. D6 Bespoke dashboards beyond share-links +
+  My View pinned layouts.
+Also outstanding: master QA pass v2 phases 6-7 (the pre-demo gate).

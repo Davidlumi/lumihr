@@ -66,6 +66,11 @@ UNCOMMON_PCT = float(os.environ.get("LUMI_UNCOMMON_PCT", "20"))
 # re-run the gate before re-enabling after any change to the generator,
 # validator or payload builder — and after configuring ANTHROPIC_API_KEY.
 AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "on").lower() == "on"
+# Per-surface kill switches for the other AI surfaces (delivery-audit D3):
+# both ship on (they have grounded prompts + deterministic fallbacks), but can
+# be cut off independently without a deploy if a trust issue appears.
+AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
+AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -551,7 +556,7 @@ async def me(request: Request):
     maybe_send_clock_reminder(conn, org, contrib)
     return {
         "contribution": contrib,
-        "features": {"commentary": AI_COMMENTARY},
+        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -1153,6 +1158,8 @@ async def gap_register_csv(request: Request):
 @app.post("/api/analyst")
 async def analyst(request: Request):
     user, org = require_user(request)
+    if not AI_ANALYST:
+        raise HTTPException(403, "Ask lumi is switched off at the moment.")
     body = await request.json()
     question = (body.get("question") or "").strip()
     if not question:
@@ -1330,6 +1337,8 @@ def _pack_item(i):
 @app.post("/api/boardpack/generate")
 async def boardpack_generate(request: Request):
     user, org = require_user(request)
+    if not AI_BOARDPACK:
+        raise HTTPException(403, "Board pack generation is switched off at the moment.")
     contrib = contribution_state(get_conn(), org)
     if not contrib["insights_unlocked"]:
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))

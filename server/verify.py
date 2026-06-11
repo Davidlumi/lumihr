@@ -1,3 +1,19 @@
+"""DEPRECATED (2026-06-11 delivery audit, defect D7): this suite assumes the
+full 778-question scope and PRE-DATES the reward-only launch flag, the tier
+removal and the required-set gate — its results are misleading under the
+current configuration. Use instead:
+  qa_focus.py        — reward-scope leak checks (23)
+  qa_status_audit.py — gap-register presence semantics (full library)
+  qa_hero.py         — hero polarity/positionability correctness (25)
+  qa_commentary.py   — AI commentary adversarial gate (40)
+Kept for the eventual all-superpowers relaunch; do not cite as evidence.
+"""
+import sys
+if "--force" not in sys.argv:
+    print(__doc__)
+    print("Refusing to run (misleading under reward-only config). Use --force to override.")
+    sys.exit(2)
+
 """lumi verification suite — runs the quality-bar checks against a live server.
 
 Usage: python3 verify.py [--base http://localhost:8060]
