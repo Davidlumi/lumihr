@@ -50,23 +50,6 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
         </div>
       </div>
 
-      <div class="sp-grid" style=${{ marginBottom: "var(--s4)" }}>
-        ${gapGroups(data).map(s => {
-          const mt = focused ? data.maturity_sections[s] : data.maturity[s];
-          if (!mt) return null;
-          return html`
-          <div key=${s} class="card sp-card" onClick=${() => setSp(sp === s ? "" : s)}
-            style=${sp === s ? { borderColor: "var(--blue)" } : null}>
-            <div class="row spread"><span class="sp-name">${focused ? s : html`<${SpIcon} sp=${s} size=${14} /> ${s}`}</span></div>
-            <div class="row spread" style=${{ marginTop: "6px" }}>
-              <div><div class="metric-value" style=${{ fontSize: "20px" }}>${mt.org_score == null ? "—" : mt.org_score}</div><div class="caption">your maturity</div></div>
-              <div style=${{ textAlign: "right" }}><div class="metric-value" style=${{ fontSize: "20px", color: "var(--ink-soft)" }}>${mt.peer_median_score == null ? "—" : mt.peer_median_score}</div><div class="caption">peer median</div></div>
-            </div>
-            <div class="progressbar" style=${{ marginTop: "8px" }}><div style=${{ width: (mt.org_score || 0) + "%" }}></div></div>
-          </div>`;
-        })}
-      </div>
-
       ${rows.length === 0 ? html`<${EmptyState} icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
         body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
       html`<div class="card" style=${{ padding: "var(--s2) var(--s5)" }}>

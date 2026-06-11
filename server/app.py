@@ -51,6 +51,16 @@ CURRENT_SNAPSHOT = 1
 # Selecting "Not applicable" / "Don't know" IS answering — it counts. Only
 # genuinely skipped questions are incomplete. A matrix counts as ONE question.
 COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # required | all
+# Hero signals (market position + practice prevalence). The at-market band is
+# percentile bounds on the favourable-adjusted scale: the default quartile band
+# (25-75) is the honest default but reads amber-heavy; tune via env on real
+# data (e.g. "40-60" for a sharper hero).
+_band = os.environ.get("LUMI_MARKET_BAND", "25-75").split("-")
+MARKET_BAND_LOW, MARKET_BAND_HIGH = float(_band[0]), float(_band[1])
+DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
+VERDICT_MARGIN = float(os.environ.get("LUMI_VERDICT_MARGIN", "0.15"))
+UNCOMMON_PCT = float(os.environ.get("LUMI_UNCOMMON_PCT", "20"))
+
 # AI metric commentary. Default ON: the adversarial QA gate (qa_commentary.py)
 # passed clean on 2026-06-11 (40/40). Set LUMI_AI_COMMENTARY=off to hide it;
 # re-run the gate before re-enabling after any change to the generator,
@@ -872,6 +882,18 @@ async def overview(request: Request):
     contrib = contribution_state(conn, org)
     items, tb = build_items(request, org, user, cut)
     summary = pos.overview_summary(items)
+    prev_items = pos.prevalence_items(org["org_id"], cut, visible_questions(), payloads(),
+                                      org_answers_for(org), make_entitled(user, org), tb)
+    sec_order = []
+    for q in visible_questions().values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in visible_questions().values() if q.sub_power == x))
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_MARGIN, UNCOMMON_PCT)
+    reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
+    hero["action_gaps"] = sum(1 for r in reg_rows
+                              if r.get("org_answered") and r.get("in_place") is False and (r.get("gap") or 0) > 0)
     co = pos.callouts(items, visible_questions(), k=3)
     money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                     org_answers_for(org), cut, tb)
@@ -886,6 +908,7 @@ async def overview(request: Request):
         "snapshot": {"date": snap["snapshot_date"], "window": snap["collection_window"]},
         "headline": summary,
         "contribution": contrib,
+        "hero": hero,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
                      "gaps": [] if not contrib["insights_unlocked"] else [c["text"] for c in co["gaps"]],
                      "gaps_locked": not contrib["insights_unlocked"],

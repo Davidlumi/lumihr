@@ -54,19 +54,8 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
-        <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
-          <div class="section-title" style=${{ marginBottom: "4px" }}>
-            You're above the peer <${Term} word="median">median<//> on
-            <span style=${{ color: "var(--blue-deep)" }}> ${h.above_median} of ${h.comparable_metrics} </span>
-            ${" "}<span class="hastip" style=${{ position: "relative", cursor: "help", borderBottom: "1px dotted var(--ink-faint)" }}>comparable metrics<span class="tip">Counted wherever your answer and at least 5 peers' answers can be compared, adjusted for whether higher or lower is the good direction. Anything based on fewer than 5 organisations is left out.</span></span>
-          </div>
-          <div class="caption">${h.below_median} sit below the median and ${h.broadly_in_line} are broadly in line — based on ${cutLabelOf(cut, cuts)}.</div>
-          <div style=${{ marginTop: "16px" }}>
-            <div class="pstrip"><div class="mark" style=${{ left: `calc(${Math.max(2, Math.min(98, pctAbove))}% - 2px)` }}></div></div>
-            <div class="caption" style=${{ marginTop: "4px" }}>That's <b>${pctAbove}%</b> of your comparable metrics at or above the peer median.</div>
-          </div>
-        </div>
-        <${OpportunityTile} opp=${data.opportunity} />
+        <${HeroSignals} hero=${data.hero} cut=${cut} cuts=${cuts} />
+        <${OpportunityTile} opp=${data.opportunity} actionGaps=${data.hero && data.hero.action_gaps} />
         <${TrajectoryTile} movement=${data.movement} />
       </div>
 
@@ -101,54 +90,62 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         </div>
       </div>
 
-      ${window.SCOPE && window.SCOPE.focused ? html`
-        <h2 class="section-title">Your position by section</h2>
-        ${Object.keys(h.by_section || {}).length === 0 && html`
-          <div class="caption" style=${{ marginBottom: "var(--s4)" }}>Your position by section appears here as your answers
-            become comparable — explore the sections in the sidebar meanwhile, every peer distribution is already open.</div>`}
-        <div class="sp-grid">
-          ${Object.entries(h.by_section || {}).sort((a, b) => secOrder(a[0]) - secOrder(b[0])).map(([sec, c]) => html`
-            <div key=${sec} class="card sp-card" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec))}>
-              <div class="row spread" style=${{ marginBottom: "6px" }}>
-                <span class="sp-name">${sec}</span>
-                <span class="caption" title="Metrics where your answer and at least 5 peers' answers can be compared">${c.available} comparable</span>
-              </div>
-              ${c.available ? html`
-                <div class="caption" style=${{ marginBottom: "8px" }}>
-                  <b style=${{ color: "var(--favourable)" }}>▲ ${c.above} ahead</b> · ${" "}
-                  <b style=${{ color: "var(--unfavourable)" }}>▼ ${c.below} behind</b>${c.inline ? html` · ${c.inline} in line` : ""}
-                </div>
-                <${QuartileDots} quartiles=${c.quartiles} />` :
-              html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
-            </div>`)}
+    </div>`;
+};
+
+/* The two-signal hero. Market position carries a verdict (performance
+   palette); practice prevalence is information (neutral palette, never
+   red/amber/green — "less common" is not "bad"). */
+const MARKET_LABEL = { above: "Above market", at: "At market", below: "Below market" };
+const MARKET_KIND = { above: "good", at: "mid", below: "bad" };
+const MARKET_ARROW = { above: "▲", at: "●", below: "▼" };
+
+function MarketPill({ m, lg }) {
+  if (!m) return null;
+  return html`<span class=${"pos-pill " + (lg ? "lg " : "") + MARKET_KIND[m.verdict]}
+    title=${`${m.above} above · ${m.at} at · ${m.below} below market, across ${m.pool} comparable positioned metrics`}>
+    ${MARKET_ARROW[m.verdict]} ${MARKET_LABEL[m.verdict]}</span>`;
+}
+
+function PrevLine({ p, compact }) {
+  if (!p) return html`<span class="caption">no comparable practices yet</span>`;
+  return html`<span class=${"prev-line" + (compact ? " caption" : "")}>
+    <b class="num">${p.with_majority}</b> of ${p.pool} practices with the peer majority${p.less_common ? html` · <b class="num">${p.less_common}</b> less common` : ""}</span>`;
+}
+
+window.HeroSignals = function ({ hero, cut, cuts }) {
+  if (!hero) return null;
+  const m = hero.market;
+  const noData = !m && !hero.prevalence;
+  return html`
+    <div style=${{ flex: "1.9 1 340px", minWidth: "320px" }}>
+      <div class="eyebrow">Where you stand · ${cutLabelOf(cut, cuts)}</div>
+      ${noData ? html`
+        <div style=${{ marginTop: "6px" }}>
+          <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>Answer your reward data to see where you stand.</b>
+          <div class="caption" style=${{ marginTop: "4px" }}>No verdict is shown until it can be computed from your own answers.</div>
         </div>` : html`
-        <h2 class="section-title">Your position by area</h2>
-        <div class="sp-grid">
-          ${(window.SCOPE ? window.SCOPE.superpowers : SUPERPOWERS).map(sp => {
-            const c = h.by_superpower[sp] || { available: 0, above: 0, below: 0, inline: 0, quartiles: [0, 0, 0, 0] };
-            return html`
-            <div key=${sp} class="card sp-card" onClick=${() => nav("/superpower/" + sp)}>
-              <div class="row spread" style=${{ marginBottom: "6px" }}>
-                <span class="sp-name"><${SpIcon} sp=${sp} /> ${sp}</span>
-                <span class="caption">${c.available} metrics</span>
-              </div>
-              ${c.available ? html`
-                <div class="row" style=${{ gap: "8px", marginBottom: "8px" }}>
-                  <span class="chip good">▲ ${c.above}</span>
-                  <span class="chip bad">▼ ${c.below}</span>
-                  ${c.inline ? html`<span class="chip">= ${c.inline}</span>` : null}
-                </div>
-                <${QuartileDots} quartiles=${c.quartiles} />` :
-              html`<div class="caption">No comparable metrics in this peer group yet.</div>`}
-            </div>`;
-          })}
+        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center", margin: "6px 0 2px" }}>
+          ${m ? html`<${MarketPill} m=${m} lg=${true} />` : html`<span class="caption">Not enough positioned metrics for a market verdict yet.</span>`}
+          ${m && html`<span class="caption num">${m.above} above · ${m.at} at · ${m.below} below, of ${m.pool} positioned metrics</span>`}
+        </div>
+        <div style=${{ marginBottom: "var(--s3)" }}><${PrevLine} p=${hero.prevalence} compact=${true} /></div>
+        <div class="domain-rows">
+          ${hero.domains.map(d => html`
+            <div key=${d.name} class="domain-row" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(d.name))}>
+              <span class="domain-name">${d.name}</span>
+              ${d.market ? html`<${MarketPill} m=${d.market} />` :
+                d.prevalence || d.polarised_comparable ? html`<span class="chip" title="Too few polarised metrics for an honest market verdict — practice comparison only">practice view</span>` :
+                html`<span class="caption">not enough comparable data yet</span>`}
+              <span class="domain-prev"><${PrevLine} p=${d.prevalence} compact=${true} /></span>
+            </div>`)}
         </div>`}
     </div>`;
 };
 
 function jumpToItem(item) { if (item) openMetric(item.question_id); }
 
-window.OpportunityTile = function ({ opp, contrib }) {
+window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
   if (!opp) return null;
   if (opp.locked) return html`
     <div class="opp-hero insight-lock">
@@ -196,7 +193,9 @@ window.OpportunityTile = function ({ opp, contrib }) {
                 </div>`)}
             </div>`)}
         </div>
-        <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>` :
+        <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>
+        ${actionGaps > 0 && html`<div class="caption" style=${{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid var(--border)" }}>
+          Plus <a href="#/gap-register"><b class="num">${actionGaps}</b> practice gaps</a> where most peers do something you don't — the non-£ to-do list.</div>`}` :
       html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/submission">your submission</a> to size the £ opportunity of closing gaps to the peer median.</div>`}
     </div>`;
 };

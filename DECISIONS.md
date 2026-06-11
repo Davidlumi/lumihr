@@ -347,3 +347,37 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
 - Synthetic-data expectation: on ~220 seed orgs, richly-filtered groups
   often fall below the floor — that is suppression working, not a bug.
   Do not loosen the floor for demos.
+
+## Hero overhaul — market position + practice prevalence (2026-06-11)
+
+- The 0-100 maturity scores are gone everywhere (incl. the gap-register
+  tiles): a score implies precision the data doesn't support. The hero now
+  leads with two signals grounded in what the data can defend:
+  A) MARKET POSITION (below/at/above, performance palette) — only the
+     polarised AND positionable pool: 87 polarised questions -> 75
+     positionable (numeric, matrix rows, scored selects with a known
+     direction); the 12 unordered polarised single_selects are ROUTED TO
+     PREVALENCE — score_answer structurally cannot rank them, so no
+     invented order is possible (the gap-register bug class).
+  B) PRACTICE PREVALENCE ("X of Y with the peer majority · N less common",
+     neutral ink/blue, NEVER red/amber/green) — the 93 neutral practices
+     plus the 12 routed; select/yes_no only (matrix/multi-select neutrals
+     excluded from prevalence v1).
+- Config (env): LUMI_MARKET_BAND (default 25-75 — the honest quartile
+  band; demo reads 48% at-market, not washed out, so the default stands;
+  tune to e.g. 40-60 on real data if it monotones), LUMI_DOMAIN_MIN_
+  POLARISED=5 (counts DISTINCT questions, so matrix rows can't earn a
+  3-question domain a verdict), LUMI_VERDICT_MARGIN=0.15,
+  LUMI_UNCOMMON_PCT=20.
+- Domain rollup: Pay/Benefits/Transparency carry market verdicts;
+  Incentives (3 polarised) and Progression (4) are practice-view only —
+  presented cleanly, not as missing data. Overall market position computes
+  from the FULL polarised pool, never an average of domain ratings.
+- Day-one: no verdict until computable from the org's own answers;
+  unanswered metrics never contribute. Non-monetary opportunity = the gap
+  register's actionable count (peers do it, you don't) — framed as the
+  to-do list, distinct from the prevalence position signal.
+- qa_hero.py (25/25) gates polarity direction (incl. lower-is-better
+  inversions), positionability census, band tunability, eligibility,
+  rollup construction, day-one and the neutral palette. Run it after any
+  change to the hero logic.

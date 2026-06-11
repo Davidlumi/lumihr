@@ -596,3 +596,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding: var(--s2) var(--s3); font-size: var(--fs-label); margin-bottom: var(--s3);
   font-variant-numeric: tabular-nums; }
 .group-count.warn { background: var(--neutral-perf-tint); color: var(--neutral-perf); font-weight: 600; }
+
+
+/* ----- hero: market position + practice prevalence ----- */
+.domain-rows { border-top: 1px solid var(--border); }
+.domain-row { display: flex; align-items: center; gap: var(--s3); padding: 7px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer; }
+.domain-row:hover .domain-name { color: var(--blue-deep); }
+.domain-row:last-child { border-bottom: none; }
+.domain-name { flex: 0 0 110px; font-weight: 650; font-size: var(--fs-label); }
+.domain-prev { margin-left: auto; text-align: right; }
+/* prevalence is information, never judgement: neutral ink/blue only */
+.prev-line { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.prev-line b { color: var(--blue-deep); }

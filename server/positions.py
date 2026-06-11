@@ -548,3 +548,113 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
             "order": sec_order.get(sec, 999),
         }
     return {"rows": rows, "maturity": maturity, "maturity_sections": maturity_sections}
+
+
+# ============================================================= HERO SIGNALS ==
+# Two signals, each grounded in what the data can defend:
+#   A) MARKET POSITION (below/at/above market) — polarised metrics only, and
+#      only those with a defensible rank (numeric values, matrix rows, and
+#      scored selects with a known direction). The 12 polarised-but-unordered
+#      single_selects can NEVER enter this pool (score_answer returns None for
+#      them) — they are routed to prevalence instead. No invented order, ever.
+#   B) PRACTICE PREVALENCE (with the majority / established / less common) —
+#      neutral practices + the routed unmappables. Information, not verdict:
+#      rendered WITHOUT the performance palette.
+# All thresholds are configuration, passed in by the caller.
+
+from aggregate import score_direction
+
+
+def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q=None):
+    """One item per answered, unsuppressed select/yes_no practice with no
+    defensible direction: how common the org's chosen approach is vs peers."""
+    out = []
+    twin_blocks_by_q = twin_blocks_by_q or {}
+    for qid, q in questions.items():
+        if not entitled(q) or q.type not in ("single_select", "yes_no"):
+            continue
+        polarised = q.polarity in ("higher_is_better", "lower_is_better")
+        if polarised and q.is_scored and score_direction(q) != 0:
+            continue  # has a defensible rank -> market position handles it
+        raw = org_answers.get((qid, ""))
+        if raw is None:
+            continue
+        p = payloads.get(qid)
+        if p is None:
+            continue
+        blk, cut_label = block_for(p, cut, twin_blocks_by_q.get(qid))
+        if is_suppressed(blk):
+            continue
+        opts = blk.get("options") or []
+        mine = next((o for o in opts if o["label"] == raw), None)
+        if mine is None or not opts:
+            continue
+        modal = max(opts, key=lambda o: o.get("pct") or 0)
+        out.append({
+            "question_id": qid, "label": q.display_title,
+            "superpower": q.superpower, "subpower": q.sub_power,
+            "your_answer": raw, "your_share": mine.get("pct"),
+            "modal_answer": modal["label"], "modal_share": modal.get("pct"),
+            "is_modal": mine["label"] == modal["label"],
+            "n": blk["n"], "cut_label": cut_label,
+            "routed_from_polarised": polarised,
+        })
+    return out
+
+
+def _adj_percentile(item):
+    """Favourable-direction percentile: high = good, regardless of polarity."""
+    return item["percentile"] if item["polarity"] == "higher_is_better" else 100.0 - item["percentile"]
+
+
+def _market_class(item, band_low, band_high):
+    a = _adj_percentile(item)
+    return "above" if a > band_high else "below" if a < band_low else "at"
+
+
+def _pool_verdict(pool, band_low, band_high, margin):
+    if not pool:
+        return None
+    above = sum(1 for i in pool if _market_class(i, band_low, band_high) == "above")
+    below = sum(1 for i in pool if _market_class(i, band_low, band_high) == "below")
+    at = len(pool) - above - below
+    share = (above - below) / float(len(pool))
+    verdict = "above" if share > margin else "below" if share < -margin else "at"
+    return {"verdict": verdict, "above": above, "at": at, "below": below, "pool": len(pool)}
+
+
+def _prev_summary(pool, uncommon_pct):
+    if not pool:
+        return None
+    modal = sum(1 for i in pool if i["is_modal"])
+    uncommon = sum(1 for i in pool if not i["is_modal"] and (i["your_share"] or 0) < uncommon_pct)
+    return {"with_majority": modal, "established": len(pool) - modal - uncommon,
+            "less_common": uncommon, "pool": len(pool)}
+
+
+def hero_signals(items, prev_items, section_order, band_low, band_high,
+                 domain_min, margin, uncommon_pct):
+    """The hero's two signals + per-domain rollups. Overall market position is
+    computed from the FULL polarised pool, never an average of domain ratings."""
+    pol_items = [i for i in items if i["polarity"] in ("higher_is_better", "lower_is_better")]
+    domains = []
+    for sec in section_order:
+        d_pol = [i for i in pol_items if i.get("subpower") == sec]
+        d_prev = [i for i in prev_items if i.get("subpower") == sec]
+        # eligibility counts DISTINCT polarised questions, not data points —
+        # matrix rows must not let a 3-question domain earn a market verdict
+        d_pol_questions = len({i["question_id"] for i in d_pol})
+        domains.append({
+            "name": sec,
+            "market": _pool_verdict(d_pol, band_low, band_high, margin) if d_pol_questions >= domain_min else None,
+            "market_eligible": d_pol_questions >= domain_min,
+            "polarised_comparable": len(d_pol),
+            "prevalence": _prev_summary(d_prev, uncommon_pct),
+        })
+    return {
+        "market": _pool_verdict(pol_items, band_low, band_high, margin),
+        "prevalence": _prev_summary(prev_items, uncommon_pct),
+        "domains": domains,
+        "config": {"band_low": band_low, "band_high": band_high,
+                   "domain_min": domain_min, "margin": margin, "uncommon_pct": uncommon_pct},
+    }
