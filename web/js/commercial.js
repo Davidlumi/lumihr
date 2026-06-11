@@ -280,7 +280,7 @@ window.AnalystPane = function ({ onClose }) {
     setInput(""); setBusy(true);
     try {
       const r = await api("/api/analyst", { method: "POST", body: { question: q } });
-      setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips }]);
+      setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips, noMetric: r.no_metric, topic: r.topic }]);
     } catch (e) {
       setMsgs(m => [...m, { role: "bot", text: "Sorry — something went wrong: " + e.message }]);
     }
@@ -296,6 +296,9 @@ window.AnalystPane = function ({ onClose }) {
         ${msgs.map((m, i) => html`
           <div key=${i} class=${"msg " + m.role}>
             ${m.text}
+            ${m.noMetric && html`
+              <div><button class="btn small" style=${{ marginTop: "var(--s2)" }}
+                onClick=${() => window.openMetricRequest(m.topic, "ask-lumi")}>Request this metric</button></div>`}
             ${m.chips && m.chips.length > 0 && html`
               <div>${m.chips.map((c, j) => html`
                 <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
@@ -510,4 +513,52 @@ window.UpgradePage = function () {
       <p class="caption">Talk to the lumi membership team to upgrade — this build doesn't take payments.</p>
       <a class="btn primary" href="mailto:members@lumi.example?subject=lumi%20Full%20membership">Contact the membership team</a>
     </div>`;
+};
+
+// -------------------------------------------------------- request a metric --
+window.RequestMetricModal = function ({ prefill, source, onClose }) {
+  const [text, setText] = useState(prefill || "");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState(null);
+  const submit = async () => {
+    if (!text.trim() || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      await api("/api/metric-requests", { method: "POST", body: { text, notes, source: source || "button" } });
+      setDone(true);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  return html`
+    <${Modal} onClose=${onClose}>
+      ${done ? html`
+        <div style=${{ textAlign: "center", padding: "var(--s4) 0" }}>
+          <div style=${{ color: "var(--plum)", marginBottom: "var(--s2)" }}><${Icon} name="sparkle" size=${22} /></div>
+          <h2 class="section-title">Thanks — we'll consider this for the next benchmark cycle.</h2>
+          <button class="btn" style=${{ marginTop: "var(--s3)" }} onClick=${onClose}>Close</button>
+        </div>` : html`
+        <div>
+          <h2 class="section-title">Request a metric</h2>
+          <p class="caption" style=${{ marginTop: "-4px" }}>lumi is shaped by its members — tell us what to measure.</p>
+          <div class="field" style=${{ marginTop: "var(--s4)" }}>
+            <label>What would you like to benchmark?</label>
+            <input autoFocus value=${text} onInput=${e => setText(e.target.value)}
+              placeholder="e.g. car allowance for field sales reps"
+              onKeyDown=${e => { if (e.key === "Enter") submit(); }} />
+          </div>
+          <div class="field">
+            <label>Anything that would help us define it? <span class="muted">(optional)</span></label>
+            <textarea rows="3" value=${notes} onInput=${e => setNotes(e.target.value)}
+              placeholder="Context, units, who it applies to…"></textarea>
+          </div>
+          ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
+          <div class="row" style=${{ justifyContent: "flex-end" }}>
+            <button class="btn quiet" onClick=${onClose}>Cancel</button>
+            <button class="btn primary" disabled=${busy || !text.trim()} onClick=${submit}>
+              ${busy ? html`<${Spinner} />` : "Send to lumi"}</button>
+          </div>
+        </div>`}
+    <//>`;
 };

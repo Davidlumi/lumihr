@@ -12,6 +12,7 @@ function App() {
   const [prefs, setPrefs] = useState({});
   const [layoutIds, setLayoutIds] = useState(new Set());
   const [analystOpen, setAnalystOpen] = useState(false);
+  const [metricReq, setMetricReq] = useState(null);   // {prefill, source} | null
   const [twinOpen, setTwinOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [qIndex, setQIndex] = useState(null);
@@ -32,6 +33,7 @@ function App() {
     api("/api/questions").then(setQIndex);
   }, [me && me.org && me.org.name]);
 
+  window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
   const scope = me && me.scope ? me.scope : { superpowers: SUPERPOWERS, focused: false, question_count: 778 };
   window.SCOPE = scope;
@@ -160,7 +162,11 @@ function App() {
             </div>
           </div>
           <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
-            <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+            <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
+              <button class="btn quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>
+                <${Icon} name="user-plus" size=${13} /> Request a metric</button>
+              <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+            </div>
             <div class="hint" style=${{ textAlign: "right" }}>Ask in plain English.</div>
           </div>
         </div>
@@ -176,6 +182,8 @@ function App() {
         </main>
       </div>
       ${analystOpen && html`<${AnalystPane} onClose=${() => setAnalystOpen(false)} />`}
+      ${metricReq && html`<${RequestMetricModal} prefill=${metricReq.prefill} source=${metricReq.source}
+        onClose=${() => setMetricReq(null)} />`}
       ${twinOpen && html`<${PeerTwinPanel} onClose=${() => setTwinOpen(false)} onUse=${() => setGlobalCut("twin")} />`}
     </div>`;
 }
@@ -223,7 +231,12 @@ function SearchPop({ qIndex, search, onGo }) {
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
   return html`
     <div class="searchpop">
-      ${hits.length === 0 && html`<div class="search-hit caption">No benchmarks match “${search}”.</div>`}
+      ${hits.length === 0 && html`
+        <div class="search-hit" style=${{ cursor: "default" }}>
+          <div class="caption">We don't benchmark “${search}” yet.</div>
+          <button class="btn small" style=${{ marginTop: "var(--s2)" }}
+            onClick=${() => window.openMetricRequest(search, "search")}>Request this metric</button>
+        </div>`}
       ${hits.map(q => html`
         <div key=${q.id} class="search-hit" onClick=${() => onGo(q)}>
           <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}

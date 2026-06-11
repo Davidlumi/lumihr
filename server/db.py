@@ -216,6 +216,18 @@ CREATE TABLE IF NOT EXISTS answers_history (
     recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Member requests for metrics lumi doesn't benchmark yet. The durable record
+-- (email notification is best-effort); curated by hand — never auto-added.
+CREATE TABLE IF NOT EXISTS metric_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    requested_text TEXT NOT NULL,
+    notes TEXT,
+    source TEXT NOT NULL DEFAULT 'button',   -- button | search | ask-lumi
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Generated board packs (narrative cached so the print view is stable).
 CREATE TABLE IF NOT EXISTS board_packs (
     pack_id TEXT PRIMARY KEY,

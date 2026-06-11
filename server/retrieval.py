@@ -14,6 +14,11 @@ that the their there this to was we what when where which who why will with you 
 do does did organisation organisations company companies peers peer benchmark vs
 """.split())
 
+# words too generic to prove the dataset actually covers a topic
+GENERIC = STOP | set("""typical average spend cost costs rate rates per employee employees
+staff people compare comparison year annual measure offer offered amount level levels
+much many usually normally similar most common""".split())
+
 
 def tokens(s):
     return [t for t in re.findall(r"[a-z0-9%£]+", (s or "").lower()) if t not in STOP]
@@ -21,6 +26,23 @@ def tokens(s):
 
 def _bigrams(toks):
     return {" ".join(toks[i:i + 2]) for i in range(len(toks) - 1)}
+
+
+def distinctive_coverage(query, qids):
+    """Share of the query's distinctive (non-generic) tokens that the matched
+    questions actually contain. Low coverage = the dataset doesn't really
+    cover this topic, however fuzzily it scored."""
+    distinctive = [t for t in set(tokens(query)) if t not in GENERIC]
+    if not distinctive:
+        return 1.0  # nothing distinctive to judge — let the matches speak
+    qs = load_questions()
+    matched_doc = set()
+    for qid in qids:
+        q = qs.get(qid)
+        if q:
+            matched_doc |= set(tokens((q.search_description or "") + " " + (q.display_title or "")))
+    hit = sum(1 for t in distinctive if t in matched_doc)
+    return hit / float(len(distinctive))
 
 
 def search_questions(query, limit=6):

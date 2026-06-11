@@ -818,10 +818,13 @@ async def analyst(request: Request):
     conn = get_conn()
     vis = visible_questions()
     qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
+    if qids and retrieval.distinctive_coverage(question, qids) < 0.34:
+        qids = []   # fuzzy noise, not real coverage — offer the request path
     if not qids:
-        return {"answer": "I couldn't match that to anything in the lumi benchmark set. "
-                          "Try naming the metric, practice or benefit you're interested in.",
-                "chips": [], "matched": []}
+        return {"answer": "lumi doesn't benchmark that yet, so I won't guess at a figure. "
+                          "If it would be useful, ask us to add it — member requests shape "
+                          "what lumi measures next.",
+                "chips": [], "matched": [], "no_metric": True, "topic": question}
     answers = org_answers_for(org)
     entitled = make_entitled(user, org)
     questions = vis
@@ -1316,6 +1319,63 @@ async def submit(request: Request):
     return {"ok": True, "answers_saved": now_rows,
             "core_completion_pct": completion,
             "benchmark_unlocked": completion >= CORE_COMPLETION_THRESHOLD * 100}
+
+
+# ============================================================ METRIC REQUESTS ==
+
+NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "david@lumi.example")
+
+
+def send_notification(subject, body):
+    """Best-effort email. SMTP isn't configured in this environment, so this
+    logs to console like every other outbound mail; when LUMI_SMTP_HOST is set
+    it sends for real with no other changes. Never raises — the stored row is
+    the source of truth."""
+    host = os.environ.get("LUMI_SMTP_HOST")
+    if host:
+        try:
+            import smtplib
+            from email.message import EmailMessage
+            msg = EmailMessage()
+            msg["From"] = os.environ.get("LUMI_SMTP_FROM", "noreply@lumi.example")
+            msg["To"] = NOTIFY_EMAIL
+            msg["Subject"] = subject
+            msg.set_content(body)
+            with smtplib.SMTP(host, int(os.environ.get("LUMI_SMTP_PORT", "587")), timeout=10) as smtp:
+                if os.environ.get("LUMI_SMTP_USER"):
+                    smtp.starttls()
+                    smtp.login(os.environ["LUMI_SMTP_USER"], os.environ.get("LUMI_SMTP_PASS", ""))
+                smtp.send_message(msg)
+            return "sent"
+        except Exception as e:
+            print("[lumi] EMAIL SEND FAILED (%s) — request is stored regardless:\n%s\n%s" % (e, subject, body))
+            return "failed"
+    print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n" % (NOTIFY_EMAIL, subject, body))
+    return "logged"
+
+
+@app.post("/api/metric-requests")
+async def create_metric_request(request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "Tell us what you'd like to benchmark first.")
+    if len(text) > 500 or len((body.get("notes") or "")) > 2000:
+        raise HTTPException(400, "That's a little long — a sentence or two is perfect.")
+    source = body.get("source") if body.get("source") in ("button", "search", "ask-lumi") else "button"
+    notes = (body.get("notes") or "").strip() or None
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO metric_requests(org_id, user_id, requested_text, notes, source) VALUES (?,?,?,?,?)",
+        (org["org_id"], user["user_id"], text, notes, source))
+    conn.commit()
+    status = send_notification(
+        "lumi metric request: %s" % text[:80],
+        "Requested metric: %s\nNotes: %s\nFrom: %s (%s, %s)\nSource: %s\nWhen: %s\nRequest id: %d"
+        % (text, notes or "—", user["display_name"] or user["email"], user["email"],
+           org["name"], source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid))
+    return {"ok": True, "id": cur.lastrowid, "notification": status}
 
 
 # =================================================================== SHARES ==
