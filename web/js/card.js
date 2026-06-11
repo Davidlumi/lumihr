@@ -6,149 +6,131 @@
    PercentileBand, Histogram, BoxPlot, OptionBars, StackedDist, MatrixHeat, MatrixGrouped,
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
-window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, onCutOverride, highlight }) {
-  /* power controls (chart type, peer cut, pin) live in the zoom pop-out */
-  const [expanded, setExpanded] = useState(false);
-  const [zoomed, setZoomed] = useState(false);
-  const [exportMsg, setExportMsg] = useState(null);
+window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight }) {
+  const [expanded, setExpanded] = useState(false);          // full question & definition
+  const [override, setOverride] = useState(null);           // per-card peer cut — exploratory, never saved
   const [localCard, setLocalCard] = useState(null);
+  const [cutBusy, setCutBusy] = useState(false);
   const ref = useRef(null);
-  const c = localCard || card;
-  const pref = (prefs || {})[card.id] || {};
-  const chart = normaliseChart(c, pref.chart);
-  const showP1090 = pref.p1090 !== false;
-  const showValues = pref.values !== false;
 
-  const cutKey = pref.cut || null;
+  // a global selector change takes precedence and clears the override
+  useEffect(() => { setOverride(null); setLocalCard(null); }, [globalCut]);
+
+  // the override re-fetches the SAME per-cut aggregate the global selector
+  // uses — chart, pill, position, readout and n all arrive as one card
   useEffect(() => {
     let dead = false;
-    if (!cutKey) { setLocalCard(null); return; }
-    const [dim, value] = cutKey.split("::");
+    if (!override) { setLocalCard(null); return; }
+    setCutBusy(true);
+    const [dim, value] = override.split("::");
     api(`/api/benchmark/${card.id}?cut=${encodeURIComponent(dim)}${value ? "&cut_value=" + encodeURIComponent(value) : ""}`)
       .then(d => { if (!dead) setLocalCard(d); })
-      .catch(() => { if (!dead) setLocalCard(null); });
+      .catch(() => { if (!dead) { setLocalCard(null); setOverride(null); toast("Couldn't load that peer group — showing the page's view.", "error"); } })
+      .finally(() => { if (!dead) setCutBusy(false); });
     return () => { dead = true; };
-  }, [cutKey, card.id, globalCut]);
+  }, [override, card.id]);
 
-  const setPref = (k, v) => onPref && onPref(card.id, { ...pref, [k]: v });
-
+  const c = (override && localCard) || card;
+  const pref = (prefs || {})[card.id] || {};
+  const chart = normaliseChart(c, pref.chart);
   if (c.reduced) return html`<${ReducedCard} card=${c} />`;
 
-  const doExport = async (mode) => {
+  const pos = cardPosition(c);
+  const overridden = !!override && !!localCard;
+  const globalKey = !globalCut || globalCut.startsWith("all") ? "all" : globalCut;
+  const effectiveKey = override || globalKey;
+  const sentence = humanSentence(c);
+
+  const doExport = async () => {
+    // exports carry the card's CURRENT cut label + n (c is the override card when set)
     const res = await exportCardPNG(ref.current, {
       title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow,
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
-    }, mode);
-    setExportMsg(res === "copied" ? "Copied" : res === "downloaded" ? "Downloaded" : "No chart");
-    setTimeout(() => setExportMsg(null), 1600);
+    }, "download");
+    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
+  };
+  const share = () => {
+    // the deep link carries the cut this card is showing, never silently the default
+    const cutPart = effectiveKey !== "all" ? "?cut=" + encodeURIComponent(effectiveKey) : "";
+    navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + card.id + cutPart);
+    toast("Link copied — opens this metric on " + c.cut.label);
   };
 
-  const pos = cardPosition(c);
-
+  const DIM_SHORT = { all: "All peers", industry: "Sector", fte_band: "Size" };
   return html`
-    <div class=${"card bench-card" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref}>
+    <div class=${"card bench-card stacked" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref} id=${"q-" + card.id}>
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
-        <button class="iconbtn title-info no-print" title="Full question, definition and method" aria-label="Full question, definition and method"
-          onClick=${() => setExpanded(true)}><${Icon} name="info" size=${13} /></button>
-        ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
+        ${overridden && html`
+          <button class="chip accent cut-chip" title=${"This card compares against " + c.cut.label + " — the page is on " + (globalKey === "all" ? "All peers" : "another group") + ". Click to reset."}
+            aria-label=${"Reset this card to the page's peer group"}
+            onClick=${() => setOverride(null)}>${DIM_SHORT[c.cut.dim] || c.cut.label} ✕</button>`}
         ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+        <${KebabMenu} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
+          onCut=${k => setOverride(k === globalKey ? null : k)}
+          onDetail=${() => setExpanded(true)} onPin=${onPin ? () => onPin(card.id) : null} pinned=${pinned}
+          doExport=${doExport} share=${share} />
       </div>
-      <div class="bench-body">
-        <div class="bench-words">
-          <div class="bench-lead">${humanSentence(c).lead || ""}</div>
-          <${WhatThisMeans} card=${c} pos=${pos} />
-          ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
-          <div class="bench-n" title="The number of organisations behind this comparison">
-            n=${c.n}${cutNote(c)}</div>
-        </div>
-        <div class=${"bench-proof bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
-          role="img" aria-label=${c.title + " chart. " + (humanSentence(c).lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations."}
-          onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest(".bench-controls")) setZoomed(true); }}>
-          <div class="bench-controls no-print">
-            <button class="iconbtn" title="Download this chart as a PNG" aria-label="Download this chart as a PNG"
-              onClick=${e => { e.stopPropagation(); doExport("download"); }}><${Icon} name="download" size=${13} /></button>
-            <button class="iconbtn" title="Expand chart" aria-label="Expand chart"
-              onClick=${e => { e.stopPropagation(); setZoomed(true); }}><${Icon} name="maximize" size=${13} /></button>
-            <button class="iconbtn" title="Open full view" aria-label="Open full view"
-              onClick=${e => { e.stopPropagation(); openMetric(c.id); }}><${Icon} name="arrow-up-right" size=${13} /></button>
-          </div>
-          <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
-        </div>
+      <div class=${"bench-chart-full" + (cutBusy ? " busy" : "")}
+        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}
+        onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
+        title=${c.suppressed ? undefined : "Open full view"}>
+        ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
+          html`<${CardBody} card=${c} chart=${chart} showP1090=${pref.p1090 !== false} showValues=${pref.values !== false} fav=${pos ? pos.kind : null} wide=${true} />`}
       </div>
+      <div class="bench-lead">${sentence.lead || ""}</div>
+      ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
+      <${WhatThisMeans} card=${c} pos=${pos} />
+      <div class="bench-n" title="The number of organisations behind this comparison">
+        n=${c.n}${cutNote(c)}</div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
-      ${zoomed && html`<${CardZoom} card=${c} pos=${pos} chart=${chart} pref=${pref} setPref=${setPref}
-        cuts=${cuts} showP1090=${showP1090} showValues=${showValues} window=${collWindow}
-        onPin=${onPin} pinned=${pinned}
-        onClose=${() => setZoomed(false)} />`}
     </div>`;
 };
 
-/* The pop-out: the same card re-rendered large in a modal, with the full
-   control cluster, readout and export to hand. */
-window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP1090, showValues, window: collWindow, onPin, pinned, onClose }) {
-  const ref = useRef(null);
-  const [exportMsg, setExportMsg] = useState(null);
-  const doExport = async (mode) => {
-    const res = await exportCardPNG(ref.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow,
-      suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
-    }, mode);
-    setExportMsg(res === "copied" ? "Copied to clipboard" : res === "downloaded" ? "Downloaded" : "No chart");
-    setTimeout(() => setExportMsg(null), 1600);
-  };
+/* The one consistent per-card control: a quiet kebab, keyboard-accessible,
+   holding peer-group, full view, question/definition, pin, export, share.
+   Context-aware: suppressed or unanswered cards never offer export/share. */
+function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, pinned, doExport, share }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = e => { if (e.key === "Escape") setOpen(false); };
+    const onDown = e => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("mousedown", onDown); };
+  }, [open]);
+  const choices = [{ key: "all", label: "All peers" }];
+  if (cuts && cuts.org_industry) choices.push({ key: "industry::" + cuts.org_industry, label: "Your sector: " + cuts.org_industry });
+  if (cuts && cuts.org_fte_band) choices.push({ key: "fte_band::" + cuts.org_fte_band, label: "Your size: " + cuts.org_fte_band + " FTE" });
+  const exportable = !c.suppressed && !!c.you;
+  const pick = (fn) => () => { setOpen(false); fn(); };
   return html`
-    <${Modal} onClose=${onClose} xl=${true}>
-      <div ref=${ref}>
-        <div class="row spread" style=${{ alignItems: "flex-start", marginBottom: "var(--s2)" }}>
-          <h2 class="section-title" style=${{ marginBottom: 0, paddingRight: "var(--s4)" }}>${c.title}</h2>
-          <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
-            ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
-            <button class="iconbtn" title="Close (Esc)" aria-label="Close expanded chart" onClick=${onClose}><${Icon} name="close" size=${15} /></button>
-          </div>
-        </div>
-        <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
-          <div class="row" style=${{ gap: "var(--s1)" }}>
-            <${NBadge} n=${c.n} cutLabel=${c.cut.label} />
-            ${c.category && html`<${Chip}>${c.category}<//>`}
-            ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
-          </div>
-          <div class="row no-print" style=${{ gap: "var(--s1)" }}>
-            ${chartAlternatives(c).length > 1 && html`
-              <select class="ctl" style=${{ height: "28px", fontSize: "12px" }} value=${chart}
-                onChange=${e => setPref("chart", e.target.value)} title="Chart type">
-                ${chartAlternatives(c).map(a => html`<option key=${a} value=${a}>${CHART_LABELS[a]}</option>`)}
-              </select>`}
-            ${cuts && html`
-              <select class="ctl" style=${{ height: "28px", fontSize: "12px", maxWidth: "180px" }}
-                value=${pref.cut || ""} onChange=${e => setPref("cut", e.target.value || undefined)} title="Peer group for this card">
-                <option value="">Page filter</option>
-                <option value="all">All peers</option>
-                ${cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry}</option>`}
-                ${cuts.org_fte_band && html`<option value=${"fte_band::" + cuts.org_fte_band}>${cuts.org_fte_band} FTE</option>`}
-                ${cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
-              </select>`}
-            ${(c.type === "numeric") && html`
-              <button class="iconbtn" title="Show/hide P10 and P90" onClick=${() => setPref("p1090", !showP1090)}>P10/90</button>`}
-            <button class=${"iconbtn" + (showValues ? " on" : "")} title="Show/hide value labels" onClick=${() => setPref("values", !showValues)}>123</button>
-            <button class="btn small" onClick=${() => doExport("download")}><${Icon} name="download" size=${12} /> PNG</button>
-            <button class="btn small" onClick=${() => doExport("clipboard")}><${Icon} name="copy" size=${12} /> Copy</button>
-            ${onPin && html`<button class=${"btn small" + (pinned ? " feature" : "")} onClick=${() => onPin(c.id)}>
-              <${Icon} name="star" size=${12} /> ${pinned ? "Pinned" : "Pin to My view"}</button>`}
-          </div>
-        </div>
-        <div class="bench-chart xl">
-          <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues}
-            fav=${pos ? pos.kind : null} xl=${true} />
-        </div>
-        ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
-        <div class="bench-readout" style=${{ marginTop: "var(--s4)", minHeight: 0 }}>${c.readout || multiSelectReadout(c) || ""}</div>
-        <p class="caption" style=${{ marginTop: "var(--s3)", marginBottom: 0 }}>
-          <b>Question asked:</b> ${c.question_text}${c.definition ? html` · <b>Definition:</b> ${c.definition}` : ""}
-        </p>
-      </div>
-    <//>`;
-};
+    <div class="kebab-wrap no-print" ref=${wrapRef}>
+      <button class="iconbtn kebab" aria-label="Card options" aria-haspopup="menu" aria-expanded=${open}
+        onClick=${() => setOpen(!open)}>⋮</button>
+      ${open && html`
+        <div class="kebab-menu" role="menu" aria-label="Card options">
+          <div class="kebab-label">Compare against</div>
+          ${choices.map(ch => html`
+            <button key=${ch.key} role="menuitemradio" aria-checked=${effectiveKey === ch.key}
+              class=${"kebab-item" + (effectiveKey === ch.key ? " on" : "")}
+              onClick=${pick(() => onCut(ch.key))}>
+              <span class="kebab-check">${effectiveKey === ch.key ? "✓" : ""}</span>${ch.label}
+              ${ch.key === globalKey ? html`<span class="caption" style=${{ marginLeft: "auto" }}>page</span>` : null}
+            </button>`)}
+          <div class="kebab-sep"></div>
+          <button role="menuitem" class="kebab-item" onClick=${pick(() => openMetric(c.id))}>Open full view</button>
+          <button role="menuitem" class="kebab-item" onClick=${pick(onDetail)}>Full question & definition</button>
+          ${onPin && html`<button role="menuitem" class="kebab-item" onClick=${pick(onPin)}>${pinned ? "Unpin from My view" : "Pin to My view"}</button>`}
+          ${exportable && html`
+            <div class="kebab-sep"></div>
+            <button role="menuitem" class="kebab-item" onClick=${pick(doExport)}>Download chart (PNG)</button>
+            <button role="menuitem" class="kebab-item" onClick=${pick(share)}>Copy link (${c.cut.label})</button>`}
+        </div>`}
+    </div>`;
+}
 
 /* The plain-English answer that leads every card: "X in 10" phrasing first,
    the precise figures as a quiet supporting line. */
@@ -247,11 +229,11 @@ function cardPosition(c) {
 }
 window.cardPosition = cardPosition;
 
-window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) {
+window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wide }) {
   // popped-out charts get a wider viewBox (more data room, same-size labels);
   // in-card charts get a narrower viewBox so labels render comfortably large
   // in the side-by-side proof column
-  const W = xl ? 780 : 340;
+  const W = xl ? 780 : wide ? 620 : 340;
   const rowH = xl ? 420 : undefined;
   if (c.suppressed) {
     return html`<div class="suppressed-box">

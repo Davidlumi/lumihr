@@ -530,3 +530,39 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding-top: var(--s3); border-top: 1px solid var(--border); }
 .exact-figs > div { display: flex; flex-direction: column; gap: 2px; }
 @media (max-width: 760px) { .cut-row { flex-direction: column; align-items: stretch; } .cut-row-label { flex: none; } }
+
+
+/* ----- card redesign: stacked layout + kebab + per-card peer group ----- */
+/* One vertical rhythm on every card: head / chart / readout / meaning / n.
+   Equal heights come from the grid stretch + n pinned to the bottom. */
+.bench-card.stacked .bench-head { align-items: center; flex-wrap: wrap; margin-bottom: var(--s3); }
+.bench-card.stacked .bench-title { flex: 1 1 200px; min-width: 0; }
+.bench-chart-full { height: var(--chart-h-stack, 200px); display: flex; flex-direction: column;
+  justify-content: center; cursor: zoom-in; border-radius: var(--radius-sm);
+  margin-bottom: var(--s3); position: relative; }
+.bench-chart-full:hover { background: color-mix(in srgb, var(--surface-sunk) 45%, transparent); }
+.bench-chart-full > * { width: 100%; }
+.bench-chart-full svg { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; }
+.bench-card.stacked .bench-lead { margin-bottom: var(--s2); }
+.bench-card.stacked .bench-n { margin-top: auto; padding-top: var(--s2); }
+
+.cut-chip { border: none; cursor: pointer; font: inherit; font-size: var(--fs-caption);
+  font-weight: 650; flex: none; }
+.cut-chip:hover { background: var(--blue-tint-2); }
+
+.kebab-wrap { position: relative; flex: none; margin-left: 2px; }
+.iconbtn.kebab { font-size: 16px; font-weight: 700; line-height: 1; width: 26px; height: 26px;
+  border-radius: var(--radius-sm); color: var(--ink-faint); }
+.iconbtn.kebab:hover, .iconbtn.kebab[aria-expanded="true"] { color: var(--ink); background: var(--surface-sunk); }
+.kebab-menu { position: absolute; right: 0; top: 30px; z-index: 60; min-width: 240px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: 0 10px 32px rgba(31,42,68,.16); padding: 6px; animation: popIn 120ms ease both; }
+.kebab-label { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-faint); font-weight: 700; padding: 6px 10px 4px; }
+.kebab-item { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer; padding: 7px 10px; border-radius: 7px;
+  font: 500 var(--fs-label)/1.2 var(--font-body); color: var(--ink); }
+.kebab-item:hover { background: var(--blue-tint); color: var(--blue-deep); }
+.kebab-item.on { font-weight: 650; color: var(--blue-deep); }
+.kebab-check { width: 14px; flex: none; color: var(--blue); font-weight: 700; }
+.kebab-sep { height: 1px; background: var(--border); margin: 6px 4px; }

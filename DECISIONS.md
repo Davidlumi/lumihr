@@ -235,3 +235,26 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
 - Reuse only: the page issues three calls to the existing per-cut
   /api/benchmark/{qid} endpoint — same aggregates, same suppression, no
   new calculations, no server changes.
+
+## Card redesign: stacked + kebab + per-card peer group (2026-06-11)
+
+- **Stacked layout** replaces side-by-side on every card via the shared
+  component: title+pill+kebab / full-width chart (W=620 viewBox, 200px) /
+  plain-English readout / What-this-means / n pinned to the bottom. Equal
+  heights per row from the grid; taller cards accepted for the calmer rhythm.
+- **Kebab** ("Card options", aria-haspopup, Esc + click-outside close)
+  replaces the floating chart toolbar entirely: peer-group radio (All /
+  Your sector / Your size, current ticked, "page" marks the global cut),
+  Open full view, Full question & definition, Pin to My view, Download,
+  Copy link. Suppressed or unanswered cards never offer Download/Share.
+  The card-zoom modal is retired — the metric full page supersedes it.
+- **Per-card peer override** is component state (exploratory by design):
+  re-fetches the SAME per-cut aggregate endpoint, so chart, pill, position,
+  readout and n always change as one card — no mixed-cut display possible.
+  Off-default chip ("Sector ✕") with one-tap reset; cleared by any global
+  selector change and by reload. The old persisted pref.cut from the zoom
+  era is deliberately ignored.
+- Exports from an overridden card are labelled with that cut + n; share
+  links carry ?cut= so the recipient sees the same comparison. Suppressed
+  cuts show the suppressed state (verified n=4 sector, no stale values);
+  unanswered metrics never gain a fabricated "you" on any cut.
