@@ -2,7 +2,7 @@
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
    OverviewPage, SuperpowerPage, MyViewPage, MyDataPage, MethodologyPage, GapRegisterPage,
    BoardPackPage, BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
-   UpgradePage, SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
+   SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
 function App() {
   const route = useRoute();
@@ -98,7 +98,6 @@ function App() {
   else if (route.startsWith("/shares")) page = html`<${SharesPage} />`;
   else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
   else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
-  else if (route.startsWith("/upgrade")) page = html`<${UpgradePage} />`;
   else page = html`<${OverviewPage} ...${pageProps} />`;
 
   const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") ||
@@ -140,7 +139,6 @@ function App() {
         <div class="nav-group nav-id" style=${{ marginTop: "auto" }}>
           <div class="who">${me.user.display_name || me.user.email}</div>
           <div class="org">${me.org.name}</div>
-          ${me.user.preview_as_core && html`<div style=${{ marginBottom: "4px" }}><span class="chip warn">Previewing as Core</span></div>`}
           <button class="nav-item" onClick=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }}><${Icon} name="log-out" size=${15} /> Sign out</button>
         </div>
       </nav>
@@ -226,7 +224,7 @@ window.ClockChip = function ({ contrib }) {
   return html`
     <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title=${!contrib.clock_started
       ? "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then."
-      : "Complete 90% of your Core reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps."} onClick=${() => nav("/submission")}>
+      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav("/submission")}>
       <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue-tint-2)" stroke-width="3"/>
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"
@@ -255,7 +253,7 @@ window.ContributionBanner = function ({ contrib }) {
     <div class="card contrib-banner">
       <div>
         <b>${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} left to unlock your insights.</b>
-        <div class="caption">You're at ${pct}% of your Core reward questions — reach 90% and the £ opportunity,
+        <div class="caption">You're at ${pct}% of your key reward questions — complete them and the £ opportunity,
           board pack and biggest gaps open up with your real position.</div>
       </div>
       <button class="btn primary small" onClick=${() => nav("/submission")}>Continue your submission</button>
@@ -274,7 +272,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
       { n: 2, label: "Complete your reward data", done: false,
-        hint: "180 questions, autosaved — insights unlock at 90% of Core." },
+        hint: "180 questions by section, autosaved — insights unlock once your key questions are answered." },
       { n: 3, label: "Invite your team", done: false,
         hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
     ];
@@ -318,7 +316,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
       </div>
       <div style=${{ flex: "1 1 240px", minWidth: "220px" }}>
         <div class="row spread" style=${{ marginBottom: "4px" }}>
-          <span class="caption"><b class="num">${pct}%</b> of Core reward questions</span>
+          <span class="caption"><b class="num">${pct}%</b> of your key reward questions</span>
           <span class="caption num">${contrib.days_left} days left</span>
         </div>
         <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / 90 * 100) + "%" }}></div></div>

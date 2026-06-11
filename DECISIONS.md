@@ -161,3 +161,23 @@ reproduces by hand.
   quiet outlined status pill (not a filled control); "Request a metric" demoted
   to a text link; the right-side helper line removed. Peer-cut helper stays
   quiet under its control.
+
+## Tiers removed; required-set unlock gate (2026-06-11)
+
+- **Core/Enhanced/Pulse/Strategic retired from UI and logic.** All 180 reward
+  questions are simply questions, organised by section. The `lumi_tier` library
+  column is untouched but never consulted (entitlement is now `lambda q: True`;
+  LockedCard/UpgradePage/preview-as-Core removed). No surprise exposure: every
+  actual member was already full-tier, so the visible set was always 180.
+- **Insight-unlock gate** is one configurable setting in app.py:
+  `LUMI_COMPLETION_BASIS` (default `required` — the 82 is_required reward
+  questions; `all` available) and `LUMI_COMPLETION_THRESHOLD` (default 0.90).
+  Rationale: 96 of 180 reward questions have an N/A option; a flat 90%-of-180
+  could lock out a diligent member with many inapplicable questions.
+- **N/A counts as answered** (selecting it is engaging); only skipped questions
+  are incomplete; a matrix counts as ONE question. Reachability proven: an org
+  answering only the 82 required questions (28 of them via N/A) reaches 100%
+  and unlocks.
+- All messaging now says "key reward questions"; methodology describes the
+  tier-free set and the gate. Demo org sits at 98.8% on the new basis
+  (unlocked; submission_complete anyway).

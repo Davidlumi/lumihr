@@ -84,14 +84,15 @@ function SubmissionHome({ state }) {
   return html`
     <div style=${{ maxWidth: "760px" }}>
       <h1 class="display-title">Your submission</h1>
-      <p>lumi is a co-operative: you see the pool because you've contributed to it. Answer at
-      least${" "}<b>${state.threshold_pct}% of Core questions</b> to unlock peer comparison. Everything autosaves — come back any time.</p>
+      <p>lumi is a co-operative: you see the pool because you've contributed to it. Answer your
+      ${" "}<b>key reward questions</b> to unlock your insights — “Not applicable” counts as an answer,
+      so nothing that doesn't apply to you can hold you back. Everything autosaves — come back any time.</p>
       <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
         <div class="row spread" style=${{ marginBottom: "6px" }}>
-          <b>Core completion</b>
-          <span class="num"><b>${state.core_completion_pct}%</b> of ${state.threshold_pct}% needed</span>
+          <b>Key reward questions</b>
+          <span class="num"><b>${state.basis_answered}</b> of ${state.basis_total} answered · insights unlock at ${state.threshold_pct}%</span>
         </div>
-        <div class="progressbar"><div style=${{ width: Math.min(100, state.core_completion_pct / state.threshold_pct * 100) + "%" }}></div></div>
+        <div class="progressbar"><div style=${{ width: Math.min(100, state.completion_pct / state.threshold_pct * 100) + "%" }}></div></div>
         <div class="caption" style=${{ marginTop: "6px" }}>${totalA} of ${totalQ} questions answered overall</div>
       </div>
       ${state.sections.map(s => html`
@@ -99,7 +100,7 @@ function SubmissionHome({ state }) {
           onClick=${() => nav("/submission/" + s.superpower)}>
           <div class="row spread">
             <b style=${{ display: "inline-flex", alignItems: "center", gap: "8px" }}><${SpIcon} sp=${s.superpower} /> ${s.superpower}</b>
-            <span class="caption num">${s.answered}/${s.questions} answered · ${s.core_answered}/${s.core_questions} core</span>
+            <span class="caption num">${s.answered}/${s.questions} answered · ${s.key_answered}/${s.key_questions} key</span>
           </div>
           <div class="progressbar" style=${{ marginTop: "6px" }}>
             <div style=${{ width: (s.questions ? 100 * s.answered / s.questions : 0) + "%" }}></div>
@@ -223,7 +224,6 @@ function QuestionInput({ q, drafts, issues, save }) {
       <div class="row spread" style=${{ marginBottom: "4px", alignItems: "flex-start" }}>
         <div style=${{ fontWeight: 600, fontSize: "13.5px", flex: 1 }}>${q.text}
           ${q.is_required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</div>
-        <${Chip}>${q.tier}<//>
       </div>
       ${q.help_text && html`<div class="caption" style=${{ marginBottom: "8px" }}>${q.help_text}</div>`}
       <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} />
@@ -331,15 +331,15 @@ function ReviewStep({ state, refresh, refreshMe }) {
       <div class="success-ring">✓</div>
       ${done.benchmark_unlocked ? html`
         <h1 class="display-title">Your insights are unlocked</h1>
-        <p>${done.answers_saved} answers saved — and you've reached <b>${done.core_completion_pct}%</b> of your Core reward
+        <p>${done.answers_saved} answers saved — and you've reached <b>${done.completion_pct}%</b> of your key reward
         questions. The £ opportunity, your board pack and your biggest gaps to peers are now live with your real position.
         Thank you for contributing to the pool — that's what makes the benchmark work.</p>
         <button class="btn primary" onClick=${() => nav("/overview")}>See where you stand</button>` : html`
         <h1 class="display-title">Submission received</h1>
         <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
-        Core completion: <b>${done.core_completion_pct}%</b>.</p>
-        <p class="caption">Reach ${state.threshold_pct}% of your Core reward questions to unlock your insights —
-        the £ opportunity, board pack and biggest gaps.</p>`}
+        Key questions answered: <b>${done.completion_pct}%</b>.</p>
+        <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
+        the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>`}
     </div>`;
   if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`

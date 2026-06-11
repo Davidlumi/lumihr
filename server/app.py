@@ -37,7 +37,19 @@ from aggregate import run_snapshot, coerce_number, score_polarity, SUPPRESSION_F
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 CURRENT_SNAPSHOT = 1
-CORE_COMPLETION_THRESHOLD = 0.90
+
+# ------------------------------------------------------- insight-unlock gate
+# THE single place to tune the gate. Tiers are gone: every reward question is
+# just a question. Completion is measured against the BASIS set:
+#   required (default) — the library's is_required questions (82 in reward
+#       scope), which by definition apply to every organisation. Safe: a
+#       member who answers everything that applies always reaches the gate.
+#   all — every visible question (~180). Unsafe with many N/A-able questions;
+#       kept only as a tunable option.
+# Selecting "Not applicable" / "Don't know" IS answering — it counts. Only
+# genuinely skipped questions are incomplete. A matrix counts as ONE question.
+COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # required | all
+COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
 # lumi launches as a reward benchmarking product. The other nine areas stay
@@ -49,7 +61,7 @@ ACTIVE_SUPERPOWERS = [] if _asp.lower() in ("", "all", "*") else [x.strip() for 
 
 
 CLOCK_DAYS = 30
-CORE_TARGET_PCT = CORE_COMPLETION_THRESHOLD * 100
+TARGET_PCT = COMPLETION_THRESHOLD * 100
 
 # Reduced (post-deadline) teaser: the first two metrics of each section stay
 # fully visible so the member remembers the value; the rest gate behind
@@ -73,16 +85,16 @@ def reduced_sample_ids():
 
 
 def contribution_state(conn, org):
-    """The day-one model: explore freely for CLOCK_DAYS; hitting the Core
-    target unlocks insights; past the deadline unmet, the benchmark reduces
+    """The day-one model: explore freely for CLOCK_DAYS; hitting the
+    completion target unlocks insights; past the deadline unmet, the benchmark reduces
     to a teaser until the submission is completed. Co-op contribution, never
     a paywall.
 
     The clock starts when the Admin accepts the Data Contribution Terms —
     the moment the org can actually contribute — NOT at signup or first
     login, so setup time never eats into the 30 days."""
-    completion = core_completion(conn, org)
-    unlocked = bool(org["submission_complete"]) or completion >= CORE_TARGET_PCT
+    completion = completion_pct(conn, org)
+    unlocked = bool(org["submission_complete"]) or completion >= TARGET_PCT
     terms = org_data_terms(conn, org["org_id"])
     clock_start = org["clock_start"]
     days_left = None
@@ -94,7 +106,7 @@ def contribution_state(conn, org):
         days_left = max(0, CLOCK_DAYS - (datetime.utcnow() - started).days)
     return {
         "core_pct": completion,
-        "target_pct": CORE_TARGET_PCT,
+        "target_pct": TARGET_PCT,
         "insights_unlocked": unlocked,
         "terms_accepted": terms is not None,
         "clock_started": bool(clock_start),
@@ -223,17 +235,10 @@ def require_data_terms(conn, org):
                                  "your organisation's Admin accepts them once, on the Submit data page.")
 
 
-def effective_tier(user, org):
-    if org["tier_entitlement"] == "full" and not user.get("preview_as_core"):
-        return "full"
-    return "core"
-
-
 def make_entitled(user, org):
-    tier = effective_tier(user, org)
-    if tier == "full":
-        return lambda q: True
-    return lambda q: q.lumi_tier == "Core"
+    # Tiers are removed: every reward question is available to every member.
+    # The lumi_tier library column still exists but is never consulted.
+    return lambda q: True
 
 
 # ------------------------------------------------------------- sanitisation ---
@@ -316,7 +321,7 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled):
         "sub_power_order": q.sub_power_order,
         "type": q.type,
         "category": q.category,
-        "tier": q.lumi_tier,
+       
         "locked": locked,
         "chart_default": q.default_chart_type,
         "unit": q.unit_block(),
@@ -499,7 +504,7 @@ async def do_reset(request: Request):
 async def me(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    completion = core_completion(conn, org)
+    completion = completion_pct(conn, org)
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
     vis = visible_questions()
     contrib = contribution_state(conn, org)
@@ -512,8 +517,7 @@ async def me(request: Request):
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
-        "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"],
-                 "preview_as_core": bool(user["preview_as_core"])},
+        "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"]},
         "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
@@ -525,25 +529,13 @@ async def me(request: Request):
                     "accepted_at": t and t["accepted_at"],
                     "version": t and t["version"],
                 })(org_data_terms(conn, org["org_id"]))},
-        "effective_tier": effective_tier(user, org),
-        "core_completion_pct": completion,
-        "benchmark_unlocked": bool(org["submission_complete"]) or completion >= CORE_COMPLETION_THRESHOLD * 100,
+        "completion_pct": completion,
+        "benchmark_unlocked": bool(org["submission_complete"]) or completion >= TARGET_PCT,
         "peer_pool": get_meta("peer_pool", {}),
         "snapshots": snaps,
     }
 
 
-@app.post("/api/me/preview-core")
-async def preview_core(request: Request):
-    user, org = require_admin(request)
-    if org["tier_entitlement"] != "full":
-        raise HTTPException(400, "Preview is only available to full-tier organisations.")
-    body = await request.json()
-    conn = get_conn()
-    conn.execute("UPDATE users SET preview_as_core=? WHERE user_id=?",
-                 (1 if body.get("on") else 0, user["user_id"]))
-    conn.commit()
-    return {"ok": True}
 
 
 # ==================================================================== TEAM ===
@@ -744,7 +736,7 @@ async def questions_index(request: Request):
         out.append({
             "id": qid, "title": q.display_title, "superpower": q.superpower,
             "subpower": q.sub_power, "sub_power_order": q.sub_power_order,
-            "type": q.type, "category": q.category, "tier": q.lumi_tier,
+            "type": q.type, "category": q.category,
             "locked": not entitled(q), "answered": qid in answered_q,
             "n": (p.get("all") or {}).get("n", 0),
         })
@@ -775,7 +767,7 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
                 "id": qid, "title": q.display_title, "question_text": q.text,
                 "superpower": q.superpower, "subpower": q.sub_power,
                 "sub_power_order": q.sub_power_order, "type": q.type,
-                "category": q.category, "tier": q.lumi_tier,
+                "category": q.category,
                 "cut": {"dim": cut["dim"], "value": cut.get("value"), "label": "All peers"},
                 "n": (p.get("all") or {}).get("n", 0), "reduced": True,
             })
@@ -799,7 +791,7 @@ async def single_benchmark(qid: str, request: Request):
         return {"id": qid, "title": q.display_title, "question_text": q.text,
                 "superpower": q.superpower, "subpower": q.sub_power,
                 "sub_power_order": q.sub_power_order, "type": q.type,
-                "category": q.category, "tier": q.lumi_tier,
+                "category": q.category,
                 "cut": {"dim": "all", "value": None, "label": "All peers"},
                 "n": (p.get("all") or {}).get("n", 0), "reduced": True}
     cut = parse_cut(request, org)
@@ -903,7 +895,7 @@ async def my_data(request: Request):
         rows.append({"question_id": qid, "question": q.text, "title": q.display_title,
                      "superpower": q.superpower, "subpower": q.sub_power,
                      "matrix_row": label, "value": value, "type": q.type,
-                     "unit": q.unit_block(), "tier": q.lumi_tier})
+                     "unit": q.unit_block()})
     rows.sort(key=lambda r: (r["superpower"], r["subpower"] or "", r["title"], r["matrix_row"] or ""))
     return {"rows": rows}
 
@@ -1282,7 +1274,7 @@ async def boardpack_generate(request: Request):
     user, org = require_user(request)
     contrib = contribution_state(get_conn(), org)
     if not contrib["insights_unlocked"]:
-        raise HTTPException(403, "Your board pack unlocks once you've answered 90% of your Core reward questions.")
+        raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
     body = await request.json()
     cut = {"dim": body.get("cut", "all"), "value": body.get("cut_value")}
     if cut["dim"] == "industry" and not cut["value"]:
@@ -1335,12 +1327,20 @@ OWNERSHIP = ["Private (Founder/Family)", "Private Equity-backed", "Public Listed
              "Co-operative / Mutual", "Subsidiary of overseas parent"]
 
 
-def core_completion(conn, org):
-    """% of ACTIVE-scope Core questions answered — benchmark gating follows the
-    launch focus (contribute reward data, see the reward benchmark)."""
+def completion_basis_questions():
     questions = visible_questions()
-    core_q = [q for q in questions.values() if q.lumi_tier == "Core"]
-    if not core_q:
+    if COMPLETION_BASIS == "required":
+        basis = [q for q in questions.values() if q.is_required]
+        if basis:
+            return basis
+    return list(questions.values())
+
+
+def completion_pct(conn, org):
+    """% of the BASIS set answered. N/A and Don't-know selections are stored
+    values, so they count as answered — only skipped questions don't."""
+    basis = completion_basis_questions()
+    if not basis:
         return 100.0
     answered = {r["question_id"] for r in conn.execute(
         "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=?",
@@ -1349,7 +1349,7 @@ def core_completion(conn, org):
         "SELECT DISTINCT question_id FROM drafts WHERE org_id=? AND value IS NOT NULL AND value != ''",
         (org["org_id"],))}
     have = answered | drafted
-    return round(100.0 * sum(1 for q in core_q if q.id in have) / len(core_q), 1)
+    return round(100.0 * sum(1 for q in basis if q.id in have) / len(basis), 1)
 
 
 @app.get("/api/submission/state")
@@ -1374,8 +1374,8 @@ async def submission_state(request: Request):
         sections.append({
             "superpower": sp, "questions": len(qs),
             "answered": sum(1 for q in qs if q.id in have),
-            "core_questions": sum(1 for q in qs if q.lumi_tier == "Core"),
-            "core_answered": sum(1 for q in qs if q.lumi_tier == "Core" and q.id in have),
+            "key_questions": sum(1 for q in qs if q.is_required),
+            "key_answered": sum(1 for q in qs if q.is_required and q.id in have),
         })
     firmographics_done = all(org.get(f) for f in ("industry", "fte_band", "hq_region", "ownership_type"))
     return {
@@ -1384,8 +1384,11 @@ async def submission_state(request: Request):
         "choices": {"industries": INDUSTRIES, "fte_bands": FTE_BANDS,
                     "regions": REGIONS, "ownership_types": OWNERSHIP},
         "sections": sections,
-        "core_completion_pct": core_completion(conn, org),
-        "threshold_pct": CORE_COMPLETION_THRESHOLD * 100,
+        "completion_pct": completion_pct(conn, org),
+        "threshold_pct": TARGET_PCT,
+        "basis": COMPLETION_BASIS,
+        "basis_total": len(completion_basis_questions()),
+        "basis_answered": sum(1 for q in completion_basis_questions() if q.id in have),
         "submission_complete": bool(org["submission_complete"]),
         "is_admin": user["role"] == "admin",
         "is_editor": user["role"] in ("admin", "contributor"),
@@ -1459,7 +1462,7 @@ async def submission_section(superpower: str, request: Request):
         entry = {
             "id": qid, "text": q.text, "title": q.display_title, "help_text": q.help_text,
             "subpower": q.sub_power, "sub_power_order": q.sub_power_order,
-            "type": q.type, "category": q.category, "tier": q.lumi_tier,
+            "type": q.type, "category": q.category,
             "options": [{"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na"))}
                         for o in sorted(q.options or [], key=lambda o: o.get("order", 0))],
             "unit_display_name": q.unit_display_name,
@@ -1617,16 +1620,16 @@ async def submit(request: Request):
             now_rows += 1
     conn.execute("DELETE FROM drafts WHERE org_id=?", (org["org_id"],))
     conn.commit()
-    completion = core_completion(conn, dict(org))
-    if completion >= CORE_COMPLETION_THRESHOLD * 100:
+    completion = completion_pct(conn, dict(org))
+    if completion >= TARGET_PCT:
         conn.execute("UPDATE orgs SET submission_complete=1 WHERE org_id=?", (org["org_id"],))
         conn.commit()
     # aggregates refresh synchronously (≈2s); peer group size updates live
     run_snapshot(CURRENT_SNAPSHOT, verbose=False)
     invalidate_payloads()
     return {"ok": True, "answers_saved": now_rows,
-            "core_completion_pct": completion,
-            "benchmark_unlocked": completion >= CORE_COMPLETION_THRESHOLD * 100}
+            "completion_pct": completion,
+            "benchmark_unlocked": completion >= TARGET_PCT}
 
 
 # ============================================================ METRIC REQUESTS ==
@@ -1767,7 +1770,7 @@ async def share_data(token: str, request: Request):
     conn = get_conn()
     org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (share["org_id"],)).fetchone())
     config = uj(share["config_json"], {})
-    pseudo_user = {"role": "viewer", "preview_as_core": 0}
+    pseudo_user = {"role": "viewer"}
     entitled = make_entitled(pseudo_user, org)
     if share["kind"] == "boardpack":
         row = conn.execute("SELECT * FROM board_packs WHERE pack_id=? AND org_id=?",

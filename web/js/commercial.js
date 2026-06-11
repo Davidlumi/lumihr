@@ -124,8 +124,8 @@ window.BoardPackPage = function ({ me, cut }) {
         <div class="lock-note">
           <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
           <div class="caption" style=${{ textAlign: "center", maxWidth: "320px" }}>
-            Your board pack is written from your own position — it unlocks when you've completed 90% of your
-            Core reward questions${contrib.days_left != null ? ` (${contrib.days_left} days left)` : ""}.</div>
+            Your board pack is written from your own position — it unlocks when you've completed your
+            key reward questions${contrib.days_left != null ? ` (${contrib.days_left} days left)` : ""}.</div>
           <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
         </div>
       </div>
@@ -555,10 +555,6 @@ window.SettingsPage = function ({ me, refreshMe }) {
       agency_premium_pct: +a.agency_premium_pct } } });
     setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
   };
-  const togglePreview = async () => {
-    await api("/api/me/preview-core", { method: "POST", body: { on: !me.user.preview_as_core } });
-    refreshMe();
-  };
   if (!a) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "640px" }}>
@@ -592,25 +588,6 @@ window.SettingsPage = function ({ me, refreshMe }) {
           data-protection teams want the fuller instrument. All terms are
           ${" "}<span class="chip warn">DRAFT — pending legal review</span></div>
       </div>
-      ${me.org.tier_entitlement === "full" && me.user.role === "admin" && html`
-        <div class="card" style=${{ padding: "var(--s5)" }}>
-          <h2 class="section-title">Preview as Core member</h2>
-          <p class="caption">See lumi the way a Core-tier member sees it — Enhanced, Pulse and Strategic benchmarks lock. Useful for demos.</p>
-          <button class="btn" onClick=${togglePreview}>${me.user.preview_as_core ? "Switch back to Full view" : "Preview as Core member"}</button>
-        </div>`}
-    </div>`;
-};
-
-// --------------------------------------------------------------- upgrade ---
-window.UpgradePage = function () {
-  return html`
-    <div style=${{ maxWidth: "620px", margin: "0 auto", textAlign: "center", paddingTop: "60px" }}>
-      <div style=${{ fontSize: "40px" }}>🔓</div>
-      <h1 class="display-title">Unlock the full lumi benchmark</h1>
-      <p>Core membership includes 138 benchmarks. The full set adds 640 more across Enhanced, Pulse and
-      Strategic tiers — deeper reward data, wellbeing practice, leadership and change benchmarks.</p>
-      <p class="caption">Talk to the lumi membership team to upgrade — this build doesn't take payments.</p>
-      <a class="btn primary" href="mailto:members@lumi.example?subject=lumi%20Full%20membership">Contact the membership team</a>
     </div>`;
 };
 

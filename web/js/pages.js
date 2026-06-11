@@ -89,7 +89,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
                 <div class="caption" style=${{ textAlign: "center", maxWidth: "280px" }}>
                   ${data.callouts.gaps_available
                     ? `We've already identified ${data.callouts.gaps_available} gap${data.callouts.gaps_available === 1 ? "" : "s"} for you. `
-                    : ""}Unlock by completing 90% of your Core reward questions${data.contribution && data.contribution.days_left != null ? ` — ${data.contribution.days_left} days left` : ""}.</div>
+                    : ""}Unlock by completing your key reward questions${data.contribution && data.contribution.days_left != null ? ` — ${data.contribution.days_left} days left` : ""}.</div>
                 <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
               </div>
             </div>` :
@@ -160,7 +160,7 @@ window.OpportunityTile = function ({ opp, contrib }) {
       <div class="lock-note">
         <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
         <div class="caption" style=${{ textAlign: "center", maxWidth: "240px" }}>
-          ${opp.item_count ? `${opp.item_count} £-sized opportunities are waiting. ` : ""}Unlock by completing 90% of your Core reward questions${opp.days_left != null ? ` — ${opp.days_left} days left` : ""}.</div>
+          ${opp.item_count ? `${opp.item_count} £-sized opportunities are waiting. ` : ""}Unlock by completing your key reward questions${opp.days_left != null ? ` — ${opp.days_left} days left` : ""}.</div>
         <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
       </div>
     </div>`;
@@ -220,7 +220,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [cat, setCat] = useState("");
-  const [tier, setTier] = useState("");
+
   useEffect(() => {
     setData(null); setErr(null);
     api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut)).then(setData).catch(e => setErr(e.message));
@@ -245,7 +245,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   let cards = data.cards;
   if (subF) cards = cards.filter(c => (c.subpower || "General") === subF);
   if (cat) cards = cards.filter(c => c.category === cat);
-  if (tier) cards = cards.filter(c => (tier === "Core" ? c.tier === "Core" : c.tier !== "Core"));
+
   const bySub = [];
   for (const c of cards) {
     let g = bySub.find(g => g.sub === (c.subpower || "General"));
@@ -273,15 +273,12 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="hint">Show only one kind of question.</div>
           </div>
           <div class="ctlgroup">
-            <select class="ctl" value=${tier} onChange=${e => setTier(e.target.value)}>
-              <option value="">All tiers</option><option value="Core">Core</option><option value="plus">Enhanced+</option>
-            </select>
-            <div class="hint">Filter by membership tier.</div>
+
           </div>
         </div>
       </div>
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"
-        body="Try clearing the category or tier filter." action=${html`<button class="btn small" onClick=${() => { setCat(""); setTier(""); }}>Clear filters</button>`} />`}
+        body="Try clearing the category filter." action=${html`<button class="btn small" onClick=${() => setCat("")}>Clear filter</button>`} />`}
       ${bySub.map(g => html`
         <div key=${g.sub} style=${{ marginBottom: "var(--s5)" }}>
           ${!subF && html`<h2 class="section-title">${g.sub}</h2>`}
@@ -411,14 +408,13 @@ window.MyDataPage = function () {
         <div key=${g.sp} class="card" style=${{ marginBottom: "var(--s4)", padding: "var(--s4)" }}>
           <h2 class="section-title" style=${{ display: "flex", alignItems: "center", gap: "8px" }}>${window.SCOPE && window.SCOPE.focused ? "" : html`<${SpIcon} sp=${g.sp} />`} ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
           <table class="data">
-            <thead><tr><th>Benchmark</th><th>Level / row</th><th class="num">Your answer</th><th>Tier</th></tr></thead>
+            <thead><tr><th>Benchmark</th><th>Level / row</th><th class="num">Your answer</th></tr></thead>
             <tbody>
               ${g.rows.map((r, i) => html`
                 <tr key=${i}>
                   <td title=${r.question}>${r.title}</td>
                   <td>${r.matrix_row || "—"}</td>
                   <td class="num"><b>${formatAnswer(r)}</b></td>
-                  <td><span class="chip">${r.tier}</span></td>
                 </tr>`)}
             </tbody>
           </table>
@@ -468,6 +464,19 @@ window.MethodologyPage = function () {
             })}
           </tbody>
         </table>
+      </div>
+
+      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">The question set and how insights unlock</h2>
+        <p>Your reward benchmark is <b>one flat set of ${(window.SCOPE || {}).question_count || 180} questions</b>,
+        organised by section (Pay, Benefits, Incentives, Transparency, Progression). There are no membership tiers —
+        every member sees and can answer every question.</p>
+        <p><b>Unlocking your insights.</b> The £ opportunity, board pack and biggest-gaps views unlock when you have
+        answered your <b>key reward questions</b> — the subset flagged as applying to every organisation. Selecting
+        “Not applicable” or “Don't know” <b>counts as answering</b>: engaging with a question that doesn't apply to
+        you is a complete answer, so an organisation can never be locked out by questions that don't apply to it.
+        A multi-row (matrix) question counts once. The same completion drives the 30-day contribution clock that
+        starts when your Admin accepts the Data Contribution Terms.</p>
       </div>
 
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>

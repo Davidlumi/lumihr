@@ -32,7 +32,6 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
   const setPref = (k, v) => onPref && onPref(card.id, { ...pref, [k]: v });
 
-  if (c.locked) return html`<${LockedCard} card=${c} size=${size} />`;
   if (c.reduced) return html`<${ReducedCard} card=${c} />`;
 
   const doExport = async (mode) => {
@@ -310,32 +309,6 @@ function stripUnit(display, unit) {
   return display;
 }
 
-window.LockedCard = function ({ card: c, size }) {
-  return html`
-    <div class=${"card bench-card" + (size === 2 ? " w2" : "")}>
-      <div class="bench-head"><h3 class="bench-title">${c.title}</h3><${Chip} kind="warn">${c.tier}<//></div>
-      <div class="bench-n">n=${c.n}</div>
-      <div class="bench-chart">
-        <div class="blurred" aria-hidden="true">
-          <svg viewBox="0 0 420 96" style=${{ width: "100%" }}>
-            <rect x="20" y="44" width="380" height="12" rx="6" fill="var(--chart-band)"/>
-            <rect x="105" y="44" width="175" height="12" rx="6" fill="var(--chart-band-mid)"/>
-            <rect x="196" y="39" width="2.5" height="22" fill="var(--chart-median)"/>
-            <circle cx="265" cy="50" r="6.5" fill="var(--you)" stroke="#fff" stroke-width="2"/>
-          </svg>
-        </div>
-      </div>
-      <div class="bench-readout blurred">This benchmark compares your position against similar organisations.</div>
-      <div class="locked-overlay">
-        <${Chip} kind="warn"><${Icon} name="lock" size=${11} /> ${c.tier} tier<//>
-        <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
-          Part of lumi's ${c.tier} set. ${c.n} organisations have contributed to it.
-        </div>
-        <button class="btn small primary" onClick=${() => nav("/upgrade")}>Unlock with lumi Full</button>
-      </div>
-    </div>`;
-};
-
 /* Day-30 reduced state: the metric stays visible as a shape, never as data.
    Encouraging restore message — a contribution prompt, not a paywall. */
 window.ReducedCard = function ({ card: c }) {
@@ -389,7 +362,6 @@ window.CardDetail = function ({ card: c, onClose }) {
       <div class="row" style=${{ marginTop: "var(--s3)" }}>
         <${Chip}>${c.superpower}${c.subpower ? " · " + c.subpower : ""}<//>
         <${Chip}>${c.category}<//>
-        <${Chip}>${c.tier} tier<//>
         <${Chip}>peer group: ${c.cut.label}, n=${c.n}<//>
       </div>
       <p class="caption" style=${{ marginTop: "var(--s3)" }}>
