@@ -576,3 +576,5 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: 999px; font: 600 var(--fs-label)/1 var(--font-body); color: var(--ink-soft); }
 .chart-switch-btn.on { background: var(--blue-tint); color: var(--blue-deep); }
 .chart-switch-btn:hover:not(.on) { color: var(--ink); }
+
+.next-step-n.done { background: var(--favourable-tint); color: var(--favourable); }

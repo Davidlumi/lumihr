@@ -600,6 +600,12 @@ window.SettingsPage = function ({ me, refreshMe }) {
         ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
       </div>
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Company profile</h2>
+        <p class="caption">The organisation facts behind your peer groups — sector, size, region, ownership
+        and workforce shape. ${me.user.role === "admin" ? "Firmographics change; update them any time." : "Your Admin keeps these up to date."}</p>
+        <a class="btn small" href="#/profile">${me.user.role === "admin" ? "View / edit profile" : "View profile"}</a>
+      </div>
+      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Terms & agreements</h2>
         ${me.org.data_terms && me.org.data_terms.accepted ? html`
           <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on

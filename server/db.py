@@ -272,7 +272,11 @@ def init_schema(conn=None):
     # migration-lite for existing databases
     for ddl in ("ALTER TABLE orgs ADD COLUMN clock_start TEXT",
                 "ALTER TABLE orgs ADD COLUMN insights_unlocked_at TEXT",
-                "ALTER TABLE orgs ADD COLUMN reminders_json TEXT NOT NULL DEFAULT '[]'"):
+                "ALTER TABLE orgs ADD COLUMN reminders_json TEXT NOT NULL DEFAULT '[]'",
+                "ALTER TABLE orgs ADD COLUMN unionised_level TEXT",
+                "ALTER TABLE orgs ADD COLUMN hr_maturity TEXT",
+                "ALTER TABLE orgs ADD COLUMN business_maturity TEXT",
+                "ALTER TABLE orgs ADD COLUMN operating_model TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

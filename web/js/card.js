@@ -104,6 +104,7 @@ function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, p
   const choices = [{ key: "all", label: "All peers" }];
   if (cuts && cuts.org_industry) choices.push({ key: "industry::" + cuts.org_industry, label: "Your sector: " + cuts.org_industry });
   if (cuts && cuts.org_fte_band) choices.push({ key: "fte_band::" + cuts.org_fte_band, label: "Your size: " + cuts.org_fte_band + " FTE" });
+  const unprofiled = cuts && !cuts.org_industry && !cuts.org_fte_band;
   const exportable = !c.suppressed && !!c.you;
   const pick = (fn) => () => { setOpen(false); fn(); };
   return html`
@@ -120,6 +121,8 @@ function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, p
               <span class="kebab-check">${effectiveKey === ch.key ? "✓" : ""}</span>${ch.label}
               ${ch.key === globalKey ? html`<span class="caption" style=${{ marginLeft: "auto" }}>page</span>` : null}
             </button>`)}
+          ${unprofiled && html`<button role="menuitem" class="kebab-item" onClick=${pick(() => nav("/profile"))}>
+            Unlock sector & size — complete your profile</button>`}
           <div class="kebab-sep"></div>
           <button role="menuitem" class="kebab-item" onClick=${pick(() => openMetric(c.id))}>Open full view</button>
           <button role="menuitem" class="kebab-item" onClick=${pick(onDetail)}>Full question & definition</button>

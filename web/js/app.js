@@ -131,6 +131,7 @@ function App() {
   else if (route.startsWith("/shares")) page = html`<${SharesPage} />`;
   else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
   else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
+  else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
@@ -186,13 +187,17 @@ function App() {
               onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
               <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
               ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} (${cuts.industries[cuts.org_industry] || "?"})</option>`}
-              ${cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
+              ${me.org.classified && cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
                 html`<option key=${i} value=${"industry::" + i}>${i} (${cuts.industries[i]})</option>`)}
-              ${cuts && Object.keys(cuts.fte_bands || {}).map(b =>
+              ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
                 html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
             </select>
-            <div class="hint">${cutHint(cut, cuts, me)}</div>
+            <div class="hint">${!me.org.classified
+              ? html`${me.user.role === "admin"
+                  ? html`<a href="#/profile">Complete your company profile</a> to compare by sector and size — 2 minutes.`
+                  : "Your Admin can complete the company profile to unlock sector and size comparisons."}`
+              : cutHint(cut, cuts, me)}</div>
             ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
           </div>
           <div class="ctlgroup" style=${{ flex: 1, maxWidth: "400px" }}>
@@ -237,6 +242,71 @@ window.SectionNav = function ({ route, qIndex, gapCue }) {
         <span class="nav-count">${sec.count}</span>
       </button>`;
   })}`;
+};
+
+/* Company profile: org-level, ~8 fields, captured once by the Admin so the
+   benchmark can compare against the right peers. Benign company facts only —
+   no personal data. Choice sets mirror the seed registry. */
+window.ProfilePage = function ({ me, refreshMe }) {
+  const [data, setData] = useState(null);
+  const [vals, setVals] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+  useEffect(() => {
+    api("/api/org-profile").then(d => { setData(d); setVals(d.values); }).catch(e => setErr(e.message));
+  }, []);
+  if (err) return html`<${EmptyState} title="Couldn't load your profile" body=${err} />`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const canEdit = data.can_edit;
+  const firstRun = !me.org.classified;
+  const CORE = [["industry", "Industry / sector"], ["fte_band", "Organisation size (full-time employees)"],
+                ["hq_region", "HQ region"], ["ownership_type", "Ownership"]];
+  const RICH = [["unionised_level", "How much of your workforce is unionised?"],
+                ["hr_maturity", "How developed is your HR function?"],
+                ["business_maturity", "Where is the business in its life cycle?"],
+                ["operating_model", "How do you operate?"]];
+  const Field = ([k, label], required) => html`
+    <div class="field" key=${k}>
+      <label>${label}${required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</label>
+      <select value=${vals[k] || ""} disabled=${!canEdit} onChange=${e => setVals({ ...vals, [k]: e.target.value })}>
+        <option value="">Choose…</option>
+        ${(data.choices[k] || []).map(o => html`<option key=${o} value=${o}>${o}</option>`)}
+      </select>
+    </div>`;
+  const coreDone = CORE.every(([k]) => vals[k]);
+  const save = async () => {
+    if (saving) return;
+    setSaving(true); setErr(null);
+    try {
+      const r = await api("/api/org-profile", { method: "PUT", body: vals });
+      await refreshMe();
+      toast(r.core_complete ? "Profile saved — your peer groups are live." : "Profile saved.");
+      if (firstRun && r.core_complete) nav("/overview");
+    } catch (e) { setErr(e.message); }
+    setSaving(false);
+  };
+  return html`
+    <div style=${{ maxWidth: "620px" }}>
+      ${!firstRun && html`<button class="btn quiet" onClick=${() => window.history.back()}>← Back</button>`}
+      <h1 class="display-title" style=${{ marginTop: "6px" }}>${firstRun ? "Tell us about your organisation" : "Company profile"}</h1>
+      <p>${firstRun
+        ? "So we can compare you to the right peers — sector, size and a few company facts. About two minutes."
+        : "The company facts behind your peer groups. Firmographics change — update them here any time."}</p>
+      <p class="caption">These are organisation-level facts only — never personal data — and they're shown to no
+      other member. They decide which peer groups you can compare against.</p>
+      <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
+        <h2 class="section-title">The essentials</h2>
+        ${CORE.map(f => Field(f, true))}
+        <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Sharper peer groups <span class="caption" style=${{ fontWeight: 400 }}>(recommended — powers "Organisations like you")</span></h2>
+        ${RICH.map(f => Field(f, false))}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+        ${canEdit ? html`
+          <button class="btn primary" disabled=${saving || !coreDone} onClick=${save}>
+            ${saving ? html`<${Spinner} />` : firstRun ? "Save and see your benchmark" : "Save profile"}</button>
+          ${!coreDone && html`<div class="caption" style=${{ marginTop: "6px" }}>The four essentials are needed before peer groups work.</div>`}` :
+        html`<div class="caption">Only your organisation's Admin can edit the company profile.</div>`}
+      </div>
+    </div>`;
 };
 
 window.NotFoundPage = function ({ route }) {
@@ -359,14 +429,20 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
   const pct = Math.round(contrib.core_pct || 0);
   const role = me && me.user ? me.user.role : "viewer";
   if (!contrib.terms_accepted) {
-    /* First-run "you're set up — next steps": welcoming, not a wizard. */
+    /* First-run "you're set up — next steps": welcoming, not a wizard.
+       The profile gate ("who you are") comes before the contribution gate
+       ("share your data") — never both walls at once. */
+    const profiled = !!(me && me.org && me.org.classified);
     const steps = [
-      { n: 1, label: "Review and accept the Data Contribution Terms", done: false,
+      { n: 1, label: "Tell us about your organisation", done: profiled,
+        hint: profiled ? "Done — your peer groups are live."
+          : "8 quick facts (sector, size, region…) so we compare you to the right peers. Two minutes, company facts only." },
+      { n: 2, label: "Review and accept the Data Contribution Terms", done: false,
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
-      { n: 2, label: "Complete your reward data", done: false,
+      { n: 3, label: "Complete your reward data", done: false,
         hint: "180 questions by section, autosaved — insights unlock once your key questions are answered." },
-      { n: 3, label: "Invite your team", done: false,
+      { n: 4, label: "Invite your team", done: false,
         hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
     ];
     return html`
@@ -384,11 +460,12 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         <div style=${{ flex: "1.2 1 280px", minWidth: "260px" }}>
           ${steps.map(st => html`
             <div key=${st.n} class="next-step">
-              <span class="next-step-n">${st.n}</span>
+              <span class=${"next-step-n" + (st.done ? " done" : "")}>${st.done ? "✓" : st.n}</span>
               <div><b>${st.label}</b><div class="caption">${st.hint}</div></div>
             </div>`)}
           <div class="row" style=${{ marginTop: "var(--s2)" }}>
-            ${role === "admin" && html`<button class="btn primary" onClick=${() => nav("/submission")}>Review the data terms</button>`}
+            ${role === "admin" && !profiled && html`<button class="btn primary" onClick=${() => nav("/profile")}>Tell us about your organisation</button>`}
+            ${role === "admin" && profiled && html`<button class="btn primary" onClick=${() => nav("/submission")}>Review the data terms</button>`}
             ${role === "admin" && html`<button class="btn" onClick=${() => nav("/team")}>Invite your team</button>`}
             ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/superpower/Reward")}>Explore the benchmark</button>`}
           </div>
@@ -561,7 +638,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
         </div>
         ${!profiled && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>
           Sector, size and bespoke comparisons unlock once your company profile is complete —
-          ${" "}<a href="#/submission">finish it in your submission</a>.</div>`}
+          ${" "}<a href="#/profile">two minutes, company facts only</a>.</div>`}
         <div class="metric-xl" ref=${chartRef} style=${busy ? { opacity: .45 } : null}
           role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
           ${c.suppressed ? html`

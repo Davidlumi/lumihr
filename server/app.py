@@ -529,6 +529,7 @@ async def me(request: Request):
         "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
+                "profile_rich_complete": all(org.get(f) for f in PROFILE_RICH),
                 "tier_entitlement": org["tier_entitlement"], "source": org["source"],
                 "submission_complete": bool(org["submission_complete"]),
                 "data_terms": (lambda t: {
@@ -1360,6 +1361,77 @@ def completion_pct(conn, org):
     return round(100.0 * sum(1 for q in basis if q.id in have) / len(basis), 1)
 
 
+# ============================================================ COMPANY PROFILE ==
+# Org-level, captured once by the Admin at first-run, BEFORE the data terms —
+# without sector/size there's nothing meaningful to compare against. Choice
+# sets come from the seed registry's feature space so real organisations land
+# in exactly the same peer cuts and similarity buckets as the seed orgs.
+
+PROFILE_CORE = ("industry", "fte_band", "hq_region", "ownership_type")
+PROFILE_RICH = ("unionised_level", "hr_maturity", "business_maturity", "operating_model")
+UNION_BANDS = ["None (0%)", "Low (1-25%)", "Medium (26-50%)", "High (over 50%)"]
+UNION_MIDPOINTS = {"None (0%)": 0, "Low (1-25%)": 13, "Medium (26-50%)": 38, "High (over 50%)": 65}
+
+
+def profile_choices():
+    space = get_meta("sim_feature_space") or {"cat_values": {}}
+    cv = space["cat_values"]
+    return {
+        "industry": INDUSTRIES,
+        "fte_band": FTE_BANDS,
+        "hq_region": REGIONS,
+        "ownership_type": cv.get("Ownership_Type", OWNERSHIP),
+        "unionised_level": UNION_BANDS,
+        "hr_maturity": cv.get("HR_Maturity", ["Basic", "Developing", "Advanced"]),
+        "business_maturity": cv.get("Business_Maturity", []),
+        "operating_model": cv.get("Operating_Model", []),
+    }
+
+
+@app.get("/api/org-profile")
+async def get_org_profile(request: Request):
+    user, org = require_user(request)
+    fields = PROFILE_CORE + PROFILE_RICH
+    return {
+        "values": {f: org.get(f) for f in fields},
+        "choices": profile_choices(),
+        "core_complete": bool(org["classified"]),
+        "rich_complete": all(org.get(f) for f in PROFILE_RICH),
+        "can_edit": user["role"] == "admin",
+    }
+
+
+@app.put("/api/org-profile")
+async def put_org_profile(request: Request):
+    """Admin-only; deliberately does NOT require the data terms — the profile
+    is the step before them in the lifecycle."""
+    user, org = require_admin(request)
+    body = await request.json()
+    choices = profile_choices()
+    vals = {}
+    for f in PROFILE_CORE + PROFILE_RICH:
+        v = body.get(f)
+        if v in (None, ""):
+            continue
+        if choices.get(f) and v not in choices[f]:
+            raise HTTPException(400, "'%s' isn't one of the recognised options for %s." % (v, f.replace("_", " ")))
+        vals[f] = v
+    if not vals:
+        raise HTTPException(400, "Nothing to save.")
+    conn = get_conn()
+    sets = ", ".join("%s=?" % f for f in vals)
+    conn.execute("UPDATE orgs SET %s WHERE org_id=?" % sets, list(vals.values()) + [org["org_id"]])
+    row = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone())
+    classified = 1 if all(row.get(f) for f in PROFILE_CORE) else 0
+    conn.execute("UPDATE orgs SET classified=? WHERE org_id=?", (classified, org["org_id"]))
+    if classified:
+        _encode_signup_vector(conn, row)
+    conn.commit()
+    invalidate_payloads()
+    return {"ok": True, "core_complete": bool(classified),
+            "rich_complete": all(row.get(f) for f in PROFILE_RICH)}
+
+
 @app.get("/api/submission/state")
 async def submission_state(request: Request):
     user, org = require_editor(request)
@@ -1440,14 +1512,25 @@ def _encode_signup_vector(conn, org):
         return
     vec = []
     decl = {"Industry": org.get("industry"), "FTE_Band": org.get("fte_band"),
-            "Ownership_Type": org.get("ownership_type")}
+            "Ownership_Type": org.get("ownership_type"),
+            "HR_Maturity": org.get("hr_maturity"),
+            "Operating_Model": org.get("operating_model"),
+            "Business_Maturity": org.get("business_maturity")}
     for attr, values in [(a, space["cat_values"][a]) for a in (
             "Industry", "FTE_Band", "Ownership_Type", "Archetype", "Turnover_Band",
             "Avg_Tenure_Band", "HR_Maturity", "Operating_Model", "Business_Maturity")]:
         mine = decl.get(attr)
         vec += [1.0 if mine == v else 0.0 for v in values]
     for a in ("Workforce_Frontline_%", "Workforce_Shift_%", "Workforce_Unionised_%"):
-        vec.append(0.5)
+        if a == "Workforce_Unionised_%" and org.get("unionised_level") in UNION_MIDPOINTS:
+            rng = (space.get("num_ranges") or {}).get(a)
+            mid = UNION_MIDPOINTS[org["unionised_level"]]
+            if rng and rng[1] > rng[0]:
+                vec.append(max(0.0, min(1.0, (mid - rng[0]) / float(rng[1] - rng[0]))))
+            else:
+                vec.append(mid / 100.0)
+        else:
+            vec.append(0.5)  # undeclared numerics stay neutral
     conn.execute("UPDATE orgs SET similarity_vector_json=? WHERE org_id=?", (j(vec), org["org_id"]))
     conn.execute("DELETE FROM peer_twin_cache WHERE org_id=?", (org["org_id"],))
 

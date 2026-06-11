@@ -286,3 +286,31 @@ detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.
   in this environment — the live surface is the deterministic generator;
   the same validator screens model outputs once a key is configured.
   RE-RUN qa_commentary.py after adding a key or changing the generator.
+
+## Company profile — onboarding capture (2026-06-11)
+
+- Lean org-level profile (~8 fields): required core (industry, FTE band,
+  HQ region, ownership) + recommended rich four (unionised band, HR
+  maturity, business maturity, operating model) that sharpen Peer Twin.
+  Deliberately NOT the other ~35 registry attributes — onboarding stays a
+  two-minute step, not a wall.
+- Sequenced FIRST in the Admin lifecycle: signup -> platform terms ->
+  COMPANY PROFILE -> benchmark usable with peer cuts -> data terms ->
+  clock -> submission. The two gates stay distinct: profile = "who you
+  are" (fast, upfront); reward 90% = "contribute to unlock insights"
+  (the 30-day journey). /api/org-profile deliberately does NOT require
+  the data terms; the submission flow prompts profile-before-terms.
+- Choice sets come from the seed registry's feature space
+  (sim_feature_space.cat_values), which FIXED a latent mismatch: the old
+  in-submission form used an OWNERSHIP list that didn't match registry
+  Ownership_Type values, so signups never matched seed orgs on ownership
+  in the similarity vector. Verified: a real org's Manufacturing /
+  1,000-4,999 / South East lands in the seed orgs' exact cut (n=15=15);
+  non-registry values are 400-rejected.
+- The similarity vector now encodes the declared rich fields and maps the
+  union band midpoint into the registry's numeric range (no longer all
+  neutral) — richer "Organisations like you" for members who fill them.
+- Gating until the core is complete: topbar selector hides sector/size
+  options and shows a complete-your-profile prompt (admin link / ask-your-
+  admin for others); card kebab and metric page prompt likewise. Editable
+  later via Settings -> Company profile (admin-only; org-level).

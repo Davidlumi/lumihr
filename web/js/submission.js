@@ -9,9 +9,18 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   if (err) return html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task"
     body=${err} />`;
   if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!state.firmographics_done) return html`
+    <div style=${{ maxWidth: "560px" }}>
+      <h1 class="display-title">First, tell us who you are</h1>
+      <p>Before the data terms and the questionnaire, we need a few company facts — sector, size,
+      region — so the benchmark compares you to the right peers. Two minutes, organisation-level only.</p>
+      ${me.user.role === "admin"
+        ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
+        : html`<${EmptyState} icon="lock" title="Waiting on your Admin"
+            body="Your organisation's Admin completes the company profile first — then the data terms, then the questionnaire opens." />`}
+    </div>`;
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
     onAccepted=${() => { refresh(); refreshMe(); }} />`;
-  if (!state.firmographics_done) return html`<${FirmographicsStep} state=${state} onDone=${() => { refresh(); refreshMe(); }} />`;
   if (section === "review") return html`<${ReviewStep} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
   if (section) return html`<${SectionForm} sp=${section} state=${state} refresh=${refresh} />`;
   return html`<${SubmissionHome} state=${state} />`;
