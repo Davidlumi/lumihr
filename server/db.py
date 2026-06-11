@@ -241,6 +241,19 @@ CREATE TABLE IF NOT EXISTS terms_acceptances (
 );
 CREATE INDEX IF NOT EXISTS idx_terms_org ON terms_acceptances(org_id, kind);
 
+-- AI metric commentary, cached per org+metric+cut until the underlying
+-- figures change (payload_hash). Regenerate replaces the row.
+CREATE TABLE IF NOT EXISTS metric_commentary (
+    org_id TEXT NOT NULL,
+    question_id TEXT NOT NULL,
+    cut_key TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    text TEXT NOT NULL,
+    source TEXT NOT NULL,              -- model | deterministic
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (org_id, question_id, cut_key)
+);
+
 -- Generated board packs (narrative cached so the print view is stable).
 CREATE TABLE IF NOT EXISTS board_packs (
     pack_id TEXT PRIMARY KEY,

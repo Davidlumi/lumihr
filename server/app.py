@@ -27,6 +27,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import auth as auth_lib
+import hashlib
+
 import claude_api
 import retrieval
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
@@ -49,6 +51,8 @@ CURRENT_SNAPSHOT = 1
 # Selecting "Not applicable" / "Don't know" IS answering — it counts. Only
 # genuinely skipped questions are incomplete. A matrix counts as ONE question.
 COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # required | all
+# AI metric commentary: stays OFF until the adversarial QA gate passes clean.
+AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "off").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -514,6 +518,7 @@ async def me(request: Request):
     maybe_send_clock_reminder(conn, org, contrib)
     return {
         "contribution": contrib,
+        "features": {"commentary": AI_COMMENTARY},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -1630,6 +1635,89 @@ async def submit(request: Request):
     return {"ok": True, "answers_saved": now_rows,
             "completion_pct": completion,
             "benchmark_unlocked": completion >= TARGET_PCT}
+
+
+# ========================================================== METRIC COMMENTARY ==
+
+def _commentary_stance(percentile, polarity):
+    """Same thresholds and polarity adjustment as the card pill."""
+    if percentile is None or polarity in (None, "neutral"):
+        return None
+    adj = 100 - percentile if polarity == "lower_is_better" else percentile
+    return "ahead" if adj > 55 else "behind" if adj < 45 else "in line"
+
+
+@app.post("/api/metric-commentary")
+async def metric_commentary(request: Request):
+    """AI commentary for one metric on one cut: grounded ONLY in the figures
+    on the page (the same assembled card), validated post-generation, cached
+    per org+metric+cut until the underlying numbers change."""
+    if not AI_COMMENTARY:
+        raise HTTPException(403, "AI commentary isn't enabled yet.")
+    user, org = require_user(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    q = visible_questions().get(qid)
+    p = payloads().get(qid)
+    if q is None or p is None:
+        raise HTTPException(404, "That metric isn't part of your benchmark.")
+    conn = get_conn()
+    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin") else "all"
+    value = body.get("cut_value")
+    if dim == "industry" and not value:
+        value = org.get("industry")
+    if dim == "fte_band" and not value:
+        value = org.get("fte_band")
+    cut = {"dim": dim, "value": value}
+    tb = twin_blocks_if_needed(conn, org, cut)
+    card = assemble_card(q, p, org, org_answers_for(org), cut,
+                         {qid: tb.get(qid)} if tb else None, make_entitled(user, org))
+
+    # the grounded payload: exactly the figures the page shows, nothing else
+    blk = card.get("block") or {}
+    you = card.get("you") or {}
+    payload = {
+        "metric": card["title"],
+        "definition": card.get("definition") or "",
+        "cut_label": card["cut"]["label"],
+        "n": card["n"],
+        "suppressed": bool(card.get("suppressed")),
+        "polarity": card.get("polarity"),
+        "you": you.get("display") or you.get("label"),
+        "percentile": you.get("percentile"),
+        "stance": _commentary_stance(you.get("percentile"), card.get("polarity")),
+        "illustrative_sample_data": bool(get_meta("synthetic_pool", True)),
+    }
+    if blk.get("p50") is not None:
+        payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
+        payload["peer_p25_display"] = pos.fmt_value(blk["p25"], q.unit_block()) if blk.get("p25") is not None else None
+        payload["peer_p75_display"] = pos.fmt_value(blk["p75"], q.unit_block()) if blk.get("p75") is not None else None
+    if blk.get("options"):
+        top = max(blk["options"], key=lambda o: o.get("pct") or 0)
+        payload["most_common"] = "\u201c%s\u201d" % top["label"]
+        payload["most_common_share"] = top.get("pct")
+        if you.get("label"):
+            mine = next((o for o in blk["options"] if o["label"] == you["label"]), None)
+            payload["your_answer_peer_share"] = mine and mine.get("pct")
+            payload["you"] = "\u201c%s\u201d" % you["label"]
+
+    cut_key = dim + "::" + (value or "")
+    phash = hashlib.sha256(j(payload).encode()).hexdigest()[:16]
+    caveats = {"illustrative": bool(payload["illustrative_sample_data"])}
+    if not body.get("force"):
+        row = conn.execute(
+            "SELECT * FROM metric_commentary WHERE org_id=? AND question_id=? AND cut_key=? AND payload_hash=?",
+            (org["org_id"], qid, cut_key, phash)).fetchone()
+        if row:
+            return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
+                    "generated_at": row["created_at"], "caveats": caveats}
+    res = claude_api.generate_metric_commentary(payload)
+    conn.execute(
+        "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
+        "VALUES (?,?,?,?,?,?)",
+        (org["org_id"], qid, cut_key, phash, j(res["parts"]), res["source"]))
+    conn.commit()
+    return {"parts": res["parts"], "source": res["source"], "cached": False, "caveats": caveats}
 
 
 # ============================================================ METRIC REQUESTS ==

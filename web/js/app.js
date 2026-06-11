@@ -574,6 +574,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           <${ExactFigures} card=${c} />`}
       </div>
 
+      ${me.features && me.features.commentary && html`
+        <${MetricCommentary} qid=${qid} sel=${sel} card=${c} />`}
+
       <div class="grid2" style=${{ marginTop: "var(--s4)", gap: "var(--s4)" }}>
         <div class="card" style=${{ padding: "var(--s5)" }}>
           <h2 class="section-title">What this measures</h2>
@@ -596,6 +599,56 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
       <div class="caption" style=${{ margin: "var(--s4) 0" }}>
         From <a href=${"#" + backTo}>${c.subpower || c.superpower}</a> in your reward benchmark.
       </div>
+    </div>`;
+}
+
+/* AI commentary: on-demand, per metric + cut, grounded server-side and
+   validated before anything is shown. Framed to sanity-check, not to obey. */
+function MetricCommentary({ qid, sel, card }) {
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  useEffect(() => { setData(null); setErr(null); }, [qid, sel.dim, sel.value]);
+  const generate = async (force) => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await api("/api/metric-commentary", { method: "POST",
+        body: { question_id: qid, cut: sel.dim, cut_value: sel.value, force: !!force } });
+      setData(r);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  const PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
+                 ["implications", "Implications"], ["considerations", "Considerations"]];
+  return html`
+    <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+      <div class="row spread" style=${{ alignItems: "flex-start" }}>
+        <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> Commentary</h2>
+        ${data && html`<span class="chip warn">AI-generated — review before use</span>`}
+      </div>
+      ${!data && !busy && html`
+        <p class="caption">A short, structured interpretation of this metric for your organisation —
+        generated from the figures on this page only, as a starting point to sanity-check, not advice.</p>
+        ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+        <button class="btn primary" onClick=${() => generate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
+      ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
+      ${data && !busy && html`
+        <div style=${{ marginTop: "var(--s3)" }}>
+          ${PARTS.map(([k, label]) => data.parts[k] && html`
+            <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
+              <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "10.5px" }}>${label}</div>
+              <p style=${{ margin: "2px 0 0" }}>${data.parts[k]}</p>
+            </div>`)}
+          <div class="caption" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
+            A starting point for your own judgement — not advice. Consider your own context and seek
+            professional input where relevant.${data.caveats && data.caveats.illustrative ? " Based on illustrative sample data while real member submissions build up." : ""}
+          </div>
+          <div class="row" style=${{ marginTop: "var(--s2)" }}>
+            <button class="btn small quiet" onClick=${() => generate(true)}>Regenerate</button>
+            ${data.cached && html`<span class="caption">Saved from ${new Date((data.generated_at || "") + "Z").toLocaleDateString("en-GB") || "earlier"} — regenerates automatically when the figures change.</span>`}
+          </div>
+        </div>`}
     </div>`;
 }
 
