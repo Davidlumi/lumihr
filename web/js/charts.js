@@ -20,7 +20,7 @@ function youColour(fav) {
 /* The single "you" marker: a filled plum diamond (performance-coloured where
    polarity applies) with a value label. Same treatment on every chart. */
 function YouDot({ x, y, fav, label, labelY, anchor }) {
-  const r = 7;
+  const r = 8;
   return html`
     <g>
       <path d=${`M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`}
@@ -107,7 +107,7 @@ window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, wi
 
 // ------------------------------------------------------- option bars -------
 // THE primary categorical language: muted bars, your option in the "you" accent.
-window.OptionBars = function ({ options, youLabels, showValues = true, width = CHART_W, height }) {
+window.OptionBars = function ({ options, youLabels, showValues = true, width = CHART_W, height, fav }) {
   const opts = options.filter(o => o.count > 0 || !o.is_na);
   const H = height || 172;
   // few options stretch to fill the chart region; many options compress to fit;
@@ -136,9 +136,9 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
             ${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
           <rect x=${labelW} y=${y + Math.max(2, rowH * 0.16)} width=${Math.max(2, bw)}
             height=${Math.max(8, rowH - Math.max(4, rowH * 0.32))} rx="3.5"
-            fill=${sel ? "var(--you)" : "var(--cat-4)"}/>
+            fill=${sel ? youColour(fav) : "var(--cat-5)"}/>
           ${showValues && html`<text x=${labelW + Math.max(2, bw) + 6} y=${y + rowH / 2 + fs * 0.34} font-size=${fs}
-            fill=${sel ? "var(--you)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
+            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
         </g>`;
       })}
     </svg>`;
@@ -146,7 +146,7 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
 
 // ------------------------------------------------------- stacked band ------
 // For ordered scales: segmented distribution band, categorical ramp, YOU pin.
-window.StackedDist = function ({ options, youLabels, showValues = true, width = CHART_W }) {
+window.StackedDist = function ({ options, youLabels, showValues = true, width = CHART_W, fav }) {
   const W = width, H = 118, barY = 34, barH = 26;
   const opts = options.filter(o => o.pct > 0);
   const mine = new Set((youLabels || []).map(s => s.toLowerCase()));
@@ -162,14 +162,14 @@ window.StackedDist = function ({ options, youLabels, showValues = true, width = 
         <g key=${s.code}>
           <rect x=${s.x0} y=${barY} width=${Math.max(1, s.w - 1)} height=${barH} fill=${s.colour} rx="2"
             opacity=${youSeg && !s.sel ? 0.55 : 1}
-            stroke=${s.sel ? "var(--you)" : "none"} stroke-width=${s.sel ? 2 : 0}/>
+            stroke=${s.sel ? youColour(fav) : "none"} stroke-width=${s.sel ? 2.5 : 0}/>
           ${showValues && s.w > 36 && html`<text x=${s.x0 + s.w / 2} y=${barY + barH / 2 + 3.5} text-anchor="middle"
             font-size="10" font-weight="600" fill=${s.sel || segs.indexOf(s) < 3 ? "#fff" : "var(--ink-soft)"}>${Math.round(s.pct)}%</text>`}
         </g>`)}
       ${youSeg && html`
         <g>
-          <line x1=${youSeg.x0 + youSeg.w / 2} x2=${youSeg.x0 + youSeg.w / 2} y1=${barY - 8} y2=${barY} stroke="var(--you)" stroke-width="1.5"/>
-          <${YouDot} x=${youSeg.x0 + youSeg.w / 2} y=${barY - 13} fav=${null}
+          <line x1=${youSeg.x0 + youSeg.w / 2} x2=${youSeg.x0 + youSeg.w / 2} y1=${barY - 8} y2=${barY} stroke=${youColour(fav)} stroke-width="1.5"/>
+          <${YouDot} x=${youSeg.x0 + youSeg.w / 2} y=${barY - 13} fav=${fav}
             label=${"You · " + youSeg.label.slice(0, 28)} labelY=${barY - 25}
             anchor=${youSeg.x0 + youSeg.w / 2 < 90 ? "start" : youSeg.x0 + youSeg.w / 2 > W - 90 ? "end" : "middle"} />
         </g>`}
@@ -231,7 +231,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width =
 };
 
 // ---------------------------------------------------------- grouped bars ---
-window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_W, height }) {
+window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_W, height, fav }) {
   const H = height || 172;
   const rowH = Math.max(22, Math.min(H > 300 ? 52 : 34, Math.floor((H - 18) / Math.max(rows.length, 1))));
   const labelW = Math.min(150, width * 0.38), W = width;
@@ -253,14 +253,14 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
           ${p50 != null ? html`<rect x=${labelW} y=${y} width=${bw(p50)} height=${bh} rx="2.5" fill="var(--chart-band-mid)"/>` :
           html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">n<5 — suppressed</text>`}
           ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">${fmtValue(p50, unit)}</text>`}
-          ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill="var(--you)"/>`}
-          ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill="var(--you)">${fmtValue(you, unit)} · You</text>`}
+          ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill=${youColour(fav)}/>`}
+          ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill=${youColour(fav)}>${fmtValue(you, unit)} · You</text>`}
         </g>`;
       })}
       <g>
         <rect x=${labelW} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--chart-band-mid)"/>
         <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">Peer P50</text>
-        <rect x=${labelW + 70} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--you)"/>
+        <rect x=${labelW + 70} y=${usedH - 10} width="8" height="8" rx="2" fill=${youColour(fav)}/>
         <text x=${labelW + 82} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">You</text>
       </g>
     </svg>`;

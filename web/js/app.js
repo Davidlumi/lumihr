@@ -121,25 +121,33 @@ function App() {
       </nav>
       <div class="main">
         <div class="topbar no-print">
-          <span class="caption" style=${{ fontWeight: 600 }}>Compare with</span>
-          <select class="ctl" value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
-            onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
-            <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
-            ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} (${cuts.industries[cuts.org_industry] || "?"})</option>`}
-            ${cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
-              html`<option key=${i} value=${"industry::" + i}>${i} (${cuts.industries[i]})</option>`)}
-            ${cuts && Object.keys(cuts.fte_bands || {}).map(b =>
-              html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
-            ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
-          </select>
-          ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
-          <div style=${{ position: "relative", flex: 1, maxWidth: "380px" }}>
-            <span style=${{ position: "absolute", left: "10px", top: "9px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
-            <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search 778 benchmarks…"
-              value=${search} onInput=${e => setSearch(e.target.value)} />
-            ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
+          <div class="ctlgroup">
+            <select class="ctl" value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
+              onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
+              <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
+              ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} (${cuts.industries[cuts.org_industry] || "?"})</option>`}
+              ${cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
+                html`<option key=${i} value=${"industry::" + i}>${i} (${cuts.industries[i]})</option>`)}
+              ${cuts && Object.keys(cuts.fte_bands || {}).map(b =>
+                html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
+              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+            </select>
+            <div class="hint">${cutHint(cut, cuts, me)}</div>
+            ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
           </div>
-          <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+          <div class="ctlgroup" style=${{ flex: 1, maxWidth: "400px" }}>
+            <div style=${{ position: "relative" }}>
+              <span style=${{ position: "absolute", left: "10px", top: "11px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
+              <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any metric, e.g. 'pension' or 'sick pay'"
+                value=${search} onInput=${e => setSearch(e.target.value)} />
+              ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
+            </div>
+            <div class="hint">Type to find any of the 778 benchmarks.</div>
+          </div>
+          <div class="ctlgroup" style=${{ marginLeft: "auto", alignItems: "flex-end" }}>
+            <button class="btn feature" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+            <div class="hint" style=${{ textAlign: "right" }}>Ask in plain English, e.g. “how does our pension compare?”</div>
+          </div>
         </div>
         <main class="content">
           ${gated && benchRoute ?
@@ -155,6 +163,14 @@ function App() {
       ${analystOpen && html`<${AnalystPane} onClose=${() => setAnalystOpen(false)} />`}
       ${twinOpen && html`<${PeerTwinPanel} onClose=${() => setTwinOpen(false)} onUse=${() => setGlobalCut("twin")} />`}
     </div>`;
+}
+
+function cutHint(cut, cuts, me) {
+  const total = (me.peer_pool || {}).responding_orgs || "all";
+  if (cut.dim === "industry") return `You're comparing against ${cut.value} organisations only. Change your peer group here.`;
+  if (cut.dim === "fte_band") return `You're comparing against organisations of ${cut.value} employees. Change your peer group here.`;
+  if (cut.dim === "twin") return "You're comparing against the organisations most like yours. Change your peer group here.";
+  return `You're comparing against all ${total} organisations. Change this to see only your sector or size.`;
 }
 
 function navCls(route, path) {

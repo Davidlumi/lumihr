@@ -49,20 +49,21 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
         <div style=${{ flex: "1.7 1 320px", minWidth: "300px" }}>
           <div class="section-title" style=${{ marginBottom: "4px" }}>
-            You sit above the peer <${Term} word="median">median<//> on
-            <span style=${{ color: "var(--plum-deep)" }}> ${h.above_median} of ${h.comparable_metrics}</span> comparable metrics
+            You're above the peer <${Term} word="median">median<//> on
+            <span style=${{ color: "var(--plum-deep)" }}> ${h.above_median} of ${h.comparable_metrics} </span>
+            ${" "}<span class="hastip" style=${{ position: "relative", cursor: "help", borderBottom: "1px dotted var(--ink-faint)" }}>comparable metrics<span class="tip">Counted wherever your answer and at least 5 peers' answers can be compared, adjusted for whether higher or lower is the good direction. Anything based on fewer than 5 organisations is left out.</span></span>
           </div>
-          <div class="caption">${h.below_median} below · ${h.broadly_in_line} broadly in line · polarity-adjusted, ${cutLabelOf(cut, cuts)} · suppressed metrics excluded</div>
-          <div style=${{ marginTop: "12px" }}>
+          <div class="caption">${h.below_median} sit below the median and ${h.broadly_in_line} are broadly in line — based on ${cutLabelOf(cut, cuts)}.</div>
+          <div style=${{ marginTop: "16px" }}>
             <div class="pstrip"><div class="mark" style=${{ left: `calc(${Math.max(2, Math.min(98, pctAbove))}% - 2px)` }}></div></div>
-            <div class="caption" style=${{ marginTop: "4px" }}><b class="num">${pctAbove}%</b> of comparable metrics at or above the peer median</div>
+            <div class="caption" style=${{ marginTop: "4px" }}>That's <b>${pctAbove}%</b> of your comparable metrics at or above the peer median.</div>
           </div>
         </div>
         <${OpportunityTile} opp=${data.opportunity} />
         <${TrajectoryTile} movement=${data.movement} />
       </div>
 
-      <div class="grid2" style=${{ marginBottom: "var(--s4)" }}>
+      <div class="grid2" style=${{ margin: "var(--s6) 0 var(--s4)" }}>
         <div>
           <h2 class="section-title">Where you lead</h2>
           ${data.callouts.strengths.length ? data.callouts.strengths.map((t, i) => html`
@@ -105,20 +106,25 @@ function jumpToItem(item) { if (item) nav("/superpower/" + item.superpower + "?f
 
 window.OpportunityTile = function ({ opp }) {
   if (!opp) return null;
+  const total = opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp;
   return html`
-    <div style=${{ flex: "1.1 1 230px", minWidth: "230px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
-      <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Total identified opportunity</div>
+    <div class="opp-hero">
+      <div class="eyebrow">Total identified opportunity</div>
       ${opp.fte_known ? html`
-        <div class="metric-value lg" style=${{ color: "var(--plum)" }}>
-          ${fmtGBPCompact(opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp)}<span class="unit">/yr</span></div>
-        <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
-          html`potential savings at peer median${opp.total_investment_to_p50_gbp ? html` · plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
-          opp.total_investment_to_p50_gbp > 0 ? "investment to close benefit gaps to the peer median" : "no gaps to the peer median identified"}</div>
-        <div class="caption" style=${{ marginTop: "4px" }}><${Term} word="indicative">Indicative<//> — assumptions in <a href="#/settings">Settings</a></div>
-        ${opp.items.map(i => html`
-          <div key=${i.question_id} class="caption" style=${{ marginTop: "2px" }}>
-            <a href=${"#/metric/" + i.question_id}>${i.label}</a>: <b class="num">${fmtGBPCompact(i.to_p50_gbp)}/yr</b> ${i.direction === "saving" ? "saving" : "investment"}
-          </div>`)}` :
+        <div>
+          <div class="metric-value lg" style=${{ color: "var(--plum)" }}>${fmtGBPCompact(total)}<span class="unit">/yr</span></div>
+          <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
+            html`potential savings if you matched the peer median${opp.total_investment_to_p50_gbp ? html` — plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
+            opp.total_investment_to_p50_gbp > 0 ? "what it would take to close your benefit gaps to the peer median" : "no gaps to the peer median identified"}</div>
+        </div>
+        <div style=${{ marginTop: "var(--s2)" }}>
+          ${opp.items.map(i => html`
+            <div key=${i.question_id} class="opp-row">
+              <a href=${"#/metric/" + i.question_id}>${i.label}</a>
+              <b>${fmtGBPCompact(i.to_p50_gbp)}/yr <span class="caption" style=${{ fontWeight: 400 }}>${i.direction === "saving" ? "saving" : "to close"}</span></b>
+            </div>`)}
+        </div>
+        <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>` :
       html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/submission">your submission</a> to size the £ opportunity of closing gaps to the peer median.</div>`}
     </div>`;
 };
@@ -184,15 +190,21 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="caption meta">${data.cards.length} benchmarks · peer group: ${cutLabelOf(cut, cuts)}</div>
           </div>
         </div>
-        <div class="controls">
-          <select class="ctl" value=${cat} onChange=${e => setCat(e.target.value)}>
-            <option value="">All categories</option>
-            <option value="metric">Metrics</option><option value="practice">Practices</option>
-            <option value="policy">Policies</option><option value="benefit">Benefits</option>
-          </select>
-          <select class="ctl" value=${tier} onChange=${e => setTier(e.target.value)}>
-            <option value="">All tiers</option><option value="Core">Core</option><option value="plus">Enhanced+</option>
-          </select>
+        <div class="controls" style=${{ alignItems: "flex-start" }}>
+          <div class="ctlgroup">
+            <select class="ctl" value=${cat} onChange=${e => setCat(e.target.value)}>
+              <option value="">All question types</option>
+              <option value="metric">Metrics</option><option value="practice">Practices</option>
+              <option value="policy">Policies</option><option value="benefit">Benefits</option>
+            </select>
+            <div class="hint">Show only one kind of question.</div>
+          </div>
+          <div class="ctlgroup">
+            <select class="ctl" value=${tier} onChange=${e => setTier(e.target.value)}>
+              <option value="">All tiers</option><option value="Core">Core</option><option value="plus">Enhanced+</option>
+            </select>
+            <div class="hint">Filter by membership tier.</div>
+          </div>
         </div>
       </div>
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"

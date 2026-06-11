@@ -76,22 +76,25 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
         ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
-      <div class="bench-meta">
-        <${NBadge} n=${c.n} cutLabel=${c.cut.label} />
-        ${c.category && html`<${Chip}>${c.category}<//>`}
-        ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
-      </div>
-
-      <div class=${"bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
-        onClick=${e => { if (!c.suppressed && !e.target.closest("a")) setZoomed(true); }}>
-        <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
-      </div>
-
-      ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
-      <div class="bench-readout">${c.readout || multiSelectReadout(c) || ""}</div>
-      <div class="movement">
-        <${Icon} name="arrow-up-right" size=${11} />
-        ${c.movement === null ? "First benchmark — movement appears from your next cycle." : ""}
+      <div class="bench-body">
+        <div class="bench-words">
+          <div class="bench-lead">${humanSentence(c).lead || ""}</div>
+          ${humanSentence(c).support && html`<div class="caption">${humanSentence(c).support}</div>`}
+          ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
+          <div class="bench-meta">
+            <${NBadge} n=${c.n} cutLabel=${c.cut.label} />
+            ${c.category && html`<${Chip}>${c.category}<//>`}
+            ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
+          </div>
+          <div class="movement">
+            <${Icon} name="arrow-up-right" size=${11} />
+            ${c.movement === null ? "First benchmark — movement appears from your next cycle." : ""}
+          </div>
+        </div>
+        <div class=${"bench-proof bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
+          onClick=${e => { if (!c.suppressed && !e.target.closest("a")) setZoomed(true); }}>
+          <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
+        </div>
       </div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
       ${zoomed && html`<${CardZoom} card=${c} pos=${pos} chart=${chart} pref=${pref} setPref=${setPref}
@@ -164,6 +167,32 @@ window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP109
     <//>`;
 };
 
+/* The plain-English answer that leads every card: "X in 10" phrasing first,
+   the precise figures as a quiet supporting line. */
+function humanSentence(c) {
+  if (c.suppressed) {
+    return { lead: "There aren't enough organisations in this peer group to show this safely.", support: "We never show a figure based on fewer than 5 organisations." };
+  }
+  if ((c.type === "single_select" || c.type === "yes_no") && c.you && c.block && c.block.options) {
+    const mine = c.block.options.find(o => o.label.toLowerCase() === (c.you.label || "").toLowerCase());
+    if (mine) {
+      const x = Math.round(mine.pct / 10);
+      const phrase = mine.pct < 5 ? "almost no similar organisations made the same choice"
+        : x <= 0 ? "fewer than 1 in 10 similar organisations made the same choice"
+        : x >= 10 ? "almost all similar organisations did the same"
+        : `about ${x} in 10 similar organisations did the same`;
+      return { lead: `You answered “${c.you.label}” — ${phrase}.`, support: c.readout };
+    }
+  }
+  if (c.type === "multi_select") {
+    return { lead: multiSelectReadout(c), support: null };
+  }
+  if (!c.you && !c.readout && c.type !== "matrix") {
+    return { lead: "You haven't answered this question yet — the peer picture is shown for context.", support: null };
+  }
+  return { lead: c.readout, support: null };
+}
+
 /* deterministic readout for multi-select cards (server sends none) */
 function multiSelectReadout(c) {
   if (c.type !== "multi_select" || c.suppressed || !c.block || !c.block.options) return null;
@@ -201,15 +230,15 @@ function cardPosition(c) {
 window.cardPosition = cardPosition;
 
 window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) {
-  // popped-out charts get a wider viewBox (more data room, same-size labels)
-  // and a taller region for row-based charts
-  const W = xl ? 780 : undefined;
+  // popped-out charts get a wider viewBox (more data room, same-size labels);
+  // in-card charts get a narrower viewBox so labels render comfortably large
+  // in the side-by-side proof column
+  const W = xl ? 780 : 340;
   const rowH = xl ? 420 : undefined;
   if (c.suppressed) {
     return html`<div class="suppressed-box">
       <${Icon} name="shield" size=${18} />
-      <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data in this peer group</div>
-      <div>Fewer than 5 organisations answered here, so we don't show it — this protects every member's data. Try a wider peer group.</div>
+      <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data to show safely</div>
       <${Chip}>n=${c.n}<//>
     </div>`;
   }
@@ -235,9 +264,9 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) 
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}>You haven't answered this question yet.</div>`}
         ${chart === "stacked_bar" && c.type !== "multi_select"
-          ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} width=${W} />`
+          ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} width=${W} fav=${fav} />`
           : html`<${OptionBars} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
-              width=${W} height=${rowH || (c.you ? 172 : 140)} />`}
+              width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`}
       </div>`;
   }
   if (c.type === "matrix") {
@@ -247,7 +276,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) 
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data in this peer group</div>
       <div>Fewer than 5 organisations per level — try a wider peer group.</div></div>`;
     return chart === "grouped_bars"
-      ? html`<${MatrixGrouped} rows=${c.matrix_rows} unit=${c.unit} showValues=${showValues} width=${W} height=${rowH} />`
+      ? html`<${MatrixGrouped} rows=${c.matrix_rows} unit=${c.unit} showValues=${showValues} width=${W} height=${rowH} fav=${fav} />`
       : html`<${MatrixHeat} rows=${c.matrix_rows} unit=${c.unit} polarity=${c.polarity} showValues=${showValues} width=${W} height=${rowH} />`;
   }
   return null;
