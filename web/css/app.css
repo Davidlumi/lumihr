@@ -578,3 +578,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .chart-switch-btn:hover:not(.on) { color: var(--ink); }
 
 .next-step-n.done { background: var(--favourable-tint); color: var(--favourable); }
+
+/* the profile-gating prompt must never truncate — it's the path to peer cuts */
+.ctlgroup .hint.hint-wide { max-width: 420px; white-space: normal; line-height: 1.3; }

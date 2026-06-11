@@ -193,7 +193,7 @@ function App() {
                 html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
             </select>
-            <div class="hint">${!me.org.classified
+            <div class=${"hint" + (!me.org.classified ? " hint-wide" : "")}>${!me.org.classified
               ? html`${me.user.role === "admin"
                   ? html`<a href="#/profile">Complete your company profile</a> to compare by sector and size — 2 minutes.`
                   : "Your Admin can complete the company profile to unlock sector and size comparisons."}`
@@ -210,7 +210,7 @@ function App() {
             </div>
           </div>
           <div class="topbar-right">
-            ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} />`}
+            ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} org=${me.org} />`}
             <button class="link-quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>Request a metric</button>
             <button class="btn feature" title="Ask anything about your benchmark, in plain English" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
           </div>
@@ -377,17 +377,20 @@ window.sectionList = function (qIndex) {
 
 /* Day-one model: explore everything; insights are the carrot. The chip is the
    persistent, quiet progress indicator — always visible, never nagging. */
-window.ClockChip = function ({ contrib }) {
+window.ClockChip = function ({ contrib, org }) {
   const pct = Math.round(contrib.core_pct || 0);
+  const needsProfile = org && !org.classified;
   const label = contrib.reduced
     ? "Benchmark paused — complete to restore"
     : !contrib.clock_started
-    ? "Next step: accept the data terms"
+    ? (needsProfile ? "Next step: complete your company profile" : "Next step: accept the data terms")
     : `Reward data ${pct}% · ${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} to unlock insights`;
   return html`
     <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title=${!contrib.clock_started
-      ? "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then."
-      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav("/submission")}>
+      ? (needsProfile
+        ? "Tell us who you are — sector, size and a few company facts — so the benchmark compares you to the right peers. The data terms come after."
+        : "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then.")
+      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav(needsProfile && !contrib.clock_started ? "/profile" : "/submission")}>
       <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue-tint-2)" stroke-width="3"/>
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"
