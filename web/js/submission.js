@@ -149,15 +149,23 @@ function FirmographicsStep({ state, onDone }) {
     </div>`;
 }
 
+// Belt-and-braces with autosave: a counter of debounced-but-unsaved edits and
+// in-flight saves. Only a genuine in-flight loss triggers the warning.
+window._pendingSaves = 0;
+window.addEventListener("beforeunload", (e) => {
+  if (window._pendingSaves > 0) { e.preventDefault(); e.returnValue = ""; }
+});
+
 // ------------------------------------------------------------ section form -
 function SectionForm({ sp, state, refresh }) {
   const [data, setData] = useState(null);
   const [drafts, setDrafts] = useState({});
   const [issues, setIssues] = useState({});   // key -> {errors, warnings}
   const [savedAt, setSavedAt] = useState(null);
+  const [loadErr, setLoadErr] = useState(null);
   useEffect(() => {
-    setData(null);
-    api("/api/submission/section/" + encodeURIComponent(sp)).then(d => {
+    setData(null); setLoadErr(null);
+    api("/api/submission/section/" + encodeURIComponent(sp)).catch(e => { setLoadErr(e.message); throw e; }).then(d => {
       setData(d);
       const init = {};
       d.questions.forEach(q => {
@@ -167,18 +175,25 @@ function SectionForm({ sp, state, refresh }) {
       setDrafts(init);
     });
   }, [sp]);
+  if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this section"
+    body=${loadErr + " — your saved answers are safe."}
+    action=${html`<button class="btn small primary" onClick=${() => nav("/submission")}>Back to all sections</button>`} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
 
   const save = async (q, rowId, value) => {
     const key = q.id + "|" + (rowId || "");
     setDrafts(d => ({ ...d, [key]: value }));
+    window._pendingSaves++;
     try {
       const r = await api("/api/submission/draft", { method: "PUT",
         body: { question_id: q.id, matrix_row_id: rowId || "", value } });
       setIssues(s => ({ ...s, [key]: { errors: r.errors || [], warnings: r.warnings || [] } }));
       if (r.ok) setSavedAt(new Date());
     } catch (e) {
-      setIssues(s => ({ ...s, [key]: { errors: [e.message], warnings: [] } }));
+      setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — check your connection and change the value again to retry."], warnings: [] } }));
+      toast("Couldn't save your last answer — it will need re-entering.", "error");
+    } finally {
+      window._pendingSaves = Math.max(0, window._pendingSaves - 1);
     }
   };
 
@@ -267,7 +282,7 @@ function InputForType({ q, drafts, issues, save }) {
     </div>`;
   }
   if (q.type === "numeric") {
-    return html`<${DebouncedNumber} value=${val} unitName=${q.unit_display_name} onSave=${v => save(q, "", v)} />`;
+    return html`<${DebouncedNumber} value=${val} unitName=${q.unit_display_name} unit=${q.unit} onSave=${v => save(q, "", v)} />`;
   }
   if (q.type === "matrix") {
     const cols = (q.matrix && q.matrix.columns) || [{ label: q.unit_display_name || "Value" }];
@@ -282,7 +297,7 @@ function InputForType({ q, drafts, issues, save }) {
             <tr key=${r.row_id}>
               <td>${r.label}</td>
               <td class="num">
-                <${DebouncedNumber} value=${drafts[rkey]} compact=${true} onSave=${v => save(q, r.row_id, v)} />
+                <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit} onSave=${v => save(q, r.row_id, v)} />
                 ${iss.errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
                 ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
               </td>
@@ -294,19 +309,30 @@ function InputForType({ q, drafts, issues, save }) {
   return null;
 }
 
-function DebouncedNumber({ value, onSave, unitName, compact }) {
-  const [v, setV] = useState(value == null ? "" : value);
+/* UK conventions in the input itself: a currency field shows £12,500 when
+   idle and accepts "£12,500" / "12500" / "12 500" while typing; the canonical
+   plain number is what's saved. Percentages stay human (8.5 means 8.5%). */
+function DebouncedNumber({ value, onSave, unitName, unit, compact }) {
+  const isCurrency = unit && unit.type === "currency";
+  const isNumber = unit && ["currency", "none"].includes(unit.type);
+  const fmt = (raw) => (isCurrency || isNumber) ? formatUKNumber(raw, isCurrency) : (raw == null ? "" : raw);
+  const [v, setV] = useState(fmt(value));
+  const [editing, setEditing] = useState(false);
   const t = useRef(null);
-  useEffect(() => { setV(value == null ? "" : value); }, [value]);
+  useEffect(() => { if (!editing) setV(fmt(value)); }, [value, editing]);
+  const commit = (nv) => onSave(parseUKNumber(nv));
   const change = (nv) => {
     setV(nv);
     clearTimeout(t.current);
-    t.current = setTimeout(() => onSave(nv), 600);
+    t.current = setTimeout(() => commit(nv), 600);
   };
   return html`
     <span class="row" style=${{ gap: "6px", display: "inline-flex" }}>
       <input style=${compact ? null : { width: "150px", padding: "7px 9px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", textAlign: "right" }}
-        inputmode="decimal" value=${v} onInput=${e => change(e.target.value)} onBlur=${() => { clearTimeout(t.current); onSave(v); }} />
+        inputmode="decimal" value=${v} aria-label=${unitName || "Value"}
+        onFocus=${() => { setEditing(true); setV(parseUKNumber(v)); }}
+        onInput=${e => change(e.target.value)}
+        onBlur=${() => { clearTimeout(t.current); commit(v); setEditing(false); setV(fmt(parseUKNumber(v))); }} />
       ${unitName && !compact && html`<span class="caption">${unitName}</span>`}
     </span>`;
 }

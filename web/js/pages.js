@@ -18,7 +18,9 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
     setData(null); setErr(null);
     api("/api/overview?" + cutQS(cut)).then(setData).catch(e => setErr(e.message));
   }, [cutKeyOf(cut)]);
-  if (err) return html`<${EmptyState} title="Couldn't load the overview" body=${err} />`;
+  if (err) return html`<${EmptyState} title="Couldn't load the overview"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
     <div>
       <div class="skel" style=${{ height: "30px", width: "320px", marginBottom: "10px" }}></div>
@@ -219,7 +221,9 @@ window.TrajectoryTile = function ({ movement }) {
 window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [cat, setCat] = useState("");
+  const ui = (prefs && prefs._ui_section) || {};
+  const [cat, setCatRaw] = useState(ui.cat || "");
+  const setCat = v => { setCatRaw(v); onPref && onPref("_ui_section", { ...ui, cat: v }); };
 
   useEffect(() => {
     setData(null); setErr(null);
@@ -231,7 +235,9 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [data, focusQ]);
-  if (err) return html`<${EmptyState} title="Couldn't load this section" body=${err} />`;
+  if (err) return html`<${EmptyState} title="Couldn't load this section"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
     <div>
       <div class="page-head">
@@ -260,12 +266,12 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
           <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
           <div>
             <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
-            <div class="caption meta">${cards.length} benchmarks${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}</div>
+            <div class="caption meta">${cards.length} benchmarks${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
         <div class="controls" style=${{ alignItems: "flex-start" }}>
           <div class="ctlgroup">
-            <select class="ctl" value=${cat} onChange=${e => setCat(e.target.value)}>
+            <select class="ctl" aria-label="Filter by question type" value=${cat} onChange=${e => setCat(e.target.value)}>
               <option value="">All question types</option>
               <option value="metric">Metrics</option><option value="practice">Practices</option>
               <option value="policy">Policies</option><option value="benefit">Benefits</option>

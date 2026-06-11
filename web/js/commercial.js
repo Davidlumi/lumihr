@@ -13,10 +13,14 @@ window.gapGroups = function (data) {
   return SUPERPOWERS.filter(s => data.maturity && data.maturity[s]);
 };
 
-window.GapRegisterPage = function ({ me, cut, cuts }) {
+window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
+  const ui = (prefs && prefs._ui_gap) || {};
   const [data, setData] = useState(null);
-  const [sp, setSp] = useState("");
-  const [show, setShow] = useState("gaps"); // gaps | all
+  const [sp, setSpRaw] = useState(ui.sp || "");
+  const [show, setShowRaw] = useState(ui.show || "gaps"); // gaps | all
+  // filter choices persist per user, server-side, like chart prefs
+  const setSp = v => { setSpRaw(v); onPref && onPref("_ui_gap", { ...ui, sp: v }); };
+  const setShow = v => { setShowRaw(v); onPref && onPref("_ui_gap", { ...ui, show: v }); };
   useEffect(() => { setData(null); api("/api/gap-register?" + cutQS(cut)).then(setData); }, [cutKeyOf(cut)]);
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   const focused = window.SCOPE && window.SCOPE.focused;
@@ -307,6 +311,11 @@ window.PackTable = PackTable;
 
 // ------------------------------------------------------------- Ask lumi ----
 window.AnalystPane = function ({ onClose }) {
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   const [msgs, setMsgs] = useState([{ role: "bot", text: "I'm lumi's benchmark analyst. Ask me how you compare with similar organisations — I'll only ever answer from the benchmark data, with the percentile, peer group and sample size cited." }]);
   const [starters, setStarters] = useState([]);
   const [input, setInput] = useState("");
@@ -330,7 +339,7 @@ window.AnalystPane = function ({ onClose }) {
     <div class="analyst-pane">
       <div class="row spread" style=${{ padding: "var(--s4)", borderBottom: "1px solid var(--border)" }}>
         <b>Ask lumi</b>
-        <button class="iconbtn" onClick=${onClose}>✕</button>
+        <button class="iconbtn" aria-label="Close Ask lumi (Esc)" title="Close (Esc)" onClick=${onClose}>✕</button>
       </div>
       <div class="analyst-msgs">
         ${msgs.map((m, i) => html`
@@ -367,6 +376,11 @@ window.AnalystPane = function ({ onClose }) {
 
 // -------------------------------------------------------------- Peer Twin --
 window.PeerTwinPanel = function ({ onUse, onClose }) {
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   const [data, setData] = useState(null);
   useEffect(() => { api("/api/peer-twin").then(setData).catch(e => setData({ available: false, message: e.message })); }, []);
   return html`
@@ -402,10 +416,16 @@ window.SharesPage = function () {
   const [data, setData] = useState(null);
   const refresh = () => api("/api/shares").then(setData);
   useEffect(() => { refresh(); }, []);
-  const revoke = async (t) => { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); };
+  const [making, setMaking] = useState(false);
+  const revoke = async (t) => { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); toast("Share link revoked"); };
   const createDash = async (days) => {
-    await api("/api/shares", { method: "POST", body: { kind: "dashboard", config: { cut: { dim: "all" } }, expiry_days: days } });
-    refresh();
+    if (making) return;
+    setMaking(true);
+    try {
+      await api("/api/shares", { method: "POST", body: { kind: "dashboard", config: { cut: { dim: "all" } }, expiry_days: days } });
+      refresh(); toast("Share link created (" + days + " days)");
+    } catch (e) { toast(e.message || "Couldn't create the share link", "error"); }
+    setMaking(false);
   };
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`
@@ -416,9 +436,9 @@ window.SharesPage = function () {
           <div class="caption" style=${{ marginTop: "4px" }}>Read-only links for people outside your lumi team. A link shows exactly what your team can see — your data plus safe peer aggregates — and nothing more.</div>
         </div>
         <div class="row">
-          <button class="btn" onClick=${() => createDash(7)}>Share dashboard (7 days)</button>
-          <button class="btn" onClick=${() => createDash(30)}>30 days</button>
-          <button class="btn" onClick=${() => createDash(90)}>90 days</button>
+          <button class="btn" disabled=${making} onClick=${() => createDash(7)}>Share dashboard (7 days)</button>
+          <button class="btn" disabled=${making} onClick=${() => createDash(30)}>30 days</button>
+          <button class="btn" disabled=${making} onClick=${() => createDash(90)}>90 days</button>
         </div>
       </div>
       ${data.shares.length === 0 ? html`<${EmptyState} icon="link" title="No share links yet"
@@ -432,7 +452,7 @@ window.SharesPage = function () {
                 <td><b>${s.kind === "boardpack" ? "Board pack" : "Dashboard"}</b></td>
                 <td>${s.revoked ? html`<span class="muted">revoked</span>` :
                   html`<a href=${s.url} target="_blank">${window.location.origin}${s.url.slice(0, 18)}…</a>
-                  <button class="iconbtn" title="Copy link" onClick=${() => navigator.clipboard.writeText(window.location.origin + s.url)}>⧉</button>`}</td>
+                  <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); }}>⧉</button>`}</td>
                 <td>${s.expires_at ? new Date(s.expires_at + "Z").toLocaleDateString("en-GB") : "Never"}</td>
                 <td>${s.revoked ? html`<span class="chip bad">Revoked</span>` :
                   (s.expires_at && new Date(s.expires_at + "Z") < new Date()) ? html`<span class="chip warn">Expired</span>` :
@@ -462,25 +482,30 @@ window.TeamPage = function ({ me }) {
   const refresh = () => api("/api/team").then(setData);
   useEffect(() => { refresh(); }, []);
   const isAdmin = me.user.role === "admin";
+  const [inviting, setInviting] = useState(false);
   const invite = async () => {
-    setErr(null); setMsg(null);
+    if (inviting) return;
+    setErr(null); setMsg(null); setInviting(true);
     try {
       const r = await api("/api/team/invite", { method: "POST", body: { email, role } });
       setMsg(`Invite created (expires in ${r.expires_days} days). The link has been logged to the server console — in production this is emailed.`);
+      toast("Invite created for " + email);
       setEmail(""); refresh();
     } catch (e) { setErr(e.message); }
+    setInviting(false);
   };
   const setMemberRole = async (uEmail, newRole) => {
     setErr(null); setMsg(null);
     try {
       await api("/api/team/role", { method: "PUT", body: { email: uEmail, role: newRole } });
       setMsg(`${uEmail} is now ${ROLE_LABEL[newRole]}.`); refresh();
+      toast(uEmail + " is now " + ROLE_LABEL[newRole]);
     } catch (e) { setErr(e.message); refresh(); }
   };
   const remove = async (uEmail) => {
     setErr(null); setMsg(null);
     if (!window.confirm(`Remove ${uEmail} from your organisation? Their account is deleted; the org's data is unaffected.`)) return;
-    try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); }
+    try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); toast(uEmail + " removed from your organisation"); }
     catch (e) { setErr(e.message); }
   };
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
@@ -522,12 +547,13 @@ window.TeamPage = function ({ me }) {
         <div class="card" style=${{ padding: "var(--s4)" }}>
           <h2 class="section-title">Invite a colleague</h2>
           <div class="row">
-            <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" value=${email} onInput=${e => setEmail(e.target.value)} />
+            <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" aria-label="Colleague's email address"
+              value=${email} onInput=${e => setEmail(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") invite(); }} />
             <select class="ctl" value=${role} onChange=${e => setRole(e.target.value)}>
               <option value="contributor">Contributor — fills the questionnaire</option>
               <option value="viewer">Viewer — dashboards & board packs</option>
             </select>
-            <button class="btn primary" onClick=${invite}>Send invite</button>
+            <button class="btn primary" disabled=${inviting} onClick=${invite}>${inviting ? html`<${Spinner} />` : "Send invite"}</button>
           </div>
           <div class="caption" style=${{ marginTop: "6px" }}>Invites expire after 7 days. Need another Admin?
             Invite them as Contributor, then promote them above. Joiners accept the Platform Terms only —
@@ -537,7 +563,7 @@ window.TeamPage = function ({ me }) {
             ${data.invites.map(i => html`
               <div key=${i.token} class="caption row spread">
                 <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${new Date(i.expires_at + "Z").toLocaleDateString("en-GB")}</span>
-                <button class="btn small quiet" onClick=${async () => { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); }}>Revoke</button>
+                <button class="btn small quiet" onClick=${async () => { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }}>Revoke</button>
               </div>`)}`}
         </div>`}
     </div>`;

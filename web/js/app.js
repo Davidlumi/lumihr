@@ -4,10 +4,30 @@
    BoardPackPage, BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
+/* Deep linking: the peer cut lives in the hash query (?cut=industry::X) so a
+   filtered view is shareable and back-button-safe. Section is already in the
+   route; this completes the main views. */
+function cutFromURL() {
+  const m = (window.location.hash || "").match(/[?&]cut=([^&]+)/);
+  if (!m) return { dim: "all", value: null };
+  const raw = decodeURIComponent(m[1]);
+  if (raw === "twin") return { dim: "twin", value: null };
+  const [dim, value] = raw.split("::");
+  return value ? { dim, value } : { dim: "all", value: null };
+}
+function cutToURL(cut) {
+  const h = window.location.hash || "#/overview";
+  const base = h.replace(/[?&]cut=[^&]*/, "").replace(/[?&]$/, "");
+  if (cut.dim === "all") { if (base !== h) history.replaceState(null, "", base); return; }
+  const enc = encodeURIComponent(cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value);
+  const next = base + (base.includes("?") ? "&" : "?") + "cut=" + enc;
+  if (next !== h) history.replaceState(null, "", next);
+}
+
 function App() {
   const route = useRoute();
   const [me, setMe] = useState(undefined);          // undefined=loading, null=unauth
-  const [cut, setCut] = useState({ dim: "all", value: null });
+  const [cut, setCut] = useState(cutFromURL());
   const [cuts, setCuts] = useState(null);
   const [prefs, setPrefs] = useState({});
   const [layoutIds, setLayoutIds] = useState(new Set());
@@ -39,6 +59,7 @@ function App() {
       setGapCue(top ? { section: top[0], count: top[1] } : null);
     }).catch(() => {});
   }, [me && me.org && me.org.name]);
+  useEffect(() => { cutToURL(cut); }, [cutKeyOf(cut)]);
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
@@ -98,15 +119,18 @@ function App() {
   else if (route.startsWith("/shares")) page = html`<${SharesPage} />`;
   else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
   else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
-  else page = html`<${OverviewPage} ...${pageProps} />`;
+  else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
+    page = html`<${OverviewPage} ...${pageProps} />`;
+  else page = html`<${NotFoundPage} route=${route} />`;
 
   const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") ||
     route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/gap-register") || route === "" || route === "/";
 
   return html`
     <div class="shell">
-      <nav class="sidebar no-print">
-        <a class="logo" href="#/overview">lumi<span>.benchmark</span></a>
+      <${IdleGuard} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setMe(null); }} />
+      <nav class="sidebar no-print" aria-label="Main navigation">
+        <a class="logo" href="#/overview" aria-label="lumi benchmark home">lumi<span>.benchmark</span></a>
         <div class="nav-group">
           <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}><${Icon} name="home" size=${15} /> Executive overview</button>
           <button class=${navCls(route, "/myview")} onClick=${() => nav("/myview")}><${Icon} name="star" size=${15} /> My view</button>
@@ -145,7 +169,7 @@ function App() {
       <div class="main">
         <div class="topbar no-print">
           <div class="ctlgroup">
-            <select class=${"ctl peer-ctl" + (cut.dim !== "all" ? " narrowed" : "")}
+            <select aria-label="Choose your peer group" class=${"ctl peer-ctl" + (cut.dim !== "all" ? " narrowed" : "")}
               value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
               onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
               <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
@@ -163,7 +187,8 @@ function App() {
             <div style=${{ position: "relative" }}>
               <span style=${{ position: "absolute", left: "10px", top: "11px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
               <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
-                value=${search} onInput=${e => setSearch(e.target.value)} />
+                aria-label="Search reward metrics" value=${search} onInput=${e => setSearch(e.target.value)}
+                onKeyDown=${e => { if (e.key === "Escape") setSearch(""); }} />
               ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); nav("/superpower/" + q.superpower + "?focus=" + q.id); }} />`}
             </div>
           </div>
@@ -200,6 +225,62 @@ window.SectionNav = function ({ route, qIndex, gapCue }) {
         <span class="nav-count">${sec.count}</span>
       </button>`;
   })}`;
+};
+
+window.NotFoundPage = function ({ route }) {
+  return html`
+    <div style=${{ maxWidth: "480px", margin: "var(--s7) auto", textAlign: "center" }}>
+      <div style=${{ color: "var(--ink-faint)", marginBottom: "var(--s3)" }}><${Icon} name="search" size=${26} /></div>
+      <h1 class="display-title">That page doesn't exist</h1>
+      <p class="caption">There's nothing at <b>${route}</b> — it may be an old or mistyped link.</p>
+      <button class="btn primary" onClick=${() => nav("/overview")}>Back to your overview</button>
+    </div>`;
+};
+
+/* Idle session guard: after IDLE_MIN minutes without input, warn with a
+   60-second countdown and a "stay signed in" option; sign out if ignored.
+   Client-side policy only — no security logic changed. */
+window.IdleGuard = function ({ onSignOut }) {
+  const IDLE_MIN = window.LUMI_IDLE_MIN || 30;   // overridable for testing
+  const [warn, setWarn] = useState(false);
+  const [left, setLeft] = useState(60);
+  const last = useRef(Date.now());
+  const warnRef = useRef(false);
+  useEffect(() => { warnRef.current = warn; }, [warn]);
+  useEffect(() => {
+    let throttled = 0;
+    const touch = () => { const now = Date.now(); if (now - throttled > 2000) { throttled = now; last.current = now; } };
+    ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(ev =>
+      window.addEventListener(ev, touch, { passive: true }));
+    const iv = setInterval(() => {
+      const idleMin = window.LUMI_IDLE_MIN || IDLE_MIN;
+      if (!warnRef.current && Date.now() - last.current > idleMin * 60000) { setWarn(true); setLeft(60); }
+    }, window.LUMI_IDLE_MIN ? 1000 : 15000);
+    return () => { clearInterval(iv); ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(ev =>
+      window.removeEventListener(ev, touch)); };
+  }, []);
+  useEffect(() => {
+    if (!warn) return;
+    const iv = setInterval(() => setLeft(l => {
+      if (l <= 1) { clearInterval(iv); onSignOut(); return 0; }
+      return l - 1;
+    }), 1000);
+    return () => clearInterval(iv);
+  }, [warn]);
+  if (!warn) return null;
+  const stay = async () => { try { await api("/api/me"); } catch (e) { /* handled globally */ } last.current = Date.now(); setWarn(false); };
+  return html`
+    <div class="modal-back" role="alertdialog" aria-label="Session timeout warning">
+      <div class="modal" style=${{ maxWidth: "420px", textAlign: "center" }}>
+        <h2 class="section-title">Still there?</h2>
+        <p>You've been inactive for a while. For your organisation's data safety we'll sign you
+        out in <span class="idle-count">${left}</span> seconds.</p>
+        <div class="row" style=${{ justifyContent: "center" }}>
+          <button class="btn primary" autoFocus onClick=${stay}>Stay signed in</button>
+          <button class="btn" onClick=${onSignOut}>Sign out now</button>
+        </div>
+      </div>
+    </div>`;
 };
 
 window.sectionList = function (qIndex) {
@@ -381,4 +462,4 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     </div>`;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${ErrorBoundary}><${App} /><//>`);

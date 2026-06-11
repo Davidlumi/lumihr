@@ -181,3 +181,35 @@ reproduces by hand.
 - All messaging now says "key reward questions"; methodology describes the
   tier-free set and the gate. Demo org sits at 98.8% on the new basis
   (unlocked; submission_complete anyway).
+
+## UX quality pass — Tier 1 + Tier 2 (2026-06-11)
+
+Tier 1 (all verified individually): autosave was already server-side
+(drafts table, per-change PUT) — proven to survive logout and a fresh
+device; beforeunload warning on in-flight saves (window._pendingSaves);
+UK input masking (currency fields show £1,250 idle, accept "£/,/space"
+while typing, store canonical numbers); jargon tooltips via the existing
+GLOSSARY/Term system; api() now maps network failures to "Couldn't reach
+lumi — check your connection" and load failures offer Retry; busy+disabled
+states added to team invite and share creation (submit/terms/board-pack
+already had them); idle session warning (30 min, 60s countdown, "Stay
+signed in"; LUMI_IDLE_MIN window hook for testing) — client-side policy,
+no security logic changed; Esc closes Ask lumi and Peer Twin panes
+(modals already did), Enter sends invites, Esc clears search.
+Accessibility: :focus-visible blue ring on all interactive elements;
+aria-labels on icon-only buttons, nav, the peer selector, search and
+numeric inputs; charts get role="img" with the card's plain-English
+sentence as the text alternative.
+
+Tier 2: skeletons confirmed (existing) on overview/sections, no spinners
+on content pages; on-blur/on-save validation confirmed (server rules,
+hard bounds block, soft warn); branded 404 for unknown routes + a React
+ErrorBoundary "something went wrong" screen; toasts (bottom-left,
+auto-dismiss) on invites, role changes, removals, share create/revoke/copy
+and failed autosaves; gap-register and section filters persist per user
+server-side (_ui_* keys in chart prefs); the peer cut deep-links in the
+URL (?cut=industry::X — restore on load, replaceState on change); section
+headers carry "benchmark data: 2026 H1".
+
+Out of scope (deliberately untouched): optimistic rollback, offline
+detection, prefetching, infinite scroll, breadcrumbs, recently-viewed.

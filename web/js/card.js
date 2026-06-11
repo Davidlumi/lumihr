@@ -49,7 +49,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     <div class=${"card bench-card" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref}>
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
-        <button class="iconbtn title-info no-print" title="Full question, definition and method"
+        <button class="iconbtn title-info no-print" title="Full question, definition and method" aria-label="Full question, definition and method"
           onClick=${() => setExpanded(true)}><${Icon} name="info" size=${13} /></button>
         ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
         ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
@@ -63,11 +63,12 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
             n=${c.n}${cutNote(c)}</div>
         </div>
         <div class=${"bench-proof bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
+          role="img" aria-label=${c.title + " chart. " + (humanSentence(c).lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations."}
           onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest(".bench-controls")) setZoomed(true); }}>
           <div class="bench-controls no-print">
-            <button class="iconbtn" title="Download this chart as a PNG"
+            <button class="iconbtn" title="Download this chart as a PNG" aria-label="Download this chart as a PNG"
               onClick=${e => { e.stopPropagation(); doExport("download"); }}><${Icon} name="download" size=${13} /></button>
-            <button class="iconbtn" title="Expand chart"
+            <button class="iconbtn" title="Expand chart" aria-label="Expand chart"
               onClick=${e => { e.stopPropagation(); setZoomed(true); }}><${Icon} name="maximize" size=${13} /></button>
           </div>
           <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
@@ -101,7 +102,7 @@ window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP109
           <h2 class="section-title" style=${{ marginBottom: 0, paddingRight: "var(--s4)" }}>${c.title}</h2>
           <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
             ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
-            <button class="iconbtn" title="Close (Esc)" onClick=${onClose}><${Icon} name="close" size=${15} /></button>
+            <button class="iconbtn" title="Close (Esc)" aria-label="Close expanded chart" onClick=${onClose}><${Icon} name="close" size=${15} /></button>
           </div>
         </div>
         <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>

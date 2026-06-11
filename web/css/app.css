@@ -492,3 +492,24 @@ td.num, th.num { text-align: right; }
   align-items: center; justify-content: center; background: var(--blue-tint-2);
   color: var(--blue-deep); font: 700 12px/1 var(--font-body);
 }
+
+
+/* ----- UX quality pass: focus, toasts ----- */
+/* Visible keyboard focus on EVERY interactive element (a11y floor). Mouse
+   clicks don't show it (:focus-visible), keyboard always does. */
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible,
+textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--blue) 45%, transparent);
+  outline-offset: 1px; border-radius: var(--radius-sm);
+}
+
+#toast-host { position: fixed; left: 20px; bottom: 20px; z-index: 200;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--navy); color: #fff; border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: var(--fs-label); box-shadow: 0 6px 24px rgba(31,42,68,.28);
+  opacity: 0; transform: translateY(6px); transition: opacity .25s ease, transform .25s ease;
+  max-width: 340px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: var(--unfavourable); }
+
+.idle-count { font-variant-numeric: tabular-nums; font-weight: 700; }

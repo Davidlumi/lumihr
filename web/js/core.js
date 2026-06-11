@@ -14,7 +14,9 @@ window.api = async function (path, opts) {
     init.headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(opts.body);
   }
-  const res = await fetch(path, init);
+  let res;
+  try { res = await fetch(path, init); }
+  catch (e) { throw new ApiError(0, "Couldn't reach lumi — check your connection and try again."); }
   if (res.status === 401) { window.dispatchEvent(new Event("lumi:unauth")); throw new ApiError(401, "Not signed in"); }
   let data = null;
   try { data = await res.json(); } catch (e) { /* non-JSON */ }
@@ -91,6 +93,60 @@ window.EmptyState = ({ icon, title, body, action }) => html`
     ${body ? html`<div>${body}</div>` : null}
     ${action || null}
   </div>`;
+
+// ------------------------------------------------------------- toasts ------
+// Lightweight background-action feedback: bottom-left, auto-dismiss, no deps.
+window.toast = function (msg, kind) {
+  let host = document.getElementById("toast-host");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "toast-host";
+    host.setAttribute("role", "status");
+    host.setAttribute("aria-live", "polite");
+    document.body.appendChild(host);
+  }
+  const el = document.createElement("div");
+  el.className = "toast" + (kind ? " " + kind : "");
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => el.classList.add("show"), 16);
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, 3600);
+};
+
+// ----------------------------------------------------- UK number inputs ----
+// Parse what a UK user might type into a money/number field: "£12,500", "12 500".
+window.parseUKNumber = function (s) {
+  if (s === null || s === undefined) return "";
+  const cleaned = String(s).replace(/[£,\s]/g, "");
+  return cleaned;
+};
+// Format a stored numeric string for display in an idle input: 12500 -> "12,500".
+window.formatUKNumber = function (s, currency) {
+  if (s === null || s === undefined || s === "") return "";
+  const n = Number(String(s).replace(/[£,\s]/g, ""));
+  if (!isFinite(n)) return String(s);
+  const txt = n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
+  return currency ? "£" + txt : txt;
+};
+
+// ------------------------------------------------------ error boundary -----
+// Render crashes become a branded, recoverable screen — never a blank page.
+window.ErrorBoundary = class extends React.Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  render() {
+    if (this.state.err) {
+      return html`
+        <div class="auth-wrap"><div class="card auth-card" style=${{ textAlign: "center" }}>
+          <div class="logo" style=${{ padding: 0, marginBottom: "4px", display: "inline-block" }}>lumi<span>.benchmark</span></div>
+          <h2 class="section-title" style=${{ marginTop: "10px" }}>Something went wrong</h2>
+          <p class="caption">Your data is safe — this is a display problem, not a data one.</p>
+          <button class="btn primary" onClick=${() => { window.location.hash = "/overview"; window.location.reload(); }}>Reload lumi</button>
+        </div></div>`;
+    }
+    return this.props.children;
+  }
+};
 
 // ------------------------------------------------------------- router ------
 window.useRoute = function () {
