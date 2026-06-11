@@ -160,17 +160,17 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   border-radius: 999px; background: var(--surface-sunk); border: 1px solid transparent;
   font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
 .chip.accent { background: var(--plum-tint); color: var(--plum-deep); }
-.chip.good { background: var(--favourable-tint); color: var(--favourable); }
-.chip.bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
-.chip.warn { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+.chip.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.chip.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.chip.warn { background: var(--neutral-perf-tint); color: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink)); }
 .chip.you { background: var(--you-soft); color: var(--you); }
 
 /* the at-a-glance position pill (top-right of cards; performance colour only) */
 .pos-pill { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 9px;
   border-radius: 999px; font-size: var(--fs-caption); font-weight: 700; flex: 0 0 auto; }
-.pos-pill.good { background: var(--favourable-tint); color: var(--favourable); }
-.pos-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
-.pos-pill.mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+.pos-pill.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.pos-pill.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.pos-pill.mid { background: var(--neutral-perf-tint); color: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink)); }
 
 select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface); font-size: var(--fs-label); max-width: 260px; }
@@ -248,7 +248,7 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 .noanswer-box { border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: var(--s2) var(--s3);
   color: var(--ink-faint); font-size: var(--fs-caption); text-align: center; }
 
-.movement { font-size: var(--fs-caption); color: var(--ink-faint); display: flex; gap: var(--s1);
+.movement { font-size: var(--fs-caption); color: var(--ink-soft); display: flex; gap: var(--s1);
   align-items: center; }
 
 /* skeleton loaders — match the card skeleton, no layout shift */
