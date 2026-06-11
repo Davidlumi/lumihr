@@ -72,10 +72,15 @@ window.NBadge = ({ n, cutLabel }) => html`
 
 window.Spinner = () => html`<span class="spinner"></span>`;
 
-window.Modal = function ({ onClose, children, width }) {
+window.Modal = function ({ onClose, children, width, xl }) {
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   return html`
     <div class="modal-back" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div class="modal" style=${width ? { width } : null}>${children}</div>
+      <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null}>${children}</div>
     </div>`;
 };
 

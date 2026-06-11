@@ -110,8 +110,10 @@ window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, wi
 window.OptionBars = function ({ options, youLabels, showValues = true, width = CHART_W, height }) {
   const opts = options.filter(o => o.count > 0 || !o.is_na);
   const H = height || 172;
-  // few options stretch to fill the chart region; many options compress to fit
-  const cap = opts.length <= 3 ? 42 : opts.length <= 5 ? 32 : 27;
+  // few options stretch to fill the chart region; many options compress to fit;
+  // popped-out regions (H > 300) allow taller rows
+  let cap = opts.length <= 3 ? 42 : opts.length <= 5 ? 32 : 27;
+  if (H > 300) cap += 16;
   const rowH = Math.max(15, Math.min(cap, Math.floor((H - 6) / Math.max(opts.length, 1))));
   const fs = rowH >= 22 ? 10.5 : 9.5;
   // label gutter sized to the actual labels, not a fixed share of the card
@@ -185,7 +187,8 @@ window.StackedDist = function ({ options, youLabels, showValues = true, width = 
 // Matrix rows: peer P50 vs you, delta-coloured by polarity (semantic use only).
 window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width = CHART_W, height }) {
   const H = height || 172;
-  const rowH = Math.max(15, Math.min(24, Math.floor((H - 18) / Math.max(rows.length, 1))));
+  const rowCap = H > 300 ? 42 : 24;
+  const rowH = Math.max(15, Math.min(rowCap, Math.floor((H - 18) / Math.max(rows.length, 1))));
   const fs = rowH >= 20 ? 10.5 : 9.5;
   const labelW = Math.min(170, width * 0.42), W = width;
   const usedH = rows.length * rowH + 18;
@@ -230,7 +233,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width =
 // ---------------------------------------------------------- grouped bars ---
 window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_W, height }) {
   const H = height || 172;
-  const rowH = Math.max(22, Math.min(34, Math.floor((H - 18) / Math.max(rows.length, 1))));
+  const rowH = Math.max(22, Math.min(H > 300 ? 52 : 34, Math.floor((H - 18) / Math.max(rows.length, 1))));
   const labelW = Math.min(150, width * 0.38), W = width;
   const usedH = rows.length * rowH + 16;
   const vals = rows.flatMap(r => [r.suppressed ? null : (r.block || {}).p50, r.you ? r.you.value : null]).filter(v => v != null);

@@ -8,6 +8,7 @@
 
 window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, onCutOverride, highlight }) {
   const [expanded, setExpanded] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const [exportMsg, setExportMsg] = useState(null);
   const [localCard, setLocalCard] = useState(null);
   const ref = useRef(null);
@@ -67,6 +68,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         <button class="iconbtn" title="Copy PNG to clipboard" onClick=${() => doExport("clipboard")}><${Icon} name="copy" size=${13} /></button>
         ${onPin && html`<button class=${"iconbtn" + (pinned ? " on" : "")} title=${pinned ? "Remove from My view" : "Pin to My view"}
           onClick=${() => onPin(c.id)}><${Icon} name="star" size=${13} /></button>`}
+        <button class="iconbtn" title="Expand chart" onClick=${() => setZoomed(true)}><${Icon} name="maximize" size=${13} /></button>
         <button class="iconbtn" title="Full question, definition and method" onClick=${() => setExpanded(true)}><${Icon} name="info" size=${13} /></button>
       </div>
 
@@ -80,7 +82,8 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
       </div>
 
-      <div class="bench-chart">
+      <div class=${"bench-chart" + (c.suppressed ? "" : " zoomable")} title=${c.suppressed ? undefined : "Click to expand"}
+        onClick=${e => { if (!c.suppressed && !e.target.closest("a")) setZoomed(true); }}>
         <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues} fav=${pos ? pos.kind : null} />
       </div>
 
@@ -91,7 +94,74 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${c.movement === null ? "First benchmark — movement appears from your next cycle." : ""}
       </div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
+      ${zoomed && html`<${CardZoom} card=${c} pos=${pos} chart=${chart} pref=${pref} setPref=${setPref}
+        cuts=${cuts} showP1090=${showP1090} showValues=${showValues} window=${collWindow}
+        onClose=${() => setZoomed(false)} />`}
     </div>`;
+};
+
+/* The pop-out: the same card re-rendered large in a modal, with the full
+   control cluster, readout and export to hand. */
+window.CardZoom = function ({ card: c, pos, chart, pref, setPref, cuts, showP1090, showValues, window: collWindow, onClose }) {
+  const ref = useRef(null);
+  const [exportMsg, setExportMsg] = useState(null);
+  const doExport = async (mode) => {
+    const res = await exportCardPNG(ref.current, {
+      title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow,
+      suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
+    }, mode);
+    setExportMsg(res === "copied" ? "Copied to clipboard" : res === "downloaded" ? "Downloaded" : "No chart");
+    setTimeout(() => setExportMsg(null), 1600);
+  };
+  return html`
+    <${Modal} onClose=${onClose} xl=${true}>
+      <div ref=${ref}>
+        <div class="row spread" style=${{ alignItems: "flex-start", marginBottom: "var(--s2)" }}>
+          <h2 class="section-title" style=${{ marginBottom: 0, paddingRight: "var(--s4)" }}>${c.title}</h2>
+          <div class="row" style=${{ gap: "var(--s2)", flexWrap: "nowrap" }}>
+            ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+            <button class="iconbtn" title="Close (Esc)" onClick=${onClose}><${Icon} name="close" size=${15} /></button>
+          </div>
+        </div>
+        <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
+          <div class="row" style=${{ gap: "var(--s1)" }}>
+            <${NBadge} n=${c.n} cutLabel=${c.cut.label} />
+            ${c.category && html`<${Chip}>${c.category}<//>`}
+            ${exportMsg && html`<${Chip} kind="accent">${exportMsg}<//>`}
+          </div>
+          <div class="row no-print" style=${{ gap: "var(--s1)" }}>
+            ${chartAlternatives(c).length > 1 && html`
+              <select class="ctl" style=${{ height: "28px", fontSize: "12px" }} value=${chart}
+                onChange=${e => setPref("chart", e.target.value)} title="Chart type">
+                ${chartAlternatives(c).map(a => html`<option key=${a} value=${a}>${CHART_LABELS[a]}</option>`)}
+              </select>`}
+            ${cuts && html`
+              <select class="ctl" style=${{ height: "28px", fontSize: "12px", maxWidth: "180px" }}
+                value=${pref.cut || ""} onChange=${e => setPref("cut", e.target.value || undefined)} title="Peer group for this card">
+                <option value="">Page filter</option>
+                <option value="all">All peers</option>
+                ${cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry}</option>`}
+                ${cuts.org_fte_band && html`<option value=${"fte_band::" + cuts.org_fte_band}>${cuts.org_fte_band} FTE</option>`}
+                ${cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+              </select>`}
+            ${(c.type === "numeric") && html`
+              <button class="iconbtn" title="Show/hide P10 and P90" onClick=${() => setPref("p1090", !showP1090)}>P10/90</button>`}
+            <button class=${"iconbtn" + (showValues ? " on" : "")} title="Show/hide value labels" onClick=${() => setPref("values", !showValues)}>123</button>
+            <button class="btn small" onClick=${() => doExport("download")}><${Icon} name="download" size=${12} /> PNG</button>
+            <button class="btn small" onClick=${() => doExport("clipboard")}><${Icon} name="copy" size=${12} /> Copy</button>
+          </div>
+        </div>
+        <div class="bench-chart xl">
+          <${CardBody} card=${c} chart=${chart} showP1090=${showP1090} showValues=${showValues}
+            fav=${pos ? pos.kind : null} xl=${true} />
+        </div>
+        ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
+        <div class="bench-readout" style=${{ marginTop: "var(--s4)", minHeight: 0 }}>${c.readout || multiSelectReadout(c) || ""}</div>
+        <p class="caption" style=${{ marginTop: "var(--s3)", marginBottom: 0 }}>
+          <b>Question asked:</b> ${c.question_text}${c.definition ? html` · <b>Definition:</b> ${c.definition}` : ""}
+        </p>
+      </div>
+    <//>`;
 };
 
 /* deterministic readout for multi-select cards (server sends none) */
@@ -130,7 +200,11 @@ function cardPosition(c) {
 }
 window.cardPosition = cardPosition;
 
-window.CardBody = function ({ card: c, chart, showP1090, showValues, fav }) {
+window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl }) {
+  // popped-out charts get a wider viewBox (more data room, same-size labels)
+  // and a taller region for row-based charts
+  const W = xl ? 780 : undefined;
+  const rowH = xl ? 420 : undefined;
   if (c.suppressed) {
     return html`<div class="suppressed-box">
       <${Icon} name="shield" size=${18} />
@@ -149,9 +223,9 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav }) {
             ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
         html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>You haven't answered this question yet — peers shown without your marker. <a href="#/submission">Add your data</a></div>`}
-        ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} />`
-        : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} />`
-        : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} />`}
+        ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
+        : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
+        : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
       </div>`;
   }
   if (c.type === "single_select" || c.type === "yes_no" || c.type === "multi_select") {
@@ -161,9 +235,9 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav }) {
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}>You haven't answered this question yet.</div>`}
         ${chart === "stacked_bar" && c.type !== "multi_select"
-          ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} />`
+          ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} width=${W} />`
           : html`<${OptionBars} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
-              height=${c.you ? 172 : 140} />`}
+              width=${W} height=${rowH || (c.you ? 172 : 140)} />`}
       </div>`;
   }
   if (c.type === "matrix") {
@@ -173,8 +247,8 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav }) {
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data in this peer group</div>
       <div>Fewer than 5 organisations per level — try a wider peer group.</div></div>`;
     return chart === "grouped_bars"
-      ? html`<${MatrixGrouped} rows=${c.matrix_rows} unit=${c.unit} showValues=${showValues} />`
-      : html`<${MatrixHeat} rows=${c.matrix_rows} unit=${c.unit} polarity=${c.polarity} showValues=${showValues} />`;
+      ? html`<${MatrixGrouped} rows=${c.matrix_rows} unit=${c.unit} showValues=${showValues} width=${W} height=${rowH} />`
+      : html`<${MatrixHeat} rows=${c.matrix_rows} unit=${c.unit} polarity=${c.polarity} showValues=${showValues} width=${W} height=${rowH} />`;
   }
   return null;
 };
