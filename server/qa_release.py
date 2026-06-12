@@ -61,6 +61,17 @@ for r in conn.execute("SELECT id, historical_comparability FROM questions WHERE 
 check("no break marker references a nonexistent release (fixture-residue class)",
       not stale_breaks, stale_breaks)
 
+print("== option-code uniqueness (collision class, 2026-06-12) ==")
+import json as _json
+from collections import Counter as _C
+code_dupes = []
+for r in conn.execute("SELECT id, options_json FROM questions WHERE options_json IS NOT NULL"):
+    cc = _C(o["code"] for o in _json.loads(r["options_json"]))
+    if any(n > 1 for n in cc.values()):
+        code_dupes.append(r["id"])
+check("no question has duplicate option codes (slug collisions merge counts)",
+      not code_dupes, code_dupes)
+
 print("== module invariant (2026.1) ==")
 bad_mod = conn.execute("SELECT COUNT(*) FROM questions WHERE module IS NOT NULL AND is_required=1").fetchone()[0]
 check("sector-module questions are never required (gate stays org-independent)", bad_mod == 0, bad_mod)

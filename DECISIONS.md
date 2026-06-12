@@ -1150,3 +1150,51 @@ VERIFIED: call-out card renders all 5 categories summing to 100% with
 1-5 days 45.5 You / 5+ 14.5) on the new chart; ALL EIGHT GATES GREEN after
 restart (engine_audit 0, integrity 0, status zero, focus 24/24, hero 25/25,
 commentary 40/40, pulse 25/25, release 0).
+
+## 2026-06-12 — Seed the 14 release-2026.1 additions (firewall) + collision fix
+
+PRECONDITIONS REPORTED: 2026.2 + its seed verified in place (2,640 REW262
+answers); the allowances-pensionability regen has NOT run — it remains
+prepared and awaiting David's baseline confirmation by design (no data
+operation was in flight, so no interleaving risk); REW26_* answers were zero.
+
+ID MAPPING: all 14 id_hints matched to live 2026.1 REW26_* questions (table
+in the run output). Resolutions: the LEVELLING question's live schema is
+MULTI_SELECT (the brief's anticipated case) — its options are mutually
+exclusive coverage levels, so each org draws ONE option and calibration
+verifies per-option prevalence against the signed distribution; five script
+labels remapped to the live option labels (MH first aiders / Digital app /
+MH days / >Annual / >8%) so every stored value matches the library exactly.
+
+SEED (seed_release_2026_1_additions.py via apply_seed_2026_1_additions.py):
+real-registry firmographics only; seeded f"{qid}|2026-06-12|{org_id}";
+org-blind whole-metric; reproducible (re-run identical); double-guarded
+write refusing pre-existing answers. CALIBRATION covered ALL 14 — the
+script's tilt damping plus driver-side input compensation (the documented
+2026.2 pattern), INCLUDING the multi_select per-option marginals and both
+numerics (median + N/A share). Realised vs signed: all categoricals within
+2.7pp with modals matching; MH provisions marginals within 2.3pp
+(counselling 62.3 vs 60, None 17.7 vs 16); wellbeing budget median 103 vs
+100 with N/A 60% vs 62% (applicable n=89 — the ~62% no-ring-fenced-budget
+routing); pension cost median 6.8 vs 7.0. 3,080 responses written +
+re-aggregated. Demo org drawn blind (its record includes 'None' levelling,
+'Not applicable' budget — visibly unfavoured). Neutral metrics (pension
+type, skills-based pay) carry no verdict (score=None). Hero schema census
+unchanged (109/76/22 — data growth doesn't move it; market pool 94 because
+the demo org's budget answer is N/A, prevalence pool grew to 96 with the
+newly answered practices).
+
+DEFECT CAUGHT BY THE GATES AND FIXED: REW26_WEL_STRATEGY had an OPTION-CODE
+COLLISION from the 2026.1 apply script — slug_code('>Annual') ==
+slug_code('Annual') == 'ANNUAL', so select_block merged both options'
+counts (prod 'Annual' 81 vs raw 64; the 17 '>Annual' answers absorbed).
+Schema bug latent since 2026.1, exposed by first data. Fixed: '>Annual'
+code -> 'GT_ANNUAL' (codes are internal keys; answers store labels — no
+data change), CSV synced, re-aggregated; platform-wide scan found exactly
+this one collision; qa_release now asserts option-code uniqueness for every
+question so the class can't recur. After fix: Annual 64/29.1%, >Annual
+17/7.7%, sum 100%.
+
+ALL EIGHT GATES GREEN after restart (engine_audit 0, integrity 0, status
+zero, focus 24/24, hero 25/25, commentary 40/40, pulse 25/25, release 0
+incl. the new uniqueness invariant).
