@@ -1350,3 +1350,18 @@ SPACING: one rhythm — s4 gaps and margins on every hero grid (top row,
 tiles, chips); tiles are flex columns with uniform s3 internal gaps (ad-hoc
 margins removed, headers min-height aligned); the tile grid is a forced
 7-across on >=1240px (6+1 orphan wrap eliminated) and balances 4+3 below.
+
+## 2026-06-12 — Bright amber + declutter pass
+
+AMBER SPLIT into two tokens: --neutral-perf #C77F06 (text — readable on
+warm paper) and --amber-bright #F5A60A (graphics: arc segment, tile dots,
+top accents). DECLUTTER: the firmographic chip row under the company name
+REMOVED (industry/FTE/region/peer-count/window) — the page is about
+position, not registration data; the ILLUSTRATIVE-SAMPLE trust chip stays
+(trust labels are inviolable) along with the active-filter chip. Signal
+rows now carry TERSE labels (signals.py label_short: boilerplate stripped,
+44-char cap) with the full fact in the hover tooltip; the "flags not
+advice" line moved to the Signals header tooltip; the arc lost its
+subtitle ("94 metrics" pill only); tile captions are bare counts (12/23)
+with tooltips. qa_hero 30/30 (wording check runs on the full detail field,
+unchanged).

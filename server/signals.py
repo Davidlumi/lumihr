@@ -49,6 +49,20 @@ def lens_config():
     return _cache["cfg"]
 
 
+def _short(title, row=None):
+    """A terse display label for the dashboard (the full fact stays in
+    `detail` for the tooltip): strip boilerplate, keep the essence."""
+    import re as _re
+    t = title or ""
+    for pat in (r"\s+by level\s*%? of base pay", r"\s+by level", r"\s*\(.*?\)",
+                r"\s+as a? ?% of payroll", r"\s+rate\b", r"^Maximum\s+", r"^Annual\s+", r"^Average\s+"):
+        t = _re.sub(pat, "", t, flags=_re.I)
+    t = t.strip().rstrip("?")
+    if row:
+        t += " — " + row
+    return (t[:44] + "…") if len(t) > 46 else t
+
+
 def _phrase(title):
     """A question title as a verb phrase: 'Do you include pay in adverts?' ->
     'include pay in adverts'."""
@@ -93,6 +107,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
             out.append({
                 "lens": money_lenses[qid], "kind": "money", "question_id": qid,
                 "value_display": _fmt_gbp(gbp),
+                "label_short": "%s — gap to median" % _short(q.display_title if q else it.get("label", "")),
                 "detail": "%s gap to the peer median" % (q.display_title if q else it.get("label", "")),
                 "impact": 1000000 + gbp,
             })
@@ -114,6 +129,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
         out.append({
             "lens": "save", "kind": "save", "question_id": qid,
             "value_display": "P%d" % round(i["percentile"]),
+            "label_short": "%s — above %d in 10 peers" % (_short(i["label"]), min(9, int(i["percentile"] / 10))),
             "detail": "%s — you pay more than %d in 10 peers" % (
                 i["label"], min(9, int(i["percentile"] / 10))),
             "impact": 500000 + (i["percentile"] - save_at) * 100,
@@ -133,9 +149,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
     for qid, (adj, i) in worst_pos.items():
         if qid in seen_q:
             continue
+        row_lbl = (i["label"].split(" — ")[-1] if " — " in i["label"] else None)
         out.append({
             "lens": pos_lenses[qid], "kind": "behind", "question_id": qid,
             "value_display": "P%d" % round(i["percentile"]),
+            "label_short": "%s · %s vs %s" % (_short(i["label"].split(" — ")[0], row_lbl),
+                                              i["value_display"], i["p50_display"] or "median"),
             "detail": "%s — %s vs %s peer median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
             "impact": 100000 + (behind_at - adj) * 100,
         })
@@ -168,6 +187,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
             out.append({
                 "lens": lens, "kind": "prevalence", "question_id": qid,
                 "value_display": "%d%%" % round(adoption),
+                "label_short": "of peers %s" % _short(_phrase(q.display_title)),
                 "detail": "of peers %s — you don't yet" % _phrase(q.display_title),
                 "impact": 10000 + adoption * 10,
             })

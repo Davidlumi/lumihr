@@ -36,11 +36,6 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
         <div>
           <h1 class="display-title">${data.org.name}</h1>
           <div class="row" style=${{ marginTop: "6px" }}>
-            <${Chip} kind="accent">${data.org.industry || "Unclassified"}<//>
-            <${Chip}>${data.org.fte_band ? data.org.fte_band + " FTE" : "Size not declared"}<//>
-            <${Chip}>${data.org.hq_region || "Region not declared"}<//>
-            <${Chip} title="Organisations contributing to this benchmark"><${Term} word="peer group">peer group<//>: ${data.peer_pool.responding_orgs} organisations<//>
-            <${Chip}>${data.snapshot.window}<//>
             ${data.synthetic_pool && html`<span class="chip warn hastip" style=${{ position: "relative", cursor: "help" }}>
               Illustrative sample data
               <span class="tip">The current peer pool is realistic but synthetic seed data, generated to behave like a UK benchmark while real member submissions build up. It must not be read as real benchmark data.</span>
@@ -128,7 +123,7 @@ function OverallArc({ market }) {
   };
   const segs = [];
   let acc = 0;
-  [["below", market.below, "var(--neutral-perf)"], ["at", market.at, "var(--favourable)"],
+  [["below", market.below, "var(--amber-bright)"], ["at", market.at, "var(--favourable)"],
    ["above", market.above, "var(--unfavourable)"]].forEach(([k, n, col]) => {
     if (!n) return;
     const f0 = acc / total + (acc ? GAP / 2 : 0);
@@ -149,7 +144,6 @@ function OverallArc({ market }) {
           stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
         <text x="105" y="92" text-anchor="middle" class="arc-word" style=${{ font: "650 26px var(--font-head)" }}
           fill=${market.verdict === "below" ? "var(--neutral-perf)" : market.verdict === "above" ? "var(--unfavourable)" : "var(--favourable)"}>${word}</text>
-        <text x="105" y="110" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${word === "With" ? "the market overall" : "market overall"}</text>
       </svg>
       <div class="arc-legend num ov-after">
         <span class="arc-pill below"><${CountUp} to=${market.below} /> below</span>
@@ -157,7 +151,7 @@ function OverallArc({ market }) {
         <span class="arc-pill above"><${CountUp} to=${market.above} /> above</span>
       </div>
       <div style=${{ textAlign: "center", marginTop: "2px" }}>
-        <span class="n-pill num">${market.pool} positioned metrics</span></div>
+        <span class="n-pill num" title="positioned metrics in this peer group">${market.pool} metrics</span></div>
     </div>`;
 }
 
@@ -169,8 +163,7 @@ function SignalsPanel({ signals, locked, contribution }) {
   return html`
     <div class="card" style=${{ padding: "var(--s3) var(--s4)", position: "relative" }}>
       <div class="row spread">
-        <span class="caption">Signals${sigs.length ? " · " + sigs.length : ""}</span>
-        <span class="caption" style=${{ color: "var(--ink-faint)" }}>flags worth a look — not advice</span>
+        <span class="caption" title="Flags worth a look — peer facts, never advice.">Signals${sigs.length ? " · " + sigs.length : ""}</span>
       </div>
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "8px" }}>
@@ -191,7 +184,7 @@ function SignalsPanel({ signals, locked, contribution }) {
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
             <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
             <span class="signal-val num">${s.value_display}</span>
-            <span class="signal-detail">${s.detail}</span>
+            <span class="signal-detail" title=${s.detail}>${s.label_short || s.detail}</span>
             <span class="lens-tag">${s.lens}</span>
             <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
@@ -203,7 +196,7 @@ function CategoryTile({ d }) {
   const verdict = d.market ? d.market.verdict : null;
   // pay-positioning traffic light (David, 2026-06-12): at market = green
   // (aligned), above = red (premium cost), below = amber (lagging)
-  const col = verdict === "below" ? "var(--neutral-perf)" : verdict === "above" ? "var(--unfavourable)"
+  const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
     : verdict ? "var(--favourable)" : "var(--you)";
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "at market" : "practice view";
   const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
@@ -227,7 +220,7 @@ function CategoryTile({ d }) {
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>`}
       <div class="row spread" style=${{ minHeight: "18px" }}>
-        <span class="caption num">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool + " majority practices" : ""}</span>
+        <span class="caption num" title="practices in line with the peer majority">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool : ""}</span>
         ${(d.signal_lenses || []).length > 0 && html`
           <span style=${{ display: "flex", gap: "3px" }}>
             ${d.signal_lenses.slice(0, 3).map((l, i) => html`<span key=${i} class=${"lens-dot lens-" + l} title=${l + " signal"}></span>`)}

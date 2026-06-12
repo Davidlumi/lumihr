@@ -61,7 +61,8 @@
 
   /* ---- performance vs peers ONLY (polarity-aware), never decorative ---- */
   --favourable: #2E7D52;   --favourable-tint: #E4F0E9;
-  --neutral-perf: #9A6207; --neutral-perf-tint: #F3EAD9;
+  --neutral-perf: #C77F06; --neutral-perf-tint: #FBEFD9;   /* text amber (readable) */
+  --amber-bright: #F5A60A;                                  /* graphic amber: fills, dots, segments */
   --unfavourable: #C0392B; --unfavourable-tint: #F7E4E1;
 
   /* ---- lens identity (SIGNALS ONLY, 2026-06-12): each outcome lens owns
@@ -468,7 +469,7 @@ td.num, th.num { text-align: right; }
   display: flex; flex-direction: column; gap: var(--s3); }
 .cat-tile .row.spread { min-height: 26px; }
 .cat-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
-.cat-tile.v-below { border-top-color: var(--neutral-perf); }
+.cat-tile.v-below { border-top-color: var(--amber-bright); }
 .cat-tile.v-above { border-top-color: var(--unfavourable); }
 .cat-tile.v-at { border-top-color: var(--favourable); }
 .cat-tile.v-practice { border-top-color: var(--blue-tint-2); }
