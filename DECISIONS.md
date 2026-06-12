@@ -676,3 +676,83 @@ N/A advances the gate; banded dropdowns pre-select existing answers;
 notice-band inversion warns, pensionability inversion doesn't; gates:
 qa_integrity 0/180, status audit zero, qa_focus 23/23, qa_hero 25/25,
 qa_commentary 40/40. Demo drafts restored after testing.
+
+## 2026-06-12 — ENGINE AUDIT Phase 1 (report): storage / calc / suppression / cuts
+
+NEW STANDING GATE: server/qa_engine_audit.py — a FRESH reference (no production
+aggregation/parsing/suppression/library imports; question metadata parsed
+straight from the questions table; own percentile/midrank/split/matrix-mode/
+floor implementations; production read via the live HTTP API + stored
+payloads). Exit code != 0 on failure; run pre-demo alongside the other gates.
+
+LAYER 1 — STORAGE: VERIFIED. 197,414 raw CSV answers -> store: 0 changed,
+0 missing, 0 extra (the 2 documented in-DB regenerations excluded and
+verified against their seeded scripts' distributions instead). Per-type
+round-trips byte-equal (incl. '1.5x'-class strings, banded labels). Tri-state
+proven: zero stored as '0', N/A as text, 0 blank rows in the canonical store
+(a cleared DRAFT stages '' by design and deletes the answer at submit). Live
+write path round-trips multi-select strings, 0, N/A and blank distinctly.
+
+LAYER 2 — CALCULATION: VERIFIED. All 180 reward metrics recomputed
+independently: 3 numeric, 138 single-select, 6 yes/no, 12 multi-select,
+14 matrix-numeric, 7 matrix-categorical — 0 value mismatches (n, P10–P90,
+option counts/pcts, per-row matrix blocks). Scored-verdict spot: ALLOW_01
+ref midrank 14.5 == prod 14.5. Cross-surface: card == dashboard list ==
+stored payload (n=200, p50=3.7 on the probe metric).
+
+LAYER 3 — SUPPRESSION: VERIFIED. 0 sub-floor blocks across every stored
+payload/cut; served cards carry no internal '_' keys; a real 1-org custom
+group end-to-end -> suppressed card, honest readout, AI commentary clean;
+foreign/stale group id -> labelled All-peers fallback (never another org's
+group); org_id injection on /api/my-data returns own data only.
+Differential-attack residual remains FLAGGED to David (unchanged).
+
+LAYER 4 — CUTS: VERIFIED. 19 sector/size cut n's == raw qualifying sets;
+unclassified responders in 'all' only (62, none in filtered cuts); fte bands
+are exact-match labels (no numeric boundary exists in the engine — banding
+happens at profile capture); custom-group counts == raw (Retail 15==15);
+self-inclusion consistent (self always counted).
+
+DETERMINISM + EDGES: re-aggregation of identical data -> identical payload
+hash (c5fef3b9...); same API call x3 identical; single value/zero-variance/
+empty/negatives/all-zeros all behave (suppressed or sensible, no NaN).
+
+THE BRIEF'S "CONFIRMED DEFECT A" (multi-select not split) — FALSE POSITIVE,
+shown with evidence: production splits on ';' and matches an independent
+split of the LIVE data exactly (ALLOW_01: Car 45.5%, Shift 41.4%, n=220).
+The brief's "correct" numbers (Shift 81.2%, n=202) reproduce ONLY from
+data/responses_orig — the pre-regeneration files superseded by the
+documented 11-June regen. Its sub-claims, tested individually against live:
+comma-only answers (95) are single options whose LABELS contain commas,
+matched whole, never shredded or dropped; "You" marks ALL selections
+(you.labels; the observed single mark was an org that genuinely selected
+one option); "you selected X of N" uses the real count; the Behind·P15
+verdict is correct under the intended option-count model (independent
+midrank 14.5). NOTHING was changed to "fix" Defect A — the prevalences
+production shows are right.
+
+REAL DEFECTS FOUND (fixing in Phase 2):
+- F1 'None' scores a point: 4 scored multi-selects give none-ish options
+  option_score 1, so an org offering NOTHING scores like an org offering one
+  item: ALLOW_01 'None' (13 orgs), EXT_REW_GAP_011 'None' (89 orgs),
+  PROP_216f7323 'None / no formal strategy' (6), PROP_aa4061d5 'No formal
+  measurement' (0 pure). Two other questions already handle this correctly
+  (na_codes), so the library is internally inconsistent. Rule applied:
+  "Not applicable" = not assessable -> na_code excluded; "None" = assessed
+  zero provision -> scores 0. Config defect (scoring_config), not engine code.
+- F2 PROP_7cdfcc7b ('Talent review coverage', Growth scope, HIDDEN from the
+  reward launch) is typed multi_select but holds Yes/No answers — 1,176
+  tokens unmatchable internally. No member-facing impact today. FLAGGED for
+  David (out of reward scope; type/answer reconciliation is a library call).
+- F3 gate mechanics: qa_integrity and qa_status_audit don't exit non-zero on
+  failure (human-read only) — hardening in Phase 2.
+
+EXISTING-GATES REVIEW: qa_integrity does test what it claims post-hardening
+(categorical rows verified, populated-rows asserted; its multi-select
+reference splits and would catch a non-splitting engine; its ';' delimiter
+assumption is shared with production but now validated against the data by
+the new independent gate). qa_focus (23) and qa_hero (25) assert what they
+claim and exit non-zero. qa_status_audit is a printed audit, no exit code.
+qa_commentary 40 checks. Blind spot closed by qa_engine_audit: none of the
+old gates exercised the live custom-group path end-to-end or the cut-set
+membership against raw.
