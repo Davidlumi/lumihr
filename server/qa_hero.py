@@ -87,11 +87,12 @@ positionable = [q for q in pol_qs if q.type in ("numeric", "matrix")
                 or (q.is_scored and q.type in ("single_select", "yes_no", "multi_select") and score_direction(q) != 0)]
 print("  coverage: %d polarised -> %d positionable, %d routed to prevalence (%s)" % (
     len(pol_qs), len(positionable), len(unmappable), Counter(q.type for q in unmappable)))
-# 2026.1 census: +11 non-neutral new questions (87->98), +1 positionable
-# numeric (wellbeing budget, 75->76), +3 unordered selects routed (12->15) —
-# delta fully accounted for by the 14 additions; existing questions unchanged
-check("98 polarised; 76 positionable; 15 unordered routed (matches the data census)",
-      len(pol_qs) == 98 and len(positionable) == 76 and len(unmappable) == 15)
+# 2026.2 census: +11 non-neutral additions (98->109; the AI-skills premium is
+# DELIBERATELY neutral — prevalence only), +0 positionable (all unscored
+# selects, 76 unchanged), +7 unordered hib single_selects routed (15->22) —
+# delta fully accounted for by the 12 additions; existing questions unchanged
+check("109 polarised; 76 positionable; 22 unordered routed (matches the data census)",
+      len(pol_qs) == 109 and len(positionable) == 76 and len(unmappable) == 22)
 fabricated = [(q.id, o["label"]) for q in unmappable for o in (q.options or [])
               if score_answer(q, o["label"]) is not None]
 check("no unordered polarised metric can produce a rank (no invented order)", not fabricated, fabricated[:2])
