@@ -1245,3 +1245,49 @@ This was the LAST QUEUED DATA OPERATION. The flagged-metric ledger closes:
 REW_INC_072 regenerated; pay frequency regenerated; allowances-pensionability
 regenerated (this entry); REW_INC_061 remains code-fixed + flagged (David's
 call on prior/reword/removal).
+
+## 2026-06-12 — Home dashboard rebuilt: 80% visuals, signals introduced
+
+THE THREE QUESTIONS, TOP TO BOTTOM: where do I sit overall (the ARC — the
+94 positioned metrics as three performance-palette segments with the verdict
+word centred: Below / 34-46-14); what should I look at (SIGNALS); where do I
+sit per category (SEVEN TILES — verdict chip, peer-band with the org's dot
+at its median polarity-adjusted percentile, x/y majority-practice count,
+lens dots where signals live; practice-view categories show a prevalence
+fill instead of a dot). Leads/gaps became micro-band chips (deduped per
+question, click-through to the metric). The £ opportunity panel is ABSORBED
+into signals; the "Your journey" strip is CUT until a second data period
+exists; the locked give-to-get treatment carries over (signals + gaps blur
+with the same lock note for not-yet-unlocked members).
+
+SIGNALS (the new machinery, server/signals.py): outcome-lens flags — save /
+attract / retain / engage — derived ONLY from data the engine already
+computes: position items (behind-lens: polarity-adjusted percentile at/below
+the threshold), practice prevalence via aggregate.practice_status applied to
+the cut's distribution block (the same single source of truth as the gap
+register — and it covers the UNSCORED 2026.1/2026.2 additions, which the
+register's is_scored filter excludes), cost percentiles (save-lens on
+neutral spend metrics — a fact about cost, never a market verdict), and the
+£ model (money-lens). DAVID OWNS data/signal_lenses.json: the metric->lens
+map, thresholds (behind P25 / save P85 / prevalence 50% / £10k floor),
+max_signals 5 and max_per_lens 2 — hot-reload, malformed edits keep the
+last good config. TRUST RULES enforced + gated: flags carry a peer fact and
+never a directive; neutral metrics can never flag 'behind'; every kind must
+come from David's maps. Demo org's live briefing: £75k/yr pension gap
+(retain/money), flex allowance P5 (retain/behind), 56% of peers put pay in
+adverts (attract/prevalence).
+
+API: /api/overview adds signals, structured leads/lags, and dot/signal_lenses
+on hero domains (ADDITIVE — the hero payload the gates assert is untouched).
+One engine fix found while wiring: practice_status returns 'not_in_place'
+(not 'absent') — corrected in the prevalence check.
+
+GATES: qa_hero grew to 30 checks with a SIGNALS trust section (caps, live
+targets, no behind-on-neutral/unmapped kinds, factual wording, dot range
+[1,99]). ALL EIGHT GREEN after restart (focus 24/24, hero 30/30, engine
+audit 0, integrity 0, status zero, commentary 40/40, pulse 25/25, release 0).
+
+FOR DAVID: signal_lenses.json is yours — the seeded lens mapping and
+thresholds are my best-guess defaults from the design discussion; adjust
+freely (hot-reloads). Lens icons/labels deliberately quiet; the performance
+palette stays reserved for verdicts (arc, tile dots, chips).

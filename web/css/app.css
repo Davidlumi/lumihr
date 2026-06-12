@@ -414,6 +414,41 @@ td.num, th.num { text-align: right; }
   padding: var(--s2) var(--s3); font-size: var(--fs-label); color: var(--ink-soft);
   margin-bottom: var(--s2); max-width: 620px; }
 
+/* ---- the 80/20 home hero (2026-06-12) ---- */
+.ov-top { display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
+@media (max-width: 1000px) { .ov-top { grid-template-columns: 1fr; } }
+.arc-card { padding: var(--s3) var(--s4); }
+.arc-legend { display: flex; justify-content: center; gap: var(--s4); font-size: var(--fs-caption); color: var(--ink-soft); margin: 2px 0; }
+.signal-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--surface-sunk); cursor: pointer; transition: background var(--ease); }
+.signal-row:hover { background: var(--blue-tint); }
+.signal-row svg { color: var(--ink-soft); flex: 0 0 auto; }
+.signal-val { font-weight: 650; font-size: 14px; min-width: 64px; color: var(--ink); }
+.signal-detail { flex: 1; font-size: var(--fs-label); color: var(--ink-soft); }
+.lens-tag { font-size: 10.5px; color: var(--ink-soft); border: 1px solid var(--border); border-radius: 9px;
+  padding: 1px 8px; text-transform: lowercase; flex: 0 0 auto; }
+.signal-row.lens-save .lens-tag { color: var(--favourable); border-color: var(--favourable-tint); background: var(--favourable-tint); }
+.signal-row.lens-attract .lens-tag, .lens-dot.lens-attract { color: var(--blue-deep); background: var(--blue-tint-2); border-color: var(--blue-tint-2); }
+.signal-row.lens-retain .lens-tag, .lens-dot.lens-retain { color: var(--blue-deep); background: var(--blue-tint); border-color: var(--blue-tint-2); }
+.signal-row.lens-engage .lens-tag, .lens-dot.lens-engage { color: var(--neutral-perf); background: var(--neutral-perf-tint); border-color: var(--neutral-perf-tint); }
+.lens-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--blue-tint-2); }
+.lens-dot.lens-save { background: var(--favourable-tint); border: 1px solid var(--favourable); }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: var(--s3); }
+.cat-tile { padding: var(--s3) var(--s4); cursor: pointer; transition: box-shadow var(--ease); }
+.cat-tile:hover { box-shadow: var(--shadow-lift); }
+.tile-chip { font-size: 10px; padding: 1px 8px; }
+.chip-bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
+.chip-good { background: var(--favourable-tint); color: var(--favourable); }
+.chip-mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+.tile-band { position: relative; height: 6px; background: var(--surface-sunk); border-radius: 3px; margin: 13px 0 2px; }
+.tile-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: 3px; }
+.tile-dot { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--surface); }
+.tile-fill { position: absolute; left: 0; height: 100%; background: var(--blue-tint-2); border-radius: 3px; }
+.chip-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer; }
+.chip-row:hover .chip-label { color: var(--blue-bright); }
+.chip-label { flex: 1; font-size: var(--fs-label); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-band { position: relative; width: 92px; height: 5px; background: var(--surface-sunk); border-radius: 3px; flex: 0 0 auto; }
+
 /* ---- pulses (Tier 2): visually distinct from the core ---- */
 .pulse-banner { display: inline-block; background: var(--surface-sunk); border: 1px dashed var(--blue);
   color: var(--blue); font-size: var(--fs-label); padding: 2px 10px; border-radius: 10px; margin-top: var(--s2); }

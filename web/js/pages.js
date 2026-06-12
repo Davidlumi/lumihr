@@ -53,45 +53,173 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
-      <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
-        <${HeroSignals} hero=${data.hero} cut=${cut} cuts=${cuts} />
-        <${OpportunityTile} opp=${data.opportunity} actionGaps=${data.hero && data.hero.action_gaps} />
-        <${TrajectoryTile} movement=${data.movement} />
-      </div>
-
-      <div class="grid2" style=${{ margin: "var(--s6) 0 var(--s4)" }}>
-        <div>
-          <h2 class="section-title">Where you lead</h2>
-          ${data.callouts.strengths.length ? data.callouts.strengths.map((t, i) => html`
-            <div key=${i} class="callout good" onClick=${() => jumpToItem(data.callouts.strength_items[i])} style=${{ cursor: "pointer" }}>${t}</div>`) :
-          html`<${EmptyState} title="No clear strengths yet" body="Once more of your data is comparable, your strongest positions appear here." />`}
-        </div>
-        <div>
-          <h2 class="section-title">Biggest gaps to peers</h2>
-          ${data.callouts.gaps_locked ? html`
-            <div class="insight-lock">
-              <div class="blurred" aria-hidden="true">
-                <div class="callout bad">Your largest gap to the peer median appears here once unlocked.</div>
-                <div class="callout bad">Where peers commonly have a practice you don't yet.</div>
-                <div class="callout bad">The third-biggest gap, sized against your peer group.</div>
-              </div>
-              <div class="lock-note">
-                <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
-                <div class="caption" style=${{ textAlign: "center", maxWidth: "280px" }}>
-                  ${data.callouts.gaps_available
-                    ? `We've already identified ${data.callouts.gaps_available} gap${data.callouts.gaps_available === 1 ? "" : "s"} for you. `
-                    : ""}Unlock by completing your key reward questions${data.contribution && data.contribution.days_left != null ? ` — ${data.contribution.days_left} days left` : ""}.</div>
-                <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
-              </div>
-            </div>` :
-          data.callouts.gaps.length ? data.callouts.gaps.map((t, i) => html`
-            <div key=${i} class="callout bad" onClick=${() => jumpToItem(data.callouts.gap_items[i])} style=${{ cursor: "pointer" }}>${t}</div>`) :
-          html`<${EmptyState} title="No comparable gaps" body="Nothing stands out below the peer median in this peer group." />`}
-        </div>
-      </div>
+      <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} />
 
     </div>`;
 };
+
+/* ============== the 80/20 home hero (2026-06-12 redesign) ==============
+   Three questions, top to bottom: where do I sit overall (the arc), what
+   should I look at (signals — flags, never advice), where do I sit per
+   category (seven tiles). Leads/gaps become micro-band chips. The £
+   opportunity lives inside signals; the journey strip returns when a second
+   data period exists. */
+function OverviewHero({ data, cut, cuts }) {
+  const m = data.hero && data.hero.market;
+  const locked = data.callouts && data.callouts.gaps_locked;
+  return html`
+    <div>
+      <div class="ov-top">
+        <${OverallArc} market=${m} />
+        <${SignalsPanel} signals=${data.signals} locked=${locked} contribution=${data.contribution} />
+      </div>
+      <div class="cat-grid">
+        ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} />`)}
+      </div>
+      <div class="grid2" style=${{ margin: "var(--s4) 0", gap: "var(--s4)" }}>
+        <${ChipColumn} title="You lead" items=${data.leads} good=${true} />
+        ${locked ? html`
+          <div class="card" style=${{ padding: "var(--s4)" }}>
+            <div class="caption" style=${{ marginBottom: "6px" }}>Biggest gaps</div>
+            <div class="insight-lock">
+              <div class="blurred" aria-hidden="true">
+                <div class="callout bad">Your largest gap appears here once unlocked.</div>
+                <div class="callout bad">Where peers commonly lead.</div>
+              </div>
+              <div class="lock-note">
+                <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+                <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>Unlock by completing your key reward questions.</div>
+                <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+              </div>
+            </div>
+          </div>` :
+          html`<${ChipColumn} title="Biggest gaps" items=${data.lags} good=${false} />`}
+      </div>
+    </div>`;
+}
+
+function OverallArc({ market }) {
+  if (!market) return html`
+    <div class="card arc-card"><div class="caption" style=${{ padding: "var(--s5)" }}>
+      Your overall position appears once enough of your data is comparable.</div></div>`;
+  const total = (market.above + market.at + market.below) || 1;
+  const R = 74, CX = 105, CY = 112, GAP = 0.06;
+  const polar = (frac) => {
+    const a = Math.PI * (1 - frac);
+    return [CX + R * Math.cos(a), CY - R * Math.sin(a)];
+  };
+  const segs = [];
+  let acc = 0;
+  [["below", market.below, "var(--unfavourable)"], ["at", market.at, "var(--neutral-perf)"],
+   ["above", market.above, "var(--favourable)"]].forEach(([k, n, col]) => {
+    if (!n) return;
+    const f0 = acc / total + (acc ? GAP / 2 : 0);
+    acc += n;
+    const f1 = acc / total - (acc < total ? GAP / 2 : 0);
+    const [x0, y0] = polar(Math.max(0, f0)), [x1, y1] = polar(Math.min(1, f1));
+    segs.push({ k, col, d: "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
+      " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) });
+  });
+  const word = market.verdict === "above" ? "Above" : market.verdict === "below" ? "Below" : "With";
+  return html`
+    <div class="card arc-card">
+      <div class="caption">Where you stand</div>
+      <svg viewBox="0 0 210 126" style=${{ width: "100%", maxWidth: "215px", display: "block", margin: "0 auto" }}
+        role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
+        ${segs.map(sg => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15" stroke-linecap="round"/>`)}
+        <text x="105" y="92" text-anchor="middle" style=${{ font: "650 24px var(--font-head)" }} fill="var(--ink)">${word}</text>
+        <text x="105" y="110" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${word === "With" ? "the market overall" : "market overall"}</text>
+      </svg>
+      <div class="arc-legend num">
+        <span><b style=${{ color: "var(--unfavourable)" }}>${market.below}</b> below</span>
+        <span><b style=${{ color: "var(--neutral-perf)" }}>${market.at}</b> at</span>
+        <span><b style=${{ color: "var(--favourable)" }}>${market.above}</b> above</span>
+      </div>
+      <div class="caption" style=${{ textAlign: "center" }}>${market.pool} positioned metrics</div>
+    </div>`;
+}
+
+const LENS_ICON = { save: "sliders", attract: "user-plus", retain: "users", engage: "heart" };
+function SignalsPanel({ signals, locked, contribution }) {
+  const sigs = signals || [];
+  return html`
+    <div class="card" style=${{ padding: "var(--s3) var(--s4)", position: "relative" }}>
+      <div class="row spread">
+        <span class="caption">Signals${sigs.length ? " · " + sigs.length : ""}</span>
+        <span class="caption" style=${{ color: "var(--ink-faint)" }}>flags worth a look — not advice</span>
+      </div>
+      ${locked ? html`
+        <div class="insight-lock" style=${{ marginTop: "8px" }}>
+          <div class="blurred" aria-hidden="true">
+            ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a flag appears here once unlocked</span></div>`)}
+          </div>
+          <div class="lock-note">
+            <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+            <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
+              Signals unlock with your insights — complete your key reward questions${contribution && contribution.days_left != null ? ` (${contribution.days_left} days left)` : ""}.</div>
+            <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+          </div>
+        </div>` :
+      sigs.length === 0 ? html`
+        <div class="caption" style=${{ padding: "var(--s4) 0" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>` :
+      html`<div style=${{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+        ${sigs.map((s, i) => html`
+          <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
+            <${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} />
+            <span class="signal-val num">${s.value_display}</span>
+            <span class="signal-detail">${s.detail}</span>
+            <span class="lens-tag">${s.lens}</span>
+          </div>`)}
+      </div>`}
+    </div>`;
+}
+
+function CategoryTile({ d }) {
+  const verdict = d.market ? d.market.verdict : null;
+  const col = verdict === "below" ? "var(--unfavourable)" : verdict === "above" ? "var(--favourable)"
+    : verdict ? "var(--neutral-perf)" : "var(--you)";
+  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "at market" : "practice view";
+  const chipCls = verdict === "below" ? "chip-bad" : verdict === "above" ? "chip-good" : verdict ? "chip-mid" : "";
+  const prev = d.prevalence || {};
+  const dot = d.dot;
+  return html`
+    <div class="card cat-tile" onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
+      <div class="row spread">
+        <span style=${{ fontWeight: 600, fontSize: "13px" }}>${d.name}</span>
+        <span class=${"chip tile-chip " + chipCls}>${chip}</span>
+      </div>
+      ${dot != null ? html`
+        <div class="tile-band">
+          <div class="tile-band-mid"></div>
+          <div class="tile-dot" style=${{ left: "calc(" + Math.min(97, Math.max(3, dot)) + "% - 6px)", background: col }}></div>
+        </div>` : html`
+        <div class="tile-band">
+          <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
+        </div>`}
+      <div class="row spread" style=${{ marginTop: "7px" }}>
+        <span class="caption num">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool + " majority practices" : ""}</span>
+        ${(d.signal_lenses || []).length > 0 && html`
+          <span style=${{ display: "flex", gap: "3px" }}>
+            ${d.signal_lenses.slice(0, 3).map((l, i) => html`<span key=${i} class=${"lens-dot lens-" + l} title=${l + " signal"}></span>`)}
+          </span>`}
+      </div>
+    </div>`;
+}
+
+function ChipColumn({ title, items, good }) {
+  return html`
+    <div class="card" style=${{ padding: "var(--s4)" }}>
+      <div class="caption" style=${{ marginBottom: "8px" }}>${title}</div>
+      ${(items || []).length === 0 ? html`<div class="caption" style=${{ color: "var(--ink-faint)" }}>Nothing stands out in this peer group yet.</div>` :
+      items.map((it, i) => html`
+        <div key=${i} class="chip-row" onClick=${() => openMetric(it.question_id)} role="button" tabindex="0">
+          <span class="chip-label">${it.label}</span>
+          <span class="chip-band"><span class="tile-dot" style=${{ left: "calc(" + Math.min(96, Math.max(2, it.adjusted)) + "% - 5px)", background: good ? "var(--favourable)" : "var(--unfavourable)", width: "10px", height: "10px", top: "-2.5px" }}></span></span>
+          <span class="num" style=${{ fontSize: "11.5px", fontWeight: 600, color: good ? "var(--favourable)" : "var(--unfavourable)", minWidth: "30px", textAlign: "right" }}>P${Math.round(it.percentile)}</span>
+        </div>`)}
+    </div>`;
+}
+
 
 /* The two-signal hero. Market position carries a verdict (performance
    palette); practice prevalence is information (neutral palette, never
