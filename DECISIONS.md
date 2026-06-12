@@ -551,3 +551,52 @@ counts, weekend-multiplier p50); pension/bonus numeric matrices unchanged;
 a select matrix on an n=4 cut still suppresses. Gates re-run clean:
 qa_integrity 0/180, qa_focus 23/23, qa_hero 25/25, status audit zero,
 commentary 40/40.
+
+## 2026-06-12 — Expert plausibility review: pay frequency regenerated; allowances-pensionable prepared for David
+
+PAY FREQUENCY (EXT_REW_GAP_013) — REGENERATED (firewall-compliant).
+- Shape resolved FIRST: true single_select ("How often are employees
+  typically paid?"), 179 answering orgs, no row-keyed rows. Only the label
+  lied — benchmark_display said "Employees typically paid by level"; fixed
+  in the questions table AND data/lumi_questions.csv (2 occurrences).
+- Why: Fortnightly was modal at 35.2% — backwards for the UK, where
+  monthly pay dominates (ONS/ASHE payroll patterns; CIPP industry data)
+  and fortnightly is a US/Australian pattern.
+- New distribution (seeded "EXT_REW_GAP_013|2026-06-12|"+org_id, whole
+  metric, participation preserved): Monthly 71.5% / Weekly 12.8% /
+  Mixed 10.1% / Fortnightly 4.5% / Don't know 1.1%. Weekly conditions on
+  Workforce_Frontline_%, Workforce_Shift_% and the five weekly-leaning
+  sectors; mixed rises with size — calibrated to the documented baseline
+  (first draw landed Weekly 19.6%; tilt coefficients reduced, re-drawn).
+- Watch orgs (fixed rule, neutral-polarity metric): demo 'Monthly' ->
+  'Monthly' (redrawn blind, same draw); 009f901c 'Fortnightly' ->
+  'Monthly'; 022f3575 'Fortnightly' -> 'Mixed (varies by role)'.
+- FOR DAVID: exact split is the constants block in
+  server/regen_pay_frequency.py ("David adjusts here") — direction is
+  settled, decimals are his; script is seeded/reproducible.
+
+ALLOWANCES PENSIONABILITY — FLAGGED, NOT REGENERATED (per the brief:
+David sets the baseline; do not regenerate on an assumed one).
+- Verified defects (live data): (1) ALLOW_03 says 81.8% of orgs pension
+  some/all allowances — implausibly high vs the base-pay-only norm in UK
+  DC schemes; (2) REW_PAY_020 is flat 20.0% Yes at every level, zero
+  seniority texture; (3) the two CONTRADICT each other for 152/220 orgs
+  (144 "Yes" org-wide but all-No by level; 8 the reverse).
+- Prepared server/regen_allowances_pensionable.py: JOINT regeneration —
+  one org-level pensioning latent (none/some/all, ownership-tilted:
+  DB-legacy cultures up, PE/VC/founder-led down) drives BOTH questions so
+  they cohere. Dry run: ALLOW_03 No 68.6%/some 19.5%/all 10.0%; matrix
+  Yes 25.5% frontline -> 30.5% senior; coherence 220/220. Write path is
+  double-guarded (--write AND --confirmed-by-david) so it cannot run by
+  accident. AWAITING DAVID'S CONFIRMATION of BASE_SOME/BASE_ALL/OWN_TILT.
+
+LEFT UNTOUCHED (David's call per the brief): LTI taper shape; tronc
+sector skew; notice periods, multipliers, PMI, status-car metrics.
+
+RUNNING FLAGGED COUNT: 4 (REW_INC_072 regenerated; REW_INC_061 code-fixed
++ flagged; pay frequency regenerated; allowances-pensionable awaiting
+baseline) — well below the ~8-10 systemic threshold; no wholesale prior
+rebuild indicated.
+
+GATES AFTER RE-AGGREGATION: qa_integrity 0/180 mismatches; status audit
+zero; qa_focus 23/23; qa_hero 25/25; qa_commentary 40/40.
