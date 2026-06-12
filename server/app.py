@@ -107,6 +107,27 @@ def reduced_sample_ids():
     return _reduced_sample
 
 
+def org_unlocked(conn, org, completion=None):
+    """STICKY unlock (versioning, 2026-06-12): once a member earns their
+    unlock it is stored (insights_unlocked_at + the release they unlocked
+    under) and NEVER revoked by a release. A release that adds required
+    questions can therefore never re-lock anyone — the new questions surface
+    as 'new to complete', access stays. Live completion is only consulted
+    until the first unlock, and can only ever ADD the stamp."""
+    if org["insights_unlocked_at"]:
+        return True
+    if completion is None:
+        completion = completion_pct(conn, org)
+    unlocked = bool(org["submission_complete"]) or completion >= TARGET_PCT
+    if unlocked:
+        rel = releases.current_release(conn)
+        conn.execute("UPDATE orgs SET insights_unlocked_at=datetime('now'), unlocked_release=? "
+                     "WHERE org_id=? AND insights_unlocked_at IS NULL",
+                     (rel["release_id"] if rel else None, org["org_id"]))
+        conn.commit()
+    return unlocked
+
+
 def contribution_state(conn, org):
     """The day-one model: explore freely for CLOCK_DAYS; hitting the
     completion target unlocks insights; past the deadline unmet, the benchmark reduces
@@ -117,7 +138,7 @@ def contribution_state(conn, org):
     the moment the org can actually contribute — NOT at signup or first
     login, so setup time never eats into the 30 days."""
     completion = completion_pct(conn, org)
-    unlocked = bool(org["submission_complete"]) or completion >= TARGET_PCT
+    unlocked = org_unlocked(conn, org, completion)
     terms = org_data_terms(conn, org["org_id"])
     clock_start = org["clock_start"]
     days_left = None
@@ -565,9 +586,7 @@ async def me(request: Request):
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
     vis = visible_questions()
     contrib = contribution_state(conn, org)
-    if contrib["insights_unlocked"] and not org["insights_unlocked_at"]:
-        conn.execute("UPDATE orgs SET insights_unlocked_at=datetime('now') WHERE org_id=?", (org["org_id"],))
-        conn.commit()
+    # (sticky-unlock stamping now happens centrally in org_unlocked)
     maybe_send_clock_reminder(conn, org, contrib)
     return {
         "contribution": contrib,
@@ -589,7 +608,7 @@ async def me(request: Request):
                     "version": t and t["version"],
                 })(org_data_terms(conn, org["org_id"]))},
         "completion_pct": completion,
-        "benchmark_unlocked": bool(org["submission_complete"]) or completion >= TARGET_PCT,
+        "benchmark_unlocked": org_unlocked(conn, org, completion),
         "peer_pool": get_meta("peer_pool", {}),
         "snapshots": snaps,
     }
@@ -703,6 +722,127 @@ async def revoke_invite(token: str, request: Request):
 
 
 # ============================================================ LAYERED TERMS ==
+
+# ============================================ CORE-SET GOVERNANCE / TRENDS ==
+
+@app.get("/api/governance")
+async def governance(request: Request):
+    """Releases, change log and backlog — read surface for the admin page."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    cur = releases.current_release(conn)
+    return {
+        "current_release": dict(cur) if cur else None,
+        "releases": [dict(r) for r in conn.execute(
+            "SELECT * FROM core_releases ORDER BY released_at DESC")],
+        "changelog": [dict(r) for r in conn.execute(
+            "SELECT * FROM core_changelog ORDER BY id DESC LIMIT 200")],
+        "backlog": [dict(r) for r in conn.execute(
+            "SELECT * FROM core_backlog ORDER BY id DESC LIMIT 200")],
+        "core_size": len(visible_questions()),
+        "required_size": len(completion_basis_questions()),
+    }
+
+
+@app.post("/api/governance/backlog")
+async def governance_backlog_add(request: Request):
+    user, org = require_admin(request)
+    body = await request.json()
+    title = (body.get("title") or "").strip()
+    if not title:
+        raise HTTPException(400, "A title is needed.")
+    releases.add_backlog(title, (body.get("detail") or "").strip(),
+                         body.get("source") or "manual", body.get("source_ref"))
+    return {"ok": True}
+
+
+@app.post("/api/governance/ingest-requests")
+async def governance_ingest(request: Request):
+    user, org = require_admin(request)
+    n = releases.ingest_metric_requests(get_conn())
+    return {"ok": True, "ingested": n}
+
+
+@app.post("/api/governance/emergency")
+async def governance_emergency(request: Request):
+    """The between-release lane. High bar by design: refused without BOTH the
+    external trigger that made the question factually wrong AND a sign-off."""
+    user, org = require_admin(request)
+    body = await request.json()
+    try:
+        releases.emergency_change(
+            body.get("question_id"), body.get("new_version"),
+            body.get("external_trigger"), body.get("signed_off_by"),
+            bool(body.get("comparability_break")))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    load_questions.cache_clear()
+    invalidate_payloads()
+    return {"ok": True}
+
+
+@app.get("/api/trend/{qid}")
+async def metric_trend(qid: str, request: Request):
+    """The metric across data periods — the second reproducibility dimension.
+    Comparability breaks are ENFORCED here, not just stored: the series is
+    returned as SEGMENTS split at each break, and the client never draws a
+    line across a segment boundary."""
+    user, org = require_user(request)
+    q = visible_questions().get(qid)
+    if q is None:
+        raise HTTPException(404, "Unknown metric")
+    conn = get_conn()
+    rel_order = {r["release_id"]: i for i, r in enumerate(conn.execute(
+        "SELECT release_id FROM core_releases ORDER BY released_at"))}
+    breaks = releases.comparability_breaks(q.historical_comparability)
+
+    def rel_pos(rid):
+        base = (rid or "").replace("+emergency", "")
+        pos = rel_order.get(base, -1)
+        return pos + (0.5 if rid and rid.endswith("+emergency") else 0)
+
+    points = []
+    for s in conn.execute("SELECT * FROM snapshots WHERE status='aggregated' ORDER BY snapshot_id"):
+        row = conn.execute("SELECT payload_json FROM benchmark_snapshots WHERE snapshot_id=? AND question_id=?",
+                           (s["snapshot_id"], qid)).fetchone()
+        if row is None:
+            continue
+        p = json.loads(row["payload_json"])
+        blk = p.get("all") or {}
+        if blk.get("suppressed"):
+            continue
+        pt = {"snapshot_id": s["snapshot_id"], "period": s["collection_window"],
+              "release_id": s["release_id"], "n": blk.get("n")}
+        if blk.get("p50") is not None:
+            pt["p50"] = blk["p50"]
+        elif (p.get("scores") or {}).get("all") and not (p["scores"]["all"] or {}).get("suppressed"):
+            pt["p50"] = (p["scores"]["all"] or {}).get("p50")
+            pt["kind"] = "score"
+        else:
+            opts = blk.get("options") or []
+            if opts:
+                top = max(opts, key=lambda o: o.get("count", 0))
+                pt["modal_label"], pt["modal_pct"] = top.get("label"), top.get("pct")
+        points.append(pt)
+
+    # split into segments: a break at release R cuts between a period stamped
+    # before R and one stamped at/after R — a continuous line across that
+    # boundary would splice incomparable data
+    segments, cuts = [[]], []
+    for i, pt in enumerate(points):
+        if i > 0:
+            prev_pos, cur_pos = rel_pos(points[i - 1]["release_id"]), rel_pos(pt["release_id"])
+            crossing = [b for b in breaks if prev_pos < rel_pos(b) <= cur_pos]
+            if crossing:
+                cuts.append({"after_period": points[i - 1]["period"], "release_id": crossing[0],
+                             "reason": "question changed materially — values either side are not comparable"})
+                segments.append([])
+        segments[-1].append(pt)
+    return {"question_id": qid, "title": q.display_title, "unit": q.unit_block(),
+            "question_version": q.question_version,
+            "segments": [s for s in segments if s], "breaks": cuts,
+            "periods": len(points)}
+
 
 @app.get("/api/terms")
 async def terms_texts():

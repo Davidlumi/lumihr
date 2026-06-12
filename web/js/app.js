@@ -134,6 +134,7 @@ function App() {
   else if (route.startsWith("/shares")) page = html`<${SharesPage} />`;
   else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
   else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
+  else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
@@ -174,6 +175,7 @@ function App() {
           <button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>
           ${me.user.role === "admin" && html`<button class=${navCls(route, "/shares")} onClick=${() => nav("/shares")}><${Icon} name="link" size=${15} /> Manage shares</button>`}
           <button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>
+          ${me.user.role === "admin" && html`<button class=${navCls(route, "/governance")} onClick=${() => nav("/governance")}><${Icon} name="list-checks" size=${15} /> Core governance</button>`}
           <button class=${navCls(route, "/methodology")} onClick=${() => nav("/methodology")}><${Icon} name="book-open" size=${15} /> Methodology</button>
         </div>
         <div class="nav-group nav-id" style=${{ marginTop: "auto" }}>
@@ -802,6 +804,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
 
       ${me.features && me.features.commentary && html`
         <${MetricCommentary} qid=${qid} sel=${sel} card=${c} />`}
+
+      <${MetricTrend} qid=${qid} />
 
       <div class="grid2" style=${{ marginTop: "var(--s4)", gap: "var(--s4)" }}>
         <div class="card" style=${{ padding: "var(--s5)" }}>

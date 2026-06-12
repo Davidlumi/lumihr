@@ -554,3 +554,137 @@ window.cutLabelOf = function (cut, cuts) {
   }
   return "All peers";
 };
+
+/* ===================== versioning & governance (2026-06-12) ===============
+   MetricTrend: the same question version across data periods. Comparability
+   breaks are ENFORCED: each segment draws separately and a visible reset
+   divider sits between segments — never a continuous line across a break. */
+window.MetricTrend = function ({ qid }) {
+  const [t, setT] = useState(null);
+  useEffect(() => { setT(null); api("/api/trend/" + qid).then(setT).catch(() => setT(false)); }, [qid]);
+  if (!t || t.periods < 2) return null;   // one period = nothing to trend yet
+  const pts = t.segments.flat();
+  const vals = pts.map(p => p.p50 != null ? p.p50 : p.modal_pct).filter(v => v != null);
+  if (!vals.length) return null;
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+  const W = 640, H = 120, PAD = 34;
+  const xStep = (W - PAD * 2) / Math.max(1, pts.length - 1);
+  let xi = 0;
+  const segs = t.segments.map(seg => seg.map(p => {
+    const v = p.p50 != null ? p.p50 : p.modal_pct;
+    const pt = { x: PAD + xi * xStep, y: H - 28 - ((v - lo) / span) * (H - 56), v, p };
+    xi += 1;
+    return pt;
+  }));
+  return html`
+    <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+      <h2 class="section-title">Across data periods</h2>
+      ${t.breaks.length > 0 && html`
+        <div class="caption" style=${{ marginBottom: "6px" }}>
+          ⚠ This question changed materially (${t.breaks.map(b => b.release_id).join(", ")}) —
+          values either side of the break aren't comparable, so the trend resets rather than joining up.
+        </div>`}
+      <svg viewBox=${"0 0 " + W + " " + H} style=${{ width: "100%", maxWidth: W + "px" }}>
+        ${segs.map((seg, si) => html`
+          <g key=${si}>
+            ${seg.length > 1 && html`<polyline fill="none" stroke="var(--blue)" stroke-width="2"
+              points=${seg.map(d => d.x + "," + d.y).join(" ")} />`}
+            ${seg.map((d, i) => html`
+              <g key=${i}>
+                <circle cx=${d.x} cy=${d.y} r="4" fill="var(--blue)" />
+                <text x=${d.x} y=${d.y - 9} text-anchor="middle" font-size="10" fill="var(--ink-soft)">${fmtValue(d.v, null)}</text>
+                <text x=${d.x} y=${H - 8} text-anchor="middle" font-size="10" fill="var(--ink-soft)">${d.p.period}</text>
+              </g>`)}
+          </g>`)}
+        ${segs.slice(0, -1).map((seg, si) => {
+          // every segment boundary IS a comparability break by construction
+          const xBreak = (seg[seg.length - 1].x + (segs[si + 1] ? segs[si + 1][0].x : seg[seg.length - 1].x)) / 2;
+          return html`
+            <g key=${"b" + si}>
+              <line x1=${xBreak} y1="10" x2=${xBreak} y2=${H - 22} stroke="var(--unfavourable)"
+                stroke-width="1.5" stroke-dasharray="4 3" />
+              <text x=${xBreak} y=${H - 26} text-anchor="middle" font-size="9" fill="var(--unfavourable)">reset</text>
+            </g>`;
+        })}
+      </svg>
+      <div class="caption">Peer median by collection period · question ${t.question_version || ""}. A reset marks a
+        comparability break — the question changed, so a single line would splice incomparable data.</div>
+    </div>`;
+};
+
+/* Admin read surface: current release, history, change log, backlog. The
+   backlog QUEUES for a release — nothing here changes the live core. */
+window.GovernancePage = function ({ me }) {
+  const [g, setG] = useState(null);
+  const [err, setErr] = useState(null);
+  const [title, setTitle] = useState("");
+  const refresh = () => api("/api/governance").then(setG).catch(e => setErr(e.message));
+  useEffect(() => { refresh(); }, []);
+  if (err) return html`<${EmptyState} icon="lock" title="Admins only" body=${err} />`;
+  if (!g) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const addBacklog = async () => {
+    if (!title.trim()) return;
+    await api("/api/governance/backlog", { method: "POST", body: { title } });
+    setTitle(""); refresh(); toast("Queued for a future release — the live core is unchanged.");
+  };
+  const ingest = async () => {
+    const r = await api("/api/governance/ingest-requests", { method: "POST", body: {} });
+    toast(r.ingested + " member request(s) pulled into the backlog."); refresh();
+  };
+  return html`
+    <div style=${{ maxWidth: "880px" }}>
+      <h1 class="display-title">Core question-set governance</h1>
+      <p>The core changes slowly and deliberately: scheduled <b>releases</b>, a queued backlog, and one
+      emergency lane reserved for questions an external change has made factually wrong. Retired questions
+      are never deleted — history always resolves.</p>
+
+      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
+        <div class="row spread">
+          <div><b>Current release:</b> ${g.current_release ? g.current_release.release_id : "—"}
+            <span class="caption"> · released ${g.current_release && g.current_release.released_at}</span></div>
+          <div class="caption num">${g.core_size} live questions · ${g.required_size} required</div>
+        </div>
+        ${g.current_release && g.current_release.notes && html`<div class="caption" style=${{ marginTop: "4px" }}>${g.current_release.notes}</div>`}
+      </div>
+
+      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Releases</h2>
+        <table class="data"><thead><tr><th>Release</th><th>Status</th><th>Released</th><th>Signed off</th></tr></thead>
+          <tbody>${g.releases.map(r => html`
+            <tr key=${r.release_id}><td><b>${r.release_id}</b></td><td>${r.status}</td>
+              <td class="num">${r.released_at}</td><td>${r.signed_off_by || "—"}</td></tr>`)}
+          </tbody></table>
+      </div>
+
+      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Change log</h2>
+        ${g.changelog.length === 0 ? html`<div class="caption">No changes yet.</div>` : html`
+          <table class="data"><thead><tr><th>Release</th><th>Lane</th><th>Type</th><th>Question</th><th>Detail</th></tr></thead>
+            <tbody>${g.changelog.map(c => html`
+              <tr key=${c.id}><td>${c.release_id || "—"}</td>
+                <td>${c.lane === "emergency" ? html`<span class="chip warn">emergency</span>` : c.lane}</td>
+                <td>${c.change_type}</td><td class="caption">${c.question_id || "—"}</td>
+                <td class="caption">${c.detail}</td></tr>`)}
+            </tbody></table>`}
+      </div>
+
+      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s5)" }}>
+        <div class="row spread">
+          <h2 class="section-title">Backlog (queued for a release — never auto-applied)</h2>
+          <button class="btn small" onClick=${ingest}>Pull in member requests</button>
+        </div>
+        <div class="row" style=${{ gap: "8px", margin: "8px 0" }}>
+          <input style=${{ flex: 1, height: "34px", padding: "0 10px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
+            placeholder="Add a candidate change for a future release…" value=${title}
+            onInput=${e => setTitle(e.target.value)} />
+          <button class="btn small primary" onClick=${addBacklog}>Queue it</button>
+        </div>
+        ${g.backlog.length === 0 ? html`<div class="caption">Backlog is empty.</div>` : html`
+          <table class="data"><thead><tr><th>Item</th><th>Source</th><th>Status</th><th>Added</th></tr></thead>
+            <tbody>${g.backlog.map(b => html`
+              <tr key=${b.id}><td>${b.title}</td><td class="caption">${b.source}</td>
+                <td>${b.status}</td><td class="num caption">${b.created_at}</td></tr>`)}
+            </tbody></table>`}
+      </div>
+    </div>`;
+};
