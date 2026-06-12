@@ -1378,3 +1378,38 @@ span (track included) is inset by the cap's angular size capF =
 where intended. Verdict word + "94 metrics" now centred INSIDE the
 gauge ("At market" replaces the cryptic "With", auto-shrinks to fit);
 legend is a 3-equal-column grid of nowrap pills. Presentation-only.
+
+## 2026-06-12 — Tile alignment + every category gets a market position
+
+David: the Pay tile was misaligned vs the rest, and Wellbeing/Recognition
+must show market position like the other five. Layout: the status chip now
+sits on its OWN row in every tile (it used to share the title row and wrap
+only when too wide — the source of the misalignment).
+
+POSITION FOR EVERY TILE, honestly: Wellbeing has zero polarised metrics in
+the score/value pool (its 8 scored questions are neutral remote-working
+policies; its 6 direction-bearing questions are the deliberately-unscored
+2026.1 additions) and Recognition has one. Two grades of verdict now exist:
+- market (unchanged): the strict, methodology-grade verdict, >= 5 distinct
+  polarised questions. The overall arc, signals, chips and gap register are
+  untouched (arc pool still 94).
+- position (new, what tiles render): the strict verdict when present;
+  otherwise an INDICATIVE verdict from combined polarised + practice
+  evidence, basis + evidence counts disclosed in the chip tooltip.
+Practice evidence = positions.practice_position_items(): the org's presence
+status (practice_status -> STATUS_POINTS, the established single source of
+truth) percentile-ranked against the peer status distribution from the SAME
+stored block. Neutral questions never position; N/A is never evidence;
+multi_select excluded (option shares can't reconstruct per-org statuses);
+scored questions stay with the score layer. LUMI_TILE_MIN_POSITIONED
+(default 1) is David-tunable. Live: Wellbeing = indicative "above" from 4
+practice positions (EAP/finwell/screening/strategy; the N/A budget answer
+correctly excluded), Recognition = indicative "at" from its single metric.
+qa_hero grew 30 -> 42 checks (strict floor intact, basis disclosure,
+N/A/neutral/multi/scored refusals, arc-pool isolation).
+
+NOTE (debugging artefact, not product): the demo seed contains BOTH
+"Thornbridge Advisory plc" and "Thornbridge Retail Group plc" — the demo
+org is Retail Group. A stray EMPTY server/lumi.db was accidentally created
+by an ad-hoc sqlite3.connect during diagnosis; the real DB is ./lumi.db at
+the repo root. The stray file is safe to delete.

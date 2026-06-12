@@ -206,7 +206,12 @@ function SignalsPanel({ signals, locked, contribution }) {
 }
 
 function CategoryTile({ d }) {
-  const verdict = d.market ? d.market.verdict : null;
+  const post = d.position || d.market;
+  const verdict = post ? post.verdict : null;
+  const ev = d.position_evidence;
+  const evNote = ev ? ("based on " + (ev.polarised + ev.practice) + " positioned metric" +
+    ((ev.polarised + ev.practice) === 1 ? "" : "s") +
+    (d.position_basis === "indicative" ? " — indicative" : "")) : "";
   // pay-positioning traffic light (David, 2026-06-12): at market = green
   // (aligned), above = red (premium cost), below = amber (lagging)
   const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
@@ -218,11 +223,9 @@ function CategoryTile({ d }) {
   const dot = d.dot;
   return html`
     <div class=${"card cat-tile " + vCls} onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
-      <div class="row spread">
-        <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
-          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
-        <span class=${"chip tile-chip " + chipCls}>${chip}</span>
-      </div>
+      <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
+        <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
+      <span class=${"chip tile-chip " + chipCls} style=${{ alignSelf: "flex-start" }} title=${evNote}>${chip}</span>
       ${dot != null ? html`
         <div class="tile-band" style=${{ margin: 0 }}>
           <div class="tile-band-mid"></div>

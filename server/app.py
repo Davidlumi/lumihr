@@ -61,6 +61,9 @@ COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # requir
 _band = os.environ.get("LUMI_MARKET_BAND", "25-75").split("-")
 MARKET_BAND_LOW, MARKET_BAND_HIGH = float(_band[0]), float(_band[1])
 DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
+# minimum distinct positioned questions for a tile's INDICATIVE verdict when
+# the strict floor isn't met (David-tunable; evidence counts ship to the UI)
+TILE_MIN_POSITIONED = int(os.environ.get("LUMI_TILE_MIN_POSITIONED", "1"))
 VERDICT_MARGIN = float(os.environ.get("LUMI_VERDICT_MARGIN", "0.15"))
 UNCOMMON_PCT = float(os.environ.get("LUMI_UNCOMMON_PCT", "20"))
 
@@ -1235,8 +1238,14 @@ async def overview(request: Request):
         if q.sub_power and q.sub_power not in sec_order:
             sec_order.append(q.sub_power)
     sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in org_visible_questions(org).values() if q.sub_power == x))
+    # direction-bearing practice evidence (unscored additions): feeds ONLY the
+    # tile rollup below — never the overall arc, signals, chips or register
+    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                             payloads(), org_answers_for(org),
+                                             make_entitled(user, org), tb)
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
-                            DOMAIN_MIN_POLARISED, VERDICT_MARGIN, UNCOMMON_PCT)
+                            DOMAIN_MIN_POLARISED, VERDICT_MARGIN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED)
     reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
     hero["action_gaps"] = sum(1 for r in reg_rows
                               if r.get("org_answered") and r.get("in_place") is False and (r.get("gap") or 0) > 0)
@@ -1250,13 +1259,16 @@ async def overview(request: Request):
     _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
     sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers)
     dots = signals_mod.domain_dots(items)
+    prac_dots = signals_mod.domain_dots(prac_items)
     sig_by_cat = {}
     for sg in sigs:
         q = org_visible_questions(org).get(sg["question_id"])
         if q:
             sig_by_cat.setdefault(q.sub_power, []).append(sg["lens"])
     for d in hero["domains"]:
-        d["dot"] = dots.get(d["name"])
+        # polarised dot when the domain has one; practice evidence fills in
+        # only where the score/value pool says nothing (Wellbeing today)
+        d["dot"] = dots.get(d["name"]) if dots.get(d["name"]) is not None else prac_dots.get(d["name"])
         d["signal_lenses"] = sig_by_cat.get(d["name"], [])
     # structured leads/lags for the chip rows (the sentence callouts stay for
     # the board pack/share surfaces)

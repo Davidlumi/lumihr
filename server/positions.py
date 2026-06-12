@@ -171,6 +171,62 @@ def position_items(org_id, cut, questions, payloads, org_answers,
     return items
 
 
+def practice_position_items(org_id, cut, questions, payloads, org_answers,
+                            entitled, twin_blocks_by_q=None):
+    """Direction-bearing PRACTICE positions for questions the score layer
+    cannot rank (unscored — e.g. new-release additions). The org's presence
+    status (practice_status -> STATUS_POINTS) is ranked against the peer
+    status distribution reconstructed from the SAME stored block, weighted
+    by option share. Honest by construction: neutral questions never
+    position; N/A / unknown statuses are never evidence; multi_select is
+    excluded (an option distribution cannot reconstruct per-org statuses).
+    Feeds ONLY the home-tile rollup — the overall arc, signals, chips and
+    the gap register keep the score/value pool untouched."""
+    from aggregate import practice_status, STATUS_POINTS
+    items = []
+    twin_blocks_by_q = twin_blocks_by_q or {}
+    for qid, q in questions.items():
+        if not entitled(q):
+            continue
+        if q.polarity not in ("higher_is_better", "lower_is_better"):
+            continue
+        if q.type not in ("single_select", "yes_no") or q.is_scored:
+            continue                       # scored questions already rank (or
+        raw = org_answers.get((qid, ""))   # legitimately refuse to)
+        if raw in (None, ""):
+            continue
+        st = practice_status(q, raw)
+        if st not in STATUS_POINTS:
+            continue                       # N/A / don't-know is never evidence
+        p = payloads.get(qid)
+        if p is None:
+            continue
+        blk, cut_label = block_for(p, cut, twin_blocks_by_q.get(qid))
+        if is_suppressed(blk):
+            continue
+        mine = STATUS_POINTS[st]
+        below = equal = total = 0.0
+        for o in blk.get("options") or []:
+            ost = practice_status(q, o["label"])
+            if ost not in STATUS_POINTS:
+                continue
+            w = o.get("pct") or 0.0
+            total += w
+            pts = STATUS_POINTS[ost]
+            if pts < mine:
+                below += w
+            elif pts == mine:
+                equal += w
+        if total <= 0:
+            continue
+        r = 100.0 * (below + equal / 2.0) / total
+        it = _item(q, None, mine, r, blk, cut_label, "practice")
+        it["value_display"] = st.replace("_", " ")
+        it["org_answer_label"] = raw
+        items.append(it)
+    return items
+
+
 def _item(q, row, value, rank, blk, cut_label, kind):
     # score items live on the direction-corrected points scale (higher = better)
     if kind == "score":
@@ -636,22 +692,42 @@ def _prev_summary(pool, uncommon_pct):
 
 
 def hero_signals(items, prev_items, section_order, band_low, band_high,
-                 domain_min, margin, uncommon_pct):
+                 domain_min, margin, uncommon_pct, practice_items=None, tile_min=1):
     """The hero's two signals + per-domain rollups. Overall market position is
-    computed from the FULL polarised pool, never an average of domain ratings."""
+    computed from the FULL polarised pool, never an average of domain ratings.
+
+    Two grades of domain verdict (David, 2026-06-12):
+    - market: the strict, methodology-grade verdict — needs >= domain_min
+      DISTINCT polarised questions. Unchanged.
+    - position: what the home tile shows. The strict verdict when it exists;
+      otherwise an INDICATIVE one from the combined polarised + practice
+      evidence (>= tile_min distinct questions), with its basis and evidence
+      counts disclosed so thin data is never dressed up as a census."""
     pol_items = [i for i in items if i["polarity"] in ("higher_is_better", "lower_is_better")]
+    practice_items = practice_items or []
     domains = []
     for sec in section_order:
         d_pol = [i for i in pol_items if i.get("subpower") == sec]
         d_prev = [i for i in prev_items if i.get("subpower") == sec]
+        d_prac = [i for i in practice_items if i.get("subpower") == sec]
         # eligibility counts DISTINCT polarised questions, not data points —
         # matrix rows must not let a 3-question domain earn a market verdict
         d_pol_questions = len({i["question_id"] for i in d_pol})
+        strict = _pool_verdict(d_pol, band_low, band_high, margin) if d_pol_questions >= domain_min else None
+        position, basis = strict, ("market" if strict else None)
+        if strict is None:
+            combined = d_pol + d_prac
+            if len({i["question_id"] for i in combined}) >= tile_min and combined:
+                position, basis = _pool_verdict(combined, band_low, band_high, margin), "indicative"
         domains.append({
             "name": sec,
-            "market": _pool_verdict(d_pol, band_low, band_high, margin) if d_pol_questions >= domain_min else None,
+            "market": strict,
             "market_eligible": d_pol_questions >= domain_min,
             "polarised_comparable": len(d_pol),
+            "position": position,
+            "position_basis": basis,
+            "position_evidence": ({"polarised": len(d_pol), "practice": len(d_prac)}
+                                  if position is not None else None),
             "prevalence": _prev_summary(d_prev, uncommon_pct),
         })
     return {
@@ -659,5 +735,6 @@ def hero_signals(items, prev_items, section_order, band_low, band_high,
         "prevalence": _prev_summary(prev_items, uncommon_pct),
         "domains": domains,
         "config": {"band_low": band_low, "band_high": band_high,
-                   "domain_min": domain_min, "margin": margin, "uncommon_pct": uncommon_pct},
+                   "domain_min": domain_min, "margin": margin, "uncommon_pct": uncommon_pct,
+                   "tile_min": tile_min},
     }

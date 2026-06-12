@@ -125,11 +125,32 @@ dm = {d["name"]: d for d in hero["domains"]}
 check("Pay / Incentives / Benefits / Time Off / Governance carry a market verdict",
       all(dm[x]["market"] is not None for x in ("Pay", "Incentives", "Benefits", "Time Off", "Governance")),
       {k: (dm[k]["market"] or {}).get("verdict") for k in dm})
-check("Wellbeing / Recognition are prevalence-only (below the polarised floor)",
+check("Wellbeing / Recognition stay below the strict polarised floor (market None)",
       dm["Wellbeing"]["market"] is None and dm["Recognition"]["market"] is None,
       {k: dm[k]["polarised_comparable"] for k in ("Wellbeing", "Recognition")})
+# tile positions (David, 2026-06-12): every tile shows a market position; when
+# the strict floor isn't met the verdict is INDICATIVE — combined polarised +
+# direction-bearing practice evidence, basis + counts disclosed
+check("every domain carries a tile position", all(d.get("position") is not None for d in hero["domains"]),
+      {d["name"]: d.get("position_basis") for d in hero["domains"]})
+check("strict domains keep basis=market and position==market verdict",
+      all(d["position_basis"] == "market" and d["position"]["verdict"] == d["market"]["verdict"]
+          for d in hero["domains"] if d["market"] is not None))
+check("sub-floor domains disclose basis=indicative + evidence counts",
+      all(d["position_basis"] == "indicative" and d.get("position_evidence") is not None
+          for d in hero["domains"] if d["market"] is None))
+check("Wellbeing indicative evidence is practice-based and excludes the N/A answer (4 of 6 direction-bearing)",
+      dm["Wellbeing"]["position_evidence"] == {"polarised": 0, "practice": 4},
+      dm["Wellbeing"].get("position_evidence"))
+check("Recognition indicative evidence is its single polarised metric",
+      dm["Recognition"]["position_evidence"] == {"polarised": 1, "practice": 0},
+      dm["Recognition"].get("position_evidence"))
 check("every domain still gets a prevalence summary", all(d["prevalence"] is not None for d in hero["domains"]))
-check("threshold is config", hero["config"]["domain_min"] == 5)
+check("threshold is config", hero["config"]["domain_min"] == 5 and hero["config"]["tile_min"] == 1)
+# practice evidence never bleeds into the overall arc (the signed census)
+check("overall arc pool is unchanged by practice evidence (score/value items only)",
+      m["pool"] == sum(1 for d in hero["domains"] for _ in range(d["polarised_comparable"])),
+      m["pool"])
 pool_sum = sum((d["market"]["pool"] if d["market"] else 0) for d in hero["domains"])
 check("overall computed from the FULL pool, not domain average (overall pool %d >= sum of eligible domain pools %d)"
       % (m["pool"], pool_sum), m["pool"] >= pool_sum)
@@ -148,7 +169,36 @@ check("no answers -> market None, prevalence None, domain shows insufficient",
       empty["market"] is None and empty["prevalence"] is None and empty["domains"][0]["market"] is None)
 one = pos.hero_signals([{"polarity": "higher_is_better", "percentile": 90, "subpower": "Pay", "question_id": "x"}],
                        [], ["Pay"], BAND_LOW, BAND_HIGH, 5, MARGIN, 20)
-check("a single answered metric never earns a domain verdict (below domain_min)", one["domains"][0]["market"] is None)
+check("a single answered metric never earns a STRICT domain verdict (below domain_min)", one["domains"][0]["market"] is None)
+check("...but it does earn a disclosed indicative tile position",
+      one["domains"][0]["position"] is not None and one["domains"][0]["position_basis"] == "indicative")
+
+# practice-position honesty rules (fixtures)
+class _FQ:
+    id = "fq"; type = "yes_no"; is_scored = False; polarity = "higher_is_better"
+    sub_power = "Pay"; superpower = "Reward"; display_title = "Do you offer X?"
+    options = [{"label": "Yes", "code": "YES"}, {"label": "No", "code": "NO"}]
+    na_handling = {}; unit = None; scoring_config = {}; score_map = {}
+    lumi_tier = None; is_required = False; sub_power_order = 1; status = "active"; module = None
+    category = "Practice"
+    def unit_block(self): return {}
+_blk = {"n": 100, "options": [{"label": "Yes", "pct": 70.0}, {"label": "No", "pct": 30.0}]}
+_pay = {"fq": {"all": _blk}}
+def _ppi(q, ans):
+    return pos.practice_position_items("o", {"dim": "all"}, {"fq": q}, _pay,
+                                       {("fq", ""): ans}, lambda q: True)
+q = _FQ()
+got = _ppi(q, "Yes")
+check("practice position ranks presence against the peer block (Yes vs 70%% adoption -> P65)",
+      len(got) == 1 and got[0]["kind"] == "practice" and abs(got[0]["percentile"] - 65.0) < 0.1,
+      got and got[0].get("percentile"))
+check("an N/A answer is never practice evidence", _ppi(q, "Not applicable") == [])
+qn = _FQ(); qn.polarity = "neutral"
+check("a neutral question never produces a practice position", _ppi(qn, "Yes") == [])
+qs2 = _FQ(); qs2.is_scored = True
+check("scored questions are left to the score layer", _ppi(qs2, "Yes") == [])
+qm = _FQ(); qm.type = "multi_select"
+check("multi_select never produces a practice position", _ppi(qm, "Yes") == [])
 
 print()
 print("=" * 100)
