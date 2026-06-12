@@ -108,16 +108,17 @@ function App() {
 
   let page = null, m;
   if (route.startsWith("/superpower/")) {
-    const [sp, qs] = route.slice("/superpower/".length).split("?");
-    const params = new URLSearchParams(qs || "");
+    // legacy URLs (pre-2026.1 terminology) redirect to the category route
+    const [, qs] = route.slice("/superpower/".length).split("?");
+    const p = new URLSearchParams(qs || "");
+    nav("/reward" + (p.get("sub") ? "?cat=" + encodeURIComponent(p.get("sub")) : ""));
+    page = null;
+  } else if (route.startsWith("/reward")) {
+    const qs = route.includes("?") ? route.slice(route.indexOf("?") + 1) : "";
+    const params = new URLSearchParams(qs);
     const focusQ = params.get("focus");
-    const subF = params.get("sub");
-    if (!activeSupers.includes(decodeURIComponent(sp))) {
-      page = html`<${EmptyState} title="That area isn't part of your benchmark"
-        body="Your benchmark covers reward." action=${html`<button class="btn small" onClick=${() => nav("/superpower/Reward")}>Go to your reward benchmark</button>`} />`;
-    } else {
-      page = html`<${SuperpowerPage} ...${pageProps} sp=${decodeURIComponent(sp)} focusQ=${focusQ} subF=${subF} />`;
-    }
+    const subF = params.get("cat");
+    page = html`<${SuperpowerPage} ...${pageProps} sp="Reward" focusQ=${focusQ} subF=${subF} />`;
   } else if ((m = route.match(/^\/metric\/(.+)$/))) {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
@@ -140,7 +141,7 @@ function App() {
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
 
-  const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") ||
+  const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") || route.startsWith("/reward") ||
     route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/gap-register") || route === "" || route === "/";
 
   return html`
@@ -157,7 +158,7 @@ function App() {
         <div class="nav-group">
           <div class="nav-label">${scope.focused ? "Your reward benchmark" : "Benchmarks"}</div>
           ${scope.focused && html`
-            <button class=${"nav-item" + (route.startsWith("/superpower/Reward") && !route.includes("sub=") ? " active" : "")} onClick=${() => nav("/superpower/Reward")}>
+            <button class=${"nav-item" + (route.startsWith("/reward") && !route.includes("cat=") ? " active" : "")} onClick=${() => nav("/reward")}>
               <${SpIcon} sp="Reward" /> All reward
               ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => !q.locked).length}</span>`}
             </button>
@@ -244,12 +245,12 @@ window.SectionNav = function ({ route, qIndex, gapCue }) {
   if (!qIndex) return null;
   const secs = sectionList(qIndex);
   return html`${secs.map(sec => {
-    const active = route.includes("sub=" + encodeURIComponent(sec.name));
+    const active = route.includes("cat=" + encodeURIComponent(sec.name));
     const cued = gapCue && gapCue.section === sec.name;
     return html`
       <button key=${sec.name} class=${"nav-item" + (active ? " active" : "")}
         style=${{ paddingLeft: "var(--s6)" }}
-        onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(sec.name))}>
+        onClick=${() => nav("/reward?cat=" + encodeURIComponent(sec.name))}>
         ${sec.name}
         ${cued && html`<span class="gap-cue" title=${gapCue.count + " practices your peers commonly have that you don't — your biggest opportunity area"}></span>`}
         <span class="nav-count">${sec.count}</span>
@@ -607,7 +608,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
             ${role === "admin" && !profiled && html`<button class="btn primary" onClick=${() => nav("/profile")}>Tell us about your organisation</button>`}
             ${role === "admin" && profiled && html`<button class="btn primary" onClick=${() => nav("/submission")}>Review the data terms</button>`}
             ${role === "admin" && html`<button class="btn" onClick=${() => nav("/team")}>Invite your team</button>`}
-            ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/superpower/Reward")}>Explore the benchmark</button>`}
+            ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/reward")}>Explore the benchmark</button>`}
           </div>
         </div>
       </div>`;
@@ -719,7 +720,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const chart = normaliseChart(c, chartSel);
   const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref", t); } catch (e) {} };
   const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
-  const backTo = "/superpower/" + c.superpower + (c.subpower ? "?sub=" + encodeURIComponent(c.subpower) : "");
+  const backTo = "/reward" + (c.subpower ? "?cat=" + encodeURIComponent(c.subpower) : "");
   const goBack = () => {
     let hasReturn = false;
     try { hasReturn = !!sessionStorage.getItem("lumi-return"); } catch (e) {}
@@ -827,7 +828,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
         </div>
       </div>
       <div class="caption" style=${{ margin: "var(--s4) 0" }}>
-        From <a href=${"#" + backTo}>${c.subpower || c.superpower}</a> in your reward benchmark.
+        From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category of your reward benchmark.
       </div>
     </div>`;
 }

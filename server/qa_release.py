@@ -50,6 +50,10 @@ check("every core question carries version + release_entered", stamped == 0, sta
 check("data periods carry the release they were aggregated under",
       conn.execute("SELECT COUNT(*) FROM snapshots WHERE release_id IS NULL").fetchone()[0] == 0)
 
+print("== module invariant (2026.1) ==")
+bad_mod = conn.execute("SELECT COUNT(*) FROM questions WHERE module IS NOT NULL AND is_required=1").fetchone()[0]
+check("sector-module questions are never required (gate stays org-independent)", bad_mod == 0, bad_mod)
+
 print("== fixture release: add required + retire + break ==")
 prev_current = rel.current_release(conn)["release_id"]
 flip = [r[0] for r in conn.execute("SELECT id FROM questions WHERE superpower='Reward' AND is_required=0 "

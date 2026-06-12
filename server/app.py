@@ -186,6 +186,22 @@ def maybe_send_clock_reminder(conn, org, state):
         % (org["name"], state["core_pct"], "7 days" if due == "7d" else "day", ", ".join(admins)))
 
 
+TRONC_SECTORS = {"Hospitality, Leisure & Travel", "Retail & Consumer Goods"}
+
+
+def org_visible_questions(org):
+    """The member-facing question set for ONE organisation: the live core
+    minus sector-module metrics the org isn't eligible for. 2026.1: the 5
+    tronc/tips metrics are a hospitality module — shown to hospitality/retail
+    organisations, hidden otherwise. Module questions are never is_required
+    (invariant, asserted by qa_release) so the unlock gate is org-independent."""
+    qs = visible_questions()
+    ind = org["industry"] if org is not None else None
+    if ind in TRONC_SECTORS:
+        return qs
+    return {qid: q for qid, q in qs.items() if not q.module}
+
+
 def visible_questions():
     """The question set every user-facing route serves. THE focus filter.
     Retired questions (versioning, 2026-06-12) leave the live member
@@ -584,7 +600,7 @@ async def me(request: Request):
     conn = get_conn()
     completion = completion_pct(conn, org)
     snaps = [dict(r) for r in conn.execute("SELECT snapshot_id, snapshot_date, collection_window, status FROM snapshots ORDER BY snapshot_id")]
-    vis = visible_questions()
+    vis = org_visible_questions(org)
     contrib = contribution_state(conn, org)
     # (sticky-unlock stamping now happens centrally in org_unlocked)
     maybe_send_clock_reminder(conn, org, contrib)
@@ -788,7 +804,7 @@ async def metric_trend(qid: str, request: Request):
     returned as SEGMENTS split at each break, and the client never draws a
     line across a segment boundary."""
     user, org = require_user(request)
-    q = visible_questions().get(qid)
+    q = org_visible_questions(org).get(qid)
     if q is None:
         raise HTTPException(404, "Unknown metric")
     conn = get_conn()
@@ -930,7 +946,7 @@ async def questions_index(request: Request):
     answers = org_answers_for(org)
     answered_q = {k[0] for k in answers}
     out = []
-    for qid, q in visible_questions().items():
+    for qid, q in org_visible_questions(org).items():
         p = payloads().get(qid, {})
         out.append({
             "id": qid, "title": q.display_title, "superpower": q.superpower,
@@ -955,7 +971,7 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
     contrib = contribution_state(conn, org)
     sample = reduced_sample_ids() if contrib["reduced"] else None
     cards = []
-    for qid, q in visible_questions().items():
+    for qid, q in org_visible_questions(org).items():
         if q.superpower != superpower:
             continue
         p = payloads().get(qid)
@@ -980,7 +996,7 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
 async def single_benchmark(qid: str, request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    q = visible_questions().get(qid)
+    q = org_visible_questions(org).get(qid)
     p = payloads().get(qid)
     if q is None or p is None:
         raise HTTPException(404, "Unknown metric")
@@ -1000,7 +1016,7 @@ async def single_benchmark(qid: str, request: Request):
     # opportunity panel for £-model metrics
     mm = next((m for m in pos.MONEY_METRICS if m["question_id"] == qid), None)
     if mm and not card["locked"] and q.polarity != "neutral":
-        money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
+        money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
                                         org_answers_for(org), cut, {qid: tb.get(qid)} if tb else None)
         card["opportunity"] = next((i for i in money["items"] if i["question_id"] == qid), None)
         card["assumptions"] = money["assumptions"]
@@ -1030,7 +1046,7 @@ def build_items(request, org, user, cut):
     conn = get_conn()
     entitled = make_entitled(user, org)
     tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") in ("twin", "group") else None
-    return pos.position_items(org["org_id"], cut, visible_questions(), payloads(),
+    return pos.position_items(org["org_id"], cut, org_visible_questions(org), payloads(),
                               org_answers_for(org), entitled, tb), tb
 
 
@@ -1042,20 +1058,20 @@ async def overview(request: Request):
     contrib = contribution_state(conn, org)
     items, tb = build_items(request, org, user, cut)
     summary = pos.overview_summary(items)
-    prev_items = pos.prevalence_items(org["org_id"], cut, visible_questions(), payloads(),
+    prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(),
                                       org_answers_for(org), make_entitled(user, org), tb)
     sec_order = []
-    for q in visible_questions().values():
+    for q in org_visible_questions(org).values():
         if q.sub_power and q.sub_power not in sec_order:
             sec_order.append(q.sub_power)
-    sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in visible_questions().values() if q.sub_power == x))
+    sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in org_visible_questions(org).values() if q.sub_power == x))
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
                             DOMAIN_MIN_POLARISED, VERDICT_MARGIN, UNCOMMON_PCT)
     reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
     hero["action_gaps"] = sum(1 for r in reg_rows
                               if r.get("org_answered") and r.get("in_place") is False and (r.get("gap") or 0) > 0)
-    co = pos.callouts(items, visible_questions(), k=3)
-    money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
+    co = pos.callouts(items, org_visible_questions(org), k=3)
+    money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
                                     org_answers_for(org), cut, tb)
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
@@ -1098,7 +1114,7 @@ async def overview(request: Request):
 async def my_data(request: Request):
     user, org = require_user(request)
     answers = org_answers_for(org)
-    questions = visible_questions()
+    questions = org_visible_questions(org)
     rows = []
     for (qid, row_id), value in answers.items():
         q = questions.get(qid)
@@ -1169,7 +1185,7 @@ def starter_layout(request, org, user):
 async def get_myview(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    vis = visible_questions()
+    vis = org_visible_questions(org)
 
     def keep(layout):
         return [slot for slot in (layout or []) if slot.get("question_id") in vis]
@@ -1277,7 +1293,7 @@ def build_gap_register(request, user, org, cut):
     entitled = make_entitled(user, org)
     tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") in ("twin", "group") else None
     sector_cut = {"dim": "industry", "value": org["industry"]} if org["industry"] else None
-    return pos.gap_register(conn, org, visible_questions(), payloads(), org_answers_for(org),
+    return pos.gap_register(conn, org, org_visible_questions(org), payloads(), org_answers_for(org),
                             cut, sector_cut, entitled, tb)
 
 
@@ -1295,7 +1311,7 @@ async def gap_register_csv(request: Request):
     reg = build_gap_register(request, user, org, cut)
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["Superpower", "Sub-power", "Category", "Practice / policy", "Tier",
+    w.writerow(["Benchmark", "Category", "Type", "Practice / policy", "Tier",
                 "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
@@ -1325,7 +1341,7 @@ async def analyst(request: Request):
         return {"answer": "Your full benchmark is paused until your reward data is complete — "
                           "finish your submission and I'll have every comparison ready for you again.",
                 "chips": [], "matched": [], "reduced": True}
-    vis = visible_questions()
+    vis = org_visible_questions(org)
     qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
     if qids and retrieval.distinctive_coverage(question, qids) < 0.34:
         qids = []   # fuzzy noise, not real coverage — offer the request path
@@ -1550,6 +1566,8 @@ OWNERSHIP = ["Private (Founder/Family)", "Private Equity-backed", "Public Listed
 
 
 def completion_basis_questions():
+    # GLOBAL by design: sector-module questions are never is_required
+    # (qa_release asserts it), so the unlock denominator is org-independent.
     questions = visible_questions()
     if COMPLETION_BASIS == "required":
         basis = [q for q in questions.values() if q.is_required]
@@ -1774,7 +1792,7 @@ async def put_org_profile(request: Request):
 async def submission_state(request: Request):
     user, org = require_editor(request)
     conn = get_conn()
-    questions = visible_questions()
+    questions = org_visible_questions(org)
     answered = {r["question_id"] for r in conn.execute(
         "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=?",
         (org["org_id"], CURRENT_SNAPSHOT))}
@@ -1882,7 +1900,7 @@ async def submission_section(section: str, request: Request):
     unit symbol, N/A capability and the soft-warn thresholds so the client
     can show the unit inline and explain a warning's range."""
     user, org = require_editor(request)
-    questions = visible_questions()
+    questions = org_visible_questions(org)
     known = {(q.sub_power or "General") for q in questions.values()}
     if section not in known:
         raise HTTPException(404, "This section isn't available.")
@@ -2211,7 +2229,7 @@ async def confirm_value(request: Request):
 async def validate_all(request: Request):
     user, org = require_editor(request)
     conn = get_conn()
-    questions = visible_questions()
+    questions = org_visible_questions(org)
     drafts = {}
     for r in conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)):
         drafts[(r["question_id"], r["matrix_row_id"] or "")] = r["value"]
@@ -2291,7 +2309,7 @@ def build_commentary_payload(conn, org, user, qid, dim, value):
     """The grounded payload: exactly the figures the metric page shows for
     this cut, nothing else. Shared by the endpoint and the adversarial QA
     harness so the harness attacks the real path."""
-    q = visible_questions().get(qid)
+    q = org_visible_questions(org).get(qid)
     p = payloads().get(qid)
     if q is None or p is None:
         return None
@@ -2538,9 +2556,9 @@ async def share_data(token: str, request: Request):
     if cut.get("dim") in ("twin", "group"):
         cut = {"dim": "all"}  # bespoke groups never exposed on anonymous links
     answers = pos.get_org_answers(conn, org["org_id"], CURRENT_SNAPSHOT)
-    items = pos.position_items(org["org_id"], cut, visible_questions(), payloads(), answers, entitled, None)
+    items = pos.position_items(org["org_id"], cut, org_visible_questions(org), payloads(), answers, entitled, None)
     summary = pos.overview_summary(items)
-    co = pos.callouts(items, visible_questions(), k=3)
+    co = pos.callouts(items, org_visible_questions(org), k=3)
     cards = []
     layout_row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
                               (org["org_id"],)).fetchone()
@@ -2553,7 +2571,7 @@ async def share_data(token: str, request: Request):
         if qid in seen:
             continue
         seen.add(qid)
-        q = visible_questions().get(qid)
+        q = org_visible_questions(org).get(qid)
         p = payloads().get(qid)
         if q is None or p is None or not entitled(q):
             continue

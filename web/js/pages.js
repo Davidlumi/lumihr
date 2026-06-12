@@ -132,7 +132,7 @@ window.HeroSignals = function ({ hero, cut, cuts }) {
         <div style=${{ marginBottom: "var(--s3)" }}><${PrevLine} p=${hero.prevalence} compact=${true} /></div>
         <div class="domain-rows">
           ${hero.domains.map(d => html`
-            <div key=${d.name} class="domain-row" onClick=${() => nav("/superpower/Reward?sub=" + encodeURIComponent(d.name))}>
+            <div key=${d.name} class="domain-row" onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))}>
               <span class="domain-name">${d.name}</span>
               ${d.market ? html`<${MarketPill} m=${d.market} />` :
                 d.prevalence || d.polarised_comparable ? html`<span class="chip" title="Too few polarised metrics for an honest market verdict — practice comparison only">practice view</span>` :

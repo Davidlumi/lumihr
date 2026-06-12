@@ -394,7 +394,7 @@ window.CardDetail = function ({ card: c, onClose }) {
       ${c.definition && html`<p><b>Definition:</b> ${c.definition}</p>`}
       ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
       <div class="row" style=${{ marginTop: "var(--s3)" }}>
-        <${Chip}>${c.superpower}${c.subpower ? " · " + c.subpower : ""}<//>
+        <${Chip}>${c.subpower || c.superpower}<//>
         <${Chip}>${c.category}<//>
         <${Chip}>peer group: ${c.cut.label}, n=${c.n}<//>
       </div>

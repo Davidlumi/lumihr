@@ -87,8 +87,11 @@ positionable = [q for q in pol_qs if q.type in ("numeric", "matrix")
                 or (q.is_scored and q.type in ("single_select", "yes_no", "multi_select") and score_direction(q) != 0)]
 print("  coverage: %d polarised -> %d positionable, %d routed to prevalence (%s)" % (
     len(pol_qs), len(positionable), len(unmappable), Counter(q.type for q in unmappable)))
-check("87 polarised; 75 positionable; 12 unordered routed (matches the data census)",
-      len(pol_qs) == 87 and len(positionable) == 75 and len(unmappable) == 12)
+# 2026.1 census: +11 non-neutral new questions (87->98), +1 positionable
+# numeric (wellbeing budget, 75->76), +3 unordered selects routed (12->15) —
+# delta fully accounted for by the 14 additions; existing questions unchanged
+check("98 polarised; 76 positionable; 15 unordered routed (matches the data census)",
+      len(pol_qs) == 98 and len(positionable) == 76 and len(unmappable) == 15)
 fabricated = [(q.id, o["label"]) for q in unmappable for o in (q.options or [])
               if score_answer(q, o["label"]) is not None]
 check("no unordered polarised metric can produce a rank (no invented order)", not fabricated, fabricated[:2])
@@ -116,11 +119,14 @@ print("=" * 100)
 print("5. DOMAIN ELIGIBILITY + ROLLUP CONSTRUCTION")
 print("=" * 100)
 dm = {d["name"]: d for d in hero["domains"]}
-check("Pay / Benefits / Transparency carry a market verdict",
-      all(dm[x]["market"] is not None for x in ("Pay", "Benefits", "Transparency")))
-check("Incentives / Progression are practice-only (no market verdict)",
-      dm["Incentives"]["market"] is None and dm["Progression"]["market"] is None,
-      {k: dm[k]["polarised_comparable"] for k in ("Incentives", "Progression")})
+# 2026.1 domains: 5 of the 7 categories clear the 5-polarised floor;
+# Wellbeing (new questions, no data yet) and Recognition (1) are prevalence-only
+check("Pay / Incentives / Benefits / Time Off / Governance carry a market verdict",
+      all(dm[x]["market"] is not None for x in ("Pay", "Incentives", "Benefits", "Time Off", "Governance")),
+      {k: (dm[k]["market"] or {}).get("verdict") for k in dm})
+check("Wellbeing / Recognition are prevalence-only (below the polarised floor)",
+      dm["Wellbeing"]["market"] is None and dm["Recognition"]["market"] is None,
+      {k: dm[k]["polarised_comparable"] for k in ("Wellbeing", "Recognition")})
 check("every domain still gets a prevalence summary", all(d["prevalence"] is not None for d in hero["domains"]))
 check("threshold is config", hero["config"]["domain_min"] == 5)
 pool_sum = sum((d["market"]["pool"] if d["market"] else 0) for d in hero["domains"])
