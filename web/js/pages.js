@@ -128,8 +128,8 @@ function OverallArc({ market }) {
   };
   const segs = [];
   let acc = 0;
-  [["below", market.below, "var(--unfavourable)"], ["at", market.at, "var(--neutral-perf)"],
-   ["above", market.above, "var(--favourable)"]].forEach(([k, n, col]) => {
+  [["below", market.below, "var(--neutral-perf)"], ["at", market.at, "var(--favourable)"],
+   ["above", market.above, "var(--unfavourable)"]].forEach(([k, n, col]) => {
     if (!n) return;
     const f0 = acc / total + (acc ? GAP / 2 : 0);
     acc += n;
@@ -148,7 +148,7 @@ function OverallArc({ market }) {
         ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15"
           stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
         <text x="105" y="92" text-anchor="middle" class="arc-word" style=${{ font: "650 26px var(--font-head)" }}
-          fill=${market.verdict === "below" ? "var(--unfavourable)" : market.verdict === "above" ? "var(--favourable)" : "var(--neutral-perf)"}>${word}</text>
+          fill=${market.verdict === "below" ? "var(--neutral-perf)" : market.verdict === "above" ? "var(--unfavourable)" : "var(--favourable)"}>${word}</text>
         <text x="105" y="110" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${word === "With" ? "the market overall" : "market overall"}</text>
       </svg>
       <div class="arc-legend num ov-after">
@@ -201,10 +201,12 @@ function SignalsPanel({ signals, locked, contribution }) {
 
 function CategoryTile({ d }) {
   const verdict = d.market ? d.market.verdict : null;
-  const col = verdict === "below" ? "var(--unfavourable)" : verdict === "above" ? "var(--favourable)"
-    : verdict ? "var(--neutral-perf)" : "var(--you)";
+  // pay-positioning traffic light (David, 2026-06-12): at market = green
+  // (aligned), above = red (premium cost), below = amber (lagging)
+  const col = verdict === "below" ? "var(--neutral-perf)" : verdict === "above" ? "var(--unfavourable)"
+    : verdict ? "var(--favourable)" : "var(--you)";
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "at market" : "practice view";
-  const chipCls = verdict === "below" ? "chip-bad" : verdict === "above" ? "chip-good" : verdict ? "chip-mid" : "chip-practice";
+  const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
   const vCls = verdict === "below" ? "v-below" : verdict === "above" ? "v-above" : verdict ? "v-at" : "v-practice";
   const prev = d.prevalence || {};
   const dot = d.dot;
@@ -216,15 +218,15 @@ function CategoryTile({ d }) {
         <span class=${"chip tile-chip " + chipCls}>${chip}</span>
       </div>
       ${dot != null ? html`
-        <div class="tile-band">
+        <div class="tile-band" style=${{ margin: 0 }}>
           <div class="tile-band-mid"></div>
           <div class="band-tick"></div>
           <div class="tile-dot" style=${{ left: "calc(" + Math.min(97, Math.max(3, dot)) + "% - 6px)", background: col }}></div>
         </div>` : html`
-        <div class="tile-band">
+        <div class="tile-band" style=${{ margin: 0 }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>`}
-      <div class="row spread" style=${{ marginTop: "7px" }}>
+      <div class="row spread" style=${{ minHeight: "18px" }}>
         <span class="caption num">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool + " majority practices" : ""}</span>
         ${(d.signal_lenses || []).length > 0 && html`
           <span style=${{ display: "flex", gap: "3px" }}>

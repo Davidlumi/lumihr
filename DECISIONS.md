@@ -1332,3 +1332,21 @@ ROUNDEL (tilts on hover), and a lens-hued hover GLOW. Every position band
 gained a MEDIAN TICK at 50 (the craft detail that makes dot placement
 readable). Category tiles reveal a ghost arrow on hover. All static depth
 or hover-only response — nothing loops; reduced-motion handling unchanged.
+
+## 2026-06-12 — Market-position traffic light (David) + spacing rhythm
+
+COLOUR SEMANTICS CHANGED on every market-position surface (David's
+pay-positioning convention): AT MARKET = GREEN (aligned — the target),
+ABOVE = RED (premium cost), BELOW = AMBER (lagging). Applied to the arc
+segments + verdict word + legend pills and the category tiles' chips, top
+accents and dots. Metric-level favourability (leads/gaps chips, card
+pills, polarity-adjusted verdicts elsewhere) keeps the original
+good-green/bad-red language — these are two different judgements: "is this
+single metric favourable" vs "where does our overall positioning sit".
+Documented here so the apparent green/red inversion between surfaces is
+understood as intentional.
+
+SPACING: one rhythm — s4 gaps and margins on every hero grid (top row,
+tiles, chips); tiles are flex columns with uniform s3 internal gaps (ad-hoc
+margins removed, headers min-height aligned); the tile grid is a forced
+7-across on >=1240px (6+1 orphan wrap eliminated) and balances 4+3 below.
