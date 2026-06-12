@@ -127,19 +127,22 @@ function OverallArc({ market }) {
       <svg viewBox="0 0 210 126" style=${{ width: "100%", maxWidth: "215px", display: "block", margin: "0 auto" }}
         role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
         ${segs.map(sg => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15" stroke-linecap="round"/>`)}
-        <text x="105" y="92" text-anchor="middle" style=${{ font: "650 24px var(--font-head)" }} fill="var(--ink)">${word}</text>
+        <text x="105" y="92" text-anchor="middle" style=${{ font: "650 26px var(--font-head)" }}
+          fill=${market.verdict === "below" ? "var(--unfavourable)" : market.verdict === "above" ? "var(--favourable)" : "var(--neutral-perf)"}>${word}</text>
         <text x="105" y="110" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${word === "With" ? "the market overall" : "market overall"}</text>
       </svg>
       <div class="arc-legend num">
-        <span><b style=${{ color: "var(--unfavourable)" }}>${market.below}</b> below</span>
-        <span><b style=${{ color: "var(--neutral-perf)" }}>${market.at}</b> at</span>
-        <span><b style=${{ color: "var(--favourable)" }}>${market.above}</b> above</span>
+        <span class="arc-pill below">${market.below} below</span>
+        <span class="arc-pill at">${market.at} at</span>
+        <span class="arc-pill above">${market.above} above</span>
       </div>
       <div class="caption" style=${{ textAlign: "center" }}>${market.pool} positioned metrics</div>
     </div>`;
 }
 
-const LENS_ICON = { save: "sliders", attract: "user-plus", retain: "users", engage: "heart" };
+const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
+const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
+  "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
 function SignalsPanel({ signals, locked, contribution }) {
   const sigs = signals || [];
   return html`
@@ -165,7 +168,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       html`<div style=${{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
         ${sigs.map((s, i) => html`
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
-            <${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} />
+            <${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${18} />
             <span class="signal-val num">${s.value_display}</span>
             <span class="signal-detail">${s.detail}</span>
             <span class="lens-tag">${s.lens}</span>
@@ -179,13 +182,15 @@ function CategoryTile({ d }) {
   const col = verdict === "below" ? "var(--unfavourable)" : verdict === "above" ? "var(--favourable)"
     : verdict ? "var(--neutral-perf)" : "var(--you)";
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "at market" : "practice view";
-  const chipCls = verdict === "below" ? "chip-bad" : verdict === "above" ? "chip-good" : verdict ? "chip-mid" : "";
+  const chipCls = verdict === "below" ? "chip-bad" : verdict === "above" ? "chip-good" : verdict ? "chip-mid" : "chip-practice";
+  const vCls = verdict === "below" ? "v-below" : verdict === "above" ? "v-above" : verdict ? "v-at" : "v-practice";
   const prev = d.prevalence || {};
   const dot = d.dot;
   return html`
-    <div class="card cat-tile" onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
+    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
       <div class="row spread">
-        <span style=${{ fontWeight: 600, fontSize: "13px" }}>${d.name}</span>
+        <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
+          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
         <span class=${"chip tile-chip " + chipCls}>${chip}</span>
       </div>
       ${dot != null ? html`
@@ -209,13 +214,15 @@ function CategoryTile({ d }) {
 function ChipColumn({ title, items, good }) {
   return html`
     <div class="card" style=${{ padding: "var(--s4)" }}>
-      <div class="caption" style=${{ marginBottom: "8px" }}>${title}</div>
+      <div class="caption" style=${{ marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px",
+        color: good ? "var(--favourable)" : "var(--unfavourable)", fontWeight: 650 }}>
+        <${Icon} name=${good ? "star" : "target"} size=${14} /> ${title}</div>
       ${(items || []).length === 0 ? html`<div class="caption" style=${{ color: "var(--ink-faint)" }}>Nothing stands out in this peer group yet.</div>` :
       items.map((it, i) => html`
         <div key=${i} class="chip-row" onClick=${() => openMetric(it.question_id)} role="button" tabindex="0">
           <span class="chip-label">${it.label}</span>
           <span class="chip-band"><span class="tile-dot" style=${{ left: "calc(" + Math.min(96, Math.max(2, it.adjusted)) + "% - 5px)", background: good ? "var(--favourable)" : "var(--unfavourable)", width: "10px", height: "10px", top: "-2.5px" }}></span></span>
-          <span class="num" style=${{ fontSize: "11.5px", fontWeight: 600, color: good ? "var(--favourable)" : "var(--unfavourable)", minWidth: "30px", textAlign: "right" }}>P${Math.round(it.percentile)}</span>
+          <span class=${"num p-pill " + (good ? "good" : "bad")}>P${Math.round(it.percentile)}</span>
         </div>`)}
     </div>`;
 }

@@ -1291,3 +1291,19 @@ FOR DAVID: signal_lenses.json is yours — the seeded lens mapping and
 thresholds are my best-guess defaults from the design discussion; adjust
 freely (hot-reloads). Lens icons/labels deliberately quiet; the performance
 palette stays reserved for verdicts (arc, tile dots, chips).
+
+## 2026-06-12 — Dashboard polish: lens colour identity
+
+Per David ("much more colourful and polished"): the LENS PALETTE from the
+approved mockup is now a documented design-system extension — four hues,
+each owned by one outcome lens, used EXCLUSIVELY on signal chips/dots with
+the lens tag attached (never on charts or verdicts): save emerald
+(#0E8A5F), attract violet (#6D5BD0), retain teal-ink (#0E7A8A), engage
+coral (#C2542E), each with a tint. Signal rows are full-tint with coloured
+glyphs (new icons: coins/magnet/anchor + heart) and filled lens pills.
+Arc verdict word takes the verdict colour; legend counts became tinted
+pills. Category tiles gained verdict-coloured top accents, blue icon
+roundels (coins/trending-up/shield/sun/heart/award/list-checks), bigger
+shadowed dots and a practice-view chip. Lead/gap chips: coloured section
+headers (star/target) + tinted P-pills + hover rows. Performance palette
+remains reserved for verdicts; blue remains identity. qa_hero 30/30.
