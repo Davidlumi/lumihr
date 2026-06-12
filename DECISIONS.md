@@ -600,3 +600,79 @@ rebuild indicated.
 
 GATES AFTER RE-AGGREGATION: qa_integrity 0/180 mismatches; status audit
 zero; qa_focus 23/23; qa_hero 25/25; qa_commentary 40/40.
+
+## 2026-06-12 — Data submission: UI cleanup + soft-warn input guardrails
+
+PHILOSOPHY (the core rule, enforced in code): soft warnings, never hard
+plausibility blocks. A member can always enter their real value — a genuine
+200% LTI or 150% exec bonus saves without friction. The ONLY hard blocks are
+malformed input (text in a number field, an unlisted band) and true floors
+(negative %/£ where negative is meaningless). Three layers in
+app.py validate_answer + cross_field_warnings:
+  1. hard floor — parse failure / below hard_min 0. Refuses the save.
+  2. soft warn — crosses David's threshold -> "That's unusually high — common
+     range is X–Y. Is that right?" The value is ALREADY SAVED when the warning
+     shows; one click ("Yes, it's right — keep it") records the override
+     (org, user email, question, row, value, threshold) in
+     validation_overrides for optional review. Never gates submission.
+  3. cross-field — seniority inversions ONLY on monotonic metrics
+     (bonus/LTI/pension/notice; config-flagged), incl. banded rows compared by
+     option order ("16 weeks" > "2 weeks"); never on flat-by-design matrices
+     (pensionability/eligibility/tronc — flat is normal there). Plus
+     max-below-target pairs (LTI max vs typical, bonus max vs target,
+     pension max vs typical). Equal values never warn.
+
+THRESHOLDS — DAVID'S CONFIG: data/validation_thresholds.json, seeded from the
+library tolerances by server/seed_validation_config.py with the too-tight
+caps WIDENED (library hard_max was 100 on all % fields): bonus % -> warn
+above 250; LTI % -> 400; pension contribution % -> 40; salary increase
+budget % -> 15 (tighter is useful); PMI -> £6,000; car allowance / per-
+allowance £ -> £30,000; cost per FTE -> £250,000; market-position vs median
+-> 60–150 (it stores % of median ~100, so the old 0-100 cap would have
+warned every above-median payer). File HOT-RELOADS on edit (no restart); a
+malformed edit keeps the last good config. Because thresholds only warn,
+erring generous costs one extra click, never data.
+
+% STORAGE CONVENTION (verified end-to-end): percentages are stored as human
+numbers (50 means 50%) at entry, in thresholds, in aggregation and display.
+Proven: 50 entered -> stored "50" -> aggregates with p50 37.0 -> displays
+"50%"/"37%" — never 0.5% or 5000%.
+
+N/A ≠ 0 ≠ BLANK (end-to-end): "Not applicable to us" is a first-class toggle
+on every numeric/matrix question (selects already had is_na options). Stored
+canonically as "Not applicable" (numeric: the value; matrix: question-level
+at matrix_row_id='', which aggregation ignores by design). Counts as
+ANSWERED for the unlock gate (proven: 81/82 -> 82/82 -> 100% when the last
+key question was answered N/A); excluded from every median/distribution
+(aggregate.py treats NA as a deliberate exclusion — excluded_na, never the
+unrecognised-format warning; a label that IS one of the column's own options
+is never treated as N/A). qa_integrity's independent reference implements
+the same documented rule.
+
+UI CLEANUP: sections are now SUB-powers (Pay 86 / Benefits 42 / Incentives 19
+/ Transparency 25 / Progression 8) — one page each with its own progress
+("Pay — 76 of 86 done") instead of one 180-question page; key (required)
+questions come first under "Key questions — these unlock your insights",
+optional ones after; £/% units sit INSIDE the input; banded matrix rows
+(notice bands, multipliers, Yes/No) are DROPDOWNS of the allowed options,
+not free text (free text could previously not even enter "12 weeks"
+validly); yes/no questions are a segmented toggle; help_text inline with a
+"What counts?" definition expander; autosave unchanged (server-side drafts,
+proven to survive a fresh session). Dead FirmographicsStep removed
+(superseded by /profile).
+
+API SHAPE: /api/submission/state sections are sub-powers ({section,
+superpower, ...}); /api/submission/section/{sub-power}; new POST
+/api/submission/confirm-value. qa_focus's section assertion updated to the
+new honest semantics (all sections ⊆ Reward; hidden section still 404s).
+
+UNCHANGED: aggregation/suppression/polarity (gates re-run green), the
+matrix-aggregation fix, reward-only focus, trust labels.
+
+VERIFIED (API + UI): 1000% bonus warns + saves + confirm logs the override +
+correcting to 100 clears the warning; 200% LTI saves silently; -5 and
+"about ten" are refused (the only blocks); invalid band via API refused;
+N/A advances the gate; banded dropdowns pre-select existing answers;
+notice-band inversion warns, pensionability inversion doesn't; gates:
+qa_integrity 0/180, status audit zero, qa_focus 23/23, qa_hero 25/25,
+qa_commentary 40/40. Demo drafts restored after testing.

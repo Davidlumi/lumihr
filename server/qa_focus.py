@@ -60,7 +60,10 @@ check("analyst never matches hidden metrics", not leak(ans.get("matched", [])) a
 vis_ids = {q["id"] for q in qi["questions"]}
 check("analyst matches ⊆ visible reward set", set(ans.get("matched", [])) <= vis_ids, set(ans.get("matched", [])) - vis_ids)
 st, sub = api("/api/submission/state")
-check("submission sections == [Reward]", [s["superpower"] for s in sub["sections"]] == ["Reward"])
+# sections are sub-powers since the entry-UI cleanup; all must belong to Reward
+check("submission sections all Reward", len(sub["sections"]) > 0 and
+      set(s["superpower"] for s in sub["sections"]) == {"Reward"},
+      [s.get("section") for s in sub["sections"]])
 st, _ = api("/api/submission/section/Wellbeing")
 check("hidden submission section -> 404", st == 404, st)
 # my view: starter all-reward; saved layout w/ hidden card degrades

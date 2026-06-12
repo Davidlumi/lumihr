@@ -1,5 +1,8 @@
-/* Questionnaire engine — rendered entirely from library metadata. */
-/* global html, useState, useEffect, useRef, api, Chip, Spinner, EmptyState, nav, SP_ICONS, SUPERPOWERS */
+/* Questionnaire engine — rendered entirely from library metadata.
+   Entry guardrails (2026-06-12): soft warnings never block — a member can
+   always save their real value; the only refusals are malformed input.
+   N/A is first-class (never faked with 0 or blank); units show inline. */
+/* global html, useState, useEffect, useRef, api, Chip, Spinner, EmptyState, nav, SP_ICONS, SUPERPOWERS, toast */
 
 window.SubmissionPage = function ({ me, refreshMe, section }) {
   const [state, setState] = useState(null);
@@ -87,6 +90,10 @@ function DataTermsGate({ me, onAccepted }) {
     </div>`;
 }
 
+// ------------------------------------------------------------------- home --
+// One card per section (sub-power): Pay, Benefits, Incentives, Transparency,
+// Progression — each with its own progress. Key (required) questions drive
+// the unlock gate, so their count is shown separately.
 function SubmissionHome({ state }) {
   const totalQ = state.sections.reduce((a, s) => a + s.questions, 0);
   const totalA = state.sections.reduce((a, s) => a + s.answered, 0);
@@ -105,11 +112,12 @@ function SubmissionHome({ state }) {
         <div class="caption" style=${{ marginTop: "6px" }}>${totalA} of ${totalQ} questions answered overall</div>
       </div>
       ${state.sections.map(s => html`
-        <div key=${s.superpower} class="card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)", cursor: "pointer" }}
-          onClick=${() => nav("/submission/" + s.superpower)}>
+        <div key=${s.section} class="card section-card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)", cursor: "pointer" }}
+          onClick=${() => nav("/submission/" + encodeURIComponent(s.section))}>
           <div class="row spread">
-            <b style=${{ display: "inline-flex", alignItems: "center", gap: "8px" }}><${SpIcon} sp=${s.superpower} /> ${s.superpower}</b>
-            <span class="caption num">${s.answered}/${s.questions} answered · ${s.key_answered}/${s.key_questions} key</span>
+            <b>${s.section}</b>
+            <span class="caption num">${s.answered} of ${s.questions} done${s.key_questions ?
+              html` · <b>${s.key_answered}/${s.key_questions}</b> key` : ""}</span>
           </div>
           <div class="progressbar" style=${{ marginTop: "6px" }}>
             <div style=${{ width: (s.questions ? 100 * s.answered / s.questions : 0) + "%" }}></div>
@@ -117,43 +125,6 @@ function SubmissionHome({ state }) {
         </div>`)}
       <div class="row" style=${{ justifyContent: "flex-end", marginTop: "var(--s4)" }}>
         <button class="btn primary" onClick=${() => nav("/submission/review")}>Review and submit</button>
-      </div>
-    </div>`;
-}
-
-function FirmographicsStep({ state, onDone }) {
-  const [f, setF] = useState(state.firmographics);
-  const [err, setErr] = useState(null);
-  const c = state.choices;
-  const save = async () => {
-    setErr(null);
-    if (!f.industry || !f.fte_band || !f.hq_region || !f.ownership_type) {
-      setErr("Industry, FTE band, region and ownership are needed before benchmarking can unlock."); return;
-    }
-    try { await api("/api/submission/firmographics", { method: "PUT", body: f }); onDone(); }
-    catch (e) { setErr(e.message); }
-  };
-  const Sel = ({ k, label, opts, free }) => html`
-    <div class="field">
-      <label>${label}</label>
-      ${free ? html`<input value=${f[k] || ""} onInput=${e => setF({ ...f, [k]: e.target.value })} placeholder="e.g. Grocery & Convenience"/>` :
-      html`<select value=${f[k] || ""} onChange=${e => setF({ ...f, [k]: e.target.value })}>
-        <option value="">Choose…</option>
-        ${opts.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
-      </select>`}
-    </div>`;
-  return html`
-    <div style=${{ maxWidth: "560px" }}>
-      <h1 class="display-title">About your organisation</h1>
-      <p>This is how lumi builds your peer groups — it takes a minute and only needs doing once.</p>
-      <div class="card" style=${{ padding: "var(--s5)" }}>
-        <${Sel} k="industry" label="Industry" opts=${c.industries} />
-        <${Sel} k="subsector" label="Subsector (optional)" free=${true} />
-        <${Sel} k="fte_band" label="Size (full-time equivalent employees)" opts=${c.fte_bands} />
-        <${Sel} k="hq_region" label="HQ region" opts=${c.regions} />
-        <${Sel} k="ownership_type" label="Ownership" opts=${c.ownership_types} />
-        ${err && html`<div class="error-text" style=${{ marginBottom: "10px" }}>${err}</div>`}
-        <button class="btn primary" onClick=${save}>Save and start the questionnaire</button>
       </div>
     </div>`;
 }
@@ -166,6 +137,8 @@ window.addEventListener("beforeunload", (e) => {
 });
 
 // ------------------------------------------------------------ section form -
+// One sub-power per page. Key questions first (they unlock insights), the
+// optional ones after, under their own divider.
 function SectionForm({ sp, state, refresh }) {
   const [data, setData] = useState(null);
   const [drafts, setDrafts] = useState({});
@@ -173,13 +146,15 @@ function SectionForm({ sp, state, refresh }) {
   const [savedAt, setSavedAt] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
   useEffect(() => {
-    setData(null); setLoadErr(null);
+    setData(null); setLoadErr(null); setIssues({});
     api("/api/submission/section/" + encodeURIComponent(sp)).catch(e => { setLoadErr(e.message); throw e; }).then(d => {
       setData(d);
       const init = {};
       d.questions.forEach(q => {
-        if (q.type === "matrix") Object.entries(q.current || {}).forEach(([rid, v]) => { if (v != null) init[q.id + "|" + rid] = v; });
-        else if (q.current != null) init[q.id + "|"] = q.current;
+        if (q.type === "matrix") {
+          Object.entries(q.current || {}).forEach(([rid, v]) => { if (v != null) init[q.id + "|" + rid] = v; });
+          if (q.current_na) init[q.id + "|"] = "Not applicable";
+        } else if (q.current != null) init[q.id + "|"] = q.current;
       });
       setDrafts(init);
     });
@@ -205,61 +180,129 @@ function SectionForm({ sp, state, refresh }) {
       window._pendingSaves = Math.max(0, window._pendingSaves - 1);
     }
   };
+  // Soft-warning confirm: the value is ALREADY saved (warnings never gate
+  // saving) — this records the override quietly for optional later review.
+  const confirmValue = async (q, rowId) => {
+    const key = q.id + "|" + (rowId || "");
+    try {
+      await api("/api/submission/confirm-value", { method: "POST",
+        body: { question_id: q.id, matrix_row_id: rowId || "", value: drafts[key] } });
+      setIssues(s => ({ ...s, [key]: { errors: [], warnings: [] } }));
+      toast("Noted — your value is kept.");
+    } catch (e) { toast(e.message || "Couldn't record the confirmation.", "error"); }
+  };
 
-  const bySub = [];
-  for (const q of data.questions) {
-    let g = bySub.find(g => g.sub === (q.subpower || "General"));
-    if (!g) { g = { sub: q.subpower || "General", order: q.sub_power_order || 999, qs: [] }; bySub.push(g); }
-    g.qs.push(q);
-  }
-  bySub.sort((a, b) => a.order - b.order);
-  const ACTIVE = (window.SCOPE && window.SCOPE.superpowers) || SUPERPOWERS;
-  const idx = ACTIVE.indexOf(sp);
+  const answeredQ = (q) => {
+    if (q.type === "matrix")
+      return q.matrix_rows.some(r => (drafts[q.id + "|" + r.row_id] || "") !== "") ||
+             (drafts[q.id + "|"] || "") !== "";
+    return (drafts[q.id + "|"] || "") !== "";
+  };
+  const keyQs = data.questions.filter(q => q.is_required);
+  const optQs = data.questions.filter(q => !q.is_required);
+  const done = data.questions.filter(answeredQ).length;
+  const keyDone = keyQs.filter(answeredQ).length;
+  const sections = state.sections.map(s => s.section);
+  const idx = sections.indexOf(sp);
+  const block = (qs) => qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts}
+      issues=${issues} save=${save} confirmValue=${confirmValue} />`);
   return html`
     <div style=${{ maxWidth: "780px" }}>
-      <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
+      <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
         <div>
           <button class="btn quiet" onClick=${() => nav("/submission")}>← All sections</button>
-          <h1 class="display-title" style=${{ marginTop: "6px", display: "flex", alignItems: "center", gap: "10px" }}><${SpIcon} sp=${sp} size=${20} /> ${sp}</h1>
+          <h1 class="display-title" style=${{ marginTop: "6px" }}>${sp}</h1>
         </div>
-        <div class="caption">${savedAt ? "All changes autosaved · " + savedAt.toLocaleTimeString("en-GB") : "Changes autosave as you type"}</div>
+        <div style=${{ textAlign: "right" }}>
+          <div class="num" style=${{ fontWeight: 600 }}>${done} of ${data.questions.length} done</div>
+          <div class="caption">${savedAt ? "All changes autosaved · " + savedAt.toLocaleTimeString("en-GB") : "Changes autosave as you type"}</div>
+        </div>
       </div>
-      ${bySub.map(g => html`
-        <div key=${g.sub} class="card" style=${{ marginBottom: "var(--s4)" }}>
-          <div style=${{ padding: "var(--s3) var(--s4)", borderBottom: "1px solid var(--border)", background: "var(--surface-sunk)", borderRadius: "var(--radius) var(--radius) 0 0" }}>
-            <b>${g.sub}</b> <span class="caption">· ${g.qs.length} questions</span>
+      <div class="progressbar" style=${{ marginBottom: "var(--s4)" }}>
+        <div style=${{ width: (data.questions.length ? 100 * done / data.questions.length : 0) + "%" }}></div>
+      </div>
+      ${keyQs.length > 0 && html`
+        <div class="card" style=${{ marginBottom: "var(--s4)" }}>
+          <div class="qsec-head">
+            <b>Key questions</b> <span class="caption">· ${keyDone}/${keyQs.length} answered — these unlock your insights</span>
           </div>
-          ${g.qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts} issues=${issues} save=${save} />`)}
-        </div>`)}
+          ${block(keyQs)}
+        </div>`}
+      ${optQs.length > 0 && html`
+        <div class="card" style=${{ marginBottom: "var(--s4)" }}>
+          <div class="qsec-head">
+            <b>Optional</b> <span class="caption">· ${optQs.length} questions — add depth to your benchmarks when you have the data to hand</span>
+          </div>
+          ${block(optQs)}
+        </div>`}
       <div class="row spread" style=${{ marginBottom: "var(--s6)" }}>
-        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/submission/" + ACTIVE[idx - 1])}>← ${ACTIVE[idx - 1] || ""}</button>
-        ${idx < ACTIVE.length - 1 ?
-          html`<button class="btn primary" onClick=${() => nav("/submission/" + ACTIVE[idx + 1])}>${ACTIVE[idx + 1]} →</button>` :
+        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/submission/" + encodeURIComponent(sections[idx - 1]))}>← ${sections[idx - 1] || ""}</button>
+        ${idx < sections.length - 1 ?
+          html`<button class="btn primary" onClick=${() => nav("/submission/" + encodeURIComponent(sections[idx + 1]))}>${sections[idx + 1]} →</button>` :
           html`<button class="btn primary" onClick=${() => nav("/submission/review")}>Review and submit →</button>`}
       </div>
     </div>`;
 }
 
-function QuestionInput({ q, drafts, issues, save }) {
+function QuestionInput({ q, drafts, issues, save, confirmValue }) {
   const key = q.id + "|";
   const iss = issues[key] || { errors: [], warnings: [] };
+  const [showDef, setShowDef] = useState(false);
+  const hasDef = q.definition && q.definition !== q.help_text;
   return html`
     <div class="q-block">
-      <div class="row spread" style=${{ marginBottom: "4px", alignItems: "flex-start" }}>
+      <div class="row" style=${{ marginBottom: "4px", alignItems: "baseline", gap: "8px" }}>
         <div style=${{ fontWeight: 600, fontSize: "13.5px", flex: 1 }}>${q.text}
-          ${q.is_required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</div>
+          ${q.is_required && html` <span class="chip key-chip" title="Counts toward unlocking your insights">key</span>`}</div>
       </div>
-      ${q.help_text && html`<div class="caption" style=${{ marginBottom: "8px" }}>${q.help_text}</div>`}
-      <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} />
-      ${iss.errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
-      ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
+      ${q.help_text && html`<div class="caption" style=${{ marginBottom: "6px" }}>${q.help_text}
+        ${hasDef && html` <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a>`}</div>`}
+      ${!q.help_text && hasDef && html`<div class="caption" style=${{ marginBottom: "6px" }}>
+        <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a></div>`}
+      ${showDef && html`<div class="def-box">${q.definition}</div>`}
+      <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${confirmValue} />
+      <${IssueNotes} iss=${iss} onConfirm=${() => confirmValue(q, "")} />
     </div>`;
 }
 
-function InputForType({ q, drafts, issues, save }) {
+/* Errors block (malformed input only); warnings allow — with one click to
+   confirm a genuine outlier ("warn, never block"). */
+function IssueNotes({ iss, onConfirm }) {
+  return html`
+    ${iss.errors.map((e, i) => html`<div key=${"e" + i} class="error-text">${e}</div>`)}
+    ${iss.warnings.length > 0 && html`
+      <div class="warn-panel">
+        ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
+        <div class="row" style=${{ gap: "8px", marginTop: "6px", alignItems: "center" }}>
+          <button class="btn small" onClick=${onConfirm}>Yes, it's right — keep it</button>
+          <span class="caption">or correct the value above. Your answer is saved either way.</span>
+        </div>
+      </div>`}`;
+}
+
+/* "Not applicable" is a first-class answer — never faked with 0, never left
+   blank. It counts as answered for the unlock gate and is excluded from
+   peer medians. */
+function NAToggle({ checked, onChange }) {
+  return html`
+    <label class="na-toggle">
+      <input type="checkbox" checked=${checked} onChange=${e => onChange(e.target.checked)} />
+      <span>Not applicable to us</span>
+    </label>`;
+}
+
+function InputForType({ q, drafts, issues, save, confirmValue }) {
   const key = q.id + "|";
   const val = drafts[key];
-  if (q.type === "single_select" || q.type === "yes_no") {
+  if (q.type === "yes_no") {
+    return html`<div class="seg-toggle" role="radiogroup" aria-label=${q.text}>
+      ${q.options.map(o => html`
+        <button key=${o.code} class=${"seg-btn" + (val === o.label ? " on" : "")}
+          role="radio" aria-checked=${val === o.label}
+          onClick=${() => save(q, "", o.label)}>${o.label}</button>`)}
+    </div>`;
+  }
+  if (q.type === "single_select") {
     return html`<div>
       ${q.options.map(o => html`
         <label key=${o.code} class="radio-row">
@@ -291,13 +334,29 @@ function InputForType({ q, drafts, issues, save }) {
     </div>`;
   }
   if (q.type === "numeric") {
-    return html`<${DebouncedNumber} value=${val} unitName=${q.unit_display_name} unit=${q.unit} onSave=${v => save(q, "", v)} />`;
+    const isNA = val === "Not applicable";
+    return html`<div class="row" style=${{ gap: "14px", alignItems: "center", flexWrap: "wrap" }}>
+      <${DebouncedNumber} value=${isNA ? "" : val} unitName=${q.unit_display_name} unit=${q.unit}
+        disabled=${isNA} onSave=${v => save(q, "", v)} />
+      ${q.na_allowed && html`<${NAToggle} checked=${isNA}
+        onChange=${on => save(q, "", on ? "Not applicable" : "")} />`}
+    </div>`;
   }
   if (q.type === "matrix") {
     const cols = (q.matrix && q.matrix.columns) || [{ label: q.unit_display_name || "Value" }];
+    const col0 = cols[0] || {};
+    const isSelect = col0.type === "select" && (col0.options || []).length > 0;
+    const isNA = drafts[key] === "Not applicable";
+    const setNA = (on) => {
+      save(q, "", on ? "Not applicable" : "");
+      if (on) q.matrix_rows.forEach(r => { if ((drafts[q.id + "|" + r.row_id] || "") !== "") save(q, r.row_id, ""); });
+    };
     return html`
-      <table class="data matrix-grid">
-        <thead><tr><th>Level</th>${cols.map((c, i) => html`<th key=${i} class="num">${c.label}</th>`)}</tr></thead>
+      <div>
+      <table class="data matrix-grid" style=${isNA ? { opacity: 0.45 } : null}>
+        <thead><tr><th>Level</th>${cols.map((c, i) => html`<th key=${i} class="num">${c.label}${
+          q.unit && q.unit.symbol && !isSelect && !(c.label || "").includes(q.unit.symbol)
+            ? " (" + q.unit.symbol + ")" : ""}</th>`)}</tr></thead>
         <tbody>
           ${q.matrix_rows.map(r => {
             const rkey = q.id + "|" + r.row_id;
@@ -306,25 +365,38 @@ function InputForType({ q, drafts, issues, save }) {
             <tr key=${r.row_id}>
               <td>${r.label}</td>
               <td class="num">
-                <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit} onSave=${v => save(q, r.row_id, v)} />
-                ${iss.errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
-                ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
+                ${isSelect ? html`
+                  <select class="band-select" disabled=${isNA} value=${drafts[rkey] || ""}
+                    aria-label=${r.label + " — " + (col0.label || "value")}
+                    onChange=${e => save(q, r.row_id, e.target.value)}>
+                    <option value="">Choose…</option>
+                    ${col0.options.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
+                  </select>` : html`
+                  <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit}
+                    disabled=${isNA} onSave=${v => save(q, r.row_id, v)} />`}
+                <${IssueNotes} iss=${iss} onConfirm=${() => confirmValue(q, r.row_id)} />
               </td>
             </tr>`;
           })}
         </tbody>
-      </table>`;
+      </table>
+      ${q.na_allowed && html`<div style=${{ marginTop: "6px" }}><${NAToggle} checked=${isNA} onChange=${setNA} /></div>`}
+      </div>`;
   }
   return null;
 }
 
 /* UK conventions in the input itself: a currency field shows £12,500 when
    idle and accepts "£12,500" / "12500" / "12 500" while typing; the canonical
-   plain number is what's saved. Percentages stay human (8.5 means 8.5%). */
-function DebouncedNumber({ value, onSave, unitName, unit, compact }) {
+   plain number is what's saved. Percentages stay human end-to-end: 8.5 means
+   8.5% at entry, in storage, in the warn thresholds and in aggregation. The
+   unit (£ prefix / % suffix) sits inside the field so nobody has to guess
+   what the number means. */
+function DebouncedNumber({ value, onSave, unitName, unit, compact, disabled }) {
   const isCurrency = unit && unit.type === "currency";
   const isNumber = unit && ["currency", "none"].includes(unit.type);
-  const fmt = (raw) => (isCurrency || isNumber) ? formatUKNumber(raw, isCurrency) : (raw == null ? "" : raw);
+  const sym = (unit && unit.symbol) || "";
+  const fmt = (raw) => (isCurrency || isNumber) ? formatUKNumber(raw, false) : (raw == null ? "" : raw);
   const [v, setV] = useState(fmt(value));
   const [editing, setEditing] = useState(false);
   const t = useRef(null);
@@ -336,13 +408,17 @@ function DebouncedNumber({ value, onSave, unitName, unit, compact }) {
     t.current = setTimeout(() => commit(nv), 600);
   };
   return html`
-    <span class="row" style=${{ gap: "6px", display: "inline-flex" }}>
-      <input style=${compact ? null : { width: "150px", padding: "7px 9px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", textAlign: "right" }}
-        inputmode="decimal" value=${v} aria-label=${unitName || "Value"}
-        onFocus=${() => { setEditing(true); setV(parseUKNumber(v)); }}
-        onInput=${e => change(e.target.value)}
-        onBlur=${() => { clearTimeout(t.current); commit(v); setEditing(false); setV(fmt(parseUKNumber(v))); }} />
-      ${unitName && !compact && html`<span class="caption">${unitName}</span>`}
+    <span class="row" style=${{ gap: "6px", display: "inline-flex", alignItems: "center" }}>
+      <span class=${"unit-input" + (compact ? " compact" : "") + (disabled ? " disabled" : "")}>
+        ${sym === "£" && html`<span class="unit-sym">£</span>`}
+        <input inputmode="decimal" value=${v} disabled=${disabled}
+          aria-label=${unitName || "Value"}
+          onFocus=${() => { setEditing(true); setV(parseUKNumber(v)); }}
+          onInput=${e => change(e.target.value)}
+          onBlur=${() => { clearTimeout(t.current); commit(v); setEditing(false); setV(fmt(parseUKNumber(v))); }} />
+        ${sym && sym !== "£" && html`<span class="unit-sym">${sym}</span>`}
+      </span>
+      ${unitName && !compact && unitName !== sym && html`<span class="caption">${unitName}</span>`}
     </span>`;
 }
 
@@ -389,10 +465,11 @@ function ReviewStep({ state, refresh, refreshMe }) {
         </div>`}
       ${val.unanswered_required.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
-          <b>Unanswered required questions (${val.unanswered_required.length})</b>
+          <b>Unanswered key questions (${val.unanswered_required.length})</b>
+          <div class="caption" style=${{ margin: "2px 0 4px" }}>“Not applicable” counts as an answer — use it where a question doesn't apply.</div>
           ${val.unanswered_required.slice(0, 12).map((u, i) => html`
             <div key=${i} class="caption" style=${{ marginTop: "4px" }}>
-              <a href=${"#/submission/" + u.superpower}>${u.superpower}</a> — ${u.title}</div>`)}
+              <a href=${"#/submission/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
           ${val.unanswered_required.length > 12 && html`<div class="caption">…and ${val.unanswered_required.length - 12} more.</div>`}
         </div>`}
       <div class="card" style=${{ padding: "var(--s5)" }}>

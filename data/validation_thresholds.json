@@ -1,0 +1,328 @@
+{
+  "_readme": [
+    "Soft-warn thresholds for data entry. DAVID OWNS THESE NUMBERS.",
+    "Crossing soft_min/soft_max shows 'is that right?' — it NEVER blocks; confirmed values save and are logged.",
+    "hard_min is the only block (0 = negative impossible). Never add a hard plausibility cap here.",
+    "monotonic:'seniority' warns when a junior level beats a senior one (bonus/LTI/pension/notice only).",
+    "max_of:<qid> warns when this 'maximum' sits below its typical/target twin on the same level.",
+    "Edits hot-reload (no restart). Re-running seed_validation_config.py REGENERATES this file from the library rules and overwrites manual edits."
+  ],
+  "questions": {
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
+      "label": "Maximum bonus % opportunity by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 250,
+      "why": "exec bonus opportunity can exceed 100% of base; library cap 100 too tight",
+      "monotonic": "seniority",
+      "max_of": "REW_INC_111"
+    },
+    "3faf1f0c-f753-497f-a395-384bba38c5e3": {
+      "label": "Average annual private medical insurance (PMI) premium",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 6000,
+      "why": "GBP per employee per year; generous so senior-heavy books don't false-warn"
+    },
+    "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
+      "label": "Total annual payment for each allowance",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 30000,
+      "why": "GBP per year; covers London weighting / on-call at the generous end"
+    },
+    "ATT_HIR_AGENCY_RATE_01": {
+      "label": "Agency usage rate by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "ATT_HIR_CPH_01": {
+      "label": "Average cost per hire % of base pay by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "ATT_HIR_REPLACE_COST_01": {
+      "label": "Estimated replacement cost by level (as % of salary)",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "ATT_OBO_REGRET_ATTR_01": {
+      "label": "Regretted attrition rate by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+      "label": "Employee notice period by level",
+      "unit": "",
+      "monotonic": "seniority"
+    },
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
+      "label": "Annual car allowance amount by level",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 30000,
+      "why": "GBP per year; generous high end for executive schemes"
+    },
+    "GRO_CAR_042": {
+      "label": "Roles were filled internally by level proportion",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "GRO_LEA_LD_SPEND_01": {
+      "label": "Average annual L&D spend per employee by level % of base pay",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "INC_Q308527": {
+      "label": "Representation (%)",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "MET_cd8efe96": {
+      "label": "Average time to hire in the last completed 12-month period",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "REW_BEN_112": {
+      "label": "Typical employer pension contribution by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 40,
+      "why": "UK employer/employee pension rarely >30% but possible; library cap 100 uselessly loose as a warn",
+      "monotonic": "seniority"
+    },
+    "REW_BEN_FLEX_ALLOW_01": {
+      "label": "Annual flexible benefits allowance by level % of base pay",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 30,
+      "why": "% of base; flex pots rarely exceed 10-15%"
+    },
+    "REW_BEN_PENS_EE_MAX_01": {
+      "label": "Maximum employee pension contribution rate by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 40,
+      "why": "UK employer/employee pension rarely >30% but possible; library cap 100 uselessly loose as a warn",
+      "monotonic": "seniority"
+    },
+    "REW_BEN_PENS_EMP_MAX_01": {
+      "label": "Maximum employer pension contribution rate by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 40,
+      "why": "UK employer/employee pension rarely >30% but possible; library cap 100 uselessly loose as a warn",
+      "monotonic": "seniority",
+      "max_of": "REW_BEN_112"
+    },
+    "REW_INC_111": {
+      "label": "Target bonus opportunity by level (as % of base salary)",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 250,
+      "why": "exec bonus opportunity can exceed 100% of base; library cap 100 too tight",
+      "monotonic": "seniority"
+    },
+    "REW_INC_LTI_MAX_01": {
+      "label": "Maximum annual LTI % of base pay by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 400,
+      "why": "senior LTI routinely 150-300%+ of base; library cap 100 far too tight",
+      "monotonic": "seniority",
+      "max_of": "REW_INC_LTI_VALUE_TYP_01"
+    },
+    "REW_INC_LTI_VALUE_TYP_01": {
+      "label": "Target annual LTI % of base pay by level",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 400,
+      "why": "senior LTI routinely 150-300%+ of base; library cap 100 far too tight",
+      "monotonic": "seniority"
+    },
+    "REW_PAY_MKT_POS_01": {
+      "label": "On average, where does base salary sit versus market median by employee level? (where market is 100%) so 110% would be 10% above market",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": 60,
+      "soft_max": 150,
+      "why": "stores % of market median (~100); the library 0-100 cap would warn on every above-median payer"
+    },
+    "REW_Q524161": {
+      "label": "Employer notice period by level",
+      "unit": "",
+      "monotonic": "seniority"
+    },
+    "PROP_db35137e": {
+      "label": "Candidate experience score",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_8153af15": {
+      "label": "Application-to-first-response time",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_b799860a": {
+      "label": "Offer acceptance rate (Priority roles)",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "PROP_e91c054c": {
+      "label": "Referral hire share",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "PROP_94199ca7": {
+      "label": "Contingent workforce proportion",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "PROP_3cb02f77": {
+      "label": "Revenue per FTE (Annual)",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_d4b98d24": {
+      "label": "Operating profit per FTE (Annual)",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_e63cf45a": {
+      "label": "Workforce cost as % of revenue",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "PROP_d16bae79": {
+      "label": "Workforce cost per FTE (Annual)",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 250000,
+      "why": "GBP per year; generous for professional-services books"
+    },
+    "PROP_9620d380": {
+      "label": "HR cost per employee (Annual)",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 250000,
+      "why": "GBP per year; generous for professional-services books"
+    },
+    "PROP_8d9d9ac5": {
+      "label": "HR cost as % of workforce cost",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_acdc8dd9": {
+      "label": "HR technology spend per employee (Annual)",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_3315e16b": {
+      "label": "Learning hours per employee (Annual)",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_9e3b1d18": {
+      "label": "Early attrition rate (New hires, 12 months)",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
+    },
+    "PROP_02c9eb9e": {
+      "label": "Employee engagement score",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_30ae24e7": {
+      "label": "Employee Net Promoter Score (eNPS)",
+      "unit": "",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "PROP_9e4ad87f": {
+      "label": "Salary increase budget as % of payroll",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 15,
+      "why": "pay budgets almost always <15%; tighter warn catches the 100-for-1.0 class of typo"
+    }
+  }
+}

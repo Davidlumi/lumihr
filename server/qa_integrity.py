@@ -183,15 +183,25 @@ for qid, q in qs.items():
         # the audit blind spot fix: EVERY answered row must aggregate — as
         # numerics if the whole question's format is numeric, else as a
         # categorical distribution. A populated row with neither is a failure.
+        # N/A rule (entry guardrails, 2026-06-12): an NA-like row value that
+        # is NOT one of the column's own options is a first-class N/A —
+        # excluded from the row distribution by spec, so the reference
+        # excludes it independently too.
+        _col_opts = (((q.matrix or {}).get("columns") or [{}])[0].get("options")) or []
+        _NAREF = re.compile(r"^(not applicable|don'?t know|prefer not|unsure\b|n/?a$)", re.I)
+        def _na_ref(v):
+            s = str(v).strip()
+            return bool(_NAREF.match(s)) and s not in _col_opts
         all_distinct = {str(v).strip() for (q2, r2), per in raw.items() if q2 == qid and r2
-                        for v in per.values() if v not in (None, "")}
+                        for v in per.values() if v not in (None, "") and not _na_ref(v)}
         q_numeric = bool(all_distinct) and all(mref(v) is not None for v in all_distinct)
         answering_ref = set()
         for (qid2, row_id), per_org in raw.items():
             if qid2 != qid or not row_id:
                 continue
             raws = {o: v for o, v in per_org.items() if v not in (None, "")}
-            answering_ref |= set(raws)
+            answering_ref |= set(raws)                 # N/A still answered
+            raws = {o: v for o, v in raws.items() if not _na_ref(v)}
             prow = rows.get(row_id)
             pblk = ((prow or {}).get("all")) or {}
             if len(raws) >= 5 and prow is None:

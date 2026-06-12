@@ -190,6 +190,20 @@ CREATE TABLE IF NOT EXISTS drafts (
     PRIMARY KEY (org_id, question_id, matrix_row_id)
 );
 
+-- Soft-warning overrides: a user confirmed an unusual-but-real value. Kept
+-- for optional review (who/field/value/threshold) — never gates anything.
+CREATE TABLE IF NOT EXISTS validation_overrides (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    user_email TEXT NOT NULL,
+    question_id TEXT NOT NULL,
+    matrix_row_id TEXT NOT NULL DEFAULT '',
+    value TEXT,
+    warning TEXT,
+    threshold TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Editable £-model assumptions per org (falls back to engine defaults).
 CREATE TABLE IF NOT EXISTS org_assumptions (
     org_id TEXT PRIMARY KEY REFERENCES orgs(org_id),

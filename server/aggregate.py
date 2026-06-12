@@ -436,9 +436,16 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
         numeric_mode = col0.get("type") in ("percentage", "currency", "number")
         if not numeric_mode and col_opts:
             numeric_mode = all(matrix_value(o) is not None for o in col_opts)
+        # N/A is a first-class entry-side answer (never 0, never blank). At
+        # row level it is deliberately EXCLUDED from the distribution — not an
+        # "unrecognised format". A label that appears in the column's own
+        # option list is a real choice, never treated as N/A.
+        def _row_na(v):
+            s = str(v).strip()
+            return bool(_NA_LABEL.match(s)) and s not in (col_opts or [])
         if not numeric_mode and not col_opts:
             all_vals = {str(v).strip() for (oid, rid), v in answers_for_q.items()
-                        if rid and v not in (None, "")}
+                        if rid and v not in (None, "") and not _row_na(v)}
             numeric_mode = bool(all_vals) and all(matrix_value(v) is not None for v in all_vals)
         mr = []
         answering = set()
@@ -448,6 +455,8 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
                 if v is not None and str(v).strip() != "":
                     raws.append(v)
                     answering.add(oid)
+            na = sum(1 for v in raws if _row_na(v))
+            raws = [v for v in raws if not _row_na(v)]
             if numeric_mode:
                 vals = [f for f in (matrix_value(v) for v in raws) if f is not None]
                 excl = len(raws) - len(vals)
@@ -456,6 +465,8 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
                 blk = numeric_block(vals, excl)
             else:
                 blk = matrix_select_block(col_opts, raws)
+            if na:
+                blk["excluded_na"] = na
             mr.append({"row_id": rid, "label": label, "block": blk})
         top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
         return top, mr, None, None
@@ -468,14 +479,20 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
     raw = list(per_org.values())
 
     if q.type == "numeric":
-        vals, excl = [], 0
+        # N/A answers count as answered (the gate) but never enter the
+        # distribution — kept distinct from a real 0 and from blank.
+        vals, excl, na = [], 0, 0
         for v in raw:
             f = coerce_number(v)
-            if f is None:
-                excl += 1
-            else:
+            if f is not None:
                 vals.append(f)
+            elif _NA_LABEL.match(str(v).strip()):
+                na += 1
+            else:
+                excl += 1
         blk = numeric_block(vals, excl)
+        if na:
+            blk["excluded_na"] = na
     elif q.type in ("single_select", "yes_no"):
         blk = select_block(q, raw)
     elif q.type == "multi_select":

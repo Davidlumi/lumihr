@@ -1636,15 +1636,18 @@ async def submission_state(request: Request):
         "SELECT DISTINCT question_id FROM drafts WHERE org_id=? AND value IS NOT NULL AND value != ''",
         (org["org_id"],))}
     have = answered | drafted
+    # Sections are SUB-powers (Pay, Benefits, Incentives, Transparency,
+    # Progression) — one digestible page each, with progress per section.
     sections = []
-    sp_order = []
+    sub_order = []
     for q in questions.values():
-        if q.superpower not in sp_order:
-            sp_order.append(q.superpower)
-    for sp in sp_order:
-        qs = [q for q in questions.values() if q.superpower == sp]
+        key = (q.sub_power_order or 999, q.sub_power or "General", q.superpower)
+        if key not in sub_order:
+            sub_order.append(key)
+    for _o, sub, sp in sorted(sub_order):
+        qs = [q for q in questions.values() if (q.sub_power or "General") == sub]
         sections.append({
-            "superpower": sp, "questions": len(qs),
+            "section": sub, "superpower": sp, "questions": len(qs),
             "answered": sum(1 for q in qs if q.id in have),
             "key_questions": sum(1 for q in qs if q.is_required),
             "key_answered": sum(1 for q in qs if q.is_required and q.id in have),
@@ -1727,30 +1730,41 @@ def _encode_signup_vector(conn, org):
     conn.execute("DELETE FROM peer_twin_cache WHERE org_id=?", (org["org_id"],))
 
 
-@app.get("/api/submission/section/{superpower}")
-async def submission_section(superpower: str, request: Request):
+@app.get("/api/submission/section/{section}")
+async def submission_section(section: str, request: Request):
+    """One SUB-power per page (Pay, Benefits, …). Each question carries its
+    unit symbol, N/A capability and the soft-warn thresholds so the client
+    can show the unit inline and explain a warning's range."""
     user, org = require_editor(request)
-    if ACTIVE_SUPERPOWERS and superpower not in ACTIVE_SUPERPOWERS:
+    questions = visible_questions()
+    known = {(q.sub_power or "General") for q in questions.values()}
+    if section not in known:
         raise HTTPException(404, "This section isn't available.")
     conn = get_conn()
-    questions = visible_questions()
     answers = org_answers_for(org)
     drafts = {}
     for r in conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)):
         drafts[(r["question_id"], r["matrix_row_id"] or "")] = r["value"]
     out = []
     for qid, q in questions.items():
-        if q.superpower != superpower:
+        if (q.sub_power or "General") != section:
             continue
+        hard_min, soft_min, soft_max = soft_thresholds(q)
+        cfg = validation_cfg().get(qid) or {}
         entry = {
             "id": qid, "text": q.text, "title": q.display_title, "help_text": q.help_text,
+            "definition": q.definition,
             "subpower": q.sub_power, "sub_power_order": q.sub_power_order,
+            "question_order": q.question_order,
             "type": q.type, "category": q.category,
             "options": [{"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na"))}
                         for o in sorted(q.options or [], key=lambda o: o.get("order", 0))],
             "unit_display_name": q.unit_display_name,
             "unit": q.unit_block(),
-            "validation": q.validation, "tolerance": q.tolerance,
+            "validation": q.validation,
+            "thresholds": {"hard_min": hard_min, "soft_min": soft_min, "soft_max": soft_max},
+            "monotonic": cfg.get("monotonic"),
+            "na_allowed": q.type in ("numeric", "matrix"),
             "is_required": q.is_required,
             "matrix": q.matrix if q.type == "matrix" else None,
             "matrix_rows": [{"row_id": rid, "label": lbl} for rid, lbl in q.matrix_row_defs()],
@@ -1758,21 +1772,95 @@ async def submission_section(superpower: str, request: Request):
         if q.type == "matrix":
             entry["current"] = {rid: (drafts.get((qid, rid)) if (qid, rid) in drafts else answers.get((qid, rid)))
                                 for rid, _l in q.matrix_row_defs()}
+            # question-level N/A lives at row_id '' (excluded from aggregation by design)
+            entry["current_na"] = (drafts.get((qid, "")) if (qid, "") in drafts
+                                   else answers.get((qid, ""))) == NA_CANON
         else:
             entry["current"] = drafts.get((qid, "")) if (qid, "") in drafts else answers.get((qid, ""))
         out.append(entry)
-    out.sort(key=lambda e: (e["sub_power_order"] or 999, e["title"]))
-    return {"superpower": superpower, "questions": out}
+    out.sort(key=lambda e: (0 if e["is_required"] else 1, e["question_order"] or 999, e["title"]))
+    return {"section": section, "questions": out}
+
+
+# ======================================================= ENTRY GUARDRAILS ==
+# The validation philosophy (2026-06-12): SOFT warnings, never hard
+# plausibility blocks. A member must always be able to enter their real
+# value, however unusual — a genuine 200% LTI goes through. Three layers:
+#   1. hard floor   — malformed input (not a number) or below a true floor
+#                     where below is meaningless (negative %/£). The ONLY block.
+#   2. soft warn    — crosses David's threshold -> "is that right?" ->
+#                     confirmed values save AND are logged, never refused.
+#   3. cross-field  — seniority inversions on monotonic metrics, max-below-
+#                     target pairs. Warn only.
+# Thresholds live in data/validation_thresholds.json (seeded from the library
+# by seed_validation_config.py with the too-tight caps widened). David edits
+# the file directly; it hot-reloads on change. % CONVENTION: percentages are
+# stored as human numbers end-to-end (50 means 50%) — entry, thresholds,
+# aggregation and display all share it.
+
+VALIDATION_CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "..", "data", "validation_thresholds.json")
+_vcfg_cache = {"mtime": None, "cfg": {}}
+
+
+def validation_cfg():
+    """David's editable soft-warn thresholds; hot-reloads on file change.
+    A malformed edit keeps the last good config rather than dropping guardrails."""
+    try:
+        mt = os.path.getmtime(VALIDATION_CFG_PATH)
+    except OSError:
+        return _vcfg_cache["cfg"]
+    if _vcfg_cache["mtime"] != mt:
+        try:
+            with open(VALIDATION_CFG_PATH) as f:
+                _vcfg_cache["cfg"] = json.load(f).get("questions") or {}
+            _vcfg_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _vcfg_cache["cfg"]
+
+
+NA_RE = re.compile(r"^(not applicable|n/?a)$", re.I)
+NA_CANON = "Not applicable"
+
+
+def soft_thresholds(q):
+    """(hard_min, soft_min, soft_max). A config entry wins outright; otherwise
+    the library tolerance applies with hard_max DEMOTED to a soft warn — the
+    library caps were authored as plausibility, and plausibility never blocks.
+    The hard floor survives only at 0 (negative is genuinely impossible)."""
+    cfg = validation_cfg().get(q.id)
+    tol = q.tolerance or {}
+    if cfg is not None:
+        return cfg.get("hard_min"), cfg.get("soft_min"), cfg.get("soft_max")
+    hard_min = 0 if tol.get("hard_min") == 0 else None
+    soft_min = tol.get("soft_min")
+    soft_max = tol.get("soft_max") if tol.get("soft_max") is not None else tol.get("hard_max")
+    return hard_min, soft_min, soft_max
+
+
+def _matrix_col(q):
+    return ((q.matrix or {}).get("columns") or [{}])[0] if q.type == "matrix" else {}
+
+
+def _range_text(q, soft_min, soft_max, hard_min):
+    u = q.unit_block()
+    lo = soft_min if soft_min is not None else hard_min
+    if lo is not None and soft_max is not None:
+        return "%s–%s" % (pos.fmt_value(lo, u), pos.fmt_value(soft_max, u))
+    if soft_max is not None:
+        return "up to %s" % pos.fmt_value(soft_max, u)
+    return "%s and above" % pos.fmt_value(lo, u)
 
 
 def validate_answer(q, value, row_id=""):
-    """Validation comes from the library, not invented. Returns (errors, warnings)."""
+    """Layers 1-2. Returns (errors, warnings): errors are the malformed/
+    impossible blocks; warnings always allow."""
     errors, warnings = [], []
     v = (value or "").strip()
     if v == "":
         return errors, warnings
     val = q.validation or {}
-    tol = q.tolerance or {}
     if val.get("max_length") and len(v) > int(val["max_length"]):
         errors.append("Answer is too long (max %s characters)." % val["max_length"])
     if val.get("pattern"):
@@ -1782,9 +1870,21 @@ def validate_answer(q, value, row_id=""):
         except re.error:
             pass
     if q.type in ("numeric", "matrix"):
+        # N/A is a first-class answer everywhere a number is asked for —
+        # never faked with 0, never conflated with blank.
+        if NA_RE.match(v):
+            return errors, warnings
+        col = _matrix_col(q)
+        if col.get("type") == "select":
+            opts = col.get("options") or []
+            if opts and v not in opts:
+                errors.append("Choose one of the listed options.")
+            return errors, warnings
         f = coerce_number(v)
+        if f is None and q.type == "matrix":
+            f = matrix_value(v)   # tolerate "1.5x" / "12 weeks" style input
         if f is None:
-            errors.append("Please enter a number.")
+            errors.append("Enter a number — e.g. 7.5. If this doesn't apply to you, use “Not applicable”.")
             return errors, warnings
         if val.get("integer_only") and f != int(f):
             errors.append("Please enter a whole number.")
@@ -1792,19 +1892,17 @@ def validate_answer(q, value, row_id=""):
             parts = v.replace(",", "").split(".")
             if len(parts) == 2 and len(parts[1]) > int(val["max_decimals"]):
                 warnings.append("We'll round this to %s decimal places." % val["max_decimals"])
-        hard_min, hard_max = tol.get("hard_min"), tol.get("hard_max")
-        soft_min, soft_max = tol.get("soft_min"), tol.get("soft_max")
+        hard_min, soft_min, soft_max = soft_thresholds(q)
         if hard_min is not None and f < hard_min:
-            errors.append("Must be at least %s." % pos.fmt_value(hard_min, q.unit_block()))
-        if hard_max is not None and f > hard_max:
-            errors.append("Must be no more than %s." % pos.fmt_value(hard_max, q.unit_block()))
-        if not errors:
-            if soft_min is not None and f < soft_min:
-                warnings.append("This is below the typical range (%s+) — please confirm it's right."
-                                % pos.fmt_value(soft_min, q.unit_block()))
-            if soft_max is not None and f > soft_max:
-                warnings.append("This is above the typical range (up to %s) — please confirm it's right."
-                                % pos.fmt_value(soft_max, q.unit_block()))
+            errors.append("This can't be negative." if hard_min == 0 else
+                          "Must be at least %s." % pos.fmt_value(hard_min, q.unit_block()))
+            return errors, warnings
+        if soft_max is not None and f > soft_max:
+            warnings.append("That's unusually high — common range is %s. Is that right?"
+                            % _range_text(q, soft_min, soft_max, hard_min))
+        elif soft_min is not None and f < soft_min:
+            warnings.append("That's unusually low — common range is %s. Is that right?"
+                            % _range_text(q, soft_min, soft_max, hard_min))
     elif q.type in ("single_select", "yes_no"):
         labels = {o["label"] for o in (q.options or [])}
         if labels and v not in labels:
@@ -1822,6 +1920,86 @@ def validate_answer(q, value, row_id=""):
     return errors, warnings
 
 
+def _merged_q_values(conn, org, qid):
+    """{row_id: raw} this org's current values for one question — drafts over
+    submitted answers, blanks dropped."""
+    vals = {}
+    for r in conn.execute("SELECT matrix_row_id, value FROM answers WHERE org_id=? AND snapshot_id=? AND question_id=?",
+                          (org["org_id"], CURRENT_SNAPSHOT, qid)):
+        vals[r["matrix_row_id"] or ""] = r["value"]
+    for r in conn.execute("SELECT matrix_row_id, value FROM drafts WHERE org_id=? AND question_id=?",
+                          (org["org_id"], qid)):
+        vals[r["matrix_row_id"] or ""] = r["value"]
+    return {k: v for k, v in vals.items() if v not in (None, "")}
+
+
+def _comparable(q, v):
+    """Scalar for cross-field comparison: the number, or a band's index in
+    the column's ordered option list ('2 weeks' < '12 weeks'). None if N/A
+    or not comparable."""
+    if v is None or NA_RE.match(str(v).strip()):
+        return None
+    f = coerce_number(v)
+    if f is None:
+        f = matrix_value(v)
+    if f is not None and _matrix_col(q).get("type") != "select":
+        return f
+    opts = _matrix_col(q).get("options") or []
+    s = str(v).strip()
+    return float(opts.index(s)) if s in opts else None
+
+
+def cross_field_warnings(conn, org, q, row_id, value):
+    """Layer 3 — internal-contradiction soft warns. Seniority inversion fires
+    ONLY on metrics configured monotonic 'seniority' (bonus/LTI/pension/notice
+    climb with seniority); flat-by-design matrices (pensionability,
+    eligibility) never warn — flat is normal there. Equal values never warn."""
+    out = []
+    cfg = validation_cfg().get(q.id) or {}
+    v_now = _comparable(q, value)
+    if v_now is None:
+        return out
+    if cfg.get("monotonic") == "seniority" and q.type == "matrix" and row_id:
+        rows = q.matrix_row_defs()          # library order: senior -> junior
+        order = [rid for rid, _ in rows]
+        labels = dict(rows)
+        if row_id in order:
+            merged = _merged_q_values(conn, org, q.id)
+            merged[row_id] = value
+            i_now = order.index(row_id)
+            for i_other, rid in enumerate(order):
+                if rid == row_id or rid not in merged:
+                    continue
+                v_other = _comparable(q, merged[rid])
+                if v_other is None:
+                    continue
+                if (i_other < i_now and v_now > v_other) or (i_other > i_now and v_other > v_now):
+                    junior, senior = (row_id, rid) if i_other < i_now else (rid, row_id)
+                    out.append("%s (%s) is above %s (%s) — this usually climbs with seniority. "
+                               "Keep it if that's genuinely how your scheme works."
+                               % (labels[junior], merged[junior], labels[senior], merged[senior]))
+                    break
+    # a "maximum" sitting below its typical/target twin on the same level
+    pairs = [(q.id, cfg.get("max_of"))] if cfg.get("max_of") else []
+    pairs += [(mqid, q.id) for mqid, e in validation_cfg().items() if e.get("max_of") == q.id]
+    for max_qid, typ_qid in pairs:
+        if not typ_qid or max_qid == typ_qid:
+            continue
+        other_qid = typ_qid if max_qid == q.id else max_qid
+        other = _merged_q_values(conn, org, other_qid).get(row_id)
+        oq = load_questions().get(other_qid)
+        v_other = _comparable(oq, other) if (oq and other) else None
+        if v_other is None:
+            continue
+        v_max, v_typ = (v_now, v_other) if max_qid == q.id else (v_other, v_now)
+        if v_max < v_typ:
+            out.append("The maximum here (%s) sits below the typical/target value (%s) for the same level — "
+                       "worth a quick check." % (pos.fmt_value(v_max, q.unit_block()),
+                                                 pos.fmt_value(v_typ, q.unit_block())))
+            break
+    return out
+
+
 @app.put("/api/submission/draft")
 async def save_draft(request: Request):
     user, org = require_editor(request)
@@ -1833,9 +2011,12 @@ async def save_draft(request: Request):
     if q is None:
         raise HTTPException(404, "Unknown question")
     value = body.get("value")
+    if value is not None and NA_RE.match(str(value).strip() or ""):
+        value = NA_CANON          # one canonical N/A spelling end-to-end
     errors, warnings = validate_answer(q, value if value is not None else "", row_id)
     conn = get_conn()
     if errors:
+        # the ONLY refusals: malformed / impossible input — never plausibility
         return {"ok": False, "errors": errors, "warnings": warnings}
     conn.execute(
         "INSERT INTO drafts(org_id, question_id, matrix_row_id, value, updated_at) "
@@ -1843,7 +2024,41 @@ async def save_draft(request: Request):
         "ON CONFLICT(org_id, question_id, matrix_row_id) DO UPDATE SET value=excluded.value, updated_at=datetime('now')",
         (org["org_id"], qid, row_id, value))
     conn.commit()
+    if value not in (None, ""):
+        warnings = warnings + cross_field_warnings(conn, org, q, row_id, value)
     return {"ok": True, "errors": [], "warnings": warnings}
+
+
+@app.post("/api/submission/confirm-value")
+async def confirm_value(request: Request):
+    """The user pressed 'yes, that's right' on a soft warning. The value is
+    already saved (warnings never gate saving) — this records the override
+    quietly (who/field/value/threshold) so David can scan confirmed outliers
+    later. Logging only; nothing is ever blocked or altered."""
+    user, org = require_editor(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    row_id = body.get("matrix_row_id") or ""
+    q = load_questions().get(qid)
+    if q is None:
+        raise HTTPException(404, "Unknown question")
+    value = body.get("value")
+    if value is not None and NA_RE.match(str(value).strip() or ""):
+        value = NA_CANON
+    conn = get_conn()
+    _e, warnings = validate_answer(q, value if value is not None else "", row_id)
+    warnings += cross_field_warnings(conn, org, q, row_id, value)
+    hard_min, soft_min, soft_max = soft_thresholds(q)
+    cfg = validation_cfg().get(qid) or {}
+    threshold = j({"soft_min": soft_min, "soft_max": soft_max,
+                   "monotonic": cfg.get("monotonic"), "max_of": cfg.get("max_of")})
+    for w in warnings:
+        conn.execute(
+            "INSERT INTO validation_overrides(org_id, user_email, question_id, matrix_row_id, value, warning, threshold) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (org["org_id"], user["email"], qid, row_id, str(value), w, threshold))
+    conn.commit()
+    return {"ok": True, "logged": len(warnings)}
 
 
 @app.post("/api/submission/validate")
@@ -1861,7 +2076,8 @@ async def validate_all(request: Request):
     for qid, q in questions.items():
         if q.is_required and not any(k[0] == qid and (v or "").strip() for k, v in merged.items()):
             unanswered_required.append({"question_id": qid, "title": q.display_title,
-                                        "superpower": q.superpower})
+                                        "superpower": q.superpower,
+                                        "section": q.sub_power or "General"})
         for (kq, krow), v in merged.items():
             if kq != qid:
                 continue
