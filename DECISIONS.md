@@ -756,3 +756,32 @@ claim and exit non-zero. qa_status_audit is a printed audit, no exit code.
 qa_commentary 40 checks. Blind spot closed by qa_engine_audit: none of the
 old gates exercised the live custom-group path end-to-end or the cut-set
 membership against raw.
+
+## 2026-06-12 — ENGINE AUDIT Phase 2 (fixes)
+
+F1 FIXED — none-ish options no longer score points. scoring_config
+option_scores set 1 -> 0 in BOTH the questions table and
+data/lumi_questions.csv for: ALLOW_01 'NONE', EXT_REW_GAP_011 'NONE',
+PROP_216f7323 'NONE_NO_FORMAL_TOTAL_REWARDS_STRATEGY', PROP_aa4061d5
+'NO_FORMAL_MEASUREMENT'. Rule now consistent across the library:
+"Not applicable" (not assessable) -> na_code excluded from scoring;
+"None" (assessed zero provision) -> scores 0. Re-aggregated; verified
+INDEPENDENTLY: a None-answering org's ALLOW_01 score 10.0 -> 0.0 points and
+EXT_REW_GAP_011 20.0 -> 0.0; corrected score p50s match a fresh recompute
+exactly (22.22/25.0, n 220/215). Demo-org side effect (mechanical, not
+favour): its 1-allowance percentile rose 14.5 -> 17.5 because the 13
+None-orgs now rank below it — direction-verified by the independent midrank.
+No answers changed (scores are derived; the integrity firewall untouched).
+
+F3 FIXED — qa_integrity and qa_status_audit now sys.exit(1) on any failure
+(CI-able like the rest). qa_engine_audit's ALLOW_01 spot-check updated to
+the corrected points model (it initially red-flagged the fix — the gate
+catching a model change exactly as designed).
+
+F2 FLAGGED (not fixed — out of reward scope): PROP_7cdfcc7b 'Talent review
+coverage' (Growth) is typed multi_select but holds Yes/No answers; David to
+reconcile type vs data when Growth scope launches.
+
+ALL GATES GREEN after fixes: qa_engine_audit 0 failures/0 warnings;
+qa_integrity 0 mismatches; status audit zero; qa_focus 23/23; qa_hero 25/25;
+qa_commentary 40/40 — all with non-zero-on-failure exit codes.

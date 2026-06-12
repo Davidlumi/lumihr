@@ -334,3 +334,5 @@ print("\nA-phase samples (raw -> reference -> displayed):")
 for s in samples[:4]:
     print("  [%s] %s | %s" % (s[0], s[2], s[3]))
 print("\nPHASE A COMPLETE: %d mismatches total" % len(mismatch))
+import sys as _sys
+_sys.exit(1 if mismatch else 0)   # CI-able: non-zero on any divergence

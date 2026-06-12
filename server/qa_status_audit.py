@@ -103,6 +103,8 @@ for r in reg["rows"]:
     if (r.get("status") or "unknown") != expect:
         bad_rows.append((r["question_id"], r["org_status"], r.get("status"), expect))
 print("Row-level re-derivation mismatches:", bad_rows or "ZERO")
+import sys as _sys
+_sys.exit(1 if (freq_misses or cad_bad or bad_rows) else 0)   # CI-able
 
 print("\nNAMED EXAMPLES:")
 for name, ans_hint in (("Pay review cycle frequency", None), ("Allowances pensionab", None),

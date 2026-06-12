@@ -399,12 +399,26 @@ for qid, m in REWARD.items():
 
 print("recomputed per type: %s | value mismatches: %d" % (checked, mismatches))
 
-# polarity spot-derivation on the scored multi-select (independent midrank)
-vals = sorted(len({t.strip() for t in str(v).split(";") if t.strip()})
-              for v in ref_select_counts("ALLOW_01").values())
+# polarity spot-derivation on the scored multi-select (independent midrank).
+# Points model (documented, 2026-06-12): each selected non-na option scores its
+# option_score; none-ish options score 0 (assessed zero provision). The config
+# is DATA (questions table) — reading it keeps the code path independent.
+_cfg = json.loads(conn.execute("SELECT scoring_config_json FROM questions WHERE id='ALLOW_01'").fetchone()[0])
+_opt_code = {ref_norm(o["label"]): o["code"] for o in (REWARD["ALLOW_01"].get("options") or [])}
+_scores, _na = _cfg["option_scores"], set(_cfg.get("na_codes") or [])
+_mx = float(sum(v for c, v in _scores.items() if c not in _na))
+
+
+def _points(ans):
+    sel = {_opt_code.get(ref_norm(t)) for t in str(ans).split(";") if t.strip()}
+    return 100.0 * sum(_scores.get(c, 0) for c in sel if c and c not in _na) / _mx
+
+
+vals = sorted(_points(v) for v in ref_select_counts("ALLOW_01").values())
 st, card = api(op, "/api/benchmark/ALLOW_01?dim=all")
+you_raw = "; ".join((card.get("you") or {}).get("labels") or [])
 mine = len((card.get("you") or {}).get("labels") or [])
-ref_p = ref_midrank(vals, mine)
+ref_p = ref_midrank(vals, _points(you_raw))
 prod_p = (card.get("score") or {}).get("percentile")
 print("polarity/verdict spot (ALLOW_01): you=%d options; ref midrank=%.1f vs prod %.1f; higher_is_better -> %s"
       % (mine, ref_p, prod_p, "Behind" if ref_p < 45 else "Ahead" if ref_p > 55 else "In line"))
