@@ -3,7 +3,7 @@
 ALLOW_03 "Are allowances pensionable?" (single_select, 220 orgs) and
 REW_PAY_020 "Allowances pensionability by level" (Yes/No matrix, 220 orgs).
 
-STATUS: AWAITING DAVID'S BASELINE CONFIRMATION. Per the plausibility-review
+STATUS: BASELINES SIGNED BY DAVID (2026-06-12) — constants below are the signed values. Per the plausibility-review
 brief the pensionability prior is the expert's to set — this script documents
 the PROPOSED baseline and prints the dry-run result, and the write path is
 double-guarded (--write AND --confirmed-by-david) so it cannot run by accident.
@@ -53,8 +53,8 @@ SEED_NS = "ALLOW_PENS_JOINT|2026-06-12|"
 SENIOR = {"board_executive", "director", "head_of"}
 
 # ---- the tunable baseline block (David adjusts here) ------------------------
-BASE_SOME = 0.17            # P(org pensions SOME allowances) before tilts
-BASE_ALL = 0.06             # P(org pensions ALL allowances) before tilts
+BASE_SOME = 0.186            # SIGNED (David, 2026-06-12): ~20% pension SOME
+BASE_ALL = 0.053             # SIGNED: ~8% pension ALL/most (implied No ~72%)
 OWN_TILT = {                # DB-legacy scheme cultures pension more
     "Public Sector Body": 0.30, "Mutual / Co-operative": 0.18,
     "Public Listed (PLC)": 0.10, "Charity / Non-profit": 0.08,
@@ -62,7 +62,7 @@ OWN_TILT = {                # DB-legacy scheme cultures pension more
     "Partnership / LLP": 0.0, "PE-backed": -0.08,
     "Founder-led (Private)": -0.08, "VC-backed (Private)": -0.10,
 }
-SENIOR_ONLY_SHARE = 0.25    # of "some" orgs, how many restrict to senior levels
+SENIOR_ONLY_SHARE = 0.0     # SIGNED: flat within org — NO seniority carve-outs
 NOISE_VARIES = 0.025        # ALLOW_03 "Varies by allowance/contract"
 NOISE_DONT_KNOW = 0.02      # ALLOW_03 "Don't know"
 # -----------------------------------------------------------------------------
@@ -110,7 +110,7 @@ for oid in all_ans:
     p = Profile(reg or None, rng)
     tilt = OWN_TILT.get(org["ownership_type"] or reg.get("Ownership_Type") or "", 0.0)
     # one org-level latent: pensioning posture (none / some / all)
-    p_some = clamp(BASE_SOME + 0.6 * tilt + 0.04 * p.F + rng.gauss(0, 0.03), 0.02, 0.55)
+    p_some = clamp(BASE_SOME + 0.6 * tilt + rng.gauss(0, 0.03), 0.02, 0.55)  # ownership-only (signed)
     p_all = clamp(BASE_ALL + 0.4 * tilt + rng.gauss(0, 0.02), 0.01, 0.35)
     r = rng.random()
     posture = "all" if r < p_all else ("some" if r < p_all + p_some else "none")

@@ -1198,3 +1198,50 @@ question so the class can't recur. After fix: Annual 64/29.1%, >Annual
 ALL EIGHT GATES GREEN after restart (engine_audit 0, integrity 0, status
 zero, focus 24/24, hero 25/25, commentary 40/40, pulse 25/25, release 0
 incl. the new uniqueness invariant).
+
+## 2026-06-12 — Allowances-pensionability regeneration APPLIED (David's baselines signed)
+
+THE PREPARED SCRIPT (regen_allowances_pensionable.py — built, dry-run and
+double-guarded earlier) ran with David's now-signed constants. CONSTANT
+MAPPING (reported): BASE_SOME=0.20 and BASE_ALL=0.08 are the SIGNED
+ORG-LEVEL TARGETS (some ~20% / all ~8% / No ~72%); because the ownership
+tilts lift the realised mean above the base constants, the working constants
+were calibrated (the documented pay-frequency pattern, one iteration:
+BASE_SOME 0.186, BASE_ALL 0.053) so the REALISED split lands on the signed
+targets. SENIOR_ONLY_SHARE -> 0.0 (signed: flat within an org, NO seniority
+lean — pensionability is a scheme rule) and the prepared formula's small
+HR-maturity term was zeroed (signed: ownership-only texture). OWN_TILT kept
+as prepared (DB-legacy/public up, PE/VC/founder-led down — matches signed).
+
+DRY-RUN SHOWN BEFORE WRITING, then applied (--write --confirmed-by-david):
+- Realised org-level split: No 70.0% / some 19.1% / all 9.1% (+Varies 0.5,
+  DK 1.4) — within ~3pp of the signed 72/20/8.
+- COHERENCE — the main prize: ALLOW_03 vs REW_PAY_020 contradictions
+  152/220 -> 0/220 (recomputed from the STORED data post-write).
+- 220/220 orgs uniform across all 7 levels (flat-within-org BY DESIGN);
+  per-level Yes uniform at 29.1% — the texture is BETWEEN orgs, by
+  ownership, exactly as signed: Public Sector Body 68.8% some/all ->
+  Charity 46.7 -> Mutual 45.5 -> PLC 41.2 -> Private 21.2 ->
+  Founder-led 14.3 -> PE-backed 7.7 -> VC 0.0.
+- Reproducible (two dry runs byte-identical); org-blind (demo org No->No by
+  its own draw; watch orgs moved in both directions); whole-metric, one
+  transaction, both questions.
+- DATA-ONLY: schema/options/codes hash byte-identical before/after
+  (037dd00136216d95) — the code-collision class cannot have been
+  reintroduced; matrix rendering untouched.
+
+GATE BOOK-KEEPING: ALLOW_03 + REW_PAY_020 joined qa_engine_audit's
+documented REGEN_WHITELIST (store verified against the signed seeded
+distributions: ALLOW_03 154/42/20/3/1, REW_PAY_020 No 1092 / Yes 448 —
+the response CSVs are stale for these two by design, like REW_INC_072 /
+EXT_REW_GAP_013); the release-addition seeds (REW26_*/REW262_*) are now a
+recognised DB-origin lineage in the L1 extra-rows check (their lineage is
+the seed scripts + DECISIONS, not the CSVs). ALL EIGHT GATES GREEN
+(engine_audit 0 failures/0 warnings, integrity 0, status zero, focus 24/24,
+hero 25/25, commentary 40/40, pulse 25/25, release 0 incl. the option-code
+uniqueness invariant).
+
+This was the LAST QUEUED DATA OPERATION. The flagged-metric ledger closes:
+REW_INC_072 regenerated; pay frequency regenerated; allowances-pensionability
+regenerated (this entry); REW_INC_061 remains code-fixed + flagged (David's
+call on prior/reword/removal).

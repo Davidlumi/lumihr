@@ -47,6 +47,11 @@ REGEN_WHITELIST = {
                     "Used strategically as part of attraction strategy": 12},
     "EXT_REW_GAP_013": {"Monthly": 128, "Weekly": 23, "Mixed (varies by role)": 18,
                         "Fortnightly": 8, "Don't know": 2},
+    # allowances-pensionability joint regen (2026-06-12, David-signed 72/20/8):
+    "ALLOW_03": {"No – non-pensionable": 154, "Yes – some allowances only": 42,
+                 "Yes – all allowances": 20, "Don't know": 3,
+                 "Varies by allowance/contract": 1},
+    "REW_PAY_020": {"No": 1092, "Yes": 448},
 }
 
 FAILS = []
@@ -228,8 +233,11 @@ for key, v in csv_rows.items():
         t = META.get(qid, {}).get("type")
         if t and t not in type_examples:
             type_examples[t] = (qid, key[2], v)
+# release-addition seeds (REW26_*/REW262_*) are documented DB-origin data —
+# their lineage is the seed scripts + DECISIONS.md, not the response CSVs
 extra_in_db = [k for k in raw_answers
-               if k not in csv_rows and k[0] not in REGEN_WHITELIST and k[0] in META]
+               if k not in csv_rows and k[0] not in REGEN_WHITELIST and k[0] in META
+               and not k[0].startswith(("REW26_", "REW262_"))]
 # question-level matrix N/A (row '') is a legitimate post-import state; so are drafts-era saves
 extra_real = [k for k in extra_in_db if not (META[k[0]]["type"] == "matrix" and k[2] == "")]
 print("CSV ground-truth rows: %d | exact in store: %d | changed: %d | missing: %d | extra in DB: %d"
