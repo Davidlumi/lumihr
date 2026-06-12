@@ -1,0 +1,54 @@
+{
+  "_readme": [
+    "SIGNALS config \u2014 DAVID OWNS THIS FILE. Which metric speaks to attraction vs retention vs engagement, and where the flag thresholds sit, is reward domain knowledge.",
+    "Signals are FLAGS with a peer fact attached \u2014 never advice. They only ever say 'worth a look'.",
+    "thresholds: behind_percentile = a mapped polarised metric flags when its polarity-adjusted percentile is at/below this; save_percentile = a cost metric flags when the org pays at/above this percentile; prevalence_floor = a mapped practice flags when peer adoption is at/above this and the org doesn't do it; money_min_gbp = a \u00a3-model gap must reach this to flag.",
+    "cost_metrics: NEUTRAL spend metrics eligible for the 'save' lens (a fact about cost, never a market verdict).",
+    "position_lenses: polarised metrics -> the lens their 'behind' flag carries.",
+    "prevalence_lenses: practice questions -> the lens their 'most peers do this, you don't' flag carries.",
+    "money_lenses: \u00a3-opportunity metrics -> lens.",
+    "Edits hot-reload (no restart needed). max_signals caps the briefing \u2014 ranked money > save > behind > prevalence, by size within each.",
+    "max_per_lens balances the briefing \u2014 at most this many flags per lens."
+  ],
+  "max_signals": 5,
+  "thresholds": {
+    "behind_percentile": 25,
+    "save_percentile": 85,
+    "prevalence_floor": 50,
+    "money_min_gbp": 10000
+  },
+  "cost_metrics": {
+    "3faf1f0c-f753-497f-a395-384bba38c5e3": "Private medical insurance premium",
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": "Car allowance",
+    "a7ed418e-b057-4b70-ab58-31e897b7c1b6": "Allowance payments"
+  },
+  "position_lenses": {
+    "REW_PAY_MKT_POS_01": "attract",
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": "attract",
+    "REW_INC_111": "attract",
+    "REW_BEN_PENS_EMP_MAX_01": "retain",
+    "REW_BEN_112": "retain",
+    "REW_BEN_FLEX_ALLOW_01": "retain",
+    "REW_INC_LTI_MAX_01": "retain",
+    "REW_INC_LTI_VALUE_TYP_01": "retain",
+    "PROP_9e4ad87f": "retain"
+  },
+  "prevalence_lenses": {
+    "REW262_GOV_PAYINADVERTS": "attract",
+    "REW262_GOV_SALHISTORY": "attract",
+    "REW26_WEL_EAP": "engage",
+    "REW26_WEL_FINWELL": "engage",
+    "REW26_WEL_SCREENING": "engage",
+    "REW26_WEL_STRATEGY": "engage",
+    "REW26_BEN_SALSAC": "retain",
+    "REW26_BEN_PENSION_MATCH": "retain",
+    "REW262_TIME_SICKDAYONE": "engage",
+    "REW262_TIME_BEREAVEMENT": "engage",
+    "EXT_REW_GAP_001": "engage",
+    "EXT_REW_GAP_005": "engage"
+  },
+  "money_lenses": {
+    "REW_BEN_PENS_EMP_MAX_01": "retain"
+  },
+  "max_per_lens": 2
+}

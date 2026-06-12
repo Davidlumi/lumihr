@@ -33,6 +33,7 @@ import claude_api
 import pulses as pulses_mod
 import releases
 import retrieval
+import signals as signals_mod
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
 import positions as pos
@@ -1242,6 +1243,38 @@ async def overview(request: Request):
     co = pos.callouts(items, org_visible_questions(org), k=3)
     money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
                                     org_answers_for(org), cut, tb)
+    # signals (2026-06-12): outcome-lens flags from the SAME computed data —
+    # lens mapping + thresholds are David's (data/signal_lenses.json)
+    _visq = org_visible_questions(org)
+    _answers = org_answers_for(org)
+    _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
+    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers)
+    dots = signals_mod.domain_dots(items)
+    sig_by_cat = {}
+    for sg in sigs:
+        q = org_visible_questions(org).get(sg["question_id"])
+        if q:
+            sig_by_cat.setdefault(q.sub_power, []).append(sg["lens"])
+    for d in hero["domains"]:
+        d["dot"] = dots.get(d["name"])
+        d["signal_lenses"] = sig_by_cat.get(d["name"], [])
+    # structured leads/lags for the chip rows (the sentence callouts stay for
+    # the board pack/share surfaces)
+    ranked = sorted((i for i in items if i["favourable"] is not None),
+                    key=lambda i: -(50.0 + i["distance"]))
+    def _chips(seq, cond):
+        outp, seen = [], set()
+        for i in seq:
+            if i["question_id"] in seen or not cond(i):
+                continue
+            seen.add(i["question_id"])
+            outp.append({"question_id": i["question_id"], "label": i["label"],
+                         "percentile": i["percentile"], "adjusted": round(50.0 + i["distance"], 1)})
+            if len(outp) == 3:
+                break
+        return outp
+    leads = _chips(ranked, lambda i: i["distance"] > 5)
+    lags = _chips(ranked[::-1], lambda i: i["distance"] < -5)
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     return {
@@ -1254,6 +1287,9 @@ async def overview(request: Request):
         "headline": summary,
         "contribution": contrib,
         "hero": hero,
+        "signals": sigs,
+        "leads": leads,
+        "lags": lags,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
                      "gaps": [] if not contrib["insights_unlocked"] else [c["text"] for c in co["gaps"]],
                      "gaps_locked": not contrib["insights_unlocked"],

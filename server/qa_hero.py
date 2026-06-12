@@ -166,6 +166,41 @@ check("PrevLine component carries no pos-pill / performance classes",
 check("maturity score tiles removed from the gap register",
       "your maturity" not in open(os.path.join(web, "js", "commercial.js"), encoding="utf-8").read())
 
+print("=" * 100)
+print("6. SIGNALS — flags never contradict the data; trust rules hold")
+print("=" * 100)
+ov_sig = api("/api/overview")
+sigs = ov_sig.get("signals") or []
+import json as _j
+cfg = _j.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "signal_lenses.json")))
+check("signal count within caps (max %d, %d/lens)" % (cfg["max_signals"], cfg["max_per_lens"]),
+      len(sigs) <= cfg["max_signals"] and all(
+          sum(1 for x in sigs if x["lens"] == l) <= cfg["max_per_lens"] for l in {x["lens"] for x in sigs}),
+      [(x["lens"], x["kind"]) for x in sigs])
+vis_ids = {q["id"] for q in api("/api/questions")["questions"]}
+check("every signal points at a live, visible metric",
+      all(x["question_id"] in vis_ids for x in sigs),
+      [x["question_id"] for x in sigs if x["question_id"] not in vis_ids])
+bad_dir = []
+for x in sigs:
+    card = api("/api/benchmark/%s?cut=all" % x["question_id"])
+    pol = card.get("polarity")
+    if x["kind"] == "behind" and (pol == "neutral" or x["question_id"] not in cfg["position_lenses"]):
+        bad_dir.append((x["question_id"], "behind on neutral / unmapped"))
+    if x["kind"] == "save" and x["question_id"] not in cfg["cost_metrics"]:
+        bad_dir.append((x["question_id"], "save outside the cost map"))
+    if x["kind"] == "prevalence" and x["question_id"] not in cfg["prevalence_lenses"]:
+        bad_dir.append((x["question_id"], "prevalence outside the map"))
+check("no signal contradicts its metric (no 'behind' on neutral; all kinds from David's maps)",
+      not bad_dir, bad_dir)
+DIRECTIVE = ("should", "must", "we recommend", "you need to", "increase your", "reduce your")
+check("signal wording is factual, never a directive",
+      all(not any(d in x["detail"].lower() for d in DIRECTIVE) for x in sigs),
+      [x["detail"] for x in sigs if any(d in x["detail"].lower() for d in DIRECTIVE)])
+dots = {d["name"]: d.get("dot") for d in ov_sig["hero"]["domains"]}
+check("category dots sit in [1,99] where present",
+      all(v is None or (1 <= v <= 99) for v in dots.values()), dots)
+
 print()
 fails = len(RESULTS) - sum(RESULTS)
 print("RESULTS: %d checks, %d passed, %d failed" % (len(RESULTS), sum(RESULTS), fails))
