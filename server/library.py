@@ -20,6 +20,9 @@ class Question(object):
         "benchmark_display", "is_scored", "scoring_config", "score_map",
         "validation", "tolerance", "is_required", "search_description",
         "question_order",
+        # core-set governance (2026-06-12)
+        "question_version", "historical_comparability", "status",
+        "replaced_by", "release_entered", "release_retired",
     )
 
     @property
@@ -85,6 +88,13 @@ def _row_to_question(r):
     q.is_required = bool(r["is_required"])
     q.search_description = r["search_description"]
     q.question_order = r["question_order"]
+    keys = r.keys()
+    q.question_version = r["question_version"] if "question_version" in keys else None
+    q.historical_comparability = r["historical_comparability"] if "historical_comparability" in keys else None
+    q.status = (r["status"] if "status" in keys else None) or "active"
+    q.replaced_by = r["replaced_by"] if "replaced_by" in keys else None
+    q.release_entered = r["release_entered"] if "release_entered" in keys else None
+    q.release_retired = r["release_retired"] if "release_retired" in keys else None
     return q
 
 

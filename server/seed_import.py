@@ -74,8 +74,9 @@ def import_library(conn, path):
                unit_type,currency_code,matrix_json,matrix_rows_json,lumi_tier,
                na_handling_json,benchmark_display,is_scored,scoring_config_json,
                score_map_json,validation_json,tolerance_json,is_required,
-               search_description,question_order)
-               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               search_description,question_order,
+               question_version,historical_comparability,status,replaced_by)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 r["id"], r["text"], r.get("short_description"), r.get("help_text"),
                 r.get("definition"), r["superpower"], r.get("sub_power"),
@@ -90,6 +91,8 @@ def import_library(conn, path):
                 _json_or_none(r.get("validation")), _json_or_none(r.get("tolerance")),
                 1 if (r.get("is_required") or "").upper() in ("TRUE", "1") else 0,
                 r.get("search_description"), i,
+                r.get("question_version"), r.get("historical_comparability"),
+                (r.get("status") or "active").strip() or "active", r.get("replaced_by") or None,
             ),
         )
         n += 1

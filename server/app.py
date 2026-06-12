@@ -30,6 +30,7 @@ import auth as auth_lib
 import hashlib
 
 import claude_api
+import releases
 import retrieval
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
@@ -165,11 +166,16 @@ def maybe_send_clock_reminder(conn, org, state):
 
 
 def visible_questions():
-    """The question set every user-facing route serves. THE focus filter."""
+    """The question set every user-facing route serves. THE focus filter.
+    Retired questions (versioning, 2026-06-12) leave the live member
+    experience but stay in the library and in release history — historical
+    benchmarks that used them still resolve."""
     qs = load_questions()
+    out = {qid: q for qid, q in qs.items()
+           if getattr(q, "status", "active") != "retired"}
     if not ACTIVE_SUPERPOWERS:
-        return qs
-    return {qid: q for qid, q in qs.items() if q.superpower in ACTIVE_SUPERPOWERS}
+        return out
+    return {qid: q for qid, q in out.items() if q.superpower in ACTIVE_SUPERPOWERS}
 
 app = FastAPI(title="lumi", docs_url=None, redoc_url=None)
 
@@ -2474,6 +2480,11 @@ def backfill_terms(conn):
 def startup():
     init_schema()
     conn = get_conn()
+    # core-set governance: backfill the library's versioning fields (one-time)
+    # and capture the baseline release if none exists. Both idempotent.
+    if releases.ensure_governance_backfill(conn):
+        load_questions.cache_clear()
+    releases.ensure_baseline(conn)
     global INDUSTRIES
     pool = get_meta("peer_pool", {})
     INDUSTRIES = sorted(pool.get("industries", {}).keys())
