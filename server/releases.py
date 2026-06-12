@@ -183,6 +183,11 @@ def create_release(release_id, notes="", signed_off_by=None, conn=None):
             changes.append(("reworded", qid, "Version %s -> %s.%s" % (
                 prev_set[qid].get("question_version"), r["question_version"],
                 " COMPARABILITY BREAK — trends reset at this release." if brk else "")))
+        elif (r["sub_power"] or "") != (prev_set[qid].get("sub_power") or ""):
+            # re-filing only: wording unchanged, trends remain comparable —
+            # NEVER a comparability break, never a retirement
+            changes.append(("recategorised", qid, "Moved %s -> %s (re-filed; wording unchanged, "
+                            "trends remain comparable)." % (prev_set[qid].get("sub_power"), r["sub_power"])))
     for qid, snap in prev_set.items():
         if qid not in live:
             conn.execute("UPDATE questions SET release_retired=? WHERE id=?", (release_id, qid))

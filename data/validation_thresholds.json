@@ -323,6 +323,22 @@
       "soft_min": null,
       "soft_max": 15,
       "why": "pay budgets almost always <15%; tighter warn catches the 100-for-1.0 class of typo"
+    },
+    "REW26_WEL_BUDGET": {
+      "label": "Annual wellbeing budget per employee",
+      "unit": "£",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": null,
+      "why": "seeded from library hard_max (now a warn, never a block)"
+    },
+    "REW26_BEN_PENSION_COST_SHARE": {
+      "label": "Employer pension cost share of total reward",
+      "unit": "%",
+      "hard_min": 0,
+      "soft_min": null,
+      "soft_max": 100,
+      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
     }
   }
 }

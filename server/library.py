@@ -22,7 +22,7 @@ class Question(object):
         "question_order",
         # core-set governance (2026-06-12)
         "question_version", "historical_comparability", "status",
-        "replaced_by", "release_entered", "release_retired",
+        "replaced_by", "release_entered", "release_retired", "module",
     )
 
     @property
@@ -95,6 +95,7 @@ def _row_to_question(r):
     q.replaced_by = r["replaced_by"] if "replaced_by" in keys else None
     q.release_entered = r["release_entered"] if "release_entered" in keys else None
     q.release_retired = r["release_retired"] if "release_retired" in keys else None
+    q.module = r["module"] if "module" in keys else None
     return q
 
 

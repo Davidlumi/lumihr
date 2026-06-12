@@ -367,7 +367,9 @@ def init_schema(conn=None):
                 "ALTER TABLE questions ADD COLUMN release_entered TEXT",
                 "ALTER TABLE questions ADD COLUMN release_retired TEXT",
                 "ALTER TABLE orgs ADD COLUMN unlocked_release TEXT",
-                "ALTER TABLE snapshots ADD COLUMN release_id TEXT"):
+                "ALTER TABLE snapshots ADD COLUMN release_id TEXT",
+                # 2026.1 restructure: sector-gated module flag (hospitality tronc/tips)
+                "ALTER TABLE questions ADD COLUMN module TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:
