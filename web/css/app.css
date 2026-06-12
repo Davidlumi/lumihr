@@ -485,6 +485,47 @@ td.num, th.num { text-align: right; }
 .p-pill.good { background: var(--favourable-tint); color: var(--favourable); }
 .p-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
 
+/* ---- premium motion (2026-06-12): calm, once, and off under
+   prefers-reduced-motion. Entrances stagger; the arc draws itself. ---- */
+@keyframes ov-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes arc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes dot-pop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.arc-card, .ov-top .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
+.signal-row { animation: ov-rise 380ms cubic-bezier(.2,.7,.3,1) both; }
+.signal-row:nth-child(1) { animation-delay: 120ms; }
+.signal-row:nth-child(2) { animation-delay: 200ms; }
+.signal-row:nth-child(3) { animation-delay: 280ms; }
+.signal-row:nth-child(4) { animation-delay: 360ms; }
+.signal-row:nth-child(5) { animation-delay: 440ms; }
+.cat-tile { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
+.cat-grid .cat-tile:nth-child(1) { animation-delay: 160ms; }
+.cat-grid .cat-tile:nth-child(2) { animation-delay: 220ms; }
+.cat-grid .cat-tile:nth-child(3) { animation-delay: 280ms; }
+.cat-grid .cat-tile:nth-child(4) { animation-delay: 340ms; }
+.cat-grid .cat-tile:nth-child(5) { animation-delay: 400ms; }
+.cat-grid .cat-tile:nth-child(6) { animation-delay: 460ms; }
+.cat-grid .cat-tile:nth-child(7) { animation-delay: 520ms; }
+.grid2 .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
+.arc-seg { stroke-dasharray: 1; stroke-dashoffset: 1; animation: arc-draw 700ms cubic-bezier(.4,0,.2,1) both; }
+.arc-word, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 520ms; }
+.tile-dot { animation: dot-pop 460ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
+.chip-band .tile-dot { animation-delay: 700ms; }
+.signal-go { opacity: 0; transform: translateX(-4px); transition: opacity var(--ease), transform var(--ease);
+  font-weight: 650; flex: 0 0 auto; }
+.signal-row:hover .signal-go { opacity: 1; transform: none; }
+.signal-row:hover { transform: translateY(-1px) scale(1.004); }
+.cat-tile .cat-icon { transition: transform var(--ease), background var(--ease); }
+.cat-tile:hover .cat-icon { transform: scale(1.12) rotate(-4deg); background: var(--blue-tint-2); }
+.cat-tile:hover .tile-dot { transform: scale(1.15); }
+.chip-row:hover .p-pill { transform: scale(1.08); }
+.p-pill { transition: transform var(--ease); }
+.arc-pill { transition: transform var(--ease); }
+.arc-pill:hover { transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+  .arc-card, .ov-top .card, .signal-row, .cat-tile, .grid2 .card, .arc-seg, .arc-word, .ov-after,
+  .tile-dot, .signal-go { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
+}
+
 /* ---- pulses (Tier 2): visually distinct from the core ---- */
 .pulse-banner { display: inline-block; background: var(--surface-sunk); border: 1px dashed var(--blue);
   color: var(--blue); font-size: var(--fs-label); padding: 2px 10px; border-radius: 10px; margin-top: var(--s2); }

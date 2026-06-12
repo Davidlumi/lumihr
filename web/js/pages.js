@@ -98,6 +98,23 @@ function OverviewHero({ data, cut, cuts }) {
     </div>`;
 }
 
+/* a quiet count-up for hero numbers (respects prefers-reduced-motion) */
+function CountUp({ to, ms = 750 }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setV(to); return; }
+    let raf; const t0 = performance.now();
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return html`${v}`;
+}
+
 function OverallArc({ market }) {
   if (!market) return html`
     <div class="card arc-card"><div class="caption" style=${{ padding: "var(--s5)" }}>
@@ -126,15 +143,16 @@ function OverallArc({ market }) {
       <div class="caption">Where you stand</div>
       <svg viewBox="0 0 210 126" style=${{ width: "100%", maxWidth: "215px", display: "block", margin: "0 auto" }}
         role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
-        ${segs.map(sg => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15" stroke-linecap="round"/>`)}
-        <text x="105" y="92" text-anchor="middle" style=${{ font: "650 26px var(--font-head)" }}
+        ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15"
+          stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
+        <text x="105" y="92" text-anchor="middle" class="arc-word" style=${{ font: "650 26px var(--font-head)" }}
           fill=${market.verdict === "below" ? "var(--unfavourable)" : market.verdict === "above" ? "var(--favourable)" : "var(--neutral-perf)"}>${word}</text>
         <text x="105" y="110" text-anchor="middle" font-size="11" fill="var(--ink-soft)">${word === "With" ? "the market overall" : "market overall"}</text>
       </svg>
-      <div class="arc-legend num">
-        <span class="arc-pill below">${market.below} below</span>
-        <span class="arc-pill at">${market.at} at</span>
-        <span class="arc-pill above">${market.above} above</span>
+      <div class="arc-legend num ov-after">
+        <span class="arc-pill below"><${CountUp} to=${market.below} /> below</span>
+        <span class="arc-pill at"><${CountUp} to=${market.at} /> at</span>
+        <span class="arc-pill above"><${CountUp} to=${market.above} /> above</span>
       </div>
       <div class="caption" style=${{ textAlign: "center" }}>${market.pool} positioned metrics</div>
     </div>`;
@@ -172,6 +190,7 @@ function SignalsPanel({ signals, locked, contribution }) {
             <span class="signal-val num">${s.value_display}</span>
             <span class="signal-detail">${s.detail}</span>
             <span class="lens-tag">${s.lens}</span>
+            <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
       </div>`}
     </div>`;

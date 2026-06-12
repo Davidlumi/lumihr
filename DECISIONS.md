@@ -1307,3 +1307,16 @@ roundels (coins/trending-up/shield/sun/heart/award/list-checks), bigger
 shadowed dots and a practice-view chip. Lead/gap chips: coloured section
 headers (star/target) + tinted P-pills + hover rows. Performance palette
 remains reserved for verdicts; blue remains identity. qa_hero 30/30.
+
+## 2026-06-12 — Dashboard motion: premium, calm, accessible
+
+Entrance choreography on the overview (run-once, never looping): cards and
+tiles rise in with a 60-80ms stagger; the ARC DRAWS ITSELF (pathLength
+dash animation, segments 140ms apart) with the verdict word and count-up
+legend (rAF ease-out, ~750ms) arriving after the draw; tile/chip dots pop
+in with a soft overshoot. Micro-interactions: signal rows lift and reveal a
+chevron affordance on hover; category icon roundels scale/tilt; P-pills and
+dots scale on hover. ALL of it is disabled under prefers-reduced-motion
+(including the count-up, which renders the final number immediately).
+Choreography total ~1.1s, cubic-bezier ease-outs, nothing loops — premium
+without noise. qa_hero 30/30 unchanged.
