@@ -30,6 +30,7 @@ import auth as auth_lib
 import hashlib
 
 import claude_api
+import pulses as pulses_mod
 import releases
 import retrieval
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
@@ -71,6 +72,7 @@ AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "on").lower() == "on"
 # both ship on (they have grounded prompts + deterministic fallbacks), but can
 # be cut off independently without a deploy if a trust issue appears.
 AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
+AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
@@ -606,7 +608,7 @@ async def me(request: Request):
     maybe_send_clock_reminder(conn, org, contrib)
     return {
         "contribution": contrib,
-        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK},
+        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK, "pulse_ai": AI_PULSE},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -738,6 +740,173 @@ async def revoke_invite(token: str, request: Request):
 
 
 # ============================================================ LAYERED TERMS ==
+
+# ======================================================== PULSES (Tier 2) ==
+# A separate surface riding the SAME engine. Pulse data never pools with core
+# data (structural separation — see pulses.py docstring). Fully independent
+# of the core unlock gate in both directions.
+
+def _pulse_member_view(conn, p, org):
+    part = pulses_mod.participant(p["pulse_id"], org["org_id"], conn)
+    n_q = len(uj(p["question_ids_json"], []))
+    n_parts = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
+                           (p["pulse_id"],)).fetchone()[0]
+    return {
+        "pulse_id": p["pulse_id"], "name": p["name"], "description": p["description"],
+        "status": p["status"], "opens_at": p["opens_at"], "closes_at": p["closes_at"],
+        "accepting": pulses_mod.is_accepting(p), "questions": n_q,
+        "participants": n_parts, "floor": SUPPRESSION_FLOOR,
+        "joined": part is not None, "participated": bool(part and part["submission_complete"]),
+    }
+
+
+@app.get("/api/pulses")
+async def list_pulses(request: Request):
+    """The member Pulses surface: open (joinable), joined, and closed/archived
+    pulses. Draft pulses are INVISIBLE to members."""
+    user, org = require_user(request)
+    conn = get_conn()
+    out = []
+    for p in conn.execute("SELECT * FROM pulses WHERE status != 'draft' ORDER BY created_at DESC"):
+        out.append(_pulse_member_view(conn, p, org))
+    return {"pulses": out}
+
+
+@app.get("/api/pulses/{pid}")
+async def pulse_detail(pid: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    if p["status"] == "draft":
+        raise HTTPException(404, "Unknown pulse")   # drafts invisible to members
+    view = _pulse_member_view(conn, p, org)
+    qs = pulses_mod.pulse_questions(p)
+    mine = {}
+    for r in conn.execute("SELECT question_id, matrix_row_id, value FROM pulse_responses "
+                          "WHERE pulse_id=? AND org_id=?", (pid, org["org_id"])):
+        mine[(r["question_id"], r["matrix_row_id"] or "")] = r["value"]
+    view["question_list"] = []
+    for qid, q in qs.items():
+        entry = {"id": qid, "text": q.text, "title": q.display_title,
+                 "help_text": q.help_text, "type": q.type,
+                 "options": [{"code": o["code"], "label": o["label"]} for o in (q.options or [])],
+                 "unit": q.unit_block(), "unit_display_name": q.unit_display_name,
+                 "na_allowed": q.type in ("numeric", "matrix"),
+                 "matrix": q.matrix if q.type == "matrix" else None,
+                 "matrix_rows": [{"row_id": rid, "label": lbl} for rid, lbl in q.matrix_row_defs()],
+                 "as_asked_version": q.question_version}
+        if q.type == "matrix":
+            entry["current"] = {rid: mine.get((qid, rid)) for rid, _l in q.matrix_row_defs()}
+        else:
+            entry["current"] = mine.get((qid, ""))
+        view["question_list"].append(entry)
+    # the report: give-to-get scoped to THIS pulse — participants only.
+    # Below the floor, participants get the honest holding state (never blank).
+    if view["participated"]:
+        rep = pulses_mod.pulse_report(pid, conn)
+        view["report"] = strip_internal(rep)
+    return view
+
+
+@app.post("/api/pulses/{pid}/join")
+async def pulse_join(pid: str, request: Request):
+    user, org = require_editor(request)
+    try:
+        pulses_mod.join_pulse(pid, org["org_id"], get_conn())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.put("/api/pulses/{pid}/response")
+async def pulse_response(pid: str, request: Request):
+    user, org = require_editor(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    conn = get_conn()
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    q = pulses_mod.pulse_questions(p).get(qid)
+    if q is None:
+        raise HTTPException(404, "That question isn't part of this pulse.")
+    value = body.get("value")
+    if value is not None and NA_RE.match(str(value).strip() or ""):
+        value = NA_CANON
+    errors, warnings = validate_answer(q, value if value is not None else "", body.get("matrix_row_id") or "")
+    if errors:
+        return {"ok": False, "errors": errors, "warnings": warnings}
+    try:
+        pulses_mod.save_response(pid, org["org_id"], qid, body.get("matrix_row_id") or "", value, conn)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True, "errors": [], "warnings": warnings}
+
+
+@app.post("/api/pulses/{pid}/submit")
+async def pulse_submit(pid: str, request: Request):
+    user, org = require_editor(request)
+    try:
+        pulses_mod.submit_pulse(pid, org["org_id"], get_conn())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/pulses/{pid}/commentary")
+async def pulse_commentary(pid: str, request: Request):
+    """Grounded AI commentary on ONE pulse question — same generator, same
+    validate_commentary gate as the core, scoped to the pulse cohort.
+    LUMI_AI_PULSE kill switch joins the per-surface family."""
+    if not AI_PULSE:
+        raise HTTPException(403, "AI commentary isn't enabled for pulses.")
+    user, org = require_user(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    conn = get_conn()
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    part = pulses_mod.participant(pid, org["org_id"], conn)
+    if not (part and part["submission_complete"]):
+        raise HTTPException(403, "Participate in this pulse to see its commentary.")
+    rep = pulses_mod.pulse_report(pid, conn)
+    entry = next((x for x in rep["questions"] if x["question_id"] == qid), None)
+    if entry is None:
+        raise HTTPException(404, "That question isn't part of this pulse.")
+    q = pulses_mod.pulse_questions(p).get(qid)
+    blk = entry["block"] or {}
+    mine = conn.execute("SELECT value FROM pulse_responses WHERE pulse_id=? AND org_id=? AND question_id=? AND matrix_row_id=''",
+                        (pid, org["org_id"], qid)).fetchone()
+    payload = {
+        "metric": entry["title"], "definition": q.definition or "",
+        "cut_label": "the %s pulse cohort" % p["name"],
+        "n": blk.get("n"), "suppressed": bool(blk.get("suppressed")),
+        "polarity": q.polarity, "you": mine and mine[0], "percentile": None,
+        "stance": None,
+        "illustrative_sample_data": bool(get_meta("synthetic_pool", True)),
+    }
+    if blk.get("p50") is not None:
+        payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
+        payload["peer_p25_display"] = pos.fmt_value(blk["p25"], q.unit_block()) if blk.get("p25") is not None else None
+        payload["peer_p75_display"] = pos.fmt_value(blk["p75"], q.unit_block()) if blk.get("p75") is not None else None
+    if blk.get("options"):
+        top = max(blk["options"], key=lambda o: o.get("pct") or 0)
+        payload["most_common"] = "\u201c%s\u201d" % top["label"]
+        payload["most_common_share"] = top.get("pct")
+        if mine and mine[0]:
+            m = next((o for o in blk["options"] if o["label"] == mine[0]), None)
+            payload["your_answer_peer_share"] = m and m.get("pct")
+            payload["you"] = "\u201c%s\u201d" % mine[0]
+    res = claude_api.generate_metric_commentary(payload)
+    return {"parts": res["parts"], "source": res["source"], "cached": False,
+            "caveats": {"illustrative": payload["illustrative_sample_data"]}}
+
 
 # ============================================ CORE-SET GOVERNANCE / TRENDS ==
 

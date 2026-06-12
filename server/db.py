@@ -331,6 +331,44 @@ CREATE TABLE IF NOT EXISTS core_changelog (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- ============================== PULSES (Tier 2) ============================
+-- Time-boxed topical surveys with their own opt-in cohort and window.
+-- THE CARDINAL RULE: pulse responses live HERE, never in `answers` — the core
+-- aggregation path reads `answers` only, so pulse data cannot pool into a
+-- core aggregate even via a forgotten WHERE clause (structural separation).
+CREATE TABLE IF NOT EXISTS pulses (
+    pulse_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',  -- draft | open | closed | archived
+    opens_at TEXT,
+    closes_at TEXT,
+    question_ids_json TEXT NOT NULL DEFAULT '[]',
+    -- the question definitions AS-ASKED (full rows), snapshotted at open:
+    -- an archived pulse report stays truthful even if the core later
+    -- rewords/retires a referenced question
+    question_snapshot_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS pulse_participants (
+    pulse_id TEXT NOT NULL REFERENCES pulses(pulse_id),
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+    submission_complete INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (pulse_id, org_id)
+);
+
+CREATE TABLE IF NOT EXISTS pulse_responses (
+    pulse_id TEXT NOT NULL REFERENCES pulses(pulse_id),
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    question_id TEXT NOT NULL,
+    matrix_row_id TEXT NOT NULL DEFAULT '',
+    value TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (pulse_id, org_id, question_id, matrix_row_id)
+);
+
 -- The persisted backlog that FEEDS releases. Items queue here and are never
 -- auto-applied to the live core.
 CREATE TABLE IF NOT EXISTS core_backlog (
