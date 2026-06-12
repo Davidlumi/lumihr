@@ -1413,3 +1413,23 @@ NOTE (debugging artefact, not product): the demo seed contains BOTH
 org is Retail Group. A stray EMPTY server/lumi.db was accidentally created
 by an ad-hoc sqlite3.connect during diagnosis; the real DB is ./lumi.db at
 the repo root. The stray file is safe to delete.
+
+## 2026-06-12 — Chrome rationalisation §0: the Governance nav dot, traced
+
+FINDING (pre-task, before any nav change): the orange dot beside
+Governance (41) is the GAP CUE — deliberate state, not leftover. app.js
+fetches the live gap register on load, counts not_in_place rows per
+category, and marks the category with the MOST of them (gapCue →
+SectionNav → .gap-cue, --neutral-perf amber). It already carries a
+factual tooltip: "N practices your peers commonly have that you don't —
+your biggest opportunity area". It sits on Governance for the demo org
+because Governance holds Thornbridge's largest cluster of peer-majority
+practices not in place.
+
+ADJUDICATION vs the spec's two branches: it is NEITHER a new-in-release
+indicator NOR unintentional. The spec's "New metrics in this category"
+tooltip would mislabel it — this dot is an opportunity cue, not a
+release flag. DECISION: keep the mechanism and its existing truthful
+tooltip, re-attach it to the Benchmark group's category child rows in
+the new IA. If David wants a separate new-in-release dot per category,
+that is a different (additive) indicator — flagged for David.
