@@ -4,7 +4,7 @@
    Reuses the submission input components (same file-global functions) and
    the chart primitives — but never the core nav/aggregates. */
 /* global html, useState, useEffect, api, Spinner, EmptyState, nav, toast, Icon,
-   PercentileBand, OptionBars, InputForType */
+   PercentileBand, OptionBars, OrderedDist, InputForType */
 
 window.PulsesPage = function ({ me }) {
   const [data, setData] = useState(null);
@@ -147,7 +147,9 @@ function PulseQuestionBlock({ q, pid, me }) {
         <div class="caption">Fewer than 5 cohort answers for this question — protected, not shown.</div>` : html`
         <div>
           ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${null} unit=${q.unit} favourable=${null} />`}
-          ${blk.options && html`<${OptionBars} options=${blk.options} youLabels=${[]} />`}
+          ${blk.options && (q.type === "multi_select"
+            ? html`<${OptionBars} options=${blk.options} youLabels=${[]} />`
+            : html`<${OrderedDist} options=${blk.options} youLabels=${[]} />`)}
           ${q.matrix_rows && html`
             <table class="data" style=${{ marginTop: "6px" }}>
               <thead><tr><th>Level</th><th class="num">Cohort</th></tr></thead>

@@ -3,7 +3,7 @@
    centred) → plain-English readout pinned at the bottom → movement slot.
    The eye reads: what is this → how do I compare (position pill) → the detail. */
 /* global html, useState, useRef, useEffect, api, fmtValue, pLabel, Chip, NBadge, Term, Modal, Icon,
-   PercentileBand, Histogram, BoxPlot, OptionBars, StackedDist, MatrixHeat, MatrixGrouped,
+   PercentileBand, Histogram, BoxPlot, OptionBars, OrderedDist, MatrixHeat, MatrixGrouped,
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
 window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight }) {
@@ -274,8 +274,9 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     return html`
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}><a href="#/submission" style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
-        ${chart === "stacked_bar" && c.type !== "multi_select"
-          ? html`<${StackedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues} width=${W} fav=${fav} />`
+        ${chart === "ordered" && c.type !== "multi_select"
+          ? html`<${OrderedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
+              width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`
           : html`<${OptionBars} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
               width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`}
       </div>`;

@@ -144,42 +144,50 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
     </svg>`;
 };
 
-// ------------------------------------------------------- stacked band ------
-// For ordered scales: segmented distribution band, categorical ramp, YOU pin.
-window.StackedDist = function ({ options, youLabels, showValues = true, width = CHART_W, fav }) {
-  const W = width, H = 118, barY = 34, barH = 26;
-  const opts = options.filter(o => o.pct > 0);
+// ------------------------------------------------ ordered distribution ------
+// THE chart for categorical scales (2026-06-12 redesign). One bar per
+// category in the question's defined order, label directly beside its own
+// bar, % on the bar, the org's answer marked IN PLACE — no detached legend,
+// no "+N more": every category is visible, zero-count real options included
+// so the scale's full shape shows (only zero-count N/A rows are dropped).
+// A thin ordinal rail signals "this is a scale". Presentation only: the
+// options arrive in library order from the same payload as before.
+window.OrderedDist = function ({ options, youLabels, showValues = true, width = CHART_W, height, fav }) {
+  const opts = (options || []).filter(o => o.count > 0 || !o.is_na);
+  const H = height || 172;
+  let cap = opts.length <= 3 ? 42 : opts.length <= 5 ? 32 : 27;
+  if (H > 300) cap += 16;
+  const rowH = Math.max(15, Math.min(cap, Math.floor((H - 6) / Math.max(opts.length, 1))));
+  const fs = rowH >= 22 ? 10.5 : 9.5;
+  const longest = Math.max(...opts.map(o => Math.min(o.label.length, 34)), 3);
+  const labelW = Math.min(190, Math.max(34, longest * fs * 0.54) + 10), W = width;
+  const railX = labelW + 5;
+  const maxP = Math.max(...opts.map(o => o.pct), 1);
+  const usedH = opts.length * rowH + 4;
   const mine = new Set((youLabels || []).map(s => s.toLowerCase()));
-  let acc = 0;
-  const segs = opts.map((o, i) => {
-    const x0 = (acc / 100) * W; acc += o.pct;
-    return { ...o, x0, w: (o.pct / 100) * W, colour: CAT_COLOURS[i % CAT_COLOURS.length], sel: mine.has(o.label.toLowerCase()) };
-  });
-  const youSeg = segs.find(s => s.sel);
   return html`
-    <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
-      ${segs.map(s => html`
-        <g key=${s.code}>
-          <rect x=${s.x0} y=${barY} width=${Math.max(1, s.w - 1)} height=${barH} fill=${s.colour} rx="2"
-            opacity=${youSeg && !s.sel ? 0.55 : 1}
-            stroke=${s.sel ? youColour(fav) : "none"} stroke-width=${s.sel ? 2.5 : 0}/>
-          ${showValues && s.w > 36 && html`<text x=${s.x0 + s.w / 2} y=${barY + barH / 2 + 3.5} text-anchor="middle"
-            font-size="10" font-weight="600" fill=${s.sel || segs.indexOf(s) < 3 ? "#fff" : "var(--ink-soft)"}>${Math.round(s.pct)}%</text>`}
-        </g>`)}
-      ${youSeg && html`
-        <g>
-          <line x1=${youSeg.x0 + youSeg.w / 2} x2=${youSeg.x0 + youSeg.w / 2} y1=${barY - 8} y2=${barY} stroke=${youColour(fav)} stroke-width="1.5"/>
-          <${YouDot} x=${youSeg.x0 + youSeg.w / 2} y=${barY - 13} fav=${fav}
-            label=${"You · " + youSeg.label.slice(0, 28)} labelY=${barY - 25}
-            anchor=${youSeg.x0 + youSeg.w / 2 < 90 ? "start" : youSeg.x0 + youSeg.w / 2 > W - 90 ? "end" : "middle"} />
-        </g>`}
-      ${segs.slice(0, segs.length > 4 ? 3 : 4).map((s, i) => html`
-        <g key=${"lg" + s.code}>
-          <rect x=${i * (W / 4)} y=${barY + barH + 14} width="8" height="8" rx="2" fill=${s.colour}/>
-          <text x=${i * (W / 4) + 12} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-soft)">
-            ${s.label.length > 18 ? s.label.slice(0, 17) + "…" : s.label}</text>
-        </g>`)}
-      ${segs.length > 4 && html`<text x=${3 * (W / 4)} y=${barY + barH + 21.5} font-size="9" fill="var(--ink-faint)">+${segs.length - 3} more</text>`}
+    <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
+      <line x1=${railX} x2=${railX} y1=${rowH / 2} y2=${usedH - rowH / 2 - 2}
+        stroke="var(--chart-axis)" stroke-width="1"/>
+      ${opts.map((o, i) => {
+        const sel = mine.has(o.label.toLowerCase());
+        const y = i * rowH, cy = y + rowH / 2;
+        const bw = (o.pct / maxP) * (W - railX - 96);
+        const maxChars = Math.floor(labelW / (fs * 0.52));
+        return html`
+        <g key=${o.code || o.label}>
+          <text x=${labelW - 4} y=${cy + fs * 0.34} text-anchor="end" font-size=${fs}
+            fill=${sel ? "var(--ink)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 400}>
+            ${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
+          <circle cx=${railX} cy=${cy} r=${sel ? 3.4 : 2.2}
+            fill=${sel ? youColour(fav) : "var(--chart-axis)"}/>
+          <rect x=${railX + 6} y=${y + Math.max(2, rowH * 0.16)} width=${Math.max(o.pct > 0 ? 2 : 0.5, bw)}
+            height=${Math.max(8, rowH - Math.max(4, rowH * 0.32))} rx="3.5"
+            fill=${sel ? youColour(fav) : "var(--cat-5)"} opacity=${o.pct > 0 ? 1 : 0.45}/>
+          ${showValues && html`<text x=${railX + 6 + Math.max(2, bw) + 6} y=${cy + fs * 0.34} font-size=${fs}
+            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
+        </g>`;
+      })}
     </svg>`;
 };
 

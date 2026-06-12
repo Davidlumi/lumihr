@@ -192,8 +192,10 @@ window.chartAlternatives = function (card) {
     return ["heatmap", "grouped_bars"];
   }
   if (card.type === "multi_select") return ["bar"];
-  // donut retired: bars for few-option categoricals, segmented band for scales
-  if (card.type === "single_select" || card.type === "yes_no") return ["bar", "stacked_bar"];
+  // 2026-06-12: the segmented band retired — categorical scales have ONE
+  // honest representation: the ordered distribution (labels on their own
+  // bars, every category visible, You in place)
+  if (card.type === "single_select" || card.type === "yes_no") return ["ordered"];
   return ["bar"];
 };
 window.normaliseChart = function (card, pref) {
@@ -205,6 +207,6 @@ window.normaliseChart = function (card, pref) {
 };
 window.CHART_LABELS = {
   quartile_band: "Percentile band", histogram: "Histogram", box: "Box plot",
-  bar: "Bars", stacked_bar: "Distribution band",
+  bar: "Bars", ordered: "Ordered distribution",
   heatmap: "Heatmap", grouped_bars: "Grouped bars", matrix_table: "Per-level table",
 };

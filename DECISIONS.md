@@ -1103,3 +1103,50 @@ flagged is_na with practice_status('Not applicable')='unknown'; trend
 starts at 2026.2 (1 period). ALL EIGHT GATES GREEN after restart
 (engine_audit 0, integrity 0, status zero, focus 24/24, hero 25/25 with
 the new census, commentary 40/40, pulse 25/25, release 0).
+
+## 2026-06-12 — Ordered-categorical chart redesign + call-out metric fix
+
+PART B DIAGNOSIS (reported before fixing):
+- TITLE was the wrong half. REW_PAY_018's full text — "Is there a minimum
+  call-out payment for call-outs (e.g., minimum hours paid)?" — confirms the
+  intent: a minimum-hours-paid-per-call-out guarantee (a real reward
+  practice). The hour OPTIONS are correct; the templated display title
+  ("A minimum call-out payment for call-outs") was wrong AND redundant.
+  Fixed display labels only ("Minimum hours paid per call-out"; DB + library
+  CSV), text untouched — the pay-frequency label-fix precedent: no
+  rewording, no comparability break, nothing seeded, nothing for David.
+- THE DISTRIBUTION WAS COMPUTED CORRECTLY all along: independent recompute
+  from raw == production exactly (10.0 / 19.5 / 37.7 / 30.0 / 2.7 = 100.0%,
+  n=220). The "98%" reading was StackedDist's LEGEND truncation (top-4
+  labels + "+N more") — display-only, fixed by Part A. Presentation-only
+  proof: the computed block hash is byte-identical before/after
+  (9c32bef3c7b01e5a == 9c32bef3c7b01e5a).
+
+PART A — OrderedDist replaces StackedDist everywhere:
+- New chart (charts.js OrderedDist): one bar per category in the question's
+  defined option order (the same order the engine uses for banded
+  aggregation), label directly beside its own bar, % on the bar, the org's
+  answer marked IN PLACE (highlighted bar + rail dot + "· You"), a thin
+  ordinal rail signalling "scale", EVERY category visible — zero-count real
+  options included at 0%, only zero-count N/A rows dropped, no "+N more".
+  Suppression/polarity/neutral handling unchanged (same props, same fav
+  palette rules).
+- ROUTING (the consistency sweep): single_select + yes_no now have ONE
+  honest representation ("ordered") via chartAlternatives — this covers
+  every card surface through CardBody (the reward grid, My view, the full
+  metric page, share views) plus pulse report blocks (pulses.js).
+  multi_select KEEPS OptionBars (prevalence, independent %s). Banded MATRIX
+  rows KEEP the per-level table (MatrixSelect): its labels/modal/You are
+  explicit table columns — the detached-legend defect never applied there,
+  and per-row full bar lists for 7 levels x 9 bands would not be compact.
+  StackedDist is deleted; stale stacked_bar chart prefs/defaults normalise
+  to "ordered" automatically.
+- PURE PRESENTATION: no server change for Part A; the API payload and every
+  computed number untouched (gates + block hash prove it).
+
+VERIFIED: call-out card renders all 5 categories summing to 100% with
+"You · 2 hours" in place and the corrected title; pay-in-adverts
+(Never 44.1 You / Some 40.5 / All 15.5) and bereavement (Statutory 40 /
+1-5 days 45.5 You / 5+ 14.5) on the new chart; ALL EIGHT GATES GREEN after
+restart (engine_audit 0, integrity 0, status zero, focus 24/24, hero 25/25,
+commentary 40/40, pulse 25/25, release 0).
