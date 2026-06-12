@@ -428,8 +428,11 @@ td.num, th.num { text-align: right; }
 .ov-wrap .grid2 { gap: var(--s4) !important; margin: var(--s4) 0 !important; }
 @media (max-width: 1000px) { .ov-top { grid-template-columns: 1fr; } }
 .arc-card { padding: var(--s4); display: flex; flex-direction: column; justify-content: center; }
-.arc-legend { display: flex; justify-content: center; gap: var(--s2); margin: 4px 0 2px; }
-.arc-pill { font-size: var(--fs-caption); font-weight: 650; border-radius: 10px; padding: 2px 10px; }
+.arc-svg { width: 100%; max-width: 212px; display: block; margin: var(--s2) auto 0; }
+.arc-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2);
+  margin: var(--s3) 0 0; max-width: 252px; align-self: center; width: 100%; }
+.arc-pill { font-size: var(--fs-caption); font-weight: 650; border-radius: 10px; padding: 3px 6px;
+  text-align: center; white-space: nowrap; }
 .arc-pill.below { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .arc-pill.at { background: var(--favourable-tint); color: var(--favourable); }
 .arc-pill.above { background: var(--unfavourable-tint); color: var(--unfavourable); }

@@ -116,44 +116,57 @@ function OverallArc({ market }) {
     <div class="card arc-card"><div class="caption" style=${{ padding: "var(--s5)" }}>
       Your overall position appears once enough of your data is comparable.</div></div>`;
   const total = (market.above + market.at + market.below) || 1;
-  const R = 74, CX = 105, CY = 112, GAP = 0.06;
+  // Cap-aware gauge geometry: round line caps paint strokeW/2 PAST a path's
+  // endpoint, so every span is inset by capF (the cap's angular size) — the
+  // painted extents then land exactly where intended and the joins show a
+  // crisp, even gap instead of overlapping blobs.
+  const R = 74, CX = 105, CY = 104, W = 14;
+  const capF = (W / 2 / R) / Math.PI, gapF = 0.022;
   const polar = (frac) => {
     const a = Math.PI * (1 - frac);
     return [CX + R * Math.cos(a), CY - R * Math.sin(a)];
+  };
+  const arcPath = (f0, f1) => {
+    const [x0, y0] = polar(f0), [x1, y1] = polar(f1);
+    return "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
+      " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
   };
   const segs = [];
   let acc = 0;
   [["below", market.below, "var(--amber-bright)"], ["at", market.at, "var(--favourable)"],
    ["above", market.above, "var(--unfavourable)"]].forEach(([k, n, col]) => {
     if (!n) return;
-    const f0 = acc / total + (acc ? GAP / 2 : 0);
+    let f0 = acc / total + capF + (acc ? gapF / 2 : 0);
     acc += n;
-    const f1 = acc / total - (acc < total ? GAP / 2 : 0);
-    const [x0, y0] = polar(Math.max(0, f0)), [x1, y1] = polar(Math.min(1, f1));
-    segs.push({ k, col, d: "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
-      " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) });
+    let f1 = acc / total - capF - (acc < total ? gapF / 2 : 0);
+    if (f1 <= f0) { const m = (f0 + f1) / 2; f0 = m - 0.001; f1 = m + 0.001; }
+    segs.push({ k, col, d: arcPath(f0, f1) });
   });
-  const word = market.verdict === "above" ? "Above" : market.verdict === "below" ? "Below" : "With";
+  const word = market.verdict === "above" ? "Above" : market.verdict === "below" ? "Below" : "At market";
+  const wordCol = market.verdict === "below" ? "var(--neutral-perf)"
+    : market.verdict === "above" ? "var(--unfavourable)" : "var(--favourable)";
   return html`
     <div class="card arc-card">
       <div class="caption">Where you stand</div>
-      <svg viewBox="0 0 210 126" style=${{ width: "100%", maxWidth: "215px", display: "block", margin: "0 auto" }}
+      <svg viewBox="0 0 210 116" class="arc-svg"
         role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
-        <path d="M 31 112 A 74 74 0 0 1 179 112" fill="none" stroke="var(--surface-sunk)" stroke-width="15" stroke-linecap="round"/>
-        ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15"
+        <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W} stroke-linecap="round"/>
+        ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width=${W}
           stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
-        <text x="105" y="92" text-anchor="middle" class="arc-word" style=${{ font: "650 26px var(--font-head)" }}
-          fill=${market.verdict === "below" ? "var(--neutral-perf)" : market.verdict === "above" ? "var(--unfavourable)" : "var(--favourable)"}>${word}</text>
+        <text x="105" y="84" text-anchor="middle" class="arc-word"
+          style=${{ font: "650 " + (word.length > 6 ? 19 : 24) + "px var(--font-head)" }}
+          fill=${wordCol}>${word}</text>
+        <text x="105" y="101" text-anchor="middle" class="ov-after"
+          style=${{ font: "500 10.5px var(--font-body)" }} fill="var(--ink-soft)">${market.pool} metrics</text>
       </svg>
       <div class="arc-legend num ov-after">
         <span class="arc-pill below"><${CountUp} to=${market.below} /> below</span>
         <span class="arc-pill at"><${CountUp} to=${market.at} /> at</span>
         <span class="arc-pill above"><${CountUp} to=${market.above} /> above</span>
       </div>
-      <div style=${{ textAlign: "center", marginTop: "2px" }}>
-        <span class="n-pill num" title="positioned metrics in this peer group">${market.pool} metrics</span></div>
     </div>`;
 }
+
 
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",

@@ -1365,3 +1365,16 @@ advice" line moved to the Signals header tooltip; the arc lost its
 subtitle ("94 metrics" pill only); tile captions are bare counts (12/23)
 with tooltips. qa_hero 30/30 (wording check runs on the full detail field,
 unchanged).
+
+## 2026-06-12 — Hero arc rebuild (alignment fix)
+
+David: the gauge looked poor — overlapping rounded caps at the segment
+joins, ragged legend, floating metrics pill. Root cause: round line caps
+paint strokeW/2 PAST the path endpoint, and the old fixed 0.06 gap was
+smaller than two cap radii, so adjacent segments collided into blobs and
+the painted arc overran its baseline. Fix = cap-aware geometry: every
+span (track included) is inset by the cap's angular size capF =
+(W/2/R)/π plus a 0.022 visible gap, so painted extents land exactly
+where intended. Verdict word + "94 metrics" now centred INSIDE the
+gauge ("At market" replaces the cryptic "With", auto-shrinks to fit);
+legend is a 3-equal-column grid of nowrap pills. Presentation-only.
