@@ -68,7 +68,8 @@ function OverviewHero({ data, cut, cuts }) {
   const m = data.hero && data.hero.market;
   const locked = data.callouts && data.callouts.gaps_locked;
   return html`
-    <div>
+    <div class="ov-wrap">
+      <div class="ov-aurora" aria-hidden="true"></div>
       <div class="ov-top">
         <${OverallArc} market=${m} />
         <${SignalsPanel} signals=${data.signals} locked=${locked} contribution=${data.contribution} />
@@ -143,6 +144,7 @@ function OverallArc({ market }) {
       <div class="caption">Where you stand</div>
       <svg viewBox="0 0 210 126" style=${{ width: "100%", maxWidth: "215px", display: "block", margin: "0 auto" }}
         role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
+        <path d="M 31 112 A 74 74 0 0 1 179 112" fill="none" stroke="var(--surface-sunk)" stroke-width="15" stroke-linecap="round"/>
         ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width="15"
           stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
         <text x="105" y="92" text-anchor="middle" class="arc-word" style=${{ font: "650 26px var(--font-head)" }}
@@ -154,7 +156,8 @@ function OverallArc({ market }) {
         <span class="arc-pill at"><${CountUp} to=${market.at} /> at</span>
         <span class="arc-pill above"><${CountUp} to=${market.above} /> above</span>
       </div>
-      <div class="caption" style=${{ textAlign: "center" }}>${market.pool} positioned metrics</div>
+      <div style=${{ textAlign: "center", marginTop: "2px" }}>
+        <span class="n-pill num">${market.pool} positioned metrics</span></div>
     </div>`;
 }
 
@@ -186,7 +189,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       html`<div style=${{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
         ${sigs.map((s, i) => html`
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
-            <${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${18} />
+            <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
             <span class="signal-val num">${s.value_display}</span>
             <span class="signal-detail">${s.detail}</span>
             <span class="lens-tag">${s.lens}</span>
@@ -215,6 +218,7 @@ function CategoryTile({ d }) {
       ${dot != null ? html`
         <div class="tile-band">
           <div class="tile-band-mid"></div>
+          <div class="band-tick"></div>
           <div class="tile-dot" style=${{ left: "calc(" + Math.min(97, Math.max(3, dot)) + "% - 6px)", background: col }}></div>
         </div>` : html`
         <div class="tile-band">
@@ -240,7 +244,7 @@ function ChipColumn({ title, items, good }) {
       items.map((it, i) => html`
         <div key=${i} class="chip-row" onClick=${() => openMetric(it.question_id)} role="button" tabindex="0">
           <span class="chip-label">${it.label}</span>
-          <span class="chip-band"><span class="tile-dot" style=${{ left: "calc(" + Math.min(96, Math.max(2, it.adjusted)) + "% - 5px)", background: good ? "var(--favourable)" : "var(--unfavourable)", width: "10px", height: "10px", top: "-2.5px" }}></span></span>
+          <span class="chip-band"><span class="band-tick"></span><span class="tile-dot" style=${{ left: "calc(" + Math.min(96, Math.max(2, it.adjusted)) + "% - 5px)", background: good ? "var(--favourable)" : "var(--unfavourable)", width: "10px", height: "10px", top: "-2.5px" }}></span></span>
           <span class=${"num p-pill " + (good ? "good" : "bad")}>P${Math.round(it.percentile)}</span>
         </div>`)}
     </div>`;

@@ -485,6 +485,40 @@ td.num, th.num { text-align: right; }
 .p-pill.good { background: var(--favourable-tint); color: var(--favourable); }
 .p-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
 
+/* ---- premium depth (2026-06-12): ambient aurora behind the hero, crisp
+   hairlines, lens-hued hover glows. Quiet luxury, zero loops. ---- */
+.ov-wrap { position: relative; }
+.ov-aurora { position: absolute; inset: -28px -20px auto -20px; height: 420px; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(560px 300px at 12% 0%, rgba(37, 71, 176, 0.055), transparent 70%),
+    radial-gradient(640px 320px at 88% 8%, rgba(194, 84, 46, 0.04), transparent 70%),
+    radial-gradient(420px 260px at 55% 0%, rgba(14, 138, 95, 0.035), transparent 70%); }
+.ov-wrap > :not(.ov-aurora) { position: relative; z-index: 1; }
+.ov-top .card, .cat-tile, .grid2 .card { box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.85); }
+.n-pill { font-size: var(--fs-caption); color: var(--ink-soft); background: var(--surface-sunk);
+  border-radius: 10px; padding: 2px 10px; }
+.signal-roundel { width: 30px; height: 30px; border-radius: 50%; background: var(--surface);
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  box-shadow: 0 1px 3px rgba(33,27,38,.12); transition: transform var(--ease); }
+.signal-row:hover .signal-roundel { transform: scale(1.1) rotate(-5deg); }
+.signal-row { box-shadow: inset 3px 0 0 transparent; }
+.signal-row.lens-save    { box-shadow: inset 3px 0 0 var(--lens-save); }
+.signal-row.lens-attract { box-shadow: inset 3px 0 0 var(--lens-attract); }
+.signal-row.lens-retain  { box-shadow: inset 3px 0 0 var(--lens-retain); }
+.signal-row.lens-engage  { box-shadow: inset 3px 0 0 var(--lens-engage); }
+.signal-row.lens-save:hover    { box-shadow: inset 3px 0 0 var(--lens-save), 0 8px 22px rgba(14,138,95,.16); }
+.signal-row.lens-attract:hover { box-shadow: inset 3px 0 0 var(--lens-attract), 0 8px 22px rgba(109,91,208,.18); }
+.signal-row.lens-retain:hover  { box-shadow: inset 3px 0 0 var(--lens-retain), 0 8px 22px rgba(14,122,138,.16); }
+.signal-row.lens-engage:hover  { box-shadow: inset 3px 0 0 var(--lens-engage), 0 8px 22px rgba(194,84,46,.16); }
+.band-tick { position: absolute; left: 50%; top: -2px; width: 1.5px; height: calc(100% + 4px);
+  background: var(--chart-axis); opacity: .7; border-radius: 1px; }
+.cat-tile:hover { box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,.85); }
+.cat-tile::after { content: "→"; position: absolute; right: 12px; bottom: 8px; font-weight: 650;
+  color: var(--blue-bright); opacity: 0; transform: translateX(-4px);
+  transition: opacity var(--ease), transform var(--ease); }
+.cat-tile { position: relative; }
+.cat-tile:hover::after { opacity: 1; transform: none; }
+
 /* ---- premium motion (2026-06-12): calm, once, and off under
    prefers-reduced-motion. Entrances stagger; the arc draws itself. ---- */
 @keyframes ov-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

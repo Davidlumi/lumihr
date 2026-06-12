@@ -1320,3 +1320,15 @@ dots scale on hover. ALL of it is disabled under prefers-reduced-motion
 (including the count-up, which renders the final number immediately).
 Choreography total ~1.1s, cubic-bezier ease-outs, nothing loops — premium
 without noise. qa_hero 30/30 unchanged.
+
+## 2026-06-12 — Dashboard premium pass 2: ambient depth + crafted detail
+
+An AURORA backdrop behind the hero (three ultra-soft radial washes in the
+brand/lens hues at 3.5-5.5% alpha — ambient light, not decoration;
+pointer-transparent). Cards carry an inner top hairline highlight over the
+soft shadow. The arc gained a full sunk TRACK behind its segments and an
+n-pill. Signal rows: lens-coloured left SPINE, the icon in a white shadowed
+ROUNDEL (tilts on hover), and a lens-hued hover GLOW. Every position band
+gained a MEDIAN TICK at 50 (the craft detail that makes dot placement
+readable). Category tiles reveal a ghost arrow on hover. All static depth
+or hover-only response — nothing loops; reduced-motion handling unchanged.
