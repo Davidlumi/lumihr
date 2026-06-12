@@ -50,6 +50,17 @@ check("every core question carries version + release_entered", stamped == 0, sta
 check("data periods carry the release they were aggregated under",
       conn.execute("SELECT COUNT(*) FROM snapshots WHERE release_id IS NULL").fetchone()[0] == 0)
 
+print("== break-marker hygiene ==")
+import re as _re
+known_rels = {r[0] for r in conn.execute("SELECT release_id FROM core_releases")}
+stale_breaks = []
+for r in conn.execute("SELECT id, historical_comparability FROM questions WHERE historical_comparability LIKE '%break@%'"):
+    for m in _re.findall(r"break@([\w.\-]+)", r["historical_comparability"]):
+        if m.replace("+emergency", "") not in known_rels:
+            stale_breaks.append((r["id"], m))
+check("no break marker references a nonexistent release (fixture-residue class)",
+      not stale_breaks, stale_breaks)
+
 print("== module invariant (2026.1) ==")
 bad_mod = conn.execute("SELECT COUNT(*) FROM questions WHERE module IS NOT NULL AND is_required=1").fetchone()[0]
 check("sector-module questions are never required (gate stays org-independent)", bad_mod == 0, bad_mod)

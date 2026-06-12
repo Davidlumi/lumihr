@@ -969,3 +969,27 @@ qa_status_audit/qa_commentary all test what they claim post-2026.1 updates
 and exit non-zero. Gaps to close in Phase 2: (a) qa_engine_audit doesn't
 self-check app-cache freshness (the footgun); (b) no gate catches break
 markers referencing nonexistent releases (the F1 class).
+
+## 2026-06-12 — ENGINE AUDIT (post-2026.1) Phase 2: fixes + gate hardening
+
+F1 FIXED: ALLOW_03's stale fixture break marker removed
+(historical_comparability back to 'medium'; 0 break markers in the library —
+correct, since no real rewording has shipped).
+
+GATES HARDENED:
+- qa_engine_audit now SELF-CHECKS app-cache freshness before auditing
+  (served question count vs DB live core) and exits 2 with a loud FATAL on
+  staleness — proven by simulation: DB retire -> "app serves 194, DB 193 —
+  STALE… restart" exit 2; restored. A forgotten restart can no longer
+  produce a falsely-green audit.
+- qa_engine_audit's scope now excludes retired questions (latent bug found
+  by the simulation itself: post-retirement it would have 404-failed every
+  API comparison).
+- qa_release gained break-marker hygiene: any 'break@<release>' referencing
+  a nonexistent release (the F1 fixture-residue class) fails the gate.
+
+ALL SEVEN GATES GREEN on a fresh server (qa_release last by documented
+convention): engine_audit 0 failures (incl. freshness pass 194==194),
+integrity 0 mismatches, status audit zero, focus 24/24, hero 25/25,
+commentary 40/40, release 0 failures (incl. the new hygiene + module
+invariants).

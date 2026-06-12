@@ -176,13 +176,28 @@ def login(email, password):
 conn = sqlite3.connect(DB)
 conn.row_factory = sqlite3.Row
 META = load_q_meta(conn)
-REWARD = {qid: m for qid, m in META.items() if m["superpower"] == "Reward"}
+# live core = Reward AND not retired (retired questions leave the member
+# surface by design — including them would 404 every API comparison)
+REWARD = {qid: m for qid, m in META.items()
+          if m["superpower"] == "Reward" and (m.get("status") or "active") != "retired"}
 print("scope: %d reward questions (reference derives scope from the questions table)" % len(REWARD))
 
 raw_answers = {}   # (qid, org, row) -> value
 for r in conn.execute("SELECT question_id, org_id, matrix_row_id, value FROM answers WHERE snapshot_id=1"):
     raw_answers[(r["question_id"], r["org_id"], r["matrix_row_id"] or "")] = r["value"]
 responding = {o for (_q, o, _r) in raw_answers}
+
+# ---- cache-freshness self-check (the footgun): a running app with a stale
+# question cache makes every API comparison falsely green or falsely broken.
+# Verify the served question count equals the DB live core BEFORE auditing.
+_op0 = login("analyst@thornbridge.example", "lumi-data-2026")
+_st, _me = api(_op0, "/api/me")
+_served = ((_me.get("scope") or {}).get("question_count"))
+if _served != len(REWARD):
+    print("FATAL: app serves %s questions but the DB live core is %d — the app is running"
+          " a STALE question cache. Restart the app and re-run this gate." % (_served, len(REWARD)))
+    sys.exit(2)
+print("cache freshness: app serves %d == DB live core %d" % (_served, len(REWARD)))
 
 # =========================================================== LAYER 1: STORAGE
 print("\n================ LAYER 1 — STORAGE FIDELITY (out == in) ================")
