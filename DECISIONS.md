@@ -902,3 +902,70 @@ additions; domains: 5 of 7 carry market verdicts, Wellbeing/Recognition
 prevalence-only below the polarised floor), qa_engine_audit 0, qa_integrity
 0, status audit zero, qa_commentary 40/40, qa_release 0 (incl. new module
 invariant). Probe org removed after testing.
+
+## 2026-06-12 — ENGINE AUDIT (post-2026.1) Phase 1: report
+
+Run on a FRESH app process, with the served question count verified against
+the DB before any check (194 == 194 — the stale-cache footgun addressed
+up front; made permanent in Phase 2).
+
+L1 STORAGE: VERIFIED on 2026.1 data — 197,414 raw rows, 0 changed/missing/
+extra (regen whitelist intact); tri-state (0 / 'Not applicable…' / no row)
+shown on real rows; suffix/banded strings verbatim; the 14 new questions
+correctly have ZERO stored rows.
+
+L2 CALCULATION: VERIFIED — independent recompute of all 194 (5 numeric,
+142 single-select, 12 yes/no, 14 multi-select, 14 matrix-numeric,
+7 matrix-categorical): 0 value mismatches; ALLOW_01 verdict midrank
+17.5 == prod 17.5.
+
+REGRESSION TARGETS (both fixes HELD through the migration):
+- Multi-select split: all 12 data-bearing metrics' top-option counts/pcts
+  match an independent live-raw split exactly (ALLOW_01: Car 45.5/Shift
+  41.4/Travel 18.6/Mobile 35.9/On-call 32.3 — note: the brief's reference
+  table (Shift 81.2%, n=202) reproduces only from the superseded
+  responses_orig files, per the 2026-06-12 adjudication; LIVE raw is the
+  ground truth). The 2 new multi-selects suppress at n=0.
+- Matrix rows: all 21 matrices aggregate every populated row (live n per
+  metric pasted; tronc n=26, notice n=220, multipliers n=191); 0 failures.
+
+L3 SUPPRESSION: VERIFIED — 0 sub-floor blocks in any stored cut; '_' keys
+stripped; live 1-org group suppressed end-to-end incl. AI commentary;
+foreign group id -> labelled all-peers; org_id injection clean; differential
+residual remains flagged (unchanged).
+
+L4 CUTS: VERIFIED — 19 cut n's == raw qualifying sets; unclassified in
+'all' only; bands exact-match labels; Retail group 15==15; self-include
+consistent.
+
+L5 RESTRUCTURE INTEGRITY: VERIFIED —
+- Mapping diff (fresh read): 0 mismatches; counts == locked (194).
+- No computed value moved: 5 recorded pre-2026.1 values (salary-budget
+  n=200/p50=3.7; pay-frequency Monthly 71.5%; ALLOW_01 score 220/22.22;
+  EXT_REW_GAP_011 score 215/25.0; recognition-budget n=213) all identical
+  live.
+- 14 new questions: 0 answers, 0 history, valid schema, payload suppressed
+  (n=0), entered 2026.1 — 0 failures.
+- Rollups/denominator: overview by_section, hero domains, submission
+  sections, methodology scope ALL the 7 categories; basis_total 82; zero
+  Transparency/Progression references on live surfaces.
+- Comparability: re-filing marked no breaks; re-categorised trends resolve.
+- Sticky unlock: pre-2026.1 stamp (2026-06-11) -> still unlocked.
+
+DETERMINISM + EDGES: payload hash identical across re-aggregation
+(79a2a771…); API x3 identical; single/zero-variance/empty/negative/all-zero
+inputs behave.
+
+DEFECT FOUND (Phase 2): F1 — ALLOW_03 carries a stale comparability-break
+marker 'break@2026.0-test2+emergency', residue of the versioning build's
+interactive emergency-lane FIXTURE (the manual cleanup string targeted
+'2026.0-test+emergency'; the marker was written under 2026.0-test2). Inert
+in current trend logic (the release id no longer exists so no boundary can
+cross it) but false metadata on a live question. The standing qa_release
+gate does NOT leave this residue (its emergency fixture sets no break).
+
+GATE REVIEW: qa_engine_audit/qa_release/qa_focus/qa_hero/qa_integrity/
+qa_status_audit/qa_commentary all test what they claim post-2026.1 updates
+and exit non-zero. Gaps to close in Phase 2: (a) qa_engine_audit doesn't
+self-check app-cache freshness (the footgun); (b) no gate catches break
+markers referencing nonexistent releases (the F1 class).
