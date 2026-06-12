@@ -1052,3 +1052,54 @@ console remains unbuilt (D2). Members only join and respond.
 REGRESSION: all EIGHT gates green on a fresh server (engine_audit 0,
 integrity 0, status audit zero, focus 24/24, hero 25/25, commentary 40/40,
 pulse 25/25, release 0) — the core is untouched.
+
+## 2026-06-12 — RELEASE 2026.2: 12 forward-looking additions (pure adds) + calibrated seed
+
+THE RELEASE (apply_release_2026_2.py, from lumi_release_2026_2_questions.csv
+verbatim — nothing invented): Governance 6 / Pay 4 / Time Off 2, all
+OPTIONAL + UNSCORED. Counts now Pay 45 · Incentives 21 · Benefits 50 ·
+Time Off 28 · Wellbeing 14 · Recognition 7 · Governance 41 = 206. Change
+log: 12 added / 0 retired / 0 reworded; zero break markers anywhere; the
+existing 194 byte-identical vs the 2026.1 snapshot (8-field diff = 0);
+2025-baseline (180), 2026.1 (194) and 2026.2 (206) all reconstruct;
+basis stays 82 — the demo org remained unlocked (81/82, insights live).
+
+QA HARDENING APPLIED: ids assigned from hints with collision check
+(REW262_*); the action-plan 'None' carries option_score 0 in a
+future-proofed scoring_config (the F1 class can't reappear if scored
+later); guaranteed-hours / cancelled-shift / shift-notice carry a
+first-class 'Not applicable' option (is_na + na_codes; counted as answered,
+shown in the distribution flagged is_na, practice_status -> unknown so it
+never enters prevalence/adoption); the AI-skills premium stays NEUTRAL
+(prevalence only, no verdict); option labels asserted delimiter-free.
+Hero census DERIVED, not drifted: 98->109 polarised (+11; the neutral is
+the 12th), positionable 76 unchanged (all additions unscored selects),
+routed single-selects 15->22 (+7) — frozen into qa_hero with the
+derivation; qa_focus updated to 206.
+
+THE SEED (seed_release_2026_2.py via apply_seed_2026_2.py): David-signed
+baselines as TARGETS; firmographics-only conditioning mapped to the real
+registry (FTE midpoints, HR_Maturity 'Advanced', Public Sector Body,
+Workforce_Frontline/Shift_%, tech sectors); seeded
+f"{qid}|2026-06-12|{org_id}", org-blind, whole-metric, reproducible
+(re-run identical). CALIBRATION (the pay-frequency precedent): the script's
+tilt damping PLUS driver-side input-constant compensation, because (a) the
+provided script never calibrated the action-plan multi (realised has-plan
+47.3% vs signed 30% — tilts added straight to the base) and (b) four
+questions sat 3.4-6.1pp off with tilts at zero (fixed-seed sampling
+variance incl. a modal flip on pay-in-adverts). Final realised vs signed:
+ALL 12 within 3.0pp, every modal matches the signed modal, action plan
+27.3% vs 30%. offer_na routing: applicable n = 190/183/183 of 220
+(salaried/no-shift orgs answered 'Not applicable'). Write double-guarded
+(--write --confirmed-by-david), refused if any REW262 answer pre-exists.
+2,640 responses inserted (answers + history), re-aggregated. INTEGRITY:
+no existing metric touched; no value hand-tuned; the demo org drawn by the
+same blind rule (its answers on record incl. 'None' action plan and
+'No AI use' — visibly not favour-tuned).
+
+PROOFS: action-plan aggregation matches an independent raw split exactly
+(Gender 56/25.5%, None 160/72.7%, n=220); shift-notice serves the N/A bar
+flagged is_na with practice_status('Not applicable')='unknown'; trend
+starts at 2026.2 (1 period). ALL EIGHT GATES GREEN after restart
+(engine_audit 0, integrity 0, status zero, focus 24/24, hero 25/25 with
+the new census, commentary 40/40, pulse 25/25, release 0).
