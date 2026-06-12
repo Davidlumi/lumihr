@@ -993,3 +993,62 @@ convention): engine_audit 0 failures (incl. freshness pass 194==194),
 integrity 0 mismatches, status audit zero, focus 24/24, hero 25/25,
 commentary 40/40, release 0 failures (incl. the new hygiene + module
 invariants).
+
+## 2026-06-12 — PULSES (Tier 2): timely topical surveys, separate surface, one engine
+
+WHAT EXISTS: pulses / pulse_participants / pulse_responses tables;
+server/pulses.py (lifecycle, participation, report, graduation);
+/api/pulses* endpoints; a distinct "Timely pulses" UI area (web/js/pulses.js,
+route /pulses) visually and structurally separate from the 7-category core
+nav; seed_pulse.py ("EU Pay Transparency readiness 2026", 5 questions, 12
+seeded synthetic participants); qa_pulse.py standing gate (25 checks,
+self-cleaning; restart the app after running it, same convention).
+
+THE CARDINAL RULE — STRUCTURAL SEPARATION, PROVEN BOTH WAYS: pulse responses
+live in pulse_responses; the core engine reads `answers` only. The decisive
+test: the demo org answered PROP_9e4ad87f as 3.9 in core and 9.9 in the
+pulse — core aggregate before == after (n=200, p50 3.7; payload
+byte-identical even after a full core re-aggregation with pulse sentinels
+present), while the pulse aggregate (n=13, p50 4.2, max 9.9) matched an
+independent recompute of pulse_responses exactly. Reverse direction: pulse
+n=13, never the 200-org core pool.
+
+ONE ENGINE: pulse_report calls aggregate_question_for_orgs — the same entry
+point as the core. Proven on the historically broken types: a pulse
+multi-select splits (Car 4/5 = 80%), a pulse matrix row aggregates
+(n=5, p50=22); n>=5 floor exact (4 participants -> every question
+suppressed + the honest holding state "results appear once 5+ have taken
+part"; the 5th serves).
+
+LIFECYCLE: draft invisible to members (list + detail 404) -> open
+(join/respond/submit inside the window; closes_at extendable) -> closed
+(responses refused, window extension refused — NO reopen in v1, report
+final) -> archived (report retained). Question definitions are SNAPSHOTTED
+at open (release-style): after a simulated core reword, the archived pulse
+still rendered the question as-asked.
+
+INDEPENDENCE (give-to-get per pulse): participation never moves the core
+unlock (stamp + basis 82 unchanged); a core-LOCKED org joined, answered and
+participated; report access requires participating in THAT pulse only.
+Whole-cohort view only in v1 (no cuts — opt-in cohorts would suppress every
+cut); deferred until cohorts grow.
+
+AI: pulse commentary rides generate_metric_commentary + the SAME
+validate_commentary gate, cohort-scoped payload; LUMI_AI_PULSE kill switch
+joins the family (off -> 403, proven on a throwaway instance; on ->
+validated deterministic output without an API key).
+
+GRADUATION: graduate_question() promotes the DEFINITION only — the pulse
+question entered the live core with ZERO core responses (asserted
+structurally; the pulse's responses stay in pulse_responses); it is logged
+'added' by the next release diff and trends from entry. Pulse-origin
+questions (superpower='Pulse') are invisible to the core scope and excluded
+from core releases until graduated.
+
+CREATION AFFORDANCE (flagged): pulses are created via seed script +
+pulses.py functions (superadmin/engineering action) — the back-office
+console remains unbuilt (D2). Members only join and respond.
+
+REGRESSION: all EIGHT gates green on a fresh server (engine_audit 0,
+integrity 0, status audit zero, focus 24/24, hero 25/25, commentary 40/40,
+pulse 25/25, release 0) — the core is untouched.

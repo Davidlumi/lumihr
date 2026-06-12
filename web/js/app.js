@@ -136,6 +136,8 @@ function App() {
   else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
   else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
   else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
+  else if ((m = route.match(/^\/pulses\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
+  else if (route.startsWith("/pulses")) page = html`<${PulsesPage} me=${me} />`;
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
@@ -168,6 +170,11 @@ function App() {
               <${SpIcon} sp=${sp} /> ${sp}
               ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => q.superpower === sp && !q.locked).length}</span>`}
             </button>`)}
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">Timely pulses</div>
+          <button class=${navCls(route, "/pulses")} onClick=${() => nav("/pulses")}>
+            <${Icon} name="zap" size=${15} /> Pulses</button>
         </div>
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
