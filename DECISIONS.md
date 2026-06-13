@@ -1433,3 +1433,45 @@ release flag. DECISION: keep the mechanism and its existing truthful
 tooltip, re-attach it to the Benchmark group's category child rows in
 the new IA. If David wants a separate new-in-release dot per category,
 that is a different (additive) indicator — flagged for David.
+
+## 2026-06-12 — Chrome rationalisation PR-1: sidebar IA, redirects, gating
+
+NEW SIDEBAR (spec §1): the 19-item rail collapses to Overview, My view,
+Priorities (was Gap register), Pulse (was Pulses; orphan "TIMELY PULSES"
+header gone), a Benchmark ▾ group (parent = label+chevron only; All·206
+the first child carrying the total; eight category children), then YOUR
+ORGANISATION → Your data (My data + Submit merged), Team (admin),
+Settings (admin). Core governance + Methodology + Sign out move into the
+identity block; no separate footer block.
+
+BENCHMARK GROUP (§1.1): expand state persists per user via the prefs
+store (_nav.benchmark_open); default expanded on first visit. Counts live
+(catalogue-driven), right-aligned, tertiary. The gap-cue dot (§0) rides
+the relevant child row, tooltip intact. "Time Off" renders "Time off".
+
+BOARD PACK (§1.2): ceases to be a nav destination — now an "Export board
+pack" action on Overview (generates under the current peer filter) with a
+chevron menu of previous packs. Hidden while insights locked. Old
+/boardpack route 301s to Overview and pulses the export button once
+(sessionStorage lumi-bp-migrated).
+
+YOUR DATA (§1.3): one destination = old My data (view) with Submit as the
+primary in-page action (hidden for viewers). Submission flow unchanged
+(privacy/terms links handled in PR-3 §6.3).
+
+RESERVED SLOT (§1.4): code comment marks the Signals insertion point
+between Overview/My view and Priorities; renders nothing.
+
+REDIRECTS (§7): mapLegacyRoute in core.js 301s every old hash —
+/gap-register→/priorities, /pulses→/pulse, /reward→/benchmark,
+/mydata→/your-data, /submission→/your-data/submit, /shares→
+/settings?tab=sharing, /boardpack→/overview. Crawl-verified: 9/9 map,
+zero 404s. All in-app nav()/href references updated in the same change.
+
+ROLE GATING (§8): Team/Settings/Core governance hidden (not disabled) for
+non-admins; direct route access renders an Admin-area lock. Verified with
+the contributor account. Settings absorbs Manage shares as a "Sharing"
+section (SharesPage gains an embedded mode).
+
+Client-only change (web/js, web/css, html) — no server/engine/catalogue/
+seed files touched. Full gate suite green (8/8). Cache v51→v52.

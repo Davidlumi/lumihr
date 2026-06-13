@@ -31,7 +31,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
-          <h1 class="display-title">Practice & policy gap register</h1>
+          <h1 class="display-title">Priorities</h1>
           <div class="caption" style=${{ marginTop: "4px" }}>
             What similar organisations have in place that you don't — sorted so the most commonly held missing items lead.
             Peer group: ${cutLabelOf(cut, cuts)}.
@@ -93,71 +93,6 @@ function GapRow({ r, focused }) {
 }
 
 // ------------------------------------------------------------ board pack ---// ------------------------------------------------------------ board pack ---
-window.BoardPackPage = function ({ me, cut }) {
-  const contrib = me.contribution;
-  if (contrib && !contrib.insights_unlocked) return html`
-    <div>
-      <div class="page-head"><div><h1 class="display-title">Board pack</h1>
-        <div class="caption">A board-ready narrative of your reward position — written from your live benchmark.</div></div></div>
-      <div class="card insight-lock" style=${{ padding: "var(--s5)", maxWidth: "720px" }}>
-        <div class="blurred" aria-hidden="true">
-          <h2 class="section-title">Executive summary</h2>
-          <p>Your organisation sits above the peer median on the majority of comparable reward metrics, with three clear opportunities…</p>
-          <h2 class="section-title">Where you lead</h2>
-          <p>Strongest positions relative to the peer group, with the evidence behind each…</p>
-          <h2 class="section-title">Priorities and the £ case</h2>
-          <p>The gaps worth closing first, sized in £ per year against the peer median…</p>
-        </div>
-        <div class="lock-note">
-          <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
-          <div class="caption" style=${{ textAlign: "center", maxWidth: "320px" }}>
-            Your board pack is written from your own position — it unlocks when you've completed your
-            key reward questions${contrib.days_left != null ? ` (${contrib.days_left} days left)` : ""}.</div>
-          <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
-        </div>
-      </div>
-    </div>`;
-  const [packs, setPacks] = useState(null);
-  const [gen, setGen] = useState(false);
-  const [err, setErr] = useState(null);
-  useEffect(() => { api("/api/boardpacks").then(d => setPacks(d.packs)); }, []);
-  const generate = async () => {
-    setGen(true); setErr(null);
-    try {
-      const r = await api("/api/boardpack/generate", { method: "POST", body: { cut: cut.dim, cut_value: cut.value } });
-      nav("/boardpack/" + r.pack_id);
-    } catch (e) { setErr(e.message); }
-    setGen(false);
-  };
-  return html`
-    <div style=${{ maxWidth: "760px" }}>
-      <h1 class="display-title">Board pack</h1>
-      <p>A board-ready summary of your benchmark position: where you lead, the biggest gaps, what closing them is
-      worth, and recommended actions — every figure cited with its percentile, peer group and sample size.</p>
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <div class="row spread">
-          <div>
-            <b>Generate a new board pack</b>
-            <div class="caption">Uses your current peer-group filter (${cut.dim === "all" ? "All peers" : cut.value || cut.dim}). Takes a few seconds.</div>
-          </div>
-          <button class="btn primary" disabled=${gen} onClick=${generate}>${gen ? html`<${Spinner} /> Writing…` : "Generate board pack"}</button>
-        </div>
-        ${err && html`<div class="error-text" style=${{ marginTop: "8px" }}>${err}</div>`}
-      </div>
-      ${packs && packs.length > 0 && html`
-        <div class="card" style=${{ padding: "var(--s4)" }}>
-          <h2 class="section-title">Previous packs</h2>
-          <table class="data"><tbody>
-            ${packs.map(p => html`
-              <tr key=${p.pack_id}>
-                <td>Board pack — ${new Date(p.created_at + "Z").toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" })}</td>
-                <td style=${{ textAlign: "right" }}><button class="btn small" onClick=${() => nav("/boardpack/" + p.pack_id)}>Open</button></td>
-              </tr>`)}
-          </tbody></table>
-        </div>`}
-    </div>`;
-};
-
 window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const [pack, setPack] = useState(sharedData || null);
   const [shareLink, setShareLink] = useState(null);
@@ -177,7 +112,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
     <div>
       ${!shared && html`
         <div class="row spread no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
-          <button class="btn quiet" onClick=${() => nav("/boardpack")}>← Back</button>
+          <button class="btn quiet" onClick=${() => nav("/overview")}>← Back</button>
           <div class="row">
             ${n._fallback && html`<${Chip} kind="warn">Deterministic narrative — set ANTHROPIC_API_KEY for AI-written prose<//>`}
             ${me && me.user.role === "admin" && html`<button class="btn" onClick=${makeShare}>Create share link (30 days)</button>`}
@@ -395,7 +330,7 @@ window.PeerTwinPanel = function ({ onUse, onClose }) {
 };
 
 // ----------------------------------------------------------------- shares --
-window.SharesPage = function () {
+window.SharesPage = function ({ embedded }) {
   const [data, setData] = useState(null);
   const refresh = () => api("/api/shares").then(setData);
   useEffect(() => { refresh(); }, []);
@@ -595,13 +530,16 @@ window.SettingsPage = function ({ me, refreshMe }) {
             ${" "}${new Date(me.org.data_terms.accepted_at + "Z").toLocaleDateString("en-GB")} (v${me.org.data_terms.version}).
             This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
           <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
-            them on the <a href="#/submission">Submit data</a> page before the first submission.</p>`}
+            them on the <a href="#/your-data/submit">Your data</a> page before the first submission.</p>`}
         <div class="row" style=${{ gap: "var(--s3)" }}>
           <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
         </div>
         <div class="caption" style=${{ marginTop: "8px" }}>The DPA is optional — for members whose legal or
           data-protection teams want the fuller instrument. All terms are
           ${" "}<span class="chip warn">DRAFT — pending legal review</span></div>
+      </div>
+      <div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <${SharesPage} embedded=${true} />
       </div>
     </div>`;
 };

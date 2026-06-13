@@ -15,7 +15,7 @@ window.PulsesPage = function ({ me }) {
   const open = data.pulses.filter(p => p.accepting);
   const past = data.pulses.filter(p => !p.accepting);
   const Card = (p) => html`
-    <div key=${p.pulse_id} class="card pulse-card" onClick=${() => nav("/pulses/" + p.pulse_id)}
+    <div key=${p.pulse_id} class="card pulse-card" onClick=${() => nav("/pulse/" + p.pulse_id)}
       style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", cursor: "pointer" }}>
       <div class="row spread">
         <b>${p.name}</b>
@@ -29,7 +29,7 @@ window.PulsesPage = function ({ me }) {
     </div>`;
   return html`
     <div style=${{ maxWidth: "760px" }}>
-      <h1 class="display-title">Pulses</h1>
+      <h1 class="display-title">Pulse</h1>
       <p>Short, timely deep-dives on what's moving in reward right now — separate from your core
       benchmark. Each pulse has its own opt-in group and its own window; take part (free) and you
       see that pulse's report. Your core benchmark is never affected.</p>
@@ -79,7 +79,7 @@ window.PulseDetailPage = function ({ me, pid }) {
 
   return html`
     <div style=${{ maxWidth: "780px" }}>
-      <button class="btn quiet" onClick=${() => nav("/pulses")}>← All pulses</button>
+      <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
       <h1 class="display-title" style=${{ margin: "6px 0 4px" }}>${p.name}</h1>
       <p class="caption">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating

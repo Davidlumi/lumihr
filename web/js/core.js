@@ -151,10 +151,37 @@ window.ErrorBoundary = class extends React.Component {
 };
 
 // ------------------------------------------------------------- router ------
+/* Chrome rationalisation (2026-06-12, spec section 7): every old route 301s to
+   its new home — typed links, bookmarks and emails must never 404. The map is
+   applied inside useRoute so every consumer only ever sees canonical routes. */
+window.mapLegacyRoute = function (r) {
+  if (r.startsWith("/gap-register")) return "/priorities";
+  if (r.startsWith("/pulses")) return "/pulse" + r.slice("/pulses".length);
+  if (r.startsWith("/reward")) return "/benchmark" + r.slice("/reward".length);
+  if (r.startsWith("/mydata")) return "/your-data";
+  if (r.startsWith("/submission")) return "/your-data/submit" + r.slice("/submission".length);
+  if (r === "/boardpack" || r === "/boardpack/") {
+    try { sessionStorage.setItem("lumi-bp-migrated", "1"); } catch (e) {}
+    return "/overview";
+  }
+  if (r.startsWith("/shares")) return "/settings?tab=sharing";
+  return null;
+};
+
+function canonicalRoute() {
+  const r = window.location.hash.slice(1) || "/overview";
+  const mapped = window.mapLegacyRoute(r);
+  if (mapped) {
+    window.location.replace("#" + mapped);
+    return mapped;
+  }
+  return r;
+}
+
 window.useRoute = function () {
-  const [route, setRoute] = useState(window.location.hash.slice(1) || "/overview");
+  const [route, setRoute] = useState(canonicalRoute());
   useEffect(() => {
-    const f = () => setRoute(window.location.hash.slice(1) || "/overview");
+    const f = () => setRoute(canonicalRoute());
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
   }, []);

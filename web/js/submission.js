@@ -113,7 +113,7 @@ function SubmissionHome({ state }) {
       </div>
       ${state.sections.map(s => html`
         <div key=${s.section} class="card section-card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)", cursor: "pointer" }}
-          onClick=${() => nav("/submission/" + encodeURIComponent(s.section))}>
+          onClick=${() => nav("/your-data/submit/" + encodeURIComponent(s.section))}>
           <div class="row spread">
             <b>${s.section}</b>
             <span class="caption num">${s.answered} of ${s.questions} done${s.key_questions ?
@@ -124,7 +124,7 @@ function SubmissionHome({ state }) {
           </div>
         </div>`)}
       <div class="row" style=${{ justifyContent: "flex-end", marginTop: "var(--s4)" }}>
-        <button class="btn primary" onClick=${() => nav("/submission/review")}>Review and submit</button>
+        <button class="btn primary" onClick=${() => nav("/your-data/submit/review")}>Review and submit</button>
       </div>
     </div>`;
 }
@@ -161,7 +161,7 @@ function SectionForm({ sp, state, refresh }) {
   }, [sp]);
   if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this section"
     body=${loadErr + " — your saved answers are safe."}
-    action=${html`<button class="btn small primary" onClick=${() => nav("/submission")}>Back to all sections</button>`} />`;
+    action=${html`<button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Back to all sections</button>`} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
 
   const save = async (q, rowId, value) => {
@@ -210,7 +210,7 @@ function SectionForm({ sp, state, refresh }) {
     <div style=${{ maxWidth: "780px" }}>
       <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
         <div>
-          <button class="btn quiet" onClick=${() => nav("/submission")}>← All sections</button>
+          <button class="btn quiet" onClick=${() => nav("/your-data/submit")}>← All sections</button>
           <h1 class="display-title" style=${{ marginTop: "6px" }}>${sp}</h1>
         </div>
         <div style=${{ textAlign: "right" }}>
@@ -236,10 +236,10 @@ function SectionForm({ sp, state, refresh }) {
           ${block(optQs)}
         </div>`}
       <div class="row spread" style=${{ marginBottom: "var(--s6)" }}>
-        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/submission/" + encodeURIComponent(sections[idx - 1]))}>← ${sections[idx - 1] || ""}</button>
+        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/your-data/submit/" + encodeURIComponent(sections[idx - 1]))}>← ${sections[idx - 1] || ""}</button>
         ${idx < sections.length - 1 ?
-          html`<button class="btn primary" onClick=${() => nav("/submission/" + encodeURIComponent(sections[idx + 1]))}>${sections[idx + 1]} →</button>` :
-          html`<button class="btn primary" onClick=${() => nav("/submission/review")}>Review and submit →</button>`}
+          html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(sections[idx + 1]))}>${sections[idx + 1]} →</button>` :
+          html`<button class="btn primary" onClick=${() => nav("/your-data/submit/review")}>Review and submit →</button>`}
       </div>
     </div>`;
 }
@@ -455,7 +455,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
   if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "680px" }}>
-      <button class="btn quiet" onClick=${() => nav("/submission")}>← All sections</button>
+      <button class="btn quiet" onClick=${() => nav("/your-data/submit")}>← All sections</button>
       <h1 class="display-title" style=${{ margin: "6px 0 12px" }}>Review and submit</h1>
       ${val.problems.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", borderColor: "var(--unfavourable)" }}>
@@ -469,7 +469,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
           <div class="caption" style=${{ margin: "2px 0 4px" }}>“Not applicable” counts as an answer — use it where a question doesn't apply.</div>
           ${val.unanswered_required.slice(0, 12).map((u, i) => html`
             <div key=${i} class="caption" style=${{ marginTop: "4px" }}>
-              <a href=${"#/submission/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
+              <a href=${"#/your-data/submit/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
           ${val.unanswered_required.length > 12 && html`<div class="caption">…and ${val.unanswered_required.length - 12} more.</div>`}
         </div>`}
       <div class="card" style=${{ padding: "var(--s5)" }}>

@@ -262,7 +262,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
             <div class="metric-value">${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
             ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
-        html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>Answer this to see where you stand among the peers below. <a href="#/submission">Add your data</a></div>`}
+        html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>Answer this to see where you stand among the peers below. <a href="#/your-data/submit">Add your data</a></div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
@@ -273,7 +273,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     if (!c.block) return html`<div class="suppressed-box">No distribution available.</div>`;
     return html`
       <div>
-        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}><a href="#/submission" style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
+        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}><a href="#/your-data/submit" style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
         ${chart === "ordered" && c.type !== "multi_select"
           ? html`<${OrderedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
               width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`
@@ -364,7 +364,7 @@ window.ReducedCard = function ({ card: c }) {
         <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
           ${c.n} organisations have contributed here. Complete your reward data to restore this comparison.
         </div>
-        <button class="btn small primary" onClick=${() => nav("/submission")}>Complete your reward data</button>
+        <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Complete your reward data</button>
       </div>
     </div>`;
 };

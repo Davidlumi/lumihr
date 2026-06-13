@@ -1,7 +1,7 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
    OverviewPage, SuperpowerPage, MyViewPage, MyDataPage, MethodologyPage, GapRegisterPage,
-   BoardPackPage, BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
+   BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
 /* Deep linking: the peer cut lives in the hash query (?cut=industry::X) so a
@@ -111,9 +111,9 @@ function App() {
     // legacy URLs (pre-2026.1 terminology) redirect to the category route
     const [, qs] = route.slice("/superpower/".length).split("?");
     const p = new URLSearchParams(qs || "");
-    nav("/reward" + (p.get("sub") ? "?cat=" + encodeURIComponent(p.get("sub")) : ""));
+    nav("/benchmark" + (p.get("sub") ? "?cat=" + encodeURIComponent(p.get("sub")) : ""));
     page = null;
-  } else if (route.startsWith("/reward")) {
+  } else if (route.startsWith("/benchmark")) {
     const qs = route.includes("?") ? route.slice(route.indexOf("?") + 1) : "";
     const params = new URLSearchParams(qs);
     const focusQ = params.get("focus");
@@ -123,28 +123,30 @@ function App() {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
     page = html`<${BoardPackView} packId=${m[1]} me=${me} />`;
-  } else if (route.startsWith("/boardpack")) page = html`<${BoardPackPage} me=${me} cut=${cut} />`;
-  else if (route.startsWith("/myview")) page = html`<${MyViewPage} ...${pageProps} />`;
-  else if (route.startsWith("/mydata")) page = html`<${MyDataPage} />`;
-  else if (route.startsWith("/methodology")) page = html`<${MethodologyPage} />`;
-  else if (route.startsWith("/gap-register")) page = html`<${GapRegisterPage} ...${pageProps} />`;
-  else if (route.startsWith("/submission")) {
-    const section = route.split("/")[2];
+  } else if (route.startsWith("/myview")) page = html`<${MyViewPage} ...${pageProps} />`;
+  else if (route.startsWith("/your-data/submit")) {
+    const section = route.split("/")[3];
     page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${section && decodeURIComponent(section)} />`;
   }
-  else if (route.startsWith("/shares")) page = html`<${SharesPage} />`;
-  else if (route.startsWith("/team")) page = html`<${TeamPage} me=${me} />`;
-  else if (route.startsWith("/settings")) page = html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`;
+  else if (route.startsWith("/your-data")) page = html`<${YourDataPage} me=${me} />`;
+  else if (route.startsWith("/methodology")) page = html`<${MethodologyPage} />`;
+  else if (route.startsWith("/priorities")) page = html`<${GapRegisterPage} ...${pageProps} />`;
+  else if (route.startsWith("/team")) page = me.user.role === "admin"
+    ? html`<${TeamPage} me=${me} />`
+    : html`<${EmptyState} icon="lock" title="Team is an Admin area" body="Your organisation's Admin manages members and roles." />`;
+  else if (route.startsWith("/settings")) page = me.user.role === "admin"
+    ? html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`
+    : html`<${EmptyState} icon="lock" title="Settings is an Admin area" body="Your organisation's Admin manages assumptions and sharing." />`;
   else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
-  else if ((m = route.match(/^\/pulses\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
-  else if (route.startsWith("/pulses")) page = html`<${PulsesPage} me=${me} />`;
+  else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
+  else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} />`;
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
 
-  const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") || route.startsWith("/reward") ||
-    route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/gap-register") || route === "" || route === "/";
+  const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") || route.startsWith("/benchmark") ||
+    route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/priorities") || route === "" || route === "/";
 
   return html`
     <div class="shell">
@@ -152,43 +154,27 @@ function App() {
       <nav class="sidebar no-print" aria-label="Main navigation">
         <a class="logo" href="#/overview" aria-label="lumi benchmark home">lumi<span>.benchmark</span></a>
         <div class="nav-group">
-          <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}><${Icon} name="home" size=${15} /> Executive overview</button>
+          <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}><${Icon} name="home" size=${15} /> Overview</button>
           <button class=${navCls(route, "/myview")} onClick=${() => nav("/myview")}><${Icon} name="star" size=${15} /> My view</button>
-          <button class=${navCls(route, "/gap-register")} onClick=${() => nav("/gap-register")}><${Icon} name="list-checks" size=${15} /> Gap register</button>
-          <button class=${navCls(route, "/boardpack")} onClick=${() => nav("/boardpack")}><${Icon} name="file-text" size=${15} /> Board pack</button>
+          ${/* Reserved slot (chrome spec section 1.4): the Signals nav item ships
+               here, between Overview/My view and Priorities. Render nothing now. */ ""}
+          <button class=${navCls(route, "/priorities")} onClick=${() => nav("/priorities")}><${Icon} name="list-checks" size=${15} /> Priorities</button>
+          <button class=${navCls(route, "/pulse")} onClick=${() => nav("/pulse")}><${Icon} name="zap" size=${15} /> Pulse</button>
         </div>
         <div class="nav-group">
-          <div class="nav-label">${scope.focused ? "Your reward benchmark" : "Benchmarks"}</div>
-          ${scope.focused && html`
-            <button class=${"nav-item" + (route.startsWith("/reward") && !route.includes("cat=") ? " active" : "")} onClick=${() => nav("/reward")}>
-              <${SpIcon} sp="Reward" /> All reward
-              ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => !q.locked).length}</span>`}
-            </button>
-            <${SectionNav} route=${route} qIndex=${qIndex} gapCue=${gapCue} />`}
-          ${!scope.focused && activeSupers.map(sp => html`
-            <button key=${sp} class=${navCls(route, "/superpower/" + sp)} onClick=${() => nav("/superpower/" + sp)}>
-              <${SpIcon} sp=${sp} /> ${sp}
-              ${qIndex && html`<span class="nav-count">${qIndex.questions.filter(q => q.superpower === sp && !q.locked).length}</span>`}
-            </button>`)}
-        </div>
-        <div class="nav-group">
-          <div class="nav-label">Timely pulses</div>
-          <button class=${navCls(route, "/pulses")} onClick=${() => nav("/pulses")}>
-            <${Icon} name="zap" size=${15} /> Pulses</button>
+          <${BenchmarkNav} route=${route} qIndex=${qIndex} gapCue=${gapCue} prefs=${prefs} onPref=${onPref} />
         </div>
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
-          <button class=${navCls(route, "/mydata")} onClick=${() => nav("/mydata")}><${Icon} name="table" size=${15} /> My data</button>
-          ${(me.user.role === "admin" || me.user.role === "contributor") && html`<button class=${navCls(route, "/submission")} onClick=${() => nav("/submission")}><${Icon} name="pencil" size=${15} /> Submit data</button>`}
-          <button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/shares")} onClick=${() => nav("/shares")}><${Icon} name="link" size=${15} /> Manage shares</button>`}
-          <button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/governance")} onClick=${() => nav("/governance")}><${Icon} name="list-checks" size=${15} /> Core governance</button>`}
-          <button class=${navCls(route, "/methodology")} onClick=${() => nav("/methodology")}><${Icon} name="book-open" size=${15} /> Methodology</button>
+          <button class=${navCls(route, "/your-data")} onClick=${() => nav("/your-data")}><${Icon} name="table" size=${15} /> Your data</button>
+          ${me.user.role === "admin" && html`<button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>`}
+          ${me.user.role === "admin" && html`<button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>`}
         </div>
         <div class="nav-group nav-id" style=${{ marginTop: "auto" }}>
           <div class="who">${me.user.display_name || me.user.email}</div>
           <div class="org">${me.org.name}</div>
+          ${me.user.role === "admin" && html`<button class="nav-item" onClick=${() => nav("/governance")}><${Icon} name="list-checks" size=${15} /> Core governance</button>`}
+          <button class="nav-item" onClick=${() => nav("/methodology")}><${Icon} name="book-open" size=${15} /> Methodology</button>
           <button class="nav-item" onClick=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }}><${Icon} name="log-out" size=${15} /> Sign out</button>
         </div>
       </nav>
@@ -248,21 +234,40 @@ function App() {
     </div>`;
 }
 
-window.SectionNav = function ({ route, qIndex, gapCue }) {
+/* The Benchmark group (chrome spec section 1.1): parent line is label +
+   chevron only — the total lives on the "All" child. Expand state persists
+   per user via the prefs store (key _nav); default expanded on first visit —
+   the category breadth is part of the pitch. */
+window.BenchmarkNav = function ({ route, qIndex, gapCue, prefs, onPref }) {
   if (!qIndex) return null;
+  const navPrefs = (prefs && prefs._nav) || {};
+  const open = navPrefs.benchmark_open !== false;
+  const toggle = () => onPref && onPref("_nav", { ...navPrefs, benchmark_open: !open });
   const secs = sectionList(qIndex);
-  return html`${secs.map(sec => {
-    const active = route.includes("cat=" + encodeURIComponent(sec.name));
-    const cued = gapCue && gapCue.section === sec.name;
-    return html`
-      <button key=${sec.name} class=${"nav-item" + (active ? " active" : "")}
-        style=${{ paddingLeft: "var(--s6)" }}
-        onClick=${() => nav("/reward?cat=" + encodeURIComponent(sec.name))}>
-        ${sec.name}
-        ${cued && html`<span class="gap-cue" title=${gapCue.count + " practices your peers commonly have that you don't — your biggest opportunity area"}></span>`}
-        <span class="nav-count">${sec.count}</span>
-      </button>`;
-  })}`;
+  const total = qIndex.questions.filter(q => !q.locked).length;
+  const allActive = route.startsWith("/benchmark") && !route.includes("cat=");
+  const secLabel = n => n === "Time Off" ? "Time off" : n;
+  return html`
+    <button class="nav-item nav-parent" aria-expanded=${open} onClick=${toggle}>
+      <${SpIcon} sp="Reward" /> Benchmark
+      <span class=${"nav-chev" + (open ? " open" : "")}><${Icon} name="chevron-down" size=${14} /></span>
+    </button>
+    ${open && html`
+      <button class=${"nav-item nav-child" + (allActive ? " active" : "")} onClick=${() => nav("/benchmark")}>
+        All
+        <span class="nav-count">${total}</span>
+      </button>
+      ${secs.map(sec => {
+        const active = route.includes("cat=" + encodeURIComponent(sec.name));
+        const cued = gapCue && gapCue.section === sec.name;
+        return html`
+          <button key=${sec.name} class=${"nav-item nav-child" + (active ? " active" : "")}
+            onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(sec.name))}>
+            ${secLabel(sec.name)}
+            ${cued && html`<span class="gap-cue" title=${gapCue.count + " practices your peers commonly have that you don't — your biggest opportunity area"}></span>`}
+            <span class="nav-count">${sec.count}</span>
+          </button>`;
+      })}`}`;
 };
 
 /* Company profile: org-level, ~8 fields, captured once by the Admin so the
@@ -535,7 +540,7 @@ window.ClockChip = function ({ contrib, org }) {
       ? (needsProfile
         ? "Tell us who you are — sector, size and a few company facts — so the benchmark compares you to the right peers. The data terms come after."
         : "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then.")
-      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav(needsProfile && !contrib.clock_started ? "/profile" : "/submission")}>
+      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav(needsProfile && !contrib.clock_started ? "/profile" : "/your-data/submit")}>
       <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue-tint-2)" stroke-width="3"/>
         <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"
@@ -557,7 +562,7 @@ window.ContributionBanner = function ({ contrib }) {
         <div class="caption">The 30 days passed before your reward data reached 90% — everything you've explored is still here,
           and a sample stays open below. Complete your reward questions to restore the full benchmark and unlock your insights. You're at ${pct}%.</div>
       </div>
-      <button class="btn primary small" onClick=${() => nav("/submission")}>Complete your reward data</button>
+      <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Complete your reward data</button>
     </div>`;
   if (contrib.days_left > 7) return null;
   return html`
@@ -567,7 +572,7 @@ window.ContributionBanner = function ({ contrib }) {
         <div class="caption">You're at ${pct}% of your key reward questions — complete them and the £ opportunity,
           board pack and biggest gaps open up with your real position.</div>
       </div>
-      <button class="btn primary small" onClick=${() => nav("/submission")}>Continue your submission</button>
+      <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Continue your submission</button>
     </div>`;
 };
 
@@ -613,9 +618,9 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
             </div>`)}
           <div class="row" style=${{ marginTop: "var(--s2)" }}>
             ${role === "admin" && !profiled && html`<button class="btn primary" onClick=${() => nav("/profile")}>Tell us about your organisation</button>`}
-            ${role === "admin" && profiled && html`<button class="btn primary" onClick=${() => nav("/submission")}>Review the data terms</button>`}
+            ${role === "admin" && profiled && html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}>Review the data terms</button>`}
             ${role === "admin" && html`<button class="btn" onClick=${() => nav("/team")}>Invite your team</button>`}
-            ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/reward")}>Explore the benchmark</button>`}
+            ${role !== "admin" && html`<button class="btn primary" onClick=${() => nav("/benchmark")}>Explore the benchmark</button>`}
           </div>
         </div>
       </div>`;
@@ -639,7 +644,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         </div>
         <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / 90 * 100) + "%" }}></div></div>
         <div class="caption" style=${{ margin: "4px 0 10px" }}>Insights unlock at 90% — everything autosaves.</div>
-        <button class="btn primary" onClick=${() => nav("/submission")}>${pct < 1 ? "Submit your data" : "Continue your submission"}</button>
+        <button class="btn primary" onClick=${() => nav("/your-data/submit")}>${pct < 1 ? "Submit your data" : "Continue your submission"}</button>
       </div>
     </div>`;
 };
@@ -727,7 +732,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const chart = normaliseChart(c, chartSel);
   const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref", t); } catch (e) {} };
   const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
-  const backTo = "/reward" + (c.subpower ? "?cat=" + encodeURIComponent(c.subpower) : "");
+  const backTo = "/benchmark" + (c.subpower ? "?cat=" + encodeURIComponent(c.subpower) : "");
   const goBack = () => {
     let hasReturn = false;
     try { hasReturn = !!sessionStorage.getItem("lumi-return"); } catch (e) {}

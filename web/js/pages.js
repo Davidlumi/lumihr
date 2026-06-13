@@ -43,6 +43,9 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
             ${cut.dim !== "all" && html`<${Chip} kind="accent">filter: ${cutLabelOf(cut, cuts)}<//>`}
           </div>
         </div>
+        <div style=${{ marginLeft: "auto" }}>
+          <${ExportBoardPack} me=${me} cut=${cut} />
+        </div>
       </div>
 
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
@@ -52,6 +55,59 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
 
     </div>`;
 };
+
+/* Board pack as an export action (chrome spec section 1.2): generate from the
+   Overview under the current peer filter; previous packs live in the small
+   menu. Hidden while insights are locked — the artifact is written from the
+   org's own position. The one-time pulse highlights the new home for anyone
+   arriving via the old /boardpack route. */
+function ExportBoardPack({ me, cut }) {
+  const contrib = me.contribution;
+  const [open, setOpen] = useState(false);
+  const [packs, setPacks] = useState(null);
+  const [gen, setGen] = useState(false);
+  const [err, setErr] = useState(null);
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("lumi-bp-migrated")) {
+        setPulse(true);
+        sessionStorage.removeItem("lumi-bp-migrated");
+      }
+    } catch (e) {}
+  }, []);
+  if (contrib && !contrib.insights_unlocked) return null;
+  const generate = async () => {
+    setGen(true); setErr(null);
+    try {
+      const r = await api("/api/boardpack/generate", { method: "POST", body: { cut: cut.dim, cut_value: cut.value } });
+      nav("/boardpack/" + r.pack_id);
+    } catch (e) { setErr(e.message); setOpen(true); }
+    setGen(false);
+  };
+  const toggle = () => {
+    setOpen(!open);
+    if (!packs) api("/api/boardpacks").then(d => setPacks(d.packs || [])).catch(() => setPacks([]));
+  };
+  return html`
+    <div class="bp-export">
+      <button class=${"btn small" + (pulse ? " pulse-once" : "")} disabled=${gen} onClick=${generate}
+        title="A board-ready narrative of your reward position, written from your live benchmark under the current peer filter.">
+        <${Icon} name="file-text" size=${14} /> ${gen ? "Writing…" : "Export board pack"}</button>
+      <button class="btn small" aria-label="Previous board packs" aria-expanded=${open} onClick=${toggle}>
+        <${Icon} name="chevron-down" size=${13} /></button>
+      ${open && html`
+        <div class="card bp-menu">
+          ${err && html`<div class="error-text" style=${{ padding: "var(--s2)" }}>${err}</div>`}
+          ${packs == null && html`<div class="caption" style=${{ padding: "var(--s2)" }}>Loading…</div>`}
+          ${packs && packs.length === 0 && !err && html`<div class="caption" style=${{ padding: "var(--s2)" }}>No packs yet — Export writes one from your live position.</div>`}
+          ${(packs || []).map(p => html`
+            <button key=${p.pack_id} class="bp-menu-item" onClick=${() => nav("/boardpack/" + p.pack_id)}>
+              ${new Date(p.created_at + "Z").toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+            </button>`)}
+        </div>`}
+    </div>`;
+}
 
 /* ============== the 80/20 home hero (2026-06-12 redesign) ==============
    Three questions, top to bottom: where do I sit overall (the arc), what
@@ -85,7 +141,7 @@ function OverviewHero({ data, cut, cuts }) {
               <div class="lock-note">
                 <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
                 <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>Unlock by completing your key reward questions.</div>
-                <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+                <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit data</button>
               </div>
             </div>
           </div>` :
@@ -187,7 +243,7 @@ function SignalsPanel({ signals, locked, contribution }) {
             <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
             <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
               Signals unlock with your insights — complete your key reward questions${contribution && contribution.days_left != null ? ` (${contribution.days_left} days left)` : ""}.</div>
-            <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+            <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit data</button>
           </div>
         </div>` :
       sigs.length === 0 ? html`
@@ -222,7 +278,7 @@ function CategoryTile({ d }) {
   const prev = d.prevalence || {};
   const dot = d.dot;
   return html`
-    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
+    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
       <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
         <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
       <span class=${"chip tile-chip " + chipCls} style=${{ alignSelf: "flex-start" }} title=${evNote}>${chip}</span>
@@ -301,7 +357,7 @@ window.HeroSignals = function ({ hero, cut, cuts }) {
         <div style=${{ marginBottom: "var(--s3)" }}><${PrevLine} p=${hero.prevalence} compact=${true} /></div>
         <div class="domain-rows">
           ${hero.domains.map(d => html`
-            <div key=${d.name} class="domain-row" onClick=${() => nav("/reward?cat=" + encodeURIComponent(d.name))}>
+            <div key=${d.name} class="domain-row" onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(d.name))}>
               <span class="domain-name">${d.name}</span>
               ${d.market ? html`<${MarketPill} m=${d.market} />` :
                 d.prevalence || d.polarised_comparable ? html`<span class="chip" title="Too few polarised metrics for an honest market verdict — practice comparison only">practice view</span>` :
@@ -329,7 +385,7 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
         <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
         <div class="caption" style=${{ textAlign: "center", maxWidth: "240px" }}>
           ${opp.item_count ? `${opp.item_count} £-sized opportunities are waiting. ` : ""}Unlock by completing your key reward questions${opp.days_left != null ? ` — ${opp.days_left} days left` : ""}.</div>
-        <button class="btn small primary" onClick=${() => nav("/submission")}>Submit data</button>
+        <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit data</button>
       </div>
     </div>`;
   const total = opp.total_savings_to_p50_gbp > 0 ? opp.total_savings_to_p50_gbp : opp.total_investment_to_p50_gbp;
@@ -364,8 +420,8 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
         </div>
         <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>
         ${actionGaps > 0 && html`<div class="caption" style=${{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid var(--border)" }}>
-          Plus <a href="#/gap-register"><b class="num">${actionGaps}</b> practice gaps</a> where most peers do something you don't — the non-£ to-do list.</div>`}` :
-      html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/submission">your submission</a> to size the £ opportunity of closing gaps to the peer median.</div>`}
+          Plus <a href="#/priorities"><b class="num">${actionGaps}</b> practice gaps</a> where most peers do something you don't — the non-£ to-do list.</div>`}` :
+      html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/your-data/submit">your submission</a> to size the £ opportunity of closing gaps to the peer median.</div>`}
     </div>`;
 };
 
@@ -552,7 +608,10 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
 function slotKey(slot) { return slot.question_id + "|" + (slot.row_id || "") + "|" + JSON.stringify(slot.cut || {}); }
 
 // ----------------------------------------------------------- my data -------
-window.MyDataPage = function () {
+/* Your data (chrome spec section 1.3): ONE destination for the org's data —
+   view/manage (the old My data) with Submit as the primary action inside the
+   page, role-gated (hidden, not disabled, for viewers). */
+window.YourDataPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [qstr, setQ] = useState("");
   useEffect(() => { api("/api/my-data").then(setData); }, []);
@@ -572,10 +631,14 @@ window.MyDataPage = function () {
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
-          <h1 class="display-title">My data</h1>
+          <h1 class="display-title">Your data</h1>
           <div class="caption" style=${{ marginTop: "4px" }}>Everything your organisation has submitted (${data.rows.length} answers). Only your team can see this.</div>
         </div>
-        <input class="ctl" placeholder="Search your answers…" value=${qstr} onInput=${e => setQ(e.target.value)} />
+        <div class="row" style=${{ gap: "var(--s3)" }}>
+          <input class="ctl" placeholder="Search your answers…" value=${qstr} onInput=${e => setQ(e.target.value)} />
+          ${me && (me.user.role === "admin" || me.user.role === "contributor") &&
+            html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Submit data</button>`}
+        </div>
       </div>
       ${rows.length === 0 && html`<${EmptyState} title="No answers match" body="Try a different search term." />`}
       ${bySp.map(g => html`
