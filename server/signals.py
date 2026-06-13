@@ -384,6 +384,68 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     if conn is not None and org_id is not None:
         out.extend(matrix_depth_signals(conn, questions, org_id, seen_q))
 
+    # 7) MULTI-SELECT per-OPTION prevalence (Mechanism C). Never answer-SET
+    # rarity (that flags everyone). Fire on the single most DECISIVE option per
+    # metric — one the org picked that ~nobody does (adoption <= decisive_low),
+    # or one the org skipped that ~everybody does (adoption >= decisive_high).
+    # Both directions, no verdict, one signal per metric.
+    dec_low = oth.get("decisive_low", 15)
+    dec_high = oth.get("decisive_high", 85)
+    for qid, spec in (ordr.get("multi_prevalence") or {}).items():
+        if qid in seen_q:
+            continue
+        q = questions.get(qid)
+        blk = get_block(qid) if q else None
+        if q is None or not blk or blk.get("suppressed") or blk.get("n", 0) < min_n:
+            continue
+        raw = org_answers.get((qid, "")) or ""
+        mine = set(t.strip() for t in raw.split(";") if t.strip())
+        best = None                       # (decisiveness, kind, label, pct)
+        for o in blk.get("options") or []:
+            if o.get("is_na"):
+                continue
+            a, lab, sel = o["pct"], o["label"], o["label"] in mine
+            if sel and a <= dec_low:
+                if best is None or (50 - a) > best[0]:
+                    best = (50 - a, "rare", lab, a)
+            elif (not sel) and a >= dec_high:
+                if best is None or (a - 50) > best[0]:
+                    best = (a - 50, "missing", lab, a)
+        if best is None:
+            continue
+        _, knd, lab, a = best
+        if knd == "rare":
+            detail = "you selected “%s” — only %d%% of peers do" % (lab, round(a))
+        else:
+            detail = "%d%% of peers select “%s” — you don't" % (round(a), lab)
+        out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
+                    "value_display": lab, "label_short": "%s · %s" % (_short(q.display_title), lab),
+                    "detail": detail, "impact": 22000 + best[0] * 100})
+        seen_q.add(qid)
+
+    # 8) GATED RARITY single-select (Mechanism D). The org's chosen value has low
+    # peer adoption (<= rarity_floor) AND a clear norm exists (mode >= 50%, the
+    # mode-gate asserted at fire). "You're the rare exception." No verdict.
+    floor = oth.get("rarity_floor", 15)
+    for qid, spec in (ordr.get("rarity") or {}).items():
+        if qid in seen_q:
+            continue
+        q = questions.get(qid)
+        blk = get_block(qid) if q else None
+        mine = org_answers.get((qid, ""))
+        if q is None or not blk or blk.get("suppressed") or blk.get("n", 0) < min_n or mine in (None, ""):
+            continue
+        opts = {o["label"]: o["pct"] for o in (blk.get("options") or []) if not o.get("is_na")}
+        a = opts.get(mine)
+        if not opts or a is None:          # org answered NA / off-list — no rarity
+            continue
+        if max(opts.values()) >= 50 and a <= floor:
+            out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
+                        "value_display": mine, "label_short": "%s · %s" % (_short(q.display_title), mine),
+                        "detail": "you answered “%s” — only %d%% of peers do" % (mine, round(a)),
+                        "impact": 22000 + (50 - a) * 100})
+            seen_q.add(qid)
+
     cap_cfg = (ordered_routing().get("_david_ratified_2026_06_13", {}) or {}).get("briefing_cap", {})
     capped = cap_briefing(out, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
                           cap_cfg.get("max_behind", 3))

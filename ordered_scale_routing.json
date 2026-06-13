@@ -10,7 +10,10 @@
     "tail_pct": 20,
     "min_modal_share": 0.35,
     "max_org_band_share": 0.5,
-    "min_n": 5
+    "min_n": 5,
+    "decisive_low": 15,
+    "decisive_high": 85,
+    "rarity_floor": 15
   },
   "behind": [
     "ALLOW_03",
@@ -420,6 +423,106 @@
       "fallback": "if fewer than 2 non-behind signals exist, unfilled reserved slots fall back to the next-highest-impact behind signal — always show 5 if 5 exist; prefer diversity, never leave a slot blank or silently drop a signal",
       "rationale": "dashboard is a balanced scorecard, not a wall of 'behind'; guarantees new outlier/prevalence mechanisms are visible to behind-heavy orgs",
       "tunable": "reserve size is panel-tunable; revisit on real customer panel"
+    }
+  },
+  "multi_prevalence": {
+    "ALLOW_01": {
+      "lens": "attract"
+    },
+    "CAR_BN_02": {
+      "lens": "save"
+    },
+    "EXT_REW_GAP_011": {
+      "lens": "engage"
+    },
+    "REW_BEN_038": {
+      "lens": "engage"
+    },
+    "REW_BEN_044": {
+      "lens": "retain"
+    },
+    "REW_INC_060": {
+      "lens": "attract"
+    },
+    "REW_PAY_007": {
+      "lens": "attract"
+    },
+    "REW_PAY_016": {
+      "lens": "save"
+    },
+    "REW_PAY_023": {
+      "lens": "attract"
+    },
+    "PROP_216f7323": {
+      "lens": "engage"
+    },
+    "PROP_aa4061d5": {
+      "lens": "engage"
+    },
+    "REW26_WEL_MH_SUPPORT": {
+      "lens": "engage"
+    },
+    "REW262_GOV_ACTIONPLAN": {
+      "lens": "attract"
+    }
+  },
+  "rarity": {
+    "EXT_REW_GAP_006": {
+      "lens": "engage"
+    },
+    "REW_BEN_046": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_006": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_007": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_009": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_010": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_011": {
+      "lens": "retain"
+    },
+    "REW_BEN_FAM_012": {
+      "lens": "retain"
+    },
+    "REW_BEN_HOL_003": {
+      "lens": "retain"
+    },
+    "REW_BEN_HOL_007": {
+      "lens": "retain"
+    },
+    "REW_BEN_SICK_006": {
+      "lens": "retain"
+    },
+    "REW_FAI_082": {
+      "lens": "attract"
+    },
+    "REW_FAI_TRONC_TYPES_b5547658": {
+      "lens": "engage"
+    },
+    "REW_INC_072": {
+      "lens": "attract"
+    },
+    "REW_PAY_019": {
+      "lens": "attract"
+    },
+    "REW_PAY_021": {
+      "lens": "retain"
+    },
+    "REW_PRO_030": {
+      "lens": "retain"
+    },
+    "REW_PRO_035": {
+      "lens": "engage"
+    },
+    "REW_PAY_TIPS_EXIST_7c80c508": {
+      "lens": "attract"
     }
   }
 }

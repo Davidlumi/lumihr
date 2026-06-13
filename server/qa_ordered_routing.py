@@ -88,8 +88,22 @@ def main():
     dm_cov = [qid for qid, s in dm.items() if not s.get("covered")]
     check("every depth_matrix metric defines a 'covered' value", not dm_cov, dm_cov)
 
-    print("\n  behind:%d  behind_explicit:%d  ordered_outlier:%d  depth_matrix:%d  scales:%d  rerouted(P3):%d"
-          % (len(cfg.get("behind", [])), len(behind_x), len(outlier), len(dm), len(scales), len(rerouted)))
+    # Mechanism C (multi_prevalence): real multi_select; D (rarity): single_select
+    mp = cfg.get("multi_prevalence", {})
+    rar = cfg.get("rarity", {})
+    mp_bad = [qid for qid in mp if not (qs.get(qid) and qs[qid].type == "multi_select" and qs[qid].status == "active")]
+    check("every multi_prevalence id is an active multi_select", not mp_bad, mp_bad)
+    rar_bad = [qid for qid in rar if not (qs.get(qid) and qs[qid].type in ("single_select", "yes_no") and qs[qid].status == "active")]
+    check("every rarity id is an active single_select/yes_no", not rar_bad, rar_bad)
+    lens_bad = [(qid, s.get("lens")) for sect in (mp, rar) for qid, s in sect.items() if s.get("lens") not in LENSES]
+    check("Mechanism C/D lens recommendations are valid", not lens_bad, lens_bad)
+    # the 2 Phase-2 re-routes now live in rarity, and must be OUT of ordered_outlier (cleanup)
+    check("re-routed metrics moved to rarity (Mechanism D), not ordered_outlier",
+          set(rerouted) <= set(rar) and not (set(rerouted) & set(outlier)),
+          {"in_rarity": sorted(set(rerouted) & set(rar)), "still_in_outlier": sorted(set(rerouted) & set(outlier))})
+
+    print("\n  behind:%d  behind_explicit:%d  ordered_outlier:%d  depth_matrix:%d  multi_prevalence:%d  rarity:%d  scales:%d"
+          % (len(cfg.get("behind", [])), len(behind_x), len(outlier), len(dm), len(mp), len(rar), len(scales)))
     print("\n== ORDERED-ROUTING GATE: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
     sys.exit(1 if FAIL else 0)
 

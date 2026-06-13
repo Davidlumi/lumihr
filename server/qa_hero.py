@@ -302,6 +302,16 @@ def _mk(k, l, i):
 _capt = _sigmod.cap_briefing([_mk("behind", "a", 9), _mk("behind", "b", 8), _mk("behind", "c", 7),
                               _mk("behind", "d", 6), _mk("outlier", "e", 1)], 5, 2, 3)
 check("briefing cap fallback yields 5 when 5 exist across lenses (never a blank slot)", len(_capt) == 5, len(_capt))
+# Mechanism C/D (rarity): per-option / rare chosen value, no verdict, one per metric.
+_rare = [x for x in sigs if x["kind"] == "rare"]
+check("rarity signals carry no verdict word",
+      all(not any(v in x["detail"].lower() for v in VERDICT) for x in _rare),
+      [x["question_id"] for x in _rare if any(v in x["detail"].lower() for v in VERDICT)])
+check("every rarity signal is routed (multi_prevalence or rarity), never set-rarity",
+      all(x["question_id"] in _ord.get("multi_prevalence", {}) or x["question_id"] in _ord.get("rarity", {}) for x in _rare),
+      [x["question_id"] for x in _rare if x["question_id"] not in _ord.get("multi_prevalence", {}) and x["question_id"] not in _ord.get("rarity", {})])
+check("per-metric cap holds — no metric yields two signals",
+      len({x["question_id"] for x in sigs}) == len(sigs))
 dots = {d["name"]: d.get("dot") for d in ov_sig["hero"]["domains"]}
 check("category dots sit in [1,99] where present",
       all(v is None or (1 <= v <= 99) for v in dots.values()), dots)

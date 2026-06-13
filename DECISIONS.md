@@ -2317,3 +2317,38 @@ unlock 3b; (b) reserve size — both REW_BEN_045 and the depth signal still lose
 their capped slot to money + retain per-lens contention; raise reserve or
 exclude money to surface more than one new-mechanism signal; (c) ratify the
 depth_matrix + ordered lens recommendations; (d) cut-scoping for Mechanism B.
+
+## 2026-06-13 — Signals Phase 3: multi-select prevalence + gated rarity (LAST mechanism class)
+Two new categorical firing paths in signals.py, off the existing block (no raw
+plumbing). routing: multi_prevalence (13) + rarity (19 = 17 gated + the 2 Phase-2
+re-routes), thresholds decisive_low=15 / decisive_high=85 / rarity_floor=15.
+MECHANISM C — multi-select per-OPTION prevalence. NOT answer-set rarity (which
+flags everyone, e.g. REW_INC_060's 79 combos/162 orgs). For each metric, fires on
+the single most DECISIVE option: one the org PICKED that <=15% adopt, or one the
+org SKIPPED that >=85% adopt. One signal per metric (per-metric cap). Both
+directions, no verdict.
+MECHANISM D — gated rarity single-select. Fires when the org's chosen value has
+adoption <= rarity_floor AND a clear norm exists (mode >= 50%, asserted at fire).
+NA/off-list answers never fire (no rarity). No verdict.
+CLEANUP: removed REW_PRO_035 + REW_PAY_TIPS_EXIST from ordered_outlier/scales
+(they belong to Mechanism D rarity now — gate asserts they're in rarity, not
+double-booked).
+VERIFIED on Thornbridge (uncapped): 6 rare fire — 2 C (EXT_REW_GAP_011 "Utility
+costs" 7%, REW_BEN_038 "Technology salary sacrifice" 13%) + 4 D (REW_BEN_HOL_007
+7%, FAM_011 12%, FAM_009 14%, FAM_007 15%). All factual ("you selected/answered X
+— only N% of peers do"), no verdict, per-metric cap holds. Full set now 39: money
+1, behind 7, outlier 6, depth 1, rare 6, prevalence 18. The re-routes don't fire
+for the demo (REW_PRO_035="Not defined" NA; REW_PAY_TIPS="Yes" is the 68% mode) —
+correct.
+THRESHOLDS (panel-tunable, RECOMMENDED): decisive 15/85 and rarity floor 15 fire
+signal-not-noise; tighter (10/90) drops 3 of 4 legit D rarities. Set from
+Thornbridge, revisit on a real panel.
+GATES: qa_hero 56/56 (+rarity no-verdict, rarity-routed-not-set-rarity, per-metric
+cap), qa_ordered_routing 17/17 (+multi_prevalence/rarity), qa_scores 3/3, qa_focus
+28/28. Dashboard renders capped, no verdicts, no console errors.
+STATUS: ALL firing mechanism classes are now built (money, save, behind,
+prevalence, ordered-outlier, depth, multi-prevalence, rarity). OUT OF SCOPE per
+brief and left untouched: 35 held no-norm metrics (re-qualify on a real panel),
+REW_BEN_REM_PAY_001 (dependent, David held), the IP presence half (needs the
+firewall option-split David declined). Lenses across Phase 1/2/3 remain David's
+to ratify.
