@@ -336,14 +336,18 @@ window.MatrixSelect = function ({ rows }) {
   live.forEach(r => (r.block.options || []).forEach(o => { if (o.pct > maxPct) maxPct = o.pct; }));
   const abbr = l => (l || "").replace(/^More than\s*/i, ">").replace(/\bweeks?\b/i, "wk")
     .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
-  const cellStyle = pct => {
-    const op = pct > 0 ? 0.10 + 0.90 * (pct / maxPct) : 0;
-    return { background: pct > 0 ? "rgba(37,71,176," + op.toFixed(3) + ")" : "transparent",
-             color: op >= 0.5 ? "#fff" : "var(--ink-soft)" };
+  // Opaque cell colour, mixed white→brand-blue by prevalence. Opaque (not an
+  // alpha wash) so a cell's shade never shifts with row striping or whatever
+  // sits behind it — darkness is one honest scale across the whole grid.
+  const mix = t => {
+    const b = [37, 71, 176];
+    return "rgb(" + Math.round(255 + (b[0] - 255) * t) + "," + Math.round(255 + (b[1] - 255) * t)
+      + "," + Math.round(255 + (b[2] - 255) * t) + ")";
   };
+  const fmtPct = p => { const r = Math.round(p); return r > 0 ? r + "%" : "<1%"; };
   return html`
     <div class="matrix-heat-wrap">
-      <table class="data matrix-heat">
+      <table class="matrix-heat">
         <thead>
           <tr>
             <th class="mh-lvl">Level</th>
@@ -354,30 +358,31 @@ window.MatrixSelect = function ({ rows }) {
         <tbody>
           ${(rows || []).map(r => {
             if (r.suppressed || !r.block) return html`
-              <tr key=${r.row_id}><td class="mh-lvl">${r.label}</td>
-                <td colspan=${order.length + 1} class="caption">not enough organisations to show safely</td></tr>`;
+              <tr key=${r.row_id} class="mh-row"><td class="mh-lvl">${r.label}</td>
+                <td colspan=${order.length + 1} class="mh-supp caption">not enough organisations to show safely</td></tr>`;
             const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
             const youLabel = r.you ? (r.you.label || r.you.display) : null;
             const modal = r.block.modal_label;
             return html`
-              <tr key=${r.row_id}>
+              <tr key=${r.row_id} class="mh-row">
                 <td class="mh-lvl">${r.label}</td>
                 ${order.map(b => {
                   const pct = pm[b] || 0;
-                  const cls = "mh-cell" + (b === modal && pct > 0 ? " mode" : "") + (youLabel && b === youLabel ? " you" : "");
-                  return html`<td key=${b} class=${cls} style=${cellStyle(pct)}
-                    title=${r.label + " · " + b + " · " + (pct ? pct + "% of peers" : "no peers")}>
-                    ${pct > 0 ? pct + "%" : html`<span class="mh-zero">·</span>`}</td>`;
+                  if (pct <= 0) return html`<td key=${b} class="mh-cell mh-empty" title=${r.label + " · " + b + " · no peers"}></td>`;
+                  const t = 0.14 + 0.86 * (pct / maxPct);
+                  const isMode = b === modal, isYou = youLabel && b === youLabel;
+                  return html`<td key=${b} class=${"mh-cell" + (isMode ? " mode" : "") + (isYou ? " you" : "")}
+                    style=${{ background: mix(t), color: t >= 0.52 ? "#fff" : "var(--ink)" }}
+                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of peers"}>${fmtPct(pct)}</td>`;
                 })}
-                <td class="mh-you num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
+                <td class="mh-you">${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;
           })}
         </tbody>
       </table>
       <div class="matrix-scale">
-        <span class="mleg"><span class="msw" style=${{ background: "rgba(37,71,176,0.16)" }}></span>fewer peers</span>
-        <span class="mleg"><span class="msw" style=${{ background: "rgba(37,71,176,1)" }}></span>more peers</span>
-        <span class="mleg"><span class="msw msw-mode"></span>most common</span>
+        <span class="mscale"><span class="caption">fewer peers</span><span class="mscale-bar"></span><span class="caption">more peers</span></span>
+        <span class="mleg"><span class="msw msw-mode"></span>most common at each level</span>
         <span class="mleg"><span class="msw msw-you"></span>your organisation</span>
       </div>
     </div>`;

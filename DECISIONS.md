@@ -1984,3 +1984,24 @@ sits in an overflow-x:auto wrapper, so nothing clips on narrow cards. Client
 -only (web/js/card.js MatrixSelect, web/css/app.css). Verified live on
 "Employee notice period by level": table fits the 620px column, You column
 intact, no console errors. v70->v74.
+
+## 2026-06-13 — Matrix heatmap: polish pass
+Polished the prevalence heatmap (still the same display, refined throughout):
+- OPAQUE cells (white→brand-blue mix by prevalence) instead of an alpha wash,
+  so a cell's shade never shifts with row striping — darkness is one honest
+  scale across the whole grid.
+- Light axis-style header (small uppercase, letter-spaced, bottom-aligned)
+  replacing the heavy navy `.data` thead; dropped the `.data` class entirely.
+- table-layout:fixed → perfectly even band columns (Level 124px, You 54px,
+  bands share the rest); rounded integer % (48% not 48.2%, <1% floor).
+- Empty cells: a quiet hatched neutral fill instead of a stray "·".
+- "you" marker: --you is the brand blue, which vanishes on a blue field, so
+  the cell ring is a white halo inside a deep-blue ring — reads on every shade
+  (pale or dark) while staying in the blue identity family. The You column
+  value is --blue-deep bold. "most common" stays a subtle dark hairline + bold.
+- Scale legend: a gradient bar (fewer→more peers) + most-common + your-org
+  swatches, on a top-ruled footer.
+Verified live on "Employee notice period by level": markers land on the
+correct cells (incl. the Manager case where you=8wk diverges from the market
+mode 4wk=80%), table fits the 620px column, no console errors. Client-only.
+v74->v76.

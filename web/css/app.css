@@ -416,28 +416,44 @@ td.num, th.num { text-align: right; }
 .radio-row input, .check-row input { accent-color: var(--blue); }
 .matrix-grid input { width: 110px; height: 30px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); text-align: right; }
-/* ---- matrix prevalence heatmap (2026-06-13) ---- */
+/* ---- matrix prevalence heatmap (2026-06-13, polished) ---- */
 .matrix-heat-wrap { overflow-x: auto; }
-.matrix-heat { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: var(--fs-label); }
-.matrix-heat th { font-weight: 600; color: var(--ink-soft); text-align: center;
-  padding: 2px 3px; vertical-align: bottom; line-height: 1.12; }
-.matrix-heat th.mh-lvl, .matrix-heat td.mh-lvl { text-align: left; color: var(--ink);
-  font-weight: 500; padding-right: var(--s2); line-height: 1.18; max-width: 130px; }
-.matrix-heat td.mh-cell { text-align: center; padding: 7px 4px; border-radius: 5px;
-  font-variant-numeric: tabular-nums; font-size: 11px; min-width: 34px;
-  box-shadow: inset 0 0 0 1px var(--chart-grid); }
-.matrix-heat td.mh-cell.mode { box-shadow: inset 0 0 0 1.5px rgba(15,23,42,.32); font-weight: 700; }
-.matrix-heat td.mh-cell.you { box-shadow: inset 0 0 0 2px var(--you); }
-.matrix-heat td.mh-cell.mode.you { box-shadow: inset 0 0 0 2px var(--you); font-weight: 700; }
-.mh-zero { color: var(--chart-grid); font-size: 13px; }
-.matrix-heat th.mh-you, .matrix-heat td.mh-you { text-align: right; white-space: nowrap; padding-left: var(--s3); }
-.matrix-scale { display: flex; flex-wrap: wrap; gap: 6px var(--s4); margin-top: var(--s3);
-  font-size: var(--fs-label); color: var(--ink-soft); align-items: center; }
-.mleg { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.msw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
-.msw-mode { background: var(--surface); box-shadow: inset 0 0 0 1.5px rgba(15,23,42,.5); }
-.msw-you { background: var(--surface); box-shadow: inset 0 0 0 2px var(--you); }
+.matrix-heat { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 4px;
+  font-size: var(--fs-label); }
+.matrix-heat thead th { font-size: 10px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-soft); text-align: center; padding: 0 2px 8px; vertical-align: bottom; line-height: 1.15;
+  background: transparent; border: 0; overflow-wrap: anywhere; }
+.matrix-heat thead th.mh-lvl { text-align: left; }
+.matrix-heat thead th.mh-you { text-align: right; }
+.matrix-heat th.mh-lvl, .matrix-heat td.mh-lvl { width: 124px; }
+.matrix-heat th.mh-you, .matrix-heat td.mh-you { width: 54px; }
+.matrix-heat td.mh-lvl { text-align: left; color: var(--ink); font-weight: 550; line-height: 1.16;
+  padding-right: var(--s2); font-size: var(--fs-label); }
+.matrix-heat td.mh-cell { height: 36px; text-align: center; vertical-align: middle; border-radius: 7px;
+  font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 550; color: var(--ink);
+  transition: box-shadow .1s ease; }
+.matrix-heat td.mh-cell.mode { box-shadow: inset 0 0 0 1px rgba(15,23,42,.24); font-weight: 750; }
+/* "you" stays in the blue identity family but the whole field is blue, so a
+   plain blue ring would vanish into the data — a white halo inside a deep-blue
+   ring separates the marker on every cell shade, pale or dark. */
+.matrix-heat td.mh-cell.you { box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3.5px var(--blue-deep); font-weight: 750; }
+.matrix-heat td.mh-empty { background:
+  repeating-linear-gradient(135deg, var(--surface-sunk) 0 6px, transparent 6px 7px), var(--surface-sunk); }
+.matrix-heat td.mh-you { text-align: right; white-space: nowrap; padding-left: var(--s3); }
+.matrix-heat td.mh-you b { color: var(--blue-deep); font-weight: 700; }
+.matrix-heat .mh-row:hover td.mh-lvl { color: var(--blue); }
+.matrix-heat .mh-row:hover td.mh-cell:not(.mode):not(.you) { box-shadow: inset 0 0 0 1px rgba(15,23,42,.14); }
+.mh-supp { text-align: left; color: var(--ink-soft); }
+.matrix-scale { display: flex; flex-wrap: wrap; align-items: center; gap: 8px var(--s4);
+  margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--chart-grid);
+  font-size: var(--fs-label); color: var(--ink-soft); }
+.mscale { display: inline-flex; align-items: center; gap: 8px; }
+.mscale-bar { width: 96px; height: 9px; border-radius: 5px;
+  background: linear-gradient(90deg, rgb(224,229,245), rgb(37,71,176)); }
+.mleg { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.msw { width: 13px; height: 13px; border-radius: 4px; flex: 0 0 auto; background: var(--surface); }
+.msw-mode { box-shadow: inset 0 0 0 1px rgba(15,23,42,.45); background: rgb(174,187,225); }
+.msw-you { background: rgb(133,152,211); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px var(--blue-deep); }
 
 /* ---- entry guardrails + cleanup (2026-06-12) ---- */
 .qsec-head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border);
