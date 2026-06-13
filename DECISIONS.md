@@ -1662,3 +1662,18 @@ as a "leftover" — its removal is deliberate.
 No qa_hero assertion referenced the lens-dots or gap-cue (the "category dots
 in [1,99]" check is the in-band position dot, d.dot, which stays). Client-
 only. qa_focus 26/26, qa_hero 42/42. Cache v58->v59.
+
+## 2026-06-13 — Nav & chrome package, Item 2: real chrome borders
+
+The 2026-06-13 soft-shadow chrome treatment was found TOO QUIET on warm
+paper and is deliberately replaced with real borders (not a regression —
+the diagnosis was right, the treatment under-powered). Root cause: --border
+#EAE5DE sits ~3% off both the white rail (#FFFFFF) and the paper body
+(#FBF9F6) — invisible against both. New token --chrome-edge #D4CCC0 carries
+real contrast against both surfaces. 2a: the sidebar's 1px right-border is
+now the PRIMARY separation cue (soft shadow demoted to secondary). 2b: the
+top bar's 1px bottom-border is the primary cue, sticky scroll-shadow
+secondary; no height added (PR-2 slimming respected, top bar stays 53px).
+2c: nav hierarchy unchanged from the QA-v3 pass — active = blue-deep + inset
+ring, inactive = --ink-faint, "YOUR ORGANISATION" label kept. Client-only.
+qa_focus 26/26, qa_hero 42/42. Cache v59->v60.
