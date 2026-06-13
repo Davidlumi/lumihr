@@ -2083,3 +2083,29 @@ Verified live: categorical (630×238) and numeric (638×380) twins rasterise to
 non-blank PNGs and the full exportCardPNG returns "downloaded" with a valid
 data:image/png for both; existing SVG charts still export; screen heatmap
 unchanged after the matrixBandOrder refactor; no console errors. v82 -> v83.
+
+## 2026-06-13 — Submission design QA: light table header + help-text content fixes
+Deep design QA of the data-submission flow (home, all six input types, warn
+state, review/submit, gates, desktop+mobile). The flow itself is strong
+(warn-never-block, units-in-field, N/A first-class, autosave, key/optional
+split). Two fixes shipped:
+1) TABLE HEADER (client): the .data table header was a heavy navy bar; stacked
+   through a long entry form it read like a database export. Replaced GLOBALLY
+   (David's call) with a light small-caps header on a bottom rule — one table
+   language across submission, my-data, pulses, admin, commercial. v83->v84.
+2) HELP-TEXT CONTENT (metadata, server/fix_help_text.py, backed up first):
+   18 questions carried help that contradicted their input type —
+   • the £-entry matrix "Total annual payment for each allowance" said "Select
+     the option that best describes…"; now "Enter the typical total annual
+     amount paid for each allowance (£). Leave a row blank where you don't
+     offer it."
+   • 17 four-option practice questions (Yes / No / partial-or-ad-hoc / Don't
+     know) still said "Select Yes or No."; now "Select the option that best
+     describes your organisation."
+   Metadata only (questions.help_text) — answers/aggregates untouched, no
+   re-aggregation. Server caches question metadata at startup, so a restart was
+   required for the API to serve the corrected text (verified live).
+FLAGGED (not changed): the matrix-row soft-warning renders inside the table
+cell so the amber box looks untethered mid-grid; and some "What counts?"
+definitions still just restate the title (a content-authoring pass, not a QA
+fix).
