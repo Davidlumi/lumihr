@@ -33,7 +33,6 @@ function App() {
   const [layoutIds, setLayoutIds] = useState(new Set());
   const [analystOpen, setAnalystOpen] = useState(false);
   const [metricReq, setMetricReq] = useState(null);   // {prefill, source} | null
-  const [gapCue, setGapCue] = useState(null);          // {section, count} — nav priority cue
   const [twinOpen, setTwinOpen] = useState(false);
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -53,12 +52,6 @@ function App() {
     api("/api/prefs").then(d => setPrefs(d.prefs || {}));
     api("/api/myview").then(d => setLayoutIds(new Set((d.layout || []).map(s => s.question_id))));
     api("/api/questions").then(setQIndex);
-    api("/api/gap-register").then(d => {
-      const counts = {};
-      (d.rows || []).forEach(r => { if (r.status === "not_in_place") counts[r.subpower] = (counts[r.subpower] || 0) + 1; });
-      const top = Object.entries(counts).sort((x, y) => y[1] - x[1])[0];
-      setGapCue(top ? { section: top[0], count: top[1] } : null);
-    }).catch(() => {});
   }, [me && me.org && me.org.name]);
   useEffect(() => { cutToURL(cut); }, [cutKeyOf(cut)]);
   useEffect(() => {
@@ -166,7 +159,7 @@ function App() {
           <button class=${navCls(route, "/pulse")} onClick=${() => nav("/pulse")}><${Icon} name="zap" size=${15} /> Pulse</button>
         </div>
         <div class="nav-group">
-          <${BenchmarkNav} route=${route} qIndex=${qIndex} gapCue=${gapCue} prefs=${prefs} onPref=${onPref} />
+          <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} />
         </div>
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
@@ -237,7 +230,7 @@ function App() {
    chevron only — the total lives on the "All" child. Expand state persists
    per user via the prefs store (key _nav); default expanded on first visit —
    the category breadth is part of the pitch. */
-window.BenchmarkNav = function ({ route, qIndex, gapCue, prefs, onPref }) {
+window.BenchmarkNav = function ({ route, qIndex, prefs, onPref }) {
   if (!qIndex) return null;
   const navPrefs = (prefs && prefs._nav) || {};
   const open = navPrefs.benchmark_open !== false;
@@ -258,12 +251,10 @@ window.BenchmarkNav = function ({ route, qIndex, gapCue, prefs, onPref }) {
       </button>
       ${secs.map(sec => {
         const active = route.includes("cat=" + encodeURIComponent(sec.name));
-        const cued = gapCue && gapCue.section === sec.name;
         return html`
           <button key=${sec.name} class=${"nav-item nav-child" + (active ? " active" : "")}
             onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(sec.name))}>
             ${secLabel(sec.name)}
-            ${cued && html`<span class="gap-cue" title=${gapCue.count + " practices your peers commonly have that you don't — your biggest opportunity area"}></span>`}
             <span class="nav-count">${sec.count}</span>
           </button>`;
       })}`}`;

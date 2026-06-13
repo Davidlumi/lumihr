@@ -1640,3 +1640,25 @@ doesn't implement (both from the PR-3 hub work).
 
 Client + one gate file (qa_focus). No engine/data change. Gate suite green.
 Cache v57->v58.
+
+## 2026-06-13 — Nav & chrome package, Item 1: dots removed
+
+TILE LENS-DOTS (1a) removed from CategoryTile + .lens-dot CSS. Chip, top
+accent, in-band position dot and the x/y count are untouched. The
+signal_lenses payload stays (additive, server-side); only the tile render
+stops. The --lens-* tokens and .signal-row.lens-* rules remain — the
+Signals panel still uses lens tints.
+
+SIDEBAR GAP-CUE DOT (1b) removed — REVERSES the §0 (2026-06-12) "keep it"
+ruling, at David's request. Removed the .gap-cue render in BenchmarkNav, the
+amber-dot CSS, AND the whole gapCue computation: nothing else consumed it
+(the on-load /api/gap-register fetch existed solely to feed the dot; the
+Priorities page fetches the register independently). A live calculation
+feeding nothing is worse than the dot. The "biggest opportunity area"
+information is not lost — it still lives in the Overview Biggest-gaps panel
+and on Priorities; only the at-a-glance nav cue is gone. Do not restore it
+as a "leftover" — its removal is deliberate.
+
+No qa_hero assertion referenced the lens-dots or gap-cue (the "category dots
+in [1,99]" check is the in-band position dot, d.dot, which stays). Client-
+only. qa_focus 26/26, qa_hero 42/42. Cache v58->v59.

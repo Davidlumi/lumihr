@@ -297,10 +297,6 @@ function CategoryTile({ d }) {
         </div>`}
       <div class="row spread" style=${{ minHeight: "18px" }}>
         <span class="caption num" title="practices in line with the peer majority">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool : ""}</span>
-        ${(d.signal_lenses || []).length > 0 && html`
-          <span style=${{ display: "flex", gap: "3px" }}>
-            ${d.signal_lenses.slice(0, 3).map((l, i) => html`<span key=${i} class=${"lens-dot lens-" + l} title=${l + " signal"}></span>`)}
-          </span>`}
       </div>
     </div>`;
 }

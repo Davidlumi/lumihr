@@ -219,8 +219,6 @@ select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid va
 select.peer-ctl { border-radius: 999px; padding: 0 var(--s4); font-weight: 600;
   font-family: var(--font-head); border-color: var(--blue-tint-2); max-width: 300px; }
 select.peer-ctl.narrowed { background: var(--blue-tint); color: var(--blue-deep); border-color: var(--blue); }
-.gap-cue { width: 7px; height: 7px; border-radius: 50%; background: var(--neutral-perf);
-  display: inline-block; margin-left: var(--s1); flex: 0 0 auto; }
 select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--blue) 40%, transparent);
   border-color: var(--blue); }
 
@@ -483,11 +481,6 @@ td.num, th.num { text-align: right; }
 .signal-row.lens-engage  { background: var(--lens-engage-tint); }
 .signal-row.lens-engage  svg, .signal-row.lens-engage .signal-val, .signal-row.lens-engage .lens-tag { color: var(--lens-engage); }
 .signal-row.lens-engage  .signal-detail { color: #8F3A1D; }
-.lens-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-.lens-dot.lens-save { background: var(--lens-save); }
-.lens-dot.lens-attract { background: var(--lens-attract); }
-.lens-dot.lens-retain { background: var(--lens-retain); }
-.lens-dot.lens-engage { background: var(--lens-engage); }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s4); }
 @media (min-width: 1240px) {
   .cat-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
