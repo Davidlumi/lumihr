@@ -890,3 +890,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .how-hub { flex-direction: column; }
   .how-tabs { position: static; flex-direction: row; flex-wrap: wrap; flex-basis: auto; }
 }
+
+/* Search empty state + fuzzy suggestions (chrome spec §5) */
+.search-empty { padding: var(--s2); }
+.search-suggest { border-radius: 8px; }
+.search-divider { height: 1px; background: var(--border); margin: var(--s2) 0; }
+.search-nores { padding: 2px; }

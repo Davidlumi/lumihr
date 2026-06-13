@@ -1549,3 +1549,22 @@ sign-up adds acceptance copy "By continuing you agree to our Terms of Use
 and Privacy Notice". The explicit Platform-Terms tick is unchanged.
 
 Full gate suite green (8/8). Cache v53→v56.
+
+## 2026-06-12 — Chrome rationalisation PR-4: search empty state + fuzzy matching
+
+SEARCH EMPTY STATE (§5): a no-result metric search never dead-ends. Exact
+substring hits render as before; when there are none, a typo-tolerant
+fuzzy pass suggests near-misses ("Did you mean…"), then a divider, then the
+"Request this metric" action (the request flow relocated from the old top
+bar in PR-2, prefilled with the typed term and clearing the search).
+
+FUZZY MATCHER: Levenshtein edit distance, token-level. The query is split
+into tokens (≥3 chars, stop-words dropped); each query token matches a title
+token at similarity ≥ 0.7 (1 − dist/longerLen). Questions ranked by matched-
+token count then average similarity, top 3. Verified against the spec's test
+terms: "allownace" → three allowance metrics; "pention" → three pension
+metrics; "sick" → 6 real substring hits (valid partial, no empty state);
+"zzzzq" → no suggestions but still offers Request (never a bare no-result).
+~200-question index, all in-browser — instant.
+
+Client-only. Full gate suite green (8/8). Cache v56→v57.

@@ -718,22 +718,80 @@ function navCls(route, path) {
   return "nav-item" + (active ? " active" : "");
 }
 
+/* Levenshtein edit distance — small, iterative, good enough for typo-tolerant
+   metric search over a ~200-question index. */
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+const STOP_WORDS = new Set(["the", "a", "an", "of", "and", "or", "to", "for", "is", "in", "by", "your", "you", "do"]);
+
+/* Fuzzy near-miss suggestions (chrome spec §5): when an exact substring search
+   finds nothing, find titles whose tokens are within a typo of the query
+   tokens ("allownace" -> allowance, "pention" -> pension). Token similarity =
+   1 - editDistance / longerLength; a query token matches a title token at
+   >= 0.7. Ranked by matched-token count then average similarity, top 3. */
+function fuzzyMatches(questions, query) {
+  const qTokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 3 && !STOP_WORDS.has(t));
+  if (!qTokens.length) return [];
+  const scored = [];
+  for (const q of questions) {
+    const tTokens = (q.title || "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    if (!tTokens.length) continue;
+    let matched = 0, simSum = 0;
+    for (const qt of qTokens) {
+      let best = 0;
+      for (const tt of tTokens) {
+        if (Math.abs(tt.length - qt.length) > 3) continue;
+        const sim = 1 - editDistance(qt, tt) / Math.max(qt.length, tt.length);
+        if (sim > best) best = sim;
+      }
+      if (best >= 0.7) { matched++; simSum += best; }
+    }
+    if (matched > 0) scored.push({ q, matched, avg: simSum / matched });
+  }
+  scored.sort((a, b) => b.matched - a.matched || b.avg - a.avg);
+  return scored.slice(0, 3).map(x => x.q);
+}
+
 function SearchPop({ qIndex, search, onGo, onRequest }) {
   const s = search.toLowerCase();
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
+  const suggestions = hits.length === 0 ? fuzzyMatches(qIndex.questions, search) : [];
+  const request = () => (onRequest ? onRequest() : window.openMetricRequest(search, "search"));
   return html`
     <div class="searchpop">
-      ${hits.length === 0 && html`
-        <div class="search-hit" style=${{ cursor: "default" }}>
-          <div class="caption">We don't benchmark “${search}” yet.</div>
-          <button class="btn small" style=${{ marginTop: "var(--s2)" }}
-            onClick=${() => window.openMetricRequest(search, "search")}>Request this metric</button>
-        </div>`}
       ${hits.map(q => html`
         <div key=${q.id} class="search-hit" onClick=${() => onGo(q)}>
           <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
           <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
         </div>`)}
+      ${hits.length === 0 && html`
+        <div class="search-empty">
+          ${suggestions.length > 0 ? html`
+            <div class="caption" style=${{ padding: "0 0 var(--s1) 2px" }}>Did you mean…</div>
+            ${suggestions.map(q => html`
+              <div key=${q.id} class="search-hit search-suggest" onClick=${() => onGo(q)}>
+                <b style=${{ fontSize: "13px" }}>${q.title}</b>
+                <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
+              </div>`)}
+            <div class="search-divider"></div>` : ""}
+          <div class="search-nores">
+            <div class="caption">No reward metric matches “${search}”.</div>
+            <button class="btn small" style=${{ marginTop: "var(--s2)" }} onClick=${request}>Request this metric</button>
+          </div>
+        </div>`}
     </div>`;
 }
 
