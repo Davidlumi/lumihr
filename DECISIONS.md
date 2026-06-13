@@ -1815,3 +1815,19 @@ verdict (below->amber, on->green, above->red). (4) NEEDLE DEPTH — a soft SVG
 drop shadow (feDropShadow) under the needle blade for a machined-instrument
 feel. All new motion is reduced-motion safe. qa_hero 46/46, qa_focus 26/26.
 Cache v63->v64.
+
+## 2026-06-13 — Hero gauge: median marker, sheen, lean label, heavier dial
+
+Per David — shipped the three held-back ideas plus a wider/heavier dial.
+(1) PEER-MEDIAN MARKER: a small "MEDIAN" caret at the arc's top centre (frac
+0.5 = net lean 0 = the market middle), making "you vs the median" explicit —
+the needle sitting left of it shows the below-lean at a glance. (2) RADIAL
+SHEEN: a soft white radial gradient (#dialSheen) washes the dial face for
+quiet dimensionality. (3) LEAN SUB-LABEL: a one-line descriptor under the
+verdict turning the tilt into words — for the demo "slightly below-leaning"
+(verdict On market, lean -0.21); below/above verdicts read
+"marginally/moderately/clearly below|above the market" by distance past the
+threshold; a near-zero lean reads "evenly balanced". (4) HEAVIER + WIDER:
+column 312->356px, arc max-width 300->334, stroke 9->13, hub/needle thicker,
+verdict word 26->30px/650. All new motion reduced-motion safe; the median
+marker rides the entrance. qa_hero 46/46, qa_focus 26/26. Cache v64->v65.

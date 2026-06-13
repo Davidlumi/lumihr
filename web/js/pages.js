@@ -203,9 +203,9 @@ function OverallArc({ market }) {
   const tipCol = v === "below" ? "#F8C24A" : v === "above" ? "#E07B72" : "#1D9E75";
 
   // geometry: semicircle, hub at base centre. frac 0=far below (left), 1=far
-  // above (right). value v -> frac (v+1)/2.
-  const CX = 140, CY = 138, R = 102, W = 9;
-  const capF = (W / 2 / R) / Math.PI, gapF = 0.018;
+  // above (right). value v -> frac (v+1)/2. Heavier stroke for a substantial dial.
+  const CX = 140, CY = 138, R = 102, W = 13;
+  const capF = (W / 2 / R) / Math.PI, gapF = 0.02;
   const toFrac = (val) => (val + 1) / 2;
   const polar = (frac, r) => { const a = Math.PI * (1 - frac); return [CX + r * Math.cos(a), CY - r * Math.sin(a)]; };
   const arcPath = (f0, f1) => {
@@ -233,23 +233,48 @@ function OverallArc({ market }) {
   const minors = [];
   for (let i = 1; i < MINOR; i++) {
     const f = capF + (i / MINOR) * (1 - 2 * capF);
-    if (Math.abs(f - j1) < 0.02 || Math.abs(f - j2) < 0.02) continue;   // don't clash with joins
+    if (Math.abs(f - j1) < 0.02 || Math.abs(f - j2) < 0.02 || Math.abs(f - 0.5) < 0.02) continue;
     const long = (i % 4 === 0);
-    minors.push(tick(f, R - 8.5, R - (long ? 14 : 11.5)));
+    minors.push(tick(f, R - 11, R - (long ? 17 : 14.5)));
   }
-  const tipY = CY - (R - 6);
+  const tipY = CY - (R - 7);
+  // peer-median marker — frac 0.5 (net lean 0 = exactly the market middle), so
+  // "you vs the median" is explicit. A small downward caret above the arc.
+  const [mx, my] = polar(0.5, R + 13);
+  const medD = "M " + (mx - 4).toFixed(1) + " " + (my - 6).toFixed(1) +
+    " L " + (mx + 4).toFixed(1) + " " + (my - 6).toFixed(1) + " L " + mx.toFixed(1) + " " + my.toFixed(1) + " Z";
+  // lean descriptor — turns the tilt into words (honest about a below-lean even
+  // when the verdict is On market).
+  const mag = Math.abs(lean);
+  const leanWord = (() => {
+    if (v === "at") {
+      if (mag < 0.06) return "evenly balanced";
+      return "slightly " + (lean < 0 ? "below" : "above") + "-leaning";
+    }
+    const past = mag - T;
+    const strength = past > 0.2 ? "clearly" : past > 0.08 ? "moderately" : "marginally";
+    return strength + " " + (v === "below" ? "below" : "above") + " the market";
+  })();
 
   return html`
     <div class="card arc-card">
       <div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
       <div class="arc-stage">
-        <svg viewBox="0 0 280 168" class="arc-svg" role="img"
-          aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + "."}>
+        <svg viewBox="0 0 280 170" class="arc-svg" role="img"
+          aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + ", " + leanWord + ". The market median sits at centre."}>
           <defs>
             <filter id="needleShadow" x="-40%" y="-40%" width="180%" height="180%">
-              <feDropShadow dx="0" dy="1.6" stdDeviation="1.7" flood-color="#211B26" flood-opacity="0.22"/>
+              <feDropShadow dx="0" dy="1.8" stdDeviation="2" flood-color="#211B26" flood-opacity="0.24"/>
             </filter>
+            <radialGradient id="dialSheen" cx="50%" cy="92%" r="72%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+              <stop offset="55%" stop-color="#ffffff" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
           </defs>
+          ${/* radial sheen on the dial face — quiet dimensionality */ ""}
+          <path d=${"M " + (CX - R - 9) + " " + CY + " A " + (R + 9) + " " + (R + 9) + " 0 0 1 " + (CX + R + 9) + " " + CY + " Z"}
+            fill="url(#dialSheen)" opacity="0.6"/>
           <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W + 3} stroke-linecap="round"/>
           ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"
             pathLength="1" class="arc-band" style=${{ animationDelay: (140 + i * 120) + "ms" }}/>`)}
@@ -259,19 +284,27 @@ function OverallArc({ market }) {
           </g>
           ${joins.map((t, i) => html`<line key=${"j" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
             stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.55"/>`)}
+          ${/* peer-median marker */ ""}
+          <g class="arc-median">
+            <path d=${medD} fill="var(--ink-soft)" opacity="0.7"/>
+            <text x=${mx.toFixed(1)} y=${(my - 9).toFixed(1)} text-anchor="middle"
+              style=${{ font: "600 8px var(--font-body)", letterSpacing: ".04em", textTransform: "uppercase" }}
+              fill="var(--ink-faint)">median</text>
+          </g>
           <g class="arc-needle" style=${{ transform: "rotate(" + shownRot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
-            <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} />
+            <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="5" fill=${tipCol} />
             <g filter="url(#needleShadow)">
-              <path d=${"M " + CX + " " + CY + " L " + (CX - 2.6) + " " + (CY - 7) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 2.6) + " " + (CY - 7) + " Z"} fill=${needleCol}/>
-              <circle cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.5"/>
+              <path d=${"M " + CX + " " + CY + " L " + (CX - 3.4) + " " + (CY - 8) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 3.4) + " " + (CY - 8) + " Z"} fill=${needleCol}/>
+              <circle cx=${CX} cy=${tipY.toFixed(1)} r="5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.75"/>
             </g>
           </g>
-          <circle cx=${CX} cy=${CY} r="6.5" fill="var(--surface)" stroke=${needleCol} stroke-width="2.75"/>
-          <circle cx=${CX} cy=${CY} r="1.75" fill=${needleCol}/>
+          <circle cx=${CX} cy=${CY} r="8" fill="var(--surface)" stroke=${needleCol} stroke-width="3.25"/>
+          <circle cx=${CX} cy=${CY} r="2.25" fill=${needleCol}/>
         </svg>
       </div>
       <div class="arc-verdict">
         <div class="arc-word num" style=${{ color: wordCol }}>${word}</div>
+        <div class="arc-lean">${leanWord}</div>
         <div class="arc-caption">across <span class="num"><${CountUp} to=${market.pool} /></span> metrics assessed</div>
       </div>
       <div class="arc-legend num">

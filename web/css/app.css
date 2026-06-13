@@ -455,7 +455,7 @@ td.num, th.num { text-align: right; }
   margin-bottom: var(--s2); max-width: 620px; }
 
 /* ---- the 80/20 home hero (2026-06-12, polished) ---- */
-.ov-top { display: grid; grid-template-columns: 312px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
+.ov-top { display: grid; grid-template-columns: 356px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
 .ov-wrap .grid2 { gap: var(--s4) !important; margin: var(--s4) 0 !important; }
 @media (max-width: 1000px) { .ov-top { grid-template-columns: 1fr; } }
 /* Hero gauge (2026-06-13 rebuild) — instrument, not segments */
@@ -471,7 +471,7 @@ td.num, th.num { text-align: right; }
   letter-spacing: 0; white-space: nowrap; }
 @media (max-width: 1180px) { .sig-head-note { display: none; } }
 .arc-stage { display: flex; justify-content: center; margin-top: var(--s2); }
-.arc-svg { width: 100%; max-width: 300px; display: block; }
+.arc-svg { width: 100%; max-width: 334px; display: block; }
 .arc-needle { transition: transform 900ms cubic-bezier(.34,1.45,.5,1); }
 /* band draw-in: each band sweeps on from its start, quietly, staggered */
 .arc-band { stroke-dasharray: 1; stroke-dashoffset: 1; animation: arc-draw 760ms cubic-bezier(.4,0,.2,1) both; }
@@ -481,8 +481,9 @@ td.num, th.num { text-align: right; }
   animation: tip-pulse 2.6s ease-in-out infinite; }
 @keyframes tip-pulse { 0%, 100% { transform: scale(1); opacity: .42; } 50% { transform: scale(2.1); opacity: 0; } }
 .arc-verdict { text-align: center; margin-top: 2px; }
-.arc-word { font-family: var(--font-head); font-size: 26px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; }
-.arc-caption { font-size: 11px; color: var(--ink-faint); margin-top: 3px; }
+.arc-word { font-family: var(--font-head); font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.08; }
+.arc-lean { font-size: 12.5px; font-weight: 500; color: var(--ink-soft); margin-top: 4px; letter-spacing: .005em; }
+.arc-caption { font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
 .arc-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-soft);
   border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s4); }
 .arc-leg-fig { font-weight: 650; color: var(--ink); margin-right: 3px; }
@@ -615,6 +616,7 @@ td.num, th.num { text-align: right; }
 .cat-grid .cat-tile:nth-child(7) { animation-delay: 520ms; }
 .grid2 .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
 .arc-verdict, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 320ms; }
+.arc-median { animation: ov-rise 460ms ease-out both; animation-delay: 600ms; }
 .tile-dot { animation: dot-pop 460ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
 .chip-band .tile-dot { animation-delay: 700ms; }
 .signal-go { opacity: 0; transform: translateX(-4px); transition: opacity var(--ease), transform var(--ease);
@@ -629,7 +631,7 @@ td.num, th.num { text-align: right; }
 
 @media (prefers-reduced-motion: reduce) {
   .arc-card, .ov-top .card, .signal-row, .cat-tile, .grid2 .card, .arc-needle, .arc-verdict, .ov-after,
-  .arc-band, .arc-minors, .arc-tip-glow, .tile-dot, .signal-go { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
+  .arc-band, .arc-minors, .arc-median, .arc-tip-glow, .tile-dot, .signal-go { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
   .arc-tip-glow { opacity: 0 !important; }
 }
 
