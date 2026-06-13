@@ -455,7 +455,7 @@ td.num, th.num { text-align: right; }
   margin-bottom: var(--s2); max-width: 620px; }
 
 /* ---- the 80/20 home hero (2026-06-12, polished) ---- */
-.ov-top { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
+.ov-top { display: grid; grid-template-columns: 312px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
 .ov-wrap .grid2 { gap: var(--s4) !important; margin: var(--s4) 0 !important; }
 @media (max-width: 1000px) { .ov-top { grid-template-columns: 1fr; } }
 /* Hero gauge (2026-06-13 rebuild) — instrument, not segments */
@@ -471,10 +471,11 @@ td.num, th.num { text-align: right; }
   letter-spacing: 0; white-space: nowrap; }
 @media (max-width: 1180px) { .sig-head-note { display: none; } }
 .arc-stage { display: flex; justify-content: center; margin-top: var(--s2); }
-.arc-svg { width: 100%; max-width: 270px; display: block; }
+.arc-svg { width: 100%; max-width: 300px; display: block; }
 .arc-needle { transition: transform 900ms cubic-bezier(.34,1.45,.5,1); }
 /* band draw-in: each band sweeps on from its start, quietly, staggered */
 .arc-band { stroke-dasharray: 1; stroke-dashoffset: 1; animation: arc-draw 760ms cubic-bezier(.4,0,.2,1) both; }
+.arc-minors { animation: ov-rise 500ms ease-out both; animation-delay: 520ms; }
 /* needle tip: a soft live pulse so the instrument feels alive */
 .arc-tip-glow { transform-box: fill-box; transform-origin: center; opacity: .5;
   animation: tip-pulse 2.6s ease-in-out infinite; }
@@ -628,7 +629,7 @@ td.num, th.num { text-align: right; }
 
 @media (prefers-reduced-motion: reduce) {
   .arc-card, .ov-top .card, .signal-row, .cat-tile, .grid2 .card, .arc-needle, .arc-verdict, .ov-after,
-  .arc-band, .arc-tip-glow, .tile-dot, .signal-go { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
+  .arc-band, .arc-minors, .arc-tip-glow, .tile-dot, .signal-go { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
   .arc-tip-glow { opacity: 0 !important; }
 }
 

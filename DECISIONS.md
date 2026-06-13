@@ -1799,3 +1799,19 @@ priorities →" link). The two hero cards now read as a matched pair with the
 same header language, no empty bottom third. Empty + locked states reuse the
 same fill (centred ring / lock note). Client-only. qa_hero 46/46, qa_focus
 26/26. Cache v62->v63.
+
+## 2026-06-13 — Hero gauge: presence + precision pass
+
+Acting on David's "could it be wider / what else" — a research-led pass toward
+a premium instrument (reference: speedometer / fintech dial language). Four
+changes, client-only: (1) WIDER — the gauge column goes 264px -> 312px and the
+arc max-width 270 -> 300, so the instrument has presence as the hero's
+headline answer. (2) MINOR GRADUATIONS — ~21 quiet inner tick marks (every
+4th longer) around the arc, the precision-instrument cue, fading in after the
+bands draw. (3) ACTIVE-ZONE EMPHASIS — the band the needle rests in renders
+RICHER (a ~66% hue mix in the verdict colour) while the dormant zones stay
+muted, so the eye lands on the answer; the active band always matches the
+verdict (below->amber, on->green, above->red). (4) NEEDLE DEPTH — a soft SVG
+drop shadow (feDropShadow) under the needle blade for a machined-instrument
+feel. All new motion is reduced-motion safe. qa_hero 46/46, qa_focus 26/26.
+Cache v63->v64.

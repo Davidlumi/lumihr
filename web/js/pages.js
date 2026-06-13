@@ -214,14 +214,29 @@ function OverallArc({ market }) {
       " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
   };
   const j1 = toFrac(-T), j2 = toFrac(T);                       // band joins at ±threshold
+  // The band the needle rests in is the verdict — render it RICHER (the eye
+  // lands on the answer); the dormant zones stay quiet. Active uses a 70% mix
+  // of its hue, dormant the ~40% --gauge-* tokens.
+  const rich = { below: "color-mix(in srgb, var(--amber-bright) 70%, var(--surface))",
+                 at: "color-mix(in srgb, var(--favourable) 66%, var(--surface))",
+                 above: "color-mix(in srgb, var(--unfavourable) 64%, var(--surface))" };
   const bands = [
-    { d: arcPath(capF, j1 - gapF), col: "var(--gauge-below)" },
-    { d: arcPath(j1 + gapF, j2 - gapF), col: "var(--gauge-on)" },
-    { d: arcPath(j2 + gapF, 1 - capF), col: "var(--gauge-above)" },
+    { k: "below", d: arcPath(capF, j1 - gapF), col: v === "below" ? rich.below : "var(--gauge-below)" },
+    { k: "at", d: arcPath(j1 + gapF, j2 - gapF), col: v === "at" ? rich.at : "var(--gauge-on)" },
+    { k: "above", d: arcPath(j2 + gapF, 1 - capF), col: v === "above" ? rich.above : "var(--gauge-above)" },
   ];
-  // band-join ticks — tiny notches across the scale where the colours meet
-  const tick = (frac) => { const [ox, oy] = polar(frac, R + 6), [ix, iy] = polar(frac, R - 6); return { ox, oy, ix, iy }; };
-  const ticks = [tick(j1), tick(j2)];
+  // band-join ticks — notches where the colours meet (the verdict thresholds)
+  const tick = (frac, r0, r1) => { const [ox, oy] = polar(frac, r0), [ix, iy] = polar(frac, r1); return { ox, oy, ix, iy }; };
+  const joins = [tick(j1, R + 6, R - 6), tick(j2, R + 6, R - 6)];
+  // minor graduations — a quiet inner scale, the precision-instrument cue.
+  const MINOR = 24;
+  const minors = [];
+  for (let i = 1; i < MINOR; i++) {
+    const f = capF + (i / MINOR) * (1 - 2 * capF);
+    if (Math.abs(f - j1) < 0.02 || Math.abs(f - j2) < 0.02) continue;   // don't clash with joins
+    const long = (i % 4 === 0);
+    minors.push(tick(f, R - 8.5, R - (long ? 14 : 11.5)));
+  }
   const tipY = CY - (R - 6);
 
   return html`
@@ -230,15 +245,26 @@ function OverallArc({ market }) {
       <div class="arc-stage">
         <svg viewBox="0 0 280 168" class="arc-svg" role="img"
           aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + "."}>
+          <defs>
+            <filter id="needleShadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="1.6" stdDeviation="1.7" flood-color="#211B26" flood-opacity="0.22"/>
+            </filter>
+          </defs>
           <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W + 3} stroke-linecap="round"/>
           ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"
             pathLength="1" class="arc-band" style=${{ animationDelay: (140 + i * 120) + "ms" }}/>`)}
-          ${ticks.map((t, i) => html`<line key=${"t" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
-            stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.5"/>`)}
+          <g class="arc-minors">
+            ${minors.map((t, i) => html`<line key=${"m" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
+              stroke="var(--ink-faint)" stroke-width="1" opacity="0.28"/>`)}
+          </g>
+          ${joins.map((t, i) => html`<line key=${"j" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
+            stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.55"/>`)}
           <g class="arc-needle" style=${{ transform: "rotate(" + shownRot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
             <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} />
-            <path d=${"M " + CX + " " + CY + " L " + (CX - 2.4) + " " + (CY - 6) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 2.4) + " " + (CY - 6) + " Z"} fill=${needleCol}/>
-            <circle cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.5"/>
+            <g filter="url(#needleShadow)">
+              <path d=${"M " + CX + " " + CY + " L " + (CX - 2.6) + " " + (CY - 7) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 2.6) + " " + (CY - 7) + " Z"} fill=${needleCol}/>
+              <circle cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.5"/>
+            </g>
           </g>
           <circle cx=${CX} cy=${CY} r="6.5" fill="var(--surface)" stroke=${needleCol} stroke-width="2.75"/>
           <circle cx=${CX} cy=${CY} r="1.75" fill=${needleCol}/>
