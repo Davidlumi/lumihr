@@ -2120,3 +2120,38 @@ grid override, specificity-matched) so the inserted note row can't flip the
 nth-child stripe parity below it; row borders separate cleanly on their own.
 Verified live (outlier on a £ cell → full-width amber row, rows below intact);
 no console errors; draft left clean. v84 -> v86.
+
+## 2026-06-13 — Signals Phase 1 SHIPPED (config-only, 25 → 108 live mappings)
+Replaced data/signal_lenses.json with signal_lenses_PHASE1.json (hot-reload, no
+restart). Adds to position_lenses + prevalence_lenses using the existing behind
++ prevalence engine logic. Validated before swap: all IDs resolve to active
+questions; no cross-bucket collisions (position ∩ prevalence empty; money ∩
+position = the pension metric, deduped by build_signals); lenses valid; the 3
+anchor-risk ordered IDs (REW_Q049530, REW_PAY_003, PROP_8e0b6316) correctly
+ABSENT.
+Live eyeball (Thornbridge demo, caps lifted): 27→26 signals fire. Static audit
+of every position_lenses choice metric's score ladder found ONE backwards case:
+  • REW_BEN_SICK_001 — score_answer ranks "Statutory sick pay only"=100 ABOVE
+    "Enhanced occupational sick pay"(66) and "Combination of enhanced+SSP"(33).
+    The org's generous sick pay reads as 'behind'. Root cause is the question's
+    option order/scoring (firewall data — affects its percentile everywhere),
+    not the lens. HELD: removed from position_lenses in both configs, logged
+    under _held_pending_data_fix. Re-add once the score ladder is corrected.
+The other 6 neutral-polarity entries in position_lenses (market position, the
+two bonus matrices, pension %/cost-share, salary budget) do NOT fire behind
+(engine requires favourable==bad) — held for the Phase-2 ordered-outlier path,
+harmless meanwhile.
+qa_hero: added a static assertion that the 3 anchor-risk IDs stay out of
+position_lenses (47/47, was 46). The existing "no behind on neutral" check
+already passes.
+NOT BLOCKING: server/qa_phase1.py (handoff gate) crashes on a 404 — it targets
+PROP_9620d380 (Processes, status=proposed) and MET_cd8efe96 (Attract), both
+outside the reward-only launch scope, so they 404 for the demo org. Pre-existing
+scope incompatibility, unrelated to Signals; the engine math it did reach
+(PROP_9e4ad87f percentiles) passed.
+FLAGS FOR DAVID: (a) fix REW_BEN_SICK_001 option order/scoring, then re-add to
+position_lenses; (b) lens framing — "Relocation support" and "EV charging
+reimbursement" fire behind under the 'save' lens (save reads as overspend, but
+behind here = you provide less) — review; (c) behind label "0/100 vs median"
+reads cryptically for ordered scores — Phase-2 label polish; (d) all lens
+assignments remain his to ratify. Phase 2/3 unbuilt per plan.
