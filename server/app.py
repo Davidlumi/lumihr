@@ -64,7 +64,14 @@ DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
 # minimum distinct positioned questions for a tile's INDICATIVE verdict when
 # the strict floor isn't met (David-tunable; evidence counts ship to the UI)
 TILE_MIN_POSITIONED = int(os.environ.get("LUMI_TILE_MIN_POSITIONED", "1"))
-VERDICT_MARGIN = float(os.environ.get("LUMI_VERDICT_MARGIN", "0.15"))
+# Hero verdict (2026-06-13, David): the headline reads where the centre of
+# gravity sits — net lean = (above-below)/pool. The verdict is "on market"
+# unless that net lean clears this threshold either way. ONE value drives both
+# the verdict word and the gauge needle, so they can never disagree (the
+# original two-measures-in-one-component defect). 0.25 (wider than the old
+# 0.15) lets a near-even split like 34/46/14 read "On market". Env-tunable.
+VERDICT_NET_LEAN = float(os.environ.get("LUMI_VERDICT_NET_LEAN",
+                                        os.environ.get("LUMI_VERDICT_MARGIN", "0.25")))
 UNCOMMON_PCT = float(os.environ.get("LUMI_UNCOMMON_PCT", "20"))
 
 # AI metric commentary. Default ON: the adversarial QA gate (qa_commentary.py)
@@ -1277,7 +1284,7 @@ async def overview(request: Request):
                                              payloads(), org_answers_for(org),
                                              make_entitled(user, org), tb)
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
-                            DOMAIN_MIN_POLARISED, VERDICT_MARGIN, UNCOMMON_PCT,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
                             practice_items=prac_items, tile_min=TILE_MIN_POSITIONED)
     reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
     hero["action_gaps"] = sum(1 for r in reg_rows

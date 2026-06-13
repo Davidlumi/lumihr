@@ -672,14 +672,24 @@ def _market_class(item, band_low, band_high):
 
 
 def _pool_verdict(pool, band_low, band_high, margin):
+    """The headline verdict + the continuous position value that drives it.
+
+    `lean` = (above - below) / pool, the net centre-of-gravity in [-1, +1].
+    The SAME value bands the verdict (below/at/above at the `margin` threshold)
+    and drives the gauge needle on the client, so word and needle agree by
+    construction. By construction this can never read "below" when below is the
+    smallest of the three counts (below smallest => above > below => lean > 0 =>
+    never "below"), and likewise for "above" — asserted in qa_hero.
+    """
     if not pool:
         return None
     above = sum(1 for i in pool if _market_class(i, band_low, band_high) == "above")
     below = sum(1 for i in pool if _market_class(i, band_low, band_high) == "below")
     at = len(pool) - above - below
-    share = (above - below) / float(len(pool))
-    verdict = "above" if share > margin else "below" if share < -margin else "at"
-    return {"verdict": verdict, "above": above, "at": at, "below": below, "pool": len(pool)}
+    lean = (above - below) / float(len(pool))
+    verdict = "above" if lean > margin else "below" if lean < -margin else "at"
+    return {"verdict": verdict, "above": above, "at": at, "below": below,
+            "pool": len(pool), "lean": round(lean, 4), "lean_threshold": margin}
 
 
 def _prev_summary(pool, uncommon_pct):

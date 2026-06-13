@@ -27,7 +27,7 @@ def check(name, ok, detail=""):
     print("  %s %-72s %s" % ("PASS" if ok else "FAIL", name[:72], ("| " + str(detail)[:80]) if detail and not ok else ""))
 
 
-BAND_LOW, BAND_HIGH, MARGIN = 25.0, 75.0, 0.15
+BAND_LOW, BAND_HIGH, MARGIN = 25.0, 75.0, 0.25   # net-lean threshold (LUMI_VERDICT_NET_LEAN)
 
 print("=" * 100)
 print("1. POLARITY DIRECTION — synthetic items of every polarity (the critical check)")
@@ -106,10 +106,29 @@ print("4. BAND — configurable; wash-out reported")
 print("=" * 100)
 m = hero["market"]
 at_share = m["at"] / float(m["pool"])
-print("  default band 25-75: %d above / %d at / %d below of %d -> %.0f%% at-market" % (
+print("  default band 25-75: %d above / %d on / %d below of %d -> %.0f%% on-market" % (
     m["above"], m["at"], m["below"], m["pool"], at_share * 100))
 check("config block exposes the band for tuning", hero["config"]["band_low"] == 25.0 and hero["config"]["band_high"] == 75.0)
-check("hero not washed out (at-market share < 70%)", at_share < 0.70, "%.0f%% at" % (at_share * 100))
+check("hero not washed out (on-market share < 70%)", at_share < 0.70, "%.0f%% on" % (at_share * 100))
+
+# F2 (2026-06-13) — the verdict can never contradict the count distribution in
+# the impossible direction: never "below" when below is the strict smallest of
+# the three counts, never "above" when above is the strict smallest. Net-balance
+# satisfies this by construction; assert it so a future threshold change can't
+# silently break it. Also: the verdict and the gauge needle share ONE value.
+_counts = {"below": m["below"], "at": m["at"], "above": m["above"]}
+_smallest = min(_counts, key=_counts.get)
+_strict_smallest = sum(1 for v in _counts.values() if v == _counts[_smallest]) == 1
+check("verdict never 'below' when below is the smallest count",
+      not (m["verdict"] == "below" and _strict_smallest and _smallest == "below"), _counts)
+check("verdict never 'above' when above is the smallest count",
+      not (m["verdict"] == "above" and _strict_smallest and _smallest == "above"), _counts)
+check("market exposes one lean value driving both word and needle",
+      "lean" in m and -1.0 <= m["lean"] <= 1.0, m.get("lean"))
+check("verdict bands the SAME lean value it ships (word/needle agree by construction)",
+      m["verdict"] == ("above" if m["lean"] > m["lean_threshold"]
+                       else "below" if m["lean"] < -m["lean_threshold"] else "at"),
+      (m["verdict"], m["lean"], m["lean_threshold"]))
 tighter = pos._pool_verdict([{"polarity": "higher_is_better", "percentile": p} for p in (30, 40, 60, 70, 35, 65)],
                             40, 60, MARGIN)
 check("a tighter band (40-60) reclassifies the same pool differently (tunable)",

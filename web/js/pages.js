@@ -167,58 +167,78 @@ function CountUp({ to, ms = 750 }) {
   return html`${v}`;
 }
 
+/* The hero gauge (2026-06-13 rebuild): a precise instrument, not three fat
+   segments. A quiet three-band scale is the backdrop; a single tapered needle
+   pivots from the base centre, its angle driven by market.lean — the SAME
+   value that bands the verdict word, so needle and word agree by construction.
+   The band joins sit at the verdict threshold (±lean_threshold), so the band
+   the needle rests in IS the verdict. The 34/46/14 counts move to a hairline
+   legend — they are not the gauge's job. Real traffic-light palette
+   (below=amber, on=green, above=red) on warm paper. */
 function OverallArc({ market }) {
   if (!market) return html`
-    <div class="card arc-card"><div class="caption" style=${{ padding: "var(--s5)" }}>
+    <div class="card arc-card"><div class="arc-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
+      <div class="caption" style=${{ padding: "var(--s4) var(--s2)" }}>
       Your overall position appears once enough of your data is comparable.</div></div>`;
-  const total = (market.above + market.at + market.below) || 1;
-  // Cap-aware gauge geometry: round line caps paint strokeW/2 PAST a path's
-  // endpoint, so every span is inset by capF (the cap's angular size) — the
-  // painted extents then land exactly where intended and the joins show a
-  // crisp, even gap instead of overlapping blobs.
-  const R = 74, CX = 105, CY = 104, W = 14;
-  const capF = (W / 2 / R) / Math.PI, gapF = 0.022;
-  const polar = (frac) => {
-    const a = Math.PI * (1 - frac);
-    return [CX + R * Math.cos(a), CY - R * Math.sin(a)];
-  };
+  const v = market.verdict;                                   // "below" | "at" | "above"
+  const lean = Math.max(-1, Math.min(1, market.lean || 0));   // centre of gravity, -1..1
+  const T = market.lean_threshold || 0.25;                    // band join = verdict threshold
+  const word = v === "above" ? "Above" : v === "below" ? "Below" : "On market";
+  // traffic light: on=green (target), above=red (premium cost), below=amber (lagging)
+  const wordCol = v === "below" ? "var(--neutral-perf)" : v === "above" ? "var(--unfavourable)" : "var(--favourable)";
+  const needleCol = v === "below" ? "var(--amber-bright)" : v === "above" ? "var(--unfavourable)" : "var(--favourable)";
+  const tipCol = v === "below" ? "#F8C24A" : v === "above" ? "#E07B72" : "#1D9E75";
+
+  // geometry: semicircle, hub at base centre. frac 0=far below (left), 1=far
+  // above (right). value v -> frac (v+1)/2.
+  const CX = 140, CY = 138, R = 102, W = 9;
+  const capF = (W / 2 / R) / Math.PI, gapF = 0.018;
+  const toFrac = (val) => (val + 1) / 2;
+  const polar = (frac, r) => { const a = Math.PI * (1 - frac); return [CX + r * Math.cos(a), CY - r * Math.sin(a)]; };
   const arcPath = (f0, f1) => {
-    const [x0, y0] = polar(f0), [x1, y1] = polar(f1);
+    const [x0, y0] = polar(f0, R), [x1, y1] = polar(f1, R);
     return "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
       " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
   };
-  const segs = [];
-  let acc = 0;
-  [["below", market.below, "var(--amber-bright)"], ["at", market.at, "var(--favourable)"],
-   ["above", market.above, "var(--unfavourable)"]].forEach(([k, n, col]) => {
-    if (!n) return;
-    let f0 = acc / total + capF + (acc ? gapF / 2 : 0);
-    acc += n;
-    let f1 = acc / total - capF - (acc < total ? gapF / 2 : 0);
-    if (f1 <= f0) { const m = (f0 + f1) / 2; f0 = m - 0.001; f1 = m + 0.001; }
-    segs.push({ k, col, d: arcPath(f0, f1) });
-  });
-  const word = market.verdict === "above" ? "Above" : market.verdict === "below" ? "Below" : "At market";
-  const wordCol = market.verdict === "below" ? "var(--neutral-perf)"
-    : market.verdict === "above" ? "var(--unfavourable)" : "var(--favourable)";
+  const j1 = toFrac(-T), j2 = toFrac(T);                       // band joins at ±threshold
+  const bands = [
+    { d: arcPath(capF, j1 - gapF), col: "var(--gauge-below)" },
+    { d: arcPath(j1 + gapF, j2 - gapF), col: "var(--gauge-on)" },
+    { d: arcPath(j2 + gapF, 1 - capF), col: "var(--gauge-above)" },
+  ];
+  // band-join ticks — tiny notches across the scale where the colours meet
+  const tick = (frac) => { const [ox, oy] = polar(frac, R + 6), [ix, iy] = polar(frac, R - 6); return { ox, oy, ix, iy }; };
+  const ticks = [tick(j1), tick(j2)];
+  // needle: drawn pointing straight up from the hub, rotated by the data angle.
+  const rot = (toFrac(lean) - 0.5) * 180;                     // -90 (far below) .. +90 (far above)
+  const tipY = CY - (R - 6);
+
   return html`
     <div class="card arc-card">
-      <div class="caption">Where you stand</div>
-      <svg viewBox="0 0 210 116" class="arc-svg"
-        role="img" aria-label=${market.below + " below, " + market.at + " at, " + market.above + " above market"}>
-        <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W} stroke-linecap="round"/>
-        ${segs.map((sg, i) => html`<path key=${sg.k} d=${sg.d} fill="none" stroke=${sg.col} stroke-width=${W}
-          stroke-linecap="round" pathLength="1" class="arc-seg" style=${{ animationDelay: (i * 140) + "ms" }}/>`)}
-        <text x="105" y="84" text-anchor="middle" class="arc-word"
-          style=${{ font: "650 " + (word.length > 6 ? 19 : 24) + "px var(--font-head)" }}
-          fill=${wordCol}>${word}</text>
-        <text x="105" y="101" text-anchor="middle" class="ov-after"
-          style=${{ font: "500 10.5px var(--font-body)" }} fill="var(--ink-soft)">${market.pool} metrics</text>
-      </svg>
-      <div class="arc-legend num ov-after">
-        <span class="arc-pill below"><${CountUp} to=${market.below} /> below</span>
-        <span class="arc-pill at"><${CountUp} to=${market.at} /> at</span>
-        <span class="arc-pill above"><${CountUp} to=${market.above} /> above</span>
+      <div class="arc-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
+      <div class="arc-stage">
+        <svg viewBox="0 0 280 168" class="arc-svg" role="img"
+          aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + "."}>
+          <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W + 3} stroke-linecap="round"/>
+          ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"/>`)}
+          ${ticks.map((t, i) => html`<line key=${"t" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
+            stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.5"/>`)}
+          <g class="arc-needle" style=${{ transform: "rotate(" + rot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
+            <path d=${"M " + CX + " " + CY + " L " + (CX - 2.4) + " " + (CY - 6) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 2.4) + " " + (CY - 6) + " Z"} fill=${needleCol}/>
+            <circle cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.5"/>
+          </g>
+          <circle cx=${CX} cy=${CY} r="6.5" fill="var(--surface)" stroke=${needleCol} stroke-width="2.75"/>
+          <circle cx=${CX} cy=${CY} r="1.75" fill=${needleCol}/>
+        </svg>
+      </div>
+      <div class="arc-verdict">
+        <div class="arc-word num" style=${{ color: wordCol }}>${word}</div>
+        <div class="arc-caption">across <span class="num">${market.pool}</span> metrics assessed</div>
+      </div>
+      <div class="arc-legend num">
+        <span><span class="arc-leg-fig">${market.below}</span> Below</span>
+        <span><span class="arc-leg-fig">${market.at}</span> On market</span>
+        <span><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
     </div>`;
 }
@@ -273,7 +293,7 @@ function CategoryTile({ d }) {
   // (aligned), above = red (premium cost), below = amber (lagging)
   const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
     : verdict ? "var(--favourable)" : "var(--you)";
-  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "at market" : "practice view";
+  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
   const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
   const vCls = verdict === "below" ? "v-below" : verdict === "above" ? "v-above" : verdict ? "v-at" : "v-practice";
   const prev = d.prevalence || {};
@@ -321,7 +341,7 @@ function ChipColumn({ title, items, good }) {
 /* The two-signal hero. Market position carries a verdict (performance
    palette); practice prevalence is information (neutral palette, never
    red/amber/green — "less common" is not "bad"). */
-const MARKET_LABEL = { above: "Above market", at: "At market", below: "Below market" };
+const MARKET_LABEL = { above: "Above market", at: "On market", below: "Below market" };
 const MARKET_KIND = { above: "good", at: "mid", below: "bad" };
 const MARKET_ARROW = { above: "▲", at: "●", below: "▼" };
 

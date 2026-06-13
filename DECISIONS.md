@@ -1723,3 +1723,57 @@ seed file touched (grep-confirmed; the only server-side line in the window is
 the QA-v3 board-pack suppression assertion in qa_focus, which predates this
 package). The "biggest opportunity area" cue the gap-cue dot carried is not
 lost — it lives in the Overview Biggest-gaps panel and on Priorities.
+
+## 2026-06-13 — Hero verdict: meaning + threshold (Part 1)
+
+VERDICT NOW READS WHERE THE MASS SITS, gated against contradiction. Tracing
+showed the word and the 34/46/14 counts already came from ONE function
+(_pool_verdict) — the earlier "median vs per-metric" theory was wrong. The
+real defect was the THRESHOLD: net lean (above-below)/pool = -0.21 crossed the
+old ±0.15 margin and read "Below" despite the plurality (46) being on-market.
+David chose Option 1 (net balance, wider band) over plurality, because the
+SAME net-lean value drives both the verdict word and the gauge needle — so
+they can never disagree (the original two-measures-in-one-component bug),
+whereas plurality reintroduces it on bimodal orgs (50/10/40 would read "Below"
+on 10 metrics and force a separate needle). New env var
+LUMI_VERDICT_NET_LEAN, default 0.25 (was 0.15); _pool_verdict now also ships
+`lean` (-1..1) and `lean_threshold`. This changes the headline's MEANING from
+the old net-share read to a wider centre-of-gravity read — logged so nobody
+asks "why doesn't this match the median?". The seven category tiles use the
+SAME _pool_verdict, so overall and tiles stay consistent (no median-vs-mass
+split). FLAG FOR DAVID: at 0.25 the demo org sits at lean -0.213, i.e. just
+0.037 of headroom before it flips to "Below" — tight. Raise
+LUMI_VERDICT_NET_LEAN if he wants more cushion; lower it if too many orgs read
+"On market". F2 GATE (qa_hero, now 46 checks): verdict can never be "below"
+when below is the strict smallest count (nor "above" when above is smallest),
+and the shipped verdict must band the shipped lean — so word and needle agree
+by construction can't silently regress.
+
+## 2026-06-13 — Hero gauge rebuilt as a needle instrument (Part 2)
+
+The three-fat-segments gauge is replaced by a precise instrument: a quiet
+desaturated three-band scale (~9px, --gauge-below/on/above) is the backdrop;
+a single tapered needle pivots from a clean base hub (white ring + centre
+dot, the stray second ring removed) with a tip marker. The needle ANGLE is
+data-driven from market.lean — rot = (frac-0.5)*180, frac=(lean+1)/2 — and
+the band joins sit at ±lean_threshold, so the band the needle rests in IS the
+verdict (word + needle reference one value). Band-join ticks mark the
+thresholds. The verdict word ("On market") sits contained below the arc in
+the head face with tight letterspacing + a tertiary caption "across N metrics
+assessed" (honest — never "On market on 46 metrics", which would falsely
+equate the verdict with a count). Counts moved to a hairline legend. Defined
+header (compass icon + label + divider). Real traffic-light palette on warm
+paper; sunk track + inner top highlight re-applied (aurora wash lives on the
+ov-wrap). Needle settle transition disabled under prefers-reduced-motion.
+
+## 2026-06-13 — Terminology: middle verdict "at market" → "on market" (Part 3)
+
+The middle market-position state reads "on market" everywhere, applied with
+the gauge rebuild so no surface drifts. DISPLAY strings changed: hero verdict
+word, hero legend, the seven category tile chips, and MARKET_LABEL (the
+metric market badge). The INTERNAL enum value stays "at" (verdict key,
+_market_class return, _pool_verdict 'at' count) to avoid churn — only
+user-facing text changed. The board pack uses separate "broadly in line"
+phrasing and carries no literal "at market", so it needed no change. qa_hero
+wording assertions updated ("on-market"). grep confirms no user-facing "at
+market" remains; code comments and the "at" enum are intentionally left.
