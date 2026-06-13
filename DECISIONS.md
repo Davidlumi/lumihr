@@ -1777,3 +1777,25 @@ user-facing text changed. The board pack uses separate "broadly in line"
 phrasing and carries no literal "at market", so it needed no change. qa_hero
 wording assertions updated ("on-market"). grep confirms no user-facing "at
 market" remains; code comments and the "at" enum are intentionally left.
+
+## 2026-06-13 — Hero polish: premium gauge animation + Signals box fill
+
+GAUGE — now a live instrument. On mount (and on every cut change) the needle
+SWEEPS from straight-up to its data angle with a spring settle
+(cubic-bezier(.34,1.45,.5,1), slight overshoot) — driven by a shownRot state
+that paints at 0 then animates to lean*90 (hooks moved above the early return
+so order stays stable when market is null). The three bands DRAW IN staggered
+(stroke-dashoffset), the legend figures and the "94" caption COUNT UP, and the
+needle tip carries a soft infinite pulse (.arc-tip-glow) so the gauge feels
+alive. All disabled under prefers-reduced-motion (needle lands directly, glow
+hidden, draws skipped).
+
+SIGNALS BOX — empty space removed. The card is now a flex column that fills its
+grid cell: a header matching the gauge's (.card-head — flag icon + "Signals · N"
++ a right-aligned "flags worth a look — peer facts, never advice" note +
+hairline divider), the rows centred to fill the available height, and a footer
+under a hairline ("Tap a flag to open the metric behind it." + a "See all
+priorities →" link). The two hero cards now read as a matched pair with the
+same header language, no empty bottom third. Empty + locked states reuse the
+same fill (centred ring / lock note). Client-only. qa_hero 46/46, qa_focus
+26/26. Cache v62->v63.

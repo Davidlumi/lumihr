@@ -176,12 +176,25 @@ function CountUp({ to, ms = 750 }) {
    legend — they are not the gauge's job. Real traffic-light palette
    (below=amber, on=green, above=red) on warm paper. */
 function OverallArc({ market }) {
+  // Hooks run BEFORE the early return so the order is stable when market is
+  // null vs present. The needle sweeps from straight-up to its data angle on
+  // mount (and re-sweeps when the cut changes) — a precision instrument
+  // finding its reading. Reduced-motion lands it directly.
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const lean = market ? Math.max(-1, Math.min(1, market.lean || 0)) : 0;
+  const rot = lean * 90;                                       // (frac-0.5)*180 == lean*90
+  const [shownRot, setShownRot] = useState(reduced ? rot : 0);
+  useEffect(() => {
+    if (reduced) { setShownRot(rot); return; }
+    const id = setTimeout(() => setShownRot(rot), 90);         // paint at 0, then sweep
+    return () => clearTimeout(id);
+  }, [rot, reduced]);
+
   if (!market) return html`
-    <div class="card arc-card"><div class="arc-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
+    <div class="card arc-card"><div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
       <div class="caption" style=${{ padding: "var(--s4) var(--s2)" }}>
       Your overall position appears once enough of your data is comparable.</div></div>`;
   const v = market.verdict;                                   // "below" | "at" | "above"
-  const lean = Math.max(-1, Math.min(1, market.lean || 0));   // centre of gravity, -1..1
   const T = market.lean_threshold || 0.25;                    // band join = verdict threshold
   const word = v === "above" ? "Above" : v === "below" ? "Below" : "On market";
   // traffic light: on=green (target), above=red (premium cost), below=amber (lagging)
@@ -209,21 +222,21 @@ function OverallArc({ market }) {
   // band-join ticks — tiny notches across the scale where the colours meet
   const tick = (frac) => { const [ox, oy] = polar(frac, R + 6), [ix, iy] = polar(frac, R - 6); return { ox, oy, ix, iy }; };
   const ticks = [tick(j1), tick(j2)];
-  // needle: drawn pointing straight up from the hub, rotated by the data angle.
-  const rot = (toFrac(lean) - 0.5) * 180;                     // -90 (far below) .. +90 (far above)
   const tipY = CY - (R - 6);
 
   return html`
     <div class="card arc-card">
-      <div class="arc-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
+      <div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
       <div class="arc-stage">
         <svg viewBox="0 0 280 168" class="arc-svg" role="img"
           aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + "."}>
           <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W + 3} stroke-linecap="round"/>
-          ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"/>`)}
+          ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"
+            pathLength="1" class="arc-band" style=${{ animationDelay: (140 + i * 120) + "ms" }}/>`)}
           ${ticks.map((t, i) => html`<line key=${"t" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
             stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.5"/>`)}
-          <g class="arc-needle" style=${{ transform: "rotate(" + rot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
+          <g class="arc-needle" style=${{ transform: "rotate(" + shownRot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
+            <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} />
             <path d=${"M " + CX + " " + CY + " L " + (CX - 2.4) + " " + (CY - 6) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 2.4) + " " + (CY - 6) + " Z"} fill=${needleCol}/>
             <circle cx=${CX} cy=${tipY.toFixed(1)} r="4.5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.5"/>
           </g>
@@ -233,12 +246,12 @@ function OverallArc({ market }) {
       </div>
       <div class="arc-verdict">
         <div class="arc-word num" style=${{ color: wordCol }}>${word}</div>
-        <div class="arc-caption">across <span class="num">${market.pool}</span> metrics assessed</div>
+        <div class="arc-caption">across <span class="num"><${CountUp} to=${market.pool} /></span> metrics assessed</div>
       </div>
       <div class="arc-legend num">
-        <span><span class="arc-leg-fig">${market.below}</span> Below</span>
-        <span><span class="arc-leg-fig">${market.at}</span> On market</span>
-        <span><span class="arc-leg-fig">${market.above}</span> Above</span>
+        <span><span class="arc-leg-fig"><${CountUp} to=${market.below} /></span> Below</span>
+        <span><span class="arc-leg-fig"><${CountUp} to=${market.at} /></span> On market</span>
+        <span><span class="arc-leg-fig"><${CountUp} to=${market.above} /></span> Above</span>
       </div>
     </div>`;
 }
@@ -250,12 +263,14 @@ const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shi
 function SignalsPanel({ signals, locked, contribution }) {
   const sigs = signals || [];
   return html`
-    <div class="card" style=${{ padding: "var(--s3) var(--s4)", position: "relative" }}>
-      <div class="row spread">
-        <span class="caption" title="Flags worth a look — peer facts, never advice.">Signals${sigs.length ? " · " + sigs.length : ""}</span>
+    <div class="card signals-card">
+      <div class="card-head">
+        <${Icon} name="flag" size=${15} />
+        <span>Signals${sigs.length ? " · " + sigs.length : ""}</span>
+        <span class="sig-head-note">flags worth a look — peer facts, never advice</span>
       </div>
       ${locked ? html`
-        <div class="insight-lock" style=${{ marginTop: "8px" }}>
+        <div class="insight-lock" style=${{ marginTop: "8px", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
             ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a flag appears here once unlocked</span></div>`)}
           </div>
@@ -267,8 +282,11 @@ function SignalsPanel({ signals, locked, contribution }) {
           </div>
         </div>` :
       sigs.length === 0 ? html`
-        <div class="caption" style=${{ padding: "var(--s4) 0" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>` :
-      html`<div style=${{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+        <div class="signals-empty">
+          <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
+          <div class="caption" style=${{ maxWidth: "320px" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
+        </div>` :
+      html`<div class="signals-list">
         ${sigs.map((s, i) => html`
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
             <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
@@ -277,6 +295,10 @@ function SignalsPanel({ signals, locked, contribution }) {
             <span class="lens-tag">${s.lens}</span>
             <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
+        <div class="signals-foot">
+          <span>Tap a flag to open the metric behind it.</span>
+          <a href="#/priorities">See all priorities →</a>
+        </div>
       </div>`}
     </div>`;
 }
