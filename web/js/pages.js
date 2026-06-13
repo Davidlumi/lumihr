@@ -368,7 +368,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       </div>`,
       html`<div class="signals-foot" key="foot">
         <span>Tap a flag to open the metric behind it.</span>
-        <a href="#/priorities">See all priorities →</a>
+        <a href="#/signals">See all signals →</a>
       </div>`]}
     </div>`;
 }
@@ -498,7 +498,7 @@ function CategoryTile({ d }) {
   const prev = d.prevalence || {};
   const dot = d.dot;
   return html`
-    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
+    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/category/" + encodeURIComponent(d.name))} role="button" tabindex="0">
       <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
         <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
       <span class="row" style=${{ gap: "5px", alignSelf: "flex-start", alignItems: "center" }}>
@@ -740,6 +740,131 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
               </div>`)}
           </div>
         </div>`)}
+    </div>`;
+};
+
+// -------------------------------------------------- category detail --------
+/* The dedicated expanded view for one sub-domain (Pay, Benefits, …). It mirrors
+   and explains the overview tile: a market-position read + practice-prevalence
+   split at the top, then THIS category's signals, then every metric in it.
+   Flags never advise — the user decides whether a difference is good or bad. */
+window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedIds, me }) {
+  const [ov, setOv] = useState(null);
+  const [bench, setBench] = useState(null);
+  const [err, setErr] = useState(null);
+  const [type, setType] = useState("");
+  useEffect(() => {
+    setOv(null); setBench(null); setErr(null); setType("");
+    Promise.all([
+      api("/api/overview?" + cutQS(cut)),
+      api("/api/benchmarks/Reward?" + cutQS(cut)),
+    ]).then(([o, b]) => { setOv(o); setBench(b); }).catch(e => setErr(e.message));
+  }, [name, cutKeyOf(cut)]);
+
+  const Head = (meta) => html`
+    <div class="page-head">
+      <div class="titleblock">
+        <a class="caption back-link" href="#/overview"><${Icon} name="chevron-left" size=${13} /> Overview</a>
+        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+          <div class="cat-glyph"><${Icon} name=${CAT_ICON[name] || "award"} size=${20} /></div>
+          <div><h1 class="display-title">${name}</h1><div class="caption meta">${meta}</div></div>
+        </div>
+      </div>
+    </div>`;
+
+  if (err) return html`<${EmptyState} title="Couldn't load this category"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (!ov || !bench) return html`<div>${Head("Loading…")}<${SkeletonGrid} count=${4} /></div>`;
+
+  const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
+  const all = (bench.cards || []).filter(c => (c.subpower || "General") === name);
+  const inCat = new Set(all.map(c => c.id));
+  const sigs = (ov.signals_all || []).filter(s => inCat.has(s.question_id) && s.status !== "dismissed");
+  const cards = type ? all.filter(c => c.category === type) : all;
+
+  // position read (same traffic-light language as the tile / hero gauge)
+  const pos = hero && (hero.position || hero.market);
+  const verdict = pos && pos.verdict;
+  const indicative = hero && hero.position_basis === "indicative";
+  const ev = hero && hero.position_evidence;
+  const evC = ev ? ev.polarised + ev.practice : 0;
+  const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
+    : verdict ? "var(--favourable)" : "var(--you)";
+  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
+  const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
+  const prev = (hero && hero.prevalence) || {};
+  const dot = hero && hero.dot;
+
+  return html`
+    <div class="category-page">
+      ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"} · peer group: ${cutLabelOf(cut, cuts)}`)}
+
+      <div class="cat-hero">
+        <div class="cat-hero-cell">
+          <div class="cat-hero-label">Market position</div>
+          ${pos ? html`
+            <div class="row" style=${{ gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+              <span class=${"chip " + chipCls}>${chip}</span>
+              ${indicative && html`<span class="indic-flag">≈ indicative</span>`}
+            </div>
+            ${dot != null ? html`
+              <div class="cat-band">
+                <div class="cat-band-mid"></div><div class="band-tick"></div>
+                <div class="cat-band-dot" style=${{ left: "calc(" + Math.min(96, Math.max(4, dot)) + "% - 7px)", background: col }}></div>
+              </div>
+              <div class="cat-band-ends"><span>below market</span><span>above market</span></div>` : null}
+            <div class="caption" style=${{ marginTop: "12px" }}>
+              <b>${pos.at}</b> of ${pos.pool} positioned metric${pos.pool === 1 ? "" : "s"} on market · ${pos.below} below · ${pos.above} above${
+              indicative ? " · indicative, not yet a full market verdict" : ""}</div>` :
+            html`<div class="caption" style=${{ marginTop: "8px" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
+        </div>
+        <div class="cat-hero-cell">
+          <div class="cat-hero-label">Practice prevalence</div>
+          ${prev.pool ? html`
+            <div class="cat-prev-big"><b style=${{ color: "var(--blue-deep)" }}>${prev.with_majority}</b> <span class="caption">of ${prev.pool}</span></div>
+            <div class="caption">of your practices match the peer majority${prev.established != null && (prev.established + prev.less_common) > 0
+              ? html`<br/><span class="muted">of the rest, ${prev.established} a common alternative · ${prev.less_common} a rarer choice</span>` : ""}</div>` :
+            html`<div class="caption" style=${{ marginTop: "8px" }}>No practice questions assessed in this category yet.</div>`}
+        </div>
+      </div>
+
+      ${sigs.length ? html`
+        <section class="cat-section">
+          <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="flag" size=${14} /></span>
+            <b>Signals in ${name}</b>
+            <span class="caption">${sigs.length} flag${sigs.length === 1 ? "" : "s"} — peer facts, you decide</span>
+            <a class="caption cat-sec-link" href="#/signals">All signals →</a></div>
+          <div class="signals-list">
+            ${sigs.map((s, i) => html`
+              <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => nav("/metric/" + s.question_id)} role="button" tabindex="0">
+                <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
+                ${SHOW_BADGE[s.kind] ? html`<span class="signal-val num">${s.value_display}</span>` : null}
+                <span class="signal-detail" title=${s.detail}>${s.label_short || s.detail}</span>
+                <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
+                <span class="signal-go" aria-hidden="true">→</span>
+              </div>`)}
+          </div>
+        </section>` : null}
+
+      <section class="cat-section">
+        <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
+          <b>All metrics</b><span class="caption">${cards.length} shown</span>
+          <select class="ctl cat-type" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
+            <option value="">All types</option><option value="metric">Metrics</option>
+            <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
+          </select></div>
+        ${cards.length === 0 ? html`<${EmptyState} title="Nothing matches this type"
+          action=${html`<button class="btn small" onClick=${() => setType("")}>Clear filter</button>`} /> ` :
+        html`<div class="bench-grid">
+          ${cards.map(c => html`
+            <div key=${c.id} id=${"q-" + c.id}>
+              <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
+                pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)}
+                window=${me.peer_pool && me.peer_pool.collection_window} />
+            </div>`)}
+        </div>`}
+      </section>
     </div>`;
 };
 

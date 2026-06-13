@@ -1,6 +1,6 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
+   OverviewPage, SuperpowerPage, CategoryPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
@@ -118,6 +118,8 @@ function App() {
     const focusQ = params.get("focus");
     const subF = params.get("cat");
     page = html`<${SuperpowerPage} ...${pageProps} sp="Reward" focusQ=${focusQ} subF=${subF} />`;
+  } else if ((m = route.match(/^\/category\/([^?]+)/))) {
+    page = html`<${CategoryPage} ...${pageProps} name=${decodeURIComponent(m[1])} />`;
   } else if ((m = route.match(/^\/metric\/(.+)$/))) {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
@@ -150,7 +152,7 @@ function App() {
   else page = html`<${NotFoundPage} route=${route} />`;
 
   const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") || route.startsWith("/benchmark") ||
-    route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/priorities") || route === "" || route === "/";
+    route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/priorities") || route.startsWith("/category/") || route === "" || route === "/";
 
   return html`
     <div class="shell">
@@ -277,7 +279,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
   const secs = sectionList(qIndex);
   const total = qIndex.questions.filter(q => !q.locked).length;
   const allActive = route.startsWith("/benchmark") && !route.includes("cat=");
-  const benchActive = route.startsWith("/benchmark");
+  const benchActive = route.startsWith("/benchmark") || route.startsWith("/category/");
   const secLabel = n => n === "Time Off" ? "Time off" : n;
 
   // COLLAPSED: the group can't show an inline child list, so the Benchmark
@@ -298,8 +300,8 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
               onClick=${() => goCat("/benchmark")}>All<span class="nav-count">${total}</span></button>
             ${secs.map(sec => html`
               <button key=${sec.name} role="menuitem"
-                class=${"rail-flyout-item" + (route.includes("cat=" + encodeURIComponent(sec.name)) ? " active" : "")}
-                onClick=${() => goCat("/benchmark?cat=" + encodeURIComponent(sec.name))}>
+                class=${"rail-flyout-item" + (route.includes("/category/" + encodeURIComponent(sec.name)) ? " active" : "")}
+                onClick=${() => goCat("/category/" + encodeURIComponent(sec.name))}>
                 ${secLabel(sec.name)}<span class="nav-count">${sec.count}</span></button>`)}
           </div>`}
       </div>`;
@@ -316,10 +318,10 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
         <span class="nav-count">${total}</span>
       </button>
       ${secs.map(sec => {
-        const active = route.includes("cat=" + encodeURIComponent(sec.name));
+        const active = route.includes("/category/" + encodeURIComponent(sec.name));
         return html`
           <button key=${sec.name} class=${"nav-item nav-child" + (active ? " active" : "")}
-            onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(sec.name))}>
+            onClick=${() => nav("/category/" + encodeURIComponent(sec.name))}>
             <span class="nav-txt">${secLabel(sec.name)}</span>
             <span class="nav-count">${sec.count}</span>
           </button>`;

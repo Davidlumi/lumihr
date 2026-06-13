@@ -718,6 +718,33 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-kind { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em;
   white-space: nowrap; opacity: .75; padding: 2px 8px; border-radius: 7px;
   background: color-mix(in srgb, currentColor 12%, transparent); }
+/* category detail page — hero (position + prevalence), signals, metric grid */
+.category-page .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: 8px; }
+.cat-glyph { width: 40px; height: 40px; border-radius: var(--radius); background: var(--blue-tint);
+  color: var(--blue); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.cat-hero { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--s4); margin: var(--s4) 0 var(--s5); }
+@media (max-width: 760px) { .cat-hero { grid-template-columns: 1fr; } }
+.cat-hero-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s4) var(--s4) var(--s4); }
+.cat-hero-label { font-size: var(--fs-caption); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-faint); margin-bottom: 12px; }
+.cat-band { position: relative; height: 9px; background: var(--surface-sunk); border-radius: 5px; }
+.cat-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: 5px; }
+.cat-band-dot { position: absolute; top: -4px; width: 17px; height: 17px; border-radius: 50%;
+  border: 2.5px solid var(--surface); box-shadow: var(--shadow-sm); }
+.cat-band-ends { display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: var(--fs-caption); color: var(--ink-faint); }
+.cat-prev-big { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+.cat-prev-big b { font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
+.cat-section { margin-bottom: var(--s5); }
+.cat-sec-head { display: flex; align-items: center; gap: 9px; margin-bottom: var(--s3); }
+.cat-sec-head > b { font-size: 15px; }
+.cat-sec-ico { width: 24px; height: 24px; border-radius: 7px; background: var(--blue-tint); color: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.cat-sec-link { margin-left: auto; font-weight: 600; }
+.cat-type { margin-left: auto; }
+.cat-sec-head .cat-type + * { margin-left: 0; }
+
 /* signals inbox: status tabs + per-row triage actions */
 .sig-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin: var(--s4) 0 var(--s5);
   border-bottom: 1px solid var(--chart-grid); }
