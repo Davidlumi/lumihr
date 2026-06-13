@@ -713,6 +713,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-lens-head.lens-retain svg  { color: var(--lens-retain); }
 .sig-lens-head.lens-engage svg  { color: var(--lens-engage); }
 .signals-page .signal-detail { font-size: var(--fs-body); }
+.signals-page .signal-val { white-space: nowrap; flex: 0 0 auto; min-width: 0; }
+.signals-page .signal-row { gap: 11px; }
 .sig-kind { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em;
   white-space: nowrap; opacity: .75; padding: 2px 8px; border-radius: 7px;
   background: color-mix(in srgb, currentColor 12%, transparent); }

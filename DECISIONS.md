@@ -2420,3 +2420,17 @@ VERIFIED on Thornbridge: 39 flags across 4 lenses (attract 5 / retain 17 /
 engage 10 / save 7, all 6 kinds), lens filter works, nav present + active,
 mobile no horizontal overflow, no console errors. qa_focus 28/28,
 qa_signals_system 8/8.
+
+## 2026-06-14 — Signals page QA + polish
+QA of the new Signals explore page surfaced one real defect: the value badge
+held long band labels (rare/outlier value_display, e.g. "No – study undertaken
+in personal time" at 282px), dominating the row and squishing the peer fact
+into a tall narrow column — plus the value was duplicated (badge + detail).
+FIX (frontend only): the value badge now renders ONLY for money/save/prevalence
+— the kinds whose headline number isn't already in the detail. behind / outlier
+/ depth / rare lead with the full peer fact instead, anchored by a lens roundel
+(re-added for a consistent left edge). Tightened kind chips ("at an end", "role
+reach"), badge set to nowrap. Verified across all 4 lenses on Thornbridge: money
+keeps its "£75k/yr" badge, the long-band rows now read cleanly, filters + lens
+roundels consistent, home dashboard unaffected (5 capped), mobile no overflow,
+no console errors. Cache v87 -> v88.

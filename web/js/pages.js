@@ -382,7 +382,11 @@ const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", sav
 const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
   engage: "how people experience work", save: "where your spend sits vs peers" };
 const KIND_LABEL = { money: "£ gap", save: "cost", behind: "position", prevalence: "peers do this",
-  outlier: "you're at an end", depth: "how far it reaches", rare: "rare choice" };
+  outlier: "at an end", depth: "role reach", rare: "rare choice" };
+// the badge holds the headline number ONLY where it isn't already in the detail
+// (money/save/prevalence). For the rest the detail states the value, so the row
+// leads with the fact, anchored by the lens roundel — no oversized/duplicate badge.
+const SHOW_BADGE = { money: 1, save: 1, prevalence: 1 };
 window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -428,7 +432,8 @@ window.SignalsPage = function ({ me }) {
               ${byLens[l].map((s, i) => html`
                 <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0"
                   onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
-                  <span class="signal-val num">${s.value_display}</span>
+                  <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>
+                  ${SHOW_BADGE[s.kind] && html`<span class="signal-val num">${s.value_display}</span>`}
                   <span class="signal-detail" title=${s.detail}>${s.detail}</span>
                   <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
                   <span class="signal-go" aria-hidden="true">→</span>
