@@ -468,7 +468,15 @@ window.SignalsPage = function ({ me }) {
               <span class="caption">${LENS_DESC[l]} · ${byLens[l].length}</span>
             </div>
             <div class="signals-list">${byLens[l].map(Row)}</div>
-          </section>`)}`}
+          </section>`)}
+        <div class="sig-register-foot">
+          <${Icon} name="table" size=${15} />
+          <div>
+            <b>Want the complete picture?</b> Signals shows only the flags that cross a threshold.
+            The <a href="#/priorities">full gap register</a> lists every metric's presence against your peers.
+            ${me.user.role === "admin" ? html` <a href="/api/gap-register.csv" download>Download CSV</a>.` : null}
+          </div>
+        </div>`}
     </div>`;
 };
 

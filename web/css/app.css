@@ -740,6 +740,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row .sig-act.on svg { fill: color-mix(in srgb, var(--blue) 20%, transparent); }
 .signal-row.is-dismissed { opacity: .62; }
 .signal-row.is-dismissed:hover { opacity: 1; }
+.sig-register-foot { display: flex; gap: 10px; align-items: flex-start; margin-top: var(--s6);
+  padding: var(--s3) var(--s4); border: 1px dashed var(--border); border-radius: var(--radius);
+  background: var(--surface-sunk); color: var(--ink-soft); font-size: var(--fs-caption); line-height: 1.5; }
+.sig-register-foot > svg { flex: 0 0 auto; margin-top: 2px; color: var(--ink-faint); }
+.sig-register-foot a { font-weight: 600; }
 .band-tick { position: absolute; left: 50%; top: -2px; width: 1.5px; height: calc(100% + 4px);
   background: var(--chart-axis); opacity: .7; border-radius: 1px; }
 .cat-tile:hover { box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,.85); }

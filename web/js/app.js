@@ -168,9 +168,10 @@ function App() {
           <${RailItem} route=${route} path="/overview" icon="home" label="Overview" />
           <${RailItem} route=${route} path="/myview" icon="star" label="My view" />
           <${RailItem} route=${route} path="/signals" icon="flag" label="Signals" />
-          ${/* Reserved slot (chrome spec section 1.4): the Signals nav item ships
-               here, between Overview/My view and Priorities. Render nothing now. */ ""}
-          <${RailItem} route=${route} path="/priorities" icon="list-checks" label="Priorities" />
+          ${/* "Priorities" (the gap register) was folded into Signals — its
+               prevalence flags ARE the gap list. The page stays reachable at
+               /priorities as the full exhaustive register + CSV export, linked
+               from Signals, but it is no longer a rail surface. */ ""}
           <${RailItem} route=${route} path="/pulse" icon="zap" label="Pulse" />
         </div>
         <div class="nav-group">

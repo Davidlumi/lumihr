@@ -1,7 +1,7 @@
 /* Commercial layer UI: gap register, board pack, Ask lumi analyst, Peer Twin
    panel, shares, team, settings, upgrade. */
 /* global html, useState, useEffect, useRef, api, fmtValue, pLabel, Chip, Term, Spinner, Modal,
-   EmptyState, nav, SP_ICONS, SUPERPOWERS, fmtGBPCompact, cutQS, cutLabelOf */
+   EmptyState, nav, Icon, SP_ICONS, SUPERPOWERS, fmtGBPCompact, cutQS, cutLabelOf */
 
 // --------------------------------------------------------- gap register ----
 window.gapGroups = function (data) {
@@ -31,10 +31,12 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
-          <h1 class="display-title">Priorities</h1>
+          <a class="caption" href="#/signals" style=${{ display: "inline-flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}>
+            <${Icon} name="chevron-left" size=${13} /> Back to Signals</a>
+          <h1 class="display-title">Full gap register</h1>
           <div class="caption" style=${{ marginTop: "4px" }}>
-            What similar organisations have in place that you don't — sorted so the most commonly held missing items lead.
-            Peer group: ${cutLabelOf(cut, cuts)}.
+            Every metric's presence against your peers — what similar organisations have in place that you don't, sorted so the most commonly held missing items lead.
+            Signals surfaces the flags that cross a threshold; this is the complete list. Peer group: ${cutLabelOf(cut, cuts)}.
           </div>
         </div>
         <div class="row">
