@@ -265,9 +265,10 @@ function CategoryTile({ d }) {
   const post = d.position || d.market;
   const verdict = post ? post.verdict : null;
   const ev = d.position_evidence;
-  const evNote = ev ? ("based on " + (ev.polarised + ev.practice) + " positioned metric" +
-    ((ev.polarised + ev.practice) === 1 ? "" : "s") +
-    (d.position_basis === "indicative" ? " — indicative" : "")) : "";
+  const indicative = d.position_basis === "indicative";
+  const evCount = ev ? ev.polarised + ev.practice : 0;
+  const evNote = ev ? ("based on " + evCount + " positioned metric" + (evCount === 1 ? "" : "s") +
+    (indicative ? " — indicative, not a full market verdict" : "")) : "";
   // pay-positioning traffic light (David, 2026-06-12): at market = green
   // (aligned), above = red (premium cost), below = amber (lagging)
   const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
@@ -281,7 +282,10 @@ function CategoryTile({ d }) {
     <div class=${"card cat-tile " + vCls} onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(d.name))} role="button" tabindex="0">
       <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
         <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
-      <span class=${"chip tile-chip " + chipCls} style=${{ alignSelf: "flex-start" }} title=${evNote}>${chip}</span>
+      <span class="row" style=${{ gap: "5px", alignSelf: "flex-start", alignItems: "center" }}>
+        <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
+        ${indicative && html`<span class="indic-flag" title=${evNote}>≈ indicative</span>`}
+      </span>
       ${dot != null ? html`
         <div class="tile-band" style=${{ margin: 0 }}>
           <div class="tile-band-mid"></div>

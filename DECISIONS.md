@@ -1568,3 +1568,75 @@ metrics; "sick" → 6 real substring hits (valid partial, no empty state);
 ~200-question index, all in-browser — instant.
 
 Client-only. Full gate suite green (8/8). Cache v56→v57.
+
+## 2026-06-13 — Overview QA v3 (content + chrome): A2/A4 fixes, B1–B3 chrome, A1/A3/A5/A6 verified
+
+A2 [built] — INDICATIVE-VERDICT CUE NOW ON THE TILE FACE. Wellbeing (0
+polarised metrics) and Recognition (1) render an indicative position verdict;
+the basis was tooltip-only, so an exported board reader could weight a
+1-metric verdict like a 23-metric one. Indicative tiles now show a dashed/
+outlined chip (chip-indicative, transparent fill + inset ring) plus a visible
+"≈ indicative" tag; strict tiles keep solid filled chips with no tag. Basis
+detail stays in the tooltip. Verified: exactly 2 indicative (Wellbeing,
+Recognition), 5 strict, no flag on strict.
+
+A4 [verified + gated] — BOARD-PACK EXPORT SUPPRESSION. assemble_pack_payload
+builds from the SAME build_items -> position_items path that enforces the
+n>=5 floor (suppressed blocks skipped inside position_items), and
+gap_register_top already filters `if not r["suppressed"]`. So suppression
+carries through structurally. Added two standing assertions to qa_focus so an
+export-only regression can never ship a sub-floor figure: every n-bearing pack
+item has n>=5, and gap-register rows are all unsuppressed (now 26 checks).
+Note: the pack does not surface per-category indicative verdicts at all, so
+there is no indicative-mislabelling risk in the export.
+
+B1/B2/B3 [built] — CHROME DEFINITION. The shell was white (--surface) on warm
+paper (--paper) — a ~3% lightness gap with a faint border, so rail/top bar
+read as undifferentiated. B1: sidebar gains a spine (1px edge + soft warm
+shadow, 4px/0.028 alpha) so the white rail lifts off the paper. B2: top bar
+keeps its 1px rule and gains a faint sticky-header shadow so content reads as
+sliding under it (light, not a band). B3: inactive nav items drop to
+--ink-faint, the active pill deepens to --blue-deep with an inset blue ring —
+the active state is now a clear step up, not the only signal. Uses the page's
+existing soft-warm shadow vocabulary.
+
+A1 [verified] — PARTIAL-UNLOCK OVERVIEW reads as invitation, not wall.
+Confirmed via a read-only client shim flipping the demo into the locked state
+(no data mutation): the arc + all 7 category tiles SHOW THROUGH (the "where
+you sit" answer is given freely; peer-n visible on the arc); only Signals and
+Biggest gaps blur, each with reciprocal copy ("complete your key reward
+questions (N days left)") + a Submit CTA, led by the "You're on your way…
+You see the pool because you're part of it" banner. No paywall language
+(buy/pay/upgrade/subscribe/£-per-month) anywhere — asserted in the check.
+
+A3 [verified — already correct] — the in-band position dot takes the tile's
+VERDICT colour (below->amber-bright, above->red, at->green), not a constant
+amber. The amber only appears on a below tile, where amber IS the verdict.
+
+A5 [verified] — the peer-set selector re-cuts ALL tiles by sector and size
+from the overview (24 options: every sector + FTE bands; the global cut
+re-fetches /api/overview). Region is not a first-class cut by design — it
+feeds the Peer Twin similarity vector; the engine's cuts are
+sector/size/twin/group. No regression.
+
+A6 [verified] — Ask lumi inherits the trust rules: analyst_answer runs the
+same validation layer as the commentary (suppression handling, DIRECTIVE_RE
+refusal, "considerations are OPTIONS never directives", number allow-listing),
+refuses to guess on unbenchmarked topics, and _analyst_block passes the
+suppressed flag per metric/row. Illustrative-sample labelling is page-level
+(the standing chip), not restated per answer.
+
+B4 [NOT BUILT] — collapsible sidebar remains David's call (delivery-audit D5).
+If green-lit, the collapsed-state spec must define what happens to the
+Benchmark group's persisted expand-state (_nav.benchmark_open) and the
+gap-cue dot that rides a category child row — both lose their label anchor
+when collapsed.
+
+FLAGGED FOR DAVID (carried): the addendum's "amber = you-marker" rule is
+superseded by the traffic-light convention — worth a one-line note back into
+the addendum so the documents don't drift. Also still open: the spec's n=3
+floor vs the engine's n=5, and the requested "dominance rule" the engine
+doesn't implement (both from the PR-3 hub work).
+
+Client + one gate file (qa_focus). No engine/data change. Gate suite green.
+Cache v57->v58.

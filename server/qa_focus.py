@@ -85,6 +85,16 @@ api("/api/myview", "PUT", {"layout": []})
 st, gen = api("/api/boardpack/generate", "POST", {"cut": "all"})
 st, pk = api("/api/boardpack/" + gen["pack_id"])
 check("board pack payload + narrative clean of hidden areas", not leak(pk), leak(pk))
+# governance: the export must inherit the n>=5 suppression floor (it shares the
+# build_items -> position_items path, but assert it so an export-only regression
+# can never ship a sub-floor figure). Every cited item carries its own n.
+_pl = pk["payload"]
+_n_bearing = (_pl.get("strengths", []) + _pl.get("gaps", []) + _pl.get("gap_register_top", []))
+_sub_floor = [it for it in _n_bearing if (it.get("n") is not None and it["n"] < 5)]
+check("board pack honours the n>=5 suppression floor (no sub-floor figure exported)",
+      not _sub_floor, _sub_floor)
+check("board pack gap-register rows are all unsuppressed",
+      all(not r.get("suppressed", False) for r in _pl.get("gap_register_top", [])))
 # share
 st, sh = api("/api/shares", "POST", {"kind": "dashboard", "config": {"cut": {"dim": "all"}}, "expiry_days": 7})
 anon_jar = http.cookiejar.CookieJar()
