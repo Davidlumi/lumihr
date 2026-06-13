@@ -129,6 +129,7 @@ function App() {
     page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${section && decodeURIComponent(section)} />`;
   }
   else if (route.startsWith("/your-data")) page = html`<${YourDataPage} me=${me} />`;
+  else if (route.startsWith("/how-lumi-works")) page = html`<${MethodologyPage} />`;
   else if (route.startsWith("/methodology")) page = html`<${MethodologyPage} />`;
   else if (route.startsWith("/priorities")) page = html`<${GapRegisterPage} ...${pageProps} />`;
   else if (route.startsWith("/team")) page = me.user.role === "admin"
@@ -170,54 +171,49 @@ function App() {
           ${me.user.role === "admin" && html`<button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>`}
           ${me.user.role === "admin" && html`<button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>`}
         </div>
-        <div class="nav-group nav-id" style=${{ marginTop: "auto" }}>
-          <div class="who">${me.user.display_name || me.user.email}</div>
-          <div class="org">${me.org.name}</div>
-          ${me.user.role === "admin" && html`<button class="nav-item" onClick=${() => nav("/governance")}><${Icon} name="list-checks" size=${15} /> Core governance</button>`}
-          <button class="nav-item" onClick=${() => nav("/methodology")}><${Icon} name="book-open" size=${15} /> Methodology</button>
-          <button class="nav-item" onClick=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }}><${Icon} name="log-out" size=${15} /> Sign out</button>
-        </div>
       </nav>
       <div class="main">
         <div class="topbar no-print">
-          <div class="ctlgroup">
+          <div class="peerset">
+            <span class="peerset-tag">Peer set</span>
             <select aria-label="Choose your peer group" class=${"ctl peer-ctl" + (cut.dim !== "all" ? " narrowed" : "")}
               value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
               onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
-              <option value="all">All peers (${(me.peer_pool || {}).responding_orgs || "—"})</option>
-              ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} (${cuts.industries[cuts.org_industry] || "?"})</option>`}
+              <option value="all">All peers · ${(me.peer_pool || {}).responding_orgs || "—"}</option>
+              ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} · ${cuts.industries[cuts.org_industry] || "?"}</option>`}
               ${me.org.classified && cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
-                html`<option key=${i} value=${"industry::" + i}>${i} (${cuts.industries[i]})</option>`)}
+                html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
               ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
-                html`<option key=${b} value=${"fte_band::" + b}>${b} FTE (${cuts.fte_bands[b]})</option>`)}
+                html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
               ${cuts && (cuts.groups || []).length > 0 && html`
                 <optgroup label="Your groups">
                   ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
-                    ${g.name}${g.too_small ? " (too few orgs)" : ` (${g.match_count})`}</option>`)}
+                    ${g.name}${g.too_small ? " (too few orgs)" : ` · ${g.match_count}`}</option>`)}
                 </optgroup>`}
               ${me.org.classified && html`<option value="manage-groups">＋ Create / manage peer groups…</option>`}
             </select>
-            <div class=${"hint" + (!me.org.classified ? " hint-wide" : "")}>${!me.org.classified
-              ? html`${me.user.role === "admin"
-                  ? html`<a href="#/profile">Complete your company profile</a> to compare by sector and size — 2 minutes.`
-                  : "Your Admin can complete the company profile to unlock sector and size comparisons."}`
-              : cutHint(cut, cuts, me)}</div>
             ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
+            ${(!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts))) && html`
+              <span class="peerset-note">${!me.org.classified
+                ? (me.user.role === "admin"
+                    ? html`<a href="#/profile">Add your company profile</a> to compare by sector & size`
+                    : "Your Admin can add the company profile to unlock sector & size")
+                : cutHint(cut, cuts, me)}</span>`}
           </div>
-          <div class="ctlgroup" style=${{ flex: 1, maxWidth: "400px" }}>
-            <div style=${{ position: "relative" }}>
-              <span style=${{ position: "absolute", left: "10px", top: "11px", color: "var(--ink-faint)", pointerEvents: "none" }}><${Icon} name="search" size=${14} /></span>
-              <input class="ctl" style=${{ width: "100%", maxWidth: "none", paddingLeft: "32px" }} placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
-                aria-label="Search reward metrics" value=${search} onInput=${e => setSearch(e.target.value)}
-                onKeyDown=${e => { if (e.key === "Escape") setSearch(""); }} />
-              ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search} onGo=${(q) => { setSearch(""); openMetric(q.id); }} />`}
-            </div>
+          <div class="topbar-search">
+            <span class="topbar-search-icon"><${Icon} name="search" size=${14} /></span>
+            <input class="ctl" placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
+              aria-label="Search reward metrics" value=${search} onInput=${e => setSearch(e.target.value)}
+              onKeyDown=${e => { if (e.key === "Escape") setSearch(""); }} />
+            ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search}
+              onGo=${(q) => { setSearch(""); openMetric(q.id); }}
+              onRequest=${() => { const term = search; setSearch(""); setMetricReq({ prefill: term, source: "search" }); }} />`}
           </div>
           <div class="topbar-right">
             ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} org=${me.org} />`}
-            <button class="link-quiet" title="Ask us to benchmark something new" onClick=${() => setMetricReq({ prefill: "", source: "button" })}>Request a metric</button>
             <button class="btn feature" title="Ask anything about your benchmark, in plain English" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+            <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }} />
           </div>
         </div>
         <main class="content">
@@ -664,12 +660,62 @@ function cutHint(cut, cuts, me) {
   return `Comparing against all ${total} organisations — change here.`;
 }
 
+/* Initials for the avatar: first letters of the display name, else the email. */
+function initialsOf(user) {
+  const src = (user.display_name || "").trim() || (user.email || "");
+  const parts = src.split(/[\s@._-]+/).filter(Boolean);
+  const a = (parts[0] || src || "?")[0] || "?";
+  const b = parts.length > 1 ? (parts[parts.length - 1][0] || "") : "";
+  return (a + b).toUpperCase();
+}
+
+function cutTooSmall(cut, cuts) {
+  if (cut.dim !== "group") return false;
+  const g = cuts && (cuts.groups || []).find(g => g.group_id === cut.value);
+  return !!(g && g.too_small);
+}
+
+/* Profile menu (chrome spec §3): the avatar at the far right of the top bar.
+   Opens an identity header (signed-in user + their org, non-clickable) then
+   Your profile / How lumi works / Sign out. The account block and all
+   reference links now live HERE — the sidebar has no footer. */
+function ProfileMenu({ me, onSignOut }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onEsc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+  const go = (path) => { setOpen(false); nav(path); };
+  return html`
+    <div class="profile-menu" ref=${ref}>
+      <button class=${"avatar" + (open ? " active" : "")} aria-haspopup="true" aria-expanded=${open}
+        aria-label="Account menu" onClick=${() => setOpen(!open)}>${initialsOf(me.user)}</button>
+      ${open && html`
+        <div class="card profile-pop" role="menu">
+          <div class="profile-id">
+            <div class="profile-id-name">${me.user.display_name || me.user.email}</div>
+            <div class="profile-id-org">${me.org.name}</div>
+          </div>
+          <div class="profile-sep"></div>
+          <button class="profile-item" role="menuitem" onClick=${() => go("/profile")}>Your profile</button>
+          <button class="profile-item" role="menuitem" onClick=${() => go("/how-lumi-works")}>How lumi works</button>
+          <div class="profile-sep"></div>
+          <button class="profile-item" role="menuitem" onClick=${() => { setOpen(false); onSignOut(); }}>Sign out</button>
+        </div>`}
+    </div>`;
+}
+
 function navCls(route, path) {
   const active = path === "/overview" ? (route === "/" || route === "" || route.startsWith("/overview")) : route.startsWith(path);
   return "nav-item" + (active ? " active" : "");
 }
 
-function SearchPop({ qIndex, search, onGo }) {
+function SearchPop({ qIndex, search, onGo, onRequest }) {
   const s = search.toLowerCase();
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
   return html`

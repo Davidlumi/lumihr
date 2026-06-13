@@ -1475,3 +1475,28 @@ section (SharesPage gains an embedded mode).
 
 Client-only change (web/js, web/css, html) — no server/engine/catalogue/
 seed files touched. Full gate suite green (8/8). Cache v51→v52.
+
+## 2026-06-12 — Chrome rationalisation PR-2: top bar + profile menu
+
+TOP BAR (§2): one slim row over the content area — self-labelling peer-set
+chip ("PEER SET" tag + "All peers · 220" value; option counts switched from
+"(220)" to "· 220"), search (placeholder UNCHANGED per spec), the single
+accented Ask lumi CTA, and the avatar. REMOVED: the duplicated wordmark
+(was never in the top bar — confirmed), the "Comparing against all 220…"
+helper line (cutHint now only renders for not-classified onboarding or a
+too-small custom group, as a compact note), and "Request a metric" (moves
+to the search empty state in PR-4; SearchPop gained an onRequest prop ready
+for it). Saved vertical space returns to the content area (topbar now
+center-aligned, single row).
+
+PROFILE MENU (§3): avatar = initials circle (display-name initials, else
+email). Dropdown: identity header (signed-in user + org, non-clickable) →
+Your profile (/profile) → How lumi works (/how-lumi-works) → Sign out.
+Closes on click-away and Escape. The account block and reference links now
+live HERE — the sidebar footer is GONE (removed the .nav-id block added in
+PR-1). Core governance / Methodology fold into the How lumi works hub
+(PR-3); /how-lumi-works currently renders MethodologyPage as a shippable
+placeholder until PR-3 swaps in the merged hub.
+
+Client-only (web/js, web/css, html). qa_focus + qa_hero green. Cache
+v52→v53.
