@@ -286,10 +286,7 @@ function OverallArc({ market }) {
             stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.55"/>`)}
           ${/* peer-median marker */ ""}
           <g class="arc-median">
-            <path d=${medD} fill="var(--ink-soft)" opacity="0.7"/>
-            <text x=${mx.toFixed(1)} y=${(my - 9).toFixed(1)} text-anchor="middle"
-              style=${{ font: "600 8px var(--font-body)", letterSpacing: ".04em", textTransform: "uppercase" }}
-              fill="var(--ink-faint)">median</text>
+            <path d=${medD} fill="var(--ink-soft)" opacity="0.7"><title>The market median sits at centre</title></path>
           </g>
           <g class="arc-needle" style=${{ transform: "rotate(" + shownRot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
             <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="5" fill=${tipCol} />
@@ -305,7 +302,6 @@ function OverallArc({ market }) {
       <div class="arc-verdict">
         <div class="arc-word num" style=${{ color: wordCol }}>${word}</div>
         <div class="arc-lean">${leanWord}</div>
-        <div class="arc-caption">across <span class="num"><${CountUp} to=${market.pool} /></span> metrics assessed</div>
       </div>
       <div class="arc-legend num">
         <span><span class="arc-leg-fig"><${CountUp} to=${market.below} /></span> Below</span>
@@ -345,7 +341,7 @@ function SignalsPanel({ signals, locked, contribution }) {
           <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
           <div class="caption" style=${{ maxWidth: "320px" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
         </div>` :
-      html`<div class="signals-list">
+      [html`<div class="signals-list" key="list">
         ${sigs.map((s, i) => html`
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
             <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
@@ -354,11 +350,11 @@ function SignalsPanel({ signals, locked, contribution }) {
             <span class="lens-tag">${s.lens}</span>
             <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
-        <div class="signals-foot">
-          <span>Tap a flag to open the metric behind it.</span>
-          <a href="#/priorities">See all priorities →</a>
-        </div>
-      </div>`}
+      </div>`,
+      html`<div class="signals-foot" key="foot">
+        <span>Tap a flag to open the metric behind it.</span>
+        <a href="#/priorities">See all priorities →</a>
+      </div>`]}
     </div>`;
 }
 

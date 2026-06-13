@@ -488,17 +488,17 @@ td.num, th.num { text-align: right; }
   border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s4); }
 .arc-leg-fig { font-weight: 650; color: var(--ink); margin-right: 3px; }
 .signals-card { display: flex; flex-direction: column; padding: var(--s4) var(--s4) var(--s3); }
-.signals-list { display: flex; flex-direction: column; gap: var(--s2); margin-top: var(--s2);
-  flex: 1; justify-content: center; }
+.signals-list { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s2);
+  flex: 1; justify-content: space-evenly; }
 .signals-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
-  margin-top: auto; padding-top: var(--s3); border-top: 1px solid var(--border);
+  padding-top: var(--s3); border-top: 1px solid var(--border);
   font-size: 11.5px; color: var(--ink-faint); }
 .signals-foot a { color: var(--blue-bright); font-weight: 500; white-space: nowrap; }
 .signals-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--s3); text-align: center; padding: var(--s5) 0; }
 .signals-empty-ring { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; background: var(--surface-sunk); color: var(--ink-faint); }
-.signal-row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: var(--radius-sm);
+.signal-row { display: flex; align-items: center; gap: 12px; padding: 15px 14px; border-radius: var(--radius-sm);
   cursor: pointer; transition: transform var(--ease), box-shadow var(--ease); border: 1px solid transparent; }
 .signal-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
 .signal-row svg { flex: 0 0 auto; }

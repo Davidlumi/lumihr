@@ -1831,3 +1831,13 @@ threshold; a near-zero lean reads "evenly balanced". (4) HEAVIER + WIDER:
 column 312->356px, arc max-width 300->334, stroke 9->13, hub/needle thicker,
 verdict word 26->30px/650. All new motion reduced-motion safe; the median
 marker rides the entrance. qa_hero 46/46, qa_focus 26/26. Cache v64->v65.
+
+## 2026-06-13 — Hero tidy: drop metrics caption + MEDIAN label, fill Signals
+
+Per David: removed the "across N metrics assessed" caption under the verdict
+and the "MEDIAN" word above the gauge (the caret stays, with a <title> for
+a11y/hover). The taller dial had stretched the height-matched Signals card,
+reopening a gap — the signal rows now distribute space-evenly to fill the box
+(footer moved to a sibling of the list so it anchors the bottom; rows a touch
+taller). The two hero cards stay a balanced matched pair. Client-only.
+qa_hero 46/46. Cache v65->v66.
