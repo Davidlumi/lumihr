@@ -417,6 +417,14 @@ td.num, th.num { text-align: right; }
 .radio-row input, .check-row input { accent-color: var(--blue); }
 .matrix-grid input { width: 110px; height: 30px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); text-align: right; }
+/* matrix entry: no zebra (row borders separate cleanly, and a soft-warning
+   note row would otherwise flip the nth-child stripe parity below it). The
+   note sits in its own full-width row attached to the flagged row above. */
+table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
+.matrix-grid tr.mg-row-flagged td { border-bottom: 0; }
+.matrix-grid tr.mg-note-row td { padding: 0 var(--s3) var(--s3); }
+.matrix-grid tr.mg-note-row:hover td { background: transparent; }
+.matrix-grid tr.mg-note-row .warn-panel { margin-top: 2px; }
 /* ---- matrix prevalence heatmap (2026-06-13, polished) ---- */
 .matrix-heat-wrap { overflow-x: auto; }
 .matrix-heat { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 4px;

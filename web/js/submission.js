@@ -361,22 +361,33 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
           ${q.matrix_rows.map(r => {
             const rkey = q.id + "|" + r.row_id;
             const iss = issues[rkey] || { errors: [], warnings: [] };
-            return html`
-            <tr key=${r.row_id}>
-              <td>${r.label}</td>
-              <td class="num">
-                ${isSelect ? html`
-                  <select class="band-select" disabled=${isNA} value=${drafts[rkey] || ""}
-                    aria-label=${r.label + " — " + (col0.label || "value")}
-                    onChange=${e => save(q, r.row_id, e.target.value)}>
-                    <option value="">Choose…</option>
-                    ${col0.options.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
-                  </select>` : html`
-                  <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit}
-                    disabled=${isNA} onSave=${v => save(q, r.row_id, v)} />`}
-                <${IssueNotes} iss=${iss} onConfirm=${() => confirmValue(q, r.row_id)} />
-              </td>
-            </tr>`;
+            const flagged = iss.errors.length > 0 || iss.warnings.length > 0;
+            // the soft-warning / error sits in its OWN full-width row directly
+            // beneath, not crammed into the narrow value cell where it read as
+            // an untethered floating box.
+            return [
+              html`
+              <tr key=${r.row_id} class=${flagged ? "mg-row-flagged" : ""}>
+                <td>${r.label}</td>
+                <td class="num">
+                  ${isSelect ? html`
+                    <select class="band-select" disabled=${isNA} value=${drafts[rkey] || ""}
+                      aria-label=${r.label + " — " + (col0.label || "value")}
+                      onChange=${e => save(q, r.row_id, e.target.value)}>
+                      <option value="">Choose…</option>
+                      ${col0.options.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
+                    </select>` : html`
+                    <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit}
+                      disabled=${isNA} onSave=${v => save(q, r.row_id, v)} />`}
+                </td>
+              </tr>`,
+              flagged ? html`
+                <tr key=${r.row_id + "::note"} class="mg-note-row">
+                  <td colspan=${cols.length + 1} class="mg-note-cell">
+                    <${IssueNotes} iss=${iss} onConfirm=${() => confirmValue(q, r.row_id)} />
+                  </td>
+                </tr>` : null,
+            ];
           })}
         </tbody>
       </table>

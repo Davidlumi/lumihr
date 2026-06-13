@@ -2109,3 +2109,14 @@ FLAGGED (not changed): the matrix-row soft-warning renders inside the table
 cell so the amber box looks untethered mid-grid; and some "What counts?"
 definitions still just restate the title (a content-authoring pass, not a QA
 fix).
+
+## 2026-06-13 — Submission matrix: soft-warning moved to its own row
+The per-row soft-warning/error rendered inside the narrow value cell, so the
+amber box read as an untethered floating panel. Now each flagged row emits a
+second full-width row (colspan) directly beneath, attached to the row above
+(no divider between them) — the warn panel + "keep it" affordance span the
+table cleanly. Zebra striping dropped on the matrix entry grid (table.matrix-
+grid override, specificity-matched) so the inserted note row can't flip the
+nth-child stripe parity below it; row borders separate cleanly on their own.
+Verified live (outlier on a £ cell → full-width amber row, rows below intact);
+no console errors; draft left clean. v84 -> v86.
