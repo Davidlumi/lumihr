@@ -59,7 +59,7 @@ window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = tr
 };
 
 // ----------------------------------------------------------- histogram -----
-window.Histogram = function ({ histogram: hist, you, unit, favourable, showValues = true, width = CHART_W }) {
+window.Histogram = function ({ histogram: hist, you, unit, favourable, median = null, showValues = true, width = CHART_W }) {
   if (!hist || !hist.bins) return null;
   const W = width, H = 116, padL = 10, padB = 18, padT = 18;
   const n = hist.bins.length, maxC = Math.max(...hist.bins, 1);
@@ -71,6 +71,12 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, showValue
         <rect key=${i} x=${padL + i * bw + 1} width=${Math.max(1, bw - 2)}
           y=${padT + (1 - c / maxC) * (H - padT - padB)} height=${(c / maxC) * (H - padT - padB)}
           rx="2" fill="var(--chart-band-mid)" />`)}
+      ${median != null && median >= hist.min && median <= hist.max && html`
+        <g>
+          <line x1=${x(median)} x2=${x(median)} y1=${padT} y2=${H - padB} stroke="var(--chart-median)"
+            stroke-width="1.5" stroke-dasharray="3 3" />
+          <text x=${x(median)} y=${H - 5} text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-weight="600">P50</text>
+        </g>`}
       <text x=${padL} y=${H - 4} font-size="9" fill="var(--ink-faint)">${fmtValue(hist.min, unit)}</text>
       <text x=${W - padL} y=${H - 4} text-anchor="end" font-size="9" fill="var(--ink-faint)">${fmtValue(hist.max, unit)}</text>
       ${you != null && html`
@@ -213,9 +219,9 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width =
   };
   return html`
     <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
-      <text x=${labelW + cellW / 2} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PEER P50</text>
-      <text x=${labelW + cellW * 1.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">YOU</text>
-      <text x=${labelW + cellW * 2.5} y="11" text-anchor="middle" font-size="8.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PERCENTILE</text>
+      <text x=${labelW + cellW / 2} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PEER P50</text>
+      <text x=${labelW + cellW * 1.5} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">YOU</text>
+      <text x=${labelW + cellW * 2.5} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PERCENTILE</text>
       ${rows.map((r, i) => {
         const y = 16 + i * rowH;
         const you = r.you ? r.you.value : null;

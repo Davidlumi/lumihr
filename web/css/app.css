@@ -83,8 +83,8 @@
   --cat-4: #AEBBDF; --cat-5: #D2DAEE; --cat-6: #EBEFF8;
 
   /* ---- chart inks (the data is quiet; the YOU is blue) ---- */
-  --chart-band: var(--surface-sunk); /* P10–P90 track */
-  --chart-band-mid: #E1D9CE;         /* P25–P75 emphasis */
+  --chart-band: #E7E4EC;             /* P10–P90 track — cool pale grey, reads on warm paper */
+  --chart-band-mid: #BFC6D6;         /* P25–P75 emphasis / hist + peer bars — cool mid grey, clearly defined */
   --chart-median: #4A4450;
   --chart-axis: #BCB6B0;
   --chart-grid: #F1EDE7;

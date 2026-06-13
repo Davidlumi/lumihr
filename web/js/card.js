@@ -263,7 +263,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
             ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
         html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>Answer this to see where you stand among the peers below. <a href="#/your-data/submit">Add your data</a></div>`}
-        ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
+        ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} median=${c.block ? c.block.p50 : null} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
       </div>`;
@@ -278,7 +278,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
           ? html`<${OrderedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
               width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`
           : html`<${OptionBars} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
-              width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`}
+              width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${c.type === "multi_select" ? null : fav} />`}
       </div>`;
   }
   if (c.type === "matrix") {

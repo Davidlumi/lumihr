@@ -2005,3 +2005,38 @@ Verified live on "Employee notice period by level": markers land on the
 correct cells (incl. the Manager case where you=8wk diverges from the market
 mode 4wk=80%), table fits the 620px column, no console errors. Client-only.
 v74->v76.
+
+## 2026-06-13 — Chart audit & polish pass (every chart type)
+Surveyed all chart components live (PercentileBand, Histogram, BoxPlot,
+OptionBars, OrderedDist, MatrixHeat, MatrixGrouped, MatrixSelect, QuartileDots)
+against colour / spacing / fonts / chart-fit / number-sanity. Fixes applied:
+
+1. CHART BANDS were warm greys on warm paper — the P25–P75 interquartile band
+   (the most important element) was invisible, and histogram/grouped bars read
+   tan-on-tan. Retuned the two chart tokens to COOL greys with a clear two-step:
+   --chart-band #E7E4EC (P10–P90 outer), --chart-band-mid #BFC6D6 (P25–P75 /
+   histogram / peer bars). Data stays quiet and neutral; "you" is still the only
+   saturated accent. One token change fixes PercentileBand, BoxPlot, Histogram
+   and MatrixGrouped at once. (chart-band was an alias of --surface-sunk; gave it
+   its own value so surfaces/heatmap-empty cells are untouched.)
+2. HISTOGRAM had no median reference — added a dashed P50 line + label so the
+   distribution has a centre to read "you" against.
+3. OPTIONBARS multi-select: the card verdict (pos.kind) was painted onto the
+   chosen *category* bar, so a nominal pick (e.g. "Mobile/phone allowance")
+   showed RED as if that allowance were "bad". A pick-list has no good/bad per
+   category (pick three and all three would go red). Now multi_select bars use
+   the neutral --you accent; performance colour stays on single_select/yes_no
+   and the numeric charts where a position is genuinely ordinal.
+4. MatrixHeat column headers 8.5px -> 9.5px (were uncomfortably small).
+
+Verified live on representative metrics; qa_focus 28/28; no console errors.
+v78 -> v79.
+
+FLAGGED FOR DAVID (not changed here):
+- MatrixHeat (numeric matrices) is an SVG-rendered 3-column table (peer P50 /
+  you / percentile) — functional but the least polished surface; a future
+  HTML rewrite (like the MatrixSelect heatmap) would bring it to parity.
+- ALLOW_01 and likely other nominal multi_selects carry polarity
+  "higher_is_better" in seed data, which is meaningless for a pick-list. The
+  client now ignores it for colour, but the polarity flag itself is a data
+  question (firewall — not touched).
