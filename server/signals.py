@@ -193,7 +193,7 @@ def _fmt_gbp(v):
     return "£%d/yr" % round(v)
 
 
-def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True):
+def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None):
     """items: pos.position_items output (cut-scoped); opportunity: the £
     model dict; questions: org-visible library; get_block(qid) -> the cut's
     main distribution block; org_answers: {(qid,row): value}. Prevalence
@@ -446,13 +446,23 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                         "impact": 22000 + (50 - a) * 100})
             seen_q.add(qid)
 
+    # per-user triage state: priority | saved | dismissed | None(new)
+    st = statuses or {}
+    for s in out:
+        s["status"] = st.get(s["question_id"])
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:
             s.pop("impact", None)
         return out
+    # home briefing: a dismissed signal never shows; a user-prioritised one
+    # jumps the queue (a big impact boost so the cap picks it first).
+    pool = [s for s in out if s["status"] != "dismissed"]
+    for s in pool:
+        if s["status"] == "priority":
+            s["impact"] += 100000000
     cap_cfg = (ordered_routing().get("_david_ratified_2026_06_13", {}) or {}).get("briefing_cap", {})
-    capped = cap_briefing(out, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
+    capped = cap_briefing(pool, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
                           cap_cfg.get("max_behind", 3))
     for s in capped:
         s.pop("impact", None)

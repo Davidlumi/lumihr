@@ -1297,10 +1297,14 @@ async def overview(request: Request):
     _visq = org_visible_questions(org)
     _answers = org_answers_for(org)
     _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
-    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers, conn=conn, org_id=org["org_id"])
+    _statuses = {r["question_id"]: r["status"] for r in conn.execute(
+        "SELECT question_id, status FROM signal_actions WHERE org_id=? AND user_id=?",
+        (org["org_id"], user["user_id"]))}
+    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
+                                     conn=conn, org_id=org["org_id"], statuses=_statuses)
     # full uncapped set for the dedicated Signals explore page (home stays capped)
     sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                         conn=conn, org_id=org["org_id"], cap=False)
+                                         conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses)
     dots = signals_mod.domain_dots(items)
     prac_dots = signals_mod.domain_dots(prac_items)
     sig_by_cat = {}
@@ -1486,6 +1490,34 @@ async def save_default_view(request: Request):
         (org["org_id"], j(body.get("layout") or [])))
     conn.commit()
     return {"ok": True}
+
+
+@app.post("/api/signals/action")
+async def signal_action(request: Request):
+    """Per-user Signals triage: set one status (priority | saved | dismissed) on
+    a signal, or clear it (status=active/None). Keyed by question_id — the per-
+    metric cap means one signal per metric."""
+    user, org = require_user(request)
+    body = await request.json()
+    qid = (body.get("question_id") or "").strip()
+    status = body.get("status")
+    if not qid:
+        raise HTTPException(400, "question_id required")
+    conn = get_conn()
+    if status in (None, "", "active", "new"):
+        conn.execute("DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND question_id=?",
+                     (org["org_id"], user["user_id"], qid))
+        status = None
+    elif status in ("priority", "saved", "dismissed"):
+        conn.execute(
+            "INSERT INTO signal_actions(org_id, user_id, question_id, status, updated_at) "
+            "VALUES (?,?,?,?,datetime('now')) "
+            "ON CONFLICT(org_id, user_id, question_id) DO UPDATE SET status=excluded.status, updated_at=datetime('now')",
+            (org["org_id"], user["user_id"], qid, status))
+    else:
+        raise HTTPException(400, "bad status")
+    conn.commit()
+    return {"ok": True, "question_id": qid, "status": status}
 
 
 # ==================================================================== PREFS ==

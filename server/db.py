@@ -161,6 +161,17 @@ CREATE TABLE IF NOT EXISTS pinned_views (
     PRIMARY KEY (org_id, user_id)
 );
 
+-- Per-user triage state for Signals (the inbox model): one status per signal
+-- (keyed by question_id — the per-metric cap means one signal per metric).
+CREATE TABLE IF NOT EXISTS signal_actions (
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    user_id TEXT NOT NULL,
+    question_id TEXT NOT NULL,
+    status TEXT NOT NULL,                -- priority | saved | dismissed
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (org_id, user_id, question_id)
+);
+
 CREATE TABLE IF NOT EXISTS shares (
     token TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES orgs(org_id),

@@ -387,21 +387,58 @@ const KIND_LABEL = { money: "£ gap", save: "cost", behind: "position", prevalen
 // (money/save/prevalence). For the rest the detail states the value, so the row
 // leads with the fact, anchored by the lens roundel — no oversized/duplicate badge.
 const SHOW_BADGE = { money: 1, save: 1, prevalence: 1 };
+const SIG_TABS = [
+  { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" },
+  { k: "priority", label: "Priority", icon: "pin", f: s => s.status === "priority" },
+  { k: "saved", label: "Saved", icon: "star", f: s => s.status === "saved" },
+  { k: "dismissed", label: "Dismissed", icon: "close", f: s => s.status === "dismissed" },
+];
 window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState("inbox");
+  const [acting, setActing] = useState({});            // optimistic status overrides
   useEffect(() => { api("/api/overview").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  const all = data.signals_all || [];
   const locked = data.callouts && data.callouts.gaps_locked;
-  const byLens = {}; LENS_ORDER.forEach(l => { byLens[l] = all.filter(s => s.lens === l); });
-  const shown = filter === "all" ? LENS_ORDER : [filter];
+  const all = (data.signals_all || []).map(s => ({ ...s, status: acting[s.question_id] !== undefined ? acting[s.question_id] : (s.status || null) }));
+
+  const setStatus = (qid, status) => {
+    setActing(a => ({ ...a, [qid]: status }));
+    api("/api/signals/action", { method: "POST", body: { question_id: qid, status: status || "active" } })
+      .catch(() => { setActing(a => { const n = { ...a }; delete n[qid]; return n; }); toast("Couldn't save that — try again", "error"); });
+  };
+  const toggle = (qid, cur, target) => setStatus(qid, cur === target ? null : target);
+
+  const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
+  const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
+  const rank = s => (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
+  const byLens = {};
+  LENS_ORDER.forEach(l => { byLens[l] = all.filter(s => cur.f(s) && s.lens === l).sort((a, b) => rank(a) - rank(b)); });
+  const total = LENS_ORDER.reduce((n, l) => n + byLens[l].length, 0);
+
+  const Row = (s) => html`
+    <div key=${s.question_id} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "")} role="button" tabindex="0"
+      onClick=${() => openMetric(s.question_id)}
+      onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); openMetric(s.question_id); } }}>
+      <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>
+      ${SHOW_BADGE[s.kind] && html`<span class="signal-val num">${s.value_display}</span>`}
+      <span class="signal-detail" title=${s.detail}>${s.detail}</span>
+      <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
+      <span class="sig-actions" onClick=${e => e.stopPropagation()}>
+        ${s.status === "dismissed" ? html`
+          <button class="sig-act" title="Restore to inbox" aria-label="Restore" onClick=${() => setStatus(s.question_id, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
+          <button class=${"sig-act" + (s.status === "priority" ? " on" : "")} title=${s.status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise" onClick=${() => toggle(s.question_id, s.status, "priority")}><${Icon} name="pin" size=${15} /></button>
+          <button class=${"sig-act" + (s.status === "saved" ? " on" : "")} title=${s.status === "saved" ? "Remove from saved" : "Save"} aria-label="Save" onClick=${() => toggle(s.question_id, s.status, "saved")}><${Icon} name="star" size=${15} /></button>
+          <button class="sig-act" title="Dismiss" aria-label="Dismiss" onClick=${() => setStatus(s.question_id, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
+      </span>
+    </div>`;
+
   return html`
     <div class="signals-page" style=${{ maxWidth: "880px" }}>
       <h1 class="display-title" style=${{ marginBottom: "4px" }}>Signals</h1>
-      <p style=${{ maxWidth: "660px", marginTop: 0 }}>Where to look across your whole organisation — every peer-grounded flag, not just the home shortlist. Each one shows where you differ and the peer fact behind it; <b>you decide</b> whether being different is good or bad. Never advice.</p>
+      <p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's flags — peer-grounded, never advice. Each shows where you differ and the peer fact behind it; <b>you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>
       ${locked ? html`
         <div class="insight-lock" style=${{ maxWidth: "520px", marginTop: "var(--s5)" }}>
           <div class="lock-note">
@@ -410,37 +447,28 @@ window.SignalsPage = function ({ me }) {
               Signals unlock with your insights — complete your key reward questions${data.contribution && data.contribution.days_left != null ? ` (${data.contribution.days_left} days left)` : ""}.</div>
             <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit your data</button>
           </div>
-        </div>` :
-      all.length === 0 ? html`
-        <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
-          <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
-          <div class="caption" style=${{ maxWidth: "340px" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
         </div>` : html`
-        <div class="sig-filters">
-          <button class=${"sig-chip" + (filter === "all" ? " on" : "")} onClick=${() => setFilter("all")}>All <span class="num">${all.length}</span></button>
-          ${LENS_ORDER.map(l => html`<button key=${l} class=${"sig-chip lens-" + l + (filter === l ? " on" : "")} onClick=${() => setFilter(l)}>
-            <${Icon} name=${LENS_ICON[l]} size=${12} /> ${LENS_LABEL[l]} <span class="num">${byLens[l].length}</span></button>`)}
+        <div class="sig-tabs">
+          ${SIG_TABS.map(t => html`<button key=${t.k} class=${"sig-tab" + (tab === t.k ? " on" : "")} onClick=${() => setTab(t.k)}>
+            <${Icon} name=${t.icon} size=${14} /> ${t.label} <span class="num">${counts[t.k]}</span></button>`)}
         </div>
-        ${shown.filter(l => byLens[l].length).map(l => html`
+        ${total === 0 ? html`
+          <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
+            <span class="signals-empty-ring"><${Icon} name=${cur.icon} size=${18} /></span>
+            <div class="caption" style=${{ maxWidth: "360px" }}>${
+              tab === "inbox" ? "Inbox zero — every flag triaged, or nothing crosses a threshold yet."
+              : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a flag to clear it from your inbox and the home briefing."
+              : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any flag to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
+          </div>` :
+        LENS_ORDER.filter(l => byLens[l].length).map(l => html`
           <section key=${l} class="sig-lens-sec">
             <div class=${"sig-lens-head lens-" + l}>
               <span class="signal-roundel"><${Icon} name=${LENS_ICON[l]} size=${15} /></span>
               <b>${LENS_LABEL[l]}</b>
-              <span class="caption">${LENS_DESC[l]} · ${byLens[l].length} flag${byLens[l].length !== 1 ? "s" : ""}</span>
+              <span class="caption">${LENS_DESC[l]} · ${byLens[l].length}</span>
             </div>
-            <div class="signals-list">
-              ${byLens[l].map((s, i) => html`
-                <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0"
-                  onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
-                  <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>
-                  ${SHOW_BADGE[s.kind] && html`<span class="signal-val num">${s.value_display}</span>`}
-                  <span class="signal-detail" title=${s.detail}>${s.detail}</span>
-                  <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
-                  <span class="signal-go" aria-hidden="true">→</span>
-                </div>`)}
-            </div>
-          </section>`)}
-        <div class="caption" style=${{ marginTop: "var(--s4)" }}>Tap any flag to open the metric behind it. Signals are facts about where you differ from peers — what to do about them is your call.</div>`}
+            <div class="signals-list">${byLens[l].map(Row)}</div>
+          </section>`)}`}
     </div>`;
 };
 

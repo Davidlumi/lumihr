@@ -718,6 +718,28 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-kind { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em;
   white-space: nowrap; opacity: .75; padding: 2px 8px; border-radius: 7px;
   background: color-mix(in srgb, currentColor 12%, transparent); }
+/* signals inbox: status tabs + per-row triage actions */
+.sig-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin: var(--s4) 0 var(--s5);
+  border-bottom: 1px solid var(--chart-grid); }
+.sig-tab { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 0;
+  background: none; color: var(--ink-soft); font-size: var(--fs-label); font-weight: 600; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; }
+.sig-tab:hover { color: var(--ink); }
+.sig-tab .num { font-variant-numeric: tabular-nums; font-size: var(--fs-caption); padding: 1px 7px;
+  border-radius: 9px; background: var(--surface-sunk); color: var(--ink-soft); }
+.sig-tab.on { color: var(--blue); border-bottom-color: var(--blue); }
+.sig-tab.on .num { background: var(--blue-tint); color: var(--blue-deep); }
+.sig-actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.signal-row .sig-act { width: 30px; height: 30px; display: inline-flex; align-items: center;
+  justify-content: center; border: 0; background: none; color: var(--ink-faint); opacity: .5;
+  border-radius: var(--radius-sm); cursor: pointer; transition: all .12s; }
+.signal-row .sig-act svg { color: inherit; }
+.signal-row:hover .sig-act { opacity: .9; }
+.signal-row .sig-act:hover { background: rgba(15,23,42,.08); color: var(--ink); opacity: 1; }
+.signal-row .sig-act.on { color: var(--blue); opacity: 1; }
+.signal-row .sig-act.on svg { fill: color-mix(in srgb, var(--blue) 20%, transparent); }
+.signal-row.is-dismissed { opacity: .62; }
+.signal-row.is-dismissed:hover { opacity: 1; }
 .band-tick { position: absolute; left: 50%; top: -2px; width: 1.5px; height: calc(100% + 4px);
   background: var(--chart-axis); opacity: .7; border-radius: 1px; }
 .cat-tile:hover { box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,.85); }
