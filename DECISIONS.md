@@ -1947,3 +1947,17 @@ one will show spurious diffs, and a rollback from one may restore a slightly
 stale state. For a clean rollback take `PRAGMA wal_checkpoint(TRUNCATE)` (or
 copy -wal/-shm too) before the cp. The write here is verified correct via the
 append-only ledger, so no rollback is needed.
+
+## 2026-06-13 — Fix: matrix-select cards overflowed / collided with neighbours
+
+A Yes/No matrix card (e.g. "Allowances pensionability by level", REW_PAY_020)
+visually overlapped the cards around it. Root cause: `.bench-chart-full` has a
+FIXED `height: var(--chart-h-stack, 200px)` with `justify-content: center`, and
+only `svg` carries `max-height: 100%`. MatrixSelect renders a `<table>` (not an
+svg), so the table got no height constraint — it rendered at full height,
+centred in the 200px box, and SPILLED out top and bottom into adjacent grid
+cells (measured +99–121px of overflow). Fix (CSS-only): `.bench-chart-full:has(table)
+{ height:auto; justify-content:flex-start; }` — a card whose chart region is a
+table grows to fit it (the grid pair stretches to match, n stays pinned to the
+bottom); svg charts keep the fixed 200px region. Verified live: 0 of 45 cards
+on the Pay page overflow (was 1, +99px). Client-only. qa_focus 28/28. v69->v70.

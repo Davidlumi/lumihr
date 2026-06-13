@@ -815,6 +815,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .bench-chart-full:hover { background: color-mix(in srgb, var(--surface-sunk) 45%, transparent); }
 .bench-chart-full > * { width: 100%; }
 .bench-chart-full svg { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; }
+/* A matrix-select card renders a <table>, not an SVG — the fixed chart height
+   (and the centred flex) jam it into 200px and the table SPILLS over the cards
+   below. Tables size to their content and the card grows to fit (the grid pair
+   stretches to match; n stays pinned to the bottom). SVG charts are untouched. */
+.bench-chart-full:has(table) { height: auto; justify-content: flex-start; cursor: default; }
 .bench-card.stacked .bench-lead { margin-bottom: var(--s2); }
 .bench-card.stacked .bench-n { margin-top: auto; padding-top: var(--s2); }
 
