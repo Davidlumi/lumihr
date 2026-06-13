@@ -2155,3 +2155,37 @@ reimbursement" fire behind under the 'save' lens (save reads as overspend, but
 behind here = you provide less) — review; (c) behind label "0/100 vs median"
 reads cryptically for ordered scores — Phase-2 label polish; (d) all lens
 assignments remain his to ratify. Phase 2/3 unbuilt per plan.
+
+## 2026-06-13 — Score-ladder integrity guard (durable fix for the sick-pay fault class)
+Follow-on to the Phase-1 sick-pay catch. Root cause: the engine derives each
+option's maturity score + direction (aggregate.py score_direction) from option
+labels + polarity; a metric only scores right if its option array is ordered
+consistently with that direction. When it isn't, a clearly-bad answer can
+outscore a clearly-good one and any signal reading that ladder fires BACKWARDS
+silently. option-array order is load-bearing with no guard.
+Built server/qa_scores.py — a standing gate that sweeps all 144 reward scored
+single_select/yes_no metrics and FAILS when a clearly-negative option (No/None/
+Not/"statutory only"/absence, via the engine's own _NEG regex) outscores a
+clearly-affirmative one (_AFF), direction-corrected. It is a RATCHET: known
+faults are allow-listed with reason+fix; the gate fails on any NEW backwards
+ladder and on a stale allow-list entry (fixed metric still listed). It also
+asserts the 3 verified best->worst metrics resolve correctly. Pure library/
+aggregate, no server.
+The automated sweep caught TWO faults the human 131-metric audit missed:
+  • REW_FAI_079 (conduct gender pay gap analysis annually?) — polarity=
+    lower_is_better is wrong; "Yes" scores 0, "In development" 100.
+  • REW_INC_070 (malus provisions used?) — same; "Yes" scores 0, "No" 100.
+BLAST RADIUS determined: both are in prevalence_lenses, where the signal is
+SAFE — practice_status is label-based (is_absence_label), so "Yes"->in_place is
+correct and prevalence fires right. The wrong polarity only corrupts their CARD
+percentile / maturity (a pre-existing app-wide bug) and would break Phase 2
+ordered signals. Neither is in position_lenses, so NO new Phase-1 hold is
+needed; REW_BEN_SICK_001 stays held.
+Gate result: 3/3 pass (3 known faults allow-listed, 3 best->worst confirmed).
+FOR DAVID (data fixes, firewall — change computed positions, need sign-off):
+  1. REW_BEN_SICK_001: reorder options worst->best, then unblock from position_lenses.
+  2. REW_FAI_079 + REW_INC_070: polarity lower_is_better -> higher_is_better.
+  3. Ratify the principle: explicit per-metric direction, no index inference — I
+     can build the explicit-direction field + an "every ordered metric has one"
+     assertion once ratified. qa_scores.py is the interim enforcement.
+PREREQUISITE for Phase 2 (its ordered mechanisms read these same ladders).
