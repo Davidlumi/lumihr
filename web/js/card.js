@@ -358,14 +358,14 @@ window.MatrixSelect = function ({ rows }) {
         <tbody>
           ${(rows || []).map(r => {
             if (r.suppressed || !r.block) return html`
-              <tr key=${r.row_id} class="mh-row"><td class="mh-lvl">${r.label}</td>
+              <tr key=${r.row_id} class="mh-row"><td class="mh-lvl"><span class="mh-lvl-txt" title=${r.label}>${r.label}</span></td>
                 <td colspan=${order.length + 1} class="mh-supp caption">not enough organisations to show safely</td></tr>`;
             const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
             const youLabel = r.you ? (r.you.label || r.you.display) : null;
             const modal = r.block.modal_label;
             return html`
               <tr key=${r.row_id} class="mh-row">
-                <td class="mh-lvl">${r.label}</td>
+                <td class="mh-lvl"><span class="mh-lvl-txt" title=${r.label}>${r.label}</span></td>
                 ${order.map(b => {
                   const pct = pm[b] || 0;
                   if (pct <= 0) return html`<td key=${b} class="mh-cell mh-empty" title=${r.label + " · " + b + " · no peers"}></td>`;
