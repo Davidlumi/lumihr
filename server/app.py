@@ -1297,7 +1297,7 @@ async def overview(request: Request):
     _visq = org_visible_questions(org)
     _answers = org_answers_for(org)
     _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
-    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers)
+    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers, conn=conn, org_id=org["org_id"])
     dots = signals_mod.domain_dots(items)
     prac_dots = signals_mod.domain_dots(prac_items)
     sig_by_cat = {}

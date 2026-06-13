@@ -369,6 +369,33 @@
       "direction": "lower_is_better"
     }
   },
+  "depth_matrix": {
+    "REW_BEN_139": {
+      "covered": "Yes",
+      "lens": "retain",
+      "title": "PMI eligibility"
+    },
+    "REW_PAY_109": {
+      "covered": "Yes",
+      "lens": "save",
+      "title": "Status car allowance"
+    },
+    "REW_INC_133": {
+      "covered": "Yes",
+      "lens": "retain",
+      "title": "LTI eligibility"
+    },
+    "REW_PAY_020": {
+      "covered": "Yes",
+      "lens": "save",
+      "title": "Allowances pensionable"
+    },
+    "REW_FAI_TRONC_GROUPS_e5639ac2": {
+      "covered": "Yes",
+      "lens": "engage",
+      "title": "Tronc participation"
+    }
+  },
   "_david_ratified_2026_06_13": {
     "reroute_to_phase3_prevalence": [
       "REW_PRO_035",

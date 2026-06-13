@@ -79,8 +79,17 @@ def main():
     leak = rerouted & set(firing)
     check("Phase-3 re-routed metrics are excluded from all firing lists", not leak, sorted(leak))
 
-    print("\n  behind:%d  behind_explicit:%d  ordered_outlier:%d  scales:%d  rerouted(P3):%d"
-          % (len(cfg.get("behind", [])), len(behind_x), len(outlier), len(scales), len(rerouted)))
+    # depth_matrix (Mechanism B): real matrix questions, valid lens + covered value
+    dm = cfg.get("depth_matrix", {})
+    dm_bad = [qid for qid in dm if not (qs.get(qid) and qs[qid].type == "matrix" and qs[qid].status == "active")]
+    check("every depth_matrix id is an active matrix question", not dm_bad, dm_bad)
+    dm_lens = [(qid, s.get("lens")) for qid, s in dm.items() if s.get("lens") not in LENSES]
+    check("depth_matrix lens recommendations are valid", not dm_lens, dm_lens)
+    dm_cov = [qid for qid, s in dm.items() if not s.get("covered")]
+    check("every depth_matrix metric defines a 'covered' value", not dm_cov, dm_cov)
+
+    print("\n  behind:%d  behind_explicit:%d  ordered_outlier:%d  depth_matrix:%d  scales:%d  rerouted(P3):%d"
+          % (len(cfg.get("behind", [])), len(behind_x), len(outlier), len(dm), len(scales), len(rerouted)))
     print("\n== ORDERED-ROUTING GATE: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
     sys.exit(1 if FAIL else 0)
 

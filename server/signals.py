@@ -105,6 +105,65 @@ def _ordinal_stats(block, scale, org_label):
             "n_placed": int(round(n)) if has_counts else block.get("n", 0)}
 
 
+def _matrix_depths(conn, qid, covered="Yes", snapshot=1):
+    """{org_id -> depth} where depth = how many role levels are 'covered' for an
+    org. Raw per-org coverage (the per-level aggregate block can't give it)."""
+    orgs, yes = set(), {}
+    for org, rid, val in conn.execute(
+            "SELECT org_id, matrix_row_id, value FROM answers WHERE question_id=? AND snapshot_id=?",
+            (qid, snapshot)):
+        if not rid:
+            continue
+        orgs.add(org)
+        if val and val.strip().lower() == covered.lower():
+            yes[org] = yes.get(org, 0) + 1
+    return {o: yes.get(o, 0) for o in orgs}
+
+
+def matrix_depth_signals(conn, questions, org_id, seen_q):
+    """Mechanism B — depth-of-provision outliers. Signal = how far DOWN the role
+    hierarchy a benefit reaches vs peers, both tails, NO verdict. Same noise gate
+    as the ordered-outlier path. Panel-scoped (cut-scoping is a refinement)."""
+    ordr = ordered_routing()
+    dm = ordr.get("depth_matrix") or {}
+    th = ordr.get("thresholds", {})
+    tail_pct, min_modal = th.get("tail_pct", 20), th.get("min_modal_share", 0.35)
+    max_band, min_n = th.get("max_org_band_share", 0.50), th.get("min_n", 5)
+    sigs = []
+    for qid, spec in dm.items():
+        if qid in seen_q:
+            continue
+        q = questions.get(qid)
+        if q is None:
+            continue
+        depths = _matrix_depths(conn, qid, spec.get("covered", "Yes"))
+        mine = depths.pop(org_id, None)            # demo depth; peers = the rest
+        vals = list(depths.values())
+        if mine is None or len(vals) < min_n:
+            continue
+        n = len(vals)
+        below = sum(1 for v in vals if v < mine)
+        at = sum(1 for v in vals if v == mine)
+        pct = 100.0 * (below + 0.5 * at) / n
+        modal_share = max(vals.count(v) for v in set(vals)) / n
+        if modal_share < min_modal or at / n >= max_band:
+            continue
+        if not (pct <= tail_pct or pct >= 100 - tail_pct):
+            continue
+        median = sorted(vals)[n // 2]
+        nlev = len(q.matrix_rows or [])
+        short = _short(spec.get("title") or q.display_title)
+        sigs.append({
+            "lens": spec.get("lens", "retain"), "kind": "depth", "question_id": qid,
+            "value_display": "%d of %d levels" % (mine, nlev),
+            "label_short": "%s · reaches %d of %d levels" % (short, mine, nlev),
+            "detail": "%s reaches %d of %d role levels — peer median %d" % (short, mine, nlev, median),
+            "impact": 30000 + abs(pct - 50) * 200,
+        })
+        seen_q.add(qid)
+    return sigs
+
+
 def _short(title, row=None):
     """A terse display label for the dashboard (the full fact stays in
     `detail` for the tooltip): strip boilerplate, keep the essence."""
@@ -134,7 +193,7 @@ def _fmt_gbp(v):
     return "£%d/yr" % round(v)
 
 
-def build_signals(items, opportunity, questions, get_block, org_answers):
+def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None):
     """items: pos.position_items output (cut-scoped); opportunity: the £
     model dict; questions: org-visible library; get_block(qid) -> the cut's
     main distribution block; org_answers: {(qid,row): value}. Prevalence
@@ -290,6 +349,40 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
             "impact": 30000 + abs(st["pct"] - 50) * 200,
         })
         seen_q.add(qid)
+
+    # 5b) BEHIND_EXPLICIT: position metrics that fire 'behind' off the EXPLICIT
+    # scale (their global score direction is unreliable — the anchor-risk set).
+    # One-ended: fires only on the BAD tail per the metric's explicit direction.
+    for qid in ordr.get("behind_explicit", []):
+        if qid in seen_q:
+            continue
+        q = questions.get(qid)
+        spec = scales.get(qid)
+        mine = org_answers.get((qid, ""))
+        if q is None or not spec or mine in (None, ""):
+            continue
+        st = _ordinal_stats(get_block(qid), spec["scale_low_to_high"], mine)
+        if not st or st["n_placed"] < min_n:
+            continue
+        bad_is_high = spec.get("direction") == "lower_is_better"   # low ordinal is good -> high is the bad tail
+        bad = st["pct"] >= 100 - behind_at if bad_is_high else st["pct"] <= behind_at
+        if not bad:
+            continue
+        med = spec["scale_low_to_high"][st["median_ord"]]
+        short = _short(q.display_title)
+        out.append({
+            "lens": spec.get("lens", "retain"), "kind": "behind", "question_id": qid,
+            "value_display": mine,
+            "label_short": "%s · %s vs %s" % (short, mine, med),
+            "detail": "%s — %s vs %s peer median" % (q.display_title, mine, med),
+            "impact": 100000 + abs(st["pct"] - 50) * 100,
+        })
+        seen_q.add(qid)
+
+    # 6) DEPTH-OF-PROVISION matrices (how far down the org a benefit reaches),
+    # both tails, no verdict. Needs raw per-org coverage, so it takes the conn.
+    if conn is not None and org_id is not None:
+        out.extend(matrix_depth_signals(conn, questions, org_id, seen_q))
 
     cap_cfg = (ordered_routing().get("_david_ratified_2026_06_13", {}) or {}).get("briefing_cap", {})
     capped = cap_briefing(out, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),

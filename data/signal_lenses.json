@@ -1,14 +1,14 @@
 {
   "_readme": [
-    "SIGNALS config \u2014 DAVID OWNS THIS FILE. Which metric speaks to attraction vs retention vs engagement, and where the flag thresholds sit, is reward domain knowledge.",
-    "Signals are FLAGS with a peer fact attached \u2014 never advice. They only ever say 'worth a look'.",
-    "thresholds: behind_percentile = a mapped polarised metric flags when its polarity-adjusted percentile is at/below this; save_percentile = a cost metric flags when the org pays at/above this percentile; prevalence_floor = a mapped practice flags when peer adoption is at/above this and the org doesn't do it; money_min_gbp = a \u00a3-model gap must reach this to flag.",
+    "SIGNALS config — DAVID OWNS THIS FILE. Which metric speaks to attraction vs retention vs engagement, and where the flag thresholds sit, is reward domain knowledge.",
+    "Signals are FLAGS with a peer fact attached — never advice. They only ever say 'worth a look'.",
+    "thresholds: behind_percentile = a mapped polarised metric flags when its polarity-adjusted percentile is at/below this; save_percentile = a cost metric flags when the org pays at/above this percentile; prevalence_floor = a mapped practice flags when peer adoption is at/above this and the org doesn't do it; money_min_gbp = a £-model gap must reach this to flag.",
     "cost_metrics: NEUTRAL spend metrics eligible for the 'save' lens (a fact about cost, never a market verdict).",
     "position_lenses: polarised metrics -> the lens their 'behind' flag carries.",
     "prevalence_lenses: practice questions -> the lens their 'most peers do this, you don't' flag carries.",
-    "money_lenses: \u00a3-opportunity metrics -> lens.",
-    "Edits hot-reload (no restart needed). max_signals caps the briefing \u2014 ranked money > save > behind > prevalence, by size within each.",
-    "max_per_lens balances the briefing \u2014 at most this many flags per lens."
+    "money_lenses: £-opportunity metrics -> lens.",
+    "Edits hot-reload (no restart needed). max_signals caps the briefing — ranked money > save > behind > prevalence, by size within each.",
+    "max_per_lens balances the briefing — at most this many flags per lens."
   ],
   "max_signals": 5,
   "thresholds": {
@@ -135,6 +135,6 @@
   },
   "max_per_lens": 2,
   "_held_pending_data_fix": {
-    "REW_BEN_SICK_001": "BACKWARDS: option_scores rank \"Statutory sick pay only\"=100 above \"Enhanced\"/\"Combination\" \u2014 an org with generous sick pay reads as behind. Root cause is the question option order/scoring (firewall data fix), not the lens. Re-add once score ladder is corrected."
+    "REW_BEN_SICK_001": "BACKWARDS: option_scores rank \"Statutory sick pay only\"=100 above \"Enhanced\"/\"Combination\" — an org with generous sick pay reads as behind. Root cause is the question option order/scoring (firewall data fix), not the lens. Re-add once score ladder is corrected."
   }
 }

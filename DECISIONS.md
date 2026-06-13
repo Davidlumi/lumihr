@@ -2283,3 +2283,37 @@ Thornbridge — 0.35 fires 6, 0.50 fires only 2. The 4 lost at 0.50 (modal
 93.6). For ordered scales "a meaningful tail" != "one band >50%". RECOMMEND KEEP
 0.35 (matches the ~35% panel modal median); flagged panel-tunable. Mechanism B
 uses the same gate.
+
+## 2026-06-13 — Signals Phase 2 cont. (2/2): Mechanism B + behind_explicit + IP carve-out
+MECHANISM B — depth-of-provision matrices (signals.py matrix_depth_signals +
+_matrix_depths). depth = how many of the 7 role levels a benefit covers, from
+RAW per-org coverage (the per-level aggregate can't give per-org depth), so
+build_signals now takes conn+org_id (app.py passes them). Fires BOTH tails vs
+the peer depth distribution, NO verdict, same noise gate as Mechanism A, n>=5;
+panel-scoped (cut-scoping is a refinement). routing depth_matrix: REW_BEN_139
+PMI, REW_PAY_109 status car, REW_INC_133 LTI, REW_PAY_020 allowances-pensionable,
+REW_FAI_TRONC (covered="Yes", lens recommendations). VERIFIED on Thornbridge:
+1 fires — REW_INC_133 "LTI eligibility reaches 2 of 7 role levels — peer median
+0" (correct: deeper LTI reach than the median org, which offers none). Other 4
+near-median -> no fire (good selectivity).
+3a behind_explicit — REW_Q049530 (car mileage, lower_is_better) fires 'behind'
+off the EXPLICIT scale, ONE-ended (bad tail only: high threshold = restrictive).
+Logic verified; does NOT fire for Thornbridge (org never answered -> suppress,
+never impute).
+3b IP presence — INTENTIONALLY NOT SHIPPED. The option "Not applicable / not
+offered" CONFLATES N/A with not-offered, so practice_status returns 'unknown'
+(not not_in_place); firing "you don't offer IP" off it would be the exact
+muddle the carve-out exists to prevent. The clean presence signal needs the
+option SPLIT into "Not applicable" vs "Not offered" — a firewall data change.
+Reverted the prevalence_lenses add; flagged for David. (Moot for Thornbridge
+anyway: it offers IP — 047="4–13 weeks" — so Mechanism A handles the generosity
+half within the offering cohort.)
+GATES: qa_hero 53/53 (+3: depth no-verdict, depth off explicit ordering, cap
+fallback==5), qa_ordered_routing 13/13 (+depth_matrix), qa_scores 3/3, qa_focus
+28/28. Dashboard renders capped, the Pay-review-cycle outlier surfaces, no
+verdicts, no console errors.
+DEFERRED / FOR DAVID: (a) split the IP "Not applicable / not offered" option to
+unlock 3b; (b) reserve size — both REW_BEN_045 and the depth signal still lose
+their capped slot to money + retain per-lens contention; raise reserve or
+exclude money to surface more than one new-mechanism signal; (c) ratify the
+depth_matrix + ordered lens recommendations; (d) cut-scoping for Mechanism B.

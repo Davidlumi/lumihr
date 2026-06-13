@@ -287,6 +287,21 @@ check("every ordered-outlier signal fires off an EXPLICIT scale (no index infere
       [x["question_id"] for x in _out_sigs if x["question_id"] not in _ord.get("scales", {})])
 check("Phase-3 re-routed metrics never fire as ordered-outlier",
       not (set(_ord.get("_david_ratified_2026_06_13", {}).get("reroute_to_phase3_prevalence", [])) & {x["question_id"] for x in _out_sigs}))
+# Mechanism B (depth-of-provision): also position + peer fact, never a verdict.
+_depth_sigs = [x for x in sigs if x["kind"] == "depth"]
+check("depth-of-provision signals carry no verdict word",
+      all(not any(v in x["detail"].lower() for v in VERDICT) for x in _depth_sigs),
+      [x["question_id"] for x in _depth_sigs if any(v in x["detail"].lower() for v in VERDICT)])
+check("every depth signal fires off a routed depth_matrix metric (explicit ordering)",
+      all(x["question_id"] in _ord.get("depth_matrix", {}) for x in _depth_sigs),
+      [x["question_id"] for x in _depth_sigs if x["question_id"] not in _ord.get("depth_matrix", {})])
+# briefing cap fallback: always 5 when 5 exist, never a blank slot / dropped signal
+import signals as _sigmod
+def _mk(k, l, i):
+    return {"kind": k, "lens": l, "impact": i, "question_id": k + l + str(i)}
+_capt = _sigmod.cap_briefing([_mk("behind", "a", 9), _mk("behind", "b", 8), _mk("behind", "c", 7),
+                              _mk("behind", "d", 6), _mk("outlier", "e", 1)], 5, 2, 3)
+check("briefing cap fallback yields 5 when 5 exist across lenses (never a blank slot)", len(_capt) == 5, len(_capt))
 dots = {d["name"]: d.get("dot") for d in ov_sig["hero"]["domains"]}
 check("category dots sit in [1,99] where present",
       all(v is None or (1 <= v <= 99) for v in dots.values()), dots)
