@@ -854,9 +854,11 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const org = me.org;
   // the page's own cut — initialised from the global selector / deep link,
   // and re-synced when the global selector changes (same semantics as cards)
-  const globalSel = cut.dim === "industry" && org.industry ? { dim: "industry", value: org.industry }
-    : cut.dim === "fte_band" && org.fte_band ? { dim: "fte_band", value: org.fte_band }
-    : cut.dim === "twin" ? { dim: "twin", value: null } : { dim: "all", value: null };
+  const globalSel = cut.dim === "industry" ? { dim: "industry", value: cut.value || org.industry }
+    : cut.dim === "fte_band" ? { dim: "fte_band", value: cut.value || org.fte_band }
+    : cut.dim === "twin" ? { dim: "twin", value: null }
+    : cut.dim === "group" ? { dim: "group", value: cut.value }
+    : { dim: "all", value: null };
   const [sel, setSel] = useState(globalSel);
   const [card, setCard] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -946,7 +948,17 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
               <option value="all">All peers</option>
               ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
               ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
+              ${sel.dim === "industry" && sel.value && sel.value !== org.industry && html`<option value=${"industry::" + sel.value}>Sector: ${sel.value}</option>`}
+              ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && html`<option value=${"fte_band::" + sel.value}>Size: ${sel.value} FTE</option>`}
               ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+              ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
+                <optgroup label="Compare a sector">
+                  ${Object.keys(cuts.industries).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
+                </optgroup>`}
+              ${cuts && Object.keys(cuts.fte_bands || {}).length > 0 && html`
+                <optgroup label="Compare a size band">
+                  ${Object.keys(cuts.fte_bands).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
+                </optgroup>`}
               ${cuts && (cuts.groups || []).length > 0 && html`
                 <optgroup label="Your groups">
                   ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}

@@ -1855,3 +1855,19 @@ content (z-index 0; card content lifted to z-index 1 so text stays crisp),
 positioned via direct DOM writes on mousemove (no React re-render). Verified
 content legibility unaffected. CountUp already eases out (cubic) — left as is.
 Client-only. qa_hero 46/46. Cache v66->v67.
+
+## 2026-06-13 — Bug fix: metric page ignored the selected sector
+
+REPORTED: on a metric detail page, changing the sector left the data
+unchanged. ROOT CAUSE (frontend, not the engine — the API returns correct
+per-sector data): MetricPage.globalSel mapped any `industry` cut to
+`org.industry` (the org's OWN sector) instead of `cut.value` (the selected
+one), so picking "Construction" globally still refetched the org's "Retail".
+Same latent bug for fte_band; group value was dropped entirely. FIX:
+globalSel now preserves cut.value for industry/fte_band/group. Also enriched
+the per-metric peer dropdown: it now reflects the active sector/size even
+when it isn't the org's own, and offers a "Compare a sector" / "Compare a
+size band" list (from cuts.industries / cuts.fte_bands) so a sector can be
+explored from the page itself. Verified: Retail n=15 (26.7/80/40) vs All
+peers n=220 (45.5/41.4/32.3) now switch correctly. Client-only. qa_focus
+26/26. Cache v67->v68.
