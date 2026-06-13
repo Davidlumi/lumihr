@@ -235,5 +235,5 @@ window.normaliseChart = function (card, pref) {
 window.CHART_LABELS = {
   quartile_band: "Percentile band", histogram: "Histogram", box: "Box plot",
   bar: "Bars", ordered: "Ordered distribution",
-  heatmap: "Heatmap", grouped_bars: "Grouped bars", matrix_table: "Per-level table",
+  heatmap: "Distribution", grouped_bars: "Grouped bars", matrix_table: "Per-level table",
 };

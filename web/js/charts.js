@@ -198,50 +198,78 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
 };
 
 // --------------------------------------------------------------- heatmap ---
-// Matrix rows: peer P50 vs you, delta-coloured by polarity (semantic use only).
-window.MatrixHeat = function ({ rows, unit, polarity, showValues = true, width = CHART_W, height }) {
-  const H = height || 172;
-  const rowCap = H > 300 ? 42 : 24;
-  const rowH = Math.max(15, Math.min(rowCap, Math.floor((H - 18) / Math.max(rows.length, 1))));
-  const fs = rowH >= 20 ? 10.5 : 9.5;
-  const labelW = Math.min(170, width * 0.42), W = width;
-  const usedH = rows.length * rowH + 18;
-  const cellW = (W - labelW - 10) / 3;
-  const deltaCol = (you, p50) => {
-    if (you == null || p50 == null) return "var(--surface-sunk)";
+// Numeric matrix rows: a per-level DISTRIBUTION STRIP — the peer middle-50%
+// (P25–P75) band, the median tick, and the org's own marker, all on ONE shared
+// scale so levels are comparable at a glance (e.g. pay rising up the ladder
+// reads as a staircase). Flanked by the exact peer-median and "you" numbers and
+// the percentile. The "you" marker is delta-coloured by polarity (semantic use
+// only — neutral metrics get the plain blue accent). HTML, tokenised, equal
+// rows — parity with the categorical heatmap.
+window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
+  const live = (rows || []).filter(r => !r.suppressed && r.block);
+  let lo = Infinity, hi = -Infinity;
+  live.forEach(r => {
+    const b = r.block, y = r.you ? r.you.value : null;
+    [b.p25, b.p50, b.p75, y].forEach(v => { if (v != null) { if (v < lo) lo = v; if (v > hi) hi = v; } });
+  });
+  if (!isFinite(lo)) { lo = 0; hi = 1; }
+  const rawLo = lo, rawHi = hi, pad = ((hi - lo) || 1) * 0.06;
+  lo -= pad; hi += pad;
+  const X = v => ((v - lo) / ((hi - lo) || 1)) * 100;
+  const favOf = (you, p50) => {
+    if (you == null || p50 == null) return null;
     const rel = p50 !== 0 ? (you - p50) / Math.abs(p50) : (you ? 1 : 0);
-    let state = rel > 0.02 ? (polarity === "lower_is_better" ? "bad" : polarity === "higher_is_better" ? "good" : null)
-      : rel < -0.02 ? (polarity === "lower_is_better" ? "good" : polarity === "higher_is_better" ? "bad" : null) : "mid";
-    if (state === "good") return "var(--favourable-tint)";
-    if (state === "bad") return "var(--unfavourable-tint)";
-    if (state === "mid") return "var(--surface-sunk)";
-    return "var(--you-soft)";   // neutral polarity: plain "you" tint, no judgement
+    if (Math.abs(rel) <= 0.02) return "mid";
+    const above = rel > 0;
+    if (polarity === "higher_is_better") return above ? "good" : "bad";
+    if (polarity === "lower_is_better") return above ? "bad" : "good";
+    return "mid";
   };
   return html`
-    <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
-      <text x=${labelW + cellW / 2} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PEER P50</text>
-      <text x=${labelW + cellW * 1.5} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">YOU</text>
-      <text x=${labelW + cellW * 2.5} y="11" text-anchor="middle" font-size="9.5" letter-spacing="0.5" fill="var(--ink-faint)" font-weight="650">PERCENTILE</text>
-      ${rows.map((r, i) => {
-        const y = 16 + i * rowH;
-        const you = r.you ? r.you.value : null;
-        const p50 = r.suppressed ? null : (r.block || {}).p50;
-        const maxChars = Math.floor(labelW / (fs * 0.52));
-        return html`
-        <g key=${r.row_id}>
-          <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs} fill="var(--ink-soft)">
-            ${r.label.length > maxChars ? r.label.slice(0, maxChars - 1) + "…" : r.label}</text>
-          <rect x=${labelW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill="var(--surface-sunk)"/>
-          <text x=${labelW + cellW / 2 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-soft)" font-weight="500">
-            ${r.suppressed ? "n<5" : (showValues ? fmtValue(p50, unit) : "")}</text>
-          <rect x=${labelW + cellW} y=${y + 1} width=${cellW - 3} height=${rowH - 3} rx="4" fill=${r.suppressed ? "var(--surface-sunk)" : deltaCol(you, p50)}/>
-          <text x=${labelW + cellW * 1.5 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} font-weight="700" fill="var(--ink)">
-            ${you == null ? "—" : (showValues ? fmtValue(you, unit) : "")}</text>
-          <text x=${labelW + cellW * 2.5 - 1} y=${y + rowH / 2 + fs * 0.34} text-anchor="middle" font-size=${fs} fill="var(--ink-soft)">
-            ${r.suppressed || !r.you || r.you.percentile == null ? "—" : pLabel(r.you.percentile)}</text>
-        </g>`;
-      })}
-    </svg>`;
+    <div class="matrix-num-wrap">
+      <table class="matrix-num">
+        <thead>
+          <tr>
+            <th class="mn-lvl">Level</th>
+            <th class="mn-num">Median</th>
+            <th class="mn-strip-h">Where peers sit · you</th>
+            <th class="mn-num">You</th>
+            <th class="mn-num">Position</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(rows || []).map(r => {
+            if (r.suppressed || !r.block) return html`
+              <tr key=${r.row_id} class="mn-row"><td class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></td>
+                <td colspan="4" class="mn-supp caption">not enough organisations to show safely</td></tr>`;
+            const b = r.block, you = r.you ? r.you.value : null;
+            const f = favOf(you, b.p50);
+            return html`
+              <tr key=${r.row_id} class="mn-row">
+                <td class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></td>
+                <td class="mn-num mn-p50">${fmtValue(b.p50, unit)}</td>
+                <td class="mn-strip">
+                  <div class="mn-track">
+                    <div class="mn-iqr" style=${{ left: X(b.p25) + "%", width: Math.max(1.5, X(b.p75) - X(b.p25)) + "%" }}></div>
+                    <div class="mn-median" style=${{ left: X(b.p50) + "%" }}></div>
+                    ${you != null && html`<div class=${"mn-you" + (f === "good" ? " good" : f === "bad" ? " bad" : "")}
+                      style=${{ left: X(you) + "%" }} title=${"You · " + r.you.display}></div>`}
+                  </div>
+                </td>
+                <td class=${"mn-num mn-youval" + (f === "good" ? " good" : f === "bad" ? " bad" : "")}>
+                  ${you != null ? html`<b>${r.you.display}</b>` : html`<span class="caption">—</span>`}</td>
+                <td class="mn-num mn-pos">${r.you && r.you.percentile != null ? pLabel(r.you.percentile) : html`<span class="caption">—</span>`}</td>
+              </tr>`;
+          })}
+        </tbody>
+      </table>
+      <div class="matrix-num-scale">
+        <span class="mleg"><span class="mn-key-iqr"></span>middle 50% of peers</span>
+        <span class="mleg"><span class="mn-key-median"></span>peer median</span>
+        <span class="mleg"><span class="mn-key-you"></span>your organisation</span>
+        ${live.length > 0 && html`<span class="caption mn-scale-range">scale ${fmtValue(rawLo, unit)} – ${fmtValue(rawHi, unit)}</span>`}
+      </div>
+    </div>`;
 };
 
 // ---------------------------------------------------------- grouped bars ---

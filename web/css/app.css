@@ -461,6 +461,52 @@ td.num, th.num { text-align: right; }
 .mh-mode-key { color: var(--ink); font-weight: 700; }
 .msw-you { background: rgb(133,152,211); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px var(--blue-deep); }
 
+/* ---- matrix NUMERIC: per-level distribution strip (2026-06-13) ---- */
+.matrix-num-wrap { overflow-x: auto; }
+.matrix-num { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;
+  font-size: var(--fs-label); }
+.matrix-num thead th { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-soft); text-align: right; padding: 0 var(--s2) 8px; vertical-align: bottom;
+  border-bottom: 1px solid var(--chart-grid); white-space: nowrap; }
+.matrix-num thead th.mn-lvl { text-align: left; }
+.matrix-num thead th.mn-strip-h { text-align: left; padding-left: var(--s4); }
+.matrix-num th.mn-lvl, .matrix-num td.mn-lvl { width: 116px; }
+.matrix-num th.mn-num, .matrix-num td.mn-num { width: 74px; }
+.matrix-num td { height: 42px; vertical-align: middle; border-bottom: 1px solid var(--chart-grid); }
+.matrix-num tbody tr:last-child td { border-bottom: 0; }
+.matrix-num td.mn-lvl { text-align: left; padding-right: var(--s2); }
+.matrix-num .mn-lvl-txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; font-size: var(--fs-label); font-weight: 600; line-height: 1.16; color: var(--ink); }
+.matrix-num td.mn-num { text-align: right; padding: 0 var(--s2); font-variant-numeric: tabular-nums;
+  font-size: var(--fs-caption); color: var(--ink-soft); white-space: nowrap; }
+.matrix-num td.mn-p50 { color: var(--ink); font-weight: 600; }
+.matrix-num td.mn-youval b { color: var(--blue-deep); font-weight: 700; }
+.matrix-num td.mn-youval.good b { color: var(--favourable); }
+.matrix-num td.mn-youval.bad b { color: var(--unfavourable); }
+/* the strip */
+.matrix-num td.mn-strip { padding: 0 var(--s3); }
+.mn-track { position: relative; height: 20px; }
+.mn-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  transform: translateY(-50%); background: var(--chart-grid); }
+.mn-iqr { position: absolute; top: 50%; transform: translateY(-50%); height: 9px; border-radius: 5px;
+  background: var(--chart-band-mid); }
+.mn-median { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 15px;
+  background: var(--chart-median); border-radius: 1px; }
+.mn-you { position: absolute; top: 50%; transform: translate(-50%, -50%) rotate(45deg); width: 11px; height: 11px;
+  background: var(--you); border-radius: 2px; box-shadow: 0 0 0 1.5px #fff, 0 1px 2px rgba(0,0,0,.25); }
+.mn-you.good { background: var(--favourable); }
+.mn-you.bad { background: var(--unfavourable); }
+.mn-supp { text-align: left; color: var(--ink-soft); }
+.matrix-num-scale { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s4);
+  margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--chart-grid);
+  font-size: var(--fs-label); color: var(--ink-soft); }
+.matrix-num-scale .mleg { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.mn-key-iqr { width: 22px; height: 9px; border-radius: 5px; background: var(--chart-band-mid); flex: 0 0 auto; }
+.mn-key-median { width: 2px; height: 14px; background: var(--chart-median); flex: 0 0 auto; }
+.mn-key-you { width: 11px; height: 11px; transform: rotate(45deg); background: var(--you); border-radius: 2px;
+  box-shadow: 0 0 0 1.5px #fff; flex: 0 0 auto; }
+.mn-scale-range { margin-left: auto; }
+
 /* ---- entry guardrails + cleanup (2026-06-12) ---- */
 .qsec-head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border);
   background: var(--surface-sunk); border-radius: var(--radius) var(--radius) 0 0; }

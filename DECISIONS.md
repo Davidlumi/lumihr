@@ -2040,3 +2040,28 @@ FLAGGED FOR DAVID (not changed here):
   "higher_is_better" in seed data, which is meaningless for a pick-list. The
   client now ignores it for colour, but the polarity flag itself is a data
   question (firewall — not touched).
+
+## 2026-06-13 — MatrixHeat rewritten: numeric per-level distribution strip (HTML)
+The numeric-matrix "Heatmap" was an SVG 3-column table (peer P50 / you /
+percentile) that threw away the per-level quartile spread the engine already
+computes. Replaced it with an HTML per-level DISTRIBUTION STRIP, parity with the
+categorical heatmap:
+- columns: Level | Median | "Where peers sit · you" (the strip) | You | Position
+- the strip draws the peer middle-50% (P25–P75) band + median tick + the org's
+  diamond marker, all on ONE shared scale across rows, so levels are directly
+  comparable (pay rising up the ladder / allowance magnitudes read at a glance).
+- the "you" diamond is polarity-coloured (good/bad) where polarity applies,
+  plain blue when neutral — same semantic discipline as before; the You value
+  text matches.
+- precise numbers retained (median, you, percentile); a legend + absolute scale
+  range (£lo–£hi) anchor the visual. Equal 42px rows, tokenised type, ruled
+  table, overflow-x safe; suppressed rows show the safe-data message.
+- toggle label "Heatmap" -> "Distribution" (CHART_LABELS) since it's no longer a
+  heatmap. Chart key stays "heatmap"; "Grouped bars" alt unchanged.
+Verified live on an answered matrix (allowance payments — shared scale shows
+London weighting highest, you above median on Night/Weekend, below on Bank
+holiday) and an unanswered one (market-position 99% — now shows peer spread, not
+"99% — —"). No console errors.
+NOTE: like the categorical heatmap, the HTML matrix can't PNG-export (exporter
+finds no <svg>); export silently no-ops for matrix cards. Flagged.
+v79 -> v82.
