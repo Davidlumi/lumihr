@@ -381,11 +381,12 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
 
 /* ================================================================== tables */
 table.data { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
+/* light, ruled header (2026-06-13) — a form full of these shouldn't read like
+   a database export; the bottom rule + small-caps carry the structure */
 table.data th { position: sticky; top: 0; z-index: 2; text-align: left; font-size: var(--fs-caption);
-  text-transform: uppercase; letter-spacing: .06em; background: var(--navy); color: #fff;
-  font-weight: 600; padding: var(--s3); white-space: nowrap; }
-table.data th:first-child { border-radius: var(--radius-sm) 0 0 0; }
-table.data th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+  text-transform: uppercase; letter-spacing: .06em; background: var(--surface); color: var(--ink-soft);
+  font-weight: 650; padding: var(--s2) var(--s3); white-space: nowrap;
+  border-bottom: 1.5px solid var(--chrome-edge, var(--border)); }
 table.data td { padding: var(--s3); border-bottom: 1px solid var(--chart-grid); vertical-align: top; }
 table.data tbody tr:nth-child(even) td { background: var(--surface-sunk); }
 table.data tr:hover td { background: var(--blue-tint); }
