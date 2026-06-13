@@ -382,7 +382,7 @@ window.MatrixSelect = function ({ rows }) {
       </table>
       <div class="matrix-scale">
         <span class="mscale"><span class="caption">fewer peers</span><span class="mscale-bar"></span><span class="caption">more peers</span></span>
-        <span class="mleg"><span class="msw msw-mode"></span>most common at each level</span>
+        <span class="mleg"><b class="mh-mode-key">bold</b> = most common at each level</span>
         <span class="mleg"><span class="msw msw-you"></span>your organisation</span>
       </div>
     </div>`;

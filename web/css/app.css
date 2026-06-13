@@ -436,7 +436,9 @@ td.num, th.num { text-align: right; }
 .matrix-heat td.mh-cell { text-align: center; border-radius: 7px;
   font-variant-numeric: tabular-nums; font-size: var(--fs-caption); font-weight: 600; color: var(--ink);
   transition: box-shadow .1s ease; }
-.matrix-heat td.mh-cell.mode { box-shadow: inset 0 0 0 1px rgba(15,23,42,.24); font-weight: 700; }
+/* most-common cell is the darkest in its row already — mark it with weight
+   alone, no ring (a dark inset border read as an unexplained black edge). */
+.matrix-heat td.mh-cell.mode { font-weight: 700; }
 /* "you" stays in the blue identity family but the whole field is blue, so a
    plain blue ring would vanish into the data — a white halo inside a deep-blue
    ring separates the marker on every cell shade, pale or dark. */
@@ -456,7 +458,7 @@ td.num, th.num { text-align: right; }
   background: linear-gradient(90deg, rgb(224,229,245), rgb(37,71,176)); }
 .mleg { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .msw { width: 13px; height: 13px; border-radius: 4px; flex: 0 0 auto; background: var(--surface); }
-.msw-mode { box-shadow: inset 0 0 0 1px rgba(15,23,42,.45); background: rgb(174,187,225); }
+.mh-mode-key { color: var(--ink); font-weight: 700; }
 .msw-you { background: rgb(133,152,211); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px var(--blue-deep); }
 
 /* ---- entry guardrails + cleanup (2026-06-12) ---- */
