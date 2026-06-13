@@ -320,9 +320,144 @@ window.QuartileDots = function ({ quartiles }) {
     </div>`;
 };
 
+// --------------------------------------- matrix export twins (HTML→SVG) ----
+// The two matrix charts render as polished HTML (crisp text, easy layout), so
+// the SVG raster exporter has nothing to serialise. Rather than rasterise the
+// DOM (fragile), we rebuild an equivalent SVG from the SAME card data — sharing
+// matrixBandOrder() with the on-screen renderer so the two can never drift.
+
+// Topological band order for categorical matrices — the ONE non-trivial bit
+// shared by the HTML heatmap (MatrixSelect) and this export twin.
+window.matrixBandOrder = function (live) {
+  const adj = new Map(), indeg = new Map(), nodes = [];
+  const ensure = l => { if (!indeg.has(l)) { indeg.set(l, 0); adj.set(l, new Set()); nodes.push(l); } };
+  (live || []).forEach(r => {
+    const os = ((r.block && r.block.options) || []).map(o => o.label);
+    os.forEach(ensure);
+    for (let i = 0; i + 1 < os.length; i++) {
+      if (!adj.get(os[i]).has(os[i + 1])) { adj.get(os[i]).add(os[i + 1]); indeg.set(os[i + 1], indeg.get(os[i + 1]) + 1); }
+    }
+  });
+  const order = [], placed = new Set();
+  while (order.length < nodes.length) {
+    const pick = nodes.find(n => !placed.has(n) && indeg.get(n) === 0);
+    if (pick == null) { nodes.forEach(n => { if (!placed.has(n)) { order.push(n); placed.add(n); } }); break; }
+    order.push(pick); placed.add(pick); indeg.set(pick, -1);
+    adj.get(pick).forEach(m => { if (indeg.get(m) > 0) indeg.set(m, indeg.get(m) - 1); });
+  }
+  return order;
+};
+
+function clipTxt(s, n) { s = String(s || ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+function abbrBand(l) {
+  return (l || "").replace(/^More than\s*/i, ">").replace(/\bweeks?\b/i, "wk")
+    .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
+}
+function mixBlueRGB(t) {
+  const b = [37, 71, 176];
+  return "rgb(" + Math.round(255 + (b[0] - 255) * t) + "," + Math.round(255 + (b[1] - 255) * t)
+    + "," + Math.round(255 + (b[2] - 255) * t) + ")";
+}
+function svgEl(W, H, inner) {
+  const str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`
+    + `<g font-family="Helvetica, Arial, sans-serif">${inner}</g></svg>`;
+  return new DOMParser().parseFromString(str, "image/svg+xml").documentElement;
+}
+
+function buildSelectSVG(card, tok) {
+  const rows = card.matrix_rows || [];
+  const live = rows.filter(r => !r.suppressed && r.block && r.block.options);
+  const order = matrixBandOrder(live);
+  let maxPct = 1; live.forEach(r => (r.block.options || []).forEach(o => { if (o.pct > maxPct) maxPct = o.pct; }));
+  const Lw = 160, Yw = 64, bw = 58, Hh = 24, Rh = 30, n = order.length;
+  const W = Lw + n * bw + Yw, R = rows.length, H = Hh + R * Rh + 4;
+  let s = `<text x="4" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">LEVEL</text>`;
+  order.forEach((b, ci) => { s += `<text x="${Lw + ci * bw + bw / 2}" y="${Hh - 8}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${tok.inkSoft}">${esc(abbrBand(b))}</text>`; });
+  s += `<text x="${W - 4}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">YOU</text>`;
+  rows.forEach((r, ri) => {
+    const y = Hh + ri * Rh, cy = y + Rh / 2 + 4;
+    s += `<text x="4" y="${cy}" font-size="11" fill="${tok.ink}">${esc(clipTxt(r.label, 24))}</text>`;
+    if (r.suppressed || !r.block) { s += `<text x="${Lw}" y="${cy}" font-size="10" fill="${tok.inkSoft}">not enough organisations</text>`; return; }
+    const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
+    const youLabel = r.you ? (r.you.label || r.you.display) : null, modal = r.block.modal_label;
+    order.forEach((b, ci) => {
+      const pct = pm[b] || 0, cx = Lw + ci * bw, ry = y + 3, ch = Rh - 6, cw = bw - 4;
+      if (pct <= 0) { s += `<rect x="${cx}" y="${ry}" width="${cw}" height="${ch}" rx="6" fill="${tok.sunk}"/>`; return; }
+      const t = 0.14 + 0.86 * (pct / maxPct);
+      s += `<rect x="${cx}" y="${ry}" width="${cw}" height="${ch}" rx="6" fill="${mixBlueRGB(t)}"`
+        + (youLabel && b === youLabel ? ` stroke="${tok.blueDeep}" stroke-width="2"` : "") + `/>`;
+      const r0 = Math.round(pct);
+      s += `<text x="${cx + cw / 2}" y="${ry + ch / 2 + 4}" text-anchor="middle" font-size="11" font-weight="${b === modal ? 700 : 600}" fill="${t >= 0.52 ? "#fff" : tok.ink}">${r0 > 0 ? r0 + "%" : "&lt;1%"}</text>`;
+    });
+    s += r.you
+      ? `<text x="${W - 4}" y="${cy}" text-anchor="end" font-size="11" font-weight="700" fill="${tok.blueDeep}">${esc(abbrBand(r.you.display))}</text>`
+      : `<text x="${W - 4}" y="${cy}" text-anchor="end" font-size="11" fill="${tok.inkSoft}">—</text>`;
+  });
+  return svgEl(W, H, s);
+}
+
+function buildNumSVG(card, tok) {
+  const rows = card.matrix_rows || [], unit = card.unit, polarity = card.polarity;
+  const live = rows.filter(r => !r.suppressed && r.block);
+  let lo = Infinity, hi = -Infinity;
+  live.forEach(r => { const b = r.block, yv = r.you ? r.you.value : null; [b.p25, b.p50, b.p75, yv].forEach(v => { if (v != null) { if (v < lo) lo = v; if (v > hi) hi = v; } }); });
+  if (!isFinite(lo)) { lo = 0; hi = 1; }
+  const pad = ((hi - lo) || 1) * 0.06, Lo = lo - pad, Hi = hi + pad;
+  const Lw = 150, Mw = 66, Sw = 300, Yw = 70, Pw = 52, Hh = 24, Rh = 32;
+  const Sx = Lw + Mw, W = Lw + Mw + Sw + Yw + Pw, R = rows.length, H = Hh + R * Rh + 4;
+  const X = v => Sx + ((v - Lo) / ((Hi - Lo) || 1)) * Sw;
+  const favOf = (you, p50) => {
+    if (you == null || p50 == null) return null;
+    const rel = p50 !== 0 ? (you - p50) / Math.abs(p50) : (you ? 1 : 0);
+    if (Math.abs(rel) <= 0.02) return "mid";
+    const a = rel > 0;
+    if (polarity === "higher_is_better") return a ? "good" : "bad";
+    if (polarity === "lower_is_better") return a ? "bad" : "good";
+    return "mid";
+  };
+  let s = `<text x="4" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">LEVEL</text>`
+    + `<text x="${Lw + Mw - 6}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">MEDIAN</text>`
+    + `<text x="${Sx + 4}" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">WHERE PEERS SIT · YOU</text>`
+    + `<text x="${Sx + Sw + Yw - 6}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">YOU</text>`
+    + `<text x="${W - 4}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">POS</text>`;
+  rows.forEach((r, ri) => {
+    const y = Hh + ri * Rh, cy = y + Rh / 2;
+    s += `<text x="4" y="${cy + 4}" font-size="11" fill="${tok.ink}">${esc(clipTxt(r.label, 20))}</text>`;
+    if (r.suppressed || !r.block) { s += `<text x="${Lw + Mw - 6}" y="${cy + 4}" text-anchor="end" font-size="10" fill="${tok.inkSoft}">n&lt;5</text>`; return; }
+    const b = r.block, yv = r.you ? r.you.value : null, f = favOf(yv, b.p50);
+    s += `<text x="${Lw + Mw - 6}" y="${cy + 4}" text-anchor="end" font-size="10.5" font-weight="600" fill="${tok.ink}">${esc(fmtValue(b.p50, unit))}</text>`;
+    s += `<line x1="${Sx}" x2="${Sx + Sw}" y1="${cy}" y2="${cy}" stroke="${tok.grid}" stroke-width="1"/>`;
+    s += `<rect x="${X(b.p25)}" y="${cy - 4.5}" width="${Math.max(2, X(b.p75) - X(b.p25))}" height="9" rx="4.5" fill="${tok.bandMid}"/>`;
+    s += `<rect x="${X(b.p50) - 1}" y="${cy - 7.5}" width="2" height="15" fill="${tok.median}"/>`;
+    if (yv != null) { const xx = X(yv), col = f === "good" ? tok.fav : f === "bad" ? tok.unfav : tok.you, rr = 5.5;
+      s += `<path d="M ${xx} ${cy - rr} L ${xx + rr} ${cy} L ${xx} ${cy + rr} L ${xx - rr} ${cy} Z" fill="${col}" stroke="#fff" stroke-width="1.5"/>`; }
+    const yvcol = f === "good" ? tok.fav : f === "bad" ? tok.unfav : tok.blueDeep;
+    s += r.you
+      ? `<text x="${Sx + Sw + Yw - 6}" y="${cy + 4}" text-anchor="end" font-size="11" font-weight="700" fill="${yvcol}">${esc(r.you.display)}</text>`
+      : `<text x="${Sx + Sw + Yw - 6}" y="${cy + 4}" text-anchor="end" font-size="11" fill="${tok.inkSoft}">—</text>`;
+    s += `<text x="${W - 4}" y="${cy + 4}" text-anchor="end" font-size="10.5" fill="${tok.inkSoft}">${esc(r.you && r.you.percentile != null ? pLabel(r.you.percentile) : "—")}</text>`;
+  });
+  return svgEl(W, H, s);
+}
+
+window.buildMatrixSVG = function (card) {
+  const cs = getComputedStyle(document.documentElement), T = n => cs.getPropertyValue(n).trim() || "#333";
+  const tok = { ink: T("--ink"), inkSoft: T("--ink-soft"), grid: T("--chart-grid"), sunk: T("--surface-sunk"),
+    bandMid: T("--chart-band-mid"), median: T("--chart-median"), you: T("--you"), blueDeep: T("--blue-deep"),
+    fav: T("--favourable"), unfav: T("--unfavourable") };
+  const rows = card.matrix_rows || [];
+  return rows.some(r => r.block && r.block.kind === "select") ? buildSelectSVG(card, tok) : buildNumSVG(card, tok);
+};
+
 // ------------------------------------------------------------- PNG export --
 window.exportCardPNG = async function (cardEl, meta, mode) {
-  const svg = cardEl.querySelector(".bench-chart svg") || cardEl.querySelector("svg");
+  // chart svg lives inside the chart container — scope the lookup so we never
+  // grab a kebab/status icon; matrix cards render as HTML, so rebuild an SVG
+  // twin from the card data.
+  let svg = cardEl.querySelector(".bench-chart-full svg") || cardEl.querySelector(".metric-xl svg")
+    || cardEl.querySelector(".bench-chart svg");
+  if (!svg && meta.card && meta.card.type === "matrix") svg = buildMatrixSVG(meta.card);
+  if (!svg) svg = cardEl.querySelector("svg");
   if (!svg) return false;
   const clone = svg.cloneNode(true);
   const vb = (svg.getAttribute("viewBox") || "0 0 420 120").split(" ").map(Number);
@@ -352,6 +487,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
     <text x="${PAD}" y="${H - 10}" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">lumi people analytics benchmark · ${esc(meta.window || "")} · generated ${new Date().toLocaleDateString("en-GB")}</text>`;
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("transform", `translate(${PAD}, ${TITLE_H + 8})`);
+  g.setAttribute("font-family", "Helvetica, Arial, sans-serif");
   while (clone.firstChild) g.appendChild(clone.firstChild);
   wrap.appendChild(g);
 

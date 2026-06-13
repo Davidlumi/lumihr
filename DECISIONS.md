@@ -2065,3 +2065,21 @@ holiday) and an unanswered one (market-position 99% — now shows peer spread, n
 NOTE: like the categorical heatmap, the HTML matrix can't PNG-export (exporter
 finds no <svg>); export silently no-ops for matrix cards. Flagged.
 v79 -> v82.
+
+## 2026-06-13 — All charts exportable: SVG export twins for the HTML matrices
+The two matrix charts render as HTML (no <svg>), so the PNG exporter — which
+serialises an SVG to canvas — silently no-op'd on them. Now EVERY chart exports:
+- buildMatrixSVG(card) rebuilds an equivalent SVG from the SAME card data for
+  both matrix kinds (categorical heatmap, numeric distribution strip), using the
+  live theme tokens for colour. matrixBandOrder() is extracted and SHARED by the
+  on-screen MatrixSelect and the export twin, so screen and export can't drift.
+- exportCardPNG now (a) scopes the chart-svg lookup to the chart container
+  (.bench-chart-full / .metric-xl) so it can never grab a kebab/status icon —
+  a latent bug; (b) rebuilds the SVG from meta.card when the card is a matrix;
+  (c) sets font-family on the chart <g> so exported labels render in the brand
+  sans, not the SVG default serif (fixes ALL chart exports, not just matrices).
+- both doExport call sites (card kebab, metric detail) pass card:c in meta.
+Verified live: categorical (630×238) and numeric (638×380) twins rasterise to
+non-blank PNGs and the full exportCardPNG returns "downloaded" with a valid
+data:image/png for both; existing SVG charts still export; screen heatmap
+unchanged after the matrixBandOrder refactor; no console errors. v82 -> v83.

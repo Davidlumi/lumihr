@@ -919,7 +919,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const profiled = !!(org.industry && org.fte_band);
   const doExport = async () => {
     const res = await exportCardPNG(chartRef.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: period,
+      title: c.title, cutLabel: c.cut.label, n: c.n, window: period, card: c,
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
     }, "download");
     toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");

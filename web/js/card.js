@@ -44,7 +44,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
   const doExport = async () => {
     // exports carry the card's CURRENT cut label + n (c is the override card when set)
     const res = await exportCardPNG(ref.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow,
+      title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow, card: c,
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
     }, "download");
     toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
@@ -307,27 +307,12 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
    A stacked bar of near-identical blues could never carry this. */
 window.MatrixSelect = function ({ rows }) {
   const live = (rows || []).filter(r => !r.suppressed && r.block && r.block.options);
-  // Recover the true band order. Rows carry their options in the column's
+  // Recover the true band order — rows carry their options in the column's
   // ordinal order but each holds only the bands it uses, so a naive first-seen
-  // merge scrambles the scale. A topological merge over every row's
-  // consecutive pairs yields 1 week → … → More than 16 weeks regardless of
-  // which row leads (falls back to first-seen if the data has no clean order).
-  const adj = new Map(), indeg = new Map(), nodes = [];
-  const ensure = l => { if (!indeg.has(l)) { indeg.set(l, 0); adj.set(l, new Set()); nodes.push(l); } };
-  live.forEach(r => {
-    const os = (r.block.options || []).map(o => o.label);
-    os.forEach(ensure);
-    for (let i = 0; i + 1 < os.length; i++) {
-      if (!adj.get(os[i]).has(os[i + 1])) { adj.get(os[i]).add(os[i + 1]); indeg.set(os[i + 1], indeg.get(os[i + 1]) + 1); }
-    }
-  });
-  const order = [], placed = new Set();
-  while (order.length < nodes.length) {
-    const pick = nodes.find(n => !placed.has(n) && indeg.get(n) === 0);
-    if (pick == null) { nodes.forEach(n => { if (!placed.has(n)) { order.push(n); placed.add(n); } }); break; }
-    order.push(pick); placed.add(pick); indeg.set(pick, -1);
-    adj.get(pick).forEach(m => { if (indeg.get(m) > 0) indeg.set(m, indeg.get(m) - 1); });
-  }
+  // merge scrambles the scale. matrixBandOrder (shared with the PNG export twin)
+  // does a topological merge → 1 week → … → More than 16 weeks regardless of
+  // which row leads.
+  const order = matrixBandOrder(live);
   // Intensity is scaled to the busiest cell anywhere in the matrix, so the
   // single most common combination is full strength and everything reads
   // relative to it. A concentrated level shows one dark cell; a split level
