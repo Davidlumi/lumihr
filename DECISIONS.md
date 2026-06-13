@@ -1677,3 +1677,49 @@ secondary; no height added (PR-2 slimming respected, top bar stays 53px).
 2c: nav hierarchy unchanged from the QA-v3 pass — active = blue-deep + inset
 ring, inactive = --ink-faint, "YOUR ORGANISATION" label kept. Client-only.
 qa_focus 26/26, qa_hero 42/42. Cache v59->v60.
+
+## 2026-06-13 — Nav & chrome package, Item 3: collapsible sidebar (D5 built)
+
+D5 COLLAPSIBLE SIDEBAR — was "flagged, NOT built, needs David's direction";
+now greenlit and built. A toggle by the wordmark switches the rail between
+full-width (224px, labels) and an icon-only rail (66px). State persists per
+user in the prefs store at _nav.sidebar_collapsed (sibling to
+benchmark_open); default expanded; the manual choice is authoritative — no
+resize override (the existing <900px media query still hides the rail on
+mobile, unchanged). Verified: toggle flips aria-expanded + accessible label
+("Collapse sidebar"/"Expand sidebar"), collapse persists across reload past
+the prefs debounce.
+
+COLLAPSED APPEARANCE: nav items refactored into a RailItem helper (icon +
+.nav-txt label + optional count) so collapse hides labels/counts uniformly;
+every collapsed item carries aria-label (accessible name kept) AND a
+hover+focus-visible CSS tooltip with the full label/count (the accessibility
+requirement). Wordmark degrades to the "lumi" glyph (".benchmark" hidden).
+Active state stays legible icon-only (the blue pill + inset ring render on
+the active icon). Width transition is one ease-out, disabled under
+prefers-reduced-motion.
+
+BENCHMARK GROUP COLLAPSED = FLYOUT (the chosen option, not auto-expand):
+the icon-only rail can't hold the eight-child list, so clicking the
+Benchmark icon opens a popover beside the rail with All + the 7 categories
+and their counts; closes on click-away/Escape; navigating a category closes
+it. No child is ever dropped — all eight reachable. Verified on-screen
+(left:67px at the rail edge, 8 items, z-index 60) and functional (navigates
+to /benchmark?cat=…).
+
+GAP-CUE DOT (3d): confirmed absent — removed in Item 1b, so no collapsed-mode
+dot handling was needed.
+
+Client-only (web/js, web/css, html). Full gate suite green (8/8). Cache
+v60->v61.
+
+## 2026-06-13 — Nav & chrome package: ship summary
+
+Three approved items shipped in sequence, each gate-green individually:
+Item 1 (b4525ac) tile lens-dots + sidebar gap-cue dot removed; Item 2
+(5406048) real --chrome-edge borders replacing the too-quiet soft shadows;
+Item 3 collapsible sidebar with Benchmark flyout. No server/engine/catalogue/
+seed file touched (grep-confirmed; the only server-side line in the window is
+the QA-v3 board-pack suppression assertion in qa_focus, which predates this
+package). The "biggest opportunity area" cue the gap-cue dot carried is not
+lost — it lives in the Overview Biggest-gaps panel and on Priorities.

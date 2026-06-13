@@ -1,6 +1,6 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage,
+   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
@@ -73,6 +73,12 @@ function App() {
   window.SCOPE = scope;
   const activeSupers = scope.superpowers;
   if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
+
+  // collapsible rail (nav pkg Item 3): persisted per user alongside the
+  // Benchmark expand-state. Manual choice is authoritative — no resize override.
+  const _railPrefs = (prefs && prefs._nav) || {};
+  const railCollapsed = !!_railPrefs.sidebar_collapsed;
+  const toggleRail = () => onPref("_nav", { ..._railPrefs, sidebar_collapsed: !railCollapsed });
 
   const onPref = (qid, p) => {
     const next = { ...prefs, [qid]: p };
@@ -148,24 +154,31 @@ function App() {
   return html`
     <div class="shell">
       <${IdleGuard} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setMe(null); }} />
-      <nav class="sidebar no-print" aria-label="Main navigation">
-        <a class="logo" href="#/overview" aria-label="lumi benchmark home">lumi<span>.benchmark</span></a>
-        <div class="nav-group">
-          <button class=${navCls(route, "/overview")} onClick=${() => nav("/overview")}><${Icon} name="home" size=${15} /> Overview</button>
-          <button class=${navCls(route, "/myview")} onClick=${() => nav("/myview")}><${Icon} name="star" size=${15} /> My view</button>
-          ${/* Reserved slot (chrome spec section 1.4): the Signals nav item ships
-               here, between Overview/My view and Priorities. Render nothing now. */ ""}
-          <button class=${navCls(route, "/priorities")} onClick=${() => nav("/priorities")}><${Icon} name="list-checks" size=${15} /> Priorities</button>
-          <button class=${navCls(route, "/pulse")} onClick=${() => nav("/pulse")}><${Icon} name="zap" size=${15} /> Pulse</button>
+      <nav class=${"sidebar no-print" + (railCollapsed ? " collapsed" : "")} aria-label="Main navigation">
+        <div class="sidebar-head">
+          <a class="logo" href="#/overview" aria-label="lumi benchmark home">lumi<span>.benchmark</span></a>
+          <button class="rail-toggle" aria-expanded=${!railCollapsed}
+            aria-label=${railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title=${railCollapsed ? "Expand sidebar" : "Collapse sidebar"} onClick=${toggleRail}>
+            <${Icon} name=${railCollapsed ? "chevron-right" : "chevron-left"} size=${16} />
+          </button>
         </div>
         <div class="nav-group">
-          <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} />
+          <${RailItem} route=${route} path="/overview" icon="home" label="Overview" />
+          <${RailItem} route=${route} path="/myview" icon="star" label="My view" />
+          ${/* Reserved slot (chrome spec section 1.4): the Signals nav item ships
+               here, between Overview/My view and Priorities. Render nothing now. */ ""}
+          <${RailItem} route=${route} path="/priorities" icon="list-checks" label="Priorities" />
+          <${RailItem} route=${route} path="/pulse" icon="zap" label="Pulse" />
+        </div>
+        <div class="nav-group">
+          <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} collapsed=${railCollapsed} />
         </div>
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
-          <button class=${navCls(route, "/your-data")} onClick=${() => nav("/your-data")}><${Icon} name="table" size=${15} /> Your data</button>
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/team")} onClick=${() => nav("/team")}><${Icon} name="users" size=${15} /> Team</button>`}
-          ${me.user.role === "admin" && html`<button class=${navCls(route, "/settings")} onClick=${() => nav("/settings")}><${Icon} name="sliders-v" size=${15} /> Settings</button>`}
+          <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
+          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
+          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />`}
         </div>
       </nav>
       <div class="main">
@@ -230,7 +243,30 @@ function App() {
    chevron only — the total lives on the "All" child. Expand state persists
    per user via the prefs store (key _nav); default expanded on first visit —
    the category breadth is part of the pitch. */
-window.BenchmarkNav = function ({ route, qIndex, prefs, onPref }) {
+/* One nav row: icon + label + optional count. Carries aria-label and data-tip
+   (label + count) so the COLLAPSED rail keeps an accessible name and shows a
+   hover/focus tooltip (nav pkg Item 3). */
+window.RailItem = function ({ route, path, icon, label, count }) {
+  const tip = label + (count != null ? " · " + count : "");
+  return html`
+    <button class=${navCls(route, path)} onClick=${() => nav(path)} aria-label=${tip} data-tip=${tip}>
+      <${Icon} name=${icon} size=${15} />
+      <span class="nav-txt">${label}</span>
+      ${count != null && html`<span class="nav-count">${count}</span>`}
+    </button>`;
+};
+
+window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
+  const [flyout, setFlyout] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!flyout) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setFlyout(false); };
+    const onEsc = (e) => { if (e.key === "Escape") setFlyout(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+  }, [flyout]);
   if (!qIndex) return null;
   const navPrefs = (prefs && prefs._nav) || {};
   const open = navPrefs.benchmark_open !== false;
@@ -238,15 +274,42 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref }) {
   const secs = sectionList(qIndex);
   const total = qIndex.questions.filter(q => !q.locked).length;
   const allActive = route.startsWith("/benchmark") && !route.includes("cat=");
+  const benchActive = route.startsWith("/benchmark");
   const secLabel = n => n === "Time Off" ? "Time off" : n;
+
+  // COLLAPSED: the group can't show an inline child list, so the Benchmark
+  // icon opens a flyout popover beside the rail with all eight categories +
+  // counts. Closes on click-away/Escape. No child is ever dropped.
+  if (collapsed) {
+    const goCat = (q) => { setFlyout(false); nav(q); };
+    return html`
+      <div class="rail-flyout-wrap" ref=${ref}>
+        <button class=${"nav-item" + (benchActive ? " active" : "")} aria-label="Benchmark"
+          data-tip="Benchmark" aria-haspopup="true" aria-expanded=${flyout} onClick=${() => setFlyout(!flyout)}>
+          <${SpIcon} sp="Reward" />
+        </button>
+        ${flyout && html`
+          <div class="card rail-flyout" role="menu">
+            <div class="rail-flyout-head">Benchmark</div>
+            <button class=${"rail-flyout-item" + (allActive ? " active" : "")} role="menuitem"
+              onClick=${() => goCat("/benchmark")}>All<span class="nav-count">${total}</span></button>
+            ${secs.map(sec => html`
+              <button key=${sec.name} role="menuitem"
+                class=${"rail-flyout-item" + (route.includes("cat=" + encodeURIComponent(sec.name)) ? " active" : "")}
+                onClick=${() => goCat("/benchmark?cat=" + encodeURIComponent(sec.name))}>
+                ${secLabel(sec.name)}<span class="nav-count">${sec.count}</span></button>`)}
+          </div>`}
+      </div>`;
+  }
+
   return html`
-    <button class="nav-item nav-parent" aria-expanded=${open} onClick=${toggle}>
-      <${SpIcon} sp="Reward" /> Benchmark
+    <button class="nav-item nav-parent" aria-expanded=${open} aria-label="Benchmark" data-tip="Benchmark" onClick=${toggle}>
+      <${SpIcon} sp="Reward" /><span class="nav-txt">Benchmark</span>
       <span class=${"nav-chev" + (open ? " open" : "")}><${Icon} name="chevron-down" size=${14} /></span>
     </button>
     ${open && html`
       <button class=${"nav-item nav-child" + (allActive ? " active" : "")} onClick=${() => nav("/benchmark")}>
-        All
+        <span class="nav-txt">All</span>
         <span class="nav-count">${total}</span>
       </button>
       ${secs.map(sec => {
@@ -254,7 +317,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref }) {
         return html`
           <button key=${sec.name} class=${"nav-item nav-child" + (active ? " active" : "")}
             onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(sec.name))}>
-            ${secLabel(sec.name)}
+            <span class="nav-txt">${secLabel(sec.name)}</span>
             <span class="nav-count">${sec.count}</span>
           </button>`;
       })}`}`;
