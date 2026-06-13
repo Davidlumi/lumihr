@@ -1841,3 +1841,17 @@ reopening a gap — the signal rows now distribute space-evenly to fill the box
 (footer moved to a sibling of the list so it anchors the bottom; rows a touch
 taller). The two hero cards stay a balanced matched pair. Client-only.
 qa_hero 46/46. Cache v65->v66.
+
+## 2026-06-13 — Hero delight: ambient aurora drift + cursor spotlight
+
+Two restrained premium touches (the entrance choreography, count-ups and
+needle sweep already exist; this adds AMBIENT life, not more entrance motion).
+(1) AURORA DRIFT — the hero's background aurora wash now breathes very slowly
+(24s alternate, ~14px/scale 1.05), a living-dashboard feel; off under
+prefers-reduced-motion. (2) CURSOR SPOTLIGHT — a faint brand-blue radial (8%)
+follows the pointer across the two hero cards (gauge + signals), the tactile
+"alive" feel premium products use. Implemented as a .card-spot overlay behind
+content (z-index 0; card content lifted to z-index 1 so text stays crisp),
+positioned via direct DOM writes on mousemove (no React re-render). Verified
+content legibility unaffected. CountUp already eases out (cubic) — left as is.
+Client-only. qa_hero 46/46. Cache v66->v67.

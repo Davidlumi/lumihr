@@ -118,6 +118,19 @@ function ExportBoardPack({ me, cut }) {
 function OverviewHero({ data, cut, cuts }) {
   const m = data.hero && data.hero.market;
   const locked = data.callouts && data.callouts.gaps_locked;
+  // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
+  // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
+  useEffect(() => {
+    const onMove = (e) => {
+      const el = e.target.closest && e.target.closest(".ov-top .card");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+      el.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+    };
+    document.addEventListener("mousemove", onMove, { passive: true });
+    return () => document.removeEventListener("mousemove", onMove);
+  }, []);
   return html`
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
@@ -258,6 +271,7 @@ function OverallArc({ market }) {
 
   return html`
     <div class="card arc-card">
+      <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
       <div class="arc-stage">
         <svg viewBox="0 0 280 170" class="arc-svg" role="img"
@@ -319,6 +333,7 @@ function SignalsPanel({ signals, locked, contribution }) {
   const sigs = signals || [];
   return html`
     <div class="card signals-card">
+      <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
         <span>Signals${sigs.length ? " · " + sigs.length : ""}</span>
