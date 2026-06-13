@@ -1,32 +1,45 @@
 {
   "_readme": [
-    "ORDERED-SCALE ROUTING — Signals Phase 2 prerequisite. DAVID OWNS THIS FILE.",
-    "Scoped to the SIGNALS ordered/outlier path only. It does NOT change benchmark percentiles or the global engine — the engine-global explicit-direction fix is a separate, baselined change.",
-    "Purpose: give every ordered/outlier metric an EXPLICIT magnitude order so the signal mechanism never infers rank from option-array index (the sick-pay fault class).",
-    "scale_low_to_high: the metric's real option labels ordered by MAGNITUDE, low -> high. The org's ordinal = its band's index here. This is the source of truth; array order is ignored.",
-    "na: option labels excluded from the scale (don't-know / not-applicable / unorderable). 'Not offered'/'None' that mean a genuine floor (0) are placed at the LOW end of the scale, not in na.",
-    "lens: RECOMMENDATION only — David ratifies which outcome lens (attract/retain/engage/save) each carries.",
-    "anchor_risk: the 3 metrics whose array runs opposite to the rest; resolved here with an explicit direction + scale. Not yet in any firing set — David routes them to behind or ordered_outlier.",
-    "review_reroute: metrics the brief grouped as ordered but which are NOT magnitude scales — they must NOT fire as outliers until re-routed.",
-    "thresholds: PLACEHOLDERS for the mechanism build (Mechanism A) — to be tuned against the seed panel and revisited on a real customer panel."
+    "ORDERED-SCALE ROUTING — Signals Phase 2. DAVID OWNS THIS FILE. Scoped to the signals path; does NOT change benchmark percentiles.",
+    "Lists carry the routing split; `scales` give each ordered/outlier metric an EXPLICIT magnitude order so the mechanism never infers rank from option-array index.",
+    "scale_low_to_high: real option labels ordered by MAGNITUDE low->high (org ordinal = index here). na: excluded labels. lens: David's recommendation.",
+    "behind: global-scored position metrics (signal_lenses.json position_lenses). behind_explicit: position metrics that fire on the EXPLICIT scale here (their global score direction is unreliable).",
+    "ordered_outlier: neutral scales, fire at BOTH tails, no verdict. anchor_risk: resolved (now empty). Lists reconciled to the _david_ratified decisions."
   ],
   "thresholds": {
     "tail_pct": 20,
-    "noise_gate_max_modal_share": 0.60,
-    "min_scale_points": 3,
+    "min_modal_share": 0.35,
+    "max_org_band_share": 0.50,
     "min_n": 5
   },
-  "ordered_outlier": {
-    "EXT_REW_GAP_003": { "scale_low_to_high": ["No limits", "Informal limits apply", "Yes – clear limits apply"], "na": ["Don't know"], "lens": "retain" },
+  "behind": [
+    "ALLOW_03", "EXT_REW_GAP_002", "EXT_REW_GAP_007", "RED_PROC_04", "RED_TERM_01", "RED_TERM_02",
+    "RED_TERM_03", "REW_BEN_041", "REW_BEN_FAM_001", "REW_BEN_FAM_002", "REW_BEN_HOL_001",
+    "REW_BEN_HOL_006", "REW_BEN_SICK_001", "REW_BEN_SICK_002", "REW_FAI_CANCEL_1bbcc629",
+    "REW_FAI_MIN_HOURS_8518a543", "REW_PAY_EV_KWH_66ef252b", "REW_PAY_HOURLY_MIN_1c6e096f",
+    "REW_PRO_098", "PROP_202fecc6", "PROP_168a6213", "PROP_cdff5737", "PROP_674db2fc",
+    "PROP_d65a16e9", "PROP_c1a3da61", "PROP_d992b2ea", "PROP_34ffb6e2", "PROP_ef4ff31e",
+    "REW26_GOV_EU_PTD_PREP", "REW262_PAY_SHIFTNOTICE"
+  ],
+  "behind_explicit": ["REW_Q049530"],
+  "ordered_outlier": [
+    "EXT_REW_GAP_003", "EXT_REW_GAP_009", "EXT_REW_GAP_012", "REW_BEN_045", "REW_BEN_047",
+    "REW_BEN_048", "REW_BEN_100", "REW_BEN_102", "REW_FAI_STUDY_TIME_93b6ef22", "REW_INC_061",
+    "REW_INC_103", "REW_INC_104", "REW_PAY_005", "REW_PAY_014", "REW_PAY_097", "PROP_634adacd",
+    "PROP_3d4fc4e7", "PROP_36b990f9", "PROP_dff9a2a5", "PROP_e1d1e604", "REW_PAY_003", "PROP_8e0b6316"
+  ],
+  "anchor_risk": [],
+  "scales": {
+    "EXT_REW_GAP_003": { "scale_low_to_high": ["Yes – clear limits apply", "Informal limits apply", "No limits"], "na": ["Don't know"], "lens": "engage" },
     "EXT_REW_GAP_009": { "scale_low_to_high": ["Fully remote", "Less than once a month", "1–2 days per week", "3 or more days per week"], "na": ["Attendance varies widely", "Don't know"], "lens": "attract" },
     "EXT_REW_GAP_012": { "scale_low_to_high": ["No", "Yes – occasionally", "Yes – at least annually"], "na": ["Don't know"], "lens": "retain" },
     "REW_BEN_045": { "scale_low_to_high": ["Not offered", "1×", "2×", "3×", "4× or more"], "na": [], "lens": "retain" },
-    "REW_BEN_047": { "scale_low_to_high": ["<4 weeks", "4–13 weeks", "14–26 weeks", "27 weeks or more"], "na": ["Not applicable / not offered"], "lens": "retain", "conditional": "gate on offers income protection; percentile within the offering cohort, n>=5 on the subset" },
-    "REW_BEN_048": { "scale_low_to_high": ["<50%", "50–65%", "66–75%", "76%+"], "na": ["Not applicable / not offered"], "lens": "retain", "conditional": "gate on offers income protection; percentile within the offering cohort, n>=5 on the subset" },
+    "REW_BEN_047": { "scale_low_to_high": ["<4 weeks", "4–13 weeks", "14–26 weeks", "27 weeks or more"], "na": ["Not applicable / not offered"], "lens": "retain", "conditional": "offering-cohort only (NA NOT floor); presence -> prevalence separately" },
+    "REW_BEN_048": { "scale_low_to_high": ["<50%", "50–65%", "66–75%", "76%+"], "na": ["Not applicable / not offered"], "lens": "retain", "conditional": "offering-cohort only (NA NOT floor); presence -> prevalence separately" },
     "REW_BEN_100": { "scale_low_to_high": ["Not offered", "<10%", "10–24%", "25–49%", "50–74%", "75%+"], "na": [], "lens": "retain" },
     "REW_BEN_102": { "scale_low_to_high": ["Not offered", "<10%", "10–24%", "25–49%", "50%+"], "na": [], "lens": "save" },
     "REW_FAI_STUDY_TIME_93b6ef22": { "scale_low_to_high": ["No – study undertaken in personal time", "Yes – limited paid study time", "Yes – paid study leave provided"], "na": ["Not applicable"], "lens": "engage" },
-    "REW_INC_061": { "scale_low_to_high": ["0%", "1%–10%", "11%–20%", "21%–30%", "31%–40%", "41%–50%", "51%–60%", "61%–70%", "71%–80%", "81%–90%", "91%–100%"], "na": [], "lens": "attract", "note": "carries the long-standing REW_INC_061 data flag — confirm distribution before relying on it" },
+    "REW_INC_061": { "scale_low_to_high": ["0%", "1%–10%", "11%–20%", "21%–30%", "31%–40%", "41%–50%", "51%–60%", "61%–70%", "71%–80%", "81%–90%", "91%–100%"], "na": [], "lens": "attract", "note": "long-standing REW_INC_061 data flag — confirm distribution" },
     "REW_INC_103": { "scale_low_to_high": ["None", "<10%", "10–24%", "25–49%", "50–74%", "75%+"], "na": [], "lens": "attract" },
     "REW_INC_104": { "scale_low_to_high": ["<50%", "50–69%", "70–79%", "80–89%", "90%–100%"], "na": ["Not applicable"], "lens": "engage" },
     "REW_PAY_005": { "scale_low_to_high": ["Below Market", "Slightly Below", "On Market", "Slightly Above", "Above Market"], "na": ["Not applicable / Don't know"], "lens": "attract" },
@@ -36,15 +49,28 @@
     "PROP_3d4fc4e7": { "scale_low_to_high": ["0%", "1%–24%", "25%–49%", "50%–74%", "75%–94%", "95%–100%"], "na": ["Not measured"], "lens": "engage" },
     "PROP_36b990f9": { "scale_low_to_high": ["<3%", "3%–4%", "5%–7%", "8%–10%", "11%+"], "na": ["Varies widely", "Not applicable / not offered", "Don't know"], "lens": "retain" },
     "PROP_dff9a2a5": { "scale_low_to_high": ["0%", "1%–24%", "25%–49%", "50%–74%", "75%–94%", "95%–100%"], "na": ["Not measured"], "lens": "retain" },
-    "PROP_e1d1e604": { "scale_low_to_high": ["0–5%", "6–10%", "11–20%", "21–30%", "31%+"], "na": ["Not measured / not tracked", "Don't know"], "lens": "retain" }
+    "PROP_e1d1e604": { "scale_low_to_high": ["0–5%", "6–10%", "11–20%", "21–30%", "31%+"], "na": ["Not measured / not tracked", "Don't know"], "lens": "retain" },
+    "REW_PAY_003": { "scale_low_to_high": ["Not reviewed", "Ad hoc", "Annually", "Biannually", "Quarterly"], "na": [], "lens": "attract" },
+    "PROP_8e0b6316": { "scale_low_to_high": ["No regular cycle (ad hoc)", "Annually", "Twice a year", "Quarterly"], "na": ["Not applicable (no pay review)", "Don't know"], "lens": "attract" },
+    "REW_Q049530": { "scale_low_to_high": ["No Minimum", "4k-5k", "6k-7k", "8k-9k", "10k", "11k+"], "na": ["Not Applicable"], "lens": "retain", "direction": "lower_is_better" }
   },
-  "anchor_risk": {
-    "REW_Q049530": { "direction": "lower_is_better", "scale_low_to_high": ["No Minimum", "4k-5k", "6k-7k", "8k-9k", "10k", "11k+"], "na": ["Not Applicable"], "lens": "retain", "note": "a LOW mileage threshold is the generous end (per brief). Resolved; not yet in a firing set." },
-    "REW_PAY_003": { "direction": "higher_is_better", "scale_low_to_high": ["Not reviewed", "Ad hoc", "Annually", "Biannually", "Quarterly"], "na": [], "lens": "attract", "note": "more frequent review is better. Resolved; not yet in a firing set." },
-    "PROP_8e0b6316": { "direction": "higher_is_better", "scale_low_to_high": ["No regular cycle (ad hoc)", "Annually", "Twice a year", "Quarterly"], "na": ["Not applicable (no pay review)", "Don't know"], "lens": "attract", "note": "more frequent review is better; array was non-monotonic ('No regular cycle' listed after Quarterly). Resolved; not yet in a firing set." }
-  },
-  "review_reroute": {
-    "REW_PRO_035": { "reason": "NOMINAL, not a magnitude scale — performance-led vs tenure-led vs combination has no high/low end. Must not fire as an ordered-outlier. David: re-route (prevalence) or drop." },
-    "REW_PAY_TIPS_EXIST_7c80c508": { "reason": "BINARY yes/no (tips received or not) — belongs in Phase 3 prevalence, not the ordered-outlier path." }
+  "_david_ratified_2026_06_13": {
+    "reroute_to_phase3_prevalence": [
+      "REW_PRO_035",
+      "REW_PAY_TIPS_EXIST_7c80c508"
+    ],
+    "anchor_risk_resolution": {
+      "REW_Q049530": "behind-percentile, lower_is_better (low mileage threshold = generous)",
+      "REW_PAY_003": "ordered-outlier (both tails, no verdict)",
+      "PROP_8e0b6316": "ordered-outlier (both tails) — UNPARK into ordered-outlier set; author scale ad-hoc->annual->twice->quarterly"
+    },
+    "na_handling": "FLOOR by default (None/Not-offered = bottom of scale).",
+    "na_carve_outs": {
+      "REW_BEN_047": "CONDITIONAL: presence fires prevalence; waiting-period generosity fires within offering-cohort only, n>=5 on subset",
+      "REW_BEN_048": "CONDITIONAL: same split as 047"
+    },
+    "direction_recheck": {
+      "EXT_REW_GAP_003": "'No limits' may be the generous/top end, not floor — agent verify scale direction before firing"
+    }
   }
 }

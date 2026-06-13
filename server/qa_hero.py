@@ -274,6 +274,19 @@ DIRECTIVE = ("should", "must", "we recommend", "you need to", "increase your", "
 check("signal wording is factual, never a directive",
       all(not any(d in x["detail"].lower() for d in DIRECTIVE) for x in sigs),
       [x["detail"] for x in sigs if any(d in x["detail"].lower() for d in DIRECTIVE)])
+# Ordered-outlier (Signals Phase 2): states position + peer fact, NEVER a verdict.
+import json as _j2, os as _os2
+_ord = _j2.load(open(_os2.path.join(_os2.path.dirname(_os2.path.abspath(__file__)), "..", "ordered_scale_routing.json")))
+_out_sigs = [x for x in sigs if x["kind"] == "outlier"]
+VERDICT = ("behind", "ahead", "better", "worse", "lagging", "leading", "you should", "underperform")
+check("ordered-outlier signals carry no verdict word (position + peer fact only)",
+      all(not any(v in x["detail"].lower() for v in VERDICT) for x in _out_sigs),
+      [x["question_id"] for x in _out_sigs if any(v in x["detail"].lower() for v in VERDICT)])
+check("every ordered-outlier signal fires off an EXPLICIT scale (no index inference)",
+      all(x["question_id"] in _ord.get("scales", {}) and x["question_id"] in _ord.get("ordered_outlier", []) for x in _out_sigs),
+      [x["question_id"] for x in _out_sigs if x["question_id"] not in _ord.get("scales", {})])
+check("Phase-3 re-routed metrics never fire as ordered-outlier",
+      not (set(_ord.get("_david_ratified_2026_06_13", {}).get("reroute_to_phase3_prevalence", [])) & {x["question_id"] for x in _out_sigs}))
 dots = {d["name"]: d.get("dot") for d in ov_sig["hero"]["domains"]}
 check("category dots sit in [1,99] where present",
       all(v is None or (1 <= v <= 99) for v in dots.values()), dots)

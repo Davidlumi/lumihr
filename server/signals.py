@@ -49,6 +49,62 @@ def lens_config():
     return _cache["cfg"]
 
 
+ORD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ordered_scale_routing.json")
+_ord_cache = {"mtime": None, "cfg": {}}
+
+
+def ordered_routing():
+    """Hot-reloaded ordered-scale routing (David-owned). Gives ordered metrics an
+    EXPLICIT magnitude order so the outlier mechanism never infers rank from the
+    option array (the sick-pay fault class)."""
+    try:
+        mt = os.path.getmtime(ORD_PATH)
+    except OSError:
+        return _ord_cache["cfg"]
+    if _ord_cache["mtime"] != mt:
+        try:
+            with open(ORD_PATH) as f:
+                _ord_cache["cfg"] = json.load(f)
+            _ord_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _ord_cache["cfg"]
+
+
+def _ordinal_stats(block, scale, org_label):
+    """Org's ordinal position on an EXPLICIT magnitude scale vs the peer
+    distribution. Peers answering off-scale (NA / unplaced) are excluded — for
+    income-protection terms this naturally scopes to the offering cohort.
+    Returns None when the block is suppressed or the org is off-scale."""
+    if not block or block.get("suppressed"):
+        return None
+    idx = {lab: i for i, lab in enumerate(scale)}
+    if org_label not in idx:
+        return None
+    has_counts = any(o.get("count") is not None for o in (block.get("options") or []))
+    dist, n = {}, 0.0
+    for o in block.get("options") or []:
+        if o["label"] in idx:
+            c = o.get("count") if has_counts else o.get("pct", 0)
+            c = c or 0
+            dist[idx[o["label"]]] = dist.get(idx[o["label"]], 0) + c
+            n += c
+    if n <= 0:
+        return None
+    org = idx[org_label]
+    below = sum(c for k, c in dist.items() if k < org)
+    at = dist.get(org, 0)
+    cum, median = 0.0, max(dist)
+    for k in sorted(dist):
+        cum += dist[k]
+        if cum >= n * 0.5:
+            median = k
+            break
+    return {"org_ord": org, "pct": 100.0 * (below + 0.5 * at) / n, "median_ord": median,
+            "modal_share": max(dist.values()) / n, "org_band_share": at / n,
+            "n_placed": int(round(n)) if has_counts else block.get("n", 0)}
+
+
 def _short(title, row=None):
     """A terse display label for the dashboard (the full fact stays in
     `detail` for the tooltip): strip boilerplate, keep the essence."""
@@ -192,6 +248,48 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
                 "impact": 10000 + adoption * 10,
             })
             seen_q.add(qid)
+
+    # 5) ORDERED-OUTLIER (neutral scales, BOTH tails, NO verdict). The org's
+    # ordinal comes from an EXPLICIT magnitude scale (ordered_scale_routing.json),
+    # never the option-array index. We state the position + the peer fact; the
+    # user judges whether their end is good or bad. Off-scale (NA) peers are
+    # excluded — for income-protection terms this scopes to the offering cohort.
+    ordr = ordered_routing()
+    oth = ordr.get("thresholds", {})
+    tail_pct = oth.get("tail_pct", 20)
+    min_modal = oth.get("min_modal_share", 0.35)
+    max_band = oth.get("max_org_band_share", 0.50)
+    min_n = oth.get("min_n", 5)
+    scales = ordr.get("scales", {})
+    for qid in ordr.get("ordered_outlier", []):
+        if qid in seen_q:
+            continue
+        q = questions.get(qid)
+        spec = scales.get(qid)
+        mine = org_answers.get((qid, ""))
+        if q is None or not spec or mine in (None, ""):
+            continue
+        st = _ordinal_stats(get_block(qid), spec["scale_low_to_high"], mine)
+        if not st or st["n_placed"] < min_n:
+            continue
+        # noise gate: a meaningful tail needs a discernible norm (modal band big
+        # enough) AND the org must not itself be that norm.
+        if st["modal_share"] < min_modal or st["org_band_share"] >= max_band:
+            continue
+        if not (st["pct"] <= tail_pct or st["pct"] >= 100 - tail_pct):
+            continue
+        high = st["pct"] >= 50
+        med = spec["scale_low_to_high"][st["median_ord"]]
+        short = _short(q.display_title)
+        out.append({
+            "lens": spec.get("lens", "engage"), "kind": "outlier", "question_id": qid,
+            "value_display": mine,
+            "label_short": "%s · %s end" % (short, "top" if high else "bottom"),
+            "detail": "%s sits at the %s of your peer group — %s (peer median %s)" % (
+                short, "top end" if high else "bottom end", mine, med),
+            "impact": 30000 + abs(st["pct"] - 50) * 200,
+        })
+        seen_q.add(qid)
 
     # rank by impact, balance the briefing: at most max_per_lens per lens
     out.sort(key=lambda s: -s["impact"])

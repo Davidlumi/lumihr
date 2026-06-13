@@ -2224,3 +2224,37 @@ on a validated explicit-direction footing.
 FOR DAVID: ratify the 20 lens recommendations; confirm the 2 re-routes; decide
 where the 3 parked anchor-risk metrics fire; sanity-check the NA classifications
 and the REW_INC_061 data flag.
+
+## 2026-06-13 — Signals Phase 2 Mechanism A: ordered-outlier (BUILT + verified)
+Built against David's ratified routing. Reconciled ordered_scale_routing.json
+to the ratifications: ordered_outlier = 22 (20 validated + REW_PAY_003 +
+PROP_8e0b6316 unparked); REW_Q049530 -> behind_explicit (lower_is_better);
+REW_PRO_035 + REW_PAY_TIPS_EXIST re-routed to Phase 3 (held out); anchor_risk
+emptied. Re-added explicit `scales` (David's edit had stripped them) and FIXED
+EXT_REW_GAP_003 per his recheck ("No limits" = generous top end, not floor).
+Mechanism A (signals.py): a hot-reloaded routing loader + _ordinal_stats —
+the org's ordinal comes from the EXPLICIT scale_low_to_high (never option-array
+index). Fires at BOTH tails with NO verdict ("X sits at the top/bottom end —
+band; peer median band"). Noise gate: modal_share>=0.35 (a discernible norm
+exists) AND org_band_share<0.50 (org isn't itself the norm) AND tail_pct<=20.
+n>=5 on the placed (on-scale) cohort — which for income-protection terms
+(047/048) naturally scopes to the offering cohort since their NA is excluded
+from the scale (David's carve-out (b)).
+VERIFIED on Thornbridge (caps lifted): 6 ordered-outlier fire, all correct and
+verdict-free. Notably PROP_8e0b6316 (the ex-anchor-risk metric) fired CORRECTLY
+("Pay review cycle at the top end — Quarterly; peer median Annually") via the
+explicit scale — the index path would have flipped it. REW_BEN_045 reproduced
+the brief's textbook case ("Life assurance cover at the top end — 4x; peer
+median 1x"). Gates: qa_ordered_routing 10/10, qa_scores 3/3, qa_hero 50/50 (+3:
+no outlier verdict word; every outlier off an explicit scale; re-routes never
+fire). Dashboard renders, capped, no verdicts, no console errors.
+FLAG (David's call): outliers DON'T reach Thornbridge's capped top-5 — behind
+impact (100k) out-ranks outlier (30k) and there are enough behinds to fill the
+5 slots. They fire (uncapped) and surface for behind-light orgs, but to put the
+new mechanism in front of behind-heavy orgs the briefing cap needs kind/lens
+diversity (round-robin or per-kind cap), not pure impact tiering. Not changed
+unilaterally — it alters the Phase-1 briefing balance David owns.
+DEFERRED to the next pass (foundation now in place): Mechanism B (depth-of-
+provision matrices, 5), behind_explicit firing for REW_Q049530 (directed bad-
+tail), and the presence->prevalence half of the 047/048 carve-out (a
+prevalence_lenses add).
