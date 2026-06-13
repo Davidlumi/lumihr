@@ -2258,3 +2258,28 @@ DEFERRED to the next pass (foundation now in place): Mechanism B (depth-of-
 provision matrices, 5), behind_explicit firing for REW_Q049530 (directed bad-
 tail), and the presence->prevalence half of the 047/048 carve-out (a
 prevalence_lenses add).
+
+## 2026-06-13 — Signals Phase 2 cont. (1/2): briefing cap + threshold confirm
+Re-materialised the reconciled routing (David's working-tree edit had reverted
+scales/lists to the decisions form) and MERGED his new briefing_cap ratification
+into it; qa_ordered_routing 10/10.
+BRIEFING CAP (David-ratified hard reserve, signals.py cap_briefing): up to 3
+behind in the top 5; the other 2 reserved for non-behind kinds by impact; if <2
+non-behind exist the reserved slots fall back to the next behind — always 5 when
+5 exist, never blank, never a silently dropped signal; per-lens cap (2/lens)
+stays on top. Extracted as a pure function and unit-tested: 5-behind/3-lenses->5,
+4-behind+1-outlier->5 (fallback), 5-behind/2-lenses->4 (per-lens binds). qa_hero
+50/50.
+VERIFIED on Thornbridge: the cap now surfaces an outlier in the top-5
+(PROP_8e0b6316). FINDING vs the brief's "both REW_BEN_045 AND PROP_8e0b6316
+reach top-5": only PROP_8e0b6316 does. REW_BEN_045 is blocked because (a) money
+takes one of the 2 non-behind reserve slots and (b) REW_BEN_045's retain lens is
+already full (money + a retain behind, per-lens cap 2). Working as ratified —
+both outliers would need a larger reserve, money excluded from the reserve, or a
+relaxed per-lens cap. All tunable; flagged for David.
+THRESHOLD (ordered-outlier noise gate, modal_share): reported 0.35 vs 0.50 on
+Thornbridge — 0.35 fires 6, 0.50 fires only 2. The 4 lost at 0.50 (modal
+0.39–0.48) include the textbook REW_BEN_045 (4x life cover, modal 0.43, pct
+93.6). For ordered scales "a meaningful tail" != "one band >50%". RECOMMEND KEEP
+0.35 (matches the ~35% panel modal median); flagged panel-tunable. Mechanism B
+uses the same gate.

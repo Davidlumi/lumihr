@@ -291,18 +291,50 @@ def build_signals(items, opportunity, questions, get_block, org_answers):
         })
         seen_q.add(qid)
 
-    # rank by impact, balance the briefing: at most max_per_lens per lens
-    out.sort(key=lambda s: -s["impact"])
-    capped, per_lens = [], {}
-    max_per = cfg.get("max_per_lens", 2)
-    for s in out:
-        if per_lens.get(s["lens"], 0) >= max_per:
-            continue
-        per_lens[s["lens"]] = per_lens.get(s["lens"], 0) + 1
+    cap_cfg = (ordered_routing().get("_david_ratified_2026_06_13", {}) or {}).get("briefing_cap", {})
+    capped = cap_briefing(out, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
+                          cap_cfg.get("max_behind", 3))
+    for s in capped:
         s.pop("impact", None)
+    return capped
+
+
+def cap_briefing(out, max_signals=5, max_per_lens=2, max_behind=3):
+    """David-ratified HARD RESERVE so behind signals don't crowd out the newer
+    mechanisms. Up to max_behind behind; the rest reserved for non-behind kinds,
+    filled by impact. If too few non-behind exist, unfilled reserved slots fall
+    back to the next-highest behind — always max_signals when that many exist
+    (within the per-lens cap), never a blank slot, never a silently dropped
+    signal. Reserve size is panel-tunable."""
+    out = sorted(out, key=lambda s: -s["impact"])
+    reserve_nb = max(0, max_signals - max_behind)
+    capped, per_lens = [], {}
+
+    def room(s):
+        return per_lens.get(s["lens"], 0) < max_per_lens
+
+    def add(s):
+        per_lens[s["lens"]] = per_lens.get(s["lens"], 0) + 1
         capped.append(s)
-        if len(capped) >= cfg.get("max_signals", 5):
+
+    bh = nb = 0
+    for s in out:                                  # pass 1: behind<=max_behind + reserve non-behind
+        if len(capped) >= max_signals:
             break
+        if not room(s):
+            continue
+        if s["kind"] == "behind":
+            if bh < max_behind:
+                add(s); bh += 1
+        elif nb < reserve_nb:
+            add(s); nb += 1
+    if len(capped) < max_signals:                  # pass 2: fallback — fill remaining by impact
+        taken = {id(s) for s in capped}
+        for s in out:
+            if len(capped) >= max_signals:
+                break
+            if id(s) not in taken and room(s):
+                add(s)
     return capped
 
 
