@@ -886,6 +886,15 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
       <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
     </div>`;
 
+  const cardStale = card && card.cut && (card.cut.dim !== sel.dim
+    || (card.cut.value || null) !== (sel.value || null));
+  if (!card || cardStale) return html`
+    <div>
+      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "10px" }}></div>
+      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "18px" }}></div>
+      <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
+    </div>`;
+
   const c = card;
   const pos = cardPosition(c);
   const sent = humanSentence(c);

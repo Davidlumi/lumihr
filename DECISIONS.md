@@ -1896,3 +1896,18 @@ REGRESSION GATE — added two assertions to qa_focus (now 28): the metric
 endpoint must apply a sector cut (n differs from all-peers) and must label the
 cut it actually used (no all-peers fallback), so an engine-side regression of
 this class can't ship silently. Client+gate only.
+
+## 2026-06-13 — Metric page: stale-card guard (peer-set/graph can't disagree)
+
+Follow-up to the sector-cut fix. A screenshot showed the metric dropdown on
+"Logistics" while the graph still read "All peers · n=220". The server is
+correct (Logistics returns n=15) and the current build reproduces correctly
+in every sequence tested — the symptom is consistent with a STALE BROWSER
+CACHE running pre-fix JS. To make the contradiction impossible regardless of
+cache or any future regression: MetricPage now refuses to render a card whose
+cut doesn't match the active selection — if card.cut != sel (stale during a
+refetch, or otherwise), it shows the loading skeleton instead of data under
+the wrong peer-set label. Verified across all cut kinds (all/industry/
+fte_band/twin/group — card.cut carries dim+value for each, so no false
+"stale" positives). The dropdown and graph can no longer disagree. Client-
+only. qa_focus 28/28. Cache v68->v69 (forces fresh JS on next load).
