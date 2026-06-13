@@ -1871,3 +1871,28 @@ size band" list (from cuts.industries / cuts.fte_bands) so a sector can be
 explored from the page itself. Verified: Retail n=15 (26.7/80/40) vs All
 peers n=220 (45.5/41.4/32.3) now switch correctly. Client-only. qa_focus
 26/26. Cache v67->v68.
+
+## 2026-06-13 — Cut-resolution debug sweep (does the bug appear elsewhere?)
+
+Triggered by the metric-page sector bug. Audited both layers; the bug was
+ISOLATED to MetricPage and is fixed — it does not recur anywhere else.
+
+FRONT END — grepped every cut-resolution path: the global peer-set selector
+(passes cut.value), the card kebab override (passes override.split("::")
+verbatim), and cutLabelOf (label-only org fallback, not a data cut) are all
+correct. Only MetricPage.globalSel re-derived the value from org.* — fixed.
+
+ENGINE — wrote a sweep over ALL 206 active metrics across the top 6 sectors +
+top 4 size bands: 0 "cut-ignored" (no metric returns the all-peers block under
+a cut label — resolve_block returns None/suppressed when a cut value is
+absent, so there is no silent all-peers fallback) and 0 "never-cuttable".
+
+FULL HTTP STACK — probed one metric of EACH type through /api/benchmark across
+all-peers vs two sectors: numeric (p50 37->21->20), single_select, yes_no,
+multi_select and matrix all change distribution + n correctly. Cut-sensitive
+end to end for every type.
+
+REGRESSION GATE — added two assertions to qa_focus (now 28): the metric
+endpoint must apply a sector cut (n differs from all-peers) and must label the
+cut it actually used (no all-peers fallback), so an engine-side regression of
+this class can't ship silently. Client+gate only.

@@ -95,6 +95,16 @@ check("board pack honours the n>=5 suppression floor (no sub-floor figure export
       not _sub_floor, _sub_floor)
 check("board pack gap-register rows are all unsuppressed",
       all(not r.get("suppressed", False) for r in _pl.get("gap_register_top", [])))
+# cut sensitivity (2026-06-13): the single-metric endpoint must genuinely apply
+# a sector cut — a regression here is what the user hit on the metric page.
+# All-peers vs a sector must differ in n (and not silently fall back to all).
+st, b_all = api("/api/benchmark/ALLOW_01?cut=all")
+st, b_sec = api("/api/benchmark/ALLOW_01?cut=industry&cut_value=Retail%20%26%20Consumer%20Goods")
+check("metric endpoint applies a sector cut (n differs from all-peers)",
+      b_all.get("n") and b_sec.get("n") and b_sec["n"] != b_all["n"],
+      (b_all.get("n"), b_sec.get("n")))
+check("metric endpoint labels the cut it actually used (no all-peers fallback)",
+      (b_sec.get("cut") or {}).get("label") == "Retail & Consumer Goods", b_sec.get("cut"))
 # share
 st, sh = api("/api/shares", "POST", {"kind": "dashboard", "config": {"cut": {"dim": "all"}}, "expiry_days": 7})
 anon_jar = http.cookiejar.CookieJar()
