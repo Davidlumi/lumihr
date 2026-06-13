@@ -2189,3 +2189,38 @@ FOR DAVID (data fixes, firewall — change computed positions, need sign-off):
      can build the explicit-direction field + an "every ordered metric has one"
      assertion once ratified. qa_scores.py is the interim enforcement.
 PREREQUISITE for Phase 2 (its ordered mechanisms read these same ladders).
+
+## 2026-06-13 — Signals Phase 2 PREREQUISITE: explicit ordered-scale routing (no index inference)
+Per David's steer: explicit direction lives in a routing JSON, scoped to the
+signals/ordered-outlier path — NO engine-global DB write (that ~60-percentile
+firewall change is its own baselined tracked change, not part of a signals
+build). The Phase-2 mechanism spec/routing handoff docs were absent, so this is
+authored from the brief and flagged for David's review on the judgment calls.
+Built ordered_scale_routing.json (David-owned, hot-reloads): every ordered
+metric gets an EXPLICIT scale_low_to_high (real option labels ordered by
+magnitude) so the new mechanism reads the org's ordinal from an authored scale,
+never from option-array index. Split:
+  • ordered_outlier: 20 metrics, each with explicit magnitude scale + NA list +
+    lens RECOMMENDATION (David ratifies). "Not offered"/"None" floors placed at
+    the LOW end (a genuine outlier), true NA/Don't-know excluded.
+  • anchor_risk: 3 (REW_Q049530 lower_is_better; REW_PAY_003 + PROP_8e0b6316
+    higher_is_better) — resolved with explicit direction + scale, PARKED (not in
+    any firing set; David routes them to behind or ordered_outlier).
+  • review_reroute: 2 HELD as non-ordinal — REW_PRO_035 (nominal: performance vs
+    tenure, no high/low end) and REW_PAY_TIPS_EXIST (binary -> Phase 3
+    prevalence). They must not fire as outliers.
+Validator qa_ordered_routing.py (11/11): every scale label matches a real
+option (no typos), every non-NA option is placed (nothing silently dropped),
+>=3 points per scale, anchor-risk carry explicit direction and stay out of the
+firing set, every brief id is homed. This IS the "explicit direction, no index
+inference" assertion.
+REW_BEN_SICK_001 stays HELD (its scoring fix is a firewall DB change, deferred
+to the separate global-direction work — not folded into signals). qa_scores
+still green.
+NEXT (not built this turn): Mechanism A (ordered-outlier firing: ordinal
+percentile from the explicit scale, both tails, noise gate, n>=5, conditional
+cohort for REW_BEN_047/048) and Mechanism B (depth-of-provision matrices) — now
+on a validated explicit-direction footing.
+FOR DAVID: ratify the 20 lens recommendations; confirm the 2 re-routes; decide
+where the 3 parked anchor-risk metrics fire; sanity-check the NA classifications
+and the REW_INC_061 data flag.
