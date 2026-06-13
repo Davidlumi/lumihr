@@ -1,6 +1,6 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, RailItem,
+   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
@@ -133,6 +133,7 @@ function App() {
     page = html`<${HowLumiWorksPage} me=${me} anchor=${anchor} />`;
   }
   else if (route.startsWith("/methodology")) { nav("/how-lumi-works/calculations"); page = null; }
+  else if (route.startsWith("/signals")) page = html`<${SignalsPage} me=${me} />`;
   else if (route.startsWith("/priorities")) page = html`<${GapRegisterPage} ...${pageProps} />`;
   else if (route.startsWith("/team")) page = me.user.role === "admin"
     ? html`<${TeamPage} me=${me} />`
@@ -166,6 +167,7 @@ function App() {
         <div class="nav-group">
           <${RailItem} route=${route} path="/overview" icon="home" label="Overview" />
           <${RailItem} route=${route} path="/myview" icon="star" label="My view" />
+          <${RailItem} route=${route} path="/signals" icon="flag" label="Signals" />
           ${/* Reserved slot (chrome spec section 1.4): the Signals nav item ships
                here, between Overview/My view and Priorities. Render nothing now. */ ""}
           <${RailItem} route=${route} path="/priorities" icon="list-checks" label="Priorities" />

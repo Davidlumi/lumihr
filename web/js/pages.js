@@ -373,6 +373,72 @@ function SignalsPanel({ signals, locked, contribution }) {
     </div>`;
 }
 
+/* The dedicated Signals explore page — the WHOLE organisation's flags, not the
+   home's capped briefing. Grouped by outcome lens (attract / retain / engage /
+   save), filterable, each row the peer fact with a click through to the metric.
+   Flags, never advice: the user decides whether each difference is good or bad. */
+const LENS_ORDER = ["attract", "retain", "engage", "save"];
+const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Save" };
+const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
+  engage: "how people experience work", save: "where your spend sits vs peers" };
+const KIND_LABEL = { money: "£ gap", save: "cost", behind: "position", prevalence: "peers do this",
+  outlier: "you're at an end", depth: "how far it reaches", rare: "rare choice" };
+window.SignalsPage = function ({ me }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [filter, setFilter] = useState("all");
+  useEffect(() => { api("/api/overview").then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const all = data.signals_all || [];
+  const locked = data.callouts && data.callouts.gaps_locked;
+  const byLens = {}; LENS_ORDER.forEach(l => { byLens[l] = all.filter(s => s.lens === l); });
+  const shown = filter === "all" ? LENS_ORDER : [filter];
+  return html`
+    <div class="signals-page" style=${{ maxWidth: "880px" }}>
+      <h1 class="display-title" style=${{ marginBottom: "4px" }}>Signals</h1>
+      <p style=${{ maxWidth: "660px", marginTop: 0 }}>Where to look across your whole organisation — every peer-grounded flag, not just the home shortlist. Each one shows where you differ and the peer fact behind it; <b>you decide</b> whether being different is good or bad. Never advice.</p>
+      ${locked ? html`
+        <div class="insight-lock" style=${{ maxWidth: "520px", marginTop: "var(--s5)" }}>
+          <div class="lock-note">
+            <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+            <div class="caption" style=${{ textAlign: "center", maxWidth: "300px" }}>
+              Signals unlock with your insights — complete your key reward questions${data.contribution && data.contribution.days_left != null ? ` (${data.contribution.days_left} days left)` : ""}.</div>
+            <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit your data</button>
+          </div>
+        </div>` :
+      all.length === 0 ? html`
+        <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
+          <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
+          <div class="caption" style=${{ maxWidth: "340px" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
+        </div>` : html`
+        <div class="sig-filters">
+          <button class=${"sig-chip" + (filter === "all" ? " on" : "")} onClick=${() => setFilter("all")}>All <span class="num">${all.length}</span></button>
+          ${LENS_ORDER.map(l => html`<button key=${l} class=${"sig-chip lens-" + l + (filter === l ? " on" : "")} onClick=${() => setFilter(l)}>
+            <${Icon} name=${LENS_ICON[l]} size=${12} /> ${LENS_LABEL[l]} <span class="num">${byLens[l].length}</span></button>`)}
+        </div>
+        ${shown.filter(l => byLens[l].length).map(l => html`
+          <section key=${l} class="sig-lens-sec">
+            <div class=${"sig-lens-head lens-" + l}>
+              <span class="signal-roundel"><${Icon} name=${LENS_ICON[l]} size=${15} /></span>
+              <b>${LENS_LABEL[l]}</b>
+              <span class="caption">${LENS_DESC[l]} · ${byLens[l].length} flag${byLens[l].length !== 1 ? "s" : ""}</span>
+            </div>
+            <div class="signals-list">
+              ${byLens[l].map((s, i) => html`
+                <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0"
+                  onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
+                  <span class="signal-val num">${s.value_display}</span>
+                  <span class="signal-detail" title=${s.detail}>${s.detail}</span>
+                  <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
+                  <span class="signal-go" aria-hidden="true">→</span>
+                </div>`)}
+            </div>
+          </section>`)}
+        <div class="caption" style=${{ marginTop: "var(--s4)" }}>Tap any flag to open the metric behind it. Signals are facts about where you differ from peers — what to do about them is your call.</div>`}
+    </div>`;
+};
+
 function CategoryTile({ d }) {
   const post = d.position || d.market;
   const verdict = post ? post.verdict : null;

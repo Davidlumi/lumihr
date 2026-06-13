@@ -2398,3 +2398,25 @@ FINDINGS FOR DAVID (flag, not fixed):
 STATUS: the Signals system is coherent and launch-ready on the seed panel; all
 thresholds are seed-panel values to revisit on a real customer panel; lenses
 remain David's desk-ratification pass.
+
+## 2026-06-13 — Dedicated Signals explore section (whole-org view)
+The home dashboard only shows the capped top-5 briefing; built a dedicated page
+so the user can see and explore EVERY signal across their organisation.
+BACKEND: signals.build_signals gains a `cap` param — cap=False returns the full
+impact-ranked set (no briefing reserve). /api/overview now returns `signals_all`
+(full) alongside `signals` (capped home set). One extra build_signals call per
+overview (the depth mechanism's 5 small SELECTs); home behaviour unchanged.
+FRONTEND: SignalsPage (web/js/pages.js) — fetches /api/overview, renders
+signals_all grouped by OUTCOME LENS (Attract / Retain / Engage / Save) with a
+one-line description each, filter chips (All + per-lens counts), and rows reusing
+the home's lens-tinted .signal-row (value badge, full peer-fact detail, a "how it
+flagged" kind chip — £ gap / position / peers do this / you're at an end / how
+far it reaches / rare choice — and click-through to the metric). Flags-never-
+advice framing up top ("you decide whether being different is good or bad").
+Locked + empty states mirror the home panel. Route /signals + sidebar RailItem
+"Signals" (flag icon, between My view and Priorities). CSS reuses signal-row,
+adds .sig-filters/.sig-chip/.sig-lens-head/.sig-kind. Cache v86 -> v87.
+VERIFIED on Thornbridge: 39 flags across 4 lenses (attract 5 / retain 17 /
+engage 10 / save 7, all 6 kinds), lens filter works, nav present + active,
+mobile no horizontal overflow, no console errors. qa_focus 28/28,
+qa_signals_system 8/8.

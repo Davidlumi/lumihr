@@ -691,6 +691,31 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row.lens-attract:hover { box-shadow: inset 3px 0 0 var(--lens-attract), 0 8px 22px rgba(109,91,208,.18); }
 .signal-row.lens-retain:hover  { box-shadow: inset 3px 0 0 var(--lens-retain), 0 8px 22px rgba(14,122,138,.16); }
 .signal-row.lens-engage:hover  { box-shadow: inset 3px 0 0 var(--lens-engage), 0 8px 22px rgba(194,84,46,.16); }
+/* ---- dedicated Signals explore page (2026-06-13) ---- */
+.signals-page .sig-filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
+.sig-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px;
+  border: 1px solid var(--chrome-edge, var(--border)); background: var(--surface); color: var(--ink-soft);
+  font-size: var(--fs-label); font-weight: 600; cursor: pointer; transition: all .12s ease; }
+.sig-chip:hover { border-color: var(--ink-soft); color: var(--ink); }
+.sig-chip .num { font-variant-numeric: tabular-nums; opacity: .7; }
+.sig-chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.sig-chip.on .num { opacity: .85; }
+.sig-chip.lens-save.on    { background: var(--lens-save); border-color: var(--lens-save); }
+.sig-chip.lens-attract.on { background: var(--lens-attract); border-color: var(--lens-attract); }
+.sig-chip.lens-retain.on  { background: var(--lens-retain); border-color: var(--lens-retain); }
+.sig-chip.lens-engage.on  { background: var(--lens-engage); border-color: var(--lens-engage); }
+.sig-lens-sec { margin-bottom: var(--s5); }
+.sig-lens-head { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s2);
+  padding-bottom: var(--s2); border-bottom: 1px solid var(--chart-grid); }
+.sig-lens-head b { font-size: var(--fs-body); }
+.sig-lens-head.lens-save svg    { color: var(--lens-save); }
+.sig-lens-head.lens-attract svg { color: var(--lens-attract); }
+.sig-lens-head.lens-retain svg  { color: var(--lens-retain); }
+.sig-lens-head.lens-engage svg  { color: var(--lens-engage); }
+.signals-page .signal-detail { font-size: var(--fs-body); }
+.sig-kind { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap; opacity: .75; padding: 2px 8px; border-radius: 7px;
+  background: color-mix(in srgb, currentColor 12%, transparent); }
 .band-tick { position: absolute; left: 50%; top: -2px; width: 1.5px; height: calc(100% + 4px);
   background: var(--chart-axis); opacity: .7; border-radius: 1px; }
 .cat-tile:hover { box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,.85); }
