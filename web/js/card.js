@@ -303,32 +303,75 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
    prevalence — quiet peers, bold you, no fabricated quartiles. */
 window.MatrixSelect = function ({ rows, showValues }) {
   const live = (rows || []).filter(r => !r.suppressed && r.block && r.block.options);
-  const CAT = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)"];
+  // Colour by BAND, not by the row-local option index: the same band (e.g.
+  // "8 weeks") must be one colour in EVERY row, or the split is unreadable and
+  // a legend is impossible. Rows carry their options in the column's ordinal
+  // order but each row only holds the bands it uses, so a naive first-seen
+  // merge scrambles the scale (the top row may start mid-ramp). Recover the
+  // true order with a topological merge over every row's consecutive pairs —
+  // this yields 1 week → … → More than 16 weeks regardless of which row leads.
+  const adj = new Map(), indeg = new Map(), nodes = [];
+  const ensure = l => { if (!indeg.has(l)) { indeg.set(l, 0); adj.set(l, new Set()); nodes.push(l); } };
+  live.forEach(r => {
+    const os = (r.block.options || []).map(o => o.label);
+    os.forEach(ensure);
+    for (let i = 0; i + 1 < os.length; i++) {
+      if (!adj.get(os[i]).has(os[i + 1])) { adj.get(os[i]).add(os[i + 1]); indeg.set(os[i + 1], indeg.get(os[i + 1]) + 1); }
+    }
+  });
+  const order = [], placed = new Set();
+  while (order.length < nodes.length) {
+    const pick = nodes.find(n => !placed.has(n) && indeg.get(n) === 0);
+    if (pick == null) { nodes.forEach(n => { if (!placed.has(n)) { order.push(n); placed.add(n); } }); break; }
+    order.push(pick); placed.add(pick); indeg.set(pick, -1);
+    adj.get(pick).forEach(m => { if (indeg.get(m) > 0) indeg.set(m, indeg.get(m) - 1); });
+  }
+  // Evenly-spaced blue ramp generated for the exact band count, so every band
+  // is a distinct shade even past six (no two longest bands sharing a colour),
+  // dark→light tracking the ordinal scale low→high.
+  const idxOf = {};
+  order.forEach((l, i) => { idxOf[l] = i; });
+  const colourOf = l => {
+    const n = order.length;
+    if (n <= 1) return "hsl(223 60% 45%)";
+    const t = (idxOf[l] != null ? idxOf[l] : n - 1) / (n - 1);
+    return "hsl(223 " + Math.round(60 - t * 16) + "% " + Math.round(40 + t * 45) + "%)";
+  };
   return html`
-    <table class="data matrix-grid" style=${{ fontSize: "var(--fs-label)" }}>
-      <thead><tr><th>Level</th><th style=${{ width: "38%" }}>Peer split</th><th>Most common</th><th class="num">You</th></tr></thead>
-      <tbody>
-        ${(rows || []).map(r => {
-          if (r.suppressed || !r.block) return html`
-            <tr key=${r.row_id}><td>${r.label}</td>
-              <td colspan="3" class="caption">not enough organisations to show safely</td></tr>`;
-          const opts = r.block.options || [];
-          return html`
-            <tr key=${r.row_id}>
-              <td>${r.label}</td>
-              <td title=${opts.map(o => o.label + " " + o.pct + "%").join(" · ")}>
-                <div style=${{ display: "flex", height: "12px", borderRadius: "6px", overflow: "hidden", background: "var(--surface-sunk)" }}>
-                  ${opts.map((o, i) => o.pct > 0 && html`
-                    <div key=${o.label} style=${{ width: o.pct + "%", background: CAT[Math.min(i, CAT.length - 1)] }}
-                      title=${o.label + " " + o.pct + "%"}></div>`)}
-                </div>
-              </td>
-              <td>${r.block.modal_label} <span class="caption num">${r.block.modal_pct}%</span></td>
-              <td class="num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${r.you.display}</b>${r.you.share_pct != null && showValues ? html`<span class="caption"> · ${r.you.share_pct}% of peers</span>` : ""}` : html`<span class="caption">—</span>`}</td>
-            </tr>`;
-        })}
-      </tbody>
-    </table>`;
+    <div>
+      ${order.length > 1 && html`
+        <div class="matrix-legend">
+          ${order.map(l => html`<span key=${l} class="mleg"><span class="msw" style=${{ background: colourOf(l) }}></span>${l}</span>`)}
+        </div>`}
+      <table class="data matrix-grid" style=${{ fontSize: "var(--fs-label)" }}>
+        <thead><tr><th>Level</th><th style=${{ width: "38%" }}>Peer split</th><th>Most common</th><th class="num">You</th></tr></thead>
+        <tbody>
+          ${(rows || []).map(r => {
+            if (r.suppressed || !r.block) return html`
+              <tr key=${r.row_id}><td>${r.label}</td>
+                <td colspan="3" class="caption">not enough organisations to show safely</td></tr>`;
+            const opts = (r.block.options || []).filter(o => o.pct > 0);
+            const youLabel = r.you ? (r.you.label || r.you.display) : null;
+            return html`
+              <tr key=${r.row_id}>
+                <td>${r.label}</td>
+                <td title=${opts.map(o => o.label + " " + o.pct + "%").join(" · ")}>
+                  <div class="matrix-split">
+                    ${opts.map(o => {
+                      const mine = youLabel && o.label === youLabel;
+                      return html`<div key=${o.label} class=${"mseg" + (mine ? " mine" : "")}
+                        style=${{ width: o.pct + "%", background: colourOf(o.label) }}
+                        title=${o.label + " " + o.pct + "%" + (mine ? " · You" : "")}></div>`;
+                    })}
+                  </div>
+                </td>
+                <td>${r.block.modal_label} <span class="caption num">${r.block.modal_pct}%</span></td>
+                <td class="num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${r.you.display}</b>${r.you.share_pct != null && showValues ? html`<span class="caption"> · ${r.you.share_pct}% of peers</span>` : ""}` : html`<span class="caption">—</span>`}</td>
+              </tr>`;
+          })}
+        </tbody>
+      </table>
+    </div>`;
 };
 
 function unitSuffix(unit) {
