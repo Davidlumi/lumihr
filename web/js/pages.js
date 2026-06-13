@@ -769,6 +769,211 @@ window.MethodologyPage = function () {
     </div>`;
 };
 
+/* ===================== How lumi works hub (chrome spec §4) =================
+   One trust page, three anchored sections, side-tab navigation. Replaces the
+   separate Methodology, Core governance and legal destinations. Every §4.1
+   sub-card carries a STABLE id so metric pages (§6.1) and the suppression
+   tooltip (§6.2) can deep-link straight to it via /how-lumi-works/<anchor>.
+   The phrase "co-op governance" appears nowhere as a heading or label. */
+window.HOW_LUMI_TABS = [
+  { key: "calculations", label: "How the numbers are calculated" },
+  { key: "co-op", label: "How the co-op works" },
+  { key: "legal", label: "Legal" },
+];
+
+window.HowLumiWorksPage = function ({ me, anchor }) {
+  const [m, setM] = useState(null);
+  const [legal, setLegal] = useState(null);
+  const [doc, setDoc] = useState(null);   // open legal document key | null
+  useEffect(() => { api("/api/methodology").then(setM); api("/api/legal").then(d => setLegal(d.documents)); }, []);
+  // deep-link: /how-lumi-works/<anchor> scrolls that element into view once
+  // the content has rendered.
+  useEffect(() => {
+    if (!m || !anchor) return;
+    // defer past layout: the methodology tables grow the page after first
+    // paint, so an immediate scroll lands on a stale position.
+    const t = setTimeout(() => {
+      const el = document.getElementById(anchor);
+      if (!el) return;
+      // instant, not smooth: a smooth animation re-targets as the methodology
+      // tables grow the page mid-scroll and overshoots the anchor.
+      el.scrollIntoView({ behavior: "auto", block: "start" });
+      el.classList.add("anchor-flash");
+      setTimeout(() => el.classList.remove("anchor-flash"), 1600);
+    }, 220);
+    return () => clearTimeout(t);
+  }, [m, anchor]);
+  if (!m) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const industries = Object.keys(m.composition);
+  const sectionTab = (HOW_LUMI_TABS.find(t => t.key === anchor) || HOW_LUMI_TABS[0]).key;
+  const go = (k) => nav("/how-lumi-works/" + k);
+  return html`
+    <div class="how-hub">
+      <aside class="how-tabs no-print">
+        <div class="nav-label">How lumi works</div>
+        ${HOW_LUMI_TABS.map(t => html`
+          <button key=${t.key} class=${"how-tab" + (sectionTab === t.key ? " active" : "")} onClick=${() => go(t.key)}>${t.label}</button>`)}
+      </aside>
+      <div class="how-body" style=${{ maxWidth: "820px" }}>
+        <h1 class="display-title">How lumi works</h1>
+        <p class="caption">What's in your benchmark, how the numbers are built, how the co-operative runs, and where the legal documents live.</p>
+
+        ${/* ---------- §4.1 Calculations ---------- */ ""}
+        <h2 class="how-section-head" id="calculations">How the numbers are calculated</h2>
+        <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v1</p>
+
+        <div class="card how-card" id="who-compared">
+          <h3 class="section-title">Who you're compared with (peer norms)</h3>
+          ${m.synthetic_pool && html`
+            <div class="how-note">
+              <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: ${m.peer_pool.responding_orgs} simulated
+              organisations whose answers were generated from published UK HR and reward norms and each organisation's
+              firmographic profile, pending real member submissions. It behaves believably for demonstration and launch
+              seeding — it is not real member data and must not be cited as a market statistic.
+            </div>`}
+          <p>A peer norm is built only from organisations that have completed a lumi submission. The pool holds
+          <b>${m.peer_pool.responding_orgs} UK organisations</b>; ${m.peer_pool.classified_orgs} carry full firmographic
+          profiles (sector, size, region, ownership) and appear in filtered peer groups, while ${m.unclassified_count}
+          await classification and sit in the "All peers" group only.</p>
+          <table class="data" style=${{ marginTop: "10px" }}>
+            <thead><tr><th>Sector</th>${m.fte_bands.map(b => html`<th key=${b} class="num">${b}</th>`)}<th class="num">Total</th></tr></thead>
+            <tbody>
+              ${industries.map(ind => {
+                const row = m.composition[ind];
+                const tot = Object.values(row).reduce((a, b) => a + b, 0);
+                return html`<tr key=${ind}><td>${ind}</td>
+                  ${m.fte_bands.map(b => html`<td key=${b} class="num">${row[b] || "·"}</td>`)}
+                  <td class="num"><b>${tot}</b></td></tr>`;
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card how-card" id="percentiles">
+          <h3 class="section-title">Percentiles and your position</h3>
+          <p><b>Percentiles.</b> P10, P25, P50 (median), P75 and P90 use linear interpolation across all valid peer
+          answers — the same method the main survey houses use. We benchmark on medians, not averages, so a single
+          unusual organisation cannot skew a figure.</p>
+          <p><b>Your percentile.</b> Your P-number is the share of peer organisations whose value sits below yours
+          (ties counted half), so P63 means you are higher than about 6 in 10 peers.</p>
+          <p><b>Favourable vs peers.</b> Each question carries a polarity — higher is better, lower is better, or
+          neutral (where "better" depends on strategy). Green/amber/red colouring is polarity-adjusted and is never
+          applied to neutral metrics.</p>
+        </div>
+
+        <div class="card how-card" id="suppression">
+          <h3 class="section-title">Small-sample protection</h3>
+          <p>Any figure that would rest on fewer than <b>${m.suppression_floor} organisations</b> is not shown — you
+          see "not enough organisations to show this safely" instead. This floor is the single suppression rule, applied
+          to <b>every</b> peer group — including bespoke groups such as Peer Twin and your own custom groups — and it is
+          enforced in one place in the calculation engine, so no view can route around it.</p>
+          <p class="caption">No peer figure is ever derived from a single organisation, and member identities are never
+          shown in any group.</p>
+        </div>
+
+        <div class="card how-card" id="versioning">
+          <h3 class="section-title">Versioning and comparability</h3>
+          <p>The question set changes through scheduled releases. ${" "}
+          <b>2026.1</b> restructured the catalogue into seven categories; <b>2026.2</b> added forward-looking questions.
+          Every collection window is stored as a separate, versioned snapshot — submissions never overwrite history.</p>
+          <p><b>Comparability breaks.</b> When a question changes materially, values either side of the change aren't
+          comparable, so trends <i>reset</i> at the break rather than joining a misleading continuous line.</p>
+        </div>
+
+        <div class="card how-card" id="sources">
+          <h3 class="section-title">Where the data comes from</h3>
+          <p>This snapshot ingested ${m.reconciliation.files} member submissions (${(m.reconciliation.answer_rows || 0).toLocaleString("en-GB")} answers).
+          ${m.reconciliation.matched_orgs} organisations were matched to the lumi member registry by normalised company
+          name; ${m.reconciliation.file_only_orgs} submissions without a registry profile are retained as Unclassified;
+          ${m.reconciliation.registry_only_orgs} registry members have not yet submitted and are excluded from every
+          aggregate. Near-miss name matches are flagged for human review and never joined automatically.</p>
+          <p><b>£ modelling assumptions.</b> Opportunity figures use FTE band midpoints, a UK all-sector median salary of
+          £${(m.assumptions.median_salary_gbp || 0).toLocaleString("en-GB")} (editable in Settings), a cost per leaver of
+          ${m.assumptions.cost_per_leaver_pct_salary}% of salary and an agency premium of ${m.assumptions.agency_premium_pct}%.
+          They are assumptions, clearly labelled, and every £ figure is indicative.</p>
+        </div>
+
+        <div class="card how-card" id="glossary">
+          <h3 class="section-title">Glossary</h3>
+          ${Object.entries(GLOSSARY).map(([k, v]) => html`
+            <p key=${k} style=${{ margin: "6px 0" }}><b style=${{ textTransform: "capitalize" }}>${k}.</b> ${v}</p>`)}
+          <p style=${{ margin: "6px 0" }}><b>Peer Twin.</b> A bespoke peer group of the organisations most similar to yours
+          across industry, size, ownership and workforce shape, recalculated as the membership grows; member names are never shown.</p>
+        </div>
+
+        ${/* ---------- §4.2 How the co-op works ---------- */ ""}
+        <h2 class="how-section-head" id="co-op">How the co-op works</h2>
+        <div class="card how-card">
+          <h3 class="section-title">A give-to-get co-operative</h3>
+          <p>lumi is a benchmarking co-operative: the data you see comes from members like you, so the value depends on
+          everyone contributing. <b>Participating organisations benchmark for free</b> — you give your reward data and,
+          in return, you get the peer picture. Organisations that want the benchmark without contributing pay; members
+          who contribute do not.</p>
+          <p><b>Founding membership.</b> Organisations joining in the launch phase are founding members and benchmark
+          free for their first year while the pool builds.</p>
+        </div>
+        <div class="card how-card">
+          <h3 class="section-title">How your data is shared — and how it isn't</h3>
+          <p>Your submission only ever appears inside <b>aggregates</b>. Other members see peer distributions and
+          percentiles, never your raw answers and never your organisation's identity within a group. The small-sample
+          floor (above) means no aggregate can be traced back to a single contributor.</p>
+          <p>Share links carry the same protection: a recipient sees exactly what your team can see — your own data plus
+          safe peer aggregates — and nothing more.</p>
+        </div>
+        <div class="card how-card">
+          <h3 class="section-title">Suppression and ethics</h3>
+          <p>We benchmark on medians, suppress thin samples, exclude "don't know" and "not applicable" rather than
+          counting them against anyone, and never present a neutral metric with a good/bad colour. The benchmark is a
+          mirror, not a scoreboard — it tells you where you stand, never what you must do.</p>
+          ${me && me.user.role === "admin" && html`
+            <p class="caption" style=${{ marginTop: "10px" }}>Admins: the question-set release console — current release, change
+            log and backlog — lives in <a href="#/governance">the governance console</a>.</p>`}
+        </div>
+
+        ${/* ---------- §4.3 Legal ---------- */ ""}
+        <h2 class="how-section-head" id="legal">Legal</h2>
+        <div class="card how-card">
+          <p class="caption">Each document is its own page; this is the index. All documents are currently
+          <span class="chip warn">DRAFT — pending legal review</span>.</p>
+          <div class="legal-list">
+            ${(legal || []).map(d => html`
+              <button key=${d.key} class="legal-row" onClick=${() => setDoc(d.key)}>
+                <span>${d.title}</span>
+                ${d.draft && html`<span class="chip warn" style=${{ marginLeft: "auto" }}>Draft</span>`}
+                <span class="legal-row-go" aria-hidden="true">→</span>
+              </button>`)}
+            ${legal == null && html`<div class="caption">Loading…</div>`}
+          </div>
+          <div class="caption" style=${{ marginTop: "var(--s3)" }}>
+            <a href="/api/terms/dpa" download>Download the full Data Sharing Agreement (DPA)</a>
+          </div>
+        </div>
+      </div>
+      ${doc && html`<${LegalDocModal} docKey=${doc} onClose=${() => setDoc(null)} />`}
+    </div>`;
+};
+
+/* A single legal document, read-only (chrome spec §4.3). Fetches the text on
+   demand from the public /api/legal/<key> route. */
+window.LegalDocModal = function ({ docKey, onClose }) {
+  const [d, setD] = useState(null);
+  useEffect(() => { api("/api/legal/" + docKey).then(setD).catch(() => setD({ error: true })); }, [docKey]);
+  return html`
+    <div class="modal-back" onClick=${onClose}>
+      <div class="card legal-modal" style=${{ maxWidth: "660px", width: "92%", maxHeight: "82vh", overflow: "auto", padding: "var(--s5)" }}
+        onClick=${e => e.stopPropagation()}>
+        <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
+          <h2 class="section-title" style=${{ margin: 0 }}>${d && d.title || "Legal"}</h2>
+          <button class="btn quiet small" onClick=${onClose}>Close</button>
+        </div>
+        ${!d ? html`<${Spinner} />`
+          : d.error ? html`<div class="error-text">Couldn't load this document.</div>`
+          : html`${d.draft && html`<div class="how-note" style=${{ marginBottom: "var(--s3)" }}>This document is <b>DRAFT — pending legal review</b>.</div>`}
+              <${TermsText} text=${d.text} />`}
+      </div>
+    </div>`;
+};
+
 // shared helpers
 window.cutQS = function (cut) {
   let qs = "cut=" + encodeURIComponent(cut.dim || "all");

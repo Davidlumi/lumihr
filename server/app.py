@@ -275,7 +275,23 @@ LEGAL_FILES = {
     "platform": "platform-terms-v1.0.md",
     "data_contribution": "data-contribution-terms-v1.0.md",
     "dpa": "data-sharing-agreement-dpa-v1.0-draft.md",
+    "privacy": "privacy-notice-v1.0-draft.md",
+    "cookies": "cookie-policy-v1.0-draft.md",
+    "subprocessors": "sub-processors-v1.0-draft.md",
 }
+
+# The Legal index (chrome spec section 4.3): each document is its own page;
+# the "How lumi works" hub is the index. Public read access — these must be
+# reachable from the auth screens (the enforceability footer) before any
+# account exists. All are DRAFT, consistent with the existing legal corpus.
+LEGAL_INDEX = [
+    {"key": "platform", "title": "Terms of Use", "draft": True},
+    {"key": "privacy", "title": "Privacy Notice", "draft": True},
+    {"key": "cookies", "title": "Cookie Policy", "draft": True},
+    {"key": "data_contribution", "title": "Data Contribution Terms", "draft": True},
+    {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": True},
+    {"key": "subprocessors", "title": "Sub-processor List", "draft": True},
+]
 
 
 def legal_text(kind):
@@ -1048,6 +1064,23 @@ async def terms_texts():
 async def terms_dpa():
     return Response(legal_text("dpa"), media_type="text/markdown",
                     headers={"Content-Disposition": 'attachment; filename="lumi-data-sharing-agreement-DRAFT.md"'})
+
+
+@app.get("/api/legal")
+async def legal_index():
+    """Public: the index behind the "How lumi works -> Legal" section and the
+    auth-screen footer. Lists every legal document; the text is fetched per
+    document below."""
+    return {"documents": LEGAL_INDEX}
+
+
+@app.get("/api/legal/{key}")
+async def legal_doc(key: str):
+    """Public: one legal document's text (read-only). 404 for unknown keys."""
+    meta = next((d for d in LEGAL_INDEX if d["key"] == key), None)
+    if meta is None or key not in LEGAL_FILES:
+        raise HTTPException(404, "Unknown legal document")
+    return {"key": key, "title": meta["title"], "draft": meta["draft"], "text": legal_text(key)}
 
 
 @app.post("/api/terms/accept-data")

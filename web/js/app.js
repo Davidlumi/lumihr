@@ -1,6 +1,6 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, MyViewPage, MyDataPage, MethodologyPage, GapRegisterPage,
+   OverviewPage, SuperpowerPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
@@ -129,8 +129,11 @@ function App() {
     page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${section && decodeURIComponent(section)} />`;
   }
   else if (route.startsWith("/your-data")) page = html`<${YourDataPage} me=${me} />`;
-  else if (route.startsWith("/how-lumi-works")) page = html`<${MethodologyPage} />`;
-  else if (route.startsWith("/methodology")) page = html`<${MethodologyPage} />`;
+  else if (route.startsWith("/how-lumi-works")) {
+    const anchor = route.slice("/how-lumi-works".length).replace(/^\//, "").split("?")[0] || null;
+    page = html`<${HowLumiWorksPage} me=${me} anchor=${anchor} />`;
+  }
+  else if (route.startsWith("/methodology")) { nav("/how-lumi-works/calculations"); page = null; }
   else if (route.startsWith("/priorities")) page = html`<${GapRegisterPage} ...${pageProps} />`;
   else if (route.startsWith("/team")) page = me.user.role === "admin"
     ? html`<${TeamPage} me=${me} />`
@@ -199,7 +202,7 @@ function App() {
                 ? (me.user.role === "admin"
                     ? html`<a href="#/profile">Add your company profile</a> to compare by sector & size`
                     : "Your Admin can add the company profile to unlock sector & size")
-                : cutHint(cut, cuts, me)}</span>`}
+                : html`${cutHint(cut, cuts, me)} ${" "}<a href="#/how-lumi-works/suppression">Why?</a>`}</span>`}
           </div>
           <div class="topbar-search">
             <span class="topbar-search-icon"><${Icon} name="search" size=${14} /></span>
@@ -853,7 +856,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
           ${c.suppressed ? html`
             <${EmptyState} icon="shield" title="Not enough organisations to show this safely"
-              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question — protecting every member's data comes first. Try a broader peer group."} />` :
+              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question — protecting every member's data comes first. Try a broader peer group."}
+              action=${html`<a class="btn small" href="#/how-lumi-works/suppression">Why figures are hidden</a>`} />` :
           html`<${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />`}
         </div>
         ${!c.suppressed && html`
@@ -873,7 +877,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
           <p class="caption"><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer
           answers; medians, not averages. Figures resting on fewer than 5 organisations are
-          ${" "}<${Term} word="suppressed">suppressed<//>. Full method in the <a href="#/methodology">methodology</a>.</p>
+          ${" "}<a href="#/how-lumi-works/suppression">suppressed</a>.
+          ${" "}<a href="#/how-lumi-works/calculations">How this is calculated</a>.</p>
         </div>
         <div class="card" style=${{ padding: "var(--s5)" }}>
           <h2 class="section-title">What this means for you</h2>

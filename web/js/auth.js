@@ -1,5 +1,5 @@
 /* Auth screens: sign in, register, reset, accept invite. */
-/* global html, useState, useEffect, api, Spinner */
+/* global html, useState, useEffect, api, Spinner, LegalDocModal */
 
 /* Minimal markdown-ish renderer for the terms documents (headings, bullets,
    bold) — enough to read them comfortably without a library. */
@@ -51,6 +51,7 @@ window.AuthScreen = function ({ onAuthed, route }) {
 };
 
 function Shell({ children, sub }) {
+  const [doc, setDoc] = useState(null);
   return html`
     <div class="auth-wrap">
       <div class="card auth-card">
@@ -58,6 +59,12 @@ function Shell({ children, sub }) {
         <div class="caption" style=${{ marginBottom: "20px" }}>${sub || "People analytics benchmarking for UK HR teams"}</div>
         ${children}
       </div>
+      <div class="auth-footer">
+        <button class="auth-foot-link" onClick=${() => setDoc("platform")}>Terms of Use</button>
+        <span aria-hidden="true">·</span>
+        <button class="auth-foot-link" onClick=${() => setDoc("privacy")}>Privacy Notice</button>
+      </div>
+      ${doc && html`<${LegalDocModal} docKey=${doc} onClose=${() => setDoc(null)} />`}
     </div>`;
 }
 
@@ -72,6 +79,7 @@ function Field({ label, type, value, onInput, placeholder, autoFocus }) {
 
 function LoginForm({ onAuthed }) {
   const [mode, setMode] = useState("login"); // login | register | forgot
+  const [legalDoc, setLegalDoc] = useState(null);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -102,6 +110,9 @@ function LoginForm({ onAuthed }) {
           <${TermsTick} checked=${tick} onChange=${setTick}>
             I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
           <//>`}
+        ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "10px" }}>
+          By continuing you agree to our <a onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }} style=${{ cursor: "pointer" }}>Terms of Use</a>
+          ${" "}and <a onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }} style=${{ cursor: "pointer" }}>Privacy Notice</a>.</div>`}
         ${err && html`<div class="error-text" style=${{ marginBottom: "10px" }}>${err}</div>`}
         ${msg && html`<div class="ok-text" style=${{ marginBottom: "10px" }}>${msg}</div>`}
         <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${busy || (mode === "register" && !tick)}>
@@ -111,6 +122,7 @@ function LoginForm({ onAuthed }) {
           You'll be your organisation's Admin. Before your team first submits data, you'll also review
           the Data Contribution Terms — your 30 days to contribute start then, not now.</div>`}
         ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
+        ${legalDoc && html`<${LegalDocModal} docKey=${legalDoc} onClose=${() => setLegalDoc(null)} />`}
       </form>
       <div class="row spread" style=${{ marginTop: "16px" }}>
         ${mode !== "login" ? html`<a onClick=${() => setMode("login")} style=${{ cursor: "pointer" }}>Sign in</a>` : html`<a onClick=${() => setMode("register")} style=${{ cursor: "pointer" }}>New organisation</a>`}

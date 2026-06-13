@@ -478,6 +478,10 @@ function ReviewStep({ state, refresh, refreshMe }) {
         ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
         <button class="btn primary" disabled=${busy || val.problems.length > 0} onClick=${submit}>
           ${busy ? html`<${Spinner} /> Submitting…` : "Submit my data"}</button>
+        <div class="caption" style=${{ marginTop: "var(--s3)" }}>
+          Your data is shared only as protected peer aggregates, never your raw answers or identity. See the
+          ${" "}<a href="#/how-lumi-works/legal">Privacy Notice and data-sharing terms</a>
+          ${" "}and <a href="#/how-lumi-works/co-op">how the co-op works</a>.</div>
       </div>
     </div>`;
 }

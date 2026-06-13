@@ -1500,3 +1500,52 @@ placeholder until PR-3 swaps in the merged hub.
 
 Client-only (web/js, web/css, html). qa_focus + qa_hero green. Cache
 v52→v53.
+
+## 2026-06-12 — Chrome rationalisation PR-3: How lumi works hub + links + auth footer
+
+MERGED HUB (§4): new /how-lumi-works — one page, three side-tab sections,
+stable anchors. §4.1 "How the numbers are calculated" (anchors:
+#calculations #who-compared #percentiles #suppression #versioning #sources
+#glossary) covers peer-norm construction, the suppression floor, versioning
+(2026.1/2026.2 + comparability breaks), data sources and the £ assumptions.
+§4.2 "How the co-op works" — give-to-get membership, free-for-participants,
+data-sharing-as-aggregates, suppression/ethics, founding membership;
+admins get a link to the release console. §4.3 "Legal" — index of six
+documents (Terms of Use, Privacy Notice, Cookie Policy, Data Contribution
+Terms, DPA, Sub-processor List), each opening a read-only viewer. The
+phrase "co-op governance" appears NOWHERE as a heading/label (DOM-verified).
+/methodology now 301s to /how-lumi-works/calculations.
+
+TWO SPEC INACCURACIES, corrected truthfully (integrity firewall — a trust
+page must never state a false rule):
+- The spec's §4.1 says "the n=3 suppression floor". The engine's real floor
+  is n=5 (aggregate.py SUPPRESSION_FLOOR = 5). The hub states 5. FLAGGED FOR
+  DAVID: if the floor should be 3, that's an engine change, not a copy edit.
+- The spec lists a "dominance rule" to document. The engine has NO dominance
+  / k-anonymity rule — suppression is solely the n<5 floor. The hub says so
+  plainly ("this floor is the single suppression rule") rather than
+  inventing one. FLAGGED FOR DAVID: if a dominance rule is wanted, it must be
+  built in the engine first.
+
+LEGAL DOCS (§4.3): three new DRAFT documents created to back the index and
+the auth footer — privacy-notice, cookie-policy, sub-processors (all
+"DRAFT — pending legal review", matching the existing corpus). Server gains
+public read-only routes GET /api/legal (index) and GET /api/legal/{key}
+(doc text; 404 on unknown). No engine/data-layer change — static text
+serving, same shape as the existing /api/terms.
+
+CONTEXTUAL LINKS (§6): §6.1 metric pages + card pop-out link "How this is
+calculated" → #/how-lumi-works/calculations; the suppressed metric view and
+the percentile note deep-link to #suppression. §6.2 the peer-set note links
+"Why?" → #suppression. §6.3 the submit step shows privacy + data-sharing +
+co-op links at the point of submission. Deep-link scroll is instant (not
+smooth — the methodology tables grow the page mid-animation and a smooth
+scroll overshoots) and lands exactly on the anchor (scroll-margin-top 84;
+verified top=84).
+
+AUTH ENFORCEABILITY (§4.3): every auth screen carries a footer with Terms
+of Use + Privacy Notice links (open the public legal viewer pre-auth);
+sign-up adds acceptance copy "By continuing you agree to our Terms of Use
+and Privacy Notice". The explicit Platform-Terms tick is unchanged.
+
+Full gate suite green (8/8). Cache v53→v56.

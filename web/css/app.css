@@ -853,3 +853,40 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .profile-item { display: block; width: 100%; text-align: left; border: 0; background: none;
   padding: 8px 10px; border-radius: 8px; font-size: var(--fs-label); color: var(--ink); cursor: pointer; }
 .profile-item:hover { background: var(--surface-sunk); }
+
+/* How lumi works hub (chrome spec §4) */
+.how-hub { display: flex; gap: var(--s5); align-items: flex-start; }
+.how-tabs { position: sticky; top: 76px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 2px; }
+.how-tab { text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px;
+  font-size: var(--fs-label); color: var(--ink-soft); cursor: pointer; }
+.how-tab:hover { background: var(--surface-sunk); color: var(--ink); }
+.how-tab.active { background: var(--blue-tint); color: var(--blue-deep); font-weight: 650; }
+.how-body { flex: 1; min-width: 0; }
+.how-section-head { font-family: var(--font-head); font-size: 22px; font-weight: 650; color: var(--ink);
+  margin: var(--s5) 0 var(--s3); padding-top: var(--s2); scroll-margin-top: 84px; }
+.how-card { padding: var(--s5); margin-bottom: var(--s4); scroll-margin-top: 84px; }
+.how-card h3.section-title { margin-top: 0; }
+.how-note { background: var(--neutral-perf-tint); border-radius: var(--radius-sm); padding: var(--s3) var(--s4);
+  margin-bottom: var(--s3); font-size: var(--fs-body); }
+.anchor-flash { animation: anchor-flash 1.6s ease-out; }
+@keyframes anchor-flash { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 35%, transparent); }
+  100% { box-shadow: 0 0 0 3px transparent; } }
+.legal-list { display: flex; flex-direction: column; gap: 2px; margin-top: var(--s2); }
+.legal-row { display: flex; align-items: center; gap: var(--s3); width: 100%; text-align: left; border: 0;
+  background: none; padding: 11px 10px; border-radius: 10px; cursor: pointer; font-size: var(--fs-label);
+  color: var(--ink); border: 1px solid transparent; }
+.legal-row:hover { background: var(--surface-sunk); border-color: var(--border); }
+.legal-row-go { color: var(--ink-faint); }
+.legal-modal .terms-text { font-size: var(--fs-body); }
+
+/* Auth screen legal footer (chrome spec §4.3 — enforceability) */
+.auth-footer { display: flex; gap: var(--s2); justify-content: center; align-items: center;
+  margin-top: var(--s4); color: var(--ink-faint); font-size: var(--fs-caption); }
+.auth-foot-link { background: none; border: 0; padding: 0; color: var(--ink-soft); cursor: pointer;
+  font-size: var(--fs-caption); }
+.auth-foot-link:hover { color: var(--blue-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 880px) {
+  .how-hub { flex-direction: column; }
+  .how-tabs { position: static; flex-direction: row; flex-wrap: wrap; flex-basis: auto; }
+}

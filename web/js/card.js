@@ -401,7 +401,7 @@ window.CardDetail = function ({ card: c, onClose }) {
       </div>
       <p class="caption" style=${{ marginTop: "var(--s3)" }}>
         Percentiles use linear interpolation across all valid peer answers; anything based on fewer
-        than 5 organisations is suppressed. See the <a href="#/methodology" onClick=${onClose}>methodology</a>.
+        than 5 organisations is suppressed. See <a href="#/how-lumi-works/calculations" onClick=${onClose}>How this is calculated</a>.
       </p>
       <div class="row" style=${{ justifyContent: "flex-end" }}>
         <button class="btn" onClick=${onClose}>Close</button>
