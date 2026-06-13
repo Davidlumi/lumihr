@@ -1911,3 +1911,39 @@ the wrong peer-set label. Verified across all cut kinds (all/industry/
 fte_band/twin/group — card.cut carries dim+value for each, so no false
 "stale" positives). The dropdown and graph can no longer disagree. Client-
 only. qa_focus 28/28. Cache v68->v69 (forces fresh JS on next load).
+
+## 2026-06-13 — Evidenced baseline recalibration (5 metrics re-seeded)
+
+The research register evidenced five seeded baselines as needing correction.
+Authored server/regen_question.py — a parameterised single-question re-seed to
+the regen_allowances_pensionable.py discipline: DRY-RUN default, double-guarded
+(--write AND --confirmed-by-david), append-only history (DELETE from `answers`
+snapshot 1 only; re-INSERT into answers + answers_history), no auto-aggregate.
+It REUSES the original seed pipelines (no reinvented calibration): 4 metrics via
+apply_seed_2026_1_additions + seed_release_2026_1_additions (remap_labels →
+build_orgs → S.calibrate → compensate → S.generate); SALHISTORY via
+apply_seed_2026_2 + seed_release_2026_2. Targets are read LIVE from the seed
+modules (recalibrated copies deployed first; md5 9d3cbb… verified on path).
+
+Corrections (live realised now, all within ~3pp of signed, modals intact):
+  REW26_WEL_EAP          Yes 78.6% -> 41.8%  (target 0.41)
+  REW26_WEL_FINWELL      Yes 32.7% -> 64.1%  (target 0.64)
+  REW26_WEL_MH_SUPPORT   Counselling ->44.5 / Mgr-training ->28.6 / None ->11.4
+                         (held: 1st-aiders 53.6, app 38.6, MH-days 14.1) — live labels via remap_labels()
+  REW26_GOV_EU_PTD_PREP  Compliant 3.2% -> 1.8%  (target 0.02)
+  REW262_GOV_SALHISTORY  Yes 34.1% -> 28.2%  (target 0.27)
+
+Integrity proof (backup-independent): answers_history +1100 rows = exactly
+5×220, ALL on the 5 ids (newest write window), none elsewhere; answers(snap1)
+total unchanged (203,134); REW262_GOV_ACTIONPLAN control UNCHANGED (dist hash
+877a849b87, history 220) despite being touched in-memory by the 2026.2
+calibration pass. benchmark_snapshots refreshed via aggregate.py (806 payloads,
+computed_at 10:59:30); preview restarted so the API serves the corrected
+distributions. NOT changed: PEN_TYPE and all corroborated metrics.
+
+OPERATIONAL CAVEAT: the `cp lumi.db` backups are WAL-incomplete (no -wal
+captured), so a backup can lag the live committed state — a comparison against
+one will show spurious diffs, and a rollback from one may restore a slightly
+stale state. For a clean rollback take `PRAGMA wal_checkpoint(TRUNCATE)` (or
+copy -wal/-shm too) before the cp. The write here is verified correct via the
+append-only ledger, so no rollback is needed.
