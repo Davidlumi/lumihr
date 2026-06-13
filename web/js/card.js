@@ -298,18 +298,20 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   return null;
 };
 
-/* Categorical matrix rows: a per-level 100%-stacked band (column option
-   order), the most common answer, and the org's own answer. Information
-   prevalence — quiet peers, bold you, no fabricated quartiles. */
-window.MatrixSelect = function ({ rows, showValues }) {
+/* Categorical matrix: a prevalence HEATMAP. Levels are rows, the ordered
+   answer bands are aligned columns, and each cell's single-hue intensity is
+   how common that band is at that level. Aligned columns make the shape of
+   the market legible at a glance (e.g. the notice period lengthening up the
+   seniority ladder reads as a diagonal); the exact % sits in every cell, the
+   most-common cell per row is ringed, and the org's own band is outlined.
+   A stacked bar of near-identical blues could never carry this. */
+window.MatrixSelect = function ({ rows }) {
   const live = (rows || []).filter(r => !r.suppressed && r.block && r.block.options);
-  // Colour by BAND, not by the row-local option index: the same band (e.g.
-  // "8 weeks") must be one colour in EVERY row, or the split is unreadable and
-  // a legend is impossible. Rows carry their options in the column's ordinal
-  // order but each row only holds the bands it uses, so a naive first-seen
-  // merge scrambles the scale (the top row may start mid-ramp). Recover the
-  // true order with a topological merge over every row's consecutive pairs —
-  // this yields 1 week → … → More than 16 weeks regardless of which row leads.
+  // Recover the true band order. Rows carry their options in the column's
+  // ordinal order but each holds only the bands it uses, so a naive first-seen
+  // merge scrambles the scale. A topological merge over every row's
+  // consecutive pairs yields 1 week → … → More than 16 weeks regardless of
+  // which row leads (falls back to first-seen if the data has no clean order).
   const adj = new Map(), indeg = new Map(), nodes = [];
   const ensure = l => { if (!indeg.has(l)) { indeg.set(l, 0); adj.set(l, new Set()); nodes.push(l); } };
   live.forEach(r => {
@@ -326,51 +328,58 @@ window.MatrixSelect = function ({ rows, showValues }) {
     order.push(pick); placed.add(pick); indeg.set(pick, -1);
     adj.get(pick).forEach(m => { if (indeg.get(m) > 0) indeg.set(m, indeg.get(m) - 1); });
   }
-  // Evenly-spaced blue ramp generated for the exact band count, so every band
-  // is a distinct shade even past six (no two longest bands sharing a colour),
-  // dark→light tracking the ordinal scale low→high.
-  const idxOf = {};
-  order.forEach((l, i) => { idxOf[l] = i; });
-  const colourOf = l => {
-    const n = order.length;
-    if (n <= 1) return "hsl(223 60% 45%)";
-    const t = (idxOf[l] != null ? idxOf[l] : n - 1) / (n - 1);
-    return "hsl(223 " + Math.round(60 - t * 16) + "% " + Math.round(40 + t * 45) + "%)";
+  // Intensity is scaled to the busiest cell anywhere in the matrix, so the
+  // single most common combination is full strength and everything reads
+  // relative to it. A concentrated level shows one dark cell; a split level
+  // shows several mid cells — darkness = "how common".
+  let maxPct = 1;
+  live.forEach(r => (r.block.options || []).forEach(o => { if (o.pct > maxPct) maxPct = o.pct; }));
+  const abbr = l => (l || "").replace(/^More than\s*/i, ">").replace(/\bweeks?\b/i, "wk")
+    .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
+  const cellStyle = pct => {
+    const op = pct > 0 ? 0.10 + 0.90 * (pct / maxPct) : 0;
+    return { background: pct > 0 ? "rgba(37,71,176," + op.toFixed(3) + ")" : "transparent",
+             color: op >= 0.5 ? "#fff" : "var(--ink-soft)" };
   };
   return html`
-    <div>
-      ${order.length > 1 && html`
-        <div class="matrix-legend">
-          ${order.map(l => html`<span key=${l} class="mleg"><span class="msw" style=${{ background: colourOf(l) }}></span>${l}</span>`)}
-        </div>`}
-      <table class="data matrix-grid" style=${{ fontSize: "var(--fs-label)" }}>
-        <thead><tr><th>Level</th><th style=${{ width: "38%" }}>Peer split</th><th>Most common</th><th class="num">You</th></tr></thead>
+    <div class="matrix-heat-wrap">
+      <table class="data matrix-heat">
+        <thead>
+          <tr>
+            <th class="mh-lvl">Level</th>
+            ${order.map(b => html`<th key=${b} class="mh-band" title=${b}>${abbr(b)}</th>`)}
+            <th class="mh-you">You</th>
+          </tr>
+        </thead>
         <tbody>
           ${(rows || []).map(r => {
             if (r.suppressed || !r.block) return html`
-              <tr key=${r.row_id}><td>${r.label}</td>
-                <td colspan="3" class="caption">not enough organisations to show safely</td></tr>`;
-            const opts = (r.block.options || []).filter(o => o.pct > 0);
+              <tr key=${r.row_id}><td class="mh-lvl">${r.label}</td>
+                <td colspan=${order.length + 1} class="caption">not enough organisations to show safely</td></tr>`;
+            const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
             const youLabel = r.you ? (r.you.label || r.you.display) : null;
+            const modal = r.block.modal_label;
             return html`
               <tr key=${r.row_id}>
-                <td>${r.label}</td>
-                <td title=${opts.map(o => o.label + " " + o.pct + "%").join(" · ")}>
-                  <div class="matrix-split">
-                    ${opts.map(o => {
-                      const mine = youLabel && o.label === youLabel;
-                      return html`<div key=${o.label} class=${"mseg" + (mine ? " mine" : "")}
-                        style=${{ width: o.pct + "%", background: colourOf(o.label) }}
-                        title=${o.label + " " + o.pct + "%" + (mine ? " · You" : "")}></div>`;
-                    })}
-                  </div>
-                </td>
-                <td>${r.block.modal_label} <span class="caption num">${r.block.modal_pct}%</span></td>
-                <td class="num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${r.you.display}</b>${r.you.share_pct != null && showValues ? html`<span class="caption"> · ${r.you.share_pct}% of peers</span>` : ""}` : html`<span class="caption">—</span>`}</td>
+                <td class="mh-lvl">${r.label}</td>
+                ${order.map(b => {
+                  const pct = pm[b] || 0;
+                  const cls = "mh-cell" + (b === modal && pct > 0 ? " mode" : "") + (youLabel && b === youLabel ? " you" : "");
+                  return html`<td key=${b} class=${cls} style=${cellStyle(pct)}
+                    title=${r.label + " · " + b + " · " + (pct ? pct + "% of peers" : "no peers")}>
+                    ${pct > 0 ? pct + "%" : html`<span class="mh-zero">·</span>`}</td>`;
+                })}
+                <td class="mh-you num">${r.you ? html`<b style=${{ color: "var(--you)" }}>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;
           })}
         </tbody>
       </table>
+      <div class="matrix-scale">
+        <span class="mleg"><span class="msw" style=${{ background: "rgba(37,71,176,0.16)" }}></span>fewer peers</span>
+        <span class="mleg"><span class="msw" style=${{ background: "rgba(37,71,176,1)" }}></span>more peers</span>
+        <span class="mleg"><span class="msw msw-mode"></span>most common</span>
+        <span class="mleg"><span class="msw msw-you"></span>your organisation</span>
+      </div>
     </div>`;
 };
 

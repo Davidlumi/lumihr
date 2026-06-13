@@ -416,18 +416,28 @@ td.num, th.num { text-align: right; }
 .radio-row input, .check-row input { accent-color: var(--blue); }
 .matrix-grid input { width: 110px; height: 30px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); text-align: right; }
-/* ---- matrix peer-split: band-consistent colour + legend (2026-06-13) ---- */
-.matrix-legend { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin: 0 0 var(--s2);
-  font-size: var(--fs-label); color: var(--ink-soft); }
+/* ---- matrix prevalence heatmap (2026-06-13) ---- */
+.matrix-heat-wrap { overflow-x: auto; }
+.matrix-heat { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: var(--fs-label); }
+.matrix-heat th { font-weight: 600; color: var(--ink-soft); text-align: center;
+  padding: 2px 3px; vertical-align: bottom; line-height: 1.12; }
+.matrix-heat th.mh-lvl, .matrix-heat td.mh-lvl { text-align: left; color: var(--ink);
+  font-weight: 500; padding-right: var(--s2); line-height: 1.18; max-width: 130px; }
+.matrix-heat td.mh-cell { text-align: center; padding: 7px 4px; border-radius: 5px;
+  font-variant-numeric: tabular-nums; font-size: 11px; min-width: 34px;
+  box-shadow: inset 0 0 0 1px var(--chart-grid); }
+.matrix-heat td.mh-cell.mode { box-shadow: inset 0 0 0 1.5px rgba(15,23,42,.32); font-weight: 700; }
+.matrix-heat td.mh-cell.you { box-shadow: inset 0 0 0 2px var(--you); }
+.matrix-heat td.mh-cell.mode.you { box-shadow: inset 0 0 0 2px var(--you); font-weight: 700; }
+.mh-zero { color: var(--chart-grid); font-size: 13px; }
+.matrix-heat th.mh-you, .matrix-heat td.mh-you { text-align: right; white-space: nowrap; padding-left: var(--s3); }
+.matrix-scale { display: flex; flex-wrap: wrap; gap: 6px var(--s4); margin-top: var(--s3);
+  font-size: var(--fs-label); color: var(--ink-soft); align-items: center; }
 .mleg { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.msw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto;
+.msw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
-.matrix-split { display: flex; height: 14px; border-radius: 7px; overflow: hidden;
-  background: var(--surface-sunk); box-shadow: inset 0 0 0 1px var(--chart-grid); }
-.mseg { height: 100%; box-shadow: inset -1.5px 0 0 var(--surface); transition: filter .12s; }
-.mseg:last-child { box-shadow: none; }
-.mseg.mine { box-shadow: inset 0 0 0 2px var(--you), inset -1.5px 0 0 var(--surface); }
-.mseg.mine:last-child { box-shadow: inset 0 0 0 2px var(--you); }
+.msw-mode { background: var(--surface); box-shadow: inset 0 0 0 1.5px rgba(15,23,42,.5); }
+.msw-you { background: var(--surface); box-shadow: inset 0 0 0 2px var(--you); }
 
 /* ---- entry guardrails + cleanup (2026-06-12) ---- */
 .qsec-head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border);

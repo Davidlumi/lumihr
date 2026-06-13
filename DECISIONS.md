@@ -1961,3 +1961,26 @@ cells (measured +99–121px of overflow). Fix (CSS-only): `.bench-chart-full:has
 table grows to fit it (the grid pair stretches to match, n stays pinned to the
 bottom); svg charts keep the fixed 200px region. Verified live: 0 of 45 cards
 on the Pay page overflow (was 1, +99px). Client-only. qa_focus 28/28. v69->v70.
+
+## 2026-06-13 — Categorical matrix: replace stacked split with a prevalence heatmap
+The per-level "peer split" stacked bar (MatrixSelect) was illegible — twice
+reported as "just 100% blue for each". A 7-band single-hue stacked bar of
+near-identical blues can't carry an ordered distribution, even with separators
+and a legend (tried first: band-consistent colour via topological band order +
+a generated ramp + segment separators; still muddy). Replaced the whole display
+with a PREVALENCE HEATMAP: levels are rows, the ordered answer bands are aligned
+columns, each cell's single-hue intensity = how common that band is at that
+level (scaled to the busiest cell anywhere in the matrix). The exact % sits in
+every cell; the most-common cell per row is ringed; the org's own band is
+outlined and repeated in a right-hand "You" column. Aligned columns make the
+shape of the market legible at a glance — e.g. notice period lengthening up the
+seniority ladder reads as a diagonal staircase. Band order recovered by a
+topological merge over each row's consecutive option pairs (rows hold only the
+bands they use, in column order), so 1 week → … → More than 16 weeks regardless
+of which row leads; falls back to first-seen if the data has no clean order.
+Time-unit column heads abbreviated (8 weeks → 8 wk, More than 16 → >16 wk),
+full label on hover. Long level labels wrap (max-width 130px) and the table
+sits in an overflow-x:auto wrapper, so nothing clips on narrow cards. Client
+-only (web/js/card.js MatrixSelect, web/css/app.css). Verified live on
+"Employee notice period by level": table fits the 620px column, You column
+intact, no console errors. v70->v74.
