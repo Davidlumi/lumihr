@@ -2352,3 +2352,49 @@ brief and left untouched: 35 held no-norm metrics (re-qualify on a real panel),
 REW_BEN_REM_PAY_001 (dependent, David held), the IP presence half (needs the
 firewall option-split David declined). Lenses across Phase 1/2/3 remain David's
 to ratify.
+
+## 2026-06-13 — Signals END-TO-END system review (read-and-report; no behaviour changed)
+Holistic audit of all 8 firing classes + the briefing cap, after Phases 1–3. No
+thresholds/behaviour touched; the only edit is a new lock-down gate.
+COHERENCE — all green:
+ • FULL uncapped set on Thornbridge = 39 (money 1, behind 7, outlier 6, depth 1,
+   rare 6, prevalence 18) — EXACT match to the last recorded set, no drift.
+ • One metric -> one firing class. The ONLY cross-class overlap is
+   money ∩ behind = REW_BEN_PENS_EMP_MAX_01 — the declared pension dedup (money
+   fires, behind suppressed by seen_q). No unintended overlap.
+ • No verdict word in ANY fired signal across all 8 classes.
+ • Every fired metric is routed (no rogue firing); no metric fires twice
+   (per-metric cap holds); n>=5 on every fired signal.
+ • Briefing cap composes with all 8 kinds: fallback yields 5, never drops, per-
+   lens holds (qa_hero unit test + live capped set verified).
+DELIBERATE GAPS — all still deliberate:
+ • Held: REW_BEN_REM_PAY_001 unrouted/inert; REW_BEN_SICK_001 held (absent from
+   position_lenses, never fires).
+ • IP presence half absent from prevalence_lenses; only the generosity half fires
+   via Mechanism A (REW_BEN_047/048 in ordered_outlier).
+ • Anchor-risk: REW_Q049530 -> behind_explicit (bad-tail only; unanswered for
+   Thornbridge -> no fire, suppress-never-impute); REW_PAY_003 + PROP_8e0b6316 ->
+   ordered_outlier. None fires off array-index inference.
+GATES: qa_hero 56/56, qa_ordered_routing 17/17, qa_scores 3/3, qa_focus 28/28,
+qa_phase3 10/10 — GREEN. qa_phase1 (1 red) and qa_phase2 (24/1) each fail on the
+SAME pre-existing cause: both hardcode /api/benchmark/PROP_9620d380 (a Processes,
+status=proposed metric) which 404s under the reward-only launch. NOT a signals
+regression and NOT a security leak — qa_phase2's other foreign-org_id tenancy
+checks (/api/my-data, /api/gap-register) PASS, so session-wins isolation is
+intact. Added qa_signals_system.py (8 checks) to lock the coherence invariants.
+FINDINGS FOR DAVID (flag, not fixed):
+ 1. Stale doc: ordered_scale_routing.json `behind` list still includes
+    REW_BEN_SICK_001, which is held from the firing source (position_lenses). It
+    does NOT fire (the list is documentation, not the firing path), but reads
+    double-booked — remove or annotate as held.
+ 2. Thresholds live in TWO config files — Phase-1 in signal_lenses.json
+    (behind 25 / save 85 / prevalence_floor 50 / money_min 10000), Phase-2/3 in
+    ordered_scale_routing.json (tail 20 / modal 0.35 / band 0.50 / n 5 /
+    decisive 15/85 / rarity_floor 15). Both are hot-reloadable config and
+    internally consistent (ordered-outlier + depth share the gate), but not in
+    ONE place — consider cross-referencing for discoverability.
+ 3. Gate hygiene: qa_phase1 + qa_phase2 reference the out-of-scope PROP_9620d380;
+    swap to an in-scope reward metric so these platform gates run clean again.
+STATUS: the Signals system is coherent and launch-ready on the seed panel; all
+thresholds are seed-panel values to revisit on a real customer panel; lenses
+remain David's desk-ratification pass.
