@@ -808,7 +808,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .data-access > svg { flex: 0 0 auto; margin-top: 2px; color: var(--ink-faint); }
 .data-access.warn { background: color-mix(in srgb, var(--amber-bright) 10%, var(--surface-sunk));
   border-color: color-mix(in srgb, var(--amber-bright) 35%, var(--border)); color: var(--ink); }
-.data-domains { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--s3); }
+/* 7 categories: one even row when it fits, a balanced 4+3 otherwise, never a
+   lone orphan donut. */
+.data-domains { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
+@media (min-width: 1480px) { .data-domains { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .data-domains { grid-template-columns: 1fr; } }
 .data-domain { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: var(--s4) var(--s3);
   cursor: pointer; text-align: center; transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease); }
 .data-domain:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
