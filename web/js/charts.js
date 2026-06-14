@@ -11,10 +11,11 @@ const CHART_W = 420;
 const CAT_COLOURS = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)"];
 
 function youColour(fav) {
-  if (fav === "good") return "var(--favourable)";
-  if (fav === "bad") return "var(--unfavourable)";
-  if (fav === "mid") return "var(--neutral-perf)";
-  return "var(--you)";   // neutral polarity: the plain "you" accent
+  if (fav === "good") return "var(--favourable)";    // above the market
+  if (fav === "bad") return "var(--unfavourable)";   // below the market
+  // "mid" = on the market (inside the 25-75 band) reads neutral, never a verdict;
+  // performance colour is reserved for genuine divergence from the market.
+  return "var(--you)";
 }
 
 /* The single "you" marker: a filled blue diamond (performance-coloured where

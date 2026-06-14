@@ -230,12 +230,16 @@ function cardPosition(c) {
   }
   if (p == null || pol === "neutral" || !pol) return null;
   const adj = pol === "lower_is_better" ? 100 - p : p;
-  const kind = adj > 55 ? "good" : adj < 45 ? "bad" : "mid";
+  // Use the SAME market band the tiles + signals use (LUMI_MARKET_BAND, default
+  // 25-75) so a card never reads "behind/red" while you're actually on the
+  // market. Below the band = below market (red); above = above market (green);
+  // the middle half = on market (neutral). Keep this in sync with the env band.
+  const kind = adj > 75 ? "good" : adj < 25 ? "bad" : "mid";
   return {
     kind,
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
-    label: (kind === "good" ? "Ahead" : kind === "bad" ? "Behind" : "In line") + " · P" + Math.round(p),
-    tip: "Your position vs this peer group, adjusted for whether higher or lower is favourable.",
+    label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + " · P" + Math.round(p),
+    tip: "Your position vs the market, adjusted for whether higher or lower is favourable.",
   };
 }
 window.cardPosition = cardPosition;
