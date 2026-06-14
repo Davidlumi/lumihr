@@ -734,8 +734,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   border: 2.5px solid var(--surface); box-shadow: var(--shadow-sm); }
 .cat-band-ends { display: flex; justify-content: space-between; margin-top: 6px;
   font-size: var(--fs-caption); color: var(--ink-faint); }
-.cat-prev-big { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
-.cat-prev-big b { font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
+.cat-prev-wrap { display: flex; align-items: center; gap: var(--s4); margin-top: 2px; }
+@media (max-width: 420px) { .cat-prev-wrap { flex-wrap: wrap; } }
+.cat-donut { position: relative; width: 104px; height: 104px; flex: 0 0 auto; }
+.cat-donut svg { width: 100%; height: 100%; display: block; }
+.cat-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; line-height: 1; pointer-events: none; }
+.cat-donut-center b { font-size: 27px; letter-spacing: -0.02em; color: var(--blue-deep); }
+.cat-donut-center span { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
+.cat-prev-legend { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cat-leg-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-caption); color: var(--ink-soft); }
+.cat-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.cat-leg-row b { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 11px; text-align: right; }
 .cat-section { margin-bottom: var(--s5); }
 .cat-sec-head { display: flex; align-items: center; gap: 9px; margin-bottom: var(--s3); }
 .cat-sec-head > b { font-size: 15px; }
@@ -825,11 +835,12 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-hero-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
   border-color: color-mix(in srgb, var(--blue) 28%, var(--border)); }
 .category-page .cat-section { animation: ov-rise 440ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 220ms; }
-/* the position dot settles into place; the big prevalence figure pops up */
+/* the position dot settles in; the prevalence donut sweeps in, centre count pops */
 .cat-band-dot { animation: dot-pop 540ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 320ms; }
-.cat-prev-big b { display: inline-block; transform-origin: left bottom;
-  animation: prev-pop 560ms cubic-bezier(.34,1.5,.4,1) both; animation-delay: 280ms; }
-@keyframes prev-pop { 0% { transform: scale(.45); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: none; opacity: 1; } }
+.cat-donut { animation: donut-in 620ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; transform-origin: center; }
+@keyframes donut-in { from { transform: rotate(-16deg) scale(.86); opacity: 0; } to { transform: none; opacity: 1; } }
+.cat-donut-center b { display: inline-block; animation: prev-pop 560ms cubic-bezier(.34,1.5,.4,1) both; animation-delay: 420ms; }
+@keyframes prev-pop { 0% { transform: scale(.45); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: none; opacity: 1; } }
 /* the back arrow nudges home; the glyph wakes on hover, like the tiles */
 .category-page .back-link svg { transition: transform var(--ease); }
 .category-page .back-link:hover svg { transform: translateX(-3px); }
@@ -849,7 +860,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .arc-card, .ov-top .card, .signal-row, .cat-tile, .grid2 .card, .arc-needle, .arc-verdict, .ov-after,
   .arc-band, .arc-minors, .arc-median, .arc-tip-glow, .tile-dot, .signal-go, .ov-aurora,
-  .category-page .page-head, .cat-hero-cell, .category-page .cat-section, .cat-band-dot, .cat-prev-big b, .cat-allclear {
+  .category-page .page-head, .cat-hero-cell, .category-page .cat-section, .cat-band-dot, .cat-donut, .cat-donut-center b, .cat-allclear {
     animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; transform: none !important; }
   .ov-aurora { transform: none !important; }
   .arc-tip-glow { opacity: 0 !important; }
