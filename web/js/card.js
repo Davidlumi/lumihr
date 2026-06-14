@@ -281,9 +281,14 @@ function cardSignalPill(c, sigs) {
     // than pick one. A single flag shows its own tag.
     if (list.length > 1) {
       const lens = list[0].lens;
+      // a matrix can flag rows in BOTH directions — state the split, never one tag
+      const up = list.filter(s => /HIGHER/.test(s.tag || "")).length;
+      const dn = list.filter(s => /LOWER/.test(s.tag || "")).length;
+      const txt = up && dn ? up + " above · " + dn + " below"
+        : up ? up + " above market" : dn ? dn + " below market" : list.length + " off market";
       const title = list.map(s => s.name + " — " + s.tag).join(" · ");
       return html`<span class=${"sig-pill lens-" + lens} title=${title}>
-        <${Icon} name=${SIG_LENS_ICON[lens] || "flag"} size=${12} /> ${list.length} off market</span>`;
+        <${Icon} name=${SIG_LENS_ICON[lens] || "flag"} size=${12} /> ${txt}</span>`;
     }
     const sig = list[0];
     return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.stand || sig.label_short || sig.detail}>
