@@ -71,6 +71,9 @@ function App() {
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
   const scope = me && me.scope ? me.scope : { superpowers: window.SUPERPOWERS || [], focused: false, question_count: 778 };
   window.SCOPE = scope;
+  // the engine's market band (LUMI_MARKET_BAND) — cardPosition colours cards on
+  // the SAME line as the tiles + signals, so they can never drift.
+  if (me && me.config && me.config.market_band) window.MARKET_BAND = me.config.market_band;
   const activeSupers = scope.superpowers;
   if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
 
@@ -692,8 +695,8 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
             ${pct < 1 ? "Welcome to lumi" : "You're on your way"}</b>
         </div>
         <p style=${{ margin: "2px 0 0" }}>${pct < 1
-          ? html`Explore your reward benchmark below — every metric and all ${pool.responding_orgs} peer organisations are open to you from day one. Complete your reward data within 30 days to unlock your insights: the £ opportunity, your board pack, and your biggest gaps to peers.`
-          : html`Keep going — at 90% your insights unlock immediately: the £ opportunity, your board pack, and your biggest gaps to peers. You see the pool because you're part of it.`}</p>
+          ? html`Explore your reward benchmark below — every metric and all ${pool.responding_orgs} peer organisations are open to you from day one. Complete your reward data within 30 days to unlock your insights: the £ opportunity, your board pack, and your biggest gaps to the market.`
+          : html`Keep going — at 90% your insights unlock immediately: the £ opportunity, your board pack, and your biggest gaps to the market. You see the pool because you're part of it.`}</p>
       </div>
       <div style=${{ flex: "1 1 240px", minWidth: "220px" }}>
         <div class="row spread" style=${{ marginBottom: "4px" }}>
@@ -1084,18 +1087,18 @@ function MetricCommentary({ qid, sel, card }) {
     </div>`;
 }
 
-/* Exact figures: the analyst's row — your value, percentile, peer quartiles, n. */
+/* Exact figures: the analyst's row — your value, percentile, market quartiles, n. */
 function ExactFigures({ card: c }) {
   const cells = [];
   if (c.type === "numeric" && c.block) {
     if (c.you && c.you.display != null) cells.push(["You", c.you.display + (c.you.percentile != null ? " · " + pLabel(c.you.percentile) : "")]);
-    for (const [k, lbl] of [["p25", "Peer P25"], ["p50", "Peer median"], ["p75", "Peer P75"]]) {
+    for (const [k, lbl] of [["p25", "Market P25"], ["p50", "Market median"], ["p75", "Market P75"]]) {
       if (c.block[k] != null) cells.push([lbl, fmtValue(c.block[k], c.unit)]);
     }
   } else if (c.block && c.block.options) {
     if (c.you && c.you.label) {
       const mine = c.block.options.find(o => o.label === c.you.label);
-      cells.push(["Your answer", c.you.label + (mine ? ` (${mine.pct}% of peers)` : "")]);
+      cells.push(["Your answer", c.you.label + (mine ? ` (${mine.pct}% of the market)` : "")]);
     }
     const top = [...c.block.options].sort((a, b) => b.pct - a.pct)[0];
     if (top) cells.push(["Most common", `${top.label} (${top.pct}%)`]);

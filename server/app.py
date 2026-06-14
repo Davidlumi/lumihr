@@ -637,6 +637,9 @@ async def me(request: Request):
     return {
         "contribution": contrib,
         "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK, "pulse_ai": AI_PULSE},
+        # the market band the engine uses (LUMI_MARKET_BAND) so the client colours
+        # cards on the SAME line as the tiles + signals — single source of truth.
+        "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH]},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},

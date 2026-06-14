@@ -230,11 +230,12 @@ function cardPosition(c) {
   }
   if (p == null || pol === "neutral" || !pol) return null;
   const adj = pol === "lower_is_better" ? 100 - p : p;
-  // Use the SAME market band the tiles + signals use (LUMI_MARKET_BAND, default
-  // 35-65) so a card never reads "behind/red" while you're actually on the
-  // market. Below the band = below market (red); above = above market (green);
-  // the middle = on market (neutral). Keep this in sync with the env band.
-  const kind = adj > 65 ? "good" : adj < 35 ? "bad" : "mid";
+  // Use the SAME market band the tiles + signals use — sourced from the engine
+  // (window.MARKET_BAND, set from /api/me) so the card colour can never drift
+  // from the env band. Below = below market (red); above = above market (green);
+  // the middle = on market (neutral). Default 35-65 if the global isn't loaded.
+  const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
+  const kind = adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
   return {
     kind,
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
