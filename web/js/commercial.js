@@ -35,7 +35,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
             <${Icon} name="chevron-left" size=${13} /> Back to Signals</a>
           <h1 class="display-title">Full gap register</h1>
           <div class="caption" style=${{ marginTop: "4px" }}>
-            Every metric's presence against your peers — what similar organisations have in place that you don't, sorted so the most commonly held missing items lead.
+            Every metric's presence against the market — what similar organisations have in place that you don't, sorted so the most commonly held missing items lead.
             Signals surfaces the flags that cross a threshold; this is the complete list. Peer group: ${cutLabelOf(cut, cuts)}.
           </div>
         </div>
@@ -82,13 +82,13 @@ function GapRow({ r, focused }) {
         <div class="gap-name"><a href=${"#/metric/" + r.question_id}>${r.name}</a>
           <span class="caption" style=${{ marginLeft: "var(--s2)" }}>${focused ? (r.subpower || "") : r.superpower}</span></div>
         <div class="caption" style=${{ marginTop: "2px" }}>
-          ${peers ? html`${peers} <b>${you}</b>` : html`Not enough peer data to compare safely. <b>${you}</b>`}
+          ${peers ? html`${peers} <b>${you}</b>` : html`Not enough market data to compare safely. <b>${you}</b>`}
           ${r.org_answered && r.status !== "unknown" ? html` <span class="muted">Your answer: “${String(r.org_status).slice(0, 48)}”.</span>` : null}
         </div>
       </div>
       <div class="gap-side">
         <span class=${"chip " + chip[0]}>${chip[1]}</span>
-        <span class="caption num" title="Share of assessable peer answers at least partly in place">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"} of peers
+        <span class="caption num" title="Share of assessable market answers at least partly in place">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"} of the market
           ${r.sector_adoption_pct != null ? html` · ${r.sector_adoption_pct}% in your sector` : null} · n=${r.n}</span>
       </div>
     </div>`;
@@ -145,7 +145,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <div class="card banner" style=${{ marginBottom: "16px", boxShadow: "none" }}>
           <div>
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
-            <div class="caption">comparable metrics at or above the peer median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
+            <div class="caption">comparable metrics at or above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
           </div>
           <div style=${{ borderLeft: "1px solid var(--border)", paddingLeft: "20px" }}>
             <div class="metric-value">${p.peer_pool.total}</div>
@@ -162,7 +162,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">Where ${p.organisation.name} leads</h2>
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
-        <h2 class="section-title" style=${{ marginTop: "26px" }}>Largest gaps to peers</h2>
+        <h2 class="section-title" style=${{ marginTop: "26px" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
         <${Footer} page="2" />
@@ -173,7 +173,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p>${n.opportunity_narrative}</p>
         ${p.opportunities.length ? html`
           <table class="data" style=${{ marginBottom: "14px" }}>
-            <thead><tr><th>Lever</th><th class="num">To peer median</th><th class="num">To upper quartile</th><th>Type</th></tr></thead>
+            <thead><tr><th>Lever</th><th class="num">To market median</th><th class="num">To upper quartile</th><th>Type</th></tr></thead>
             <tbody>${p.opportunities.map(o => html`
               <tr key=${o.label}><td><b>${o.label}</b><div class="caption">${o.formula}</div></td>
               <td class="num"><b>${fmtGBPCompact(o.to_p50_gbp)}/yr</b></td>

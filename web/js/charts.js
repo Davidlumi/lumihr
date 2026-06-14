@@ -232,7 +232,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
           <tr>
             <th class="mn-lvl">Level</th>
             <th class="mn-num">Median</th>
-            <th class="mn-strip-h">Where peers sit · you</th>
+            <th class="mn-strip-h">Where the market sits · you</th>
             <th class="mn-num">You</th>
             <th class="mn-num">Position</th>
           </tr>
@@ -264,8 +264,8 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
         </tbody>
       </table>
       <div class="matrix-num-scale">
-        <span class="mleg"><span class="mn-key-iqr"></span>middle 50% of peers</span>
-        <span class="mleg"><span class="mn-key-median"></span>peer median</span>
+        <span class="mleg"><span class="mn-key-iqr"></span>middle 50% of the market</span>
+        <span class="mleg"><span class="mn-key-median"></span>market median</span>
         <span class="mleg"><span class="mn-key-you"></span>your organisation</span>
         ${live.length > 0 && html`<span class="caption mn-scale-range">scale ${fmtValue(rawLo, unit)} – ${fmtValue(rawHi, unit)}</span>`}
       </div>
@@ -312,7 +312,7 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
 window.QuartileDots = function ({ quartiles }) {
   const total = quartiles.reduce((a, b) => a + b, 0) || 1;
   return html`
-    <div class="qdots" title="Where your metrics fall across peer quartiles (Q1 lowest → Q4 highest)">
+    <div class="qdots" title="Where your metrics fall across market quartiles (Q1 lowest → Q4 highest)">
       ${quartiles.map((c, i) => html`
         <div key=${i} class="qdot" style=${{
           background: c ? `color-mix(in srgb, var(--cat-1) ${Math.round(22 + 78 * c / total)}%, var(--surface-sunk))` : "var(--surface-sunk)",

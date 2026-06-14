@@ -1725,7 +1725,7 @@ async def analyst_starters(request: Request):
             "What bonus eligibility is typical for organisations like ours?",
             "Which benefits are most commonly offered by organisations our size?",
             "How does our annual leave entitlement compare?",
-            "What proportion of peers have a published pay transparency approach?",
+            "What proportion of the market have a published pay transparency approach?",
         ][len(starters)])
     return {"starters": starters[:6]}
 

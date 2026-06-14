@@ -149,7 +149,7 @@ function OverviewHero({ data, cut, cuts }) {
             <div class="insight-lock">
               <div class="blurred" aria-hidden="true">
                 <div class="callout bad">Your largest gap appears here once unlocked.</div>
-                <div class="callout bad">Where peers commonly lead.</div>
+                <div class="callout bad">Where the market commonly leads.</div>
               </div>
               <div class="lock-note">
                 <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
@@ -377,7 +377,7 @@ function SignalsPanel({ signals, locked, contribution }) {
 const LENS_ORDER = ["attract", "retain", "engage", "save"];
 const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Save" };
 const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
-  engage: "how people experience work", save: "where your spend sits vs peers" };
+  engage: "how people experience work", save: "where your spend sits vs the market" };
 // legacy fallback tags (the engine now supplies s.tag in plain market language)
 const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
   prevalence: "ON MARKET", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
@@ -476,7 +476,7 @@ window.SignalsPage = function ({ me }) {
           <${Icon} name="table" size=${15} />
           <div>
             <b>Want the complete picture?</b> Signals shows only the flags that cross a threshold.
-            The <a href="#/priorities">full gap register</a> lists every metric's presence against your peers.
+            The <a href="#/priorities">full gap register</a> lists every metric's presence against the market.
             ${me.user.role === "admin" ? html` <a href="/api/gap-register.csv" download>Download CSV</a>.` : null}
           </div>
         </div>`}
@@ -518,7 +518,7 @@ function CategoryTile({ d }) {
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>`}
       <div class="row spread" style=${{ minHeight: "18px" }}>
-        <span class="caption num" title="practices in line with the peer majority">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool : ""}</span>
+        <span class="caption num" title="practices in line with the market majority">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool : ""}</span>
       </div>
     </div>`;
 }
@@ -557,7 +557,7 @@ function MarketPill({ m, lg }) {
 function PrevLine({ p, compact }) {
   if (!p) return html`<span class="caption">no comparable practices yet</span>`;
   return html`<span class=${"prev-line" + (compact ? " caption" : "")}>
-    <b class="num">${p.with_majority}</b> of ${p.pool} practices with the peer majority${p.less_common ? html` · <b class="num">${p.less_common}</b> less common` : ""}</span>`;
+    <b class="num">${p.with_majority}</b> of ${p.pool} practices with the market majority${p.less_common ? html` · <b class="num">${p.less_common}</b> less common` : ""}</span>`;
 }
 
 window.HeroSignals = function ({ hero, cut, cuts }) {
@@ -599,7 +599,7 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
       <div class="eyebrow">Total identified opportunity</div>
       <div class="blurred" aria-hidden="true">
         <div class="metric-value lg" style=${{ color: "var(--blue)" }}>£———<span class="unit">/yr</span></div>
-        <div class="caption">what closing your gaps to the peer median is worth</div>
+        <div class="caption">what closing your gaps to the market median is worth</div>
         <div class="opp-row"><span>Largest opportunity</span><b>£——/yr</b></div>
         <div class="opp-row"><span>Second opportunity</span><b>£——/yr</b></div>
       </div>
@@ -618,8 +618,8 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
         <div>
           <div class="metric-value lg" style=${{ color: "var(--blue)" }}>${fmtGBPCompact(total)}<span class="unit">/yr</span></div>
           <div class="caption">${opp.total_savings_to_p50_gbp > 0 ?
-            html`potential savings if you matched the peer median${opp.total_investment_to_p50_gbp ? html` — plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
-            opp.total_investment_to_p50_gbp > 0 ? "what it would take to close your benefit gaps to the peer median" : "no gaps to the peer median identified"}</div>
+            html`potential savings if you matched the market median${opp.total_investment_to_p50_gbp ? html` — plus ${fmtGBPCompact(opp.total_investment_to_p50_gbp)}/yr to close benefit gaps` : ""}` :
+            opp.total_investment_to_p50_gbp > 0 ? "what it would take to close your benefit gaps to the market median" : "no gaps to the market median identified"}</div>
         </div>
         <div style=${{ marginTop: "var(--s2)" }}>
           ${opp.items.map(i => html`
@@ -643,7 +643,7 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
         <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>
         ${actionGaps > 0 && html`<div class="caption" style=${{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid var(--border)" }}>
           Plus <a href="#/priorities"><b class="num">${actionGaps}</b> practice gaps</a> where most peers do something you don't — the non-£ to-do list.</div>`}` :
-      html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/your-data/submit">your submission</a> to size the £ opportunity of closing gaps to the peer median.</div>`}
+      html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/your-data/submit">your submission</a> to size the £ opportunity of closing gaps to the market median.</div>`}
     </div>`;
 };
 
@@ -768,7 +768,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
 // judge. Centre holds the headline count; the legend names each slice.
 function prevDonut(prev) {
   const segs = [
-    { k: "majority", v: prev.with_majority || 0, c: "var(--blue-deep)", label: "match the peer majority" },
+    { k: "majority", v: prev.with_majority || 0, c: "var(--blue-deep)", label: "match the market majority" },
     { k: "common", v: prev.established || 0, c: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))", label: "a common alternative" },
     { k: "rare", v: prev.less_common || 0, c: "color-mix(in srgb, var(--blue) 16%, var(--surface-sunk))", label: "a rarer choice" },
   ].filter(s => s.v > 0);
@@ -782,7 +782,7 @@ function prevDonut(prev) {
   return html`
     <div class="cat-prev-wrap">
       <div class="cat-donut" role="img"
-        aria-label=${prev.with_majority + " of " + total + " practices match the peer majority"}>
+        aria-label=${prev.with_majority + " of " + total + " practices match the market majority"}>
         <svg viewBox="0 0 140 140" aria-hidden="true">
           <circle cx="70" cy="70" r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width="15" />
           ${arcs}
@@ -1136,7 +1136,7 @@ window.MethodologyPage = function () {
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">How the numbers are calculated</h2>
         <p><b>Percentiles.</b> P10, P25, P50 (median), P75 and P90 are calculated with linear interpolation across all
-        valid peer answers — the same method used by the main survey houses. We benchmark on medians rather than
+        valid market answers — the same method used by the main survey houses. We benchmark on medians rather than
         averages so a single unusual organisation cannot skew a figure.</p>
         <p><b>Small-sample protection.</b> Any figure that would rest on fewer than ${m.suppression_floor} organisations is not shown.
         You will see "not enough organisations to show this safely" instead. This rule applies to every peer group —
@@ -1144,7 +1144,7 @@ window.MethodologyPage = function () {
         <p><b>Multiple-choice questions.</b> Distributions show the share of answering organisations choosing each option.
         For "select all that apply" questions, the denominator is the number of organisations that answered the question
         — so percentages can sum to more than 100.</p>
-        <p><b>Favourable vs peers.</b> Each question carries a polarity: higher is better (e.g. offer acceptance rate),
+        <p><b>Favourable vs the market.</b> Each question carries a polarity: higher is better (e.g. offer acceptance rate),
         lower is better (e.g. regretted attrition), or neutral (e.g. salary increase budget, where "better" depends on
         strategy). Green/amber/red colouring is polarity-adjusted and is never applied to neutral metrics.</p>
         <p><b>Practice adoption.</b> We treat a practice or policy as <b>in place</b> when an organisation gives a real,
@@ -1240,7 +1240,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v1</p>
 
         <div class="card how-card" id="who-compared">
-          <h3 class="section-title">Who you're compared with (peer norms)</h3>
+          <h3 class="section-title">Who you're compared with (market norms)</h3>
           ${m.synthetic_pool && html`
             <div class="how-note">
               <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: ${m.peer_pool.responding_orgs} simulated
@@ -1273,7 +1273,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           unusual organisation cannot skew a figure.</p>
           <p><b>Your percentile.</b> Your P-number is the share of peer organisations whose value sits below yours
           (ties counted half), so P63 means you are higher than about 6 in 10 peers.</p>
-          <p><b>Favourable vs peers.</b> Each question carries a polarity — higher is better, lower is better, or
+          <p><b>Favourable vs the market.</b> Each question carries a polarity — higher is better, lower is better, or
           neutral (where "better" depends on strategy). Green/amber/red colouring is polarity-adjusted and is never
           applied to neutral metrics.</p>
         </div>
@@ -1461,7 +1461,7 @@ window.MetricTrend = function ({ qid }) {
             </g>`;
         })}
       </svg>
-      <div class="caption">Peer median by collection period · question ${t.question_version || ""}. A reset marks a
+      <div class="caption">Market median by collection period · question ${t.question_version || ""}. A reset marks a
         comparability break — the question changed, so a single line would splice incomparable data.</div>
     </div>`;
 };

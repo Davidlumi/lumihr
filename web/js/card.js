@@ -189,9 +189,9 @@ function meaningLines(c, pos) {
   const p50 = c.block && c.block.p50 != null ? fmtValue(c.block.p50, c.unit) : null;
   if (pos.kind === "bad") {
     if (c.category === "practice" || c.category === "policy") {
-      return "Most similar organisations are further ahead here. A typical next step is to review whether a more formal approach would fit your size and sector — your peers' position suggests it's become standard practice.";
+      return "Most similar organisations are further ahead here. A typical next step is to review whether a more formal approach would fit your size and sector — the market's position suggests it's become standard practice.";
     }
-    return "You're behind most similar organisations on this measure." + (p50 ? ` What good looks like: the peer median is ${p50} — a realistic first milestone.` : "");
+    return "You're behind most similar organisations on this measure." + (p50 ? ` What good looks like: the market median is ${p50} — a realistic first milestone.` : "");
   }
   if (pos.kind === "good") {
     return "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
@@ -244,9 +244,9 @@ window.cardPosition = cardPosition;
    signal (lens-coloured flag, never a verdict), or — if the user hasn't answered
    — a prompt to add data so it CAN flag, or a quiet "No flag" when answered and
    nothing crosses a threshold. Mirrors the Signals inbox language. */
-const SIG_KIND = { money: "£ gap", save: "cost", behind: "Behind", prevalence: "peers do this",
-  outlier: "at an end", depth: "role reach", rare: "rare choice" };
-const SIG_SHOWVAL = { money: 1, save: 1, prevalence: 1, behind: 1 };
+// fallback tags only — the engine now supplies sig.tag in plain market language
+const SIG_KIND = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
+  prevalence: "ON MARKET", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
 const SIG_LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 function cardAnswered(c) {
   // numeric/select/multi carry c.you; matrix answers live per-row in matrix_rows
@@ -271,10 +271,10 @@ function cardSignalPill(c, sig) {
   if (state === "add") {
     const href = c.subpower ? "#/your-data/submit/" + encodeURIComponent(c.subpower) : "#/your-data";
     return html`<a class="sig-pill is-add" href=${href} onClick=${e => e.stopPropagation()}
-      title=${"Add your data for this metric to see if it flags vs peers"}>
+      title=${"Add your data for this metric to see if it flags vs the market"}>
       <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
   }
-  return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical peer range.">
+  return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical market range.">
     <${Icon} name="sparkle" size=${11} /> No flag</span>`;
 }
 window.cardSignalPill = cardSignalPill;
@@ -397,7 +397,7 @@ window.MatrixSelect = function ({ rows }) {
                   const isMode = b === modal, isYou = youLabel && b === youLabel;
                   return html`<td key=${b} class=${"mh-cell" + (isMode ? " mode" : "") + (isYou ? " you" : "")}
                     style=${{ background: mix(t), color: t >= 0.52 ? "#fff" : "var(--ink)" }}
-                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of peers"}>${fmtPct(pct)}</td>`;
+                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of the market"}>${fmtPct(pct)}</td>`;
                 })}
                 <td class="mh-you">${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;
@@ -481,7 +481,7 @@ window.CardDetail = function ({ card: c, onClose }) {
         <${Chip}>peer group: ${c.cut.label}, n=${c.n}<//>
       </div>
       <p class="caption" style=${{ marginTop: "var(--s3)" }}>
-        Percentiles use linear interpolation across all valid peer answers; anything based on fewer
+        Percentiles use linear interpolation across all valid market answers; anything based on fewer
         than 5 organisations is suppressed. See <a href="#/how-lumi-works/calculations" onClick=${onClose}>How this is calculated</a>.
       </p>
       <div class="row" style=${{ justifyContent: "flex-end" }}>
