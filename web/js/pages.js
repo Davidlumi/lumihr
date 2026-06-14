@@ -664,13 +664,20 @@ window.TrajectoryTile = function ({ movement }) {
 window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
+  const [sigMap, setSigMap] = useState({});
   const ui = (prefs && prefs._ui_section) || {};
   const [cat, setCatRaw] = useState(ui.cat || "");
+  const [sigF, setSigF] = useState("");
   const setCat = v => { setCatRaw(v); onPref && onPref("_ui_section", { ...ui, cat: v }); };
 
   useEffect(() => {
     setData(null); setErr(null);
     api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut)).then(setData).catch(e => setErr(e.message));
+    // signals come from the same computed data the home/category pages use; one
+    // fetch per page builds the qid -> signal map for every card's status pill
+    api("/api/overview?" + cutQS(cut)).then(o => {
+      const m = {}; (o.signals_all || []).forEach(s => { m[s.question_id] = s; }); setSigMap(m);
+    }).catch(() => setSigMap({}));
   }, [sp, cutKeyOf(cut)]);
   useEffect(() => {
     if (data && focusQ) {
@@ -694,6 +701,9 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   let cards = data.cards;
   if (subF) cards = cards.filter(c => (c.subpower || "General") === subF);
   if (cat) cards = cards.filter(c => c.category === cat);
+  const sigCounts = { signal: 0, add: 0, clear: 0 };
+  cards.forEach(c => { const st = cardSignalState(c, sigMap[c.id]); if (st) sigCounts[st]++; });
+  if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
 
   const bySub = [];
   for (const c of cards) {
@@ -722,12 +732,18 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="hint">Show only one kind of question.</div>
           </div>
           <div class="ctlgroup">
-
+            <select class="ctl" aria-label="Filter by signal" value=${sigF} onChange=${e => setSigF(e.target.value)}>
+              <option value="">All signals</option>
+              <option value="signal">Flagged · ${sigCounts.signal}</option>
+              <option value="add">Needs data · ${sigCounts.add}</option>
+              <option value="clear">No flag · ${sigCounts.clear}</option>
+            </select>
+            <div class="hint">Flagged, needs data, or no flag.</div>
           </div>
         </div>
       </div>
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"
-        body="Try clearing the category filter." action=${html`<button class="btn small" onClick=${() => setCat("")}>Clear filter</button>`} />`}
+        body="Try clearing the filters." action=${html`<button class="btn small" onClick=${() => { setCat(""); setSigF(""); }}>Clear filters</button>`} />`}
       ${bySub.map(g => html`
         <div key=${g.sub} style=${{ marginBottom: "var(--s5)" }}>
           ${!subF && html`<h2 class="section-title">${g.sub}</h2>`}
@@ -735,7 +751,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             ${g.cards.map(c => html`
               <div key=${c.id} id=${"q-" + c.id}>
                 <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
-                  pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)}
+                  pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[c.id]}
                   window=${me.peer_pool && me.peer_pool.collection_window} highlight=${focusQ === c.id} />
               </div>`)}
           </div>
@@ -790,8 +806,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [bench, setBench] = useState(null);
   const [err, setErr] = useState(null);
   const [type, setType] = useState("");
+  const [sigF, setSigF] = useState("");
   useEffect(() => {
-    setOv(null); setBench(null); setErr(null); setType("");
+    setOv(null); setBench(null); setErr(null); setType(""); setSigF("");
     Promise.all([
       api("/api/overview?" + cutQS(cut)),
       api("/api/benchmarks/Reward?" + cutQS(cut)),
@@ -817,8 +834,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
   const all = (bench.cards || []).filter(c => (c.subpower || "General") === name);
   const inCat = new Set(all.map(c => c.id));
+  const sigMap = {}; (ov.signals_all || []).forEach(s => { sigMap[s.question_id] = s; });
   const sigs = (ov.signals_all || []).filter(s => inCat.has(s.question_id) && s.status !== "dismissed");
-  const cards = type ? all.filter(c => c.category === type) : all;
+  let cards = type ? all.filter(c => c.category === type) : all;
+  if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
+  const sigCounts = { signal: 0, add: 0, clear: 0 };
+  all.forEach(c => { const st = cardSignalState(c, sigMap[c.id]); if (st) sigCounts[st]++; });
 
   // position read (same traffic-light language as the tile / hero gauge)
   const pos = hero && (hero.position || hero.market);
@@ -888,17 +909,25 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
           <b>All metrics</b><span class="caption">${cards.length} shown</span>
-          <select class="ctl cat-type" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
-            <option value="">All types</option><option value="metric">Metrics</option>
-            <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
-          </select></div>
-        ${cards.length === 0 ? html`<${EmptyState} title="Nothing matches this type"
-          action=${html`<button class="btn small" onClick=${() => setType("")}>Clear filter</button>`} /> ` :
+          <div class="cat-filters">
+            <select class="ctl" aria-label="Filter by signal" value=${sigF} onChange=${e => setSigF(e.target.value)}>
+              <option value="">All signals</option>
+              <option value="signal">Flagged · ${sigCounts.signal}</option>
+              <option value="add">Needs data · ${sigCounts.add}</option>
+              <option value="clear">No flag · ${sigCounts.clear}</option>
+            </select>
+            <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
+              <option value="">All types</option><option value="metric">Metrics</option>
+              <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
+            </select>
+          </div></div>
+        ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
+          action=${html`<button class="btn small" onClick=${() => { setType(""); setSigF(""); }}>Clear filters</button>`} /> ` :
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>
               <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
-                pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)}
+                pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[c.id]}
                 window=${me.peer_pool && me.peer_pool.collection_window} />
             </div>`)}
         </div>`}
@@ -913,7 +942,13 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
   const [cards, setCards] = useState({});
   const [drag, setDrag] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [sigMap, setSigMap] = useState({});
   useEffect(() => { api("/api/myview").then(d => { setLayout(d.layout); setSource(d.source); }); }, []);
+  useEffect(() => {
+    api("/api/overview?" + cutQS(cut)).then(o => {
+      const m = {}; (o.signals_all || []).forEach(s => { m[s.question_id] = s; }); setSigMap(m);
+    }).catch(() => setSigMap({}));
+  }, [cutKeyOf(cut)]);
   useEffect(() => {
     if (!layout) return;
     layout.forEach(slot => {
@@ -976,7 +1011,7 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
             c.error ? html`<div class="card bench-card"><${EmptyState} title="Couldn't load this card" /></div>` :
             html`<div style=${{ position: "relative" }}>
               <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
-                onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} />
+                onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]} />
               <div class="no-print" style=${{ position: "absolute", bottom: "8px", right: "10px", display: "flex", gap: "2px" }}>
                 <button class="iconbtn" title="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
                 <span class="iconbtn" title="Drag to reorder" style=${{ cursor: "grab" }}>⠿</span>

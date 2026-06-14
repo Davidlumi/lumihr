@@ -219,6 +219,22 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .pos-pill.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .pos-pill.mid { background: var(--neutral-perf-tint); color: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink)); }
 
+/* the per-card status pill: signal (lens-tinted) / add-data prompt / quiet no-flag */
+.sig-pill { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; max-width: 230px;
+  height: 22px; padding: 0 10px; border-radius: 999px; font-size: var(--fs-caption); font-weight: 650;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sig-pill svg { flex: 0 0 auto; }
+.sig-pill.lens-save    { background: var(--lens-save-tint);    color: var(--lens-save); }
+.sig-pill.lens-attract { background: var(--lens-attract-tint); color: var(--lens-attract); }
+.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: var(--lens-retain); }
+.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: var(--lens-engage); }
+.sig-pill.is-clear { background: var(--surface-sunk); color: var(--ink-faint); font-weight: 600; }
+.sig-pill.is-add { background: var(--blue-tint); color: var(--blue); text-decoration: none;
+  cursor: pointer; transition: background var(--ease), transform var(--ease); }
+.sig-pill.is-add:hover { background: var(--blue-tint-2); transform: translateY(-1px); }
+.cat-filters { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.cat-filters .ctl { margin-left: 0; }
+
 select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface); font-size: var(--fs-label); max-width: 260px; }
 /* the peer-group selector is the product's core control — first-class */

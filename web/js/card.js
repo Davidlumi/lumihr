@@ -6,7 +6,7 @@
    PercentileBand, Histogram, BoxPlot, OptionBars, OrderedDist, MatrixHeat, MatrixGrouped,
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
-window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight }) {
+window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight, signal }) {
   const [expanded, setExpanded] = useState(false);          // full question & definition
   const [override, setOverride] = useState(null);           // per-card peer cut — exploratory, never saved
   const [localCard, setLocalCard] = useState(null);
@@ -65,7 +65,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
           <button class="chip accent cut-chip" title=${"This card compares against " + c.cut.label + " — the page is on " + (globalKey === "all" ? "All peers" : "another group") + ". Click to reset."}
             aria-label=${"Reset this card to the page's peer group"}
             onClick=${() => setOverride(null)}>${DIM_SHORT[c.cut.dim] || c.cut.label} ✕</button>`}
-        ${pos && html`<span class=${"pos-pill " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+        ${cardSignalPill(c, signal)}
         <${KebabMenu} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
           onCut=${k => setOverride(k === globalKey ? null : k)}
           onDetail=${() => setExpanded(true)} onPin=${onPin ? () => onPin(card.id) : null} pinned=${pinned}
@@ -239,6 +239,47 @@ function cardPosition(c) {
   };
 }
 window.cardPosition = cardPosition;
+
+/* The per-card status pill: every card carries exactly one. Either the metric's
+   signal (lens-coloured flag, never a verdict), or — if the user hasn't answered
+   — a prompt to add data so it CAN flag, or a quiet "No flag" when answered and
+   nothing crosses a threshold. Mirrors the Signals inbox language. */
+const SIG_KIND = { money: "£ gap", save: "cost", behind: "Behind", prevalence: "peers do this",
+  outlier: "at an end", depth: "role reach", rare: "rare choice" };
+const SIG_SHOWVAL = { money: 1, save: 1, prevalence: 1, behind: 1 };
+const SIG_LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
+function cardAnswered(c) {
+  // numeric/select/multi carry c.you; matrix answers live per-row in matrix_rows
+  if (c.you) return true;
+  if (c.type === "matrix" && c.matrix_rows) return c.matrix_rows.some(r => r.you);
+  return false;
+}
+function cardSignalState(c, sig) {
+  if (c.suppressed || c.reduced) return null;
+  if (sig) return "signal";
+  if (c.locked || !cardAnswered(c)) return "add";
+  return "clear";
+}
+window.cardSignalState = cardSignalState;
+function cardSignalPill(c, sig) {
+  const state = cardSignalState(c, sig);
+  if (!state) return null;
+  if (state === "signal") {
+    const txt = SIG_KIND[sig.kind] || sig.kind;
+    const val = SIG_SHOWVAL[sig.kind] ? sig.value_display : null;
+    return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.label_short || sig.detail}>
+      <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${txt}${val ? " · " + val : ""}</span>`;
+  }
+  if (state === "add") {
+    const href = c.subpower ? "#/your-data/submit/" + encodeURIComponent(c.subpower) : "#/your-data";
+    return html`<a class="sig-pill is-add" href=${href} onClick=${e => e.stopPropagation()}
+      title=${"Add your data for this metric to see if it flags vs peers"}>
+      <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
+  }
+  return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical peer range.">
+    <${Icon} name="sparkle" size=${11} /> No flag</span>`;
+}
+window.cardSignalPill = cardSignalPill;
 
 window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wide }) {
   // popped-out charts get a wider viewBox (more data room, same-size labels);
