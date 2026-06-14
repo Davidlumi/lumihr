@@ -617,22 +617,29 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   cursor: pointer; transition: transform var(--ease), box-shadow var(--ease); border: 1px solid transparent; }
 .signal-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
 .signal-row svg { flex: 0 0 auto; }
-.signal-val { font: 650 15px/1 var(--font-head); min-width: 70px; }
-.signal-detail { flex: 1; font-size: var(--fs-label); }
-.lens-tag { font-size: 10.5px; font-weight: 650; border-radius: 9px; padding: 2px 9px;
-  text-transform: lowercase; flex: 0 0 auto; background: var(--surface); }
+/* every row: what it is (bold) · where you stand (the market fact) · the tag */
+.signal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sig-worth { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: 1px; }
+.sig-name { font-size: var(--fs-label); font-weight: 650; color: var(--ink); line-height: 1.25; }
+.sig-stand { font-size: var(--fs-caption); line-height: 1.3; }
+.sig-tag { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  border-radius: 9px; padding: 3px 9px; flex: 0 0 auto; white-space: nowrap; background: var(--surface);
+  align-self: center; }
 .signal-row.lens-save    { background: var(--lens-save-tint); }
-.signal-row.lens-save    svg, .signal-row.lens-save .signal-val, .signal-row.lens-save .lens-tag { color: var(--lens-save); }
-.signal-row.lens-save    .signal-detail { color: #1E5F45; }
+.signal-row.lens-save    svg, .signal-row.lens-save .sig-tag { color: var(--lens-save); }
+.signal-row.lens-save    .sig-stand, .signal-row.lens-save .sig-name { color: #1E5F45; }
 .signal-row.lens-attract { background: var(--lens-attract-tint); }
-.signal-row.lens-attract svg, .signal-row.lens-attract .signal-val, .signal-row.lens-attract .lens-tag { color: var(--lens-attract); }
-.signal-row.lens-attract .signal-detail { color: #4F3F9E; }
+.signal-row.lens-attract svg, .signal-row.lens-attract .sig-tag { color: var(--lens-attract); }
+.signal-row.lens-attract .sig-stand, .signal-row.lens-attract .sig-name { color: #4F3F9E; }
 .signal-row.lens-retain  { background: var(--lens-retain-tint); }
-.signal-row.lens-retain  svg, .signal-row.lens-retain .signal-val, .signal-row.lens-retain .lens-tag { color: var(--lens-retain); }
-.signal-row.lens-retain  .signal-detail { color: #0A5562; }
+.signal-row.lens-retain  svg, .signal-row.lens-retain .sig-tag { color: var(--lens-retain); }
+.signal-row.lens-retain  .sig-stand, .signal-row.lens-retain .sig-name { color: #0A5562; }
 .signal-row.lens-engage  { background: var(--lens-engage-tint); }
-.signal-row.lens-engage  svg, .signal-row.lens-engage .signal-val, .signal-row.lens-engage .lens-tag { color: var(--lens-engage); }
-.signal-row.lens-engage  .signal-detail { color: #8F3A1D; }
+.signal-row.lens-engage  svg, .signal-row.lens-engage .sig-tag { color: var(--lens-engage); }
+.signal-row.lens-engage  .sig-stand, .signal-row.lens-engage .sig-name { color: #8F3A1D; }
+/* the stand line stays quieter than the bold name even within the lens colour */
+.signal-row .sig-stand { opacity: .82; }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s4); }
 @media (min-width: 1240px) {
   .cat-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }

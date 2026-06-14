@@ -152,9 +152,11 @@ def matrix_depth_signals(conn, questions, org_id, seen_q):
             continue
         median = sorted(vals)[n // 2]
         nlev = len(q.matrix_rows or [])
-        short = _short(spec.get("title") or q.display_title)
+        short = _label(qid, q, spec.get("title"))
         sigs.append({
             "lens": spec.get("lens", "retain"), "kind": "depth", "question_id": qid,
+            "name": short, "tag": "HIGHER THAN MARKET" if pct >= 50 else "LOWER THAN MARKET", "worth": False,
+            "stand": "reaches %d of %d levels, market median %d" % (mine, nlev, median),
             "value_display": "%d of %d levels" % (mine, nlev),
             "label_short": "%s · reaches %d of %d levels" % (short, mine, nlev),
             "detail": "%s reaches %d of %d role levels — peer median %d" % (short, mine, nlev, median),
@@ -175,7 +177,19 @@ def _short(title, row=None):
     t = t.strip().rstrip("?")
     if row:
         t += " — " + row
-    return (t[:44] + "…") if len(t) > 46 else t
+    if len(t) > 46:                       # truncate on a WORD boundary, never mid-word
+        t = t[:44].rsplit(" ", 1)[0].rstrip(" ,;—-") + "…"
+    return t
+
+
+def _label(qid, q=None, fallback=None):
+    """The clean short display name for a signal row. Prefers David's authored
+    label (data/signal_lenses.json -> signal_labels), else derives one from the
+    question title. Never raw question stem, never mid-word truncation."""
+    lbl = (lens_config().get("signal_labels") or {}).get(qid)
+    if lbl:
+        return lbl
+    return _short(fallback if fallback is not None else (q.display_title if q else ""))
 
 
 def _phrase(title):
@@ -191,6 +205,27 @@ def _fmt_gbp(v):
     if v >= 1000:
         return "£%dk/yr" % round(v / 1000.0)
     return "£%d/yr" % round(v)
+
+
+def _compare(mine, med, higher):
+    """The 'where you stand' line. Shows the two values when both are short
+    enough to read at a glance ('you 4×, market median 1×'); collapses to a
+    plain direction when they're long phrases ('below the market')."""
+    mine, med = str(mine), str(med)
+    if len(mine) > 16 or len(med) > 16:
+        return "above the market" if higher else "below the market"
+    return "you %s, market median %s" % (mine, med)
+
+
+def _ordinal_leak(vd):
+    """The position engine emits an internal 0-100 ordinal for banded/scale
+    metrics; it must never reach the UI. Returns a plain-language replacement
+    when value_display is that raw ordinal, else None (use the real value)."""
+    import re as _re
+    m = _re.match(r"^\s*(\d+)\s*/\s*100\s*$", str(vd or ""))
+    if not m:
+        return None
+    return "you provide none, the market provides it" if m.group(1) == "0" else "below the market median"
 
 
 def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None):
@@ -221,6 +256,9 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             q = questions.get(qid)
             out.append({
                 "lens": money_lenses[qid], "kind": "money", "question_id": qid,
+                "name": _label(qid, q, it.get("label")),
+                "tag": "£ GAP", "worth": False,
+                "stand": "%s below the market median" % _fmt_gbp(gbp),
                 "value_display": _fmt_gbp(gbp),
                 "label_short": "%s — gap to median" % _short(q.display_title if q else it.get("label", "")),
                 "detail": "%s gap to the peer median" % (q.display_title if q else it.get("label", "")),
@@ -243,6 +281,9 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             continue
         out.append({
             "lens": "save", "kind": "save", "question_id": qid,
+            "name": _label(qid, None, i["label"]),
+            "tag": "HIGHER THAN MARKET", "worth": False,
+            "stand": "your spend is above %d in 10 in the market" % min(9, int(i["percentile"] / 10)),
             "value_display": "P%d" % round(i["percentile"]),
             "label_short": "%s — above %d in 10 peers" % (_short(i["label"]), min(9, int(i["percentile"] / 10))),
             "detail": "%s — you pay more than %d in 10 peers" % (
@@ -265,8 +306,14 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if qid in seen_q:
             continue
         row_lbl = (i["label"].split(" — ")[-1] if " — " in i["label"] else None)
+        nm = _label(qid, questions.get(qid), i["label"].split(" — ")[0])
+        if row_lbl:
+            nm = "%s (%s)" % (nm, row_lbl)
+        leak = _ordinal_leak(i["value_display"])
+        stand = leak or _compare(i["value_display"], i["p50_display"] or "n/a", False)
         out.append({
             "lens": pos_lenses[qid], "kind": "behind", "question_id": qid,
+            "name": nm, "tag": "LOWER THAN MARKET", "worth": True, "stand": stand,
             "value_display": "P%d" % round(i["percentile"]),
             "label_short": "%s · %s vs %s" % (_short(i["label"].split(" — ")[0], row_lbl),
                                               i["value_display"], i["p50_display"] or "median"),
@@ -301,6 +348,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if adoption >= prev_floor:
             out.append({
                 "lens": lens, "kind": "prevalence", "question_id": qid,
+                "name": _label(qid, q), "tag": "ON MARKET", "worth": True,
+                "stand": "%d%% of the market does this, you don't" % round(adoption),
                 "value_display": "%d%%" % round(adoption),
                 "label_short": "of peers %s" % _short(_phrase(q.display_title)),
                 "detail": "of peers %s — you don't yet" % _phrase(q.display_title),
@@ -339,9 +388,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             continue
         high = st["pct"] >= 50
         med = spec["scale_low_to_high"][st["median_ord"]]
-        short = _short(q.display_title)
+        short = _label(qid, q)
         out.append({
             "lens": spec.get("lens", "engage"), "kind": "outlier", "question_id": qid,
+            "name": short, "tag": "HIGHER THAN MARKET" if high else "LOWER THAN MARKET", "worth": False,
+            "stand": _compare(mine, med, high),
             "value_display": mine,
             "label_short": "%s · %s end" % (short, "top" if high else "bottom"),
             "detail": "%s sits at the %s of your peer group — %s (peer median %s)" % (
@@ -369,9 +420,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if not bad:
             continue
         med = spec["scale_low_to_high"][st["median_ord"]]
-        short = _short(q.display_title)
+        short = _label(qid, q)
         out.append({
             "lens": spec.get("lens", "retain"), "kind": "behind", "question_id": qid,
+            "name": short, "tag": "HIGHER THAN MARKET" if st["pct"] >= 50 else "LOWER THAN MARKET", "worth": True,
+            "stand": _compare(mine, med, st["pct"] >= 50),
             "value_display": mine,
             "label_short": "%s · %s vs %s" % (short, mine, med),
             "detail": "%s — %s vs %s peer median" % (q.display_title, mine, med),
@@ -416,9 +469,15 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         _, knd, lab, a = best
         if knd == "rare":
             detail = "you selected “%s” — only %d%% of peers do" % (lab, round(a))
+            tag, worth = "FEW OFFER THIS", False
+            stand = "only %d%% of the market offers it" % round(a)
         else:
             detail = "%d%% of peers select “%s” — you don't" % (round(a), lab)
+            tag, worth = "ON MARKET", True
+            stand = "%d%% of the market does this, you don't" % round(a)
+        # the OPTION is the label here — never the multi-select question stem
         out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
+                    "name": lab, "tag": tag, "worth": worth, "stand": stand,
                     "value_display": lab, "label_short": "%s · %s" % (_short(q.display_title), lab),
                     "detail": detail, "impact": 22000 + best[0] * 100})
         seen_q.add(qid)
@@ -441,6 +500,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             continue
         if max(opts.values()) >= 50 and a <= floor:
             out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
+                        "name": _label(qid, q), "tag": "FEW OFFER THIS", "worth": False,
+                        "stand": "only %d%% of the market does this — you do" % round(a),
                         "value_display": mine, "label_short": "%s · %s" % (_short(q.display_title), mine),
                         "detail": "you answered “%s” — only %d%% of peers do" % (mine, round(a)),
                         "impact": 22000 + (50 - a) * 100})

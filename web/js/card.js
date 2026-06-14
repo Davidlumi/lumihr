@@ -265,10 +265,8 @@ function cardSignalPill(c, sig) {
   const state = cardSignalState(c, sig);
   if (!state) return null;
   if (state === "signal") {
-    const txt = SIG_KIND[sig.kind] || sig.kind;
-    const val = SIG_SHOWVAL[sig.kind] ? sig.value_display : null;
-    return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.label_short || sig.detail}>
-      <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${txt}${val ? " · " + val : ""}</span>`;
+    return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.stand || sig.label_short || sig.detail}>
+      <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${sig.tag || SIG_KIND[sig.kind] || sig.kind}</span>`;
   }
   if (state === "add") {
     const href = c.subpower ? "#/your-data/submit/" + encodeURIComponent(c.subpower) : "#/your-data";

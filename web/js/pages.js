@@ -337,7 +337,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
         <span>Signals${sigs.length ? " · " + sigs.length : ""}</span>
-        <span class="sig-head-note">flags worth a look — peer facts, never advice</span>
+        <span class="sig-head-note">flags worth a look — we flag, you decide</span>
       </div>
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "8px", flex: 1 }}>
@@ -359,10 +359,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       [html`<div class="signals-list" key="list">
         ${sigs.map((s, i) => html`
           <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
-            <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
-            <span class="signal-val num">${s.value_display}</span>
-            <span class="signal-detail" title=${s.detail}>${s.label_short || s.detail}</span>
-            <span class="lens-tag">${s.lens}</span>
+            ${sigParts(s)}
             <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
       </div>`,
@@ -381,12 +378,21 @@ const LENS_ORDER = ["attract", "retain", "engage", "save"];
 const LENS_LABEL = { attract: "Attract", retain: "Retain", engage: "Engage", save: "Save" };
 const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps people staying",
   engage: "how people experience work", save: "where your spend sits vs peers" };
-const KIND_LABEL = { money: "£ gap", save: "cost", behind: "position", prevalence: "peers do this",
-  outlier: "at an end", depth: "role reach", rare: "rare choice" };
-// the badge holds the headline number ONLY where it isn't already in the detail
-// (money/save/prevalence). For the rest the detail states the value, so the row
-// leads with the fact, anchored by the lens roundel — no oversized/duplicate badge.
-const SHOW_BADGE = { money: 1, save: 1, prevalence: 1 };
+// legacy fallback tags (the engine now supplies s.tag in plain market language)
+const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
+  prevalence: "ON MARKET", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
+// Every row reads the same three things in the same order: what it is (bold) ·
+// where you stand (the market fact) · the categorical tag. "Worth a look" leads
+// only where there's a supported worse direction (behind / a common practice you
+// lack). The tag answers one question — how do you compare to the market?
+const sigParts = (s) => [
+  html`<span class="signal-roundel" key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
+  html`<span class="signal-body" key="b">
+    ${s.worth ? html`<span class="sig-worth">Worth a look</span>` : null}
+    <b class="sig-name">${s.name || s.label_short}</b>
+    <span class="sig-stand">${s.stand || s.detail}</span></span>`,
+  html`<span class=${"sig-tag tag-" + (s.tag || "").split(" ")[0].toLowerCase().replace(/[^a-z]/g, "")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
+];
 const SIG_TABS = [
   { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" },
   { k: "priority", label: "Priority", icon: "pin", f: s => s.status === "priority" },
@@ -422,10 +428,7 @@ window.SignalsPage = function ({ me }) {
     <div key=${s.question_id} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); openMetric(s.question_id); } }}>
-      <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>
-      ${SHOW_BADGE[s.kind] && html`<span class="signal-val num">${s.value_display}</span>`}
-      <span class="signal-detail" title=${s.detail}>${s.detail}</span>
-      <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
+      ${sigParts(s)}
       <span class="sig-actions" onClick=${e => e.stopPropagation()}>
         ${s.status === "dismissed" ? html`
           <button class="sig-act" title="Restore to inbox" aria-label="Restore" onClick=${() => setStatus(s.question_id, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
@@ -438,7 +441,7 @@ window.SignalsPage = function ({ me }) {
   return html`
     <div class="signals-page" style=${{ maxWidth: "880px" }}>
       <h1 class="display-title" style=${{ marginBottom: "4px" }}>Signals</h1>
-      <p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's flags — peer-grounded, never advice. Each shows where you differ and the peer fact behind it; <b>you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>
+      <p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's flags — market-grounded, never advice. Each shows where you stand and the market fact behind it; <b>we flag, you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>
       ${locked ? html`
         <div class="insight-lock" style=${{ maxWidth: "520px", marginTop: "var(--s5)" }}>
           <div class="lock-note">
@@ -873,7 +876,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               </div>
               <div class="cat-band-ends"><span>below market</span><span>above market</span></div>` : null}
             <div class="caption" style=${{ marginTop: "12px" }}>
-              <b>${pos.at}</b> of ${pos.pool} positioned metric${pos.pool === 1 ? "" : "s"} on market · ${pos.below} below · ${pos.above} above${
+              <b>${pos.at}</b> of ${pos.pool} metric${pos.pool === 1 ? "" : "s"} placed · ${pos.below} below market · ${pos.above} above${
               indicative ? " · indicative, not yet a full market verdict" : ""}</div>` :
             html`<div class="caption" style=${{ marginTop: "8px" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
         </div>
@@ -888,15 +891,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <section class="cat-section">
           <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="flag" size=${14} /></span>
             <b>Signals in ${name}</b>
-            <span class="caption">${sigs.length} flag${sigs.length === 1 ? "" : "s"} — peer facts, you decide</span>
+            <span class="caption">${sigs.length} flag${sigs.length === 1 ? "" : "s"} — we flag, you decide</span>
             <a class="caption cat-sec-link" href="#/signals">All signals →</a></div>
           <div class="signals-list">
             ${sigs.map((s, i) => html`
               <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => nav("/metric/" + s.question_id)} role="button" tabindex="0">
-                <span class="signal-roundel"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${16} /></span>
-                ${SHOW_BADGE[s.kind] ? html`<span class="signal-val num">${s.value_display}</span>` : null}
-                <span class="signal-detail" title=${s.detail}>${s.label_short || s.detail}</span>
-                <span class="sig-kind">${KIND_LABEL[s.kind] || s.kind}</span>
+                ${sigParts(s)}
                 <span class="signal-go" aria-hidden="true">→</span>
               </div>`)}
           </div>
