@@ -275,10 +275,11 @@ function sigList(sigs) {
 function cardFav(c, sigs) {
   const list = sigList(sigs);
   if (list.length !== 1) return null;                 // none, or multi-row matrix
-  const t = list[0].tag || "";
-  if (/HIGHER/.test(t)) return "good";
-  if (/LOWER/.test(t) || /GAP/.test(t)) return "bad";
-  return null;                                         // MOST DO THIS / FEW OFFER THIS
+  // the engine tells us favourability (good=ahead, bad=behind/£gap); everything
+  // else (neutral outlier / prevalence / rarity) leaves the bar the plain accent.
+  // fav, NOT the tag — a lower-is-better strength reads 'LOWER THAN MARKET' yet green.
+  const f = list[0].fav;
+  return f === "good" ? "good" : f === "bad" ? "bad" : null;
 }
 window.cardFav = cardFav;
 function cardSignalState(c, sigs) {

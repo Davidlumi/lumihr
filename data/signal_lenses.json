@@ -15,7 +15,8 @@
     "behind_percentile": 35,
     "save_percentile": 85,
     "prevalence_floor": 50,
-    "money_min_gbp": 10000
+    "money_min_gbp": 10000,
+    "ahead_percentile": 65
   },
   "cost_metrics": {
     "3faf1f0c-f753-497f-a395-384bba38c5e3": "Private medical insurance premium",

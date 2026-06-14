@@ -257,7 +257,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             out.append({
                 "lens": money_lenses[qid], "kind": "money", "question_id": qid,
                 "name": _label(qid, q, it.get("label")),
-                "tag": "£ GAP", "worth": False,
+                "tag": "£ GAP", "fav": "bad", "worth": False,
                 "stand": "%s below the market median" % _fmt_gbp(gbp),
                 "value_display": _fmt_gbp(gbp),
                 "label_short": "%s — gap to median" % _short(q.display_title if q else it.get("label", "")),
@@ -313,12 +313,52 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         stand = leak or _compare(i["value_display"], i["p50_display"] or "n/a", False)
         out.append({
             "lens": pos_lenses[qid], "kind": "behind", "question_id": qid,
-            "name": nm, "tag": "LOWER THAN MARKET", "worth": True, "stand": stand,
+            "name": nm, "tag": "HIGHER THAN MARKET" if i["percentile"] > 50 else "LOWER THAN MARKET",
+            "fav": "bad", "worth": True, "stand": stand,
             "value_display": "P%d" % round(i["percentile"]),
             "label_short": "%s · %s vs %s" % (_short(i["label"].split(" — ")[0], row_lbl),
                                               i["value_display"], i["p50_display"] or "median"),
             "detail": "%s — %s vs %s peer median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
             "impact": 100000 + (behind_at - adj) * 100,
+        })
+        seen_q.add(qid)
+
+    # 3b) AHEAD (strength): the favourable mirror of BEHIND. Same routed set
+    # (position_lenses), but where the polarity-adjusted position sits at/above
+    # the ahead threshold — you LEAD the market here. Surfaced so strengths show,
+    # not just gaps. A polarised metric fires behind XOR ahead, never both.
+    ahead_at = th.get("ahead_percentile", 65)
+    best_pos = {}
+    for i in items:
+        qid = i["question_id"]
+        if qid in pos_lenses and i["favourable"] == "good":
+            adj = 50.0 + i["distance"]
+            if adj >= ahead_at and (qid not in best_pos or adj > best_pos[qid][0]):
+                best_pos[qid] = (adj, i)
+    for qid, (adj, i) in best_pos.items():
+        if qid in seen_q:
+            continue
+        row_lbl = (i["label"].split(" — ")[-1] if " — " in i["label"] else None)
+        nm = _label(qid, questions.get(qid), i["label"].split(" — ")[0])
+        if row_lbl:
+            nm = "%s (%s)" % (nm, row_lbl)
+        # the TAG states the value direction (are you numerically higher/lower
+        # than the market); the COLOUR (fav) states it's a strength. For a
+        # lower-is-better metric a strength reads 'LOWER THAN MARKET' + green.
+        hi = i["percentile"] > 50
+        tag = "HIGHER THAN MARKET" if hi else "LOWER THAN MARKET"
+        if _ordinal_leak(i["value_display"]) or not i["p50_display"]:
+            stand = "above the market" if hi else "below the market"
+        else:
+            stand = _compare(i["value_display"], i["p50_display"], hi)
+        out.append({
+            "lens": pos_lenses[qid], "kind": "ahead", "question_id": qid,
+            "name": nm, "tag": tag, "fav": "good", "worth": False, "stand": stand,
+            "value_display": "P%d" % round(i["percentile"]),
+            "label_short": "%s · %s vs %s" % (_short(i["label"].split(" — ")[0], row_lbl),
+                                              i["value_display"], i["p50_display"] or "median"),
+            "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
+            "impact": 80000 + (adj - ahead_at) * 100,
         })
         seen_q.add(qid)
 
