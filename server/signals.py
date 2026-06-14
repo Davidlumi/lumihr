@@ -444,7 +444,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     # tails, no verdict; identity is qid::row_id so they coexist and triage
     # independently. Auto-applies to ALL value matrices (lens via optional routing
     # override, else a default). Per-row items already exist in `items`.
-    mat_lo, mat_hi = behind_at, 100 - behind_at        # same 25-75 band as the cards
+    # tighter band than the 25-75 used for headline position: on a precise £ line
+    # (e.g. £2,300 vs £1,900 median) P69 is genuinely above market, so a row flags
+    # outside 35-65 by default. David-tunable (thresholds.matrix_low/high).
+    mat_lo = oth.get("matrix_low", 35)
+    mat_hi = oth.get("matrix_high", 65)
     mp_over = ordr.get("matrix_position") or {}
     mp_default_lens = mp_over.get("_default_lens", "retain")
     mp_max_rows = int(oth.get("matrix_max_rows", 4))   # cap per matrix so one grid can't flood

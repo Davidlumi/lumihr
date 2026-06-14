@@ -13,7 +13,9 @@
     "min_n": 5,
     "decisive_low": 15,
     "decisive_high": 85,
-    "rarity_floor": 15
+    "rarity_floor": 15,
+    "matrix_low": 35,
+    "matrix_high": 65
   },
   "behind": [
     "ALLOW_03",
