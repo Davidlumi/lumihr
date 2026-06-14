@@ -829,6 +829,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .yourdata .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: 4px; }
 .data-done { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption);
   font-weight: 650; color: var(--favourable); }
+.data-hero.fresh { background: linear-gradient(120deg, var(--blue-tint) -10%, var(--blue-tint-2) 10%, var(--surface) 55%); }
+.data-start { margin-top: 14px; align-self: flex-start; }
+.data-hero-fig b { line-height: 1.2; }
 /* ---- Your data: delight — calm entrances, once, reduced-motion safe ---- */
 .data-hero { animation: ov-rise 460ms cubic-bezier(.2,.7,.3,1) both; }
 .data-domain { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }

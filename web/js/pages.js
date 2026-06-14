@@ -1067,6 +1067,7 @@ window.YourDataPage = function ({ me }) {
   const c = data.contribution || {};
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const target = c.target_pct || 90;
+  const fresh = data.answered === 0;            // brand-new: a start, not a deficit
   return html`
     <div class="yourdata">
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
@@ -1077,15 +1078,17 @@ window.YourDataPage = function ({ me }) {
         ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Submit data</button>`}
       </div>
 
-      <div class="card data-hero">
+      <div class=${"card data-hero" + (fresh ? " fresh" : "")}>
         <${CompletionRing} pct=${data.pct} size=${118} stroke=${12} />
         <div class="data-hero-body">
-          <div class="data-hero-fig"><b>${data.answered}</b> of ${data.total} answered</div>
+          <div class="data-hero-fig">${fresh ? html`<b>Let's build your reward benchmark.</b>`
+            : html`<b>${data.answered}</b> of ${data.total} answered`}</div>
           ${c.insights_unlocked ? html`
             <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
               <div><b>Insights unlocked.</b> Your signals, £ opportunity and board pack are live — thank you for contributing to the benchmark.</div></div>` : html`
-            <div class="data-unlock"><span class="du-ico"><${Icon} name="lock" size=${14} /></span>
-              <div><b>Reach ${target}% to unlock your insights.</b> Completing your reward data turns on your signals, the £ opportunity and your board pack${c.days_left != null ? ` — ${c.days_left} days left` : ""}.</div></div>`}
+            <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
+              <div><b>${fresh ? "Answer your reward questions to unlock your insights." : "Reach " + target + "% to unlock your insights."}</b> ${fresh ? "It turns on" : "Completing your reward data turns on"} your signals, the £ opportunity and your board pack${c.days_left != null ? ` — ${c.days_left} days to reach ${target}%` : ""}.</div></div>`}
+          ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Start submitting</button>`}
           ${!c.insights_unlocked && c.clock_started && html`
             <div class=${"data-access" + (c.reduced ? " warn" : "")}>
               <${Icon} name=${c.reduced ? "shield" : "info"} size=${13} />
@@ -1095,7 +1098,7 @@ window.YourDataPage = function ({ me }) {
         </div>
       </div>
 
-      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>By area <span class="caption">tap an area to view or complete its questions</span></h2>
+      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>By area <span class="caption">${fresh ? "tap an area to start answering its questions" : "tap an area to view or complete its questions"}</span></h2>
       <div class="data-domains">
         ${(data.domains || []).map(d => html`
           <div key=${d.name} class="card data-domain" role="button" tabindex="0"
