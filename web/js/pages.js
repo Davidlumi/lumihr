@@ -1029,16 +1029,32 @@ function slotKey(slot) { return slot.question_id + "|" + (slot.row_id || "") + "
 /* Your data (chrome spec section 1.3): ONE destination for the org's data —
    view/manage (the old My data) with Submit as the primary action inside the
    page, role-gated (hidden, not disabled, for viewers). */
-// a compact completion ring (pct in centre); colour cues the progress band
+// a compact completion ring (pct in centre); colour cues the progress band.
+// On mount the arc draws and the number counts up — once, reduced-motion safe.
 function CompletionRing({ pct, size = 72, stroke = 8 }) {
-  const r = (size - stroke) / 2, C = 2 * Math.PI * r, off = C * (1 - Math.max(0, Math.min(100, pct)) / 100);
-  const col = pct >= 90 ? "var(--favourable)" : pct >= 50 ? "var(--blue)" : "var(--amber-bright)";
+  const target = Math.max(0, Math.min(100, pct));
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setShown(target); return; }
+    let raf, start = null; const dur = 850;
+    const tick = (t) => {
+      if (start === null) start = t;
+      const k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3); // easeOutCubic
+      setShown(target * e);
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+  const r = (size - stroke) / 2, C = 2 * Math.PI * r, off = C * (1 - shown / 100);
+  const col = target >= 90 ? "var(--favourable)" : target >= 50 ? "var(--blue)" : "var(--amber-bright)";
   const cx = size / 2;
   return html`<svg width=${size} height=${size} viewBox=${"0 0 " + size + " " + size} class="comp-ring" aria-hidden="true">
     <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
     <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${col} stroke-width=${stroke} stroke-linecap="round"
-      stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"} class="comp-ring-arc" />
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${pct}%</text>
+      stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"} />
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${Math.round(shown)}%</text>
   </svg>`;
 }
 window.CompletionRing = CompletionRing;
@@ -1087,7 +1103,8 @@ window.YourDataPage = function ({ me }) {
             onKeyDown=${e => { if (e.key === "Enter") nav("/your-data/" + encodeURIComponent(d.name)); }}>
             <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${d.name}</div>
             <${CompletionRing} pct=${d.pct} size=${78} stroke=${8} />
-            <div class="caption">${d.answered} of ${d.total} answered${d.answered < d.total ? html` · <span class="data-todo">${d.total - d.answered} to do</span>` : ""}</div>
+            ${d.answered >= d.total ? html`<div class="data-done"><${Icon} name="award" size=${11} /> Complete</div>`
+              : html`<div class="caption">${d.answered} of ${d.total} · <span class="data-todo">${d.total - d.answered} to do</span></div>`}
           </div>`)}
       </div>
     </div>`;

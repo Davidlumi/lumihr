@@ -783,6 +783,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .comp-ring-arc { transition: stroke-dashoffset 700ms cubic-bezier(.3,.8,.3,1); }
 .data-hero { display: flex; align-items: center; gap: var(--s5); padding: var(--s5);
   background: linear-gradient(120deg, var(--blue-tint) -10%, var(--surface) 45%); }
+@media (max-width: 560px) { .data-hero { flex-direction: column; align-items: flex-start; gap: var(--s4); } }
 .data-hero .comp-ring { flex: 0 0 auto; }
 .data-hero-body { flex: 1; min-width: 0; }
 .data-hero-fig { font-size: 17px; margin-bottom: 10px; }
@@ -826,7 +827,27 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: var(--favourable); }
 .data-q-flag.todo { background: var(--blue-tint); color: var(--blue); }
 .yourdata .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: 4px; }
-@media (prefers-reduced-motion: reduce) { .comp-ring-arc, .data-domain { transition: none !important; } }
+.data-done { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption);
+  font-weight: 650; color: var(--favourable); }
+/* ---- Your data: delight — calm entrances, once, reduced-motion safe ---- */
+.data-hero { animation: ov-rise 460ms cubic-bezier(.2,.7,.3,1) both; }
+.data-domain { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
+.data-domain:nth-child(1) { animation-delay: 60ms; } .data-domain:nth-child(2) { animation-delay: 110ms; }
+.data-domain:nth-child(3) { animation-delay: 160ms; } .data-domain:nth-child(4) { animation-delay: 210ms; }
+.data-domain:nth-child(5) { animation-delay: 260ms; } .data-domain:nth-child(6) { animation-delay: 310ms; }
+.data-domain:nth-child(7) { animation-delay: 360ms; }
+.data-domain .cat-icon { transition: transform var(--ease), background var(--ease); }
+.data-domain:hover .cat-icon { transform: scale(1.12) rotate(-5deg); background: var(--blue-tint-2); }
+.data-unlock.good .du-ico { animation: du-pulse 2.6s ease-in-out 600ms 2; }
+@keyframes du-pulse { 0%,100% { transform: none; } 50% { transform: scale(1.12); box-shadow: 0 0 0 5px color-mix(in srgb, var(--favourable) 14%, transparent); } }
+.data-q { animation: ov-rise 320ms cubic-bezier(.2,.7,.3,1) both; }
+.data-q:nth-child(1){animation-delay:30ms}.data-q:nth-child(2){animation-delay:70ms}.data-q:nth-child(3){animation-delay:110ms}.data-q:nth-child(4){animation-delay:150ms}.data-q:nth-child(5){animation-delay:190ms}
+.data-q-flag.ok { transition: transform var(--ease); }
+.data-q:hover .data-q-flag.ok { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) {
+  .data-hero, .data-domain, .data-q, .data-unlock.good .du-ico { animation: none !important; }
+  .data-domain { transition: none !important; }
+}
 .cat-sec-head .cat-type + * { margin-left: 0; }
 
 /* signals inbox: status tabs + per-row triage actions */
