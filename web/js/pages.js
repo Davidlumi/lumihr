@@ -380,7 +380,7 @@ const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps peopl
   engage: "how people experience work", save: "where your spend sits vs the market" };
 // legacy fallback tags (the engine now supplies s.tag in plain market language)
 const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
-  prevalence: "ON MARKET", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
+  prevalence: "MOST DO THIS", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
 // Every row reads the same three things in the same order: what it is (bold) ·
 // where you stand (the market fact) · the categorical tag. "Worth a look" leads
 // only where there's a supported worse direction (behind / a common practice you

@@ -251,7 +251,7 @@ window.cardPosition = cardPosition;
    nothing crosses a threshold. Mirrors the Signals inbox language. */
 // fallback tags only — the engine now supplies sig.tag in plain market language
 const SIG_KIND = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
-  prevalence: "ON MARKET", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
+  prevalence: "MOST DO THIS", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
 const SIG_LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 function cardAnswered(c) {
   // numeric/select/multi carry c.you; matrix answers live per-row in matrix_rows

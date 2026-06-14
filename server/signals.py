@@ -348,7 +348,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if adoption >= prev_floor:
             out.append({
                 "lens": lens, "kind": "prevalence", "question_id": qid,
-                "name": _label(qid, q), "tag": "ON MARKET", "worth": True,
+                "name": _label(qid, q), "tag": "MOST DO THIS", "worth": True,
                 "stand": "%d%% of the market does this, you don't" % round(adoption),
                 "value_display": "%d%%" % round(adoption),
                 "label_short": "of peers %s" % _short(_phrase(q.display_title)),
@@ -518,7 +518,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             stand = "only %d%% of the market offers it" % round(a)
         else:
             detail = "%d%% of peers select “%s” — you don't" % (round(a), lab)
-            tag, worth = "ON MARKET", True
+            tag, worth = "MOST DO THIS", True
             stand = "%d%% of the market does this, you don't" % round(a)
         # the OPTION is the label here — never the multi-select question stem
         out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
