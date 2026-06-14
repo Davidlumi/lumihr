@@ -12,7 +12,7 @@
   ],
   "max_signals": 5,
   "thresholds": {
-    "behind_percentile": 25,
+    "behind_percentile": 35,
     "save_percentile": 85,
     "prevalence_floor": 50,
     "money_min_gbp": 10000

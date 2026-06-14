@@ -55,10 +55,11 @@ CURRENT_SNAPSHOT = 1
 # genuinely skipped questions are incomplete. A matrix counts as ONE question.
 COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # required | all
 # Hero signals (market position + practice prevalence). The at-market band is
-# percentile bounds on the favourable-adjusted scale: the default quartile band
-# (25-75) is the honest default but reads amber-heavy; tune via env on real
-# data (e.g. "40-60" for a sharper hero).
-_band = os.environ.get("LUMI_MARKET_BAND", "25-75").split("-")
+# percentile bounds on the favourable-adjusted scale. 35-65 (David, 2026-06-14):
+# below P35 = below market, P35-65 = on market, above P65 = above market. Kept in
+# sync with cardPosition (card colour) and thresholds.behind_percentile so the
+# card colour, the tile verdict and the signal all agree. Tune via env.
+_band = os.environ.get("LUMI_MARKET_BAND", "35-65").split("-")
 MARKET_BAND_LOW, MARKET_BAND_HIGH = float(_band[0]), float(_band[1])
 DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
 # minimum distinct positioned questions for a tile's INDICATIVE verdict when

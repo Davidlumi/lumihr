@@ -106,9 +106,9 @@ print("4. BAND — configurable; wash-out reported")
 print("=" * 100)
 m = hero["market"]
 at_share = m["at"] / float(m["pool"])
-print("  default band 25-75: %d above / %d on / %d below of %d -> %.0f%% on-market" % (
+print("  default band 35-65: %d above / %d on / %d below of %d -> %.0f%% on-market" % (
     m["above"], m["at"], m["below"], m["pool"], at_share * 100))
-check("config block exposes the band for tuning", hero["config"]["band_low"] == 25.0 and hero["config"]["band_high"] == 75.0)
+check("config block exposes the band for tuning", hero["config"]["band_low"] == 35.0 and hero["config"]["band_high"] == 65.0)
 check("hero not washed out (on-market share < 70%)", at_share < 0.70, "%.0f%% on" % (at_share * 100))
 
 # F2 (2026-06-13) — the verdict can never contradict the count distribution in
