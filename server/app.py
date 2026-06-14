@@ -1400,6 +1400,54 @@ async def my_data(request: Request):
     return {"rows": rows}
 
 
+@app.get("/api/data-overview")
+async def data_overview(request: Request):
+    """Completion-first view of the org's own data: overall + per-domain
+    progress and, per domain, every question with its answered status and the
+    submitted value. Drives the Your-data landing + per-domain drill-down."""
+    user, org = require_user(request)
+    conn = get_conn()
+    answers = org_answers_for(org)                       # {(qid,row): value}
+    questions = org_visible_questions(org)
+    by_q = {}
+    for (qid, row_id), value in answers.items():
+        by_q.setdefault(qid, []).append((row_id, value))
+    basis = {q.id for q in completion_basis_questions()}
+    domains = {}
+    for qid, q in questions.items():
+        sec = q.sub_power or "General"
+        d = domains.setdefault(sec, {"name": sec, "order": 999, "questions": []})
+        d["order"] = min(d["order"], q.sub_power_order or 999)
+        ans = by_q.get(qid)
+        rowdefs = dict(q.matrix_row_defs()) if q.type == "matrix" else {}
+        item = {"question_id": qid, "title": q.display_title, "question": q.text,
+                "type": q.type, "unit": q.unit_block(), "answered": bool(ans),
+                "required": qid in basis, "value": None, "rows": None}
+        if ans:
+            if q.type == "matrix":
+                item["rows"] = [{"row": rowdefs.get(r, r) or "—", "value": v}
+                                for r, v in sorted(ans, key=lambda x: x[0] or "")]
+                item["value"] = "%d level%s" % (len(ans), "" if len(ans) == 1 else "s")
+            else:
+                item["value"] = ans[0][1]
+        d["questions"].append(item)
+    out = []
+    for sec, d in domains.items():
+        d["questions"].sort(key=lambda x: (not x["answered"], x["title"]))
+        tot = len(d["questions"]); ansd = sum(1 for x in d["questions"] if x["answered"])
+        d["total"] = tot; d["answered"] = ansd
+        d["pct"] = round(100.0 * ansd / tot) if tot else 0
+        out.append(d)
+    out.sort(key=lambda d: d["order"])
+    tot = sum(d["total"] for d in out); ansd = sum(d["answered"] for d in out)
+    return {
+        "contribution": contribution_state(conn, org),
+        "total": tot, "answered": ansd,
+        "pct": round(100.0 * ansd / tot) if tot else 0,
+        "domains": out,
+    }
+
+
 # ============================================================== METHODOLOGY ==
 
 @app.get("/api/methodology")

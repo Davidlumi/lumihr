@@ -1029,59 +1029,129 @@ function slotKey(slot) { return slot.question_id + "|" + (slot.row_id || "") + "
 /* Your data (chrome spec section 1.3): ONE destination for the org's data —
    view/manage (the old My data) with Submit as the primary action inside the
    page, role-gated (hidden, not disabled, for viewers). */
+// a compact completion ring (pct in centre); colour cues the progress band
+function CompletionRing({ pct, size = 72, stroke = 8 }) {
+  const r = (size - stroke) / 2, C = 2 * Math.PI * r, off = C * (1 - Math.max(0, Math.min(100, pct)) / 100);
+  const col = pct >= 90 ? "var(--favourable)" : pct >= 50 ? "var(--blue)" : "var(--amber-bright)";
+  const cx = size / 2;
+  return html`<svg width=${size} height=${size} viewBox=${"0 0 " + size + " " + size} class="comp-ring" aria-hidden="true">
+    <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
+    <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${col} stroke-width=${stroke} stroke-linecap="round"
+      stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"} class="comp-ring-arc" />
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${pct}%</text>
+  </svg>`;
+}
+window.CompletionRing = CompletionRing;
+
 window.YourDataPage = function ({ me }) {
   const [data, setData] = useState(null);
-  const [qstr, setQ] = useState("");
-  useEffect(() => { api("/api/my-data").then(setData); }, []);
+  useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  const ql = qstr.toLowerCase();
-  const rows = data.rows.filter(r => !ql || (r.title + " " + r.question + " " + (r.matrix_row || "") + " " + r.value).toLowerCase().includes(ql));
-  const focused = window.SCOPE && window.SCOPE.focused;
-  const bySp = [];
-  for (const r of rows) {
-    const key = focused ? (r.subpower || "General") : r.superpower;
-    let g = bySp.find(g => g.sp === key);
-    if (!g) { g = { sp: key, sup: r.superpower, rows: [] }; bySp.push(g); }
-    g.rows.push(r);
-  }
-  if (focused) bySp.sort((a, b) => secOrder(a.sp) - secOrder(b.sp));
+  if (data.error) return html`<${EmptyState} title="Couldn't load your data" />`;
+  const c = data.contribution || {};
+  const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
+  const target = c.target_pct || 90;
   return html`
-    <div>
+    <div class="yourdata">
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <h1 class="display-title">Your data</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>Everything your organisation has submitted (${data.rows.length} answers). Only your team can see this.</div>
+          <div class="caption" style=${{ marginTop: "4px" }}>Everything your organisation has submitted — only your team can see this.</div>
         </div>
-        <div class="row" style=${{ gap: "var(--s3)" }}>
-          <input class="ctl" placeholder="Search your answers…" value=${qstr} onInput=${e => setQ(e.target.value)} />
-          ${me && (me.user.role === "admin" || me.user.role === "contributor") &&
-            html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Submit data</button>`}
+        ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Submit data</button>`}
+      </div>
+
+      <div class="card data-hero">
+        <${CompletionRing} pct=${data.pct} size=${118} stroke=${12} />
+        <div class="data-hero-body">
+          <div class="data-hero-fig"><b>${data.answered}</b> of ${data.total} answered</div>
+          ${c.insights_unlocked ? html`
+            <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
+              <div><b>Insights unlocked.</b> Your signals, £ opportunity and board pack are live — thank you for contributing to the benchmark.</div></div>` : html`
+            <div class="data-unlock"><span class="du-ico"><${Icon} name="lock" size=${14} /></span>
+              <div><b>Reach ${target}% to unlock your insights.</b> Completing your reward data turns on your signals, the £ opportunity and your board pack${c.days_left != null ? ` — ${c.days_left} days left` : ""}.</div></div>`}
+          ${!c.insights_unlocked && c.clock_started && html`
+            <div class=${"data-access" + (c.reduced ? " warn" : "")}>
+              <${Icon} name=${c.reduced ? "shield" : "info"} size=${13} />
+              ${c.reduced ? html`<span><b>Access reduced.</b> Your benchmark is in teaser mode until you reach ${target}%. Complete your data to restore full access — your data is what keeps the co-op fair.</span>`
+                : html`<span>lumi is a give-to-get co-op: your contribution is what keeps the benchmark live. Keep your data complete to maintain full platform access.</span>`}
+            </div>`}
         </div>
       </div>
-      ${rows.length === 0 && html`<${EmptyState} title="No answers match" body="Try a different search term." />`}
-      ${bySp.map(g => html`
-        <div key=${g.sp} class="card" style=${{ marginBottom: "var(--s4)", padding: "var(--s4)" }}>
-          <h2 class="section-title" style=${{ display: "flex", alignItems: "center", gap: "8px" }}>${window.SCOPE && window.SCOPE.focused ? "" : html`<${SpIcon} sp=${g.sp} />`} ${g.sp} <span class="caption">(${g.rows.length})</span></h2>
-          <table class="data">
-            <thead><tr><th>Benchmark</th><th>Level / row</th><th class="num">Your answer</th></tr></thead>
-            <tbody>
-              ${g.rows.map((r, i) => html`
-                <tr key=${i}>
-                  <td title=${r.question}>${r.title}</td>
-                  <td>${r.matrix_row || "—"}</td>
-                  <td class="num"><b>${formatAnswer(r)}</b></td>
-                </tr>`)}
-            </tbody>
-          </table>
-        </div>`)}
+
+      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>By area <span class="caption">tap an area to view or complete its questions</span></h2>
+      <div class="data-domains">
+        ${(data.domains || []).map(d => html`
+          <div key=${d.name} class="card data-domain" role="button" tabindex="0"
+            onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
+            onKeyDown=${e => { if (e.key === "Enter") nav("/your-data/" + encodeURIComponent(d.name)); }}>
+            <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${d.name}</div>
+            <${CompletionRing} pct=${d.pct} size=${78} stroke=${8} />
+            <div class="caption">${d.answered} of ${d.total} answered${d.answered < d.total ? html` · <span class="data-todo">${d.total - d.answered} to do</span>` : ""}</div>
+          </div>`)}
+      </div>
     </div>`;
 };
-function formatAnswer(r) {
-  if (r.type === "numeric" || r.type === "matrix") {
-    const f = parseFloat(String(r.value).replace(/[£,%]/g, ""));
-    if (!isNaN(f)) return fmtValue(f, r.unit);
+
+window.DomainDataView = function ({ me, section }) {
+  const [data, setData] = useState(null);
+  const [filter, setFilter] = useState("all");
+  useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  const d = (data.domains || []).find(x => x.name === section);
+  if (!d) return html`<${EmptyState} icon="table" title="Area not found"
+    action=${html`<button class="btn small" onClick=${() => nav("/your-data")}>Back to Your data</button>`} />`;
+  const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
+  const tabs = [{ k: "all", label: "All", n: d.total }, { k: "answered", label: "Answered", n: d.answered },
+    { k: "unanswered", label: "To answer", n: d.total - d.answered }];
+  const qs = d.questions.filter(x => filter === "all" || (filter === "answered") === x.answered);
+  return html`
+    <div class="yourdata">
+      <a class="caption back-link" href="#/your-data"><${Icon} name="chevron-left" size=${13} /> Your data</a>
+      <div class="row spread" style=${{ alignItems: "center", margin: "4px 0 var(--s4)" }}>
+        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+          <span class="cat-glyph"><${Icon} name=${CAT_ICON[section] || "award"} size=${20} /></span>
+          <div><h1 class="display-title">${section}</h1>
+            <div class="caption meta">${d.answered} of ${d.total} answered</div></div>
+        </div>
+        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+          <${CompletionRing} pct=${d.pct} size=${56} stroke=${7} />
+          ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(section))}><${Icon} name="pencil" size=${14} /> ${d.answered < d.total ? "Complete" : "Edit"} ${section}</button>`}
+        </div>
+      </div>
+
+      <div class="sig-tabs">
+        ${tabs.map(t => html`<button key=${t.k} class=${"sig-tab" + (filter === t.k ? " on" : "")} onClick=${() => setFilter(t.k)}>
+          ${t.label} <span class="num">${t.n}</span></button>`)}
+      </div>
+
+      ${qs.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
+          <span class="signals-empty-ring"><${Icon} name=${filter === "unanswered" ? "sparkle" : "table"} size=${18} /></span>
+          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + section + " — fully complete." : "No questions here yet."}</div>
+        </div>` :
+      html`<div class="data-qlist">
+        ${qs.map(q => html`
+          <div key=${q.question_id} class=${"data-q" + (q.answered ? "" : " unans")}>
+            <div class="data-q-main">
+              <div class="data-q-title">${q.title}
+                ${q.required ? html`<span class="data-q-req" title="Counts toward the completion that keeps your access">required</span>` : ""}</div>
+              ${q.answered ? (q.rows ? html`
+                <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
+                : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
+                : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>answer now</a>` : ""}</div>`}
+            </div>
+            <span class=${"data-q-flag " + (q.answered ? "ok" : "todo")}>
+              <${Icon} name=${q.answered ? "award" : "pencil"} size=${13} /> ${q.answered ? "Answered" : "To do"}</span>
+          </div>`)}
+      </div>`}
+    </div>`;
+};
+function dataVal(value, q) {
+  if (q && (q.type === "numeric" || q.type === "matrix")) {
+    const f = parseFloat(String(value).replace(/[£,%]/g, ""));
+    if (!isNaN(f)) return fmtValue(f, q.unit);
   }
-  return r.value;
+  return value;
 }
 
 // -------------------------------------------------------- methodology ------

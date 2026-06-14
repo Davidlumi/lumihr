@@ -776,6 +776,57 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .cat-sec-link { margin-left: auto; font-weight: 600; }
 .cat-type { margin-left: auto; }
+
+/* ---- Your data: completion-first landing + per-domain drill-down ---- */
+.comp-ring { display: block; }
+.comp-ring-pct { font: 700 var(--fs-label)/1 var(--font-head); font-variant-numeric: tabular-nums; }
+.comp-ring-arc { transition: stroke-dashoffset 700ms cubic-bezier(.3,.8,.3,1); }
+.data-hero { display: flex; align-items: center; gap: var(--s5); padding: var(--s5);
+  background: linear-gradient(120deg, var(--blue-tint) -10%, var(--surface) 45%); }
+.data-hero .comp-ring { flex: 0 0 auto; }
+.data-hero-body { flex: 1; min-width: 0; }
+.data-hero-fig { font-size: 17px; margin-bottom: 10px; }
+.data-hero-fig b { font-size: 22px; letter-spacing: -.01em; }
+.data-unlock { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-label);
+  color: var(--ink-soft); line-height: 1.5; }
+.data-unlock b { color: var(--ink); }
+.du-ico { width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--blue-tint); color: var(--blue); }
+.data-unlock.good .du-ico { background: color-mix(in srgb, var(--favourable) 16%, transparent); color: var(--favourable); }
+.data-access { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; padding: 9px 12px;
+  border-radius: var(--radius-sm); background: var(--surface-sunk); border: 1px dashed var(--border);
+  font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.5; }
+.data-access > svg { flex: 0 0 auto; margin-top: 2px; color: var(--ink-faint); }
+.data-access.warn { background: color-mix(in srgb, var(--amber-bright) 10%, var(--surface-sunk));
+  border-color: color-mix(in srgb, var(--amber-bright) 35%, var(--border)); color: var(--ink); }
+.data-domains { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--s3); }
+.data-domain { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: var(--s4) var(--s3);
+  cursor: pointer; text-align: center; transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease); }
+.data-domain:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--border)); }
+.data-domain-head { display: flex; align-items: center; gap: 7px; font-weight: 650; font-size: var(--fs-label); }
+.data-domain .cat-icon { width: 24px; height: 24px; }
+.data-domain .caption { font-size: var(--fs-caption); }
+.data-todo { color: var(--blue); font-weight: 600; }
+.data-qlist { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; }
+.data-q { display: flex; align-items: center; gap: var(--s3); padding: 13px var(--s4);
+  border-top: 1px solid var(--border); background: var(--surface); }
+.data-q:first-child { border-top: 0; }
+.data-q.unans { background: color-mix(in srgb, var(--blue) 3%, var(--surface)); }
+.data-q-main { flex: 1; min-width: 0; }
+.data-q-title { font-weight: 600; font-size: var(--fs-label); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.data-q-req { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--blue); background: var(--blue-tint); padding: 1px 6px; border-radius: 6px; }
+.data-q-val { font-size: var(--fs-label); color: var(--ink); font-weight: 600; margin-top: 3px; }
+.data-q-rows { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-size: var(--fs-caption); color: var(--ink); }
+.data-q-none { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
+.data-q-flag { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; font-size: 11px;
+  font-weight: 650; padding: 3px 9px; border-radius: 999px; }
+.data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: var(--favourable); }
+.data-q-flag.todo { background: var(--blue-tint); color: var(--blue); }
+.yourdata .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: 4px; }
+@media (prefers-reduced-motion: reduce) { .comp-ring-arc, .data-domain { transition: none !important; } }
 .cat-sec-head .cat-type + * { margin-left: 0; }
 
 /* signals inbox: status tabs + per-row triage actions */

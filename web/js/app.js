@@ -1,6 +1,6 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, CategoryPage, MyViewPage, YourDataPage, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
+   OverviewPage, SuperpowerPage, CategoryPage, MyViewPage, YourDataPage, DomainDataView, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
 
@@ -131,6 +131,9 @@ function App() {
   else if (route.startsWith("/your-data/submit")) {
     const section = route.split("/")[3];
     page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${section && decodeURIComponent(section)} />`;
+  }
+  else if ((m = route.match(/^\/your-data\/(.+)$/))) {
+    page = html`<${DomainDataView} me=${me} section=${decodeURIComponent(m[1].split("?")[0])} />`;
   }
   else if (route.startsWith("/your-data")) page = html`<${YourDataPage} me=${me} />`;
   else if (route.startsWith("/how-lumi-works")) {
