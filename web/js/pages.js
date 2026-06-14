@@ -408,14 +408,15 @@ window.SignalsPage = function ({ me }) {
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   const locked = data.callouts && data.callouts.gaps_locked;
-  const all = (data.signals_all || []).map(s => ({ ...s, status: acting[s.question_id] !== undefined ? acting[s.question_id] : (s.status || null) }));
+  // triage identity is sig_id (= question_id, or qid::row_id for a matrix row)
+  const all = (data.signals_all || []).map(s => { const sid = s.sig_id || s.question_id; return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null) }; });
 
-  const setStatus = (qid, status) => {
-    setActing(a => ({ ...a, [qid]: status }));
-    api("/api/signals/action", { method: "POST", body: { question_id: qid, status: status || "active" } })
-      .catch(() => { setActing(a => { const n = { ...a }; delete n[qid]; return n; }); toast("Couldn't save that — try again", "error"); });
+  const setStatus = (sid, status) => {
+    setActing(a => ({ ...a, [sid]: status }));
+    api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active" } })
+      .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
   };
-  const toggle = (qid, cur, target) => setStatus(qid, cur === target ? null : target);
+  const toggle = (sid, cur, target) => setStatus(sid, cur === target ? null : target);
 
   const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
   const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
@@ -424,19 +425,19 @@ window.SignalsPage = function ({ me }) {
   LENS_ORDER.forEach(l => { byLens[l] = all.filter(s => cur.f(s) && s.lens === l).sort((a, b) => rank(a) - rank(b)); });
   const total = LENS_ORDER.reduce((n, l) => n + byLens[l].length, 0);
 
-  const Row = (s) => html`
-    <div key=${s.question_id} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "")} role="button" tabindex="0"
+  const Row = (s) => { const sid = s.sig_id || s.question_id; return html`
+    <div key=${sid} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); openMetric(s.question_id); } }}>
       ${sigParts(s)}
       <span class="sig-actions" onClick=${e => e.stopPropagation()}>
         ${s.status === "dismissed" ? html`
-          <button class="sig-act" title="Restore to inbox" aria-label="Restore" onClick=${() => setStatus(s.question_id, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
-          <button class=${"sig-act" + (s.status === "priority" ? " on" : "")} title=${s.status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise" onClick=${() => toggle(s.question_id, s.status, "priority")}><${Icon} name="pin" size=${15} /></button>
-          <button class=${"sig-act" + (s.status === "saved" ? " on" : "")} title=${s.status === "saved" ? "Remove from saved" : "Save"} aria-label="Save" onClick=${() => toggle(s.question_id, s.status, "saved")}><${Icon} name="star" size=${15} /></button>
-          <button class="sig-act" title="Dismiss" aria-label="Dismiss" onClick=${() => setStatus(s.question_id, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
+          <button class="sig-act" title="Restore to inbox" aria-label="Restore" onClick=${() => setStatus(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
+          <button class=${"sig-act" + (s.status === "priority" ? " on" : "")} title=${s.status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise" onClick=${() => toggle(sid, s.status, "priority")}><${Icon} name="pin" size=${15} /></button>
+          <button class=${"sig-act" + (s.status === "saved" ? " on" : "")} title=${s.status === "saved" ? "Remove from saved" : "Save"} aria-label="Save" onClick=${() => toggle(sid, s.status, "saved")}><${Icon} name="star" size=${15} /></button>
+          <button class="sig-act" title="Dismiss" aria-label="Dismiss" onClick=${() => setStatus(sid, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
       </span>
-    </div>`;
+    </div>`; };
 
   return html`
     <div class="signals-page" style=${{ maxWidth: "880px" }}>
@@ -679,7 +680,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     // signals come from the same computed data the home/category pages use; one
     // fetch per page builds the qid -> signal map for every card's status pill
     api("/api/overview?" + cutQS(cut)).then(o => {
-      const m = {}; (o.signals_all || []).forEach(s => { m[s.question_id] = s; }); setSigMap(m);
+      const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => setSigMap({}));
   }, [sp, cutKeyOf(cut)]);
   useEffect(() => {
@@ -837,7 +838,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
   const all = (bench.cards || []).filter(c => (c.subpower || "General") === name);
   const inCat = new Set(all.map(c => c.id));
-  const sigMap = {}; (ov.signals_all || []).forEach(s => { sigMap[s.question_id] = s; });
+  const sigMap = {}; (ov.signals_all || []).forEach(s => { (sigMap[s.question_id] = sigMap[s.question_id] || []).push(s); });
   const sigs = (ov.signals_all || []).filter(s => inCat.has(s.question_id) && s.status !== "dismissed");
   let cards = type ? all.filter(c => c.category === type) : all;
   if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
@@ -946,7 +947,7 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
   useEffect(() => { api("/api/myview").then(d => { setLayout(d.layout); setSource(d.source); }); }, []);
   useEffect(() => {
     api("/api/overview?" + cutQS(cut)).then(o => {
-      const m = {}; (o.signals_all || []).forEach(s => { m[s.question_id] = s; }); setSigMap(m);
+      const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => setSigMap({}));
   }, [cutKeyOf(cut)]);
   useEffect(() => {

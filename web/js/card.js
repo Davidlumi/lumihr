@@ -258,17 +258,34 @@ function cardAnswered(c) {
   if (c.type === "matrix" && c.matrix_rows) return c.matrix_rows.some(r => r.you);
   return false;
 }
-function cardSignalState(c, sig) {
+// `sigs` may be a single signal, an array (matrices have one per off-market row),
+// or nothing. Normalise to a list and drop dismissed ones.
+function sigList(sigs) {
+  const arr = sigs == null ? [] : (Array.isArray(sigs) ? sigs : [sigs]);
+  return arr.filter(s => s && s.status !== "dismissed");
+}
+function cardSignalState(c, sigs) {
   if (c.suppressed || c.reduced) return null;
-  if (sig) return "signal";
+  if (sigList(sigs).length) return "signal";
   if (c.locked || !cardAnswered(c)) return "add";
   return "clear";
 }
 window.cardSignalState = cardSignalState;
-function cardSignalPill(c, sig) {
-  const state = cardSignalState(c, sig);
+function cardSignalPill(c, sigs) {
+  const state = cardSignalState(c, sigs);
   if (!state) return null;
   if (state === "signal") {
+    const list = sigList(sigs);
+    // a metric can carry several row-level flags pointing in different directions
+    // (one allowance below market, another above) — summarise the count rather
+    // than pick one. A single flag shows its own tag.
+    if (list.length > 1) {
+      const lens = list[0].lens;
+      const title = list.map(s => s.name + " — " + s.tag).join(" · ");
+      return html`<span class=${"sig-pill lens-" + lens} title=${title}>
+        <${Icon} name=${SIG_LENS_ICON[lens] || "flag"} size=${12} /> ${list.length} off market</span>`;
+    }
+    const sig = list[0];
     return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.stand || sig.label_short || sig.detail}>
       <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${sig.tag || SIG_KIND[sig.kind] || sig.kind}</span>`;
   }

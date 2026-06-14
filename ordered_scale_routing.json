@@ -526,12 +526,7 @@
     }
   },
   "matrix_position": {
-    "_readme": "Matrix value metrics scanned per-ROW: fire if any row crosses the 25-75 market band (the aggregate can hide a single off-market row). David-owned; lens per metric. Extend with any £-matrix you want row-level flags on.",
-    "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
-      "lens": "retain"
-    },
-    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
-      "lens": "retain"
-    }
+    "_readme": "Per-ROW signals for value matrices: every row crossing the 25-75 market band fires its own neutral flag (identity qid::row_id). AUTO-APPLIES to all value matrices. This map only holds OVERRIDES — set _default_lens, or qid->{lens} to route a specific matrix to a different outcome lens. David-owned.",
+    "_default_lens": "retain"
   }
 }

@@ -437,35 +437,45 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     if conn is not None and org_id is not None:
         out.extend(matrix_depth_signals(conn, questions, org_id, seen_q))
 
-    # 6b) MATRIX-ROW POSITION (neutral value matrices, BOTH tails, no verdict).
-    # A matrix's typical position can hide a single ROW that sits well off the
-    # market (e.g. one allowance type at P8 inside an otherwise on-market grid).
-    # Fire if ANY row crosses the market band, naming the most extreme row. The
-    # per-row items already exist in `items`; we just scan them by percentile.
-    mat_lo, mat_hi = behind_at, 100 - behind_at        # same 25-75 band as cards
-    for qid, spec in (ordr.get("matrix_position") or {}).items():
-        if qid in seen_q:
+    # 6b) MATRIX-ROW POSITION — each value-matrix ROW is its own signal. A matrix's
+    # typical position hides rows that sit off the market in DIFFERENT directions
+    # (one allowance below, another above); a single per-metric flag would lie.
+    # So every row that crosses the 25-75 band fires its OWN neutral signal, both
+    # tails, no verdict; identity is qid::row_id so they coexist and triage
+    # independently. Auto-applies to ALL value matrices (lens via optional routing
+    # override, else a default). Per-row items already exist in `items`.
+    mat_lo, mat_hi = behind_at, 100 - behind_at        # same 25-75 band as the cards
+    mp_over = ordr.get("matrix_position") or {}
+    mp_default_lens = mp_over.get("_default_lens", "retain")
+    mp_max_rows = int(oth.get("matrix_max_rows", 4))   # cap per matrix so one grid can't flood
+    rows_by_q = {}
+    for i in items:
+        if i.get("row_id") and i["kind"] == "value" and (i.get("n") or 0) >= min_n:
+            rows_by_q.setdefault(i["question_id"], []).append(i)
+    for qid, rws in rows_by_q.items():
+        if qid in seen_q:                  # already flagged by money/behind/etc — one class per metric
             continue
-        rows = [i for i in items if i["question_id"] == qid and i.get("row_id")
-                and i["kind"] == "value" and (i.get("n") or 0) >= min_n]
-        cross = [i for i in rows if i["percentile"] <= mat_lo or i["percentile"] >= mat_hi]
+        cross = [i for i in rws if i["percentile"] <= mat_lo or i["percentile"] >= mat_hi]
         if not cross:
             continue
-        i = max(cross, key=lambda x: abs(x["percentile"] - 50))   # the most divergent row
-        high = i["percentile"] >= 50
-        row_lbl = i["label"].split(" — ")[-1] if " — " in i["label"] else None
-        nm = _label(qid, questions.get(qid))
-        if row_lbl:
-            nm = "%s (%s)" % (nm, row_lbl)
-        out.append({
-            "lens": spec.get("lens", "retain"), "kind": "outlier", "question_id": qid,
-            "name": nm, "tag": "HIGHER THAN MARKET" if high else "LOWER THAN MARKET", "worth": False,
-            "stand": _compare(i["value_display"], i["p50_display"] or "n/a", high),
-            "value_display": i["value_display"],
-            "label_short": "%s · %s vs %s" % (nm, i["value_display"], i["p50_display"] or "median"),
-            "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
-            "impact": 28000 + abs(i["percentile"] - 50) * 100,
-        })
+        cross.sort(key=lambda x: -abs(x["percentile"] - 50))   # most divergent rows first
+        spec = mp_over.get(qid) or {}
+        lens = spec.get("lens", mp_default_lens)
+        nm0 = _label(qid, questions.get(qid))
+        for i in cross[:mp_max_rows]:
+            high = i["percentile"] >= 50
+            row_lbl = i["label"].split(" — ")[-1] if " — " in i["label"] else None
+            nm = "%s (%s)" % (nm0, row_lbl) if row_lbl else nm0
+            out.append({
+                "lens": lens, "kind": "outlier", "question_id": qid,
+                "sig_id": qid + "::" + (i.get("row_id") or ""),
+                "name": nm, "tag": "HIGHER THAN MARKET" if high else "LOWER THAN MARKET", "worth": False,
+                "stand": _compare(i["value_display"], i["p50_display"] or "n/a", high),
+                "value_display": i["value_display"],
+                "label_short": "%s · %s vs %s" % (nm, i["value_display"], i["p50_display"] or "median"),
+                "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
+                "impact": 28000 + abs(i["percentile"] - 50) * 100,
+            })
         seen_q.add(qid)
 
     # 7) MULTI-SELECT per-OPTION prevalence (Mechanism C). Never answer-SET
@@ -538,10 +548,13 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                         "impact": 22000 + (50 - a) * 100})
             seen_q.add(qid)
 
-    # per-user triage state: priority | saved | dismissed | None(new)
+    # per-user triage state: priority | saved | dismissed | None(new). Identity is
+    # sig_id — usually the question_id, but qid::row_id for per-row matrix signals
+    # so each row triages independently.
     st = statuses or {}
     for s in out:
-        s["status"] = st.get(s["question_id"])
+        s.setdefault("sig_id", s["question_id"])
+        s["status"] = st.get(s["sig_id"])
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:

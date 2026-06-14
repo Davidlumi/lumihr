@@ -93,10 +93,19 @@ def main():
         json.dump(base, open(SL, "w"), indent=2, ensure_ascii=False)
 
     ids = [s["question_id"] for s in sigs]
-    check("every fired signal is routed (no rogue / held metric fires)",
-          all(q in firing for q in ids), [q for q in ids if q not in firing])
-    check("no metric fires twice — per-metric cap holds across all classes",
-          len(ids) == len(set(ids)), [q for q in set(ids) if ids.count(q) > 1])
+    sids = [s.get("sig_id") or s["question_id"] for s in sigs]
+    # matrix-row signals (one per off-market row) auto-route and legitimately
+    # repeat the metric's qid; identity is qid::row_id.
+    mat = [s for s in sigs if "::" in (s.get("sig_id") or "")]
+    nonmat_ids = [s["question_id"] for s in sigs if "::" not in (s.get("sig_id") or "")]
+    check("every fired signal is routed (matrix rows auto-route; others must be in a list)",
+          all(q in firing for q in nonmat_ids), [q for q in nonmat_ids if q not in firing])
+    check("no signal fires twice — unique sig_id, and non-matrix metrics fire once",
+          len(sids) == len(set(sids)) and len(nonmat_ids) == len(set(nonmat_ids)),
+          {"dup_sig": [x for x in set(sids) if sids.count(x) > 1],
+           "dup_metric": [x for x in set(nonmat_ids) if nonmat_ids.count(x) > 1]})
+    check("matrix-row signals are neutral position outliers (one class per metric holds)",
+          all(s["kind"] == "outlier" for s in mat), [(s["kind"], s.get("sig_id")) for s in mat if s["kind"] != "outlier"])
     check("no verdict word in ANY fired signal, across all 8 classes",
           all(not any(v in s["detail"].lower() for v in VERDICT) for s in sigs),
           [(s["kind"], s["question_id"]) for s in sigs if any(v in s["detail"].lower() for v in VERDICT)])
