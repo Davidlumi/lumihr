@@ -82,11 +82,14 @@ def numeric_block(values, excluded=0):
             b["excluded_non_numeric"] = excluded
         return b
     vs = sorted(values)
+    # round display percentiles to 2dp — strips float-interpolation artefacts
+    # (e.g. 60.400000000000034 -> 60.4); the raw values stay in _values for scoring
+    r = lambda p: round(percentile(vs, p), 2)
     return {
-        "n": n, "min": vs[0], "max": vs[-1],
-        "p10": percentile(vs, 10), "p25": percentile(vs, 25),
-        "p50": percentile(vs, 50), "p75": percentile(vs, 75),
-        "p90": percentile(vs, 90), "mean": sum(vs) / n,
+        "n": n, "min": round(vs[0], 2), "max": round(vs[-1], 2),
+        "p10": r(10), "p25": r(25),
+        "p50": r(50), "p75": r(75),
+        "p90": r(90), "mean": round(sum(vs) / n, 2),
         "excluded_non_numeric": excluded,
         "_values": vs,   # server-side only; stripped by the API layer
     }
