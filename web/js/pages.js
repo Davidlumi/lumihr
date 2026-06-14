@@ -136,7 +136,7 @@ function OverviewHero({ data, cut, cuts }) {
       <div class="ov-aurora" aria-hidden="true"></div>
       <div class="ov-top">
         <${OverallArc} market=${m} />
-        <${SignalsPanel} signals=${data.signals} total=${(data.signals_all || []).filter(s => s.status !== "dismissed").length} locked=${locked} contribution=${data.contribution} />
+        <${SignalsPanel} signals=${data.signals} total=${(data.signals_all || []).filter(s => s.status !== "dismissed").length} newCount=${data.signals_new || 0} locked=${locked} contribution=${data.contribution} />
       </div>
       <div class="cat-grid">
         ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} />`)}
@@ -329,7 +329,7 @@ function OverallArc({ market }) {
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
   "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
-function SignalsPanel({ signals, total, locked, contribution }) {
+function SignalsPanel({ signals, total, newCount, locked, contribution }) {
   const sigs = signals || [];
   return html`
     <div class="card signals-card">
@@ -337,6 +337,7 @@ function SignalsPanel({ signals, total, locked, contribution }) {
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
         <span>Signals${total > sigs.length ? " · top " + sigs.length : (sigs.length ? " · " + sigs.length : "")}</span>
+        ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
         <span class="sig-head-note">flags worth a look — we flag, you decide</span>
       </div>
       ${locked ? html`
@@ -358,7 +359,7 @@ function SignalsPanel({ signals, total, locked, contribution }) {
         </div>` :
       [html`<div class="signals-list" key="list">
         ${sigs.map((s, i) => html`
-          <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
+          <div key=${i} class=${"signal-row lens-" + s.lens + (s.new ? " is-new" : "")} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
             ${sigParts(s)}
             <span class="signal-go" aria-hidden="true">→</span>
           </div>`)}
@@ -388,7 +389,7 @@ const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER
 const sigParts = (s) => [
   html`<span class="signal-roundel" key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
   html`<span class="signal-body" key="b">
-    ${s.worth ? html`<span class="sig-worth">Worth a look</span>` : null}
+    <span class="sig-lead">${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}${s.worth ? html`<span class="sig-worth">Worth a look</span>` : null}</span>
     <b class="sig-name">${s.name || s.label_short}</b>
     <span class="sig-stand">${s.stand || s.detail}</span></span>`,
   html`<span class=${"sig-tag tag-" + (s.tag || "").split(" ")[0].toLowerCase().replace(/[^a-z]/g, "")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
@@ -404,7 +405,14 @@ window.SignalsPage = function ({ me }) {
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("inbox");
   const [acting, setActing] = useState({});            // optimistic status overrides
-  useEffect(() => { api("/api/overview").then(setData).catch(e => setErr(e.message)); }, []);
+  useEffect(() => {
+    api("/api/overview").then(d => {
+      setData(d);
+      // viewing the Signals page clears NEW: mark every current signal seen
+      const ids = (d.signals_all || []).map(s => s.sig_id || s.question_id);
+      if (ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
+    }).catch(e => setErr(e.message));
+  }, []);
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
   const locked = data.callouts && data.callouts.gaps_locked;
@@ -426,7 +434,7 @@ window.SignalsPage = function ({ me }) {
   const total = LENS_ORDER.reduce((n, l) => n + byLens[l].length, 0);
 
   const Row = (s) => { const sid = s.sig_id || s.question_id; return html`
-    <div key=${sid} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "")} role="button" tabindex="0"
+    <div key=${sid} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); openMetric(s.question_id); } }}>
       ${sigParts(s)}

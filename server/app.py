@@ -1309,6 +1309,17 @@ async def overview(request: Request):
     # full uncapped set for the dedicated Signals explore page (home stays capped)
     sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
                                          conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses)
+    # new-since-last-seen: a signal is NEW until the user has viewed it on the
+    # Signals page. Annotate both sets + count the un-dismissed new ones.
+    _seen = {r["sig_id"] for r in conn.execute(
+        "SELECT sig_id FROM signal_seen WHERE org_id=? AND user_id=?",
+        (org["org_id"], user["user_id"]))}
+    for s in sigs_all:
+        s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
+    _new_ids = {(s.get("sig_id") or s["question_id"]) for s in sigs_all}  # current sig_ids
+    for s in sigs:
+        s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
+    signals_new = sum(1 for s in sigs_all if s["new"] and s.get("status") != "dismissed")
     dots = signals_mod.domain_dots(items)
     prac_dots = signals_mod.domain_dots(prac_items)
     sig_by_cat = {}
@@ -1352,6 +1363,7 @@ async def overview(request: Request):
         "hero": hero,
         "signals": sigs,
         "signals_all": sigs_all,
+        "signals_new": signals_new,
         "leads": leads,
         "lags": lags,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
@@ -1570,6 +1582,23 @@ async def signal_action(request: Request):
         raise HTTPException(400, "bad status")
     conn.commit()
     return {"ok": True, "question_id": qid, "status": status}
+
+
+@app.post("/api/signals/seen")
+async def signals_seen(request: Request):
+    """Mark signals as seen for this user (clears their NEW state). The client
+    posts the sig_ids it is currently showing — called when the Signals page is
+    viewed. Idempotent."""
+    user, org = require_user(request)
+    body = await request.json()
+    ids = [str(s) for s in (body.get("sig_ids") or []) if s][:2000]
+    if ids:
+        conn = get_conn()
+        conn.executemany(
+            "INSERT OR IGNORE INTO signal_seen(org_id, user_id, sig_id) VALUES (?,?,?)",
+            [(org["org_id"], user["user_id"], sid) for sid in ids])
+        conn.commit()
+    return {"ok": True, "seen": len(ids)}
 
 
 # ==================================================================== PREFS ==

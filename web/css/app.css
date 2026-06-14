@@ -619,8 +619,16 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row svg { flex: 0 0 auto; }
 /* every row: what it is (bold) · where you stand (the market fact) · the tag */
 .signal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sig-lead { display: inline-flex; align-items: center; gap: 6px; }
+.sig-lead:empty { display: none; }
 .sig-worth { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
   color: var(--ink-faint); margin-bottom: 1px; }
+/* new-since-last-seen markers */
+.sig-new-tag { font-size: 9px; font-weight: 800; letter-spacing: .06em; color: #fff;
+  background: var(--blue-bright); padding: 1px 5px; border-radius: 5px; margin-bottom: 1px; }
+.sig-new-chip { font-size: 11px; font-weight: 700; color: var(--blue); background: var(--blue-tint);
+  padding: 1px 8px; border-radius: 9px; }
+.signal-row.is-new .signal-roundel { box-shadow: 0 0 0 2px var(--blue-bright), 0 0 0 4px color-mix(in srgb, var(--blue-bright) 22%, transparent); }
 .sig-name { font-size: var(--fs-label); font-weight: 650; color: var(--ink); line-height: 1.25; }
 .sig-stand { font-size: var(--fs-caption); line-height: 1.3; }
 .sig-tag { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;

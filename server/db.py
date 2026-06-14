@@ -172,6 +172,16 @@ CREATE TABLE IF NOT EXISTS signal_actions (
     PRIMARY KEY (org_id, user_id, question_id)
 );
 
+-- per-user "seen" set for the new-since-last-seen badge: a signal (by sig_id)
+-- is NEW until the user has viewed it on the Signals page.
+CREATE TABLE IF NOT EXISTS signal_seen (
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    user_id TEXT NOT NULL,
+    sig_id TEXT NOT NULL,
+    seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (org_id, user_id, sig_id)
+);
+
 CREATE TABLE IF NOT EXISTS shares (
     token TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES orgs(org_id),
