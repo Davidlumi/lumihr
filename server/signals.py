@@ -437,6 +437,37 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     if conn is not None and org_id is not None:
         out.extend(matrix_depth_signals(conn, questions, org_id, seen_q))
 
+    # 6b) MATRIX-ROW POSITION (neutral value matrices, BOTH tails, no verdict).
+    # A matrix's typical position can hide a single ROW that sits well off the
+    # market (e.g. one allowance type at P8 inside an otherwise on-market grid).
+    # Fire if ANY row crosses the market band, naming the most extreme row. The
+    # per-row items already exist in `items`; we just scan them by percentile.
+    mat_lo, mat_hi = behind_at, 100 - behind_at        # same 25-75 band as cards
+    for qid, spec in (ordr.get("matrix_position") or {}).items():
+        if qid in seen_q:
+            continue
+        rows = [i for i in items if i["question_id"] == qid and i.get("row_id")
+                and i["kind"] == "value" and (i.get("n") or 0) >= min_n]
+        cross = [i for i in rows if i["percentile"] <= mat_lo or i["percentile"] >= mat_hi]
+        if not cross:
+            continue
+        i = max(cross, key=lambda x: abs(x["percentile"] - 50))   # the most divergent row
+        high = i["percentile"] >= 50
+        row_lbl = i["label"].split(" — ")[-1] if " — " in i["label"] else None
+        nm = _label(qid, questions.get(qid))
+        if row_lbl:
+            nm = "%s (%s)" % (nm, row_lbl)
+        out.append({
+            "lens": spec.get("lens", "retain"), "kind": "outlier", "question_id": qid,
+            "name": nm, "tag": "HIGHER THAN MARKET" if high else "LOWER THAN MARKET", "worth": False,
+            "stand": _compare(i["value_display"], i["p50_display"] or "n/a", high),
+            "value_display": i["value_display"],
+            "label_short": "%s · %s vs %s" % (nm, i["value_display"], i["p50_display"] or "median"),
+            "detail": "%s — %s vs %s market median" % (i["label"], i["value_display"], i["p50_display"] or "the"),
+            "impact": 28000 + abs(i["percentile"] - 50) * 100,
+        })
+        seen_q.add(qid)
+
     # 7) MULTI-SELECT per-OPTION prevalence (Mechanism C). Never answer-SET
     # rarity (that flags everyone). Fire on the single most DECISIVE option per
     # metric — one the org picked that ~nobody does (adoption <= decisive_low),

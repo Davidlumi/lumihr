@@ -524,5 +524,14 @@
     "REW_PAY_TIPS_EXIST_7c80c508": {
       "lens": "attract"
     }
+  },
+  "matrix_position": {
+    "_readme": "Matrix value metrics scanned per-ROW: fire if any row crosses the 25-75 market band (the aggregate can hide a single off-market row). David-owned; lens per metric. Extend with any £-matrix you want row-level flags on.",
+    "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
+      "lens": "retain"
+    },
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
+      "lens": "retain"
+    }
   }
 }
