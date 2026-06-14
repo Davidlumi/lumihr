@@ -420,11 +420,12 @@
       "EXT_REW_GAP_003": "'No limits' may be the generous/top end, not floor — agent verify scale direction before firing"
     },
     "briefing_cap": {
-      "rule": "hard reserve: max 3 behind signals in top 5; 2 slots reserved for non-behind kinds (outlier/prevalence/save/money)",
+      "rule": "top 3 on the home: max 2 'lower-than-market' (behind) signals; >=1 slot reserved for another kind (money/prevalence/ahead/outlier). Priority-pinned first, dismissed excluded (slot refills).",
       "fill_order": "within each group rank by impact",
       "fallback": "if fewer than 2 non-behind signals exist, unfilled reserved slots fall back to the next-highest-impact behind signal — always show 5 if 5 exist; prefer diversity, never leave a slot blank or silently drop a signal",
-      "rationale": "dashboard is a balanced scorecard, not a wall of 'behind'; guarantees new outlier/prevalence mechanisms are visible to behind-heavy orgs",
-      "tunable": "reserve size is panel-tunable; revisit on real customer panel"
+      "rationale": "the home is a 3-line scorecard of what matters most right now, not a wall of gaps; the full set lives on the Signals page.",
+      "tunable": "reserve size is panel-tunable; revisit on real customer panel",
+      "max_behind": 2
     }
   },
   "multi_prevalence": {

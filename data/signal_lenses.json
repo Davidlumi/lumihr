@@ -10,7 +10,7 @@
     "Edits hot-reload (no restart needed). max_signals caps the briefing — ranked money > save > behind > prevalence, by size within each.",
     "max_per_lens balances the briefing — at most this many flags per lens."
   ],
-  "max_signals": 5,
+  "max_signals": 3,
   "thresholds": {
     "behind_percentile": 35,
     "save_percentile": 85,

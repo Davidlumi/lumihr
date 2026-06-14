@@ -136,7 +136,7 @@ function OverviewHero({ data, cut, cuts }) {
       <div class="ov-aurora" aria-hidden="true"></div>
       <div class="ov-top">
         <${OverallArc} market=${m} />
-        <${SignalsPanel} signals=${data.signals} locked=${locked} contribution=${data.contribution} />
+        <${SignalsPanel} signals=${data.signals} total=${(data.signals_all || []).filter(s => s.status !== "dismissed").length} locked=${locked} contribution=${data.contribution} />
       </div>
       <div class="cat-grid">
         ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} />`)}
@@ -329,14 +329,14 @@ function OverallArc({ market }) {
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
   "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
-function SignalsPanel({ signals, locked, contribution }) {
+function SignalsPanel({ signals, total, locked, contribution }) {
   const sigs = signals || [];
   return html`
     <div class="card signals-card">
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
-        <span>Signals${sigs.length ? " · " + sigs.length : ""}</span>
+        <span>Signals${total > sigs.length ? " · top " + sigs.length : (sigs.length ? " · " + sigs.length : "")}</span>
         <span class="sig-head-note">flags worth a look — we flag, you decide</span>
       </div>
       ${locked ? html`
@@ -365,7 +365,7 @@ function SignalsPanel({ signals, locked, contribution }) {
       </div>`,
       html`<div class="signals-foot" key="foot">
         <span>Tap a flag to open the metric behind it.</span>
-        <a href="#/signals">See all signals →</a>
+        <a href="#/signals">${total > sigs.length ? "See all " + total + " signals →" : "See all signals →"}</a>
       </div>`]}
     </div>`;
 }
