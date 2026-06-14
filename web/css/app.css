@@ -816,9 +816,41 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .chip-row:hover .p-pill { transform: scale(1.08); }
 .p-pill { transition: transform var(--ease); }
 
+/* ---- category page delight: calm entrances (once), warm hover responses ---- */
+.category-page .page-head { animation: ov-rise 360ms cubic-bezier(.2,.7,.3,1) both; }
+.cat-hero-cell { animation: ov-rise 440ms cubic-bezier(.2,.7,.3,1) both;
+  transition: box-shadow var(--ease), transform var(--ease), border-color var(--ease); }
+.cat-hero-cell:nth-child(1) { animation-delay: 70ms; }
+.cat-hero-cell:nth-child(2) { animation-delay: 150ms; }
+.cat-hero-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--border)); }
+.category-page .cat-section { animation: ov-rise 440ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 220ms; }
+/* the position dot settles into place; the big prevalence figure pops up */
+.cat-band-dot { animation: dot-pop 540ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 320ms; }
+.cat-prev-big b { display: inline-block; transform-origin: left bottom;
+  animation: prev-pop 560ms cubic-bezier(.34,1.5,.4,1) both; animation-delay: 280ms; }
+@keyframes prev-pop { 0% { transform: scale(.45); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: none; opacity: 1; } }
+/* the back arrow nudges home; the glyph wakes on hover, like the tiles */
+.category-page .back-link svg { transition: transform var(--ease); }
+.category-page .back-link:hover svg { transform: translateX(-3px); }
+.cat-glyph { transition: transform var(--ease), background var(--ease); }
+.category-page .titleblock:hover .cat-glyph { transform: scale(1.08) rotate(-4deg); background: var(--blue-tint-2); }
+.cat-sec-link, .cat-sec-link svg { transition: transform var(--ease); }
+.cat-sec-link:hover { transform: translateX(2px); }
+.cat-allclear { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s5);
+  padding: var(--s3) var(--s4); border-radius: var(--radius); font-size: var(--fs-caption); color: var(--ink-soft);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--favourable) 9%, var(--surface-sunk)), var(--surface-sunk));
+  border: 1px solid color-mix(in srgb, var(--favourable) 22%, var(--border));
+  animation: ov-rise 440ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 200ms; }
+.cat-allclear-ring { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--favourable) 16%, transparent); color: var(--favourable); }
+
 @media (prefers-reduced-motion: reduce) {
   .arc-card, .ov-top .card, .signal-row, .cat-tile, .grid2 .card, .arc-needle, .arc-verdict, .ov-after,
-  .arc-band, .arc-minors, .arc-median, .arc-tip-glow, .tile-dot, .signal-go, .ov-aurora { animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; }
+  .arc-band, .arc-minors, .arc-median, .arc-tip-glow, .tile-dot, .signal-go, .ov-aurora,
+  .category-page .page-head, .cat-hero-cell, .category-page .cat-section, .cat-band-dot, .cat-prev-big b, .cat-allclear {
+    animation: none !important; transition: none !important; opacity: 1; stroke-dashoffset: 0; transform: none !important; }
   .ov-aurora { transform: none !important; }
   .arc-tip-glow { opacity: 0 !important; }
 }

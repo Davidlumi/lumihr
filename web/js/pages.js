@@ -845,7 +845,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                 <span class="signal-go" aria-hidden="true">→</span>
               </div>`)}
           </div>
-        </section>` : null}
+        </section>` : html`
+        <div class="cat-allclear">
+          <span class="cat-allclear-ring"><${Icon} name="sparkle" size=${15} /></span>
+          <span>Nothing flagged in ${name} — no metric here crosses a signal threshold. That's a quiet category.</span>
+        </div>`}
 
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
