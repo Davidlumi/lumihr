@@ -36,6 +36,8 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
   if (c.reduced) return html`<${ReducedCard} card=${c} />`;
 
   const pos = cardPosition(c);
+  const cfav = cardFav(c, signal);                    // chart colour follows the flag, not the percentile
+  const meaningPos = pos ? { ...pos, kind: cfav || "mid" } : null;  // "What this means" agrees with the flag
   const overridden = !!override && !!localCard;
   const globalKey = !globalCut || globalCut.startsWith("all") ? "all" : globalCut;
   const effectiveKey = override || globalKey;
@@ -76,11 +78,11 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
         title=${c.suppressed ? undefined : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
-          html`<${CardBody} card=${c} chart=${chart} showP1090=${pref.p1090 !== false} showValues=${pref.values !== false} fav=${pos ? pos.kind : null} wide=${true} />`}
+          html`<${CardBody} card=${c} chart=${chart} showP1090=${pref.p1090 !== false} showValues=${pref.values !== false} fav=${cfav} wide=${true} />`}
       </div>
       <div class="bench-lead">${sentence.lead || ""}</div>
       ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
-      <${WhatThisMeans} card=${c} pos=${pos} />
+      <${WhatThisMeans} card=${c} pos=${meaningPos} />
       <div class="bench-n" title="The number of organisations behind this comparison">
         n=${c.n}${cutNote(c)}</div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
@@ -265,6 +267,20 @@ function sigList(sigs) {
   const arr = sigs == null ? [] : (Array.isArray(sigs) ? sigs : [sigs]);
   return arr.filter(s => s && s.status !== "dismissed");
 }
+// The chart's "You" bar is coloured by the FLAG, never the raw percentile — so
+// colour and pill always agree. Only a directional market signal paints it
+// (below market = red, above = green); no flag, a mixed matrix, or a neutral
+// prevalence/rarity flag leaves it the plain "you" accent. Kills green/red-but-
+// No-flag: a common practice you simply have reads neutral, not "ahead".
+function cardFav(c, sigs) {
+  const list = sigList(sigs);
+  if (list.length !== 1) return null;                 // none, or multi-row matrix
+  const t = list[0].tag || "";
+  if (/HIGHER/.test(t)) return "good";
+  if (/LOWER/.test(t) || /GAP/.test(t)) return "bad";
+  return null;                                         // MOST DO THIS / FEW OFFER THIS
+}
+window.cardFav = cardFav;
 function cardSignalState(c, sigs) {
   if (c.suppressed || c.reduced) return null;
   if (sigList(sigs).length) return "signal";
