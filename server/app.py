@@ -1389,11 +1389,20 @@ async def overview(request: Request):
     _statuses = {r["question_id"]: r["status"] for r in conn.execute(
         "SELECT question_id, status FROM signal_actions WHERE org_id=? AND user_id=?",
         (org["org_id"], user["user_id"]))}
+    # step-3 layer 4: per-domain alignment map from the layer-3 hero output (the SINGLE
+    # source of truth — alignment is NOT recomputed in signals.py, which has no domain
+    # aggregate verdict). {domain: alignment} over competitive domains that carry a target;
+    # strategy-off → every target None → empty map → nothing confirms → the signal set
+    # degrades byte-identical. Drives confirm-suppression inside build_signals.
+    _dom_align = {d["name"]: (d.get("target") or {}).get("alignment")
+                  for d in hero["domains"] if d.get("target")}
     sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                     conn=conn, org_id=org["org_id"], statuses=_statuses, strategy=_strategy)
+                                     conn=conn, org_id=org["org_id"], statuses=_statuses,
+                                     strategy=_strategy, domain_alignment=_dom_align)
     # full uncapped set for the dedicated Signals explore page (home stays capped)
     sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                         conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses, strategy=_strategy)
+                                         conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses,
+                                         strategy=_strategy, domain_alignment=_dom_align)
     # new-since-last-seen: a signal is NEW until the user has viewed it on the
     # Signals page. Annotate both sets + count the un-dismissed new ones.
     _seen = {r["sig_id"] for r in conn.execute(

@@ -4923,3 +4923,48 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   console errors. QA harness /tmp/dt_qa_l3.py (13/13 PASS), preserves the full enum set on every PUT. Server restarted
   (no --reload). ⛔ Layer 4 (suppression) = separate pass — reads d["target"] + risk_framed to suppress confirming
   non-risk signals per domain.
+
+2026-06-24 — STEP 3 LAYER 4 (SUPPRESSION): confirm/tension shedding — the payoff. The FIRST layer that changes the
+  signal SET: a signal in a domain whose position CONFIRMS its aim is noise ("you chose this and you're sitting on it")
+  and is shed; a risk_framed signal pointing the same way is exposure, NOT confirmation, and is EXEMPT (the maternity-
+  zero guard). Completes the per-domain tension chain: capture (L2) → engine alignment (L3) → suppression (L4).
+  RULINGS (David 2026-06-24):
+  (1) ACTION = C (demote + cap-aware), NOT hard-suppress. A confirming non-risk signal is flagged s["confirm"]=True and
+      its impact demoted (CONFIRM_DEMOTE_MULT=0.25); cap_briefing gains a confirm-aware pass so it sheds OFF the home
+      briefing (tension/risk fill first) but STAYS in the full Signals list (signals_all) — honours the cap's standing
+      "never a silently dropped signal" contract. NOT removed anywhere.
+  (2) CONFIRM = alignment == "on_target" ONLY. "ahead" (overshoot/overspend vs the aim — only arises for a match/lag
+      aim) and "behind" (the gap) both STAY actionable. Only "sitting exactly on the aim" is suppressible noise.
+  (3) EXEMPTION = `not s["risk_framed"]` AND alignment=="on_target", checked in the signals.py enrichment loop after
+      risk_framed is stamped (:729). risk_framed signals never get confirm=True → never demoted.
+  (4) SCOPE = global-aim INCLUDED: domain_alignment degrades to the global market_position, so any domain that confirms
+      (global OR per-domain override) sheds. The degrade-to-byte-identical baseline is STRATEGY-OFF (no aim → empty map
+      → nothing confirms). Thornbridge (global match, all six domains below→behind) confirms NOTHING globally, so an
+      override is what introduces the first confirm.
+  (5) WIRING (single source of truth): app.py overview derives _dom_align = {domain: target.alignment} from hero["domains"]
+      (the L3 output, built at :1374 BEFORE build_signals at :1392/:1395) and threads it as the new build_signals
+      domain_alignment= param. Alignment is NOT recomputed inside signals.py (which has no per-domain aggregate verdict —
+      doing so would duplicate positions.py and risk drift). org_signals (nightly sweep, :1565) passes no strategy →
+      domain_alignment=None → notifications stay strategy-neutral (unaffected). The AI-diagnosis endpoint (:1500) uses
+      compute_findings, not build_signals — untouched.
+  HOOK: signals.py build_signals enrichment loop, alongside the existing _suppress (:877, location-agnostic) and
+  family-over demote (:883) precedents; reads s["domain"] (:718) + s["risk_framed"] (:729) + the threaded map. The
+  s["confirm"] flag rides the signal dict (queryable, parallel to risk_framed) but is NOT rendered (card treatment
+  deferred, like L3's target). GAUGE: untouched — hero["market"]=_pool_verdict (positions.py:1019) is built before and
+  independent of build_signals; suppression is signals-only.
+  (6) on_plan DRIFT (logged per David): app.py:1527 computes a DIFFERENT "on_plan" notion for the AI strategy-diagnosis
+      narrative (competitive domain with a verdict AND not flagged by compute_findings) — NOT the L3 target.alignment
+      used here. The two "doing-what-you-intended" definitions can diverge; reconciling them is FUTURE work, explicitly
+      not this pass.
+  VERIFIED live (Thornbridge, global match; REW_BEN_FAM_002 maternity + REW262_TIME_SICKDAYONE sick-pay both sit in the
+  Time Off domain): ⭐[a] COUNT-CHANGE BOTH HALVES — (i) strategy-off AND strategy-on-no-override → ZERO confirm anywhere
+  (degrade, all-behind nothing confirms); (ii) Time Off→lag → Time Off confirms (on_target), its 8 NON-risk signals all
+  flagged confirm + demoted (median full-list rank 48/88 → 84/88), full-set COUNT unchanged + Time Off id-set identical
+  (demote ≠ delete). ⭐[b] MATERNITY-ZERO SURVIVES — REW_BEN_FAM_002 (risk_framed, in the CONFIRMING Time Off domain) is
+  NOT flagged confirm, holds full-list rank 5/88, survives into the briefing; REW262_TIME_SICKDAYONE likewise exempt.
+  [c] TENSION UNTOUCHED — Incentives (still behind) carries no confirm; ONLY Time Off does. [d] NO-TARGET DEGRADE —
+  Governance + strategy-off never confirm. [e] CAP — hard-reserve holds (≤5, ≤3 behind, ≤2/lens) both states; briefing
+  led by non-confirm, confirm only backfills if room. [f] GAUGE 76/15/1/92 identical across off / no-override / override.
+  [g] Thornbridge restored to domain_targets=NULL; 0 console errors; web untouched (no cache bump). QA /tmp/dt_qa_l4.py
+  20/20 PASS. Server restarted (no --reload). ⛔ Per-domain strategy-tension chain COMPLETE. Tagging pass
+  (variable_pay / transparency precision) remains as separate parallel work.

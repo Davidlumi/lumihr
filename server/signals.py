@@ -326,6 +326,14 @@ def _p4p_mult(strategy, domain):
     return P4P_INCENTIVE_MULT.get(_strategy_field(strategy, "pay_for_performance"), 1.0)
 
 
+# STEP-3 LAYER 4 confirm-shedding demote (David 2026-06-24, ruling C). A non-risk signal
+# whose DOMAIN confirms its aim (alignment == on_target — on_target ONLY: ahead=overspend
+# and behind=gap both stay actionable) is the lowest briefing priority. This impact demote
+# sinks it in the full Signals list; cap_briefing's confirm-aware pass is what actually
+# sheds it off the home briefing. Tunable; 0 confirm signals → no-op (byte-identical).
+CONFIRM_DEMOTE_MULT = 0.25
+
+
 def _strategy_field(strategy, field):
     """A strategy dial value iff a real 'set' choice — None when absent/skipped."""
     if not strategy:
@@ -336,7 +344,7 @@ def _strategy_field(strategy, field):
     return v
 
 
-def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None, strategy=None):
+def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None, strategy=None, domain_alignment=None):
     """items: pos.position_items output (cut-scoped); opportunity: the £
     model dict; questions: org-visible library; get_block(qid) -> the cut's
     main distribution block; org_answers: {(qid,row): value}. Prevalence
@@ -881,6 +889,20 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             # never hide a family metric that's BELOW (that contradicts the stance)
             s["strategy_note"] = "intended — your generous family stance"
             s["impact"] = round((s.get("impact") or 0) * 0.4)
+        # STEP-3 LAYER 4 — confirm-suppression (ruling C: demote + cap-aware). A non-risk
+        # signal in a domain whose position CONFIRMS its aim (alignment == on_target) is
+        # noise — you chose this stance and you're sitting on it. Flag `confirm` so
+        # cap_briefing sheds it off the home briefing (tension/risk fill first), and demote
+        # its impact so it sinks in the full Signals list — but it STAYS there, never
+        # silently dropped. RISK-EXEMPT: a risk_framed absence is exposure, not confirmation
+        # (the maternity-zero guard) — `not s["risk_framed"]` spares it. on_target ONLY
+        # (David): ahead = overspend-vs-intent and behind = the gap both stay actionable.
+        # domain_alignment degrades to the global market_position; strategy-off → empty map
+        # → nothing confirms → byte-identical. No target / Governance → not in the map.
+        if (not s.get("risk_framed")
+                and (domain_alignment or {}).get(s.get("domain")) == "on_target"):
+            s["confirm"] = True
+            s["impact"] = round((s.get("impact") or 0) * CONFIRM_DEMOTE_MULT)
     out = [s for s in out if not s.get("_suppress")]
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
@@ -907,7 +929,14 @@ def cap_briefing(out, max_signals=5, max_per_lens=2, max_behind=3):
     filled by impact. If too few non-behind exist, unfilled reserved slots fall
     back to the next-highest behind — always max_signals when that many exist
     (within the per-lens cap), never a blank slot, never a silently dropped
-    signal. Reserve size is panel-tunable."""
+    signal. Reserve size is panel-tunable.
+
+    STEP-3 LAYER 4 (cap-aware confirm shedding): a `confirm` signal (non-risk, in a
+    domain whose position is on_target with its aim) is the LOWEST briefing priority —
+    tension + risk + every other non-confirm signal fill first; a confirm signal reaches
+    the briefing only as a last-resort fallback when genuine room remains. It is NEVER
+    dropped from the set (the cap=False full Signals list keeps it) — only deprioritised
+    here. No confirm signals → `primary` == `out` → byte-identical to pre-layer-4."""
     out = sorted(out, key=lambda s: -s["impact"])
     reserve_nb = max(0, max_signals - max_behind)
     capped, per_lens = [], {}
@@ -919,8 +948,9 @@ def cap_briefing(out, max_signals=5, max_per_lens=2, max_behind=3):
         per_lens[s["lens"]] = per_lens.get(s["lens"], 0) + 1
         capped.append(s)
 
+    primary = [s for s in out if not s.get("confirm")]   # tension / risk / other first
     bh = nb = 0
-    for s in out:                                  # pass 1: behind<=max_behind + reserve non-behind
+    for s in primary:                              # pass 1: behind<=max_behind + reserve non-behind
         if len(capped) >= max_signals:
             break
         if not room(s):
@@ -930,12 +960,21 @@ def cap_briefing(out, max_signals=5, max_per_lens=2, max_behind=3):
                 add(s); bh += 1
         elif nb < reserve_nb:
             add(s); nb += 1
-    if len(capped) < max_signals:                  # pass 2: fallback — fill remaining by impact
+    if len(capped) < max_signals:                  # pass 2: fallback — fill remaining by impact (non-confirm)
         taken = {id(s) for s in capped}
-        for s in out:
+        for s in primary:
             if len(capped) >= max_signals:
                 break
             if id(s) not in taken and room(s):
+                add(s)
+    if len(capped) < max_signals:                  # pass 3: last resort — confirm signals only if room remains
+        taken = {id(s) for s in capped}
+        for s in out:
+            if not s.get("confirm") or id(s) in taken:
+                continue
+            if len(capped) >= max_signals:
+                break
+            if room(s):
                 add(s)
     return capped
 
