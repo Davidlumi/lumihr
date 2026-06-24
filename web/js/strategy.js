@@ -12,7 +12,7 @@
 // se = the one-line "signal-effect" reveal; pill markup inline. C dials carry none.
 const SE = (t) => t;   // marker — strings may contain <b>/<span class="se-pill …">
 const SCALE = {
-  market: { q: 'As a broad stance, where do you aim to sit on pay against peers? <span class="strat-faint">You can refine by job family later.</span>',
+  market: { q: 'As a broad stance, where do you aim to sit on pay against peers? <span class="strat-faint">You can refine by area below.</span>',
     stops: [
       { v: "lag", t: "Below market", d: "By design, not by accident", se: 'A below-market position reads as <span class="se-pill amber">intended</span> — we won’t flag it as a gap to close.' },
       { v: "match", t: "On market", d: "In line with peers", se: 'An on-market position reads as <span class="se-pill green">on target</span> — where you mean to be.' },
@@ -142,7 +142,7 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
 }
 
 // ---- a single dial card (scale | cards | chips) -------------------------------
-function DialCard({ field, value, onPick, required, context }) {
+function DialCard({ field, value, onPick, required, context, extra }) {
   const sk = SCALE_FIELD[field];
   const flagged = required && !value;     // unset required → amber prompt
   const tag = required ? html`<span class="strat-req">Required</span>` : html`<span class="strat-opt">Optional</span>`;
@@ -181,11 +181,39 @@ function DialCard({ field, value, onPick, required, context }) {
         <span class="se-text" dangerouslySetInnerHTML=${{ __html: se }}></span></div>`}
       ${context && html`<div class="signal-effect strat-ctx-note"><span class="se-eye"><${Icon} name="info" size=${14} /></span>
         <span class="se-text">Kept for context — this doesn't shape your signals yet.</span></div>`}
+      ${extra || null}
     </div>`;
 }
 const DIAL_ICON = { market_position: "target", reward_mix: "coins", pay_for_performance: "bar-chart",
   transparency: "search", location_approach: "compass", benefits_lead: "heart", family_position: "users",
   primary_objective: "target", budget_direction: "trending-up", acute_pressure: "zap", risk_appetite: "shield" };
+
+// Per-domain market-position overrides (step-3 layer 2) — Option A "global + reveal" (David
+// 2026-06-24): the global market_position dial stays the default; this reveals an override
+// ScaleTrack per COMPETITIVE domain (config-derived list from /api/strategy, never hardcoded),
+// only on opt-in. An UNSET domain sends NO key → inherits the global aim (layer-1 degrade); a
+// "Clear" deletes the key. Optional — never a required gate. Writes strat.domain_targets only.
+function DomainOverrides({ domains, targets, globalValue, onSet }) {
+  const [open, setOpen] = useState(false);
+  if (!domains || !domains.length) return null;
+  const t = targets || {};
+  const n = Object.keys(t).length;
+  return html`
+    <div class="dom-ov">
+      <button type="button" class=${"dom-reveal" + (open ? " open" : "")} aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
+        <${Icon} name="sliders" size=${13} /> Refine by area${n ? html` · <b>${n}</b> set` : ""}
+        <span class="dom-chev">${open ? "▾" : "▸"}</span></button>
+      ${open && html`<div class="dom-panel">
+        <p class="dom-hint">Set a different aim for any reward area. Areas you leave alone follow your overall position${globalValue ? html` (<b>${labelOf("market_position", globalValue)}</b>)` : ""}.</p>
+        ${domains.map(dom => html`<div key=${dom} class="dom-row">
+          <div class="dom-row-head"><span class="dom-name">${dom}</span>
+            ${t[dom] ? html`<button type="button" class="dom-clear" onClick=${() => onSet(dom, null)}>Clear · follow overall</button>`
+                     : html`<span class="dom-inherit">follows overall</span>`}</div>
+          <${ScaleTrack} skey="market" value=${t[dom]} ariaLabel=${dom + " market position"} onPick=${v => onSet(dom, v)} />
+        </div>`)}
+      </div>`}
+    </div>`;
+}
 
 window.StrategyPage = function ({ me }) {
   const [data, setData] = useState(null);
@@ -210,6 +238,13 @@ window.StrategyPage = function ({ me }) {
     body="Your reward strategy is set by an organisation Admin. Ask yours to complete it — you'll see your results read through it." />`;
 
   const pick = (field, val) => setStrat(s => ({ ...s, [field]: val }));
+  // per-domain override write (step-3 layer 2): only set domains carry a key — null deletes
+  // it (back to inherit-global). Partial dict → partial payload → unset domains inherit global.
+  const setDomainTarget = (dom, val) => setStrat(s => {
+    const dt = { ...(s.domain_targets || {}) };
+    if (val == null) delete dt[dom]; else dt[dom] = val;
+    return { ...s, domain_targets: dt };
+  });
   const planeBfields = ["market_position", "reward_mix", "pay_for_performance", "transparency",
     "location_approach", "benefits_lead", "family_position"];
   const planeCfields = ["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
@@ -283,7 +318,8 @@ window.StrategyPage = function ({ me }) {
           <div class="strat-eyebrow">Your philosophy <span class="strat-mode choose">Your call</span></div>
           <h1 class="strat-title">The positions you've chosen</h1>
           <p class="strat-sub">These are deliberate commitments, not facts about your business — so we ask you fresh. They're what let us tell "below the market" from "below the market, on purpose."</p>
-          ${shownFields(planeBfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`)}
+          ${shownFields(planeBfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"}
+            extra=${f === "market_position" ? html`<${DomainOverrides} domains=${data.competitive_domains || []} targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />` : null} />`)}
         </section>`}
 
       ${step === 2 && html`
@@ -330,6 +366,10 @@ function reviewRow(field, strat) {
     return { label: DIAL_LABEL[field], value: sel.length ? sel.map(x => BENEFITS.find(b => b.v === x).t).join(", ") : "Skipped — read neutrally", skipped: !sel.length };
   }
   if (!v) return { label: DIAL_LABEL[field], value: "Skipped — read neutrally", skipped: true };
+  if (field === "market_position") {
+    const dt = strat.domain_targets || {}, n = Object.keys(dt).length;
+    return { label: DIAL_LABEL[field], value: labelOf(field, v) + (n ? " · " + n + " area" + (n === 1 ? "" : "s") + " refined" : "") };
+  }
   return { label: DIAL_LABEL[field], value: labelOf(field, v) };
 }
 function ReviewSection({ title, chip, chipCls, rows, onEdit }) {

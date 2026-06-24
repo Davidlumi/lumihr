@@ -2165,6 +2165,25 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-color: var(--border); animation: none; }
 .strat-ctx-note .se-eye { color: var(--grey-neutral-ink); }
 .strat-ctx-note .se-text { color: var(--ink-faint); }
+/* Per-domain market-position overrides (step-3 layer 2) — Option A "global + reveal":
+   a quiet pill under the global dial reveals a per-domain ScaleTrack for each competitive
+   reward area, only on opt-in. Reuses the existing .scale dial styles. */
+.dom-ov { margin-top: var(--s4); }
+.dom-reveal { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-label); font-weight: 600;
+  color: var(--blue); background: var(--blue-tint); border: 0; border-radius: 999px; padding: var(--s2) var(--s3);
+  cursor: pointer; transition: background .15s; }
+.dom-reveal:hover { background: var(--blue-tint-2); }
+.dom-reveal svg { color: var(--blue); flex: none; }
+.dom-reveal .dom-chev { margin-left: 2px; opacity: .7; }
+.dom-panel { margin-top: var(--s3); padding: var(--s4); background: var(--surface-sunk); border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; gap: var(--s5); animation: stratRise .3s ease; }
+.dom-hint { font-size: var(--fs-label); color: var(--ink-soft); margin: 0 0 var(--s1); line-height: 1.5; }
+.dom-row { display: flex; flex-direction: column; gap: var(--s1); }
+.dom-row-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.dom-name { font-weight: 600; font-size: var(--fs-label); color: var(--ink); }
+.dom-inherit { font-size: var(--fs-micro); color: var(--ink-faint); }
+.dom-clear { font-size: var(--fs-micro); font-weight: 600; color: var(--blue); background: none; border: 0; cursor: pointer; padding: 0; }
+.dom-clear:hover { text-decoration: underline; }
 .se-pill.green { background: var(--favourable-tint); color: var(--favourable); }
 .se-pill.amber { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .se-pill.blue { background: var(--blue-tint); color: var(--blue-deep); }

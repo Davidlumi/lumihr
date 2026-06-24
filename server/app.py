@@ -2918,6 +2918,11 @@ def strategy_state(conn, org):
     strat = {f: row.get(f) for f in STRATEGY_ENUMS}
     strat["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
     strat["domain_targets"] = uj(row.get("domain_targets"), {}) or {}   # step-3 layer 1 round-trip (no consumer yet)
+    # competitive domains for the per-domain override UI (step-3 layer 2) — derived from the
+    # SAME config source the save-route validation uses (_domains where competitive), so the
+    # UI list and the validation can't drift. Governance (competitiveness=False) falls out.
+    _mpc = pos.market_position_config()
+    comp_domains = [d for d in (_mpc.get("_domains") or {}) if pos._mp_competitive(_mpc, d)]
     return {
         "strategy": strat,
         "provenance": uj(row.get("field_provenance"), {}) or {},
@@ -2925,6 +2930,7 @@ def strategy_state(conn, org):
         "plane_a": _strategy_plane_a(org),
         "required": list(STRATEGY_REQUIRED),
         "benefits_options": STRATEGY_BENEFITS,
+        "competitive_domains": comp_domains,
     }
 
 

@@ -4868,3 +4868,28 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   400 on invalid stance (leadx), unknown domain (Foo), AND Governance. [e] partial {Pay:lag} persists Pay only.
   [f] wal_checkpoint(TRUNCATE) + gitignored .bak taken before the migration. qa_overview 17/17. Thornbridge restored
   to domain_targets=NULL. No cache bump (backend-only); server restarted to apply the migration.
+
+2026-06-24 — STEP 3 LAYER 2 (CAPTURE UI): per-domain market_position overrides. Collects per-domain intent into the
+  layer-1 domain_targets column. David UX ruling: Option A "GLOBAL + REVEAL" — the single global market_position dial
+  stays the default; a quiet "Refine by area" pill under it reveals a per-domain ScaleTrack for each competitive
+  reward area, only on opt-in (most orgs set global only; the form doesn't balloon). Copy ruling: the global dial's
+  "refine by job family later" → "refine by area below" (overrides are per reward DOMAIN, not job family).
+  strategy.js: new DomainOverrides component (reveal + per-domain ScaleTrack reusing skey="market", the SAME
+  lag|match|lead dial); DialCard gains an `extra` slot rendering it under the market dial; setDomainTarget writes
+  strat.domain_targets — a PARTIAL dict (only picked domains carry a key; "Clear" deletes a key → back to inherit).
+  reviewRow shows "· N areas refined" on the market_position row. Domains come from data.competitive_domains, NEVER
+  hardcoded. app.py strategy_state adds competitive_domains = [d for d in _domains if _mp_competitive] — the SAME
+  config source the save-route validation uses, so UI list and validation can't drift. app.css: .dom-* reveal/panel
+  styles. NO engine consumption (layer 3) — this layer only WRITES domain_targets via the existing validated save route.
+  DEGRADE: an un-overridden domain sends NO key (UI shows "follows overall") → inherits the global aim; partial
+  capture → partial payload, never padded with the global value for untouched domains.
+  VERIFIED live at v249 (Thornbridge): [a] reveal renders inside the market dial; expanding shows 6 competitive domains
+  (Pay/Incentives/Benefits/Time Off/Wellbeing/Recognition), Governance ABSENT. [b] PUT {Pay:lag,Benefits:lead} persists
+  + round-trips on reload. [c] DEGRADE: set Pay+Benefits → "2 set"; Incentives/Time Off show "follows overall" (unset,
+  no key) → partial payload (proven: {Pay:lag} persists Pay only). [d] overrides optional — not in REQUIRED/planeReq;
+  footer count stays "6 dials" (overrides are sub-dials of market_position, don't inflate it); survey completable
+  without touching them. [e] LAYER BOUNDARY: gauge 76/15/1/92 + 88 signals BYTE-IDENTICAL before, WITH domain_targets
+  set, and after restore (engine layer 3 not built). [f] competitive_domains config-derived (add/remove a competitive
+  domain → UI tracks). [g] 0 console errors. strict-reject 400s still hold (invalid stance / unknown domain /
+  Governance). Thornbridge left at domain_targets=NULL (browser QA didn't Save). Cache v248→v249; server restarted
+  (strategy_state change). Engine = layer 3, separate pass.
