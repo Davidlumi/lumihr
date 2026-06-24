@@ -4814,3 +4814,29 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   user having seen or reconfirmed it (it's been hidden from the form). DECISION REQUIRED at step 3, do NOT resolve
   now: respect the stored value (continuity) vs force a reconfirm (re-ask before a hidden, unwired field reactivates).
   David's lean: RECONFIRM. Logged here so the step-3 wiring pass cannot miss it.
+
+2026-06-24 — RISK/POSITION SPLIT (Option 1) — step-3 prerequisite, Phase B BUILD. Marks each signal risk-framed vs
+  position-framed; the risk_framed flag is the EXEMPTION surface per-domain suppression (step-3 layer 5) will read so
+  it can never hide a genuine floor (the maternity-zero guard). DISPLAY-ONLY in effect now; suppression is NOT built.
+  FIELD (David-ruled): a top-level "risk_metrics" curated qid LIST in signal_lenses.json — NEVER a heuristic, every
+  flag traces to the list. CURATED RISK SET (conservative first cut, exactly 3): REW_BEN_FAM_002 (enhanced maternity),
+  REW262_TIME_SICKDAYONE (sick pay from day one), REW26_WEL_EAP (EAP). Ruled NOT-risk (POSITION despite absence
+  phrasing): REW26_BEN_PENSION_MATCH — pension level is the core strategic lever a lag org legitimately pulls, a
+  distance a strategy explains, not a floor. PAYTR_02 (pay-ranges-visible) deferred to the step-6 transparency tagging
+  pass, not a risk. PRINCIPLE (David): risk = an absence that's cheap/near-universal to provide AND carries
+  duty-of-care / statutory-adjacent / reputational exposure no pay strategy excuses; position = a distance a deliberate
+  strategy explains.
+  ENGINE (signals.py): risk_set = set(cfg.get("risk_metrics") or []) loaded once; in the enrichment loop (~:710,
+  beside domain/position/mp_class) s["risk_framed"] = s["question_id"] in risk_set. A STABLE, QUERYABLE property that
+  rides the signal dict — survives the Fix-4 firewall, the §5.2 reframes, _suppress and cap_briefing — so suppression
+  and the client both read it. Purely additive: touches NO impact/sort/position/kind/counts/gauge.
+  CLIENT (pages.js + app.css): s.risk_framed → "is-risk" row class on all three signal surfaces (home panel, signals
+  page, category page) → a CORAL left accent (--lumi-coral #F08C6E — ATTENTION, not a RAG verdict; deliberately NOT the
+  traffic-light red we removed) + a quiet shield "Risk" marker by the name. Position rows unchanged.
+  VERIFIED live at v248 (Thornbridge): [b] gauge 76/15/1/92 + 88 signals BYTE-IDENTICAL; signals.py diff is additive
+  (risk_framed only — grep-proven, no impact/sort/position/kind). [f] PREREQUISITE — all 88 signals carry risk_framed
+  in the serialized /api/overview payload (queryable downstream ✓). [d] exactly the 3 curated qids are true; pension-
+  match FALSE; every flag traces to the list. [e] maternity True / pension-£206k False (headline test). [a] coral
+  accent rgb(240,140,110)=#F08C6E + "Risk" marker, distinct from position rows; coral NOT red. [c] same 3 flagged
+  under strategy ON and strategy OFF (risk is a signal property, not strategy state). [g] 0 console errors. Backend+web
+  → server restarted, cache v247→v248.

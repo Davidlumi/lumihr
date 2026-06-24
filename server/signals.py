@@ -707,6 +707,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     import positions as _pos
     _cfg = _pos.market_position_config() or {}
     _metrics = _cfg.get("metrics", {})
+    risk_set = set(cfg.get("risk_metrics") or [])   # RISK/POSITION split (David-curated; never a heuristic)
     for s in out:
         s.setdefault("sig_id", s["question_id"])
         s["status"] = st.get(s["sig_id"])
@@ -718,6 +719,14 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         s["position"] = _signal_position(s, _m.get("class"))
         s["polarity"] = _signal_polarity(s, _m.get("direction"))
         s["mp_class"] = _m.get("class")          # internal class, surfaced only in the metric detail view
+        # RISK/POSITION split (Option 1, step-3 prerequisite — David's curated risk_metrics list).
+        # A stable, QUERYABLE property that rides the signal dict like position/domain (survives the
+        # Fix-4 firewall, the §5.2 reframes, _suppress and cap_briefing): risk-framed = an absence/
+        # exposure no pay strategy excuses (statutory/duty-of-care floor) vs a position distance a
+        # strategy explains. DISPLAY-ONLY in EFFECT now (coral row accent on the client) — but
+        # per-domain suppression (step-3 layer 5) will READ this to EXEMPT risks from confirm-
+        # suppression (the maternity-zero guard). Never a heuristic — only the curated list.
+        s["risk_framed"] = s["question_id"] in risk_set
         # NON-COMPETITIVE DOMAINS (Governance scoping ruling — signals layer, 2026-06-22):
         # market-relative framing (below/on/above/differs) applies ONLY to competitive
         # domains. A domain with no market position contributes 0 to the market axis —

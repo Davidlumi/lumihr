@@ -1148,6 +1148,17 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row.lens-attract:hover { box-shadow: inset 3px 0 0 var(--lens-attract), 0 8px 22px rgba(109,91,208,.18); }
 .signal-row.lens-retain:hover  { box-shadow: inset 3px 0 0 var(--lens-retain), 0 8px 22px rgba(14,122,138,.16); }
 .signal-row.lens-engage:hover  { box-shadow: inset 3px 0 0 var(--lens-engage), 0 8px 22px rgba(194,84,46,.16); }
+/* RISK/POSITION split (Option 1, 2026-06-24) — a risk-framed signal (David's curated
+   risk_metrics) gets a CORAL left accent (#F08C6E — ATTENTION, not a RAG verdict: no red,
+   we deliberately removed the traffic-light) + a quiet shield marker, so genuine exposures
+   (maternity floor / sick-pay / EAP) stand out of the wall of position rows. Overrides the
+   per-lens accent; the row background is unchanged. */
+.signal-row.is-risk { box-shadow: inset 3px 0 0 var(--lumi-coral); }
+.signal-row.is-risk:hover { box-shadow: inset 3px 0 0 var(--lumi-coral), 0 8px 22px color-mix(in srgb, var(--lumi-coral) 22%, transparent); }
+.sig-risk { display: inline-flex; align-items: center; gap: 3px; margin-left: var(--s2); vertical-align: middle;
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
+  background: color-mix(in srgb, var(--lumi-coral) 20%, transparent); padding: 0 var(--s2); border-radius: 5px; }
+.sig-risk svg { color: var(--lumi-coral); flex: none; }
 /* ---- dedicated Signals explore page (2026-06-13) ---- */
 .signals-page .sig-filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
 .sig-chip { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: 999px;

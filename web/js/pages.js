@@ -840,7 +840,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
         </div>` :
       [html`<div class="signals-list" key="list">
         ${shown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
-          <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.new ? " is-new" : "")} onClick=${() => openMetric(s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }} role="button" tabindex="0">
+          <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "")} onClick=${() => openMetric(s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }} role="button" tabindex="0">
             ${sigParts(s, pt)}
             <${SignalActions} status=${effStatus(s)} sid=${sid} onSet=${onSet} />
           </div>`; })}
@@ -870,7 +870,7 @@ const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER
 const sigParts = (s, pt) => [
   html`<span class=${"signal-roundel lens-" + s.lens} key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
   html`<span class="signal-body" key="b">
-    <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}</b>
+    <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}</b>
     <span class="sig-stand">${s.stand || s.detail}</span></span>`,
   html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
 ];
@@ -1053,11 +1053,11 @@ window.SignalsPage = function ({ me }) {
     .filter(g => g.items.length);
 
   const Row = (s) => { const sid = s.sig_id || s.question_id; const pt = posTag(s, aim); return html`
-    <div key=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "")} role="button" tabindex="0"
+    <div key=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
       <span class="signal-body">
-        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}</b>
+        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}</b>
         <span class="sig-stand">${s.stand || s.detail}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
       <span class=${"pos-tag pos-" + pt.tone}>${pt.text}</span>
       <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
@@ -1535,7 +1535,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <a class="caption cat-sec-link" href="#/signals">All signals →</a></div>
           <div class="signals-list">
             ${sigsShown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
-              <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone} onClick=${() => nav("/metric/" + s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/metric/" + s.question_id); } }} role="button" tabindex="0">
+              <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.risk_framed ? " is-risk" : "")} onClick=${() => nav("/metric/" + s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/metric/" + s.question_id); } }} role="button" tabindex="0">
                 ${sigParts(s, pt)}
                 <${SignalActions} status=${sigEff(s)} sid=${sid} onSet=${onSetSig} />
               </div>`; })}

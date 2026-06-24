@@ -161,6 +161,8 @@
   "money_lenses": {
     "REW_BEN_PENS_EMP_MAX_01": "retain"
   },
+  "_risk_metrics_readme": "RISK/POSITION split (Option 1, 2026-06-24) — DAVID-CURATED, never a heuristic. A risk-framed signal is an ABSENCE/exposure no pay strategy excuses (statutory-adjacent / duty-of-care floor), distinct from a position-framed DISTANCE a deliberate strategy explains. Listed qids get signal.risk_framed=true; the client gives them a coral accent, and per-domain suppression (step 3) will EXEMPT them so a deliberate-lag domain can never hide a genuine floor (the maternity-zero guard). Add a qid only when its absence is a floor, not a position.",
+  "risk_metrics": ["REW_BEN_FAM_002", "REW262_TIME_SICKDAYONE", "REW26_WEL_EAP"],
   "max_per_lens": 2,
   "_held_pending_data_fix": {
     "REW_BEN_SICK_001": "BACKWARDS: option_scores rank \"Statutory sick pay only\"=100 above \"Enhanced\"/\"Combination\" — an org with generous sick pay reads as behind. Root cause is the question option order/scoring (firewall data fix), not the lens. Re-add once score ladder is corrected."
