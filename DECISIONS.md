@@ -4893,3 +4893,33 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   domain → UI tracks). [g] 0 console errors. strict-reject 400s still hold (invalid stance / unknown domain /
   Governance). Thornbridge left at domain_targets=NULL (browser QA didn't Save). Cache v248→v249; server restarted
   (strategy_state change). Engine = layer 3, separate pass.
+
+2026-06-24 — STEP 3 LAYER 3 (ENGINE): per-domain alignment from domain_targets. Threads the layer-1/2 column into
+  the engine so each competitive domain reads its verdict against ITS OWN aim — the queryable input layer-4 suppression
+  needs (parallel to risk_framed). SCOPE = C (ruled, David): compute per-domain alignment + thread domain_targets in;
+  DASHBOARD BYTE-IDENTICAL this layer; card-recolour DEFERRED to its own ruled pass; suppression NOT built here.
+  Three edits, all degrade-to-global by construction:
+  (1) app.py strategy_for_engine: out["domain_targets"] = uj(row["domain_targets"]) or {} — the ENGINE strategy load
+      (distinct from the API GET strategy_state) previously STRIPPED the column. NULL col → {} so every .get(sec)=None.
+  (2) positions.py _market_target(market, strategy, stance_override=None): stance = stance_override or
+      _strategy_field(strategy,"market_position"). Same annotation contract (never touches counts/lean/gauge); the
+      override just swaps which aim the verdict is read against. None → global (degrade).
+  (3) positions.py _hero_signals_classified loop: _dts = (strategy or {}).get("domain_targets") or {} before the loop;
+      d["target"] = _market_target(d["position"], strategy, stance_override=_dts.get(sec)) before domains.append(d).
+      Governance excluded BY CONSTRUCTION — the non-competitive branch (_mp_competitive False) continues before this
+      line, so it never gets a target.
+  ROUTING per scope C: server attaches d["target"]; FRONTEND NOT TOUCHED. Verified: the per-domain tiles colour from
+  aim=marketAim(m) (the GLOBAL aggregate market.target.stance, pages.js:271/433) — the new per-domain d.target is passed
+  into CategoryTile via d but NEVER read (grep: no d.target/domain.target read anywhere in web/js). So it is inert on
+  screen, live only in the data layer for layer 4. No cache bump (no web change).
+  VERIFIED live (Thornbridge, global market_position="match", all 6 competitive verdicts "below"): ⭐[a] DEGRADE BOTH
+  HALVES side by side — (i) NULL domain_targets → every competitive domain target={stance:match,alignment:behind}
+  (degrade-to-global), Governance target=None; (ii) {Benefits:lag} → Benefits target={stance:lag,alignment:on_target}
+  DIVERGES from the global read (behind→on_target), all 5 un-overridden domains BYTE-IDENTICAL to the global read,
+  Governance still None. [b] GAUGE INVARIANT 76/15/1/92 + 88 signals identical null vs override vs restore. ⭐[c]
+  QUERYABLE-FOR-SUPPRESSION: Benefits.target present + both fields populated on the override domain in the payload
+  layer-4 reads. [d] SCOPE C: dashboard numbers byte-identical (gauge "On market", all 7 tiles render); target unread by
+  frontend. [e] GOVERNANCE: no target in either state. [f] Thornbridge restored to domain_targets=NULL post-QA. [g] 0
+  console errors. QA harness /tmp/dt_qa_l3.py (13/13 PASS), preserves the full enum set on every PUT. Server restarted
+  (no --reload). ⛔ Layer 4 (suppression) = separate pass — reads d["target"] + risk_framed to suppress confirming
+  non-risk signals per domain.

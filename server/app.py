@@ -3036,6 +3036,7 @@ def strategy_for_engine(conn, org_id):
     out = {f: row.get(f) for f in STRATEGY_ENUMS}
     out["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
     out["provenance"] = uj(row.get("field_provenance"), {}) or {}
+    out["domain_targets"] = uj(row.get("domain_targets"), {}) or {}   # step-3 layer 3: per-domain aims for the engine (null col → {} → every domain reads global)
     return out
 
 

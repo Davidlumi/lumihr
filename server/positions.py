@@ -856,13 +856,15 @@ def _strategy_field(strategy, field):
     return v
 
 
-def _market_target(market, strategy):
+def _market_target(market, strategy, stance_override=None):
     """Read the competitiveness verdict against the member's declared
     `market_position` target (handover §5.2) — an ANNOTATION only; it never
     changes the verdict, counts or lean (so 'verdict reflects mass' holds, and
     strategy=None degrades byte-for-byte). An above-market member who AIMED
-    above-market reads 'on target', not a premium-cost flag."""
-    stance = _strategy_field(strategy, "market_position")
+    above-market reads 'on target', not a premium-cost flag. `stance_override`
+    (step-3 layer 3): a per-domain aim (domain_targets[sec]); None → falls back
+    to the global market_position (degrade-to-global)."""
+    stance = stance_override or _strategy_field(strategy, "market_position")
     if not market or not stance:
         return None
     rank = {"below": 0, "at": 1, "above": 2}.get(market.get("verdict"))
@@ -967,6 +969,7 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
         gauge_pool = [i for i in gauge_pool if not (_m.get(i["question_id"]) or {}).get("location_scoped")]
 
     domains = []
+    _dts = (strategy or {}).get("domain_targets") or {}   # step-3 layer 3: per-domain aims (null → {} → global fallback)
     for sec in section_order:
         d_prev = [i for i in prev_items if i.get("subpower") == sec]
         if not _mp_competitive(cfg, sec):
@@ -1006,6 +1009,12 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
         if (sec == "Pay" and position and position.get("verdict") == "below"
                 and _strategy_field(strategy, "reward_mix") == "benefits"):
             d["mix_note"] = "benefits"
+        # per-domain market-position alignment (step-3 layer 3): the domain's verdict read
+        # against ITS aim — domain_targets[sec] if overridden, else the global market_position
+        # (degrade-to-global, inside _market_target). ANNOTATION only — never touches counts /
+        # the gauge; this is the queryable input layer-4 suppression reads (parallel to
+        # risk_framed). Governance never reaches here (non-competitive branch above → no target).
+        d["target"] = _market_target(d["position"], strategy, stance_override=_dts.get(sec))
         domains.append(d)
     market = _pool_verdict(gauge_pool, band_low, band_high, margin)
     target = _market_target(market, strategy)
