@@ -1,0 +1,13 @@
+{
+  "name": "lumi benchmark",
+  "short_name": "lumi",
+  "description": "UK reward benchmarking — see where you stand against the market.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EAF0FB",
+  "theme_color": "#2048B0",
+  "icons": [
+    { "src": "/lumi_app_navy_192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/lumi_app_navy_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
