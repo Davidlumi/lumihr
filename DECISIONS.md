@@ -4840,3 +4840,31 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   accent rgb(240,140,110)=#F08C6E + "Risk" marker, distinct from position rows; coral NOT red. [c] same 3 flagged
   under strategy ON and strategy OFF (risk is a signal property, not strategy state). [g] 0 console errors. Backend+web
   → server restarted, cache v247→v248.
+
+2026-06-24 — STEP 3 LAYER 1 (SCHEMA): per-domain market_position target column. First layer of the per-domain tension
+  chain. STORAGE + SAVE PATH ONLY — no engine consumption, no capture UI (those are layers 2/3). David rulings baked
+  in: single nullable JSON column (NOT 7 columns / NOT a child table); strict-reject validation; key validation DERIVED
+  from the config, not a hardcoded domain list.
+  db.py: `domain_targets TEXT` added to the org_strategy CREATE TABLE + "ALTER TABLE org_strategy ADD COLUMN
+  domain_targets TEXT" in the migration-lite try/except tuple (idempotent; mirrors the existing pattern, no new
+  mechanism). Nullable, no default.
+  app.py PUT /api/strategy: validates domain_targets right after benefits_lead. STRICT REJECT (400): each value must be
+  in market_position's lag|match|lead; each domain must be a KNOWN competitive domain. KEY VALIDATION FIX (QA-caught):
+  _mp_competitive(cfg, dom) DEFAULTS TO TRUE for domains absent from the config, so it alone does NOT reject unknown
+  keys (it only rejects Governance, which is present with competitiveness=False). Gate is therefore
+  `dom in cfg["_domains"] AND _mp_competitive(cfg, dom)` — rejects unknown domains AND Governance through one
+  config-derived gate (no hardcoded six-domain list; tracks the config automatically). Persisted as
+  json.dumps(dt) or None; "domain_targets" added to the INSERT cols/row_vals; provenance "set"/"skipped" like the
+  other fields. strategy_state read-back adds strat["domain_targets"]=uj(...) so it round-trips.
+  DEGRADE CONTRACT (design for layer 3; storage supports it now): domain present → use that domain's stance; domain
+  absent → fall back to the global market_position; whole column null → byte-identical to today. Per-domain
+  independent (partial capture inherits global per-unset-domain) via the field_provenance skipped→None→fallback
+  discipline. NO CONSUMER YET — strategy_for_engine / positions.py / signals.py untouched; the column exists and
+  persists but nothing reads it for surfacing or the gauge.
+  VERIFIED live (Thornbridge): [a] migration applied (domain_targets col, nullable, no default), existing org NULL (no
+  data loss), init_schema idempotent (ran twice clean). [b] LAYER BOUNDARY: gauge 76/15/1/92 + 88 signals BYTE-
+  IDENTICAL before, WITH domain_targets={Pay:lag,Benefits:lead} set, and after restore (no consumer leaked forward).
+  [c] {Pay:lag,Benefits:lead} persists + round-trips on reload; other strategy fields preserved. [d] STRICT REJECT
+  400 on invalid stance (leadx), unknown domain (Foo), AND Governance. [e] partial {Pay:lag} persists Pay only.
+  [f] wal_checkpoint(TRUNCATE) + gitignored .bak taken before the migration. qa_overview 17/17. Thornbridge restored
+  to domain_targets=NULL. No cache bump (backend-only); server restarted to apply the migration.

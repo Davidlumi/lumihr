@@ -519,6 +519,12 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     acute_pressure      TEXT,   -- 'bau' | 'scaling' | 'shock'
     risk_appetite       TEXT,   -- 'early' | 'follow' | 'wait'
     field_provenance    TEXT,   -- JSON {field: 'set'|'suggested'|'skipped'} ('suggested' reserved, unused v1)
+    -- per-domain market-position target (step-3 layer 1, 2026-06-24): JSON
+    -- {domain: 'lag'|'match'|'lead'} — SAME enum as market_position, only for
+    -- COMPETITIVE domains (validated via _mp_competitive). Absent domain / null
+    -- column → falls back to the global market_position (degrade-to-global).
+    -- Stored only; NO consumer yet (engine reads it in layer 3).
+    domain_targets      TEXT,
     completed_at        TEXT,
     updated_at          TEXT
 );
@@ -578,7 +584,10 @@ def init_schema(conn=None):
                 "ALTER TABLE pulses ADD COLUMN reviewed_by TEXT",
                 "ALTER TABLE pulses ADD COLUMN reviewed_at TEXT",
                 "ALTER TABLE pulses ADD COLUMN launch_fee_pence INTEGER",
-                "ALTER TABLE pulses ADD COLUMN visibility TEXT NOT NULL DEFAULT 'community'"):
+                "ALTER TABLE pulses ADD COLUMN visibility TEXT NOT NULL DEFAULT 'community'",
+                # per-domain market-position target (step-3 layer 1, 2026-06-24):
+                # nullable JSON {domain: lag|match|lead}; null → global fallback.
+                "ALTER TABLE org_strategy ADD COLUMN domain_targets TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

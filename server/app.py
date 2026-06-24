@@ -2917,6 +2917,7 @@ def strategy_state(conn, org):
     row = dict(r) if r else {}
     strat = {f: row.get(f) for f in STRATEGY_ENUMS}
     strat["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
+    strat["domain_targets"] = uj(row.get("domain_targets"), {}) or {}   # step-3 layer 1 round-trip (no consumer yet)
     return {
         "strategy": strat,
         "provenance": uj(row.get("field_provenance"), {}) or {},
@@ -2971,14 +2972,33 @@ async def put_strategy(request: Request):
             raise HTTPException(400, "'%s' isn't a recognised benefits area." % x)
     vals["benefits_lead"] = json.dumps(bl) if bl else None
     prov["benefits_lead"] = "set" if bl else "skipped"
+    # per-domain market-position target (step-3 layer 1, 2026-06-24) — STRICT REJECT.
+    # A dict {domain: stance}; each stance must be a valid market_position enum, each
+    # domain must pass _mp_competitive (the SINGLE source of truth — this rejects unknown
+    # domains AND the non-competitive Governance through ONE gate, no special branch).
+    # Absent/empty → skipped → null → degrade-to-global. Stored only; NO consumer yet (layer 3).
+    dt = incoming.get("domain_targets") or {}
+    if not isinstance(dt, dict):
+        raise HTTPException(400, "domain_targets must be an object of {domain: stance}.")
+    _mpc = pos.market_position_config()
+    _doms = _mpc.get("_domains", {})              # the canonical domain set (config = single source of truth)
+    for dom, stance in dt.items():
+        if stance not in STRATEGY_ENUMS["market_position"]:
+            raise HTTPException(400, "'%s' isn't a valid market position for %s — use lag, match or lead." % (stance, dom))
+        # reject UNKNOWN domains (absent from _domains — _mp_competitive defaults True for those)
+        # AND non-competitive ones (Governance: present but competitiveness=False) — one gate, derived.
+        if dom not in _doms or not pos._mp_competitive(_mpc, dom):
+            raise HTTPException(400, "'%s' isn't a competitive reward domain that can carry a market-position target." % dom)
+    vals["domain_targets"] = json.dumps(dt) if dt else None
+    prov["domain_targets"] = "set" if dt else "skipped"
 
     conn = get_conn()
     prev = conn.execute("SELECT completed_at FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
     complete = all(vals.get(f) for f in STRATEGY_REQUIRED)
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     completed_at = (prev["completed_at"] if prev and prev["completed_at"] else None) or (now if complete else None)
-    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "field_provenance", "updated_at", "completed_at"]
-    row_vals = [vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], json.dumps(prov), now, completed_at]
+    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets", "field_provenance", "updated_at", "completed_at"]
+    row_vals = [vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"], json.dumps(prov), now, completed_at]
     setclause = ", ".join("%s=excluded.%s" % (c, c) for c in cols)
     conn.execute("INSERT INTO org_strategy (org_id, %s) VALUES (%s) ON CONFLICT(org_id) DO UPDATE SET %s"
                  % (", ".join(cols), ", ".join(["?"] * (len(cols) + 1)), setclause),
