@@ -4769,3 +4769,48 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   strategy ON → green restored (chip-good, MKT_RICH.green, aim bracket back). 0 console errors. Pref left ON (default).
   Cache v245→v246 (JS-only, no server restart). The overview↔category divergence is now CLOSED on BOTH the
   strategy-on (green/amber) and strategy-off (grey) paths.
+
+2026-06-24 — WIRED pay_for_performance (coarse RE-RANK). The strategy dial pay_for_performance (egal|moderate|
+  strong) was captured but read nowhere in surfacing; now it re-ranks the signal briefing. Mechanism: a SECOND
+  impact multiplier mirroring the primary_objective re-ranker, keyed on the signal's DOMAIN (sub_power=="Incentives",
+  23 metrics) — NOT a new per-metric tag (coarse: directionally right, imprecise at the margins; a variable_pay tag
+  is the deferred precision step). signals.py: P4P_INCENTIVE_MULT {strong:1.4, egal:0.7} + _p4p_mult(strategy,
+  domain) (after _objective_mult); the application site (was the bare objective line) now applies a CAPPED PRODUCT.
+  COMPOSITION RULING (David, AskUserQuestion 2026-06-24): the two multipliers key on DIFFERENT axes (objective→lens,
+  P4P→Incentives domain) so both can hit one signal; compose as min(objective_mult × p4p_mult, 2.0) — a capped
+  product, magnitudes strong 1.4 / egal 0.7, moderate/unset → 1.0. The cap bounds the runaway double-boost
+  (strong-P4P + attract → 1.6×1.4=2.24, clamped to 2.0; live Thornbridge objective=cost → a save-lens Incentives
+  signal 1.7×1.4=2.38 clamps to 2.0). DISPLAY/RANKING ONLY — changes signal ORDER, never which signals exist, the
+  gauge, counts, or position/kind.
+  DEGRADE: pay_for_performance unset/skipped or strategy=off → _strategy_field None → p4p_mult 1.0 → strat_mult ==
+  objective_mult (cap never bites, objective ≤1.7<2.0) → byte-identical to pre-change. moderate → 1.0 (exact no-op).
+  VERIFIED (non-mutating harness over Thornbridge, build_signals variants): same SET of 88 signals across egal/
+  moderate/strong/unset; position+kind identical; strong → every Incentives signal ranks UP, egal → every one DOWN;
+  moderate == unset (exact no-op); non-Incentives strat-multiplier identical across all 4 variants (n=70, byte-
+  identical impact); cap math confirmed (save×1.4=2.38→2.0). qa_overview 17/17; live gauge 76/15/1/92 unchanged
+  (Thornbridge is moderate → no-op); 0 console errors. Backend-only (signals.py) — server restarted, NO cache bump
+  (no web asset changed).
+
+2026-06-24 — THREE-STATE SURVEY FIELD TREATMENT (strategy capture UI, UI-only). The reward-strategy capture now
+  reflects each field's wiring status, via a config-driven FIELD_STATE map in web/js/strategy.js (mirrors the
+  planeBfields/planeCfields arrays): "coming" = HIDE (wired later), "context" = SHOW-BUT-LABEL (collected on purpose,
+  not wired to surfacing), "live" (default) = render normally. Current map: transparency → "coming" (hidden pending
+  its precise tag in the deferred step-3 tagging pass); budget_direction / risk_appetite / acute_pressure → "context"
+  (kept for board-pack narrative / future, but not shaping signals today); everything else incl. pay_for_performance
+  → "live". shownFields() filters "coming" from the rendered plane arrays + the review read-back; DialCard renders a
+  muted "Context" badge (sibling of Optional) + a quiet note "Kept for context — this doesn't shape your signals yet."
+  in place of the live blue signal-effect reveal (reuses --grey-neutral / --grey-neutral-ink). Plane-B footer count is
+  now dynamic (shownFields(planeBfields).length = 6 dials, was literal "7"); Plane-C stays 4. NOTHING changed in:
+  columns, enums, the save route, the completion gate (REQUIRED = market_position/reward_mix/primary_objective, all
+  visible → still completable), or the engine. Re-showing transparency once wired = a ONE-LINE flip ("coming"→"live").
+  Cache v246→v247 (web-only, no server restart). DEGRADE: transparency hidden → not asked → fresh org stores it
+  skipped (None + provenance skipped → engine no-op, byte-identical); a returning org's prior value rides along in
+  `strat` (seeded from d.strategy) → preserved, NOT wiped (reversible, UI-only).
+
+2026-06-24 — STEP-3 FLAG (stale transparency value — DECISION REQUIRED when transparency is wired). Because hiding is
+  UI-only and `strat` seeds from the stored strategy, a returning org that SET transparency BEFORE it was hidden keeps
+  that stored value (preserved, not wiped). It is inert today (transparency is CAPTURED-BUT-IGNORED). RISK: when
+  transparency is WIRED in step 3, that stale stored value would silently go LIVE — driving surfacing — without the
+  user having seen or reconfirmed it (it's been hidden from the form). DECISION REQUIRED at step 3, do NOT resolve
+  now: respect the stored value (continuity) vs force a reconfirm (re-ask before a hidden, unwired field reactivates).
+  David's lean: RECONFIRM. Logged here so the step-3 wiring pass cannot miss it.

@@ -2144,6 +2144,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .se-eye { color: var(--blue); flex: none; margin-top: 1px; }
 .se-text { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5; }
 .se-pill { font-weight: 650; padding: 1px var(--s2); border-radius: 5px; white-space: nowrap; }
+/* Three-state survey field treatment (2026-06-24) — a "context" dial is collected but NOT
+   wired to surfacing: a muted neutral badge + a quiet note in place of the live blue signal-
+   effect reveal, so it visibly reads as "not shaping your signals". Reuses the attainment grey. */
+.strat-ctx { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  color: var(--grey-neutral-ink); background: color-mix(in srgb, var(--grey-neutral) 16%, transparent);
+  padding: 2px var(--s2); border-radius: 5px; }
+.signal-effect.strat-ctx-note { background: color-mix(in srgb, var(--surface-sunk) 60%, transparent);
+  border-color: var(--border); animation: none; }
+.strat-ctx-note .se-eye { color: var(--grey-neutral-ink); }
+.strat-ctx-note .se-text { color: var(--ink-faint); }
 .se-pill.green { background: var(--favourable-tint); color: var(--favourable); }
 .se-pill.amber { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .se-pill.blue { background: var(--blue-tint); color: var(--blue-deep); }

@@ -69,6 +69,17 @@ const SCALE_FIELD = { market_position: "market", reward_mix: "mix", pay_for_perf
   transparency: "transparency", location_approach: "location", family_position: "family",
   budget_direction: "budget", acute_pressure: "pressure", risk_appetite: "risk" };
 const REQUIRED = ["market_position", "reward_mix", "primary_objective"];
+// FIELD_STATE (2026-06-24) — three-state survey field VISIBILITY (UI-only; persistence,
+// enums, the save route, the completion gate and the engine are ALL untouched).
+//   "coming"  → wired in a later step, HIDE for now (drives nothing yet, so don't ask).
+//   "context" → collected deliberately (board-pack narrative / future) but NOT wired to
+//               surfacing, SHOW BUT LABEL honestly so the user isn't misled.
+//   "live" (default) → wired, drives output, render normally (no label).
+// Re-showing a "coming" field once it's wired is a ONE-LINE flip to "live".
+const FIELD_STATE = { transparency: "coming",
+  budget_direction: "context", risk_appetite: "context", acute_pressure: "context" };
+const fieldState = (f) => FIELD_STATE[f] || "live";
+const shownFields = (fields) => fields.filter(f => fieldState(f) !== "coming");   // render/review only
 const DIAL_LABEL = { market_position: "Market position", reward_mix: "Total-reward mix",
   pay_for_performance: "Pay for performance", transparency: "Pay transparency",
   location_approach: "Location approach", benefits_lead: "Benefits lead", family_position: "Family-friendliness",
@@ -131,7 +142,7 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
 }
 
 // ---- a single dial card (scale | cards | chips) -------------------------------
-function DialCard({ field, value, onPick, required }) {
+function DialCard({ field, value, onPick, required, context }) {
   const sk = SCALE_FIELD[field];
   const flagged = required && !value;     // unset required → amber prompt
   const tag = required ? html`<span class="strat-req">Required</span>` : html`<span class="strat-opt">Optional</span>`;
@@ -161,13 +172,15 @@ function DialCard({ field, value, onPick, required }) {
       <div class="dial-head">
         <span class=${"dial-roundel" + (flagged ? " flagged" : "")}><${Icon} name=${DIAL_ICON[field] || "target"} size=${16} /></span>
         <div>
-          <div class="dial-title">${DIAL_LABEL[field]} ${tag}</div>
+          <div class="dial-title">${DIAL_LABEL[field]} ${tag}${context ? html` <span class="strat-ctx">Context</span>` : null}</div>
           <div class="dial-q" dangerouslySetInnerHTML=${{ __html: q }}></div>
         </div>
       </div>
       ${body}
-      ${se && html`<div class="signal-effect"><span class="se-eye"><${Icon} name="sparkle" size=${14} /></span>
+      ${se && !context && html`<div class="signal-effect"><span class="se-eye"><${Icon} name="sparkle" size=${14} /></span>
         <span class="se-text" dangerouslySetInnerHTML=${{ __html: se }}></span></div>`}
+      ${context && html`<div class="signal-effect strat-ctx-note"><span class="se-eye"><${Icon} name="info" size=${14} /></span>
+        <span class="se-text">Kept for context — this doesn't shape your signals yet.</span></div>`}
     </div>`;
 }
 const DIAL_ICON = { market_position: "target", reward_mix: "coins", pay_for_performance: "bar-chart",
@@ -270,7 +283,7 @@ window.StrategyPage = function ({ me }) {
           <div class="strat-eyebrow">Your philosophy <span class="strat-mode choose">Your call</span></div>
           <h1 class="strat-title">The positions you've chosen</h1>
           <p class="strat-sub">These are deliberate commitments, not facts about your business — so we ask you fresh. They're what let us tell "below the market" from "below the market, on purpose."</p>
-          ${planeBfields.map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} />`)}
+          ${shownFields(planeBfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`)}
         </section>`}
 
       ${step === 2 && html`
@@ -278,7 +291,7 @@ window.StrategyPage = function ({ me }) {
           <div class="strat-eyebrow">Right now <span class="strat-mode choose">Your call</span></div>
           <h1 class="strat-title">What you're working on this year</h1>
           <p class="strat-sub">Philosophy is your long game; this is the near term. It changes yearly, so we ask it fresh — it tunes how urgently a gap is flagged and which moves we surface first.</p>
-          ${planeCfields.map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} />`)}
+          ${shownFields(planeCfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`)}
         </section>`}
 
       ${step === 3 && html`
@@ -289,15 +302,15 @@ window.StrategyPage = function ({ me }) {
           <${ReviewSection} title="Your business" chip="confirmed" chipCls="confirmed"
             rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => setStep(0)} />
           <${ReviewSection} title="Your philosophy" chip="your choices" chipCls="choices"
-            rows=${planeBfields.map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} />
+            rows=${shownFields(planeBfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} />
           <${ReviewSection} title="Right now" chip="this year" chipCls="choices"
-            rows=${planeCfields.map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} />
+            rows=${shownFields(planeCfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} />
           <p class="strat-trust"><b>These are company facts and choices, not employee data.</b> They stay at organisation level, set only by an Admin, and shape how your results are read — never what your people see.</p>
         </section>`}
 
       <div class="strat-footer">
         <div class="strat-footer-in">
-          <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · 7 dials", "Right now · 4 questions", "Review your strategy"][step]}</div>
+          <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " questions", "Review your strategy"][step]}</div>
           <div class="row" style=${{ gap: "var(--s2)" }}>
             ${step > 0 && !committed && html`<button class="btn" onClick=${back}>Back</button>`}
             ${step < 3 ? html`<button class="btn primary strat-next" onClick=${next}>${step === 0 ? "Looks right" : "Next"}</button>`
