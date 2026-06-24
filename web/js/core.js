@@ -56,6 +56,10 @@ window.GLOSSARY = {
   "peer group": "The organisations you're being compared with. Use the filter to compare against everyone, your industry, organisations your size, or organisations like you.",
   n: "The number of organisations behind this comparison. A benchmark without its sample size isn't publishable — so n is always shown.",
   indicative: "A modelled, directional figure built on the stated assumptions — useful for sizing a conversation, not for budgeting.",
+  "market position": "Where you sit versus peers on a measure — below, on, or above market. The headline is built only from market-rate measures where higher is better, so it answers one question: how competitive is your reward?",
+  "differs from market": "You do something differently from most peers on a measure with no better-or-worse — a choice, not a gap to close.",
+  favourable: "A measure where being lower is the good outcome — such as a pay gap — and you sit on the good side of the market.",
+  context: "A measure with no inherently good direction, shown as a fact to weigh rather than a verdict.",
 };
 
 // ------------------------------------------------------------- atoms -------
@@ -76,15 +80,39 @@ window.NBadge = ({ n, cutLabel }) => html`
 
 window.Spinner = () => html`<span class="spinner"></span>`;
 
-window.Modal = function ({ onClose, children, width, xl }) {
+window.Modal = function ({ onClose, children, width, xl, label }) {
+  const cardRef = useRef(null);
   useEffect(() => {
     const onKey = e => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  // Focus management (mirrors commercial.js SuggestModal): capture the trigger,
+  // focus the first focusable inside .modal (or the .modal itself), restore on unmount.
+  useEffect(() => {
+    const trigger = document.activeElement;
+    const t = setTimeout(() => {
+      const el = cardRef.current;
+      if (!el) return;
+      const first = [...el.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+        .filter(n => !n.disabled && n.offsetParent)[0];
+      (first || el).focus();
+    }, 0);
+    return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
+  }, []);
+  // Trap Tab/Shift+Tab within .modal (wrap first↔last).
+  const onKeyDown = (e) => {
+    if (e.key !== "Tab" || !cardRef.current) return;
+    const f = [...cardRef.current.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
   return html`
     <div class="modal-back" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null}>${children}</div>
+      <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null} ref=${cardRef} tabindex="-1" role="dialog" aria-modal="true" aria-label=${label || "Dialog"} onKeyDown=${onKeyDown}>${children}</div>
     </div>`;
 };
 
@@ -119,13 +147,13 @@ window.toast = function (msg, kind) {
 // Parse what a UK user might type into a money/number field: "£12,500", "12 500".
 window.parseUKNumber = function (s) {
   if (s === null || s === undefined) return "";
-  const cleaned = String(s).replace(/[£,\s]/g, "");
+  const cleaned = String(s).replace(/[£,%\s]/g, "");
   return cleaned;
 };
 // Format a stored numeric string for display in an idle input: 12500 -> "12,500".
 window.formatUKNumber = function (s, currency) {
   if (s === null || s === undefined || s === "") return "";
-  const n = Number(String(s).replace(/[£,\s]/g, ""));
+  const n = Number(String(s).replace(/[£,%\s]/g, ""));
   if (!isFinite(n)) return String(s);
   const txt = n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
   return currency ? "£" + txt : txt;
@@ -140,8 +168,8 @@ window.ErrorBoundary = class extends React.Component {
     if (this.state.err) {
       return html`
         <div class="auth-wrap"><div class="card auth-card" style=${{ textAlign: "center" }}>
-          <div class="logo" style=${{ padding: 0, marginBottom: "4px", display: "inline-block" }}>lumi<span>.benchmark</span></div>
-          <h2 class="section-title" style=${{ marginTop: "10px" }}>Something went wrong</h2>
+          <div class="logo" style=${{ padding: 0, marginBottom: "var(--s1)", display: "inline-block" }}>lumi<span>.benchmark</span></div>
+          <h2 class="section-title" style=${{ marginTop: "var(--s3)" }}>Something went wrong</h2>
           <p class="caption">Your data is safe — this is a display problem, not a data one.</p>
           <button class="btn primary" onClick=${() => { window.location.hash = "/overview"; window.location.reload(); }}>Reload lumi</button>
         </div></div>`;
@@ -187,7 +215,83 @@ window.useRoute = function () {
   }, []);
   return route;
 };
-window.nav = path => { window.location.hash = path; };
+// Navigation goes through a single chokepoint so an optional leave-guard can
+// intercept it (e.g. "you have unsubmitted changes"). _navRaw is the
+// unguarded jump the guard itself uses once the user confirms.
+window._navRaw = path => { window.location.hash = path; };
+window.nav = path => {
+  if (window._leaveGuard && window._leaveGuard(path)) return;   // guard opened a dialog
+  window._navRaw(path);
+};
+
+// Unsubmitted-changes flag: drafts autosave server-side but only reach the
+// benchmark on submit. markUnsubmitted() is called after a successful draft
+// save, clearUnsubmitted() after a submit; the App listens for the event to
+// drive the reminder bar + leave-guard.
+window._unsubmitted = false;
+window.markUnsubmitted = () => { window._unsubmitted = true; window.dispatchEvent(new CustomEvent("lumi:unsubmitted")); };
+window.clearUnsubmitted = () => { window._unsubmitted = false; window.dispatchEvent(new CustomEvent("lumi:unsubmitted")); };
+
+/* Lightweight, dependency-free canvas confetti for the genuine "you did it"
+   moments (a section completed, a submission landed, insights unlocked). One
+   self-removing canvas per burst; honours prefers-reduced-motion. */
+window.confettiBurst = function (opts) {
+  opts = opts || {};
+  try {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  } catch (e) {}
+  const count = opts.count || 130;
+  const duration = opts.duration || 2600;
+  const spread = opts.spread || 1;          // 1 = full burst; <1 = tighter
+  // celebrate in the lumi palette — resolve brand tokens at runtime (canvas
+  // fillStyle can't read CSS vars directly), with brand-hex fallbacks.
+  const _cs = getComputedStyle(document.documentElement);
+  const _tok = (n, fb) => (_cs.getPropertyValue(n).trim() || fb);
+  const colors = opts.colors || [
+    _tok("--blue-bright", "#2E62D9"), _tok("--favourable", "#2E7D52"),
+    _tok("--amber-bright", "#F5A60A"), _tok("--lumi-coral", "#F08C6E"),
+    _tok("--blue", "#2547B0"), _tok("--differs", "#7A5AF8")];
+  const origin = opts.origin || { x: 0.5, y: 0.32 };
+  const cv = document.createElement("canvas");
+  cv.setAttribute("aria-hidden", "true");
+  cv.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999";
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = () => window.innerWidth, H = () => window.innerHeight;
+  const resize = () => { cv.width = W() * dpr; cv.height = H() * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  resize();
+  window.addEventListener("resize", resize);
+  const ox = origin.x * W(), oy = origin.y * H();
+  const P = [];
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const speed = (5 + Math.random() * 8) * spread;
+    P.push({
+      x: ox, y: oy, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - (5 + Math.random() * 5),
+      g: 0.16 + Math.random() * 0.12, size: 5 + Math.random() * 7,
+      color: colors[(Math.random() * colors.length) | 0],
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.34,
+      shape: Math.random() < 0.5 ? "rect" : "circle",
+    });
+  }
+  let start = null;
+  function frame(t) {
+    if (start === null) start = t;
+    const e = t - start, fade = Math.max(0, 1 - e / duration);
+    ctx.clearRect(0, 0, W(), H());
+    for (const p of P) {
+      p.vy += p.g; p.vx *= 0.992; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx.save(); ctx.globalAlpha = fade; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+      if (p.shape === "rect") ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.62);
+      else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
+    if (e < duration) requestAnimationFrame(frame);
+    else { window.removeEventListener("resize", resize); cv.remove(); }
+  }
+  requestAnimationFrame(frame);
+};
 
 /* The metric full page is each metric's home. openMetric remembers where the
    user came from (route + scroll) so Back restores their exact position. */
@@ -212,17 +316,30 @@ window.consumeReturnScroll = function (hash) {
 // ------------------------------------------------- chart-type compatibility -
 // Never offer a chart type that misrepresents the data shape.
 window.chartAlternatives = function (card) {
-  if (card.type === "numeric") return ["quartile_band", "histogram", "box"];
+  if (card.type === "numeric") {
+    // only offer the histogram when the engine actually carries binned values —
+    // a banded/derived numeric has no bins, so the switch would render blank
+    const hasBins = card.histogram && card.histogram.bins && card.histogram.bins.length > 1;
+    return hasBins ? ["quartile_band", "histogram", "box"] : ["quartile_band", "box"];
+  }
   if (card.type === "matrix") {
     // categorical matrices have one honest representation: the per-level table
     if ((card.matrix_rows || []).some(r => r.block && r.block.kind === "select")) return ["matrix_table"];
     return ["heatmap", "grouped_bars"];
   }
   if (card.type === "multi_select") return ["bar"];
-  // 2026-06-12: the segmented band retired — categorical scales have ONE
-  // honest representation: the ordered distribution (labels on their own
-  // bars, every category visible, You in place)
-  if (card.type === "single_select" || card.type === "yes_no") return ["ordered"];
+  // 2026-06-12: ordered scales have ONE honest representation — the ordered
+  // distribution (labels on their own bars, every category visible, You in place,
+  // a thin ordinal rail signalling "this is a scale").
+  if (card.type === "single_select") return ["ordered"];
+  if (card.type === "yes_no") {
+    // a TRUE binary (≤2 real answers) is NOT a scale → plain bars, no ordinal rail.
+    // many "yes_no" metrics actually carry a middle/partial state (Yes/No/Partially/
+    // In development/…) — that gradient keeps the ordered distribution, which shows
+    // the spread honestly.
+    const realOpts = ((card.block && card.block.options) || []).filter(o => !o.is_na);
+    return realOpts.length > 2 ? ["ordered"] : ["bar"];
+  }
   return ["bar"];
 };
 window.normaliseChart = function (card, pref) {

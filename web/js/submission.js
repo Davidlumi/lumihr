@@ -9,9 +9,15 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   const [err, setErr] = useState(null);
   const refresh = () => api("/api/submission/state").then(setState).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, []);
+  // The no-section route is now purely a gate on-ramp: once firmographics and
+  // the data terms are cleared, bounce to the single "Your data" home — there
+  // is no second "submission home" any more.
+  useEffect(() => {
+    if (state && !section && state.firmographics_done && state.data_terms_accepted) nav("/your-data");
+  }, [state, section]);
   if (err) return html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task"
     body=${err} />`;
-  if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   if (!state.firmographics_done) return html`
     <div style=${{ maxWidth: "560px" }}>
       <h1 class="display-title">First, tell us who you are</h1>
@@ -25,8 +31,9 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
     onAccepted=${() => { refresh(); refreshMe(); }} />`;
   if (section === "review") return html`<${ReviewStep} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
-  if (section) return html`<${SectionForm} sp=${section} state=${state} refresh=${refresh} />`;
-  return html`<${SubmissionHome} state=${state} />`;
+  if (section) return html`<${DomainPage} sp=${section} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
+  // gates cleared, no section → redirecting to /your-data (above effect)
+  return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 };
 
 /* Layer 2 — the Data Contribution Terms. Accepted once, by an Admin, on
@@ -70,7 +77,7 @@ function DataTermsGate({ me, onAccepted }) {
             <${TermsText} text=${terms.data_contribution.text} />
           </div>`}
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>
-          <span class="chip warn">DRAFT — pending legal review · v${terms ? terms.data_contribution.version : "…"}</span>
+          <span class="chip">Current version · v${terms ? terms.data_contribution.version : "…"}</span>
         </div>
       </div>
       ${isAdmin ? html`
@@ -79,53 +86,14 @@ function DataTermsGate({ me, onAccepted }) {
             <input type="checkbox" checked=${tick} onChange=${e => setTick(e.target.checked)} />
             <span><b>I accept these Data Contribution Terms on behalf of my organisation.</b></span>
           </label>
-          <div class="caption" style=${{ margin: "4px 0 10px" }}>Your acceptance is recorded (organisation,
+          <div class="caption" style=${{ margin: "var(--s1) 0 var(--s3)" }}>Your acceptance is recorded (organisation,
             your name, date, terms version) and starts your organisation's 30 days to contribute.</div>
-          ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+          ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
           <button class="btn primary" disabled=${!tick || busy} onClick=${accept}>
             ${busy ? html`<${Spinner} />` : "Accept and begin"}</button>
         </div>` : html`
         <${EmptyState} icon="lock" title="Waiting on your Admin"
           body="Only your organisation's Admin can accept the Data Contribution Terms. Once they have, you can start submitting here — your 30 days to contribute start at that moment, so no time is being lost." />`}
-    </div>`;
-}
-
-// ------------------------------------------------------------------- home --
-// One card per section (sub-power): Pay, Benefits, Incentives, Transparency,
-// Progression — each with its own progress. Key (required) questions drive
-// the unlock gate, so their count is shown separately.
-function SubmissionHome({ state }) {
-  const totalQ = state.sections.reduce((a, s) => a + s.questions, 0);
-  const totalA = state.sections.reduce((a, s) => a + s.answered, 0);
-  return html`
-    <div style=${{ maxWidth: "760px" }}>
-      <h1 class="display-title">Your submission</h1>
-      <p>lumi is a co-operative: you see the pool because you've contributed to it. Answer your
-      ${" "}<b>key reward questions</b> to unlock your insights — “Not applicable” counts as an answer,
-      so nothing that doesn't apply to you can hold you back. Everything autosaves — come back any time.</p>
-      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
-        <div class="row spread" style=${{ marginBottom: "6px" }}>
-          <b>Key reward questions</b>
-          <span class="num"><b>${state.basis_answered}</b> of ${state.basis_total} answered · insights unlock at ${state.threshold_pct}%</span>
-        </div>
-        <div class="progressbar"><div style=${{ width: Math.min(100, state.completion_pct / state.threshold_pct * 100) + "%" }}></div></div>
-        <div class="caption" style=${{ marginTop: "6px" }}>${totalA} of ${totalQ} questions answered overall</div>
-      </div>
-      ${state.sections.map(s => html`
-        <div key=${s.section} class="card section-card" style=${{ padding: "var(--s3) var(--s4)", marginBottom: "var(--s2)", cursor: "pointer" }}
-          onClick=${() => nav("/your-data/submit/" + encodeURIComponent(s.section))}>
-          <div class="row spread">
-            <b>${s.section}</b>
-            <span class="caption num">${s.answered} of ${s.questions} done${s.key_questions ?
-              html` · <b>${s.key_answered}/${s.key_questions}</b> key` : ""}</span>
-          </div>
-          <div class="progressbar" style=${{ marginTop: "6px" }}>
-            <div style=${{ width: (s.questions ? 100 * s.answered / s.questions : 0) + "%" }}></div>
-          </div>
-        </div>`)}
-      <div class="row" style=${{ justifyContent: "flex-end", marginTop: "var(--s4)" }}>
-        <button class="btn primary" onClick=${() => nav("/your-data/submit/review")}>Review and submit</button>
-      </div>
     </div>`;
 }
 
@@ -136,17 +104,26 @@ window.addEventListener("beforeunload", (e) => {
   if (window._pendingSaves > 0) { e.preventDefault(); e.returnValue = ""; }
 });
 
-// ------------------------------------------------------------ section form -
-// One sub-power per page. Key questions first (they unlock insights), the
-// optional ones after, under their own divider.
-function SectionForm({ sp, state, refresh }) {
+// ---------------------------------------------------- domain (your data) ----
+// ONE page per section (Pay, Benefits, …) — the single place a member reviews
+// AND enters their data. Default is a reviewable LIST: every question with its
+// status and current value, click a row to edit it inline (autosaves). An
+// opt-in GUIDED mode steps through one question at a time with Save & next.
+// There is no separate "submit" surface — this is it.
+function DomainPage({ sp, state, refresh, refreshMe }) {
   const [data, setData] = useState(null);
   const [drafts, setDrafts] = useState({});
   const [issues, setIssues] = useState({});   // key -> {errors, warnings}
   const [savedAt, setSavedAt] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
+  const [mode, setMode] = useState(() => /[?&]mode=guided/.test(window.location.hash) ? "guided" : "list");
+  const [filter, setFilter] = useState("all");   // all | answered | unanswered (list mode)
+  const [openId, setOpenId] = useState(null);    // expanded row in list mode
+  const [step, setStep] = useState(0);           // current question in guided mode
+  const prevDoneRef = useRef(null);              // celebrate only on the transition to complete
+  const focusedRef = useRef(false);              // honour ?focus=<qid> once per section load
   useEffect(() => {
-    setData(null); setLoadErr(null); setIssues({});
+    setData(null); setLoadErr(null); setIssues({}); setStep(0); setOpenId(null); focusedRef.current = false;
     api("/api/submission/section/" + encodeURIComponent(sp)).catch(e => { setLoadErr(e.message); throw e; }).then(d => {
       setData(d);
       const init = {};
@@ -159,10 +136,39 @@ function SectionForm({ sp, state, refresh }) {
       setDrafts(init);
     });
   }, [sp]);
-  if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this section"
+  // Delight: a little confetti + a nod the moment a whole section is finished
+  // — but only on the transition, never on a section that loads already done.
+  useEffect(() => {
+    if (!data) { prevDoneRef.current = null; return; }
+    const qs = data.questions;
+    const isAns = (q) => q.type === "matrix"
+      ? (q.matrix_rows || []).some(r => (drafts[q.id + "|" + r.row_id] || "") !== "") || (drafts[q.id + "|"] || "") === "Not applicable"
+      : (drafts[q.id + "|"] || "") !== "";
+    const total = qs.length, doneN = qs.filter(isAns).length;
+    if (prevDoneRef.current != null && prevDoneRef.current < total && doneN === total && total > 0) {
+      toast("Nice — " + sp + " is complete ✨");
+      window.confettiBurst({ count: 100, duration: 2200, origin: { x: 0.5, y: 0.26 } });
+    }
+    prevDoneRef.current = doneN;
+  }, [drafts, data]);
+  // Deep-link from a card's "Add data": open that exact question, in list mode,
+  // and scroll it into view with a brief highlight.
+  useEffect(() => {
+    if (!data || focusedRef.current) return;
+    focusedRef.current = true;
+    const m = window.location.hash.match(/[?&]focus=([^&#]+)/);
+    const qid = m ? decodeURIComponent(m[1]) : null;
+    if (!qid || !data.questions.some(q => q.id === qid)) return;
+    setMode("list"); setFilter("all"); setOpenId(qid);
+    setTimeout(() => {
+      const el = document.getElementById("dq-" + qid);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("dq-flash"); setTimeout(() => el.classList.remove("dq-flash"), 1700); }
+    }, 140);
+  }, [data]);
+  if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this area"
     body=${loadErr + " — your saved answers are safe."}
-    action=${html`<button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Back to all sections</button>`} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+    action=${html`<button class="btn small primary" onClick=${() => nav("/your-data")}>Back to Your data</button>`} />`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 
   const save = async (q, rowId, value) => {
     const key = q.id + "|" + (rowId || "");
@@ -172,7 +178,7 @@ function SectionForm({ sp, state, refresh }) {
       const r = await api("/api/submission/draft", { method: "PUT",
         body: { question_id: q.id, matrix_row_id: rowId || "", value } });
       setIssues(s => ({ ...s, [key]: { errors: r.errors || [], warnings: r.warnings || [] } }));
-      if (r.ok) setSavedAt(new Date());
+      if (r.ok) { setSavedAt(new Date()); window.markUnsubmitted(); }
     } catch (e) {
       setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — check your connection and change the value again to retry."], warnings: [] } }));
       toast("Couldn't save your last answer — it will need re-entering.", "error");
@@ -198,48 +204,180 @@ function SectionForm({ sp, state, refresh }) {
              (drafts[q.id + "|"] || "") !== "";
     return (drafts[q.id + "|"] || "") !== "";
   };
+  // Collapsed-row value summary (mirrors the read-only DomainDataView display).
+  const fmtV = (q, raw) => {
+    if (raw == null || raw === "") return "";
+    if (String(raw) === "Not applicable") return "Not applicable";
+    if (q.type === "numeric" || q.type === "matrix") {
+      const f = parseFloat(String(raw).replace(/[£,%\s]/g, ""));
+      if (!isNaN(f)) return fmtValue(f, q.unit);
+    }
+    return String(raw);
+  };
+  const summarize = (q) => {
+    if (q.type === "matrix") {
+      if ((drafts[q.id + "|"] || "") === "Not applicable") return "Not applicable";
+      return (q.matrix_rows || []).filter(r => (drafts[q.id + "|" + r.row_id] || "") !== "")
+        .map(r => ({ row: r.label, val: fmtV(q, drafts[q.id + "|" + r.row_id]) }));
+    }
+    return fmtV(q, drafts[q.id + "|"]);
+  };
+
   const keyQs = data.questions.filter(q => q.is_required);
   const optQs = data.questions.filter(q => !q.is_required);
-  const done = data.questions.filter(answeredQ).length;
-  const keyDone = keyQs.filter(answeredQ).length;
+  const ordered = keyQs.concat(optQs);            // key first, then optional
+  const total = ordered.length;
+  const done = ordered.filter(answeredQ).length;
+  const pct = total ? Math.round(100 * done / total) : 0;
   const sections = state.sections.map(s => s.section);
   const idx = sections.indexOf(sp);
-  const block = (qs) => qs.map(q => html`<${QuestionInput} key=${q.id} q=${q} drafts=${drafts}
-      issues=${issues} save=${save} confirmValue=${confirmValue} />`);
+
+  // Flush any debounced/in-flight edit before we navigate or switch mode, so a
+  // value is never left behind.
+  const flush = async () => {
+    const el = document.activeElement;
+    if (el && el.blur) el.blur();
+    await new Promise(r => setTimeout(r, 60));   // let the blur-commit fire its PUT
+    let g = 0;
+    while (window._pendingSaves > 0 && g < 80) { await new Promise(r => setTimeout(r, 50)); g++; }
+  };
+  const toGuided = async () => { await flush(); const gap = ordered.findIndex(q => !answeredQ(q)); setStep(gap >= 0 ? gap : 0); setMode("guided"); window.scrollTo(0, 0); };
+  const toList = async () => { await flush(); setMode("list"); window.scrollTo(0, 0); };
+  const goSection = async (to) => { await flush(); nav("/your-data/" + encodeURIComponent(to)); };
+
+  const header = html`
+    <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
+      <a class="caption back-link" href="#/your-data"><${Icon} name="chevron-left" size=${13} /> Your data</a>
+      <div class="caption">Section ${idx + 1} of ${sections.length}</div>
+    </div>
+    <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
+      <div>
+        <h1 class="display-title" style=${{ margin: "0 0 3px" }}>${sp}</h1>
+        <div class=${"qwiz-saved" + (savedAt ? " on" : "")}>
+          ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : done + " of " + total + " answered · autosaves as you go"}</div>
+      </div>
+      <div style=${{ minWidth: "128px" }}>
+        <div class="progressbar"><div style=${{ width: pct + "%" }}></div></div>
+        <div class="caption" style=${{ textAlign: "right", marginTop: "var(--s1)" }}>${pct}% complete</div>
+      </div>
+    </div>`;
+
+  // ----------------------------------------------------------- GUIDED mode --
+  if (mode === "guided") {
+    const at = Math.min(step, Math.max(0, total - 1));
+    const cur = ordered[at];
+    const goTo = async (i) => { await flush(); setStep(i); window.scrollTo(0, 0); };
+    const next = async () => {
+      await flush();
+      if (at < total - 1) { setStep(at + 1); window.scrollTo(0, 0); }
+      else if (idx < sections.length - 1) nav("/your-data/" + encodeURIComponent(sections[idx + 1]) + "?mode=guided");
+      else nav("/your-data/review");
+    };
+    const prev = async () => {
+      await flush();
+      if (at > 0) { setStep(at - 1); window.scrollTo(0, 0); }
+      else setMode("list");
+    };
+    const isLast = at >= total - 1;
+    const curError = cur && Object.entries(issues).some(([k, v]) => k.indexOf(cur.id + "|") === 0 && (v.errors || []).length > 0);
+    const curAnswered = cur && answeredQ(cur);
+    const optionalStart = cur && !cur.is_required && at === keyQs.length;
+    const nextLabel = isLast ? (idx < sections.length - 1 ? "Save & next section →" : "Save & review →") : "Save & next →";
+    return html`
+      <div class="yourdata" style=${{ maxWidth: "720px" }}>
+        ${header}
+        <div class="row spread dompage-modebar">
+          <div class="caption">Step-by-step · question <b>${at + 1}</b> of ${total}</div>
+          <button class="btn small" onClick=${toList}><${Icon} name="table" size=${13} /> List view</button>
+        </div>
+        <div class="qwiz-pips" role="tablist" aria-label="Questions in this section">
+          ${ordered.map((q, i) => html`
+            <button key=${q.id} role="tab" aria-selected=${i === at} title=${(i + 1) + ". " + q.text}
+              class=${"qwiz-pip" + (answeredQ(q) ? " done" : "") + (i === at ? " now" : "") + (q.is_required ? " key" : "")}
+              onClick=${() => goTo(i)}></button>`)}
+        </div>
+        ${optionalStart && html`
+          <div class="qwiz-divider"><span>Optional from here</span> — these add depth to your benchmarks when you have the data to hand.</div>`}
+        <div class="qwiz-card card">
+          <${QuestionInput} key=${cur.id} q=${cur} drafts=${drafts}
+            issues=${issues} save=${save} confirmValue=${confirmValue} />
+        </div>
+        <div class="qwiz-nav row spread">
+          <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
+          <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
+            ${!curAnswered && !cur.is_required && html`
+              <a class="qwiz-skip" onClick=${e => { e.preventDefault(); next(); }}>Skip for now</a>`}
+            <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel}</button>
+          </div>
+        </div>
+        ${curError && html`<div class="caption" style=${{ textAlign: "right", marginTop: "var(--s2)", color: "var(--unfavourable)" }}>
+          Fix the value above to continue.</div>`}
+      </div>`;
+  }
+
+  // ------------------------------------------------------------- LIST mode --
+  const tabs = [{ k: "all", label: "All", n: total }, { k: "answered", label: "Answered", n: done },
+    { k: "unanswered", label: "To answer", n: total - done }];
+  // The open row stays in the list even once it stops matching the filter, so a
+  // multi-entry answer (multi-select, or a matrix with several rows) doesn't
+  // vanish mid-edit the instant its first value makes it "answered".
+  const visible = ordered.filter(q => q.id === openId || filter === "all" || (filter === "answered") === answeredQ(q));
   return html`
-    <div style=${{ maxWidth: "780px" }}>
-      <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
-        <div>
-          <button class="btn quiet" onClick=${() => nav("/your-data/submit")}>← All sections</button>
-          <h1 class="display-title" style=${{ marginTop: "6px" }}>${sp}</h1>
+    <div class="yourdata" style=${{ maxWidth: "780px" }}>
+      ${header}
+      <div class="row spread dompage-modebar">
+        <div class="sig-tabs">
+          ${tabs.map(t => html`<button key=${t.k} class=${"sig-tab" + (filter === t.k ? " on" : "")} onClick=${() => setFilter(t.k)}>
+            ${t.label} <span class="num">${t.n}</span></button>`)}
         </div>
-        <div style=${{ textAlign: "right" }}>
-          <div class="num" style=${{ fontWeight: 600 }}>${done} of ${data.questions.length} done</div>
-          <div class="caption">${savedAt ? "All changes autosaved · " + savedAt.toLocaleTimeString("en-GB") : "Changes autosave as you type"}</div>
+        <button class="btn small" onClick=${toGuided} title="Walk through this section one question at a time">
+          <${Icon} name="sparkle" size=${13} /> Step me through it</button>
+      </div>
+
+      ${visible.length === 0 ? html`
+        <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
+          <span class="signals-empty-ring"><${Icon} name=${filter === "unanswered" ? "award" : "table"} size=${18} /></span>
+          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + sp + " — fully complete." : "No questions here yet."}</div>
+        </div>` :
+      html`<div class="dq-list">
+        ${visible.map(q => {
+          const open = openId === q.id;
+          const ans = answeredQ(q);
+          const sum = summarize(q);
+          const hasErr = Object.entries(issues).some(([k, v]) => k.indexOf(q.id + "|") === 0 && (v.errors || []).length > 0);
+          return html`
+            <div key=${q.id} id=${"dq-" + q.id} class=${"dq-row" + (ans ? "" : " unans") + (open ? " open" : "") + (hasErr ? " err" : "")}>
+              <div class="dq-summary" role="button" tabindex="0" aria-expanded=${open}
+                onClick=${() => setOpenId(open ? null : q.id)}
+                onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(open ? null : q.id); } }}>
+                <div class="dq-sum-left">
+                  <div class="data-q-title">${q.title || q.text}
+                    ${q.is_required ? html`<span class="data-q-req" title="Counts toward the completion that keeps your access">required</span>` : ""}</div>
+                  ${open ? null : (ans
+                    ? (Array.isArray(sum)
+                        ? html`<div class="data-q-rows">${sum.map((r, i) => html`<span key=${i}><span class="muted">${r.row}:</span> ${r.val}</span>`)}</div>`
+                        : html`<div class="data-q-val">${sum || "—"}</div>`)
+                    : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add it</span></div>`)}
+                </div>
+                <div class="dq-sum-right">
+                  <span class=${"data-q-flag " + (ans ? "ok" : "todo")}>
+                    <${Icon} name=${ans ? "award" : "pencil"} size=${13} /> ${ans ? "Answered" : "To do"}</span>
+                  <span class="dq-chev"><${Icon} name=${open ? "chevron-up" : "chevron-down"} size=${15} /></span>
+                </div>
+              </div>
+              ${open && html`<div class="dq-editor">
+                <${QuestionInput} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${confirmValue} />
+              </div>`}
+            </div>`;
+        })}
+      </div>`}
+
+      <div class="qwiz-nav row spread" style=${{ marginTop: "var(--s4)" }}>
+        <button class="btn" disabled=${idx <= 0} onClick=${() => goSection(sections[idx - 1])}>← ${sections[idx - 1] || "Your data"}</button>
+        <div class="row" style=${{ gap: "var(--s3)" }}>
+          ${idx < sections.length - 1 && html`<button class="btn" onClick=${() => goSection(sections[idx + 1])}>${sections[idx + 1]} →</button>`}
+          <button class="btn primary" onClick=${async () => { await flush(); nav("/your-data/review"); }}>Review & submit →</button>
         </div>
-      </div>
-      <div class="progressbar" style=${{ marginBottom: "var(--s4)" }}>
-        <div style=${{ width: (data.questions.length ? 100 * done / data.questions.length : 0) + "%" }}></div>
-      </div>
-      ${keyQs.length > 0 && html`
-        <div class="card" style=${{ marginBottom: "var(--s4)" }}>
-          <div class="qsec-head">
-            <b>Key questions</b> <span class="caption">· ${keyDone}/${keyQs.length} answered — these unlock your insights</span>
-          </div>
-          ${block(keyQs)}
-        </div>`}
-      ${optQs.length > 0 && html`
-        <div class="card" style=${{ marginBottom: "var(--s4)" }}>
-          <div class="qsec-head">
-            <b>Optional</b> <span class="caption">· ${optQs.length} questions — add depth to your benchmarks when you have the data to hand</span>
-          </div>
-          ${block(optQs)}
-        </div>`}
-      <div class="row spread" style=${{ marginBottom: "var(--s6)" }}>
-        <button class="btn" disabled=${idx <= 0} onClick=${() => nav("/your-data/submit/" + encodeURIComponent(sections[idx - 1]))}>← ${sections[idx - 1] || ""}</button>
-        ${idx < sections.length - 1 ?
-          html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(sections[idx + 1]))}>${sections[idx + 1]} →</button>` :
-          html`<button class="btn primary" onClick=${() => nav("/your-data/submit/review")}>Review and submit →</button>`}
       </div>
     </div>`;
 }
@@ -251,13 +389,13 @@ function QuestionInput({ q, drafts, issues, save, confirmValue }) {
   const hasDef = q.definition && q.definition !== q.help_text;
   return html`
     <div class="q-block">
-      <div class="row" style=${{ marginBottom: "4px", alignItems: "baseline", gap: "8px" }}>
-        <div style=${{ fontWeight: 600, fontSize: "13.5px", flex: 1 }}>${q.text}
+      <div class="row" style=${{ marginBottom: "var(--s1)", alignItems: "baseline", gap: "var(--s2)" }}>
+        <div style=${{ fontWeight: 600, fontSize: "var(--fs-label)", flex: 1 }}>${q.text}
           ${q.is_required && html` <span class="chip key-chip" title="Counts toward unlocking your insights">key</span>`}</div>
       </div>
-      ${q.help_text && html`<div class="caption" style=${{ marginBottom: "6px" }}>${q.help_text}
+      ${q.help_text && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>${q.help_text}
         ${hasDef && html` <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a>`}</div>`}
-      ${!q.help_text && hasDef && html`<div class="caption" style=${{ marginBottom: "6px" }}>
+      ${!q.help_text && hasDef && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>
         <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a></div>`}
       ${showDef && html`<div class="def-box">${q.definition}</div>`}
       <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${confirmValue} />
@@ -273,7 +411,7 @@ function IssueNotes({ iss, onConfirm }) {
     ${iss.warnings.length > 0 && html`
       <div class="warn-panel">
         ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
-        <div class="row" style=${{ gap: "8px", marginTop: "6px", alignItems: "center" }}>
+        <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s2)", alignItems: "center" }}>
           <button class="btn small" onClick=${onConfirm}>Yes, it's right — keep it</button>
           <span class="caption">or correct the value above. Your answer is saved either way.</span>
         </div>
@@ -282,7 +420,7 @@ function IssueNotes({ iss, onConfirm }) {
 
 /* "Not applicable" is a first-class answer — never faked with 0, never left
    blank. It counts as answered for the unlock gate and is excluded from
-   peer medians. */
+   market medians. */
 function NAToggle({ checked, onChange }) {
   return html`
     <label class="na-toggle">
@@ -335,7 +473,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
   }
   if (q.type === "numeric") {
     const isNA = val === "Not applicable";
-    return html`<div class="row" style=${{ gap: "14px", alignItems: "center", flexWrap: "wrap" }}>
+    return html`<div class="row" style=${{ gap: "var(--s3)", alignItems: "center", flexWrap: "wrap" }}>
       <${DebouncedNumber} value=${isNA ? "" : val} unitName=${q.unit_display_name} unit=${q.unit}
         disabled=${isNA} onSave=${v => save(q, "", v)} />
       ${q.na_allowed && html`<${NAToggle} checked=${isNA}
@@ -391,7 +529,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
           })}
         </tbody>
       </table>
-      ${q.na_allowed && html`<div style=${{ marginTop: "6px" }}><${NAToggle} checked=${isNA} onChange=${setNA} /></div>`}
+      ${q.na_allowed && html`<div style=${{ marginTop: "var(--s2)" }}><${NAToggle} checked=${isNA} onChange=${setNA} /></div>`}
       </div>`;
   }
   return null;
@@ -419,7 +557,7 @@ function DebouncedNumber({ value, onSave, unitName, unit, compact, disabled }) {
     t.current = setTimeout(() => commit(nv), 600);
   };
   return html`
-    <span class="row" style=${{ gap: "6px", display: "inline-flex", alignItems: "center" }}>
+    <span class="row" style=${{ gap: "var(--s2)", display: "inline-flex", alignItems: "center" }}>
       <span class=${"unit-input" + (compact ? " compact" : "") + (disabled ? " disabled" : "")}>
         ${sym === "£" && html`<span class="unit-sym">£</span>`}
         <input inputmode="decimal" value=${v} disabled=${disabled}
@@ -440,21 +578,34 @@ function ReviewStep({ state, refresh, refreshMe }) {
   const [done, setDone] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => { api("/api/submission/validate", { method: "POST", body: {} }).then(setVal); }, []);
+  // The payoff: confetti when a submission lands — a full three-cannon volley
+  // the moment insights unlock, a gentler single burst otherwise.
+  useEffect(() => {
+    if (!done) return;
+    if (done.benchmark_unlocked) {
+      window.confettiBurst({ count: 200, duration: 3400, origin: { x: 0.5, y: 0.3 } });
+      setTimeout(() => window.confettiBurst({ count: 110, duration: 2800, spread: 0.9, origin: { x: 0.18, y: 0.45 } }), 220);
+      setTimeout(() => window.confettiBurst({ count: 110, duration: 2800, spread: 0.9, origin: { x: 0.82, y: 0.45 } }), 420);
+    } else {
+      window.confettiBurst({ count: 120, duration: 2400, origin: { x: 0.5, y: 0.32 } });
+    }
+  }, [done]);
   const submit = async () => {
     setBusy(true); setErr(null);
     try {
       const r = await api("/api/submission/submit", { method: "POST", body: {} });
+      window.clearUnsubmitted();   // drafts committed and cleared server-side
       setDone(r); refreshMe();
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
   if (done) return html`
-    <div class="success-pop" style=${{ maxWidth: "560px", margin: "0 auto", textAlign: "center", paddingTop: "60px" }}>
-      <div class="success-ring">✓</div>
+    <div class=${"success-pop" + (done.benchmark_unlocked ? " unlocked" : "")} style=${{ maxWidth: "560px", margin: "0 auto", textAlign: "center", paddingTop: "var(--s8)" }}>
+      <div class="success-ring">${done.benchmark_unlocked ? html`<${Icon} name="sparkle" size=${34} />` : "✓"}</div>
       ${done.benchmark_unlocked ? html`
         <h1 class="display-title">Your insights are unlocked</h1>
         <p>${done.answers_saved} answers saved — and you've reached <b>${done.completion_pct}%</b> of your key reward
-        questions. The £ opportunity, your board pack and your biggest gaps to peers are now live with your real position.
+        questions. The £ opportunity, your board pack and your biggest gaps to the market are now live with your real position.
         Thank you for contributing to the pool — that's what makes the benchmark work.</p>
         <button class="btn primary" onClick=${() => nav("/overview")}>See where you stand</button>` : html`
         <h1 class="display-title">Submission received</h1>
@@ -463,32 +614,46 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
         the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>`}
     </div>`;
-  if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "680px" }}>
-      <button class="btn quiet" onClick=${() => nav("/your-data/submit")}>← All sections</button>
-      <h1 class="display-title" style=${{ margin: "6px 0 12px" }}>Review and submit</h1>
+      <button class="btn quiet" onClick=${() => nav("/your-data")}>← Your data</button>
+      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Review and submit</h1>
+      <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
+        <div class="row spread" style=${{ alignItems: "baseline", marginBottom: "var(--s2)" }}>
+          <b>${val.pending_changes > 0
+            ? `${val.pending_changes} ${val.pending_changes === 1 ? "change" : "changes"} ready to submit`
+            : "No new changes to submit"}</b>
+          <span class="num caption"><b>${state.basis_answered}</b> of ${state.basis_total} key questions</span>
+        </div>
+        <div class="progressbar"><div style=${{ width: Math.min(100, state.threshold_pct ? 100 * state.completion_pct / state.threshold_pct : 0) + "%" }}></div></div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>
+          ${state.completion_pct >= state.threshold_pct
+            ? html`<span style=${{ color: "var(--favourable)", fontWeight: 600 }}>✓ Past the ${state.threshold_pct}% unlock threshold</span> — submitting keeps your insights live with your latest data.`
+            : html`${state.completion_pct}% of your key questions answered · insights unlock at <b>${state.threshold_pct}%</b>`}
+        </div>
+      </div>
       ${val.problems.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", borderColor: "var(--unfavourable)" }}>
           <b style=${{ color: "var(--unfavourable)" }}>Fix these before submitting</b>
           ${val.problems.map((p, i) => html`
-            <div key=${i} style=${{ marginTop: "6px" }}>${p.title}${p.matrix_row_id ? " — " + p.matrix_row_id.replace(/_/g, " ") : ""}: ${p.errors.join("; ")}</div>`)}
+            <div key=${i} style=${{ marginTop: "var(--s2)" }}>${p.title}${p.matrix_row_id ? " — " + p.matrix_row_id.replace(/_/g, " ") : ""}: ${p.errors.join("; ")}</div>`)}
         </div>`}
       ${val.unanswered_required.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
           <b>Unanswered key questions (${val.unanswered_required.length})</b>
-          <div class="caption" style=${{ margin: "2px 0 4px" }}>“Not applicable” counts as an answer — use it where a question doesn't apply.</div>
+          <div class="caption" style=${{ margin: "2px 0 var(--s1)" }}>“Not applicable” counts as an answer — use it where a question doesn't apply.</div>
           ${val.unanswered_required.slice(0, 12).map((u, i) => html`
-            <div key=${i} class="caption" style=${{ marginTop: "4px" }}>
-              <a href=${"#/your-data/submit/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
+            <div key=${i} class="caption" style=${{ marginTop: "var(--s1)" }}>
+              <a href=${"#/your-data/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
           ${val.unanswered_required.length > 12 && html`<div class="caption">…and ${val.unanswered_required.length - 12} more.</div>`}
         </div>`}
       <div class="card" style=${{ padding: "var(--s5)" }}>
         <p>Submitting saves a timestamped version of your answers into the current collection window and refreshes the
         live benchmark. Nothing is ever overwritten — future windows will show your movement.</p>
-        ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
-        <button class="btn primary" disabled=${busy || val.problems.length > 0} onClick=${submit}>
-          ${busy ? html`<${Spinner} /> Submitting…` : "Submit my data"}</button>
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
+        <button class="btn primary" disabled=${busy || val.problems.length > 0 || !(val.pending_changes > 0)} onClick=${submit}>
+          ${busy ? html`<${Spinner} /> Submitting…` : val.pending_changes > 0 ? "Submit my data" : "Nothing new to submit"}</button>
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>
           Your data is shared only as protected peer aggregates, never your raw answers or identity. See the
           ${" "}<a href="#/how-lumi-works/legal">Privacy Notice and data-sharing terms</a>

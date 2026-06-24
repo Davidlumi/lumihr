@@ -21,6 +21,32 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+
+def _load_local_env():
+    """Load server/.env.local (git-ignored) into the environment at startup, so
+    local secrets like ANTHROPIC_API_KEY are present however the server is launched
+    — terminal, the preview runner, a process manager — without exporting them by
+    hand each time. A real environment variable always wins (the file only fills
+    gaps), and a missing or malformed file never blocks startup."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env.local")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k, v = k.strip(), v.strip().strip('"').strip("'")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+    except FileNotFoundError:
+        pass
+    except Exception as e:                       # never let a bad env file crash boot
+        print("[lumi] .env.local present but could not be read: %s" % e)
+
+
+_load_local_env()
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, Response, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,10 +56,14 @@ import auth as auth_lib
 import hashlib
 
 import claude_api
+import strategy_diag
 import pulses as pulses_mod
+import payments as payments_mod
 import releases
 import retrieval
+import guide
 import signals as signals_mod
+import notifications
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
 import positions as pos
@@ -65,6 +95,10 @@ DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
 # minimum distinct positioned questions for a tile's INDICATIVE verdict when
 # the strict floor isn't met (David-tunable; evidence counts ship to the UI)
 TILE_MIN_POSITIONED = int(os.environ.get("LUMI_TILE_MIN_POSITIONED", "1"))
+# Self-service pulse launch fee (2026-06-22): the DEFAULT fee a member pays to
+# launch their own pulse to the community, in whole GBP (staff can override per
+# pulse at approval). Stored/charged in pence. David-tunable.
+PULSE_LAUNCH_FEE_PENCE = int(os.environ.get("LUMI_PULSE_LAUNCH_FEE_GBP", "750")) * 100
 # Hero verdict (2026-06-13, David): the headline reads where the centre of
 # gravity sits — net lean = (above-below)/pool. The verdict is "on market"
 # unless that net lean clears this threshold either way. ONE value drives both
@@ -86,6 +120,7 @@ AI_COMMENTARY = os.environ.get("LUMI_AI_COMMENTARY", "on").lower() == "on"
 AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
 AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
+AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -155,6 +190,11 @@ def contribution_state(conn, org):
     unlocked = org_unlocked(conn, org, completion)
     terms = org_data_terms(conn, org["org_id"])
     clock_start = org["clock_start"]
+    # Drafts are autosaved but only committed to the benchmark on submit (which
+    # clears them). A non-empty drafts table therefore means "saved, but not yet
+    # submitted" — the cue for the unsubmitted-changes reminder.
+    pending_changes = conn.execute(
+        "SELECT COUNT(*) c FROM drafts WHERE org_id=?", (org["org_id"],)).fetchone()["c"]
     days_left = None
     if clock_start and not unlocked:
         try:
@@ -171,6 +211,7 @@ def contribution_state(conn, org):
         "clock_start": clock_start,
         "days_left": days_left,
         "reduced": bool(clock_start) and (not unlocked) and days_left <= 0,
+        "pending_changes": pending_changes,
     }
 
 
@@ -275,14 +316,27 @@ def require_editor(request):
     return user, org
 
 
+def require_platform_admin(request):
+    """lumi-staff tier (back office, D2). ABOVE the org roles: a cross-tenant
+    privilege, so it deliberately returns NO org — every /api/admin/* route
+    reads across tenants explicitly and must never scope to one org. The flag
+    rides on request.state.user (get_session_user does SELECT u.*), so it is
+    checked on every request like any other session fact."""
+    if request.state.user is None:
+        raise HTTPException(401, "Not signed in")
+    if not request.state.user.get("platform_admin"):
+        raise HTTPException(403, "Staff access only")
+    return request.state.user
+
+
 # ----------------------------------------------------------- layered terms --
-PLATFORM_TERMS_VERSION = "1.0-draft"
-DATA_TERMS_VERSION = "1.0-draft"
+PLATFORM_TERMS_VERSION = "1.0"
+DATA_TERMS_VERSION = "1.0"
 LEGAL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "legal")
 LEGAL_FILES = {
     "platform": "platform-terms-v1.0.md",
     "data_contribution": "data-contribution-terms-v1.0.md",
-    "dpa": "data-sharing-agreement-dpa-v1.0-draft.md",
+    "dpa": "data-sharing-agreement-dpa-v1.0.md",
     "privacy": "privacy-notice-v1.0-draft.md",
     "cookies": "cookie-policy-v1.0-draft.md",
     "subprocessors": "sub-processors-v1.0-draft.md",
@@ -291,13 +345,16 @@ LEGAL_FILES = {
 # The Legal index (chrome spec section 4.3): each document is its own page;
 # the "How lumi works" hub is the index. Public read access — these must be
 # reachable from the auth screens (the enforceability footer) before any
-# account exists. All are DRAFT, consistent with the existing legal corpus.
+# account exists. Each entry's `draft` flag reflects its own review status:
+# platform terms, data-contribution terms and the DPA are lawyer-approved final
+# v1.0; privacy, cookies and sub-processors remain in review pending operational
+# details (contact address / analytics description / named sub-processors).
 LEGAL_INDEX = [
-    {"key": "platform", "title": "Terms of Use", "draft": True},
+    {"key": "platform", "title": "Terms of Use", "draft": False},
     {"key": "privacy", "title": "Privacy Notice", "draft": True},
     {"key": "cookies", "title": "Cookie Policy", "draft": True},
-    {"key": "data_contribution", "title": "Data Contribution Terms", "draft": True},
-    {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": True},
+    {"key": "data_contribution", "title": "Data Contribution Terms", "draft": False},
+    {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": False},
     {"key": "subprocessors", "title": "Sub-processor List", "draft": True},
 ]
 
@@ -643,7 +700,8 @@ async def me(request: Request):
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
-        "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"]},
+        "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"],
+                 "platform_admin": bool(user.get("platform_admin"))},
         "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
@@ -834,9 +892,11 @@ async def pulse_detail(pid: str, request: Request):
         else:
             entry["current"] = mine.get((qid, ""))
         view["question_list"].append(entry)
-    # the report: give-to-get scoped to THIS pulse — participants only.
-    # Below the floor, participants get the honest holding state (never blank).
-    if view["participated"]:
+    # the report: give-to-get scoped to THIS pulse — participants only, PLUS the
+    # sponsor that launched it (a paying self-service owner always sees its
+    # results). Below the floor, the honest holding state is shown (never blank).
+    view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
+    if view["participated"] or view["is_owner"]:
         rep = pulses_mod.pulse_report(pid, conn)
         view["report"] = strip_internal(rep)
     return view
@@ -920,7 +980,7 @@ async def pulse_commentary(pid: str, request: Request):
         "n": blk.get("n"), "suppressed": bool(blk.get("suppressed")),
         "polarity": q.polarity, "you": mine and mine[0], "percentile": None,
         "stance": None,
-        "illustrative_sample_data": bool(get_meta("synthetic_pool", True)),
+        "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
     }
     if blk.get("p50") is not None:
         payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
@@ -1063,7 +1123,7 @@ async def metric_trend(qid: str, request: Request):
 @app.get("/api/terms")
 async def terms_texts():
     """Public: the signup screen shows the Platform Terms before any account
-    exists. Both documents are DRAFT — pending legal review."""
+    exists. Both documents are the lawyer-approved final v1.0 versions."""
     return {
         "platform": {"version": PLATFORM_TERMS_VERSION, "text": legal_text("platform")},
         "data_contribution": {"version": DATA_TERMS_VERSION, "text": legal_text("data_contribution")},
@@ -1074,7 +1134,7 @@ async def terms_texts():
 @app.get("/api/terms/dpa")
 async def terms_dpa():
     return Response(legal_text("dpa"), media_type="text/markdown",
-                    headers={"Content-Disposition": 'attachment; filename="lumi-data-sharing-agreement-DRAFT.md"'})
+                    headers={"Content-Disposition": 'attachment; filename="lumi-data-sharing-agreement.md"'})
 
 
 @app.get("/api/legal")
@@ -1237,6 +1297,19 @@ async def single_benchmark(qid: str, request: Request):
                                         org_answers_for(org), cut, {qid: tb.get(qid)} if tb else None)
         card["opportunity"] = next((i for i in money["items"] if i["question_id"] == qid), None)
         card["assumptions"] = money["assumptions"]
+    # classification (analyst/detailed view): the engine's internal class/register —
+    # surfaced here only, never on the default chip rows (spec §6.3)
+    _mp = pos.market_position_config()
+    _m = (_mp.get("metrics") or {}).get(qid)
+    if _m:
+        _cls = _m.get("class")
+        _reg = "Substance" if _cls in ("Level", "Provision") else "Approach" if _cls in ("Practice", "Design") else None
+        _comp = (_mp.get("_domains") or {}).get(q.sub_power, {}).get("competitiveness", True)
+        card["classification"] = {
+            "cls": _cls, "register": _reg, "direction": _m.get("direction"),
+            "weight": _m.get("weight", 1), "competitive_domain": bool(_comp),
+            "feeds_gauge": bool(_reg == "Substance" and _m.get("direction") == "higher_is_better" and _comp),
+        }
     return card
 
 
@@ -1274,7 +1347,6 @@ async def overview(request: Request):
     cut = parse_cut(request, org)
     contrib = contribution_state(conn, org)
     items, tb = build_items(request, org, user, cut)
-    summary = pos.overview_summary(items)
     prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(),
                                       org_answers_for(org), make_entitled(user, org), tb)
     sec_order = []
@@ -1282,14 +1354,27 @@ async def overview(request: Request):
         if q.sub_power and q.sub_power not in sec_order:
             sec_order.append(q.sub_power)
     sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in org_visible_questions(org).values() if q.sub_power == x))
-    # direction-bearing practice evidence (unscored additions): feeds ONLY the
-    # tile rollup below — never the overall arc, signals, chips or register
+    # direction-bearing practice evidence (unscored additions): Provision presence
+    # feeds the gauge + headline; the rest is tile-rollup only
     prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
                                              payloads(), org_answers_for(org),
                                              make_entitled(user, org), tb)
+    # headline counts the SAME Substance pool the gauge does (board pack / share /
+    # dashboard never disagree about the same org)
+    mp_cfg = pos.market_position_config()
+    _strategy_full = strategy_for_engine(conn, org["org_id"])   # the org's declared strategy (None if unset)
+    # "Apply my strategy" toggle (?strategy=off): read the dashboard WITHOUT the stance
+    # lens — absolute RAG colours, impact-ordered signals, plain verdict (no aim/target).
+    # Reuses the engine's strategy=None degrade path (§5.5); the org's strategy still
+    # EXISTS (strategy_complete stays true) — it's simply not applied this request.
+    apply_strategy = request.query_params.get("strategy") != "off"
+    _strategy = _strategy_full if apply_strategy else None   # None → legacy hero + legacy signal order
+    summary = pos.overview_summary(items, mp_config=mp_cfg, practice_items=prac_items,
+                                   band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
                             DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
-                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED)
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=mp_cfg, strategy=_strategy)
     reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
     hero["action_gaps"] = sum(1 for r in reg_rows
                               if r.get("org_answered") and r.get("in_place") is False and (r.get("gap") or 0) > 0)
@@ -1305,10 +1390,10 @@ async def overview(request: Request):
         "SELECT question_id, status FROM signal_actions WHERE org_id=? AND user_id=?",
         (org["org_id"], user["user_id"]))}
     sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                     conn=conn, org_id=org["org_id"], statuses=_statuses)
+                                     conn=conn, org_id=org["org_id"], statuses=_statuses, strategy=_strategy)
     # full uncapped set for the dedicated Signals explore page (home stays capped)
     sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                         conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses)
+                                         conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses, strategy=_strategy)
     # new-since-last-seen: a signal is NEW until the user has viewed it on the
     # Signals page. Annotate both sets + count the un-dismissed new ones.
     _seen = {r["sig_id"] for r in conn.execute(
@@ -1332,23 +1417,6 @@ async def overview(request: Request):
         # only where the score/value pool says nothing (Wellbeing today)
         d["dot"] = dots.get(d["name"]) if dots.get(d["name"]) is not None else prac_dots.get(d["name"])
         d["signal_lenses"] = sig_by_cat.get(d["name"], [])
-    # structured leads/lags for the chip rows (the sentence callouts stay for
-    # the board pack/share surfaces)
-    ranked = sorted((i for i in items if i["favourable"] is not None),
-                    key=lambda i: -(50.0 + i["distance"]))
-    def _chips(seq, cond):
-        outp, seen = [], set()
-        for i in seq:
-            if i["question_id"] in seen or not cond(i):
-                continue
-            seen.add(i["question_id"])
-            outp.append({"question_id": i["question_id"], "label": i["label"],
-                         "percentile": i["percentile"], "adjusted": round(50.0 + i["distance"], 1)})
-            if len(outp) == 3:
-                break
-        return outp
-    leads = _chips(ranked, lambda i: i["distance"] > 5)
-    lags = _chips(ranked[::-1], lambda i: i["distance"] < -5)
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     return {
@@ -1356,7 +1424,6 @@ async def overview(request: Request):
                 "hq_region": org["hq_region"], "classified": bool(org["classified"])},
         "cut": cut,
         "peer_pool": pool,
-        "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "snapshot": {"date": snap["snapshot_date"], "window": snap["collection_window"]},
         "headline": summary,
         "contribution": contrib,
@@ -1364,8 +1431,20 @@ async def overview(request: Request):
         "signals": sigs,
         "signals_all": sigs_all,
         "signals_new": signals_new,
-        "leads": leads,
-        "lags": lags,
+        # reward strategy completion — drives the dashboard nudge for Admins who
+        # haven't set their stance yet (the engines read None = legacy until then)
+        "strategy_complete": bool(conn.execute(
+            "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+            (org["org_id"],)).fetchone()),
+        # whether the stance lens is APPLIED on this request (the "Apply my strategy"
+        # toggle) — distinct from strategy_complete (does one EXIST). False = absolute view.
+        "strategy_applied": bool(_strategy),
+        "strategy_can_edit": user["role"] == "admin",
+        # the objective the Signals order is read through (None when unset/skipped) —
+        # drives the modest "ordered for your strategy" indicator on the Signals page
+        "strategy_objective": OBJECTIVE_LABELS.get(
+            _strategy.get("primary_objective")) if (_strategy and
+            (_strategy.get("provenance") or {}).get("primary_objective") != "skipped") else None,
         "callouts": {"strengths": [c["text"] for c in co["strengths"]],
                      "gaps": [] if not contrib["insights_unlocked"] else [c["text"] for c in co["gaps"]],
                      "gaps_locked": not contrib["insights_unlocked"],
@@ -1387,6 +1466,138 @@ async def overview(request: Request):
         "movement": {"available": False,
                      "message": "First benchmark — movement appears from your next cycle."},
     }
+
+
+@app.post("/api/strategy-diagnosis")
+async def strategy_diagnosis(request: Request):
+    """Strategy-execution check: where the org's declared reward strategy and its
+    actual market position diverge. Findings computed deterministically (firewall),
+    narrated by the model with the same trust gate as commentary."""
+    if not AI_STRATEGY:
+        raise HTTPException(403, "Reward strategy check isn't enabled.")
+    user, org = require_user(request)
+    conn = get_conn()
+    strat = strategy_for_engine(conn, org["org_id"])
+    complete = conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                            (org["org_id"],)).fetchone()
+    if not strat or not complete:
+        return {"ok": False, "reason": "no_strategy"}
+    contrib = contribution_state(conn, org)
+    if not contrib["insights_unlocked"]:
+        return {"ok": False, "reason": "locked", "days_left": contrib["days_left"]}
+    # build the same hero domains + £ opportunities the overview does, on All peers
+    cut = parse_cut(request, org)
+    items, tb = build_items(request, org, user, cut)
+    prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(),
+                                      org_answers_for(org), make_entitled(user, org), tb)
+    sec_order = []
+    for q in org_visible_questions(org).values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                             payloads(), org_answers_for(org), make_entitled(user, org), tb)
+    mp_cfg = pos.market_position_config()
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=mp_cfg, strategy=strat)
+    money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
+                                    org_answers_for(org), cut, tb)
+    # per-domain verdict + £ opportunity rolled up by domain (q.sub_power)
+    domains = []
+    for d in hero["domains"]:
+        p = d.get("position") or d.get("market") or {}
+        domains.append({"name": d["name"], "verdict": p.get("verdict"),
+                        "below": p.get("below"), "at": p.get("at"), "above": p.get("above"),
+                        "pool": p.get("pool"), "competitive": d.get("competitiveness", True)})
+    vq = org_visible_questions(org)
+    opp_by_domain = {}
+    for it in money["items"]:
+        q = vq.get(it["question_id"])
+        dom = q.sub_power if q else None
+        gbp = it.get("to_p50_gbp") or 0
+        if not dom or not gbp:
+            continue
+        e = opp_by_domain.setdefault(dom, {"gbp": 0, "direction": it["direction"], "top_label": it["label"], "top_gbp": 0})
+        e["gbp"] += gbp
+        if gbp >= (e["top_gbp"] or 0):
+            e["top_gbp"], e["top_label"], e["direction"] = gbp, it["label"], it["direction"]
+    findings = strategy_diag.compute_findings(strat, domains, opp_by_domain)
+    flagged = {f["area"] for f in findings}
+    on_plan = [d["name"] for d in domains if d.get("competitive", True)
+               and d["name"] in strategy_diag._COMPETITIVE and d["verdict"] and d["name"] not in flagged]
+    obj_label = OBJECTIVE_LABELS.get(strat.get("primary_objective")) if (
+        (strat.get("provenance") or {}).get("primary_objective") != "skipped") else None
+    payload = strategy_diag.build_diagnosis_payload(
+        strat, findings, (hero.get("market") or {}).get("target"), obj_label, on_plan,
+        bool(get_meta("synthetic_pool", False)))
+    res = claude_api.generate_strategy_diagnosis(payload)
+    # Signpost: attach each finding's domain so the Signals page can deep-link the
+    # narrative to the matching signal group. The validator guarantees the narrated
+    # findings match the computed `findings` 1:1 and in order, so a positional zip is
+    # safe; the on-plan affirmation has no computed findings, so it carries no domain.
+    parts = res["parts"]
+    nf = parts.get("findings") or []
+    if len(nf) == len(findings):
+        for narrated, computed in zip(nf, findings):
+            narrated["area"] = computed.get("area")
+    return {"ok": True, "parts": parts, "source": res["source"],
+            # on_plan = competitive domains tracking with intent (engine-derived, not
+            # model output) — the frontend renders them as a quiet "on plan" line that
+            # can still signpost to each domain's signals.
+            "on_plan": on_plan,
+            "caveats": {"illustrative": payload["illustrative_sample_data"]}}
+
+
+# ============================================================ NOTIFICATIONS ==
+
+def org_signals(conn, org):
+    """The org's full (uncapped) signal set on the default all-peers cut, built
+    request-free for the nightly sweep — the same machinery /api/overview uses,
+    minus the per-user triage status (identity/value don't depend on it)."""
+    cut = {"dim": "all", "value": None}
+    items, tb = build_items(None, org, None, cut)
+    money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
+                                    org_answers_for(org), cut, tb)
+    visq = org_visible_questions(org)
+    answers = org_answers_for(org)
+    get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
+    return signals_mod.build_signals(items, money, visq, get_block, answers,
+                                     conn=conn, org_id=org["org_id"], cap=False, statuses=None)
+
+
+def run_signal_sweep(conn=None, verbose=True):
+    """Nightly: after run_snapshot recomputes the benchmark, diff each unlocked
+    org's signal set against signal_state, record change events and fan them
+    out per-user. Locked orgs get nothing (no insights → no signals → no
+    events), checked here. Returns (orgs_swept, events_written)."""
+    conn = conn or get_conn()
+    swept, total_events = 0, 0
+    for row in conn.execute("SELECT * FROM orgs"):
+        org = dict(row)
+        try:
+            if not org_unlocked(conn, org):
+                continue
+            fresh = org_signals(conn, org)
+            oid = org["org_id"]
+            seen_before = conn.execute(
+                "SELECT (EXISTS(SELECT 1 FROM signal_state WHERE org_id=?) "
+                "     OR EXISTS(SELECT 1 FROM notification_events WHERE org_id=?)) e",
+                (oid, oid)).fetchone()["e"]
+            if not seen_before:
+                notifications.record_baseline(conn, oid, fresh)   # silent: establish baseline
+                swept += 1
+                continue
+            events = notifications.diff_and_record(conn, oid, fresh)
+            if events:
+                notifications.fan_out(conn, oid, events)
+            swept += 1
+            total_events += len(events)
+        except Exception as e:
+            print("[lumi] signal sweep failed for org %s: %s" % (org.get("org_id"), e))
+    if verbose:
+        print("Signal sweep: %d unlocked orgs, %d change events recorded" % (swept, total_events))
+    return swept, total_events
 
 
 # ================================================================== MY DATA ==
@@ -1479,7 +1690,6 @@ async def methodology(request: Request):
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS), "question_count": len(vis),
                   "sections": sorted({q.sub_power for q in vis.values() if q.sub_power})},
-        "synthetic_pool": bool(get_meta("synthetic_seed", False)),
         "composition": {k: dict(v) for k, v in sorted(comp.items())},
         "unclassified_count": uncl,
         "fte_bands": ["50-249", "250-999", "1,000-4,999", "5,000-9,999", "10,000+"],
@@ -1556,6 +1766,243 @@ async def save_default_view(request: Request):
     return {"ok": True}
 
 
+# ============================================================== DASHBOARDS ==
+# "My dashboards" — multiple named, saveable layouts per user. Slot shape is the
+# same as the old single "My view". A user's FIRST dashboard is lazily migrated
+# from their old pinned_views row, so nobody loses their existing view.
+
+def _dash_seed_layout(request, org, user, conn):
+    """Layout for a user's first-ever dashboard: their old personal pinned view
+    if present, else the org default, else the computed starter (8 gaps + 4
+    strengths) — the exact cascade the old /api/myview used."""
+    row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=?",
+                       (org["org_id"], user["user_id"])).fetchone()
+    if row:
+        return uj(row["layout_json"], [])
+    row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
+                       (org["org_id"],)).fetchone()
+    if row:
+        return uj(row["layout_json"], [])
+    return starter_layout(request, org, user)
+
+
+def _dash_rows(conn, org, user):
+    return conn.execute(
+        "SELECT * FROM dashboards WHERE org_id=? AND user_id=? ORDER BY position, created_at",
+        (org["org_id"], user["user_id"])).fetchall()
+
+
+def _ensure_dashboards(request, org, user, conn):
+    """Every user always has >=1 dashboard — bootstrap (seeded from the old view)
+    on first visit or after the last one is deleted."""
+    rows = _dash_rows(conn, org, user)
+    if rows:
+        return rows
+    did = str(uuid.uuid4())
+    # idempotent seed — the WHERE NOT EXISTS guards the check-then-insert race when
+    # two first-visit requests land together (the app shell + the page both GET
+    # /api/dashboards), so a brand-new user can't end up with two "My dashboard"
+    # rows. The active pointer is left to _resolve_active, which repairs it.
+    conn.execute(
+        "INSERT INTO dashboards(dashboard_id, org_id, user_id, name, layout_json, position) "
+        "SELECT ?,?,?,?,?,0 WHERE NOT EXISTS(SELECT 1 FROM dashboards WHERE org_id=? AND user_id=?)",
+        (did, org["org_id"], user["user_id"], "My dashboard",
+         j(_dash_seed_layout(request, org, user, conn)), org["org_id"], user["user_id"]))
+    conn.commit()
+    return _dash_rows(conn, org, user)
+
+
+def _resolve_active(request, org, user, conn):
+    """(active_id, rows) — validates users.active_dashboard_id and repairs a
+    missing/stale pointer to the first dashboard."""
+    rows = _ensure_dashboards(request, org, user, conn)
+    ids = [r["dashboard_id"] for r in rows]
+    cur = conn.execute("SELECT active_dashboard_id FROM users WHERE user_id=?",
+                       (user["user_id"],)).fetchone()
+    aid = cur["active_dashboard_id"] if cur else None
+    if aid not in ids:
+        aid = ids[0]
+        conn.execute("UPDATE users SET active_dashboard_id=? WHERE user_id=?", (aid, user["user_id"]))
+        conn.commit()
+    return aid, rows
+
+
+def _dash_visible_layout(row, vis):
+    return [s for s in uj(row["layout_json"], []) if s.get("question_id") in vis]
+
+
+def _dash_meta(row, vis):
+    return {"id": row["dashboard_id"], "name": row["name"], "position": row["position"],
+            "count": len(_dash_visible_layout(row, vis)), "updated_at": row["updated_at"]}
+
+
+def _own_dashboard(conn, did, org, user):
+    return conn.execute(
+        "SELECT * FROM dashboards WHERE dashboard_id=? AND org_id=? AND user_id=?",
+        (did, org["org_id"], user["user_id"])).fetchone()
+
+
+@app.get("/api/dashboards")
+async def list_dashboards(request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    vis = org_visible_questions(org)
+    aid, rows = _resolve_active(request, org, user, conn)
+    active = next(r for r in rows if r["dashboard_id"] == aid)
+    # ?card=<qid> annotates each dashboard with whether it already holds that
+    # metric — powers the card's "Add to dashboard" picker.
+    card = request.query_params.get("card")
+    metas = []
+    for r in rows:
+        m = _dash_meta(r, vis)
+        if card:
+            m["has_card"] = any(s.get("question_id") == card for s in uj(r["layout_json"], []))
+        metas.append(m)
+    return {
+        "dashboards": metas,
+        "active_id": aid,
+        "active": {"id": active["dashboard_id"], "name": active["name"],
+                   "position": active["position"], "layout": _dash_visible_layout(active, vis)},
+    }
+
+
+@app.get("/api/dashboards/{did}")
+async def get_dashboard(did: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    row = _own_dashboard(conn, did, org, user)
+    if row is None:
+        raise HTTPException(404, "No such dashboard.")
+    vis = org_visible_questions(org)
+    return {"id": row["dashboard_id"], "name": row["name"], "position": row["position"],
+            "layout": _dash_visible_layout(row, vis)}
+
+
+@app.post("/api/dashboards")
+async def create_dashboard(request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    conn = get_conn()
+    _ensure_dashboards(request, org, user, conn)
+    name = (body.get("name") or "New dashboard").strip()[:60] or "New dashboard"
+    layout = []
+    clone = body.get("clone_from")
+    if clone:
+        src = _own_dashboard(conn, clone, org, user)
+        if src:
+            layout = uj(src["layout_json"], [])
+    # create-with-a-card (the "+ New dashboard" option in the card picker)
+    with_card = body.get("with_card")
+    if with_card and not any(s.get("question_id") == with_card for s in layout):
+        layout = layout + [{"question_id": with_card, "size": 1}]
+    pos = conn.execute("SELECT COALESCE(MAX(position),-1)+1 p FROM dashboards WHERE org_id=? AND user_id=?",
+                       (org["org_id"], user["user_id"])).fetchone()["p"]
+    did = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO dashboards(dashboard_id, org_id, user_id, name, layout_json, position) VALUES (?,?,?,?,?,?)",
+        (did, org["org_id"], user["user_id"], name, j(layout), pos))
+    conn.execute("UPDATE users SET active_dashboard_id=? WHERE user_id=?", (did, user["user_id"]))
+    conn.commit()
+    return {"id": did, "name": name, "position": pos, "layout": layout}
+
+
+@app.put("/api/dashboards/{did}")
+async def update_dashboard(did: str, request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    conn = get_conn()
+    row = _own_dashboard(conn, did, org, user)
+    if row is None:
+        raise HTTPException(404, "No such dashboard.")
+    name = row["name"]
+    if body.get("name") is not None:
+        name = (body.get("name") or "").strip()[:60] or row["name"]
+    layout_json = row["layout_json"]
+    if body.get("layout") is not None:
+        layout_json = j(body.get("layout") or [])
+    conn.execute("UPDATE dashboards SET name=?, layout_json=?, updated_at=datetime('now') WHERE dashboard_id=?",
+                 (name, layout_json, did))
+    conn.commit()
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/dashboards/{did}")
+async def delete_dashboard(did: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    row = _own_dashboard(conn, did, org, user)
+    if row is None:
+        raise HTTPException(404, "No such dashboard.")
+    conn.execute("DELETE FROM dashboards WHERE dashboard_id=?", (did,))
+    conn.commit()
+    # never leave the user with zero — _resolve_active re-bootstraps if needed
+    aid, rows = _resolve_active(request, org, user, conn)
+    vis = org_visible_questions(org)
+    return {"ok": True, "active_id": aid, "dashboards": [_dash_meta(r, vis) for r in rows]}
+
+
+@app.post("/api/dashboards/{did}/activate")
+async def activate_dashboard(did: str, request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    if _own_dashboard(conn, did, org, user) is None:
+        raise HTTPException(404, "No such dashboard.")
+    conn.execute("UPDATE users SET active_dashboard_id=? WHERE user_id=?", (did, user["user_id"]))
+    conn.commit()
+    return {"ok": True}
+
+
+def _toggle_card_layout(layout, qid, row_id=None):
+    """Add the card if absent, remove it if present. Returns (layout, now_on)."""
+    if any(s.get("question_id") == qid for s in layout):
+        return [s for s in layout if s.get("question_id") != qid], False
+    slot = {"question_id": qid, "size": 1}
+    if row_id:
+        slot["row_id"] = row_id
+    return layout + [slot], True
+
+
+@app.post("/api/dashboards/pin")
+async def pin_to_dashboard(request: Request):
+    """Toggle a metric on the user's ACTIVE dashboard — the target the global
+    pin-star points at from anywhere in the app."""
+    user, org = require_user(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    if not qid:
+        raise HTTPException(400, "question_id required")
+    conn = get_conn()
+    aid, rows = _resolve_active(request, org, user, conn)
+    active = next(r for r in rows if r["dashboard_id"] == aid)
+    layout, _on = _toggle_card_layout(uj(active["layout_json"], []), qid, body.get("row_id"))
+    conn.execute("UPDATE dashboards SET layout_json=?, updated_at=datetime('now') WHERE dashboard_id=?",
+                 (j(layout), aid))
+    conn.commit()
+    vis = org_visible_questions(org)
+    pinned = [s.get("question_id") for s in layout if s.get("question_id") in vis]
+    return {"pinned_ids": pinned, "active_id": aid, "dashboard_name": active["name"]}
+
+
+@app.post("/api/dashboards/{did}/toggle-card")
+async def toggle_card_on_dashboard(did: str, request: Request):
+    """Add/remove a metric on a SPECIFIC dashboard — the card's picker target."""
+    user, org = require_user(request)
+    body = await request.json()
+    qid = body.get("question_id")
+    if not qid:
+        raise HTTPException(400, "question_id required")
+    conn = get_conn()
+    row = _own_dashboard(conn, did, org, user)
+    if row is None:
+        raise HTTPException(404, "No such dashboard.")
+    layout, now_on = _toggle_card_layout(uj(row["layout_json"], []), qid, body.get("row_id"))
+    conn.execute("UPDATE dashboards SET layout_json=?, updated_at=datetime('now') WHERE dashboard_id=?",
+                 (j(layout), did))
+    conn.commit()
+    vis = org_visible_questions(org)
+    return {"on": now_on, "count": len([s for s in layout if s.get("question_id") in vis])}
+
+
 @app.post("/api/signals/action")
 async def signal_action(request: Request):
     """Per-user Signals triage: set one status (priority | saved | dismissed) on
@@ -1599,6 +2046,99 @@ async def signals_seen(request: Request):
             [(org["org_id"], user["user_id"], sid) for sid in ids])
         conn.commit()
     return {"ok": True, "seen": len(ids)}
+
+
+# ----------------------------------------------------------- notifications ----
+@app.get("/api/notifications")
+async def list_notifications(request: Request):
+    """The bell: this user's admitted change events (newest first) + unread
+    count. Org-scoped via the session, like everywhere. Inbox-off → empty."""
+    user, org = require_user(request)
+    conn = get_conn()
+    urow = conn.execute("SELECT notify_prefs_json FROM users WHERE user_id=?", (user["user_id"],)).fetchone()
+    prefs = notifications.user_prefs(urow["notify_prefs_json"] if urow else "{}")
+    if not prefs["inbox_enabled"]:
+        return {"unread": 0, "events": [], "inbox_enabled": False}
+    rows = conn.execute(
+        "SELECT e.*, r.read_at FROM notification_reads r JOIN notification_events e ON e.id=r.event_id "
+        "WHERE r.user_id=? AND r.suppressed_reason IS NULL AND e.org_id=? "
+        "ORDER BY e.detected_at DESC, e.id DESC LIMIT 100",
+        (user["user_id"], org["org_id"])).fetchall()
+    out = []
+    for r in rows:
+        ev = notifications.render_event(dict(r))
+        ev["read"] = r["read_at"] is not None
+        out.append(ev)
+    return {"unread": sum(1 for e in out if not e["read"]), "events": out, "inbox_enabled": True}
+
+
+@app.post("/api/notifications/read")
+async def mark_notifications_read(request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    conn = get_conn()
+    if body.get("all"):
+        conn.execute("UPDATE notification_reads SET read_at=datetime('now') WHERE user_id=? AND read_at IS NULL",
+                     (user["user_id"],))
+    else:
+        ids = [int(i) for i in (body.get("event_ids") or []) if str(i).isdigit()][:500]
+        if ids:
+            conn.executemany("UPDATE notification_reads SET read_at=datetime('now') WHERE user_id=? AND event_id=?",
+                             [(user["user_id"], i) for i in ids])
+    conn.commit()
+    return {"ok": True}
+
+
+@app.get("/api/notify-prefs")
+async def get_notify_prefs(request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    urow = conn.execute("SELECT notify_prefs_json FROM users WHERE user_id=?", (user["user_id"],)).fetchone()
+    return {"prefs": notifications.user_prefs(urow["notify_prefs_json"] if urow else "{}"),
+            "min_money_floor": notifications.alert_cfg().get("min_money_change_gbp", 10000)}
+
+
+@app.put("/api/notify-prefs")
+async def put_notify_prefs(request: Request):
+    user, org = require_user(request)
+    body = await request.json()
+    p = body.get("prefs") or {}
+    clean = {
+        "inbox_enabled": bool(p.get("inbox_enabled", True)),
+        "email_frequency": p.get("email_frequency") if p.get("email_frequency") in ("off", "daily", "weekly") else "weekly",
+        "lenses": [l for l in (p.get("lenses") or []) if l in notifications.ALL_LENSES] or notifications.ALL_LENSES,
+        "events": [e for e in (p.get("events") or []) if e in notifications.ALL_EVENTS],
+        "min_money_gbp": max(0, int(p.get("min_money_gbp") or 0)),
+    }
+    conn = get_conn()
+    conn.execute("UPDATE users SET notify_prefs_json=? WHERE user_id=?", (j(clean), user["user_id"]))
+    conn.commit()
+    return {"ok": True, "prefs": notifications.user_prefs(j(clean))}
+
+
+@app.post("/api/notify-prefs/unsubscribe")
+async def unsubscribe_email(request: Request):
+    """One-click email opt-out — flips the master email toggle to off, honoured
+    before any other pref. The in-app inbox is unaffected."""
+    user, org = require_user(request)
+    conn = get_conn()
+    urow = conn.execute("SELECT notify_prefs_json FROM users WHERE user_id=?", (user["user_id"],)).fetchone()
+    p = uj(urow["notify_prefs_json"] if urow else "{}", {})
+    p["email_frequency"] = "off"
+    conn.execute("UPDATE users SET notify_prefs_json=? WHERE user_id=?", (j(p), user["user_id"]))
+    conn.commit()
+    return {"ok": True}
+
+
+@app.post("/api/notifications/run-sweep")
+async def trigger_sweep(request: Request):
+    """Manual trigger for the nightly sweep (no cron in this environment).
+    Platform-admin only — recomputes change events and fans out notifications
+    for EVERY org (a cross-tenant write), so it carries no org scope and must
+    not be reachable by an ordinary org admin."""
+    require_platform_admin(request)
+    swept, events = run_signal_sweep(get_conn(), verbose=False)
+    return {"ok": True, "orgs_swept": swept, "events": events}
 
 
 # ==================================================================== PREFS ==
@@ -1698,6 +2238,66 @@ async def gap_register_csv(request: Request):
                     headers={"Content-Disposition": "attachment; filename=lumi-gap-register.csv"})
 
 
+# ============================================================== BENCHMARK CSV ==
+
+@app.get("/api/benchmark.csv")
+async def benchmark_csv(request: Request):
+    """Quantitative export: one row per org-visible metric, numbers matching the
+    benchmark cards exactly (same assemble_card path). Suppressed cells ship
+    blank stats + suppressed=true — a small-cell distribution never leaks."""
+    user, org = require_user(request)
+    conn = get_conn()
+    entitled = make_entitled(user, org)
+    cut = parse_cut(request, org)
+    tb = twin_blocks_if_needed(conn, org, cut)
+    answers = org_answers_for(org)
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["question_id", "title", "subpower", "your_value",
+                "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"])
+
+    rows = []
+    for qid, q in org_visible_questions(org).items():
+        p = payloads().get(qid)
+        if p is None:
+            continue
+        card = assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None, entitled)
+        suppressed = bool(card.get("suppressed"))
+        cut_label = (card.get("cut") or {}).get("label", "")
+
+        # your_value: numeric value, else the selected label (multi_select joined)
+        you = card.get("you") or {}
+        if "value" in you:
+            your_value = you["value"]
+        elif you.get("labels"):
+            your_value = "; ".join(you["labels"])
+        elif "label" in you:
+            your_value = you["label"]
+        else:
+            your_value = ""
+
+        # percentiles only exist for numeric distributions; suppressed cells stay blank
+        blk = card.get("block") if not suppressed else None
+        if blk and q.type == "numeric":
+            stats = [blk.get("p10", ""), blk.get("p25", ""), blk.get("p50", ""),
+                     blk.get("p75", ""), blk.get("p90", "")]
+        else:
+            stats = ["", "", "", "", ""]
+
+        rows.append([qid, q.display_title, q.sub_power, your_value,
+                     *stats, card.get("n", 0), cut_label,
+                     "true" if suppressed else "false"])
+
+    rows.sort(key=lambda r: (r[2] or "", r[1] or ""))
+    for r in rows:
+        w.writerow(r)
+
+    fname = "lumi-benchmark-%s.csv" % (cut.get("dim") or "all")
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="%s"' % fname})
+
+
 # ================================================================== ANALYST ==
 
 @app.post("/api/analyst")
@@ -1710,12 +2310,20 @@ async def analyst(request: Request):
     if not question:
         raise HTTPException(400, "Ask a question first.")
     conn = get_conn()
+    vis = org_visible_questions(org)
+
+    # Intent routing: finding a metric, explaining a term, or how-to guidance go
+    # to the GUIDE path (no peer data → can't cite a figure). Anything else is a
+    # benchmark question and falls through to the strict, cited analyst below.
+    intent, extra = guide.classify(question)
+    if intent != "benchmark":
+        return _guide_response(question, intent, extra, org, vis)
+
     contrib = contribution_state(conn, org)
     if contrib["reduced"]:
         return {"answer": "Your full benchmark is paused until your reward data is complete — "
                           "finish your submission and I'll have every comparison ready for you again.",
                 "chips": [], "matched": [], "reduced": True}
-    vis = org_visible_questions(org)
     qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
     if qids and retrieval.distinctive_coverage(question, qids) < 0.34:
         qids = []   # fuzzy noise, not real coverage — offer the request path
@@ -1767,6 +2375,80 @@ async def analyst(request: Request):
     return {"answer": res["answer"], "chips": res["chips"], "matched": qids}
 
 
+def _depluralise(question):
+    """Best-effort singularise each word so a plural find-query ('pensions',
+    'allowances', 'bonuses') still matches the singular library term — the
+    retrieval tokenizer doesn't stem. English plural rules, not naive 's'-strip
+    (which mangles 'allowances'→'allowanc')."""
+    def one(w):
+        if len(w) > 4 and re.search(r"(?:ses|xes|zes|ches|shes)$", w):
+            return w[:-2]                                  # bonuses->bonus, boxes->box
+        if len(w) > 4 and w.endswith("s") and not w.endswith("ss"):
+            return w[:-1]                                  # pensions->pension, allowances->allowance
+        return w
+    return " ".join(one(t) for t in question.lower().split())
+
+
+def _guide_response(question, intent, extra, org, vis):
+    """Ask lumi's non-benchmark side: find a metric · explain a term · how-to.
+    Assembles the metric CATALOGUE (names/areas only — never values), the
+    glossary and the feature guide, lets Claude phrase it warmly, and falls back
+    to the deterministic glossary/feature copy when the model is unavailable."""
+    answers = org_answers_for(org)
+    answered_q = {k[0] for k in answers}
+
+    def _matches(q):
+        """Catalogue hits with real topic coverage — the same distinctive gate
+        the benchmark path uses, so a topic lumi doesn't cover ("submarines")
+        returns nothing rather than fuzzy noise."""
+        hits = [x for x in retrieval.search_questions(q, limit=10) if x in vis]
+        return hits if (hits and retrieval.distinctive_coverage(q, hits) >= 0.34) else []
+
+    # Only "find" needs the catalogue (its chips). Term/how-to questions never
+    # show metric chips, so we skip the (full-catalogue) retrieval scan entirely.
+    qids = []
+    if intent == "find":
+        qids = _matches(question)
+        if not qids:
+            # the retrieval tokenizer doesn't stem, so a plural ("pensions") misses
+            # the singular library term. Retry singularised before we ever tell a
+            # member lumi doesn't cover something it does.
+            alt = _depluralise(question)
+            if alt != question.lower():
+                qids = _matches(alt)
+    metas = []
+    for qid in qids:
+        q = vis[qid]
+        metas.append({"question_id": qid, "name": q.display_title,
+                      "area": q.sub_power or q.category or q.superpower,
+                      "in_your_data": qid in answered_q})
+    # chips are the clickable metric list — only meaningful for "find" (for term
+    # and how-to questions the retrieval matches are noise, so we don't show them)
+    chips = []
+    if intent == "find":
+        chips = [{"label": m["name"], "value": "in your data" if m["in_your_data"] else "add data",
+                  "sub": m["area"], "question_id": m["question_id"]} for m in metas[:8]]
+
+    # nothing in the catalogue for a "find" → offer the request path, no chips
+    if intent == "find" and not metas:
+        return {"answer": guide.deterministic_answer("find", None, question, False),
+                "chips": [], "matched": [], "no_metric": True, "topic": question, "kind": "find"}
+
+    links = guide.links_for(intent, extra)
+    ctx = {"intent": intent, "question": question, "glossary": guide.GLOSSARY,
+           "features": [{"answer": f["answer"], "route": f["route"], "cta": f["cta"]} for f in guide.FEATURES],
+           "metrics": metas, "term": extra if intent == "term" else None,
+           "organisation": {"name": org["name"]}}
+    res = claude_api.guide_answer(ctx) if AI_ANALYST else {"ok": False}
+    if res.get("ok"):
+        answer = res["answer"]
+        if res.get("links"):
+            links = res["links"]
+    else:
+        answer = guide.deterministic_answer(intent, extra, question, bool(metas))
+    return {"answer": answer, "chips": chips, "links": links, "matched": qids, "kind": intent}
+
+
 def _analyst_block(card):
     out = {"suppressed": card.get("suppressed"), "n": card.get("n"),
            "cut_label": card["cut"]["label"], "readout": card.get("readout")}
@@ -1795,19 +2477,23 @@ def _analyst_block(card):
 async def analyst_starters(request: Request):
     user, org = require_user(request)
     items, _ = build_items(request, org, user, {"dim": "all"})
-    gaps = pos.top_gaps(items, 6)
+    gaps = pos.top_gaps(items, 4)
+    # mix: a couple of benchmark questions from the org's biggest gaps, plus
+    # guide examples so members discover that Ask lumi also finds metrics,
+    # explains terms and helps with the platform.
     starters = []
-    for g in gaps:
+    for g in gaps[:3]:
         starters.append("How does our %s compare with similar organisations?" % pos._lower_first(g["label"]))
-    while len(starters) < 6:
-        starters.append([
-            "Where do we sit on employer pension contributions?",
-            "How common are holiday purchase schemes?",
-            "What bonus eligibility is typical for organisations like ours?",
-            "Which benefits are most commonly offered by organisations our size?",
-            "How does our annual leave entitlement compare?",
-            "What proportion of the market have a published pay transparency approach?",
-        ][len(starters)])
+    bench_fallback = [
+        "Where do we sit on employer pension contributions?",
+        "How common are holiday purchase schemes?",
+        "How does our annual leave entitlement compare?",
+    ]
+    while len(starters) < 3:
+        starters.append(bench_fallback[len(starters)])
+    starters += ["Do you have any metrics on parental leave?",
+                 "What does ‘percentile’ mean?",
+                 "How do I add my data?"]
     return {"starters": starters[:6]}
 
 
@@ -1816,7 +2502,14 @@ async def analyst_starters(request: Request):
 def assemble_pack_payload(request, user, org, cut):
     conn = get_conn()
     items, tb = build_items(request, org, user, cut)
-    summary = pos.overview_summary(items)
+    # headline scoped to the Substance pool (Provision presence included) so the
+    # board pack agrees with the dashboard gauge — same definition, same numbers
+    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                             payloads(), org_answers_for(org),
+                                             make_entitled(user, org), tb)
+    summary = pos.overview_summary(items, mp_config=pos.market_position_config(),
+                                   practice_items=prac_items,
+                                   band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
     strengths = pos.top_strengths(items, 5)
     gaps = pos.top_gaps(items, 5)
     money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
@@ -2160,6 +2853,164 @@ async def put_org_profile(request: Request):
     invalidate_payloads()
     return {"ok": True, "core_complete": bool(classified),
             "rich_complete": all(row.get(f) for f in PROFILE_RICH)}
+
+
+# ===================== Reward strategy capture (2026-06-16) =====================
+# Org-level reward stance — Plane B (philosophy) + Plane C (posture) dials. Plane A
+# (your business) is read from the existing registry record, not duplicated here.
+# Three required dials flip a signal's direction; the rest default neutral. See
+# DECISIONS.md "Reward strategy capture".
+STRATEGY_ENUMS = {
+    "market_position":     ["lag", "match", "lead"],
+    "reward_mix":          ["cash", "balanced", "benefits"],
+    "pay_for_performance": ["egal", "moderate", "strong"],
+    "transparency":        ["closed", "ranges", "open"],
+    "location_approach":   ["local", "national", "agnostic"],
+    "family_position":     ["statutory", "market", "over"],
+    "primary_objective":   ["attract", "retain", "cost", "compliance", "hold"],
+    "budget_direction":    ["investing", "flat", "pressure"],
+    "acute_pressure":      ["bau", "scaling", "shock"],
+    "risk_appetite":       ["early", "follow", "wait"],
+}
+STRATEGY_BENEFITS = ["physical", "mental", "financial", "worklife"]   # multi-select
+STRATEGY_REQUIRED = ("market_position", "reward_mix", "primary_objective")
+OBJECTIVE_LABELS = {"attract": "Attract", "retain": "Retain", "cost": "Control cost",
+                    "compliance": "Get it right", "hold": "Hold steady"}
+STRATEGY_PLANE_A_KEYS = {"lifecycle": "Business_Maturity", "talent": "Talent_Competition",
+                         "workforce": "Workforce_Shape", "footprint": "International_Footprint"}
+
+
+def _workforce_shape(reg):
+    """Derived, not stored (spec §4): Workforce_Frontline_% banded <33 / 33-66 / >66."""
+    try:
+        f = float(reg.get("Workforce_Frontline_%"))
+    except (TypeError, ValueError):
+        return None
+    return "Salaried" if f < 33 else ("Frontline / shift" if f > 66 else "Mixed")
+
+
+def _strategy_plane_a(org):
+    """The 4 Plane-A confirm facts, read from the registry record (read-only
+    pre-fill; an Admin override persists back into registry_json on PUT)."""
+    reg = uj(org.get("registry_json"), {}) or {}
+    cv = (get_meta("sim_feature_space") or {}).get("cat_values", {})
+    shape_override = reg.get("Workforce_Shape")
+    return [
+        {"key": "lifecycle", "label": "Lifecycle stage", "value": reg.get("Business_Maturity"),
+         "options": cv.get("Business_Maturity") or [],
+         "why": "Sets your default posture — a scale-up leads on equity; a mature firm on retention."},
+        {"key": "talent", "label": "Talent model", "value": reg.get("Talent_Competition"),
+         "options": cv.get("Talent_Competition") or ["Low", "Medium", "High"],
+         "why": "Scarce, business-critical skills justify paying a premium — we read high pay as strategy, not overspend."},
+        {"key": "workforce", "label": "Workforce shape", "value": shape_override or _workforce_shape(reg),
+         "options": ["Salaried", "Mixed", "Frontline / shift"], "derived": not shape_override,
+         "why": "Decides which questions apply to you — frontline and shift workforces route differently."},
+        {"key": "footprint", "label": "Geographic footprint", "value": reg.get("International_Footprint"),
+         "options": cv.get("International_Footprint") or ["UK Only", "UK + Europe", "UK + Global"],
+         "why": "Decides whether local-market pay reads matter, or a single national view is the right one."},
+    ]
+
+
+def strategy_state(conn, org):
+    """The org's stored B/C strategy + provenance + Plane-A facts, shaped for the API."""
+    r = conn.execute("SELECT * FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
+    row = dict(r) if r else {}
+    strat = {f: row.get(f) for f in STRATEGY_ENUMS}
+    strat["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
+    return {
+        "strategy": strat,
+        "provenance": uj(row.get("field_provenance"), {}) or {},
+        "completed_at": row.get("completed_at"),
+        "plane_a": _strategy_plane_a(org),
+        "required": list(STRATEGY_REQUIRED),
+        "benefits_options": STRATEGY_BENEFITS,
+    }
+
+
+@app.get("/api/strategy")
+async def get_strategy(request: Request):
+    user, org = require_user(request)
+    out = strategy_state(get_conn(), org)
+    out["can_edit"] = user["role"] == "admin"
+    return out
+
+
+@app.get("/api/strategy/suggestions")
+async def get_strategy_suggestions(request: Request):
+    """Reserved (spec §2.1/§3). v1 emits NO demographic suggestions — there is no
+    life-stage signal to derive from, and a manufactured default would make the
+    engines confidently wrong. The 'suggested' provenance value stays reserved."""
+    require_user(request)
+    return {"suggestions": {}}
+
+
+@app.put("/api/strategy")
+async def put_strategy(request: Request):
+    """Admin-only upsert. Every field validated against its enum (400 on unknown,
+    never silent coerce). completed_at is set server-side only when all three
+    required dials are non-null — the gate is not UI-only."""
+    user, org = require_admin(request)
+    body = await request.json()
+    incoming = body.get("strategy") or {}
+    vals, prov = {}, {}
+    for f, allowed in STRATEGY_ENUMS.items():
+        v = incoming.get(f)
+        if v in (None, ""):
+            vals[f] = None
+            prov[f] = "skipped"                      # required-empty also reads skipped; gate below catches it
+            continue
+        if v not in allowed:
+            raise HTTPException(400, "'%s' isn't a valid option for %s." % (v, f.replace("_", " ")))
+        vals[f] = v
+        prov[f] = "set"
+    bl = incoming.get("benefits_lead") or []
+    if not isinstance(bl, list):
+        raise HTTPException(400, "benefits_lead must be a list of areas.")
+    for x in bl:
+        if x not in STRATEGY_BENEFITS:
+            raise HTTPException(400, "'%s' isn't a recognised benefits area." % x)
+    vals["benefits_lead"] = json.dumps(bl) if bl else None
+    prov["benefits_lead"] = "set" if bl else "skipped"
+
+    conn = get_conn()
+    prev = conn.execute("SELECT completed_at FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
+    complete = all(vals.get(f) for f in STRATEGY_REQUIRED)
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    completed_at = (prev["completed_at"] if prev and prev["completed_at"] else None) or (now if complete else None)
+    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "field_provenance", "updated_at", "completed_at"]
+    row_vals = [vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], json.dumps(prov), now, completed_at]
+    setclause = ", ".join("%s=excluded.%s" % (c, c) for c in cols)
+    conn.execute("INSERT INTO org_strategy (org_id, %s) VALUES (%s) ON CONFLICT(org_id) DO UPDATE SET %s"
+                 % (", ".join(cols), ", ".join(["?"] * (len(cols) + 1)), setclause),
+                 [org["org_id"]] + row_vals)
+    # Plane-A overrides persist back into the registry record (small merge)
+    pa = body.get("plane_a") or {}
+    if pa:
+        reg = uj(org.get("registry_json"), {}) or {}
+        changed = False
+        for k, regkey in STRATEGY_PLANE_A_KEYS.items():
+            if pa.get(k) and pa[k] != reg.get(regkey):
+                reg[regkey] = pa[k]
+                changed = True
+        if changed:
+            conn.execute("UPDATE orgs SET registry_json=? WHERE org_id=?",
+                         (json.dumps(reg), org["org_id"]))
+    conn.commit()
+    return {"ok": True, "completed_at": completed_at,
+            "complete": bool(completed_at)}
+
+
+def strategy_for_engine(conn, org_id):
+    """The org's B/C strategy + provenance for the verdict engines, or None when
+    unset (→ engines run their legacy path byte-for-byte, §5.5)."""
+    r = conn.execute("SELECT * FROM org_strategy WHERE org_id=?", (org_id,)).fetchone()
+    if not r:
+        return None
+    row = dict(r)
+    out = {f: row.get(f) for f in STRATEGY_ENUMS}
+    out["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
+    out["provenance"] = uj(row.get("field_provenance"), {}) or {}
+    return out
 
 
 @app.get("/api/submission/state")
@@ -2623,7 +3474,8 @@ async def validate_all(request: Request):
             if errs:
                 problems.append({"question_id": qid, "title": q.display_title,
                                  "matrix_row_id": krow, "errors": errs})
-    return {"problems": problems, "unanswered_required": unanswered_required}
+    return {"problems": problems, "unanswered_required": unanswered_required,
+          "pending_changes": len(drafts)}
 
 
 @app.post("/api/submission/submit")
@@ -2714,17 +3566,38 @@ def build_commentary_payload(conn, org, user, qid, dim, value):
     if pctl is None and (you.get("display") or you.get("label")) and sc.get("percentile") is not None:
         pctl = sc["percentile"]
         pol = sc.get("polarity") or pol
+    # the engine's market-position classification (same source the metric page's
+    # "How lumi reads this" note uses) — lets the narrative frame a no-direction
+    # measure by prevalence rather than a false above/below verdict.
+    _mc = (pos.market_position_config().get("metrics") or {}).get(qid) or {}
+    # stance is read from the firewall-reviewed market-position direction — the SAME
+    # source the metric page's "How lumi reads this" note, pill and gauge use — never
+    # the legacy DB polarity, which can disagree. This guarantees the narrative can't
+    # contradict how the rest of the page reads the metric.
+    _dir = _mc.get("direction")
+    if _dir == "neutral" or _mc.get("class") in ("Practice", "Design"):
+        _stance = None                                  # no inherent better/worse → prevalence
+    elif _dir in ("higher_is_better", "lower_is_better"):
+        _stance = _commentary_stance(pctl, _dir)
+    else:
+        _stance = _commentary_stance(pctl, pol)         # unclassified → fall back to engine polarity
     payload = {
         "metric": card["title"],
         "definition": card.get("definition") or "",
         "cut_label": card["cut"]["label"],
         "n": card["n"],
         "suppressed": bool(card.get("suppressed")),
-        "polarity": pol,
+        "polarity": _dir or pol,
         "you": you.get("display") or you.get("label"),
         "percentile": pctl,
-        "stance": _commentary_stance(pctl, pol),
-        "illustrative_sample_data": bool(get_meta("synthetic_pool", True)),
+        "stance": _stance,
+        # richer signal for the narrative: how lumi classifies the metric, which
+        # domain it sits in, and how it's expressed
+        "cls": _mc.get("class"),
+        "direction": _mc.get("direction"),
+        "category": q.sub_power or q.category or q.superpower,
+        "metric_type": q.type,
+        "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
     }
     if blk.get("p50") is not None:
         payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
@@ -2759,7 +3632,8 @@ async def metric_commentary(request: Request):
         raise HTTPException(404, "That metric isn't part of your benchmark.")
 
     cut_key = dim + "::" + (value or "")
-    phash = hashlib.sha256(j(payload).encode()).hexdigest()[:16]
+    phash = hashlib.sha256(
+        (j(payload) + "|" + claude_api.COMMENTARY_GEN_VERSION).encode()).hexdigest()[:16]
     caveats = {"illustrative": bool(payload["illustrative_sample_data"])}
     if not body.get("force"):
         row = conn.execute(
@@ -2782,11 +3656,13 @@ async def metric_commentary(request: Request):
 NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "david@lumi.example")
 
 
-def send_notification(subject, body):
+def send_notification(subject, body, to=None):
     """Best-effort email. SMTP isn't configured in this environment, so this
     logs to console like every other outbound mail; when LUMI_SMTP_HOST is set
     it sends for real with no other changes. Never raises — the stored row is
-    the source of truth."""
+    the source of truth. `to` defaults to the ops inbox (NOTIFY_EMAIL) for
+    internal alerts; member digests pass the member's address."""
+    recipient = to or NOTIFY_EMAIL
     host = os.environ.get("LUMI_SMTP_HOST")
     if host:
         try:
@@ -2794,7 +3670,7 @@ def send_notification(subject, body):
             from email.message import EmailMessage
             msg = EmailMessage()
             msg["From"] = os.environ.get("LUMI_SMTP_FROM", "noreply@lumi.example")
-            msg["To"] = NOTIFY_EMAIL
+            msg["To"] = recipient
             msg["Subject"] = subject
             msg.set_content(body)
             with smtplib.SMTP(host, int(os.environ.get("LUMI_SMTP_PORT", "587")), timeout=10) as smtp:
@@ -2806,7 +3682,7 @@ def send_notification(subject, body):
         except Exception as e:
             print("[lumi] EMAIL SEND FAILED (%s) — request is stored regardless:\n%s\n%s" % (e, subject, body))
             return "failed"
-    print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n" % (NOTIFY_EMAIL, subject, body))
+    print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n" % (recipient, subject, body))
     return "logged"
 
 
@@ -2832,6 +3708,562 @@ async def create_metric_request(request: Request):
         % (text, notes or "—", user["display_name"] or user["email"], user["email"],
            org["name"], source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid))
     return {"ok": True, "id": cur.lastrowid, "notification": status}
+
+
+# ======================================================== METRIC SUGGESTIONS ==
+
+def notify_suggestion_team(s):
+    """Email the ops inbox about a new metric suggestion via the existing
+    best-effort notification service (send_notification). The stored row is the
+    source of truth; email is best-effort and never raises."""
+    body = ("New metric suggestion #%d\n\n"
+            "Metric name: %s\nWhat it measures: %s\nWhy it matters: %s\nSuggested category: %s\n\n"
+            "From: %s (%s)\nOrganisation: %s\nWhen: %s\n"
+            % (s["id"], s["metric_name"], s["what_it_measures"], s["why_it_matters"],
+               s["suggested_category"] or "—", s["user_name"], s["user_email"], s["org_name"],
+               datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")))
+    return send_notification("New metric suggestion: %s" % s["metric_name"][:80], body)
+
+
+@app.post("/api/suggestions")
+async def create_suggestion(request: Request):
+    user, org = require_user(request)               # 401 if session invalid
+    body = await request.json()
+    name = (body.get("metric_name") or "").strip()
+    measures = (body.get("what_it_measures") or "").strip()
+    matters = (body.get("why_it_matters") or "").strip()
+    category = (body.get("suggested_category") or "").strip() or None
+    missing = [lbl for v, lbl in ((name, "metric name"), (measures, "what it measures"),
+                                  (matters, "why it matters")) if not v]
+    if missing:
+        raise HTTPException(400, "Required: " + ", ".join(missing) + ".")
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO metric_suggestions(org_id, user_id, user_email, metric_name, what_it_measures,"
+        " why_it_matters, suggested_category) VALUES (?,?,?,?,?,?,?)",
+        (org["org_id"], user["user_id"], user["email"], name, measures, matters, category))
+    conn.commit()
+    notify_suggestion_team({
+        "id": cur.lastrowid, "metric_name": name, "what_it_measures": measures,
+        "why_it_matters": matters, "suggested_category": category,
+        "user_name": user["display_name"] or user["email"], "user_email": user["email"],
+        "org_name": org["name"]})
+    return {"status": "ok", "id": cur.lastrowid}
+
+
+# =============================================================== BACK OFFICE ==
+# lumi-staff console (closes D2). EVERY route's first line is
+# require_platform_admin — a cross-tenant privilege, so there is NO org scope and
+# NEVER a client-supplied org_id. The console authors definitions/metadata only;
+# it never writes answer data (answers / pulse_responses), so the integrity
+# firewall holds. New core metrics are always unscored + optional.
+
+ADMIN_SUB_POWERS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing",
+                    "Recognition", "Governance"]
+ADMIN_SUB_POWER_ORDER = {name: i + 1 for i, name in enumerate(ADMIN_SUB_POWERS)}
+SUGGESTION_STATUSES = ("new", "reviewed", "accepted", "rejected")
+ADMIN_METRIC_TYPES = ("numeric", "single_select", "yes_no", "multi_select")
+
+
+def _admin_slug_code(label):
+    s = re.sub(r"[^A-Za-z0-9]+", "_", label.strip().upper()).strip("_")
+    return s or "OPT"
+
+
+# ----- module 1: cross-tenant orgs overview (read-only) ----------------------
+@app.get("/api/admin/orgs")
+async def admin_orgs(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT o.*, (SELECT COUNT(*) FROM users u WHERE u.org_id=o.org_id) AS n_users "
+        "FROM orgs o ORDER BY o.name").fetchall()
+    out = []
+    for r in rows:
+        o = dict(r)
+        out.append({
+            "org_id": o["org_id"], "name": o["name"], "industry": o["industry"],
+            "fte_band": o["fte_band"], "classified": bool(o["classified"]),
+            "source": o["source"], "submission_complete": bool(o["submission_complete"]),
+            "n_users": o["n_users"],
+            # read-only unlock state (the stored stamp) — no side-effecting stamp
+            # from a staff list view, unlike org_unlocked().
+            "unlocked": bool(o["insights_unlocked_at"]) or bool(o["submission_complete"]),
+        })
+    return {"orgs": out, "total": len(out)}
+
+
+# ----- module 2: metric-suggestions triage ----------------------------------
+@app.get("/api/admin/suggestions")
+async def admin_suggestions(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT s.*, o.name AS org_name FROM metric_suggestions s "
+        "LEFT JOIN orgs o ON o.org_id = s.org_id ORDER BY s.created_at DESC, s.id DESC").fetchall()
+    return {"suggestions": [dict(r) for r in rows], "statuses": list(SUGGESTION_STATUSES)}
+
+
+@app.put("/api/admin/suggestions/{sid}")
+async def admin_suggestion_update(sid: int, request: Request):
+    user = require_platform_admin(request)
+    body = await request.json()
+    status = body.get("status")
+    if status not in SUGGESTION_STATUSES:
+        raise HTTPException(400, "status must be one of: " + ", ".join(SUGGESTION_STATUSES))
+    notes = (body.get("review_notes") or "").strip() or None
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM metric_suggestions WHERE id=?", (sid,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown suggestion")
+    conn.execute("UPDATE metric_suggestions SET status=?, review_notes=?, reviewed_by=?, "
+                 "reviewed_at=datetime('now') WHERE id=?", (status, notes, user["email"], sid))
+    conn.commit()
+    # accepting promotes it into the governed backlog (dedup by source_ref).
+    promoted = False
+    if status == "accepted":
+        promoted = releases.add_backlog(
+            row["metric_name"],
+            (row["what_it_measures"] or "") + " — " + (row["why_it_matters"] or ""),
+            "request-a-metric", "sugg-%d" % sid)
+    return {"ok": True, "promoted_to_backlog": promoted}
+
+
+# ----- module 3: pulse builder + management ----------------------------------
+@app.get("/api/admin/pulses")
+async def admin_pulses(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    out = []
+    for p in conn.execute("SELECT * FROM pulses ORDER BY created_at DESC"):
+        n_parts = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=?",
+                               (p["pulse_id"],)).fetchone()[0]
+        n_done = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
+                              (p["pulse_id"],)).fetchone()[0]
+        out.append({
+            "pulse_id": p["pulse_id"], "name": p["name"], "description": p["description"],
+            "status": p["status"], "opens_at": p["opens_at"], "closes_at": p["closes_at"],
+            "n_questions": len(uj(p["question_ids_json"], [])),
+            "n_participants": n_parts, "n_submitted": n_done})
+    return {"pulses": out}
+
+
+@app.post("/api/admin/pulses")
+async def admin_pulse_create(request: Request):
+    require_platform_admin(request)
+    body = await request.json()
+    name = (body.get("name") or "").strip()
+    desc = (body.get("description") or "").strip()
+    if not name:
+        raise HTTPException(400, "A pulse needs a name.")
+    qids = body.get("question_ids") or []
+    new_qs = body.get("new_questions") or []
+    if not qids and not new_qs:
+        raise HTTPException(400, "Add at least one question — from the library or a new one.")
+    for nq in new_qs:                      # console v1 authors non-matrix only
+        if nq.get("type") == "matrix":
+            raise HTTPException(400, "Matrix questions are authored via script in v1, not the console.")
+        if not (nq.get("text") or "").strip() or not nq.get("type"):
+            raise HTTPException(400, "Each new question needs text and a type.")
+    try:
+        pid = pulses_mod.create_pulse(name, desc, qids, new_qs, body.get("closes_at") or None)
+    except (ValueError, KeyError) as e:
+        raise HTTPException(400, "Couldn't create the pulse: %s" % e)
+    return {"ok": True, "pulse_id": pid}
+
+
+def _pulse_lifecycle(fn, pid):
+    try:
+        fn(pid)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/admin/pulses/{pid}/open")
+async def admin_pulse_open(pid: str, request: Request):
+    require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.open_pulse, pid)
+
+
+@app.post("/api/admin/pulses/{pid}/close")
+async def admin_pulse_close(pid: str, request: Request):
+    require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.close_pulse, pid)
+
+
+@app.post("/api/admin/pulses/{pid}/archive")
+async def admin_pulse_archive(pid: str, request: Request):
+    require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.archive_pulse, pid)
+
+
+@app.post("/api/admin/pulses/{pid}/extend")
+async def admin_pulse_extend(pid: str, request: Request):
+    require_platform_admin(request)
+    body = await request.json()
+    new_close = (body.get("closes_at") or "").strip()
+    if not new_close:
+        raise HTTPException(400, "Provide a new close date/time (YYYY-MM-DD HH:MM:SS).")
+    try:
+        pulses_mod.extend_close(pid, new_close)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.get("/api/admin/pulses/{pid}/report")
+async def admin_pulse_report(pid: str, request: Request):
+    require_platform_admin(request)
+    try:
+        rep = pulses_mod.pulse_report(pid, get_conn())
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    return strip_internal(rep)
+
+
+# ============== SELF-SERVICE PULSE BUILDER + PAID LAUNCH (2026-06-22) =========
+# An org Admin authors a pulse (its own firewall-safe questions), submits it for
+# lumi review, and once approved pays a launch fee (Stripe) that opens it to the
+# whole community. Ownership + the review/billing gate live on pulses.* ; payment
+# ONLY gates draft->open and never touches give-to-get or the core firewall.
+
+def _base_url():
+    return os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
+
+
+def _owned_pulse(conn, pid, org):
+    """Fetch a pulse and assert this org owns it — 404 (not 403) for anything
+    else so we never reveal another org's pulse ids."""
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    if not p["owner_org_id"] or p["owner_org_id"] != org["org_id"]:
+        raise HTTPException(404, "Unknown pulse")
+    return p
+
+
+def _org_pulse_detail(conn, p):
+    """Owner-facing detail incl. the authored questions (live library while a
+    draft; the as-asked snapshot once opened) — feeds the builder + status view."""
+    qs = pulses_mod.pulse_questions(p)
+    qlist = []
+    for qid, q in qs.items():
+        qlist.append({"id": qid, "text": q.text, "title": q.display_title, "type": q.type,
+                      "polarity": q.polarity,
+                      "options": [{"code": o["code"], "label": o["label"]} for o in (q.options or [])],
+                      "authored": str(qid).startswith("PULSE_")})
+    d = pulses_mod._pulse_summary(p, conn)
+    d["question_list"] = qlist
+    d["payments_enabled"] = payments_mod.is_configured()
+    d["payments_mode"] = payments_mod.mode()
+    d["default_fee_pence"] = PULSE_LAUNCH_FEE_PENCE
+    return d
+
+
+def _parse_pulse_body(body):
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Your pulse needs a name.")
+    qids = body.get("question_ids") or []
+    new_qs = body.get("new_questions") or []
+    if not qids and not new_qs:
+        raise HTTPException(400, "Add at least one question.")
+    for nq in new_qs:
+        if nq.get("type") not in pulses_mod.PULSE_NEW_TYPES:
+            raise HTTPException(400, "Each new question needs a supported type (%s)."
+                                % ", ".join(pulses_mod.PULSE_NEW_TYPES))
+        if not (nq.get("text") or "").strip():
+            raise HTTPException(400, "Each new question needs text.")
+    return name, (body.get("description") or "").strip(), qids, new_qs, (body.get("closes_at") or None)
+
+
+@app.get("/api/org/pulses")
+async def org_pulses_list(request: Request):
+    user, org = require_admin(request)
+    return {"pulses": pulses_mod.org_pulses(org["org_id"], get_conn()),
+            "payments_enabled": payments_mod.is_configured(),
+            "payments_mode": payments_mod.mode(),
+            "default_fee_pence": PULSE_LAUNCH_FEE_PENCE}
+
+
+@app.get("/api/org/pulses/{pid}")
+async def org_pulse_detail(pid: str, request: Request):
+    user, org = require_admin(request)
+    conn = get_conn()
+    return _org_pulse_detail(conn, _owned_pulse(conn, pid, org))
+
+
+@app.post("/api/org/pulses")
+async def org_pulse_create(request: Request):
+    user, org = require_admin(request)
+    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await request.json())
+    try:
+        pid = pulses_mod.create_pulse(name, desc, qids, new_qs, closes_at,
+                                      owner_org_id=org["org_id"], created_by=user["user_id"])
+    except (ValueError, KeyError) as e:
+        raise HTTPException(400, "Couldn't create the pulse: %s" % e)
+    return {"ok": True, "pulse_id": pid}
+
+
+@app.put("/api/org/pulses/{pid}")
+async def org_pulse_update(pid: str, request: Request):
+    user, org = require_admin(request)
+    conn = get_conn()
+    _owned_pulse(conn, pid, org)
+    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await request.json())
+    try:
+        pulses_mod.update_pulse_draft(pid, org["org_id"], name, desc, qids, new_qs, closes_at, conn)
+    except (ValueError, KeyError) as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.delete("/api/org/pulses/{pid}")
+async def org_pulse_discard(pid: str, request: Request):
+    user, org = require_admin(request)
+    conn = get_conn()
+    _owned_pulse(conn, pid, org)
+    try:
+        pulses_mod.discard_pulse(pid, org["org_id"], conn)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/org/pulses/{pid}/submit-for-review")
+async def org_pulse_submit_review(pid: str, request: Request):
+    user, org = require_admin(request)
+    conn = get_conn()
+    _owned_pulse(conn, pid, org)
+    try:
+        pulses_mod.submit_for_review(pid, org["org_id"], conn)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/org/pulses/{pid}/checkout")
+async def org_pulse_checkout(pid: str, request: Request):
+    """Approved -> pay. Records a launch order; when Stripe is configured returns
+    a Checkout Session URL. When it isn't, returns the order 'unconfigured' so a
+    lumi admin can confirm the launch (invoiced / pre-keys)."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    p = _owned_pulse(conn, pid, org)
+    if p["launch_status"] != "approved":
+        raise HTTPException(400, "This pulse isn't approved for launch yet.")
+    fee = p["launch_fee_pence"] or PULSE_LAUNCH_FEE_PENCE
+    oid = pulses_mod.create_launch_order(pid, org["org_id"], fee, created_by=user["user_id"], conn=conn)
+    if not payments_mod.is_configured():
+        return {"ok": True, "mode": "unconfigured", "order_id": oid, "amount_pence": fee,
+                "message": "Card payments aren't switched on yet — a lumi admin can confirm this launch."}
+    base = _base_url()
+    try:
+        session_id, url = payments_mod.create_checkout_session(
+            amount_pence=fee, currency="gbp",
+            product_name="lumi pulse launch — %s" % p["name"],
+            success_url=base + "/app#/run-a-pulse/%s?paid=1" % pid,
+            cancel_url=base + "/app#/run-a-pulse/%s?cancelled=1" % pid,
+            client_reference_id=oid,
+            metadata={"order_id": oid, "pulse_id": pid, "org_id": org["org_id"]})
+    except Exception as e:                       # Stripe/network error -> surface, change nothing
+        raise HTTPException(502, "Couldn't start checkout: %s" % e)
+    pulses_mod.set_order_session(oid, session_id, conn)
+    return {"ok": True, "mode": "stripe", "order_id": oid, "checkout_url": url}
+
+
+@app.post("/api/stripe/webhook")
+async def stripe_webhook(request: Request):
+    """Stripe -> us (public, signature-verified). On checkout.session.completed
+    the launch order is marked paid, which opens the pulse. Idempotent."""
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        event = payments_mod.verify_webhook(payload, sig)
+    except ValueError as e:
+        raise HTTPException(400, "Webhook verification failed: %s" % e)
+    if event.get("type") == "checkout.session.completed":
+        sess = (event.get("data") or {}).get("object") or {}
+        oid = sess.get("client_reference_id") or (sess.get("metadata") or {}).get("order_id")
+        pi = sess.get("payment_intent")
+        if oid:
+            try:
+                pulses_mod.mark_order_paid(oid, payment_intent=pi)
+            except ValueError:
+                pass    # unknown/duplicate — acknowledge so Stripe stops retrying
+    return {"received": True}
+
+
+# ----- staff: review + confirm self-service launches -------------------------
+@app.get("/api/admin/pulse-reviews")
+async def admin_pulse_reviews(request: Request):
+    require_platform_admin(request)
+    return {"pulses": pulses_mod.review_queue(get_conn()),
+            "payments_mode": payments_mod.mode(),
+            "default_fee_pence": PULSE_LAUNCH_FEE_PENCE}
+
+
+@app.post("/api/admin/pulses/{pid}/review")
+async def admin_pulse_review(pid: str, request: Request):
+    staff = require_platform_admin(request)
+    body = await request.json()
+    decision = body.get("decision")
+    notes = (body.get("notes") or "").strip()
+    fee = body.get("fee_pence")
+    if decision == "approve" and not fee:
+        fee = PULSE_LAUNCH_FEE_PENCE
+    try:
+        pulses_mod.review_pulse(pid, decision, staff["user_id"], notes=notes, fee_pence=fee, conn=get_conn())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/admin/pulses/{pid}/confirm-launch")
+async def admin_pulse_confirm_launch(pid: str, request: Request):
+    """Staff confirm a launch WITHOUT Stripe — an invoiced/hand-negotiated deal,
+    or local testing before keys exist. Opens the pulse exactly as a real card
+    payment would (marks the latest pending order paid, or records one)."""
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    if not p["owner_org_id"] or p["launch_status"] not in ("approved", "paid"):
+        raise HTTPException(400, "Only an approved self-service pulse can be confirmed.")
+    fee = p["launch_fee_pence"] or PULSE_LAUNCH_FEE_PENCE
+    o = pulses_mod.latest_order(pid, conn)
+    oid = (o["order_id"] if (o and o["status"] != "paid")
+           else pulses_mod.create_launch_order(pid, p["owner_org_id"], fee, created_by=staff["user_id"], conn=conn))
+    pulses_mod.mark_order_paid(oid, payment_intent="staff-confirmed", conn=conn)
+    return {"ok": True, "pulse_id": pid}
+
+
+# ----- module 4: create metric (author -> backlog -> publish live) -----------
+def _validate_metric_def(body):
+    text = (body.get("text") or "").strip()
+    sub_power = (body.get("sub_power") or "").strip()
+    qtype = (body.get("type") or "").strip()
+    polarity = (body.get("polarity") or "neutral").strip()
+    if not text:
+        raise HTTPException(400, "The metric needs a question text.")
+    if sub_power not in ADMIN_SUB_POWER_ORDER:
+        raise HTTPException(400, "Category must be one of: " + ", ".join(ADMIN_SUB_POWERS))
+    if qtype not in ADMIN_METRIC_TYPES:
+        raise HTTPException(400, "Type must be numeric, single_select, yes_no or multi_select "
+                                 "(matrix is script-only in v1).")
+    if polarity not in ("higher_is_better", "lower_is_better", "neutral"):
+        raise HTTPException(400, "Polarity must be higher_is_better, lower_is_better or neutral.")
+    options = []
+    if qtype in ("single_select", "yes_no", "multi_select"):
+        labels = [str(l).strip() for l in (body.get("options") or []) if str(l).strip()]
+        if qtype == "yes_no" and not labels:
+            labels = ["Yes", "No"]
+        if len(labels) < 2:
+            raise HTTPException(400, "Select questions need at least two options.")
+        for l in labels:
+            if ";" in l or "," in l:
+                raise HTTPException(400, "Option labels can't contain ';' or ',' (delimiter-safe storage).")
+        options = labels
+    return {
+        "text": text, "short_description": (body.get("short_description") or text[:80]).strip(),
+        "help_text": (body.get("help_text") or "").strip() or None,
+        "definition": (body.get("definition") or "").strip() or None,
+        "sub_power": sub_power, "type": qtype, "polarity": polarity, "options": options,
+        "unit": (body.get("unit") or "").strip() or None,
+        "unit_display_name": (body.get("unit_display_name") or "").strip() or None,
+        "unit_type": (body.get("unit_type") or "none").strip() or "none",
+    }
+
+
+def _publish_metric(conn, m):
+    """Governed insert of a NEW core metric — mirrors apply_release_2026_2.py.
+    ALWAYS is_scored=0 + is_required=0 (never re-locks the 82-question unlock
+    gate, never needs seeded answers — the firewall holds). Stamped to the
+    current release; no per-metric release cut (the next annual diff logs it as
+    'added'). Caller commits + marks the backlog row applied."""
+    qid = "ADM_" + uuid.uuid4().hex[:10].upper()
+    if conn.execute("SELECT 1 FROM questions WHERE id=?", (qid,)).fetchone():
+        raise ValueError("id collision — please retry")
+    order = (conn.execute("SELECT MAX(question_order) FROM questions "
+                          "WHERE question_order < 90000").fetchone()[0] or 0) + 1
+    is_select = m["type"] in ("single_select", "yes_no", "multi_select")
+    opts = j([{"code": _admin_slug_code(l), "label": l, "order": i + 1, "is_na": False}
+              for i, l in enumerate(m["options"])]) if is_select else None
+    unit_type = m["unit_type"] if m["type"] == "numeric" else "none"
+    rel = releases.current_release(conn)
+    cols = {
+        "id": qid, "text": m["text"], "short_description": m["short_description"],
+        "help_text": m["help_text"], "definition": m["definition"], "superpower": "Reward",
+        "sub_power": m["sub_power"], "sub_power_order": ADMIN_SUB_POWER_ORDER[m["sub_power"]],
+        "type": m["type"], "category": "practice", "options_json": opts,
+        "default_chart_type": "quartile_band" if m["type"] == "numeric" else "bar",
+        "data_display_type": "mean" if m["type"] == "numeric" else "percentage_distribution",
+        "polarity": m["polarity"],
+        "unit": m["unit"] if m["type"] == "numeric" else None,
+        "unit_display_name": m["unit_display_name"] if m["type"] == "numeric" else None,
+        "unit_type": unit_type, "currency_code": "GBP" if unit_type == "currency" else None,
+        "lumi_tier": "Core",
+        "na_handling_json": j({"exclude_from_scoring": True, "exclude_from_benchmarking": False}),
+        "benchmark_display": m["short_description"], "is_scored": 0, "is_required": 0,
+        "search_description": ((m["help_text"] or "") + " " + m["text"]).strip(),
+        "question_order": order, "question_version": "v1.0",
+        "historical_comparability": "high", "status": "active",
+        "release_entered": rel["release_id"] if rel else None,
+    }
+    conn.execute("INSERT INTO questions(%s) VALUES (%s)" % (
+        ",".join(cols), ",".join("?" * len(cols))), list(cols.values()))
+    load_questions.cache_clear()
+    invalidate_payloads()
+    return qid
+
+
+@app.get("/api/admin/backlog")
+async def admin_backlog(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM core_backlog ORDER BY created_at DESC, id DESC").fetchall()
+    return {"backlog": [dict(r) for r in rows]}
+
+
+@app.post("/api/admin/metrics/draft")
+async def admin_metric_draft(request: Request):
+    require_platform_admin(request)
+    body = await request.json()
+    metric = _validate_metric_def(body)
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO core_backlog(title, detail, source, status) VALUES (?,?,'admin_console','queued')",
+        (metric["text"][:120], j(metric)))
+    conn.commit()
+    return {"ok": True, "backlog_id": cur.lastrowid}
+
+
+@app.post("/api/admin/metrics/{backlog_id}/publish")
+async def admin_metric_publish(backlog_id: int, request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM core_backlog WHERE id=?", (backlog_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown backlog item")
+    if row["source"] != "admin_console":
+        raise HTTPException(400, "Only console-authored drafts can be published here.")
+    if row["status"] == "applied":
+        raise HTTPException(400, "This draft has already been published.")
+    metric = uj(row["detail"], None)
+    if not metric:
+        raise HTTPException(400, "This backlog item has no metric definition to publish.")
+    try:
+        qid = _publish_metric(conn, metric)
+    except ValueError as e:
+        conn.rollback()
+        raise HTTPException(400, "Couldn't publish: %s" % e)
+    conn.execute("UPDATE core_backlog SET status='applied' WHERE id=?", (backlog_id,))
+    conn.commit()
+    return {"ok": True, "question_id": qid}
 
 
 # =================================================================== SHARES ==
@@ -2931,7 +4363,11 @@ async def share_data(token: str, request: Request):
         cut = {"dim": "all"}  # bespoke groups never exposed on anonymous links
     answers = pos.get_org_answers(conn, org["org_id"], CURRENT_SNAPSHOT)
     items = pos.position_items(org["org_id"], cut, org_visible_questions(org), payloads(), answers, entitled, None)
-    summary = pos.overview_summary(items)
+    # headline scoped to the Substance pool (Provision presence included) so the
+    # public share link agrees with the dashboard gauge
+    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org), payloads(), answers, entitled, None)
+    summary = pos.overview_summary(items, mp_config=pos.market_position_config(), practice_items=prac_items,
+                                   band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
     co = pos.callouts(items, org_visible_questions(org), k=3)
     cards = []
     layout_row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
@@ -2967,7 +4403,28 @@ async def share_page(token: str):
 
 @app.get("/")
 async def index():
+    # public marketing front door; the app lives at /app (its "Log in" target).
+    # marketing.html bounces any incoming app-route hash (/#/reset/… etc.) to /app.
+    return FileResponse(os.path.join(WEB_DIR, "marketing.html"))
+
+
+@app.get("/app")
+async def app_shell():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
+
+
+# Brand assets at the document root (browsers request /favicon.ico by default,
+# and the lumi_brand_kit head snippet uses root paths). Served from web/.
+for _bn, _mt in (("favicon.ico", None), ("lumi_favicon.svg", "image/svg+xml"),
+                 ("apple-touch-icon.png", None), ("lumi_app_navy_192.png", None),
+                 ("lumi_app_navy_512.png", None),
+                 ("manifest.webmanifest", "application/manifest+json")):
+    def _brand_asset(name=_bn, media=_mt):
+        async def _serve():
+            return FileResponse(os.path.join(WEB_DIR, name), media_type=media) if media \
+                else FileResponse(os.path.join(WEB_DIR, name))
+        return _serve
+    app.add_api_route("/" + _bn, _brand_asset(), methods=["GET"], include_in_schema=False)
 
 
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")

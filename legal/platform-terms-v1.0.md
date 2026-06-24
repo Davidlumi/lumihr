@@ -1,6 +1,6 @@
 # lumi Platform Terms of Use
 
-**Version 1.0-draft · DRAFT — pending legal review**
+**Version 1.0**
 
 These terms govern your individual use of the lumi platform. They apply to every
 user account. Your organisation's participation in the benchmark is governed

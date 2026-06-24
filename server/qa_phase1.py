@@ -252,12 +252,19 @@ for c, name, pol in ((hi, hi_name, "higher"), (lo, lo_name, "lower")):
           (name, you, p50, pol, fav, expect, " or mid (near median)" if near else ""))
     check("polarity direction %s" % name, ok)
 
-# overview counts respect polarity: recompute above_median from items
+# headline (board pack / share) and the gauge count the SAME Substance pool at the
+# SAME band, so they must agree exactly — the "same org, one story" invariant
+# (task #86, finished by threading MARKET_BAND into overview_summary). Asserting
+# headline==gauge is stronger and band-correct vs the old favourable-recount, which
+# used the legacy raw pool at the per-metric 45/55 cut and drifted once the headline
+# was re-axed to the substance pool at the gauge's 35/65 band.
 ov = api("/api/overview")
-items = pos.position_items(org["org_id"], {"dim": "all"}, qs, payloads, answers, lambda q: True, None)
-above = sum(1 for i in items if i["favourable"] == "good")
-check("overview above_median == polarity-adjusted recount", ov["headline"]["above_median"] == above,
-      "%s vs %s" % (ov["headline"]["above_median"], above))
+mkt = ov["hero"].get("market") or {}
+check("overview headline above/below == gauge (board pack / share / dashboard, one story)",
+      ov["headline"]["above_median"] == mkt.get("above")
+      and ov["headline"]["below_median"] == mkt.get("below"),
+      "headline %s/%s vs gauge %s/%s" % (ov["headline"]["above_median"], ov["headline"]["below_median"],
+                                         mkt.get("above"), mkt.get("below")))
 
 # ------------------------------------ 1.6 percentile function consistency ---
 print("\n== 1.6 Percentile consistency between cards and £ model " + "=" * 33)

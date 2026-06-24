@@ -31,6 +31,7 @@ const ICON_PATHS = {
   home: [["p", "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"], ["p", "M9 22V12h6v10"]],
   star: [["p", "M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"]],
   "list-checks": [["p", "m3 17 2 2 4-4"], ["p", "m3 7 2 2 4-4"], ["l", 13, 6, 21, 6], ["l", 13, 12, 21, 12], ["l", 13, 18, 21, 18]],
+  menu: [["l", 4, 6, 20, 6], ["l", 4, 12, 20, 12], ["l", 4, 18, 20, 18]],
   "file-text": [["p", "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"], ["p", "M14 2v4a2 2 0 0 0 2 2h4"],
                 ["l", 8, 13, 16, 13], ["l", 8, 17, 16, 17]],
   table: [["p", "M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"],
@@ -43,6 +44,7 @@ const ICON_PATHS = {
   "book-open": [["p", "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"], ["p", "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"]],
   "log-out": [["p", "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"], ["pl", "16 17 21 12 16 7"], ["l", 21, 12, 9, 12]],
   sparkle: [["p", "M12 3l-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"]],
+  bulb: [["p", "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"], ["p", "M9 18h6"], ["p", "M10 22h4"]],
   lock: [["p", "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"], ["p", "M7 11V7a5 5 0 0 1 10 0v4"]],
   search: [["c", 11, 11, 8], ["p", "m21 21-4.3-4.3"]],
   shield: [["p", "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"]],
@@ -59,6 +61,8 @@ const ICON_PATHS = {
   "bar-chart": [["l", 12, 20, 12, 10], ["l", 18, 20, 18, 4], ["l", 6, 20, 6, 16]],
   maximize: [["pl", "15 3 21 3 21 9"], ["pl", "9 21 3 21 3 15"], ["l", 21, 3, 14, 10], ["l", 3, 21, 10, 14]],
   close: [["l", 18, 6, 6, 18], ["l", 6, 6, 18, 18]],
+  bell: [["p", "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"], ["p", "M10.3 21a1.94 1.94 0 0 0 3.4 0"]],
+  check: [["pl", "20 6 9 17 4 12"]],
 };
 
 window.Icon = function ({ name, size = 16, strokeWidth = 1.75, style }) {
@@ -91,8 +95,8 @@ window.SkeletonCard = function () {
     <div class="card skel-card" aria-hidden="true">
       <div class="skel" style=${{ height: "16px", width: "75%" }}></div>
       <div class="skel" style=${{ height: "16px", width: "45%" }}></div>
-      <div class="skel" style=${{ height: "20px", width: "55%", marginTop: "4px" }}></div>
-      <div class="skel" style=${{ height: "var(--chart-h)", marginTop: "8px" }}></div>
+      <div class="skel" style=${{ height: "20px", width: "55%", marginTop: "var(--s1)" }}></div>
+      <div class="skel" style=${{ height: "var(--chart-h)", marginTop: "var(--s2)" }}></div>
       <div class="skel" style=${{ height: "12px", width: "90%", marginTop: "auto" }}></div>
     </div>`;
 };

@@ -1,0 +1,2327 @@
+{
+  "_readme": [
+    "DAVID OWNS THIS FILE — per-metric market-position classification (handover Part A).",
+    "FIREWALL: class/direction/competitiveness drive COMPUTED positions. Hot-reload: edit and the engine picks it up; no rebuild, no gate (pre-launch).",
+    "Per-metric: class (Level|Provision|Practice|Design), type (numeric|binary|ordinal|categorical), direction (higher_is_better|lower_is_better|neutral|null for Approach), lens, weight (reserved v2).",
+    "Only higher_is_better Substance (Level/Provision) in a competitiveness domain feeds the gauge. lower_is_better=favourable, neutral=context — shown beside it. Approach (Practice/Design)=differs.",
+    "_domains.competitiveness=false (Governance) → favourable/context/differs, no headline verdict.",
+    "Review the flagged subset in MARKET_POSITION_REVIEW.md (Part B). Priority of harm: direction > competitiveness > class > lens."
+  ],
+  "_part_b_review": {
+    "directions": [
+      {
+        "id": "PROP_9e4ad87f",
+        "domain": "Pay",
+        "class": "Level",
+        "type": "numeric",
+        "direction": "neutral",
+        "text": "What was the overall salary increase budget (merit/annual review) as a percentage of payro",
+        "why": "neutral — U-shaped / cost / count: context, not a verdict"
+      },
+      {
+        "id": "PROP_d16bae79",
+        "domain": "Pay",
+        "class": "Level",
+        "type": "numeric",
+        "direction": "neutral",
+        "text": "What was total workforce cost per FTE in the last completed financial year (in GBP)?",
+        "why": "neutral — U-shaped / cost / count: context, not a verdict"
+      },
+      {
+        "id": "PROP_e63cf45a",
+        "domain": "Pay",
+        "class": "Level",
+        "type": "numeric",
+        "direction": "neutral",
+        "text": "What was total workforce cost as a percentage of revenue in the last completed financial y",
+        "why": "neutral — U-shaped / cost / count: context, not a verdict"
+      },
+      {
+        "id": "REW_BEN_058",
+        "domain": "Pay",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "In the last 12 months, have you enhanced benefits in response to cost-of-living or labour ",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_PAY_011",
+        "domain": "Pay",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Do you pay overtime?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_PAY_TIPS_EXIST_7c80c508",
+        "domain": "Pay",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Do employees receive customer tips or service charges as part of their total earnings?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_INC_070",
+        "domain": "Incentives",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "lower_is_better",
+        "text": "Are malus provisions used (reduce unpaid awards) for misconduct/risk/compliance issues?",
+        "why": "lower_is_better — from curated polarity"
+      },
+      {
+        "id": "REW_INC_071",
+        "domain": "Incentives",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Are clawback provisions used (recover paid awards) in defined circumstances?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_INC_131",
+        "domain": "Incentives",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Does your organisation operate any long-term incentive or equity plans for any levels?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_INC_135",
+        "domain": "Incentives",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Does your organisation operate sales commission or commission-based incentive plans?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "RED_COST_01",
+        "domain": "Benefits",
+        "class": "Level",
+        "type": "ordinal",
+        "direction": "neutral",
+        "text": "What was the average redundancy cost per employee in the last completed 12-month period?",
+        "why": "neutral — U-shaped / cost / count: context, not a verdict"
+      },
+      {
+        "id": "REW26_BEN_PENSION_COST_SHARE",
+        "domain": "Benefits",
+        "class": "Level",
+        "type": "numeric",
+        "direction": "neutral",
+        "text": "Employer pension cost as a % of total reward spend?",
+        "why": "neutral — U-shaped / cost / count: context, not a verdict"
+      },
+      {
+        "id": "REW_BEN_045",
+        "domain": "Benefits",
+        "class": "Level",
+        "type": "ordinal",
+        "direction": "higher_is_better",
+        "text": "What life assurance cover is provided for the main population (multiple of salary)?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_PAY_014",
+        "domain": "Time Off",
+        "class": "Level",
+        "type": "ordinal",
+        "direction": "higher_is_better",
+        "text": "What is the standard premium for working on UK bank holidays where applicable?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "REW_BEN_REM_PAY_005",
+        "domain": "Wellbeing",
+        "class": "Level",
+        "type": "ordinal",
+        "direction": "higher_is_better",
+        "text": "Do any pay premiums or discounts apply specifically to remote roles?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      },
+      {
+        "id": "EXT_REW_GAP_004",
+        "domain": "Recognition",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Do you operate a long service award scheme?",
+        "why": "DEFAULTED higher_is_better — confirm (no curated direction)"
+      }
+    ],
+    "governance": [
+      {
+        "id": "PAYTR_01_42eae7ec",
+        "domain": "Governance",
+        "class": "Provision",
+        "type": "binary",
+        "direction": "higher_is_better",
+        "text": "Do job adverts typically include a salary or salary range?"
+      },
+      {
+        "id": "PAYTR_03_db0108d6",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a formal policy describing pay progression within bands?"
+      },
+      {
+        "id": "PROP_10d1211d",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation run disability pay gap analyses (or pay equity analyses by disabili"
+      },
+      {
+        "id": "PROP_216f7323",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "categorical",
+        "direction": null,
+        "text": "Which pillars are explicitly included in your total rewards strategy?"
+      },
+      {
+        "id": "PROP_34ffb6e2",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Which best describes how promotion decisions are governed?"
+      },
+      {
+        "id": "PROP_38555969",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Do you have a documented annual reward/benefits communication plan (e.g., pay review comms"
+      },
+      {
+        "id": "PROP_674db2fc",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does the organisation provide total reward statements to employees, and what proportion of"
+      },
+      {
+        "id": "PROP_8862fcad",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation have a documented total rewards strategy that integrates pay, benef"
+      },
+      {
+        "id": "PROP_930043cc",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation run ethnicity pay gap analyses at least annually?"
+      },
+      {
+        "id": "PROP_aa4061d5",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "categorical",
+        "direction": null,
+        "text": "How does your organisation measure the effectiveness of reward/benefits communications?"
+      },
+      {
+        "id": "PROP_cdff5737",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does the organisation run pay equity analyses across comparable roles (e.g., gender, ethni"
+      },
+      {
+        "id": "PROP_d65a16e9",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "When was your total rewards strategy last refreshed or formally reviewed?"
+      },
+      {
+        "id": "PROP_d992b2ea",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a standard minimum time-in-role or time-in-grade expectation before promotion (wh"
+      },
+      {
+        "id": "PROP_e1d1e604",
+        "domain": "Governance",
+        "class": "Design",
+        "type": "categorical",
+        "direction": null,
+        "text": "Approximately what proportion of employees receive an off-cycle pay increase outside the a"
+      },
+      {
+        "id": "PROP_ef4ff31e",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Do you monitor promotion rates by protected characteristics to identify equity issues?"
+      },
+      {
+        "id": "REW262_GOV_ACTIONPLAN",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "categorical",
+        "direction": null,
+        "text": "Do you have a published equality action plan, and which characteristics does it cover?"
+      },
+      {
+        "id": "REW262_GOV_AIINPAY",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "categorical",
+        "direction": null,
+        "text": "Do you use AI tools in pay decisions, and with what governance?"
+      },
+      {
+        "id": "REW262_GOV_EQUALPAYAUDIT",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Do you run proactive equal-pay audits, and how often?"
+      },
+      {
+        "id": "REW262_GOV_EQUALVALUE",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Can you group your workforce into categories of equal value (by skills, effort, responsibi"
+      },
+      {
+        "id": "REW262_GOV_PAYINADVERTS",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Do you include pay or a pay range in job adverts?"
+      },
+      {
+        "id": "REW262_GOV_SALHISTORY",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Have you removed salary-history questions from your hiring process?"
+      },
+      {
+        "id": "REW26_GOV_EU_PTD_PREP",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "How prepared are you for the EU Pay Transparency Directive (2026)?"
+      },
+      {
+        "id": "REW_FAI_079",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation conduct gender pay gap analysis at least annually?"
+      },
+      {
+        "id": "REW_FAI_081",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Are pay decisions reviewed for fairness before implementation (e.g., calibration, central "
+      },
+      {
+        "id": "REW_FAI_082",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Are exceptions to standard pay rules formally documented with justification?"
+      },
+      {
+        "id": "REW_FAI_085",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation review pay outcomes for compression and internal equity as part of "
+      },
+      {
+        "id": "REW_FAI_086",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation review incentive outcomes by protected characteristic (where data i"
+      },
+      {
+        "id": "REW_FAI_087",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation have a documented pay transparency approach or policy?"
+      },
+      {
+        "id": "REW_FAI_088",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Do employees have access to pay ranges for their grade/role family?"
+      },
+      {
+        "id": "REW_FAI_089",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation publish pay ranges on job adverts?"
+      },
+      {
+        "id": "REW_FAI_091",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Over the next 12-24 months, do you plan to expand external pay transparency?"
+      },
+      {
+        "id": "REW_FAI_092",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Have you completed a pay transparency readiness assessment (e.g., audit of structures, dat"
+      },
+      {
+        "id": "REW_PAY_001",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Are formal pay ranges defined for all permanent roles?"
+      },
+      {
+        "id": "REW_PAY_002",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Are pay ranges linked to a documented job evaluation or grading framework?"
+      },
+      {
+        "id": "REW_PAY_003",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "How often are pay ranges reviewed and refreshed using market data?"
+      },
+      {
+        "id": "REW_PAY_006",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation use external pay benchmark data when setting pay ranges or offers?"
+      },
+      {
+        "id": "REW_PAY_019",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Are allowances consolidated into base pay at any point (e.g., on promotion or contract cha"
+      },
+      {
+        "id": "REW_PRO_030",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Is progression eligibility linked to performance outcomes?"
+      },
+      {
+        "id": "REW_PRO_034",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "Does your organisation use promotion guidelines that specify recommended salary positionin"
+      },
+      {
+        "id": "REW_PRO_035",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "ordinal",
+        "direction": null,
+        "text": "What is pay progression based on outside of the annual review and promotions?"
+      },
+      {
+        "id": "REW_PRO_098",
+        "domain": "Governance",
+        "class": "Level",
+        "type": "ordinal",
+        "direction": "higher_is_better",
+        "text": "What is the typical maximum pay increase for promotions?"
+      }
+    ],
+    "class_edges": [
+      {
+        "id": "ALLOW_02",
+        "domain": "Pay",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Are allowances reviewed regularly as part of reward governance?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "REW_INC_065",
+        "domain": "Incentives",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a gatekeeper metric (e.g., profit, safety, compliance) that must be met for any p",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "RED_PROC_01",
+        "domain": "Benefits",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a documented redundancy process applied consistently?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "RED_PROC_02",
+        "domain": "Benefits",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Are selection criteria for redundancy documented and objective?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "RED_PROC_03",
+        "domain": "Benefits",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Are redundancy outcomes reviewed for fairness and bias?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "RED_PROC_05",
+        "domain": "Benefits",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Are line managers trained to manage redundancy conversations?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "PAYTR_03_db0108d6",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a formal policy describing pay progression within bands?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "PROP_d992b2ea",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Is there a standard minimum time-in-role or time-in-grade expectation before promotion (wh",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      },
+      {
+        "id": "REW262_GOV_SALHISTORY",
+        "domain": "Governance",
+        "class": "Practice",
+        "type": "binary",
+        "direction": null,
+        "text": "Have you removed salary-history questions from your hiring process?",
+        "why": "binary-measured but a Practice — confirm it stays OUT of the gauge"
+      }
+    ]
+  },
+  "defaults": {
+    "market_band": [
+      35,
+      65
+    ],
+    "verdict_margin": 0.25,
+    "uncommon_pct": 20,
+    "binary_prevalence_thresholds": [
+      35,
+      65
+    ],
+    "suppression_floor": 3,
+    "domain_min_polarised": 3,
+    "tile_min_positioned": 1
+  },
+  "_domains": {
+    "Pay": {
+      "competitiveness": true
+    },
+    "Incentives": {
+      "competitiveness": true
+    },
+    "Benefits": {
+      "competitiveness": true
+    },
+    "Time Off": {
+      "competitiveness": true
+    },
+    "Wellbeing": {
+      "competitiveness": true
+    },
+    "Recognition": {
+      "competitiveness": true
+    },
+    "Governance": {
+      "competitiveness": false
+    }
+  },
+  "metrics": {
+    "REW263_BEN_CICOVER": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_BEN_DENTAL": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_BEN_NEURO": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_BEN_PENBASIS": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_BEN_PMIEXCESS": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_BEN_PMIMH": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_GOV_BENOBJ": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_ETHDISREADY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_FIREREHIRE": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_FLEXALLOW": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_MENOPLAN": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_REWTEAM": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_SIGNOFF": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_UKPAYTRANS": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_GOV_UMBRELLA": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_INC_DEFERRAL": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_INC_POOLFUND": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW263_PAY_COMPARATIO": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW263_PAY_GUARHRSAVG": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW263_PAY_MERITMATRIX": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW263_PAY_SHIFTRIGHTS": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW263_PAY_SSPALIGN": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW263_REC_CURRENCY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_REC_IMPACT": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_REC_MGRBUDGET": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_REC_PEER": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_TIME_CARERPAID": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_DAYONELEAVE": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_FERTLEAVE": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_HOLRECORDS": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_IVF": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_NEONATAL": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_PATPAY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_TIME_PREGLOSS": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW263_WEL_DATA": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_WEL_FINWELL": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_WEL_MGRTRAIN": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW263_WEL_OH": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "ALLOW_01": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "ALLOW_02": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "ALLOW_03": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "ALLOW_04": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_013": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "OT_04_b14623a6": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "PAYTR_02_131bd412": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_168a6213": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "PROP_634adacd": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_8e0b6316": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_9e4ad87f": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "neutral",
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_d16bae79": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "neutral",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_dff9a2a5": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_e63cf45a": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "neutral",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_fe1a29ec": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW262_PAY_AISKILLSPAY": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_PAY_CANCELLEDSHIFT": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW262_PAY_GUARANTEEDHRS": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_PAY_SHIFTNOTICE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW26_PAY_JOBEVAL_COVERAGE": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW26_PAY_SKILLS_PAY": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_058": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_FAIR_TIPS_DIST_7d34e570": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_128": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_FAI_CANCEL_1bbcc629": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_FAI_MIN_HOURS_8518a543": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_FAI_TRONC_GROUPS_e5639ac2": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_TRONC_TYPES_b5547658": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_005": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_007": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_011": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_PAY_016": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_017": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_018": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_020": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_021": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_022": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_023": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_097": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_126": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_HOURLY_MIN_1c6e096f": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_MKT_POS_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_TIPS_EXIST_7c80c508": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_TRONC_6db81475": {
+      "class": "Design",
+      "type": "binary",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_060": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_061": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_065": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_069": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_070": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "lower_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_071": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_072": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_077": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_103": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_104": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_111": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_131": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_INC_132": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_133": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_135": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_INC_136": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_INC_LTI_MAX_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_INC_LTI_VALUE_TYP_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_Q528801": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_Q534581": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "3faf1f0c-f753-497f-a395-384bba38c5e3": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "CAR_BN_02": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "CAR_COST_02": {
+      "class": "Design",
+      "type": "binary",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "CAR_STATUS_01": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "CAR_STATUS_03": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "EXT_REW_GAP_012": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_11a83d52": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "PROP_202fecc6": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "PROP_36b990f9": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_3d4fc4e7": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_7d858df2": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "PROP_c1a3da61": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "RED_COST_01": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
+      "lens": "attract",
+      "weight": 1
+    },
+    "RED_NOTICE_01": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "RED_PAY_01": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "RED_PROC_01": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_PROC_02": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_PROC_03": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_PROC_04": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "RED_PROC_05": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_TERM_01": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_TERM_02": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "RED_TERM_03": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW26_BEN_PENSION_COST_SHARE": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "neutral",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW26_BEN_PENSION_MATCH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW26_BEN_PENSION_TYPE": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW26_BEN_PLSA_QM": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW26_BEN_SALSAC": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_BEN_038": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_039": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_044": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_045": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_046": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_047": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_048": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_055": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_100": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_102": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_112": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_BEN_139": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_FLEX_ALLOW_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_BEN_PENS_EE_MAX_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_PENS_EMP_MAX_01": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_FAI_STUDY_TIME_93b6ef22": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_109": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_EV_KWH_66ef252b": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_Q049530": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_Q524161": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "OT_03_1a68c68a": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW262_TIME_BEREAVEMENT": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW262_TIME_SICKDAYONE": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_041": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_FAM_001": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_FAM_002": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_FAM_005": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_FAM_006": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_FAM_007": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_FAM_008": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_FAM_009": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_FAM_010": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_FAM_011": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_FAM_012": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1,
+      "family_metric": true
+    },
+    "REW_BEN_HOL_001": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_HOL_002": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_HOL_003": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_HOL_004": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_BEN_HOL_005": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_HOL_006": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_HOL_007": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_HOL_008": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_SICK_001": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_SICK_002": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_BEN_SICK_004": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_SICK_005": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_BEN_SICK_006": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_014": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_009": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_010": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_011": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW26_WEL_BUDGET": {
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW26_WEL_EAP": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW26_WEL_FINWELL": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW26_WEL_MH_SUPPORT": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW26_WEL_SCREENING": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW26_WEL_STRATEGY": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "REW_BEN_REM_PAY_001": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_REM_PAY_002": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1,
+      "location_scoped": true
+    },
+    "REW_BEN_REM_PAY_003": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_REM_PAY_004": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_BEN_REM_PAY_005": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_001": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "engage",
+      "weight": 1
+    },
+    "EXT_REW_GAP_002": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
+      "lens": "engage",
+      "weight": 1
+    },
+    "EXT_REW_GAP_003": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_004": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "retain",
+      "weight": 1
+    },
+    "EXT_REW_GAP_005": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "EXT_REW_GAP_006": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "EXT_REW_GAP_007": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
+      "lens": "engage",
+      "weight": 1
+    },
+    "PAYTR_01_42eae7ec": {
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "PAYTR_03_db0108d6": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_10d1211d": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_216f7323": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_34ffb6e2": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_38555969": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "PROP_674db2fc": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_8862fcad": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "engage",
+      "weight": 1
+    },
+    "PROP_930043cc": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_aa4061d5": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_cdff5737": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_d65a16e9": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_d992b2ea": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "PROP_e1d1e604": {
+      "class": "Design",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "PROP_ef4ff31e": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_ACTIONPLAN": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_AIINPAY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_EQUALPAYAUDIT": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_EQUALVALUE": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_PAYINADVERTS": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW262_GOV_SALHISTORY": {
+      "class": "Practice",
+      "type": "binary",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW26_GOV_EU_PTD_PREP": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_FAI_079": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_081": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_082": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_085": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "save",
+      "weight": 1
+    },
+    "REW_FAI_086": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_087": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_088": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_089": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_091": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_FAI_092": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_PAY_001": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_002": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_003": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_006": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PAY_019": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PRO_030": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PRO_034": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1
+    },
+    "REW_PRO_035": {
+      "class": "Practice",
+      "type": "ordinal",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW_PRO_098": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    }
+  }
+}

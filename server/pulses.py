@@ -44,14 +44,21 @@ def _now():
 
 
 # ----------------------------------------------------------------- lifecycle
-def create_pulse(name, description, question_ids, new_questions=None,
-                 closes_at=None, conn=None):
-    """Superadmin: assemble a pulse from existing library questions (by id —
-    reuse first) and/or newly authored pulse questions (full standard schema,
-    flagged pulse-origin via superpower='Pulse'). Starts as DRAFT."""
-    conn = conn or get_conn()
+PULSE_NEW_TYPES = ("yes_no", "single_select", "multi_select", "numeric")
+
+
+def _assemble_questions(question_ids, new_questions, conn):
+    """Build the final ordered question-id list for a pulse from reused library
+    ids + newly authored pulse questions. Newly authored questions are inserted
+    into `questions` flagged pulse-origin (superpower='Pulse') so they can never
+    leak into the core scope filter or a core release — the firewall holds for
+    self-service authors exactly as it does for staff."""
     qids = list(question_ids or [])
     for nq in (new_questions or []):
+        if nq.get("type") not in PULSE_NEW_TYPES:
+            raise ValueError("unsupported question type: %s" % nq.get("type"))
+        if not (nq.get("text") or "").strip():
+            raise ValueError("every question needs text")
         qid = nq.get("id") or ("PULSE_" + uuid.uuid4().hex[:10].upper())
         cols = {
             "id": qid, "text": nq["text"], "short_description": nq.get("title"),
@@ -83,9 +90,26 @@ def create_pulse(name, description, question_ids, new_questions=None,
     missing = [q for q in qids if q not in lib]
     if missing:
         raise ValueError("unknown question ids: %s" % missing)
+    return qids
+
+
+def create_pulse(name, description, question_ids, new_questions=None,
+                 closes_at=None, conn=None, owner_org_id=None, created_by=None):
+    """Assemble a pulse from existing library questions (by id — reuse first)
+    and/or newly authored pulse questions. Starts as DRAFT.
+
+    Staff-authored (owner_org_id=None): launch_status stays NULL and the pulse
+    is opened directly from the admin console. Org-authored (owner_org_id set):
+    launch_status starts 'building' and the pulse only opens via the
+    review -> approve -> paid gate (see review_pulse / mark_order_paid)."""
+    conn = conn or get_conn()
+    qids = _assemble_questions(question_ids, new_questions, conn)
     pid = "pulse-" + uuid.uuid4().hex[:8]
-    conn.execute("INSERT INTO pulses(pulse_id, name, description, status, closes_at, question_ids_json) "
-                 "VALUES (?,?,?,'draft',?,?)", (pid, name, description, closes_at, j(qids)))
+    launch_status = "building" if owner_org_id else None
+    conn.execute(
+        "INSERT INTO pulses(pulse_id, name, description, status, closes_at, question_ids_json, "
+        "owner_org_id, created_by, launch_status) VALUES (?,?,?,'draft',?,?,?,?,?)",
+        (pid, name, description, closes_at, j(qids), owner_org_id, created_by, launch_status))
     conn.commit()
     return pid
 
@@ -140,6 +164,199 @@ def get_pulse(pulse_id, conn=None):
     if p is None:
         raise ValueError("unknown pulse %s" % pulse_id)
     return p
+
+
+# ===================== self-service launch flow (2026-06-22) =================
+# An org Admin authors a pulse, submits it for lumi review, and — once approved —
+# pays a launch fee that opens it to the whole community. The states below ride
+# on pulses.launch_status (NULL for staff-authored pulses); the engine `status`
+# stays 'draft' until payment, at which point open_pulse() runs unchanged.
+#
+#   building -> in_review -> changes_requested -> (back to building)
+#                         -> rejected
+#                         -> approved -> paid (==> status flips draft->open)
+#
+# EDITABLE = the author can still change it; LOCKED otherwise.
+_EDITABLE = ("building", "changes_requested")
+
+
+def _require_owner(p, org_id):
+    if not p["owner_org_id"]:
+        raise ValueError("This isn't a self-service pulse.")
+    if org_id is not None and p["owner_org_id"] != org_id:
+        raise ValueError("This pulse belongs to another organisation.")
+
+
+def update_pulse_draft(pulse_id, org_id, name, description, question_ids,
+                       new_questions=None, closes_at=None, conn=None):
+    """Edit an org-authored draft while it is still EDITABLE (building or
+    after staff requested changes). Rebuilds the question set; any previously
+    authored pulse questions left unreferenced stay inert (superpower='Pulse',
+    invisible to core)."""
+    conn = conn or get_conn()
+    p = get_pulse(pulse_id, conn)
+    _require_owner(p, org_id)
+    if p["launch_status"] not in _EDITABLE:
+        raise ValueError("This pulse can no longer be edited (it is %s)." % p["launch_status"])
+    qids = _assemble_questions(question_ids, new_questions, conn)
+    conn.execute("UPDATE pulses SET name=?, description=?, closes_at=?, question_ids_json=? WHERE pulse_id=?",
+                 (name, description, closes_at, j(qids), pulse_id))
+    conn.commit()
+    return qids
+
+
+def discard_pulse(pulse_id, org_id, conn=None):
+    """Delete an org-authored draft that hasn't launched (building or
+    changes_requested). Removes the pulse and any orders/participants/responses
+    it accrued (a pre-launch draft has none of the latter)."""
+    conn = conn or get_conn()
+    p = get_pulse(pulse_id, conn)
+    _require_owner(p, org_id)
+    if p["launch_status"] not in _EDITABLE:
+        raise ValueError("Only a draft that hasn't launched can be discarded.")
+    conn.execute("DELETE FROM pulse_responses WHERE pulse_id=?", (pulse_id,))
+    conn.execute("DELETE FROM pulse_participants WHERE pulse_id=?", (pulse_id,))
+    conn.execute("DELETE FROM pulse_launch_orders WHERE pulse_id=?", (pulse_id,))
+    conn.execute("DELETE FROM pulses WHERE pulse_id=?", (pulse_id,))
+    conn.commit()
+
+
+def submit_for_review(pulse_id, org_id, conn=None):
+    """Author -> lumi: hand an editable draft to staff for the launch review."""
+    conn = conn or get_conn()
+    p = get_pulse(pulse_id, conn)
+    _require_owner(p, org_id)
+    if p["launch_status"] not in _EDITABLE:
+        raise ValueError("This pulse isn't ready to submit (it is %s)." % p["launch_status"])
+    if not uj(p["question_ids_json"], []):
+        raise ValueError("Add at least one question before submitting for review.")
+    conn.execute("UPDATE pulses SET launch_status='in_review', review_notes=NULL WHERE pulse_id=?", (pulse_id,))
+    conn.commit()
+
+
+def review_pulse(pulse_id, decision, reviewed_by, notes="", fee_pence=None, conn=None):
+    """lumi staff decision on a submitted pulse. decision in
+    {approve, changes, reject}. Approval REQUIRES a launch fee (pence) and moves
+    the pulse to 'approved' — ready for the author to pay. 'changes' returns it
+    to the author (editable again) with notes; 'reject' is terminal."""
+    conn = conn or get_conn()
+    p = get_pulse(pulse_id, conn)
+    if not p["owner_org_id"]:
+        raise ValueError("Only a self-service pulse goes through review.")
+    if p["launch_status"] != "in_review":
+        raise ValueError("Only a pulse awaiting review can be decided (it is %s)." % p["launch_status"])
+    target = {"approve": "approved", "changes": "changes_requested", "reject": "rejected"}.get(decision)
+    if not target:
+        raise ValueError("decision must be approve | changes | reject")
+    if target == "approved" and not fee_pence:
+        raise ValueError("Approval needs a launch fee.")
+    conn.execute(
+        "UPDATE pulses SET launch_status=?, review_notes=?, reviewed_by=?, reviewed_at=?, "
+        "launch_fee_pence=COALESCE(?, launch_fee_pence) WHERE pulse_id=?",
+        (target, notes or None, reviewed_by, _now(), fee_pence, pulse_id))
+    conn.commit()
+
+
+# --------------------------------------------------------------- launch orders
+def create_launch_order(pulse_id, org_id, amount_pence, created_by, currency="gbp", conn=None):
+    """One row per checkout attempt — the billing/audit ledger."""
+    conn = conn or get_conn()
+    oid = "ord-" + uuid.uuid4().hex[:12]
+    conn.execute(
+        "INSERT INTO pulse_launch_orders(order_id, pulse_id, org_id, amount_pence, currency, created_by) "
+        "VALUES (?,?,?,?,?,?)", (oid, pulse_id, org_id, amount_pence, currency, created_by))
+    conn.commit()
+    return oid
+
+
+def set_order_session(order_id, session_id, conn=None):
+    conn = conn or get_conn()
+    conn.execute("UPDATE pulse_launch_orders SET stripe_session_id=? WHERE order_id=?", (session_id, order_id))
+    conn.commit()
+
+
+def get_order(order_id, conn=None):
+    conn = conn or get_conn()
+    return conn.execute("SELECT * FROM pulse_launch_orders WHERE order_id=?", (order_id,)).fetchone()
+
+
+def get_order_by_session(session_id, conn=None):
+    conn = conn or get_conn()
+    return conn.execute("SELECT * FROM pulse_launch_orders WHERE stripe_session_id=?", (session_id,)).fetchone()
+
+
+def latest_order(pulse_id, conn=None):
+    conn = conn or get_conn()
+    return conn.execute("SELECT * FROM pulse_launch_orders WHERE pulse_id=? ORDER BY created_at DESC, rowid DESC "
+                        "LIMIT 1", (pulse_id,)).fetchone()
+
+
+def mark_order_paid(order_id, payment_intent=None, conn=None):
+    """IDEMPOTENT paid->open gate (webhook and success-redirect may both fire):
+    mark the order paid, flip launch_status='paid', and OPEN the pulse (snapshot
+    + status='open') if it is still a draft. Returns the pulse_id."""
+    conn = conn or get_conn()
+    o = get_order(order_id, conn)
+    if o is None:
+        raise ValueError("unknown launch order")
+    if o["status"] != "paid":
+        conn.execute(
+            "UPDATE pulse_launch_orders SET status='paid', paid_at=?, stripe_payment_intent=? WHERE order_id=?",
+            (_now(), payment_intent, order_id))
+        conn.commit()
+    p = get_pulse(o["pulse_id"], conn)
+    if p["launch_status"] != "paid":
+        conn.execute("UPDATE pulses SET launch_status='paid' WHERE pulse_id=?", (o["pulse_id"],))
+        conn.commit()
+    if p["status"] == "draft":
+        open_pulse(o["pulse_id"], conn)        # snapshot questions + status='open'
+    return o["pulse_id"]
+
+
+# ------------------------------------------------------------- listing helpers
+def _pulse_summary(p, conn):
+    """Owner/staff-facing summary row: counts + lifecycle + the latest order."""
+    pid = p["pulse_id"]
+    n_part = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=?", (pid,)).fetchone()[0]
+    n_sub = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
+                         (pid,)).fetchone()[0]
+    o = latest_order(pid, conn)
+    return {
+        "pulse_id": pid, "name": p["name"], "description": p["description"],
+        "status": p["status"], "launch_status": p["launch_status"],
+        "owner_org_id": p["owner_org_id"], "visibility": p["visibility"],
+        "n_questions": len(uj(p["question_ids_json"], [])),
+        "n_participants": n_part, "n_submitted": n_sub,
+        "opens_at": p["opens_at"], "closes_at": p["closes_at"], "created_at": p["created_at"],
+        "review_notes": p["review_notes"], "launch_fee_pence": p["launch_fee_pence"],
+        "order": ({"order_id": o["order_id"], "status": o["status"], "amount_pence": o["amount_pence"]}
+                  if o else None),
+    }
+
+
+def org_pulses(org_id, conn=None):
+    """Every pulse this org authored, newest first (owner dashboard)."""
+    conn = conn or get_conn()
+    rows = conn.execute("SELECT * FROM pulses WHERE owner_org_id=? ORDER BY created_at DESC", (org_id,)).fetchall()
+    return [_pulse_summary(r, conn) for r in rows]
+
+
+def review_queue(conn=None):
+    """Staff console: all self-service pulses, those awaiting review first."""
+    conn = conn or get_conn()
+    rows = conn.execute(
+        "SELECT * FROM pulses WHERE owner_org_id IS NOT NULL "
+        "ORDER BY (launch_status='in_review') DESC, created_at DESC").fetchall()
+    out = []
+    for p in rows:
+        s = _pulse_summary(p, conn)
+        owner = conn.execute("SELECT name FROM orgs WHERE org_id=?", (p["owner_org_id"],)).fetchone()
+        s["owner_name"] = owner["name"] if owner else p["owner_org_id"]
+        # the actual questions, so staff can review wording for quality / no-PII
+        s["questions"] = [{"id": qid, "text": q.text, "type": q.type}
+                          for qid, q in pulse_questions(p).items()]
+        out.append(s)
+    return out
 
 
 def is_accepting(p):

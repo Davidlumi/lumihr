@@ -327,6 +327,55 @@ def main():
           mv1["source"] == "user" and mv1["layout"] == test_layout, mv1)
     admin2.req("/api/myview", "PUT", {"layout": mv0["layout"] if mv0["source"] == "user" else []})
 
+    print("\n== 16. Reward strategy capture ==")
+    smk = str(int(time.time())) + "s"
+    # a fresh admin org — never write strategy onto the demo org
+    sa = Client()
+    st, _ = sa.req("/api/auth/register", "POST", {"org_name": "Verify Probe Ltd " + smk,
+                   "email": "sprobe%s@verify.example" % smk, "password": "probe-pass-123",
+                   "accept_platform_terms": True})
+    check("strategy: probe admin org registered", st == 200, st)
+    REQ = {"market_position": "lead", "reward_mix": "balanced", "primary_objective": "retain"}
+    # tenancy — viewer + contributor blocked, admin allowed; org from session
+    vc = login("ceo@thornbridge.example", "lumi-view-2026")
+    st, _ = vc.req("/api/strategy", "PUT", {"strategy": REQ})
+    check("strategy: viewer PUT blocked (403)", st == 403, st)
+    cc = login("analyst@thornbridge.example", "lumi-data-2026")
+    st, _ = cc.req("/api/strategy", "PUT", {"strategy": REQ})
+    check("strategy: contributor PUT blocked (403)", st == 403, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, transparency="open")})
+    check("strategy: admin PUT succeeds (200)", st == 200, st)
+    # required gate + provenance integrity
+    st, full = sa.req("/api/strategy")
+    check("strategy: completed_at set once 3 required present", bool(full["completed_at"]))
+    check("strategy: chosen dials persist provenance 'set'",
+          full["provenance"].get("market_position") == "set" and full["provenance"].get("transparency") == "set")
+    check("strategy: untouched optionals persist 'skipped' — no phantom 'suggested'/'set'",
+          full["provenance"].get("location_approach") == "skipped" and full["provenance"].get("benefits_lead") == "skipped"
+          and "suggested" not in set(full["provenance"].values()))
+    check("strategy: family_position + benefits_lead start blank (no demographic suggestion, §2.1)",
+          not full["strategy"]["family_position"] and not full["strategy"]["benefits_lead"])
+    # enum validation — out-of-enum rejected, never coerced
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, market_position="nonsense")})
+    check("strategy: out-of-enum value rejected (400, not coerced)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, benefits_lead=["bogus"])})
+    check("strategy: out-of-enum benefits area rejected (400)", st == 400, st)
+    # server-side gate + forged org_id ignored + isolation (probe B)
+    sb = Client()
+    sb.req("/api/auth/register", "POST", {"org_name": "Verify Probe Ltd " + smk + "b",
+           "email": "sprobeb%s@verify.example" % smk, "password": "probe-pass-123",
+           "accept_platform_terms": True})
+    st, _ = sb.req("/api/strategy", "PUT", {"strategy": {"market_position": "match", "reward_mix": "cash"},
+                                            "org_id": "forged-not-mine"})   # missing primary_objective + forged org
+    st, partial = sb.req("/api/strategy")
+    check("strategy: gate is server-side — missing a required leaves completed_at null",
+          partial["completed_at"] is None, partial.get("completed_at"))
+    check("strategy: org_id taken from session — forged body org_id ignored (B wrote its own row)",
+          partial["strategy"]["market_position"] == "match")
+    st, sa_after = sa.req("/api/strategy")
+    check("strategy: isolation — probe B's write never touched probe A's strategy",
+          sa_after["strategy"]["market_position"] == "lead")
+
     _cleanup()
     print("\n== Summary: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
     for n, d in FAIL:
@@ -353,7 +402,7 @@ def _cleanup():
         "SELECT org_id FROM orgs WHERE name LIKE 'Verify Probe Ltd%'")]
     for oid in probes:
         for tbl in ("answers", "answers_history", "drafts", "org_assumptions",
-                    "peer_twin_cache", "pinned_views", "shares", "board_packs"):
+                    "peer_twin_cache", "pinned_views", "shares", "board_packs", "org_strategy"):
             conn.execute("DELETE FROM %s WHERE org_id=?" % tbl, (oid,))
         conn.execute("DELETE FROM sessions WHERE user_id IN (SELECT user_id FROM users WHERE org_id=?)", (oid,))
         conn.execute("DELETE FROM users WHERE org_id=?", (oid,))
@@ -370,6 +419,7 @@ def _cleanup():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=BASE)
+    ap.add_argument("--force", action="store_true", help="run the deprecated full-scope suite anyway")
     args = ap.parse_args()
     BASE = args.base
     import urllib.parse  # noqa: F401  (used above)

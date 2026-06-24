@@ -18,17 +18,21 @@ SEED_DATE = "2026-06-12"
 # id_hints map to the live REW26_* ids at apply time (Claude Code resolves the real ids).
 BASELINES = {
  # ---------------- WELLBEING ----------------
- "WELL_EAP": {"type":"yes_no","dist":{"Yes":0.76,"No":0.24},
+ "WELL_EAP": {"type":"yes_no","dist":{"Yes":0.41,"No":0.59},   # recalibrated 0.76->0.41 per CIPD H&W 2025 (S28) MH-measure read; tab6 evidenced
    "tilt":{"size_large":{"Yes":+0.12,"No":-0.12},"hr_mature":{"Yes":+0.10,"No":-0.10}}},
- "WELL_MHPROVISIONS": {"type":"multi_select",   # calibrate per-option prevalence
+ "WELL_MHPROVISIONS": {"type":"multi_select",   # recalibrated to CIPD H&W 2025 (S28) marginals; tab6 evidenced
    # conditional-on-not-None offer probs, tuned so realised MARGINALS hit signed targets
-   "option_probs":{"Mental health first aiders":0.583,"Counselling":0.690,
-                   "Digital wellbeing app":0.441,"Manager training":0.495,
-                   "Dedicated MH days":0.122},
-   "none_label":"None","none_prob":0.227,   # real primary draw; tuned to marginal None=16%
+   # CIPD S28: counselling 43%, manager MH training 29% (also reinforces G3), ~88% take some action (None ~12%).
+   # First-aiders & digital app not in CIPD top-line -> held near prior (not invented).
+   # NOTE: multi_select is NOT auto-calibrated (see calibrate()), so these conditional
+   # probs are SOLVED on the seeded panel to realise the SIGNED_MULTI marginals directly.
+   "option_probs":{"Mental health first aiders":0.480,"Counselling":0.439,
+                   "Digital wellbeing app":0.421,"Manager training":0.287,
+                   "Dedicated MH days":0.093},
+   "none_label":"None","none_prob":0.200,   # solved so realised marginal None~12% (CIPD: 88% take action)
    "none_tilt":{"size_large":-0.08,"hr_mature":-0.08},
    "opt_tilt":{"size_large":+0.04,"hr_mature":+0.04}},
- "WELL_FINWELL": {"type":"yes_no","dist":{"Yes":0.30,"No":0.70},
+ "WELL_FINWELL": {"type":"yes_no","dist":{"Yes":0.64,"No":0.36},   # recalibrated 0.30->0.64 per CIPD Reward 2026 (S29); NOTE 64% INCLUDES orgs planning to introduce in 2026, so 'in place today' is lower
    "tilt":{"size_large":{"Yes":+0.10,"No":-0.10},"hr_mature":{"Yes":+0.10,"No":-0.10}}},
  "WELL_BUDGET": {"type":"numeric","unit":"GBP","na_share":0.62,"na_calibrates":True,
    "median":100.0,"lo":20.0,"hi":600.0,"sigma":0.6,   # lognormal median=100
@@ -60,14 +64,14 @@ BASELINES = {
    "tilt":{"size_large":{"All":+0.10,"None":-0.12},"hr_mature":{"All":+0.08,"None":-0.10}}},
  # ---------------- GOVERNANCE ----------------
  "GOV_PTDREADY": {"type":"single_select",
-   "dist":{"Not started":0.33,"Assessing":0.30,"Planning":0.21,"Implementing":0.13,"Compliant":0.03},
+   "dist":{"Not started":0.33,"Assessing":0.30,"Planning":0.21,"Implementing":0.14,"Compliant":0.02},   # Compliant 0.03->0.02 per S4 (mature tail genuinely tiny); +0.01 to Implementing
    "tilt":{"size_large":{"Assessing":+0.06,"Not started":-0.10},"hr_mature":{"Planning":+0.06,"Not started":-0.08}}},
 }
 
 # Signed targets (the realised data must hit these within tolerance)
 SIGNED = {
- "WELL_EAP":{"Yes":0.76,"No":0.24},
- "WELL_FINWELL":{"Yes":0.30,"No":0.70},
+ "WELL_EAP":{"Yes":0.41,"No":0.59},
+ "WELL_FINWELL":{"Yes":0.64,"No":0.36},
  "WELL_SCREENING":{"Yes":0.42,"No":0.58},
  "WELL_STRATEGY":{"No strategy":0.34,"Ad hoc":0.30,"Annual":0.28,"More than annually":0.08},
  "PEN_TYPE":{"DC":0.82,"DB":0.08,"Hybrid":0.07,"None":0.03},
@@ -76,12 +80,12 @@ SIGNED = {
  "PEN_SALSAC":{"Yes":0.58,"No":0.42},
  "PAY_SKILLSPAY":{"Yes":0.26,"No":0.74},
  "PAY_LEVELLING":{"All":0.31,"Senior only":0.14,"Some families":0.27,"None":0.28},
- "GOV_PTDREADY":{"Not started":0.33,"Assessing":0.30,"Planning":0.21,"Implementing":0.13,"Compliant":0.03},
+ "GOV_PTDREADY":{"Not started":0.33,"Assessing":0.30,"Planning":0.21,"Implementing":0.14,"Compliant":0.02},
 }
 # Multi-select target = per-option prevalence + None
 # True SIGNED MARGINAL prevalence across ALL orgs (what David signed), for verification.
-SIGNED_MULTI = {"WELL_MHPROVISIONS":{"Mental health first aiders":0.52,"Counselling":0.60,
-                "Digital wellbeing app":0.38,"Manager training":0.45,"Dedicated MH days":0.14,"None":0.16}}
+SIGNED_MULTI = {"WELL_MHPROVISIONS":{"Mental health first aiders":0.52,"Counselling":0.43,
+                "Digital wellbeing app":0.38,"Manager training":0.29,"Dedicated MH days":0.14,"None":0.12}}
 # Numeric target = median + na_share
 SIGNED_NUM = {"WELL_BUDGET":{"median":100.0,"na_share":0.62},"PEN_COSTPCT":{"median":7.0,"na_share":0.0}}
 

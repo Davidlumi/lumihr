@@ -1,8 +1,19 @@
 /* lumi root app: shell, navigation, global peer filter, search, routing. */
+
+/* Brand lockups, inlined verbatim from lumi_brand_kit (wordmark is outlined —
+   no font dependency; injected via innerHTML so the designer SVG isn't mangled
+   by React attribute casing). Full horizontal lockup in the rail; symbol-only
+   mark when the rail is collapsed. */
+const LUMI_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="178" viewBox="0 0 390 178" role="img" aria-label="lumi"><title>lumi</title><g transform="translate(-414.25 -156.25)"><path d="M 470.00 212.00 L 470.00 280.00 L 538.00 280.00" fill="none" stroke="#2048B0" stroke-width="17.0" stroke-linecap="round" stroke-linejoin="round"/><circle cx="490.00" cy="263.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="504.00" cy="254.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="520.00" cy="238.00" r="14.00" fill="#F08C6E"/></g><g transform="translate(50.162499999999994 -578.25)"><g transform="translate(120 700) scale(0.08955938697318008 -0.08955938697318008)"><path transform="translate(0 0)" d="M68 0V720H168V0Z" fill="#243642"/><path transform="translate(237 0)" d="M253 -12Q194 -12 150.5 12.0Q107 36 83.5 84.0Q60 132 60 205V504H160V216Q160 145 191.0 109.0Q222 73 280 73Q319 73 350.5 92.0Q382 111 400.0 147.0Q418 183 418 235V504H518V0H429L422 86Q399 40 355.0 14.0Q311 -12 253 -12Z" fill="#243642"/><path transform="translate(824 0)" d="M68 0V504H158L165 433Q189 472 229.0 494.0Q269 516 319 516Q357 516 388.0 505.5Q419 495 443.0 474.0Q467 453 482 422Q509 466 554.5 491.0Q600 516 651 516Q712 516 756.0 491.5Q800 467 823.0 418.5Q846 370 846 298V0H747V288Q747 358 718.5 394.0Q690 430 635 430Q598 430 569.0 411.0Q540 392 523.5 356.0Q507 320 507 268V0H407V288Q407 358 378.5 394.0Q350 430 295 430Q260 430 231.0 411.0Q202 392 185.0 356.0Q168 320 168 268V0Z" fill="#243642"/><path transform="translate(1731 0)" d="M68 0V504H168V0Z" fill="#243642"/></g><circle cx="285.64" cy="641.61" r="7.52" fill="#F08C6E"/></g></svg>`;
+const LUMI_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="lumi"><title>lumi</title><path d="M 30.00 22.00 L 30.00 90.00 L 98.00 90.00" fill="none" stroke="#2048B0" stroke-width="17.0" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50.00" cy="73.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="64.00" cy="64.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="80.00" cy="48.00" r="14.00" fill="#F08C6E"/></svg>`;
+// Reversed lockup (white wordmark + white L-axis + coral dot) — for the navy brand bar only.
+// Exact bytes of lumi_horizontal_reversed.svg (brand kit) — wordmark is outlined, not re-typeset.
+const LUMI_LOGO_REVERSED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="178" viewBox="0 0 390 178" role="img" aria-label="lumi"><title>lumi</title><g transform="translate(-414.25 -156.25)"><path d="M 470.00 212.00 L 470.00 280.00 L 538.00 280.00" fill="none" stroke="#FFFFFF" stroke-width="17.0" stroke-linecap="round" stroke-linejoin="round"/><circle cx="490.00" cy="263.00" r="6.00" fill="rgba(255,255,255,0.45)"/><circle cx="504.00" cy="254.00" r="6.00" fill="rgba(255,255,255,0.45)"/><circle cx="520.00" cy="238.00" r="14.00" fill="#F08C6E"/></g><g transform="translate(50.162499999999994 -578.25)"><g transform="translate(120 700) scale(0.08955938697318008 -0.08955938697318008)"><path transform="translate(0 0)" d="M68 0V720H168V0Z" fill="#FFFFFF"/><path transform="translate(237 0)" d="M253 -12Q194 -12 150.5 12.0Q107 36 83.5 84.0Q60 132 60 205V504H160V216Q160 145 191.0 109.0Q222 73 280 73Q319 73 350.5 92.0Q382 111 400.0 147.0Q418 183 418 235V504H518V0H429L422 86Q399 40 355.0 14.0Q311 -12 253 -12Z" fill="#FFFFFF"/><path transform="translate(824 0)" d="M68 0V504H158L165 433Q189 472 229.0 494.0Q269 516 319 516Q357 516 388.0 505.5Q419 495 443.0 474.0Q467 453 482 422Q509 466 554.5 491.0Q600 516 651 516Q712 516 756.0 491.5Q800 467 823.0 418.5Q846 370 846 298V0H747V288Q747 358 718.5 394.0Q690 430 635 430Q598 430 569.0 411.0Q540 392 523.5 356.0Q507 320 507 268V0H407V288Q407 358 378.5 394.0Q350 430 295 430Q260 430 231.0 411.0Q202 392 185.0 356.0Q168 320 168 268V0Z" fill="#FFFFFF"/><path transform="translate(1731 0)" d="M68 0V504H168V0Z" fill="#FFFFFF"/></g><circle cx="285.64" cy="641.61" r="7.52" fill="#F08C6E"/></g></svg>`;
 /* global html, useState, useEffect, useMemo, useRef, api, useRoute, nav, Chip, Spinner, AuthScreen,
-   OverviewPage, SuperpowerPage, CategoryPage, MyViewPage, YourDataPage, DomainDataView, MethodologyPage, HowLumiWorksPage, GapRegisterPage, SignalsPage, RailItem,
+   OverviewPage, SuperpowerPage, CategoryPage, DashboardsPage, YourDataPage, DomainDataView, HowLumiWorksPage, GapRegisterPage, SignalsPage, StrategyPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
-   SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf */
+   SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf,
+   AdminConsolePage, NotFoundPage */
 
 /* Deep linking: the peer cut lives in the hash query (?cut=industry::X) so a
    filtered view is shareable and back-button-safe. Section is already in the
@@ -37,6 +48,45 @@ function App() {
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [qIndex, setQIndex] = useState(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);   // mobile nav drawer (<900px)
+  const [activeHit, setActiveHit] = useState(-1);  // combobox: active option index (-1 = none)
+  const searchHitsRef = useRef([]);                // current activatable search options (for Enter)
+  const searchRef = useRef(null);
+  // Reset the combobox active option whenever the query changes.
+  useEffect(() => { setActiveHit(-1); }, [search]);
+  // Keep the keyboard-active option scrolled into view in the results listbox.
+  useEffect(() => {
+    if (activeHit < 0) return;
+    const el = document.getElementById("search-hit-" + activeHit);
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+  }, [activeHit]);
+  // Global "jump to search" — ⌘K / Ctrl-K anywhere, or "/" when not already typing
+  // (the command-palette affordance modern tools train users to reach for).
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = (e.target.tagName || "").toLowerCase();
+      const typing = tag === "input" || tag === "textarea" || e.target.isContentEditable;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); searchRef.current && searchRef.current.focus(); }
+      else if (e.key === "/" && !typing) { e.preventDefault(); searchRef.current && searchRef.current.focus(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  // Mobile nav drawer: the open state lives here; the body class is the shared
+  // contract app.css styles against. Escape closes the drawer.
+  useEffect(() => {
+    document.body.classList.toggle("nav-open", navOpen);
+    if (!navOpen) return;
+    const onEsc = (e) => { if (e.key === "Escape") setNavOpen(false); };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [navOpen]);
+  // Close the drawer on any route change (e.g. a sidebar nav-link click).
+  useEffect(() => { setNavOpen(false); }, [route]);
+  const [unsub, setUnsub] = useState(false);        // org has saved-but-unsubmitted drafts
+  const [barHidden, setBarHidden] = useState(false); // user dismissed the reminder bar this view
+  const [leaveTo, setLeaveTo] = useState(null);      // pending destination held by the leave-guard
   const prefsTimer = useRef(null);
 
   const refreshMe = () => api("/api/me").then(setMe).catch(() => setMe(null));
@@ -50,10 +100,40 @@ function App() {
     if (!me) return;
     api("/api/cuts").then(setCuts);
     api("/api/prefs").then(d => setPrefs(d.prefs || {}));
-    api("/api/myview").then(d => setLayoutIds(new Set((d.layout || []).map(s => s.question_id))));
+    api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id))));
     api("/api/questions").then(setQIndex);
   }, [me && me.org && me.org.name]);
   useEffect(() => { cutToURL(cut); }, [cutKeyOf(cut)]);
+  // Unsubmitted-changes reminder: seed the flag from the server on load (so a
+  // returning member with leftover drafts is reminded), then follow live edits.
+  useEffect(() => {
+    if (me && me.contribution) { window._unsubmitted = (me.contribution.pending_changes || 0) > 0; setUnsub(window._unsubmitted); setBarHidden(false); }
+  }, [me]);
+  useEffect(() => {
+    const f = () => { setUnsub(!!window._unsubmitted); setBarHidden(false); };
+    window.addEventListener("lumi:unsubmitted", f);
+    return () => window.removeEventListener("lumi:unsubmitted", f);
+  }, []);
+  // the card "Add to dashboard" picker can change the active dashboard from any
+  // surface — keep the global pinned set (star-fill) in step with the server.
+  useEffect(() => {
+    const f = () => api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id)))).catch(() => {});
+    window.addEventListener("lumi:pins-changed", f);
+    return () => window.removeEventListener("lumi:pins-changed", f);
+  }, []);
+  // Leave-guard: clicking out of the Your-data flow with unsubmitted changes
+  // opens a confirm dialog instead of navigating straight away. Re-registered
+  // on each route change so it knows where the user currently is.
+  useEffect(() => {
+    window._leaveGuard = (path) => {
+      if (!window._unsubmitted) return false;
+      const onData = route.startsWith("/your-data");
+      const staying = path.startsWith("/your-data") || path.startsWith("/profile");
+      if (onData && !staying) { setLeaveTo(path); return true; }
+      return false;
+    };
+    return () => { window._leaveGuard = null; };
+  }, [route]);
   useEffect(() => {
     const y = consumeReturnScroll(window.location.hash);
     if (y != null) {
@@ -89,13 +169,10 @@ function App() {
     clearTimeout(prefsTimer.current);
     prefsTimer.current = setTimeout(() => api("/api/prefs", { method: "PUT", body: { prefs: next } }).catch(() => {}), 800);
   };
+  // the global pin-star toggles a card on the user's ACTIVE dashboard
   const onPin = async (qid) => {
-    const view = await api("/api/myview");
-    let layout = view.layout || [];
-    if (layout.some(s => s.question_id === qid)) layout = layout.filter(s => s.question_id !== qid);
-    else layout = [...layout, { question_id: qid, size: 1 }];
-    await api("/api/myview", { method: "PUT", body: { layout } });
-    setLayoutIds(new Set(layout.map(s => s.question_id)));
+    const r = await api("/api/dashboards/pin", { method: "POST", body: { question_id: qid } });
+    setLayoutIds(new Set(r.pinned_ids || []));
   };
   const setGlobalCut = (key) => {
     if (key === "all") setCut({ dim: "all", value: null });
@@ -105,7 +182,9 @@ function App() {
   };
   const refreshCuts = () => api("/api/cuts").then(setCuts);
 
-  const pageProps = { me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds: layoutIds };
+  const pageProps = { me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds: layoutIds,
+    setPinned: (ids) => setLayoutIds(new Set(ids)),
+    onCut: setGlobalCut, onTwinInfo: () => setTwinOpen(true) };
   const contrib = me.contribution || null;
 
   let page = null, m;
@@ -127,13 +206,29 @@ function App() {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
     page = html`<${BoardPackView} packId=${m[1]} me=${me} />`;
-  } else if (route.startsWith("/myview")) page = html`<${MyViewPage} ...${pageProps} />`;
+  } else if (route.startsWith("/myview")) { nav("/dashboards"); page = null; }   // legacy → renamed surface
+  else if (route.startsWith("/dashboards")) page = html`<${DashboardsPage} ...${pageProps} />`;
   else if (route.startsWith("/your-data/submit")) {
-    const section = route.split("/")[3];
-    page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${section && decodeURIComponent(section)} />`;
+    // Legacy submit tree → the unified Your-data routes. The bare on-ramp keeps
+    // running the firmographics/terms gates (then bounces to /your-data); the
+    // deeper URLs redirect to their unified equivalents so old links still work.
+    const seg = route.split("/")[3];
+    const sub = seg ? seg.split("?")[0] : "";
+    if (!sub) page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} />`;
+    else if (sub === "review") { nav("/your-data/review"); page = null; }
+    else { nav("/your-data/" + sub); page = null; }
+  }
+  else if (route.startsWith("/your-data/review")) {
+    page = html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section="review" />`;
   }
   else if ((m = route.match(/^\/your-data\/(.+)$/))) {
-    page = html`<${DomainDataView} me=${me} section=${decodeURIComponent(m[1].split("?")[0])} />`;
+    // One domain page. Editors get the unified review+edit surface (gate-wrapped
+    // DomainPage); viewers get the read-only DomainDataView.
+    const seg = decodeURIComponent(m[1].split("?")[0]);
+    const canEdit = me.user.role === "admin" || me.user.role === "contributor";
+    page = canEdit
+      ? html`<${SubmissionPage} me=${me} refreshMe=${refreshMe} section=${seg} />`
+      : html`<${DomainDataView} me=${me} section=${seg} />`;
   }
   else if (route.startsWith("/your-data")) page = html`<${YourDataPage} me=${me} />`;
   else if (route.startsWith("/how-lumi-works")) {
@@ -150,22 +245,78 @@ function App() {
     ? html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`
     : html`<${EmptyState} icon="lock" title="Settings is an Admin area" body="Your organisation's Admin manages assumptions and sharing." />`;
   else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
+  else if ((m = route.match(/^\/run-a-pulse\/([^?]+)/))) page = me.user.role === "admin"
+    ? html`<${PulseBuilderPage} me=${me} pid=${m[1]} />`
+    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
+  else if (route.startsWith("/run-a-pulse")) page = me.user.role === "admin"
+    ? html`<${RunPulsePage} me=${me} />`
+    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
   else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
   else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} />`;
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
+  else if (route.startsWith("/strategy")) page = html`<${StrategyPage} me=${me} />`;
+  else if (route.startsWith("/admin")) page = me.user.platform_admin
+    ? html`<${AdminConsolePage} me=${me} route=${route} />`
+    : html`<${NotFoundPage} route=${route} />`;   // invisible to non-staff
   else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
 
   const benchRoute = route.startsWith("/overview") || route.startsWith("/superpower") || route.startsWith("/benchmark") ||
-    route.startsWith("/myview") || route.startsWith("/metric") || route.startsWith("/priorities") || route.startsWith("/category/") || route === "" || route === "/";
+    route.startsWith("/myview") || route.startsWith("/dashboards") || route.startsWith("/metric") || route.startsWith("/priorities") || route.startsWith("/category/") || route === "" || route === "/";
+  // the Overview renders the peer-cut inline in its title row (saves a row of
+  // vertical space); every other bench surface keeps the standalone strip.
+  const isOverview = route.startsWith("/overview") || route === "" || route === "/";
+
+  // Combobox: the search popup is open at >1 char with an index; keep the
+  // activatable-option list in a ref so the input's Enter handler can act on it.
+  const searchPopOpen = !!(search.length > 1 && qIndex);
+  searchHitsRef.current = searchPopOpen ? searchOptions(qIndex, search) : [];
 
   return html`
     <div class="shell">
+      <a class="skip-link" href="#main-content">Skip to content</a>
       <${IdleGuard} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setMe(null); }} />
+      <header class="topbar brandbar no-print">
+        <button class="nav-hamburger" aria-label="Open menu" aria-expanded=${navOpen}
+          onClick=${() => setNavOpen(o => !o)}><${Icon} name="menu" size=${20} /></button>
+        <a class="brandbar-logo" href="#/overview" aria-label="lumi benchmark home"
+          dangerouslySetInnerHTML=${{ __html: LUMI_LOGO_REVERSED_SVG }}></a>
+        <div class="topbar-search">
+          <span class="topbar-search-icon"><${Icon} name="search" size=${15} /></span>
+          <input ref=${searchRef} class="ctl" placeholder="Search reward metrics — try ‘pension’ or ‘sick pay’"
+            aria-label="Search reward metrics" value=${search}
+            role="combobox" aria-controls="searchpop-list" aria-autocomplete="list"
+            aria-expanded=${searchPopOpen} aria-activedescendant=${activeHit >= 0 ? "search-hit-" + activeHit : ""}
+            onInput=${e => setSearch(e.target.value)}
+            onKeyDown=${e => {
+              if (e.key === "Escape") { setSearch(""); setActiveHit(-1); e.target.blur(); return; }
+              if (!searchPopOpen) return;
+              const opts = searchHitsRef.current;
+              if (e.key === "ArrowDown") { e.preventDefault(); if (opts.length) setActiveHit(i => (i + 1) % opts.length); }
+              else if (e.key === "ArrowUp") { e.preventDefault(); if (opts.length) setActiveHit(i => (i <= 0 ? opts.length - 1 : i - 1)); }
+              else if (e.key === "Enter") {
+                const q = opts[activeHit];
+                if (q) { e.preventDefault(); setSearch(""); setActiveHit(-1); openMetric(q.id); }
+              }
+            }} />
+          ${searchPopOpen && html`<${SearchPop} qIndex=${qIndex} search=${search}
+            activeHit=${activeHit} onActiveHit=${setActiveHit}
+            onGo=${(q) => { setSearch(""); setActiveHit(-1); openMetric(q.id); }}
+            onRequest=${() => { const term = search; setSearch(""); setActiveHit(-1); setMetricReq({ prefill: term, source: "search" }); }} />`}
+        </div>
+        <div class="topbar-right">
+          <button class="btn feature suggest-pill" aria-label="Suggest a new metric" onClick=${() => setSuggestOpen(true)}>Suggest a metric</button>
+          <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+          <span class="topbar-sep" aria-hidden="true"></span>
+          <${NotificationBell} me=${me} />
+          <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }} />
+        </div>
+      </header>
+      <div class="shell-body">
+      <div class="nav-scrim no-print" onClick=${() => setNavOpen(false)} aria-hidden="true"></div>
       <nav class=${"sidebar no-print" + (railCollapsed ? " collapsed" : "")} aria-label="Main navigation">
         <div class="sidebar-head">
-          <a class="logo" href="#/overview" aria-label="lumi benchmark home">lumi<span>.benchmark</span></a>
           <button class="rail-toggle" aria-expanded=${!railCollapsed}
             aria-label=${railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title=${railCollapsed ? "Expand sidebar" : "Collapse sidebar"} onClick=${toggleRail}>
@@ -174,13 +325,14 @@ function App() {
         </div>
         <div class="nav-group">
           <${RailItem} route=${route} path="/overview" icon="home" label="Overview" />
-          <${RailItem} route=${route} path="/myview" icon="star" label="My view" />
+          <${RailItem} route=${route} path="/dashboards" icon="table" label="My dashboards" />
           <${RailItem} route=${route} path="/signals" icon="flag" label="Signals" />
           ${/* "Priorities" (the gap register) was folded into Signals — its
                prevalence flags ARE the gap list. The page stays reachable at
                /priorities as the full exhaustive register + CSV export, linked
                from Signals, but it is no longer a rail surface. */ ""}
           <${RailItem} route=${route} path="/pulse" icon="zap" label="Pulse" />
+          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/run-a-pulse" icon="list-checks" label="Run a pulse" />`}
         </div>
         <div class="nav-group">
           <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} collapsed=${railCollapsed} />
@@ -188,65 +340,63 @@ function App() {
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
           <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
+          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />`}
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />`}
         </div>
+        ${me.user.platform_admin && html`
+        <div class="nav-group">
+          <div class="nav-label">lumi staff</div>
+          <${RailItem} route=${route} path="/admin" icon="shield" label="Console" />
+        </div>`}
       </nav>
       <div class="main">
-        <div class="topbar no-print">
-          <div class="peerset">
-            <span class="peerset-tag">Peer set</span>
-            <select aria-label="Choose your peer group" class=${"ctl peer-ctl" + (cut.dim !== "all" ? " narrowed" : "")}
-              value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
-              onChange=${e => { if (e.target.value === "twin-info") { setTwinOpen(true); } else setGlobalCut(e.target.value); }}>
-              <option value="all">All peers · ${(me.peer_pool || {}).responding_orgs || "—"}</option>
-              ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} · ${cuts.industries[cuts.org_industry] || "?"}</option>`}
-              ${me.org.classified && cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
-                html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
-              ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
-                html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
-              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
-              ${cuts && (cuts.groups || []).length > 0 && html`
-                <optgroup label="Your groups">
-                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
-                    ${g.name}${g.too_small ? " (too few orgs)" : ` · ${g.match_count}`}</option>`)}
-                </optgroup>`}
-              ${me.org.classified && html`<option value="manage-groups">＋ Create / manage peer groups…</option>`}
-            </select>
-            ${cut.dim === "twin" && html`<button class="btn small" onClick=${() => setTwinOpen(true)}>Why these peers?</button>`}
-            ${(!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts))) && html`
-              <span class="peerset-note">${!me.org.classified
-                ? (me.user.role === "admin"
-                    ? html`<a href="#/profile">Add your company profile</a> to compare by sector & size`
-                    : "Your Admin can add the company profile to unlock sector & size")
-                : html`${cutHint(cut, cuts, me)} ${" "}<a href="#/how-lumi-works/suppression">Why?</a>`}</span>`}
-          </div>
-          <div class="topbar-search">
-            <span class="topbar-search-icon"><${Icon} name="search" size=${14} /></span>
-            <input class="ctl" placeholder="Search any reward metric, e.g. 'pension' or 'sick pay'"
-              aria-label="Search reward metrics" value=${search} onInput=${e => setSearch(e.target.value)}
-              onKeyDown=${e => { if (e.key === "Escape") setSearch(""); }} />
-            ${search.length > 1 && qIndex && html`<${SearchPop} qIndex=${qIndex} search=${search}
-              onGo=${(q) => { setSearch(""); openMetric(q.id); }}
-              onRequest=${() => { const term = search; setSearch(""); setMetricReq({ prefill: term, source: "search" }); }} />`}
-          </div>
-          <div class="topbar-right">
-            ${contrib && !contrib.insights_unlocked && html`<${ClockChip} contrib=${contrib} org=${me.org} />`}
-            <button class="btn feature" title="Ask anything about your benchmark, in plain English" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
-            <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }} />
-          </div>
-        </div>
-        <main class="content">
+        <main class="content" id="main-content" tabindex="-1">
+          ${benchRoute && !isOverview && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
+            onSelect=${setGlobalCut} onTwinInfo=${() => setTwinOpen(true)} />`}
           ${contrib && benchRoute && html`<${ContributionBanner} contrib=${contrib} />`}
           ${page}
         </main>
       </div>
+      </div>${/* /.shell-body */""}
+      ${unsub && !barHidden && !leaveTo && !route.startsWith("/your-data/review") && html`
+        <div class="unsub-bar no-print" role="status">
+          <span class="unsub-bar-msg"><span class="unsub-dot"><${Icon} name="award" size=${13} /></span>
+            Your answers are <b>saved</b> — but not submitted to the benchmark yet.</span>
+          <button class="btn small primary" onClick=${() => nav("/your-data/review")}>Review & submit</button>
+          <button class="unsub-x" aria-label="Hide reminder" onClick=${() => setBarHidden(true)}><${Icon} name="close" size=${14} /></button>
+        </div>`}
+      ${leaveTo && html`<${LeaveSubmitModal}
+        onReview=${() => { setLeaveTo(null); window._navRaw("/your-data/review"); }}
+        onLeave=${() => { const d = leaveTo; setLeaveTo(null); window._navRaw(d); }}
+        onClose=${() => setLeaveTo(null)} />`}
       ${analystOpen && html`<${AnalystPane} onClose=${() => setAnalystOpen(false)} />`}
       ${metricReq && html`<${RequestMetricModal} prefill=${metricReq.prefill} source=${metricReq.source}
         onClose=${() => setMetricReq(null)} />`}
+      ${suggestOpen && html`<${SuggestMetricModal} onClose=${() => setSuggestOpen(false)} userEmail=${me.user && me.user.email} />`}
       ${twinOpen && html`<${PeerTwinPanel} onClose=${() => setTwinOpen(false)} onUse=${() => setGlobalCut("twin")} />`}
       ${groupsOpen && html`<${PeerGroupsModal} onClose=${() => { setGroupsOpen(false); refreshCuts(); }}
         onUse=${(gid) => { setCut({ dim: "group", value: gid }); setGroupsOpen(false); refreshCuts(); }} />`}
+    </div>`;
+}
+
+/* Leave-guard dialog: shown when a member navigates out of the Your-data flow
+   with autosaved-but-unsubmitted changes. The honest framing is "saved, not
+   submitted" — nothing is lost by leaving; the benchmark just won't update
+   until they submit. */
+function LeaveSubmitModal({ onReview, onLeave, onClose }) {
+  return html`
+    <div class="modal-back" role="alertdialog" aria-label="Unsubmitted changes" onClick=${onClose}>
+      <div class="modal" style=${{ maxWidth: "460px" }} onClick=${e => e.stopPropagation()}>
+        <h2 class="section-title" style=${{ marginTop: 0 }}>You haven't submitted yet</h2>
+        <p>Your answers are <b>saved</b> — they'll be here when you come back. But they're${" "}
+        <b>not submitted to the benchmark yet</b>, so your position, signals and £ opportunity
+        won't update until you do.</p>
+        <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "flex-end" }}>
+          <button class="btn" onClick=${onLeave}>Leave for now</button>
+          <button class="btn primary" onClick=${onReview}>Review & submit</button>
+        </div>
+      </div>
     </div>`;
 }
 
@@ -346,7 +496,7 @@ window.ProfilePage = function ({ me, refreshMe }) {
     api("/api/org-profile").then(d => { setData(d); setVals(d.values); }).catch(e => setErr(e.message));
   }, []);
   if (err) return html`<${EmptyState} title="Couldn't load your profile" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const canEdit = data.can_edit;
   const firstRun = !me.org.classified;
   const CORE = [["industry", "Industry / sector"], ["fte_band", "Organisation size (full-time employees)"],
@@ -378,7 +528,7 @@ window.ProfilePage = function ({ me, refreshMe }) {
   return html`
     <div style=${{ maxWidth: "620px" }}>
       ${!firstRun && html`<button class="btn quiet" onClick=${() => window.history.back()}>← Back</button>`}
-      <h1 class="display-title" style=${{ marginTop: "6px" }}>${firstRun ? "Tell us about your organisation" : "Company profile"}</h1>
+      <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${firstRun ? "Tell us about your organisation" : "Company profile"}</h1>
       <p>${firstRun
         ? "So we can compare you to the right peers — sector, size and a few company facts. About two minutes."
         : "The company facts behind your peer groups. Firmographics change — update them here any time."}</p>
@@ -389,11 +539,11 @@ window.ProfilePage = function ({ me, refreshMe }) {
         ${CORE.map(f => Field(f, true))}
         <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Sharper peer groups <span class="caption" style=${{ fontWeight: 400 }}>(recommended — powers "Organisations like you")</span></h2>
         ${RICH.map(f => Field(f, false))}
-        ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         ${canEdit ? html`
           <button class="btn primary" disabled=${saving || !coreDone} onClick=${save}>
             ${saving ? html`<${Spinner} />` : firstRun ? "Save and see your benchmark" : "Save profile"}</button>
-          ${!coreDone && html`<div class="caption" style=${{ marginTop: "6px" }}>The four essentials are needed before peer groups work.</div>`}` :
+          ${!coreDone && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>The four essentials are needed before peer groups work.</div>`}` :
         html`<div class="caption">Only your organisation's Admin can edit the company profile.</div>`}
       </div>
     </div>`;
@@ -468,7 +618,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
               <div class="row spread">
                 <div style=${{ minWidth: 0 }}>
                   <b>${g.name}</b>
-                  <span class=${"chip " + (g.too_small ? "warn" : "")} style=${{ marginLeft: "8px" }}>
+                  <span class=${"chip " + (g.too_small ? "warn" : "")} style=${{ marginLeft: "var(--s2)" }}>
                     ${g.too_small ? `only ${g.match_count} match — needs ${g.min_orgs}` : `${g.match_count} organisations`}</span>
                   <div class="caption" style=${{ marginTop: "2px" }}>
                     ${Object.entries(g.criteria).map(([f, vs]) => {
@@ -496,7 +646,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
           <div class="group-fields">
             ${options.fields.map(f => html`
               <div key=${f.key} class="group-field">
-                <div class="caption" style=${{ fontWeight: 700, marginBottom: "4px" }}>${f.label}
+                <div class="caption" style=${{ fontWeight: 700, marginBottom: "var(--s1)" }}>${f.label}
                   ${!(criteria[f.key] || []).length && html`<span style=${{ fontWeight: 400 }}> · any</span>`}</div>
                 <div class="chip-row">
                   ${f.choices.map(v => html`
@@ -513,7 +663,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
                 ? `Only ${count.match_count} organisation${count.match_count === 1 ? "" : "s"} currently match — at least ${count.min_orgs} are needed before any benchmark shows. You can still save it; it stays suppressed until enough organisations match.`
                 : `${count.match_count} organisations currently match — comfortably above the minimum of ${count.min_orgs}.`}
           </div>
-          ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+          ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
           <div class="row">
             <button class="btn primary" disabled=${busy || !name.trim() || Object.keys(criteria).length === 0} onClick=${save}>
               ${busy ? html`<${Spinner} />` : "Save group"}</button>
@@ -589,30 +739,8 @@ window.sectionList = function (qIndex) {
   return Array.from(m.values()).sort((a, b) => a.order - b.order);
 };
 
-/* Day-one model: explore everything; insights are the carrot. The chip is the
-   persistent, quiet progress indicator — always visible, never nagging. */
-window.ClockChip = function ({ contrib, org }) {
-  const pct = Math.round(contrib.core_pct || 0);
-  const needsProfile = org && !org.classified;
-  const label = contrib.reduced
-    ? "Benchmark paused — complete to restore"
-    : !contrib.clock_started
-    ? (needsProfile ? "Next step: complete your company profile" : "Next step: accept the data terms")
-    : `Reward data ${pct}% · ${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} to unlock insights`;
-  return html`
-    <button class=${"clock-chip" + (contrib.reduced ? " paused" : "")} title=${!contrib.clock_started
-      ? (needsProfile
-        ? "Tell us who you are — sector, size and a few company facts — so the benchmark compares you to the right peers. The data terms come after."
-        : "Your Admin accepts the Data Contribution Terms once, on the Submit data page — your 30 days to contribute start then.")
-      : "Complete your key reward questions to unlock your insights — the £ opportunity, board pack and biggest gaps. 'Not applicable' counts as an answer."} onClick=${() => nav(needsProfile && !contrib.clock_started ? "/profile" : "/your-data/submit")}>
-      <span class="clock-ring"><svg viewBox="0 0 20 20" width="14" height="14">
-        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue-tint-2)" stroke-width="3"/>
-        <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"
-          stroke-dasharray=${Math.max(2, Math.min(100, pct / 90 * 100)) * 0.503 + " 100"} transform="rotate(-90 10 10)"/>
-      </svg></span>
-      ${label}
-    </button>`;
-};
+/* The contribution countdown now lives only in the unsubmitted-state banner
+   (see WelcomeHero) — the duplicate nav chip was removed 2026-06-15. */
 
 /* Gentle reminders as the deadline nears (7 days / 1 day), and the fair,
    forewarned day-30 message. Quiet banners, never modals. */
@@ -633,8 +761,7 @@ window.ContributionBanner = function ({ contrib }) {
     <div class="card contrib-banner">
       <div>
         <b>${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} left to unlock your insights.</b>
-        <div class="caption">You're at ${pct}% of your key reward questions — complete them and the £ opportunity,
-          board pack and biggest gaps open up with your real position.</div>
+        <div class="caption">You're at ${pct}% of your key reward questions — complete them and your insights go live with your real position.</div>
       </div>
       <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Continue your submission</button>
     </div>`;
@@ -645,6 +772,10 @@ window.ContributionBanner = function ({ contrib }) {
 window.WelcomeHero = function ({ contrib, pool, me }) {
   const pct = Math.round(contrib.core_pct || 0);
   const role = me && me.user ? me.user.role : "viewer";
+  // Source the onboarding numbers from live scope + the dynamic unlock threshold
+  // so they never drift on a release (questions added/removed, threshold tuned).
+  const scopeN = (me && me.scope && me.scope.question_count) || (window.SCOPE && window.SCOPE.question_count) || null;
+  const targetPct = Math.round(contrib.target_pct || 90);
   if (!contrib.terms_accepted) {
     /* First-run "you're set up — next steps": welcoming, not a wizard.
        The profile gate ("who you are") comes before the contribution gate
@@ -658,21 +789,20 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
       { n: 3, label: "Complete your reward data", done: false,
-        hint: "180 questions by section, autosaved — insights unlock once your key questions are answered." },
+        hint: (scopeN ? scopeN + " questions" : "Your reward questions") + " by section, autosaved — insights unlock once your key questions are answered." },
       { n: 4, label: "Invite your team", done: false,
         hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
     ];
     return html`
       <div class="card welcome-hero">
         <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
-          <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
+          <div class="row" style=${{ gap: "var(--s2)", marginBottom: "var(--s1)" }}>
             <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
             <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>You're set up — here's what's next</b>
           </div>
-          <p style=${{ margin: "2px 0 0" }}>Explore your reward benchmark below — every metric and all
-            ${" "}${pool.responding_orgs} peer organisations are open to you from day one. Your 30 days to
-            contribute only start when your Admin accepts the Data Contribution Terms — setup time is never
-            counted against you.</p>
+          <p style=${{ margin: "2px 0 0" }}>Explore every metric and all ${pool.responding_orgs} peer
+            organisations from day one. Your 30 days only start once your Admin accepts the data terms —
+            setup never counts against you.</p>
         </div>
         <div style=${{ flex: "1.2 1 280px", minWidth: "260px" }}>
           ${steps.map(st => html`
@@ -690,26 +820,20 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
       </div>`;
   }
   return html`
-    <div class="card welcome-hero">
-      <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
-        <div class="row" style=${{ gap: "var(--s2)", marginBottom: "4px" }}>
-          <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
-          <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>
-            ${pct < 1 ? "Welcome to lumi" : "You're on your way"}</b>
-        </div>
-        <p style=${{ margin: "2px 0 0" }}>${pct < 1
-          ? html`Explore your reward benchmark below — every metric and all ${pool.responding_orgs} peer organisations are open to you from day one. Complete your reward data within 30 days to unlock your insights: the £ opportunity, your board pack, and your biggest gaps to the market.`
-          : html`Keep going — at 90% your insights unlock immediately: the £ opportunity, your board pack, and your biggest gaps to the market. You see the pool because you're part of it.`}</p>
+    <div class="submit-banner">
+      <div class="submit-banner-counter">
+        <div class="submit-banner-days num">${contrib.days_left}</div>
+        <div class="submit-banner-dayword">${contrib.days_left === 1 ? "day left" : "days left"}</div>
       </div>
-      <div style=${{ flex: "1 1 240px", minWidth: "220px" }}>
-        <div class="row spread" style=${{ marginBottom: "4px" }}>
-          <span class="caption"><b class="num">${pct}%</b> of your key reward questions</span>
-          <span class="caption num">${contrib.days_left} days left</span>
+      <div class="submit-banner-msg">
+        <div class="submit-banner-head">Submit your reward data to unlock insights</div>
+        <p class="submit-banner-body">At ${targetPct}% complete, your benchmark unlocks — the £ opportunity, your board pack and your biggest gaps. After day 0, founding-member access closes.</p>
+        <div class="submit-banner-progress">
+          <div class="progressbar"><div style=${{ width: Math.min(100, pct / targetPct * 100) + "%" }}></div></div>
+          <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}% complete · autosaves</span>
         </div>
-        <div class="progressbar" style=${{ height: "10px" }}><div style=${{ width: Math.min(100, pct / 90 * 100) + "%" }}></div></div>
-        <div class="caption" style=${{ margin: "4px 0 10px" }}>Insights unlock at 90% — everything autosaves.</div>
-        <button class="btn primary" onClick=${() => nav("/your-data/submit")}>${pct < 1 ? "Submit your data" : "Continue your submission"}</button>
       </div>
+      <button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data/submit")}>Continue submission</button>
     </div>`;
 };
 
@@ -771,10 +895,114 @@ function ProfileMenu({ me, onSignOut }) {
           </div>
           <div class="profile-sep"></div>
           <button class="profile-item" role="menuitem" onClick=${() => go("/profile")}>Your profile</button>
+          ${me.user.role === "admin" ? html`<button class="profile-item" role="menuitem" onClick=${() => go("/strategy")}>Reward strategy</button>` : null}
           <button class="profile-item" role="menuitem" onClick=${() => go("/how-lumi-works")}>How lumi works</button>
           <div class="profile-sep"></div>
           <button class="profile-item" role="menuitem" onClick=${() => { setOpen(false); onSignOut(); }}>Sign out</button>
         </div>`}
+    </div>`;
+}
+
+/* The notification bell (chrome): every member's in-app inbox of signal-change
+   alerts. Unread count + a dropdown grouped by lens; each row opens its metric
+   and marks itself read. Polls quietly — the nightly sweep feeds it. */
+const NOTIF_LENS = {
+  attract: { label: "Attract", icon: "magnet" }, retain: { label: "Retain", icon: "anchor" },
+  engage: { label: "Engage", icon: "heart" }, save: { label: "Save", icon: "coins" },
+};
+const NOTIF_LENS_ORDER = ["attract", "retain", "engage", "save"];
+
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState(null);
+  const ref = useRef(null);
+  const load = () => api("/api/notifications").then(setData).catch(() => {});
+  useEffect(() => { load(); const t = setInterval(load, 120000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onEsc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc); document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+  if (!data || !data.inbox_enabled) return null;        // inbox switched off → no bell
+  const unread = data.unread || 0;
+  const events = data.events || [];
+  const markAll = async () => { await api("/api/notifications/read", { method: "POST", body: { all: true } }).catch(() => {}); load(); };
+  const openEvent = (ev) => {
+    setOpen(false);
+    api("/api/notifications/read", { method: "POST", body: { event_ids: [ev.id] } }).catch(() => {});
+    openMetric(ev.question_id);
+  };
+  const groups = NOTIF_LENS_ORDER.map(l => ({ lens: l, items: events.filter(e => e.lens === l) })).filter(g => g.items.length);
+  return html`
+    <div class="notif-bell" ref=${ref}>
+      <button class=${"notif-btn" + (open ? " active" : "")} aria-haspopup="true" aria-expanded=${open}
+        aria-label=${"Notifications" + (unread ? " — " + unread + " unread" : "")} onClick=${() => setOpen(!open)}>
+        <${Icon} name="bell" size=${17} />
+        ${unread > 0 && html`<span class="notif-badge">${unread > 99 ? "99+" : unread}</span>`}
+      </button>
+      ${open && html`
+        <div class="card notif-pop" role="menu">
+          <div class="notif-head">
+            <b>Notifications</b>
+            ${unread > 0 ? html`<button class="notif-mark" onClick=${markAll}>Mark all read</button>` : null}
+          </div>
+          ${events.length === 0 ? html`
+            <div class="notif-empty"><span class="notif-empty-ring"><${Icon} name="bell" size=${18} /></span>
+              <div class="caption">No changes yet. When your position against the market moves — a flag appears, clears, or shifts — it lands here.</div></div>` :
+          html`<div class="notif-list">
+            ${groups.map(g => html`
+              <div key=${g.lens} class="notif-group">
+                <div class=${"notif-group-head lens-" + g.lens}><${Icon} name=${NOTIF_LENS[g.lens].icon} size=${12} /> ${NOTIF_LENS[g.lens].label}</div>
+                ${g.items.map(ev => html`
+                  <button key=${ev.id} class=${"notif-row lens-" + g.lens + (ev.read ? "" : " unread")} role="menuitem" onClick=${() => openEvent(ev)}>
+                    <span class="notif-row-title">${ev.title}</span>
+                    <span class="notif-row-body">${ev.body}</span>
+                  </button>`)}
+              </div>`)}
+          </div>`}
+          <div class="notif-foot"><a onClick=${() => { setOpen(false); nav("/settings"); }}>Notification settings →</a></div>
+        </div>`}
+    </div>`;
+}
+
+/* The peer-set lens. It used to anchor the top bar, but it only changes the
+   benchmark surfaces — so it now lives in a slim context strip at the top of
+   those pages ("comparing against …"), and is absent everywhere else. Still
+   global state (App owns `cut`); this is just where it's surfaced. */
+function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline }) {
+  const note = (!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts)));
+  return html`
+    <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
+      <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
+      <span class=${"peerbar-pill" + (cut.dim !== "all" ? " narrowed" : "")}>
+        <select aria-label="Choose your peer group" class="peer-ctl"
+          value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
+          onChange=${e => { if (e.target.value === "twin-info") { onTwinInfo(); } else onSelect(e.target.value); }}>
+          <option value="all">All peers · ${(me.peer_pool || {}).responding_orgs || "—"}</option>
+          ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} · ${cuts.industries[cuts.org_industry] || "?"}</option>`}
+          ${me.org.classified && cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
+            html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
+          ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
+            html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
+          ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+          ${cuts && (cuts.groups || []).length > 0 && html`
+            <optgroup label="Your groups">
+              ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
+                ${g.name}${g.too_small ? " (too few orgs)" : ` · ${g.match_count}`}</option>`)}
+            </optgroup>`}
+          ${me.org.classified && html`<option value="manage-groups">＋ Create / manage peer groups…</option>`}
+        </select>
+        <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
+      </span>
+      ${cut.dim === "twin" && html`<button class="btn small" onClick=${onTwinInfo}>Why these peers?</button>`}
+      ${note && html`
+        <span class="peerset-note">${!me.org.classified
+          ? (me.user.role === "admin"
+              ? html`<a href="#/profile">Add your company profile</a> to compare by sector & size`
+              : "Your Admin can add the company profile to unlock sector & size")
+          : html`${cutHint(cut, cuts, me)} ${" "}<a href="#/how-lumi-works/suppression">Why?</a>`}</span>`}
     </div>`;
 }
 
@@ -830,25 +1058,38 @@ function fuzzyMatches(questions, query) {
   return scored.slice(0, 3).map(x => x.q);
 }
 
-function SearchPop({ qIndex, search, onGo, onRequest }) {
+// The ordered list of activatable search options (direct hits, else fuzzy
+// suggestions). Shared by SearchPop (render) and the combobox keyboard handler
+// in App, so arrow-key navigation and the rendered rows can never drift.
+function searchOptions(qIndex, search) {
+  const s = search.toLowerCase();
+  const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
+  if (hits.length) return hits;
+  return fuzzyMatches(qIndex.questions, search);
+}
+
+function SearchPop({ qIndex, search, onGo, onRequest, activeHit, onActiveHit }) {
   const s = search.toLowerCase();
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
   const suggestions = hits.length === 0 ? fuzzyMatches(qIndex.questions, search) : [];
   const request = () => (onRequest ? onRequest() : window.openMetricRequest(search, "search"));
+  const setActive = (i) => onActiveHit && onActiveHit(i);
   return html`
-    <div class="searchpop">
-      ${hits.map(q => html`
-        <div key=${q.id} class="search-hit" onClick=${() => onGo(q)}>
-          <b style=${{ fontSize: "13px" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
+    <div class="searchpop" id="searchpop-list" role="listbox" aria-label="Search results">
+      ${hits.map((q, i) => html`
+        <div key=${q.id} id=${"search-hit-" + i} class="search-hit" role="option"
+          aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
+          <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
           <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
         </div>`)}
       ${hits.length === 0 && html`
         <div class="search-empty">
           ${suggestions.length > 0 ? html`
             <div class="caption" style=${{ padding: "0 0 var(--s1) 2px" }}>Did you mean…</div>
-            ${suggestions.map(q => html`
-              <div key=${q.id} class="search-hit search-suggest" onClick=${() => onGo(q)}>
-                <b style=${{ fontSize: "13px" }}>${q.title}</b>
+            ${suggestions.map((q, i) => html`
+              <div key=${q.id} id=${"search-hit-" + i} class="search-hit search-suggest" role="option"
+                aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
+                <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b>
                 <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
               </div>`)}
             <div class="search-divider"></div>` : ""}
@@ -861,6 +1102,37 @@ function SearchPop({ qIndex, search, onGo, onRequest }) {
 }
 
 // single-metric page (deep links from analyst chips / opportunity tile)
+// Analyst/detailed view (spec §6.3): the engine's internal class/register made
+// legible on the single-metric page — never on the default chip rows.
+function mpReadChip(cl) {
+  if (cl.register === "Approach") return { cls: "differs", text: "differs from market" };
+  if (cl.register === "Substance") {
+    if (!cl.competitive_domain) return { cls: "context", text: "beside the headline" };
+    if (cl.direction === "neutral") return { cls: "context", text: "context" };
+    if (cl.direction === "lower_is_better") return { cls: "fav", text: "favourable when low" };
+    return { cls: "headline", text: "in the headline" };
+  }
+  return { cls: "context", text: "tracked" };
+}
+function mpReadCopy(cl) {
+  if (cl.register === "Approach") {
+    const what = cl.cls === "Practice" ? "a practice — how, or how often, you do something"
+      : "a structural choice — which approach you take";
+    return "lumi reads this as a " + cl.cls + " (" + what + "). It has no better-or-worse, so it shows as "
+      + "“differs from market” and never feeds your competitiveness headline."
+      + (cl.weight && cl.weight !== 1 ? " Weighted ×" + cl.weight + " for materiality." : "");
+  }
+  if (cl.register === "Substance") {
+    const base = cl.cls === "Provision" ? "a Provision (a market benefit, compared to peer take-up)" : "a Level (a market rate)";
+    const dir = cl.direction === "lower_is_better" ? "Lower is better here, so sitting below market reads as favourable, not a gap."
+      : cl.direction === "neutral" ? "There’s no inherently good direction, so it’s shown as context, not a verdict — and kept out of the headline."
+      : "Higher is better, so it feeds your competitiveness headline.";
+    const head = cl.competitive_domain ? "lumi reads this as " + base + ". "
+      : "lumi reads this as " + base + ", but governance sits beside the headline — it isn’t a competitiveness measure. ";
+    return head + dir + (cl.weight && cl.weight !== 1 ? " Weighted ×" + cl.weight + " for materiality." : "");
+  }
+  return "lumi tracks this metric but hasn’t classified it for the competitiveness headline.";
+}
 function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const org = me.org;
   // the page's own cut — initialised from the global selector / deep link,
@@ -892,8 +1164,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!card) return html`
     <div>
-      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "10px" }}></div>
-      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "18px" }}></div>
+      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "var(--s3)" }}></div>
+      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "var(--s4)" }}></div>
       <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
     </div>`;
 
@@ -901,8 +1173,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
     || (card.cut.value || null) !== (sel.value || null));
   if (!card || cardStale) return html`
     <div>
-      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "10px" }}></div>
-      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "18px" }}></div>
+      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "var(--s3)" }}></div>
+      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "var(--s4)" }}></div>
       <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
     </div>`;
 
@@ -944,21 +1216,23 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   return html`
     <div class="metric-page">
       <button class="btn quiet" onClick=${goBack}>← Back</button>
-      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "8px", gap: "var(--s4)" }}>
+      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s2)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
-          <h1 class="display-title" style=${{ marginBottom: "4px" }}>${c.title}</h1>
-          <p class="caption" style=${{ margin: "0 0 10px", maxWidth: "640px" }}>${c.question_text}</p>
+          <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>${c.title}</h1>
+          <p class="caption" style=${{ margin: "0 0 var(--s3)", maxWidth: "640px" }}>${c.question_text}</p>
           <div class="row" style=${{ gap: "var(--s2)" }}>
             <${Chip} kind="accent">${org.name}<//>
             ${org.industry && html`<${Chip}>${org.industry}<//>`}
             ${org.fte_band && html`<${Chip}>${org.fte_band} FTE<//>`}
             ${org.hq_region && html`<${Chip}>${org.hq_region}<//>`}
             ${period && html`<${Chip}>${period}<//>`}
-            <span class="chip warn hastip" style=${{ position: "relative", cursor: "help" }}>Illustrative sample data
-              <span class="tip">The current peer pool is realistic but synthetic seed data, generated to behave like a UK benchmark while real member submissions build up. It must not be read as real benchmark data.</span></span>
           </div>
         </div>
-        ${pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+        ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
+          ? html`<span class="pos-pill lg mid" title=${c.classification.register === "Approach"
+              ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
+              : "This measure has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
+          : pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
 
       <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
@@ -1023,12 +1297,20 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           answers; medians, not averages. Figures resting on fewer than 5 organisations are
           ${" "}<a href="#/how-lumi-works/suppression">suppressed</a>.
           ${" "}<a href="#/how-lumi-works/calculations">How this is calculated</a>.</p>
+          ${c.classification && c.classification.cls && html`
+            <div class="mp-class-note">
+              <div class="mp-class-head">
+                <span class="mp-class-label">How lumi reads this</span>
+                <span class=${"mp-class-chip " + mpReadChip(c.classification).cls}>${mpReadChip(c.classification).text}</span>
+              </div>
+              <p class="caption">${mpReadCopy(c.classification)}</p>
+            </div>`}
         </div>
         <div class="card" style=${{ padding: "var(--s5)" }}>
           <h2 class="section-title">What this means for you</h2>
           <${WhatThisMeans} card=${c} pos=${pos} defaultOpen=${true} />
           <div class="row" style=${{ marginTop: "var(--s3)", flexWrap: "wrap" }}>
-            ${!c.suppressed && c.you && html`<button class="btn" onClick=${doExport}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>`}
+            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn" onClick=${doExport}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>`}
             <button class="btn" onClick=${share}><${Icon} name="link" size=${13} /> Copy link to this metric</button>
             <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
           </div>
@@ -1068,19 +1350,19 @@ function MetricCommentary({ qid, sel, card }) {
       ${!data && !busy && html`
         <p class="caption">A short, structured interpretation of this metric for your organisation —
         generated from the figures on this page only, as a starting point to sanity-check, not advice.</p>
-        ${err && html`<div class="error-text" style=${{ marginBottom: "8px" }}>${err}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         <button class="btn primary" onClick=${() => generate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
       ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
       ${data && !busy && html`
         <div style=${{ marginTop: "var(--s3)" }}>
           ${PARTS.map(([k, label]) => data.parts[k] && html`
             <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
-              <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "10.5px" }}>${label}</div>
+              <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)" }}>${label}</div>
               <p style=${{ margin: "2px 0 0" }}>${data.parts[k]}</p>
             </div>`)}
           <div class="caption" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
             A starting point for your own judgement — not advice. Consider your own context and seek
-            professional input where relevant.${data.caveats && data.caveats.illustrative ? " Based on illustrative sample data while real member submissions build up." : ""}
+            professional input where relevant.
           </div>
           <div class="row" style=${{ marginTop: "var(--s2)" }}>
             <button class="btn small quiet" onClick=${() => generate(true)}>Regenerate</button>

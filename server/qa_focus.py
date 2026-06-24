@@ -27,22 +27,29 @@ def leak(blob):
     return [h for h in HIDDEN if '"%s"' % h in t]
 
 st, me = api("/api/me")
-check("scope = Reward only, count 206 (2026.2; demo org sees the hospitality module)", me["scope"]["superpowers"] == ["Reward"] and me["scope"]["question_count"] == 206, me["scope"])
+check("scope = Reward only, count tracks the live library (>=240 post-2026.3)", me["scope"]["superpowers"] == ["Reward"] and me["scope"]["question_count"] >= 240, me["scope"])
 st, qi = api("/api/questions")
-check("/api/questions serves exactly 206, all Reward", len(qi["questions"]) == 206 and not leak(qi))
+check("/api/questions count agrees with scope, all Reward, no leak", len(qi["questions"]) == me["scope"]["question_count"] and not leak(qi))
 st, _ = api("/api/benchmarks/Processes")
 check("hidden area page -> 404", st == 404, st)
 st, _ = api("/api/benchmark/PROP_9e3b1d18")   # early attrition = Attract
 check("hidden metric -> 404", st == 404, st)
 st, rw = api("/api/benchmarks/Reward")
-check("/api/benchmarks/Reward serves 206 cards", len(rw["cards"]) == 206)
+check("/api/benchmarks/Reward serves a card per visible Reward question",
+      len(rw["cards"]) == me["scope"]["question_count"],
+      (len(rw["cards"]), me["scope"]["question_count"]))
 st, ov = api("/api/overview")
 check("overview clean of hidden areas", not leak(ov), leak(ov))
-check("overview headline reward-scoped (comparable < 220)", ov["headline"]["comparable_metrics"] <= 206,
-      ov["headline"]["comparable_metrics"])
+check("overview headline reward-scoped (comparable_metrics <= the Reward question universe)",
+      ov["headline"]["comparable_metrics"] <= me["scope"]["question_count"],
+      (ov["headline"]["comparable_metrics"], me["scope"]["question_count"]))
 check("by_superpower keys == {Reward}", list(ov["headline"]["by_superpower"].keys()) == ["Reward"])
-check("by_section has the 7 categories (2026.1)", sorted(ov["headline"]["by_section"].keys()) ==
-      ["Benefits", "Governance", "Incentives", "Pay", "Recognition", "Time Off", "Wellbeing"],
+# Governance is carved out of the competitiveness headline (competitiveness=false,
+# no headline role — see positions.py / the market-position re-axis), so by_section
+# carries the 6 competitive categories, not all 7.
+check("by_section has the 6 competitive categories (Governance carved out)",
+      sorted(ov["headline"]["by_section"].keys()) ==
+      ["Benefits", "Incentives", "Pay", "Recognition", "Time Off", "Wellbeing"],
       sorted(ov["headline"]["by_section"].keys()))
 check("£ opportunity only reward metrics (pension; no agency/attrition)",
       all(i["label"] == "Employer pension contribution" for i in ov["opportunity"]["items"]),

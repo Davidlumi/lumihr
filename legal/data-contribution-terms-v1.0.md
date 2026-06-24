@@ -1,6 +1,6 @@
 # lumi Data Contribution Terms
 
-**Version 1.0-draft · DRAFT — pending legal review**
+**Version 1.0**
 
 These terms are accepted once, by an Admin, on behalf of the contributing
 organisation. They govern how your organisation's data is used in the lumi

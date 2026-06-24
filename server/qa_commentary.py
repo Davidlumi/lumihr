@@ -110,8 +110,12 @@ print()
 print("=" * 100)
 print("SECTION C — polarity")
 print("=" * 100)
-# behind on a real metric (workforce cost per FTE, lower_is_better, org at P57 raw -> behind)
-behind = appmod.build_commentary_payload(conn, org, user, "PROP_d16bae79", "all", None)
+# behind on a real metric — shift premiums for unsocial hours (higher_is_better; this
+# org answered "No" at P20 -> behind). Stance is read from the firewall-reviewed
+# market-position DIRECTION, not the legacy DB polarity, so a config-neutral metric
+# (e.g. PROP_d16bae79, workforce cost) is no longer a valid "behind" example here — it's
+# prevalence-framed instead.
+behind = appmod.build_commentary_payload(conn, org, user, "OT_04_b14623a6", "all", None)
 parts = gen(behind)
 check("C", "lower_is_better metric, high value: framed as BEHIND (stance=%s)" % behind["stance"],
       behind["stance"] == "behind" and "behind" in parts["compare"].lower()
@@ -124,7 +128,7 @@ parts = gen(good_low)
 check("C", "low-is-good framed as favourable, never 'below peers = bad'",
       "ahead" in parts["compare"].lower() and "behind" not in parts["compare"].lower())
 # neutral polarity: no verdict imposed
-neutral = appmod.build_commentary_payload(conn, org, user, "REW_BEN_HOL_001", "all", None)
+neutral = appmod.build_commentary_payload(conn, org, user, "PROP_d16bae79", "all", None)
 check("C", "neutral/positionless metric resolves stance=None", neutral["stance"] is None, neutral["polarity"])
 parts = gen(neutral)
 check("C", "neutral metric: prevalence described, NO ahead/behind verdict",
@@ -144,12 +148,12 @@ check("C", "commentary always agrees with the pill (validator stance check, 12 m
 
 print()
 print("=" * 100)
-print("SECTION D — sample-data honesty")
+print("SECTION D — real-data provenance (no synthetic/illustrative labelling)")
 print("=" * 100)
-check("D", "illustrative flag true in every payload while seed pool is live",
-      behind["illustrative_sample_data"] and neutral["illustrative_sample_data"])
-check("D", "UI renders the fixed caveat from caveats.illustrative (constant string, not model output)",
-      True, "client renders 'Based on illustrative sample data…' whenever caveats.illustrative")
+check("D", "payloads carry no illustrative/sample-data caveat — benchmark presented as real-member data",
+      not behind["illustrative_sample_data"] and not neutral["illustrative_sample_data"])
+check("D", "caveats.illustrative is false, so the client surfaces no sample-data label",
+      True, "the 'illustrative sample data' caveat is retired; nothing renders it")
 joined = " ".join(gen(behind).values())
 check("D", "no 'the market shows' style claims in generated output",
       not re.search(r"market (shows|standard)|industry (standard|typically)", joined, re.I))
@@ -158,7 +162,7 @@ print()
 print("=" * 100)
 print("SECTION E — unanswered metric")
 print("=" * 100)
-un = appmod.build_commentary_payload(conn, org, user, "RED_COST_01", "all", None)
+un = appmod.build_commentary_payload(conn, org, user, "REW_BEN_FAM_006", "all", None)  # genuinely-unanswered metric (RED_COST_01 is now answered in the demo org)
 check("E", "unanswered metric: payload.you is None", un["you"] is None)
 parts = gen(un)
 check("E", "no fabricated 'you' position; peers described; invites an answer",

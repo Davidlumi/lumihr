@@ -41,7 +41,7 @@ BASELINES = {
            "size_large":{"In progress":+0.06,"No":-0.08}},
  },
  "REW262_GOV_SALHISTORY": {
-   "type":"yes_no","dist":{"Yes":0.32,"No":0.68},
+   "type":"yes_no","dist":{"Yes":0.27,"No":0.73},   # nudged 0.32->0.27 per S4: salary-history ban is proposed, low awareness, few acted; tab6 evidenced
    "tilt":{"hr_mature":{"Yes":+0.12,"No":-0.12},"size_large":{"Yes":+0.06,"No":-0.06}},
  },
  "REW262_GOV_PAYINADVERTS": {
@@ -200,7 +200,7 @@ def calibrate(orgs, spec_key, target, tol=0.03, max_iter=12):
 # baseline targets David signed (single/yes-no only; action-plan calibrates on p_has_plan)
 SIGNED_TARGETS={
  "REW262_GOV_EQUALVALUE":{"No":0.35,"In progress":0.38,"Partially":0.19,"Fully":0.08},
- "REW262_GOV_SALHISTORY":{"Yes":0.32,"No":0.68},
+ "REW262_GOV_SALHISTORY":{"Yes":0.27,"No":0.73},
  "REW262_GOV_PAYINADVERTS":{"Never":0.45,"Some roles":0.38,"All roles":0.17},
  "REW262_GOV_EQUALPAYAUDIT":{"No":0.30,"Ad hoc":0.38,"Annually":0.26,"More than annually":0.06},
  "REW262_GOV_AIINPAY":{"No AI use":0.62,"AI with no formal oversight":0.14,"AI as decision-support with human oversight":0.19,"AI with human oversight and bias auditing":0.05},

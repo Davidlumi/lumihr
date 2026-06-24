@@ -6,7 +6,7 @@
    PercentileBand, Histogram, BoxPlot, OptionBars, OrderedDist, MatrixHeat, MatrixGrouped,
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
-window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight, signal }) {
+window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight, signal, footTools }) {
   const [expanded, setExpanded] = useState(false);          // full question & definition
   const [override, setOverride] = useState(null);           // per-card peer cut — exploratory, never saved
   const [localCard, setLocalCard] = useState(null);
@@ -43,13 +43,27 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
   const effectiveKey = override || globalKey;
   const sentence = humanSentence(c);
 
+  // both exports carry the card's CURRENT cut label + n (c is the override card when set)
+  const exportMeta = () => ({
+    title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow, card: c,
+    suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
+  });
   const doExport = async () => {
-    // exports carry the card's CURRENT cut label + n (c is the override card when set)
-    const res = await exportCardPNG(ref.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow, card: c,
-      suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
-    }, "download");
+    const res = await exportCardPNG(ref.current, exportMeta(), "download");
     toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
+  };
+  const doCopy = async () => {
+    // clipboard mode, with a graceful download fallback if the browser blocks
+    // ClipboardItem or write() throws (permissions / focus)
+    try {
+      const res = await exportCardPNG(ref.current, exportMeta(), "clipboard");
+      if (res === "copied") toast(`Chart copied — labelled ${c.cut.label}, n=${c.n}`);
+      else if (res === "downloaded") toast(`Copy isn't available here — downloaded the chart instead (${c.cut.label}, n=${c.n})`);
+      else toast("Nothing to export yet");
+    } catch (e) {
+      const res = await exportCardPNG(ref.current, exportMeta(), "download");
+      toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, n=${c.n})` : "Nothing to export yet");
+    }
   };
   const share = () => {
     // the deep link carries the cut this card is showing, never silently the default
@@ -58,20 +72,13 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     toast("Link copied — opens this metric on " + c.cut.label);
   };
 
-  const DIM_SHORT = { all: "All peers", industry: "Sector", fte_band: "Size" };
+  const matrixBlank = c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed);
+  const exportable = !c.suppressed && !matrixBlank;   // only a drawn chart can export
   return html`
     <div class=${"card bench-card stacked" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref} id=${"q-" + card.id}>
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
-        ${overridden && html`
-          <button class="chip accent cut-chip" title=${"This card compares against " + c.cut.label + " — the page is on " + (globalKey === "all" ? "All peers" : "another group") + ". Click to reset."}
-            aria-label=${"Reset this card to the page's peer group"}
-            onClick=${() => setOverride(null)}>${DIM_SHORT[c.cut.dim] || c.cut.label} ✕</button>`}
         ${cardSignalPill(c, signal)}
-        <${KebabMenu} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
-          onCut=${k => setOverride(k === globalKey ? null : k)}
-          onDetail=${() => setExpanded(true)} onPin=${onPin ? () => onPin(card.id) : null} pinned=${pinned}
-          doExport=${doExport} share=${share} />
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "")}
         role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}
@@ -83,18 +90,33 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       <div class="bench-lead">${sentence.lead || ""}</div>
       ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
       <${WhatThisMeans} card=${c} pos=${meaningPos} />
-      <div class="bench-n" title="The number of organisations behind this comparison">
-        n=${c.n}${cutNote(c)}</div>
+      <div class="bench-foot">
+        <${ComparePill} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
+          onCut=${k => setOverride(k === globalKey ? null : k)} />
+        <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
+        <div class="card-tools no-print">
+          ${footTools && html`${footTools}<span class="tool-div" aria-hidden="true"></span>`}
+          <button class="iconbtn" title="Open full view" aria-label="Open full view" onClick=${() => openMetric(c.id)}><${Icon} name="maximize" size=${15} /></button>
+          <button class="iconbtn" title="Question & definition" aria-label="Question & definition" onClick=${() => setExpanded(true)}><${Icon} name="info" size=${15} /></button>
+          ${onPin && html`<${AddToDashboard} c=${c} />`}
+          ${exportable && html`<button class="iconbtn" title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
+          ${exportable && html`<button class="iconbtn" title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
+          ${exportable && html`<button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>`}
+        </div>
+      </div>
       ${expanded && html`<${CardDetail} card=${c} onClose=${() => setExpanded(false)} />`}
     </div>`;
 };
 
-/* The one consistent per-card control: a quiet kebab, keyboard-accessible,
-   holding peer-group, full view, question/definition, pin, export, share.
-   Context-aware: suppressed or unanswered cards never offer export/share. */
-function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, pinned, doExport, share }) {
+/* Per-card controls (replaced the single ⋮ menu, 2026-06-17): a compare-against
+   pill + small icon buttons, each opening a focused popover that can't overflow
+   like the old combined menu did. usePopover holds the open/flip/outside-close
+   logic shared by ComparePill and AddToDashboard. */
+function usePopover(measureKey) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ up: false, maxH: null });
   const wrapRef = useRef(null);
+  const popRef = useRef(null);
   useEffect(() => {
     if (!open) return;
     const onKey = e => { if (e.key === "Escape") setOpen(false); };
@@ -103,37 +125,108 @@ function KebabMenu({ c, cuts, effectiveKey, globalKey, onCut, onDetail, onPin, p
     document.addEventListener("mousedown", onDown);
     return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("mousedown", onDown); };
   }, [open]);
+  React.useLayoutEffect(() => {
+    if (!open || !wrapRef.current) return;
+    const r = wrapRef.current.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom - 12;
+    const above = r.top - 12;
+    const want = popRef.current ? popRef.current.scrollHeight : 280;
+    const up = below < want && above > below;     // flip up when the menu doesn't fit below
+    setPos({ up, maxH: Math.max(160, Math.round(up ? above : below)) });
+  }, [open, measureKey]);
+  return { open, setOpen, pos, wrapRef, popRef };
+}
+
+// Compare-against pill — the per-card peer-group selector (was the menu's top section).
+function ComparePill({ c, cuts, effectiveKey, globalKey, onCut }) {
+  const { open, setOpen, pos, wrapRef, popRef } = usePopover(0);
   const choices = [{ key: "all", label: "All peers" }];
   if (cuts && cuts.org_industry) choices.push({ key: "industry::" + cuts.org_industry, label: "Your sector: " + cuts.org_industry });
   if (cuts && cuts.org_fte_band) choices.push({ key: "fte_band::" + cuts.org_fte_band, label: "Your size: " + cuts.org_fte_band + " FTE" });
   (cuts && cuts.groups || []).forEach(g => choices.push({ key: "group::" + g.group_id, label: "Group: " + g.name }));
   const unprofiled = cuts && !cuts.org_industry && !cuts.org_fte_band;
-  const exportable = !c.suppressed && !!c.you;
-  const pick = (fn) => () => { setOpen(false); fn(); };
+  const overridden = effectiveKey !== globalKey;
+  const pick = (k) => { setOpen(false); onCut(k); };
   return html`
-    <div class="kebab-wrap no-print" ref=${wrapRef}>
-      <button class="iconbtn kebab" aria-label="Card options" aria-haspopup="menu" aria-expanded=${open}
-        onClick=${() => setOpen(!open)}>⋮</button>
+    <div class="pop-wrap no-print" ref=${wrapRef}>
+      <button class=${"cmp-pill" + (overridden ? " on" : "")} aria-haspopup="menu" aria-expanded=${open}
+        title=${"Comparing against " + c.cut.label + (overridden ? " — differs from the page" : "")}
+        onClick=${() => setOpen(!open)}>
+        <${Icon} name="users" size=${13} />
+        <span class="cmp-pill-label">${c.cut.label}</span>
+        <${Icon} name="chevron-down" size=${12} />
+      </button>
       ${open && html`
-        <div class="kebab-menu" role="menu" aria-label="Card options">
+        <div ref=${popRef} class=${"kebab-menu cmp-menu" + (pos.up ? " up" : "")}
+          style=${pos.maxH ? { maxHeight: pos.maxH + "px" } : null} role="menu" aria-label="Compare against">
           <div class="kebab-label">Compare against</div>
           ${choices.map(ch => html`
             <button key=${ch.key} role="menuitemradio" aria-checked=${effectiveKey === ch.key}
-              class=${"kebab-item" + (effectiveKey === ch.key ? " on" : "")}
-              onClick=${pick(() => onCut(ch.key))}>
+              class=${"kebab-item" + (effectiveKey === ch.key ? " on" : "")} onClick=${() => pick(ch.key)}>
               <span class="kebab-check">${effectiveKey === ch.key ? "✓" : ""}</span>${ch.label}
               ${ch.key === globalKey ? html`<span class="caption" style=${{ marginLeft: "auto" }}>page</span>` : null}
             </button>`)}
-          ${unprofiled && html`<button role="menuitem" class="kebab-item" onClick=${pick(() => nav("/profile"))}>
+          ${unprofiled && html`<button role="menuitem" class="kebab-item" onClick=${() => { setOpen(false); nav("/profile"); }}>
             Unlock sector & size — complete your profile</button>`}
+        </div>`}
+    </div>`;
+}
+
+// Add-to-dashboard — pin icon + a picker popover (toggle existing dashboards / create new).
+function AddToDashboard({ c }) {
+  const [dl, setDl] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const newRef = useRef(null);
+  const { open, setOpen, pos, wrapRef, popRef } = usePopover(dl ? dl.length : -1);
+  useEffect(() => {
+    if (!open) { setCreating(false); return; }
+    setDl(null);
+    api("/api/dashboards?card=" + encodeURIComponent(c.id)).then(d => setDl(d.dashboards || [])).catch(() => setDl([]));
+  }, [open]);
+  useEffect(() => { if (creating && newRef.current) newRef.current.focus(); }, [creating]);
+  const toggleDash = (d) => {
+    const adding = !d.has_card;
+    setDl(list => list.map(x => x.id === d.id ? { ...x, has_card: adding, count: x.count + (adding ? 1 : -1) } : x));
+    api(`/api/dashboards/${d.id}/toggle-card`, { method: "POST", body: { question_id: c.id } })
+      .then(() => { window.dispatchEvent(new Event("lumi:pins-changed")); toast(adding ? "Added to " + d.name : "Removed from " + d.name); })
+      .catch(() => { setDl(list => list.map(x => x.id === d.id ? { ...x, has_card: !adding, count: x.count + (adding ? -1 : 1) } : x)); toast("Couldn't update that dashboard.", "error"); });
+  };
+  const createDash = async () => {
+    const nm = (newName || "").trim().slice(0, 60);
+    try {
+      const r = await api("/api/dashboards", { method: "POST", body: { name: nm || "New dashboard", with_card: c.id } });
+      setDl(list => [...(list || []), { id: r.id, name: r.name, count: (r.layout || []).length, has_card: true }]);
+      setCreating(false); setNewName("");
+      window.dispatchEvent(new Event("lumi:pins-changed"));
+      toast("Added to new dashboard “" + r.name + "”");
+    } catch (e) { toast("Couldn't create that dashboard.", "error"); }
+  };
+  return html`
+    <div class="pop-wrap no-print" ref=${wrapRef}>
+      <button class=${"iconbtn" + (open ? " on" : "")} aria-haspopup="menu" aria-expanded=${open}
+        title="Add to dashboard" aria-label="Add to dashboard" onClick=${() => setOpen(!open)}><${Icon} name="pin" size=${15} /></button>
+      ${open && html`
+        <div ref=${popRef} class=${"kebab-menu" + (pos.up ? " up" : "")}
+          style=${pos.maxH ? { maxHeight: pos.maxH + "px" } : null} role="menu" aria-label="Add to dashboard">
+          <div class="kebab-label">Add to dashboard</div>
+          ${dl === null ? html`<div class="kebab-item muted">Loading your dashboards…</div>` :
+            dl.map(d => html`
+              <button key=${d.id} role="menuitemcheckbox" aria-checked=${d.has_card}
+                class=${"kebab-item kebab-pickrow" + (d.has_card ? " on" : "")} onClick=${() => toggleDash(d)}>
+                <span class=${"kebab-box" + (d.has_card ? " on" : "")}>${d.has_card ? "✓" : ""}</span>
+                <span class="kebab-pickname">${d.name}</span>
+                <span class="caption" style=${{ marginLeft: "auto" }}>${d.count}</span>
+              </button>`)}
           <div class="kebab-sep"></div>
-          <button role="menuitem" class="kebab-item" onClick=${pick(() => openMetric(c.id))}>Open full view</button>
-          <button role="menuitem" class="kebab-item" onClick=${pick(onDetail)}>Full question & definition</button>
-          ${onPin && html`<button role="menuitem" class="kebab-item" onClick=${pick(onPin)}>${pinned ? "Unpin from My view" : "Pin to My view"}</button>`}
-          ${exportable && html`
-            <div class="kebab-sep"></div>
-            <button role="menuitem" class="kebab-item" onClick=${pick(doExport)}>Download chart (PNG)</button>
-            <button role="menuitem" class="kebab-item" onClick=${pick(share)}>Copy link (${c.cut.label})</button>`}
+          ${creating ? html`
+            <div class="kebab-newrow">
+              <input ref=${newRef} class="ctl kebab-newinput" placeholder="New dashboard name" value=${newName} maxlength="60"
+                onInput=${e => setNewName(e.target.value)}
+                onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); createDash(); } else if (e.key === "Escape") { setCreating(false); } }} />
+              <button class="btn small primary" onClick=${createDash}>Add</button>
+            </div>` : html`
+            <button role="menuitem" class="kebab-item kebab-new" onClick=${() => setCreating(true)}><span class="kebab-plus" aria-hidden="true">＋</span> New dashboard…</button>`}
         </div>`}
     </div>`;
 }
@@ -191,9 +284,9 @@ function meaningLines(c, pos) {
   const p50 = c.block && c.block.p50 != null ? fmtValue(c.block.p50, c.unit) : null;
   if (pos.kind === "bad") {
     if (c.category === "practice" || c.category === "policy") {
-      return "Most similar organisations are further ahead here. A typical next step is to review whether a more formal approach would fit your size and sector — the market's position suggests it's become standard practice.";
+      return "Most similar organisations are further ahead here — a more formal approach has become standard practice at your size and sector.";
     }
-    return "You're behind most similar organisations on this measure." + (p50 ? ` What good looks like: the market median is ${p50} — a realistic first milestone.` : "");
+    return "You're behind most similar organisations on this measure." + (p50 ? ` The market median sits at ${p50}.` : "");
   }
   if (pos.kind === "good") {
     return "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
@@ -230,6 +323,11 @@ function cardPosition(c) {
     const ps = c.matrix_rows.filter(r => r.you && r.you.percentile != null && !r.suppressed).map(r => r.you.percentile);
     if (ps.length) p = ps.reduce((a, b) => a + b, 0) / ps.length;
   }
+  // the firewall-reviewed market-position direction (carried on the single-metric
+  // page as c.classification) wins over the legacy DB polarity, so the pill agrees
+  // with the "How lumi reads this" note and the AI commentary. Tiles/dashboards don't
+  // carry classification, so they're unaffected.
+  if (c.classification && c.classification.direction) pol = c.classification.direction;
   if (p == null || pol === "neutral" || !pol) return null;
   const adj = pol === "lower_is_better" ? 100 - p : p;
   // Use the SAME market band the tiles + signals use — sourced from the engine
@@ -313,7 +411,7 @@ function cardSignalPill(c, sigs) {
       <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${sig.tag || SIG_KIND[sig.kind] || sig.kind}</span>`;
   }
   if (state === "add") {
-    const href = c.subpower ? "#/your-data/submit/" + encodeURIComponent(c.subpower) : "#/your-data";
+    const href = c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data";
     return html`<a class="sig-pill is-add" href=${href} onClick=${e => e.stopPropagation()}
       title=${"Add your data for this metric to see if it flags vs the market"}>
       <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
@@ -345,7 +443,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
             <div class="metric-value">${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
             ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
-        html`<div class="noanswer-box" style=${{ marginBottom: "4px" }}>Answer this to see where you stand among the peers below. <a href="#/your-data/submit">Add your data</a></div>`}
+        html`<div class="noanswer-box" style=${{ marginBottom: "var(--s1)" }}>Answer this to see where you stand among the peers below. <a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"}>Add your data</a></div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} median=${c.block ? c.block.p50 : null} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
@@ -356,7 +454,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     if (!c.block) return html`<div class="suppressed-box">No distribution available.</div>`;
     return html`
       <div>
-        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "6px" }}><a href="#/your-data/submit" style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
+        ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "var(--s2)" }}><a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"} style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
         ${chart === "ordered" && c.type !== "multi_select"
           ? html`<${OrderedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
               width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`

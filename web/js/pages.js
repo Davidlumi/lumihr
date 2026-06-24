@@ -1,57 +1,93 @@
-/* Dashboard pages: Executive overview, Superpower detail, My view, My data, Methodology. */
+/* Dashboard pages: Executive overview, Superpower detail, My dashboards, My data, Methodology. */
 /* global html, useState, useEffect, useMemo, api, fmtValue, pLabel, Chip, NBadge, Term, Spinner,
    BenchmarkCard, QuartileDots, fmtGBPCompact, EmptyState, nav */
 
 const SUPERPOWERS = ["Reward", "Processes", "Wellbeing", "Growth", "Capability",
   "Inclusivity", "Attract", "Leadership", "Purpose", "Change"];
 window.SUPERPOWERS = SUPERPOWERS;
-window.SECTION_ORDER = { "Pay": 1, "Benefits": 2, "Incentives": 3, "Transparency": 4, "Progression": 5 };
-window.secOrder = sec => (window.SECTION_ORDER_LIVE && window.SECTION_ORDER_LIVE[sec]) || window.SECTION_ORDER[sec] || 99;
 /* SpIcon: the one consistent superpower glyph (line-icon family from icons.js) */
 window.SpIcon = ({ sp, size = 15 }) => html`<${Icon} name=${SP_ICON[sp] || "target"} size=${size} />`;
 
 // ------------------------------------------------------------ overview -----
-window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
+// Dashboard nudge — Admins who haven't set their reward strategy. Quietly
+// dismissible per-session; reappears next visit until the stance is captured
+// (the strategy_complete flag, not a permanent dismiss).
+function StrategyNudge() {
+  const KEY = "lumi-strat-nudge";
+  const [hidden, setHidden] = useState(() => { try { return sessionStorage.getItem(KEY) === "1"; } catch (e) { return false; } });
+  if (hidden) return null;
+  return html`
+    <div class="strat-nudge">
+      <span class="strat-nudge-icon"><${Icon} name="compass" size=${20} /></span>
+      <div class="strat-nudge-body">
+        <b>Set your reward strategy</b>
+        <span>Tell us your stance — where you aim to sit, what your package leads on — so we can read “below market” from “below market, on purpose.” Two minutes.</span>
+      </div>
+      <button class="btn primary strat-nudge-cta" onClick=${() => nav("/strategy")}>Set it up</button>
+      <button class="strat-nudge-x" aria-label="Dismiss for now"
+        onClick=${() => { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} setHidden(true); }}><${Icon} name="close" size=${15} /></button>
+    </div>`;
+}
+window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut, onTwinInfo }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
+  // Home dashboard lens (persisted in prefs._overview): MARKET view (gauge + below/
+  // on/above) vs PRACTICE view (how you operate — the differ/approach read), and
+  // whether the reward-strategy stance is APPLIED. Strategy-off re-fetches the
+  // overview WITHOUT the lens (absolute colours, impact-ordered signals, plain verdict).
+  const _ov = (prefs && prefs._overview) || {};
+  const [view, setViewState] = useState(_ov.view === "practice" ? "practice" : "market");
+  const [applyStrat, setApplyState] = useState(_ov.apply_strategy !== false);
+  const setView = (v) => { setViewState(v); onPref("_overview", { view: v, apply_strategy: applyStrat }); };
+  const setApplyStrat = (b) => { setApplyState(b); onPref("_overview", { view, apply_strategy: b }); };
   useEffect(() => {
     setData(null); setErr(null);
-    api("/api/overview?" + cutQS(cut)).then(setData).catch(e => setErr(e.message));
-  }, [cutKeyOf(cut)]);
+    api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")).then(setData).catch(e => setErr(e.message));
+  }, [cutKeyOf(cut), applyStrat]);
   if (err) return html`<${EmptyState} title="Couldn't load the overview"
     body=${err + " — nothing is lost; it usually works on a retry."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
     <div>
-      <div class="skel" style=${{ height: "30px", width: "320px", marginBottom: "10px" }}></div>
-      <div class="skel" style=${{ height: "20px", width: "480px", marginBottom: "16px" }}></div>
-      <div class="skel" style=${{ height: "180px", marginBottom: "16px", borderRadius: "var(--radius)" }}></div>
+      <div class="skel" style=${{ height: "30px", width: "320px", marginBottom: "var(--s3)" }}></div>
+      <div class="skel" style=${{ height: "20px", width: "480px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "180px", marginBottom: "var(--s4)", borderRadius: "var(--radius)" }}></div>
       <${SkeletonGrid} count=${3} />
     </div>`;
   const h = data.headline;
   const pctAbove = h.comparable_metrics ? Math.round(100 * h.above_median / h.comparable_metrics) : 0;
+  // Single source of truth for peer-sample confidence. The caveat is the ONLY
+  // surface that flags a thin cut; gauge / cards / panels / signals read this and
+  // render nothing extra. Gated on insights unlocked so it never stacks on the
+  // data-pending gauge (below the 90% gate). Window [5, 20): below 5 a cut is
+  // fully suppressed (no verdict to caveat, = SUPPRESSION_FLOOR); 20 is the round
+  // upper edge (DECISIONS.md).
+  const unlocked = !!(data.contribution && data.contribution.insights_unlocked);
+  const sampleN = cutSize(cut, cuts, me.peer_pool);
+  const thinSample = unlocked && sampleN != null && sampleN >= 5 && sampleN < 20;
   return html`
     <div>
       <div class="hero">
-        <div>
-          <h1 class="display-title">${data.org.name}</h1>
-          <div class="row" style=${{ marginTop: "6px" }}>
-            ${data.synthetic_pool && html`<span class="chip warn hastip" style=${{ position: "relative", cursor: "help" }}>
-              Illustrative sample data
-              <span class="tip">The current peer pool is realistic but synthetic seed data, generated to behave like a UK benchmark while real member submissions build up. It must not be read as real benchmark data.</span>
-            </span>`}
-            ${cut.dim !== "all" && html`<${Chip} kind="accent">filter: ${cutLabelOf(cut, cuts)}<//>`}
-          </div>
-        </div>
-        <div style=${{ marginLeft: "auto" }}>
+        <h1 class="display-title">${data.org.name}</h1>
+        <div class="hero-actions">
+          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true} />
           <${ExportBoardPack} me=${me} cut=${cut} />
+          <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
+          ${thinSample && html`
+            <div class="sample-caveat-line">
+              <span class="indic-flag" tabindex="0" role="note">
+                <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
+                <span class="indic-tip">Verdicts are compared against ${sampleN} organisations — treat as directional.</span>
+              </span>
+            </div>`}
         </div>
       </div>
 
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
-      <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} />
+      <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
+        view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat} />
 
     </div>`;
 };
@@ -109,15 +145,88 @@ function ExportBoardPack({ me, cut }) {
     </div>`;
 }
 
+/* Share this view (chrome spec): a read-only public link to the current
+   dashboard view, scoped to the active peer filter. Admin-only (mirrors the
+   board-pack share gate + /api/shares require_admin). The button sits beside
+   Export board pack on the Overview header and on My dashboards. Posts
+   kind=dashboard, config {cut, cut_value, name}, 30-day expiry; on success the
+   dialog shows the public link with a copy button. */
+function ShareButton({ me, cut, name }) {
+  const [open, setOpen] = useState(false);
+  if (!me || !me.user || me.user.role !== "admin") return null;
+  return html`
+    <button class="btn small" onClick=${() => setOpen(true)}
+      title="Create a read-only public link to this view (30 days).">
+      <${Icon} name="link" size=${14} /> Share</button>
+    ${open && html`<${ShareDialog} cut=${cut} name=${name} onClose=${() => setOpen(false)} />`}`;
+}
+
+function ShareDialog({ cut, name, onClose }) {
+  const [link, setLink] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const create = async () => {
+    setBusy(true); setErr(null);
+    try {
+      const r = await api("/api/shares", { method: "POST", body: {
+        kind: "dashboard",
+        config: { cut: (cut && cut.dim) || "all", cut_value: (cut && cut.value) || null, name: name || null },
+        expiry_days: 30 } });
+      setLink(window.location.origin + "/share/" + r.token);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch (e) { setErr("Couldn't copy — select the link and copy manually."); }
+  };
+  return html`
+    <${window.Modal} onClose=${onClose} label="Share this view" width="460px">
+      <div style=${{ padding: "var(--s4)" }}>
+        <h2 style=${{ margin: "0 0 var(--s2)", fontSize: "var(--fs-subhead)" }}>Share this view</h2>
+        <p class="caption" style=${{ marginTop: 0 }}>
+          Create a read-only public link to this dashboard under its current peer filter. Anyone with the link can view it for 30 days; no sign-in needed.</p>
+        ${err && html`<div class="error-text" style=${{ margin: "var(--s2) 0" }}>${err}</div>`}
+        ${!link ? html`
+          <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
+            <button class="btn primary" disabled=${busy} onClick=${create}>${busy ? "Creating…" : "Create link"}</button>
+            <button class="btn quiet" onClick=${onClose}>Cancel</button>
+          </div>` : html`
+          <div style=${{ marginTop: "var(--s3)" }}>
+            <div class="row" style=${{ gap: "var(--s2)", alignItems: "stretch" }}>
+              <input class="ctl" readOnly value=${link} aria-label="Public link"
+                onFocus=${e => e.target.select()} style=${{ flex: 1 }} />
+              <button class="btn" onClick=${copy} title="Copy link">
+                <${Icon} name=${copied ? "check" : "copy"} size=${14} /> ${copied ? "Copied" : "Copy"}</button>
+            </div>
+            <div class="caption" style=${{ marginTop: "var(--s2)" }}>Read-only · expires in 30 days.</div>
+            <div class="row" style=${{ marginTop: "var(--s3)" }}>
+              <button class="btn quiet" onClick=${onClose}>Done</button>
+            </div>
+          </div>`}
+      </div>
+    <//>`;
+}
+
 /* ============== the 80/20 home hero (2026-06-12 redesign) ==============
    Three questions, top to bottom: where do I sit overall (the arc), what
    should I look at (signals — flags, never advice), where do I sit per
    category (seven tiles). Leads/gaps become micro-band chips. The £
    opportunity lives inside signals; the journey strip returns when a second
    data period exists. */
-function OverviewHero({ data, cut, cuts }) {
+function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setApplyStrat }) {
   const m = data.hero && data.hero.market;
   const locked = data.callouts && data.callouts.gaps_locked;
+  // Signals follow the Market/Practice lens: MARKET view shows market-position signals
+  // (below/on/above), PRACTICE view shows practice signals (differs-from-market +
+  // differs-from-peers). signals_all is impact-sorted, so slice() gives the top of each.
+  const _sigPos = view === "practice" ? ["differs", "practice"] : ["below", "on", "above"];
+  const _viewSigs = (data.signals_all || []).filter(s => _sigPos.indexOf(s.position) !== -1);
+  const _viewLive = _viewSigs.filter(s => s.status !== "dismissed");
+  const _viewShown = _viewLive.slice(0, 4);             // top 4 NON-dismissed (impact-sorted)
+  const _viewTotal = _viewLive.length;
+  const _viewNew = _viewSigs.filter(s => s.new && s.status !== "dismissed").length;
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   useEffect(() => {
@@ -134,32 +243,110 @@ function OverviewHero({ data, cut, cuts }) {
   return html`
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
+      ${data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
+      ${!locked && html`
+        <div class="ov-controls">
+          <div class="ov-seg" role="group" aria-label="Dashboard lens">
+            ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
+              <button key=${k} type="button" class=${"ov-seg-btn" + (view === k ? " on" : "")} aria-pressed=${view === k}
+                onClick=${() => setView && setView(k)}>${lab}</button>`)}
+          </div>
+          ${data.strategy_complete && html`
+            <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
+              onClick=${() => setApplyStrat && setApplyStrat(!applyStrat)}
+              title=${applyStrat
+                ? "Reading against your reward strategy — aim-aware colours and signal order. Click for the absolute market view."
+                : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
+              <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
+              <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
+            </button>`}
+        </div>`}
       <div class="ov-top">
-        <${OverallArc} market=${m} />
-        <${SignalsPanel} signals=${data.signals} total=${(data.signals_all || []).filter(s => s.status !== "dismissed").length} newCount=${data.signals_new || 0} locked=${locked} contribution=${data.contribution} />
+        ${view === "practice"
+          ? html`<${ApproachPanel} approach=${data.hero.approach} pending=${locked} />`
+          : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
+        <${SignalsPanel} signals=${_viewShown} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} />
       </div>
       <div class="cat-grid">
-        ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} />`)}
+        ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} pending=${locked} aim=${marketAim(m)} view=${view} />`)}
       </div>
-      <div class="grid2" style=${{ margin: "var(--s4) 0", gap: "var(--s4)" }}>
-        <${ChipColumn} title="You lead" items=${data.leads} good=${true} />
-        ${locked ? html`
-          <div class="card" style=${{ padding: "var(--s4)" }}>
-            <div class="caption" style=${{ marginBottom: "6px" }}>Biggest gaps</div>
-            <div class="insight-lock">
-              <div class="blurred" aria-hidden="true">
-                <div class="callout bad">Your largest gap appears here once unlocked.</div>
-                <div class="callout bad">Where the market commonly leads.</div>
-              </div>
-              <div class="lock-note">
-                <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
-                <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>Unlock by completing your key reward questions.</div>
-                <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit data</button>
-              </div>
-            </div>
-          </div>` :
-          html`<${ChipColumn} title="Biggest gaps" items=${data.lags} good=${false} />`}
+    </div>`;
+}
+
+/* Reward strategy check: AI synthesis of "are you delivering your own strategy?".
+   Findings are computed server-side from your data + declared stance (the model
+   only narrates them); on-demand so it doesn't spend on every load. Lives on the
+   Signals page so each finding can signpost (onGoToDomain) to its signal group. */
+function StrategyCheck({ onGoToDomain, signalDomains }) {
+  const [st, setSt] = useState({ phase: "idle" });
+  const cardRef = useRef(null);
+  // Cursor spotlight — the same alive, brand-tinted glow the home hero cards carry,
+  // so this reads as part of the same dashboard family.
+  useEffect(() => {
+    const el = cardRef.current; if (!el) return;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+      el.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+    };
+    el.addEventListener("mousemove", onMove, { passive: true });
+    return () => el.removeEventListener("mousemove", onMove);
+  }, []);
+  const run = async () => {
+    setSt({ phase: "loading" });
+    try {
+      const r = await api("/api/strategy-diagnosis", { method: "POST", body: {} });
+      if (!r.ok) { setSt({ phase: r.reason === "locked" ? "locked" : "nostrat" }); return; }
+      setSt({ phase: "done", parts: r.parts || {}, source: r.source,
+              onPlan: r.on_plan || [], illustrative: (r.caveats || {}).illustrative });
+    } catch (e) { setSt({ phase: "error", error: e.message }); }
+  };
+  const f = st.parts || {};
+  const hasDomain = (d) => !!(d && onGoToDomain && (!signalDomains || signalDomains.has(d)));
+  const realFindings = (f.findings || []).some(x => x.area);   // off-plan, not the all-on-plan affirmation
+  return html`
+    <div class="card strat-diag" ref=${cardRef}>
+      <div class="card-spot" aria-hidden="true"></div>
+      <div class="card-head">
+        <${Icon} name="compass" size=${15} /><span>Reward strategy check</span>
+        <span class="sig-head-note">are you delivering the strategy you set?</span>
+        ${st.phase === "done" && html`<span class="strat-badge">AI · review before use</span>`}
       </div>
+      ${st.phase === "idle" && html`
+        <p class="strat-intro">See where your market position is <b>delivering the reward strategy you set</b> —
+          and where it's pulling against it. Read only from your own figures and your declared aims;
+          each call signposts the signals behind it.</p>
+        <button class="btn primary" onClick=${run}>Run the check</button>`}
+      ${st.phase === "loading" && html`
+        <div class="strat-loading"><${Spinner} /> Reading your strategy against your data…
+          <span class="caption">a few seconds</span></div>`}
+      ${st.phase === "done" && html`
+        <p class="strat-summary">${f.summary}</p>
+        <div class="strat-findings">
+          ${(f.findings || []).map((x, i) => html`
+            <div class="strat-finding" key=${i}>
+              <div class="sf-head">${x.headline}</div>
+              <div class="sf-detail">${x.detail}</div>
+              <div class="sf-opt">${x.option}</div>
+              ${hasDomain(x.area) && html`
+                <button class="sf-jump" onClick=${() => onGoToDomain(x.area)}>
+                  See the ${x.area} signals <${Icon} name="chevron-down" size=${13} /></button>`}
+            </div>`)}
+        </div>
+        ${realFindings && st.onPlan && st.onPlan.length ? html`
+          <div class="strat-onplan">
+            <${Icon} name="check" size=${13} />
+            <span><b>On plan:</b> ${st.onPlan.map((d, i) => html`${i ? html`<span class="sep"> · </span>` : null}${
+              hasDomain(d)
+                ? html`<button class="sf-jump-inline" onClick=${() => onGoToDomain(d)}>${d}</button>`
+                : html`<span>${d}</span>`}`)} — tracking the aim you set.</span>
+          </div>` : null}
+        <div class="row spread strat-foot">
+          <span class="caption">${st.source === "deterministic" ? "Rule-based read. " : ""}A starting point for your own judgement — not advice.</span>
+          <button class="btn small" onClick=${run}>Re-run</button>
+        </div>`}
+      ${st.phase === "error" && html`
+        <div class="error-text">Couldn't run the check — ${st.error}. <a href="#" onClick=${e => { e.preventDefault(); run(); }}>Retry</a></div>`}
     </div>`;
 }
 
@@ -187,21 +374,265 @@ function CountUp({ to, ms = 750 }) {
    The band joins sit at the verdict threshold (±lean_threshold), so the band
    the needle rests in IS the verdict. The 34/46/14 counts move to a hairline
    legend — they are not the gauge's job. Real traffic-light palette
-   (below=amber, on=green, above=red) on warm paper. */
-function OverallArc({ market }) {
-  // Hooks run BEFORE the early return so the order is stable when market is
-  // null vs present. The needle sweeps from straight-up to its data angle on
-  // mount (and re-sweeps when the cut changes) — a precision instrument
-  // finding its reading. Reduced-motion lands it directly.
+   (below=red · on=amber · above=green) on warm paper. */
+// Proportional "Where you stand" arc geometry (2026-06-15). Shared by the
+// needle-rotation helper and the render so they never diverge.
+const ARC = { CX: 140, CY: 138, R: 102, W: 15 };
+ARC.capF = (ARC.W / 2 / ARC.R) / Math.PI;
+function arcSeams(market) {
+  // block boundaries on the semicircle, each block ∝ its count.
+  const pool = market.pool || (market.below + market.at + market.above) || 1;
+  const span = 1 - 2 * ARC.capF;
+  return {
+    s0: ARC.capF,
+    s1: ARC.capF + (market.below / pool) * span,
+    s2: ARC.capF + ((market.below + market.at) / pool) * span,
+    s3: 1 - ARC.capF,
+  };
+}
+function proportionalNeedleRot(market) {
+  // The centroid needle stays INSIDE the verdict block, positioned by the lean's
+  // offset within that verdict's lean-range — so it never contradicts the word
+  // while the proportional blocks carry the distribution. Returns a CSS rotation
+  // (deg, clockwise-from-up); frac->rot is (frac-0.5)*180.
+  const T = market.lean_threshold || 0.25;
+  const lean = Math.max(-1, Math.min(1, market.lean || 0));
+  const { s0, s1, s2, s3 } = arcSeams(market);
+  const lerp = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t));
+  const v = market.verdict;
+  let f = v === "above" ? lerp(s2, s3, (lean - T) / (1 - T))
+        : v === "below" ? lerp(s0, s1, (lean + 1) / (1 - T))
+        : lerp(s1, s2, (lean + T) / (2 * T));
+  if (!isFinite(f)) f = 0.5;
+  return (f - 0.5) * 180;
+}
+
+// strategy market_position reframe (§5.2): read the verdict against the member's
+// declared target — an above-market member who AIMED there is on target, not flagged.
+const STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
+function targetCopy(t) {
+  const w = STANCE_WORD[t.stance] || "your target";
+  if (t.alignment === "on_target") return "On your target — you aim to sit " + w;
+  if (t.alignment === "ahead") return "Ahead of your target — you aim to sit " + w;
+  return "Behind your target — you aim to sit " + w;
+}
+// ---- market-position colour code (David 2026-06-23): ONE consistent rule across the
+// hero gauge/donut + category tiles + Signals. Two modes, by the strategy toggle:
+//   STRATEGY OFF (no stance) → a POSITION lens: on-market is the green ideal, deviations
+//     are flagged the same way everywhere — below=amber (under), on=green, above=red
+//     (over). Applied to below/on/above regardless of direction-of-good (a deliberate
+//     simplification — see DECISIONS; "position lens").
+//   STRATEGY ON (stance set) → an ALIGNMENT lens: at OR better than your declared aim =
+//     aligned (green), short of it = not aligned (red). Binary, no amber.
+// marketTone = the OFF mapping; bandToneAim + alignTone = the ON mapping (both fall back
+// to marketTone when no aim). The same tone (green/amber/red) drives the bands, the
+// verdict word, the chips and the per-signal colours, so the whole market read is one
+// colour language.
+const MKT_BIDX = { below: 0, on: 1, at: 1, above: 2 };
+function marketAim(market) {
+  return market && market.target ? ({ lag: 0, match: 1, lead: 2 })[market.target.stance] : null;
+}
+function marketTone(key, _aim) {           // absolute (no stance): on-market is the green ideal, deviations flagged
+  const idx = MKT_BIDX[key];
+  if (idx == null) return "neutral";
+  return idx === 0 ? "amber" : idx === 1 ? "green" : "red";   // below=amber · on=green · above=red (position lens)
+}
+// Alignment-aware verdict tone (Option A, David 2026-06-21). The VERDICT word + the
+// domain chips read against the org's declared aim, not the raw market position: on
+// the aim or past it is favourable (you're achieving the position you set), only
+// short of it ("behind") is the alarm. Returns a tone, or null when no stance is set
+// (caller falls back to absolute marketTone). The bands, needle, segments and counts
+// stay ABSOLUTE everywhere, so the magnitude of the gap is never hidden — this only
+// reframes the headline so a deliberately-below org isn't told it's failing. `aim` is
+// the stance index from marketAim (lag 0 / match 1 / lead 2); mirrors positions._market_target.
+const POS_RANK = { below: 0, at: 1, on: 1, above: 2 };
+function alignTone(verdict, aim) {
+  if (aim == null || verdict == null) return null;
+  const rank = POS_RANK[verdict];
+  if (rank == null) return null;
+  // strategy ON: at your aim = green; misaligned shows the DIRECTION with two reds —
+  // short of aim ("below" your target) = red, past it ("above" your target) = redover.
+  return rank === aim ? "green" : rank < aim ? "red" : "redover";
+}
+// Aim-aware DISTRIBUTION tone (David 2026-06-21, v211) — for a stance-set org the
+// gauge arc + tile bars read against the AIM, not absolute position: the band that
+// IS your aim is green (on target), a band short of it is red, a band past it is
+// amber (drifted up — caution, not alarm). So a deliberately-below org sees a calm
+// green dashboard instead of a wall of red, and the bars now AGREE with the
+// aim-aware verdict word/chip (no more green-word-over-red-bar). The segment
+// PROPORTIONS + the below/on/above counts still carry the magnitude. No stance →
+// absolute marketTone (unchanged).
+function bandToneAim(k, aim) {
+  if (aim == null) return marketTone(k);
+  const r = POS_RANK[k];
+  if (r == null) return marketTone(k);
+  // strategy ON: at aim = green; below aim (short) = red; above aim (overshot) = redover
+  return r === aim ? "green" : r < aim ? "red" : "redover";
+}
+// FIX 1 (2026-06-23) — ATTAINMENT colour lens (David-approved). The hero gauge, the per-
+// domain sliders and the gauge-card chip/tint colour by STRATEGY ATTAINMENT, not market
+// direction: on your aim = green (on target), off your aim = amber (off target, direction-
+// agnostic), no strategy set = grey-neutral (no judgement). Direction is carried by the
+// marker position + the below/on/above word only — never by hue. The signals list, the
+// metric-page spectrum and the practice encodings keep their existing (direction) colour
+// by design — this lens is scoped to the overview gauge surfaces only.
+function attainTone(verdict, aim) {
+  if (aim == null) return "grey";              // strategy OFF → neutral grey, no judgement
+  const r = POS_RANK[verdict];
+  if (r == null) return "grey";
+  return r === aim ? "green" : "amber";        // on your aim = on target (green); otherwise off target (amber)
+}
+const MKT_SOFT = { green: "var(--gauge-on)", amber: "var(--gauge-below)", red: "var(--gauge-above)",
+                   redover: "color-mix(in srgb, var(--unfavourable-deep) 42%, var(--surface))",
+                   grey: "color-mix(in srgb, var(--grey-neutral) 30%, var(--surface))",
+                   neutral: "color-mix(in srgb, var(--chart-band-mid) 65%, var(--surface))" };
+const MKT_RICH = { green: "color-mix(in srgb, var(--favourable) 56%, var(--surface))",
+                   amber: "color-mix(in srgb, var(--amber-bright) 58%, var(--surface))",
+                   red: "color-mix(in srgb, var(--unfavourable) 54%, var(--surface))",
+                   redover: "color-mix(in srgb, var(--unfavourable-deep) 72%, var(--surface))",
+                   grey: "color-mix(in srgb, var(--grey-neutral) 62%, var(--surface))",
+                   neutral: "var(--chart-band-mid)" };
+const MKT_CHIP = { green: "chip-good", red: "chip-bad", redover: "chip-bad-over", amber: "chip-mid", grey: "chip-neutral-mkt", neutral: "chip-practice" };
+const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber: "v-below", grey: "v-neutral-mkt", neutral: "v-practice" };
+const MKT_SOLID = { green: "var(--favourable)", red: "var(--unfavourable)", redover: "var(--unfavourable-deep)", amber: "var(--amber-bright)", grey: "var(--grey-neutral)", neutral: "var(--ink-faint)" };
+
+// Shared "market spectrum" marker chart — the proportional below/on/above blocks
+// unrolled onto a below↔above axis, with the org's declared AIM drawn on the axis
+// and a "you are here" centroid marker. ONE component for the overview hero AND
+// every domain page, so the read is identical everywhere. `market`: {below,at,above,
+// pool,lean,verdict,lean_threshold}; `aim`: stance index (lag 0 / match 1 / lead 2)
+// or null. Chart-only — callers supply their own verdict word/chip + counts.
+function MarketSpectrum({ market, aim }) {
+  const pool = market && (market.pool || ((market.below || 0) + (market.at || 0) + (market.above || 0)));
+  if (!market || !pool) return null;
+  const T = market.lean_threshold || 0.25;
+  const lean = Math.max(-1, Math.min(1, market.lean != null ? market.lean : (market.above - market.below) / pool));
+  const v = market.verdict || (lean < -T ? "below" : lean > T ? "above" : "at");
+  const { s0, s1, s2, s3 } = arcSeams({ pool, below: market.below, at: market.at, above: market.above });
+  const lerpC = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t));
+  const SPX0 = 24, SPX1 = 256, SPY = 58, SPH = 20;
+  const spx = (frac) => SPX0 + frac * (SPX1 - SPX0);
+  const spBands = [
+    { k: "below", a: s0, b: s1, on: v === "below" },
+    { k: "on", a: s1, b: s2, on: v === "at" },
+    { k: "above", a: s2, b: s3, on: v === "above" },
+  ].filter(g => g.b - g.a > 0.004).map(g => {
+    // FIX 1 attainment lens (extended to the spectrum, 2026-06-24): ONE hue across the bands,
+    // keyed by attainment (on your aim = green / off = amber / no aim = grey), the verdict band
+    // rich + the rest soft — exactly like the gauge donut. Direction is NOT in the hue here; it
+    // stays SPATIAL (axis position + the per-band labels + the aim-zone bracket + the marker),
+    // so retiring the tricolour loses no information. Replaces the per-band bandToneAim.
+    const tone = attainTone(v, aim);
+    const n = g.k === "below" ? market.below : g.k === "on" ? market.at : market.above;
+    return { k: g.k, x0: spx(g.a), x1: spx(g.b), col: g.on ? MKT_RICH[tone] : MKT_SOFT[tone], on: g.on, n };
+  });
+  const cF = v === "above" ? lerpC(s2, s3, (lean - T) / (1 - T))
+           : v === "below" ? lerpC(s0, s1, (lean + 1) / (1 - T))
+           : lerpC(s1, s2, (lean + T) / (2 * T));
+  const youX = spx(Math.max(s0, Math.min(s3, isFinite(cF) ? cF : 0.5)));
+  const aimZone = aim == null ? null : aim === 0 ? [s0, s1] : aim === 1 ? [s1, s2] : [s2, s3];
+  const aimX0 = aimZone ? spx(aimZone[0]) : null, aimX1 = aimZone ? spx(aimZone[1]) : null;
+  const aimMid = aimZone ? (aimX0 + aimX1) / 2 : null;
+  const zoneLabels = spBands.filter(b => b.x1 - b.x0 > 26).map(b => ({
+    x: (b.x0 + b.x1) / 2, t: b.k === "below" ? "below market" : b.k === "on" ? "on market" : "above market" }));
+  const word = v === "above" ? "Above" : v === "below" ? "Below" : "On market";
+  return html`
+    <div class="arc-stage spectrum-stage">
+      <svg viewBox="0 0 280 108" class="spectrum-svg" role="img"
+        aria-label=${"Of " + pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your aim zone" : "") + "."}>
+        ${aimMid != null ? html`<g>
+          <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--blue)">your aim</text>
+          <path d=${"M " + (aimX0 + 1).toFixed(1) + " 33 L " + (aimX0 + 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 33"} fill="none" stroke="var(--blue)" stroke-width="1.5"/>
+          <line x1=${(aimX0 + 1).toFixed(1)} y1="33" x2=${(aimX0 + 1).toFixed(1)} y2=${SPY - 2} stroke="var(--blue)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+          <line x1=${(aimX1 - 1).toFixed(1)} y1="33" x2=${(aimX1 - 1).toFixed(1)} y2=${SPY - 2} stroke="var(--blue)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+        </g>` : null}
+        <rect x=${SPX0 - 2} y=${SPY - 2} width=${SPX1 - SPX0 + 4} height=${SPH + 4} rx=${((SPH + 4) / 2).toFixed(1)} fill="var(--surface-sunk)"/>
+        ${spBands.map(b => html`<rect key=${b.k} x=${(b.x0 + 1).toFixed(1)} y=${SPY} width=${Math.max(2, b.x1 - b.x0 - 2).toFixed(1)} height=${SPH} rx="3" fill=${b.col}/>`)}
+        ${spBands.filter(b => b.x1 - b.x0 > 26).map(b => html`<text key=${"n" + b.k} x=${((b.x0 + b.x1) / 2).toFixed(1)} y=${SPY + SPH / 2} text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="600" fill=${b.on ? "#fff" : "var(--ink-soft)"}>${b.n}</text>`)}
+        <line x1=${youX.toFixed(1)} y1=${SPY - 7} x2=${youX.toFixed(1)} y2=${SPY + SPH + 7} stroke="var(--ink-soft)" stroke-width="2"/>
+        <circle cx=${youX.toFixed(1)} cy=${SPY - 7} r="4" fill="var(--ink)" stroke="var(--surface)" stroke-width="1.5"/>
+        ${zoneLabels.map((z, i) => html`<text key=${i} x=${z.x.toFixed(1)} y=${SPY + SPH + 20} text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">${z.t}</text>`)}
+      </svg>
+    </div>`;
+}
+
+// Simple DONUT (ring) chart for the hero — segments ∝ count, a quiet total in the
+// centre. Replaces the needle dial (2026-06-23). Used for BOTH the market read
+// (below/on/above) and the practice read (differ/in-line); colours passed in by the
+// caller so it stays a dumb renderer. Segments draw from 12 o'clock, clockwise.
+function Donut({ segments, total, centerNum, sub, size, stroke }) {
+  size = size || 188; stroke = stroke || 26;
+  const r = (size - stroke) / 2, cx = size / 2, cy = size / 2, C = 2 * Math.PI * r;
+  let acc = 0;
+  const arcs = (segments || []).filter(s => s.value > 0).map((s, i) => {
+    const len = total ? (s.value / total) * C : 0;
+    const gap = len > 8 ? 3 : 0;             // a small breather between real segments; none for slivers
+    const drawn = Math.max(0.5, len - gap);
+    const node = html`<circle key=${i} cx=${cx} cy=${cy} r=${r} fill="none" stroke=${s.color}
+      stroke-width=${stroke} stroke-linecap="butt"
+      stroke-dasharray=${drawn.toFixed(2) + " " + (C - drawn).toFixed(2)}
+      stroke-dashoffset=${(-acc).toFixed(2)} transform=${"rotate(-90 " + cx + " " + cy + ")"} />`;
+    acc += len;
+    return node;
+  });
+  return html`
+    <div class="donut" style=${{ width: size + "px", height: size + "px" }}>
+      <svg viewBox=${"0 0 " + size + " " + size} class="donut-svg" aria-hidden="true">
+        <circle cx=${cx} cy=${cy} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
+        ${arcs}
+      </svg>
+      <div class="donut-center">
+        <div class="donut-num num">${centerNum}</div>
+        ${sub ? html`<div class="donut-sub">${sub}</div>` : null}
+      </div>
+    </div>`;
+}
+
+function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
+  // Hooks run BEFORE the early return so the order is stable when market is null
+  // vs present. 2.1 — the needle settles ONCE per org, on the first populated
+  // render (localStorage gate); every later visit snaps. Reduced motion + no
+  // localStorage both fall back to snapping (off means off).
   const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const lean = market ? Math.max(-1, Math.min(1, market.lean || 0)) : 0;
-  const rot = lean * 90;                                       // (frac-0.5)*180 == lean*90
-  const [shownRot, setShownRot] = useState(reduced ? rot : 0);
+  // needle now points at the centroid's position WITHIN the proportional arc
+  // (computed up-front so the settle-animation hook below can target it).
+  const rot = market ? proportionalNeedleRot(market) : 0;
+  const animateNeedle = useMemo(() => {
+    if (reduced || pending || !market) return false;
+    try {
+      const key = "lumi.gauge.firstPopulatedRender." + (orgKey || "default");
+      if (localStorage.getItem(key) === "true") return false;  // already celebrated
+      localStorage.setItem(key, "true");
+      return true;                                             // first populated render → settle
+    } catch (e) { return false; }                              // no localStorage → snap
+  }, []);
+  const [shownRot, setShownRot] = useState(animateNeedle ? 0 : rot);
   useEffect(() => {
-    if (reduced) { setShownRot(rot); return; }
-    const id = setTimeout(() => setShownRot(rot), 90);         // paint at 0, then sweep
+    if (!animateNeedle) { setShownRot(rot); return; }          // snap to the reading
+    const id = setTimeout(() => setShownRot(rot), 90);         // paint at 0, then settle
     return () => clearTimeout(id);
-  }, [rot, reduced]);
+  }, [rot]);
+  // Data-pending: below the insights-unlock threshold a verdict from a handful of
+  // metrics isn't credible — greyed dial, no needle, not a reading.
+  if (pending) return html`
+    <div class="card arc-card arc-pending">
+      <div class="card-spot" aria-hidden="true"></div>
+      <div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
+      <div class="arc-stage">
+        <svg viewBox="0 0 280 170" class="arc-svg" role="img" aria-label="Not enough data to position yet — keep submitting.">
+          <path d="M 38 138 A 102 102 0 0 1 242 138" fill="none" stroke="var(--surface-sunk)" stroke-width="16" stroke-linecap="round"/>
+          <path d="M 38 138 A 102 102 0 0 1 242 138" fill="none" stroke="var(--chart-band-mid)" stroke-width="13" stroke-linecap="round"/>
+          <circle cx="140" cy="138" r="8" fill="var(--surface)" stroke="#9AA3B5" stroke-width="3.25"/>
+          <circle cx="140" cy="138" r="2.25" fill="#9AA3B5"/>
+        </svg>
+      </div>
+      <div class="arc-verdict">
+        <div class="arc-word arc-word-pending">Not enough data to position yet</div>
+        <div class="arc-lean">Keep submitting — your position appears once enough data is comparable.</div>
+      </div>
+      <div class="arc-legend num"><span class="arc-pending-note">Data pending — ${pct || 0}% of key reward questions submitted</span></div>
+    </div>`;
 
   if (!market) return html`
     <div class="card arc-card"><div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
@@ -210,118 +641,160 @@ function OverallArc({ market }) {
   const v = market.verdict;                                   // "below" | "at" | "above"
   const T = market.lean_threshold || 0.25;                    // band join = verdict threshold
   const word = v === "above" ? "Above" : v === "below" ? "Below" : "On market";
-  // traffic light: on=green (target), above=red (premium cost), below=amber (lagging)
-  const wordCol = v === "below" ? "var(--neutral-perf)" : v === "above" ? "var(--unfavourable)" : "var(--favourable)";
-  const needleCol = v === "below" ? "var(--amber-bright)" : v === "above" ? "var(--unfavourable)" : "var(--favourable)";
-  const tipCol = v === "below" ? "#F8C24A" : v === "above" ? "#E07B72" : "#1D9E75";
-
-  // geometry: semicircle, hub at base centre. frac 0=far below (left), 1=far
-  // above (right). value v -> frac (v+1)/2. Heavier stroke for a substantial dial.
-  const CX = 140, CY = 138, R = 102, W = 13;
-  const capF = (W / 2 / R) / Math.PI, gapF = 0.02;
-  const toFrac = (val) => (val + 1) / 2;
+  // The BANDS stay ABSOLUTE RAG (below=red, on=amber, above=green) — they're the
+  // factual composition, sized by count, and must never hide the gap. The VERDICT
+  // WORD carries NO good/bad colour (2026-06-23, "mirror, not consultant"): the verdict
+  // word renders in neutral ink, IDENTICAL on Strategy ON and OFF — the on-target meaning
+  // lives only in the footer line. The donut bands keep their position colour; the word
+  // never judges below/on/above as success or failure.
+  const AIM = marketAim(market);
+  const bandTone = (k) => bandToneAim(k, AIM);
+  // PROPORTIONAL arc: each block's angular span ∝ its count, so the composition
+  // itself tells the story (a below-market-heavy org shows a big red block). Soft
+  // red/amber/green; the verdict block sits a touch richer so the eye lands.
+  const { CX, CY, R, W, capF } = ARC;
+  const gapF = 0.014;
   const polar = (frac, r) => { const a = Math.PI * (1 - frac); return [CX + r * Math.cos(a), CY - r * Math.sin(a)]; };
   const arcPath = (f0, f1) => {
     const [x0, y0] = polar(f0, R), [x1, y1] = polar(f1, R);
+    // large-arc-flag is ALWAYS 0: every gauge band (and the background track) spans
+    // at most the full semicircle (<180deg), so the minor arc is always the correct
+    // one — over the top. The old `(f1-f0)>0.5 ? 1 : 0` drew the MAJOR arc (the long
+    // way, under the bottom) for any single block that dominated the dial, splitting
+    // it into two stubs with a grey gap across the top (visible whenever one band
+    // exceeded ~half the dial, e.g. a heavily below-market org).
     return "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
-      " A " + R + " " + R + " 0 " + ((f1 - f0) > 0.5 ? 1 : 0) + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
+      " A " + R + " " + R + " 0 0 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
   };
-  const j1 = toFrac(-T), j2 = toFrac(T);                       // band joins at ±threshold
-  // The band the needle rests in is the verdict — render it RICHER (the eye
-  // lands on the answer); the dormant zones stay quiet. Active uses a 70% mix
-  // of its hue, dormant the ~40% --gauge-* tokens.
-  const rich = { below: "color-mix(in srgb, var(--amber-bright) 70%, var(--surface))",
-                 at: "color-mix(in srgb, var(--favourable) 66%, var(--surface))",
-                 above: "color-mix(in srgb, var(--unfavourable) 64%, var(--surface))" };
+  const { s0, s1, s2, s3 } = arcSeams(market);
+  // tone → fill (soft for context bands, rich for the band the org actually sits in).
+  // "neutral" (no stance) is a quiet blue-grey distribution — read by SIZE, not verdict.
   const bands = [
-    { k: "below", d: arcPath(capF, j1 - gapF), col: v === "below" ? rich.below : "var(--gauge-below)" },
-    { k: "at", d: arcPath(j1 + gapF, j2 - gapF), col: v === "at" ? rich.at : "var(--gauge-on)" },
-    { k: "above", d: arcPath(j2 + gapF, 1 - capF), col: v === "above" ? rich.above : "var(--gauge-above)" },
-  ];
-  // band-join ticks — notches where the colours meet (the verdict thresholds)
-  const tick = (frac, r0, r1) => { const [ox, oy] = polar(frac, r0), [ix, iy] = polar(frac, r1); return { ox, oy, ix, iy }; };
-  const joins = [tick(j1, R + 6, R - 6), tick(j2, R + 6, R - 6)];
-  // minor graduations — a quiet inner scale, the precision-instrument cue.
-  const MINOR = 24;
-  const minors = [];
-  for (let i = 1; i < MINOR; i++) {
-    const f = capF + (i / MINOR) * (1 - 2 * capF);
-    if (Math.abs(f - j1) < 0.02 || Math.abs(f - j2) < 0.02 || Math.abs(f - 0.5) < 0.02) continue;
-    const long = (i % 4 === 0);
-    minors.push(tick(f, R - 11, R - (long ? 17 : 14.5)));
-  }
+    { k: "below", a: s0, b: s1, on: v === "below" },
+    { k: "on", a: s1, b: s2, on: v === "at" },
+    { k: "above", a: s2, b: s3, on: v === "above" },
+  ].filter(g => g.b - g.a > 0.004).map(g => {
+    const a = g.a + (g.a > s0 + 0.0001 ? gapF : 0), b = g.b - (g.b < s3 - 0.0001 ? gapF : 0);
+    const tone = bandTone(g.k);
+    return { k: g.k, d: arcPath(a, Math.max(a, b)), col: g.on ? MKT_RICH[tone] : MKT_SOFT[tone] };
+  });
+  // quiet seam ticks where the colours meet (the below|on and on|above boundaries)
+  const tickAt = (frac) => { const [ox, oy] = polar(frac, R + 5), [ix, iy] = polar(frac, R - 5); return { ox, oy, ix, iy }; };
+  const seams = [s1, s2].filter(s => s > s0 + 0.02 && s < s3 - 0.02).map(tickAt);
   const tipY = CY - (R - 7);
-  // peer-median marker — frac 0.5 (net lean 0 = exactly the market middle), so
-  // "you vs the median" is explicit. A small downward caret above the arc.
-  const [mx, my] = polar(0.5, R + 13);
-  const medD = "M " + (mx - 4).toFixed(1) + " " + (my - 6).toFixed(1) +
-    " L " + (mx + 4).toFixed(1) + " " + (my - 6).toFixed(1) + " L " + mx.toFixed(1) + " " + my.toFixed(1) + " Z";
+  // neutral-grey needle — a pure "you are here" pointer; the blocks carry the colour.
+  const NEEDLE = "var(--ink-soft)", NTIP = "var(--ink)";
   // lean descriptor — turns the tilt into words (honest about a below-lean even
   // when the verdict is On market).
   const mag = Math.abs(lean);
   const leanWord = (() => {
     if (v === "at") {
       if (mag < 0.06) return "evenly balanced";
-      return "slightly " + (lean < 0 ? "below" : "above") + "-leaning";
+      return "leaning slightly " + (lean < 0 ? "below" : "above");
     }
+    // severity ADVERB from percentile DEPTH (median adjusted percentile) — "how far",
+    // not "how many" (Stage A item C). Verdict word stays lean-driven. Falls back to
+    // the count lean only if depth_pctl is absent (older cached payload).
+    const dp = market.depth_pctl;
     const past = mag - T;
-    const strength = past > 0.2 ? "clearly" : past > 0.08 ? "moderately" : "marginally";
+    const byCount = past > 0.2 ? "clearly" : past > 0.08 ? "moderately" : "marginally";
+    const strength = dp == null ? byCount
+      : v === "below" ? (dp < 25 ? "clearly" : dp < 40 ? "moderately" : "marginally")
+      : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
     return strength + " " + (v === "below" ? "below" : "above") + " the market";
   })();
+  // FIX 2 (2026-06-23) — headline hierarchy: with a stance set AND on/ahead of target, the
+  // headline reads "On target" (attainment framing); strategy-off (no target) or behind
+  // reverts to the direction word. The verdict ENUM and below/on/above copy are untouched;
+  // this is headline framing only. Counts stay live in the legend.
+  const _onTarget = !!(market.target && (market.target.alignment === "on_target" || market.target.alignment === "ahead"));
+  const _dirPhrase = v === "below" ? "below market" : v === "above" ? "above market" : "on market";
+  const headWord = _onTarget ? "On target" : word;
+  const headLean = _onTarget ? ("sitting " + _dirPhrase + ", as you intend") : leanWord;
+  // FIX 1 — the ring colours by ATTAINMENT, not direction: on target green, off target
+  // amber, no strategy grey. A single hue across the ring; the verdict band sits richer so
+  // the eye lands, but the split (below/on/above) is read by arc SIZE + the legend, never
+  // by hue. _onTarget already folds on_target/ahead → on target (mirrors the headline).
+  const _gaugeAttain = !market.target ? "grey" : (_onTarget ? "green" : "amber");
 
   return html`
     <div class="card arc-card">
       <div class="card-spot" aria-hidden="true"></div>
-      <div class="card-head"><${Icon} name="compass" size=${15} /><span>Where you stand</span></div>
-      <div class="arc-stage">
-        <svg viewBox="0 0 280 170" class="arc-svg" role="img"
-          aria-label=${"Gauge: " + market.at + " of " + market.pool + " metrics on market, " + market.below + " below, " + market.above + " above. Overall: " + word + ", " + leanWord + ". The market median sits at centre."}>
-          <defs>
-            <filter id="needleShadow" x="-40%" y="-40%" width="180%" height="180%">
-              <feDropShadow dx="0" dy="1.8" stdDeviation="2" flood-color="#211B26" flood-opacity="0.24"/>
-            </filter>
-            <radialGradient id="dialSheen" cx="50%" cy="92%" r="72%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
-              <stop offset="55%" stop-color="#ffffff" stop-opacity="0.28"/>
-              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          ${/* radial sheen on the dial face — quiet dimensionality */ ""}
-          <path d=${"M " + (CX - R - 9) + " " + CY + " A " + (R + 9) + " " + (R + 9) + " 0 0 1 " + (CX + R + 9) + " " + CY + " Z"}
-            fill="url(#dialSheen)" opacity="0.6"/>
-          <path d=${arcPath(capF, 1 - capF)} fill="none" stroke="var(--surface-sunk)" stroke-width=${W + 3} stroke-linecap="round"/>
-          ${bands.map((b, i) => html`<path key=${i} d=${b.d} fill="none" stroke=${b.col} stroke-width=${W} stroke-linecap="round"
-            pathLength="1" class="arc-band" style=${{ animationDelay: (140 + i * 120) + "ms" }}/>`)}
-          <g class="arc-minors">
-            ${minors.map((t, i) => html`<line key=${"m" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
-              stroke="var(--ink-faint)" stroke-width="1" opacity="0.28"/>`)}
-          </g>
-          ${joins.map((t, i) => html`<line key=${"j" + i} x1=${t.ox.toFixed(1)} y1=${t.oy.toFixed(1)} x2=${t.ix.toFixed(1)} y2=${t.iy.toFixed(1)}
-            stroke="var(--ink-faint)" stroke-width="1.25" opacity="0.55"/>`)}
-          ${/* peer-median marker */ ""}
-          <g class="arc-median">
-            <path d=${medD} fill="var(--ink-soft)" opacity="0.7"><title>The market median sits at centre</title></path>
-          </g>
-          <g class="arc-needle" style=${{ transform: "rotate(" + shownRot.toFixed(2) + "deg)", transformOrigin: CX + "px " + CY + "px" }}>
-            <circle class="arc-tip-glow" cx=${CX} cy=${tipY.toFixed(1)} r="5" fill=${tipCol} />
-            <g filter="url(#needleShadow)">
-              <path d=${"M " + CX + " " + CY + " L " + (CX - 3.4) + " " + (CY - 8) + " L " + CX + " " + tipY.toFixed(1) + " L " + (CX + 3.4) + " " + (CY - 8) + " Z"} fill=${needleCol}/>
-              <circle cx=${CX} cy=${tipY.toFixed(1)} r="5" fill=${tipCol} stroke="var(--surface)" stroke-width="1.75"/>
-            </g>
-          </g>
-          <circle cx=${CX} cy=${CY} r="8" fill="var(--surface)" stroke=${needleCol} stroke-width="3.25"/>
-          <circle cx=${CX} cy=${CY} r="2.25" fill=${needleCol}/>
-        </svg>
+      <div class="card-head">
+        <${Icon} name="compass" size=${15} /><span>Where you stand</span>
+      </div>
+      <div class="arc-stage" role="img"
+        aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
+        <${Donut}
+          segments=${[
+            { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
+            { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
+            { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
+          ]}
+          total=${market.pool} centerNum=${market.pool} sub="metrics" size=${210} stroke=${28} />
       </div>
       <div class="arc-verdict">
-        <div class="arc-word num" style=${{ color: wordCol }}>${word}</div>
-        <div class="arc-lean">${leanWord}</div>
+        <div class=${"arc-word num" + (animateNeedle ? " arc-word-reveal" : "")} style=${{ color: "var(--ink)" }}>${headWord}</div>
+        <div class="arc-lean">${headLean}</div>
       </div>
       <div class="arc-legend num">
-        <span><span class="arc-leg-fig"><${CountUp} to=${market.below} /></span> Below</span>
-        <span><span class="arc-leg-fig"><${CountUp} to=${market.at} /></span> On market</span>
-        <span><span class="arc-leg-fig"><${CountUp} to=${market.above} /></span> Above</span>
+        <span><span class="arc-leg-fig">${market.below}</span> Below</span>
+        <span><span class="arc-leg-fig">${market.at}</span> On market</span>
+        <span><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
+      ${market.target ? html`
+        <div class=${"arc-target arc-target-" + market.target.alignment}
+          title="How your position reads against the market stance you set in your reward strategy.">
+          <${Icon} name="target" size=${13} /><span>${targetCopy(market.target)}</span>
+        </div>`
+      : stratOff ? html`
+        <div class="arc-target arc-target-off" title="You've turned your reward strategy off — this is the absolute market view, with no aim applied. Switch it back on above to read against your stance.">
+          <${Icon} name="target" size=${13} /><span>Strategy off — absolute market view</span>
+        </div>`
+      : html`
+        <button class="arc-target arc-target-unset" onClick=${() => nav("/strategy")}
+          title="Set your market-position stance so lumi reads this against your aim, not a generic flag.">
+          <${Icon} name="target" size=${13} /><span>Set your reward strategy to read this against your aim</span>
+        </button>`}
+    </div>`;
+}
+
+
+// PRACTICE lens for the hero (the dashboard toggle's "Practice" view): the approach
+// read — how many competitive practices differ from the market norm — as the headline,
+// with a proportional differ/in-line bar. The market gauge's sibling, shown INSTEAD of
+// it (the two-axis split: market position vs practice difference, never mixed on screen).
+function ApproachPanel({ approach, pending }) {
+  if (pending || !approach || !approach.pool) return html`
+    <div class="card arc-card">
+      <div class="card-head"><${Icon} name="layers" size=${15} /><span>How you compare on practice</span></div>
+      <div class="caption" style=${{ padding: "var(--s4) var(--s2)" }}>
+        ${pending ? "Your practice mix appears once enough of your data is comparable."
+                  : "No practice metrics are comparable in this peer set yet."}</div>
+    </div>`;
+  const differ = approach.differ, inLine = approach.in_line, pool = approach.pool;
+  const fr = pool ? Math.round(1000 * differ / pool) / 10 : 0;
+  return html`
+    <div class="card arc-card">
+      <div class="card-spot" aria-hidden="true"></div>
+      <div class="card-head"><${Icon} name="layers" size=${15} /><span>How you compare on practice</span></div>
+      <div class="appr-stage">
+        <div class="arc-stage" role="img"
+          aria-label=${differ + " of " + pool + " practices differ from the market norm; " + inLine + " in line."}>
+          <${Donut}
+            segments=${[
+              { value: differ, color: "var(--differs)" },
+              { value: inLine, color: "var(--chart-band-mid)" },
+            ]}
+            total=${pool} centerNum=${pool} sub="practices" size=${210} stroke=${28} />
+        </div>
+        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} practices differ from market</div>
+        <div class="appr-legend num">
+          <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> differ</span>
+          <span><span class="appr-dot appr-dot-inline"></span><b>${inLine}</b> in line with the market</span>
+        </div>
+      </div>
+      <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
     </div>`;
 }
 
@@ -329,44 +802,52 @@ function OverallArc({ market }) {
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
   "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
-function SignalsPanel({ signals, total, newCount, locked, contribution }) {
+function SignalsPanel({ signals, total, newCount, locked, contribution, view }) {
   const sigs = signals || [];
+  // triage actions are available on every signal — the home briefing keeps a local
+  // optimistic overlay so a dismiss/priority/save updates instantly (the server has
+  // the truth on next load).
+  const [stOv, setStOv] = useState({});
+  const effStatus = s => { const k = s.sig_id || s.question_id; return k in stOv ? stOv[k] : s.status; };
+  const onSet = (sid, status) => { setStOv(p => ({ ...p, [sid]: status || "active" })); signalAction(sid, status).catch(() => {}); };
+  const shown = sigs.filter(s => effStatus(s) !== "dismissed");
   return html`
     <div class="card signals-card">
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
-        <span>Signals${total > sigs.length ? " · top " + sigs.length : (sigs.length ? " · " + sigs.length : "")}</span>
+        <span>Signals${total > shown.length ? " · top " + shown.length : (shown.length ? " · " + shown.length : "")}</span>
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
-        <span class="sig-head-note">flags worth a look — we flag, you decide</span>
+        <span class="sig-head-note">${view === "practice" ? "practice differences — we flag, you decide" : "market positions — we flag, you decide"}</span>
       </div>
+      ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${view === "practice" ? "ranked by rarity" : "ranked by market gap"}</div>` : null}
       ${locked ? html`
-        <div class="insight-lock" style=${{ marginTop: "8px", flex: 1 }}>
+        <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
-            ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a flag appears here once unlocked</span></div>`)}
+            ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a signal appears here once unlocked</span></div>`)}
           </div>
           <div class="lock-note">
             <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
             <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
               Signals unlock with your insights — complete your key reward questions${contribution && contribution.days_left != null ? ` (${contribution.days_left} days left)` : ""}.</div>
-            <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit data</button>
+            <button class="btn small outline-navy" onClick=${() => nav("/your-data/submit")}>Submit data</button>
           </div>
         </div>` :
-      sigs.length === 0 ? html`
+      shown.length === 0 ? html`
         <div class="signals-empty">
           <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
-          <div class="caption" style=${{ maxWidth: "320px" }}>No flags right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
+          <div class="caption" style=${{ maxWidth: "320px" }}>No signals right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
         </div>` :
       [html`<div class="signals-list" key="list">
-        ${sigs.map((s, i) => html`
-          <div key=${i} class=${"signal-row lens-" + s.lens + (s.new ? " is-new" : "")} onClick=${() => openMetric(s.question_id)} role="button" tabindex="0">
-            ${sigParts(s)}
-            <span class="signal-go" aria-hidden="true">→</span>
-          </div>`)}
+        ${shown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
+          <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.new ? " is-new" : "")} onClick=${() => openMetric(s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }} role="button" tabindex="0">
+            ${sigParts(s, pt)}
+            <${SignalActions} status=${effStatus(s)} sid=${sid} onSet=${onSet} />
+          </div>`; })}
       </div>`,
       html`<div class="signals-foot" key="foot">
-        <span>Tap a flag to open the metric behind it.</span>
-        <a href="#/signals">${total > sigs.length ? "See all " + total + " signals →" : "See all signals →"}</a>
+        <span>Tap a signal to open the metric · prioritise, save or dismiss with the icons.</span>
+        <a href="#/signals">${total > shown.length ? "See all " + total + " signals →" : "See all signals →"}</a>
       </div>`]}
     </div>`;
 }
@@ -386,25 +867,129 @@ const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER
 // where you stand (the market fact) · the categorical tag. "Worth a look" leads
 // only where there's a supported worse direction (behind / a common practice you
 // lack). The tag answers one question — how do you compare to the market?
-const sigParts = (s) => [
-  html`<span class="signal-roundel" key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
+const sigParts = (s, pt) => [
+  html`<span class=${"signal-roundel lens-" + s.lens} key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
   html`<span class="signal-body" key="b">
-    <span class="sig-lead">${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}${s.worth ? html`<span class="sig-worth">Worth a look</span>` : null}</span>
-    <b class="sig-name">${s.name || s.label_short}</b>
+    <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}</b>
     <span class="sig-stand">${s.stand || s.detail}</span></span>`,
-  html`<span class=${"sig-tag tag-" + (s.tag || "").split(" ")[0].toLowerCase().replace(/[^a-z]/g, "")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
+  html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
 ];
+// Triage controls (prioritise · save · dismiss / restore) — ONE shared control on
+// EVERY signal wherever it appears: the home briefing, each domain page, and the
+// Signals explore page. onSet(sid, status) persists + optimistically updates; status
+// is the final state (null = back to active/inbox). Toggle logic lives here so every
+// surface behaves identically.
+function SignalActions({ status, sid, onSet }) {
+  return html`<span class="sig-actions" onClick=${e => e.stopPropagation()}>
+    ${status === "dismissed" ? html`
+      <button class="sig-act" title="Restore to inbox" aria-label="Restore signal to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
+      <button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>
+      <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
+      <button class="sig-act" title="Dismiss" aria-label="Dismiss signal" onClick=${() => onSet(sid, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
+  </span>`;
+}
+// Persist a triage action (home panel + domain pages call this; the Signals page keeps
+// its own statuses state). Best-effort — the optimistic UI is the caller's.
+function signalAction(sid, status) {
+  return api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active" } });
+}
 const SIG_TABS = [
   { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" },
   { k: "priority", label: "Priority", icon: "pin", f: s => s.status === "priority" },
   { k: "saved", label: "Saved", icon: "star", f: s => s.status === "saved" },
   { k: "dismissed", label: "Dismissed", icon: "close", f: s => s.status === "dismissed" },
 ];
+// Market-position axis (spec §6.3): the cut users come for. below/above = Substance,
+// differs = Approach — so this single control subsumes the register split. `practice` is
+// the NON-MARKET bucket: signals on a non-competitive domain (Governance) which has no
+// market rate, so they read "differs from peers", never a market verdict (Governance
+// scoping ruling — signals layer; same competitiveness flag the hero scopes by).
+const SIG_POSITIONS = [
+  { k: "below", label: "below market" },
+  { k: "on", label: "on market" },
+  { k: "above", label: "above market" },
+  { k: "differs", label: "differs from market" },
+  { k: "practice", label: "differs from peers" },
+];
+const SIG_DOMAINS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing", "Recognition", "Governance"];
+const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above market", differs: "differs from market", practice: "differs from peers" };
+// Solid stance-aware colour for a market position — the SAME palette the home gauge
+// uses, so the two surfaces speak one colour language (on the aim = green, past it =
+// amber, short of it = red). Approach (differs) carries no market stance → purple.
+const SIG_TONE_SOLID = { green: "var(--favourable)", amber: "var(--amber-bright)",
+  red: "var(--unfavourable)", neutral: "var(--chart-band-mid)", approach: "var(--differs)" };
+function posColor(k, aim) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k, aim)]; }
+// The factual position word stays true to the number; the COLOUR is direction-corrected
+// absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
+// better than market green. Approach metrics (differs) and non-competitive practice
+// signals (practice) carry no market position → purple; neutral-polarity metrics are
+// context → navy; lower-is-better metrics flip (below the market = good = green, above
+// = worse = red).
+function posTag(s, aim) {
+  const text = POS_TAG_TEXT[s.position] || "differs from market";
+  if (s.position === "practice") return { text, tone: "approach", hint: "" };
+  if (s.polarity === "neutral") return { text, tone: "neutral", hint: "context, not a verdict" };
+  if (s.position === "differs")  return { text, tone: "approach", hint: "" };
+  if (s.polarity === "lower")    return { text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
+  return { text, tone: marketTone(s.position, aim), hint: "" };
+}
+// The locked Signals state is the single biggest pull to submit data, so it
+// sells the payoff: what signals do, how close you are, and a blurred taste of
+// the real thing (the actual tag vocabulary, detail obscured).
+function SignalsLocked({ contrib, me }) {
+  const pct = Math.round(contrib.core_pct || 0);
+  const target = contrib.target_pct || 90;
+  const days = contrib.days_left;
+  const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
+  const teasers = [
+    { lens: "save", icon: "coins", tag: "£ GAP", name: "Bonus opportunity", stand: "sits below the market median for your size" },
+    { lens: "retain", icon: "magnet", tag: "LOWER THAN MARKET", name: "Company sick pay", stand: "below where most of your peers land" },
+    { lens: "engage", icon: "users", tag: "MOST DO THIS", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
+    { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market — a story worth telling" },
+  ];
+  return html`
+    <div class="sig-unlock">
+      <div class="card sig-unlock-hero">
+        <div class="sig-unlock-ring"><${Icon} name="flag" size=${26} /></div>
+        <h2 class="display-title" style=${{ margin: "0 0 var(--s2)" }}>Your signals are waiting</h2>
+        <p style=${{ margin: "0 auto", maxWidth: "440px" }}>Once your reward data is in, lumi surfaces the handful
+        of things worth your attention — the <b>£ gaps</b>, where you sit <b>behind or ahead</b> of the market, and the
+        practices <b>most peers offer that you don't</b>. No dashboards to wade through; we flag, you decide.</p>
+        <div class="sig-unlock-prog">
+          <div class="row spread" style=${{ marginBottom: "var(--s2)", alignItems: "baseline" }}>
+            <b>Reward data ${pct}%</b>
+            <span class="caption">unlocks at ${target}%${days != null ? ` · ${days} days left` : ""}</span>
+          </div>
+          <div class="progressbar"><div style=${{ width: Math.min(100, target ? 100 * pct / target : 0) + "%" }}></div></div>
+        </div>
+        ${canEdit
+          ? html`<button class="btn primary sig-unlock-cta" onClick=${() => nav("/your-data")}>
+              <${Icon} name="pencil" size=${14} /> ${pct > 0 ? "Continue adding your data" : "Add your reward data"}</button>`
+          : html`<div class="caption" style=${{ marginTop: "var(--s3)" }}>Your Admin or a Contributor adds the reward data that unlocks these for the whole team.</div>`}
+      </div>
+      <div class="sig-teaser-label caption">A taste of what you'll unlock</div>
+      <div class="sig-teaser-grid" aria-hidden="true">
+        ${teasers.map((t, i) => html`
+          <div key=${i} class=${"signal-row lens-" + t.lens + " sig-teaser"}>
+            <span class="signal-roundel"><${Icon} name=${t.icon} size=${15} /></span>
+            <span class="signal-body">
+              <b class="sig-name">${t.name}</b>
+              <span class="sig-stand">${t.stand}</span></span>
+            <span class="sig-tag">${t.tag}</span>
+            <span class="sig-teaser-lock"><${Icon} name="lock" size=${12} /></span>
+          </div>`)}
+      </div>
+    </div>`;
+}
+
 window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("inbox");
+  const [posF, setPosF] = useState("all");             // market-position filter
+  const [groupBy, setGroupBy] = useState("domain");    // domain · lens
   const [acting, setActing] = useState({});            // optimistic status overrides
+  const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
   useEffect(() => {
     api("/api/overview").then(d => {
       setData(d);
@@ -413,11 +998,36 @@ window.SignalsPage = function ({ me }) {
       if (ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
     }).catch(e => setErr(e.message));
   }, []);
+  // Strategy-check signpost: once the view has re-rendered to show the target
+  // domain's group, scroll it into view and flash it. Runs after the state the
+  // jump set (tab/filter/groupBy) has committed.
+  useEffect(() => {
+    if (!jumpTo) return;
+    const el = document.getElementById("sig-dom-" + jumpTo);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("sig-group-flash");
+      setTimeout(() => el.classList.remove("sig-group-flash"), 1700);
+    }
+    setJumpTo(null);
+  }, [jumpTo, tab, posF, groupBy]);
+  // surface the named domain's signals on the same page, then scroll to them
+  const goToDomain = (dom) => { setTab("inbox"); setPosF("all"); setGroupBy("domain"); setJumpTo(dom); };
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  const locked = data.callouts && data.callouts.gaps_locked;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  const contrib = data.contribution || {};
+  // Signals only exist once insights unlock. For everyone short of that — and
+  // especially a brand-new 0%-data member — this page is the single biggest
+  // reason to submit, so it gets an engaging teaser rather than a dead end.
+  const unlocked = data.contribution ? !!contrib.insights_unlocked : !(data.callouts && data.callouts.gaps_locked);
   // triage identity is sig_id (= question_id, or qid::row_id for a matrix row)
   const all = (data.signals_all || []).map(s => { const sid = s.sig_id || s.question_id; return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null) }; });
+  // domains that have at least one live signal — so the strategy check only
+  // signposts where there's actually something to land on.
+  const signalDomains = new Set(all.filter(s => s.status !== "dismissed").map(s => s.domain).filter(Boolean));
+  // the org's stance aim — drives the SAME stance-aware position colours as the home
+  // dashboard (no red for a lag org sitting below market; that's on plan).
+  const aim = marketAim(data.hero && data.hero.market);
 
   const setStatus = (sid, status) => {
     setActing(a => ({ ...a, [sid]: status }));
@@ -429,62 +1039,87 @@ window.SignalsPage = function ({ me }) {
   const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
   const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
   const rank = s => (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
-  const byLens = {};
-  LENS_ORDER.forEach(l => { byLens[l] = all.filter(s => cur.f(s) && s.lens === l).sort((a, b) => rank(a) - rank(b)); });
-  const total = LENS_ORDER.reduce((n, l) => n + byLens[l].length, 0);
+  const triaged = all.filter(cur.f);                              // current triage tab
+  // NEUTRAL-polarity signals (cost/spend context) are NEVER coloured by verdict —
+  // engine principle #5 — so they're excluded from the position bar/chip composition
+  // (which is absolute RAG via posColor). They still render as rows with their navy
+  // "context, not a verdict" tag, and stay reachable under the position filter.
+  const posCounts = {}; triaged.forEach(s => { if (s.polarity === "neutral") return; posCounts[s.position] = (posCounts[s.position] || 0) + 1; });
+  const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab emptied falls back
+  const visible = triaged.filter(s => effPos === "all" || s.position === effPos);
+  const order = groupBy === "domain" ? SIG_DOMAINS : LENS_ORDER;
+  const groups = order.map(k => ({ key: k,
+    items: visible.filter(s => (groupBy === "domain" ? s.domain : s.lens) === k).sort((a, b) => rank(a) - rank(b)) }))
+    .filter(g => g.items.length);
 
-  const Row = (s) => { const sid = s.sig_id || s.question_id; return html`
-    <div key=${sid} class=${"signal-row lens-" + s.lens + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "")} role="button" tabindex="0"
+  const Row = (s) => { const sid = s.sig_id || s.question_id; const pt = posTag(s, aim); return html`
+    <div key=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
-      onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); openMetric(s.question_id); } }}>
-      ${sigParts(s)}
-      <span class="sig-actions" onClick=${e => e.stopPropagation()}>
-        ${s.status === "dismissed" ? html`
-          <button class="sig-act" title="Restore to inbox" aria-label="Restore" onClick=${() => setStatus(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
-          <button class=${"sig-act" + (s.status === "priority" ? " on" : "")} title=${s.status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise" onClick=${() => toggle(sid, s.status, "priority")}><${Icon} name="pin" size=${15} /></button>
-          <button class=${"sig-act" + (s.status === "saved" ? " on" : "")} title=${s.status === "saved" ? "Remove from saved" : "Save"} aria-label="Save" onClick=${() => toggle(sid, s.status, "saved")}><${Icon} name="star" size=${15} /></button>
-          <button class="sig-act" title="Dismiss" aria-label="Dismiss" onClick=${() => setStatus(sid, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
-      </span>
+      onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
+      <span class="signal-body">
+        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}</b>
+        <span class="sig-stand">${s.stand || s.detail}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
+      <span class=${"pos-tag pos-" + pt.tone}>${pt.text}</span>
+      <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
     </div>`; };
 
   return html`
     <div class="signals-page" style=${{ maxWidth: "880px" }}>
-      <h1 class="display-title" style=${{ marginBottom: "4px" }}>Signals</h1>
-      <p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's flags — market-grounded, never advice. Each shows where you stand and the market fact behind it; <b>we flag, you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>
-      ${locked ? html`
-        <div class="insight-lock" style=${{ maxWidth: "520px", marginTop: "var(--s5)" }}>
-          <div class="lock-note">
-            <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
-            <div class="caption" style=${{ textAlign: "center", maxWidth: "300px" }}>
-              Signals unlock with your insights — complete your key reward questions${data.contribution && data.contribution.days_left != null ? ` (${data.contribution.days_left} days left)` : ""}.</div>
-            <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Submit your data</button>
-          </div>
-        </div>` : html`
+      <div class="ov-aurora" aria-hidden="true"></div>
+      <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
+      ${unlocked ? html`<p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's signals — grounded in your peer data, never advice. Each shows where you sit against the market, or a practice most peers have that you don't; <b>we flag, you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>` : null}
+      ${unlocked && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
+      ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />` : html`
         <div class="sig-tabs">
           ${SIG_TABS.map(t => html`<button key=${t.k} class=${"sig-tab" + (tab === t.k ? " on" : "")} onClick=${() => setTab(t.k)}>
             <${Icon} name=${t.icon} size=${14} /> ${t.label} <span class="num">${counts[t.k]}</span></button>`)}
         </div>
-        ${total === 0 ? html`
+        ${triaged.length === 0 ? html`
           <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
             <span class="signals-empty-ring"><${Icon} name=${cur.icon} size=${18} /></span>
             <div class="caption" style=${{ maxWidth: "360px" }}>${
-              tab === "inbox" ? "Inbox zero — every flag triaged, or nothing crosses a threshold yet."
-              : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a flag to clear it from your inbox and the home briefing."
-              : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any flag to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
-          </div>` :
-        LENS_ORDER.filter(l => byLens[l].length).map(l => html`
-          <section key=${l} class="sig-lens-sec">
-            <div class=${"sig-lens-head lens-" + l}>
-              <span class="signal-roundel"><${Icon} name=${LENS_ICON[l]} size=${15} /></span>
-              <b>${LENS_LABEL[l]}</b>
-              <span class="caption">${LENS_DESC[l]} · ${byLens[l].length}</span>
+              tab === "inbox" ? "Inbox zero — every signal triaged, or nothing crosses a threshold yet."
+              : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a signal to clear it from your inbox and the home briefing."
+              : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any signal to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
+          </div>` : html`
+        <div class="sig-summary card">
+          <div class="sig-summary-top">
+            <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + (POS_TAG_TEXT[effPos] || effPos)}</span>
+            ${data.strategy_objective && html`<span class="sig-strat-order" title="The most material signals for your stance come first. Set in your reward strategy.">
+              <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
+          </div>
+          <div class="sig-bar" role="img" aria-label="Signals by market position">
+            ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: posColor(p.k, aim) }}></span>`)}
+          </div>
+          <div class="sig-controls">
+            <div class="sig-chips">
+              <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${triaged.length}</span></button>
+              ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`
+                <button key=${p.k} class=${"sig-chip" + (effPos === p.k ? " on" : "")} aria-pressed=${effPos === p.k} onClick=${() => setPosF(effPos === p.k ? "all" : p.k)}>
+                  <span class="sig-chip-dot" style=${{ background: posColor(p.k, aim) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
             </div>
-            <div class="signals-list">${byLens[l].map(Row)}</div>
-          </section>`)}
+            <div class="sig-groupby">group by
+              <div class="seg" role="group" aria-label="Group by">
+                <button class=${groupBy === "domain" ? "on" : ""} aria-pressed=${groupBy === "domain"} onClick=${() => setGroupBy("domain")}>domain</button>
+                <button class=${groupBy === "lens" ? "on" : ""} aria-pressed=${groupBy === "lens"} onClick=${() => setGroupBy("lens")}>lens</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><div class="caption">No signals ${POS_TAG_TEXT[effPos] || ""} in this view.</div></div>` :
+        groups.map(g => html`
+          <section key=${g.key} id=${groupBy === "domain" ? "sig-dom-" + g.key : null} class="sig-group">
+            <div class="sig-grouphead">
+              ${groupBy === "lens" ? html`<span class=${"signal-roundel lens-" + g.key}><${Icon} name=${LENS_ICON[g.key]} size=${14} /></span>` : html`<span class="sig-grouphead-icon"><${Icon} name=${CAT_ICON[g.key] || "award"} size=${15} /></span>`}
+              <b class="gname">${groupBy === "domain" ? g.key : LENS_LABEL[g.key]}</b>
+              <span class="gmeta">${groupBy === "lens" ? LENS_DESC[g.key] + " · " : ""}${g.items.length}</span>
+            </div>
+            <div class="signals-list">${g.items.map(Row)}</div>
+          </section>`)}`}
         <div class="sig-register-foot">
           <${Icon} name="table" size=${15} />
           <div>
-            <b>Want the complete picture?</b> Signals shows only the flags that cross a threshold.
+            <b>Want the complete picture?</b> Signals shows only the signals that cross a threshold.
             The <a href="#/priorities">full gap register</a> lists every metric's presence against the market.
             ${me.user.role === "admin" ? html` <a href="/api/gap-register.csv" download>Download CSV</a>.` : null}
           </div>
@@ -492,112 +1127,97 @@ window.SignalsPage = function ({ me }) {
     </div>`;
 };
 
-function CategoryTile({ d }) {
+function CategoryTile({ d, pending, aim, view }) {
   const post = d.position || d.market;
-  const verdict = post ? post.verdict : null;
+  const noRate = d.competitiveness === false;
+  const prev = d.prevalence || {};
+  const ap = pending ? null : d.approach;
+
+  // PRACTICE LENS (the dashboard "Practice" view): every card shows its approach read —
+  // how many of this area's practices differ from the market norm (a count, never a
+  // verdict). The market bar/verdict is hidden; the two concepts never share the card.
+  if (view === "practice") {
+    const pool = ap && ap.pool, differ = ap && ap.differ;
+    const fr = pool ? Math.round(1000 * differ / pool) / 10 : 0;
+    return html`
+      <div class="card cat-tile cat-tile-practice" onClick=${() => nav("/category/" + encodeURIComponent(d.name))} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/category/" + encodeURIComponent(d.name)); } }} role="button" tabindex="0">
+        <span style=${{ display: "inline-flex", alignItems: "center", gap: "var(--s2)", fontWeight: 600, fontSize: "var(--fs-label)" }}>
+          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
+        ${pending ? html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>Appears once unlocked</div>`
+          : (pool ? html`
+            <div class="cat-axis num">differ</div>
+            <div class="catp-bar" title="How many of this area's practices differ from the market norm — a different way of doing things, not a gap."
+              role="img" aria-label=${differ + " of " + pool + " practices differ from the market norm."}>
+              <div class="catp-bar-fill" style=${{ width: fr + "%" }}></div></div>
+            <div class="cat-differ num"><span class="cat-differ-dot"></span><span class="cat-differ-txt"><b>${differ}</b> of ${pool} differ</span></div>`
+          : html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>${prev.pool || 0} practices tracked</div>`)}
+      </div>`;
+  }
+
+  // MARKET LENS (default): the verdict chip + proportional below/on/above bar with the
+  // per-domain lean needle. The practice differ line now lives in the Practice view.
+  // Data-pending: a per-category verdict on ~1% of data isn't credible — neutral fallback.
+  const verdict = pending ? null : (post ? post.verdict : null);
   const ev = d.position_evidence;
-  const indicative = d.position_basis === "indicative";
+  const indicative = pending ? false : (d.position_basis === "indicative");
   const evCount = ev ? ev.polarised + ev.practice : 0;
   const evNote = ev ? ("based on " + evCount + " positioned metric" + (evCount === 1 ? "" : "s") +
     (indicative ? " — indicative, not a full market verdict" : "")) : "";
-  // pay-positioning traffic light (David, 2026-06-12): at market = green
-  // (aligned), above = red (premium cost), below = amber (lagging)
-  const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
-    : verdict ? "var(--favourable)" : "var(--you)";
-  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
-  const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
-  const vCls = verdict === "below" ? "v-below" : verdict === "above" ? "v-above" : verdict ? "v-at" : "v-practice";
-  const prev = d.prevalence || {};
-  const dot = d.dot;
+  // The chip + card tint read against the org's AIM (Option A): on-target/ahead is
+  // favourable, only short of the aim is red; no stance → absolute RAG. The bands stay
+  // ABSOLUTE (marketTone) so the composition is factual. Governance (noRate) is OUT of
+  // the headline — no market rate to be under/over — so it reports prevalence instead.
+  // FIX 1 — chip + card tint colour by ATTAINMENT (attainTone): on your aim = green, off it
+  // = amber, no stance = grey-neutral. The chip TEXT keeps the direction word (below/on/
+  // above); only the colour changes. No verdict (practice / no market rate) → practice tint.
+  const tone = verdict ? attainTone(verdict, aim) : null;
+  const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : noRate ? "no market rate" : "practice view";
+  const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
+  const vCls = tone ? MKT_VCLS[tone] : "v-practice";
+  const positioned = !pending && post && post.pool > 0;
+  const vKey = verdict === "below" ? "below" : verdict === "above" ? "above" : "on";
+  const segs = positioned ? [{ k: "below", n: post.below }, { k: "on", n: post.at }, { k: "above", n: post.above }] : [];
+  let markFrac = 0.5;
+  if (positioned) {
+    const T = post.lean_threshold || 0.25, lz = Math.max(-1, Math.min(1, post.lean || 0));
+    const b1 = post.below / post.pool, b2 = (post.below + post.at) / post.pool;
+    const lp = (a, z, t) => a + (z - a) * Math.max(0, Math.min(1, t));
+    markFrac = verdict === "above" ? lp(b2, 1, (lz - T) / (1 - T))
+             : verdict === "below" ? lp(0, b1, (lz + 1) / (1 - T))
+             : lp(b1, b2, (lz + T) / (2 * T));
+    markFrac = Math.max(0.025, Math.min(0.975, markFrac));
+  }
   return html`
-    <div class=${"card cat-tile " + vCls} onClick=${() => nav("/category/" + encodeURIComponent(d.name))} role="button" tabindex="0">
-      <span style=${{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
+    <div class=${"card cat-tile " + vCls + (noRate ? " cat-tile-norate" : "")} onClick=${() => nav("/category/" + encodeURIComponent(d.name))} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/category/" + encodeURIComponent(d.name)); } }} role="button" tabindex="0">
+      <span style=${{ display: "inline-flex", alignItems: "center", gap: "var(--s2)", fontWeight: 600, fontSize: "var(--fs-label)" }}>
         <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
-      <span class="row" style=${{ gap: "5px", alignSelf: "flex-start", alignItems: "center" }}>
+      <span class="row" style=${{ gap: "var(--s1)", alignSelf: "flex-start", alignItems: "center" }}>
         <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
-        ${indicative && html`<span class="indic-flag" title=${evNote}>≈ indicative</span>`}
+        ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
       </span>
-      ${dot != null ? html`
-        <div class="tile-band" style=${{ margin: 0 }}>
-          <div class="tile-band-mid"></div>
-          <div class="band-tick"></div>
-          <div class="tile-dot" style=${{ left: "calc(" + Math.min(97, Math.max(3, dot)) + "% - 6px)", background: col }}></div>
-        </div>` : html`
-        <div class="tile-band" style=${{ margin: 0 }}>
+      ${positioned ? html`
+        <div class="cat-axis num">position</div>
+        <div class=${"cat-pos" + (indicative ? " cat-pos-indic" : "")}>
+          <div class="cat-bar" title=${evNote} role="img"
+            aria-label=${post.below + " below, " + post.at + " on market, " + post.above + " above. " + evNote}>
+            <div class="cat-bar-track">
+              ${segs.map(s => { const st = attainTone(verdict, aim);   /* FIX 1: whole bar = one attainment hue; the marker carries direction */
+                return html`<div key=${s.k} class="cat-bar-seg"
+                  style=${{ width: (100 * s.n / post.pool).toFixed(2) + "%", background: s.k === vKey ? MKT_RICH[st] : MKT_SOFT[st] }}></div>`; })}
+            </div>
+            <div class="cat-bar-mark" style=${{ left: (markFrac * 100).toFixed(1) + "%" }}><i></i></div>
+          </div>
+        </div>` : noRate ? html`
+        <div class="cat-na num" style=${{ marginTop: "var(--s2)" }}
+          title="No market rate to be under or over — these are approach choices, not a market position.">N/A</div>` : html`
+        <div class="tile-band" style=${{ margin: "2px 0 0" }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
-        </div>`}
-      <div class="row spread" style=${{ minHeight: "18px" }}>
-        <span class="caption num" title="practices in line with the market majority">${prev.with_majority != null ? prev.with_majority + "/" + prev.pool : ""}</span>
-      </div>
-    </div>`;
-}
-
-function ChipColumn({ title, items, good }) {
-  return html`
-    <div class="card" style=${{ padding: "var(--s4)" }}>
-      <div class="caption" style=${{ marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px",
-        color: good ? "var(--favourable)" : "var(--unfavourable)", fontWeight: 650 }}>
-        <${Icon} name=${good ? "star" : "target"} size=${14} /> ${title}</div>
-      ${(items || []).length === 0 ? html`<div class="caption" style=${{ color: "var(--ink-faint)" }}>Nothing stands out in this peer group yet.</div>` :
-      items.map((it, i) => html`
-        <div key=${i} class="chip-row" onClick=${() => openMetric(it.question_id)} role="button" tabindex="0">
-          <span class="chip-label">${it.label}</span>
-          <span class="chip-band"><span class="band-tick"></span><span class="tile-dot" style=${{ left: "calc(" + Math.min(96, Math.max(2, it.adjusted)) + "% - 5px)", background: good ? "var(--favourable)" : "var(--unfavourable)", width: "10px", height: "10px", top: "-2.5px" }}></span></span>
-          <span class=${"num p-pill " + (good ? "good" : "bad")}>P${Math.round(it.percentile)}</span>
-        </div>`)}
-    </div>`;
-}
-
-
-/* The two-signal hero. Market position carries a verdict (performance
-   palette); practice prevalence is information (neutral palette, never
-   red/amber/green — "less common" is not "bad"). */
-const MARKET_LABEL = { above: "Above market", at: "On market", below: "Below market" };
-const MARKET_KIND = { above: "good", at: "mid", below: "bad" };
-const MARKET_ARROW = { above: "▲", at: "●", below: "▼" };
-
-function MarketPill({ m, lg }) {
-  if (!m) return null;
-  return html`<span class=${"pos-pill " + (lg ? "lg " : "") + MARKET_KIND[m.verdict]}
-    title=${`${m.above} above · ${m.at} at · ${m.below} below market, across ${m.pool} comparable positioned metrics`}>
-    ${MARKET_ARROW[m.verdict]} ${MARKET_LABEL[m.verdict]}</span>`;
-}
-
-function PrevLine({ p, compact }) {
-  if (!p) return html`<span class="caption">no comparable practices yet</span>`;
-  return html`<span class=${"prev-line" + (compact ? " caption" : "")}>
-    <b class="num">${p.with_majority}</b> of ${p.pool} practices with the market majority${p.less_common ? html` · <b class="num">${p.less_common}</b> less common` : ""}</span>`;
-}
-
-window.HeroSignals = function ({ hero, cut, cuts }) {
-  if (!hero) return null;
-  const m = hero.market;
-  const noData = !m && !hero.prevalence;
-  return html`
-    <div style=${{ flex: "1.9 1 340px", minWidth: "320px" }}>
-      <div class="eyebrow">Where you stand · ${cutLabelOf(cut, cuts)}</div>
-      ${noData ? html`
-        <div style=${{ marginTop: "6px" }}>
-          <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>Answer your reward data to see where you stand.</b>
-          <div class="caption" style=${{ marginTop: "4px" }}>No verdict is shown until it can be computed from your own answers.</div>
-        </div>` : html`
-        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center", margin: "6px 0 2px" }}>
-          ${m ? html`<${MarketPill} m=${m} lg=${true} />` : html`<span class="caption">Not enough positioned metrics for a market verdict yet.</span>`}
-          ${m && html`<span class="caption num">${m.above} above · ${m.at} at · ${m.below} below, of ${m.pool} positioned metrics</span>`}
         </div>
-        <div style=${{ marginBottom: "var(--s3)" }}><${PrevLine} p=${hero.prevalence} compact=${true} /></div>
-        <div class="domain-rows">
-          ${hero.domains.map(d => html`
-            <div key=${d.name} class="domain-row" onClick=${() => nav("/benchmark?cat=" + encodeURIComponent(d.name))}>
-              <span class="domain-name">${d.name}</span>
-              ${d.market ? html`<${MarketPill} m=${d.market} />` :
-                d.prevalence || d.polarised_comparable ? html`<span class="chip" title="Too few polarised metrics for an honest market verdict — practice comparison only">practice view</span>` :
-                html`<span class="caption">not enough comparable data yet</span>`}
-              <span class="domain-prev"><${PrevLine} p=${d.prevalence} compact=${true} /></span>
-            </div>`)}
-        </div>`}
+        ${prev.with_majority != null && html`<div class="caption num" title="practices in line with the market majority">${prev.with_majority}/${prev.pool} in line with the market</div>`}`}
     </div>`;
-};
+}
+
+
 
 function jumpToItem(item) { if (item) openMetric(item.question_id); }
 
@@ -650,9 +1270,9 @@ window.OpportunityTile = function ({ opp, contrib, actionGaps }) {
             </div>`)}
         </div>
         <div class="caption" style=${{ marginTop: "auto" }}><${Term} word="indicative">Indicative<//> — based on assumptions you can change in <a href="#/settings">Settings</a>.</div>
-        ${actionGaps > 0 && html`<div class="caption" style=${{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid var(--border)" }}>
+        ${actionGaps > 0 && html`<div class="caption" style=${{ marginTop: "var(--s2)", paddingTop: "var(--s2)", borderTop: "1px solid var(--border)" }}>
           Plus <a href="#/priorities"><b class="num">${actionGaps}</b> practice gaps</a> where most peers do something you don't — the non-£ to-do list.</div>`}` :
-      html`<div class="caption" style=${{ marginTop: "6px" }}>Declare your FTE band in <a href="#/your-data/submit">your submission</a> to size the £ opportunity of closing gaps to the market median.</div>`}
+      html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>Declare your FTE band in <a href="#/your-data/submit">your submission</a> to size the £ opportunity of closing gaps to the market median.</div>`}
     </div>`;
 };
 
@@ -660,7 +1280,7 @@ window.TrajectoryTile = function ({ movement }) {
   return html`
     <div style=${{ flex: "1 1 190px", minWidth: "190px", borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)", display: "flex", flexDirection: "column" }}>
       <div class="caption" style=${{ fontWeight: 650, textTransform: "uppercase", letterSpacing: ".06em" }}>Your journey</div>
-      <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "10px 0 6px" }}>
+      <svg viewBox="0 0 170 44" style=${{ width: "170px", display: "block", margin: "var(--s3) 0 var(--s2)" }}>
         <polyline points="4,30 40,30" stroke="var(--blue)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
         <circle cx="40" cy="30" r="5" fill="var(--blue)"/>
         <circle cx="40" cy="30" r="9" fill="none" stroke="var(--blue-tint-2)" stroke-width="2"/>
@@ -748,9 +1368,9 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
               <option value="">All signals</option>
               <option value="signal">Flagged · ${sigCounts.signal}</option>
               <option value="add">Needs data · ${sigCounts.add}</option>
-              <option value="clear">No flag · ${sigCounts.clear}</option>
+              <option value="clear">No signal · ${sigCounts.clear}</option>
             </select>
-            <div class="hint">Flagged, needs data, or no flag.</div>
+            <div class="hint">Flagged, needs data, or no signal.</div>
           </div>
         </div>
       </div>
@@ -819,19 +1439,28 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [err, setErr] = useState(null);
   const [type, setType] = useState("");
   const [sigF, setSigF] = useState("");
+  const [sigStOv, setSigStOv] = useState({});   // local triage overlay for this domain's signals
+  // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
+  // stays consistent across surfaces: when the user has turned their strategy OFF on the
+  // overview (persisted pref _overview.apply_strategy === false), fetch this category with
+  // &strategy=off too, so market.target comes back null → aim null → attainTone yields the
+  // grey "no judgement" hue here as well (no separate flag; same source of truth, same param
+  // as the overview at line ~45). Real-aim by default.
+  const _ovp = (prefs && prefs._overview) || {};
+  const applyStrat = _ovp.apply_strategy !== false;
   useEffect(() => {
     setOv(null); setBench(null); setErr(null); setType(""); setSigF("");
     Promise.all([
-      api("/api/overview?" + cutQS(cut)),
+      api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
       api("/api/benchmarks/Reward?" + cutQS(cut)),
     ]).then(([o, b]) => { setOv(o); setBench(b); }).catch(e => setErr(e.message));
-  }, [name, cutKeyOf(cut)]);
+  }, [name, cutKeyOf(cut), applyStrat]);
 
   const Head = (meta) => html`
     <div class="page-head">
       <div class="titleblock">
         <a class="caption back-link" href="#/overview"><${Icon} name="chevron-left" size=${13} /> Overview</a>
-        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <div class="cat-glyph"><${Icon} name=${CAT_ICON[name] || "award"} size=${20} /></div>
           <div><h1 class="display-title">${name}</h1><div class="caption meta">${meta}</div></div>
         </div>
@@ -848,6 +1477,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const inCat = new Set(all.map(c => c.id));
   const sigMap = {}; (ov.signals_all || []).forEach(s => { (sigMap[s.question_id] = sigMap[s.question_id] || []).push(s); });
   const sigs = (ov.signals_all || []).filter(s => inCat.has(s.question_id) && s.status !== "dismissed");
+  const sigEff = s => { const k = s.sig_id || s.question_id; return k in sigStOv ? sigStOv[k] : s.status; };
+  const onSetSig = (sid, status) => { setSigStOv(p => ({ ...p, [sid]: status || "active" })); signalAction(sid, status).catch(() => {}); };
+  const sigsShown = sigs.filter(s => sigEff(s) !== "dismissed");
   let cards = type ? all.filter(c => c.category === type) : all;
   if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
   const sigCounts = { signal: 0, add: 0, clear: 0 };
@@ -859,10 +1491,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const indicative = hero && hero.position_basis === "indicative";
   const ev = hero && hero.position_evidence;
   const evC = ev ? ev.polarised + ev.practice : 0;
-  const col = verdict === "below" ? "var(--amber-bright)" : verdict === "above" ? "var(--unfavourable)"
-    : verdict ? "var(--favourable)" : "var(--you)";
+  // FIX 1 attainment lens (extended to the category hero, 2026-06-24): the chip colours by
+  // ATTAINMENT (attainTone) — on your aim = green, off it = amber, no stance = grey-neutral —
+  // exactly as the overview gauge card. The chip TEXT still states the absolute position
+  // (below/on/above). marketTone/alignTone stay defined (the signals list still uses them).
+  const aim = marketAim(ov.hero && ov.hero.market);
+  const tone = verdict ? attainTone(verdict, aim) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
-  const chipCls = verdict === "below" ? "chip-mid" : verdict === "above" ? "chip-bad" : verdict ? "chip-good" : "chip-practice";
+  const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
   const dot = hero && hero.dot;
 
@@ -874,40 +1510,35 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="cat-hero-cell">
           <div class="cat-hero-label">Market position</div>
           ${pos ? html`
-            <div class="row" style=${{ gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+            <div class="row" style=${{ gap: "var(--s2)", alignItems: "center", marginBottom: "var(--s3)" }}>
               <span class=${"chip " + chipCls}>${chip}</span>
-              ${indicative && html`<span class="indic-flag">≈ indicative</span>`}
+              ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
             </div>
-            ${dot != null ? html`
-              <div class="cat-band">
-                <div class="cat-band-mid"></div><div class="band-tick"></div>
-                <div class="cat-band-dot" style=${{ left: "calc(" + Math.min(96, Math.max(4, dot)) + "% - 7px)", background: col }}></div>
-              </div>
-              <div class="cat-band-ends"><span>below market</span><span>above market</span></div>` : null}
-            <div class="caption" style=${{ marginTop: "12px" }}>
+            ${pos.pool ? html`<${MarketSpectrum} market=${pos} aim=${aim} />` : null}
+            <div class="caption" style=${{ marginTop: "var(--s3)" }}>
               <b>${pos.at}</b> of ${pos.pool} metric${pos.pool === 1 ? "" : "s"} placed · ${pos.below} below market · ${pos.above} above${
               indicative ? " · indicative, not yet a full market verdict" : ""}</div>` :
-            html`<div class="caption" style=${{ marginTop: "8px" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
+            html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
         </div>
         <div class="cat-hero-cell">
           <div class="cat-hero-label">Practice prevalence</div>
           ${prev.pool ? prevDonut(prev) :
-            html`<div class="caption" style=${{ marginTop: "8px" }}>No practice questions assessed in this category yet.</div>`}
+            html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>No practice questions assessed in this category yet.</div>`}
         </div>
       </div>
 
-      ${sigs.length ? html`
+      ${sigsShown.length ? html`
         <section class="cat-section">
           <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="flag" size=${14} /></span>
             <b>Signals in ${name}</b>
-            <span class="caption">${sigs.length} flag${sigs.length === 1 ? "" : "s"} — we flag, you decide</span>
+            <span class="caption">${sigsShown.length} signal${sigsShown.length === 1 ? "" : "s"} — we flag, you decide</span>
             <a class="caption cat-sec-link" href="#/signals">All signals →</a></div>
           <div class="signals-list">
-            ${sigs.map((s, i) => html`
-              <div key=${i} class=${"signal-row lens-" + s.lens} onClick=${() => nav("/metric/" + s.question_id)} role="button" tabindex="0">
-                ${sigParts(s)}
-                <span class="signal-go" aria-hidden="true">→</span>
-              </div>`)}
+            ${sigsShown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
+              <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone} onClick=${() => nav("/metric/" + s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/metric/" + s.question_id); } }} role="button" tabindex="0">
+                ${sigParts(s, pt)}
+                <${SignalActions} status=${sigEff(s)} sid=${sid} onSet=${onSetSig} />
+              </div>`; })}
           </div>
         </section>` : html`
         <div class="cat-allclear">
@@ -923,7 +1554,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               <option value="">All signals</option>
               <option value="signal">Flagged · ${sigCounts.signal}</option>
               <option value="add">Needs data · ${sigCounts.add}</option>
-              <option value="clear">No flag · ${sigCounts.clear}</option>
+              <option value="clear">No signal · ${sigCounts.clear}</option>
             </select>
             <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
               <option value="">All types</option><option value="metric">Metrics</option>
@@ -944,15 +1575,46 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
     </div>`;
 };
 
-// ----------------------------------------------------------- my view -------
-window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
-  const [layout, setLayout] = useState(null);
-  const [source, setSource] = useState(null);
+// --------------------------------------------------------- my dashboards ---
+// Several named, saveable dashboards per user. A switcher tab-bar sits above the
+// same draggable card grid the old single "My view" used; the active dashboard
+// is what the global pin-star (anywhere in the app) writes to.
+window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
+  const [list, setList] = useState(null);       // [{id,name,position,count}]
+  const [activeId, setActiveId] = useState(null);
+  const [layout, setLayout] = useState(null);   // active dashboard's slots
   const [cards, setCards] = useState({});
   const [drag, setDrag] = useState(null);
   const [saved, setSaved] = useState(null);
   const [sigMap, setSigMap] = useState({});
-  useEffect(() => { api("/api/myview").then(d => { setLayout(d.layout); setSource(d.source); }); }, []);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const nameRef = useRef(null);
+  const cancelRename = useRef(false);   // Escape sets this so the input's onBlur doesn't commit
+
+  const applyActive = (id, lay) => {
+    setActiveId(id); setLayout(lay); setCards({});
+    if (setPinned) setPinned((lay || []).map(s => s.question_id));
+  };
+  // cache key folds in the EFFECTIVE peer cut, so changing the global filter
+  // (or a slot's own cut) yields a fresh key → refetch, not a stale card.
+  const cardKey = slot => slotKey(slot) + "|" + cutKeyOf(slot.cut || cut);
+  const reload = () => api("/api/dashboards").then(d => {
+    setList(d.dashboards); applyActive(d.active_id, d.active.layout);
+  });
+  useEffect(() => { reload(); }, []);
+  // a card's "Add to dashboard" picker (anywhere) can change this dashboard's
+  // contents — keep the tab counts + the active grid in sync without a full reset.
+  useEffect(() => {
+    const f = () => api("/api/dashboards").then(d => {
+      setList(d.dashboards); setLayout(d.active.layout);
+      if (setPinned) setPinned((d.active.layout || []).map(s => s.question_id));
+    }).catch(() => {});
+    window.addEventListener("lumi:pins-changed", f);
+    return () => window.removeEventListener("lumi:pins-changed", f);
+  }, []);
   useEffect(() => {
     api("/api/overview?" + cutQS(cut)).then(o => {
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
@@ -961,7 +1623,7 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
   useEffect(() => {
     if (!layout) return;
     layout.forEach(slot => {
-      const key = slotKey(slot);
+      const key = cardKey(slot);
       if (cards[key]) return;
       const c = slot.cut || cut;
       api(`/api/benchmark/${slot.question_id}?` + cutQS(c))
@@ -969,11 +1631,17 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
         .catch(() => setCards(prev => ({ ...prev, [key]: { error: true } })));
     });
   }, [layout, cutKeyOf(cut)]);
-  if (!layout) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
+
+  if (!list || !layout) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  const active = list.find(d => d.id === activeId) || {};
+  const activeName = active.name || "My dashboard";
 
   const persist = async (next) => {
     setLayout(next);
-    await api("/api/myview", { method: "PUT", body: { layout: next } });
+    if (setPinned) setPinned(next.map(s => s.question_id));
+    setList(l => l.map(d => d.id === activeId ? { ...d, count: next.length } : d));
+    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { layout: next } }).catch(() => {});
   };
   const remove = qid => persist(layout.filter(s => s.question_id !== qid));
   const resize = (qid, size) => persist(layout.map(s => s.question_id === qid ? { ...s, size } : s));
@@ -982,55 +1650,139 @@ window.MyViewPage = function ({ me, cut, cuts, prefs, onPref }) {
     const next = [...layout];
     const [moved] = next.splice(drag, 1);
     next.splice(idx, 0, moved);
-    setDrag(null);
-    persist(next);
+    setDrag(null); persist(next);
+  };
+
+  const switchTo = async (id) => {
+    if (id === activeId || busy) return;
+    setBusy(true); setRenaming(false); setConfirmDel(false);
+    try {
+      await api(`/api/dashboards/${id}/activate`, { method: "POST" });
+      const d = await api(`/api/dashboards/${id}`);
+      applyActive(id, d.layout);
+    } finally { setBusy(false); }
+  };
+  const createNew = async () => {
+    if (busy) return;
+    setBusy(true); setConfirmDel(false);
+    try {
+      const d = await api("/api/dashboards", { method: "POST", body: { name: "New dashboard" } });
+      await reload();
+      setNameDraft(d.name); setRenaming(true);
+    } finally { setBusy(false); }
+  };
+  const duplicate = async () => {
+    if (busy) return;
+    setBusy(true); setConfirmDel(false);
+    try {
+      await api("/api/dashboards", { method: "POST", body: { name: activeName + " copy", clone_from: activeId } });
+      await reload();
+    } finally { setBusy(false); }
+  };
+  const startRename = () => { setNameDraft(activeName); setRenaming(true); };
+  const commitName = async () => {
+    if (!renaming) return;
+    if (cancelRename.current) { cancelRename.current = false; setRenaming(false); return; }  // Escape — discard
+    const nm = (nameDraft || "").trim().slice(0, 60) || activeName;
+    setRenaming(false);
+    setList(l => l.map(d => d.id === activeId ? { ...d, name: nm } : d));
+    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { name: nm } }).catch(() => {});
+  };
+  const doDelete = async () => {
+    setConfirmDel(false); setBusy(true);
+    try {
+      const r = await api(`/api/dashboards/${activeId}`, { method: "DELETE" });
+      setList(r.dashboards);
+      const d = await api(`/api/dashboards/${r.active_id}`);
+      applyActive(r.active_id, d.layout);
+    } finally { setBusy(false); }
   };
   const saveDefault = async () => {
     await api("/api/myview/save-default", { method: "POST", body: { layout } });
-    setSaved("Saved as your organisation's default view");
+    setSaved("Saved as your team's starting layout");
     setTimeout(() => setSaved(null), 2500);
   };
+  const onlyOne = list.length <= 1;
+
   return html`
     <div>
-      <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
+      <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
         <div>
-          <h1 class="display-title">My view</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>
-            ${source === "starter" ? "A starter view of your 8 biggest gaps and 4 biggest strengths — pin any card from anywhere in lumi (☆), drag to reorder, resize, or remove." :
-            source === "org_default" ? "Your organisation's default view — make it your own by pinning, dragging and resizing." :
-            "Your pinned view. Drag to reorder; cards keep their own peer-group and chart settings."}
+          <h1 class="display-title">My dashboards</h1>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>
+            Build and save as many views as you like — pin cards from anywhere in lumi (☆), drag to arrange, and switch between them here.
           </div>
         </div>
         <div class="row">
           ${saved && html`<${Chip} kind="good">${saved}<//>`}
-          ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members will inherit this layout">Save as team default</button>`}
+          <${ShareButton} me=${me} cut=${null} name=${activeName} />
+          ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members start from this layout">Save as team default</button>`}
         </div>
       </div>
-      ${layout.length === 0 && html`<${EmptyState} icon="star" title="Nothing pinned yet"
-        body="Use the star on any benchmark card to pin it here."
-        action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Back to overview</button>`} />`}
-      <div class="bench-grid">
+
+      <div class="dash-tabs" role="group" aria-label="Your dashboards">
+        ${list.map(d => html`
+          <button key=${d.id} type="button" aria-pressed=${d.id === activeId}
+            class=${"dash-tab" + (d.id === activeId ? " on" : "")} onClick=${() => switchTo(d.id)}>
+            <span class="dash-tab-name">${d.name}</span>
+            <span class="dash-tab-count">${d.count}</span>
+          </button>`)}
+        <button class="dash-tab dash-tab-new" onClick=${createNew} disabled=${busy} title="Create a new dashboard">
+          <span aria-hidden="true">＋</span> New</button>
+      </div>
+
+      <div class="dash-toolbar">
+        <div class="dash-toolbar-l">
+          ${renaming
+            ? html`<input ref=${nameRef} class="ctl dash-name-input" value=${nameDraft} maxlength="60"
+                aria-label="Dashboard name"
+                onInput=${e => setNameDraft(e.target.value)}
+                onBlur=${commitName}
+                onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitName(); } else if (e.key === "Escape") { cancelRename.current = true; setRenaming(false); } }} />`
+            : html`<h2 class="dash-name" onDoubleClick=${startRename} title="Double-click to rename">${activeName}</h2>`}
+          ${!renaming && html`
+            <div class="dash-actions no-print">
+              <button class="iconbtn" title="Rename" onClick=${startRename}><${Icon} name="pencil" size=${14} /></button>
+              <button class="iconbtn" title="Duplicate this dashboard" onClick=${duplicate} disabled=${busy}><${Icon} name="copy" size=${14} /></button>
+              <button class="iconbtn" title=${onlyOne ? "Reset this dashboard" : "Delete this dashboard"} onClick=${() => setConfirmDel(true)} disabled=${busy}><${Icon} name="close" size=${14} /></button>
+            </div>`}
+        </div>
+        <div class="caption">${layout.length} card${layout.length === 1 ? "" : "s"}</div>
+      </div>
+
+      ${confirmDel && html`
+        <div class="dash-confirm" role="alertdialog">
+          <span><b>${onlyOne ? "Reset" : "Delete"} “${activeName}”?</b> ${onlyOne ? "It will be cleared back to your starting layout." : "This can't be undone."}</span>
+          <div class="row" style=${{ gap: "var(--s2)" }}>
+            <button class="btn small" onClick=${() => setConfirmDel(false)}>Cancel</button>
+            <button class="btn small danger" onClick=${doDelete}>${onlyOne ? "Reset" : "Delete"}</button>
+          </div>
+        </div>`}
+
+      ${layout.length === 0 && html`<${EmptyState} icon="star" title="This dashboard is empty"
+        body="Pin a card with the star (☆) on any benchmark — across Overview, Benchmark or Signals — and it lands here."
+        action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
+
+      <div class=${"bench-grid" + (busy ? " is-busy" : "")}>
         ${layout.map((slot, i) => {
-          const c = cards[slotKey(slot)];
+          const c = cards[cardKey(slot)];
           return html`
           <div key=${slotKey(slot)} draggable="true" class=${drag === i ? "dragging" : ""}
             onDragStart=${() => setDrag(i)} onDragOver=${e => e.preventDefault()} onDrop=${() => onDrop(i)}
             style=${slot.size === 2 ? { gridColumn: "span 2" } : null}>
             ${!c ? html`<${SkeletonCard} />` :
             c.error ? html`<div class="card bench-card"><${EmptyState} title="Couldn't load this card" /></div>` :
-            html`<div style=${{ position: "relative" }}>
-              <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
-                onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]} />
-              <div class="no-print" style=${{ position: "absolute", bottom: "8px", right: "10px", display: "flex", gap: "2px" }}>
-                <button class="iconbtn" title="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
-                <span class="iconbtn" title="Drag to reorder" style=${{ cursor: "grab" }}>⠿</span>
-              </div>
-            </div>`}
+            html`<${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
+              onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]}
+              footTools=${html`
+                <button class="iconbtn" title=${slot.size === 2 ? "Single width" : "Double width"} aria-label="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
+                <span class="iconbtn" title="Drag to reorder" aria-label="Drag to reorder" style=${{ cursor: "grab" }}>⠿</span>`} />`}
           </div>`;
         })}
       </div>
     </div>`;
 };
+window.MyViewPage = window.DashboardsPage;   // back-compat alias
 function slotKey(slot) { return slot.question_id + "|" + (slot.row_id || "") + "|" + JSON.stringify(slot.cut || {}); }
 
 // ----------------------------------------------------------- my data -------
@@ -1070,20 +1822,32 @@ window.CompletionRing = CompletionRing;
 window.YourDataPage = function ({ me }) {
   const [data, setData] = useState(null);
   useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   if (data.error) return html`<${EmptyState} title="Couldn't load your data" />`;
   const c = data.contribution || {};
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const target = c.target_pct || 90;
   const fresh = data.answered === 0;            // brand-new: a start, not a deficit
+  // One forward CTA, gate-aware. Until firmographics + data terms are cleared,
+  // the on-ramp (/your-data/submit) runs those gates; after that the CTA points
+  // straight into the first unfinished area, or to Review & submit when done.
+  const profiled = !!(me && me.org && me.org.classified);   // firmographics done
+  const termsAccepted = !!c.terms_accepted;                 // data terms accepted
+  const gated = !profiled || !termsAccepted;
+  const nextDomain = (data.domains || []).find(d => d.answered < d.total);
+  const cta = gated
+    ? { label: !profiled ? "Get started" : "Review the data terms", to: "/your-data/submit" }
+    : nextDomain
+      ? { label: fresh ? "Start answering" : "Continue answering", to: "/your-data/" + encodeURIComponent(nextDomain.name) }
+      : { label: "Review & submit", to: "/your-data/review" };
   return html`
     <div class="yourdata">
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <h1 class="display-title">Your data</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>Everything your organisation has submitted — only your team can see this.</div>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Everything your organisation has submitted — only your team can see this.</div>
         </div>
-        ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Submit data</button>`}
+        ${canEdit && !fresh && html`<button class="btn primary" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
       </div>
 
       <div class=${"card data-hero" + (fresh ? " fresh" : "")}>
@@ -1093,15 +1857,15 @@ window.YourDataPage = function ({ me }) {
             : html`<b>${data.answered}</b> of ${data.total} answered`}</div>
           ${c.insights_unlocked ? html`
             <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
-              <div><b>Insights unlocked.</b> Your signals, £ opportunity and board pack are live — thank you for contributing to the benchmark.</div></div>` : html`
+              <div><b>Insights unlocked</b> — thank you for contributing to the benchmark.</div></div>` : html`
             <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
-              <div><b>${fresh ? "Answer your reward questions to unlock your insights." : "Reach " + target + "% to unlock your insights."}</b> ${fresh ? "It turns on" : "Completing your reward data turns on"} your signals, the £ opportunity and your board pack${c.days_left != null ? ` — ${c.days_left} days to reach ${target}%` : ""}.</div></div>`}
-          ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav("/your-data/submit")}><${Icon} name="pencil" size=${14} /> Start submitting</button>`}
-          ${!c.insights_unlocked && c.clock_started && html`
-            <div class=${"data-access" + (c.reduced ? " warn" : "")}>
-              <${Icon} name=${c.reduced ? "shield" : "info"} size=${13} />
-              ${c.reduced ? html`<span><b>Access reduced.</b> Your benchmark is in teaser mode until you reach ${target}%. Complete your data to restore full access — your data is what keeps the co-op fair.</span>`
-                : html`<span>lumi is a give-to-get co-op: your contribution is what keeps the benchmark live. Keep your data complete to maintain full platform access.</span>`}
+              <div><b>${fresh ? "Answer your reward questions to unlock your insights." : "Reach " + target + "% to unlock your insights."}</b>${c.days_left != null ? ` ${c.days_left} days to go.` : ""}</div></div>`}
+          ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
+          ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
+          ${c.reduced && html`
+            <div class="data-access warn">
+              <${Icon} name="shield" size=${13} />
+              <span><b>Access reduced.</b> Your benchmark is in teaser mode until you reach ${target}%. Complete your data to restore full access.</span>
             </div>`}
         </div>
       </div>
@@ -1111,7 +1875,7 @@ window.YourDataPage = function ({ me }) {
         ${(data.domains || []).map(d => html`
           <div key=${d.name} class="card data-domain" role="button" tabindex="0"
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
-            onKeyDown=${e => { if (e.key === "Enter") nav("/your-data/" + encodeURIComponent(d.name)); }}>
+            onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/your-data/" + encodeURIComponent(d.name)); } }}>
             <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${d.name}</div>
             <${CompletionRing} pct=${d.pct} size=${78} stroke=${8} />
             ${d.answered >= d.total ? html`<div class="data-done"><${Icon} name="award" size=${11} /> Complete</div>`
@@ -1125,7 +1889,7 @@ window.DomainDataView = function ({ me, section }) {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState("all");
   useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const d = (data.domains || []).find(x => x.name === section);
   if (!d) return html`<${EmptyState} icon="table" title="Area not found"
     action=${html`<button class="btn small" onClick=${() => nav("/your-data")}>Back to Your data</button>`} />`;
@@ -1136,13 +1900,13 @@ window.DomainDataView = function ({ me, section }) {
   return html`
     <div class="yourdata">
       <a class="caption back-link" href="#/your-data"><${Icon} name="chevron-left" size=${13} /> Your data</a>
-      <div class="row spread" style=${{ alignItems: "center", margin: "4px 0 var(--s4)" }}>
-        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+      <div class="row spread" style=${{ alignItems: "center", margin: "var(--s1) 0 var(--s4)" }}>
+        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <span class="cat-glyph"><${Icon} name=${CAT_ICON[section] || "award"} size=${20} /></span>
           <div><h1 class="display-title">${section}</h1>
             <div class="caption meta">${d.answered} of ${d.total} answered</div></div>
         </div>
-        <div class="row" style=${{ gap: "12px", alignItems: "center" }}>
+        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <${CompletionRing} pct=${d.pct} size=${56} stroke=${7} />
           ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(section))}><${Icon} name="pencil" size=${14} /> ${d.answered < d.total ? "Complete" : "Edit"} ${section}</button>`}
         </div>
@@ -1182,109 +1946,6 @@ function dataVal(value, q) {
   return value;
 }
 
-// -------------------------------------------------------- methodology ------
-window.MethodologyPage = function () {
-  const [m, setM] = useState(null);
-  useEffect(() => { api("/api/methodology").then(setM); }, []);
-  if (!m) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
-  const industries = Object.keys(m.composition);
-  return html`
-    <div style=${{ maxWidth: "880px" }}>
-      <h1 class="display-title">Methodology</h1>
-      <p class="caption">Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v1</p>
-
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Who you're compared with</h2>
-        ${m.synthetic_pool && html`
-          <div style=${{ background: "var(--neutral-perf-tint)", borderRadius: "var(--radius-sm)", padding: "var(--s3) var(--s4)", marginBottom: "var(--s3)", fontSize: "var(--fs-body)" }}>
-            <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: 220 simulated
-            organisations whose answers were generated from published UK HR and reward norms and each organisation's
-            firmographic profile, pending real member submissions. It is designed to behave believably for
-            demonstration and launch seeding — it is not real member data and must not be cited as a market statistic.
-          </div>`}
-        <p>The peer group contains <b>${m.peer_pool.responding_orgs} UK organisations</b> that have completed a lumi benchmark submission.
-        ${m.peer_pool.classified_orgs} carry full firmographic profiles (sector, size, region, ownership) and appear in filtered peer
-        groups; ${m.unclassified_count} are awaiting classification, stay in the "All peers" group only, and are shown as "Unclassified".</p>
-        <table class="data" style=${{ marginTop: "10px" }}>
-          <thead><tr><th>Sector</th>${m.fte_bands.map(b => html`<th key=${b} class="num">${b}</th>`)}<th class="num">Total</th></tr></thead>
-          <tbody>
-            ${industries.map(ind => {
-              const row = m.composition[ind];
-              const tot = Object.values(row).reduce((a, b) => a + b, 0);
-              return html`<tr key=${ind}><td>${ind}</td>
-                ${m.fte_bands.map(b => html`<td key=${b} class="num">${row[b] || "·"}</td>`)}
-                <td class="num"><b>${tot}</b></td></tr>`;
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">The question set and how insights unlock</h2>
-        <p>Your reward benchmark is <b>one flat set of ${(window.SCOPE || {}).question_count || 180} questions</b>,
-        organised by section (Pay, Benefits, Incentives, Transparency, Progression). There are no membership tiers —
-        every member sees and can answer every question.</p>
-        <p><b>Unlocking your insights.</b> The £ opportunity, board pack and biggest-gaps views unlock when you have
-        answered your <b>key reward questions</b> — the subset flagged as applying to every organisation. Selecting
-        “Not applicable” or “Don't know” <b>counts as answering</b>: engaging with a question that doesn't apply to
-        you is a complete answer, so an organisation can never be locked out by questions that don't apply to it.
-        A multi-row (matrix) question counts once. The same completion drives the 30-day contribution clock that
-        starts when your Admin accepts the Data Contribution Terms.</p>
-      </div>
-
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">How the numbers are calculated</h2>
-        <p><b>Percentiles.</b> P10, P25, P50 (median), P75 and P90 are calculated with linear interpolation across all
-        valid market answers — the same method used by the main survey houses. We benchmark on medians rather than
-        averages so a single unusual organisation cannot skew a figure.</p>
-        <p><b>Small-sample protection.</b> Any figure that would rest on fewer than ${m.suppression_floor} organisations is not shown.
-        You will see "not enough organisations to show this safely" instead. This rule applies to every peer group —
-        including bespoke groups such as Peer Twin — and is enforced in one place in the calculation engine.</p>
-        <p><b>Multiple-choice questions.</b> Distributions show the share of answering organisations choosing each option.
-        For "select all that apply" questions, the denominator is the number of organisations that answered the question
-        — so percentages can sum to more than 100.</p>
-        <p><b>Favourable vs the market.</b> Each question carries a polarity: higher is better (e.g. offer acceptance rate),
-        lower is better (e.g. regretted attrition), or neutral (e.g. salary increase budget, where "better" depends on
-        strategy). Green/amber/red colouring is polarity-adjusted and is never applied to neutral metrics.</p>
-        <p><b>Practice adoption.</b> We treat a practice or policy as <b>in place</b> when an organisation gives a real,
-        substantive answer — any genuine frequency, approach or level counts (reviewing pay quarterly is a pay review cycle).
-        Only explicit absence answers ("No", "None", "No formal policy", "Never") count as <b>not in place</b>;
-        clearly partial answers ("Partially", "In development") count as <b>partly in place</b>; and "Don't know" or
-        "Not applicable" answers are excluded rather than counted against anyone. Peer adoption is the share of
-        assessable answers that are at least partly in place, under the same rule.</p>
-        <p><b>Your percentile.</b> Your P-number is the share of peer organisations whose value sits below yours
-        (ties counted half), so P63 means you are higher than about 6 in 10 peers.</p>
-      </div>
-
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Where the data comes from</h2>
-        <p>This snapshot ingested ${m.reconciliation.files} member submissions (${(m.reconciliation.answer_rows || 0).toLocaleString("en-GB")} answers).
-        ${m.reconciliation.matched_orgs} organisations were matched to the lumi member registry by normalised company name;
-        ${m.reconciliation.file_only_orgs} submissions without a registry profile are retained in "All peers" as Unclassified;
-        ${m.reconciliation.registry_only_orgs} registry members have not yet submitted and are excluded from every aggregate.
-        Near-miss name matches are flagged for human review and never joined automatically. New members declare their own
-        firmographics at sign-up, which removes this reconciliation step for future windows.</p>
-        <p><b>Snapshots.</b> Every collection window is stored as a separate snapshot; submissions are versioned and never
-        overwrite history. From your second window onwards, movement ("vs last period") appears on each benchmark card and
-        the trajectory module.</p>
-        <p><b>£ modelling assumptions.</b> Opportunity figures use FTE band midpoints
-        (${Object.entries(m.assumptions.fte_band_midpoints || {}).map(([k, v]) => `${k}: ${v.toLocaleString("en-GB")}`).join("; ")}),
-        a UK all-sector median salary of £${(m.assumptions.median_salary_gbp || 0).toLocaleString("en-GB")} (editable in Settings),
-        a cost per leaver of ${m.assumptions.cost_per_leaver_pct_salary}% of salary and an agency premium of
-        ${m.assumptions.agency_premium_pct}%. They are assumptions, clearly labelled, and every £ figure is indicative.</p>
-      </div>
-
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Glossary</h2>
-        ${Object.entries(GLOSSARY).map(([k, v]) => html`
-          <p key=${k} style=${{ margin: "6px 0" }}><b style=${{ textTransform: "capitalize" }}>${k}.</b> ${v}</p>`)}
-        <p style=${{ margin: "6px 0" }}><b>Peer Twin.</b> A bespoke peer group of the organisations most similar to yours across
-        industry, size, ownership and workforce shape. The group is recalculated as the membership grows; member names are never shown.</p>
-        <p style=${{ margin: "6px 0" }}><b>Polarity.</b> Whether a higher value is favourable, unfavourable, or neither, for colour-coding your position.</p>
-      </div>
-    </div>`;
-};
-
 /* ===================== How lumi works hub (chrome spec §4) =================
    One trust page, three anchored sections, side-tab navigation. Replaces the
    separate Methodology, Core governance and legal destinations. Every §4.1
@@ -1319,7 +1980,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
     }, 220);
     return () => clearTimeout(t);
   }, [m, anchor]);
-  if (!m) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!m) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const industries = Object.keys(m.composition);
   const sectionTab = (HOW_LUMI_TABS.find(t => t.key === anchor) || HOW_LUMI_TABS[0]).key;
   const go = (k) => nav("/how-lumi-works/" + k);
@@ -1338,20 +1999,29 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <h2 class="how-section-head" id="calculations">How the numbers are calculated</h2>
         <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v1</p>
 
+        <div class="card how-card" id="market-position">
+          <h3 class="section-title">Where you stand — your market position</h3>
+          <p>For everything we measure, we compare your figure to the same measure across your peer group and place you in one of three positions: <b>below market</b> (under where most peers sit), <b>on market</b> (in line — we allow a sensible margin so tiny differences aren't treated as gaps), or <b>above market</b>. We do this measure by measure, roll it up for each area of reward, and bring it together into a single headline.</p>
+          <p><b>Two kinds of thing we measure.</b> Some measures have a going rate — pay, pension, holiday, bonus levels — so "below, on or above market" genuinely means something. Others are choices with no right answer — which share scheme you run, how you structure a benefit, how often you review pay. There's no rate to be under or over; you're simply doing it differently. We label these <b>differs from market</b> — a difference to be aware of, not a gap to close. That's why your headline won't match the total number of things we measure: only the market-rate measures feed it.</p>
+          <p><b>When "below market" isn't a bad thing.</b> A few measures are better when they're lower — your CEO-to-employee pay ratio, your gender pay gap. Below market there is good news, so we show it as <b>favourable</b> rather than a gap. Some measures have no good direction at all — workforce cost as a share of revenue could mean you're lean, or under-investing. We show these as <b>context</b>: a fact to weigh, not a verdict. The label always tells the truth about the number; the colour tells you how to read it.</p>
+          <div class="mp-legend">
+            <span><i class="sw" style=${{ background: "var(--unfavourable)" }}></i> below market</span>
+            <span><i class="sw" style=${{ background: "var(--amber-bright)" }}></i> on market / favourable</span>
+            <span><i class="sw" style=${{ background: "var(--favourable)" }}></i> above market</span>
+            <span><i class="sw" style=${{ background: "var(--differs)" }}></i> differs from market</span>
+            <span><i class="sw" style=${{ background: "var(--navy)" }}></i> context</span>
+          </div>
+          <p><b>The headline answers one question.</b> "Where you stand" is a read on how competitive your reward is — are you paying and providing at the market rate? So it's built only from the market-rate measures where higher is better. Governance (your pay ratio, your pay gap) isn't about competitiveness — you don't compete on a low pay ratio — so it sits beside the headline, not inside it. The same goes for any market-rate measure with no competitive direction, like your workforce cost as a share of revenue. That keeps the headline answering one clear thing rather than blending several.</p>
+          <p class="caption">Where a comparison rests on only a few companies, we mark the verdict <b>indicative</b> — a steer, not a precise figure.</p>
+        </div>
+
         <div class="card how-card" id="who-compared">
           <h3 class="section-title">Who you're compared with (market norms)</h3>
-          ${m.synthetic_pool && html`
-            <div class="how-note">
-              <b>Illustrative sample data.</b> The current benchmark pool is <b>synthetic seed data</b>: ${m.peer_pool.responding_orgs} simulated
-              organisations whose answers were generated from published UK HR and reward norms and each organisation's
-              firmographic profile, pending real member submissions. It behaves believably for demonstration and launch
-              seeding — it is not real member data and must not be cited as a market statistic.
-            </div>`}
           <p>A peer norm is built only from organisations that have completed a lumi submission. The pool holds
           <b>${m.peer_pool.responding_orgs} UK organisations</b>; ${m.peer_pool.classified_orgs} carry full firmographic
           profiles (sector, size, region, ownership) and appear in filtered peer groups, while ${m.unclassified_count}
           await classification and sit in the "All peers" group only.</p>
-          <table class="data" style=${{ marginTop: "10px" }}>
+          <table class="data" style=${{ marginTop: "var(--s3)" }}>
             <thead><tr><th>Sector</th>${m.fte_bands.map(b => html`<th key=${b} class="num">${b}</th>`)}<th class="num">Total</th></tr></thead>
             <tbody>
               ${industries.map(ind => {
@@ -1412,8 +2082,8 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <div class="card how-card" id="glossary">
           <h3 class="section-title">Glossary</h3>
           ${Object.entries(GLOSSARY).map(([k, v]) => html`
-            <p key=${k} style=${{ margin: "6px 0" }}><b style=${{ textTransform: "capitalize" }}>${k}.</b> ${v}</p>`)}
-          <p style=${{ margin: "6px 0" }}><b>Peer Twin.</b> A bespoke peer group of the organisations most similar to yours
+            <p key=${k} style=${{ margin: "var(--s2) 0" }}><b style=${{ textTransform: "capitalize" }}>${k}.</b> ${v}</p>`)}
+          <p style=${{ margin: "var(--s2) 0" }}><b>Peer Twin.</b> A bespoke peer group of the organisations most similar to yours
           across industry, size, ownership and workforce shape, recalculated as the membership grows; member names are never shown.</p>
         </div>
 
@@ -1442,15 +2112,14 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           counting them against anyone, and never present a neutral metric with a good/bad colour. The benchmark is a
           mirror, not a scoreboard — it tells you where you stand, never what you must do.</p>
           ${me && me.user.role === "admin" && html`
-            <p class="caption" style=${{ marginTop: "10px" }}>Admins: the question-set release console — current release, change
+            <p class="caption" style=${{ marginTop: "var(--s3)" }}>Admins: the question-set release console — current release, change
             log and backlog — lives in <a href="#/governance">the governance console</a>.</p>`}
         </div>
 
         ${/* ---------- §4.3 Legal ---------- */ ""}
         <h2 class="how-section-head" id="legal">Legal</h2>
         <div class="card how-card">
-          <p class="caption">Each document is its own page; this is the index. All documents are currently
-          <span class="chip warn">DRAFT — pending legal review</span>.</p>
+          <p class="caption">Each document is its own page; this is the index. Any document still in review is marked <b>Draft</b>.</p>
           <div class="legal-list">
             ${(legal || []).map(d => html`
               <button key=${d.key} class="legal-row" onClick=${() => setDoc(d.key)}>
@@ -1508,6 +2177,30 @@ window.cutLabelOf = function (cut, cuts) {
   return "All peers";
 };
 
+/* Pool size of the currently selected cut — mirrors the "· N" the peer control
+   (PeerSetBar) shows, so the small-sample caveat's number always equals it.
+   Returns null when size isn't known (the twin cut doesn't expose its pool size
+   → treated as not-thin by design; recorded as a known gap in DECISIONS.md). */
+window.cutSize = function (cut, cuts, peerPool) {
+  if (!cut || !cut.dim || cut.dim === "all") {
+    const n = (peerPool || {}).responding_orgs;
+    return typeof n === "number" ? n : null;
+  }
+  if (cut.dim === "industry") {
+    const n = cuts && cuts.industries && cuts.industries[cut.value];
+    return typeof n === "number" ? n : null;
+  }
+  if (cut.dim === "fte_band") {
+    const n = cuts && cuts.fte_bands && cuts.fte_bands[cut.value];
+    return typeof n === "number" ? n : null;
+  }
+  if (cut.dim === "group") {
+    const g = cuts && (cuts.groups || []).find(x => x.group_id === cut.value);
+    return g && typeof g.match_count === "number" ? g.match_count : null;
+  }
+  return null; // twin — pool size not exposed
+};
+
 /* ===================== versioning & governance (2026-06-12) ===============
    MetricTrend: the same question version across data periods. Comparability
    breaks are ENFORCED: each segment draws separately and a visible reset
@@ -1533,7 +2226,7 @@ window.MetricTrend = function ({ qid }) {
     <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <h2 class="section-title">Across data periods</h2>
       ${t.breaks.length > 0 && html`
-        <div class="caption" style=${{ marginBottom: "6px" }}>
+        <div class="caption" style=${{ marginBottom: "var(--s2)" }}>
           ⚠ This question changed materially (${t.breaks.map(b => b.release_id).join(", ")}) —
           values either side of the break aren't comparable, so the trend resets rather than joining up.
         </div>`}
@@ -1574,7 +2267,7 @@ window.GovernancePage = function ({ me }) {
   const refresh = () => api("/api/governance").then(setG).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, []);
   if (err) return html`<${EmptyState} icon="lock" title="Admins only" body=${err} />`;
-  if (!g) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!g) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const addBacklog = async () => {
     if (!title.trim()) return;
     await api("/api/governance/backlog", { method: "POST", body: { title } });
@@ -1597,7 +2290,7 @@ window.GovernancePage = function ({ me }) {
             <span class="caption"> · released ${g.current_release && g.current_release.released_at}</span></div>
           <div class="caption num">${g.core_size} live questions · ${g.required_size} required</div>
         </div>
-        ${g.current_release && g.current_release.notes && html`<div class="caption" style=${{ marginTop: "4px" }}>${g.current_release.notes}</div>`}
+        ${g.current_release && g.current_release.notes && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>${g.current_release.notes}</div>`}
       </div>
 
       <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s4)" }}>
@@ -1626,8 +2319,8 @@ window.GovernancePage = function ({ me }) {
           <h2 class="section-title">Backlog (queued for a release — never auto-applied)</h2>
           <button class="btn small" onClick=${ingest}>Pull in member requests</button>
         </div>
-        <div class="row" style=${{ gap: "8px", margin: "8px 0" }}>
-          <input style=${{ flex: 1, height: "34px", padding: "0 10px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
+        <div class="row" style=${{ gap: "var(--s2)", margin: "var(--s2) 0" }}>
+          <input style=${{ flex: 1, height: "34px", padding: "0 var(--s3)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
             placeholder="Add a candidate change for a future release…" value=${title}
             onInput=${e => setTitle(e.target.value)} />
           <button class="btn small primary" onClick=${addBacklog}>Queue it</button>

@@ -11,7 +11,7 @@ window.PulsesPage = function ({ me }) {
   const [err, setErr] = useState(null);
   useEffect(() => { api("/api/pulses").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load pulses" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const open = data.pulses.filter(p => p.accepting);
   const past = data.pulses.filter(p => !p.accepting);
   const Card = (p) => html`
@@ -21,7 +21,7 @@ window.PulsesPage = function ({ me }) {
         <b>${p.name}</b>
         <span class="chip ${p.accepting ? "pulse-chip" : ""}">${p.accepting ? "open" : p.status}</span>
       </div>
-      <div class="caption" style=${{ margin: "4px 0 6px" }}>${p.description}</div>
+      <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>${p.description}</div>
       <div class="caption num">${p.questions} questions · ${p.participants} participating
         ${p.closes_at ? " · closes " + p.closes_at.slice(0, 10) : ""}
         ${p.participated ? html` · <b style=${{ color: "var(--blue)" }}>you've taken part — report available</b>` :
@@ -33,6 +33,12 @@ window.PulsesPage = function ({ me }) {
       <p>Short, timely deep-dives on what's moving in reward right now — separate from your core
       benchmark. Each pulse has its own opt-in group and its own window; take part (free) and you
       see that pulse's report. Your core benchmark is never affected.</p>
+      ${me.user.role === "admin" && html`
+        <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", display: "flex",
+          justifyContent: "space-between", alignItems: "center", gap: "var(--s3)" }}>
+          <div><b>Run your own pulse</b><div class="caption">Design a survey and launch it to the community.</div></div>
+          <button class="btn primary" onClick=${() => nav("/run-a-pulse")}>Get started</button>
+        </div>`}
       <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Open now</h2>
       ${open.length ? open.map(Card) : html`<div class="caption">No pulse is open right now — new topics land here as they emerge.</div>`}
       <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Closed & archived</h2>
@@ -56,7 +62,7 @@ window.PulseDetailPage = function ({ me, pid }) {
   }).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, [pid]);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load this pulse" body=${err} />`;
-  if (!p) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!p) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 
   const editor = me.user.role === "admin" || me.user.role === "contributor";
   const join = async () => {
@@ -81,7 +87,7 @@ window.PulseDetailPage = function ({ me, pid }) {
     <div style=${{ maxWidth: "780px" }}>
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
-      <h1 class="display-title" style=${{ margin: "6px 0 4px" }}>${p.name}</h1>
+      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>
       <p class="caption">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating
         ${p.closes_at ? " · " + (p.accepting ? "closes" : "closed") + " " + p.closes_at.slice(0, 10) : ""}</p>
 
@@ -90,7 +96,7 @@ window.PulseDetailPage = function ({ me, pid }) {
       ${!p.joined && p.accepting && html`
         <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
           <b>Take part to see this pulse's report</b>
-          <p class="caption" style=${{ margin: "6px 0 10px" }}>Free for participants. Answer what applies —
+          <p class="caption" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Free for participants. Answer what applies —
             partial answers count. Taking part doesn't change your core benchmark or its unlock.</p>
           ${editor ? html`<button class="btn primary" onClick=${join}>Join this pulse</button>` :
             html`<div class="caption">Ask an Admin or Contributor on your team to join and answer.</div>`}
@@ -104,8 +110,8 @@ window.PulseDetailPage = function ({ me, pid }) {
           <div class="qsec-head"><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
           ${p.question_list.map(q => html`
             <div key=${q.id} class="q-block">
-              <div style=${{ fontWeight: 600, fontSize: "13.5px", marginBottom: "4px" }}>${q.text}</div>
-              ${q.help_text && html`<div class="caption" style=${{ marginBottom: "6px" }}>${q.help_text}</div>`}
+              <div style=${{ fontWeight: 600, fontSize: "var(--fs-label)", marginBottom: "var(--s1)" }}>${q.text}</div>
+              ${q.help_text && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>${q.help_text}</div>`}
               <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${() => {}} />
               ${(issues[q.id + "|"] || { errors: [] }).errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
               ${(issues[q.id + "|"] || { warnings: [] }).warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
@@ -120,9 +126,9 @@ window.PulseDetailPage = function ({ me, pid }) {
 function PulseReport({ report, pid, me }) {
   if (report.below_floor) return html`
     <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0", textAlign: "center" }}>
-      <div style=${{ fontSize: "26px" }}>⏳</div>
+      <div style=${{ fontSize: "var(--fs-metric)" }}>⏳</div>
       <b>Your responses are in — results appear once ${report.floor}+ organisations have taken part.</b>
-      <div class="caption" style=${{ marginTop: "6px" }}>${report.participants} of ${report.floor} so far.
+      <div class="caption" style=${{ marginTop: "var(--s2)" }}>${report.participants} of ${report.floor} so far.
         Every answer stays protected by the same ${report.floor}-organisation rule as the core benchmark.</div>
     </div>`;
   return html`
@@ -142,7 +148,7 @@ function PulseQuestionBlock({ q, pid, me }) {
   };
   return html`
     <div class="q-block">
-      <div style=${{ fontWeight: 600, marginBottom: "6px" }}>${q.title}</div>
+      <div style=${{ fontWeight: 600, marginBottom: "var(--s2)" }}>${q.title}</div>
       ${blk.suppressed ? html`
         <div class="caption">Fewer than 5 cohort answers for this question — protected, not shown.</div>` : html`
         <div>
@@ -151,7 +157,7 @@ function PulseQuestionBlock({ q, pid, me }) {
             ? html`<${OptionBars} options=${blk.options} youLabels=${[]} />`
             : html`<${OrderedDist} options=${blk.options} youLabels=${[]} />`)}
           ${q.matrix_rows && html`
-            <table class="data" style=${{ marginTop: "6px" }}>
+            <table class="data" style=${{ marginTop: "var(--s2)" }}>
               <thead><tr><th>Level</th><th class="num">Cohort</th></tr></thead>
               <tbody>${q.matrix_rows.map(r => html`
                 <tr key=${r.row_id}><td>${r.label}</td>
@@ -160,15 +166,285 @@ function PulseQuestionBlock({ q, pid, me }) {
                     r.block && r.block.modal_label ? r.block.modal_label + " (" + r.block.modal_pct + "%)" : "—"}
                     ${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td></tr>`)}
               </tbody></table>`}
-          <div class="caption num" style=${{ marginTop: "4px" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}</div>
+          <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}</div>
           ${me.features && me.features.pulse_ai && html`
-            <div style=${{ marginTop: "6px" }}>
-              ${!com ? html`<button class="btn small" onClick=${askAI}>✦ Commentary</button>` :
+            <div style=${{ marginTop: "var(--s2)" }}>
+              ${!com ? html`<button class="btn small" onClick=${askAI}><${Icon} name="sparkle" size=${12} /> Commentary</button>` :
                 com === "…" ? html`<${Spinner} />` : html`
-                <div class="def-box" style=${{ marginTop: "6px" }}>
-                  ${Object.entries(com.parts || {}).map(([k, v]) => html`<p key=${k} style=${{ margin: "4px 0" }}>${v}</p>`)}
+                <div class="def-box" style=${{ marginTop: "var(--s2)" }}>
+                  ${Object.entries(com.parts || {}).map(([k, v]) => html`<p key=${k} style=${{ margin: "var(--s1) 0" }}>${v}</p>`)}
                 </div>`}
             </div>`}
         </div>`}
     </div>`;
+}
+
+/* ========== SELF-SERVICE PULSE BUILDER + PAID LAUNCH (2026-06-22) ============
+   An org Admin designs their own survey, submits it for lumi review, and once
+   approved pays a one-off launch fee that opens it to the whole community.
+   Same engine, same firewall, same give-to-get 5+-org report as every pulse. */
+
+const PULSE_BUILD_TYPES = ["yes_no", "single_select", "multi_select", "numeric"];
+const TYPE_LABEL = { yes_no: "Yes / No", single_select: "Pick one", multi_select: "Pick many", numeric: "A number" };
+const fmtFee = (pence) => "£" + ((pence || 0) / 100).toLocaleString("en-GB");
+const LAUNCH_STEPS = [
+  { key: "building", label: "Build" }, { key: "in_review", label: "lumi review" },
+  { key: "approved", label: "Pay" }, { key: "paid", label: "Live" },
+];
+function launchStepIndex(ls) {
+  return { building: 0, changes_requested: 0, in_review: 1, approved: 2, paid: 3 }[ls] || 0;
+}
+
+function LaunchStepper({ ls }) {
+  const idx = launchStepIndex(ls);
+  if (ls === "rejected") return html`<div class="pulse-stepper"><div class="pulse-step warn">
+    <span class="pulse-step-dot"></span>Not approved</div></div>`;
+  return html`
+    <div class="pulse-stepper">
+      ${LAUNCH_STEPS.map((s, i) => html`
+        <div key=${s.key} class=${"pulse-step" + (i < idx ? " done" : "") + (i === idx ? " current" : "")}>
+          <span class="pulse-step-dot"></span>${s.label}</div>`)}
+    </div>`;
+}
+
+window.RunPulsePage = function ({ me }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => { api("/api/org/pulses").then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load your surveys" body=${err} />`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  const chip = (p) => {
+    const ls = p.launch_status;
+    const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "";
+    const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
+      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "ready to pay"
+      : ls === "rejected" ? "declined" : "draft";
+    return html`<span class="chip ${tone}">${label}</span>`;
+  };
+  return html`
+    <div style=${{ maxWidth: "780px" }}>
+      <div class="row spread" style=${{ alignItems: "flex-end", gap: "var(--s3)" }}>
+        <div>
+          <h1 class="display-title" style=${{ margin: 0 }}>Run a pulse</h1>
+          <p class="pulse-lead">Design your own short survey and launch it to the lumi community — answers come back
+            as anonymised, 5+-organisation aggregates, the same protection as your core benchmark.</p>
+        </div>
+        <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}>
+          <${Icon} name="list-checks" size=${15} /> New survey</button>
+      </div>
+
+      <div class="pulse-how">
+        <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
+        <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
+        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">Pay once · opens to all members</span></div></div>
+      </div>
+
+      ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
+        <span>Card payments are being switched on — for now a lumi admin confirms your launch once it's approved.</span></div>`}
+
+      ${!data.pulses.length ? html`
+        <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center", marginTop: "var(--s3)" }}>
+          <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
+          <b>No surveys yet</b>
+          <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only
+            lumi can answer — pay equity, four-day weeks, AI in reward, whatever's on your board's mind.</p>
+          <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first survey</button>
+        </div>` :
+        html`<div style=${{ marginTop: "var(--s3)" }}>${data.pulses.map(p => html`
+          <div key=${p.pulse_id} class="card pulse-srow" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}>
+            <div class="row spread"><b>${p.name}</b>${chip(p)}</div>
+            <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} response${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
+          </div>`)}</div>`}
+    </div>`;
+};
+
+window.PulseBuilderPage = function ({ me, pid }) {
+  const isNew = pid === "new";
+  const [detail, setDetail] = useState(isNew ? { launch_status: "building", question_list: [] } : null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => { if (!isNew) api("/api/org/pulses/" + pid).then(setDetail).catch(e => setErr(e.message)); };
+  useEffect(() => {
+    load();
+    if (!isNew && window.location.hash.indexOf("paid=1") >= 0) {
+      toast("Payment received — your pulse is launching to the community.", "success");
+      nav("/run-a-pulse/" + pid);   // strip the ?paid query
+    }
+  }, [pid]);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load this survey" body=${err} />`;
+  if (!detail) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  const ls = detail.launch_status;
+  const editable = ls === "building" || ls === "changes_requested";
+
+  const submitCreate = async (body) => { setBusy(true);
+    try { const r = await api("/api/org/pulses", { method: "POST", body }); toast("Draft saved.", "success"); nav("/run-a-pulse/" + r.pulse_id); }
+    catch (e) { toast(e.message, "error"); } setBusy(false); };
+  const submitUpdate = async (body) => { setBusy(true);
+    try { await api("/api/org/pulses/" + pid, { method: "PUT", body }); toast("Saved.", "success"); load(); }
+    catch (e) { toast(e.message, "error"); } setBusy(false); };
+  const submitForReview = async () => { setBusy(true);
+    try {
+      await api("/api/org/pulses/" + pid + "/submit-for-review", { method: "POST", body: {} });
+      toast("Submitted for review — we'll be in touch.", "success");
+      if (window.confettiBurst) window.confettiBurst({ count: 80, spread: 0.85, origin: { x: 0.5, y: 0.3 } });
+      load();
+    } catch (e) { toast(e.message, "error"); } setBusy(false); };
+  const discard = async () => { if (!window.confirm("Discard this draft survey?")) return;
+    try { await api("/api/org/pulses/" + pid, { method: "DELETE" }); toast("Discarded."); nav("/run-a-pulse"); }
+    catch (e) { toast(e.message, "error"); } };
+
+  return html`
+    <div style=${{ maxWidth: "780px" }}>
+      <button class="btn quiet" onClick=${() => nav("/run-a-pulse")}>← Your surveys</button>
+      ${!isNew && html`<${LaunchStepper} ls=${ls} />`}
+      ${ls === "changes_requested" && detail.review_notes && html`
+        <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", borderLeft: "3px solid var(--amber-bright)" }}>
+          <b>lumi asked for a few changes</b><p class="caption" style=${{ margin: "var(--s1) 0 0" }}>${detail.review_notes}</p></div>`}
+      ${editable
+        ? html`<${PulseComposer} initial=${detail} isNew=${isNew} busy=${busy}
+            onSubmit=${isNew ? submitCreate : submitUpdate}
+            onSubmitReview=${isNew ? null : submitForReview} onDiscard=${isNew ? null : discard} />`
+        : html`<${PulseLaunchPanel} detail=${detail} pid=${pid} onChange=${load} />`}
+    </div>`;
+};
+
+function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDiscard }) {
+  const [name, setName] = useState(initial.name || "");
+  const [desc, setDesc] = useState(initial.description || "");
+  const [closesAt, setClosesAt] = useState(initial.closes_at || "");
+  const [keep, setKeep] = useState((initial.question_list || []).map(q => ({ id: q.id, text: q.text, type: q.type })));
+  const [newQs, setNewQs] = useState([]);
+  const [lib, setLib] = useState(null);
+  const [libQ, setLibQ] = useState("");
+  const [showLib, setShowLib] = useState(false);
+  useEffect(() => { if (showLib && lib === null) api("/api/questions").then(d => setLib(d.questions || [])).catch(() => setLib([])); }, [showLib]);
+  const removeKeep = (id) => setKeep(k => k.filter(x => x.id !== id));
+  const addLib = (x) => setKeep(k => k.some(i => i.id === x.id) ? k : [...k, { id: x.id, text: x.title, type: x.type }]);
+  const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo" }]);
+  const setNQ = (i, patch) => setNewQs(n => n.map((x, j) => j === i ? { ...x, ...patch } : x));
+  const removeNQ = (i) => setNewQs(n => n.filter((_, j) => j !== i));
+  const liveNew = () => newQs.filter(nq => (nq.text || "").trim());
+  const buildBody = () => {
+    const bespoke = liveNew().map(nq => {
+      const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
+      const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
+      return { text: nq.text.trim(), type: nq.type, polarity: nq.polarity || "neutral",
+        options: isSel ? labels.map((l, i) => ({ code: l.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "") || ("OPT" + i), label: l, order: i + 1, is_na: false })) : undefined };
+    });
+    return { name: name.trim(), description: desc.trim(), closes_at: closesAt.trim() || null,
+      question_ids: keep.map(k => k.id), new_questions: bespoke };
+  };
+  const valid = () => {
+    if (!name.trim()) { toast("Give your survey a name.", "error"); return false; }
+    if (!keep.length && !liveNew().length) { toast("Add at least one question.", "error"); return false; }
+    return true;
+  };
+  const save = () => { if (valid()) onSubmit(buildBody()); };
+  const saveThenReview = async () => { if (!valid()) return; await onSubmit(buildBody()); onSubmitReview(); };
+  const needle = libQ.trim().toLowerCase();
+  const libRows = (lib || []).filter(x => !needle || (x.title || "").toLowerCase().includes(needle) || (x.subpower || "").toLowerCase().includes(needle));
+  return html`
+    <div class="card pulse-form" style=${{ padding: "var(--s5)", marginTop: "var(--s3)" }}>
+      <h2 class="section-title">${isNew ? "New survey" : "Edit your survey"}</h2>
+      <p class="caption" style=${{ marginTop: "2px" }}>Members answer what applies; you get back anonymised aggregates (5+ organisations).</p>
+      <label>Survey name<input class="ctl" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
+      <label>Description<textarea class="ctl" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)} placeholder="One line on what you're asking and why."></textarea></label>
+      <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional</span>
+        <input class="ctl" value=${closesAt} onInput=${e => setClosesAt(e.target.value)} placeholder="YYYY-MM-DD HH:MM:SS" /></label>
+
+      <div class="qsec-head" style=${{ marginTop: "var(--s4)" }}><b>Questions</b> <span class="caption">· ${keep.length + liveNew().length} so far</span></div>
+      ${keep.map(k => html`
+        <div key=${k.id} class="pulse-keep-row">
+          <span>${k.text} <span class="caption">· ${TYPE_LABEL[k.type] || k.type}</span></span>
+          <button class="btn small quiet" onClick=${() => removeKeep(k.id)}>Remove</button></div>`)}
+      ${newQs.map((nq, i) => html`
+        <div key=${"n" + i} class="pulse-newq">
+          <div class="row spread"><b class="caption">New question ${i + 1}</b>
+            <button class="btn small quiet" onClick=${() => removeNQ(i)}>Remove</button></div>
+          <label>Question<input class="ctl" value=${nq.text} onInput=${e => setNQ(i, { text: e.target.value })} placeholder="What do you want to ask?" /></label>
+          <div class="row" style=${{ gap: "var(--s3)" }}>
+            <label style=${{ flex: 1 }}>Answer type<select class="ctl" value=${nq.type} onChange=${e => setNQ(i, { type: e.target.value })}>
+              ${PULSE_BUILD_TYPES.map(t => html`<option key=${t} value=${t}>${TYPE_LABEL[t]}</option>`)}</select></label>
+            ${nq.type === "numeric" && html`<label style=${{ flex: 1 }}>Better when<select class="ctl" value=${nq.polarity} onChange=${e => setNQ(i, { polarity: e.target.value })}>
+              <option value="neutral">no preference</option><option value="higher_is_better">higher</option><option value="lower_is_better">lower</option></select></label>`}
+          </div>
+          ${["single_select", "yes_no", "multi_select"].includes(nq.type) && html`
+            <label>Options <span class="caption" style=${{ fontWeight: 400 }}>· one per line</span>
+              <textarea class="ctl" rows=${3} value=${nq.optionsText} onInput=${e => setNQ(i, { optionsText: e.target.value })}></textarea></label>`}
+        </div>`)}
+      <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
+        <button class="btn small" onClick=${addNew}>＋ Add a question</button>
+        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "＋ Add from the lumi library"}</button>
+      </div>
+      ${showLib && html`
+        <div style=${{ marginTop: "var(--s2)" }}>
+          <input class="ctl" style=${{ width: "100%" }} placeholder="Search the library…" value=${libQ} onInput=${e => setLibQ(e.target.value)} />
+          <div class="pulse-libpick">
+            ${lib === null ? html`<${Spinner} />` : libRows.slice(0, 120).map(x => html`
+              <button key=${x.id} class="pulse-librow" disabled=${keep.some(k => k.id === x.id)} onClick=${() => addLib(x)}>
+                ${x.title} <span class="caption">· ${x.subpower || "—"} · ${x.type}</span></button>`)}
+          </div></div>`}
+      <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s5)", flexWrap: "wrap" }}>
+        <button class="btn" disabled=${busy} onClick=${save}>${isNew ? "Save draft" : "Save changes"}</button>
+        ${!isNew && onSubmitReview && html`<button class="btn primary" disabled=${busy} onClick=${saveThenReview}>Submit for review →</button>`}
+        ${!isNew && onDiscard && html`<button class="btn quiet" style=${{ marginLeft: "auto" }} onClick=${onDiscard}>Discard</button>`}
+      </div>
+      ${isNew && html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Save the draft, then submit it for review when you're ready.</p>`}
+    </div>`;
+}
+
+function PulseLaunchPanel({ detail, pid, onChange }) {
+  const ls = detail.launch_status;
+  useEffect(() => {
+    if (ls === "paid") {
+      const k = "lumi.pulse.celebrated." + pid;
+      if (!localStorage.getItem(k)) {
+        localStorage.setItem(k, "1");
+        setTimeout(() => window.confettiBurst && window.confettiBurst({ origin: { x: 0.5, y: 0.34 } }), 250);
+      }
+    }
+  }, [ls, pid]);
+  const pay = async () => {
+    try {
+      const r = await api("/api/org/pulses/" + pid + "/checkout", { method: "POST", body: {} });
+      if (r.mode === "stripe" && r.checkout_url) { window.location.href = r.checkout_url; return; }
+      toast(r.message || "Launch requested — a lumi admin will confirm it shortly.", "info");
+      onChange();
+    } catch (e) { toast(e.message, "error"); }
+  };
+  const QList = () => html`
+    <div class="card" style=${{ padding: "var(--s4)", marginTop: "var(--s3)" }}>
+      <div class="qsec-head"><b>${detail.name}</b></div>
+      ${detail.description ? html`<p class="caption">${detail.description}</p>` : ""}
+      ${(detail.question_list || []).map(q => html`<div key=${q.id} class="caption" style=${{ padding: "3px 0" }}>• ${q.text} <span style=${{ opacity: 0.7 }}>(${TYPE_LABEL[q.type] || q.type})</span></div>`)}
+    </div>`;
+  if (ls === "in_review") return html`
+    <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s3)", textAlign: "center" }}>
+      <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
+      <b>With lumi for review</b>
+      <p class="caption" style=${{ margin: "var(--s1) auto 0", maxWidth: "44ch" }}>We're checking your survey before it goes
+        out to the community — usually within a couple of working days. We'll let you know when it's approved.</p>
+    </div>
+    ${QList()}`;
+  if (ls === "approved") return html`
+    <div class="card pulse-launch" style=${{ marginTop: "var(--s3)" }}>
+      <div class="pulse-empty-ico"><${Icon} name="check" size=${24} /></div>
+      <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
+      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Pay the one-off launch fee and your survey opens to the whole community.</p>
+      <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
+      <button class="btn primary" onClick=${pay}>${detail.payments_enabled ? "Pay & launch →" : "Request launch"}</button>
+      ${!detail.payments_enabled ? html`<p class="caption" style=${{ marginTop: "var(--s3)" }}>Card payments are being switched on — a lumi admin will confirm your launch.</p>` : ""}
+    </div>
+    ${QList()}`;
+  if (ls === "paid") return html`
+    <div class="card pulse-launch live" style=${{ marginTop: "var(--s3)" }}>
+      <div class="pulse-empty-ico"><${Icon} name="sparkle" size=${24} /></div>
+      <b style=${{ fontSize: "var(--fs-card-title)" }}>You're live — open to the community</b>
+      <p class="caption" style=${{ margin: "var(--s2) auto var(--s3)", maxWidth: "40ch" }}>${detail.n_submitted || 0} response${detail.n_submitted === 1 ? "" : "s"} so far · results unlock at 5+ organisations.</p>
+      <button class="btn primary" onClick=${() => nav("/pulse/" + pid)}>View the live pulse & report →</button>
+    </div>`;
+  if (ls === "rejected") return html`
+    <${EmptyState} icon="info" title="Not approved for launch"
+      body=${detail.review_notes || "lumi wasn't able to approve this survey for the community."} />`;
+  return html`<${EmptyState} icon="info" title="Draft" body="Edit your survey to continue." />`;
 }

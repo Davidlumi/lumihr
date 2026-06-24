@@ -8,8 +8,6 @@
 
 const CHART_W = 420;
 
-const CAT_COLOURS = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)", "var(--cat-6)"];
-
 function youColour(fav) {
   if (fav === "good") return "var(--favourable)";    // above the market
   if (fav === "bad") return "var(--unfavourable)";   // below the market
@@ -17,6 +15,9 @@ function youColour(fav) {
   // performance colour is reserved for genuine divergence from the market.
   return "var(--you)";
 }
+// a SHAPE cue for the verdict that survives greyscale / colour-blindness — mirrors
+// the ▲/▼ on the position pill, so green-vs-red is never the only signal.
+function favGlyph(fav) { return fav === "good" ? "▲" : fav === "bad" ? "▼" : ""; }
 
 /* The single "you" marker: a filled blue diamond (performance-coloured where
    polarity applies) with a value label. Same treatment on every chart. */
@@ -27,7 +28,7 @@ function YouDot({ x, y, fav, label, labelY, anchor }) {
       <path d=${`M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`}
         fill=${youColour(fav)} stroke="#fff" stroke-width="1.8"/>
       ${label && html`<text x=${x} y=${labelY} text-anchor=${anchor || "middle"} font-size="10.5"
-        font-weight="700" fill=${youColour(fav)}>${label}</text>`}
+        font-weight="700" fill=${youColour(fav)}>${favGlyph(fav) ? favGlyph(fav) + " " : ""}${label}</text>`}
     </g>`;
 }
 window.YouDot = YouDot;
@@ -66,8 +67,34 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
   const n = hist.bins.length, maxC = Math.max(...hist.bins, 1);
   const bw = (W - padL * 2) / n;
   const x = v => padL + ((v - hist.min) / ((hist.max - hist.min) || 1)) * (W - padL * 2);
+  // The "you" marker can sit outside the peer min/max; clamp ONLY the marker to
+  // the canvas so it pins to the edge instead of drawing off-screen. Bars and
+  // axis labels keep the raw x() scale.
+  const xClamp = v => Math.max(padL, Math.min(W - padL, x(v)));
+  // Degenerate distribution: every peer gave the same value (one populated bin,
+  // or a zero-width range). A lone spike reads as "spread" — render an honest
+  // unanimous state instead, still placing the "you" marker against the consensus.
+  const nonZero = hist.bins.filter(c => c > 0).length;
+  const unanimous = nonZero <= 1 || hist.max === hist.min;
+  if (unanimous) {
+    const consensus = (hist.max + hist.min) / 2;
+    const off = you != null && you !== consensus;
+    return html`
+      <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
+        <line x1=${x(consensus)} x2=${x(consensus)} y1=${padT} y2=${H - padB} stroke="var(--chart-median)" stroke-width="2"/>
+        <text x=${W / 2} y=${padT - 4} text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-weight="600">The market is unanimous here</text>
+        <text x=${x(consensus)} y=${H - 5} text-anchor="middle" font-size="9" fill="var(--ink-faint)">Everyone: ${fmtValue(consensus, unit)}</text>
+        ${you != null && html`
+          <${YouDot} x=${xClamp(you)} y=${padT + (H - padT - padB) / 2} fav=${off ? favourable : "mid"}
+            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"}
+            label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${padT + (H - padT - padB) / 2 - 14} />`}
+      </svg>`;
+  }
   return html`
     <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
+      <line x1=${padL} x2=${padL} y1=${padT} y2=${H - padB} stroke="var(--chart-axis)" stroke-width="1" opacity="0.5"/>
+      <line x1=${padL - 2} x2=${padL + 2} y1=${padT} y2=${padT} stroke="var(--chart-axis)" stroke-width="1" opacity="0.5"/>
+      <text x=${padL + 1} y=${padT - 2} font-size="8.5" fill="var(--ink-faint)">${"max " + maxC}</text>
       ${hist.bins.map((c, i) => html`
         <rect key=${i} x=${padL + i * bw + 1} width=${Math.max(1, bw - 2)}
           y=${padT + (1 - c / maxC) * (H - padT - padB)} height=${(c / maxC) * (H - padT - padB)}
@@ -82,8 +109,9 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
       <text x=${W - padL} y=${H - 4} text-anchor="end" font-size="9" fill="var(--ink-faint)">${fmtValue(hist.max, unit)}</text>
       ${you != null && html`
         <g>
-          <line x1=${x(you)} x2=${x(you)} y1=${padT - 2} y2=${H - padB} stroke=${youColour(favourable)} stroke-width="2" />
-          <${YouDot} x=${x(you)} y=${padT - 2} fav=${favourable}
+          <line x1=${xClamp(you)} x2=${xClamp(you)} y1=${padT - 2} y2=${H - padB} stroke=${youColour(favourable)} stroke-width="2" />
+          <${YouDot} x=${xClamp(you)} y=${padT - 2} fav=${favourable}
+            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"}
             label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${10} />
         </g>`}
     </svg>`;
@@ -128,11 +156,18 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
   const labelW = Math.min(190, Math.max(34, longest * fs * 0.54) + 10), W = width;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;
-  const mine = new Set((youLabels || []).map(s => s.toLowerCase()));
+  // Match the server's whitespace-collapsing _norm_label so the "you" highlight
+  // lands on the same option the server selected (plain toLowerCase missed labels
+  // with internal/edge whitespace differences).
+  const normLbl = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const mine = new Set((youLabels || []).map(normLbl));
+  // Many options can't fit the fixed chart box; flag it so the card grows to fit
+  // (like matrix tables) instead of bleeding over the title above it.
+  const tall = usedH > H;
   return html`
-    <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
+    <svg class=${tall ? "ob-tall" : ""} viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
       ${opts.map((o, i) => {
-        const sel = mine.has(o.label.toLowerCase());
+        const sel = mine.has(normLbl(o.label));
         const y = i * rowH;
         const bw = (o.pct / maxP) * (W - labelW - 86);
         const maxChars = Math.floor(labelW / (fs * 0.52));
@@ -140,12 +175,12 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
         <g key=${o.code}>
           <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs}
             fill=${sel ? "var(--ink)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 400}>
-            ${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
+            ${o.label.length > maxChars && html`<title>${o.label}</title>`}${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
           <rect x=${labelW} y=${y + Math.max(2, rowH * 0.16)} width=${Math.max(2, bw)}
             height=${Math.max(8, rowH - Math.max(4, rowH * 0.32))} rx="3.5"
-            fill=${sel ? youColour(fav) : "var(--cat-5)"}/>
+            fill=${sel ? youColour(fav) : "var(--chart-cat)"}/>
           ${showValues && html`<text x=${labelW + Math.max(2, bw) + 6} y=${y + rowH / 2 + fs * 0.34} font-size=${fs}
-            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
+            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" + (favGlyph(fav) ? " " + favGlyph(fav) : "") : ""}</text>`}
         </g>`;
       })}
     </svg>`;
@@ -171,13 +206,17 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
   const railX = labelW + 5;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;
-  const mine = new Set((youLabels || []).map(s => s.toLowerCase()));
+  // Match the server's whitespace-collapsing _norm_label so the "you" highlight
+  // lands on the same option the server selected (plain toLowerCase missed labels
+  // with internal/edge whitespace differences).
+  const normLbl = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const mine = new Set((youLabels || []).map(normLbl));
   return html`
     <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
       <line x1=${railX} x2=${railX} y1=${rowH / 2} y2=${usedH - rowH / 2 - 2}
         stroke="var(--chart-axis)" stroke-width="1"/>
       ${opts.map((o, i) => {
-        const sel = mine.has(o.label.toLowerCase());
+        const sel = mine.has(normLbl(o.label));
         const y = i * rowH, cy = y + rowH / 2;
         const bw = (o.pct / maxP) * (W - railX - 96);
         const maxChars = Math.floor(labelW / (fs * 0.52));
@@ -185,14 +224,14 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
         <g key=${o.code || o.label}>
           <text x=${labelW - 4} y=${cy + fs * 0.34} text-anchor="end" font-size=${fs}
             fill=${sel ? "var(--ink)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 400}>
-            ${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
+            ${o.label.length > maxChars && html`<title>${o.label}</title>`}${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
           <circle cx=${railX} cy=${cy} r=${sel ? 3.4 : 2.2}
             fill=${sel ? youColour(fav) : "var(--chart-axis)"}/>
           <rect x=${railX + 6} y=${y + Math.max(2, rowH * 0.16)} width=${Math.max(o.pct > 0 ? 2 : 0.5, bw)}
             height=${Math.max(8, rowH - Math.max(4, rowH * 0.32))} rx="3.5"
-            fill=${sel ? youColour(fav) : "var(--cat-5)"} opacity=${o.pct > 0 ? 1 : 0.45}/>
+            fill=${sel ? youColour(fav) : "var(--chart-cat)"} opacity=${o.pct > 0 ? 1 : 0.5}/>
           ${showValues && html`<text x=${railX + 6 + Math.max(2, bw) + 6} y=${cy + fs * 0.34} font-size=${fs}
-            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" : ""}</text>`}
+            fill=${sel ? youColour(fav) : "var(--ink-faint)"} font-weight=${sel ? 700 : 500}>${o.pct}%${sel ? " · You" + (favGlyph(fav) ? " " + favGlyph(fav) : "") : ""}</text>`}
         </g>`;
       })}
     </svg>`;
@@ -316,7 +355,7 @@ window.QuartileDots = function ({ quartiles }) {
     <div class="qdots" title="Where your metrics fall across market quartiles (Q1 lowest → Q4 highest)">
       ${quartiles.map((c, i) => html`
         <div key=${i} class="qdot" style=${{
-          background: c ? `color-mix(in srgb, var(--cat-1) ${Math.round(22 + 78 * c / total)}%, var(--surface-sunk))` : "var(--surface-sunk)",
+          background: c ? `color-mix(in srgb, var(--quartile-fill) ${Math.round(22 + 78 * c / total)}%, var(--surface-sunk))` : "var(--surface-sunk)",
         }}></div>`)}
     </div>`;
 };
@@ -451,6 +490,12 @@ window.buildMatrixSVG = function (card) {
 };
 
 // ------------------------------------------------------------- PNG export --
+// lumi horizontal logo (navy mark + coral "you" dot + ink wordmark), inner
+// markup only — designed to a 0 0 390 178 box (web/lumi_horizontal.svg). Inlined
+// into the export SVG so the brand renders in one pass (no second image load /
+// no canvas taint). Colours are literal brand hex per LOGO_STANDARDS.md.
+const LUMI_EXPORT_LOGO = '<g transform="translate(-414.25 -156.25)"><path d="M 470.00 212.00 L 470.00 280.00 L 538.00 280.00" fill="none" stroke="#2048B0" stroke-width="17.0" stroke-linecap="round" stroke-linejoin="round"/><circle cx="490.00" cy="263.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="504.00" cy="254.00" r="6.00" fill="#2048B0" opacity="0.35"/><circle cx="520.00" cy="238.00" r="14.00" fill="#F08C6E"/></g><g transform="translate(50.162499999999994 -578.25)"><g transform="translate(120 700) scale(0.08955938697318008 -0.08955938697318008)"><path transform="translate(0 0)" d="M68 0V720H168V0Z" fill="#243642"/><path transform="translate(237 0)" d="M253 -12Q194 -12 150.5 12.0Q107 36 83.5 84.0Q60 132 60 205V504H160V216Q160 145 191.0 109.0Q222 73 280 73Q319 73 350.5 92.0Q382 111 400.0 147.0Q418 183 418 235V504H518V0H429L422 86Q399 40 355.0 14.0Q311 -12 253 -12Z" fill="#243642"/><path transform="translate(824 0)" d="M68 0V504H158L165 433Q189 472 229.0 494.0Q269 516 319 516Q357 516 388.0 505.5Q419 495 443.0 474.0Q467 453 482 422Q509 466 554.5 491.0Q600 516 651 516Q712 516 756.0 491.5Q800 467 823.0 418.5Q846 370 846 298V0H747V288Q747 358 718.5 394.0Q690 430 635 430Q598 430 569.0 411.0Q540 392 523.5 356.0Q507 320 507 268V0H407V288Q407 358 378.5 394.0Q350 430 295 430Q260 430 231.0 411.0Q202 392 185.0 356.0Q168 320 168 268V0Z" fill="#243642"/><path transform="translate(1731 0)" d="M68 0V504H168V0Z" fill="#243642"/></g><circle cx="285.64" cy="641.61" r="7.52" fill="#F08C6E"/></g>';
+
 window.exportCardPNG = async function (cardEl, meta, mode) {
   // chart svg lives inside the chart container — scope the lookup so we never
   // grab a kebab/status icon; matrix cards render as HTML, so rebuild an SVG
@@ -463,7 +508,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   const clone = svg.cloneNode(true);
   const vb = (svg.getAttribute("viewBox") || "0 0 420 120").split(" ").map(Number);
   const cw = vb[2], ch = vb[3];
-  const PAD = 18, TITLE_H = 46, FOOT_H = 26;
+  const PAD = 18, TITLE_H = 46, FOOT_H = 46;   // taller footer carries the lumi logo + source
   const W = cw + PAD * 2, H = ch + TITLE_H + FOOT_H + PAD;
   const wrap = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   wrap.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -481,11 +526,17 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
     node.childNodes.forEach(resolve);
   };
   resolve(clone);
+  // branded source footer: hairline · lumi logo (bottom-left) · "Source: lumi HR"
+  // attribution + date (bottom-right). Logo scaled from its 0..390×0..178 box.
+  const LOGO_H = 18, lscale = LOGO_H / 178, logoY = H - 32, sepY = H - 40, footY = H - 18;
+  const src = `Source: lumi HR${meta.window ? " · " + esc(meta.window) : ""} · generated ${new Date().toLocaleDateString("en-GB")}`;
   wrap.innerHTML = `
     <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
     <text x="${PAD}" y="${PAD + 6}" font-family="Helvetica, Arial" font-size="13" font-weight="700" fill="#211B26">${esc(meta.title)}</text>
     <text x="${PAD}" y="${PAD + 24}" font-family="Helvetica, Arial" font-size="10" fill="#5B5560">${esc(meta.cutLabel)} · n=${meta.n}${meta.suffix ? " · " + esc(meta.suffix) : ""}</text>
-    <text x="${PAD}" y="${H - 10}" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">lumi people analytics benchmark · ${esc(meta.window || "")} · generated ${new Date().toLocaleDateString("en-GB")}</text>`;
+    <line x1="${PAD}" y1="${sepY}" x2="${W - PAD}" y2="${sepY}" stroke="#E7E2DA" stroke-width="1"/>
+    <g transform="translate(${PAD}, ${logoY}) scale(${lscale})">${LUMI_EXPORT_LOGO}</g>
+    <text x="${W - PAD}" y="${footY}" text-anchor="end" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">${src}</text>`;
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("transform", `translate(${PAD}, ${TITLE_H + 8})`);
   g.setAttribute("font-family", "Helvetica, Arial, sans-serif");

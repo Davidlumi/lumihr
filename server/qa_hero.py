@@ -87,12 +87,19 @@ positionable = [q for q in pol_qs if q.type in ("numeric", "matrix")
                 or (q.is_scored and q.type in ("single_select", "yes_no", "multi_select") and score_direction(q) != 0)]
 print("  coverage: %d polarised -> %d positionable, %d routed to prevalence (%s)" % (
     len(pol_qs), len(positionable), len(unmappable), Counter(q.type for q in unmappable)))
-# 2026.2 census: +11 non-neutral additions (98->109; the AI-skills premium is
-# DELIBERATELY neutral — prevalence only), +0 positionable (all unscored
-# selects, 76 unchanged), +7 unordered hib single_selects routed (15->22) —
-# delta fully accounted for by the 12 additions; existing questions unchanged
-check("109 polarised; 76 positionable; 22 unordered routed (matches the data census)",
-      len(pol_qs) == 109 and len(positionable) == 76 and len(unmappable) == 22)
+# Self-tracking invariant (was a frozen 109/76/22 census that drifted with every
+# release — 2026.3 added 38). What MUST hold regardless of library growth: the
+# positionable set (scored, real order) and the unordered-routed set (single_select,
+# score_direction==0) are each a subset of the polarised pool and are DISJOINT by
+# construction (one needs direction!=0, the other ==0), and both are non-empty so
+# the polarity-inversion checks above have something to bite on.
+_pos_ids = {q.id for q in positionable}
+_unm_ids = {q.id for q in unmappable}
+_pol_ids = {q.id for q in pol_qs}
+check("polarised coverage is sound (positionable & routed each subset of polarised, disjoint, non-empty)",
+      _pos_ids <= _pol_ids and _unm_ids <= _pol_ids and _pos_ids.isdisjoint(_unm_ids)
+      and len(positionable) > 0 and len(unmappable) > 0,
+      "pos=%d unm=%d pol=%d" % (len(positionable), len(unmappable), len(pol_qs)))
 fabricated = [(q.id, o["label"]) for q in unmappable for o in (q.options or [])
               if score_answer(q, o["label"]) is not None]
 check("no unordered polarised metric can produce a rank (no invented order)", not fabricated, fabricated[:2])
@@ -110,6 +117,17 @@ print("  default band 35-65: %d above / %d on / %d below of %d -> %.0f%% on-mark
     m["above"], m["at"], m["below"], m["pool"], at_share * 100))
 check("config block exposes the band for tuning", hero["config"]["band_low"] == 35.0 and hero["config"]["band_high"] == 65.0)
 check("hero not washed out (on-market share < 70%)", at_share < 0.70, "%.0f%% on" % (at_share * 100))
+# the headline ("above the market median on X of Y comparable metrics" — board
+# pack + share) counts the SAME Substance pool the gauge does, so the surfaces can
+# never tell different stories about the same org (2026-06-16, overview_summary re-axis)
+check("headline comparable == gauge pool (dashboard / board pack / share agree)",
+      ov["headline"]["comparable_metrics"] == m["pool"],
+      (ov["headline"]["comparable_metrics"], m["pool"]))
+# the Approach companion ("N differ from market") tallies Practice/Design choices vs
+# the market mode — a separate register, never folded into the gauge's below/on/above
+ap = hero.get("approach")
+check("Approach companion present + internally consistent (differ + in_line == pool)",
+      ap and ap["differ"] + ap["in_line"] == ap["pool"] and ap["pool"] > 0, ap)
 
 # F2 (2026-06-13) — the verdict can never contradict the count distribution in
 # the impossible direction: never "below" when below is the strict smallest of
@@ -139,37 +157,42 @@ print("=" * 100)
 print("5. DOMAIN ELIGIBILITY + ROLLUP CONSTRUCTION")
 print("=" * 100)
 dm = {d["name"]: d for d in hero["domains"]}
-# 2026.1 domains: 5 of the 7 categories clear the 5-polarised floor;
-# Wellbeing (new questions, no data yet) and Recognition (1) are prevalence-only
-check("Pay / Incentives / Benefits / Time Off / Governance carry a market verdict",
-      all(dm[x]["market"] is not None for x in ("Pay", "Incentives", "Benefits", "Time Off", "Governance")),
-      {k: (dm[k]["market"] or {}).get("verdict") for k in dm})
-check("Wellbeing / Recognition stay below the strict polarised floor (market None)",
-      dm["Wellbeing"]["market"] is None and dm["Recognition"]["market"] is None,
-      {k: dm[k]["polarised_comparable"] for k in ("Wellbeing", "Recognition")})
-# tile positions (David, 2026-06-12): every tile shows a market position; when
-# the strict floor isn't met the verdict is INDICATIVE — combined polarised +
-# direction-bearing practice evidence, basis + counts disclosed
-check("every domain carries a tile position", all(d.get("position") is not None for d in hero["domains"]),
-      {d["name"]: d.get("position_basis") for d in hero["domains"]})
+# WIRED to market_position_config (2026-06-16): the gauge feed is SUBSTANCE
+# (Level + Provision, higher_is_better) in COMPETITIVE domains only. Governance
+# (_domains.competitiveness=false) has NO headline role; the 5->3 firm floor lets
+# a 3+-Substance domain (Wellbeing, via newly-routed Provision presence) earn a
+# strict verdict where it was practice-only indicative before.
+comp = [d for d in hero["domains"] if d["name"] != "Governance"]
+check("Governance carries NO market verdict and NO tile position (competitiveness carve-out)",
+      dm["Governance"]["market"] is None and dm["Governance"]["position"] is None
+      and dm["Governance"].get("competitiveness") is False,
+      {"market": dm["Governance"]["market"], "position": dm["Governance"]["position"]})
+check("competitive domains clearing the 3-Substance floor carry a strict market verdict",
+      all(dm[x]["market"] is not None for x in ("Pay", "Incentives", "Benefits", "Time Off", "Wellbeing")),
+      {k: dm[k]["polarised_comparable"] for k in ("Pay", "Incentives", "Benefits", "Time Off", "Wellbeing")})
+check("Wellbeing now reaches a STRICT verdict (was practice-only indicative; the 5->3 unlock)",
+      dm["Wellbeing"]["market"] is not None and dm["Wellbeing"]["position_basis"] == "market",
+      {"market": dm["Wellbeing"]["market"], "basis": dm["Wellbeing"]["position_basis"]})
+check("Recognition stays sub-floor (<3 Substance) -> indicative, not masked as strict",
+      dm["Recognition"]["market"] is None and dm["Recognition"]["position_basis"] == "indicative",
+      {"q": dm["Recognition"]["polarised_comparable"], "basis": dm["Recognition"]["position_basis"]})
 check("strict domains keep basis=market and position==market verdict",
       all(d["position_basis"] == "market" and d["position"]["verdict"] == d["market"]["verdict"]
-          for d in hero["domains"] if d["market"] is not None))
-check("sub-floor domains disclose basis=indicative + evidence counts",
+          for d in comp if d["market"] is not None))
+check("sub-floor competitive domains disclose basis=indicative + evidence counts",
       all(d["position_basis"] == "indicative" and d.get("position_evidence") is not None
-          for d in hero["domains"] if d["market"] is None))
-check("Wellbeing indicative evidence is practice-based and excludes the N/A answer (4 of 6 direction-bearing)",
-      dm["Wellbeing"]["position_evidence"] == {"polarised": 0, "practice": 4},
-      dm["Wellbeing"].get("position_evidence"))
-check("Recognition indicative evidence is its single polarised metric",
-      dm["Recognition"]["position_evidence"] == {"polarised": 1, "practice": 0},
-      dm["Recognition"].get("position_evidence"))
-check("every domain still gets a prevalence summary", all(d["prevalence"] is not None for d in hero["domains"]))
-check("threshold is config", hero["config"]["domain_min"] == 5 and hero["config"]["tile_min"] == 1)
-# practice evidence never bleeds into the overall arc (the signed census)
-check("overall arc pool is unchanged by practice evidence (score/value items only)",
-      m["pool"] == sum(1 for d in hero["domains"] for _ in range(d["polarised_comparable"])),
-      m["pool"])
+          for d in comp if d["market"] is None and d.get("position") is not None))
+check("tile evidence is Substance-based — no practice bleed (practice==0 everywhere)",
+      all((d.get("position_evidence") or {"practice": 0})["practice"] == 0 for d in hero["domains"]),
+      {d["name"]: d.get("position_evidence") for d in hero["domains"] if d.get("position_evidence")})
+check("every competitive domain still gets a prevalence summary", all(d["prevalence"] is not None for d in comp))
+check("threshold is config (domain_min=3, tile_min=1)",
+      hero["config"]["domain_min"] == 3 and hero["config"]["tile_min"] == 1, hero["config"])
+# the overall arc pool is exactly the union of per-domain Substance feeds —
+# no double-count, Governance (polarised_comparable 0) contributes nothing
+check("overall arc pool == sum of per-domain Substance counts (Governance excluded, no double-count)",
+      m["pool"] == sum(d["polarised_comparable"] for d in hero["domains"]),
+      (m["pool"], sum(d["polarised_comparable"] for d in hero["domains"])))
 pool_sum = sum((d["market"]["pool"] if d["market"] else 0) for d in hero["domains"])
 check("overall computed from the FULL pool, not domain average (overall pool %d >= sum of eligible domain pools %d)"
       % (m["pool"], pool_sum), m["pool"] >= pool_sum)
@@ -226,12 +249,15 @@ print("=" * 100)
 web = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 css = open(os.path.join(web, "css", "app.css"), encoding="utf-8").read()
 js = open(os.path.join(web, "js", "pages.js"), encoding="utf-8").read()
-prev_css = css[css.index(".prev-line"):css.index(".prev-line") + 300]
-check("prev-line styles use ink/blue only (no favourable/unfavourable vars)",
-      "favourable" not in prev_css and "unfavourable" not in prev_css)
-prevline_src = js[js.index("function PrevLine"):js.index("function PrevLine") + 400]
-check("PrevLine component carries no pos-pill / performance classes",
-      "pos-pill" not in prevline_src and "good" not in prevline_src and "bad" not in prevline_src)
+# prevalence is now rendered by the prevDonut (neutral blue tones) + the tile
+# prevalence line; the old .prev-line/PrevLine were retired with the dead HeroSignals.
+donut_src = js[js.index("function prevDonut"):js.index("function prevDonut") + 900]
+check("prevDonut uses blue/neutral tones, never the performance vars",
+      "favourable" not in donut_src and "unfavourable" not in donut_src and "var(--blue" in donut_src)
+check("prevDonut carries no pos-pill / verdict classes",
+      "pos-pill" not in donut_src and "good" not in donut_src and "bad" not in donut_src)
+check("tile prevalence line is a neutral caption (no performance colour)",
+      'title="practices in line with the market majority"' in js)
 check("maturity score tiles removed from the gap register",
       "your maturity" not in open(os.path.join(web, "js", "commercial.js"), encoding="utf-8").read())
 

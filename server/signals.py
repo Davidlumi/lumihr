@@ -49,6 +49,16 @@ def lens_config():
     return _cache["cfg"]
 
 
+def signal_key(sig):
+    """Stable identity for change-alert diffing: lens:kind:question_id:matrix_row.
+    A signal carries lens/kind/question_id on every row; matrix rows additionally
+    carry their row in sig_id as 'question_id::row_id'."""
+    sid = sig.get("sig_id") or sig.get("question_id") or ""
+    row = sid.split("::", 1)[1] if "::" in sid else ""
+    return "%s:%s:%s:%s" % (sig.get("lens", ""), sig.get("kind", ""),
+                            sig.get("question_id", ""), row)
+
+
 ORD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ordered_scale_routing.json")
 _ord_cache = {"mtime": None, "cfg": {}}
 
@@ -228,7 +238,91 @@ def _ordinal_leak(vd):
     return "you provide none, the market provides it" if m.group(1) == "0" else "below the market median"
 
 
-def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None):
+def _signal_position(sig, cls):
+    """Market position for the Signals page axis: below / on / above (Substance)
+    or `differs` (Approach). Approach (config Practice/Design) and rarity always
+    read as `differs`; otherwise the factual tag direction (HIGHER->above,
+    LOWER->below) — §5.5 colour is applied separately, by polarity."""
+    if cls in ("Practice", "Design"):
+        return "differs"
+    tag = sig.get("tag", "")
+    if tag == "FEW OFFER THIS":
+        return "differs"
+    if tag == "MOST DO THIS":          # a market provision you lack reads below; a practice differs
+        return "below" if cls in ("Level", "Provision") else "differs"
+    if tag == "£ GAP":
+        return "below"
+    if "HIGHER" in tag:
+        return "above"
+    if "LOWER" in tag:
+        return "below"
+    return "differs"
+
+
+def _signal_polarity(sig, direction):
+    """Row colour driver (§5.5): a cost/spend signal or a neutral metric is
+    context (navy); lower_is_better flips favourability; everything else higher."""
+    if sig.get("kind") == "save" or direction == "neutral":
+        return "neutral"
+    if direction == "lower_is_better":
+        return "lower"
+    return "higher"
+
+
+def _market_adoption(q, blk):
+    """Share of the market with a practice in place (in_place+partial over the
+    assessable base) — the SAME computation block 4 (PREVALENCE) uses, so a
+    signal recast from a verdict to prevalence carries an identical, honest
+    adoption figure. Returns None when nothing is assessable."""
+    if not q or not blk:
+        return None
+    from aggregate import practice_status, STATUS_POINTS
+    assessable = in_place = 0.0
+    for o in blk.get("options") or []:
+        st = practice_status(q, o["label"])
+        if st in STATUS_POINTS:
+            assessable += o["pct"]
+            if st in ("in_place", "partial"):
+                in_place += o["pct"]
+    return (100.0 * in_place / assessable) if assessable else None
+
+
+# Reward-strategy objective re-ranker (handover §5.3) — a per-lens multiplier on
+# signal impact BEFORE the sort. The founding strategy hook: a cost-cutting org
+# must not be shown investment signals first. Pure re-rank — fabricates nothing,
+# hides nothing — so the trust rules hold. strategy=None → all 1.0 → today's order
+# byte-for-byte (the degrade-to-legacy contract, §5.5).
+OBJECTIVE_LENS_MULT = {
+    "attract":    {"attract": 1.6, "retain": 1.0, "engage": 1.0, "save": 0.9},
+    "retain":     {"attract": 1.0, "retain": 1.6, "engage": 1.1, "save": 0.9},
+    "cost":       {"attract": 0.6, "retain": 0.8, "engage": 0.8, "save": 1.7},
+    "compliance": {"attract": 0.9, "retain": 1.0, "engage": 1.4, "save": 1.0},
+    "hold":       {"attract": 1.0, "retain": 1.0, "engage": 1.0, "save": 1.0},
+}
+
+
+def _objective_mult(strategy, lens):
+    """Per-lens impact scaler from the org's primary_objective. Neutral (1.0)
+    when there is no strategy, no objective, or it was skipped (§5.4 provenance)."""
+    if not strategy:
+        return 1.0
+    obj = strategy.get("primary_objective")
+    if not obj or (strategy.get("provenance") or {}).get("primary_objective") == "skipped":
+        return 1.0
+    return (OBJECTIVE_LENS_MULT.get(obj) or {}).get(lens, 1.0)
+
+
+def _strategy_field(strategy, field):
+    """A strategy dial value iff a real 'set' choice — None when absent/skipped."""
+    if not strategy:
+        return None
+    v = strategy.get(field)
+    if not v or (strategy.get("provenance") or {}).get(field) == "skipped":
+        return None
+    return v
+
+
+def build_signals(items, opportunity, questions, get_block, org_answers, conn=None, org_id=None, cap=True, statuses=None, strategy=None):
     """items: pos.position_items output (cut-scoped); opportunity: the £
     model dict; questions: org-visible library; get_block(qid) -> the cut's
     main distribution block; org_answers: {(qid,row): value}. Prevalence
@@ -596,9 +690,169 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     # sig_id — usually the question_id, but qid::row_id for per-row matrix signals
     # so each row triages independently.
     st = statuses or {}
+    import positions as _pos
+    _cfg = _pos.market_position_config() or {}
+    _metrics = _cfg.get("metrics", {})
     for s in out:
         s.setdefault("sig_id", s["question_id"])
         s["status"] = st.get(s["sig_id"])
+        # market-position re-axis (spec §6.3): domain + position (below/on/above/
+        # differs) + polarity, so the Signals page can chip-filter, group and colour
+        _q = questions.get(s["question_id"])
+        _m = _metrics.get(s["question_id"]) or {}
+        s["domain"] = _q.sub_power if _q else None
+        s["position"] = _signal_position(s, _m.get("class"))
+        s["polarity"] = _signal_polarity(s, _m.get("direction"))
+        s["mp_class"] = _m.get("class")          # internal class, surfaced only in the metric detail view
+        # NON-COMPETITIVE DOMAINS (Governance scoping ruling — signals layer, 2026-06-22):
+        # market-relative framing (below/on/above/differs) applies ONLY to competitive
+        # domains. A domain with no market position contributes 0 to the market axis —
+        # reading the SAME _mp_competitive flag the hero scopes by (single source of
+        # truth, so signals and the hero can't drift). Its signals carry the NON-market
+        # "practice" position and, if they fired through a market verdict (behind/ahead),
+        # are recast to a peer/practice statement — never a market label. RELABEL, kept in
+        # the stream (sortable/filterable/dismissable), never dropped. The adoption FACT
+        # keeps "the market" (it's prevalence, not a verdict); only the verdict framing goes.
+        if not _pos._mp_competitive(_cfg, s["domain"]):
+            s["position"] = "practice"
+            if s.get("kind") in ("behind", "ahead"):
+                was_behind = s.get("fav") == "bad"
+                adoption = _market_adoption(_q, get_block(s["question_id"]) if _q else None)
+                s.pop("fav", None)
+                s["worth"] = True
+                _ttl = _phrase(_q.display_title) if _q else (s.get("name") or "this")
+                if was_behind and adoption is not None and adoption >= prev_floor:
+                    # a common practice you lack — prevalence framing (adoption fact keeps
+                    # "the market" per the ruling; only the position label changed).
+                    _pct = round(adoption)
+                    s["kind"] = "prevalence"; s["tag"] = "MOST DO THIS"
+                    s["stand"] = "%d%% of the market does this, you don't" % _pct
+                    s["value_display"] = "%d%%" % _pct
+                    s["label_short"] = "of peers %s" % _short(_ttl)
+                    s["detail"] = "of peers %s — you don't yet" % _ttl
+                    s["impact"] = 10000 + _pct * 10
+                elif _m.get("class") in ("Practice", "Design"):
+                    # a yes/no approach with no clear majority — a peer-framed approach note
+                    s["kind"] = "approach"; s["tag"] = "DIFFERS FROM PEERS"
+                    s["stand"] = "your approach differs from the peer norm"
+                    s["detail"] = "your approach to %s differs from the peer norm" % _ttl
+                    s["value_display"] = ""
+                    s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
+                    s["impact"] = 9000
+                else:
+                    # a quantity (Level/Provision): a NEUTRAL peer-position note, never an
+                    # above/below-MARKET verdict. Peer-framed, no RAG.
+                    high = "HIGHER" in (s.get("tag") or "")
+                    s["kind"] = "outlier"
+                    s["tag"] = "HIGHER THAN PEERS" if high else "LOWER THAN PEERS"
+                    s["stand"] = "sits at the %s end of your peer group" % ("high" if high else "low")
+                    s["detail"] = "%s sits at the %s end of your peer group" % (
+                        (_q.display_title if _q else _ttl), "high" if high else "low")
+                    s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
+                    s["value_display"] = ""
+                    s["impact"] = 9000
+            # defensive: any residual market-relative TAG on a non-competitive signal
+            # (e.g. a native outlier/depth "HIGHER THAN MARKET") is peer-framed too. The
+            # adoption STAND keeps "the market" by design (prevalence, not a verdict).
+            if (s.get("tag") or "").endswith("THAN MARKET"):
+                s["tag"] = s["tag"].replace("THAN MARKET", "THAN PEERS")
+        # COMPETITIVE domains only — the original Approach (Practice/Design) recast:
+        # A Practice/Design metric resolves to position "differs" — it is an
+        # APPROACH, never a market deficiency. If such a metric fired through a
+        # verdict block (behind/ahead — e.g. a practice routed via position_lenses),
+        # strip the RAG verdict (kind/tag/fav) and re-cast it as prevalence
+        # ("most do this, you don't") so the card reads as a practice gap, not a
+        # red/green market position. The gauge already excludes Approach metrics;
+        # this only corrects the Signals/home briefing read. (signal-colour fix #2)
+        elif s["position"] == "differs" and s.get("kind") in ("behind", "ahead"):
+            was_behind = s.get("fav") == "bad"
+            adoption = _market_adoption(_q, get_block(s["question_id"]) if _q else None)
+            s.pop("fav", None)
+            s["worth"] = True
+            _ttl = _phrase(_q.display_title) if _q else (s.get("name") or "this")
+            if was_behind and adoption is not None and adoption >= prev_floor:
+                _pct = round(adoption)
+                s["kind"] = "prevalence"
+                s["tag"] = "MOST DO THIS"
+                s["stand"] = "%d%% of the market does this, you don't" % _pct
+                s["value_display"] = "%d%%" % _pct
+                s["label_short"] = "of peers %s" % _short(_ttl)
+                s["detail"] = "of peers %s — you don't yet" % _ttl
+                # re-baseline impact to prevalence tier (was behind/ahead tier): a
+                # recast must not keep verdict-level impact, or it jumps the
+                # cap_briefing diversity reserve meant for genuine prevalence.
+                # Byte-matches native prevalence (block 4): 10000 + adoption*10.
+                s["impact"] = 10000 + _pct * 10
+            else:
+                # leads on / differs in an approach with no clear adoption norm:
+                # state the difference, assert no verdict (no fav, purple chip).
+                # detail + label_short are rewritten too so the stale "X vs Y
+                # market median" verdict never leaks into the persisted signal
+                # state or the change-alert email (notifications.py reads detail).
+                s["kind"] = "approach"
+                s["tag"] = "DIFFERS FROM MARKET"
+                s["stand"] = "your approach differs from the market norm"
+                s["value_display"] = ""
+                s["detail"] = "your approach to %s differs from the market norm" % _ttl
+                s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
+                s["impact"] = 9000          # below floor-level prevalence; a no-verdict flag ranks lower
+        # FIX 4 (2026-06-23) — PRACTICE-TAB VOCABULARY FIREWALL (the differs lane). The recast
+        # above only converts behind/ahead; depth/outlier (and any other) kinds that resolve
+        # to position=differs keep their DIRECTIONAL "HIGHER/LOWER THAN MARKET" verdict and so
+        # show on the dashboard Practice tab reading like a market deficiency. A practice
+        # difference is never a market verdict, so route ANY residual directional market tag on
+        # a differs signal to rarity/approach/peer vocab — keyed on the FINAL position (what
+        # decides the tab), not the kind. Mirrors the non-competitive branching (a common
+        # practice you lack → MOST DO THIS; a yes/no approach → DIFFERS FROM PEERS; a quantity →
+        # HIGHER/LOWER THAN PEERS). DISPLAY-ONLY: tag + the stand/detail/label copy. position,
+        # kind, impact, counts, ranking and the gauge are all left untouched (byte-identical).
+        _ftag = s.get("tag") or ""
+        if s.get("position") == "differs" and (
+                _ftag.endswith("THAN MARKET") or _ftag == "£ GAP"
+                or "ABOVE MARKET" in _ftag or "BELOW MARKET" in _ftag):
+            _fttl = _phrase(_q.display_title) if _q else (s.get("name") or "this")
+            _fadopt = _market_adoption(_q, get_block(s["question_id"]) if _q else None)
+            if _fadopt is not None and _fadopt >= prev_floor:
+                _fpct = round(_fadopt)
+                s["tag"] = "MOST DO THIS"
+                s["stand"] = "%d%% of the market does this, your approach differs" % _fpct
+                s["value_display"] = "%d%%" % _fpct
+                s["label_short"] = "of peers %s" % _short(_fttl)
+                s["detail"] = "of peers %s — your approach differs" % _fttl
+            elif _m.get("class") in ("Practice", "Design"):
+                s["tag"] = "DIFFERS FROM PEERS"
+                s["stand"] = "your approach differs from the peer norm"
+                s["value_display"] = ""
+                s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
+                s["detail"] = "your approach to %s differs from the peer norm" % _fttl
+            else:
+                _fhigh = "HIGHER" in _ftag
+                s["tag"] = "HIGHER THAN PEERS" if _fhigh else "LOWER THAN PEERS"
+                s["stand"] = "sits at the %s end of your peer group" % ("high" if _fhigh else "low")
+                s["value_display"] = ""
+                s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
+                s["detail"] = "%s sits at the %s end of your peer group" % (
+                    (_q.display_title if _q else _fttl), "high" if _fhigh else "low")
+        # v2 materiality weighting (handover §9.6): David's per-metric `weight`
+        # (default 1, hot-reloaded) scales how strongly a signal surfaces in the
+        # ranked briefing — a base-pay gap outranks a minor allowance. It does NOT
+        # touch the gauge, which stays count-mass ("verdict reflects mass").
+        _w = _m.get("weight", 1)
+        s["weight"] = _w
+        s["impact"] = round((s.get("impact") or 0) * (_w if _w is not None else 1))
+        # reward-strategy objective re-rank (§5.3) — 1.0 when strategy is absent
+        s["impact"] = round(s["impact"] * _objective_mult(strategy, s.get("lens")))
+        # applicability + family reframes (§5.2) — config tags gate them, the opt-in
+        # stance drives them; both no-ops when untagged/unset (degrade byte-for-byte)
+        if _strategy_field(strategy, "location_approach") == "agnostic" and _m.get("location_scoped"):
+            s["_suppress"] = True          # per-location read doesn't apply to a one-rate org
+        elif (_strategy_field(strategy, "family_position") == "over" and _m.get("family_metric")
+              and (s.get("position") == "above" or s.get("kind") == "save")):
+            # high family spend reads as intended, not overspend — relabel + demote,
+            # never hide a family metric that's BELOW (that contradicts the stance)
+            s["strategy_note"] = "intended — your generous family stance"
+            s["impact"] = round((s.get("impact") or 0) * 0.4)
+    out = [s for s in out if not s.get("_suppress")]
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:

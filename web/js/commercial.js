@@ -22,7 +22,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   const setSp = v => { setSpRaw(v); onPref && onPref("_ui_gap", { ...ui, sp: v }); };
   const setShow = v => { setShowRaw(v); onPref && onPref("_ui_gap", { ...ui, show: v }); };
   useEffect(() => { setData(null); api("/api/gap-register?" + cutQS(cut)).then(setData); }, [cutKeyOf(cut)]);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const focused = window.SCOPE && window.SCOPE.focused;
   let rows = data.rows.filter(r => !r.suppressed);
   if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
@@ -31,10 +31,10 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
-          <a class="caption" href="#/signals" style=${{ display: "inline-flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}>
+          <a class="caption" href="#/signals" style=${{ display: "inline-flex", alignItems: "center", gap: "var(--s1)", marginBottom: "var(--s1)" }}>
             <${Icon} name="chevron-left" size=${13} /> Back to Signals</a>
           <h1 class="display-title">Full gap register</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>
             Every metric's presence against the market — what similar organisations have in place that you don't, sorted so the most commonly held missing items lead.
             Signals surfaces the flags that cross a threshold; this is the complete list. Peer group: ${cutLabelOf(cut, cuts)}.
           </div>
@@ -47,6 +47,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           <select class="ctl" value=${show} onChange=${e => setShow(e.target.value)}>
             <option value="gaps">Gaps only</option><option value="all">Everything</option>
           </select>
+          <a class="btn" href=${"/api/benchmark.csv?" + cutQS(cut)} download>Download data (CSV)</a>
           ${me.user.role === "admin" && html`
             <a class="btn" href=${"/api/gap-register.csv?" + cutQS(cut)} download>Download gap register (CSV)</a>`}
         </div>
@@ -101,7 +102,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   useEffect(() => {
     if (!sharedData) api("/api/boardpack/" + packId).then(setPack).catch(() => setPack({ error: true }));
   }, [packId]);
-  if (!pack) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!pack) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   if (pack.error) return html`<${EmptyState} title="Board pack not found" />`;
   const p = pack.payload, n = pack.narrative;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v1`;
@@ -128,10 +129,10 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "13px", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>LUMI PEOPLE ANALYTICS BENCHMARK</div>
-          <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "12px 0 6px", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
-          <div style=${{ fontSize: "16px", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
-          <div class="row" style=${{ marginTop: "18px" }}>
+          <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi people analytics benchmark</div>
+          <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "var(--s3) 0 var(--s2)", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
+          <div style=${{ fontSize: "var(--fs-card-title)", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
+          <div class="row" style=${{ marginTop: "var(--s4)" }}>
             <${Chip} kind="accent">${p.organisation.industry || "Unclassified"}<//>
             <${Chip}>${p.organisation.fte_band ? p.organisation.fte_band + " FTE" : ""}<//>
             <${Chip}>Peer group: ${p.cut_label}<//>
@@ -142,17 +143,17 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <h2 class="section-title">Executive position</h2>
-        <div class="card banner" style=${{ marginBottom: "16px", boxShadow: "none" }}>
+        <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
           <div>
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
-            <div class="caption">comparable metrics at or above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
+            <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
           </div>
-          <div style=${{ borderLeft: "1px solid var(--border)", paddingLeft: "20px" }}>
+          <div style=${{ borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
             <div class="metric-value">${p.peer_pool.total}</div>
             <div class="caption">organisations in the lumi peer pool</div>
           </div>
         </div>
-        ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "13.5px" }}>${para}</p>`)}
+        ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "var(--fs-label)" }}>${para}</p>`)}
         <p class="caption">Peer-group composition: ${p.peer_pool.total} UK organisations across 14 sectors (${p.peer_pool.classified} fully classified);
         comparisons use the ${p.cut_label} cut unless stated. Figures resting on fewer than 5 organisations are never shown.</p>
         <${Footer} page="1" />
@@ -162,7 +163,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">Where ${p.organisation.name} leads</h2>
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
-        <h2 class="section-title" style=${{ marginTop: "26px" }}>Largest gaps to the market</h2>
+        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
         <${Footer} page="2" />
@@ -172,7 +173,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">What closing the gaps is worth</h2>
         <p>${n.opportunity_narrative}</p>
         ${p.opportunities.length ? html`
-          <table class="data" style=${{ marginBottom: "14px" }}>
+          <table class="data" style=${{ marginBottom: "var(--s3)" }}>
             <thead><tr><th>Lever</th><th class="num">To market median</th><th class="num">To upper quartile</th><th>Type</th></tr></thead>
             <tbody>${p.opportunities.map(o => html`
               <tr key=${o.label}><td><b>${o.label}</b><div class="caption">${o.formula}</div></td>
@@ -185,9 +186,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           cost per leaver ${p.opportunity_assumptions.cost_per_leaver_pct_salary}% of salary; agency premium ${p.opportunity_assumptions.agency_premium_pct}%;
           FTE from band midpoints. Edit these in Settings and regenerate.</p>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}
-        <h2 class="section-title" style=${{ marginTop: "22px" }}>Recommended actions</h2>
-        <ol style=${{ fontSize: "13.5px", paddingLeft: "20px" }}>
-          ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "7px" }}>${a}</li>`)}
+        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Options to consider</h2>
+        <p class="caption" style=${{ marginTop: "-4px", marginBottom: "var(--s2)" }}>A starting point for your own judgement — not advice.
+          lumi is a mirror, not a scoreboard: it tells you where you stand, never what you must do.</p>
+        <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
+          ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
         <${Footer} page="3" />
       </div>
@@ -202,9 +205,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               <td class="num"><b>${r.peer_adoption_pct}%</b> <span class="caption">(n=${r.n})</span></td></tr>`)}
             </tbody>
           </table>` : html`<p class="caption">No qualifying items.</p>`}
-        <p class="caption" style=${{ marginTop: "14px" }}>Methodology: percentiles use linear interpolation; medians (P50) are
-        preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption means an answer
-        scoring ≥50 on the question's 0–100 scale. Full methodology in the lumi platform.</p>
+        <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
+        preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
+        assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
         <${Footer} page="4" />
       </div>
     </div>`;
@@ -236,7 +239,7 @@ window.AnalystPane = function ({ onClose }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const [msgs, setMsgs] = useState([{ role: "bot", text: "I'm lumi's benchmark analyst. Ask me how you compare with similar organisations — I'll only ever answer from the benchmark data, with the percentile, peer group and sample size cited." }]);
+  const [msgs, setMsgs] = useState([{ role: "bot", text: "Hi — I'm lumi. I can help you find a metric, explain a term, or show you how to use the platform. And ask how you compare on anything — I'll answer from the benchmark with the percentile, peer group and sample size cited." }]);
   const [starters, setStarters] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -249,7 +252,7 @@ window.AnalystPane = function ({ onClose }) {
     setInput(""); setBusy(true);
     try {
       const r = await api("/api/analyst", { method: "POST", body: { question: q } });
-      setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips, noMetric: r.no_metric, topic: r.topic }]);
+      setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips, links: r.links, noMetric: r.no_metric, topic: r.topic }]);
     } catch (e) {
       setMsgs(m => [...m, { role: "bot", text: "Sorry — something went wrong: " + e.message }]);
     }
@@ -268,6 +271,10 @@ window.AnalystPane = function ({ onClose }) {
             ${m.noMetric && html`
               <div><button class="btn small" style=${{ marginTop: "var(--s2)" }}
                 onClick=${() => window.openMetricRequest(m.topic, "ask-lumi")}>Request this metric</button></div>`}
+            ${m.links && m.links.length > 0 && html`
+              <div style=${{ marginTop: "var(--s2)", display: "flex", gap: "var(--s2)", flexWrap: "wrap" }}>
+                ${m.links.map((l, j) => html`<button key=${j} class="btn small outline-navy"
+                  onClick=${() => { nav(l.route); onClose(); }}>${l.label} →</button>`)}</div>`}
             ${m.chips && m.chips.length > 0 && html`
               <div>${m.chips.map((c, j) => html`
                 <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
@@ -278,15 +285,15 @@ window.AnalystPane = function ({ onClose }) {
         ${busy && html`<div class="msg bot"><${Spinner} /> Checking the benchmark…</div>`}
         ${msgs.length === 1 && starters.length > 0 && html`
           <div>
-            <div class="caption" style=${{ marginBottom: "6px" }}>Try one of these — based on your biggest gaps:</div>
+            <div class="caption" style=${{ marginBottom: "var(--s2)" }}>Try one of these — compare, find a metric, learn a term, or get help:</div>
             ${starters.map((s, i) => html`
-              <button key=${i} class="btn small" style=${{ margin: "0 6px 6px 0", whiteSpace: "normal", textAlign: "left" }}
+              <button key=${i} class="btn small" style=${{ margin: "0 var(--s2) var(--s2) 0", whiteSpace: "normal", textAlign: "left" }}
                 onClick=${() => ask(s)}>${s}</button>`)}
           </div>`}
         <div ref=${endRef}></div>
       </div>
-      <div style=${{ padding: "var(--s3)", borderTop: "1px solid var(--border)", display: "flex", gap: "8px" }}>
-        <input class="ctl" style=${{ flex: 1, maxWidth: "none" }} placeholder="e.g. How does our pension compare?"
+      <div style=${{ padding: "var(--s3)", borderTop: "1px solid var(--border)", display: "flex", gap: "var(--s2)" }}>
+        <input class="ctl" style=${{ flex: 1, maxWidth: "none" }} placeholder="Ask about a metric, a term, or how lumi works…"
           value=${input} onInput=${e => setInput(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") ask(input); }} />
         <button class="btn primary" disabled=${busy} onClick=${() => ask(input)}>Ask</button>
@@ -310,7 +317,7 @@ window.PeerTwinPanel = function ({ onUse, onClose }) {
       !data.available ? html`<p>${data.message}</p>` :
       html`<div>
         <p>${data.rationale.note}</p>
-        <h3 style=${{ fontSize: "13px", margin: "14px 0 6px" }}>Why these peers?</h3>
+        <h3 style=${{ fontSize: "var(--fs-label)", margin: "var(--s3) 0 var(--s2)" }}>Why these peers?</h3>
         <table class="data">
           <thead><tr><th>Attribute</th><th>You</th><th class="num">Matching twin peers</th></tr></thead>
           <tbody>
@@ -321,9 +328,9 @@ window.PeerTwinPanel = function ({ onUse, onClose }) {
               </tr>`)}
           </tbody>
         </table>
-        <p class="caption" style=${{ marginTop: "10px" }}>Similarity also weighs workforce shape (frontline, shift and unionised
+        <p class="caption" style=${{ marginTop: "var(--s3)" }}>Similarity also weighs workforce shape (frontline, shift and unionised
         percentages). Peer names are never shown, and anything resting on fewer than 5 of these organisations stays hidden.</p>
-        <div class="row" style=${{ justifyContent: "flex-end", marginTop: "10px" }}>
+        <div class="row" style=${{ justifyContent: "flex-end", marginTop: "var(--s3)" }}>
           <button class="btn" onClick=${onClose}>Close</button>
           <button class="btn primary" onClick=${() => { onUse(); onClose(); }}>Use as my peer group</button>
         </div>
@@ -347,13 +354,13 @@ window.SharesPage = function ({ embedded }) {
     } catch (e) { toast(e.message || "Couldn't create the share link", "error"); }
     setMaking(false);
   };
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "880px" }}>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <h1 class="display-title">Manage shares</h1>
-          <div class="caption" style=${{ marginTop: "4px" }}>Read-only links for people outside your lumi team. A link shows exactly what your team can see — your data plus safe peer aggregates — and nothing more.</div>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Read-only links for people outside your lumi team. A link shows exactly what your team can see — your data plus safe peer aggregates — and nothing more.</div>
         </div>
         <div class="row">
           <button class="btn" disabled=${making} onClick=${() => createDash(7)}>Share dashboard (7 days)</button>
@@ -428,7 +435,7 @@ window.TeamPage = function ({ me }) {
     try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); toast(uEmail + " removed from your organisation"); }
     catch (e) { setErr(e.message); }
   };
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "800px" }}>
       <h1 class="display-title">Team</h1>
@@ -454,9 +461,9 @@ window.TeamPage = function ({ me }) {
                 <button class="btn small quiet" onClick=${() => remove(u.email)}>Remove</button></td>`}</tr>`)}
           </tbody>
         </table>
-        ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
-        ${err && html`<div class="error-text" style=${{ marginTop: "8px" }}>${err}</div>`}
-        <div class="caption" style=${{ marginTop: "10px" }}>
+        ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginTop: "var(--s2)" }}>${err}</div>`}
+        <div class="caption" style=${{ marginTop: "var(--s3)" }}>
           <b>Admin</b> — ${ROLE_DESC.admin}<br/>
           <b>Contributor</b> — ${ROLE_DESC.contributor}<br/>
           <b>Viewer</b> — ${ROLE_DESC.viewer}<br/>
@@ -475,11 +482,11 @@ window.TeamPage = function ({ me }) {
             </select>
             <button class="btn primary" disabled=${inviting} onClick=${invite}>${inviting ? html`<${Spinner} />` : "Send invite"}</button>
           </div>
-          <div class="caption" style=${{ marginTop: "6px" }}>Invites expire after 7 days. Need another Admin?
+          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Invites expire after 7 days. Need another Admin?
             Invite them as Contributor, then promote them above. Joiners accept the Platform Terms only —
             your Data Contribution agreement covers the whole organisation.</div>
           ${data.invites.length > 0 && html`
-            <h3 style=${{ fontSize: "13px", margin: "16px 0 6px" }}>Outstanding invites</h3>
+            <h3 style=${{ fontSize: "var(--fs-label)", margin: "var(--s4) 0 var(--s2)" }}>Outstanding invites</h3>
             ${data.invites.map(i => html`
               <div key=${i.token} class="caption row spread">
                 <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${new Date(i.expires_at + "Z").toLocaleDateString("en-GB")}</span>
@@ -490,6 +497,73 @@ window.TeamPage = function ({ me }) {
 };
 
 // -------------------------------------------------------------- settings ---
+// Personal notification preferences — the bell (default on), the email digest
+// (opt-in), which lenses you hear about, good news, and a personal £ floor.
+const NOTIF_LENSES = [
+  { k: "attract", label: "Attract", icon: "magnet" }, { k: "retain", label: "Retain", icon: "anchor" },
+  { k: "engage", label: "Engage", icon: "heart" }, { k: "save", label: "Save", icon: "coins" },
+];
+function NotificationsSettings() {
+  const [p, setP] = useState(null);
+  const [floor, setFloor] = useState(10000);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { api("/api/notify-prefs").then(d => { setP(d.prefs); setFloor(d.min_money_floor || 10000); }).catch(() => {}); }, []);
+  if (!p) return html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /></div>`;
+  const save = (next) => {
+    setP(next);
+    api("/api/notify-prefs", { method: "PUT", body: { prefs: next } })
+      .then(() => { setSaved(true); setTimeout(() => setSaved(false), 1500); }).catch(() => {});
+  };
+  const toggleLens = (l) => {
+    const set = new Set(p.lenses);
+    if (set.has(l)) set.delete(l); else set.add(l);
+    save({ ...p, lenses: Array.from(set) });
+  };
+  const goodNews = p.events.includes("cleared");
+  return html`
+    <div class="notif-prefs">
+      <label class="na-toggle" style=${{ marginBottom: "var(--s3)" }}>
+        <input type="checkbox" checked=${p.inbox_enabled} onChange=${e => save({ ...p, inbox_enabled: e.target.checked })} />
+        <span><b>Show the notification bell</b> — your in-app inbox of changes</span>
+      </label>
+      <div class="field">
+        <label>Email digest</label>
+        <div class="seg-toggle" role="radiogroup" aria-label="Email digest frequency">
+          ${["off", "daily", "weekly"].map(f => html`
+            <button key=${f} class=${"seg-btn" + (p.email_frequency === f ? " on" : "")} role="radio"
+              aria-checked=${p.email_frequency === f} onClick=${() => save({ ...p, email_frequency: f })}>
+              ${f.charAt(0).toUpperCase() + f.slice(1)}</button>`)}
+        </div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Switch to Daily or Off any time; one-click unsubscribe on every email.</div>
+      </div>
+      <div class="field">
+        <label>What to hear about</label>
+        <div class="notif-lens-checks">
+          ${NOTIF_LENSES.map(l => html`
+            <label key=${l.k} class="check-row notif-lens-check">
+              <input type="checkbox" checked=${p.lenses.includes(l.k)} onChange=${() => toggleLens(l.k)} />
+              <span class=${"lens-" + l.k}><${Icon} name=${l.icon} size=${13} /> ${l.label}</span>
+            </label>`)}
+        </div>
+      </div>
+      <label class="na-toggle">
+        <input type="checkbox" checked=${goodNews}
+          onChange=${e => save({ ...p, events: e.target.checked ? ["appeared", "moved", "cleared"] : ["appeared", "moved"] })} />
+        <span>Include good news — tell me when a flag <b>clears</b></span>
+      </label>
+      <div class="field" style=${{ marginTop: "var(--s3)" }}>
+        <label>£ changes smaller than this won't notify me</label>
+        <div class="unit-input" style=${{ maxWidth: "180px" }}>
+          <span class="unit-sym">£</span>
+          <input type="number" step="1000" min=${floor} value=${p.min_money_gbp}
+            onChange=${e => save({ ...p, min_money_gbp: Math.max(floor, parseInt(e.target.value, 10) || 0) })} />
+        </div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your floor can be stricter than lumi's (£${floor.toLocaleString("en-GB")}), never looser.</div>
+      </div>
+      ${saved && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>Saved.</div>`}
+    </div>`;
+}
+
 window.SettingsPage = function ({ me, refreshMe }) {
   const [a, setA] = useState(null);
   const [editable, setEditable] = useState(false);
@@ -501,7 +575,7 @@ window.SettingsPage = function ({ me, refreshMe }) {
       agency_premium_pct: +a.agency_premium_pct } } });
     setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
   };
-  if (!a) return html`<div class="row" style=${{ justifyContent: "center", padding: "60px" }}><${Spinner} /></div>`;
+  if (!a) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   return html`
     <div style=${{ maxWidth: "640px" }}>
       <h1 class="display-title">Settings</h1>
@@ -514,10 +588,16 @@ window.SettingsPage = function ({ me, refreshMe }) {
           <input type="number" value=${a.cost_per_leaver_pct_salary} disabled=${!editable} onInput=${e => setA({ ...a, cost_per_leaver_pct_salary: e.target.value })} /></div>
         <div class="field"><label>Agency premium (% over employed cost)</label>
           <input type="number" value=${a.agency_premium_pct} disabled=${!editable} onInput=${e => setA({ ...a, agency_premium_pct: e.target.value })} /></div>
-        <div class="caption" style=${{ marginBottom: "10px" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
+        <div class="caption" style=${{ marginBottom: "var(--s3)" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
         ${editable ? html`<button class="btn primary" onClick=${save}>Save assumptions</button>` :
         html`<div class="caption">Only admins can edit assumptions.</div>`}
-        ${msg && html`<div class="ok-text" style=${{ marginTop: "8px" }}>${msg}</div>`}
+        ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
+      </div>
+      <div class="card" id="notifications" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Notifications</h2>
+        <p class="caption">When your position against the market changes — a flag appears, clears, or shifts —
+          we record it to your bell and (if you opt in) an email digest. These are personal to you.</p>
+        <${NotificationsSettings} />
       </div>
       <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Company profile</h2>
@@ -536,9 +616,9 @@ window.SettingsPage = function ({ me, refreshMe }) {
         <div class="row" style=${{ gap: "var(--s3)" }}>
           <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
         </div>
-        <div class="caption" style=${{ marginTop: "8px" }}>The DPA is optional — for members whose legal or
-          data-protection teams want the fuller instrument. All terms are
-          ${" "}<span class="chip warn">DRAFT — pending legal review</span></div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for members whose legal or
+          data-protection teams want the fuller instrument. These are the current
+          ${" "}<span class="chip">published versions</span></div>
       </div>
       <div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <${SharesPage} embedded=${true} />
@@ -592,4 +672,123 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
           </div>
         </div>`}
     <//>`;
+};
+
+// ----------------------------------------------------- suggest a metric -----
+// Richer, structured suggestion (distinct from the lightweight search "request
+// a metric"): name + definition + rationale + optional category, its own table
+// and endpoint. The honest subtitle deliberately does NOT promise inclusion —
+// suggestions are input to a deliberate, research-standards review.
+window.SUGGEST_CATEGORIES = ["Pay", "Incentives", "Benefits", "Time off", "Wellbeing", "Recognition", "Governance", "Not sure"];
+window.SuggestMetricModal = function ({ onClose, userEmail }) {
+  const [name, setName] = useState("");
+  const [measures, setMeasures] = useState("");
+  const [matters, setMatters] = useState("");
+  const [category, setCategory] = useState("");
+  const [errs, setErrs] = useState({});
+  const [general, setGeneral] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const cardRef = useRef(null);
+  const nameRef = useRef(null);
+  // 2.6 — animated close: play the exit animation, then unmount. Reduced motion
+  // skips the delay entirely (off means off). Focus return happens on unmount.
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const close = () => {
+    if (reduced) { onClose(); return; }
+    setClosing(true);
+    setTimeout(onClose, 250);
+  };
+  // focus the first field on open; restore focus to the trigger (the pill) on close
+  useEffect(() => {
+    const trigger = document.activeElement;
+    const t = setTimeout(() => nameRef.current && nameRef.current.focus(), 0);
+    return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
+  }, []);
+  // Escape closes; Tab cycles within the card (close → fields → cancel → submit → close)
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") { close(); return; }
+    if (e.key !== "Tab" || !cardRef.current) return;
+    const f = [...cardRef.current.querySelectorAll("button, input, textarea, select")].filter(el => !el.disabled && el.offsetParent);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  const submit = async () => {
+    if (busy) return;
+    const next = {};
+    if (!name.trim()) next.name = "Please add a metric name.";
+    if (!measures.trim()) next.measures = "Please describe what it measures.";
+    if (!matters.trim()) next.matters = "Please explain why it matters.";
+    setErrs(next); setGeneral(null);
+    if (Object.keys(next).length) return;   // no API call while invalid
+    setBusy(true);
+    try {
+      await api("/api/suggestions", { method: "POST", body: {
+        metric_name: name.trim(), what_it_measures: measures.trim(),
+        why_it_matters: matters.trim(), suggested_category: category || null } });
+      setDone(true);
+    } catch (e) {
+      if (e.status === 401) setGeneral("Please log in again to submit.");
+      else if (e.status === 400 && typeof e.message === "string") setGeneral(e.message);
+      else setGeneral("Something went wrong. Please try again.");
+      setBusy(false);
+    }
+  };
+  return html`
+    <div class=${"suggest-back" + (closing ? " closing" : "")} onClick=${e => { if (e.target === e.currentTarget) close(); }}>
+      <div class=${"suggest-modal" + (closing ? " closing" : "")} ref=${cardRef} role="dialog" aria-modal="true" aria-labelledby="suggest-title" onKeyDown=${onKeyDown}>
+        <button class="suggest-close" aria-label="Close" onClick=${close}><${Icon} name="close" size=${16} /></button>
+        <div class="suggest-head">
+          <h2 id="suggest-title" class="suggest-title">Suggest a metric</h2>
+          <p class="suggest-sub">Help shape lumi's methodology. We review every suggestion against our research standards and email you when we've made a decision.</p>
+        </div>
+        ${done ? html`
+          <div class="suggest-done">
+            <div class="suggest-done-ring"><${Icon} name="check" size=${24} /></div>
+            <div class="suggest-done-head">Thanks — we've got it.</div>
+            <div class="suggest-done-body">${userEmail
+              ? html`We'll email you at ${userEmail} when we've reviewed your suggestion.`
+              : html`We'll email you when we've reviewed your suggestion.`}</div>
+            <button class="btn primary suggest-done-btn" onClick=${close}>Done</button>
+          </div>` : html`
+          <div class="suggest-body">
+            <div class="suggest-field">
+              <label for="sg-name">Metric name</label>
+              <input id="sg-name" ref=${nameRef} class=${"suggest-input" + (errs.name ? " err" : "")} value=${name}
+                onInput=${e => setName(e.target.value)} placeholder="e.g. Internal mobility rate" />
+              <div class="suggest-hint">Short and specific. What would you call this on a dashboard?</div>
+              ${errs.name && html`<div class="suggest-err">${errs.name}</div>`}
+            </div>
+            <div class="suggest-field">
+              <label for="sg-measures">What it measures</label>
+              <textarea id="sg-measures" rows="3" class=${"suggest-input" + (errs.measures ? " err" : "")} value=${measures}
+                onInput=${e => setMeasures(e.target.value)} placeholder="e.g. The percentage of open roles filled by internal candidates over a 12-month period."></textarea>
+              <div class="suggest-hint">One or two sentences. Treat this as the definition.</div>
+              ${errs.measures && html`<div class="suggest-err">${errs.measures}</div>`}
+            </div>
+            <div class="suggest-field">
+              <label for="sg-matters">Why it matters</label>
+              <textarea id="sg-matters" rows="3" class=${"suggest-input" + (errs.matters ? " err" : "")} value=${matters}
+                onInput=${e => setMatters(e.target.value)} placeholder="e.g. It signals how well an organisation develops and retains internal talent — relevant for engagement and retention benchmarking."></textarea>
+              <div class="suggest-hint">What decision would this help reward leaders make?</div>
+              ${errs.matters && html`<div class="suggest-err">${errs.matters}</div>`}
+            </div>
+            <div class="suggest-field">
+              <label for="sg-cat">Suggested category</label>
+              <select id="sg-cat" class="suggest-input" value=${category} onInput=${e => setCategory(e.target.value)}>
+                <option value="">Select a category if you know</option>
+                ${SUGGEST_CATEGORIES.map(c => html`<option key=${c} value=${c}>${c}</option>`)}
+              </select>
+            </div>
+            ${general && html`<div class="suggest-err suggest-general">${general}</div>`}
+          </div>
+          <div class="suggest-foot">
+            <button class="btn quiet suggest-cancel" onClick=${close}>Cancel</button>
+            <button class="btn primary suggest-submit" disabled=${busy} onClick=${submit}>${busy ? "Submitting…" : "Submit suggestion"}</button>
+          </div>`}
+      </div>
+    </div>`;
 };

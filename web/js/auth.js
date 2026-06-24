@@ -29,7 +29,7 @@ window.TermsModal = function ({ kind, onClose }) {
         ${!doc ? html`<${Spinner} />` : html`
           <${TermsText} text=${doc.text} />
           <div class="row spread" style=${{ marginTop: "var(--s4)" }}>
-            <span class="chip warn">DRAFT — pending legal review · v${doc.version}</span>
+            <span class="chip">Current version · v${doc.version}</span>
             <button class="btn" onClick=${onClose}>Close</button>
           </div>`}
       </div>
@@ -55,8 +55,8 @@ function Shell({ children, sub }) {
   return html`
     <div class="auth-wrap">
       <div class="card auth-card">
-        <div class="logo" style=${{ padding: 0, marginBottom: "4px" }}>lumi<span>.benchmark</span></div>
-        <div class="caption" style=${{ marginBottom: "20px" }}>${sub || "People analytics benchmarking for UK HR teams"}</div>
+        <div class="logo" style=${{ padding: 0, marginBottom: "var(--s1)" }}>lumi<span>.benchmark</span></div>
+        <div class="caption" style=${{ marginBottom: "var(--s5)" }}>${sub || "People analytics benchmarking for UK HR teams"}</div>
         ${children}
       </div>
       <div class="auth-footer">
@@ -110,21 +110,21 @@ function LoginForm({ onAuthed }) {
           <${TermsTick} checked=${tick} onChange=${setTick}>
             I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
           <//>`}
-        ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "10px" }}>
+        ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }} style=${{ cursor: "pointer" }}>Terms of Use</a>
           ${" "}and <a onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }} style=${{ cursor: "pointer" }}>Privacy Notice</a>.</div>`}
-        ${err && html`<div class="error-text" style=${{ marginBottom: "10px" }}>${err}</div>`}
-        ${msg && html`<div class="ok-text" style=${{ marginBottom: "10px" }}>${msg}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
+        ${msg && html`<div class="ok-text" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>`}
         <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${busy || (mode === "register" && !tick)}>
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
         </button>
-        ${mode === "register" && html`<div class="caption" style=${{ marginTop: "8px" }}>
+        ${mode === "register" && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
           You'll be your organisation's Admin. Before your team first submits data, you'll also review
           the Data Contribution Terms — your 30 days to contribute start then, not now.</div>`}
         ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
         ${legalDoc && html`<${LegalDocModal} docKey=${legalDoc} onClose=${() => setLegalDoc(null)} />`}
       </form>
-      <div class="row spread" style=${{ marginTop: "16px" }}>
+      <div class="row spread" style=${{ marginTop: "var(--s4)" }}>
         ${mode !== "login" ? html`<a onClick=${() => setMode("login")} style=${{ cursor: "pointer" }}>Sign in</a>` : html`<a onClick=${() => setMode("register")} style=${{ cursor: "pointer" }}>New organisation</a>`}
         ${mode !== "forgot" && html`<a onClick=${() => setMode("forgot")} style=${{ cursor: "pointer" }}>Forgotten password?</a>`}
       </div>
@@ -143,10 +143,10 @@ function ResetForm({ token, onAuthed }) {
   return html`
     <${Shell} sub="Choose a new password">
       ${done ? html`<div class="ok-text">Password updated.</div>
-        <button class="btn primary" style=${{ marginTop: "12px" }} onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Sign in</button>` :
+        <button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Sign in</button>` :
       html`<form onSubmit=${go}>
         <${Field} label="New password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoFocus=${true} />
-        ${err && html`<div class="error-text" style=${{ marginBottom: "10px" }}>${err}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }}>Set password</button>
       </form>`}
     <//>`;
@@ -176,9 +176,9 @@ function InviteForm({ token, onAuthed }) {
         <${TermsTick} checked=${tick} onChange=${setTick}>
           I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
         <//>
-        ${err && html`<div class="error-text" style=${{ marginBottom: "10px" }}>${err}</div>`}
+        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${!tick}>Join ${info.org_name}</button>
-        <div class="caption" style=${{ marginTop: "8px" }}>Your organisation's Data Contribution Terms were
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your organisation's Data Contribution Terms were
           already accepted by your Admin — you don't accept those again.</div>
       </form>`}
       ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}

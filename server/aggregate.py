@@ -16,6 +16,7 @@ Rules implemented here (and only here):
 Run:  python3 aggregate.py [--snapshot 1]
 """
 import argparse
+import json
 import os
 import re
 import sys
@@ -109,7 +110,14 @@ MATRIX_VAL_RE = re.compile(r"^(-?\d+(?:\.\d+)?)\s*(?:x|×|%|weeks?|wks?)?$", re.
 
 
 def matrix_value(v):
-    m = MATRIX_VAL_RE.match(str(v).strip()) if v is not None else None
+    if v is None:
+        return None
+    # strip thousands separators + currency the same way coerce_number does, so a
+    # currency/number matrix cell entered as "£12,500" parses instead of dropping
+    # out of the distribution and the org's own rank. NOT '%' — the regex below
+    # intentionally consumes a trailing %/x/weeks suffix.
+    s = str(v).strip().replace(",", "").replace("£", "")
+    m = MATRIX_VAL_RE.match(s)
     return float(m.group(1)) if m else None
 
 
@@ -163,14 +171,17 @@ def select_block(q, raw_answers):
 
 def multi_block(q, raw_answers):
     """raw_answers: list of semicolon-delimited strings (one per org).
-    Denominator = orgs that answered the question at all."""
+    Denominator = orgs that contributed at least one RECOGNIZED selection — a
+    blank or all-unmatched row adds nothing to counts, so it must not deflate
+    every option's pct. Mirrors select_block's matched-only convention and is
+    None-safe (the answers.value column is nullable)."""
     by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
-    n = len(raw_answers)
     counts = defaultdict(int)
     unmatched_tokens = 0
+    n = 0
     for a in raw_answers:
         seen = set()
-        for tok in a.split(";"):
+        for tok in (a or "").split(";"):
             tok = tok.strip()
             if not tok:
                 continue
@@ -180,6 +191,8 @@ def multi_block(q, raw_answers):
             elif o["code"] not in seen:
                 seen.add(o["code"])
                 counts[o["code"]] += 1
+        if seen:
+            n += 1                       # this org contributed a recognized selection
     if n < SUPPRESSION_FLOOR:
         b = suppressed(n)
         b["unmatched_tokens"] = unmatched_tokens
@@ -216,6 +229,31 @@ _NUMBAND = re.compile(r"^(<|under|less than|up to|within)?\s*[\d£%]", re.I)
 
 _direction_cache = {}
 
+_mp_dir_cache = {"mtime": None, "dir": {}}
+
+
+def _mp_direction(qid):
+    """Per-metric direction from data/market_position_config.json (David-owned,
+    hot-reloaded). Used ONLY by the route-(b) score-direction fallback below. A
+    standalone reader (not positions.market_position_config) to avoid the
+    aggregate<->positions import cycle."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+                        "market_position_config.json")
+    try:
+        mt = os.path.getmtime(path)
+    except OSError:
+        return None
+    if _mp_dir_cache["mtime"] != mt:
+        try:
+            with open(path) as f:
+                cfg = json.load(f)
+            _mp_dir_cache["dir"] = {k: (v or {}).get("direction")
+                                    for k, v in (cfg.get("metrics") or {}).items()}
+            _mp_dir_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _mp_dir_cache["dir"].get(qid)
+
 
 def score_direction(q):
     """+1 raw scores already run worst->best; -1 inverted (best first); 0 unknown."""
@@ -247,9 +285,19 @@ def _score_direction(q):
             return 1
         if q.polarity == "lower_is_better":
             return -1
-        return 0
-    if cfg.get("polarity") == "lower_is_better":
+        # neutral band: no DB-polarity signal — fall through to route (b) below
+    elif cfg.get("polarity") == "lower_is_better":
         return -1
+    # ---- route (b) (2026-06-18): config-direction trusts an ASCENDING map ----
+    # The label heuristic above couldn't read a direction (we'd return 0). If the
+    # market-position config marks this metric higher_is_better AND it carries an
+    # explicit graded option_scores map, trust the map — but ONLY if it is monotone
+    # ASCENDING in option order (worst->best). A non-ascending map is NEVER trusted
+    # (stays 0 -> prevalence): safe for any future metric, not just today's set.
+    if _mp_direction(q.id) == "higher_is_better":
+        seq = [float(sc[o["code"]]) for o in opts]
+        if len(set(seq)) >= 2 and all(seq[i] <= seq[i + 1] for i in range(len(seq) - 1)):
+            return 1
     return 0
 
 
@@ -592,6 +640,15 @@ def run_snapshot(snapshot_id=1, verbose=True):
     questions = load_questions()
     answers = load_answers(conn, snapshot_id)
     responding = {oid for qa in answers.values() for (oid, _r) in qa}
+    # FIREWALL: only orgs that COMPLETED submission contribute to the published
+    # benchmark — the same gate peer_twin and qa_integrity enforce. Without this,
+    # a half-finished signup that answered a single question leaks into the live
+    # counts and option shares (the ALLOW_02 n=221-vs-220 inflation). build_cuts
+    # already restricts the filtered cuts to classified orgs; this gates the
+    # 'all' universe too. Incomplete is orthogonal to classified, so no complete
+    # peer is dropped.
+    complete = {r[0] for r in conn.execute("SELECT org_id FROM orgs WHERE submission_complete=1")}
+    responding &= complete
     cuts = build_cuts(conn, responding)
     if verbose:
         print("Aggregating snapshot %d: %d questions, %d responding orgs (%d classified in cuts)"

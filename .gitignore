@@ -4,3 +4,7 @@ lumi.db-shm
 data/responses/
 __pycache__/
 data/responses_orig/
+
+# local secrets (never commit) — e.g. ANTHROPIC_API_KEY for AI commentary
+server/.env.local
+.env.local

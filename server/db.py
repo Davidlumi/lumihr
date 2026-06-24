@@ -153,6 +153,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
 );
 
 -- "My view" pinned layouts. user_id='' means the org default layout.
+-- Retained as the org-default TEMPLATE that seeds a new user's first dashboard
+-- (and for backward-compat); per-user working layouts now live in `dashboards`.
 CREATE TABLE IF NOT EXISTS pinned_views (
     org_id TEXT NOT NULL REFERENCES orgs(org_id),
     user_id TEXT NOT NULL DEFAULT '',
@@ -160,6 +162,23 @@ CREATE TABLE IF NOT EXISTS pinned_views (
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (org_id, user_id)
 );
+
+-- "My dashboards" — each user can keep several named, saveable dashboards.
+-- A dashboard is a layout (same slot shape as pinned_views.layout_json) plus a
+-- name + ordering position. The user's first dashboard is lazily migrated from
+-- their old pinned_views row (see _ensure_dashboards in app.py). Tenancy + owner
+-- are (org_id, user_id); the active one is tracked on users.active_dashboard_id.
+CREATE TABLE IF NOT EXISTS dashboards (
+    dashboard_id TEXT PRIMARY KEY,
+    org_id       TEXT NOT NULL REFERENCES orgs(org_id),
+    user_id      TEXT NOT NULL,
+    name         TEXT NOT NULL,
+    layout_json  TEXT NOT NULL DEFAULT '[]',
+    position     INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dashboards_owner ON dashboards(org_id, user_id, position);
 
 -- Per-user triage state for Signals (the inbox model): one status per signal
 -- (keyed by question_id — the per-metric cap means one signal per metric).
@@ -180,6 +199,46 @@ CREATE TABLE IF NOT EXISTS signal_seen (
     sig_id TEXT NOT NULL,
     seen_at TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (org_id, user_id, sig_id)
+);
+
+-- Notifications (signal change alerts). Signals are computed live and not
+-- persisted; signal_state is the nightly snapshot we diff against to detect a
+-- flag appearing, clearing, or crossing a materiality bucket.
+CREATE TABLE IF NOT EXISTS signal_state (
+    org_id        TEXT NOT NULL REFERENCES orgs(org_id),
+    signal_key    TEXT NOT NULL,        -- {lens}:{kind}:{question_id}:{matrix_row}
+    lens          TEXT NOT NULL,        -- save | attract | retain | engage
+    kind          TEXT NOT NULL,        -- behind | save | prevalence | money | ...
+    question_id   TEXT NOT NULL,
+    value_display TEXT,                 -- the figure shown ("P5", "56%", "£75k/yr")
+    bucket        TEXT NOT NULL,        -- materiality step — diffed, not the raw value
+    detail        TEXT NOT NULL,        -- factual string, reused in inbox + email verbatim
+    first_seen    TEXT NOT NULL DEFAULT (datetime('now')),
+    last_seen     TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (org_id, signal_key)
+);
+
+-- One row per detected org-level change. Two consumers: the in-app inbox
+-- (every user) and the email digest (opted-in users).
+CREATE TABLE IF NOT EXISTS notification_events (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id       TEXT NOT NULL REFERENCES orgs(org_id),
+    event_kind   TEXT NOT NULL,         -- appeared | cleared | moved
+    signal_key   TEXT NOT NULL,
+    lens         TEXT NOT NULL,
+    question_id  TEXT NOT NULL,
+    payload_json TEXT NOT NULL,         -- diff row frozen at detection (detail, value, prev)
+    detected_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Per-user read/email state against those events (drives the bell + digest).
+CREATE TABLE IF NOT EXISTS notification_reads (
+    user_id           TEXT NOT NULL REFERENCES users(user_id),
+    event_id          INTEGER NOT NULL REFERENCES notification_events(id),
+    read_at           TEXT,             -- NULL = unread in the bell
+    emailed_at        TEXT,             -- NULL = not yet in a sent digest
+    suppressed_reason TEXT,             -- guardrail/pref drop (audit, not error)
+    PRIMARY KEY (user_id, event_id)
 );
 
 CREATE TABLE IF NOT EXISTS shares (
@@ -261,6 +320,23 @@ CREATE TABLE IF NOT EXISTS metric_requests (
     notes TEXT,
     source TEXT NOT NULL DEFAULT 'button',   -- button | search | ask-lumi
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Structured "Suggest a metric" submissions (name + definition + rationale +
+-- optional category) — input to a deliberate research-standards review, never
+-- auto-added. status is for future review-state tracking. (Schema change, not
+-- data: lives here and auto-applies on restart; see DECISIONS.md.)
+CREATE TABLE IF NOT EXISTS metric_suggestions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    user_email TEXT,
+    metric_name TEXT NOT NULL,
+    what_it_measures TEXT NOT NULL,
+    why_it_matters TEXT NOT NULL,
+    suggested_category TEXT,
+    status TEXT NOT NULL DEFAULT 'new'
 );
 
 -- Layered terms acceptance log: who accepted what, for which org, when, and
@@ -390,6 +466,27 @@ CREATE TABLE IF NOT EXISTS pulse_responses (
     PRIMARY KEY (pulse_id, org_id, question_id, matrix_row_id)
 );
 
+-- Self-service pulse launches (2026-06-22): an org Admin authors a pulse, it
+-- goes through lumi staff review, then a paid Stripe checkout opens it to the
+-- community. Ownership + review state + the launch fee ride on `pulses`
+-- (owner_org_id, created_by, launch_status, review_*, launch_fee_pence); each
+-- checkout attempt is one row HERE — the billing/audit ledger. Payment ONLY
+-- gates the draft->open transition; it never touches the give-to-get report
+-- gate or the core firewall.
+CREATE TABLE IF NOT EXISTS pulse_launch_orders (
+    order_id TEXT PRIMARY KEY,
+    pulse_id TEXT NOT NULL REFERENCES pulses(pulse_id),
+    org_id TEXT NOT NULL REFERENCES orgs(org_id),
+    amount_pence INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'gbp',
+    status TEXT NOT NULL DEFAULT 'pending',   -- pending | paid | failed | refunded
+    stripe_session_id TEXT,
+    stripe_payment_intent TEXT,
+    created_by TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    paid_at TEXT
+);
+
 -- The persisted backlog that FEEDS releases. Items queue here and are never
 -- auto-applied to the live core.
 CREATE TABLE IF NOT EXISTS core_backlog (
@@ -400,6 +497,30 @@ CREATE TABLE IF NOT EXISTS core_backlog (
     source_ref TEXT,                       -- e.g. metric_requests.id (dedup key)
     status TEXT NOT NULL DEFAULT 'queued', -- queued | scheduled | applied | rejected
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Reward strategy capture (2026-06-16): org-level reward stance — the Plane B
+-- (philosophy) + Plane C (posture) dials that let the engines tell "below market"
+-- from "below market, on purpose". Plane A facts are NOT here — they live in the
+-- orgs/registry record. One row per org; Admin-set.
+CREATE TABLE IF NOT EXISTS org_strategy (
+    org_id              TEXT PRIMARY KEY REFERENCES orgs(org_id),
+    -- Plane B (philosophy)
+    market_position     TEXT,   -- 'lag' | 'match' | 'lead'                       (REQUIRED)
+    reward_mix          TEXT,   -- 'cash' | 'balanced' | 'benefits'               (REQUIRED)
+    pay_for_performance TEXT,   -- 'egal' | 'moderate' | 'strong'
+    transparency        TEXT,   -- 'closed' | 'ranges' | 'open'
+    location_approach   TEXT,   -- 'local' | 'national' | 'agnostic'
+    benefits_lead       TEXT,   -- JSON array: ['physical','mental','financial','worklife']
+    family_position     TEXT,   -- 'statutory' | 'market' | 'over'
+    -- Plane C (posture)
+    primary_objective   TEXT,   -- 'attract'|'retain'|'cost'|'compliance'|'hold'  (REQUIRED)
+    budget_direction    TEXT,   -- 'investing' | 'flat' | 'pressure'
+    acute_pressure      TEXT,   -- 'bau' | 'scaling' | 'shock'
+    risk_appetite       TEXT,   -- 'early' | 'follow' | 'wait'
+    field_provenance    TEXT,   -- JSON {field: 'set'|'suggested'|'skipped'} ('suggested' reserved, unused v1)
+    completed_at        TEXT,
+    updated_at          TEXT
 );
 """
 
@@ -428,7 +549,36 @@ def init_schema(conn=None):
                 "ALTER TABLE orgs ADD COLUMN unlocked_release TEXT",
                 "ALTER TABLE snapshots ADD COLUMN release_id TEXT",
                 # 2026.1 restructure: sector-gated module flag (hospitality tronc/tips)
-                "ALTER TABLE questions ADD COLUMN module TEXT"):
+                "ALTER TABLE questions ADD COLUMN module TEXT",
+                # signal change alerts: per-user notification preferences (bell +
+                # email opt-in), stored like chart_prefs_json
+                "ALTER TABLE users ADD COLUMN notify_prefs_json TEXT NOT NULL DEFAULT '{}'",
+                # back-office (D2): platform-admin tier ABOVE the org roles — staff
+                # who can cross tenants in the staff console. Defaults to 0 so every
+                # existing user stays a normal tenant member.
+                "ALTER TABLE users ADD COLUMN platform_admin INTEGER NOT NULL DEFAULT 0",
+                # metric-suggestion triage: staff review workflow over the existing
+                # write-only suggestions inbox (status new -> reviewed -> accepted|rejected)
+                "ALTER TABLE metric_suggestions ADD COLUMN reviewed_by TEXT",
+                "ALTER TABLE metric_suggestions ADD COLUMN reviewed_at TEXT",
+                "ALTER TABLE metric_suggestions ADD COLUMN review_notes TEXT",
+                # "My dashboards" (multi-dashboard): per-user pointer to the
+                # dashboard the global pin-star targets and the page opens on.
+                "ALTER TABLE users ADD COLUMN active_dashboard_id TEXT",
+                # Self-service pulse builder + paid launch (2026-06-22): pulses
+                # gain org ownership + a review/billing sub-state that lives
+                # ALONGSIDE the engine `status` (draft->open->closed->archived).
+                # launch_status is NULL for legacy staff-authored global pulses;
+                # for org-authored pulses it tracks building -> in_review ->
+                # changes_requested|approved -> paid (then status flips to open).
+                "ALTER TABLE pulses ADD COLUMN owner_org_id TEXT",
+                "ALTER TABLE pulses ADD COLUMN created_by TEXT",
+                "ALTER TABLE pulses ADD COLUMN launch_status TEXT",
+                "ALTER TABLE pulses ADD COLUMN review_notes TEXT",
+                "ALTER TABLE pulses ADD COLUMN reviewed_by TEXT",
+                "ALTER TABLE pulses ADD COLUMN reviewed_at TEXT",
+                "ALTER TABLE pulses ADD COLUMN launch_fee_pence INTEGER",
+                "ALTER TABLE pulses ADD COLUMN visibility TEXT NOT NULL DEFAULT 'community'"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

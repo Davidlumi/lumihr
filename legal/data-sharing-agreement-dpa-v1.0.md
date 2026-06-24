@@ -1,6 +1,6 @@
 # lumi Data Sharing Agreement (incorporating Data Processing terms)
 
-**Version 1.0-draft · DRAFT — pending legal review**
+**Version 1.0**
 **For members whose legal or data-protection teams require a fuller instrument
 than the on-platform Data Contribution Terms. Optional — the on-platform
 acceptance remains the operative agreement unless this document is executed.**

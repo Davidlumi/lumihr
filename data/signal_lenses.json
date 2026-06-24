@@ -18,6 +18,33 @@
     "money_min_gbp": 10000,
     "ahead_percentile": 65
   },
+  "alert": {
+    "_readme": "Materiality buckets for change alerts. A 'moved' alert fires only when a signal's figure crosses a bucket boundary, so peer jitter (P26->P24) stays silent but a real shift (P26->P12) notifies. David owns these thresholds.",
+    "buckets": {
+      "behind": [
+        10,
+        25
+      ],
+      "save": [
+        85,
+        95
+      ],
+      "prevalence": [
+        50,
+        75,
+        90
+      ],
+      "money": [
+        10000,
+        50000,
+        100000
+      ]
+    },
+    "min_money_change_gbp": 10000,
+    "max_emails_per_org_per_week": 3,
+    "min_hours_between_emails": 24,
+    "email_digest_default": "weekly"
+  },
   "cost_metrics": {
     "3faf1f0c-f753-497f-a395-384bba38c5e3": "Private medical insurance premium",
     "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": "Car allowance",

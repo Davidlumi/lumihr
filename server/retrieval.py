@@ -17,7 +17,8 @@ do does did organisation organisations company companies peers peer benchmark vs
 # words too generic to prove the dataset actually covers a topic
 GENERIC = STOP | set("""typical average spend cost costs rate rates per employee employees
 staff people compare comparison year annual measure offer offered amount level levels
-much many usually normally similar most common""".split())
+much many usually normally similar most common
+metric metrics data figure figures number numbers stat stats anything something""".split())
 
 
 def tokens(s):

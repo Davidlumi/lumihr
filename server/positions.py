@@ -3,6 +3,7 @@ analyst, starter layout): one definition of percentile rank, favourability,
 "biggest gaps/strengths", plain-English readouts, gap-to-£ and the gap register.
 """
 import bisect
+import json
 import sys
 import os
 from collections import defaultdict
@@ -346,21 +347,47 @@ def _lower_first(s):
 
 # ----------------------------------------------------------------- overview
 
-def overview_summary(items):
-    above = sum(1 for i in items if i["favourable"] == "good")
-    below = sum(1 for i in items if i["favourable"] == "bad")
-    inline = sum(1 for i in items if i["favourable"] == "mid")
+def overview_summary(items, mp_config=None, practice_items=None,
+                     band_low=None, band_high=None):
+    """The "above the market median on X of Y comparable metrics" headline
+    (board pack + share). When `mp_config` is supplied it counts the SAME
+    Substance pool the gauge uses (Level + Provision, higher_is_better,
+    competitive domains) so the headline and the dashboard gauge agree by
+    construction; without it, the legacy full-polarised pool is counted.
+
+    When band_low/band_high are given (the gauge's MARKET_BAND), each comparable
+    item is bucketed by _market_class at the SAME thresholds the gauge uses, so
+    above/on/below match hero.market exactly (finishing task #86 — the headline
+    was re-axed to the Substance POOL but still split it at the per-metric 45/55
+    `favourable` cut, drifting from the gauge's 35/65). Neutral items (favourable
+    None) stay excluded from the comparable count. No bands → legacy 45/55 path
+    (degrades byte-for-byte)."""
+    if mp_config and mp_config.get("metrics"):
+        items = substance_pool(items, practice_items, mp_config)
+
+    def _cls(i):
+        if i.get("favourable") is None:
+            return None                       # neutral — not comparable, never counted
+        if band_low is not None and band_high is not None:
+            k = _market_class(i, band_low, band_high)
+            return "good" if k == "above" else "bad" if k == "below" else "mid"
+        return i["favourable"]
+
+    above = sum(1 for i in items if _cls(i) == "good")
+    below = sum(1 for i in items if _cls(i) == "bad")
+    inline = sum(1 for i in items if _cls(i) == "mid")
     comparable = above + below + inline
     by_sp = defaultdict(lambda: {"available": 0, "above": 0, "below": 0, "inline": 0,
                                  "quartiles": [0, 0, 0, 0]})
     for i in items:
         c = by_sp[i["superpower"]]
         c["available"] += 1
-        if i["favourable"] == "good":
+        fc = _cls(i)
+        if fc == "good":
             c["above"] += 1
-        elif i["favourable"] == "bad":
+        elif fc == "bad":
             c["below"] += 1
-        elif i["favourable"] == "mid":
+        elif fc == "mid":
             c["inline"] += 1
         qx = min(3, int(i["percentile"] // 25))
         c["quartiles"][qx] += 1
@@ -371,11 +398,12 @@ def overview_summary(items):
             continue
         c = by_sec[i["subpower"]]
         c["available"] += 1
-        if i["favourable"] == "good":
+        fc = _cls(i)
+        if fc == "good":
             c["above"] += 1
-        elif i["favourable"] == "bad":
+        elif fc == "bad":
             c["below"] += 1
-        elif i["favourable"] == "mid":
+        elif fc == "mid":
             c["inline"] += 1
         qx = min(3, int(i["percentile"] // 25))
         c["quartiles"][qx] += 1
@@ -688,8 +716,17 @@ def _pool_verdict(pool, band_low, band_high, margin):
     at = len(pool) - above - below
     lean = (above - below) / float(len(pool))
     verdict = "above" if lean > margin else "below" if lean < -margin else "at"
+    # depth_pctl: the MEDIAN polarity-adjusted percentile across the pool — how FAR
+    # the org sits from market, not how MANY metrics are below it. Drives the
+    # severity ADVERB on the client (clearly/moderately/marginally); the verdict
+    # WORD stays lean-driven ('verdict reflects mass', qa_hero). Distribution, not
+    # headcount (Stage A item C, 2026-06-22).
+    pctls = sorted(_adj_percentile(i) for i in pool)
+    n = len(pctls)
+    depth = pctls[n // 2] if n % 2 else (pctls[n // 2 - 1] + pctls[n // 2]) / 2.0
     return {"verdict": verdict, "above": above, "at": at, "below": below,
-            "pool": len(pool), "lean": round(lean, 4), "lean_threshold": margin}
+            "pool": len(pool), "lean": round(lean, 4), "lean_threshold": margin,
+            "depth_pctl": round(depth, 1)}
 
 
 def _prev_summary(pool, uncommon_pct):
@@ -701,8 +738,144 @@ def _prev_summary(pool, uncommon_pct):
             "less_common": uncommon, "pool": len(pool)}
 
 
+_MP_CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+                            "market_position_config.json")
+_mp_cache = {"mtime": None, "cfg": {}}
+
+
+def market_position_config():
+    """Hot-reloaded market-position classification (David-owned). Per-metric
+    `class` (Level/Provision = Substance; Practice/Design = Approach),
+    `direction`, `lens`; a `_domains` block with `competitiveness`; and
+    `defaults` (thresholds). The engine reads class/direction/competitiveness
+    from here to decide which metrics feed the competitiveness gauge — so
+    David's refinements take effect on the next request, no redeploy. A
+    malformed edit keeps the last good config (mirrors signals.lens_config)."""
+    try:
+        mt = os.path.getmtime(_MP_CFG_PATH)
+    except OSError:
+        return _mp_cache["cfg"]
+    if _mp_cache["mtime"] != mt:
+        try:
+            with open(_MP_CFG_PATH) as f:
+                _mp_cache["cfg"] = json.load(f)
+            _mp_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _mp_cache["cfg"]
+
+
+def _mp_competitive(cfg, sec):
+    return cfg.get("_domains", {}).get(sec, {}).get("competitiveness", True)
+
+
+def _mp_gauge_eligible(item, cfg):
+    """Does this item feed the competitiveness read? Only higher_is_better
+    Substance (Level/Provision) in a competitive domain. FAIL-CLOSED: a metric
+    with no config classification is one the firewall hasn't reviewed, so it
+    leans OUT of the gauge (the signed-off "errors lean OUT" invariant) — it
+    never earns a verdict on raw DB polarity. This runs only on the classified
+    path (mp_config present); the legacy no-config path filters polarity inline
+    in hero_signals, so nothing it owns is affected. A populated config holds
+    every active Reward metric, so the missing-entry branch only guards a future
+    un-classified release, which must be classified rather than auto-admitted."""
+    if not _mp_competitive(cfg, item.get("subpower")):
+        return False
+    m = cfg.get("metrics", {}).get(item["question_id"])
+    if not m:
+        # Only fall back to legacy polarity if the WHOLE metrics map is empty
+        # (mis-loaded config); a populated config with a missing entry =
+        # unclassified -> excluded (fail-closed).
+        return (not cfg.get("metrics")) and item["polarity"] in ("higher_is_better", "lower_is_better")
+    return m.get("class") in ("Level", "Provision") and m.get("direction") == "higher_is_better"
+
+
+def _approach_summary(prev_items, cfg):
+    """The Approach register's companion tally — "N differ from market".
+
+    Approach = config class Practice/Design (a choice with no better/worse). Over
+    the answered, unsuppressed practices the org's choice is compared to the market
+    mode: differ = not the modal answer, in_line = the modal answer. Never folded
+    into the competitiveness gauge's below/on/above — it's a separate, quiet count
+    (spec §6.1). Returns None when the org has no Approach metric in scope."""
+    metrics = cfg.get("metrics", {})
+    pool = [i for i in prev_items
+            if (metrics.get(i["question_id"]) or {}).get("class") in ("Practice", "Design")]
+    if not pool:
+        return None
+    differ = sum(1 for i in pool if not i.get("is_modal"))
+    return {"differ": differ, "in_line": len(pool) - differ, "pool": len(pool)}
+
+
+def _mp_normalised(item, direction):
+    """Re-score an item on the CONFIG direction (authoritative), not the metric's
+    stored DB polarity. Part A sometimes sets direction=higher_is_better on a
+    metric whose DB polarity is `neutral` (e.g. life-assurance cover, LTI plans,
+    overtime — offering more = above market). Left as-is, `_adj_percentile` would
+    read the neutral polarity and score it as lower, and `favourable` would be
+    None (uncounted in the headline). Returns a COPY (never mutates the shared
+    item, which other surfaces read on its original polarity)."""
+    if item.get("polarity") == direction and item.get("favourable") is not None:
+        return item
+    rank = item.get("percentile") or 0.0
+    if direction == "lower_is_better":
+        fav, dist = ("good" if rank < 45 else "bad" if rank > 55 else "mid"), -(rank - 50.0)
+    elif direction == "higher_is_better":
+        fav, dist = ("good" if rank > 55 else "bad" if rank < 45 else "mid"), (rank - 50.0)
+    else:
+        return item
+    c = dict(item)
+    c["polarity"], c["favourable"], c["distance"] = direction, fav, dist
+    return c
+
+
+def substance_pool(items, practice_items, cfg):
+    """THE competitiveness feed — Level (scored/numeric `items`) + Provision
+    (presence-ranked `practice_items`), routed by the config and re-scored on the
+    config direction. The single definition shared by the gauge (hero_signals)
+    AND the headline summary (overview_summary) so the dashboard and the board
+    pack can never tell different stories about the same org."""
+    metrics = cfg.get("metrics", {})
+    out = []
+    for i in list(items) + list(practice_items or []):
+        if not _mp_gauge_eligible(i, cfg):
+            continue
+        m = metrics.get(i["question_id"])
+        out.append(_mp_normalised(i, m["direction"]) if m else i)
+    return out
+
+
+def _strategy_field(strategy, field):
+    """A strategy dial's value iff it's a real 'set' choice — None when the
+    strategy is absent, the field unset, or it was skipped (§5.4 provenance)."""
+    if not strategy:
+        return None
+    v = strategy.get(field)
+    if not v or (strategy.get("provenance") or {}).get(field) == "skipped":
+        return None
+    return v
+
+
+def _market_target(market, strategy):
+    """Read the competitiveness verdict against the member's declared
+    `market_position` target (handover §5.2) — an ANNOTATION only; it never
+    changes the verdict, counts or lean (so 'verdict reflects mass' holds, and
+    strategy=None degrades byte-for-byte). An above-market member who AIMED
+    above-market reads 'on target', not a premium-cost flag."""
+    stance = _strategy_field(strategy, "market_position")
+    if not market or not stance:
+        return None
+    rank = {"below": 0, "at": 1, "above": 2}.get(market.get("verdict"))
+    aim = {"lag": 0, "match": 1, "lead": 2}.get(stance)
+    if rank is None or aim is None:
+        return None
+    align = "behind" if rank < aim else ("on_target" if rank == aim else "ahead")
+    return {"stance": stance, "alignment": align}
+
+
 def hero_signals(items, prev_items, section_order, band_low, band_high,
-                 domain_min, margin, uncommon_pct, practice_items=None, tile_min=1):
+                 domain_min, margin, uncommon_pct, practice_items=None, tile_min=1,
+                 mp_config=None, strategy=None):
     """The hero's two signals + per-domain rollups. Overall market position is
     computed from the FULL polarised pool, never an average of domain ratings.
 
@@ -712,9 +885,18 @@ def hero_signals(items, prev_items, section_order, band_low, band_high,
     - position: what the home tile shows. The strict verdict when it exists;
       otherwise an INDICATIVE one from the combined polarised + practice
       evidence (>= tile_min distinct questions), with its basis and evidence
-      counts disclosed so thin data is never dressed up as a census."""
-    pol_items = [i for i in items if i["polarity"] in ("higher_is_better", "lower_is_better")]
+      counts disclosed so thin data is never dressed up as a census.
+
+    When `mp_config` (data/market_position_config.json) is supplied, the gauge
+    feed is routed by the classification instead of raw polarity — see
+    _hero_signals_classified. Without it, the legacy polarity path below runs
+    unchanged (keeps qa_hero's synthetic fixtures valid)."""
     practice_items = practice_items or []
+    if mp_config and mp_config.get("metrics"):
+        return _hero_signals_classified(items, prev_items, section_order, band_low,
+                                        band_high, domain_min, margin, uncommon_pct,
+                                        practice_items, tile_min, mp_config, strategy)
+    pol_items = [i for i in items if i["polarity"] in ("higher_is_better", "lower_is_better")]
     domains = []
     for sec in section_order:
         d_pol = [i for i in pol_items if i.get("subpower") == sec]
@@ -747,4 +929,107 @@ def hero_signals(items, prev_items, section_order, band_low, band_high,
         "config": {"band_low": band_low, "band_high": band_high,
                    "domain_min": domain_min, "margin": margin, "uncommon_pct": uncommon_pct,
                    "tile_min": tile_min},
+    }
+
+
+def _hero_signals_classified(items, prev_items, section_order, band_low, band_high,
+                             domain_min, margin, uncommon_pct, practice_items, tile_min, cfg, strategy=None):
+    """Classification-driven gauge feed (market_position_config.json).
+
+    The competitiveness gauge — overall AND per domain — is fed by SUBSTANCE
+    only, and only where it reads as a market rate you can be under or over:
+
+      class in {Level, Provision}  AND  direction == higher_is_better
+      AND the metric's domain is competitive (_domains.competitiveness)
+
+    Everything else is deliberately kept OUT of the below/on/above counts:
+    - neutral Substance (workforce-cost %, span of control) — context, not a verdict;
+    - lower_is_better Substance (the malus provision) — favourable when low, shown
+      beside the gauge; its own row still inverts via _adj_percentile elsewhere;
+    - Approach (Practice/Design) — 'differs from market', never a rate;
+    - Governance — competitiveness=false, no headline role at all.
+
+    Level positions come from `items` (scored/numeric ranks); Provision positions
+    come from `practice_items` (presence ranked vs peer take-up). Thresholds are
+    the config defaults (domain_min_polarised / tile_min_positioned)."""
+    defaults = cfg.get("defaults", {})
+    dmin = defaults.get("domain_min_polarised", domain_min)
+    tmin = defaults.get("tile_min_positioned", tile_min)
+
+    # Substance pool: Level (scored/numeric) + Provision (presence-ranked), routed
+    # by the config — the SAME definition overview_summary's headline uses.
+    gauge_pool = substance_pool(items, practice_items, cfg)
+    # location_approach=agnostic reframe (§5.2): a one-rate org's per-location pay
+    # metrics aren't applicable — drop config-tagged location_scoped from the gauge.
+    # No-op when unset or untagged (degrade byte-for-byte).
+    if _strategy_field(strategy, "location_approach") == "agnostic":
+        _m = cfg.get("metrics", {})
+        gauge_pool = [i for i in gauge_pool if not (_m.get(i["question_id"]) or {}).get("location_scoped")]
+
+    domains = []
+    for sec in section_order:
+        d_prev = [i for i in prev_items if i.get("subpower") == sec]
+        if not _mp_competitive(cfg, sec):
+            # non-competitive (Governance): no market position — surfaced as
+            # favourable / context / differs beside the headline, never a verdict
+            domains.append({
+                "name": sec, "market": None, "market_eligible": False,
+                "polarised_comparable": 0, "position": None, "position_basis": None,
+                "position_evidence": None, "competitiveness": False,
+                "prevalence": _prev_summary(d_prev, uncommon_pct),
+                "approach": _approach_summary(d_prev, cfg),
+            })
+            continue
+        d_sub = [i for i in gauge_pool if i.get("subpower") == sec]
+        # DISTINCT Substance questions gate the verdict (matrix rows never inflate)
+        d_questions = len({i["question_id"] for i in d_sub})
+        strict = _pool_verdict(d_sub, band_low, band_high, margin) if d_questions >= dmin else None
+        if strict is not None:
+            position, basis = strict, "market"
+        elif d_questions >= tmin and d_sub:
+            position, basis = _pool_verdict(d_sub, band_low, band_high, margin), "indicative"
+        else:
+            position, basis = None, None
+        d = {
+            "name": sec, "market": strict,
+            "market_eligible": d_questions >= dmin,
+            "polarised_comparable": len(d_sub),
+            "position": position, "position_basis": basis,
+            "position_evidence": ({"polarised": len(d_sub), "practice": 0}
+                                  if position is not None else None),
+            "competitiveness": True,
+            "prevalence": _prev_summary(d_prev, uncommon_pct),
+            "approach": _approach_summary(d_prev, cfg),
+        }
+        # reward_mix=benefits reframe (§5.2): a below-market PAY verdict is the
+        # cash-light mix working as intended — annotate, never re-verdict
+        if (sec == "Pay" and position and position.get("verdict") == "below"
+                and _strategy_field(strategy, "reward_mix") == "benefits"):
+            d["mix_note"] = "benefits"
+        domains.append(d)
+    market = _pool_verdict(gauge_pool, band_low, band_high, margin)
+    target = _market_target(market, strategy)
+    if target:
+        market = dict(market)
+        market["target"] = target
+    # Market-relative framing (differ / below / on / above) applies ONLY to
+    # competitive-scope domains. A non-competitive domain (Governance) contributes 0
+    # to the hero differ — NUMERATOR AND DENOMINATOR — exactly as it already
+    # contributes 0 to below/on/above. The hero approach is therefore the SUM of the
+    # competitive cards' approach summaries (one source of truth, so the hero and the
+    # cards can never drift); a non-competitive domain's prevalence differences stay
+    # real on its own tile, surfaced as practice signals, never as market differences.
+    # (Governance scoping ruling, 2026-06-22 — see DECISIONS.md.)
+    _comp_appr = [d["approach"] for d in domains if d.get("competitiveness") and d.get("approach")]
+    hero_approach = ({"differ": sum(a["differ"] for a in _comp_appr),
+                      "in_line": sum(a["in_line"] for a in _comp_appr),
+                      "pool": sum(a["pool"] for a in _comp_appr)} if _comp_appr else None)
+    return {
+        "market": market,
+        "prevalence": _prev_summary(prev_items, uncommon_pct),
+        "approach": hero_approach,
+        "domains": domains,
+        "config": {"band_low": band_low, "band_high": band_high,
+                   "domain_min": dmin, "margin": margin, "uncommon_pct": uncommon_pct,
+                   "tile_min": tmin, "classified": True},
     }

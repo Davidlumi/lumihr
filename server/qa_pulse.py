@@ -50,6 +50,7 @@ orgs = [r["org_id"] for r in conn.execute(
     "SELECT org_id FROM orgs WHERE source='seed' AND classified=1 ORDER BY org_id DESC LIMIT 6")]
 demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
 unlock_before = conn.execute("SELECT insights_unlocked_at FROM orgs WHERE org_id=?", (demo,)).fetchone()[0]
+basis_before = len(appmod.completion_basis_questions())   # core-unlock denominator BEFORE any pulse activity
 
 print("== fixture pulse: lifecycle + engine parity ==")
 pid = pulses.create_pulse("qa-pulse-fixture", "gate fixture",
@@ -125,7 +126,10 @@ print("== give-to-get independence ==")
 unlock_after = conn.execute("SELECT insights_unlocked_at FROM orgs WHERE org_id=?", (demo,)).fetchone()[0]
 check("core unlock stamp untouched by pulse activity", unlock_after == unlock_before)
 basis = len(appmod.completion_basis_questions())
-check("core unlock denominator unchanged (82)", basis == 82, basis)
+# The invariant is that PULSE activity never moves the denominator — compared to
+# the value captured before any pulse fixture, so it tracks required-set
+# restructures instead of freezing a literal (was 82; the live core is 81).
+check("core unlock denominator unmoved by pulse activity", basis == basis_before, (basis, basis_before))
 # a core-locked org can still participate (no core gate on the pulse path)
 conn.execute("INSERT OR REPLACE INTO orgs(org_id, name, normalized_name, source, classified, submission_complete, tier_entitlement) "
              "VALUES ('qa-pulse-locked','QA Locked','qapulselocked','signup',0,0,'full')")
@@ -190,13 +194,53 @@ check("the pulse's responses were NOT copied into the core store",
 check("pulse responses retained in their own store",
       conn.execute("SELECT COUNT(*) FROM pulse_responses WHERE question_id=?", (gqid,)).fetchone()[0] == 1)
 
+print("== self-service launch: ownership + staff review + paid gate + firewall ==")
+sp_q = "PULSE_QA_SELFSERVE"
+conn.execute("DELETE FROM questions WHERE id=?", (sp_q,)); conn.commit()
+pid3 = pulses.create_pulse(
+    "qa-selfserve-fixture", "self-serve gate", question_ids=[QID],   # reuse a CORE question on purpose
+    new_questions=[{"id": sp_q, "title": "SS", "text": "Self-serve fixture?", "type": "numeric"}],
+    owner_org_id=demo, created_by="qa-user", conn=conn)
+p3 = pulses.get_pulse(pid3, conn)
+check("org-authored pulse: owner recorded, launch_status building, status draft",
+      p3["owner_org_id"] == demo and p3["launch_status"] == "building" and p3["status"] == "draft")
+pulses.submit_for_review(pid3, demo, conn)
+check("submit_for_review -> in_review", pulses.get_pulse(pid3, conn)["launch_status"] == "in_review")
+try:
+    pulses.submit_for_review(pid3, orgs[0], conn)
+    check("cross-org cannot drive another org's pulse", False)
+except ValueError:
+    check("cross-org cannot drive another org's pulse", True)
+pulses.review_pulse(pid3, "approve", "qa-staff", notes="ok", fee_pence=50000, conn=conn)
+p3 = pulses.get_pulse(pid3, conn)
+check("staff approve -> approved + fee, but NOT open (payment gates draft->open)",
+      p3["launch_status"] == "approved" and p3["launch_fee_pence"] == 50000 and p3["status"] == "draft")
+oid = pulses.create_launch_order(pid3, demo, 50000, created_by="qa-user", conn=conn)
+opened = pulses.mark_order_paid(oid, payment_intent="qa", conn=conn)
+p3 = pulses.get_pulse(pid3, conn)
+check("paid order opens the pulse (status open, launch_status paid)",
+      opened == pid3 and p3["status"] == "open" and p3["launch_status"] == "paid")
+pulses.mark_order_paid(oid, conn=conn)   # idempotent
+check("mark_order_paid is idempotent", pulses.get_pulse(pid3, conn)["status"] == "open")
+# THE CARDINAL RULE for org-authored pulses too: a sentinel into the reused core
+# QID lands in pulse_responses, never in the core answers store.
+pulses.join_pulse(pid3, demo, conn)
+pulses.save_response(pid3, demo, QID, "", "98765", conn)
+pulses.submit_pulse(pid3, demo, conn)
+check("org-authored pulse sentinel is NOT in the core answers store",
+      conn.execute("SELECT COUNT(*) FROM answers WHERE question_id=? AND TRIM(value)='98765'",
+                   (QID,)).fetchone()[0] == 0)
+check("self-service authored question is pulse-origin (out of core scope)",
+      sp_q not in appmod.visible_questions())
+
 # ------------------------------------------------------------- CLEANUP -----
 print("== fixture cleanup ==")
-for fpid in (pid, pid2):
+for fpid in (pid, pid2, pid3):
     conn.execute("DELETE FROM pulse_responses WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulse_participants WHERE pulse_id=?", (fpid,))
+    conn.execute("DELETE FROM pulse_launch_orders WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulses WHERE pulse_id=?", (fpid,))
-conn.execute("DELETE FROM questions WHERE id=?", (gqid,))
+conn.execute("DELETE FROM questions WHERE id IN (?,?)", (gqid, sp_q))
 conn.execute("DELETE FROM orgs WHERE org_id='qa-pulse-locked'")
 conn.commit()
 appmod.load_questions.cache_clear()
