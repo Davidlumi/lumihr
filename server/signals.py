@@ -312,6 +312,20 @@ def _objective_mult(strategy, lens):
     return (OBJECTIVE_LENS_MULT.get(obj) or {}).get(lens, 1.0)
 
 
+# pay_for_performance RE-RANK (coarse, David 2026-06-24) — a SECOND strategy multiplier on the
+# same impact, keyed on the signal's DOMAIN (sub_power), NOT the lens: the org's P4P intensity
+# bumps Incentives-domain signals. strong → 1.4 (variable pay matters more), egal → 0.7 (demote
+# incentives so base-pay / fairness signals rise relatively), moderate / unset / skipped → 1.0.
+# COARSE: whole-domain key, no per-metric tag — directionally right, imprecise at the margins (a
+# variable_pay tag is the deferred precision step). Composes with _objective_mult under a CAPPED
+# PRODUCT (≤2.0) at the application site so the two can't runaway-stack.
+P4P_INCENTIVE_MULT = {"strong": 1.4, "egal": 0.7}    # moderate / None → 1.0 via .get default
+def _p4p_mult(strategy, domain):
+    if domain != "Incentives":
+        return 1.0
+    return P4P_INCENTIVE_MULT.get(_strategy_field(strategy, "pay_for_performance"), 1.0)
+
+
 def _strategy_field(strategy, field):
     """A strategy dial value iff a real 'set' choice — None when absent/skipped."""
     if not strategy:
@@ -840,8 +854,14 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         _w = _m.get("weight", 1)
         s["weight"] = _w
         s["impact"] = round((s.get("impact") or 0) * (_w if _w is not None else 1))
-        # reward-strategy objective re-rank (§5.3) — 1.0 when strategy is absent
-        s["impact"] = round(s["impact"] * _objective_mult(strategy, s.get("lens")))
+        # reward-strategy re-rank — §5.3 objective (keyed on lens) × pay_for_performance
+        # (keyed on the Incentives domain), as a CAPPED PRODUCT (David 2026-06-24): the two
+        # multipliers key on DIFFERENT axes, so both can hit one signal; multiply, then clamp
+        # the COMBINED strategy multiplier to 2.0 so a strong-P4P + attract org can't double-
+        # boost incentive-attract signals past the cap. 1.0 when strategy is absent/skipped
+        # (objective alone ≤1.7 < cap, P4P 1.0 off-Incentives/moderate/unset → byte-identical).
+        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("domain")), 2.0)
+        s["impact"] = round(s["impact"] * _strat_mult)
         # applicability + family reframes (§5.2) — config tags gate them, the opt-in
         # stance drives them; both no-ops when untagged/unset (degrade byte-for-byte)
         if _strategy_field(strategy, "location_approach") == "agnostic" and _m.get("location_scoped"):
