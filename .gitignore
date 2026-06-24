@@ -30,3 +30,4 @@ lumi.db.bak*
 # --- secrets (belt-and-braces; already ignored, keep explicit) ---
 server/.env.local
 .env*
+.DS_Store
