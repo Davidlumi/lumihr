@@ -8,3 +8,25 @@ data/responses_orig/
 # local secrets (never commit) — e.g. ANTHROPIC_API_KEY for AI commentary
 server/.env.local
 .env.local
+
+# --- DB + config backups (never versioned; lumi.db itself stays untracked) ---
+lumi.db
+lumi.db.bak*
+*.bak_pre_*
+*.bak
+
+# --- one-off / scratch scripts (root-level, not part of the app) ---
+/apply_*.py
+/audit_*.py
+/dryrun_*.py
+/capture_*.py
+
+# --- exports / generated artifacts ---
+*.xlsx
+*.zip
+*.png
+/*.csv
+
+# --- secrets (belt-and-braces; already ignored, keep explicit) ---
+server/.env.local
+.env*
