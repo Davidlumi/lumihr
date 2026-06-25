@@ -482,6 +482,12 @@ function attainTone(verdict, aim) {
   if (r == null) return "grey";
   return r === aim ? "green" : "amber";        // on your aim = on target (green); otherwise off target (amber)
 }
+// Per-domain attainment from the L3 alignment (card-recolour pass, 2026-06-25, ruling A): map
+// d.target.alignment → the SAME Fix-1 tones attainTone yields, so a tile can colour against its
+// OWN aim while the lens rule is unchanged. on_target = on target (green); behind OR ahead = off
+// the aim either way (amber) — exactly attainTone(verdict, thatAim), and the SAME alignment L4
+// suppression reads (card ⟷ suppression agree by construction). No red, no direction hue.
+const ATTAIN_ALIGN = { on_target: "green", behind: "amber", ahead: "amber" };
 const MKT_SOFT = { green: "var(--gauge-on)", amber: "var(--gauge-below)", red: "var(--gauge-above)",
                    redover: "color-mix(in srgb, var(--unfavourable-deep) 42%, var(--surface))",
                    grey: "color-mix(in srgb, var(--grey-neutral) 30%, var(--surface))",
@@ -1170,7 +1176,12 @@ function CategoryTile({ d, pending, aim, view }) {
   // FIX 1 — chip + card tint colour by ATTAINMENT (attainTone): on your aim = green, off it
   // = amber, no stance = grey-neutral. The chip TEXT keeps the direction word (below/on/
   // above); only the colour changes. No verdict (practice / no market rate) → practice tint.
-  const tone = verdict ? attainTone(verdict, aim) : null;
+  // CARD-RECOLOUR (2026-06-25, ruling A): colour against the domain's OWN aim — read d.target.alignment
+  // (L3, the SAME field L4 suppression reads, so card ⟷ suppression can't diverge). on_target→green /
+  // behind|ahead→amber = the Fix-1 lens unchanged, only the aim is now per-domain. No target (Governance
+  // / strategy-off / no aim) → fall back to the global attainTone → byte-identical to today.
+  const tone = verdict ? (d.target ? (ATTAIN_ALIGN[d.target.alignment] || attainTone(verdict, aim))
+                                   : attainTone(verdict, aim)) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : noRate ? "no market rate" : "practice view";
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const vCls = tone ? MKT_VCLS[tone] : "v-practice";
@@ -1201,7 +1212,7 @@ function CategoryTile({ d, pending, aim, view }) {
           <div class="cat-bar" title=${evNote} role="img"
             aria-label=${post.below + " below, " + post.at + " on market, " + post.above + " above. " + evNote}>
             <div class="cat-bar-track">
-              ${segs.map(s => { const st = attainTone(verdict, aim);   /* FIX 1: whole bar = one attainment hue; the marker carries direction */
+              ${segs.map(s => { const st = tone;   /* FIX 1: whole bar = one attainment hue (per-domain via d.target); the marker carries direction */
                 return html`<div key=${s.k} class="cat-bar-seg"
                   style=${{ width: (100 * s.n / post.pool).toFixed(2) + "%", background: s.k === vKey ? MKT_RICH[st] : MKT_SOFT[st] }}></div>`; })}
             </div>

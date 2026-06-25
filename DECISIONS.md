@@ -5041,3 +5041,38 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   Thornbridge restored to transparency=closed, provenance not "live" = the correct inert resting state. QA
   /tmp/dt_qa_tr.py 20/20 PASS. Server restarted (no --reload). ✅ TAGGING PASS COMPLETE (variable_pay + transparency).
   The L2 transparency stale-value open item is RESOLVED.
+
+2026-06-25 — STEP 3 CARD-RECOLOUR PASS — the L3-deferred VISIBLE payoff. L3 (scope C) computed per-domain
+  d["target"].alignment but deferred card-recolour to "its own ruled pass"; L4 made the override behaviourally real
+  (confirming signals demote), so recolouring a card against its per-domain aim no longer outruns suppression. This pass
+  makes a per-domain override VISIBLE on the dashboard for the first time. FRONTEND-ONLY (positions.py already emits
+  d.target; the tile just reads it).
+  ⚠️ Reopens the Fix-1 attainment-colour surface (most-ruled in the project): card colour = STRATEGY ATTAINMENT
+  (on-aim green / off-aim amber / no-aim grey), NOT market direction; direction is the marker + below/on/above word; RAG
+  banned.
+  RULING A (David): ahead-tone = on_target→green, behind→amber, AHEAD→amber. DECISIVE — this mapping is PROVABLY EQUAL to
+  the existing attainTone(verdict, sameAim) (which already does `r===aim ? green : amber`, i.e. ahead→amber). So the lens
+  RULE is unchanged; only WHICH aim it reads changes. Options B (ahead→green) / C (distinct over-tone) were rejected: they
+  rewrite the lens AND would recolour non-override ahead cards product-wide, and B would let a card read green while its
+  signals are NOT suppressed (contradicts L4). A keeps card ⟷ suppression in agreement (both read on_target=confirm).
+  COLOUR-SOURCE SWITCH (pages.js CategoryTile): tone = verdict ? (d.target ? ATTAIN_ALIGN[d.target.alignment] :
+  attainTone(verdict, marketAim(m))) : null, where ATTAIN_ALIGN={on_target:green, behind:amber, ahead:amber}. The card
+  reads the SAME d.target.alignment L4 suppression reads → single source of truth, can't diverge. The cat-bar segments
+  reuse the same `tone` (bar ⟷ chip can't disagree). d.target is present (alignment vs the per-domain aim where set, else
+  global) for competitive domains when strategy is applied; null (Governance / strategy-off / no verdict) → fall back to
+  the global attainTone. So the recolour bites ONLY on overridden domains; non-override path is byte-identical BY ALGEBRA
+  (the A-equivalence). Lag-inversion preserved per-domain (below+lag = on_target = green; below+lead = behind = amber).
+  SCOPE = TILES ONLY (CategoryTile). ⚑ FOLLOW-ON (David-flagged, NOT folded in): the category-detail page hero
+  (pages.js:1498-1499) still colours that domain's hero against the GLOBAL aim — the immediate NEXT pass should switch it
+  to the per-domain aim for consistency; kept separate (different render path; bundling drags in the parked MetricPage
+  question). A brief tile-vs-detail-hero seam is accepted for one pass.
+  VERIFIED — scripted mirror (/tmp/dt_qa_recolour.py 14/14, mirrors the pages.js tone logic against the live payload) +
+  browser: [a] ⭐ FIX-1 LENS INTACT PER-DOMAIN — Benefits (below market): no-override→amber (off the global match aim),
+  :lag→GREEN (below+lag = on-aim), :lead→AMBER (below+lead = off-aim); un-overridden domains unchanged under :lag. [b] ⭐
+  CARD ⟷ SUPPRESSION AGREE — under :lag the GREEN card domain == the on_target domain == EXACTLY the domain L4 demotes
+  (all read the same d.target.alignment). [c] DEGRADE — no-override: NEW tone == OLD (global-aim) tone for every domain;
+  strategy-off → all grey; Governance no target. [d] RAG ABSENT — tones ∈ {green, amber, grey} only, no red/redover/
+  direction hue. [e] GAUGE 76/15/1/92 + L4 confirm-shed + maternity exemption all untouched (frontend-only). [f] browser:
+  Benefits tile renders GREEN (chip-good) under :lag with strategy applied while the other 5 competitive tiles are AMBER
+  (chip-mid), 7 tiles render, 0 console errors. Cache v250→v251. Thornbridge restored to domain_targets={}. ✅ The
+  per-domain override is now BOTH behavioural (L4 suppression) AND visible (this pass) — the chain's payoff is complete.
