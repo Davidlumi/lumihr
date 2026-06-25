@@ -4956,6 +4956,19 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
       narrative (competitive domain with a verdict AND not flagged by compute_findings) — NOT the L3 target.alignment
       used here. The two "doing-what-you-intended" definitions can diverge; reconciling them is FUTURE work, explicitly
       not this pass.
+      RESOLVED 2026-06-24 (cleanup sweep, ruling C — DOCUMENT-ONLY, no behaviour change): the two are INTENTIONALLY
+      DISTINCT concepts, not a bug to unify. on_plan = "inferred-aim-clean" — domain_aims(strategy) infers a per-domain
+      aim from the COARSE dials (market_position + reward_mix + pay_for_performance heuristics; e.g. reward_mix=benefits →
+      Benefits lead / Pay lag) and on_plan = competitive domains with a verdict whose actual==inferred-aim (compute_findings
+      flags any delta≠0). target.alignment = "explicit-override-met" — _market_target reads the EXPLICIT domain_targets[sec]
+      (→ global market_position), no reward_mix/P4P nudges. They diverge where (a) a domain_targets override is set
+      (target.alignment honours it; the narrative's domain_aims does NOT read domain_targets) or (b) reward_mix/P4P nudge a
+      domain's inferred aim (domain_aims applies the nudge; target.alignment does not). Both are valid for their surface:
+      the narrative wants an inferred clean-bill read incl reward_mix intent; suppression/colour want the explicit per-domain
+      verdict-vs-aim. Option A (point on_plan at target.alignment) REGRESSES — it loses the reward_mix/P4P nudges; Option A′
+      (extend domain_aims to honour domain_targets, override > nudge) is a real FEATURE change to the AI narrative and is
+      AVAILABLE as its own future diagnosed pass if the narrative should respect explicit per-domain overrides. Closed as
+      intentional-distinct; no code change.
   VERIFIED live (Thornbridge, global match; REW_BEN_FAM_002 maternity + REW262_TIME_SICKDAYONE sick-pay both sit in the
   Time Off domain): ⭐[a] COUNT-CHANGE BOTH HALVES — (i) strategy-off AND strategy-on-no-override → ZERO confirm anywhere
   (degrade, all-behind nothing confirms); (ii) Time Off→lag → Time Off confirms (on_target), its 8 NON-risk signals all
