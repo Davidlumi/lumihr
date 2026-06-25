@@ -5235,3 +5235,30 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   separate surfaces — untouched. The metric/domain lens-difference is intentional and documented; not a gap to close.
   This closes the last parked Step-3 conceptual item. (Remaining: the git housekeeping to switch the GitHub default
   branch to main so origin/checkpoint can be deleted — David's Settings action.)
+
+2026-06-25 — NOTIFICATION PEER-CUT BASELINE — CONCEPT RULING A (canonical `all` cut, by design; NO BUILD).
+  Design-diagnostic pass (verified the mechanism from code, framed the fork, no code). VERIFIED: the nightly sweep
+  baselines on the canonical all-peers cut — run_signal_sweep (app.py:1578) → org_signals (app.py:1567) builds
+  fresh_signals on a hard-coded `{"dim":"all"}` cut; signal_state is keyed (org_id, signal_key) with NO cut dimension
+  (db.py:207) → single-cut by construction; no primary/default/pinned-cut concept exists (orgs has no such column;
+  peer_groups are saved groups but none is designated the alert frame).
+  RESOLVED: the notification baseline is the CANONICAL `all` cut, BY DESIGN — the all-peers baseline's STABILITY is the
+  FEATURE, not a limitation. RATIONALE: a notification is a CHANGE-CLAIM over time, and a change-claim is only meaningful
+  if the reference frame held STILL while the change happened. This is categorically unlike A′ (a narrative describes the
+  PRESENT — no baseline), so the A′ "honour the user's choice" principle does NOT transfer: an alert frame has a
+  STABILITY requirement a narrative doesn't. THE DISCRIMINATOR IS STABLE-vs-DRIFTING, not choice-vs-constant.
+  B-via-TWIN DISQUALIFIED: compute_twin (peer_twin.py:39) is a recomputed top-K (TWIN_K=12, min 8) — a twin-baselined
+  alert would fire when the COHORT changes (a new similar org joins → top-K re-selects, a 1-in-12 lurch), not when the
+  ORG changes, and the user CANNOT tell which → it MISATTRIBUTES cohort drift to the org's own reward decisions, a
+  phantom/mis-causal alert on a product whose credibility is "we tell you the truth about where you stand." (Same shape
+  as the MetricPage maternity disqualifier: the appealing option misinforms on the cases that matter.)
+  Per-cohort alerts are NOT rejected in principle — but the baseline cut must be STABLE. Canonical `all` = stable (a
+  one-org swap barely moves it) → valid. Twin = drifting → INVALID. A SAVED CUSTOM GROUP (membership declared via FROZEN
+  criteria, not recomputed) is chosen AND stable → the ONLY coherent path to a cohort-specific baseline, and the shape any
+  FUTURE B-pass must take — with a re-baseline rule on criteria-change. So A is the honest default NOW and the door to a
+  future stable-saved-group baseline stays OPEN, while the twin baseline stays CLOSED WITH A REASON.
+  NON-DECISION INVARIANTS (confirmed, hold under any future stable baseline): interactive cut-switching is a VIEW op that
+  NEVER notifies (signal_state/events are written only by run_signal_sweep; /api/overview is a read-only GET) and stays
+  so; the materiality bucket-jitter guard (notifications.py:160 — "moved" fires only on a bucket CHANGE, plus a
+  min_money_change_gbp threshold) + the _live_at_send suppression re-check (notifications.py:281) + the n>=5 floor +
+  peer-name privacy are all cut-agnostic. This closes the notification-baseline conceptual item.
