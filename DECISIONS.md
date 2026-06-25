@@ -5214,3 +5214,24 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   on_target). [e] _reason_for cites the lag target NOT the benefits-led mix (the contradiction case). [f]
   compute_findings: Benefits:lag flips Benefits gap→on-plan. [g] gauge 76/15/1/92 untouched. Backend-only (no cache
   bump). ✅ A′ resolved. MetricPage per-metric attainment (the conceptual fork) remains its own DESIGN diagnostic.
+
+2026-06-25 — METRICPAGE PER-METRIC ATTAINMENT — CONCEPT RULING B (status quo, NO BUILD). Design-diagnostic pass
+  (framed the fork, no code). RESOLVED: per-metric attainment is REJECTED by design. Attainment is a DOMAIN-LEVEL
+  concept — a strategy stance (lag/match/lead) is set FOR a domain, never for an individual metric. A metric has a
+  market POSITION (a fact); a domain has an AIM (declared intent). The per-metric pill (card.js cardPosition — percentile
+  vs window.MARKET_BAND → above=good / below=bad / on=mid, strategy-independent) is a market-DIRECTION fact,
+  INTENTIONALLY distinct from the domain-level ATTAINMENT lens (pages.js attainTone / ATTAIN_ALIGN reading
+  d.target.alignment). Metric = position; domain = attainment — a correct-by-design division of labour, already
+  implemented; the lens-difference between metric and domain surfaces is the HONEST reflection of where a stance was set,
+  not an inconsistency to fix.
+  Option A (metric inherits the domain aim) DISQUALIFIED: it would green-wash real gaps inside a lag domain — the
+  decisive case is REW_BEN_FAM_002 (enhanced maternity), where a lag-Time-Off aim would make the below-market maternity
+  metric read GREEN / "on plan", re-introducing through the COLOUR channel the exact failure the L4 risk-exemption was
+  architected to prevent (it would defeat the maternity-zero guard on its most consequential metric). B over C: the
+  direction-pill is a MARKET FACT ("below market · P22"), the core benchmarking info the user wants — it states where the
+  metric sits and does NOT deliver an intent-verdict the user didn't ask for (which is what mirror philosophy guards
+  against); C's neutral pill would lose real at-a-glance utility to gain purity B already has. NON-DECISION INVARIANTS
+  (true either way, confirmed): gauge, L3 alignment, L4 suppression, tile+hero recolour and the A′ narrative are all
+  separate surfaces — untouched. The metric/domain lens-difference is intentional and documented; not a gap to close.
+  This closes the last parked Step-3 conceptual item. (Remaining: the git housekeeping to switch the GitHub default
+  branch to main so origin/checkpoint can be deleted — David's Settings action.)
