@@ -5361,3 +5361,39 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   signal row appears (home/signals/metric), colour stays the market fact, and the maternity-zero risk
   exemption holds at the visual layer. Deferred Signals passes: 3 triage hierarchy, 4 context-row verify,
   5 header honesty.
+
+2026-06-25 — SIGNALS PAGE PASS 3 — TRIAGE HIERARCHY, RULING A+ (confirm-aware rank), BUILT (one line).
+  Audit flagged the Signals list as "flat" — grouped by domain, within-group sorted by triage status only.
+  Pass 2 added the confirm glyph + kept the L4 ×0.25 demote; question: is glyph+demote ENOUGH triage, or do
+  confirm rows want a structural SUB-GROUP? DIAGNOSED on SCREENSHOT EVIDENCE (read-only, live Time Off→lag
+  override). FINDING: the within-group sort is rank = triage-status-only (pages.js:1034), a STABLE sort, so
+  the L4 impact-demote reached within-group position ONLY as the signals_all tiebreaker — never explicitly.
+  Live Time Off group (10 rows) ordered: Risk #1, CONFIRM #2, Risk #3, confirm #4-10 — i.e. a confirm row
+  ("Bank holiday working premium", impact-heavy enough that ×0.25 still beat sick-pay) SPLIT the two Risk
+  rows; confirm did NOT cleanly clump at the tail. KEY INSIGHT that killed B: confirm is CONCENTRATED by
+  construction (it fires only where a whole domain sits on its aim) — all 8 confirm rows were in the ONE
+  on-target group; every other domain group had ZERO confirm (byte-identical to pre-Pass-2). So a sub-group
+  (B) would have GUTTED the Time Off group — lift 8 of 10 rows out, leaving a 2-row Risk stub — fragmenting
+  the domain reading; and B's "confirm clutters the tail" justification did NOT manifest (confirm was a
+  uniform marked block, not clutter). RULING A+ (David): reject B; keep domain grouping; fix the only real
+  blemish (the #2 confirm splitting the Risk pair) with a ONE-LINE confirm-aware rank:
+    const rank = s => s.confirm ? 3 : (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
+  Confirm rows deterministically sink to the group TAIL (rank 3) — the visible mirror of L4 demote-not-delete
+  (tail, not removed; stays in its domain group, no sub-group). The 2 risk-exempt rows (never confirm → never
+  rank 3) stay ADJACENT at the top. BUILD: web/js/pages.js:1034 (the rank fn) + comment; cache v255→v256.
+  Frontend-only, one line. QA (in-browser, live override + transient strategy=off, no DB write): PROOF 1
+  RE-ORDER — Time Off group now: Risk #1 (maternity REW_BEN_FAM_002) + Risk #2 (sick-pay REW262_TIME_
+  SICKDAYONE) ADJACENT at top; all 8 confirm rows clump at the TAIL (#3-10, confirm_clumped_at_tail=true,
+  risk_adjacent_at_top=true); "Bank holiday working premium" moved #2→#3, no longer splitting the Risk pair.
+  PROOF 2 DEGRADE — strategy=off render: 0 confirm pills, and the Time Off order EXACTLY matches the pre-
+  Pass-3 triage-status-only stable sort (order_matches_triage_only_sort=true) → the confirm?3 branch only
+  bites where confirm fires → byte-identical. PROOF 3 MIXED GROUP — none exists under the single-domain
+  override (confirm is whole-domain), but the Time Off group proves the rule: the 2 non-confirm Risk rows
+  (rank 2) sort ABOVE all 8 confirm rows (rank 3); rank 3 > rank 0/1/2 guarantees confirm sinks below ANY
+  non-confirm row (tension or risk) wherever they coexist. 0 console errors. NOTE: a PINNED confirm row also
+  sinks in the grouped inbox (confirm beats triage status by design — quiet stays quiet); it still surfaces
+  in the Priority TAB (filtered by status===priority). PASS 5 INTERACTION (header honesty): A+ makes the
+  within-group ordering claim TRUE (impact = strategy-multiplied + confirm explicitly last), but the GROUP
+  order is fixed SIG_DOMAINS order, not strategy-ranked — so the header "ordered for your strategy" is honest
+  at the row level inside a domain yet loose globally; that domain-fixed-group-order question stays with
+  Pass 5. Deferred Signals passes remaining: 4 context-row verify, 5 header honesty.

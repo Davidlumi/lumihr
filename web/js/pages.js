@@ -1031,7 +1031,12 @@ window.SignalsPage = function ({ me }) {
 
   const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
   const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
-  const rank = s => (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
+  // Triage order within a domain group. CONFIRM sinks to the TAIL (rank 3) — the visible
+  // mirror of L4's demote-not-delete: a strategy-confirming "On plan" row stays in its domain
+  // group (no sub-group, Pass 3 ruling A+) but clumps last, so the 2 risk-exempt rows stay
+  // adjacent at the top and no confirm row splits them. Degrades cleanly: strategy-off → no
+  // confirm → s.confirm falsy → rank reverts to the 3-tier triage-status function, byte-identical.
+  const rank = s => s.confirm ? 3 : (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
   const triaged = all.filter(cur.f);                              // current triage tab
   // NEUTRAL-polarity signals (cost/spend context) are NEVER coloured by verdict —
   // engine principle #5 — so they're excluded from the position bar/chip composition
