@@ -5318,3 +5318,46 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   rgb(245,166,10)=below / red rgb(192,57,43)=above / indigo rgb(98,87,201)=differs; bar segs var(--amber-bright) /
   var(--unfavourable) / var(--differs); tags "below market" / "differs from market". Byte-identical render — pure
   dead-code removal, no colour change. NEXT: Pass 2 = the confirm/tension ICON system (its own gated diagnose->build).
+
+2026-06-25 — SIGNALS PAGE PASS 2 — CONFIRM/TENSION ICON SYSTEM, RULING + BUILT (mark-the-exceptions).
+  Pass 1 ruled the row COLOUR = market DIRECTION (a fact); the strategy relationship (confirm/tension/
+  risk/no-aim) had NOWHERE to render — s.confirm rode the row data (signals.py:926, L4) but the Row
+  renderer never read it (no is-confirm, no glyph; confirm was consumed only server-side: the ×0.25
+  impact demote + cap_briefing home-shed). So the icon is the ONLY channel for the strategy relationship.
+  RULING (David) — MARK-THE-EXCEPTIONS vocabulary: confirm → a quiet GREEN "✓ On plan" pill; risk →
+  its existing CORAL "⛨ Risk" shield, UNCHANGED; tension (default) + no-aim (strategy-off/Governance) →
+  UNMARKED. Marking the rule is noise (for the canonical match+cost demo org, tension IS every below-aim
+  row); the eye catches the two exceptions, bare = "ordinary tension, look at it", and the header's
+  strategy-on/off state disambiguates tension from no-aim. SUB-RULINGS: (a) glyph + KEEP the ×0.25 demote
+  (signals.py:927) — the pill EXPLAINS the demotion (legibly quiet), does NOT reverse it; faithful to L4
+  demote-not-delete; line 927 untouched. (b) Shield-sole, no double-marking — DATA-GUARANTEED: the L4
+  confirm gate is `not s.get("risk_framed") AND domain_alignment[domain]=="on_target"`, so a risk row can
+  NEVER be confirm-flagged (any_risk_confirmed=false); the maternity-zero guard survives at the visual
+  layer. (c) no-aim unmarked — degrade: empty/None domain_alignment → gate short-circuits → 0 confirm →
+  0 glyphs → byte-identical. (d) ⭐ render WHEREVER s.confirm fires, INCLUDING differs/approach rows (4 of
+  the 8 demo rows) — MIRROR L4 EXACTLY, no position filter; the glyph means precisely "engine flagged
+  confirm", and a subset would re-introduce the icon↔engine drift this whole session closed.
+  BUILD (frontend-only, web/js/pages.js + web/css/app.css, v254→v255): added the "✓ On plan" pill to the
+  shared sigParts name-line (home + metric page) AND the Signals-page inline name-line, cloned from the
+  .sig-risk structure (check glyph size 11, var(--favourable) channel, color-mix 18% tint) so it composes
+  inline with the NEW pill + Risk shield WITHOUT changing row height; added the is-confirm row class at all
+  three render sites (home 834, signals 1049, metric 1542). The row's left accent + tint stay DIRECTION-
+  toned (.is-confirm deliberately adds NO recolour — colour is the fact, the pill is the relationship).
+  New CSS: .sig-onplan + .sig-onplan svg. OPEN ITEM (i) — DEMO ORG STATE: KEPT the persisted
+  org_strategy.domain_targets={"Time Off":"lag"} on thornbridgeretailgroupplc (David's lean) — a lag stance
+  on below-market Time Off resolves to on_target, so the demo org exercises the glyph LIVE (8 confirm rows).
+  No DB write (keep = the no-mutation path). Harness is config-independent either way.
+  QA — TWO PROOFS, both pass (no DB mutation; in-browser against the live override org + a transient
+  strategy=off render). PROOF 1 CONFIRM FIRES: /api/overview signals_all carries 8 confirm rows (4 below +
+  4 differs, all Time Off, all non-risk); the Signals page renders exactly 8 "✓ On plan" pills (is-confirm
+  on 8 rows), tones 4 amber + 4 approach (differs rows DO get the pill), glyph = check polyline, svg green
+  rgb(46,125,82); the 2 risk Time Off rows render SHIELD + NO pill (maternity "Enhanced maternity & adoption
+  pay" REW_BEN_FAM_002, sick-pay "Sick pay from day one" REW262_TIME_SICKDAYONE — both hasShield=true,
+  hasOnPlan=false); 0 rows carry BOTH markers. Screenshot shows two adjacent below-market rows — maternity
+  (Risk) + Bank-holiday-premium (On plan) — same amber direction colour, different glyph. PROOF 2 BYTE-
+  IDENTICAL-ABSENT: forcing the SignalsPage overview fetch to strategy=off → 81 rows (unchanged), 0 On-plan
+  pills, 0 is-confirm rows, the 3 risk shields still present (direction-independent) → page identical to
+  pre-Pass-2. 0 console errors throughout. ✅ The strategy relationship now renders on every surface a
+  signal row appears (home/signals/metric), colour stays the market fact, and the maternity-zero risk
+  exemption holds at the visual layer. Deferred Signals passes: 3 triage hierarchy, 4 context-row verify,
+  5 header honesty.

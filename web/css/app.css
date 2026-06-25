@@ -1159,6 +1159,17 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
   background: color-mix(in srgb, var(--lumi-coral) 20%, transparent); padding: 0 var(--s2); border-radius: 5px; }
 .sig-risk svg { color: var(--lumi-coral); flex: none; }
+/* ON-PLAN / CONFIRM marker (Signals Pass 2, 2026-06-25, ruling: mark-the-exceptions) — a strategy-
+   CONFIRMING signal (s.confirm from L4: its domain sits on the declared aim, non-risk) gets a quiet
+   GREEN "On plan" pill cloned from .sig-risk, in the favourable channel. The pill is the ONLY confirm
+   marker: the row's left accent + tint stay DIRECTION-toned (Pass 1 — colour is the market fact, the
+   glyph is the strategy relationship), so .is-confirm deliberately does NOT recolour the row. The pill
+   EXPLAINS the L4 ×0.25 impact demote (the row is legibly quiet), it does not reverse it. Mutually
+   exclusive with .is-risk by construction (the confirm gate excludes risk_framed). */
+.sig-onplan { display: inline-flex; align-items: center; gap: 3px; margin-left: var(--s2); vertical-align: middle;
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
+  background: color-mix(in srgb, var(--favourable) 18%, transparent); padding: 0 var(--s2); border-radius: 5px; }
+.sig-onplan svg { color: var(--favourable); flex: none; }
 /* ---- dedicated Signals explore page (2026-06-13) ---- */
 .signals-page .sig-filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
 .sig-chip { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: 999px;
