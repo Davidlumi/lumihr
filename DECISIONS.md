@@ -5105,3 +5105,26 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   :lag, matching the tile (was amber pre-pass); 0 console errors. Cache v251→v252. Thornbridge restored to
   domain_targets={}. ✅ SEAM CLOSED — tile + detail hero now agree. MetricPage per-metric attainment ("one metric vs org
   aim") remains the one parked detail-page conceptual question, by design.
+
+2026-06-24 — STEP 3 MAIN MERGE — the per-domain strategy chain landed on main at adc4285 via fast-forward.
+  The whole chain (capture L2 → engine alignment L3 → suppression+exemption L4 → tagging variable_pay+transparency →
+  card-recolour → detail-hero recolour, the 16 commits 8eaf7b8..adc4285) was built on checkpoint/2026-06-24-session-work
+  while main sat at 8eaf7b8 (unpushed since the git recovery) DELIBERATELY, waiting for the feature to be whole. It is.
+  RULINGS (David): shape = A FAST-FORWARD (main was a strict ancestor → main advanced 8eaf7b8→adc4285 linearly, all 16
+  commits preserved individually, NO merge commit; squash rejected to keep per-pass granularity, no-ff unnecessary as
+  main never diverged); push = YES (origin/main created as canonical published history); branch = KEEP
+  checkpoint/2026-06-24-session-work (on origin) until verified, cleanup a separate later call.
+  PRE-MERGE REVIEW (read-only, before touching public history): all 16 commits authored David Whitfield
+  <david@lumihr.co.uk> (recovery-fixed identity, none on the machine address); diff 8eaf7b8..adc4285 = 80 files
+  +17,779/-1,404, coherent lumi product only (engine/signals/strategy/web/config/tooling/QA-suite/DECISIONS/legal/
+  release); ZERO forbidden artifacts in the tracked diff (no lumi.db / *.db-wal/-shm, no *.bak backups, no .env/secrets,
+  no /tmp dt_qa_* scratch); .DS_Store present only as DELETIONS (the 39b994c untrack); the session's QA harnesses live in
+  /tmp (never tracked); server/qa_*.py are the project's committed verification suite (product). SAFETY NET: tag
+  pre-merge-main-8eaf7b8 created on the old main (8eaf7b8) and pushed to origin (durable rollback marker); checkpoint on
+  origin is the second net. EXECUTION: FF via `git fetch . checkpoint:main` (FF-enforced, no checkout → avoided the
+  tracked-.DS_Store-vs-untracked checkout conflict, zero working-tree churn, HEAD stayed on checkpoint). VERIFIED:
+  main == origin/main == adc4285 (0/0 in sync); main tip has ONE parent (no merge commit); tracked tree clean (only the
+  21 untracked session scratch files remain, untouched by the merge); checkpoint kept local + origin. origin now holds
+  main, checkpoint/2026-06-24-session-work, and tag pre-merge-main-8eaf7b8.
+  ⚑ FUTURE HYGIENE (David-flagged, NOT this pass): .claude/settings.local.json is tracked (pre-existing, modified, no
+  secret) — untrack + gitignore as machine-local in a separate tick; deliberately NOT bundled into the merge.
