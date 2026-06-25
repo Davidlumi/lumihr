@@ -312,16 +312,18 @@ def _objective_mult(strategy, lens):
     return (OBJECTIVE_LENS_MULT.get(obj) or {}).get(lens, 1.0)
 
 
-# pay_for_performance RE-RANK (coarse, David 2026-06-24) — a SECOND strategy multiplier on the
-# same impact, keyed on the signal's DOMAIN (sub_power), NOT the lens: the org's P4P intensity
-# bumps Incentives-domain signals. strong → 1.4 (variable pay matters more), egal → 0.7 (demote
-# incentives so base-pay / fairness signals rise relatively), moderate / unset / skipped → 1.0.
-# COARSE: whole-domain key, no per-metric tag — directionally right, imprecise at the margins (a
-# variable_pay tag is the deferred precision step). Composes with _objective_mult under a CAPPED
-# PRODUCT (≤2.0) at the application site so the two can't runaway-stack.
+# pay_for_performance RE-RANK (David 2026-06-24; PRECISION upgrade 2026-06-25) — a SECOND strategy
+# multiplier on the same impact: the org's P4P intensity bumps VARIABLE-PAY signals. strong → 1.4
+# (variable pay matters more), egal → 0.7 (demote variable pay so base-pay / fairness signals rise
+# relatively), moderate / unset / skipped → 1.0. PRECISE keying (tagging pass): on the curated
+# variable_pay_metrics SET (signal_lenses.json), NOT the whole Incentives domain — so governance
+# (malus/clawback), scheme design, eligibility policy and overtime/shift premiums that merely SIT in
+# Incentives no longer get the bump/demote. Composes with _objective_mult under a CAPPED PRODUCT
+# (≤2.0) at the application site so the two can't runaway-stack. Empty set → 1.0 everywhere (degrade);
+# were the set every Incentives metric, output = the old coarse behaviour byte-for-byte.
 P4P_INCENTIVE_MULT = {"strong": 1.4, "egal": 0.7}    # moderate / None → 1.0 via .get default
-def _p4p_mult(strategy, domain):
-    if domain != "Incentives":
+def _p4p_mult(strategy, qid, variable_pay_set):
+    if qid not in (variable_pay_set or ()):
         return 1.0
     return P4P_INCENTIVE_MULT.get(_strategy_field(strategy, "pay_for_performance"), 1.0)
 
@@ -716,6 +718,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     _cfg = _pos.market_position_config() or {}
     _metrics = _cfg.get("metrics", {})
     risk_set = set(cfg.get("risk_metrics") or [])   # RISK/POSITION split (David-curated; never a heuristic)
+    vp_set = set(cfg.get("variable_pay_metrics") or [])   # variable_pay tag (David-curated): precise P4P keying
     for s in out:
         s.setdefault("sig_id", s["question_id"])
         s["status"] = st.get(s["sig_id"])
@@ -872,12 +875,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         s["weight"] = _w
         s["impact"] = round((s.get("impact") or 0) * (_w if _w is not None else 1))
         # reward-strategy re-rank — §5.3 objective (keyed on lens) × pay_for_performance
-        # (keyed on the Incentives domain), as a CAPPED PRODUCT (David 2026-06-24): the two
+        # (keyed on the variable_pay metric tag), as a CAPPED PRODUCT (David 2026-06-24): the two
         # multipliers key on DIFFERENT axes, so both can hit one signal; multiply, then clamp
         # the COMBINED strategy multiplier to 2.0 so a strong-P4P + attract org can't double-
         # boost incentive-attract signals past the cap. 1.0 when strategy is absent/skipped
-        # (objective alone ≤1.7 < cap, P4P 1.0 off-Incentives/moderate/unset → byte-identical).
-        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("domain")), 2.0)
+        # (objective alone ≤1.7 < cap, P4P 1.0 off-variable-pay/moderate/unset → byte-identical).
+        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("question_id"), vp_set), 2.0)
         s["impact"] = round(s["impact"] * _strat_mult)
         # applicability + family reframes (§5.2) — config tags gate them, the opt-in
         # stance drives them; both no-ops when untagged/unset (degrade byte-for-byte)

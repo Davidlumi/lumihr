@@ -4968,3 +4968,37 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   [g] Thornbridge restored to domain_targets=NULL; 0 console errors; web untouched (no cache bump). QA /tmp/dt_qa_l4.py
   20/20 PASS. Server restarted (no --reload). ⛔ Per-domain strategy-tension chain COMPLETE. Tagging pass
   (variable_pay / transparency precision) remains as separate parallel work.
+
+2026-06-25 — STEP 3 TAGGING PASS · UNIT 1 (variable_pay). Upgrades the pay_for_performance re-rank from COARSE
+  domain==Incentives keying (commit 94a64b4 — every Incentives metric got the multiplier) to PRECISE per-metric: only
+  the curated variable_pay set gets the P4P bump/demote (strong 1.4 / egal 0.7 / moderate·unset 1.0). CLASSIFICATION
+  work — David-judgment-authoritative; an independent diverse-lens (amount / product / taxonomy) classification proposed
+  the set, David ruled.
+  FIELD (David-ruled): a curated "variable_pay_metrics" qid LIST in signal_lenses.json — the risk_metrics precedent
+  (David-owned, never a heuristic). SET (7, David-ruled): 323ffcf1-… (max bonus % by level), REW_INC_111 (target bonus
+  % by level), REW_INC_104 (avg payout %), REW_INC_LTI_MAX_01 + REW_INC_LTI_VALUE_TYP_01 (max/target LTI %) — the 5
+  unanimous AMOUNT/opportunity metrics — PLUS REW_INC_131 (operate-LTI) + REW_INC_135 (operate-commission): provision-
+  EXISTENCE of a contingent-pay vehicle is P4P-relevant (David). OUT: the other 16 Incentives metrics, incl REW_INC_061
+  (individual/business split — design), REW_INC_072 (sign-on — NOT performance-contingent, explicitly out), REW_INC_132
+  (LTI types — design), malus/clawback (070/071 — governance), and the overtime/shift premiums.
+  WIRING: signals.py _p4p_mult(strategy, qid, variable_pay_set) keys on `qid in variable_pay_set` (was `domain ==
+  "Incentives"`); vp_set loaded once from cfg.get("variable_pay_metrics") beside risk_set; application site passes
+  s["question_id"] + vp_set. No variable-pay metric exists OUTSIDE Incentives (scanned) — the set is entirely within the
+  domain. INDEPENDENT of the L2-L4 suppression chain: this changes a re-rank MULTIPLIER (impact ×=), not the confirm/
+  suppress mechanism; gauge + L4 exemption untouched.
+  DEGRADE: pay_for_performance moderate/unset/strategy-off → multiplier 1.0 everywhere → byte-identical. Were the set the
+  full Incentives domain, output == the old coarse behaviour byte-for-byte (proven). Precise set ⊊ coarse → the 16
+  excluded metrics LOSE the multiplier (the only place the coarse net was too wide).
+  ⚑ HYGIENE FLAG (David, for a FUTURE pass — NOT this one): REW_Q528801 / REW_Q534581 (overtime & hourly shift-pay
+  multipliers) are Level metrics MISFILED in the Incentives domain — they are time/shift PREMIUMS, not performance-
+  contingent pay. The variable_pay tag correctly excludes them; the domain misclassification itself wants a separate
+  hygiene fix.
+  VERIFIED (Thornbridge surfaces both tagged + non-tagged Incentives signals): [A] UNIT — exhaustive over all 23
+  Incentives metrics: strong→1.4 tagged / 1.0 non-tagged, egal→0.7/1.0, moderate→1.0, None/empty→1.0, non-Incentives→1.0.
+  [A2] PRECISION WIN — precise==coarse on exactly the 7 tagged; precise≠coarse (NO LONGER bumped) on exactly the 16 non-
+  tagged. [A3] DEGRADE-EQUIVALENCE — vp_set=all-Incentives → ==coarse for all 23. [B] INTEGRATION — under strong, tagged
+  REW_INC_111 rises rank 31→13; non-tagged overtime REW_Q528801 holds rank 40 (no bump). [c] GAUGE 76/15/1/92 invariant.
+  [B2] SUPPRESSION UNTOUCHED — L4 confirm-shed + maternity exemption + gauge intact under the new tag. QA /tmp/dt_qa_vp.py
+  15/15 PASS; 0 console errors; web untouched (no cache bump). Server restarted (no --reload). ⛔ STOP before Unit 2
+  (transparency) — separate committed unit. Stale-value handling (treat-as-unset-until-reconfirmed; Thornbridge stores
+  transparency=closed) is the load-bearing Unit-2 proof.
