@@ -1563,16 +1563,40 @@ async def strategy_diagnosis(request: Request):
 def org_signals(conn, org):
     """The org's full (uncapped) signal set on the default all-peers cut, built
     request-free for the nightly sweep — the same machinery /api/overview uses,
-    minus the per-user triage status (identity/value don't depend on it)."""
+    minus the per-user triage status (identity/value don't depend on it).
+    STRATEGY-AWARE (step-3 notification coherence, ruling C): threads the org's strategy +
+    per-domain alignment exactly as /api/overview does, so confirm-suppression fires HERE too —
+    confirming non-risk signals carry s["confirm"] (the event layer quiets them; risk_framed stays
+    exempt by the same not-risk_framed gate). The peer cut stays the canonical all-peers frame
+    (RULED). strategy None / no override → empty alignment map → no confirm flags → byte-identical
+    to the pre-coherence (strategy-blind) sweep (degrade)."""
     cut = {"dim": "all", "value": None}
     items, tb = build_items(None, org, None, cut)
-    money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
-                                    org_answers_for(org), cut, tb)
     visq = org_visible_questions(org)
     answers = org_answers_for(org)
+    money = pos.money_opportunities(conn, org, visq, payloads(), answers, cut, tb)
     get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
+    # parity with /api/overview: build the hero (request-free; all entitled — the sweep only runs
+    # for UNLOCKED orgs) to derive the {domain: alignment} map, then thread strategy + the map into
+    # build_signals. Single source of truth — the same per-domain target L3/L4/recolour read.
+    strat = strategy_for_engine(conn, org["org_id"])
+    ent = lambda q: True
+    prev_items = pos.prevalence_items(org["org_id"], cut, visq, payloads(), answers, ent, tb)
+    prac_items = pos.practice_position_items(org["org_id"], cut, visq, payloads(), answers, ent, tb)
+    sec_order = []
+    for q in visq.values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in visq.values() if q.sub_power == x))
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=pos.market_position_config(), strategy=strat)
+    dom_align = {d["name"]: (d.get("target") or {}).get("alignment")
+                 for d in hero["domains"] if d.get("target")}
     return signals_mod.build_signals(items, money, visq, get_block, answers,
-                                     conn=conn, org_id=org["org_id"], cap=False, statuses=None)
+                                     conn=conn, org_id=org["org_id"], cap=False, statuses=None,
+                                     strategy=strat, domain_alignment=dom_align)
 
 
 def run_signal_sweep(conn=None, verbose=True):
@@ -2078,7 +2102,13 @@ async def list_notifications(request: Request):
         ev = notifications.render_event(dict(r))
         ev["read"] = r["read_at"] is not None
         out.append(ev)
-    return {"unread": sum(1 for e in out if not e["read"]), "events": out, "inbox_enabled": True}
+    # notification coherence (step-3, ruling C): a confirm-flagged change confirms the org's
+    # strategy aim — it stays in the inbox (nothing dropped) but NEVER leads. Tension + risk lead
+    # the list and the unread badge; confirm sorts to the bottom and is excluded from the badge —
+    # mirroring L4 demoting a confirming signal off the home briefing while keeping it findable.
+    out.sort(key=lambda e: bool(e.get("confirm")))   # stable → confirm to the bottom, order otherwise kept
+    unread = sum(1 for e in out if not e["read"] and not e.get("confirm"))
+    return {"unread": unread, "events": out, "inbox_enabled": True}
 
 
 @app.post("/api/notifications/read")
@@ -3039,6 +3069,17 @@ async def put_strategy(request: Request):
             conn.execute("UPDATE orgs SET registry_json=? WHERE org_id=?",
                          (json.dumps(reg), org["org_id"]))
     conn.commit()
+    # notification coherence (step-3, ruling C — storm bound): a strategy change is the user's OWN
+    # deliberate act, so it re-sorts what's worth flagging — that must QUIETLY re-baseline the bell,
+    # never storm it (the inverse of the cut-drift stable ruling; parallel to the transparency
+    # reconfirm gate). Recompute the strategy-aware signal set and silently reset signal_state, so
+    # the next sweep diffs against the new baseline and a strategy-driven re-sort fires no alerts.
+    # Best-effort — never break the save (only unlocked orgs have a baseline to reset).
+    try:
+        if org_unlocked(conn, org):
+            notifications.rebaseline(conn, org["org_id"], org_signals(conn, org))
+    except Exception as e:
+        print("[lumi] strategy-change rebaseline failed for org %s: %s" % (org.get("org_id"), e))
     return {"ok": True, "completed_at": completed_at,
             "complete": bool(completed_at)}
 

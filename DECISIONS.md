@@ -5262,3 +5262,34 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   so; the materiality bucket-jitter guard (notifications.py:160 — "moved" fires only on a bucket CHANGE, plus a
   min_money_change_gbp threshold) + the _live_at_send suppression re-check (notifications.py:281) + the n>=5 floor +
   peer-name privacy are all cut-agnostic. This closes the notification-baseline conceptual item.
+
+2026-06-25 — NOTIFICATION <-> STRATEGY COHERENCE — RULING C (hybrid demote), BUILT. The dashboard suppresses
+  (L4-demotes) signals that confirm a deliberately-set strategy aim, but the nightly sweep was STRATEGY-BLIND
+  (verified: org_signals app.py:1574 passed neither strategy nor domain_alignment; overview app.py:1399 passed both) —
+  so notifications fired about signals the dashboard demoted: the last coherence gap (narrative/dashboard/colours honour
+  strategy; notifications didn't). Ruling C (David): the chain's verb for "confirms your choice" is DEMOTE, never DELETE
+  (B rejected — it would make notifications the one surface that deletes a confirming signal); C is the faithful L4 mirror.
+  BUILD (backend-only, app.py + notifications.py): (1) org_signals now threads strategy + per-domain alignment with PARITY
+  to /api/overview — builds the hero request-free (all entitled; the sweep only runs for unlocked orgs) to derive the
+  {domain: alignment} map (the SAME L3 target), then passes strategy + domain_alignment to build_signals so confirm-
+  flagging fires in the sweep. Cut stays canonical all-peers (RULED). (2) EVENT-LAYER confirm-aware PRIORITY (not
+  deletion): diff_and_record stamps payload.confirm = bool(s["confirm"]) on appeared/moved; render_event titles a confirm
+  change "On plan" (not "Worth a look"); list_notifications sorts confirm LAST and EXCLUDES it from the unread badge
+  (tension + risk lead); run_email_digest excludes confirm from the email push (event_is_confirm) — nothing dropped,
+  confirm stays in the in-app inbox, quiet (mirrors L4 demoting off the home briefing while keeping findable). KEY
+  TECHNICAL FINDING that shaped it: diff_and_record keys on signal-key PRESENCE + bucket, NOT impact — so L4's impact-
+  demote doesn't reach the event layer; C adds an EXPLICIT confirm priority tier, not an impact reliance. (3) STORM BOUND:
+  put_strategy now silently RE-BASELINES on a strategy change (notifications.rebaseline = DELETE signal_state +
+  record_baseline, firing no events) so the user's OWN deliberate re-sort never storms the bell (inverse of the cut-drift
+  stable ruling; parallel to the transparency reconfirm gate). (4) RISK-EXEMPTION (structural, free): the confirm flag is
+  gated on not risk_framed (identical to L4) -> maternity/sick-pay/EAP are NEVER confirm-flagged -> ALWAYS notify at full
+  priority. DEGRADE: strategy-off / no override -> empty alignment map -> no confirm flags -> byte-identical to the prior
+  strategy-blind sweep (the signal-KEY set is identical; confirm is a flag, not a presence change, so no storm even from
+  the rollout). VERIFIED /tmp/dt_qa_notifcoherence.py 16/16: [a] degrade both halves (no-override key set == strategy-
+  blind; Time Off:lag -> 8 non-risk confirm-flagged, key set unchanged). [b] risk exemption (maternity + sick-pay NOT
+  confirm-flagged while siblings are). [c] event layer (confirm -> "On plan", sorts last, excluded from unread/email).
+  [d] storm bound (re-baseline -> next diff 0 events). [e] cut canonical all + parity. /api/notifications 200 + events
+  carry confirm; gauge 76/15/1/92; dashboard + bell render, 0 console errors. Backend-only (no cache bump). Note: only 1
+  org currently has a strategy (every other degrades) so no transition re-baseline of all orgs was needed; the PUT hook
+  handles all future strategy changes. ✅ The last coherence gap is closed — every surface (narrative, dashboard, colours,
+  notifications) now honours the user's explicit strategy, the risk-exemption survives at all four, and the gauge held.

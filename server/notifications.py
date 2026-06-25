@@ -125,6 +125,29 @@ def record_baseline(conn, org_id, fresh_signals):
     return []
 
 
+def rebaseline(conn, org_id, fresh_signals):
+    """Silent RE-baseline (step-3 notification coherence): fully replace the org's signal_state
+    with a fresh set, firing NO events. Used when the org's OWN deliberate act — a strategy change
+    — re-sorts what's worth flagging: that must quietly re-baseline the bell, never storm it (the
+    inverse of the cut-drift stable ruling; parallel to the transparency reconfirm gate). DELETE
+    first so a strategy effect that REMOVES signals (e.g. location-agnostic) can't leave stale rows
+    the next sweep would 'clear'."""
+    conn.execute("DELETE FROM signal_state WHERE org_id=?", (org_id,))
+    return record_baseline(conn, org_id, fresh_signals)
+
+
+def event_is_confirm(event):
+    """True iff this event confirms the org's strategy aim (payload.confirm) — quiet, never leads
+    the bell and never emailed. Accepts a DB row (payload_json) or an in-flight event dict."""
+    p = event.get("payload") if isinstance(event.get("payload"), dict) else None
+    if p is None:
+        try:
+            p = json.loads(event.get("payload_json") or "{}")
+        except (ValueError, TypeError):
+            p = {}
+    return bool(p.get("confirm"))
+
+
 def diff_and_record(conn, org_id, fresh_signals):
     """Diff stored signal_state vs a freshly-built signal set for one org.
     Writes appeared/cleared/moved rows to notification_events and updates
@@ -150,7 +173,8 @@ def diff_and_record(conn, org_id, fresh_signals):
                            "question_id": s.get("question_id", ""),
                            "payload": {"kind": kind, "name": s.get("name"), "tag": s.get("tag"),
                                        "detail": detail, "value_display": vd,
-                                       "prev_value": None, "worth": bool(s.get("worth"))}})
+                                       "prev_value": None, "worth": bool(s.get("worth")),
+                                       "confirm": bool(s.get("confirm"))}})
             conn.execute(
                 "INSERT INTO signal_state(org_id, signal_key, lens, kind, question_id, value_display, bucket, detail) "
                 "VALUES (?,?,?,?,?,?,?,?)",
@@ -167,7 +191,8 @@ def diff_and_record(conn, org_id, fresh_signals):
                                "question_id": s.get("question_id", ""),
                                "payload": {"kind": kind, "name": s.get("name"), "tag": s.get("tag"),
                                            "detail": detail, "value_display": vd,
-                                           "prev_value": prev["value_display"], "worth": bool(s.get("worth"))}})
+                                           "prev_value": prev["value_display"], "worth": bool(s.get("worth")),
+                                           "confirm": bool(s.get("confirm"))}})
             conn.execute(
                 "UPDATE signal_state SET lens=?, kind=?, value_display=?, bucket=?, detail=?, last_seen=datetime('now') "
                 "WHERE org_id=? AND signal_key=?",
@@ -272,8 +297,14 @@ def render_event(event):
     else:  # appeared
         title = "Worth a look" if payload.get("worth") else "New"
         body = payload.get("detail") or ""
+    # notification coherence (step-3, ruling C): a change that CONFIRMS the org's strategy aim is
+    # quiet — "On plan", never "Worth a look". Mirrors L4 demoting a confirming signal off the home
+    # briefing while keeping it findable (cleared stays as-is — an absence has no confirm sense).
+    confirm = bool(payload.get("confirm")) and kind != "cleared"
+    if confirm:
+        title = "On plan"
     return {"id": event.get("id"), "event_kind": kind, "lens": event["lens"],
-            "question_id": event["question_id"], "title": title, "body": body,
+            "question_id": event["question_id"], "title": title, "body": body, "confirm": confirm,
             "tag": payload.get("tag"), "name": name, "detected_at": event.get("detected_at")}
 
 
@@ -361,7 +392,11 @@ def run_email_digest(conn, base_url="", frequencies=("daily", "weekly")):
             "WHERE r.user_id=? AND r.emailed_at IS NULL AND r.suppressed_reason IS NULL "
             "ORDER BY e.detected_at",
             (uid,)).fetchall()
-        live = [e for e in pending if _live_at_send(conn, e)]
+        # notification coherence (step-3, ruling C): a confirm-flagged change is on-plan — it stays
+        # in the in-app inbox (quiet) but is NEVER pushed in the email digest (the push channel is
+        # the "briefing"; confirm is demoted off it, exactly as L4 demotes it off the home briefing).
+        # It stays emailed_at NULL = inert in the email path; an org with ONLY confirm changes mails nothing.
+        live = [e for e in pending if _live_at_send(conn, e) and not event_is_confirm(e)]
         if not live:
             continue
         org = conn.execute("SELECT name FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
