@@ -424,7 +424,7 @@ function targetCopy(t) {
 //     simplification — see DECISIONS; "position lens").
 //   STRATEGY ON (stance set) → an ALIGNMENT lens: at OR better than your declared aim =
 //     aligned (green), short of it = not aligned (red). Binary, no amber.
-// marketTone = the OFF mapping; bandToneAim + alignTone = the ON mapping (both fall back
+// marketTone = the OFF mapping; bandToneAim = the ON mapping (falls back
 // to marketTone when no aim). The same tone (green/amber/red) drives the bands, the
 // verdict word, the chips and the per-signal colours, so the whole market read is one
 // colour language.
@@ -437,23 +437,9 @@ function marketTone(key, _aim) {           // absolute (no stance): on-market is
   if (idx == null) return "neutral";
   return idx === 0 ? "amber" : idx === 1 ? "green" : "red";   // below=amber · on=green · above=red (position lens)
 }
-// Alignment-aware verdict tone (Option A, David 2026-06-21). The VERDICT word + the
-// domain chips read against the org's declared aim, not the raw market position: on
-// the aim or past it is favourable (you're achieving the position you set), only
-// short of it ("behind") is the alarm. Returns a tone, or null when no stance is set
-// (caller falls back to absolute marketTone). The bands, needle, segments and counts
-// stay ABSOLUTE everywhere, so the magnitude of the gap is never hidden — this only
-// reframes the headline so a deliberately-below org isn't told it's failing. `aim` is
-// the stance index from marketAim (lag 0 / match 1 / lead 2); mirrors positions._market_target.
+// verdict-rank lookup, shared by attainTone (the Fix-1 attainment lens) and bandToneAim
+// (the aim-aware distribution bars). 0/1/2 = below/on/above.
 const POS_RANK = { below: 0, at: 1, on: 1, above: 2 };
-function alignTone(verdict, aim) {
-  if (aim == null || verdict == null) return null;
-  const rank = POS_RANK[verdict];
-  if (rank == null) return null;
-  // strategy ON: at your aim = green; misaligned shows the DIRECTION with two reds —
-  // short of aim ("below" your target) = red, past it ("above" your target) = redover.
-  return rank === aim ? "green" : rank < aim ? "red" : "redover";
-}
 // Aim-aware DISTRIBUTION tone (David 2026-06-21, v211) — for a stance-set org the
 // gauge arc + tile bars read against the AIM, not absolute position: the band that
 // IS your aim is green (on target), a band short of it is red, a band past it is
@@ -500,7 +486,6 @@ const MKT_RICH = { green: "color-mix(in srgb, var(--favourable) 56%, var(--surfa
                    neutral: "var(--chart-band-mid)" };
 const MKT_CHIP = { green: "chip-good", red: "chip-bad", redover: "chip-bad-over", amber: "chip-mid", grey: "chip-neutral-mkt", neutral: "chip-practice" };
 const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber: "v-below", grey: "v-neutral-mkt", neutral: "v-practice" };
-const MKT_SOLID = { green: "var(--favourable)", red: "var(--unfavourable)", redover: "var(--unfavourable-deep)", amber: "var(--amber-bright)", grey: "var(--grey-neutral)", neutral: "var(--ink-faint)" };
 
 // Shared "market spectrum" marker chart — the proportional below/on/above blocks
 // unrolled onto a below↔above axis, with the org's declared AIM drawn on the axis
@@ -1505,7 +1490,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // FIX 1 attainment lens (extended to the category hero, 2026-06-24): the chip colours by
   // ATTAINMENT (attainTone) — on your aim = green, off it = amber, no stance = grey-neutral —
   // exactly as the overview gauge card. The chip TEXT still states the absolute position
-  // (below/on/above). marketTone/alignTone stay defined (the signals list still uses them).
+  // (below/on/above). marketTone stays defined (the signals list still uses it).
   const aim = marketAim(ov.hero && ov.hero.market);
   // CARD-DETAIL-HERO RECOLOUR (2026-06-25): close the tile⟷hero seam — colour the detail hero against
   // the domain's OWN aim (hero.target.alignment, the SAME field the tile + L4 suppression read), else the
