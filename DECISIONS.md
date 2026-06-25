@@ -5160,3 +5160,32 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   feature commits are in main's history, and the pre-merge state is preserved by tag pre-merge-main-8eaf7b8 (local +
   origin). The stale origin/checkpoint is inert until the default flips. Overtime/shift-premium misfiling
   (REW_Q528801/534581) + MetricPage per-metric attainment remain parked as their own diagnosed/conceptual passes.
+
+2026-06-25 — STEP 3 OVERTIME/SHIFT-PREMIUM RE-FILING (last data debt, cause-fixed). REW_Q528801 ("overtime
+  multiplier by shift type") + REW_Q534581 ("hourly pay multipliers by time band") were Level-class PREMIUM-PAY
+  metrics MISFILED in the Incentives domain — surfaced during variable_pay tagging (57bcc11, symptom-fixed: the tag
+  excludes them from the P4P multiplier), CAUSE now fixed: re-filed Incentives → PAY. Ruling (David): Pay is the home —
+  overtime/shift MULTIPLIERS are pay structure/rates, NOT base-salary £, so NO collision with lumi's base-salary
+  exclusion; clinching evidence: the CSV rows already had sub_power_code=REW_PAY and superpower tuple {"Reward","Pay",…}
+  — the CODE always said Pay, only the sub_power LABEL was wrong; and Pay already holds the sibling OT_04 (shift
+  premiums). NOT cleanup — a data re-classification with engine effect; the gauge was MEASURED, not assumed.
+  WRITE PATH (all confirmed): WAL-checkpoint(TRUNCATE) + DB backup (lumi.db.bak_pre_refile_overtime_*) FIRST → guarded
+  edit (/tmp/refile_overtime.py, --write --confirmed-by-david, idempotent): the TRACKED source data/lumi_questions.csv
+  (sub_power Incentives→Pay, surgical binary replace of the misfiling-specific token ",Incentives,REW_PAY," — exactly 2
+  occurrences file-wide, byte-preserving so the diff is 2 lines, NOT the 805-line CRLF-churn a text-mode write caused on
+  the first attempt, which was reverted) AND the runtime questions.sub_power (2 rows) → aggregate.py refresh (the
+  snapshot payload also bakes subpower; 844 questions/220 orgs re-aggregated, snapshot subpower now Pay) → server
+  restart. market_position_config untouched (stores no per-metric domain). Append-only intact: only the question's domain
+  LABEL changed — answers/answers_history untouched, same question_id/version → historical comparability preserved
+  (metadata correction, not a versioned redefinition).
+  ⭐ GAUGE MEASURED — Thornbridge 76/15/1/92 BEFORE == 76/15/1/92 AFTER (UNCHANGED). WHY: the 12 positioned matrix rows
+  moved Incentives→Pay, BOTH competitive → they stay in the gauge's whole-pool mass; only the sub-pools re-attribute
+  (gauge = _pool_verdict over the whole competitive pool, positions.py:1019; per-domain = filter by subpower, :986).
+  PER-DOMAIN (expected + correct, distinct from the gauge invariant): Pay pool 13→25 (+12), Incentives 25→13 (−12),
+  conserved; both verdicts stay "below" (no flip) → Thornbridge per-domain alignment unchanged. variable_pay STILL
+  excludes them (qid-keyed, domain-independent — _p4p_mult(strong,…)=1.0). L4 suppression + card/hero recolour untouched
+  in MECHANISM (they read domain/alignment generically; the data change flows through, no code change). SPOT-CHECK
+  (universal, not per-org): 2nd org Meremont College Group — REW_Q534581 now groups under Pay (REW_Q528801 simply doesn't
+  position for that org). 0 console errors; dashboard renders (7 tiles, gauge "On market"). Committed: data/lumi_questions.csv
+  (2-line diff) + DECISIONS; the DB + benchmark_snapshots are runtime (gitignored), reproduced from the CSV on any re-seed.
+  ✅ Last data debt cleared. MetricPage per-metric attainment + A′ (narrative-honours-overrides) remain as their own passes.
