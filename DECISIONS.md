@@ -5189,3 +5189,28 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   position for that org). 0 console errors; dashboard renders (7 tiles, gauge "On market"). Committed: data/lumi_questions.csv
   (2-line diff) + DECISIONS; the DB + benchmark_snapshots are runtime (gitignored), reproduced from the CSV on any re-seed.
   ✅ Last data debt cleared. MetricPage per-metric attainment + A′ (narrative-honours-overrides) remain as their own passes.
+
+2026-06-25 — A′: AI-DIAGNOSIS NARRATIVE HONOURS PER-DOMAIN OVERRIDES (resolves the cleanup-sweep-deferred item).
+  The narrative computes on_plan via strategy_diag.domain_aims, which INFERRED each domain's aim from heuristics
+  (market_position + reward_mix + pay_for_performance) and IGNORED domain_targets — so an org that explicitly set
+  Benefits:lag had its narrative judge Benefits against the inferred aim, not the override L3/L4/recolour already honour.
+  Feature pass (CHANGES narrative output for override orgs), not cleanup. Ruling A (David): OVERRIDE BEATS INFERENCE.
+  BUILD (strategy_diag.py, backend-only, no threading — domain_targets already reaches the path via
+  strategy_for_engine at app.py:1489/3056): (1) domain_aims gains a post-pass AFTER the reward_mix/P4P nudges —
+  `for dom,stance in (strategy.get("domain_targets") or {}).items(): if dom in aims and stance in _STANCE_AIM:
+  aims[dom]=_STANCE_AIM[stance]` → precedence override > nudge > base. (2) _reason_for gains a matching front guard —
+  where domain_targets[dom] is set it names "your <stance>-the-market target for <domain>", NEVER the inferred nudge
+  (aim + reason are two halves of ONE coherence change: without the reason fix, Benefits:lag + reward_mix=benefits
+  would narrate a SELF-CONTRADICTING reason — "off your benefits-led mix" on a domain the user set to lag).
+  CONVERGENCE (by design, structural): _STANCE_AIM and _market_target's aim map are IDENTICAL ({lag:0,match:1,lead:2}),
+  verdict indices identical ({below:0,at:1,above:2}) → for an OVERRIDDEN domain the narrative's delta==0 ⟺ the engine's
+  on_target. The cleanup-sweep-logged drift is RESOLVED for overridden domains. NO-OVERRIDE fallback INTENTIONALLY
+  differs (narrative keeps its reward_mix/P4P heuristic nuance; the engine falls back to global market_position) — two
+  valid fallbacks, deliberately NOT flattened. INVARIANT: domain_aims is called in exactly ONE place (compute_findings)
+  → narrative-only; the gauge, L4 suppression (_market_target/alignment), and tile/hero recolour (d.target.alignment)
+  are separate surfaces, untouched. VERIFIED /tmp/dt_qa_aprime.py 14/14: [a] degrade both halves (no-override byte-
+  identical inference; Benefits:lag → Benefits 2→0, override beats the benefits-led nudge; per-domain independent;
+  Pay's reward_mix nudge preserved). [b] convergence across the axis (lag/match/lead → narrative on-plan ⟺ engine
+  on_target). [e] _reason_for cites the lag target NOT the benefits-led mix (the contradiction case). [f]
+  compute_findings: Benefits:lag flips Benefits gap→on-plan. [g] gauge 76/15/1/92 untouched. Backend-only (no cache
+  bump). ✅ A′ resolved. MetricPage per-metric attainment (the conceptual fork) remains its own DESIGN diagnostic.

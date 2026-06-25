@@ -45,11 +45,26 @@ def domain_aims(strategy):
             aims["Incentives"] = 2
         elif pfp == "egal":
             aims["Incentives"] = 0
+    # A′ (2026-06-25): an EXPLICIT per-domain override BEATS the inferred aim — the narrative now
+    # honours domain_targets[dom] (the SAME field L3 alignment / L4 suppression / tile+hero recolour
+    # respect), so it converges with _market_target where an override is set. Applied AFTER the
+    # reward_mix/P4P nudges, so override > nudge > base. Unset domains keep the heuristic inference —
+    # the narrative's richer fallback is deliberately NOT flattened to the global stance.
+    for dom, stance in (strategy.get("domain_targets") or {}).items():
+        if dom in aims and stance in _STANCE_AIM:
+            aims[dom] = _STANCE_AIM[stance]
     return aims
 
 
 def _reason_for(domain, strategy):
     """One short phrase naming the strategy choice that sets this domain's aim."""
+    # A′ (2026-06-25): an explicit per-domain override OWNS the aim — so it owns the reason too. Name
+    # the target, never the inferred nudge, or an override that CONTRADICTS a nudge (e.g. Benefits:lag
+    # + reward_mix=benefits) would narrate a self-contradicting reason on the very domain this fixes.
+    # Mirrors the domain_aims override precedence (override > inference).
+    dt = (strategy.get("domain_targets") or {}).get(domain)
+    if dt in _STANCE_AIM:
+        return "your %s-the-market target for %s" % (dt, domain)
     if domain == "Benefits" and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "benefits":
         return "your benefits-led reward mix"
     if domain == "Pay" and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "cash":
