@@ -5293,3 +5293,28 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   org currently has a strategy (every other degrades) so no transition re-baseline of all orgs was needed; the PUT hook
   handles all future strategy changes. ✅ The last coherence gap is closed — every surface (narrative, dashboard, colours,
   notifications) now honours the user's explicit strategy, the risk-exemption survives at all four, and the gauge held.
+
+2026-06-25 — SIGNALS PAGE PASS 1 — COLOUR-LENS RULING A (direction colour), CLEANUP BUILD. First of a 5-pass
+  Signals-page strategy-coherence sequence (1 colour-lens [this], 2 confirm/tension icon system, 3 triage hierarchy,
+  4 context-row verify, 5 header honesty). CONCEPT QUESTION: should the Signals rows colour by market DIRECTION
+  (below=amber / on=green / above=red — a fact) or by ATTAINMENT-vs-aim (the tile/hero lens, no-red-when-on-plan)?
+  RULING A (David): DIRECTION is correct-by-design and CONSISTENT with the MetricPage ruling (B, 2026-06-25) — a
+  Signals row IS a metric, and a metric has a POSITION not an aim; attainment is domain-level (the tile/hero, which IS
+  a domain). The strategy relationship (confirm / tension) belongs on the row's ICON (Pass 2), never on the row colour —
+  so direction-amber on a deliberately-below metric is honest, not a false alarm, because the icon will carry "on plan".
+  This was ALWAYS what rendered: marketTone() already returned pure direction and DISCARDED the aim arg it was passed —
+  so Ruling A is "keep the visible behaviour, delete the dead scaffolding that implied otherwise". CLEANUP BUILD
+  (web/js/pages.js, frontend-only): (1) marketTone(key, _aim) -> marketTone(key) + accurate comment (absolute DIRECTION,
+  a fact, no stance). (2) posColor(k, aim) -> posColor(k); posTag(s, aim) -> posTag(s) (both already passed aim only to
+  marketTone, which dropped it). (3) SignalsPage: DELETED the dead `const aim = marketAim(data.hero.market)` var + its
+  stale comment (which described the removed alignTone "no red for a lag org" stance-colour that never reached the rows)
+  -> replaced with a comment stating the rows colour by per-metric DIRECTION, attainment is domain-level (MetricPage),
+  and strategy relationship rides the icon. (4) de-aimed the 3 call sites (posTag :1048, posColor :1085 bar + :1092 chip
+  dot). UNTOUCHED (verified LIVE, used by attainTone): CategoryTile `aim` prop (271->1123->1170) and CategoryDetailPage
+  hero `const aim = marketAim(...)` (now :1496) feeding attainTone + MarketSpectrum — those surfaces ARE domains and
+  colour by attainment, correctly. bandToneAim (:451) already called marketTone(k) 1-arg — unaffected. Scope verified
+  pages.js-local (posTag/posColor/marketTone not referenced in other web/js files). VERIFIED in preview (v253->v254):
+  Signals page renders 81 rows, 0 console errors, colours resolve to the SAME direction mapping — chip dots amber
+  rgb(245,166,10)=below / red rgb(192,57,43)=above / indigo rgb(98,87,201)=differs; bar segs var(--amber-bright) /
+  var(--unfavourable) / var(--differs); tags "below market" / "differs from market". Byte-identical render — pure
+  dead-code removal, no colour change. NEXT: Pass 2 = the confirm/tension ICON system (its own gated diagnose->build).

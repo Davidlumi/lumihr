@@ -432,7 +432,7 @@ const MKT_BIDX = { below: 0, on: 1, at: 1, above: 2 };
 function marketAim(market) {
   return market && market.target ? ({ lag: 0, match: 1, lead: 2 })[market.target.stance] : null;
 }
-function marketTone(key, _aim) {           // absolute (no stance): on-market is the green ideal, deviations flagged
+function marketTone(key) {                  // absolute market DIRECTION: below=amber · on=green · above=red (a fact, no stance)
   const idx = MKT_BIDX[key];
   if (idx == null) return "neutral";
   return idx === 0 ? "amber" : idx === 1 ? "green" : "red";   // below=amber · on=green · above=red (position lens)
@@ -909,20 +909,20 @@ const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above mar
 // amber, short of it = red). Approach (differs) carries no market stance → purple.
 const SIG_TONE_SOLID = { green: "var(--favourable)", amber: "var(--amber-bright)",
   red: "var(--unfavourable)", neutral: "var(--chart-band-mid)", approach: "var(--differs)" };
-function posColor(k, aim) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k, aim)]; }
+function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k)]; }
 // The factual position word stays true to the number; the COLOUR is direction-corrected
 // absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
 // better than market green. Approach metrics (differs) and non-competitive practice
 // signals (practice) carry no market position → purple; neutral-polarity metrics are
 // context → navy; lower-is-better metrics flip (below the market = good = green, above
 // = worse = red).
-function posTag(s, aim) {
+function posTag(s) {
   const text = POS_TAG_TEXT[s.position] || "differs from market";
   if (s.position === "practice") return { text, tone: "approach", hint: "" };
   if (s.polarity === "neutral") return { text, tone: "neutral", hint: "context, not a verdict" };
   if (s.position === "differs")  return { text, tone: "approach", hint: "" };
   if (s.polarity === "lower")    return { text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
-  return { text, tone: marketTone(s.position, aim), hint: "" };
+  return { text, tone: marketTone(s.position), hint: "" };
 }
 // The locked Signals state is the single biggest pull to submit data, so it
 // sells the payoff: what signals do, how close you are, and a blurred taste of
@@ -1016,9 +1016,11 @@ window.SignalsPage = function ({ me }) {
   // domains that have at least one live signal — so the strategy check only
   // signposts where there's actually something to land on.
   const signalDomains = new Set(all.filter(s => s.status !== "dismissed").map(s => s.domain).filter(Boolean));
-  // the org's stance aim — drives the SAME stance-aware position colours as the home
-  // dashboard (no red for a lag org sitting below market; that's on plan).
-  const aim = marketAim(data.hero && data.hero.market);
+  // Signals rows colour by market DIRECTION (below/on/above) — a per-metric FACT, NOT an
+  // attainment verdict: a metric has a position, not a stance; attainment is domain-level (the
+  // MetricPage ruling). The strategy relationship (confirm / tension) is carried by the row's
+  // icon/treatment, never by colour. (No stance `aim` here — that was orphaned attainment plumbing
+  // from the removed alignTone; the tiles, which ARE domains, colour by attainment via attainTone.)
 
   const setStatus = (sid, status) => {
     setActing(a => ({ ...a, [sid]: status }));
@@ -1043,7 +1045,7 @@ window.SignalsPage = function ({ me }) {
     items: visible.filter(s => (groupBy === "domain" ? s.domain : s.lens) === k).sort((a, b) => rank(a) - rank(b)) }))
     .filter(g => g.items.length);
 
-  const Row = (s) => { const sid = s.sig_id || s.question_id; const pt = posTag(s, aim); return html`
+  const Row = (s) => { const sid = s.sig_id || s.question_id; const pt = posTag(s); return html`
     <div key=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "")} role="button" tabindex="0"
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
@@ -1080,14 +1082,14 @@ window.SignalsPage = function ({ me }) {
               <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
           </div>
           <div class="sig-bar" role="img" aria-label="Signals by market position">
-            ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: posColor(p.k, aim) }}></span>`)}
+            ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: posColor(p.k) }}></span>`)}
           </div>
           <div class="sig-controls">
             <div class="sig-chips">
               <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${triaged.length}</span></button>
               ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`
                 <button key=${p.k} class=${"sig-chip" + (effPos === p.k ? " on" : "")} aria-pressed=${effPos === p.k} onClick=${() => setPosF(effPos === p.k ? "all" : p.k)}>
-                  <span class="sig-chip-dot" style=${{ background: posColor(p.k, aim) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
+                  <span class="sig-chip-dot" style=${{ background: posColor(p.k) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
             </div>
             <div class="sig-groupby">group by
               <div class="seg" role="group" aria-label="Group by">
