@@ -1507,7 +1507,13 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // exactly as the overview gauge card. The chip TEXT still states the absolute position
   // (below/on/above). marketTone/alignTone stay defined (the signals list still uses them).
   const aim = marketAim(ov.hero && ov.hero.market);
-  const tone = verdict ? attainTone(verdict, aim) : null;
+  // CARD-DETAIL-HERO RECOLOUR (2026-06-25): close the tile⟷hero seam — colour the detail hero against
+  // the domain's OWN aim (hero.target.alignment, the SAME field the tile + L4 suppression read), else the
+  // global lens. Reuses the shipped ATTAIN_ALIGN (ruling A); frontend-only; no per-metric pill touched
+  // (cardPosition stays parked — direction lens, a separate question). A-equivalence → byte-identical off
+  // any override; no target (strategy-off / Governance) → fall back to the global attainTone.
+  const tone = verdict ? (hero.target ? (ATTAIN_ALIGN[hero.target.alignment] || attainTone(verdict, aim))
+                                      : attainTone(verdict, aim)) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};

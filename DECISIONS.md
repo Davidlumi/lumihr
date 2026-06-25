@@ -5076,3 +5076,32 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   Benefits tile renders GREEN (chip-good) under :lag with strategy applied while the other 5 competitive tiles are AMBER
   (chip-mid), 7 tiles render, 0 console errors. Cache v250→v251. Thornbridge restored to domain_targets={}. ✅ The
   per-domain override is now BOTH behavioural (L4 suppression) AND visible (this pass) — the chain's payoff is complete.
+
+2026-06-25 — STEP 3 CATEGORY-DETAIL HERO RECOLOUR — closes the tile⟷hero seam the card-recolour pass (7617fdc) left.
+  That pass recoloured the dashboard TILES per-domain but scoped OUT the category-detail page hero, which still coloured
+  against the GLOBAL aim — so an overridden domain's tile went green while its detail hero stayed amber. This pass applies
+  the SAME shipped switch to the detail hero. FRONTEND-ONLY, ONE LINE.
+  DIAGNOSIS (the one real question): d.target is ALREADY in the detail hero's data — pages.js:1486 `hero =
+  ov.hero.domains.find(d => d.name === name)` returns the SAME domain object the tile receives, carrying hero.target =
+  {stance, alignment}. So CLEAN REUSE, no threading, no payload change. Reuses the shipped ATTAIN_ALIGN map (pages.js:485,
+  module-level → in scope). NO re-rule of ruling A / the ahead-tone; the only new thing is the second render path.
+  SWITCH (pages.js CategoryPage ~:1511): tone = verdict ? (hero.target ? ATTAIN_ALIGN[hero.target.alignment] :
+  attainTone(verdict, marketAim(ov.hero.market))) : null — an exact mirror of the tile (CategoryTile), reading
+  hero.target instead of d.target. The detail-hero verdict source (hero.position || hero.market) matches the tile's.
+  ⭐ BOUNDARY (David): this pass touches the domain-HERO attainment tone ONLY. The per-metric pill — cardPosition
+  (card.js:317, window.cardPosition, used at card.js:38) — is a DIFFERENT file, DIFFERENT function, DIFFERENT lens (a
+  DIRECTION read: percentile vs window.MARKET_BAND → above=good / below=bad / on=mid, strategy-independent) and is
+  UNTOUCHED. The parked "one metric vs org aim" question stays parked. Exact line boundary: pages.js:1511 (hero, changed)
+  ⟂ card.js:317 (per-metric, untouched).
+  VERIFIED — scripted mirror (/tmp/dt_qa_detailhero.py 13/13) + browser: [a] ⭐ SEAM CLOSED — the tile and the detail hero
+  compute tone with the SAME function on the SAME ov.hero.domains[d] → agree on EVERY domain; Benefits:lag → tile green ==
+  hero green. [b] FIX-1 LENS on the hero per-domain — below+lag→GREEN, below+lead→AMBER (lag-inversion both ways). [c] ⭐
+  cardPosition BYTE-IDENTICAL — the /api/benchmarks Benefits cards (cardPosition inputs: percentile/direction/polarity)
+  are identical across no-override vs :lag (strategy never reaches /api/benchmarks); the parked question is not reopened.
+  [d] DEGRADE — no-override: NEW hero tone == OLD (global-aim) hero tone for every domain (A-equivalence); strategy-off →
+  grey; Governance → no target → fallback. [e] CARD ⟷ HERO ⟷ SUPPRESSION — green (hero+tile) == on_target == the
+  L4-suppressed domain, all reading the same d.target.alignment. [f] GAUGE 76/15/1/92 + L4 maternity exemption + the tile
+  recolour (7617fdc) all untouched. BROWSER: the Benefits detail hero chip renders "below" + chip-good (GREEN) under
+  :lag, matching the tile (was amber pre-pass); 0 console errors. Cache v251→v252. Thornbridge restored to
+  domain_targets={}. ✅ SEAM CLOSED — tile + detail hero now agree. MetricPage per-metric attainment ("one metric vs org
+  aim") remains the one parked detail-page conceptual question, by design.
