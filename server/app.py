@@ -3006,6 +3006,14 @@ async def put_strategy(request: Request):
             raise HTTPException(400, "'%s' isn't a competitive reward domain that can carry a market-position target." % dom)
     vals["domain_targets"] = json.dumps(dt) if dt else None
     prov["domain_targets"] = "set" if dt else "skipped"
+    # transparency RECONFIRM gate (step-3 tagging unit 2, 2026-06-25) — the field was hidden
+    # ("coming") and is now live; resolves the L2 stale-value flag. A stored value must be SEEN +
+    # reconfirmed in the visible field before it drives surfacing (treat-as-unset-until-reconfirmed).
+    # The live field sends transparency_confirmed=true on save → provenance "live"; a pre-wiring value
+    # passed through WITHOUT it keeps "set" → the engine (_transparency_mult) treats it as unset.
+    # (transparency_confirmed rides the BODY top-level, beside plane_a — not inside `strategy`.)
+    if vals.get("transparency") and body.get("transparency_confirmed"):
+        prov["transparency"] = "live"
 
     conn = get_conn()
     prev = conn.execute("SELECT completed_at FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()

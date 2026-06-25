@@ -328,6 +328,23 @@ def _p4p_mult(strategy, qid, variable_pay_set):
     return P4P_INCENTIVE_MULT.get(_strategy_field(strategy, "pay_for_performance"), 1.0)
 
 
+# transparency RE-RANK (step-3 tagging unit 2, David 2026-06-25) — a THIRD strategy multiplier,
+# keyed on the curated transparency_metrics tag. An org that RECONFIRMS transparency=open in the
+# now-live field surfaces its transparency-practice signals higher ("gaps to full openness become
+# actions"). ⭐ STALE-VALUE GATE (treat-as-unset-until-reconfirmed, the L2 flag's resolution): the
+# value drives surfacing ONLY when field_provenance.transparency == "live" — a pre-wiring stored
+# value (provenance "set", never seen in the visible field) reads as unset → 1.0. open → 1.4;
+# ranges / closed / unset / unreconfirmed → 1.0. Folds into the SAME capped product (≤2.0) as
+# objective × p4p at the application site — no separate uncapped multiply.
+TRANSPARENCY_MULT = {"open": 1.4}    # ranges / closed / unset → 1.0 via .get default
+def _transparency_mult(strategy, qid, transparency_set):
+    if qid not in (transparency_set or ()):
+        return 1.0
+    if not strategy or (strategy.get("provenance") or {}).get("transparency") != "live":
+        return 1.0                                       # stale / unset / unreconfirmed → never drives surfacing
+    return TRANSPARENCY_MULT.get(strategy.get("transparency"), 1.0)
+
+
 # STEP-3 LAYER 4 confirm-shedding demote (David 2026-06-24, ruling C). A non-risk signal
 # whose DOMAIN confirms its aim (alignment == on_target — on_target ONLY: ahead=overspend
 # and behind=gap both stay actionable) is the lowest briefing priority. This impact demote
@@ -719,6 +736,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     _metrics = _cfg.get("metrics", {})
     risk_set = set(cfg.get("risk_metrics") or [])   # RISK/POSITION split (David-curated; never a heuristic)
     vp_set = set(cfg.get("variable_pay_metrics") or [])   # variable_pay tag (David-curated): precise P4P keying
+    tr_set = set(cfg.get("transparency_metrics") or [])   # transparency tag (David-curated): reconfirmed-open re-rank
     for s in out:
         s.setdefault("sig_id", s["question_id"])
         s["status"] = st.get(s["sig_id"])
@@ -880,7 +898,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         # the COMBINED strategy multiplier to 2.0 so a strong-P4P + attract org can't double-
         # boost incentive-attract signals past the cap. 1.0 when strategy is absent/skipped
         # (objective alone ≤1.7 < cap, P4P 1.0 off-variable-pay/moderate/unset → byte-identical).
-        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("question_id"), vp_set), 2.0)
+        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("question_id"), vp_set)
+                          * _transparency_mult(strategy, s.get("question_id"), tr_set), 2.0)
         s["impact"] = round(s["impact"] * _strat_mult)
         # applicability + family reframes (§5.2) — config tags gate them, the opt-in
         # stance drives them; both no-ops when untagged/unset (degrade byte-for-byte)

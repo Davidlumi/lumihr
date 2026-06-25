@@ -5002,3 +5002,42 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   15/15 PASS; 0 console errors; web untouched (no cache bump). Server restarted (no --reload). ⛔ STOP before Unit 2
   (transparency) — separate committed unit. Stale-value handling (treat-as-unset-until-reconfirmed; Thornbridge stores
   transparency=closed) is the load-bearing Unit-2 proof.
+
+2026-06-25 — STEP 3 TAGGING PASS · UNIT 2 (transparency) — closes the tagging pass. ACTIVATES the dormant transparency
+  field: unhides it (L2 FIELD_STATE "coming"→"live") and wires it to a per-metric re-rank. Unlike Unit 1 (sharpened a
+  live dial), this introduces NEW surfacing where there was none — so the stale-value gate is load-bearing.
+  FIELD (David-ruled): a curated "transparency_metrics" qid LIST in signal_lenses.json (the risk_metrics/variable_pay
+  precedent). SET (10, David-ruled): PAYTR_02 (ranges visible to staff), PAYTR_01 + REW262_GOV_PAYINADVERTS (pay in
+  adverts), REW263_GOV_UKPAYTRANS, REW26_GOV_EU_PTD_PREP (EU PTD readiness), REW_FAI_088 (access to ranges), REW_FAI_089
+  (publish ranges), REW_FAI_087 (documented approach), REW263_GOV_ETHDISREADY (mandatory eth/dis gap PUBLICATION
+  readiness), REW262_GOV_ACTIONPLAN (PUBLISHED equality plan). PRINCIPLE (David): tag = openness/PUBLICATION, NOT internal
+  equity-work — so the gender/ethnicity/disability gap ANALYSES (REW_FAI_079 / PROP_930043cc / PROP_10d1211d) and the
+  readiness SELF-ASSESSMENT (REW_FAI_092) are OUT. (ACTIONPLAN ruled IN as a published commitment.)
+  WIRING: signals.py _transparency_mult(strategy, qid, transparency_set) — a THIRD strategy multiplier parallel to
+  _p4p_mult: open → 1.4 on tagged signals; ranges/closed/unset → 1.0. tr_set loaded once beside risk_set/vp_set; folded
+  into the SAME capped product min(objective × p4p × transparency, 2.0) — transparency stacks INSIDE the cap, no separate
+  uncapped multiply (proven: an attract×open stack of 2.24 clamps to 2.0).
+  ⭐ STALE-VALUE GATE (treat-as-unset-until-reconfirmed — resolves the L2-flagged open item, David's lean). REUSES
+  field_provenance (no parallel mechanism): the live field sends transparency_confirmed=true (BODY top-level, beside
+  plane_a) on save → server marks field_provenance.transparency = "live"; a pre-wiring value passed through WITHOUT the
+  flag keeps "set". The engine drives the multiplier ONLY when provenance.transparency == "live" — a stored-but-unseen
+  value reads as unset → 1.0. (NB: the confirm flag rides the body, not the `strategy` sub-dict — first wiring read
+  `incoming` and silently never fired; fixed to `body`.)
+  FRONTEND: strategy.js FIELD_STATE.transparency "coming"→"live" (the field renders as an OPTIONAL plane-B dial); the
+  save sends transparency_confirmed = (fieldState=="live"). plane-B dial count is DYNAMIC (shownFields(planeBfields).length)
+  — verified 6→7 live, no hardcode. Cache v249→v250.
+  GOVERNANCE-HEAVY (no gauge interaction): 9 of 10 tagged metrics are Governance (non-competitive, zero gauge mass);
+  PAYTR_02 is Pay. So this surfaces transparency PRACTICE gaps higher (the field's "open" copy: "gaps to full openness
+  become actions") with NO verdict/gauge effect. INDEPENDENT of the L2-L4 suppression chain (a re-rank multiplier, not
+  the confirm/suppress mechanism).
+  VERIFIED (Thornbridge stores transparency=closed; 3 tagged metrics surface — PAYTR_01/02, REW262_GOV_PAYINADVERTS):
+  [A] UNIT — open+live+tagged→1.4; ⭐ open+UNRECONFIRMED(prov "set"/absent)+tagged→1.0 (GATE); closed/ranges+live→1.0;
+  non-tagged→1.0; strategy-off→1.0. [A2] CAP — 1.6×1.0×1.4=2.24 clamps to 2.0. [B] INTEGRATION — ⭐ STALE-VALUE GATE
+  (real): Thornbridge's stored closed AND a stored OPEN-unreconfirmed both read inert (tagged ranks held 83/84/85,
+  provenance not "live"); after RECONFIRM (open + confirmed → provenance "live") the 3 tagged metrics RISE to 61/62/63;
+  strategy-off == unreconfirmed (both inert). [e] GAUGE 76/15/1/92 invariant across stale/held/reconfirmed/off. [f]
+  SUPPRESSION UNTOUCHED — L4 confirm-shed + maternity exemption intact with transparency active. [g] plane-B count 6→7
+  dynamic; 0 console errors; cache bumped; web verified (transparency dial renders, "Pay transparency · OPTIONAL"). [h]
+  Thornbridge restored to transparency=closed, provenance not "live" = the correct inert resting state. QA
+  /tmp/dt_qa_tr.py 20/20 PASS. Server restarted (no --reload). ✅ TAGGING PASS COMPLETE (variable_pay + transparency).
+  The L2 transparency stale-value open item is RESOLVED.

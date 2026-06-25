@@ -76,7 +76,7 @@ const REQUIRED = ["market_position", "reward_mix", "primary_objective"];
 //               surfacing, SHOW BUT LABEL honestly so the user isn't misled.
 //   "live" (default) → wired, drives output, render normally (no label).
 // Re-showing a "coming" field once it's wired is a ONE-LINE flip to "live".
-const FIELD_STATE = { transparency: "coming",
+const FIELD_STATE = { transparency: "live",
   budget_direction: "context", risk_appetite: "context", acute_pressure: "context" };
 const fieldState = (f) => FIELD_STATE[f] || "live";
 const shownFields = (fields) => fields.filter(f => fieldState(f) !== "coming");   // render/review only
@@ -268,7 +268,11 @@ window.StrategyPage = function ({ me }) {
     setSaving(true);
     try {
       const pa = {}; planeA.forEach(f => { pa[f.key] = f.value; });
-      await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa } });
+      // transparency reconfirm marker (step-3 tagging unit 2): saving through the now-live field
+      // means the user has SEEN the transparency dial — confirm it so the engine reads the value
+      // (a pre-wiring stored value stays inert until this). True only while the field is live.
+      await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
+        transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // the payoff — a quiet flourish, then land on the dashboard
       if (window.confettiBurst) window.confettiBurst({ count: 90, duration: 2000, origin: { x: 0.5, y: 0.42 } });
       setTimeout(() => nav("/"), 1400);
