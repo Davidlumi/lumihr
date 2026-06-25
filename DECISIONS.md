@@ -5141,3 +5141,22 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   main, checkpoint/2026-06-24-session-work, and tag pre-merge-main-8eaf7b8.
   ⚑ FUTURE HYGIENE (David-flagged, NOT this pass): .claude/settings.local.json is tracked (pre-existing, modified, no
   secret) — untrack + gitignore as machine-local in a separate tick; deliberately NOT bundled into the merge.
+
+2026-06-24 — STEP 3 CLEANUP SWEEP (logged-debt clearance). Four parked debts, each its own commit straight to main (no
+  bundled "cleanup" commit). UNIT 1 (a6efa20): untracked .claude/settings.local.json (machine-local Claude Code
+  permission allowlist, no secret) via git rm --cached + .gitignore; runtime byte-identical. UNIT 2 (6b978d2): removed
+  the DEAD colour helpers alignTone + MKT_SOLID (grep-proven zero call-sites; trimmed a stale comment that mis-claimed
+  the signals list uses alignTone — it uses marketTone). KEPT bandToneAim (live: called pages.js:657 via bandTone,
+  rendered :684) — the "prove dead before cutting" guard caught the one that looked dead but isn't. POS_RANK kept (shared
+  by attainTone + bandToneAim). Cache v252→v253; dashboard renders, 0 console errors. UNIT 3 (1e1cd3d): RESOLVED the L4
+  on_plan-drift note (ruling C, document-only) — on_plan (inferred-aim-clean, domain_aims heuristics) and target.alignment
+  (explicit-override-met) are intentionally distinct concepts, not a unify; A′ (extend domain_aims to honour
+  domain_targets) is a separate future feature pass. UNIT 4 (branch disposition): DELETE checkpoint. Local branch deleted
+  (was 3e2ab05, fully merged). ⚠️ origin/checkpoint deletion BLOCKED — it is still the GitHub repo's DEFAULT branch (it
+  was the first branch pushed, before main existed), and GitHub refuses to delete the default. ACTION PENDING (David):
+  switch the repo default branch to main (GitHub → Settings → General → Default branch → main, or `gh repo edit
+  Davidlumi/lumihr --default-branch main` once gh is authed), THEN `git push origin --delete
+  checkpoint/2026-06-24-session-work`. Nothing is at risk: main == origin/main == 1e1cd3d (canonical, in sync), all 16
+  feature commits are in main's history, and the pre-merge state is preserved by tag pre-merge-main-8eaf7b8 (local +
+  origin). The stale origin/checkpoint is inert until the default flips. Overtime/shift-premium misfiling
+  (REW_Q528801/534581) + MetricPage per-metric attainment remain parked as their own diagnosed/conceptual passes.
