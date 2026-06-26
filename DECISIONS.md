@@ -5678,3 +5678,39 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   v258→v259. ✅ The signal verdict now calibrates to the metric's real-terms gap — the hero↔signal flatness that
   a domain expert read as unreliability is closed; the hero keeps its percentile-depth scope, the signal answers
   the real-gap question, both honest.
+
+2026-06-26 — SIGNALS FRESHNESS (confidence axis 2 of 3) — SPEC RULED, BUILD DEFERRED (dormancy). Self-data
+  currency: "how old is my OWN figure" — distinct from magnitude (the verdict adverb) and peer-n (the single-
+  source "Small sample" caveat). DIAGNOSED read-only. DATA: answers.submitted_at (db.py:98) is per-answer,
+  defaults datetime('now'), updated on every INSERT OR REPLACE (app.py:3591), with answers_history — BUT
+  get_org_answers (positions.py) selects only question_id/matrix_row_id/value, so submitted_at is NOT reachable
+  at render today; it needs a thread (a submitted_at query → onto the item/signal, exactly like gap_pct and n
+  were threaded). PLACEMENT: the figure line "you £X, market median £Y" is the signal's `stand` (signals.py:227)
+  → the .sig-stand span, SEPARATE from the verdict pill (pos-tag) — so a currency cue attaches near the figure,
+  not in the verdict. JUDGMENT FORK ruled: A (neutral date, "we flag, you decide") + B's DATA for SCOPE — i.e.
+  the SPEC is: show a NEUTRAL DATE ("entered Mar 2025", never the word "stale"/"old"/⚠️) on the figure line,
+  STABILITY-GATED to metrics that can actually go stale (the per-metric `stability` field EXISTS in
+  lumi_questions.csv: stable=731 / variable=32 / volatile=15; plus update_frequency annually=543 / ad_hoc=220 /
+  quarterly=15 — option B is feasible, no capture needed). Show the date only on the ~47 variable/volatile rows,
+  SILENT on the 731 stable (pension design barely moves — a date there is noise). Metric-aware WHICH-rows +
+  neutral WHAT-it-says: no crying-wolf, no clutter, no tool-asserts-"stale" judgment. C (flat "N months → stale"
+  threshold) REJECTED — cries wolf on the 731 stable metrics. ANTI-MERGE clean: freshness is its OWN cue (a
+  date), OWN word ("entered [date]"), OWN placement (the figure line) — does not touch the verdict adverb
+  (magnitude) or the page-level "Small sample · N peers" single-source caveat (peer-n). signal_key/gauge
+  unaffected (a date on the stand line is presentation, not a verdict class; submitted_at isn't in signal_key
+  or signal_state). ⭐ DEFER RATIONALE (the load-bearing ruling): the synthetic seed was generated ALL-AT-ONCE —
+  EVERY answer carries submitted_at in 2026-06 (demo org: 964 answers, all June, span Jun 11-23 = 3-15 days old;
+  ALL orgs: 211,507 answers ALL 2026-06). There is NO stale self-data anywhere. So a freshness cue would render
+  "entered this month" on every row — UNIFORM, RECENT, DORMANT — the exact "don't ship dormant against the data"
+  failure ruled for the peer-n axis. AND unlike peer-n (which had the custom-cut path to fire on), freshness has
+  NO live surface where it fires on this seed (no aged data to narrow to). RULING (David): DEFER the build until
+  the seed gains temporal spread OR real orgs accumulate aged figures. The SPEC above is the durable artifact;
+  the build is then a known scoped render-add (thread submitted_at + the stability gate + the .sig-stand date,
+  ~mirrors the gap_pct pass). (Build-now-dormant was the alternative — capability lands ahead of real aged data,
+  QA'd only via forced old timestamps, invisible on the demo — correct + future-proof but un-exercisable now;
+  David ruled DEFER over it.) CONFIDENCE/STALENESS PROGRAMME STATUS: (1) magnitude → BUILT (the %-gap severity
+  adverb). (2) peer-n → NO-BUILD (already handled by the single-source "Small sample · N peers" caveat, window
+  [5,20); the Signals page is deliberately all-peers and "renders nothing extra"). (3) freshness → SPEC RULED,
+  BUILD DEFERRED (this entry). (4) anchor quality → its own capture-first pass on the Anchor Register programme
+  (grade/est provenance is an offline file read by no code; needs import into the runtime before any render).
+  No code, no cache bump.
