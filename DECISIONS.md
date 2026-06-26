@@ -5531,3 +5531,38 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   tagging match the declared objective?), distinct from sort position. Its own gated diagnose when wanted —
   verify the intended lens semantics BEFORE any re-tag, gauge-neutral check (a lens change doesn't touch verdict
   mass), 2nd-org spot-check. Not actioned this turn.
+
+2026-06-26 — LENS-TAG COHERENCE — cost metrics RE-TAGGED attract → save (ruling: MIS-TAG, BUILT). Surfaced by
+  the Pay-group QA: "Workforce cost per FTE" (PROP_d16bae79) and "Workforce cost as % of revenue" (PROP_e63cf45a)
+  were tagged lens=attract in signal_lenses.json position_lenses, so under the demo org's "cost" objective they
+  were DEMOTED ×0.6 (OBJECTIVE_LENS_MULT["cost"]["attract"]) — they led Pay on base-gap materiality alone,
+  FIGHTING the strategy multiplier. DIAGNOSED read-only (3-agent workflow): SEMANTICS — save is EXPLICITLY
+  defined as employer spend/cost ("save (money out vs peers)" signals.py:5; "where your spend sits vs the
+  market" pages.js:852; cost_metrics = "NEUTRAL spend metrics eligible for the 'save' lens — a fact about cost,
+  never a market verdict" signal_lenses.json:6); attract = "how you draw talent in" (talent-draw, not spend).
+  The lens MAP is David-owned (signals.py:11-13). CONSISTENCY — the two "total workforce cost…" rows were the
+  ONLY cost-magnitude/spend metrics tagged attract; every sibling spend metric routes to save (pension cost
+  share, PMI premium, car allowance, shift premiums, allowance pensionability); the only spend-adjacent attract
+  (AI-skills pay premium) is an attraction PRACTICE, not a cost-magnitude metric. RULING (David): MIS-TAG →
+  re-tag both to save within position_lenses (NOT moved to cost_metrics — keeps the position framing + neutral
+  polarity). This is a COHERENCE fix, not a re-rank: both rows already lead Pay; under cost, save=×1.7 vs
+  attract=×0.6 just makes them lead BECAUSE of the strategy instead of despite it. save is objective-independent-
+  correct for a spend metric (cost boosts; attract/retain demote ×0.9 — all sensible). ORTHOGONALITY/GAUGE-
+  NEUTRAL (proven structural): lens drives ONLY the impact multiplier (+ per-lens briefing cap + signal_key diff
+  identity + group-by); polarity (signals.py:749, separate) drives the verdict tone (navy .sig-tone-neutral,
+  Pass 4) + gauge exclusion; positions.py (the gauge) has ZERO lens references — a lens re-tag cannot move
+  polarity, the navy "context" colour, or 76/15/1/92. BUILD (in order): (1) WAL checkpoint(TRUNCATE) + backup
+  lumi.db → lumi.db.bak_pre_retag_lens_20260626_092653 (74M, gitignored). (2) edit data/signal_lenses.json
+  position_lenses: PROP_e63cf45a + PROP_d16bae79 "attract"→"save" (2-line diff; hot-reloads via lens_config, no
+  restart, NO web cache bump — lens isn't a web asset). (3) SILENT propagation: lens is part of signal_key
+  ('%s:%s:%s:%s' % (lens,kind,question_id,row)), so the re-tag changed the key for these metrics in every org
+  that has them in signal_state — a naive sweep would fire spurious cleared+appeared and storm the bell. Ran
+  notifications.rebaseline (DELETE signal_state + record_baseline, fires 0 events) over EXACTLY the 154 orgs with
+  a cost metric in signal_state (/tmp/dt_retag_rebaseline.py, in-process). NOT touched: data/lumi_questions.csv
+  (no lens column), server/aggregate.py (no lens reference). QA — ALL PASS: notification_events 10804 → 10804
+  (UNCHANGED → zero bell events, no storm); signal_state cost-metric lens now ONLY save (278 rows, 0 attract);
+  /api/overview hero.market gauge 76/15/1/92 byte-identical (gauge-neutral confirmed); both rows render lens=save
+  with polarity=neutral + position=below untouched (Pass-4 navy colour preserved); 154/154 orgs rebaselined, 0
+  failures; .bak retained for rollback. The engine now points the SAME way as the declared objective for these
+  spend metrics — strategy-coherence restored. (Note: a lens re-tag must go through silent rebaseline, never the
+  nightly diff — the signal_key includes lens, established here as the pattern for any future lens-map edit.)
