@@ -1002,7 +1002,9 @@ window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("inbox");
-  const [posF, setPosF] = useState("all");             // market-position filter
+  const [posF, setPosF] = useState("all");             // market-position filter (single-select)
+  const [provF, setProvF] = useState(false);           // "verified source" filter (independent predicate)
+  const [riskF, setRiskF] = useState(false);           // "risk only" filter (independent predicate)
   const [groupBy, setGroupBy] = useState("domain");    // domain · lens
   const [acting, setActing] = useState({});            // optimistic status overrides
   const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
@@ -1028,7 +1030,7 @@ window.SignalsPage = function ({ me }) {
     setJumpTo(null);
   }, [jumpTo, tab, posF, groupBy]);
   // surface the named domain's signals on the same page, then scroll to them
-  const goToDomain = (dom) => { setTab("inbox"); setPosF("all"); setGroupBy("domain"); setJumpTo(dom); };
+  const goToDomain = (dom) => { setTab("inbox"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const contrib = data.contribution || {};
@@ -1072,7 +1074,13 @@ window.SignalsPage = function ({ me }) {
   // "context, not a verdict" tag, and stay reachable under the position filter.
   const posCounts = {}; triaged.forEach(s => { if (s.polarity === "neutral") return; posCounts[s.position] = (posCounts[s.position] || 0) + 1; });
   const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab emptied falls back
-  const visible = triaged.filter(s => effPos === "all" || s.position === effPos);
+  // NEW-DATA filters (scoped B, 2026-06-26): provenance + risk are INDEPENDENT predicates that AND with the
+  // position single-select — a director wants "below market AND verified source", not either/or. Pure VIEW op.
+  const isVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.anchor_grade === "C";
+  const provCount = triaged.filter(isVerified).length;
+  const riskCount = triaged.filter(s => s.risk_framed).length;
+  const visible = triaged.filter(s => effPos === "all" || s.position === effPos)
+    .filter(s => !provF || isVerified(s)).filter(s => !riskF || s.risk_framed);
   const order = groupBy === "domain" ? SIG_DOMAINS : LENS_ORDER;
   const groups = order.map(k => ({ key: k,
     items: visible.filter(s => (groupBy === "domain" ? s.domain : s.lens) === k).sort((a, b) => rank(a) - rank(b)) }))
@@ -1124,6 +1132,11 @@ window.SignalsPage = function ({ me }) {
                 <button key=${p.k} class=${"sig-chip" + (effPos === p.k ? " on" : "")} aria-pressed=${effPos === p.k} onClick=${() => setPosF(effPos === p.k ? "all" : p.k)}>
                   <span class="sig-chip-dot" style=${{ background: posColor(p.k) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
             </div>
+            ${(provCount || riskCount) ? html`<div class="sig-filters" role="group" aria-label="Show only">
+              <span class="sig-filters-lbl">show only</span>
+              ${provCount ? html`<button class=${"sig-fchip" + (provF ? " on" : "")} aria-pressed=${provF} onClick=${() => setProvF(v => !v)} title="Show only verdicts backed by a verified, published source (the rest are estimate-flagged or unsourced).">verified source <span class="n">${provCount}</span></button>` : null}
+              ${riskCount ? html`<button class=${"sig-fchip sig-fchip-risk" + (riskF ? " on" : "")} aria-pressed=${riskF} onClick=${() => setRiskF(v => !v)} title="Show only duty-of-care risk signals (statutory / floor exposures)."><${Icon} name="shield" size=${11} /> risk <span class="n">${riskCount}</span></button>` : null}
+            </div>` : null}
             <div class="sig-groupby">group by
               <div class="seg" role="group" aria-label="Group by">
                 <button class=${groupBy === "domain" ? "on" : ""} aria-pressed=${groupBy === "domain"} onClick=${() => setGroupBy("domain")}>domain</button>
@@ -1132,7 +1145,7 @@ window.SignalsPage = function ({ me }) {
             </div>
           </div>
         </div>
-        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><div class="caption">No signals ${POS_TAG_TEXT[effPos] || ""} in this view.</div></div>` :
+        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — clear a filter to see more" : ""}.</div></div>` :
         groups.map(g => html`
           <section key=${g.key} id=${groupBy === "domain" ? "sig-dom-" + g.key : null} class="sig-group">
             <div class="sig-grouphead">

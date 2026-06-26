@@ -963,6 +963,19 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-chip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .sig-chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 .sig-chip.on .n { color: rgba(255,255,255,.72); }
+/* NEW-DATA filter toggles (scoped B, 2026-06-26) — an INDEPENDENT group that ANDs with the single-select
+   position chips. Visually distinct so they read "add these on", not "pick one of these instead": DASHED
+   border (vs the chips' solid) + a TINTED on-state (vs the chips' solid-dark fill). */
+.sig-filters { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.sig-filters-lbl { font-size: var(--fs-label); color: var(--ink-soft); white-space: nowrap; }
+.sig-fchip { display: inline-flex; align-items: center; gap: var(--s2); background: var(--surface); border: 1px dashed var(--border);
+  border-radius: 22px; padding: var(--s2) var(--s3); font-size: var(--fs-label); font-family: inherit; color: var(--ink-soft); cursor: pointer; transition: border-color .15s, background .15s; }
+.sig-fchip:hover { border-color: var(--ink-faint); }
+.sig-fchip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.sig-fchip.on { background: color-mix(in srgb, var(--blue) 12%, var(--surface)); border: 1px solid var(--blue); color: var(--blue); }
+.sig-fchip.on .n { color: var(--blue); }
+.sig-fchip-risk svg { color: var(--lumi-coral); flex: none; }
+.sig-fchip-risk.on { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); border-color: var(--lumi-coral); color: var(--ink); }
 .sig-groupby { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-label); color: var(--ink-soft); white-space: nowrap; }
 .sig-groupby .seg { display: flex; background: rgba(35,35,43,.05); border: 1px solid var(--border); border-radius: 9px; padding: 2px; }
 .sig-groupby .seg button { font-family: inherit; font-size: var(--fs-label); border: none; background: none; color: var(--ink-soft); padding: var(--s1) var(--s3); border-radius: 7px; cursor: pointer; }

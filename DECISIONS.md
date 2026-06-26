@@ -5789,3 +5789,35 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   estimate marks, UNKNOWN silent-default, source-on-hover). Every confidence axis is now either surfaced, single-
   sourced, deferred-with-spec, or rendered — and the Signals verdict carries direction (Pass 1) + magnitude
   (adverb) + anchor provenance, with peer-n at the page level and freshness reserved.
+
+2026-06-26 — SIGNALS FILTERING — SCOPED B (provenance + risk filters), BUILT. The Signals page computes rich
+  per-row attributes but a director could only READ 81 signals, not SLICE the new credibility data. DIAGNOSED:
+  position chips were ALREADY clickable filters (posF single-select -> visible; "option A" already shipped) +
+  tabs=status + group-by=domain/lens; the GAP was the new data — magnitude (gap_pct), provenance (anchor_grade),
+  risk_framed, confirm — unfilterable. RULING (David): scoped B — TWO new filters, not four. (1) PROVENANCE
+  ("verified source") — the highest-value slice, makes the anchor programme usable (the board-brief "show only
+  source-backed verdicts"). (2) RISK ("risk only") — duty-of-care focus. DEFERRED: magnitude (partly redundant
+  with ordering+adverb) and confirm ("hide on-plan", redundant — already tail-clumped + glyph-marked) — legibility
+  budget: +2 composable filters extends cleanly, +4 doubles the chip row and clutters a clean page. ⭐ COMPOSITION
+  MODEL (the load-bearing design point): the position chips are MUTUALLY EXCLUSIVE (posF single value); provenance
+  + risk are a DIFFERENT AXIS — a director wants "below market AND verified source", not either/or. So the two new
+  filters are INDEPENDENT BOOLEAN PREDICATES that AND with position, NOT additions to the posF single-select group.
+  visible = triaged.filter(position).filter(!provF || verified).filter(!riskF || risk_framed). UI = a distinct
+  "show only" toggle group (.sig-filters / .sig-fchip) separate from the position chips, with a DIFFERENT visual
+  language (DASHED border + a TINTED on-state, vs the chips' solid border + solid-dark on-fill) so they read "add
+  these on", not "pick one instead". BUILD (web/js/pages.js + web/css/app.css, client-only): provF/riskF state
+  (independent of posF); isVerified = anchor_grade in A/B/C; provCount/riskCount counts in triaged (toggles only
+  render when >0); the two toggles in .sig-controls after the position chips; empty-result message generalised to
+  "No signals match this view — clear a filter to see more" (the groups.length===0 guard already covers any
+  emptying combo); reset-on-nav added to goToDomain (mirrors posF). cache v260->v261. PURELY PRESENTATIONAL: a
+  client-side VIEW op (React state, like posF/cut-switching) — no payload change, no GET, no gauge effect, no
+  signal_key, NO rebaseline. QA — FOUR PROOFS, all pass (live demo, v261): (1) COMPOSES — baseline 81 -> verified
+  44 -> verified AND below-market 30 -> +risk 3 -> toggle all off restores 81 (filters AND, never replace). (2)
+  INDEPENDENT AXIS — toggling the position chip does NOT reset the verified toggle (both held together; different
+  axes). (3) EMPTY-RESULT GUARD — "above market" + "risk" -> 0 rows -> graceful "No signals match this view — clear
+  a filter" fallback, not a blank page. (4) PRESENTATIONAL — gauge 76/15/1/92 byte-identical; filters reset on nav
+  (set verified -> navigate away+back -> cleared). 0 console errors; screenshot shows the distinct "show only"
+  group (verified source blue-tinted active + risk shield) beside the single-select position chips. The new
+  credibility data (anchor provenance) and the duty-of-care risk state are now sliceable, composing cleanly with
+  the existing position/tab/group axes — the expert questions ("only verified-source below-market gaps", "just the
+  risk rows") answerable in two clicks.
