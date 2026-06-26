@@ -883,6 +883,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   gap: var(--s3); text-align: center; padding: var(--s5) 0; }
 .signals-empty-ring { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; background: var(--surface-sunk); color: var(--ink-faint); }
+/* Signals briefing — dismiss → backfill choreography (pages.js SignalsPanel). The
+   dismissed row fades out in place (CSS, below); then on commit the survivors FLIP up
+   and the next-ranked signal rises + fades in (driven in JS so it composes with the
+   space-evenly layout). Reduced motion drops straight to the new state. */
+@keyframes sig-leave-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.95) translateX(12px); } }
+.signal-row.sig-leaving { animation: sig-leave-out .26s cubic-bezier(.4, 0, 1, 1) both; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .signal-row.sig-leaving { animation: none; opacity: 0; } }
 
 /* Signals locked → engaging "unlock" teaser (biggest pull to submit data) */
 .sig-unlock { max-width: 720px; margin-top: var(--s4); }

@@ -799,9 +799,63 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
   // optimistic overlay so a dismiss/priority/save updates instantly (the server has
   // the truth on next load).
   const [stOv, setStOv] = useState({});
+  const [leaving, setLeaving] = useState({});                 // sid -> true while its dismiss animates out (kept in `shown` until the fade ends)
+  const listRef = useRef(null);
+  const posRef = useRef(null);                                // sid -> offsetTop from the last paint (null on first paint, so the initial list never animates in)
+  const reduceMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const effStatus = s => { const k = s.sig_id || s.question_id; return k in stOv ? stOv[k] : s.status; };
-  const onSet = (sid, status) => { setStOv(p => ({ ...p, [sid]: status || "active" })); signalAction(sid, status).catch(() => {}); };
-  const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0, 4);   // filter-before-slice: a dismiss backfills #5 from the tail
+  // Dismiss → backfill choreography. Dismiss is two-phase: flag the row `leaving` (CSS
+  // fades it out in place, count stays 3), then after the fade COMMIT the dismiss so the
+  // row drops from `shown` and the next-ranked signal backfills the tail. Pin/Save never
+  // change membership, so they commit instantly; reduced-motion commits instantly too.
+  const onSet = (sid, status) => {
+    if (status === "dismissed" && !reduceMotion) {
+      setLeaving(p => ({ ...p, [sid]: true }));
+      signalAction(sid, status).catch(() => {});
+      setTimeout(() => {
+        setStOv(p => ({ ...p, [sid]: "dismissed" }));
+        setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
+      }, 260);
+    } else {
+      setStOv(p => ({ ...p, [sid]: status || "active" }));
+      signalAction(sid, status).catch(() => {});
+    }
+  };
+  const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0, 3);   // filter-before-slice: a dismiss backfills #4 from the tail
+  // FLIP the briefing on every commit: survivors slide up from where they were, the
+  // backfilled row rises + fades in. Runs before paint so there's no flash at the old
+  // layout; the first paint (posRef null) only records positions — no entrance on load.
+  React.useLayoutEffect(() => {
+    const listEl = listRef.current;
+    if (!listEl) { posRef.current = null; return; }
+    const rows = listEl.querySelectorAll(".signal-row[data-sid]");
+    const cur = new Map();
+    rows.forEach(el => cur.set(el.getAttribute("data-sid"), el.offsetTop));
+    const prev = posRef.current;
+    posRef.current = cur;
+    if (!prev || reduceMotion) return;
+    rows.forEach(el => {
+      const sid = el.getAttribute("data-sid");
+      const was = prev.get(sid), top = cur.get(sid);
+      if (was == null) {                                       // backfilled row — rise + fade in
+        el.style.transition = "none"; el.style.transform = "translateY(12px)"; el.style.opacity = "0";
+        el.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          el.style.transition = "transform .34s cubic-bezier(.22,.61,.36,1), opacity .3s ease";
+          el.style.transform = ""; el.style.opacity = "";
+          setTimeout(() => { el.style.transition = ""; }, 380);
+        });
+      } else if (was !== top) {                                // survivor — FLIP slide to its new slot
+        el.style.transition = "none"; el.style.transform = "translateY(" + (was - top) + "px)";
+        el.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          el.style.transition = "transform .34s cubic-bezier(.22,.61,.36,1)";
+          el.style.transform = "";
+          setTimeout(() => { el.style.transition = ""; }, 380);
+        });
+      }
+    });
+  });
   return html`
     <div class="card signals-card">
       <div class="card-spot" aria-hidden="true"></div>
@@ -829,9 +883,9 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
           <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
           <div class="caption" style=${{ maxWidth: "320px" }}>No signals right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
         </div>` :
-      [html`<div class="signals-list" key="list">
-        ${shown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
-          <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "") + (s.confirm ? " is-confirm" : "")} onClick=${() => openMetric(s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }} role="button" tabindex="0">
+      [html`<div class="signals-list" key="list" ref=${listRef}>
+        ${shown.map(s => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
+          <div key=${sid} data-sid=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "") + (s.confirm ? " is-confirm" : "") + (leaving[sid] ? " sig-leaving" : "")} onClick=${() => openMetric(s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }} role="button" tabindex="0">
             ${sigParts(s, pt)}
             <${SignalActions} status=${effStatus(s)} sid=${sid} onSet=${onSet} />
           </div>`; })}

@@ -5835,3 +5835,23 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   optimistic overlay), 0 console errors; EDGE — slice(0,4) on a <4 pool returns the whole array (JS-safe), renders
   however many remain without erroring. Gauge 76/15/1/92 byte-identical; 2 QA-dismissed signals restored (demo
   org clean). Cache v261 -> v262.
+
+2026-06-26 — OVERVIEW SIGNALS PANEL — TOP-3 + DISMISS→BACKFILL ANIMATION (David: "change the number to 3 and
+  create an animation when one is dismissed and another is added"), BUILT. (1) COUNT 4 -> 3: SignalsPanel
+  slice(0,3); header "Signals · top 3", footer "See all N" unchanged. (2) ANIMATION — refilling-queue
+  choreography: the dismissed row fades out IN PLACE (CSS @keyframes sig-leave-out .26s, opacity + scale/slide),
+  then on commit the survivors FLIP up to their new slots and the next-ranked signal rises + fades in at the tail
+  (one React.useLayoutEffect measuring offsetTop deltas; backfill enters from translateY(12)+opacity 0). Dismiss is
+  two-phase (flag `leaving` -> CSS fade -> 260ms -> commit setStOv so the row drops and #4 backfills); Pin/Save
+  commit instantly. ENABLERS: rows re-keyed by signal id (were key=index, which made React swap row CONTENT instead
+  of mounting/unmounting — fatal for enter/leave), + data-sid hook + sig-leaving class. ACCESSIBILITY:
+  prefers-reduced-motion commits instantly, no FLIP, no fade (CSS guard + JS branch). FLIP chosen over a layout
+  change because .signals-list is space-evenly/flex:1 — removing the top row shifts survivors ~112px (measured), so
+  a naive removal would jump; FLIP smooths it while preserving the card's filled layout. QA (live, market view):
+  count=3; dismiss -> backfilled:true, count_held_3:true, order_preserved:true; leave row carries sig-leaving;
+  backfill observed at enter initial state then settled opacity ~1; inline transforms/transitions fully cleaned up
+  (no hover-slowdown leftover); gauge 76/15/1/92 byte-identical; 0 console errors. NOTE: smooth mid-flight motion
+  not visually sampleable in preview (background tab throttles rAF/CSS-animation) — verified via start/end state +
+  cleanup; plays smoothly in a foreground browser. Demo integrity: the 2 prior-task signals (Workforce cost,
+  Maximum LTI) had silently reverted to dismissed; re-restored via status=null (app's real restore path) and
+  confirmed it persists across reload. Cache v262 -> v263 (17 + 12, lockstep).
