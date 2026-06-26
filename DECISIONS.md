@@ -5397,3 +5397,38 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   order is fixed SIG_DOMAINS order, not strategy-ranked — so the header "ordered for your strategy" is honest
   at the row level inside a domain yet loose globally; that domain-fixed-group-order question stays with
   Pass 5. Deferred Signals passes remaining: 4 context-row verify, 5 header honesty.
+
+2026-06-26 — SIGNALS PASS 3.5 — PIN vs CONFIRM PRECEDENCE, RULING A (pin-only beats confirm), BUILT (one line).
+  Pass 3's A+ rank (s.confirm ? 3 : (priority?0:saved?1:2)) checked confirm FIRST, so a row that was BOTH
+  pinned (status=priority) AND confirm sank to rank 3 (group tail) — the engine's "on-plan, stay quiet"
+  silently overrode the user's explicit pin. DIAGNOSED (read-only, in-memory rank simulation, no DB write):
+  the precedence was confirm-wins (pinned confirm → rank 3 → tail). The cost was sharper than Pass 3 implied:
+  because the Priority tab shares the SAME grouped+ranked pipeline (triaged=all.filter(cur.f) → groups →
+  .sort(rank); only cur.f changes per tab), a pinned confirm row was demoted-within-group in the Priority
+  tab TOO — the one view whose whole job is to honour pins. Still PRESENT/findable everywhere, never removed.
+  RULING A (David) — PIN WINS, pin-only (A′ rejected). The session principle (honour the user's explicit
+  choice over the engine's inference: per-domain override beats inferred mix in A′; a deliberate strategy
+  change re-baselines notifications, never storms) = the USER WINS THE CONFLICT. KEY DISTINCTION that scoped
+  it to pin-only: PIN = "keep this at the TOP" = a POSITION instruction → genuinely CONFLICTS with confirm's
+  position-demotion → user wins → pin beats confirm. SAVE = "bookmark / track this" = a RETRIEVAL instruction
+  → orthogonal to position; a saved+confirm row tail-clumping does NOT contradict what saving did (still in
+  the Saved tab, still retrievable) → NO conflict → save need not beat confirm. A′ (saved also beats confirm)
+  was CONSIDERED and REJECTED as over-reach — protecting saved-confirm from a demotion that doesn't undermine
+  the save (a division that doesn't earn itself, cf. Pass 3 B). BUILD (one line, web/js/pages.js:~1034,
+  cache v256→v257): rank = s => (s.status === "priority" ? 0 : s.confirm ? 3 : s.status === "saved" ? 1 : 2)
+  — priority checked BEFORE confirm: a pinned confirm row lifts to rank 0 (group top); UNPINNED confirm still
+  sinks to rank 3 (Pass 3 fully preserved); saved stays rank 1 (saved+confirm still tail-clumps). One line +
+  comment; fixes BOTH the grouped inbox AND the Priority tab (shared pipeline, no separate scoping). GLYPH: a
+  pinned confirm row at the group top STILL wears the green On-plan pill (pill is conditional on s.confirm
+  only, status-independent) → reads "I'm watching this, and it's on plan" — coherent, glyph is a fact not a
+  sort; a pinned row above an unpinned Risk row is correct (pin = explicit top; Risk keeps its coral shield
+  regardless of position). QA — THREE PROOFS, all pass (in-browser, live Time Off→lag override; the pin was
+  injected IN-MEMORY via a fetch patch — NO DB write — then a transient strategy=off render; org_strategy
+  untouched). PROOF 1 PIN WINS: the injected-pin confirm row "Bank holiday working premium" lifts to group
+  TOP (#1), above the 2 Risk rows (now #2/#3), STILL wearing the On-plan pill; the other 7 unpinned confirm
+  rows STILL tail-clump (#4-10); verified #1 in the Priority tab too (alongside a pre-existing real Governance
+  pin). Screenshot captured. PROOF 2 PASS-3 PRESERVED: with no pin, Time Off order unchanged (Risk #1/#2
+  adjacent, confirm #3-10 tail-clumped). PROOF 3 BYTE-IDENTICAL-ABSENT: strategy=off → 0 confirm pills →
+  order reverts to the pre-Pass-3 triage-only sort (the confirm?3 branch bites ONLY the narrow pinned-AND-
+  confirm intersection). 0 console errors. Deferred Signals passes remaining: 4 context-row verify, 5 header
+  honesty (inherits the domain-fixed-group-order vs "ordered for your strategy" question from Pass 3).

@@ -1031,12 +1031,15 @@ window.SignalsPage = function ({ me }) {
 
   const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
   const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
-  // Triage order within a domain group. CONFIRM sinks to the TAIL (rank 3) — the visible
-  // mirror of L4's demote-not-delete: a strategy-confirming "On plan" row stays in its domain
-  // group (no sub-group, Pass 3 ruling A+) but clumps last, so the 2 risk-exempt rows stay
-  // adjacent at the top and no confirm row splits them. Degrades cleanly: strategy-off → no
-  // confirm → s.confirm falsy → rank reverts to the 3-tier triage-status function, byte-identical.
-  const rank = s => s.confirm ? 3 : (s.status === "priority" ? 0 : s.status === "saved" ? 1 : 2);
+  // Triage order within a domain group (Pass 3.5, ruling A — PIN beats confirm). PIN is checked
+  // FIRST: a pinned ("priority") row lifts to the group TOP even when confirm — the user's explicit
+  // "keep this up top" is a POSITION instruction that wins the genuine conflict with confirm's
+  // position-demotion. UNPINNED confirm still sinks to the TAIL (rank 3 — Pass 3's L4 demote-not-
+  // delete mirror, fully preserved). SAVE stays rank 1: it's a RETRIEVAL instruction (orthogonal to
+  // position), so a saved+confirm row still tail-clumps — no conflict to resolve (A′ rejected as
+  // over-reach). Degrades byte-identical: strategy-off → s.confirm falsy → the confirm?3 branch never
+  // fires → rank collapses to priority?0 : saved?1 : 2 (pre-Pass-3).
+  const rank = s => (s.status === "priority" ? 0 : s.confirm ? 3 : s.status === "saved" ? 1 : 2);
   const triaged = all.filter(cur.f);                              // current triage tab
   // NEUTRAL-polarity signals (cost/spend context) are NEVER coloured by verdict —
   // engine principle #5 — so they're excluded from the position bar/chip composition
