@@ -5596,3 +5596,46 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   silently not render AND qa_phase4 §4.5 / qa_commentary §D would FAIL (they assert no label) — so the QA
   assertions force a deliberate re-introduction of the labelling at that time; the latent risk is self-guarding.
   No code, no cache bump. This closes the caveats.illustrative item parked in the Pass-5 entry (DECISIONS.md:5500).
+
+2026-06-26 — EMPLOYER PENSION £206k — DE-MONEY on Signals (Ruling B), BUILT. The Benefits Signals group rendered
+  "Employer pension · £206k/yr below the market median" — an aggregate £ among per-level % pension siblings.
+  VERIFIED (prior turn): REW_BEN_PENS_EMP_MAX_01 ("Maximum employer pension contribution rate by level", unit=%,
+  matrix per-level, higher_is_better, exclude_from_scoring) is the SOLE money_lenses member; £206k =
+  Σ_levels (peer-median rate − your rate)/100 × median_salary × (org_FTE × level_share) (positions.py:514-515) —
+  a deliberately-modelled INDICATIVE aggregate, NOT a bug, but headcount-scaled (measures org SIZE as much as
+  design generosity), built off the MAX/ceiling rate of an exclude_from_scoring metric, with "below the market
+  median" copy implying a £-median that doesn't exist. NOT the Pass-4 neutral case (pension is higher_is_better;
+  money_opportunities skips neutral). RULING B (David): de-money on Signals — render it as the per-level % it
+  actually is, like its 11 siblings; the £-opportunity stays ONLY on the board-pack £-model surface (where its
+  indicative assumptions are labelled). PHASE A scoped the removal CLEAN (both STOP gates cleared): (1) the
+  board pack reads MONEY_METRICS (positions.py) via money_opportunities — NOT money_lenses (signal_lenses.json),
+  which drives ONLY the Signals row — so the two lists are already separate; removing from money_lenses is
+  Signals-only and the board pack is untouched (proven in-process). (2) FALL-THROUGH proven: seen_q enforces
+  one-class-per-metric, and the money block only claims a metric when it's in money_lenses; removed, the verdict
+  block emits it as a per-level % ("you 5%, market median 9% · below market", kind=behind, higher_is_better) —
+  unit-coherent. (3) GAUGE structurally safe: exclude_from_scoring → not in the 76/15/1/92 pool; lens/money
+  never touch verdict mass. (4) The ceiling-rate % verdict reads honestly ("your max employer rate is below the
+  market's max"). BUILD: removed REW_BEN_PENS_EMP_MAX_01 from money_lenses in data/signal_lenses.json (it was
+  the ONLY entry → money_lenses now {}; no metric emits a Signals money row now — the £-model lives entirely on
+  the board pack, exactly the ruling). KEPT it in MONEY_METRICS (positions.py) so the board-pack £ survives.
+  SIGNAL_KEY DISCIPLINE (the lens-re-tag pattern): removing from money_lenses flips the signal's kind
+  (money→behind) + row (aggregate→per-level), changing signal_key — so, like the cost-metric re-tag, this went
+  through a SILENT rebaseline, not the nightly diff. Scope: only the 54 orgs where the money block was actually
+  firing (signal_state kind='money'); the other 130 (ahead 87 / behind 43) were already on the % path → key
+  unchanged → provably unaffected. WAL-checkpoint(TRUNCATE) + backup lumi.db.bak_pre_demoney_pension_20260626_
+  121740 (74M, gitignored) FIRST; then rebaseline(conn, oid, org_signals) per the 54 (DELETE + record_baseline,
+  fires 0 events). QA — FOUR PROOFS, all pass (live demo org, in-process board-pack check): (1) UNIT-COHERENT:
+  pension renders "you 5%, market median 9% · below market" (kind=behind, amber), at position 2/26 in Benefits
+  (NOT pinned top — the 1,000,000+gbp money impact is gone), in-line with its % siblings; NO £206k anywhere on
+  Signals; screenshot captured. (2) £-MODEL PRESERVED: money_opportunities STILL returns pension at £206,280
+  (MONEY_METRICS untouched) → board pack keeps the £-opportunity. (3) GAUGE 76/15/1/92 byte-identical. (4) OTHER
+  MONEY METRICS INTACT: all 3 MONEY_METRICS (pension + attrition + agency) still defined; attrition/agency were
+  never Signals rows (not in money_lenses) and are unaffected. STORM CHECK: notification_events 10804 → 10804
+  (zero events); pension signal_state now ahead=87 / behind=92 / money=0; 54/54 orgs rebaselined, 0 failures; 0
+  console errors. NOTE: de-moneying drops the pension Signals row for ~5 orgs whose £ gap was material but whose
+  per-level rate gap is below the % signal threshold (the board pack retains their £) — the intended effect of
+  removing headcount-scaling (a small rate gap shouldn't headline Signals just because the org is large). No web
+  cache bump (signal_lenses.json is server-side, hot-reloaded; the Signals render is data-driven from
+  /api/overview, not an asset — consistent with the lens re-tag). lumi_questions.csv + MONEY_METRICS (positions.py)
+  + aggregate.py untouched. ✅ Pension now reads as the unit-coherent % verdict it is; the £-opportunity lives
+  where its assumptions are labelled (the board pack).
