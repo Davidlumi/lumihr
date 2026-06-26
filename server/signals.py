@@ -49,6 +49,32 @@ def lens_config():
     return _cache["cfg"]
 
 
+ANCHOR_PROV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+                                "anchor_provenance.json")
+_prov_cache = {"mtime": None, "map": {}}
+
+
+def anchor_provenance():
+    """Per-metric anchor provenance (grade/est/source), hot-reloaded — CAPTURE-ONLY (stage 1,
+    2026-06-26). A POSITIVE LIST of the 121 graded metrics distilled from the Anchor Register
+    (data/anchor_provenance.json); a question_id ABSENT here is UNKNOWN provenance — never
+    defaulted to verified or estimate. grade A/B/C = sourced/verified (descending quality),
+    EST = estimate-flagged. Read at render in stage 2; NEVER feeds the gauge/verdict (metadata,
+    not a value). Survives reseeds (benchmark_snapshots does not)."""
+    try:
+        mt = os.path.getmtime(ANCHOR_PROV_PATH)
+    except OSError:
+        return _prov_cache["map"]
+    if _prov_cache["mtime"] != mt:
+        try:
+            with open(ANCHOR_PROV_PATH) as f:
+                _prov_cache["map"] = (json.load(f) or {}).get("provenance") or {}
+            _prov_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _prov_cache["map"]
+
+
 def signal_key(sig):
     """Stable identity for change-alert diffing: lens:kind:question_id:matrix_row.
     A signal carries lens/kind/question_id on every row; matrix rows additionally
@@ -953,6 +979,18 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             s["gap_pct"] = round(abs(float(_v) - float(_p)) / abs(float(_p)) * 100.0, 1)
         except (TypeError, ValueError):
             pass
+    # ANCHOR PROVENANCE capture (stage 1, 2026-06-26): attach the per-metric anchor grade for the
+    # 121 graded metrics (A/B/C = verified · EST = estimate); a question_id ABSENT from the config is
+    # UNKNOWN by omission (the ~723 ungraded — NEVER defaulted to verified). CAPTURE-ONLY: the grade
+    # rides the signal payload so it's READABLE at render, but nothing renders it here — stage 2
+    # (the verified/estimate/unknown render fork) is its own ruling. Metadata, not a value ->
+    # gauge-neutral; not in signal_key / signal_state -> no rebaseline, no storm.
+    _prov = anchor_provenance()
+    if _prov:
+        for s in out:
+            _pv = _prov.get(s.get("question_id"))
+            if _pv:
+                s["anchor_grade"] = _pv.get("grade")
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:

@@ -5714,3 +5714,41 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   BUILD DEFERRED (this entry). (4) anchor quality → its own capture-first pass on the Anchor Register programme
   (grade/est provenance is an offline file read by no code; needs import into the runtime before any render).
   No code, no cache bump.
+
+2026-06-26 — ANCHOR PROVENANCE — STAGE 1 CAPTURE (confidence axis 4), BUILT. The Anchor Register
+  (lumi_anchor_register_CLAUDECODE.json: per-metric grade A/B/C/EST + est bool + source citations, 121 anchored
+  rows) was an OFFLINE FILE READ BY NO CODE — only anchor VALUES were imported at seed time; the grade/est/source
+  provenance never reached the runtime, so a Grade-A CIPD-verified median and an estimate-flagged derivation
+  rendered IDENTICALLY. This is the real, NON-dormant, highest-leverage credibility axis (grades genuinely vary
+  across rows — unlike peer-n [already single-sourced] and freshness [dormant on the all-June seed]). CAPTURE-
+  FIRST: import provenance into the runtime so it's READABLE at render, BEFORE any render (stage 2 is its own
+  ruling). DIAGNOSED read-only: join key = metric_id = question_id (ORPHAN=0 — every register row maps to a live
+  snapshot metric; the join is sound); grade A=75/B=30/C=8 (sourced/verified, descending quality) + EST=8
+  (estimate-flagged), est=true ⟺ grade=EST (the 8); the register's own meta WARNS "parsed_pcts are anchor values
+  only; benchmark_snapshots is the live-value source of truth" → so the import is PROVENANCE-ONLY (grade/est/
+  source by metric_id), never values, making value-drift irrelevant. ⭐ COVERAGE (the load-bearing finding): 121
+  graded of 844 live question_ids → ~86% UNKNOWN (or 122 of the register's 243 tracked metrics). UNKNOWN is the
+  DOMINANT state, forcing a genuine THREE-STATE (verified / estimate / UNKNOWN); an ungraded metric must NEVER
+  default to verified (would falsely credential 723) nor estimate (would falsely flag fine rows). BUILD (capture-
+  only, no render): (1) data/anchor_provenance.json — a curated per-metric config (question_id → {grade, est,
+  source}, 121 entries) distilled from the register, same shape as signal_lenses.json — David-owned, hot-reloaded,
+  SURVIVES RESEEDS (a benchmark_snapshots column would be wiped on reseed). (2) anchor_provenance() loader in
+  signals.py (mtime-cached, mirrors lens_config). (3) build_signals post-pass attaches s["anchor_grade"] for the
+  graded metrics; ABSENT = UNKNOWN by omission (POSITIVE-LIST semantics). The grade rides the signal payload so
+  it's READABLE at render, but NOTHING renders it — stage 2 (the render fork) is a separate ruling. GAUGE-NEUTRAL
+  by construction: metadata (a grade label), not a value — touches no value/verdict/score. SIGNAL_KEY untouched
+  (anchor_grade not in lens:kind:question_id:row, not a signal_state column) → no rebaseline, no storm. QA — FIVE
+  CAPTURE PROOFS, all pass: (1) CONFIG CORRECT — 121 entries (75 A / 30 B / 8 C / 8 EST); loader returns A for a
+  verified metric, the EST flag for an estimate, ABSENT→UNKNOWN for an ungraded one. (2) THREE-STATE on the live
+  payload — demo org's 88 signals: 49 graded (A=21/B=22/C=1/EST=5) + 39 UNKNOWN (anchor_grade absent — e.g. EV
+  charging, Workforce cost per FTE — NOT defaulted to verified). (3) GAUGE 76/15/1/92 byte-identical. (4) BYTE-
+  IDENTICAL-VISIBLE — pages.js v259 (NO cache bump, no client change), 81 rows render, verdicts/adverb intact, NO
+  anchor/grade/verified text leaks to screen, 0 console errors (provenance captured but unrendered). (5) SANITY
+  SPOT-CHECK — the 8 EST all still status "ESTIMATE-FLAGGED (no published prevalence)" source "-"; 3 sample A-
+  grades all still CIPD-sourced, est=False. No DB write, no cache bump. ⭐ STAGE 2 (RENDER) IS A SEPARATE RULING:
+  the coverage (~86% UNKNOWN) pushes AWAY from mark-estimate (which would imply the other 836 are verified) TOWARD
+  mark-verified (credential only the earned 113) or an explicit three-state. The register stays the offline
+  curation source-of-truth; data/anchor_provenance.json is the distilled runtime artifact. CONFIDENCE/STALENESS
+  PROGRAMME: (1) magnitude → BUILT (severity adverb). (2) peer-n → NO-BUILD (single-source "Small sample"
+  caveat). (3) freshness → SPEC RULED, BUILD DEFERRED (seed-dormant). (4) anchor → STAGE 1 CAPTURED (this), stage
+  2 render pending.

@@ -1,0 +1,610 @@
+{
+  "_readme": "Per-metric anchor PROVENANCE (stage-1 capture, 2026-06-26). Distilled from lumi_anchor_register_CLAUDECODE.json — the curator grade/est/source per ANCHORED metric. POSITIVE LIST of the 121 graded metrics; any question_id ABSENT here is UNKNOWN provenance by omission (never default to verified, never to estimate). grade A/B/C = sourced/verified (descending quality: A=verified-from-source, B=modest/broker-book, C=weakest-but-sourced); EST = estimate-flagged (no published source); est mirrors grade==EST. CAPTURE-ONLY: read at render in stage 2; NEVER feeds the gauge/verdict/score (metadata, not a value). Curated, David-owned, hot-reloaded; survives reseeds (benchmark_snapshots does not). Join key = question_id; orphan=0 vs the live snapshot. Coverage: 121 graded (113 A/B/C verified + 8 EST estimate) of 844 live question_ids -> ~86% UNKNOWN; stage-2 render fork (mark-verified vs three-state) is its own ruling.",
+  "provenance": {
+    "3faf1f0c-f753-497f-a395-384bba38c5e3": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "CAR_STATUS_01": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, Oct 2021 (private 70%); item base n=217 for transport benefits. Grade A with modest-sample caveat. Verified from source PDF."
+    },
+    "EXT_REW_GAP_012": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "PROP_36b990f9": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD/Pensions Regulator 2025/26"
+    },
+    "RED_COST_01": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "RED_NOTICE_01": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "RED_PROC_01": {
+      "grade": "C",
+      "est": false,
+      "source": "CIPD redundancy guidance 2026"
+    },
+    "RED_TERM_01": {
+      "grade": "C",
+      "est": false,
+      "source": "CIPD redundancy 2026; IRIS 2025/26"
+    },
+    "RED_TERM_02": {
+      "grade": "A",
+      "est": false,
+      "source": "IRIS / theemploymentlawsolicitors 2026"
+    },
+    "REW263_BEN_CICOVER": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW263_BEN_DENTAL": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW263_BEN_NEURO": {
+      "grade": "C",
+      "est": false,
+      "source": "Aon UK Benefits and Trends Survey 2025 (240+ UK employers, Spring 2025, Grade B, large-skew: 49% are 500+ FTE)."
+    },
+    "REW263_BEN_PENBASIS": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW263_BEN_PMIEXCESS": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits 2026 (YouGov, n=1,059 UK reward/HR decision-makers, fieldwork 24 Oct-27 Nov 2025, weighted to be representative of the UK business population). Grade A - nationally representative all-UK base. Verified from source PDF."
+    },
+    "REW263_BEN_PMIMH": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, weighted n=1,101; large 250+ n=376; SME 2-249)"
+    },
+    "REW26_BEN_PENSION_COST_SHARE": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW26_BEN_PENSION_MATCH": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, weighted n=1,059; large 250+ n=178)"
+    },
+    "REW26_BEN_PENSION_TYPE": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW26_BEN_PLSA_QM": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW26_BEN_SALSAC": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD pension analysis Dec 2025"
+    },
+    "REW_BEN_038": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits 2026 (YouGov, n=1,059 UK reward/HR decision-makers, fieldwork 24 Oct-27 Nov 2025, weighted to be representative of the UK business population). Grade A - nationally representative all-UK base. Verified from source PDF."
+    },
+    "REW_BEN_039": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_044": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_045": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_046": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW_BEN_047": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW_BEN_048": {
+      "grade": "B",
+      "est": false,
+      "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown, FCA-regulated broker)"
+    },
+    "REW_BEN_055": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Reward Survey 2026"
+    },
+    "REW_BEN_100": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_102": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_112": {
+      "grade": "B",
+      "est": false,
+      "source": "Aon UK Benefits & Trends Survey 2025 (Spring 2025, n=240+ UK senior HR/reward/benefits professionals, broker-book skew) Q77/Q78"
+    },
+    "REW_BEN_139": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_FLEX_ALLOW_01": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW_BEN_PENS_EE_MAX_01": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_BEN_PENS_EMP_MAX_01": {
+      "grade": "B",
+      "est": false,
+      "source": "Aon UK Benefits & Trends Survey 2025 (Spring 2025, n=240+ UK senior HR/reward/benefits professionals, broker-book skew) Q77/Q78"
+    },
+    "REW_FAI_STUDY_TIME_93b6ef22": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, Oct 2021 (private 70%). Grade A with modest-sample caveat. Verified from source PDF."
+    },
+    "REW_Q524161": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "REW262_TIME_BEREAVEMENT": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW262_TIME_SICKDAYONE": {
+      "grade": "A",
+      "est": false,
+      "source": "ERA 2025 / gov.uk economic analysis Jan 2026"
+    },
+    "REW263_TIME_CARERPAID": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, fieldwork 14 Apr-5 May 2025, weighted/representative of senior decision-makers. Grade A. Post-ERA (Flexible Working) Act 2023 day-one right. Verified from source PDF."
+    },
+    "REW263_TIME_DAYONELEAVE": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "REW263_TIME_FERTLEAVE": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Workplace support for employees experiencing fertility challenges, investigations or treatment\" (May 2023). Employer survey: YouGov, n=2,023 senior HR decision-makers, fieldwork 22 Mar-18 Apr 2022, weighted representative of UK business by size/sector/industry. Grade A. Verified from source PDF."
+    },
+    "REW263_TIME_NEONATAL": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD / Neonatal Care Act 2023"
+    },
+    "REW263_TIME_PATPAY": {
+      "grade": "A",
+      "est": false,
+      "source": "Bright Horizons Benchmark 2021; updated"
+    },
+    "REW263_TIME_PREGLOSS": {
+      "grade": "B",
+      "est": false,
+      "source": "ERA 2025 / WEC; CIPD"
+    },
+    "REW_BEN_FAM_001": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Employer focus on working parents: parental leave and pay and childcare policies\" (Aug 2022, ref 8268). YouGov, n=2,000 senior UK decision-makers, Jun-Jul 2022, weighted representative of UK employment by size/sector/industry (from Labour Market Outlook). Grade A. Verified from source PDF."
+    },
+    "REW_BEN_FAM_002": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_FAM_005": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Employer focus on working parents: parental leave and pay and childcare policies\" (Aug 2022, ref 8268). YouGov, n=2,000 senior UK decision-makers, Jun-Jul 2022, weighted representative of UK employment by size/sector/industry (from Labour Market Outlook). Grade A. Verified from source PDF."
+    },
+    "REW_BEN_FAM_006": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "REW_BEN_FAM_007": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, fieldwork 14 Apr-5 May 2025, weighted/representative of senior decision-makers. Grade A. Post-ERA (Flexible Working) Act 2023 day-one right. Verified from source PDF."
+    },
+    "REW_BEN_FAM_008": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, fieldwork Oct 2021 (private 70%/public/voluntary); item-level bases ~212-253 due to per-question non-response. Grade A (CIPD employer-prevalence) with modest-sample caveat (~280). Verified from source PDF."
+    },
+    "REW_BEN_FAM_009": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, fieldwork Oct 2021 (private 70%/public/voluntary); item-level bases ~212-253 due to per-question non-response. Grade A (CIPD employer-prevalence) with modest-sample caveat (~280). Verified from source PDF."
+    },
+    "REW_BEN_FAM_010": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, fieldwork Oct 2021 (private 70%/public/voluntary); item-level bases ~212-253 due to per-question non-response. Grade A (CIPD employer-prevalence) with modest-sample caveat (~280). Verified from source PDF."
+    },
+    "REW_BEN_FAM_011": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, ref tcm18-108776). Employer survey: 280 UK reward professionals, fieldwork Oct 2021 (private 70%/public/voluntary); item-level bases ~212-253 due to per-question non-response. Grade A (CIPD employer-prevalence) with modest-sample caveat (~280). Verified from source PDF."
+    },
+    "REW_BEN_FAM_012": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Menopause in the workplace: Employee experiences 2023\" (Oct 2023), employer-prevalence figures cross-referenced to CIPD/Simplyhealth Health & Wellbeing at Work survey (people-professional respondents). Grade A for the policy-prevalence figure. Verified from source PDF."
+    },
+    "REW_BEN_HOL_001": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_HOL_002": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk / Acas / business.gov.uk + Employment Rights (Increase of Limits) Order 2026; Employment Rights Act 2025 (SSP reform). Verified June 2026."
+    },
+    "REW_BEN_HOL_003": {
+      "grade": "B",
+      "est": false,
+      "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown). Online survey of 626 HR/finance professionals, Feb 2026, UK employers all sizes/sectors. Verified from source PDF. Grade B - broker survey incl. own clients, convenience sample, benefits-engaged skew. Not UK-representative."
+    },
+    "REW_BEN_HOL_004": {
+      "grade": "C",
+      "est": false,
+      "source": "IDR Payline (collective-agreement records, agreements dated 2024)"
+    },
+    "REW_BEN_HOL_006": {
+      "grade": "C",
+      "est": false,
+      "source": "IDR Payline (collective-agreement records, agreements dated 2024)"
+    },
+    "REW_BEN_SICK_001": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_SICK_002": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW_BEN_SICK_004": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW_BEN_SICK_005": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "EXT_REW_GAP_009": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, fieldwork 14 Apr-5 May 2025, weighted/representative of senior decision-makers. Grade A. Post-ERA (Flexible Working) Act 2023 day-one right. Verified from source PDF."
+    },
+    "EXT_REW_GAP_010": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, fieldwork 14 Apr-5 May 2025, weighted/representative of senior decision-makers. Grade A. Post-ERA (Flexible Working) Act 2023 day-one right. Verified from source PDF."
+    },
+    "OT_04_b14623a6": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "PAYTR_02_131bd412": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "PROP_634adacd": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Labour Market Outlook Spring 2026"
+    },
+    "PROP_8e0b6316": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "PROP_9e4ad87f": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Labour Market Outlook Spring 2026"
+    },
+    "PROP_dff9a2a5": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Labour Market Outlook Spring 2026"
+    },
+    "PROP_fe1a29ec": {
+      "grade": "B",
+      "est": false,
+      "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown broker)"
+    },
+    "REW263_PAY_MERITMATRIX": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "REW263_PAY_SSPALIGN": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW_BEN_058": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW_BEN_REM_PAY_001": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, fieldwork 14 Apr-5 May 2025, weighted/representative of senior decision-makers. Grade A. Post-ERA (Flexible Working) Act 2023 day-one right. Verified from source PDF."
+    },
+    "REW_PAY_005": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_PAY_018": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_PAY_HOURLY_MIN_1c6e096f": {
+      "grade": "A",
+      "est": false,
+      "source": "gov.uk NLW/NMW rates (Apr 2026) cross-checked vs HR DataHub NLW planning decks"
+    },
+    "REW_INC_060": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_INC_072": {
+      "grade": "B",
+      "est": false,
+      "source": "HR DataHub Talent Attraction & Retention Survey, Oct 2022 (co-authored by David Whitfield)"
+    },
+    "REW_INC_103": {
+      "grade": "B",
+      "est": false,
+      "source": "Brightmine (formerly XpertHR) \"Bonus Payments 2025\" white paper, UK Compensation Planning data (year to May 2025). Grade B. Verified from source PDF."
+    },
+    "REW_INC_104": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_INC_131": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "REW_INC_132": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "REW_INC_133": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "REW_Q528801": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW_Q534581": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW263_WEL_DATA": {
+      "grade": "EST",
+      "est": true,
+      "source": "-"
+    },
+    "REW263_WEL_FINWELL": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW263_WEL_MGRTRAIN": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW263_WEL_OH": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW26_WEL_BUDGET": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW26_WEL_EAP": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW26_WEL_FINWELL": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey Feb 2026"
+    },
+    "REW26_WEL_MH_SUPPORT": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW26_WEL_SCREENING": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "REW26_WEL_STRATEGY": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=446)"
+    },
+    "EXT_REW_GAP_001": {
+      "grade": "C",
+      "est": false,
+      "source": "Huggg \"2026 UK Gifting & Recognition Benchmarks Report\" (vendor survey via Typeform, fieldwork 26 Jan-10 Feb 2026, n=85 verified UK HR professionals at 80+ orgs). Grade C - SMALL SELF-SELECTED SAMPLE, vendor audience skewed to Tech/Software (31.8%) & Professional Services (23.5%); NOT nationally representative. Directional only."
+    },
+    "EXT_REW_GAP_004": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "EXT_REW_GAP_006": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "REW263_REC_CURRENCY": {
+      "grade": "A",
+      "est": false,
+      "source": "Huggg \"2026 UK Gifting & Recognition Benchmarks Report\" (vendor survey via Typeform, fieldwork 26 Jan-10 Feb 2026, n=85 verified UK HR professionals at 80+ orgs). Grade C - SMALL SELF-SELECTED SAMPLE, vendor audience skewed to Tech/Software (31.8%) & Professional Services (23.5%); NOT nationally representative. Directional only. || ALSO: CIPD RMS 2022 (n~280, Oct 2021) for voucher/gift prevalence 39-51%."
+    },
+    "REW263_REC_IMPACT": {
+      "grade": "C",
+      "est": false,
+      "source": "Huggg \"2026 UK Gifting & Recognition Benchmarks Report\" (vendor survey via Typeform, fieldwork 26 Jan-10 Feb 2026, n=85 verified UK HR professionals at 80+ orgs). Grade C - SMALL SELF-SELECTED SAMPLE, vendor audience skewed to Tech/Software (31.8%) & Professional Services (23.5%); NOT nationally representative. Directional only."
+    },
+    "REW263_REC_PEER": {
+      "grade": "B",
+      "est": false,
+      "source": "lumi legacy platform (HR Data Hub intake), 2019-20"
+    },
+    "PAYTR_01_42eae7ec": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "PROP_10d1211d": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "PROP_674db2fc": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ADP; research by IDR). YouGov, n=832 UK HR/senior decision-makers, fieldwork 3-24 Oct 2023, weighted (private 75%/public 18%/voluntary 7%; 57% large 250+, 43% SME). Grade A. Verified from source PDF."
+    },
+    "PROP_8862fcad": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "PROP_930043cc": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW262_GOV_EQUALPAYAUDIT": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW262_GOV_PAYINADVERTS": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW263_GOV_BENOBJ": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=178; SME n=881)"
+    },
+    "REW263_GOV_FLEXALLOW": {
+      "grade": "B",
+      "est": false,
+      "source": "Broadstone UK Employee Benefits Survey, Nov 2023. ~200 UK employers. Grade B - broker client convenience sample, benefits-engaged skew, not UK-representative."
+    },
+    "REW263_GOV_MENOPLAN": {
+      "grade": "C",
+      "est": false,
+      "source": "Aon UK Benefits and Trends Survey 2025 (240+ UK employers, Spring 2025, Grade B, large-skew: 49% are 500+ FTE)."
+    },
+    "REW263_GOV_UKPAYTRANS": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW26_GOV_EU_PTD_PREP": {
+      "grade": "B",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW_FAI_079": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW_FAI_088": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    },
+    "REW_FAI_089": {
+      "grade": "A",
+      "est": false,
+      "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)"
+    }
+  }
+}
