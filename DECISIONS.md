@@ -5432,3 +5432,32 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   order reverts to the pre-Pass-3 triage-only sort (the confirm?3 branch bites ONLY the narrow pinned-AND-
   confirm intersection). 0 console errors. Deferred Signals passes remaining: 4 context-row verify, 5 header
   honesty (inherits the domain-fixed-group-order vs "ordered for your strategy" question from Pass 3).
+
+2026-06-26 — SIGNALS PASS 4 — CONTEXT-ROW VERIFY, RULING NO-BUILD (false alarm, confirmed on evidence).
+  Audit flagged: a "context, not a verdict" row (neutral polarity, e.g. Workforce cost per FTE) appeared
+  AMBER-ish in a screenshot — neutral rows should be visually distinct from the amber "below market" verdict
+  tone. Two candidate causes to distinguish on evidence: (a) the metric isn't actually direction=neutral in
+  config → getting a real verdict tone (DATA mis-tag), or (b) the metric IS neutral but the neutral CSS tone
+  renders too close to amber (CSS issue). DIAGNOSED read-only (live demo org, no DB write). RESULT: NEITHER —
+  all three layers correct. (1) CODE PATH: posTag (pages.js:922) checks `s.polarity === "neutral"` BEFORE the
+  directional branches → a neutral row gets tone "neutral" + hint "context, not a verdict", can never fall
+  through to a verdict tone; neutral rows are excluded from the RAG composition (pages.js:1040, `if (s.polarity
+  === "neutral") return;`) so they add nothing to the position bar/chips and contribute nothing to the gauge
+  (76/15/1/92 is the positioned-verdict pool). (2) DATA — cause (a) RULED OUT: the live org has exactly 2
+  context rows, both genuinely polarity=neutral — "Workforce cost per FTE" (PROP_d16bae79) and "Workforce cost
+  as % of revenue" (PROP_e63cf45a), both Pay, both position=below; a name-pattern sweep for cost/spend/ratio/
+  per-FTE/budget metrics that are NOT neutral returned 0 suspects. The audit's example IS correctly tagged.
+  (3) CSS — cause (b) RULED OUT: computed colours off the live DOM — neutral row = navy border rgb(31,42,68)
+  on grey-blue bg rgb(238,240,247), navy pill (.pos-neutral bg #E9EBF6 / color var(--navy) rgb(31,42,68)); the
+  amber verdict = amber-bright border rgb(245,166,10), dark-amber pill (rgb 138,88,5) on pale-amber bg
+  rgb(251,239,217). Source: .sig-tone-neutral { background:#EEF0F7; border-left-color:var(--navy); }
+  (app.css:985), .pos-neutral { background:#E9EBF6; color:var(--navy); } (app.css:996) — navy-on-grey-blue, a
+  DIFFERENT HUE FAMILY from amber, not close. The audit's "amber-ish" read = JPEG compression of a navy pill on
+  warm-paper background (navy muddies toward brownish under compression); a fresh screenshot renders it cleanly
+  navy. The ONLY thing a neutral row shares with a verdict row is the WORDING "below market" (the position is a
+  fact — the value IS below the market median), disambiguated by the navy tone + the italic "context, not a
+  verdict" hint — this is BY DESIGN (state the position, refuse the good/bad verdict: below on cost-per-FTE is
+  genuinely ambiguous — efficient vs under-resourced), and a VERIFY is not a redesign so the shared wording
+  stays. CLOSE Pass 4 no-build. (Softening the shared "below market" wording on context rows — e.g. a distinct
+  context label — would be its own scoped redesign pass, not this verify.) Deferred Signals passes remaining:
+  5 header honesty (inherits the domain-fixed-group-order vs "ordered for your strategy" question from Pass 3).
