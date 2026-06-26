@@ -5639,3 +5639,42 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   /api/overview, not an asset — consistent with the lens re-tag). lumi_questions.csv + MONEY_METRICS (positions.py)
   + aggregate.py untouched. ✅ Pension now reads as the unit-coherent % verdict it is; the £-opportunity lives
   where its assumptions are labelled (the board pack).
+
+2026-06-26 — SIGNALS VERDICT ADVERB — RULING A (per-metric severity adverb), BUILT. A skeptical reward director
+  reads "below market" worded identically for a chasm (£700 vs £1,550 = 55%) and a rounding error (£1,500 vs
+  £1,550 = 3%) as "this tool can't tell a real problem from noise." DIAGNOSED (prior turns): magnitude IS
+  computed — depth_pctl already drives a "clearly/moderately/marginally" severity adverb ON THE HERO
+  (pages.js:691-694) — but the per-metric SIGNAL verdict was flat. The fix is a CONSISTENCY/calibration win, not
+  new machinery. THREE rulings resolved on live data before building (the STOP gate): (1) BASIS = %-GAP-FROM-
+  MEDIAN on the signal (per-metric real-terms gap), NOT percentile. A reward director judges materiality in gap
+  SIZE; percentile-depth (a) skewed ~40 clean signals into one bucket and (b) couldn't separate the £700/£1,500
+  examples (a %-gap distinction). The HERO STAYS percentile (it's a DOMAIN verdict — peer-standing mass);
+  signal=real-gap, hero=peer-standing — DIFFERENT SCOPES, both calibrated, not a contradiction (so the hero is
+  NOT relabelled). (2) SCOPE = property-based: the adverb fires ONLY on positioned VALUE verdicts with a real
+  %-gap — position in (below/above) AND polarity != neutral AND kind not in (prevalence/depth/money) AND the
+  item has numeric value + p50 (≠0). Excludes prevalence ("most do this", adoption not a value gap), neutral/
+  context (Pass 4), and approach/differs BY PROPERTY, not a list. Plus a <3% FLOOR: a sub-3%-gap row is at-
+  market noise → plain verdict, NO adverb. (3) CALIBRATION = clearly >40% · moderately 15-40% · marginally
+  3-15% (symmetric for above). David's initial >25/10-25/<10 lean gave an EMPTY MIDDLE on the demo org (29/0/8 —
+  non-differentiating, the exact failure the STOP existed to catch). >40/15-40/<15 gives 16/13/8 (all buckets,
+  round + defensible: "more than 40% below = clearly far below"). 2ND-ORG CALIBRATION GATE (the overfit check):
+  across 6 diverse orgs (freight/tech/college/utilities/environmental/transport, all fte-bands) the buckets
+  spread across all three every time (e.g. Yarrowwell 5/3/15, Larkholm 21/6/4, Fenland 5/16/1) — NOT Thornbridge-
+  overfit; each org's adverb reflects its own gap profile. BUILD: (server/signals.py) a post-pass after the
+  signal loop attaches s["gap_pct"] = round(|value − p50|/|p50| × 100, 1) for in-scope signals, reusing the
+  item's value+p50 (matched by question_id + matrix row via sig_id); (web/js/pages.js) severityAdverb(s) +
+  posTag prepends the adverb to the verdict text for the two positioned-value branches only. SIGNAL_KEY CHECK
+  (confirmed before writing, per the lens-re-tag lesson): signal_key = lens:kind:question_id:row (signals.py:52)
+  — the verdict STRING is NOT in it, and gap_pct is not a signal_state column → NO key change → NO rebaseline,
+  NO storm. Presentation-only (a descriptive word before the unchanged verdict class) → gauge-neutral. SCOPE BUG
+  caught + fixed in QA: the first server pass gated only on position+polarity, so 11 PREVALENCE rows (adoption
+  0-vs-100 → 100% "gap") wrongly got "clearly" — added the kind not-in (prevalence/depth/money) exclusion;
+  re-verified 0 prevalence / 0 neutral carry gap_pct. QA — FIVE PROOFS, all pass (live demo, v258→v259, server
+  restart for the signals.py change): (1) DIFFERENTIATES — rendered 15 clearly / 12 moderately / 1 marginally,
+  all buckets. (2) EXAMPLES — "Total allowance payment · you £700, market median £1,550" → "clearly below
+  market"; "Base salary (Head of) · you 96%, market median 99%" → "marginally below market" (screenshot). (3)
+  SCOPE — neutral cost rows "below market" (plain), prevalence/differs plain, sub-3% no adverb. (4) GAUGE
+  76/15/1/92 byte-identical. (5) 2ND-ORG spread (above). 0 console errors. No DB write (no rebaseline). Cache
+  v258→v259. ✅ The signal verdict now calibrates to the metric's real-terms gap — the hero↔signal flatness that
+  a domain expert read as unreliability is closed; the hero keeps its percentile-depth scope, the signal answers
+  the real-gap question, both honest.

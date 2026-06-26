@@ -916,13 +916,25 @@ function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_S
 // signals (practice) carry no market position → purple; neutral-polarity metrics are
 // context → navy; lower-is-better metrics flip (below the market = good = green, above
 // = worse = red).
+// severity ADVERB (Ruling A, 2026-06-26): per-metric REAL-TERMS %-gap from the peer median
+// calibrates the verdict word, mirroring the hero's depth adverb but per-metric (a reward director
+// judges materiality in gap SIZE, not percentile rank — so the hero stays percentile, the signal
+// reads real-gap; different scopes, both calibrated). clearly >40% · moderately 15-40% · marginally
+// 3-15% · <3% = at-market noise, NO adverb. ONLY positioned value verdicts (below/above) — server
+// attaches s.gap_pct only there (prevalence/neutral/no-value excluded by property).
+function severityAdverb(s) {
+  const g = s.gap_pct;
+  if (g == null || g < 3 || (s.position !== "below" && s.position !== "above")) return "";
+  return (g > 40 ? "clearly " : g >= 15 ? "moderately " : "marginally ");
+}
 function posTag(s) {
   const text = POS_TAG_TEXT[s.position] || "differs from market";
   if (s.position === "practice") return { text, tone: "approach", hint: "" };
   if (s.polarity === "neutral") return { text, tone: "neutral", hint: "context, not a verdict" };
   if (s.position === "differs")  return { text, tone: "approach", hint: "" };
-  if (s.polarity === "lower")    return { text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
-  return { text, tone: marketTone(s.position), hint: "" };
+  const adv = severityAdverb(s);
+  if (s.polarity === "lower")    return { text: adv + text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
+  return { text: adv + text, tone: marketTone(s.position), hint: "" };
 }
 // The locked Signals state is the single biggest pull to submit data, so it
 // sells the payoff: what signals do, how close you are, and a blurred taste of

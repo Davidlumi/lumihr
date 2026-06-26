@@ -926,6 +926,33 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             s["confirm"] = True
             s["impact"] = round((s.get("impact") or 0) * CONFIRM_DEMOTE_MULT)
     out = [s for s in out if not s.get("_suppress")]
+    # PER-METRIC GAP MAGNITUDE for the verdict severity adverb (clearly/moderately/marginally),
+    # client-rendered on the Signals row (Ruling A, 2026-06-26). Mirrors the hero's depth adverb,
+    # but per-METRIC and in REAL-TERMS %-gap from the peer median (not percentile — a reward
+    # director judges materiality in gap size). ONLY positioned VALUE verdicts get it: prevalence
+    # ("most do this", no value), neutral/context, and approach/differs are excluded BY PROPERTY
+    # (no numeric value + p50). The client floors a <3% gap to NO adverb (at-market noise). Reuses
+    # the item's value+p50; presentation-only -> gauge-neutral, and gap_pct is not in signal_key /
+    # signal_state, so it never changes the change-alert identity (no rebaseline).
+    _item_by_key = {}
+    for _it in items:
+        _item_by_key[(_it.get("question_id"), _it.get("row_id"))] = _it
+    for s in out:
+        if (s.get("position") not in ("below", "above") or s.get("polarity") == "neutral"
+                or s.get("kind") in ("prevalence", "depth", "money")):
+            continue                            # only positioned VALUE verdicts; prevalence (adoption,
+        _sid = s.get("sig_id") or ""            # not a value gap) / depth / money are out of scope
+        _row = _sid.split("::", 1)[1] if "::" in _sid else None
+        _it = _item_by_key.get((s["question_id"], _row)) or _item_by_key.get((s["question_id"], None))
+        if not _it:
+            continue
+        _v, _p = _it.get("value"), _it.get("p50")
+        if _v is None or _p in (None, 0):
+            continue
+        try:
+            s["gap_pct"] = round(abs(float(_v) - float(_p)) / abs(float(_p)) * 100.0, 1)
+        except (TypeError, ValueError):
+            pass
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:
