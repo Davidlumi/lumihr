@@ -223,9 +223,9 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   // differs-from-peers). signals_all is impact-sorted, so slice() gives the top of each.
   const _sigPos = view === "practice" ? ["differs", "practice"] : ["below", "on", "above"];
   const _viewSigs = (data.signals_all || []).filter(s => _sigPos.indexOf(s.position) !== -1);
-  const _viewLive = _viewSigs.filter(s => s.status !== "dismissed");
-  const _viewShown = _viewLive.slice(0, 4);             // top 4 NON-dismissed (impact-sorted)
-  const _viewTotal = _viewLive.length;
+  const _viewLive = _viewSigs.filter(s => s.status !== "dismissed");   // full ranked live pool — the panel
+  const _viewTotal = _viewLive.length;                 // slices top-4 AFTER its optimistic dismiss filter
+                                                       // (filter-before-slice, so a dismiss backfills #5 from the tail)
   const _viewNew = _viewSigs.filter(s => s.new && s.status !== "dismissed").length;
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
@@ -265,7 +265,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         ${view === "practice"
           ? html`<${ApproachPanel} approach=${data.hero.approach} pending=${locked} />`
           : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
-        <${SignalsPanel} signals=${_viewShown} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} />
+        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} />
       </div>
       <div class="cat-grid">
         ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} pending=${locked} aim=${marketAim(m)} view=${view} />`)}
@@ -801,7 +801,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
   const [stOv, setStOv] = useState({});
   const effStatus = s => { const k = s.sig_id || s.question_id; return k in stOv ? stOv[k] : s.status; };
   const onSet = (sid, status) => { setStOv(p => ({ ...p, [sid]: status || "active" })); signalAction(sid, status).catch(() => {}); };
-  const shown = sigs.filter(s => effStatus(s) !== "dismissed");
+  const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0, 4);   // filter-before-slice: a dismiss backfills #5 from the tail
   return html`
     <div class="card signals-card">
       <div class="card-spot" aria-hidden="true"></div>

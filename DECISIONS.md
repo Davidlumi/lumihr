@@ -5821,3 +5821,17 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   credibility data (anchor provenance) and the duty-of-care risk state are now sliceable, composing cleanly with
   the existing position/tab/group axes — the expert questions ("only verified-source below-market gaps", "just the
   risk rows") answerable in two clicks.
+
+2026-06-26 — OVERVIEW SIGNALS PANEL — FILTER-BEFORE-SLICE FIX (APPROVED), BUILT. The home "Signals · top 4"
+  panel sliced the top-4 UPSTREAM (OverviewPage, on server status) then the panel's optimistic dismiss filtered
+  POST-slice with no re-slice — so dismissing a row shrank 4->3 with an empty slot, never backfilling rank #5. The
+  explore page was already correct (filters the full pool before any cut). Fix (2 pure-client edits, matching the
+  explore page): (1) OverviewPage passes the FULL live pool signals=${_viewLive} (removed the now-dead _viewShown);
+  (2) SignalsPanel filters THEN slices — const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0,4).
+  QA (4 proofs + edge): BACKFILL — dismiss #1 -> 4 rows (#5 slides up), dismiss #2 -> 4 rows (#6 slides up), never
+  a hole; ORDER — non-dismissed order byte-identical to baseline (the move applies no re-sort, panel maps _viewLive
+  in server impact-order); COUNT HONESTY — header "top 4" = visible, footer "See all 50" = _viewTotal (full view
+  pool), unchanged by the move; PURE RENDER — zero new network calls (backfill is a client re-slice on the existing
+  optimistic overlay), 0 console errors; EDGE — slice(0,4) on a <4 pool returns the whole array (JS-safe), renders
+  however many remain without erroring. Gauge 76/15/1/92 byte-identical; 2 QA-dismissed signals restored (demo
+  org clean). Cache v261 -> v262.
