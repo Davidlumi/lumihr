@@ -5499,3 +5499,35 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   superlative (Pass 5 B). OUT-OF-SCOPE observation flagged for a future look (NOT a Pass 5 ordering issue): the
   sweep reports caveats.illustrative is captured into StrategyCheck state (pages.js:301) but never RENDERED, so
   an org on a synthetic peer pool may show no sample-data caveat in the strategy-check card — unverified, parked.
+
+2026-06-26 — SIGNALS QA (post-Pass-5) — PAY GROUP ORDERING, RULING NO-BUILD (Q1 neutral sort position + Q2
+  rest-of-order). Three live screenshots of the Pay group (domain groupBy, inbox tab, demo org) showed the 2
+  NEUTRAL "context, not a verdict" rows — Workforce cost per FTE (PROP_d16bae79), Workforce cost as % of
+  revenue (PROP_e63cf45a) — leading the group, ABOVE the actionable below-market verdicts. DIAGNOSED read-only
+  (no DB write). Q1 — WHY neutral leads: they carry the HIGHEST BASE IMPACT in Pay (globalIdx 6 & 7 = the first
+  two Pay rows; impact is popped server-side at signals.py:932 so the signals_all ARRAY ORDER is the impact-desc
+  rank). They are kind="ahead" Level signals (you spend LESS than market — "LOWER THAN MARKET": £27,500 vs
+  £44,000 ≈ £16.5k/FTE; 14% vs 37% = 23pp), polarity-neutralised because lower-cost is directionally ambiguous
+  (efficient vs under-resourced). Their base verdict-tier impact scales with that large gap. NOTABLY the strategy
+  re-rank DEMOTES them: lens=attract under the org's "cost" objective → OBJECTIVE_LENS_MULT["cost"]["attract"]
+  =0.6 (signals.py:298), a STEEPER demote than the retain/engage below rows (×0.8) — yet they still lead, so the
+  base gap dominates. NOT a sort bug. RULING Q1 (David): NO-BUILD. Demoting neutral to the group TAIL (the
+  earlier diagnostic lean) is REJECTED — it would re-introduce the no-verdict↔low-value conflation Pass 4
+  explicitly refused, by burying the LARGEST-materiality rows in the group. Neutral is HIGH-MATERIALITY CONTEXT,
+  not low-priority signal — categorically unlike confirm (which tail-clumps CORRECTLY, Pass 3, because an on-plan
+  row genuinely IS low-priority/nothing-to-act-on). The navy tone (.sig-tone-neutral / .pos-neutral) + the
+  italic "context, not a verdict" hint already mark these rows, so leading with them does not mislead. THIS
+  EXTENDS PASS 4: neutral context rows are correct on COLOUR (navy, distinct from amber), GAUGE-EXCLUSION
+  (excluded from 76/15/1/92 via pages.js:1040), AND now SORT POSITION (high-impact context legitimately leads).
+  Q2 — REST OF PAY ORDER: correct-by-rank, no action. The rendered inbox Pay order is strictly globalIdx-
+  ascending (verified) = pure impact-desc across all tier-2 active rows; differs and below rows are INTERLEAVED
+  by impact (Tronc gi8 / Pay-increase gi9 high; Utility gi42 / Pay-for-skills gi44 / Other gi54 low), NOT grouped
+  by position — the expected impact-stable residual, not a bug. 0 confirm + 0 pin in Pay (Pay is not the
+  on_target domain; the override is Time Off→lag), so Pass 3/3.5 don't apply here. FLAGGED FOR ITS OWN GATED PASS
+  (NOT folded in, parked): the cost metrics' lens=attract tagging. For a cost-objective org the cost objective
+  DEMOTES the cost rows ×0.6 (attract under cost) — they lead on base gap alone, FIGHTING the multiplier. If
+  "Workforce cost per FTE" / "cost as % revenue" should be lens=save (boosted ×1.7 under cost), the strategy
+  would point the SAME way as the gap = coherent. This is a STRATEGY-COHERENCE question (does the engine's lens
+  tagging match the declared objective?), distinct from sort position. Its own gated diagnose when wanted —
+  verify the intended lens semantics BEFORE any re-tag, gauge-neutral check (a lens change doesn't touch verdict
+  mass), 2nd-org spot-check. Not actioned this turn.
