@@ -5752,3 +5752,40 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   PROGRAMME: (1) magnitude → BUILT (severity adverb). (2) peer-n → NO-BUILD (single-source "Small sample"
   caveat). (3) freshness → SPEC RULED, BUILD DEFERRED (seed-dormant). (4) anchor → STAGE 1 CAPTURED (this), stage
   2 render pending.
+
+2026-06-26 — ANCHOR PROVENANCE — STAGE 2 RENDER (ruling B), BUILT. Stage 1 captured s.anchor_grade (A/B/C
+  verified · EST estimate · absent=UNKNOWN) onto the signal payload, unrendered. Stage 2 surfaces it. RULING B
+  (David): MARK-VERIFIED + MARK-ESTIMATE, UNKNOWN silent-default. Rationale: UNKNOWN = provenance UNASSESSED
+  (not in the curated register); ESTIMATE = ASSESSED-and-weak (curator-derived, no published source) — different
+  claims, so collapsing assessed-weak into unassessed would HIDE a known weakness. Mark the two ASSESSED states
+  (verified + estimate), leave the ~86% UNASSESSED bare. A rejected (estimate vanishes into unknown); C rejected
+  (marking 723 unknowns = noise). GRADE: COLLAPSE A/B/C -> one "· verified source" on the row; the grade letter +
+  citation ride the HOVER. PLACEMENT: the figure line (.sig-stand), anchored after the market-median portion (it
+  is the ANCHOR's provenance) — distinct from the verdict adverb (in the pos-tag pill) and the page-level peer-n
+  "Small sample" caveat. Reserves the "you £X" half of the figure line for the deferred freshness cue (the figure
+  line is a two-cue zone: your-figure-freshness | anchor-provenance). GLYPH-CLASH GUARD honoured: the verified
+  mark is TEXT ("· verified source"), NOT a check — the row's green ✓ "On plan" confirm pill (Pass 2) owns the
+  check glyph; a row that is BOTH confirm AND verified shows both unambiguously (different zones/treatments).
+  BUILD: (server/signals.py) threaded s["anchor_source"] alongside s["anchor_grade"] in the stage-1 post-pass
+  (one line, same anchor_provenance() config) so the citation reaches the payload for hover. (web/js/pages.js)
+  provMark(s): UNKNOWN -> null (no mark); EST -> quiet "· estimate" (title "Curator estimate — no published
+  source. Treat directionally."); A/B/C -> quiet "· verified source" (title "Verified anchor (Grade <g>) ·
+  <source citation>"); rendered in the Row .sig-stand after s.stand. (web/css/app.css) .sig-prov (cursor:help +
+  faint dotted underline as the hover affordance), .sig-prov-ok (neutral ink), .sig-prov-est (muted amber
+  caveat, italic) — quiet, distinct from each other and from the On-plan check. cache v259->v260. GAUGE-NEUTRAL:
+  presentation only — anchor_grade/source are metadata, never feed the verdict/score; 76/15/1/92 byte-identical.
+  SIGNAL_KEY untouched (anchor_grade/source not in lens:kind:question_id:row, not signal_state columns) -> no
+  rebaseline, no storm. QA — FIVE PROOFS, all pass (live demo, v260, server restart for the source thread): (1)
+  THREE-STATE RENDERS — verified=44 "· verified source", estimate=3 "· estimate", unknown=34 UNMARKED. (2) NO
+  GLYPH CLASH — 4 rows are BOTH confirm AND verified (e.g. "Sabbatical or career break"): green ✓ On-plan pill on
+  the name line + muted "· verified source" text on the figure line, distinct + unambiguous (screenshot). (3)
+  SOURCE ON HOVER (the payoff) — verified hover shows the real citation ("Verified anchor (Grade B) · CIPD Labour
+  Market Outlook Spring 2026"); estimate hover shows the honest "no published source" note. (4) BYTE-IDENTICAL-
+  UNKNOWN — the 34 unknown rows render exactly as today (unmarked); the "you £X" freshness half untouched. (5)
+  GAUGE 76/15/1/92 unchanged. 0 console errors. ✅ This CLOSES THE ANCHOR AXIS (stage-1 capture + stage-2 render)
+  AND THE CONFIDENCE/STALENESS PROGRAMME: (1) magnitude -> BUILT (severity adverb); (2) peer-n -> NO-BUILD
+  (single-source "Small sample" caveat, Signals deliberately renders nothing extra); (3) freshness -> SPEC RULED,
+  BUILD DEFERRED (seed-dormant, the figure-line "you £X" half reserved for it); (4) anchor -> BUILT (verified +
+  estimate marks, UNKNOWN silent-default, source-on-hover). Every confidence axis is now either surfaced, single-
+  sourced, deferred-with-spec, or rendered — and the Signals verdict carries direction (Pass 1) + magnitude
+  (adverb) + anchor provenance, with peer-n at the page level and freshness reserved.

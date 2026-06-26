@@ -985,6 +985,12 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-tone-neutral   { background: #EEF0F7; border-left-color: var(--navy); }
 .sig-row-axis .sig-stand { opacity: 1; color: var(--ink-soft); }
 .sig-hint { color: var(--ink-faint); font-style: italic; }
+/* anchor provenance mark (stage 2, ruling B 2026-06-26): quiet text on the figure line; hover shows the
+   source citation (the Anchor Register payoff). NOT a check — the On-plan confirm pill owns the check glyph.
+   verified = neutral ink; estimate = a quiet amber caveat (distinct). UNKNOWN renders no mark (silent default). */
+.sig-prov { cursor: help; white-space: nowrap; border-bottom: 1px dotted color-mix(in srgb, currentColor 40%, transparent); }
+.sig-prov-ok  { color: var(--ink-soft); }
+.sig-prov-est { color: var(--neutral-perf); font-style: italic; }
 .pos-tag { font-size: var(--fs-micro); font-weight: 650; letter-spacing: .015em; padding: var(--s1) var(--s3); border-radius: 7px; white-space: nowrap; flex: none; }
 /* verdict tags: darken green/red onto their tints with the same color-mix recipe
    as .chip/.pos-pill so the text clears AA (≥4.5:1); amber already ships the deep

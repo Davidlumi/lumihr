@@ -991,6 +991,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             _pv = _prov.get(s.get("question_id"))
             if _pv:
                 s["anchor_grade"] = _pv.get("grade")
+                s["anchor_source"] = _pv.get("source") or ""   # stage-2: citation for the verified hover
     if not cap:                                    # full set for the Signals explore page
         out.sort(key=lambda s: -s["impact"])
         for s in out:

@@ -936,6 +936,19 @@ function posTag(s) {
   if (s.polarity === "lower")    return { text: adv + text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
   return { text: adv + text, tone: marketTone(s.position), hint: "" };
 }
+// ANCHOR PROVENANCE mark (stage 2, ruling B, 2026-06-26): the market-median anchor's source quality —
+// a QUIET, TEXT-ONLY mark on the figure line (so it composes near "market median £Y", distinct from the
+// verdict adverb in the pill and from the page-level peer-n caveat). THREE-STATE: A/B/C collapse to
+// "verified source" (grade + citation on hover — the Anchor Register payoff); EST → "estimate" (honest
+// "no published source"); UNKNOWN (s.anchor_grade absent) → NOTHING (silent default for the ~86%).
+// TEXT, NOT a check — the row's green ✓ "On plan" pill already owns the check glyph (no clash).
+function provMark(s) {
+  const g = s.anchor_grade;
+  if (!g) return null;                                   // UNKNOWN — unmarked, byte-identical
+  if (g === "EST")
+    return html`<span class="sig-prov sig-prov-est" tabindex="0" title="Curator estimate — no published source. Treat directionally."> · estimate</span>`;
+  return html`<span class="sig-prov sig-prov-ok" tabindex="0" title=${"Verified anchor (Grade " + g + ")" + (s.anchor_source ? " · " + s.anchor_source : "")}> · verified source</span>`;
+}
 // The locked Signals state is the single biggest pull to submit data, so it
 // sells the payoff: what signals do, how close you are, and a blurred taste of
 // the real thing (the actual tag vocabulary, detail obscured).
@@ -1071,7 +1084,7 @@ window.SignalsPage = function ({ me }) {
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
       <span class="signal-body">
         <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
-        <span class="sig-stand">${s.stand || s.detail}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
+        <span class="sig-stand">${s.stand || s.detail}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
       <span class=${"pos-tag pos-" + pt.tone}>${pt.text}</span>
       <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
     </div>`; };
