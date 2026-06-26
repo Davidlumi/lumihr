@@ -5566,3 +5566,33 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   failures; .bak retained for rollback. The engine now points the SAME way as the declared objective for these
   spend metrics — strategy-coherence restored. (Note: a lens re-tag must go through silent rebaseline, never the
   nightly diff — the signal_key includes lens, established here as the pattern for any future lens-map edit.)
+
+2026-06-26 — CAVEATS.ILLUSTRATIVE — strategy-check sample-data caveat, RULING NOT A GAP (no-build). The Pass-5
+  honesty sweep reported that caveats.illustrative is captured into StrategyCheck state but may never RENDER —
+  i.e. an org on a synthetic peer pool could read strategy-check findings with no "illustrative / sample data"
+  warning. VERIFIED read-only end-to-end; the sweep was right on the render-absence but OVER-REPORTED it as a
+  risk. TRACE: (SET) caveats.illustrative = bool(get_meta("synthetic_pool", False)) — produced at app.py:983 /
+  1542 / 1558 / 3685 / 3722, meant to fire when the org sits on a synthetic peer pool. (CAPTURED) pages.js:301
+  `illustrative: (r.caveats || {}).illustrative` into StrategyCheck state. (RENDERED) ZERO sites — exhaustive
+  grep: the ONLY mention of illustrative/caveats in all of web/js is the capture at pages.js:301; the
+  StrategyCheck render (pages.js:307-349) reads st.parts / st.source / st.onPlan / st.phase and NEVER st.
+  illustrative. The captured field is dead state. So the binary answer is: it renders nowhere. WHY THIS IS NOT A
+  GAP (three independent reasons): (1) DELIBERATE — task #68 retired the dev-era illustrative/synthetic self-
+  labelling AT SOURCE (DECISIONS.md:3997-4007: "dropped the synthetic_pool field… flipped illustrative_sample_
+  data to default OFF everywhere"), because the seed is expert-signed / plausibility-validated, so the benchmark
+  is presented as real-member data PLATFORM-WIDE; the strategy-check card is CONSISTENT with every other surface,
+  not dropping a caveat others keep. (2) QA-ENFORCED — qa_phase4 §4.5 + qa_commentary §D actively ASSERT no
+  synthetic/illustrative label renders (and pass); qa_commentary.py:156 is explicit ("the 'illustrative sample
+  data' caveat is retired; nothing renders it"). Rendering it would REVERSE a shipped decision AND fail 2 QA
+  suites. (3) STRUCTURALLY DEAD FLAG — the synthetic_pool meta key is ABSENT from the live DB (only peer_pool
+  exists, the real pool), so get_meta("synthetic_pool", False) returns False for every request → caveats.
+  illustrative is ALWAYS false → NO live org fires it (demo org included). The honesty concern (synthetic-pool
+  findings shown as real-peer) cannot manifest in current data. BLAST RADIUS: zero orgs. SIBLINGS: the strategy-
+  check caveats object holds ONLY illustrative (no small_sample/coverage sibling), so there is no "a sibling
+  renders but illustrative doesn't" signal. RULING (David): NOT A GAP → no-build. Optional, NOT actioned: the
+  producer (5 app.py sites) + capture (pages.js:301) are vestigial (compute/stash a permanently-false flag) and
+  could be deleted for tidiness, or left as a dormant hook — cosmetic, not corrective. FUTURE-REVIVAL GATE
+  (recorded): if synthetic pools were ever revived (re-setting the synthetic_pool meta), the caveat would
+  silently not render AND qa_phase4 §4.5 / qa_commentary §D would FAIL (they assert no label) — so the QA
+  assertions force a deliberate re-introduction of the labelling at that time; the latent risk is self-guarding.
+  No code, no cache bump. This closes the caveats.illustrative item parked in the Pass-5 entry (DECISIONS.md:5500).
