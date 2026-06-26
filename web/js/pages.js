@@ -1086,7 +1086,7 @@ window.SignalsPage = function ({ me }) {
         <div class="sig-summary card">
           <div class="sig-summary-top">
             <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + (POS_TAG_TEXT[effPos] || effPos)}</span>
-            ${data.strategy_objective && html`<span class="sig-strat-order" title="The most material signals for your stance come first. Set in your reward strategy.">
+            ${data.strategy_objective && html`<span class="sig-strat-order" title="Each area is ordered for your stance — pins stay on top. Set in your reward strategy.">
               <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
           </div>
           <div class="sig-bar" role="img" aria-label="Signals by market position">

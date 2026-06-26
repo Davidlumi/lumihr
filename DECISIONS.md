@@ -5461,3 +5461,41 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   stays. CLOSE Pass 4 no-build. (Softening the shared "below market" wording on context rows — e.g. a distinct
   context label — would be its own scoped redesign pass, not this verify.) Deferred Signals passes remaining:
   5 header honesty (inherits the domain-fixed-group-order vs "ordered for your strategy" question from Pass 3).
+
+2026-06-26 — SIGNALS PASS 5 — HEADER HONESTY, RULING B (drop the superlative), BUILT (one line). The final
+  Signals pass. An exhaustive read-only honesty sweep of EVERY user-facing claim on the Signals page (header
+  chip + tooltip + intro paragraph + strategy-check card + register foot + empty states + count) found 12
+  ordering/materiality/strategy/provenance claims, 11 HONEST and exactly 1 LOOSE: the header-chip tooltip
+  title= "The most material signals for your stance come first." VERIFIED honest (untouched): the VISIBLE chip
+  "ordered for your <objective> strategy" (the order genuinely is objective-shaped — build_signals multiplies
+  impact by _objective_mult/_p4p_mult/_transparency_mult and sorts by -impact; no global-materiality claim);
+  the intro ("grounded in your peer data, never advice · we flag, you decide"); the strategy-check card ("read
+  only from your own figures and your declared aims" — findings are deterministic via the strategy_diag
+  firewall, model only narrates, with honest "AI · review before use"/"not advice" disclosures); the register
+  foot ("Signals shows only the signals that cross a threshold" — actively undercuts any complete-ordering
+  read). THE LOOSE TOOLTIP was loose at TWO levels: (1) GLOBALLY — the fixed SIG_DOMAINS group order (Pay →
+  Incentives → Benefits → Time Off → Wellbeing → Recognition → Governance, pages.js:905/~1043, NOT materiality-
+  reordered) means Pay's rows always come first, not the most material across domains; (2) WITHIN-AREA — Pass 3
+  (confirm ×0.25 demote → tail) and Pass 3.5 (pin → top) DELIBERATELY made the within-area order NOT pure
+  materiality, so a tooltip claiming "most material first" now CONTRADICTS the ordering we spent two passes
+  building. RULING B (David): DROP the superlative entirely (not the minimal "within each area … most material
+  first" scoping, which fixes only level 1 and leaves level 2 contradicting Pass 3/3.5). CHANGE (web/js/
+  pages.js:~1089, title= string only, cache v257→v258): "The most material signals for your stance come first.
+  Set in your reward strategy." → "Each area is ordered for your stance — pins stay on top. Set in your reward
+  strategy." States what is TRUE at both levels: each AREA ordered FOR YOUR STANCE (impact is strategy-shaped),
+  PINS STAY ON TOP (Pass 3.5 — and the ordering fact the user most needs, since they took the explicit pin
+  action). Honest ABOUT Pass 3/3.5 rather than undermining it. The visible chip "ordered for your strategy" is
+  UNTOUCHED (already honest). A rejected (knowingly keeps a loose superlative when the fix is free); C (strategy-
+  rank the groups) rejected (breaks the stable, navigable fixed domain order — users learn "Pay is always
+  first"; over-engineering — fixed order is a navigation feature, not a bug). DEGRADE (verified clean): the
+  tooltip lives inside the same data.strategy_objective-gated span, so it never shows when strategy is off — no
+  new conditional, zero degrade risk (sweep: this is the ONLY loose claim in SignalsPage; strategy_off_has_
+  orphan_claim=false). QA (in-browser, v258, live demo org): strategy-ON → chip present, visible text "ordered
+  for your Control cost strategy · edit" (untouched), tooltip = the new copy; strategy-OFF (overview?strategy=
+  off render) → chip ABSENT, zero "most material" text anywhere on the page; 0 console errors. ✅ This CLOSES
+  the 5-pass Signals strategy-coherence sequence: (1) colour = market DIRECTION (Pass 1), (2) confirm/tension
+  ICON system — green On-plan pill (Pass 2), (3) confirm-aware rank → tail-clump (Pass 3 A+), (3.5) pin beats
+  confirm (Pass 3.5 A), (4) context-row verify — no-build false alarm (Pass 4), (5) header honesty — drop the
+  superlative (Pass 5 B). OUT-OF-SCOPE observation flagged for a future look (NOT a Pass 5 ordering issue): the
+  sweep reports caveats.illustrative is captured into StrategyCheck state (pages.js:301) but never RENDERED, so
+  an org on a synthetic peer pool may show no sample-data caveat in the strategy-check card — unverified, parked.
