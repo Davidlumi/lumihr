@@ -1272,19 +1272,18 @@ function CategoryTile({ d, pending, aim, view }) {
   const evCount = ev ? ev.polarised + ev.practice : 0;
   const evNote = ev ? ("based on " + evCount + " positioned metric" + (evCount === 1 ? "" : "s") +
     (indicative ? " — indicative, not a full market verdict" : "")) : "";
-  // The chip + card tint read against the org's AIM (Option A): on-target/ahead is
-  // favourable, only short of the aim is red; no stance → absolute RAG. The bands stay
-  // ABSOLUTE (marketTone) so the composition is factual. Governance (noRate) is OUT of
-  // the headline — no market rate to be under/over — so it reports prevalence instead.
-  // FIX 1 — chip + card tint colour by ATTAINMENT (attainTone): on your aim = green, off it
-  // = amber, no stance = grey-neutral. The chip TEXT keeps the direction word (below/on/
-  // above); only the colour changes. No verdict (practice / no market rate) → practice tint.
-  // CARD-RECOLOUR (2026-06-25, ruling A): colour against the domain's OWN aim — read d.target.alignment
-  // (L3, the SAME field L4 suppression reads, so card ⟷ suppression can't diverge). on_target→green /
-  // behind|ahead→amber = the Fix-1 lens unchanged, only the aim is now per-domain. No target (Governance
-  // / strategy-off / no aim) → fall back to the global attainTone → byte-identical to today.
-  const tone = verdict ? (d.target ? (ATTAIN_ALIGN[d.target.alignment] || attainTone(verdict, aim))
-                                   : attainTone(verdict, aim)) : null;
+  // PASS 2 (RAG/strategy separation, 2026-06-27) — tile chip / top-border / bar colour by
+  // POSITION, not attainment: tone = marketTone(verdict) (below=amber / on=green / above=red),
+  // strategy-INVARIANT. Was ATTAIN_ALIGN[d.target.alignment] / attainTone(verdict, aim) — the
+  // org's aim recolouring the position. The alignment relationship now rides the compact navy
+  // AlignmentChip in the header (strategy-on only); strategy never enters the tile hue, so
+  // strategy-off and strategy-on render the SAME per-tile colour (on==off parity). The chip
+  // TEXT stays the direction word (below / on market / above); no verdict (practice / no market
+  // rate) → practice tint. R3: an above-market tile now reaches marketTone "red" → the v-above
+  // border + chip-bad, previously unreachable under the attainment lens (which only emitted
+  // green/amber/grey). (v-above-over / "redover" stays retired — it was a strategy-overshoot
+  // concept with no meaning in the pure position lens.)
+  const tone = verdict ? marketTone(verdict) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : noRate ? "no market rate" : "practice view";
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const vCls = tone ? MKT_VCLS[tone] : "v-practice";
@@ -1309,6 +1308,7 @@ function CategoryTile({ d, pending, aim, view }) {
         <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
         ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
       </span>
+      ${d.target ? html`<div class="cat-tile-align"><${AlignmentChip} target=${d.target} compact=${true} /></div>` : null}
       ${positioned ? html`
         <div class="cat-axis num">position</div>
         <div class=${"cat-pos" + (indicative ? " cat-pos-indic" : "")}>

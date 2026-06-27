@@ -5901,3 +5901,24 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   below-market (amber) + "On plan" (intent matched, in the chip). 0 console errors. Verdict WORD still flips to
   "On target"/_onTarget (strategy TEXT framing, not colour) — left as-is (out of Pass 1 scope; flagged). Tiles
   still on attainment (Pass 2). Cache v264 -> v265.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 2 (Category tiles ×7), BUILT. The 7 CategoryTiles coloured chip +
+  top-border (vCls) + the whole position bar by ATTAINMENT (tone = ATTAIN_ALIGN[d.target.alignment] ||
+  attainTone(verdict, aim) — the org's per-domain aim recolouring position). Pass 2 reverts tone to POSITION:
+  tone = marketTone(verdict) (below=amber/on=green/above=red), strategy-INVARIANT; feeds chipCls (MKT_CHIP),
+  vCls (MKT_VCLS) + the bar (MKT_RICH/MKT_SOFT) unchanged downstream. The alignment relationship now rides the
+  compact navy AlignmentChip. DENSITY (David's explicit gate): the labelled chip on the name line OVERFLOWED the
+  narrow tiles (134px tile / 102px header; "Incentives" name 99px + "On plan" 67px = head scrollWidth 174 >> 102)
+  — reported, NOT shipped cramped. David ruled OWN-ROW: the chip rides its own full-width line under the verdict
+  chip (.cat-tile-align, margin-top -s2 to group). QA (live, demo org director@thornbridge): all 6 substantive
+  tiles v-below + chip-mid amber (Governance v-practice "no market rate", no chip); on==off colour parity TRUE
+  (toggled live — every tile border+chipClass identical strategy-on vs off); AlignmentChip "On plan" present ON,
+  GONE OFF (strategy-on only); own-row layout verified — chip below the name, align_row_overflow false,
+  chip_overflows_tile false on all 7, uniform tile height 203px (no crowding). R3 LATENT BUG: the dead red
+  .cat-tile.v-above / v-above-over borders — confirmed by synthetic probe (.cat-tile.v-above border-top-color =
+  rgb(192,57,43) = --unfavourable; .tile-chip.chip-bad = red-tint bg + red text) that an above-market tile now
+  renders position-red (path: above -> marketTone "red" -> v-above + chip-bad). FLAGGED: no demo org domain is
+  above-market (all below/on), so R3 is confirmed-by-inspection, NOT live data; v-above-over ("redover") correctly
+  STAYS retired (a strategy-overshoot concept with no meaning in the pure position lens). 0 console errors; parse
+  OK. Screenshot tool mini-scaled (known quirk, stop/start did not clear) — density confirmed via pixel
+  measurement, not eyeball. Cache v266 -> v267. NEXT: Pass 3 (MarketSpectrum hero + every category page).
