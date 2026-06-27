@@ -537,7 +537,7 @@ function MarketSpectrum({ market, aim }) {
 // centre. Replaces the needle dial (2026-06-23). Used for BOTH the market read
 // (below/on/above) and the practice read (differ/in-line); colours passed in by the
 // caller so it stays a dumb renderer. Segments draw from 12 o'clock, clockwise.
-function Donut({ segments, total, centerNum, sub, size, stroke }) {
+function Donut({ segments, total, centerNum, sub, size, stroke, centerWord }) {
   size = size || 188; stroke = stroke || 26;
   const r = (size - stroke) / 2, cx = size / 2, cy = size / 2, C = 2 * Math.PI * r;
   let acc = 0;
@@ -559,8 +559,11 @@ function Donut({ segments, total, centerNum, sub, size, stroke }) {
         ${arcs}
       </svg>
       <div class="donut-center">
-        <div class="donut-num num">${centerNum}</div>
-        ${sub ? html`<div class="donut-sub">${sub}</div>` : null}
+        ${centerWord
+          ? html`<div class="donut-word">${centerWord}</div>
+              <div class="donut-count num">${centerNum}${sub ? " " + sub : ""}</div>`
+          : html`<div class="donut-num num">${centerNum}</div>
+              ${sub ? html`<div class="donut-sub">${sub}</div>` : null}`}
       </div>
     </div>`;
 }
@@ -676,10 +679,11 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
             { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
             { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
           ]}
-          total=${market.pool} centerNum=${market.pool} sub="metrics" size=${210} stroke=${28} />
+          total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${210} stroke=${28} />
       </div>
       <div class="arc-verdict">
-        <div class=${"arc-word num" + (animateNeedle ? " arc-word-reveal" : "")} style=${{ color: "var(--ink)" }}>${headWord}</div>
+        ${/* PASS 6: the verdict WORD moved into the donut centre; this keeps only the magnitude
+              adverb (clearly/moderately/marginally below/above the market) as one quiet caption. */ ""}
         <div class="arc-lean">${headLean}</div>
       </div>
       <div class="arc-legend num">

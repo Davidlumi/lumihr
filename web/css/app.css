@@ -841,6 +841,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   justify-content: center; text-align: center; pointer-events: none; }
 .donut-num { font-size: var(--fs-metric-lg); line-height: 1; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .donut-sub { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: 3px; }
+/* PASS 6 (2026-06-27): market gauge donut centre = the POSITION verdict word (the finding),
+   NEUTRAL ink — the ring carries the RAG colour, so the word is not re-coloured (no doubled
+   cue). The metric total is demoted to a small line beneath. centerWord is opt-in: the market
+   gauge passes it; the practice donut keeps its count-centric centre. Sized to fit "On market". */
+.donut-word { font-family: var(--font-head); font-size: 24px; line-height: 26px; font-weight: 650;
+  letter-spacing: -0.01em; color: var(--ink); text-align: center; }
+.donut-count { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
 /* spectrum hero SVG: mirror .arc-svg so it can't collapse to 0 width in WebKit
    (an SVG with only a viewBox and no width rule has no intrinsic size here) */
 .spectrum-svg { width: 100%; max-width: 300px; display: block; }

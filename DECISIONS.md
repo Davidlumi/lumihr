@@ -6033,3 +6033,27 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   Logged for a future consistency pass, NOT swept in. Cache v273 -> v274. CLOSES the channel separation: colour =
   position (marketTone), word/chip = position (below/on/above market), alignment = navy chip behind/on/ahead-of-
   strategy (strategy-on only) — three elements, two channels, no "amber but On target" contradiction.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 6 (donut centre = position verdict + hero tighten), BUILT. The gauge
+  donut centre showed "92 / metrics" (a COUNT, not a finding) in the page's most prominent spot, while the position
+  verdict word ("Below") floated BENEATH the donut — a 2-element word+lean stack (.arc-verdict, 59px) that pushed
+  the domain tiles toward/below the fold. Two issues, one fix: pull the verdict INTO the centre, drop the float.
+  BUILD (pages.js + app.css, pure render): (1) Donut gains an OPT-IN centerWord prop — the market gauge passes
+  centerWord=headWord ("Below") so the centre = the verdict WORD (the donut self-contains: ring=distribution,
+  centre=verdict) + a demoted small "92 metrics" line; the PRACTICE gauge does NOT pass it, so its count-centric
+  centre is byte-unchanged. (2) "92 metrics" → small .donut-count under the word. (3) .arc-verdict collapses from
+  word+lean (2 elements) to the single magnitude caption (.arc-lean = "clearly below the market", clearly/
+  moderately/marginally — magnitude preserved per ruling (a)); the redundant floated verdict WORD is removed.
+  CHANNEL DISCIPLINE (load-bearing): centre = POSITION verdict only ("Below"), NEVER the alignment state — the
+  "Behind strategy" chip stays separate beneath; centre + chip never mix. COLOUR: centre word = NEUTRAL ink
+  (var(--ink), the same the floated word used) — the RING carries the RAG colour, so the word isn't re-coloured
+  (no doubled cue). .donut-word 24px head-font (sized to fit the longest verdict "On market" — probed 121px in the
+  154px centre). QA (live, demo org director@thornbridge): centre "Below" + "92 metrics"; centre word colour
+  rgb(33,27,38)=--ink; caption "clearly below the market"; floated .arc-word GONE (no duplicate verdict on the
+  page); GUARD — practice donut centre unchanged ("76 practices", no donut-word); on==off — centre word "Below"
+  IDENTICAL strategy-on vs off (position → strategy-invariant, like the colour); "On market" probe 121px fits.
+  HERO HEIGHT: arc-card 435 -> 402px (-33px); first-tile top 675 -> 642px. TILE-FOLD: at 1320x900 the tile row
+  fully clears (845 < 900) — cutoff fixed there; at a 1366x768 laptop the row now STARTS on-screen (top 642 < 768)
+  but the bottom (845) is 77px below the fold — down from ~110px — so this is a meaningful STEP-1 tighten, not a
+  full clear on short laptops (follow-up: trim the card-head / counts spacing). 0 console errors; parse OK; clean
+  screenshot captured. Cache v274 -> v275.
