@@ -6057,3 +6057,25 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   but the bottom (845) is 77px below the fold — down from ~110px — so this is a meaningful STEP-1 tighten, not a
   full clear on short laptops (follow-up: trim the card-head / counts spacing). 0 console errors; parse OK; clean
   screenshot captured. Cache v274 -> v275.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — TILE ALIGNMENT-CHIP READ FIX, BUILT. Pass-5 abbreviated the tile chip to
+  the state word alone (On/Behind/Ahead) to fit the 134px tile, but it read MUDDY: "below · On" (verdict chip +
+  bare alignment chip) was ambiguous — "on what?" — and "On" looked almost contradictory beside the position
+  "below". FIX (David's ruling): give the alignment chip a quiet LABEL mirroring the tile's existing "POSITION"
+  label, so the abbreviated state word reads against it. BUILD (pages.js + app.css, pure render): (1) a new
+  "STRATEGY" label = <div class="cat-axis num">strategy</div> — REUSES .cat-axis verbatim (9.5px / weight 650 /
+  letter-spacing .07em / uppercase / --ink-faint), identical to "POSITION", no new chrome. (2) REORDER: the
+  labelled alignment row moves from ABOVE the position bar to BELOW it, so the tile reads verdict-chip → POSITION
+  [bar] → STRATEGY [Behind/On/Ahead] — position primary (the fixed fact), alignment secondary (the strategy
+  overlay), primary-then-secondary, matching the gauge's vertical order. (3) both the STRATEGY label + the chip
+  sit INSIDE the d.target gate → hide together strategy-off (no orphan label). .cat-tile-align margin-top
+  calc(-1*--s2) → var(--s2) to mirror .cat-pos (label's negative margin-bottom snugs the chip up). The chip stays
+  the abbreviated word; the full "Behind/On/Ahead strategy" stays on the gauge/hero + every tooltip. QA (live):
+  ORDER correct (position-label y < bar < strategy-label <= chip); STRATEGY label byte-matches POSITION (9.5px,
+  rgb(142,136,147)=--ink-faint, uppercase, .07em); all THREE states read clean under the label — BEHIND + ON
+  (Thornbridge, e.g. Time Off="On"), AHEAD (Larkholm forced match→above=ahead, then strategy removed) — 0 tile
+  overflow on any; strategy-OFF → 0 STRATEGY labels + 0 chips (degrade contract, no orphan); gauge/hero full
+  phrase unchanged ("Behind strategy"/"Ahead of strategy"); tooltips carry the full phrase. 0 console errors;
+  parse OK. (Screenshot mini-scaled — a flaky preview quirk — so verified by DOM measurement.) Resolves the
+  gauge-vs-tile wording inconsistency: gauge states "On strategy" inline; tile states it via the "STRATEGY: On"
+  label. Cache v275 -> v276.

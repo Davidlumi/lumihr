@@ -1037,11 +1037,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   border-top: 3px solid var(--border); border-radius: 0 0 var(--radius) var(--radius);
   display: flex; flex-direction: column; gap: var(--s3); }
 .cat-tile .row.spread { min-height: 26px; }
-/* PASS 2 (RAG/strategy separation) — the compact navy AlignmentChip rides its OWN line under
-   the verdict chip (strategy-on only); the name line is too narrow for a labelled chip beside
-   longer category names (David, own-row ruling). Snug it up under the verdict chip so the
-   position + alignment reads group together. */
-.cat-tile-align { margin-top: calc(-1 * var(--s2)); }
+/* The compact navy AlignmentChip rides its OWN line (the name line is too narrow for a labelled
+   chip beside longer category names). It now sits under a quiet "STRATEGY" .cat-axis label,
+   BELOW the position bar — so it mirrors the position row exactly (label + value): margin-top
+   var(--s2) matches .cat-pos, and the label's negative margin-bottom snugs the chip up to it. */
+.cat-tile-align { margin-top: var(--s2); }
 .cat-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 .cat-tile.v-below { border-top-color: var(--amber-bright); }
 .cat-tile.v-above { border-top-color: var(--unfavourable); }

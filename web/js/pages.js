@@ -1247,7 +1247,6 @@ function CategoryTile({ d, pending, aim, view }) {
         <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
         ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
       </span>
-      ${d.target ? html`<div class="cat-tile-align"><${AlignmentChip} target=${d.target} compact=${true} /></div>` : null}
       ${positioned ? html`
         <div class="cat-axis num">position</div>
         <div class=${"cat-pos" + (indicative ? " cat-pos-indic" : "")}>
@@ -1267,6 +1266,14 @@ function CategoryTile({ d, pending, aim, view }) {
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>
         ${prev.with_majority != null && html`<div class="caption num" title="practices in line with the market majority">${prev.with_majority}/${prev.pool} in line with the market</div>`}`}
+      ${/* PASS (tile alignment label): a quiet STRATEGY row beneath the POSITION bar, mirroring
+            its "POSITION" label (same .cat-axis) so the abbreviated state word reads against it
+            ("STRATEGY: Behind/On/Ahead"). Position primary (the fixed fact), alignment secondary
+            (the strategy overlay) — primary-then-secondary, matching the gauge. Both label + chip
+            gate on d.target → hide together strategy-off (no orphan label). */ ""}
+      ${d.target ? html`
+        <div class="cat-axis num">strategy</div>
+        <div class="cat-tile-align"><${AlignmentChip} target=${d.target} compact=${true} /></div>` : null}
     </div>`;
 }
 
