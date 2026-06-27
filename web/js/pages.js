@@ -487,6 +487,24 @@ const MKT_RICH = { green: "color-mix(in srgb, var(--favourable) 56%, var(--surfa
 const MKT_CHIP = { green: "chip-good", red: "chip-bad", redover: "chip-bad-over", amber: "chip-mid", grey: "chip-neutral-mkt", neutral: "chip-practice" };
 const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber: "v-below", grey: "v-neutral-mkt", neutral: "v-practice" };
 
+// ── ALIGNMENT INDICATOR — the SEPARATE strategy channel (RAG/strategy separation, Phase B,
+// 2026-06-27, ruling R2). The aggregate-position surfaces (the hero gauge + the category
+// tiles) carry no signal-row to host an "On plan" pill, so the strategy relationship rides
+// as this NAVY chip: a target glyph + a short, aim-relative label. It reads ONLY
+// target.alignment (server _market_target → {stance, alignment}); with no target it renders
+// NOTHING, so a strategy-off view degrades to pure RAG position colour with zero indicators.
+// NAVY by design — never amber/green/red (that would re-merge with the position RAG) and
+// never coral (risk) — so the two channels stay visually distinct. The label distinguishes
+// behind vs ahead, which the old attainment colour could not (it lumped both as amber); the
+// full sentence (targetCopy) rides as the title. DORMANT in Phase B: defined here, wired onto
+// NO surface yet — the gauge / tiles / spectrum / category-hero revert passes adopt it.
+const ALIGN_LABEL = { on_target: "On plan", behind: "Behind plan", ahead: "Ahead of plan" };
+function AlignmentChip({ target, compact }) {
+  if (!target || !ALIGN_LABEL[target.alignment]) return null;
+  return html`<span class=${"align-chip align-" + target.alignment + (compact ? " align-chip-sm" : "")}
+    title=${targetCopy(target)}><${Icon} name="target" size=${compact ? 11 : 12} /> ${ALIGN_LABEL[target.alignment]}</span>`;
+}
+
 // Shared "market spectrum" marker chart — the proportional below/on/above blocks
 // unrolled onto a below↔above axis, with the org's declared AIM drawn on the axis
 // and a "you are here" centroid marker. ONE component for the overview hero AND

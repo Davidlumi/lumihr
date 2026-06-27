@@ -5855,3 +5855,31 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   cleanup; plays smoothly in a foreground browser. Demo integrity: the 2 prior-task signals (Workforce cost,
   Maximum LTI) had silently reverted to dismissed; re-restored via status=null (app's real restore path) and
   confirmed it persists across reload. Cache v262 -> v263 (17 + 12, lockstep).
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PHASE A DIAGNOSE + PHASE B SPEC+HELPER, BUILT (Phase B; Phase A is
+  read-only). RULING: two channels must never share a colour — COLOUR = market position RAG (amber=below /
+  green=on / red=above), FIXED + strategy-INVARIANT; ALIGNMENT INDICATOR = a separate navy chip encoding distance
+  from the org's OWN declared aim, strategy-on only, never recolours position. PHASE A (workflow: 6 surface
+  readers + adversarial completeness critic, high confidence): per-surface map — domain page (CategoryPage) BLEED,
+  home MIXED (gauge + tiles BLEED, signal rows + verdict-word CLEAN), Signals explore CLEAN (Pass 1 holds), on-plan
+  pill CLEAN (the correct two-channel pattern; '.is-confirm' has NO CSS rule — inert), risk-colour separable,
+  palette single-sourced-tokens / SCATTERED-logic. KEY FINDING: not a repaint — marketTone() (pages.js:435) ALREADY
+  returns amber/green/red; the bleed is a 2026-06-23 'Fix 1' that swapped 4 surfaces (gauge donut, 7 tiles,
+  MarketSpectrum, category-hero chip) onto an ATTAINMENT lens (attainTone/_gaugeAttain/ATTAIN_ALIGN, fed by server
+  _market_target {stance,alignment}). So Phase B+ = a REVERT of those 4 onto marketTone + a new alignment chip.
+  RED-ABOVE coexists with risk-coral: risk = coral glyph + INSET left-edge shadow (.is-risk box-shadow), position =
+  background FILL + border-left-color (.sig-tone-*) — different CSS properties, no clash (maternity REW_BEN_FAM_002
+  stays distinct in both strategy states). Pure render: server emits NO colour, only verdict/favourable/target
+  enums; _market_target never changes verdict/counts/lean — NO signal_key/rebaseline. RULINGS: R1 signal rows STAY
+  polarity-aware (do NOT flatten to literal RAG; a below-market lower-is-better metric is honestly green) — agreed.
+  R2 alignment cue = navy 'target' chip (glyph + On plan / Behind plan / Ahead of plan) on BOTH gauge (caption
+  slot) and tiles (header, compact) — David chose. R3 the two latent bugs (dead red v-above/v-above-over tile
+  borders; inverted methodology legend pages.js:2112) get FIXED INSIDE the revert passes (passes 2 + 4), not
+  deferred. PHASE B BUILT (commits alone, NO surface switched): (1) RAG_SPEC.md — the shared spec (§1 marketTone
+  single source; §2 AlignmentChip; §3 risk; §4 degrade contract: strategy-off==strategy-on colour byte-identical,
+  indicators added-only — every pass's gate; + the 4-pass sweep map). (2) AlignmentChip + ALIGN_LABEL dormant
+  helper (pages.js:490) — navy chip, reads target.alignment only, renders null when absent, compact variant; wired
+  onto NO surface. (3) .align-chip navy CSS (app.css:2270) — distinct from RAG + risk-coral. QA: pages.js PARSE_OK
+  (no white-screen), AlignmentChip invoked 0 times (dormant), 21 attainTone/_gaugeAttain/ATTAIN_ALIGN refs intact
+  (4 surfaces untouched), CSS served. Cache v263 -> v264 (17 + 12). NEXT: revert sweep = 4 gated passes (gauge ->
+  tiles -> spectrum -> cat-hero+legend), none bundled, each proving the two-halves degrade contract.
