@@ -720,11 +720,12 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
   const _dirPhrase = v === "below" ? "below market" : v === "above" ? "above market" : "on market";
   const headWord = _onTarget ? "On target" : word;
   const headLean = _onTarget ? ("sitting " + _dirPhrase + ", as you intend") : leanWord;
-  // FIX 1 — the ring colours by ATTAINMENT, not direction: on target green, off target
-  // amber, no strategy grey. A single hue across the ring; the verdict band sits richer so
-  // the eye lands, but the split (below/on/above) is read by arc SIZE + the legend, never
-  // by hue. _onTarget already folds on_target/ahead → on target (mirrors the headline).
-  const _gaugeAttain = !market.target ? "grey" : (_onTarget ? "green" : "amber");
+  // PASS 1 (RAG/strategy separation, 2026-06-27) — the ring colours by POSITION, not
+  // attainment: each band carries its OWN marketTone hue (below=amber / on=green / above=red),
+  // the verdict band richer so the eye lands. Strategy NEVER enters the gauge colour now, so
+  // strategy-off and strategy-on render the SAME hue per band (on==off colour parity — the
+  // canary). The alignment relationship moved OUT of colour and INTO the navy AlignmentChip
+  // below. (_onTarget survives only for the verdict-word framing, not the hue.)
 
   return html`
     <div class="card arc-card">
@@ -736,9 +737,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
         <${Donut}
           segments=${[
-            { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
-            { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
-            { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[_gaugeAttain] },
+            { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
+            { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
+            { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
           ]}
           total=${market.pool} centerNum=${market.pool} sub="metrics" size=${210} stroke=${28} />
       </div>
@@ -752,10 +753,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         <span><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
       ${market.target ? html`
-        <div class=${"arc-target arc-target-" + market.target.alignment}
-          title="How your position reads against the market stance you set in your reward strategy.">
-          <${Icon} name="target" size=${13} /><span>${targetCopy(market.target)}</span>
-        </div>`
+        <div class="arc-target"><${AlignmentChip} target=${market.target} /></div>`
       : stratOff ? html`
         <div class="arc-target arc-target-off" title="You've turned your reward strategy off — this is the absolute market view, with no aim applied. Switch it back on above to read against your stance.">
           <${Icon} name="target" size=${13} /><span>Strategy off — absolute market view</span>

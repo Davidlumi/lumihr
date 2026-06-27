@@ -5883,3 +5883,21 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   (no white-screen), AlignmentChip invoked 0 times (dormant), 21 attainTone/_gaugeAttain/ATTAIN_ALIGN refs intact
   (4 surfaces untouched), CSS served. Cache v263 -> v264 (17 + 12). NEXT: revert sweep = 4 gated passes (gauge ->
   tiles -> spectrum -> cat-hero+legend), none bundled, each proving the two-halves degrade contract.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 1 (Overview gauge donut), BUILT. The hero "Where you stand" donut
+  coloured by ATTAINMENT (_gaugeAttain = !market.target ? grey : on-aim?green:amber — one strategy-driven hue across
+  the ring). Pass 1 reverts it to POSITION: each band carries its own marketTone hue (below=amber/on=green/
+  above=red), the verdict band RICH. CHANGES (pages.js, pure render): (1) donut segments (v===band ? MKT_RICH :
+  MKT_SOFT)[_gaugeAttain] -> [marketTone("below"/"at"/"above")] — colour now references NO strategy token (no
+  _gaugeAttain/_onTarget/market.target); _gaugeAttain deleted. (2) the bled .arc-target alignment line
+  (arc-target-<alignment>, green/amber + targetCopy) REPLACED (not added) by <AlignmentChip target=market.target />
+  (Phase B navy chip) — strategy-ON only; strategy-OFF keeps the neutral "Strategy off — absolute market view" hint.
+  CORRECTED CANARY (David ruled): NOT "off == today" — strategy-off donut was GREY today (the attainment artefact)
+  and SHOULD change to marketTone RAG (a no-strategy org should see its position). The real proof = on==off colour
+  PARITY. QA (live, demo org director@thornbridge, strategy on): counts 76/15/1/92 byte-identical; donut
+  strategy-ON colours [below=amber-bright 58% RICH, on=--gauge-on, above=--gauge-above] === strategy-OFF colours
+  (toggled live, byte-identical) — alignment left the colour channel; AlignmentChip "On plan" navy (#1F2A44)
+  present ON, GONE OFF; old bled arc-target-* line absent (no double cue); the demo's divergent case now legible —
+  below-market (amber) + "On plan" (intent matched, in the chip). 0 console errors. Verdict WORD still flips to
+  "On target"/_onTarget (strategy TEXT framing, not colour) — left as-is (out of Pass 1 scope; flagged). Tiles
+  still on attainment (Pass 2). Cache v264 -> v265.
