@@ -845,6 +845,48 @@ def substance_pool(items, practice_items, cfg):
     return out
 
 
+def _metric_bands(pool, band_low, band_high, margin):
+    """{question_id: 'below'|'at'|'above'} — ONE band per METRIC.
+
+    A single-valued metric is classified by _market_class; a MATRIX metric (several pool
+    items, one per row) is collapsed to its OWN _pool_verdict verdict — the same engine,
+    one level up — so it reads as a single below/on/above, never row-by-row (sub-ruling,
+    2026-06-27). This is the METRIC-level companion to _pool_verdict's per-READING mass
+    count: the domain grid + position chips ask 'how many metrics sit below market and
+    which', the home needle 'where the reading mass sits'. Shared by pool_market_bands
+    (per-card bands) and the §1 domain donut's metric counts, so card, donut and chip can
+    never disagree. A question with no usable item drops out (→ absent / null)."""
+    by_q = {}
+    for i in pool:
+        by_q.setdefault(i["question_id"], []).append(i)
+    out = {}
+    for qid, its in by_q.items():
+        if len(its) == 1:
+            out[qid] = _market_class(its[0], band_low, band_high)
+        else:
+            v = _pool_verdict(its, band_low, band_high, margin)
+            out[qid] = v["verdict"] if v else None
+    return out
+
+
+def pool_market_bands(items, practice_items, cfg, band_low, band_high, margin):
+    """{question_id: 'below'|'at'|'above'} per METRIC for the Substance pool — the SAME
+    substance_pool the competitiveness gauge counts, collapsed to one band per metric via
+    _metric_bands (matrices → their own verdict). A per-card market position that can
+    never disagree with the §1 donut's metric count it sums into: same pool, same
+    classifier, metric-level on both sides. A metric OUTSIDE the pool — Approach
+    (Practice/Design), neutral, lower_is_better, non-competitive (Governance), or
+    unclassified — is absent from the map → the card reads it as null (no market rate to
+    be under/over). Fixes the firewall drift where the card's legacy DB polarity
+    disagreed with the config direction (a cost ratio read 'above market' the config calls
+    neutral/excluded).
+
+    Strategy-invariant by design (no location_approach=agnostic filter — that reframe
+    lives only in _hero_signals_classified): the position chips that consume this never
+    move under the strategy toggle (position counts are strategy-invariant)."""
+    return _metric_bands(substance_pool(items, practice_items, cfg), band_low, band_high, margin)
+
+
 def _strategy_field(strategy, field):
     """A strategy dial's value iff it's a real 'set' choice — None when the
     strategy is absent, the field unset, or it was skipped (§5.4 provenance)."""
@@ -993,11 +1035,26 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
             position, basis = _pool_verdict(d_sub, band_low, band_high, margin), "indicative"
         else:
             position, basis = None, None
+        # METRIC-level counts (Pass 2a, ruling 2026-06-27): how many DISTINCT metrics sit
+        # below/on/above — the unit the domain grid + position chips use (matrix metric =
+        # its own verdict via _metric_bands), vs the per-READING mass _pool_verdict above
+        # that the home needle keeps. The §1 CARD A donut reads THIS; summing it === the
+        # chip counts === the filtered grid, all metric-level. None when no positioned metric.
+        position_metrics = None
+        if position is not None:
+            _mb = _metric_bands(d_sub, band_low, band_high, margin)
+            _bc = {"below": 0, "at": 0, "above": 0}
+            for _v in _mb.values():
+                if _v in _bc:
+                    _bc[_v] += 1
+            position_metrics = {"below": _bc["below"], "at": _bc["at"],
+                                "above": _bc["above"], "pool": len(_mb)}
         d = {
             "name": sec, "market": strict,
             "market_eligible": d_questions >= dmin,
             "polarised_comparable": len(d_sub),
             "position": position, "position_basis": basis,
+            "position_metrics": position_metrics,
             "position_evidence": ({"polarised": len(d_sub), "practice": 0}
                                   if position is not None else None),
             "competitiveness": True,

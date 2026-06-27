@@ -477,7 +477,7 @@ def twin_blocks_if_needed(conn, org, cut):
     return tb
 
 
-def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled):
+def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, market_band=None):
     """Everything one benchmark card needs, fully sanitised."""
     locked = not entitled(q)
     tb = (twin_blocks_by_q or {}).get(q.id)
@@ -502,6 +502,12 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled):
         "n": (blk or {}).get("n", 0),
         "suppressed": bool(pos.is_suppressed(blk)),
         "movement": None,  # vs-last-period slot: populated once a second snapshot exists
+        # firewall-reviewed market position (below/at/above), from the SAME Substance pool
+        # the competitiveness gauge/donut counts (positions.pool_market_bands). null when
+        # the metric isn't a positioned market rate (Approach / neutral / lower_is_better /
+        # non-competitive / unclassified). Passed in per-request so a card's band can never
+        # disagree with the donut count it sums into (Pass 2a, 2026-06-27).
+        "market_band": market_band,
     }
     if locked:
         return base
@@ -1247,6 +1253,15 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
     answers = org_answers_for(org)
     contrib = contribution_state(conn, org)
     sample = reduced_sample_ids() if contrib["reduced"] else None
+    # firewall-reviewed per-card market position (Pass 2a): build the SAME Substance pool
+    # the overview's gauge/donut counts (build_items + practice_position_items, identical
+    # args to /api/overview) and classify it once, so each card's market_band agrees with
+    # the §1 donut count it sums into. Strategy-invariant (the position chips don't move).
+    _bi_items, _bi_tb = build_items(request, org, user, cut)
+    _bi_prac = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                           payloads(), answers, entitled, _bi_tb)
+    band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
+                                     MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
     cards = []
     for qid, q in org_visible_questions(org).items():
         if q.superpower != superpower:
@@ -1264,7 +1279,8 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
                 "n": (p.get("all") or {}).get("n", 0), "reduced": True,
             })
             continue
-        cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None, entitled))
+        cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None,
+                                   entitled, market_band=band_map.get(qid)))
     cards.sort(key=lambda c: (c["sub_power_order"] or 999, c["title"]))
     return {"superpower": superpower, "cut": cut, "cards": cards, "reduced": contrib["reduced"]}
 
