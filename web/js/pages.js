@@ -568,13 +568,32 @@ function Donut({ segments, total, centerNum, sub, size, stroke, centerWord }) {
     </div>`;
 }
 
+// Shared position-verdict TEXT (extracted 2026-06-27, domain-page Pass 1) — ONE source for the
+// verdict WORD + the magnitude caption, used by the home gauge AND the domain Market-position
+// donut so the two surfaces read identically (no drift). Both take the market/_pool_verdict shape.
+function verdictWord(v) { return v === "above" ? "Above" : v === "below" ? "Below" : "On market"; }
+function leanCaption(market) {
+  // magnitude adverb from percentile DEPTH (how far, not how many); falls back to the count lean
+  // when depth_pctl is absent; verdict "at" → evenly balanced / leaning slightly.
+  const v = market.verdict, T = market.lean_threshold || 0.25;
+  const lean = Math.max(-1, Math.min(1, market.lean || 0)), mag = Math.abs(lean);
+  if (v === "at") {
+    if (mag < 0.06) return "evenly balanced";
+    return "leaning slightly " + (lean < 0 ? "below" : "above");
+  }
+  const dp = market.depth_pctl, past = mag - T;
+  const byCount = past > 0.2 ? "clearly" : past > 0.08 ? "moderately" : "marginally";
+  const strength = dp == null ? byCount
+    : v === "below" ? (dp < 25 ? "clearly" : dp < 40 ? "moderately" : "marginally")
+    : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
+  return strength + " " + (v === "below" ? "below" : "above") + " the market";
+}
 function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
   // Hooks run BEFORE the early return so the order is stable when market is null
   // vs present. 2.1 — the needle settles ONCE per org, on the first populated
   // render (localStorage gate); every later visit snaps. Reduced motion + no
   // localStorage both fall back to snapping (off means off).
   const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const lean = market ? Math.max(-1, Math.min(1, market.lean || 0)) : 0;
   // needle now points at the centroid's position WITHIN the proportional arc
   // (computed up-front so the settle-animation hook below can target it).
   const rot = market ? proportionalNeedleRot(market) : 0;
@@ -619,8 +638,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
       <div class="caption" style=${{ padding: "var(--s4) var(--s2)" }}>
       Your overall position appears once enough of your data is comparable.</div></div>`;
   const v = market.verdict;                                   // "below" | "at" | "above"
-  const T = market.lean_threshold || 0.25;                    // band join = verdict threshold
-  const word = v === "above" ? "Above" : v === "below" ? "Below" : "On market";
+  const word = verdictWord(v);                                // shared verdict-text helper
   // The BANDS stay ABSOLUTE RAG (below=red, on=amber, above=green) — they're the
   // factual composition, sized by count, and must never hide the gap. The VERDICT
   // WORD carries NO good/bad colour (2026-06-23, "mirror, not consultant"): the verdict
@@ -631,25 +649,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
   // all computed here but never rendered since the Donut replaced the dial — is removed along
   // with the attainment lens it depended on. The live gauge is the <Donut> below, per-band by
   // marketTone; the centroid position is handled by proportionalNeedleRot / animateNeedle.)
-  // lean descriptor — turns the tilt into words (honest about a below-lean even
-  // when the verdict is On market).
-  const mag = Math.abs(lean);
-  const leanWord = (() => {
-    if (v === "at") {
-      if (mag < 0.06) return "evenly balanced";
-      return "leaning slightly " + (lean < 0 ? "below" : "above");
-    }
-    // severity ADVERB from percentile DEPTH (median adjusted percentile) — "how far",
-    // not "how many" (Stage A item C). Verdict word stays lean-driven. Falls back to
-    // the count lean only if depth_pctl is absent (older cached payload).
-    const dp = market.depth_pctl;
-    const past = mag - T;
-    const byCount = past > 0.2 ? "clearly" : past > 0.08 ? "moderately" : "marginally";
-    const strength = dp == null ? byCount
-      : v === "below" ? (dp < 25 ? "clearly" : dp < 40 ? "moderately" : "marginally")
-      : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
-    return strength + " " + (v === "below" ? "below" : "above") + " the market";
-  })();
+  const leanWord = leanCaption(market);                       // shared magnitude-caption helper
   // PASS 5 (RAG/strategy separation, 2026-06-27) — the verdict WORD + subtitle = market POSITION,
   // strategy-INVARIANT, matching the gauge colour + the below/on/above counts. Was a FIX-2
   // attainment override (on/ahead of aim → "On target" / "...as you intend") that put the
@@ -1563,30 +1563,53 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
   const dot = hero && hero.dot;
+  // §1 (domain-page Pass 1, 2026-06-27): two RAG donuts via the shared <Donut>. CARD A (position)
+  // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
+  // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
+  // practice is not a market position), a count-HEADLINE centre, no alignment chip.
+  const posSegs = pos ? ["below", "at", "above"].map(k => ({ value: pos[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
+  const prevSegs = [
+    { value: prev.with_majority || 0, color: "var(--blue-deep)" },
+    { value: prev.established || 0, color: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))" },
+    { value: prev.less_common || 0, color: "color-mix(in srgb, var(--blue) 16%, var(--surface-sunk))" },
+  ];
 
   return html`
     <div class="category-page">
       ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"} · peer group: ${cutLabelOf(cut, cuts)}`)}
 
+      ${ov.strategy_complete ? html`
+        <div class="cat-strat-bar">
+          <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
+            onClick=${() => onPref && onPref("_overview", { ..._ovp, apply_strategy: !applyStrat })}
+            title=${applyStrat
+              ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your aim. Click for the absolute market view."
+              : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
+            <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
+            <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
+          </button>
+        </div>` : null}
       <div class="cat-hero">
-        <div class="cat-hero-cell">
+        <div class="card cat-pos-card">
           <div class="cat-hero-label">Market position</div>
-          ${pos ? html`
-            <div class="row" style=${{ gap: "var(--s2)", alignItems: "center", marginBottom: "var(--s3)" }}>
-              <span class=${"chip " + chipCls}>${chip}</span>
-              ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
-              ${hero.target ? html`<${AlignmentChip} target=${hero.target} />` : null}
+          ${pos && pos.pool ? html`
+            <${Donut} segments=${posSegs} total=${pos.pool} centerNum=${pos.pool} sub="metrics" centerWord=${verdictWord(verdict)} size=${210} stroke=${28} />
+            <div class="cat-card-cap">${leanCaption(pos)}${indicative ? " · indicative" : ""}</div>
+            <div class="cat-card-counts num">
+              <span><b>${pos.below}</b> below</span><span><b>${pos.at}</b> on market</span><span><b>${pos.above}</b> above</span>
             </div>
-            ${pos.pool ? html`<${MarketSpectrum} market=${pos} aim=${aim} />` : null}
-            <div class="caption" style=${{ marginTop: "var(--s3)" }}>
-              <b>${pos.at}</b> of ${pos.pool} metric${pos.pool === 1 ? "" : "s"} placed · ${pos.below} below market · ${pos.above} above${
-              indicative ? " · indicative, not yet a full market verdict" : ""}</div>` :
-            html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
+            ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}` :
+            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
         </div>
-        <div class="cat-hero-cell">
+        <div class="card cat-pos-card">
           <div class="cat-hero-label">Practice prevalence</div>
-          ${prev.pool ? prevDonut(prev) :
-            html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>No practice questions assessed in this category yet.</div>`}
+          ${prev.pool ? html`
+            <${Donut} segments=${prevSegs} total=${prev.pool} centerNum=${prev.with_majority} sub=${"of " + prev.pool + " practice" + (prev.pool === 1 ? "" : "s")} size=${210} stroke=${28} />
+            <div class="cat-card-cap">match the market majority</div>
+            <div class="cat-card-counts num">
+              <span><b>${prev.with_majority}</b> match</span><span><b>${prev.established}</b> common alt</span><span><b>${prev.less_common}</b> rarer</span>
+            </div>` :
+            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>No practice questions assessed in this category yet.</div>`}
         </div>
       </div>
 

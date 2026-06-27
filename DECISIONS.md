@@ -6079,3 +6079,29 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   parse OK. (Screenshot mini-scaled — a flaky preview quirk — so verified by DOM measurement.) Resolves the
   gauge-vs-tile wording inconsistency: gauge states "On strategy" inline; tile states it via the "STRATEGY: On"
   label. Cache v275 -> v276.
+
+2026-06-27 — DOMAIN PAGE — PASS 1 (§1 two-donut hero + on-page strategy toggle), BUILT. The category-detail §1
+  was a chip + MarketSpectrum BAR (position) beside a bespoke prevDonut (practice). Rebuilt to the agreed mock:
+  TWO SEPARATE CARDS, each a shared <Donut>. EXTRACTION (David ruling 2): pulled the gauge's verdict-WORD map +
+  the ~15-line magnitude IIFE into shared verdictWord(v) + leanCaption(market) helpers (one source, no drift);
+  OverallArc now calls them — PROVEN byte-identical (Overview gauge still "Below" / "92 metrics" / "clearly below
+  the market"). Removed the now-unused lean/T/mag from OverallArc. CARD A "Market position" = the home
+  Donut(centerWord) scoped to the domain: per-band marketTone segments (below=amber/on=green/above=red), centre =
+  verdictWord(verdict) ("Below") + demoted pos.pool count, leanCaption(pos) magnitude caption, a below/on/above
+  counts line, + the navy AlignmentChip (hero.target, strategy-on only). CARD B "Practice prevalence" = the SAME
+  shared Donut re-skinned: its OWN blue palette (--blue-deep / blue mixes — NOT marketTone; practice is not a
+  market position), centre = COUNT-HEADLINE (David ruling 1: with_majority big + "of N practices" small — no
+  descriptor word; rarity is the signal, the count states the fact), "match the market majority" caption, a
+  match/common-alt/rarer counts line, NO alignment chip (practice has no strategy relationship). DROPPED the
+  MarketSpectrum invocation (the donut supersedes it; the component is now uninvoked → dead, flagged for a cleanup
+  pass). ADDED an interactive strategy toggle at §1 top (reuses the ov-strat switch markup; gated on
+  ov.strategy_complete; onClick onPref("_overview", {..._ovp, apply_strategy:!applyStrat}) → derived applyStrat
+  recomputes → the existing useEffect refetches with &strategy=off → CARD A's chip appears/hides). CHANNEL
+  DISCIPLINE QA (live, demo org, category Pay): CARD A centre = POSITION verdict only; CARD B centre = neutral
+  count-headline (no verdict smuggled); A coloured marketTone (amber/green), B coloured BLUE (B_uses_marketTone
+  false); alignment chip on A only. on==off: A word + counts byte-identical strategy-on vs off, ONLY the chip is
+  the delta (ON present / OFF gone); CARD B fully identical. counts derive-not-literal (16/9/0 below/on/above =
+  25 pool; 18/9/8 match/common-alt/rarer = 35 pool — engine values). Spectrum absent; toggle present; 0 console
+  errors; parse OK; clean screenshot. The home OVERVIEW renders identical (only the shared Donut + the extracted
+  helpers were reused — no Overview change). Cache v276 -> v277. NEXT: Pass 2 (count→chip filterable grid, remove
+  the standalone signals list), Pass 3 (net-new AI domain summary).

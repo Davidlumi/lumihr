@@ -1239,7 +1239,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .category-page .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: var(--s2); }
 .cat-glyph { width: 40px; height: 40px; border-radius: var(--radius); background: var(--blue-tint);
   color: var(--blue); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.cat-hero { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--s4); margin: var(--s4) 0 var(--s5); }
+.cat-hero { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); margin: var(--s3) 0 var(--s5); }
 @media (max-width: 760px) { .cat-hero { grid-template-columns: 1fr; } }
 .cat-hero-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: var(--s4) var(--s4) var(--s4); }
@@ -1259,6 +1259,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   align-items: center; justify-content: center; line-height: 1; pointer-events: none; }
 .cat-donut-center b { font-size: var(--fs-metric); letter-spacing: -0.02em; color: var(--blue-deep); }
 .cat-donut-center span { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
+/* DOMAIN PAGE §1 (2026-06-27, Pass 1): two equal RAG-donut cards (the shared <Donut>) + a slim
+   strategy toggle bar above them. CARD A = position (marketTone, verdict-word centre, alignment
+   chip); CARD B = prevalence (blue palette, count-headline centre, no chip). */
+.cat-strat-bar { display: flex; justify-content: flex-end; align-items: center; margin: var(--s4) 0 0; }
+.cat-pos-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s2); }
+.cat-pos-card .cat-hero-label { align-self: flex-start; }
+.cat-pos-card .donut { margin-top: var(--s2); }
+.cat-card-cap { font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); letter-spacing: .005em; }
+.cat-card-counts { display: flex; gap: var(--s4); flex-wrap: wrap; justify-content: center;
+  font-size: var(--fs-caption); color: var(--ink-soft); margin-top: 1px; }
+.cat-card-counts b { color: var(--ink); font-weight: 700; }
+.cat-card-align { margin-top: var(--s1); }
 .cat-prev-legend { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .cat-leg-row { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); color: var(--ink-soft); }
 .cat-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
