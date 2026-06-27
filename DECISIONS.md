@@ -6007,3 +6007,29 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   design). QA: parse OK; reload regression on BOTH cases post-cleanup — Larkholm (above) rich red gauge + 6 red
   tiles + spectrum/hero red; Thornbridge (below) rich amber gauge + "Below" word + 6 below tiles + "Behind plan"
   pill — render byte-unchanged (dead code carried no behaviour); 0 console errors. Cache v271 -> v272.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 5 VOCABULARY (alignment language lock), BUILT. VOCABULARY RULING
+  (David): POSITION channel (RAG colour + verdict word/chip + counts) = ALWAYS below/on/above market, every
+  surface, strategy-INVARIANT (locked). ALIGNMENT channel (the navy AlignmentChip + spectrum bracket) = a parallel
+  three-state, strategy-on only: behind / on / ahead OF STRATEGY (behind/ahead aren't position words; the shared
+  "on" disambiguates by noun — on market vs on strategy). EDIT 1 (verdict-word revert off _onTarget) already
+  shipped 981e7d8 — no-op. EDITS (pages.js, pure render): EDIT 2 — ALIGN_LABEL {on_target:"On strategy",
+  behind:"Behind strategy", ahead:"Ahead of strategy"} (one map → gauge :686 / tile :1241 / hero :1562 chips).
+  EDIT 3 — targetCopy tooltip "On/Ahead/Behind strategy — you aim to sit [STANCE_WORD]" (the chip's own tooltip,
+  was "On your target …" — a mismatch is an internal contradiction). TILE-FIT (David's hard-floor ruling): the
+  align-chip-sm font is ALREADY at the 11px type floor, and at 11px the full phrases overflow the tile's own-row
+  (102px usable / 134px tile): "Behind strategy" 110px, "Ahead of strategy" 122px (clips) — measured live. Per
+  ruling (shrink to 11px floor; if it still doesn't fit, abbreviate the TILE to the state word alone): added
+  ALIGN_LABEL_SHORT {on_target:"On", behind:"Behind", ahead:"Ahead"} for compact=true; the full "… strategy"
+  phrase stays on gauge/hero (non-compact) + the tooltip (targetCopy) on every chip. NO font sub-11px, NO wrap, NO
+  negate-padding. QA (live): Thornbridge (behind) — gauge "Behind strategy" + tooltip full; tiles "Behind"/"On"
+  (63/41px, 0 overflow), tile tooltip carries the full phrase. FORCED AHEAD (longest label, temporarily set
+  Larkholm org_strategy market_position=match → above-market reads ahead, then REMOVED the QA strategy to restore
+  Larkholm to no-strategy): gauge "Ahead of strategy" (full, fits the 322px slot); tile "Ahead" (61px, 0 overflow);
+  hero "Ahead of strategy" (full); tooltip "Ahead of strategy — you aim to sit on market" on all. on==off (chips
+  strategy-on only, gone off); 0 console errors; parse OK. OUT OF SCOPE (David, stays): signal-row green "On plan"
+  pill (s.confirm, :864/:1094 — binary confirm glyph, GREEN channel, different indicator) + the strategy summary
+  "On plan:" list (:339) — renaming would import three-state vocab onto a binary green pill and blur green/navy.
+  Logged for a future consistency pass, NOT swept in. Cache v273 -> v274. CLOSES the channel separation: colour =
+  position (marketTone), word/chip = position (below/on/above market), alignment = navy chip behind/on/ahead-of-
+  strategy (strategy-on only) — three elements, two channels, no "amber but On target" contradiction.

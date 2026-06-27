@@ -411,10 +411,10 @@ function proportionalNeedleRot(market) {
 // declared target — an above-market member who AIMED there is on target, not flagged.
 const STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
 function targetCopy(t) {
-  const w = STANCE_WORD[t.stance] || "your target";
-  if (t.alignment === "on_target") return "On your target — you aim to sit " + w;
-  if (t.alignment === "ahead") return "Ahead of your target — you aim to sit " + w;
-  return "Behind your target — you aim to sit " + w;
+  const w = STANCE_WORD[t.stance] || "your aim";
+  if (t.alignment === "on_target") return "On strategy — you aim to sit " + w;
+  if (t.alignment === "ahead") return "Ahead of strategy — you aim to sit " + w;
+  return "Behind strategy — you aim to sit " + w;
 }
 // ---- market-position colour code. After the RAG/strategy separation sweep (2026-06-27, see
 // DECISIONS), POSITION is one fixed colour language everywhere: marketTone maps below=amber /
@@ -460,11 +460,16 @@ const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber
 // behind vs ahead, which the old attainment colour could not (it lumped both as amber); the
 // full sentence (targetCopy) rides as the title. DORMANT in Phase B: defined here, wired onto
 // NO surface yet — the gauge / tiles / spectrum / category-hero revert passes adopt it.
-const ALIGN_LABEL = { on_target: "On plan", behind: "Behind plan", ahead: "Ahead of plan" };
+const ALIGN_LABEL = { on_target: "On strategy", behind: "Behind strategy", ahead: "Ahead of strategy" };
+// Compact tile chip: the state WORD alone — the full "… strategy" phrase overflows the tile's
+// own-row even at the 11px type floor (David 2026-06-27). "strategy" is implied by the navy
+// align-row context; the full phrase still rides the tooltip (targetCopy) + the gauge & hero chips.
+const ALIGN_LABEL_SHORT = { on_target: "On", behind: "Behind", ahead: "Ahead" };
 function AlignmentChip({ target, compact }) {
   if (!target || !ALIGN_LABEL[target.alignment]) return null;
+  const label = (compact ? ALIGN_LABEL_SHORT : ALIGN_LABEL)[target.alignment];
   return html`<span class=${"align-chip align-" + target.alignment + (compact ? " align-chip-sm" : "")}
-    title=${targetCopy(target)}><${Icon} name="target" size=${compact ? 11 : 12} /> ${ALIGN_LABEL[target.alignment]}</span>`;
+    title=${targetCopy(target)}><${Icon} name="target" size=${compact ? 11 : 12} /> ${label}</span>`;
 }
 
 // Shared "market spectrum" marker chart — the proportional below/on/above blocks
