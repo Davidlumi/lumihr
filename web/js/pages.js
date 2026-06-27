@@ -416,18 +416,14 @@ function targetCopy(t) {
   if (t.alignment === "ahead") return "Ahead of your target — you aim to sit " + w;
   return "Behind your target — you aim to sit " + w;
 }
-// ---- market-position colour code (David 2026-06-23): ONE consistent rule across the
-// hero gauge/donut + category tiles + Signals. Two modes, by the strategy toggle:
-//   STRATEGY OFF (no stance) → a POSITION lens: on-market is the green ideal, deviations
-//     are flagged the same way everywhere — below=amber (under), on=green, above=red
-//     (over). Applied to below/on/above regardless of direction-of-good (a deliberate
-//     simplification — see DECISIONS; "position lens").
-//   STRATEGY ON (stance set) → an ALIGNMENT lens: at OR better than your declared aim =
-//     aligned (green), short of it = not aligned (red). Binary, no amber.
-// marketTone = the OFF mapping; bandToneAim = the ON mapping (falls back
-// to marketTone when no aim). The same tone (green/amber/red) drives the bands, the
-// verdict word, the chips and the per-signal colours, so the whole market read is one
-// colour language.
+// ---- market-position colour code. After the RAG/strategy separation sweep (2026-06-27, see
+// DECISIONS), POSITION is one fixed colour language everywhere: marketTone maps below=amber /
+// on=green / above=red, strategy-INVARIANT. It drives the hero gauge donut, the category tiles,
+// the MarketSpectrum bands and the cat-hero chip — identical strategy-on or off. The org's
+// STRATEGY (alignment vs its declared aim) is a SEPARATE navy channel — the AlignmentChip pill +
+// the spectrum's "your aim" bracket, strategy-on only — and NEVER recolours position. The per-
+// signal rows keep their own polarity-aware tone (a below-market lower-is-better metric is
+// honestly green). The retired attainment lens (attainTone / bandToneAim / ATTAIN_ALIGN) is gone.
 const MKT_BIDX = { below: 0, on: 1, at: 1, above: 2 };
 function marketAim(market) {
   return market && market.target ? ({ lag: 0, match: 1, lead: 2 })[market.target.stance] : null;
@@ -437,43 +433,9 @@ function marketTone(key) {                  // absolute market DIRECTION: below=
   if (idx == null) return "neutral";
   return idx === 0 ? "amber" : idx === 1 ? "green" : "red";   // below=amber · on=green · above=red (position lens)
 }
-// verdict-rank lookup, shared by attainTone (the Fix-1 attainment lens) and bandToneAim
-// (the aim-aware distribution bars). 0/1/2 = below/on/above.
-const POS_RANK = { below: 0, at: 1, on: 1, above: 2 };
-// Aim-aware DISTRIBUTION tone (David 2026-06-21, v211) — for a stance-set org the
-// gauge arc + tile bars read against the AIM, not absolute position: the band that
-// IS your aim is green (on target), a band short of it is red, a band past it is
-// amber (drifted up — caution, not alarm). So a deliberately-below org sees a calm
-// green dashboard instead of a wall of red, and the bars now AGREE with the
-// aim-aware verdict word/chip (no more green-word-over-red-bar). The segment
-// PROPORTIONS + the below/on/above counts still carry the magnitude. No stance →
-// absolute marketTone (unchanged).
-function bandToneAim(k, aim) {
-  if (aim == null) return marketTone(k);
-  const r = POS_RANK[k];
-  if (r == null) return marketTone(k);
-  // strategy ON: at aim = green; below aim (short) = red; above aim (overshot) = redover
-  return r === aim ? "green" : r < aim ? "red" : "redover";
-}
-// FIX 1 (2026-06-23) — ATTAINMENT colour lens (David-approved). The hero gauge, the per-
-// domain sliders and the gauge-card chip/tint colour by STRATEGY ATTAINMENT, not market
-// direction: on your aim = green (on target), off your aim = amber (off target, direction-
-// agnostic), no strategy set = grey-neutral (no judgement). Direction is carried by the
-// marker position + the below/on/above word only — never by hue. The signals list, the
-// metric-page spectrum and the practice encodings keep their existing (direction) colour
-// by design — this lens is scoped to the overview gauge surfaces only.
-function attainTone(verdict, aim) {
-  if (aim == null) return "grey";              // strategy OFF → neutral grey, no judgement
-  const r = POS_RANK[verdict];
-  if (r == null) return "grey";
-  return r === aim ? "green" : "amber";        // on your aim = on target (green); otherwise off target (amber)
-}
-// Per-domain attainment from the L3 alignment (card-recolour pass, 2026-06-25, ruling A): map
-// d.target.alignment → the SAME Fix-1 tones attainTone yields, so a tile can colour against its
-// OWN aim while the lens rule is unchanged. on_target = on target (green); behind OR ahead = off
-// the aim either way (amber) — exactly attainTone(verdict, thatAim), and the SAME alignment L4
-// suppression reads (card ⟷ suppression agree by construction). No red, no direction hue.
-const ATTAIN_ALIGN = { on_target: "green", behind: "amber", ahead: "amber" };
+// (Retired 2026-06-27, RAG/strategy separation sweep: the attainment lens — POS_RANK,
+// bandToneAim, attainTone, ATTAIN_ALIGN — colour-bled strategy into position and is fully
+// removed. Position now colours via marketTone above; alignment rides the AlignmentChip.)
 const MKT_SOFT = { green: "var(--gauge-on)", amber: "var(--gauge-below)", red: "var(--gauge-above)",
                    redover: "color-mix(in srgb, var(--unfavourable-deep) 42%, var(--surface))",
                    grey: "color-mix(in srgb, var(--grey-neutral) 30%, var(--surface))",
@@ -657,43 +619,10 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
   // word renders in neutral ink, IDENTICAL on Strategy ON and OFF — the on-target meaning
   // lives only in the footer line. The donut bands keep their position colour; the word
   // never judges below/on/above as success or failure.
-  const AIM = marketAim(market);
-  const bandTone = (k) => bandToneAim(k, AIM);
-  // PROPORTIONAL arc: each block's angular span ∝ its count, so the composition
-  // itself tells the story (a below-market-heavy org shows a big red block). Soft
-  // red/amber/green; the verdict block sits a touch richer so the eye lands.
-  const { CX, CY, R, W, capF } = ARC;
-  const gapF = 0.014;
-  const polar = (frac, r) => { const a = Math.PI * (1 - frac); return [CX + r * Math.cos(a), CY - r * Math.sin(a)]; };
-  const arcPath = (f0, f1) => {
-    const [x0, y0] = polar(f0, R), [x1, y1] = polar(f1, R);
-    // large-arc-flag is ALWAYS 0: every gauge band (and the background track) spans
-    // at most the full semicircle (<180deg), so the minor arc is always the correct
-    // one — over the top. The old `(f1-f0)>0.5 ? 1 : 0` drew the MAJOR arc (the long
-    // way, under the bottom) for any single block that dominated the dial, splitting
-    // it into two stubs with a grey gap across the top (visible whenever one band
-    // exceeded ~half the dial, e.g. a heavily below-market org).
-    return "M " + x0.toFixed(1) + " " + y0.toFixed(1) +
-      " A " + R + " " + R + " 0 0 1 " + x1.toFixed(1) + " " + y1.toFixed(1);
-  };
-  const { s0, s1, s2, s3 } = arcSeams(market);
-  // tone → fill (soft for context bands, rich for the band the org actually sits in).
-  // "neutral" (no stance) is a quiet blue-grey distribution — read by SIZE, not verdict.
-  const bands = [
-    { k: "below", a: s0, b: s1, on: v === "below" },
-    { k: "on", a: s1, b: s2, on: v === "at" },
-    { k: "above", a: s2, b: s3, on: v === "above" },
-  ].filter(g => g.b - g.a > 0.004).map(g => {
-    const a = g.a + (g.a > s0 + 0.0001 ? gapF : 0), b = g.b - (g.b < s3 - 0.0001 ? gapF : 0);
-    const tone = bandTone(g.k);
-    return { k: g.k, d: arcPath(a, Math.max(a, b)), col: g.on ? MKT_RICH[tone] : MKT_SOFT[tone] };
-  });
-  // quiet seam ticks where the colours meet (the below|on and on|above boundaries)
-  const tickAt = (frac) => { const [ox, oy] = polar(frac, R + 5), [ix, iy] = polar(frac, R - 5); return { ox, oy, ix, iy }; };
-  const seams = [s1, s2].filter(s => s > s0 + 0.02 && s < s3 - 0.02).map(tickAt);
-  const tipY = CY - (R - 7);
-  // neutral-grey needle — a pure "you are here" pointer; the blocks carry the colour.
-  const NEEDLE = "var(--ink-soft)", NTIP = "var(--ink)";
+  // (Retired 2026-06-27: the pre-Donut proportional-arc render — bands / seam ticks / needle,
+  // all computed here but never rendered since the Donut replaced the dial — is removed along
+  // with the attainment lens it depended on. The live gauge is the <Donut> below, per-band by
+  // marketTone; the centroid position is handled by proportionalNeedleRot / animateNeedle.)
   // lean descriptor — turns the tilt into words (honest about a below-lean even
   // when the verdict is On market).
   const mag = Math.abs(lean);

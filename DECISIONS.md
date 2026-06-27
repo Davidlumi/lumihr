@@ -5988,3 +5988,22 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   verified BY CONSTRUCTION (headWord = word unconditional). 0 console errors; parse OK. Cache v270 -> v271.
   CHANNEL SEPARATION NOW COMPLETE: colour (marketTone) + word/subtitle (position) + chip/bracket (alignment,
   strategy-on) all consistent across gauge / tiles / spectrum / cat-hero.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — R3 DEBT CLOSED + DEAD-CODE CLEANUP. (A) R3 LIVE-DATA DEBT CLOSED: ran
+  /tmp/provision_larkholm.py (David-directed) → created a QA Admin login director@larkholm.example / lumi-above-2026
+  on Larkholm Environmental Services Ltd, the most above-market seed org (96/107 above, already unlocked). Logged
+  in + QA'd live: the rich RED now renders on ALL FOUR aggregate surfaces for an above-market org — gauge donut
+  above-band = MKT_RICH.red (color-mix --unfavourable 54%); all 6 substantive tiles v-above + chip-bad (red border
+  + red chip — the dead Pass-2 borders now reachable); MarketSpectrum above-band rich red; cat-hero chip chip-bad
+  red. Closes the code-verified-not-live debt carried since Pass 2/3/4. (Larkholm login left in place as a
+  persistent above-market demo org; it's a DB row, not committed.) (B) DEAD-CODE CLEANUP (pages.js, pure removal):
+  retired the now-unused attainment lens — module-level POS_RANK / bandToneAim / attainTone / ATTAIN_ALIGN (zero
+  live calls after the sweep; attainTone/ATTAIN_ALIGN only in comments, bandToneAim only fed the dead arc) — and
+  the unrendered pre-Donut proportional-arc block in OverallArc (AIM / bandTone / the ARC CX,CY,R,W,capF
+  destructure / gapF / polar / arcPath / a local arcSeams call / the `bands` array / tickAt / seams / tipY /
+  NEEDLE / NTIP) — all computed but never rendered since the Donut replaced the dial. KEPT: arcSeams (still live in
+  proportionalNeedleRot + MarketSpectrum), marketTone, MKT_BIDX, MKT_RICH/SOFT, AlignmentChip, proportionalNeedleRot.
+  Refreshed the stale marketTone header comment (it described the retired two-mode off=marketTone/on=bandToneAim
+  design). QA: parse OK; reload regression on BOTH cases post-cleanup — Larkholm (above) rich red gauge + 6 red
+  tiles + spectrum/hero red; Thornbridge (below) rich amber gauge + "Below" word + 6 below tiles + "Behind plan"
+  pill — render byte-unchanged (dead code carried no behaviour); 0 console errors. Cache v271 -> v272.
