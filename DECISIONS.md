@@ -5944,3 +5944,26 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   a Larkholm-style 96/107-above org would show it live (provisioning script handed to David). 0 console errors;
   parse OK. counts/geometry untouched (colour-only; band widths / aim-zone / marker unchanged). Cache v267 -> v269
   (v268 was the marketTone(v) bug build). NEXT: Pass 4 (category-detail hero chip + methodology legend realign).
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 4 (category-detail hero chip + methodology legend), BUILT. THE LAST
+  REVERT — closes the 4-pass sweep. THREE pieces (pages.js, pure render): (1) cat-detail hero chip tone
+  attainTone/ATTAIN_ALIGN[hero.target.alignment] -> marketTone(verdict) (:1616) — position lens, strategy-
+  invariant. (2) added the navy AlignmentChip (full label, non-compact — hero is wide) beside the hero verdict
+  chip (:1633), strategy-on only (hero.target). (3) R3 SECOND LATENT BUG — the methodology legend (.mp-legend,
+  ~:2126) was INVERTED (below=--unfavourable red / on=--amber-bright / above=--favourable green); swapped to
+  below=--amber-bright / on=--favourable / above=--unfavourable so it teaches the now-canonical marketTone (the
+  prose's favourable/context labels stay honest — green covers on-market AND favourable-lower-better-below).
+  QA (live, demo org director@thornbridge, category Pay): hero chip "below" = chip-mid AMBER; hero chip parity
+  on==off TRUE (chip-mid both); navy AlignmentChip "On plan" (#1F2A44, full label) present ON, GONE OFF; spectrum
+  navy bracket present. BRACKET+CHIP COMPOSE: the two navy cues sit 43px apart vertically (chip in the verdict
+  row = state word; bracket in the chart below = spatial aim zone) — complementary, not a doubled cue. LEGEND
+  verified live: below rgb(245,166,10) amber / on-favourable rgb(46,125,82) green / above rgb(192,57,43) red /
+  differs purple / context navy — matches every live surface. 0 console errors; parse OK. RED debt: hero
+  above-market chip = chip-bad (red, = the Pass 2 tile probe) — code-verified; Larkholm (96/107 above) NOT
+  provisioned by David, so the rich-red hero/tiles/spectrum stay code-verified-not-live (provisioning script
+  /tmp/provision_larkholm.py handed over). Cache v269 -> v270. CLEANUP FLAGGED (not done, out of scope): after the
+  sweep, attainTone / ATTAIN_ALIGN / bandToneAim survive ONLY as defs + dead code (the unrendered pre-Donut `bands`
+  arc array in OverallArc, superseded by the Donut) + comments — no live surface uses them; safe to delete in a
+  follow-up. SWEEP COMPLETE: all 4 aggregate surfaces (gauge donut, 7 tiles, MarketSpectrum, cat-hero chip) now
+  colour by marketTone (position, strategy-invariant); alignment rides the navy AlignmentChip / spectrum bracket
+  (strategy-on only); signal rows stay polarity-aware (R1); risk coral unchanged; legend honest.

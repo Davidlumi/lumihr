@@ -1606,18 +1606,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const indicative = hero && hero.position_basis === "indicative";
   const ev = hero && hero.position_evidence;
   const evC = ev ? ev.polarised + ev.practice : 0;
-  // FIX 1 attainment lens (extended to the category hero, 2026-06-24): the chip colours by
-  // ATTAINMENT (attainTone) — on your aim = green, off it = amber, no stance = grey-neutral —
-  // exactly as the overview gauge card. The chip TEXT still states the absolute position
-  // (below/on/above). marketTone stays defined (the signals list still uses it).
+  // PASS 4 (RAG/strategy separation, 2026-06-27): the category-detail hero chip colours by
+  // POSITION, not attainment — tone = marketTone(verdict) (below=amber / on=green / above=red),
+  // strategy-INVARIANT. Was ATTAIN_ALIGN[hero.target.alignment] / attainTone(verdict, aim). The
+  // alignment relationship now rides the navy AlignmentChip beside the verdict chip (strategy-on
+  // only); strategy never enters the hero hue → strategy-off and strategy-on render the SAME chip
+  // colour (on==off parity). aim is still read for the MarketSpectrum's spatial aim bracket.
   const aim = marketAim(ov.hero && ov.hero.market);
-  // CARD-DETAIL-HERO RECOLOUR (2026-06-25): close the tile⟷hero seam — colour the detail hero against
-  // the domain's OWN aim (hero.target.alignment, the SAME field the tile + L4 suppression read), else the
-  // global lens. Reuses the shipped ATTAIN_ALIGN (ruling A); frontend-only; no per-metric pill touched
-  // (cardPosition stays parked — direction lens, a separate question). A-equivalence → byte-identical off
-  // any override; no target (strategy-off / Governance) → fall back to the global attainTone.
-  const tone = verdict ? (hero.target ? (ATTAIN_ALIGN[hero.target.alignment] || attainTone(verdict, aim))
-                                      : attainTone(verdict, aim)) : null;
+  const tone = verdict ? marketTone(verdict) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
@@ -1634,6 +1630,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="row" style=${{ gap: "var(--s2)", alignItems: "center", marginBottom: "var(--s3)" }}>
               <span class=${"chip " + chipCls}>${chip}</span>
               ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
+              ${hero.target ? html`<${AlignmentChip} target=${hero.target} />` : null}
             </div>
             ${pos.pool ? html`<${MarketSpectrum} market=${pos} aim=${aim} />` : null}
             <div class="caption" style=${{ marginTop: "var(--s3)" }}>
@@ -2126,9 +2123,9 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           <p><b>Two kinds of thing we measure.</b> Some measures have a going rate — pay, pension, holiday, bonus levels — so "below, on or above market" genuinely means something. Others are choices with no right answer — which share scheme you run, how you structure a benefit, how often you review pay. There's no rate to be under or over; you're simply doing it differently. We label these <b>differs from market</b> — a difference to be aware of, not a gap to close. That's why your headline won't match the total number of things we measure: only the market-rate measures feed it.</p>
           <p><b>When "below market" isn't a bad thing.</b> A few measures are better when they're lower — your CEO-to-employee pay ratio, your gender pay gap. Below market there is good news, so we show it as <b>favourable</b> rather than a gap. Some measures have no good direction at all — workforce cost as a share of revenue could mean you're lean, or under-investing. We show these as <b>context</b>: a fact to weigh, not a verdict. The label always tells the truth about the number; the colour tells you how to read it.</p>
           <div class="mp-legend">
-            <span><i class="sw" style=${{ background: "var(--unfavourable)" }}></i> below market</span>
-            <span><i class="sw" style=${{ background: "var(--amber-bright)" }}></i> on market / favourable</span>
-            <span><i class="sw" style=${{ background: "var(--favourable)" }}></i> above market</span>
+            <span><i class="sw" style=${{ background: "var(--amber-bright)" }}></i> below market</span>
+            <span><i class="sw" style=${{ background: "var(--favourable)" }}></i> on market / favourable</span>
+            <span><i class="sw" style=${{ background: "var(--unfavourable)" }}></i> above market</span>
             <span><i class="sw" style=${{ background: "var(--differs)" }}></i> differs from market</span>
             <span><i class="sw" style=${{ background: "var(--navy)" }}></i> context</span>
           </div>
