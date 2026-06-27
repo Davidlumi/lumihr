@@ -5967,3 +5967,24 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   follow-up. SWEEP COMPLETE: all 4 aggregate surfaces (gauge donut, 7 tiles, MarketSpectrum, cat-hero chip) now
   colour by marketTone (position, strategy-invariant); alignment rides the navy AlignmentChip / spectrum bracket
   (strategy-on only); signal rows stay polarity-aware (R1); risk coral unchanged; legend honest.
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 5 (verdict-word channel), BUILT. Closes the channel separation: the
+  hero gauge verdict WORD + subtitle now = market POSITION, strategy-INVARIANT, matching the gauge colour + the
+  below/on/above counts. PHASE A confirmed: word = (v==="below"?"Below":...) (:653), leanWord = the position lean
+  descriptor (:700) — both position; the FIX-2 override headWord = _onTarget ? "On target" : word (:722) +
+  headLean = _onTarget ? "sitting [dir] market, as you intend" : leanWord (:723) put the ALIGNMENT channel into
+  the word (an amber gauge under "On target" read as a self-contradiction); strategy-off ALREADY showed the
+  position strings (market.target absent → _onTarget false), so this is a revert-to-invariant; the "On plan" pill
+  beneath = the Pass-1 AlignmentChip (:757), the existing alignment cue, unchanged. BUILD (pages.js, pure render):
+  headWord = word; headLean = leanWord; — _onTarget + _dirPhrase fully removed (0 code refs; alignment lives ONLY
+  in the AlignmentChip pill). QA (live, demo org director@thornbridge): word "Below" + subtitle "clearly below the
+  market" — POSITION; word_parity on==off TRUE (identical "Below"/"clearly below the market" strategy-on vs off —
+  the word is now strategy-invariant like the colour); pill present ON / GONE OFF (alignment channel, strategy-on
+  only); pill correctly matches server alignment. NOTE: David changed the demo stance lag→MATCH between turns, so
+  the org now reads alignment "behind" → pill "Behind plan" — a nice DIVERGENT demo (amber gauge + "Below" word +
+  76 Below counts, all POSITION, beside "Behind plan" ALIGNMENT — two channels disagreeing honestly, no
+  contradiction). In this "behind" state the word was already "Below" pre-fix (behind never triggered the
+  override); the fix's visible change is the on_target/ahead case (was "On target" → now the position word),
+  verified BY CONSTRUCTION (headWord = word unconditional). 0 console errors; parse OK. Cache v270 -> v271.
+  CHANNEL SEPARATION NOW COMPLETE: colour (marketTone) + word/subtitle (position) + chip/bracket (alignment,
+  strategy-on) all consistent across gauge / tiles / spectrum / cat-hero.

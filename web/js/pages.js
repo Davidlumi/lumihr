@@ -713,20 +713,20 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
       : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
     return strength + " " + (v === "below" ? "below" : "above") + " the market";
   })();
-  // FIX 2 (2026-06-23) — headline hierarchy: with a stance set AND on/ahead of target, the
-  // headline reads "On target" (attainment framing); strategy-off (no target) or behind
-  // reverts to the direction word. The verdict ENUM and below/on/above copy are untouched;
-  // this is headline framing only. Counts stay live in the legend.
-  const _onTarget = !!(market.target && (market.target.alignment === "on_target" || market.target.alignment === "ahead"));
-  const _dirPhrase = v === "below" ? "below market" : v === "above" ? "above market" : "on market";
-  const headWord = _onTarget ? "On target" : word;
-  const headLean = _onTarget ? ("sitting " + _dirPhrase + ", as you intend") : leanWord;
+  // PASS 5 (RAG/strategy separation, 2026-06-27) — the verdict WORD + subtitle = market POSITION,
+  // strategy-INVARIANT, matching the gauge colour + the below/on/above counts. Was a FIX-2
+  // attainment override (on/ahead of aim → "On target" / "...as you intend") that put the
+  // ALIGNMENT channel into the word, competing with the position colour (an amber gauge under
+  // "On target" read as a contradiction). Alignment now lives ONLY in the navy AlignmentChip pill
+  // below; strategy-off already showed these position strings, so strategy-on now matches (on==off).
+  const headWord = word;
+  const headLean = leanWord;
   // PASS 1 (RAG/strategy separation, 2026-06-27) — the ring colours by POSITION, not
   // attainment: each band carries its OWN marketTone hue (below=amber / on=green / above=red),
   // the verdict band richer so the eye lands. Strategy NEVER enters the gauge colour now, so
   // strategy-off and strategy-on render the SAME hue per band (on==off colour parity — the
   // canary). The alignment relationship moved OUT of colour and INTO the navy AlignmentChip
-  // below. (_onTarget survives only for the verdict-word framing, not the hue.)
+  // below. (Pass 5 also moved the verdict WORD to position — _onTarget is fully retired.)
 
   return html`
     <div class="card arc-card">
