@@ -5922,3 +5922,25 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   STAYS retired (a strategy-overshoot concept with no meaning in the pure position lens). 0 console errors; parse
   OK. Screenshot tool mini-scaled (known quirk, stop/start did not clear) — density confirmed via pixel
   measurement, not eyeball. Cache v266 -> v267. NEXT: Pass 3 (MarketSpectrum hero + every category page).
+
+2026-06-27 — RAG / STRATEGY SEPARATION — PASS 3 (MarketSpectrum), BUILT. PHASE A: the MarketSpectrum
+  (pages.js:514) is invoked ONLY on the category-detail page (:1638), NOT the overview hero (that's the
+  Donut/gauge, Pass 1). Bands coloured tone = attainTone(v, aim) (:534) -> BLEED (aim = strategy stance). KEY
+  Phase-A finding (a THIRD case, not replace-or-add): the spectrum ALREADY carries a SPATIAL alignment cue — the
+  "your aim" bracket (:552-557) drawn in BLUE (--blue): a label + bracket + dashed zone-edges over the axis, plus
+  the ink you-marker, strategy-on only (aimMid!=null). It is NOT a RAG-colour bleed (blue, separate SVG layer), so
+  it neither needs replacing (it's not bled) nor is the slot empty. David ruled (option B): recolour the bracket
+  blue -> navy (unify the alignment channel), keep it (richer spatial read than a chip for a scale), do NOT add an
+  AlignmentChip to the spectrum (the category page's navy label-chip belongs at the cat-hero verdict = Pass 4).
+  BUILD (pages.js, pure render): (1) band tone attainTone(v, aim) -> marketTone(g.k) — PER-BAND (below=amber /
+  on=green / above=red), the verdict band rich; (2) the 4 aim-bracket fills/strokes var(--blue) -> var(--navy).
+  CAUGHT IN QA: first wrote marketTone(v) (one verdict hue for ALL bands -> amber+amber); fixed to marketTone(g.k)
+  (per-band). QA (live, demo org director@thornbridge, category Pay): bands now [below = amber-bright 58% RICH,
+  on = --gauge-on soft GREEN] — per-band RAG, distinct; band parity on==off TRUE (toggled live, identical
+  [amber,green]); navy "your aim" bracket renders var(--navy) strategy-ON, GONE strategy-OFF (degrade contract).
+  RED BAND: above-band probe-confirmed red (MKT_RICH.red srgb 0.87/0.58/0.55, MKT_SOFT.red --gauge-above srgb
+  0.91/0.70/0.68 — both R-dominant, distinct from amber/green). FLAGGED: the demo has only 1 above-metric total
+  (no above-market DOMAIN), so the RICH red verdict-BAND is code-verified-not-live (carries the Pass 2 R3 debt);
+  a Larkholm-style 96/107-above org would show it live (provisioning script handed to David). 0 console errors;
+  parse OK. counts/geometry untouched (colour-only; band widths / aim-zone / marker unchanged). Cache v267 -> v269
+  (v268 was the marketTone(v) bug build). NEXT: Pass 4 (category-detail hero chip + methodology legend realign).

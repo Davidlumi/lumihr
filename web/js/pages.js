@@ -526,12 +526,13 @@ function MarketSpectrum({ market, aim }) {
     { k: "on", a: s1, b: s2, on: v === "at" },
     { k: "above", a: s2, b: s3, on: v === "above" },
   ].filter(g => g.b - g.a > 0.004).map(g => {
-    // FIX 1 attainment lens (extended to the spectrum, 2026-06-24): ONE hue across the bands,
-    // keyed by attainment (on your aim = green / off = amber / no aim = grey), the verdict band
-    // rich + the rest soft — exactly like the gauge donut. Direction is NOT in the hue here; it
-    // stays SPATIAL (axis position + the per-band labels + the aim-zone bracket + the marker),
-    // so retiring the tricolour loses no information. Replaces the per-band bandToneAim.
-    const tone = attainTone(v, aim);
+    // PASS 3 (RAG/strategy separation, 2026-06-27): POSITION lens, not attainment — each band
+    // carries its OWN marketTone hue (below=amber / on=green / above=red), the verdict band rich.
+    // Strategy NEVER enters the band hue now → strategy-off and strategy-on render identical bands
+    // (on==off parity). Alignment stays SPATIAL: the navy "your aim" bracket + the you-marker show
+    // where your aim sits vs where you are — strategy-on only, recoloured navy to match the
+    // alignment channel (the gauge/tile AlignmentChip). On the scale, ABOVE-market is now a red BAND.
+    const tone = marketTone(g.k);   // PER-BAND: below=amber / on=green / above=red (not one verdict hue)
     const n = g.k === "below" ? market.below : g.k === "on" ? market.at : market.above;
     return { k: g.k, x0: spx(g.a), x1: spx(g.b), col: g.on ? MKT_RICH[tone] : MKT_SOFT[tone], on: g.on, n };
   });
@@ -550,10 +551,10 @@ function MarketSpectrum({ market, aim }) {
       <svg viewBox="0 0 280 108" class="spectrum-svg" role="img"
         aria-label=${"Of " + pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your aim zone" : "") + "."}>
         ${aimMid != null ? html`<g>
-          <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--blue)">your aim</text>
-          <path d=${"M " + (aimX0 + 1).toFixed(1) + " 33 L " + (aimX0 + 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 33"} fill="none" stroke="var(--blue)" stroke-width="1.5"/>
-          <line x1=${(aimX0 + 1).toFixed(1)} y1="33" x2=${(aimX0 + 1).toFixed(1)} y2=${SPY - 2} stroke="var(--blue)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
-          <line x1=${(aimX1 - 1).toFixed(1)} y1="33" x2=${(aimX1 - 1).toFixed(1)} y2=${SPY - 2} stroke="var(--blue)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+          <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--navy)">your aim</text>
+          <path d=${"M " + (aimX0 + 1).toFixed(1) + " 33 L " + (aimX0 + 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 33"} fill="none" stroke="var(--navy)" stroke-width="1.5"/>
+          <line x1=${(aimX0 + 1).toFixed(1)} y1="33" x2=${(aimX0 + 1).toFixed(1)} y2=${SPY - 2} stroke="var(--navy)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+          <line x1=${(aimX1 - 1).toFixed(1)} y1="33" x2=${(aimX1 - 1).toFixed(1)} y2=${SPY - 2} stroke="var(--navy)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
         </g>` : null}
         <rect x=${SPX0 - 2} y=${SPY - 2} width=${SPX1 - SPX0 + 4} height=${SPH + 4} rx=${((SPH + 4) / 2).toFixed(1)} fill="var(--surface-sunk)"/>
         ${spBands.map(b => html`<rect key=${b.k} x=${(b.x0 + 1).toFixed(1)} y=${SPY} width=${Math.max(2, b.x1 - b.x0 - 2).toFixed(1)} height=${SPH} rx="3" fill=${b.col}/>`)}
