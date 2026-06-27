@@ -6105,3 +6105,42 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   errors; parse OK; clean screenshot. The home OVERVIEW renders identical (only the shared Donut + the extracted
   helpers were reused — no Overview change). Cache v276 -> v277. NEXT: Pass 2 (count→chip filterable grid, remove
   the standalone signals list), Pass 3 (net-new AI domain summary).
+
+2026-06-27 — DOMAIN PAGE — PASS 2a (per-card market_band — a DATA-INTEGRITY fix), BUILT. Pass-2's Phase-A QA
+  surfaced a latent firewall bug: the domain donut classifies position via the post-firewall config (_market_class
+  over the Substance pool), but the benchmark CARD carried no band — the frontend recomputed it from the card's
+  LEGACY DB polarity (cardPosition), which disagreed (live, Pay: donut above=0 vs cardPosition above=4 — 4 cost/
+  Design rows like 'Workforce cost as % of revenue' that the config calls neutral/excluded read 'above market' on
+  legacy polarity). Ruling (David): fix at source, not a Pass-2 workaround. ADDED positions.pool_market_bands(items,
+  practice_items, cfg, band_low, band_high, margin) → {qid: band}, built from the SAME substance_pool the gauge
+  counts via a shared _metric_bands() helper; threaded market_band into assemble_card (a new kwarg → base dict
+  field, null when not positioned); the /api/benchmarks route builds the pool once (build_items + practice_position_
+  items, identical args to /api/overview) and stamps each card. GRANULARITY RULING (David, Option A): the donut's
+  below/at/above count READINGS (matrix rows = mass — 'verdict reflects mass', the home needle keeps this), but the
+  grid is one card per METRIC; summing per-card could never equal the reading-mass donut for matrix domains (Pay 25
+  readings / 13 metrics; Benefits 40 / 14). So _metric_bands collapses a MATRIX metric to its OWN _pool_verdict
+  verdict (sub-ruling: NOT majority, NOT worst-row — same engine, one level up), giving ONE band per metric; and
+  hero.domains[].position_metrics (NEW) carries the metric-level below/at/above the §1 CARD A donut now reads. The
+  home needle (hero.market mass _pool_verdict over the whole gauge_pool) is UNTOUCHED — the two surfaces answer
+  different questions (home 'where Pay sits overall, reading-mass-weighted'; domain grid 'how many Pay metrics sit
+  below market, show me which'). PROOF (live, Thornbridge): per-card market_band sum === position_metrics for ALL 7
+  domains (Pay 8/5/0, Benefits 11/2/1, Incentives 6/1/0, Time Off 7/2/0, Wellbeing 3/0/0, Recognition 1/1/0,
+  Governance null) — all_match true; home gauge mass byte-identical (76 Below / 15 On market / 1 Above, pool 92,
+  'clearly below the market'); the 4 cost/Design rows resolve to null; consumer-safety audit (workflow, 22
+  consumers) clears — all named-field reads, strip_internal passes non-_ fields, no market_band name collision.
+
+2026-06-27 — DOMAIN PAGE — PASS 2b (count→chip filterable grid + signals-list retirement), BUILT on 2a. The §1
+  CARD A donut REPOINTS to position_metrics (Pay reads 'Below · 13 metrics · 8 below · 5 on · 0 above' — the verdict
+  WORD + lean adverb stay mass-level/canonical, only the counts/segments/pool go metric-level; ruled, not a
+  regression). The 'All metrics' signal-state <select> → 3 COMPOSABLE neutral position chips (SignalsPage .sig-chip
+  pattern, NO marketTone dot — a filter is a control, not a position readout; hide-0 so Pay shows 'below 8 · on
+  market 5', no 'above 0'); counts read posM (=== the donut, one source); the filter predicate reads c.market_band
+  (engine 'at' → chip 'on'), so count===donut===filtered-grid BY CONSTRUCTION. KEPT the orthogonal type select.
+  RETIRED the standalone signals list (+ its orphaned sigEff/sigStOv/onSetSig/sigsShown/inCat triage overlay; kept
+  sigMap — the grid still needs it). ADDED a slim '⚑ N flagged →' link-out (.cat-flag-link, NOT a chip) to
+  #/signals (unscoped this pass; domain-scoping = a SignalsPage fast-follow). PROOF (live, Pay): click 'below 8' →
+  exactly 8 cards; multi-select below+on → 13; 'All' clears; donut+chips metric-level (8/5/0); home gauge
+  unchanged; 0 console errors. Cache v277 -> v279. Follow-ups: MarketSpectrum still dead (cleanup); single_benchmark
+  carries market_band=null (only the grid consumes it this pass); location_approach=agnostic orgs read metric_bands
+  strategy-invariant (donut may shrink under strategy for that rare reframe). NEXT: Pass 3 (net-new AI domain
+  summary).

@@ -1498,8 +1498,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [bench, setBench] = useState(null);
   const [err, setErr] = useState(null);
   const [type, setType] = useState("");
-  const [sigF, setSigF] = useState("");
-  const [sigStOv, setSigStOv] = useState({});   // local triage overlay for this domain's signals
+  const [posSel, setPosSel] = useState([]);     // market-position chip filter (multi-select; [] = all)
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
   // stays consistent across surfaces: when the user has turned their strategy OFF on the
   // overview (persisted pref _overview.apply_strategy === false), fetch this category with
@@ -1509,7 +1508,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const _ovp = (prefs && prefs._overview) || {};
   const applyStrat = _ovp.apply_strategy !== false;
   useEffect(() => {
-    setOv(null); setBench(null); setErr(null); setType(""); setSigF("");
+    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]);
     Promise.all([
       api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
       api("/api/benchmarks/Reward?" + cutQS(cut)),
@@ -1534,20 +1533,27 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
 
   const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
   const all = (bench.cards || []).filter(c => (c.subpower || "General") === name);
-  const inCat = new Set(all.map(c => c.id));
   const sigMap = {}; (ov.signals_all || []).forEach(s => { (sigMap[s.question_id] = sigMap[s.question_id] || []).push(s); });
-  const sigs = (ov.signals_all || []).filter(s => inCat.has(s.question_id) && s.status !== "dismissed");
-  const sigEff = s => { const k = s.sig_id || s.question_id; return k in sigStOv ? sigStOv[k] : s.status; };
-  const onSetSig = (sid, status) => { setSigStOv(p => ({ ...p, [sid]: status || "active" })); signalAction(sid, status).catch(() => {}); };
-  const sigsShown = sigs.filter(s => sigEff(s) !== "dismissed");
-  let cards = type ? all.filter(c => c.category === type) : all;
-  if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
   const sigCounts = { signal: 0, add: 0, clear: 0 };
   all.forEach(c => { const st = cardSignalState(c, sigMap[c.id]); if (st) sigCounts[st]++; });
+  // §2 grid filter: TYPE (kept) + market-POSITION chips (multi-select; [] = all). cardBand reads
+  // the server's firewall-reviewed c.market_band (Pass 2a — the SAME _metric_bands the §1 donut
+  // counts), mapping the engine's 'at' to the chip's 'on'. count===donut===filtered-grid BY
+  // CONSTRUCTION (one source, metric-level). null (Approach / neutral / non-positioned) matches
+  // no chip. Strategy-invariant (market_band is strategy-free).
+  const cardBand = c => { const b = c.market_band; return b === "at" ? "on" : b; };
+  let cards = type ? all.filter(c => c.category === type) : all;
+  if (posSel.length) cards = cards.filter(c => posSel.includes(cardBand(c)));
 
   // position read (same traffic-light language as the tile / hero gauge)
   const pos = hero && (hero.position || hero.market);
   const verdict = pos && pos.verdict;
+  // §1 CARD A counts DISTINCT positioned METRICS (matrix metric = its own verdict) — the unit
+  // the grid + position chips share — NOT the per-reading mass the home needle keeps (ruling
+  // 2026-06-27). Donut segments/counts/pool read posM; the verdict WORD + lean adverb stay
+  // mass-level (the canonical domain read, consistent with tile/chip/home). Falls back to mass
+  // if an older payload lacks position_metrics.
+  const posM = (hero && hero.position_metrics) || pos;
   const indicative = hero && hero.position_basis === "indicative";
   const ev = hero && hero.position_evidence;
   const evC = ev ? ev.polarised + ev.practice : 0;
@@ -1567,7 +1573,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
   // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
   // practice is not a market position), a count-HEADLINE centre, no alignment chip.
-  const posSegs = pos ? ["below", "at", "above"].map(k => ({ value: pos[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
+  const posSegs = posM ? ["below", "at", "above"].map(k => ({ value: posM[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
   const prevSegs = [
     { value: prev.with_majority || 0, color: "var(--blue-deep)" },
     { value: prev.established || 0, color: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))" },
@@ -1592,11 +1598,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
       <div class="cat-hero">
         <div class="card cat-pos-card">
           <div class="cat-hero-label">Market position</div>
-          ${pos && pos.pool ? html`
-            <${Donut} segments=${posSegs} total=${pos.pool} centerNum=${pos.pool} sub="metrics" centerWord=${verdictWord(verdict)} size=${210} stroke=${28} />
+          ${posM && posM.pool ? html`
+            <${Donut} segments=${posSegs} total=${posM.pool} centerNum=${posM.pool} sub="metrics" centerWord=${verdictWord(verdict)} size=${210} stroke=${28} />
             <div class="cat-card-cap">${leanCaption(pos)}${indicative ? " · indicative" : ""}</div>
             <div class="cat-card-counts num">
-              <span><b>${pos.below}</b> below</span><span><b>${pos.at}</b> on market</span><span><b>${pos.above}</b> above</span>
+              <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
             </div>
             ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}` :
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
@@ -1613,42 +1619,25 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         </div>
       </div>
 
-      ${sigsShown.length ? html`
-        <section class="cat-section">
-          <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="flag" size=${14} /></span>
-            <b>Signals in ${name}</b>
-            <span class="caption">${sigsShown.length} signal${sigsShown.length === 1 ? "" : "s"} — we flag, you decide</span>
-            <a class="caption cat-sec-link" href="#/signals">All signals →</a></div>
-          <div class="signals-list">
-            ${sigsShown.map((s, i) => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
-              <div key=${i} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.risk_framed ? " is-risk" : "") + (s.confirm ? " is-confirm" : "")} onClick=${() => nav("/metric/" + s.question_id)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/metric/" + s.question_id); } }} role="button" tabindex="0">
-                ${sigParts(s, pt)}
-                <${SignalActions} status=${sigEff(s)} sid=${sid} onSet=${onSetSig} />
-              </div>`; })}
-          </div>
-        </section>` : html`
-        <div class="cat-allclear">
-          <span class="cat-allclear-ring"><${Icon} name="sparkle" size=${15} /></span>
-          <span>Nothing flagged in ${name} — no metric here crosses a signal threshold. That's a quiet category.</span>
-        </div>`}
-
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
           <b>All metrics</b><span class="caption">${cards.length} shown</span>
+          ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
           <div class="cat-filters">
-            <select class="ctl" aria-label="Filter by signal" value=${sigF} onChange=${e => setSigF(e.target.value)}>
-              <option value="">All signals</option>
-              <option value="signal">Flagged · ${sigCounts.signal}</option>
-              <option value="add">Needs data · ${sigCounts.add}</option>
-              <option value="clear">No signal · ${sigCounts.clear}</option>
-            </select>
+            ${posM && posM.pool ? html`<div class="sig-chips cat-pos-chips" role="group" aria-label="Filter by market position">
+              <button type="button" class=${"sig-chip" + (posSel.length === 0 ? " on" : "")} aria-pressed=${posSel.length === 0} onClick=${() => setPosSel([])}>All</button>
+              ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
+                <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
+                  onClick=${() => setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k])}>
+                  ${p.lab} <span class="n">${p.n}</span></button>`)}
+            </div>` : null}
             <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
               <option value="">All types</option><option value="metric">Metrics</option>
               <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
             </select>
           </div></div>
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
-          action=${html`<button class="btn small" onClick=${() => { setType(""); setSigF(""); }}>Clear filters</button>`} /> ` :
+          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); }}>Clear filters</button>`} /> ` :
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>

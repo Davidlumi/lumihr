@@ -1281,6 +1281,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-sec-ico { width: 24px; height: 24px; border-radius: 7px; background: var(--blue-tint); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .cat-sec-link { margin-left: auto; font-weight: 600; }
+/* slim flagged-pointer in the All-metrics head — a link-out to Signals, NOT a filter chip */
+.cat-flag-link { font-weight: 600; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.cat-flag-link:hover { color: var(--blue); }
+.cat-flag-link svg, .cat-flag-link:hover svg { transition: transform var(--ease); }
+.cat-flag-link:hover svg { transform: translateX(1px); }
+/* the position filter chips reuse the neutral .sig-chip pill (no marketTone dot) */
+.cat-pos-chips { flex-wrap: wrap; }
 .cat-type { margin-left: auto; }
 
 /* ---- Your data: completion-first landing + per-domain drill-down ---- */
