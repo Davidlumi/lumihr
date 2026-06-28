@@ -1667,7 +1667,13 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-card-counts num">
               <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
             </div>
-            ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}` :
+            ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
+            <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
+              ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
+                <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
+                  onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
+                  ${p.lab} <span class="n">${p.n}</span></button>`)}
+            </div>` :
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
         </div>
         <div class="card cat-pos-card">
@@ -1677,6 +1683,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-card-cap">match the market majority</div>
             <div class="cat-card-counts num">
               <span><b>${prev.with_majority}</b> match</span><span><b>${prev.established}</b> common alt</span><span><b>${prev.less_common}</b> rarer</span>
+            </div>
+            <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by practice prevalence">
+              ${[{ k: "match", n: prev.with_majority, lab: "match" }, { k: "common_alt", n: prev.established, lab: "common alt" }, { k: "rarer", n: prev.less_common, lab: "rarer" }].filter(p => p.n).map(p => html`
+                <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
+                  onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
+                  ${p.lab} <span class="n">${p.n}</span></button>`)}
             </div>` :
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>No practice questions assessed in this category yet.</div>`}
         </div>
@@ -1688,31 +1700,13 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
           <b>All metrics</b><span class="caption">${cards.length} shown</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
-        </div>
-        <div class="cat-filter-row" role="group" aria-label="Filter the metrics">
-          ${(posM && posM.pool) || prev.pool ? html`
-            <button type="button" class=${"sig-chip" + (posSel.length === 0 && prevSel.length === 0 ? " on" : "")} aria-pressed=${posSel.length === 0 && prevSel.length === 0} onClick=${() => { setPosSel([]); setPrevSel([]); }}>All</button>` : null}
-          ${posM && posM.pool ? html`
-            <span class="cat-filter-axis">Position</span>
-            <div class="sig-chips" role="group" aria-label="Filter by market position">
-              ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
-                <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
-                  onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
-                  ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </div>` : null}
-          ${(posM && posM.pool) && prev.pool ? html`<span class="cat-filter-div" aria-hidden="true"></span>` : null}
-          ${prev.pool ? html`
-            <span class="cat-filter-axis">Practices</span>
-            <div class="sig-chips" role="group" aria-label="Filter by practice prevalence">
-              ${[{ k: "match", n: prev.with_majority, lab: "match" }, { k: "common_alt", n: prev.established, lab: "common alt" }, { k: "rarer", n: prev.less_common, lab: "rarer" }].filter(p => p.n).map(p => html`
-                <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
-                  onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
-                  ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </div>` : null}
-          <select class="ctl cat-type-sel" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
-            <option value="">All types</option><option value="metric">Metrics</option>
-            <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
-          </select>
+          <div class="cat-head-ctl">
+            ${(posSel.length || prevSel.length) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); }}>Clear filter</button>` : null}
+            <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
+              <option value="">All types</option><option value="metric">Metrics</option>
+              <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
+            </select>
+          </div>
         </div>
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
           action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); }}>Clear filters</button>`} /> ` :

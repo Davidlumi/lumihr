@@ -6291,3 +6291,23 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   exactly 8 cards; click "below" → prevalence cleared (mutual exclusion), grid 8; click "on market" → composes
   within position (grid 13); click "match" → position cleared, grid 18; shared "All" → grid 60; the row reads as
   two labelled groups (POSITION | PRACTICES) + type; 0 console errors. Cache v282 -> v283. Both passes shipped.
+
+2026-06-28 — DOMAIN PAGE — FILTERS-UNDER-THEIR-DONUT restructure + card padding fix (render-placement + CSS only,
+  NO logic/band/payload change), BUILT. (1) PADDING: .card has no padding and .cat-pos-card added none, so the
+  donut card content was flush to the edge (the label, align-self:flex-start, sat hard in the top-left corner).
+  Added padding:var(--s4) to .cat-pos-card (both cards, symmetric) — label + donut + footer now inset. (2)
+  RELOCATE CHIPS: the combined two-group filter strip split — the 3 POSITION chips (below/on/above) moved INTO
+  CARD A's footer under the position donut, the 3 PREVALENCE chips (match/common-alt/rarer) into CARD B's footer
+  under the prevalence donut (.cat-card-chips: a quiet border-top footer, centred). Each donut is now a self-
+  contained filterable unit. DROPPED the .cat-filter-axis "Position"/"Practices" labels — the donut title above
+  each card already names the dimension (also kills the donut-title-vs-filter-label naming mismatch). The shared
+  "All"/clear → relocated to the grid header (.cat-sec-head) as a quiet "Clear filter" (shown only when a chip is
+  active; resets both posSel + prevSel); the orthogonal type select stays at the grid header (grid-level). The old
+  .cat-filter-row + its CSS (cat-filter-row/axis/div/type-sel) removed. CHIP LOGIC UNCHANGED — same state
+  (posSel/prevSel, CategoryPage scope), same mutual-exclusion handlers (position chip clears prevalence + vice-
+  versa), same cardBand/cardPrevBand predicate, same counts (=== each donut), same hide-0 — only the JSX placement
+  moved. PROOF (live, Pay): both cards padded (label inset, content not flush); position chips under the position
+  donut, prevalence chips under the prevalence donut, no filter-axis labels; click "rarer 8" (now under the
+  prevalence donut) → exactly 8 cards; "below" clears prevalence (mutual excl); below+on composes → 13; grid-header
+  "Clear filter" → both reset → 60; the type select at the grid header filters grid-level (practice → 27); donut
+  centres/counts/verdict + §2 unchanged; 0 console errors. Cache v283 -> v284.
