@@ -6144,3 +6144,34 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   carries market_band=null (only the grid consumes it this pass); location_approach=agnostic orgs read metric_bands
   strategy-invariant (donut may shrink under strategy for that rare reframe). NEXT: Pass 3 (net-new AI domain
   summary).
+
+2026-06-28 — DOMAIN PAGE — PASS 3 PROMPT (locked) + 3a (server: payload + generator + validator + floor + table +
+  green gate), BUILT. The §2 AI domain summary is the one net-new, philosophy-sensitive piece. PROCESS: mapped the
+  per-metric scaffold (Phase A) → David drafted the generation prompt → adversarial pressure-test (a 5-lens
+  red-team workflow STALLED on infra, so done directly) surfaced critical/high risks: position-vs-strategy
+  vocabulary conflation, derived/worded-ratio numbers, the "considerations" advice leak (contradicting mirror-not-
+  consultant), and missing branches for Governance/indicative/no-gaps → David hardened the prompt (vocab lock,
+  "8 of 13" counts only, considerations DROPPED, no-position branch, strengths named, calibration kept) → a second
+  pressure-test surfaced the seam issues now ruled as D1-D6. RULINGS: part-set = FOUR describe-only slots
+  (position / notable[gaps+strengths] / prevalence-or-approach / provenance); peer_pool_size = responding_orgs
+  nominal; §2 degrade = ALWAYS show the deterministic floor (never hide); separate AI_DOMAIN_SUMMARY flag (default
+  OFF). BUILD (3a, server only — no route, no frontend): claude_api.py DOMAIN_SUMMARY_SYSTEM (the locked prompt) +
+  DOMAIN_SUMMARY_SCHEMA (4 slots) + validate_domain_summary (post-gen gate) + _deterministic_domain_summary (the
+  always-present floor) + generate_domain_summary (floor-first, ≤2 model attempts each gated, floor on any fail/no
+  key) + DOMAIN_SUMMARY_GEN_VERSION; app.py build_domain_summary_payload (same engine the §1 donut uses — Pass 2a
+  position_metrics, prevalence, approach, top_gaps/top_strengths, provenance) + AI_DOMAIN_SUMMARY flag; db.py
+  domain_summary cache table (PK org+domain+cut_key; cut_key folds strategy on/off). D-RULINGS honoured: D1 gaps/
+  strengths carry the favourability-ADJUSTED percentile (round(50+distance,1) — low=gap always, no wrong-direction
+  P); D2 the number allowlist is built from DATA fields + the quoted metric NAMES only (never definitions — the
+  domain payload carries none), and names use the concise q.short_description with digit-bearing parens + post-'?'
+  explainers stripped (kills the "(100%) so 110% would be 10% above market" cruft); D3 alignment in DISPLAY vocab
+  ("behind/on/ahead strategy"), present only strategy-on; D4 provenance = {answered_count, peer_pool_size(nominal)};
+  D5 prevalence phrasing pinned per bucket; D6 four describe-only slots, no interpretive slot. GATE:
+  qa_domain_summary.py mirrors qa_commentary — attacks the live path (7 domains × strategy on/off × cuts) AND the
+  validator with 13 hostile outputs (ungrounded/worded numbers, crossed vocab, advice/directive/legal, alarm,
+  alignment-without-strategy, market-position-on-Governance, missing provenance). 127/127 PASS (deterministic+
+  validator path; LUMI_QA_WITH_MODEL=on to also exercise live generations). Floor reads honestly e.g. Pay: "8 of 13
+  positioned metrics sit below market, 5 on market and 0 above market. Against the strategy you have set, this
+  domain reads behind strategy." FOLLOW-UP (ruled, logged, NOT this pass): the per-metric _commentary_numbers
+  allowlist scans the WHOLE payload JSON incl. definitions — the same D2 hole — to tighten to data-fields-only on
+  that shipped surface. NEXT: 3b (route POST /api/domain-summary + §2 frontend block, flag-gated), after sign-off.

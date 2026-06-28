@@ -380,6 +380,21 @@ CREATE TABLE IF NOT EXISTS metric_commentary (
     PRIMARY KEY (org_id, question_id, cut_key)
 );
 
+-- AI per-DOMAIN summary (Pass 3). Same cache contract as metric_commentary; the
+-- cut_key folds the strategy on/off state in (dim::value::strat|abs) so the
+-- strategy-applied and absolute reads cache separately. payload_hash folds in
+-- DOMAIN_SUMMARY_GEN_VERSION so the cache self-invalidates on a generator change.
+CREATE TABLE IF NOT EXISTS domain_summary (
+    org_id TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    cut_key TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    text TEXT NOT NULL,
+    source TEXT NOT NULL,              -- model | deterministic
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (org_id, domain, cut_key)
+);
+
 -- Generated board packs (narrative cached so the print view is stable).
 CREATE TABLE IF NOT EXISTS board_packs (
     pack_id TEXT PRIMARY KEY,

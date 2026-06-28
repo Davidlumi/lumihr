@@ -121,6 +121,9 @@ AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
 AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
+# Per-domain AI summary (Pass 3) — its OWN kill switch, default OFF until the
+# adversarial gate (qa_domain_summary.py) passes and the prompt is signed off.
+AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -3630,6 +3633,93 @@ def _commentary_stance(percentile, polarity):
         return None
     adj = 100 - percentile if polarity == "lower_is_better" else percentile
     return "ahead" if adj > 55 else "behind" if adj < 45 else "in line"
+
+
+def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True):
+    """The grounded per-DOMAIN payload: exactly the metric-level figures the domain page
+    shows (Pass 2a position_metrics, prevalence, approach, the widest gaps/strengths,
+    provenance) — and ONLY those numeric DATA fields (never metric definitions, so the
+    validator's allowlist stays tight, D2). Built from the SAME engine the overview/§1
+    donut uses, so the summary can never disagree with the page. Shared by the endpoint
+    and the qa_domain_summary harness so the harness attacks the real path. apply_strategy
+    drives the alignment field (present only strategy-on); the position counts are
+    strategy-invariant either way (Pass 2a)."""
+    qs = org_visible_questions(org)
+    if not any(q.sub_power == name for q in qs.values()):
+        return None
+    entitled = make_entitled(user, org)
+    answers = org_answers_for(org)
+    tb = twin_blocks_if_needed(conn, org, cut) if cut.get("dim") in ("twin", "group") else None
+    items = pos.position_items(org["org_id"], cut, qs, payloads(), answers, entitled, tb)
+    prev_items = pos.prevalence_items(org["org_id"], cut, qs, payloads(), answers, entitled, tb)
+    prac_items = pos.practice_position_items(org["org_id"], cut, qs, payloads(), answers, entitled, tb)
+    mp_cfg = pos.market_position_config()
+    strat = strategy_for_engine(conn, org["org_id"]) if apply_strategy else None
+    sec_order = []
+    for q in qs.values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=mp_cfg, strategy=strat)
+    d = next((x for x in hero["domains"] if x["name"] == name), None)
+    if d is None:
+        return None
+    pm = d.get("position_metrics")
+    has_pos = bool(d.get("competitiveness")) and pm is not None
+    # widest gaps / strengths from the SAME Substance pool the counts use, with the
+    # favourability-ADJUSTED percentile (50 + distance) so a quoted "P9" always reads
+    # low = gap regardless of polarity (D1). Metric-level labels (matrix rows carry their
+    # row label, e.g. "Pay by band — Senior").
+    dom_pool = [i for i in pos.substance_pool(items, prac_items, mp_cfg) if i.get("subpower") == name]
+    # Concise metric name: q.short_description (a clean label) + the matrix row, NOT the full
+    # display_title — whose benchmark_display can embed an explanatory sentence with stray
+    # numbers ("(where market is 100%) so 110%…") that would clutter the summary and mislead.
+    def _gname(i):
+        q = qs.get(i["question_id"])
+        base = q.short_description if (q and q.short_description) else i["label"]
+        base = re.sub(r"\s*\([^)]*\d[^)]*\)", "", base)   # drop only digit-bearing parens (noise, not "(PMI)")
+        base = base.split("?")[0]                          # drop any trailing post-question explainer
+        base = re.sub(r"\s+", " ", base).strip().rstrip(".,;:")
+        if len(base) > 78:
+            base = base[:77].rstrip() + "…"
+        if i.get("row_id") and " — " in i["label"]:
+            base = base + " — " + i["label"].rsplit(" — ", 1)[-1]
+        return base
+    _gs = lambda i: {"metric": _gname(i), "adj_pctl": round(50.0 + i["distance"], 1), "n": i["n"]}
+    gaps = [_gs(i) for i in pos.top_gaps(dom_pool, 3)]
+    strengths = [_gs(i) for i in pos.top_strengths(dom_pool, 3)]
+    prev = d.get("prevalence") or {}
+    appr = d.get("approach") or {}
+    # alignment in DISPLAY vocabulary, present only strategy-on AND when a target exists
+    # (target is None strategy-off by construction). on_target -> "on strategy" (D3).
+    _ALIGN = {"behind": "behind strategy", "on_target": "on strategy", "ahead": "ahead of strategy"}
+    tgt = d.get("target")
+    alignment = _ALIGN.get((tgt or {}).get("alignment")) if (tgt and apply_strategy) else None
+    # provenance: the answered/positioned benchmark count the summary rests on + the peer
+    # group NOMINAL (responding_orgs — the stable number the UI shows, not a per-metric n).
+    answered_count = (pm.get("pool") if has_pos
+                      else (appr.get("pool") or prev.get("pool") or 0))
+    peer_pool_size = (get_meta("peer_pool", {}) or {}).get("responding_orgs")
+    return {
+        "domain": name,
+        "has_position": has_pos,
+        "position_basis": d.get("position_basis"),
+        "position": ({"below": pm.get("below"), "at": pm.get("at"),
+                      "above": pm.get("above"), "pool": pm.get("pool")} if has_pos else None),
+        "gaps": gaps,
+        "strengths": strengths,
+        "prevalence": ({"match_market_majority": prev.get("with_majority"),
+                        "established_alternative": prev.get("established"),
+                        "less_common": prev.get("less_common"),
+                        "pool": prev.get("pool")} if prev.get("pool") else None),
+        "approach": ({"differ": appr.get("differ"), "in_line": appr.get("in_line"),
+                      "pool": appr.get("pool")} if appr.get("pool") else None),
+        "alignment": alignment,
+        "provenance": {"answered_count": answered_count, "peer_pool_size": peer_pool_size},
+        "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
+    }
 
 
 def build_commentary_payload(conn, org, user, qid, dim, value):
