@@ -2,9 +2,7 @@
 
 **Version 1.0 · current as of 28 June 2026**
 
-This page lists the sub-processors lumi engages to deliver the service. The AI
-sub-processor (Anthropic) is finalised; the hosting and transactional-email
-providers are being confirmed and will be named here before they carry live data.
+This page lists the sub-processors lumi engages to deliver the service.
 
 ## How to read this list
 
@@ -18,8 +16,8 @@ Agreement (DPA).
 | Purpose | Sub-processor | Location & transfer | Safeguards |
 | --- | --- | --- | --- |
 | AI-generated analytical summaries (AI Insights) | Anthropic PBC | United States — UK GDPR transfer safeguards (SCCs / UK Addendum) | Data-processing agreement; processes only aggregated/derived figures (no individual salaries); no training on inputs; zero/limited retention under commercial API terms |
-| Application hosting | *To be confirmed before launch* | UK / EEA | — |
-| Transactional email | *To be confirmed before launch* | UK / EEA | — |
+| Application hosting | Amazon Web Services (AWS) | United Kingdom / EEA region | Data-processing agreement (AWS DPA) |
+| Transactional email | Amazon SES (AWS) | United Kingdom / EEA region | Data-processing agreement (AWS DPA) |
 
 ## Changes
 

@@ -32,16 +32,31 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 4. **Sub-processor + privacy disclosure.** The Anthropic row was added to the Sub-processor List
    (aggregated/derived figures only — no individual salaries; no training on inputs; zero/limited
    retention; DPA + transfer safeguards), and an **AI-assisted analysis** section was added to the
-   Privacy Notice. Confirm the DPA / Article 30 records cover the AI processing and Anthropic.
+   Privacy Notice.
 
-### Two NON-AI residual items (David's, not blocking the AI flip, but tidy before/soon after)
+### Post-sign-off prerequisites (this release — COMPLETE)
 
-- **Privacy Notice contact address** — still says "the address published in the final notice".
-  Set a real data-subject-rights contact, then flip `LEGAL_INDEX["privacy"].draft → false`.
-- **Hosting + transactional-email sub-processors** — still "to be confirmed". Name them, then flip
-  `LEGAL_INDEX["subprocessors"].draft → false`.
-  (The authoritative AI disclosure is the final **AI Insights Terms** page, which every AI surface
-  links to; these two pages remain `draft:true` only for the non-AI items above.)
+- **C3 — opt-out cache deletion.** Turning AI Insights off now DELETES the org's cached AI
+  summaries (`domain_summary` + `metric_commentary`), not just gates them — `purge_ai_cache()` in
+  `server/app.py`, called on withdrawal. Verified: opt-out → cached rows gone + route 403, with a
+  second org's cache untouched (per-org scope).
+- **C4 — non-AI placeholders filled.** Privacy Notice rights contact = **dpo@lumihr.co.uk**;
+  Sub-processor List hosting = **Amazon Web Services (AWS)**, email = **Amazon SES**. Both pages
+  finalised (`-draft` suffix dropped, `LEGAL_INDEX` `draft:false`). Only the **Cookie Policy**
+  remains draft (pending its analytics description — not part of the AI go-live).
+- **Article 30 / LIA attestation** produced: `compliance/ai-insights-data-minimisation-attestation.md`
+  — send-ready; David emails it to the solicitor to append to the RoPA / LIA.
+
+### David's actions before the flip (in order)
+
+- **a.** Accept the **Anthropic DPA** in the Anthropic console (confirm zero-retention / no-training
+  commercial terms + transfer mechanism match the Sub-processor List row).
+- **b.** **Email the attestation** (`compliance/ai-insights-data-minimisation-attestation.md`) to the
+  solicitor for the RoPA / LIA.
+- **c.** Confirm the C4 values are live — that **dpo@lumihr.co.uk** receives mail, and that AWS / SES
+  are the actual providers.
+- **d.** Confirm the DPA / Article 30 records cover the AI processing and Anthropic, then proceed to
+  step 5.
 
 ## The remaining step — David's, in production (step 5)
 

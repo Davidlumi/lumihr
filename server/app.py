@@ -366,9 +366,9 @@ LEGAL_FILES = {
     "platform": "platform-terms-v1.0.md",
     "data_contribution": "data-contribution-terms-v1.0.md",
     "dpa": "data-sharing-agreement-dpa-v1.0.md",
-    "privacy": "privacy-notice-v1.0-draft.md",
+    "privacy": "privacy-notice-v1.0.md",
     "cookies": "cookie-policy-v1.0-draft.md",
-    "subprocessors": "sub-processors-v1.0-draft.md",
+    "subprocessors": "sub-processors-v1.0.md",
     "ai_insights": "ai-insights-terms-v1.0.md",
 }
 
@@ -376,16 +376,17 @@ LEGAL_FILES = {
 # the "How lumi works" hub is the index. Public read access — these must be
 # reachable from the auth screens (the enforceability footer) before any
 # account exists. Each entry's `draft` flag reflects its own review status:
-# platform terms, data-contribution terms and the DPA are lawyer-approved final
-# v1.0; privacy, cookies and sub-processors remain in review pending operational
-# details (contact address / analytics description / named sub-processors).
+# platform terms, data-contribution terms, the DPA, the privacy notice, the
+# sub-processor list and the AI Insights terms are final v1.0 (privacy + sub-
+# processors finalised 2026-06-28: real rights contact + named AWS/SES). Only the
+# cookie policy remains in draft pending its analytics description.
 LEGAL_INDEX = [
     {"key": "platform", "title": "Terms of Use", "draft": False},
-    {"key": "privacy", "title": "Privacy Notice", "draft": True},
+    {"key": "privacy", "title": "Privacy Notice", "draft": False},
     {"key": "cookies", "title": "Cookie Policy", "draft": True},
     {"key": "data_contribution", "title": "Data Contribution Terms", "draft": False},
     {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": False},
-    {"key": "subprocessors", "title": "Sub-processor List", "draft": True},
+    {"key": "subprocessors", "title": "Sub-processor List", "draft": False},
     {"key": "ai_insights", "title": "AI Insights Terms", "draft": False},
 ]
 
@@ -428,6 +429,18 @@ def record_ai_consent(conn, org_id, user_id, version=None):
 
 def record_ai_withdrawal(conn, org_id, user_id, version=None):
     record_acceptance(conn, org_id, user_id, "ai_insights_withdrawn", version or AI_TERMS_VERSION)
+
+
+def purge_ai_cache(conn, org_id):
+    """Data-minimisation on opt-out (C3): when a member turns AI Insights off, delete the org's
+    cached AI-generated summaries so no derived AI output persists — not merely gated from display.
+    The two on-demand caches are cleared (they regenerate lawfully only if a still-consented member
+    next views the page; under opt_out a withdrawn member's routes 403 before any regeneration).
+    Board packs are member-INITIATED saved exports (created_by, a deliberate document), handled
+    under the normal erasure/retention process, not this automatic cache purge."""
+    conn.execute("DELETE FROM domain_summary WHERE org_id=?", (org_id,))
+    conn.execute("DELETE FROM metric_commentary WHERE org_id=?", (org_id,))
+    conn.commit()
 
 
 def ai_consent_state(conn, user_id):
@@ -1347,6 +1360,7 @@ async def ai_consent(request: Request):
         record_ai_consent(conn, org["org_id"], user["user_id"])
     else:
         record_ai_withdrawal(conn, org["org_id"], user["user_id"])
+        purge_ai_cache(conn, org["org_id"])     # C3: erase derived AI summaries on opt-out
     return {"ok": True, "ai_insights": ai_gate(conn, user)}
 
 

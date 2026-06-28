@@ -1,10 +1,9 @@
 # lumi.benchmark — Privacy Notice
 
-**Version 1.0 — DRAFT, pending legal review**
+**Version 1.0 · Effective 28 June 2026**
 
-This notice explains what personal data lumi processes, why, and the rights
-you have. It is a plain-English summary in draft form; the final notice will
-be reviewed by a qualified data-protection adviser before launch.
+This notice explains, in plain English, what personal data lumi processes, why,
+and the rights you have.
 
 ## Who we are
 
@@ -64,8 +63,7 @@ retained as historical snapshots so trends remain meaningful.
 
 You may request access to, correction of, or deletion of your personal data,
 and you may object to or restrict certain processing. To exercise any right,
-contact your organisation's lumi Admin or email the address published in the
-final notice.
+contact your organisation's lumi Admin, or email us at **dpo@lumihr.co.uk**.
 
 ## Cookies
 
@@ -74,5 +72,5 @@ technologies.
 
 ## Changes
 
-We will publish the reviewed, non-draft version of this notice before the
-service leaves its launch phase.
+We may update this notice from time to time; material changes will be posted
+here with a revised effective date.

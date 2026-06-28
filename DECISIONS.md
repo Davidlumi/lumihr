@@ -6409,3 +6409,33 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   NO high findings; the load-bearing "no individual salaries" claim VERIFIED true across all 8 AI call sites
   (strip_internal drops _-prefixed peer values; no individual-pay field exists in the schema); the only flags were
   the now-fixed stale checklist and the accepted non-AI draft residuals. Cache v286 -> v287. Committing master OFF.
+
+2026-06-28 — AI INSIGHTS — POST-SOLICITOR PRE-FLIP STEPS (C3 cache-purge + Article-30 attestation +
+  load-bearing-claim checkpoint), BUILT — MASTER STILL OFF. Conditional solicitor sign-off (legitimate
+  interest, LIA formalised, wording approved); four prerequisites land BEFORE David's prod env flip.
+  C3 — OPT-OUT CACHE PURGE. When a member turns AI Insights off (POST /api/ai-consent consent=false →
+  ai_insights_withdrawn), the org's cached AI-generated summaries are now DELETED, not merely gated:
+  purge_ai_cache(conn, org_id) (app.py) deletes the org's rows from domain_summary + metric_commentary.
+  Pipeline bypass on subsequent cycles already held (require_ai → 403; AI is generated strictly on-demand
+  at the two routes — NO background/batch regeneration exists). Board packs are member-INITIATED saved
+  exports (created_by) handled under normal erasure/retention, NOT this auto-purge — stated, not overclaimed.
+  PROOF (live, master on via env, opt_out): Larkholm cached 4 domain_summary rows → opt out → route 403 +
+  Larkholm domain_summary/metric_commentary rows = 0, while a SECOND org's 3 rows stayed untouched (per-org
+  scoping correct).
+  ARTICLE 30 / LIA ATTESTATION. compliance/ai-insights-data-minimisation-attestation.md — a send-ready,
+  regulator-readable exhibit David can email the solicitor to append to the RoPA + LIA. States, each with a
+  code reference: what IS sent to Anthropic (domain position counts, named metrics + percentile + sample
+  size, prevalence, peer-group size, the org's own org-level submitted figure, org firmographics); what is
+  NOT (no individual salaries / base pay — backed TWO ways: (i) the answers schema (db.py:92-100) has NO
+  individual-pay field at all, and (ii) strip_internal (app.py:495-501) removes raw _-prefixed peer values
+  at block assembly (619/636/664), upstream of every payload builder); coverage (all 6 AI features, one API
+  egress at claude_api.py:59, sweep traced 8 entry points); verification (adversarial sweep 2026-06-28, 0
+  high, payload-accuracy clean); and an explicit scope/limits + signature line. Reflects payload commit
+  d6b0401 (unchanged by the C3 cache change, which doesn't alter what's sent).
+  ⭐ LOAD-BEARING-CLAIM CHECKPOINT. The Privacy Notice + AI Insights Terms representation "individual
+  salaries and base-pay levels are not used" is LOAD-BEARING on the AI payload staying minimal. Any future
+  change to what is sent to the AI provider — a new field in ANY AI payload, a new AI feature/surface, or a
+  change to strip_internal or the answers schema — MUST re-run the payload-accuracy verification and re-issue
+  the attestation BEFORE shipping. Treat "does this change the AI payload?" as a hard release checkpoint on
+  the AI surfaces (commentary, analyst, board pack, pulse, strategy, domain summary).
+  C4 (non-AI placeholders) handled separately; master default stays OFF — the prod flip is David's.
