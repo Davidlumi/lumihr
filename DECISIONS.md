@@ -6336,3 +6336,41 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   (one line). The five UI changes from 88adb36 STAY (correct). The §2 summary remains demo/env-var only
   (LUMI_AI_DOMAIN_SUMMARY=on) until David explicitly authorizes go-live. PROCESS NOTE: a member-facing AI launch is
   an outward-facing, hard-to-reverse action — confirm explicitly, never infer authorization from feature praise.
+
+2026-06-28 — AI INSIGHTS — CONSENT INFRASTRUCTURE (Option A, master gate), BUILT — MASTER LEFT OFF.
+  Built the consent/authority plumbing for ALL SIX AI features (commentary, analyst, board pack, pulse, strategy
+  diagnosis, domain summary) and wired every one to it, WITH THE MASTER SWITCH LEFT OFF for solicitor review before
+  real go-live. This closes the compliance gap behind the reverted go-live above: member-facing AI content from
+  member data must not render in production until David flips the master switch himself, post-sign-off.
+  GATE (the safety property): any AI feature renders IFF `AI_INSIGHTS_ENABLED` (master, default OFF) AND that
+  feature's own flag is on AND the member has consented (per AI_CONSENT_MODE). So flag-on != all-members-see-AI, and
+  the five currently-default-on features go DARK in production the moment this lands, staying dark until the master
+  is flipped. Implemented by making /api/me features EFFECTIVE (ai_feature_on(gate, flag)) so every existing client
+  gate (me.features.X) auto-respects the master + consent with ZERO change to existing feature-gating code; the six
+  AI routes call require_ai(conn, user, flag) (403 unless master+flag+consent).
+  CONFIG (no hardcoding): LUMI_AI_INSIGHTS_ENABLED (default "off"); LUMI_AI_CONSENT_MODE ("opt_in" default |
+  "opt_out" — the solicitor rules the lawful basis); AI_TERMS_VERSION "1.0-draft". The five existing per-feature
+  flag defaults LEFT UNTOUCHED (still on); AI_DOMAIN_SUMMARY stays default OFF.
+  CONSENT RECORD: mirrors terms_acceptances (append-only Article-30 audit log) — kind="ai_insights" (grant) /
+  "ai_insights_withdrawn" (withdrawal), per-user, versioned to AI_TERMS_VERSION; current state derived from the
+  latest event (opt_in: active iff granted; opt_out: active unless withdrawn). No new table. Helpers: record_ai_
+  consent / record_ai_withdrawal / ai_consent_state / is_ai_consented / ai_gate / ai_feature_on / require_ai.
+  SIGNUP GATE: an unbundled, unticked-by-default "Optional — I consent to lumi generating AI Insights… DRAFT"
+  acknowledgment, SEPARATE from the platform T&C, on both the register form and the accept-invite form (auth.js);
+  captured via accept_ai_insights → record_ai_consent (opt_in).
+  SETTINGS: an "AI Insights" card (commercial.js SettingsPage) — status line + a toggle that POSTs /api/ai-consent
+  (grant/withdraw → refreshMe); withdrawal closes the gate next request. Draft-terms link.
+  EXISTING-MEMBER RE-CONSENT: a never-decided member (opt_in, no record → needs_decision) is shown a consent prompt
+  where §2 would render (pages.js CategoryPage: "AI Insights can summarise this domain… Review & enable →" → #/settings),
+  not the AI itself. Withdrawn members (have a record) get no prompt.
+  PLACEHOLDER LEGAL: legal/ai-insights-terms-v1.0-draft.md, registered in LEGAL_FILES + LEGAL_INDEX with draft:true
+  (mirrors the existing -draft.md / draft:true pattern), clearly marked "DRAFT — NOT LEGALLY VERIFIED · pending
+  solicitor review". GO_LIVE_CHECKLIST.md documents David's post-solicitor switch-on order (replace placeholder
+  legal text, confirm lawful basis/set AI_CONSENT_MODE, bump AI_TERMS_VERSION, confirm DPA/Article 30, flip
+  LUMI_AI_INSIGHTS_ENABLED=on, re-run adversarial gates) + the kill switches.
+  PROOF (live, master ON via env-var on the preview instance only): master OFF (default) → features all false +
+  routes 403 + ai_insights{master:false,needs_decision:true,active:false}; grant→consented:true / withdraw→event
+  "ai_insights_withdrawn" / regrant→consented:true; master ON + consented → features ALL true + domain route 200 +
+  active:true; master ON + withdrawn → features ALL false + route 403; consented org → §2 present, no prompt;
+  never-decided org → consent prompt present (Review&enable→#/settings), §2 absent; Settings AI card renders the
+  toggle; 0 console errors. COMMITTING WITH THE MASTER OFF — the switch-on is David's, post-review. Cache v285 -> v286.

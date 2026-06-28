@@ -128,6 +128,24 @@ AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
 # per-environment with LUMI_AI_DOMAIN_SUMMARY=on (demo / preview) until David explicitly
 # authorizes launch. (The 2026-06-28 default-on flip was unauthorized and reverted.)
 AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
+
+# ===================================================================== AI INSIGHTS GATE ==
+# The MASTER switch for ALL member-facing AI insight features (commentary, analyst, board
+# pack, pulse, strategy diagnosis, domain summary). Default OFF — this holds production dark
+# regardless of the per-feature flags above (five of which still default on), so AI-generated,
+# member-facing content derived from member data ships to NOBODY until David flips this himself,
+# AFTER solicitor sign-off on the compliance track (DPA / privacy notice / sub-processors).
+# Every AI feature renders iff:  AI_INSIGHTS_ENABLED on  AND  its own flag on  AND  the member
+# has consented (per AI_CONSENT_MODE). Demo/review runs the COMPLETE flow on test data via
+# LUMI_AI_INSIGHTS_ENABLED=on; real members see nothing while it's off. See GO_LIVE_CHECKLIST.md.
+AI_INSIGHTS_ENABLED = os.environ.get("LUMI_AI_INSIGHTS_ENABLED", "off").lower() == "on"
+# Lawful-basis switch the solicitor rules on — built to support EITHER without a code change.
+#   opt_in  (default, conservative): no AI for a member until they explicitly consent.
+#   opt_out (legitimate interest):   AI on by default; a member can disable it (records withdrawal).
+AI_CONSENT_MODE = os.environ.get("LUMI_AI_CONSENT_MODE", "opt_in").lower()
+# The AI-Insights terms version the consent record pins. "-draft" until the solicitor finalises
+# the wording; a bump can force re-consent (the solicitor defines what change is "material").
+AI_TERMS_VERSION = "1.0-draft"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -347,6 +365,7 @@ LEGAL_FILES = {
     "privacy": "privacy-notice-v1.0-draft.md",
     "cookies": "cookie-policy-v1.0-draft.md",
     "subprocessors": "sub-processors-v1.0-draft.md",
+    "ai_insights": "ai-insights-terms-v1.0-draft.md",
 }
 
 # The Legal index (chrome spec section 4.3): each document is its own page;
@@ -363,6 +382,7 @@ LEGAL_INDEX = [
     {"key": "data_contribution", "title": "Data Contribution Terms", "draft": False},
     {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": False},
     {"key": "subprocessors", "title": "Sub-processor List", "draft": True},
+    {"key": "ai_insights", "title": "AI Insights Terms", "draft": True},
 ]
 
 
@@ -392,6 +412,72 @@ def require_data_terms(conn, org):
     if org_data_terms(conn, org["org_id"]) is None:
         raise HTTPException(403, "Review and accept the Data Contribution Terms to begin — "
                                  "your organisation's Admin accepts them once, on the Submit data page.")
+
+
+# --------------------------------------------------- AI Insights consent (per user) --
+# Consent is recorded in the SAME terms_acceptances audit log (kind="ai_insights"), and
+# withdrawal as kind="ai_insights_withdrawn" — an immutable, versioned, per-user event
+# trail (Article 30). The CURRENT state is the member's latest ai_insights-family event.
+def record_ai_consent(conn, org_id, user_id, version=None):
+    record_acceptance(conn, org_id, user_id, "ai_insights", version or AI_TERMS_VERSION)
+
+
+def record_ai_withdrawal(conn, org_id, user_id, version=None):
+    record_acceptance(conn, org_id, user_id, "ai_insights_withdrawn", version or AI_TERMS_VERSION)
+
+
+def ai_consent_state(conn, user_id):
+    """The member's latest AI-consent event → {event, version, at}. event is
+    'ai_insights' (granted), 'ai_insights_withdrawn', or None (never decided)."""
+    row = conn.execute(
+        "SELECT kind, version, accepted_at FROM terms_acceptances "
+        "WHERE user_id=? AND kind IN ('ai_insights','ai_insights_withdrawn') "
+        "ORDER BY accepted_at DESC, id DESC LIMIT 1", (user_id,)).fetchone()
+    if row is None:
+        return {"event": None, "version": None, "at": None}
+    return {"event": row["kind"], "version": row["version"], "at": row["accepted_at"]}
+
+
+def is_ai_consented(state, mode=None):
+    """Resolve the consent EVENT into an effective yes/no under the lawful basis.
+    opt_out: active unless explicitly withdrawn. opt_in: active only if explicitly granted."""
+    mode = mode or AI_CONSENT_MODE
+    if mode == "opt_out":
+        return state["event"] != "ai_insights_withdrawn"
+    return state["event"] == "ai_insights"
+
+
+def ai_gate(conn, user):
+    """The single source of truth for whether a member may see AI insights. Returns the
+    full state so /api/me can expose it and the AI routes can enforce it identically."""
+    state = ai_consent_state(conn, user["user_id"])
+    consented = is_ai_consented(state)
+    return {
+        "master": AI_INSIGHTS_ENABLED,          # the global switch (David flips post-solicitor)
+        "mode": AI_CONSENT_MODE,                # opt_in | opt_out
+        "consent_event": state["event"],        # ai_insights | ai_insights_withdrawn | None
+        "consented": consented,                 # effective yes/no under the mode
+        "consented_at": state["at"],
+        "version": state["version"],
+        "terms_version": AI_TERMS_VERSION,
+        # needs_decision: opt_in member who has never decided → show the consent gate (item 6)
+        "needs_decision": (AI_CONSENT_MODE == "opt_in" and state["event"] is None),
+        "active": AI_INSIGHTS_ENABLED and consented,   # master AND consent (per-feature flag still ANDs on top)
+    }
+
+
+def ai_feature_on(gate, feature_flag):
+    """A specific AI feature renders iff the master gate is on, the member consents, AND the
+    feature's own kill-switch is on. This is what /api/me publishes and the routes enforce."""
+    return bool(gate["active"] and feature_flag)
+
+
+def require_ai(conn, user, feature_flag):
+    """Server-side enforcement for an AI route — defence in depth behind the features map."""
+    gate = ai_gate(conn, user)
+    if not ai_feature_on(gate, feature_flag):
+        raise HTTPException(403, "AI Insights aren't enabled for you. They may be switched off "
+                                 "for the platform, or awaiting your consent in Settings.")
 
 
 def make_entitled(user, org):
@@ -661,6 +747,12 @@ async def register(request: Request):
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
                                body.get("display_name"))
     record_acceptance(conn, org_id, uid, "platform", PLATFORM_TERMS_VERSION)
+    # AI Insights consent — UNBUNDLED from the platform terms (a separate, unticked-by-default
+    # acknowledgment). opt_in: record only if the member explicitly ticked it; opt_out: no
+    # record needed (absence of a withdrawal = active under legitimate interest). Never blocks
+    # account creation — a member can decline AI and still use lumi.
+    if AI_CONSENT_MODE == "opt_in" and body.get("accept_ai_insights") is True:
+        record_ai_consent(conn, org_id, uid)
     token = auth_lib.create_session(uid)
     resp = JSONResponse({"ok": True})
     resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
@@ -708,10 +800,17 @@ async def me(request: Request):
     contrib = contribution_state(conn, org)
     # (sticky-unlock stamping now happens centrally in org_unlocked)
     maybe_send_clock_reminder(conn, org, contrib)
+    # AI features are now EFFECTIVE flags: master gate AND the member's consent AND the
+    # per-feature kill-switch. So every existing client gate (me.features.X) automatically
+    # respects the master switch + consent with no client change. ai_insights carries the
+    # gate state for the settings toggle + the consent prompt.
+    _aig = ai_gate(conn, user)
     return {
         "contribution": contrib,
-        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK,
-                     "pulse_ai": AI_PULSE, "domain_summary": AI_DOMAIN_SUMMARY},
+        "features": {"commentary": ai_feature_on(_aig, AI_COMMENTARY), "analyst": ai_feature_on(_aig, AI_ANALYST),
+                     "boardpack": ai_feature_on(_aig, AI_BOARDPACK), "pulse_ai": ai_feature_on(_aig, AI_PULSE),
+                     "domain_summary": ai_feature_on(_aig, AI_DOMAIN_SUMMARY)},
+        "ai_insights": _aig,
         # the market band the engine uses (LUMI_MARKET_BAND) so the client colours
         # cards on the SAME line as the tiles + signals — single source of truth.
         "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH]},
@@ -971,9 +1070,8 @@ async def pulse_commentary(pid: str, request: Request):
     """Grounded AI commentary on ONE pulse question — same generator, same
     validate_commentary gate as the core, scoped to the pulse cohort.
     LUMI_AI_PULSE kill switch joins the per-surface family."""
-    if not AI_PULSE:
-        raise HTTPException(403, "AI commentary isn't enabled for pulses.")
     user, org = require_user(request)
+    require_ai(get_conn(), user, AI_PULSE)
     body = await request.json()
     qid = body.get("question_id")
     conn = get_conn()
@@ -1219,6 +1317,10 @@ async def accept_invite(request: Request):
     # Joiners accept the Platform Terms only — the org's Data Contribution
     # agreement was made once by the Admin and is inherited, never re-accepted.
     record_acceptance(conn, row["org_id"], uid, "platform", PLATFORM_TERMS_VERSION)
+    # AI Insights consent is PER-USER (not inherited from the org) — each joiner decides for
+    # themselves via the same unbundled, unticked acknowledgment (opt_in mode).
+    if AI_CONSENT_MODE == "opt_in" and body.get("accept_ai_insights") is True:
+        record_ai_consent(conn, row["org_id"], uid)
     conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
     token = auth_lib.create_session(uid)
@@ -1226,6 +1328,22 @@ async def accept_invite(request: Request):
     resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
                     max_age=auth_lib.SESSION_TTL_DAYS * 86400)
     return resp
+
+
+@app.post("/api/ai-consent")
+async def ai_consent(request: Request):
+    """Member-level AI Insights consent toggle — the Settings switch AND the consent gate.
+    Records a consent or a withdrawal event in the immutable terms_acceptances audit log;
+    the gate re-reads the latest event next request, so withdrawal closes the gate at once.
+    Per-user (each member decides for themselves), versioned (pins AI_TERMS_VERSION)."""
+    user, org = require_user(request)
+    body = await request.json()
+    conn = get_conn()
+    if body.get("consent") is True:
+        record_ai_consent(conn, org["org_id"], user["user_id"])
+    else:
+        record_ai_withdrawal(conn, org["org_id"], user["user_id"])
+    return {"ok": True, "ai_insights": ai_gate(conn, user)}
 
 
 # =============================================================== BENCHMARKS ==
@@ -1516,10 +1634,9 @@ async def strategy_diagnosis(request: Request):
     """Strategy-execution check: where the org's declared reward strategy and its
     actual market position diverge. Findings computed deterministically (firewall),
     narrated by the model with the same trust gate as commentary."""
-    if not AI_STRATEGY:
-        raise HTTPException(403, "Reward strategy check isn't enabled.")
     user, org = require_user(request)
     conn = get_conn()
+    require_ai(conn, user, AI_STRATEGY)
     strat = strategy_for_engine(conn, org["org_id"])
     complete = conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
                             (org["org_id"],)).fetchone()
@@ -2376,8 +2493,7 @@ async def benchmark_csv(request: Request):
 @app.post("/api/analyst")
 async def analyst(request: Request):
     user, org = require_user(request)
-    if not AI_ANALYST:
-        raise HTTPException(403, "Ask lumi is switched off at the moment.")
+    require_ai(get_conn(), user, AI_ANALYST)
     body = await request.json()
     question = (body.get("question") or "").strip()
     if not question:
@@ -2648,8 +2764,7 @@ def _pack_item(i):
 @app.post("/api/boardpack/generate")
 async def boardpack_generate(request: Request):
     user, org = require_user(request)
-    if not AI_BOARDPACK:
-        raise HTTPException(403, "Board pack generation is switched off at the moment.")
+    require_ai(get_conn(), user, AI_BOARDPACK)
     contrib = contribution_state(get_conn(), org)
     if not contrib["insights_unlocked"]:
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
@@ -3853,9 +3968,8 @@ async def metric_commentary(request: Request):
     """AI commentary for one metric on one cut: grounded ONLY in the figures
     on the page (the same assembled card), validated post-generation, cached
     per org+metric+cut until the underlying numbers change."""
-    if not AI_COMMENTARY:
-        raise HTTPException(403, "AI commentary isn't enabled yet.")
     user, org = require_user(request)
+    require_ai(get_conn(), user, AI_COMMENTARY)
     body = await request.json()
     qid = body.get("question_id")
     conn = get_conn()
@@ -3892,9 +4006,8 @@ async def domain_summary(request: Request):
     post-generation, cached per org+domain+cut+strategy until the underlying numbers change.
     Mirrors /api/metric-commentary. Never errors on model failure — generate_domain_summary
     always returns the validated deterministic floor when the model is down or rejected."""
-    if not AI_DOMAIN_SUMMARY:
-        raise HTTPException(403, "The domain summary isn't enabled yet.")
     user, org = require_user(request)
+    require_ai(get_conn(), user, AI_DOMAIN_SUMMARY)
     body = await request.json()
     name = body.get("domain")
     conn = get_conn()

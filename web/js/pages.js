@@ -1696,7 +1696,13 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         </div>
       </div>
 
-      ${me.features && me.features.domain_summary ? html`<${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} />` : null}
+      ${me.features && me.features.domain_summary ? html`<${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} />` :
+        (me.ai_insights && me.ai_insights.master && me.ai_insights.needs_decision ? html`
+          <div class="cat-ai-consent">
+            <span><${Icon} name="sparkle" size=${14} /> AI Insights can summarise this domain in plain English —
+              a description of your data, not advice.</span>
+            <a class="btn small primary" href="#/settings">Review & enable →</a>
+          </div>` : null)}
 
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>

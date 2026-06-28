@@ -1322,6 +1322,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-clear { background: none; border: none; color: var(--ink-soft); font-size: var(--fs-caption);
   font-weight: 600; cursor: pointer; padding: 2px 4px; white-space: nowrap; }
 .cat-clear:hover { color: var(--blue); }
+/* the consent gate where the AI summary would render — shown when the platform has AI on but
+   the member hasn't decided yet (item 6: present the gate before any AI renders, never silent). */
+.cat-ai-consent { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  flex-wrap: wrap; background: var(--blue-tint); border: 1px solid color-mix(in srgb, var(--blue) 18%, transparent);
+  border-radius: var(--radius); padding: var(--s3) var(--s4); margin-bottom: var(--s5); }
+.cat-ai-consent > span { display: inline-flex; align-items: center; gap: var(--s2); color: var(--ink-soft);
+  font-size: var(--fs-caption); }
+.cat-ai-consent svg { color: var(--blue); flex: none; }
 
 /* §2 (Pass 3b): the describe-only AI domain summary — a quiet, plain block between the
    two-donut hero and the metric grid. Always present once the feature flag is on. */
