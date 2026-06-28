@@ -1541,6 +1541,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [err, setErr] = useState(null);
   const [type, setType] = useState("");
   const [posSel, setPosSel] = useState([]);     // market-position chip filter (multi-select; [] = all)
+  const [prevSel, setPrevSel] = useState([]);   // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
   // stays consistent across surfaces: when the user has turned their strategy OFF on the
   // overview (persisted pref _overview.apply_strategy === false), fetch this category with
@@ -1550,7 +1551,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const _ovp = (prefs && prefs._overview) || {};
   const applyStrat = _ovp.apply_strategy !== false;
   useEffect(() => {
-    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]);
+    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]); setPrevSel([]);
     Promise.all([
       api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
       api("/api/benchmarks/Reward?" + cutQS(cut)),
@@ -1584,8 +1585,15 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // CONSTRUCTION (one source, metric-level). null (Approach / neutral / non-positioned) matches
   // no chip. Strategy-invariant (market_band is strategy-free).
   const cardBand = c => { const b = c.market_band; return b === "at" ? "on" : b; };
+  // §2 second filter DIMENSION (prevalence-filtering Pass B): c.prevalence_band (match/common_alt/
+  // rarer, the SAME prevalence_items pool the §1 donut counts; null = not a prevalence-rated
+  // practice). MUTUALLY EXCLUSIVE with position (the two are near-disjoint — cross-AND mostly
+  // empties the grid; only one group is ever non-empty, enforced in the chip handlers), so this
+  // AND-chains as a no-op when prevSel is empty. null-safe (includes(null) is false).
+  const cardPrevBand = c => c.prevalence_band;
   let cards = type ? all.filter(c => c.category === type) : all;
   if (posSel.length) cards = cards.filter(c => posSel.includes(cardBand(c)));
+  if (prevSel.length) cards = cards.filter(c => prevSel.includes(cardPrevBand(c)));
 
   // position read (same traffic-light language as the tile / hero gauge)
   const pos = hero && (hero.position || hero.market);
@@ -1680,21 +1688,34 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
           <b>All metrics</b><span class="caption">${cards.length} shown</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
-          <div class="cat-filters">
-            ${posM && posM.pool ? html`<div class="sig-chips cat-pos-chips" role="group" aria-label="Filter by market position">
-              <button type="button" class=${"sig-chip" + (posSel.length === 0 ? " on" : "")} aria-pressed=${posSel.length === 0} onClick=${() => setPosSel([])}>All</button>
+        </div>
+        <div class="cat-filter-row" role="group" aria-label="Filter the metrics">
+          ${(posM && posM.pool) || prev.pool ? html`
+            <button type="button" class=${"sig-chip" + (posSel.length === 0 && prevSel.length === 0 ? " on" : "")} aria-pressed=${posSel.length === 0 && prevSel.length === 0} onClick=${() => { setPosSel([]); setPrevSel([]); }}>All</button>` : null}
+          ${posM && posM.pool ? html`
+            <span class="cat-filter-axis">Position</span>
+            <div class="sig-chips" role="group" aria-label="Filter by market position">
               ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
-                  onClick=${() => setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k])}>
+                  onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
             </div>` : null}
-            <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
-              <option value="">All types</option><option value="metric">Metrics</option>
-              <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
-            </select>
-          </div></div>
+          ${(posM && posM.pool) && prev.pool ? html`<span class="cat-filter-div" aria-hidden="true"></span>` : null}
+          ${prev.pool ? html`
+            <span class="cat-filter-axis">Practices</span>
+            <div class="sig-chips" role="group" aria-label="Filter by practice prevalence">
+              ${[{ k: "match", n: prev.with_majority, lab: "match" }, { k: "common_alt", n: prev.established, lab: "common alt" }, { k: "rarer", n: prev.less_common, lab: "rarer" }].filter(p => p.n).map(p => html`
+                <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
+                  onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
+                  ${p.lab} <span class="n">${p.n}</span></button>`)}
+            </div>` : null}
+          <select class="ctl cat-type-sel" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
+            <option value="">All types</option><option value="metric">Metrics</option>
+            <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
+          </select>
+        </div>
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
-          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); }}>Clear filters</button>`} /> ` :
+          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); }}>Clear filters</button>`} /> ` :
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>

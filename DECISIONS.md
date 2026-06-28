@@ -6276,3 +6276,18 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   domains (all_match true; Pay 18/9/8, Benefits 13/4/6, Governance 15/13/4, …); field on 244 cards. Committed
   alone (server only — no frontend). NEXT: Pass B (the prevalence chips — mutually-exclusive with the position
   group, two labelled groups + divider).
+
+2026-06-28 — DOMAIN PAGE — PREVALENCE FILTERING PASS B (the prevalence chips), BUILT on A. The grid filter now
+  carries BOTH §1 dimensions. ADDED prevSel state + cardPrevBand (= c.prevalence_band) + the AND-ed null-safe
+  predicate. ⭐ MUTUALLY-EXCLUSIVE GROUPS (David ruling): position and prevalence are near-disjoint (only 6 of
+  Pay's cards are both), so cross-dimension AND mostly empties the grid (a trap) — so selecting a prevalence chip
+  CLEARS the position selection and vice-versa (the two are ALTERNATIVE lenses, not composable refinements);
+  WITHIN a group chips still compose (below+on); ONE shared "All" clears both. Restructured the control row into a
+  second filter row below the head (.cat-filter-row): a shared "All" + a labelled POSITION group + a vertical
+  divider + a labelled PRACTICES group (.cat-filter-axis labels reusing the home-tile pattern) + the orthogonal
+  type select (pushed right) — two labelled dimensions, not six undifferentiated chips. Prevalence chips: match /
+  common alt / rarer, counts from prev.with_majority/established/less_common (=== the §1 donut, one source);
+  hide-0. PROOF (live, Pay): chips "match 18 · common alt 9 · rarer 8" === the prevalence donut; click "rarer 8" →
+  exactly 8 cards; click "below" → prevalence cleared (mutual exclusion), grid 8; click "on market" → composes
+  within position (grid 13); click "match" → position cleared, grid 18; shared "All" → grid 60; the row reads as
+  two labelled groups (POSITION | PRACTICES) + type; 0 console errors. Cache v282 -> v283. Both passes shipped.
