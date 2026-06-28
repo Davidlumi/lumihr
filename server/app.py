@@ -3688,7 +3688,7 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
         if i.get("row_id") and " — " in i["label"]:
             base = base + " — " + i["label"].rsplit(" — ", 1)[-1]
         return base
-    _gs = lambda i: {"metric": _gname(i), "adj_pctl": round(50.0 + i["distance"], 1), "n": i["n"]}
+    _gs = lambda i: {"metric": _gname(i), "adj_pctl": round(50.0 + i["distance"]), "n": i["n"]}  # integer percentile (no false precision)
     gaps = [_gs(i) for i in pos.top_gaps(dom_pool, 3)]
     strengths = [_gs(i) for i in pos.top_strengths(dom_pool, 3)]
     prev = d.get("prevalence") or {}
@@ -3715,8 +3715,11 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
                         "established_alternative": prev.get("established"),
                         "less_common": prev.get("less_common"),
                         "pool": prev.get("pool")} if prev.get("pool") else None),
+        # the "differ from market" approach register is the NON-competitive companion to the
+        # market position (Governance) — for a competitive domain it's near-redundant beside
+        # prevalence, so it's dropped (describe-only discipline; ruling 2026-06-28).
         "approach": ({"differ": appr.get("differ"), "in_line": appr.get("in_line"),
-                      "pool": appr.get("pool")} if appr.get("pool") else None),
+                      "pool": appr.get("pool")} if (not has_pos and appr.get("pool")) else None),
         "alignment": alignment,
         "provenance": {"answered_count": answered_count, "peer_pool_size": peer_pool_size},
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),

@@ -6198,3 +6198,25 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   strategy") appears strategy-on / absent strategy-off while the §1 donut counts stay 8/5/0 (strategy-invariant);
   0 console errors. Cache v279 -> v280. Committed with the flag OFF; real model prose surfaced separately for
   David's quality read before any flag-on. NEXT: David reads the prose → flag-on is his call.
+
+2026-06-28 — DOMAIN PAGE — PASS 3 VOICE POLISH (4 gated prompt/payload tweaks from David's quality read of the
+  real model prose), BUILT — flag STILL OFF, validator UNCHANGED, qa_domain_summary 127/127 after each. The first
+  keyed model run read well but surfaced four wrinkles; David ruled each as a gated tweak. (1) INSTRUCTION-ECHO:
+  the model narrated its own rule ("position and alignment are described here as separate things") — prompt rule 3
+  now says apply the vocab lock SILENTLY, never mention/explain/narrate the separation or any rule (describe the
+  effect, never recite the rule). (2) PERCENTILE FALSE-PRECISION: payload now rounds the gap/strength adj_pctl to an
+  INTEGER (was 1dp) + prompt phrases "at the Nth percentile (n=X)" — belt+braces so the allowlist and the prose
+  agree on the integer. (3) APPROACH NOISE: the "N differ from the market norm" approach register is dropped from
+  the payload for competitive domains (build_domain_summary_payload: approach only when NOT has_position) — it's the
+  Governance/non-competitive companion (H1), near-redundant beside prevalence on a competitive domain. (4)
+  GOVERNANCE OVER-REJECT (investigated first per ruling): the model produced CORRECT no-position prose but conveyed
+  it by NEGATING the market words ("no metric sits below market"), which the strict DOMAIN_MKTPOS_RE caught →
+  floor shipped. RULING: Option A (prompt) ONLY, validator UNCHANGED (no safety traded). Rule 6 now tells the model
+  to state plainly there is no market position and describe prevalence/approach WITHOUT enumerating below/on/above
+  market at all — not even to deny it — in EVERY slot (the notable slot simply states there are no gaps or
+  strengths). Result: Governance now ships a MODEL voice (was deterministic floor), reading naturally. GEN_VERSION
+  bumped v1 -> v2-voice so the domain_summary route cache self-invalidates. RESIDUAL (logged, not blocking; David
+  approved the voice): the model still occasionally (~1/3) slips a HYPHENATED enumeration ("above-market standing")
+  past the space-based guard — harmless/contrastive, and the floor stays the net; a hyphen-aware validator tweak is
+  a possible future item (would need a ruling, since validator-stays-strict was the #4 decision). NEXT: flag-on is
+  David's call.
