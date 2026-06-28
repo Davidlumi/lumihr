@@ -6175,3 +6175,26 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   domain reads behind strategy." FOLLOW-UP (ruled, logged, NOT this pass): the per-metric _commentary_numbers
   allowlist scans the WHOLE payload JSON incl. definitions — the same D2 hole — to tighten to data-fields-only on
   that shipped surface. NEXT: 3b (route POST /api/domain-summary + §2 frontend block, flag-gated), after sign-off.
+
+2026-06-28 — DOMAIN PAGE — PASS 3b (route + §2 frontend block), BUILT — WIRING ONLY, flag stays OFF. Displays the
+  3a product (prompt+validator+floor untouched). ROUTE: POST /api/domain-summary (mirrors /api/metric-commentary) —
+  flag-gated (403 if not AI_DOMAIN_SUMMARY); {domain, cut, apply_strategy} → build_domain_summary_payload →
+  cut_key = dim::value::(strat|abs) (strategy-on/off cache separately) → sha256(payload+DOMAIN_SUMMARY_GEN_VERSION)
+  → domain_summary cache → generate_domain_summary; never errors on model failure (the generator ships the
+  validated floor). Exposed "domain_summary": AI_DOMAIN_SUMMARY in the /api/me features map. FRONTEND: a
+  DomainSummary component at the 1620 seam (between .cat-hero close and the All-metrics <section>), feature-gated on
+  me.features.domain_summary. FLAG CONTRACT (David ruling): flag OFF → §2 absent + not fetched → page byte-identical
+  to post-2b (the flag is the launch kill-switch); flag ON → §2 ALWAYS present (the "never hide" rule is about INFRA
+  — the floor fills in when the model is down, the block never disappears). Auto-fetches on mount + on
+  applyStrat/cut change (lazy, no button — the one deviation from the button-triggered metric commentary, per
+  ruling); skeleton → the four describe-only slots (3 labelled: Market position / Notable metrics / Practices +
+  the provenance footer); deterministic source → a quiet "A plain-data summary, written from your figures." caveat
+  (StrategyCheck source pattern); a quiet honesty marker "AI-generated · a description of your data, not advice"
+  (mirrors the metric "review before use" chip — the describe-not-advise framing made visible). NO client
+  editorialising — renders the 4 parts as-is, no recommendations UI, no action buttons. PROOF (live): flag OFF →
+  §2 absent, route 403, §1+chips+grid+Overview unchanged (v280); flag ON (local, env-injected for the proof only,
+  key blanked → deterministic floor) → §2 renders between hero and grid, 4 slots, skeleton→content, caveat +
+  honesty marker present; strategy toggle → §2 refetches, the alignment clause ("…this domain reads behind
+  strategy") appears strategy-on / absent strategy-off while the §1 donut counts stay 8/5/0 (strategy-invariant);
+  0 console errors. Cache v279 -> v280. Committed with the flag OFF; real model prose surfaced separately for
+  David's quality read before any flag-on. NEXT: David reads the prose → flag-on is his call.

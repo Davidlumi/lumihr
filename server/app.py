@@ -702,7 +702,8 @@ async def me(request: Request):
     maybe_send_clock_reminder(conn, org, contrib)
     return {
         "contribution": contrib,
-        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK, "pulse_ai": AI_PULSE},
+        "features": {"commentary": AI_COMMENTARY, "analyst": AI_ANALYST, "boardpack": AI_BOARDPACK,
+                     "pulse_ai": AI_PULSE, "domain_summary": AI_DOMAIN_SUMMARY},
         # the market band the engine uses (LUMI_MARKET_BAND) so the client colours
         # cards on the SAME line as the tiles + signals — single source of truth.
         "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH]},
@@ -3838,6 +3839,59 @@ async def metric_commentary(request: Request):
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
         "VALUES (?,?,?,?,?,?)",
         (org["org_id"], qid, cut_key, phash, j(res["parts"]), res["source"]))
+    conn.commit()
+    return {"parts": res["parts"], "source": res["source"], "cached": False, "caveats": caveats}
+
+
+@app.post("/api/domain-summary")
+async def domain_summary(request: Request):
+    """AI per-DOMAIN describe-only summary for one domain on one cut + strategy state:
+    grounded ONLY in the metric-level figures the domain page shows (Pass 2a), validated
+    post-generation, cached per org+domain+cut+strategy until the underlying numbers change.
+    Mirrors /api/metric-commentary. Never errors on model failure — generate_domain_summary
+    always returns the validated deterministic floor when the model is down or rejected."""
+    if not AI_DOMAIN_SUMMARY:
+        raise HTTPException(403, "The domain summary isn't enabled yet.")
+    user, org = require_user(request)
+    body = await request.json()
+    name = body.get("domain")
+    conn = get_conn()
+    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
+    value = body.get("cut_value")
+    if dim == "industry" and not value:
+        value = org.get("industry")
+    if dim == "fte_band" and not value:
+        value = org.get("fte_band")
+    apply_strategy = body.get("apply_strategy") is not False     # default True
+    cut = {"dim": dim, "value": value}
+    if dim == "group":
+        row = conn.execute("SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+                           (value or "", org["org_id"])).fetchone()
+        if row is None:
+            cut, dim, value = {"dim": "all", "value": None}, "all", None   # foreign/stale id → all peers
+        else:
+            cut["label"] = row["name"]
+            cut["criteria"] = uj(row["criteria_json"], {})
+    payload = build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=apply_strategy)
+    if payload is None:
+        raise HTTPException(404, "That domain isn't part of your benchmark.")
+
+    cut_key = dim + "::" + (value or "") + "::" + ("strat" if apply_strategy else "abs")
+    phash = hashlib.sha256(
+        (j(payload) + "|" + claude_api.DOMAIN_SUMMARY_GEN_VERSION).encode()).hexdigest()[:16]
+    caveats = {"illustrative": bool(payload["illustrative_sample_data"])}
+    if not body.get("force"):
+        row = conn.execute(
+            "SELECT * FROM domain_summary WHERE org_id=? AND domain=? AND cut_key=? AND payload_hash=?",
+            (org["org_id"], name, cut_key, phash)).fetchone()
+        if row:
+            return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
+                    "generated_at": row["created_at"], "caveats": caveats}
+    res = claude_api.generate_domain_summary(payload)
+    conn.execute(
+        "INSERT OR REPLACE INTO domain_summary(org_id, domain, cut_key, payload_hash, text, source) "
+        "VALUES (?,?,?,?,?,?)",
+        (org["org_id"], name, cut_key, phash, j(res["parts"]), res["source"]))
     conn.commit()
     return {"parts": res["parts"], "source": res["source"], "cached": False, "caveats": caveats}
 

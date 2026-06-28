@@ -1493,6 +1493,48 @@ function prevDonut(prev) {
    and explains the overview tile: a market-position read + practice-prevalence
    split at the top, then THIS category's signals, then every metric in it.
    Flags never advise — the user decides whether a difference is good or bad. */
+// §2 (domain-page Pass 3b): the AI domain summary — a describe-only "mirror" of the org's
+// position across this domain's metrics. Auto-fetches on mount + on cut/strategy change (lazy,
+// no button); always present once me.features.domain_summary is on — the server ships a
+// validated deterministic FLOOR when the model is down, so the block never disappears on infra.
+// Four describe-only slots (position / notable / prevalence-or-approach / provenance) rendered
+// as-is: NO client editorialising, no recommendations, no actions. It describes and stops.
+function DomainSummary({ name, cut, applyStrat }) {
+  const [st, setSt] = useState({ phase: "loading" });
+  useEffect(() => {
+    let live = true;
+    setSt({ phase: "loading" });
+    api("/api/domain-summary", { method: "POST",
+        body: { domain: name, cut: cut.dim, cut_value: cut.value, apply_strategy: applyStrat } })
+      .then(r => { if (live) setSt({ phase: "done", parts: r.parts || {}, source: r.source, caveats: r.caveats || {} }); })
+      .catch(e => { if (live) setSt({ phase: "error", error: e.message }); });
+    return () => { live = false; };
+  }, [name, cutKeyOf(cut), applyStrat]);
+  const f = st.parts || {};
+  const SLOTS = [["position", "Market position"], ["notable", "Notable metrics"], ["prevalence", "Practices"]];
+  return html`
+    <section class="cat-section cat-summary">
+      <div class="cat-sec-head"><span class="cat-sec-ico cat-sum-ico"><${Icon} name="sparkle" size=${14} /></span>
+        <b>How your ${name} reads</b>
+        <span class="cat-ai-tag">AI-generated · a description of your data, not advice</span></div>
+      ${st.phase === "loading" ? html`
+        <div class="cat-summary-body">${[0, 1, 2].map(i => html`<div key=${i} class="cat-sum-skel"></div>`)}</div>` :
+        st.phase === "error" ? html`
+        <div class="cat-summary-body"><p class="caption">Couldn't load this summary — ${st.error}.</p></div>` :
+        html`
+        <div class="cat-summary-body">
+          ${SLOTS.map(([k, label]) => f[k] ? html`
+            <div key=${k} class="cat-sum-part">
+              <div class="cat-sum-label">${label}</div>
+              <p class="cat-sum-text">${f[k]}</p>
+            </div>` : null)}
+          ${f.provenance ? html`<div class="cat-sum-prov">${f.provenance}</div>` : null}
+          ${st.source === "deterministic" ? html`
+            <div class="cat-sum-caveat">A plain-data summary, written from your figures.</div>` : null}
+        </div>`}
+    </section>`;
+}
+
 window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedIds, me }) {
   const [ov, setOv] = useState(null);
   const [bench, setBench] = useState(null);
@@ -1618,6 +1660,8 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>No practice questions assessed in this category yet.</div>`}
         </div>
       </div>
+
+      ${me.features && me.features.domain_summary ? html`<${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} />` : null}
 
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
