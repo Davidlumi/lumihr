@@ -887,6 +887,26 @@ def pool_market_bands(items, practice_items, cfg, band_low, band_high, margin):
     return _metric_bands(substance_pool(items, practice_items, cfg), band_low, band_high, margin)
 
 
+def pool_prevalence_bands(prev_items, uncommon_pct):
+    """{question_id: 'match'|'common_alt'|'rarer'} per prevalence-rated practice — the SAME
+    prevalence_items pool + the SAME bucketing _prev_summary counts (is_modal + your_share
+    vs uncommon_pct). A per-card prevalence band that can never disagree with the §1
+    prevalence donut count it sums into: match = with_majority (your answer IS the market
+    mode), rarer = less_common (off-mode AND held by < uncommon_pct of peers), common_alt =
+    established (off-mode but not rare). One-per-question (prevalence_items has no matrix
+    rows / per-option items), so summing per-card === the donut counts exactly — no
+    metric-vs-mass complication. A metric outside the prevalence pool is absent → null."""
+    out = {}
+    for i in prev_items:
+        if i["is_modal"]:
+            out[i["question_id"]] = "match"
+        elif (i["your_share"] or 0) < uncommon_pct:
+            out[i["question_id"]] = "rarer"
+        else:
+            out[i["question_id"]] = "common_alt"
+    return out
+
+
 def _strategy_field(strategy, field):
     """A strategy dial's value iff it's a real 'set' choice — None when the
     strategy is absent, the field unset, or it was skipped (§5.4 provenance)."""

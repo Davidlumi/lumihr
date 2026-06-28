@@ -6261,3 +6261,18 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   filtered 60→8 while the labels STAYED "· 13 of 60" / "· 35 of 60" (anchor reads all.length, not the shrinking
   cards.length); centres/counts/chips unchanged; 0 console errors. Cache v281 -> v282. The whole counts-
   reconciliation set (#1 provenance, #2 small-sample, #3 labelling) is done; flag-on remains David's call.
+
+2026-06-28 — DOMAIN PAGE — PREVALENCE FILTERING PASS A (per-card prevalence_band, engine), BUILT. The §1 has two
+  parallel donuts but only POSITION drove the grid filter (2a/2b market_band); prevalence (match/common-alt/rarer)
+  was display-only — a member seeing "6 rarer" couldn't filter to them. Phase A confirmed the card carried only
+  market_band → prevalence_band is net-new (the 2a mirror). ADDED positions.pool_prevalence_bands(prev_items,
+  uncommon_pct) → {qid: 'match'|'common_alt'|'rarer'} from the SAME prevalence_items pool + the SAME bucketing
+  _prev_summary counts (is_modal → match/with_majority; off-mode & your_share<uncommon_pct → rarer/less_common;
+  else → common_alt/established). assemble_card gains a prevalence_band kwarg → base field; the /api/benchmarks
+  route builds prevalence_items once (same cut/args as /api/overview) and stamps every card. CLEANER than 2a:
+  prevalence_items is one-item-per-question (single_select/yes_no only, no matrix rows / per-option items), so
+  summing per-card === the donut exactly — no metric-vs-mass or matrix-collapse. PROOF (live, Thornbridge, all
+  cuts): per-card prevalence_band sum === hero.prevalence {with_majority, established, less_common} for ALL 7
+  domains (all_match true; Pay 18/9/8, Benefits 13/4/6, Governance 15/13/4, …); field on 244 cards. Committed
+  alone (server only — no frontend). NEXT: Pass B (the prevalence chips — mutually-exclusive with the position
+  group, two labelled groups + divider).

@@ -480,7 +480,7 @@ def twin_blocks_if_needed(conn, org, cut):
     return tb
 
 
-def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, market_band=None):
+def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, market_band=None, prevalence_band=None):
     """Everything one benchmark card needs, fully sanitised."""
     locked = not entitled(q)
     tb = (twin_blocks_by_q or {}).get(q.id)
@@ -511,6 +511,10 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         # non-competitive / unclassified). Passed in per-request so a card's band can never
         # disagree with the donut count it sums into (Pass 2a, 2026-06-27).
         "market_band": market_band,
+        # practice-prevalence band (match / common_alt / rarer) from the SAME prevalence_items
+        # pool the §1 prevalence donut counts; null when not a prevalence-rated practice. Drives
+        # the second (prevalence) chip dimension (prevalence-filtering Pass A, 2026-06-28).
+        "prevalence_band": prevalence_band,
     }
     if locked:
         return base
@@ -1266,6 +1270,11 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
                                            payloads(), answers, entitled, _bi_tb)
     band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
                                      MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
+    # second chip dimension (prevalence-filtering Pass A): the per-card prevalence band from the
+    # SAME prevalence_items pool the §1 prevalence donut counts, so a card's band === the donut.
+    _bi_prev = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org),
+                                    payloads(), answers, entitled, _bi_tb)
+    prev_band_map = pos.pool_prevalence_bands(_bi_prev, UNCOMMON_PCT)
     cards = []
     for qid, q in org_visible_questions(org).items():
         if q.superpower != superpower:
@@ -1284,7 +1293,8 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
             })
             continue
         cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None,
-                                   entitled, market_band=band_map.get(qid)))
+                                   entitled, market_band=band_map.get(qid),
+                                   prevalence_band=prev_band_map.get(qid)))
     cards.sort(key=lambda c: (c["sub_power_order"] or 999, c["title"]))
     return {"superpower": superpower, "cut": cut, "cards": cards, "reduced": contrib["reduced"]}
 
