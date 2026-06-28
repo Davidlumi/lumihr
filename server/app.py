@@ -121,9 +121,10 @@ AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
 AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
-# Per-domain AI summary (Pass 3) — its OWN kill switch, default OFF until the
-# adversarial gate (qa_domain_summary.py) passes and the prompt is signed off.
-AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
+# Per-domain AI summary (Pass 3) — its OWN kill switch. Default ON (2026-06-28): the
+# adversarial gate (qa_domain_summary.py) passed clean and David signed off the voice.
+# Set LUMI_AI_DOMAIN_SUMMARY=off to cut it without a deploy.
+AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "on").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus

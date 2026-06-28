@@ -1669,6 +1669,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             </div>
             ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
             <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
+              <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
               ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
                   onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
@@ -1685,6 +1686,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               <span><b>${prev.with_majority}</b> match</span><span><b>${prev.established}</b> common alt</span><span><b>${prev.less_common}</b> rarer</span>
             </div>
             <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by practice prevalence">
+              <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
               ${[{ k: "match", n: prev.with_majority, lab: "match" }, { k: "common_alt", n: prev.established, lab: "common alt" }, { k: "rarer", n: prev.less_common, lab: "rarer" }].filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
                   onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>

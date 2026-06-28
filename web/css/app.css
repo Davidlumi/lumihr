@@ -1243,8 +1243,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 @media (max-width: 760px) { .cat-hero { grid-template-columns: 1fr; } }
 .cat-hero-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: var(--s4) var(--s4) var(--s4); }
-.cat-hero-label { font-size: var(--fs-caption); font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--ink-faint); margin-bottom: var(--s3); }
+.cat-hero-label { font-size: var(--fs-body); font-weight: 800; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--ink); margin-bottom: var(--s3); }
 /* the "· N of 60" lens-of-total anchor — subordinate to the lens name (the donut is a
    subset lens of the page's 60 benchmarks, not a partition that should sum to it) */
 .cat-lens-of { font-weight: 400; text-transform: none; letter-spacing: 0;
@@ -1273,8 +1273,15 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 /* the relocated filter chips sit in a quiet footer under each donut (position chips under the
    position donut, prevalence under the prevalence donut) — the donut title already names the
    dimension, so no separate filter-axis label is needed (2026-06-28). */
-.cat-card-chips { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s2);
-  margin-top: var(--s2); padding-top: var(--s3); border-top: 1px solid var(--border); }
+/* margin-top:auto pins the filter footer to the card BOTTOM, so the two cards' chip rows
+   align on the same level despite different content heights above (grid stretches them equal). */
+.cat-card-chips { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: var(--s2); margin-top: auto; padding-top: var(--s3); border-top: 1px solid var(--border); }
+/* the "Filter" affordance — signals the pills are interactive controls, not static stats */
+.cat-filter-cue { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro);
+  font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint);
+  margin-right: 2px; }
+.cat-filter-cue svg { color: var(--ink-soft); }
 .cat-pos-card .donut { margin-top: var(--s2); }
 .cat-card-cap { font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); letter-spacing: .005em; }
 .cat-card-counts { display: flex; gap: var(--s4); flex-wrap: wrap; justify-content: center;
@@ -1292,9 +1299,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .cat-sec-link { margin-left: auto; font-weight: 600; }
 /* slim flagged-pointer in the All-metrics head — a link-out to Signals, NOT a filter chip */
-.cat-flag-link { font-weight: 600; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.cat-flag-link:hover { color: var(--blue); }
-.cat-flag-link svg, .cat-flag-link:hover svg { transition: transform var(--ease); }
+/* the signals entry point — promoted from a faint inline link to a prominent badge so the
+   "N flagged" pointer reads as a clear, tappable call to the Signals view (2026-06-28). */
+.cat-flag-link { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  font-weight: 650; font-size: var(--fs-caption); color: var(--blue-deep);
+  background: var(--blue-tint); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  padding: 4px 11px; border-radius: 999px; }
+.cat-flag-link:hover { background: color-mix(in srgb, var(--blue) 15%, var(--surface)); }
+.cat-flag-link svg { color: var(--blue); transition: transform var(--ease); }
 .cat-flag-link:hover svg { transform: translateX(1px); }
 /* the position filter chips reuse the neutral .sig-chip pill (no marketTone dot) */
 .cat-pos-chips { flex-wrap: wrap; }

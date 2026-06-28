@@ -6311,3 +6311,19 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   prevalence donut) → exactly 8 cards; "below" clears prevalence (mutual excl); below+on composes → 13; grid-header
   "Clear filter" → both reset → 60; the type select at the grid header filters grid-level (practice → 27); donut
   centres/counts/verdict + §2 unchanged; 0 console errors. Cache v283 -> v284.
+
+2026-06-28 — DOMAIN PAGE — design crit pass (5 items from David's screenshot review) + AI SUMMARY GO-LIVE, BUILT.
+  (1) FILTER FOOTERS SAME ROW (ruling: align under each donut, not recombine): .cat-card-chips now margin-top:auto
+  — pins each card's chip footer to the card BOTTOM, so the two cards' chip rows align on the same level (grid
+  stretches the cards equal-height). Verified side-by-side: both footers top=627, card heights 444=444. (2) DONUT
+  TITLES MORE PROMINENT: .cat-hero-label bumped fs-caption→fs-body, weight 700→800, colour ink-faint→ink (15px
+  dark). (3) PILLS OBVIOUSLY FILTERS: a quiet "FILTER" cue (sliders icon + label, .cat-filter-cue) prepended to
+  each card footer — signals the pills are interactive controls, not static stats; the dimension is still named by
+  the donut title above (no re-added axis label). (4) SIGNALS NOT OBVIOUS: the "flagged →" pointer promoted from a
+  faint inline link to a prominent blue-tint pill BADGE (.cat-flag-link: blue-tint bg + border + 999px radius).
+  (5) AI SUMMARY GO-LIVE (David ruling: "Turn it on"): flipped AI_DOMAIN_SUMMARY default off→on — the §2 domain
+  summary now ships to ALL orgs (qa_domain_summary green + the voice signed off; LUMI_AI_DOMAIN_SUMMARY=off still
+  cuts it without a deploy). PROOF (live, Pay, desktop 1280): footers aligned; titles 15px dark; "FILTER" cue in
+  both footers; signals a blue badge; §2 renders MODEL output ("Across the 13 positioned Pay metrics, 8 sit below
+  market and 5 sit on market… reads as behind strategy"); 0 console errors. Render/CSS + one-flag-flip only — no
+  donut math / band / payload change. Cache v284 -> v285.
