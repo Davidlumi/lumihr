@@ -6327,3 +6327,12 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   both footers; signals a blue badge; §2 renders MODEL output ("Across the 13 positioned Pay metrics, 8 sit below
   market and 5 sit on market… reads as behind strategy"); 0 console errors. Render/CSS + one-flag-flip only — no
   donut math / band / payload change. Cache v284 -> v285.
+
+2026-06-28 — DOMAIN PAGE — AI-summary go-live REVERTED (compliance). Item (5) of the crit pass (88adb36) flipped
+  AI_DOMAIN_SUMMARY default off→on, treating "an AI summary would be good" as launch authorization. That was WRONG:
+  the comment affirmed the FEATURE (already built + rendering behind the flag), not a LAUNCH to all members. The
+  flag-on decision is RESERVED for David and gated on the compliance track (DPA / privacy notice / sub-processor
+  review — it ships AI-generated, member-facing content derived from member data). Reverted the default back to OFF
+  (one line). The five UI changes from 88adb36 STAY (correct). The §2 summary remains demo/env-var only
+  (LUMI_AI_DOMAIN_SUMMARY=on) until David explicitly authorizes go-live. PROCESS NOTE: a member-facing AI launch is
+  an outward-facing, hard-to-reverse action — confirm explicitly, never infer authorization from feature praise.

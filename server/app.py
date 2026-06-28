@@ -121,10 +121,13 @@ AI_ANALYST = os.environ.get("LUMI_AI_ANALYST", "on").lower() == "on"
 AI_PULSE = os.environ.get("LUMI_AI_PULSE", "on").lower() == "on"
 AI_BOARDPACK = os.environ.get("LUMI_AI_BOARDPACK", "on").lower() == "on"
 AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
-# Per-domain AI summary (Pass 3) — its OWN kill switch. Default ON (2026-06-28): the
-# adversarial gate (qa_domain_summary.py) passed clean and David signed off the voice.
-# Set LUMI_AI_DOMAIN_SUMMARY=off to cut it without a deploy.
-AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "on").lower() == "on"
+# Per-domain AI summary (Pass 3) — its OWN kill switch. Default OFF: go-live to ALL members
+# is RESERVED for David and gated on the compliance track (DPA / privacy notice / sub-processor
+# review — this ships AI-generated, member-facing content derived from member data). The
+# adversarial gate (qa_domain_summary.py) is green and the voice is signed off, so it's enabled
+# per-environment with LUMI_AI_DOMAIN_SUMMARY=on (demo / preview) until David explicitly
+# authorizes launch. (The 2026-06-28 default-on flip was unauthorized and reverted.)
+AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
