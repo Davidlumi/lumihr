@@ -1652,7 +1652,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         </div>` : null}
       <div class="cat-hero">
         <div class="card cat-pos-card">
-          <div class="cat-hero-label">Market position</div>
+          <div class="cat-hero-label">Market position${posM && posM.pool ? html` <span class="cat-lens-of">· ${posM.pool} of ${all.length}</span>` : ""}</div>
           ${posM && posM.pool ? html`
             <${Donut} segments=${posSegs} total=${posM.pool} centerNum=${posM.pool} sub="metrics" centerWord=${verdictWord(verdict)} size=${210} stroke=${28} />
             <div class="cat-card-cap">${leanCaption(pos)}${indicative ? " · indicative" : ""}</div>
@@ -1663,7 +1663,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
         </div>
         <div class="card cat-pos-card">
-          <div class="cat-hero-label">Practice prevalence</div>
+          <div class="cat-hero-label">Practice prevalence${prev.pool ? html` <span class="cat-lens-of">· ${prev.pool} of ${all.length}</span>` : ""}</div>
           ${prev.pool ? html`
             <${Donut} segments=${prevSegs} total=${prev.pool} centerNum=${prev.with_majority} sub=${"of " + prev.pool + " practice" + (prev.pool === 1 ? "" : "s")} size=${210} stroke=${28} />
             <div class="cat-card-cap">match the market majority</div>

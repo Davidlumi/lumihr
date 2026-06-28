@@ -1245,6 +1245,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   padding: var(--s4) var(--s4) var(--s4); }
 .cat-hero-label { font-size: var(--fs-caption); font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; color: var(--ink-faint); margin-bottom: var(--s3); }
+/* the "· N of 60" lens-of-total anchor — subordinate to the lens name (the donut is a
+   subset lens of the page's 60 benchmarks, not a partition that should sum to it) */
+.cat-lens-of { font-weight: 400; text-transform: none; letter-spacing: 0;
+  font-variant-numeric: tabular-nums; opacity: .8; }
 .cat-band { position: relative; height: 9px; background: var(--surface-sunk); border-radius: 5px; }
 .cat-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: 5px; }
 .cat-band-dot { position: absolute; top: -4px; width: 17px; height: 17px; border-radius: 50%;

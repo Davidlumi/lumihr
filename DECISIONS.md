@@ -6244,3 +6244,20 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   15 peers — a small peer group, so read this as directional"; qa_domain_summary 127/127; 0 console errors.
   GEN_VERSION v2-voice -> v3-provenance; cache v280 -> v281. Flag still OFF. NEXT: #3 donut/header subset-lens
   labelling (a follow-up, non-gating).
+
+2026-06-28 — DOMAIN PAGE — COUNTS RECONCILIATION #3 (donut/header legibility — LABELLING ONLY), BUILT. The two §1
+  donuts (13 metrics / 35 practices) read as totals that should sum to the header's 60, but they're overlapping
+  SUBSET-LENSES of the 60 (6 overlap, 18 in neither). Minimal fix (David ruling): append a quiet "· N of 60" anchor
+  to each cat-hero-label so each donut reads as a lens on the 60, not a partition — CARD A "Market position · 13 of
+  60", CARD B "Practice prevalence · 35 of 60". The "60" reads all.length (the STABLE parent — same source as the
+  header's "60 benchmarks", NOT cards.length which shrinks under grid filters); posM.pool/prev.pool supply the
+  13/35 (same scope, derive-not-literal). The header's "60 benchmarks" right above supplies the noun, so the bare
+  "· N of 60" reads back as "13 of my 60 benchmarks carry a market position" — no repeated "benchmarks". Quiet
+  styling (.cat-lens-of: weight 400 vs the label's 700, text-transform none, opacity .8) so the lens NAME reads
+  first, the anchor subordinate. LABELLING ONLY — no count/donut-math/payload change; centres ("Below / 13 metrics",
+  "18 / of 35 practices"), counts lines, chips, §2, grid all UNCHANGED; the overlap (6) and residual (18) are NOT
+  spelled out (set-theory the member doesn't need — "of 60" alone kills the false-partition read). PROOF (live,
+  Pay): labels "Market position · 13 of 60" / "Practice prevalence · 35 of 60"; applied the "below" chip → grid
+  filtered 60→8 while the labels STAYED "· 13 of 60" / "· 35 of 60" (anchor reads all.length, not the shrinking
+  cards.length); centres/counts/chips unchanged; 0 console errors. Cache v281 -> v282. The whole counts-
+  reconciliation set (#1 provenance, #2 small-sample, #3 labelling) is done; flag-on remains David's call.
