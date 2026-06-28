@@ -3636,6 +3636,26 @@ def _commentary_stance(percentile, polarity):
     return "ahead" if adj > 55 else "behind" if adj < 45 else "in line"
 
 
+def _cut_peer_n(conn, org, cut):
+    """The nominal peer-group size for a cut — the SAME number the page header + the small-
+    sample caveat show (mirrors the client cutSize and the board-pack cut_n at app.py ~2583).
+    Used for the domain-summary provenance so 'compared with N peers' matches the header's
+    'peer group (n=N)', not the whole-pool nominal (D4 reversal, counts-reconciliation
+    ruling 2026-06-28)."""
+    pool = get_meta("peer_pool", {}) or {}
+    dim = cut.get("dim")
+    if dim == "industry":
+        return pool.get("industries", {}).get(cut.get("value") or org.get("industry"), 0)
+    if dim == "fte_band":
+        return pool.get("fte_bands", {}).get(cut.get("value") or org.get("fte_band"), 0)
+    if dim == "twin":
+        twin = peer_twin.compute_twin(conn, org["org_id"])
+        return len(twin["peer_org_ids"]) if twin else 0
+    if dim == "group":
+        return len(peer_twin.group_org_ids(conn, cut.get("criteria") or {}))
+    return pool.get("responding_orgs", 0)
+
+
 def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True):
     """The grounded per-DOMAIN payload: exactly the metric-level figures the domain page
     shows (Pass 2a position_metrics, prevalence, approach, the widest gaps/strengths,
@@ -3698,11 +3718,15 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
     _ALIGN = {"behind": "behind strategy", "on_target": "on strategy", "ahead": "ahead of strategy"}
     tgt = d.get("target")
     alignment = _ALIGN.get((tgt or {}).get("alignment")) if (tgt and apply_strategy) else None
-    # provenance: the answered/positioned benchmark count the summary rests on + the peer
-    # group NOMINAL (responding_orgs — the stable number the UI shows, not a per-metric n).
-    answered_count = (pm.get("pool") if has_pos
-                      else (appr.get("pool") or prev.get("pool") or 0))
-    peer_pool_size = (get_meta("peer_pool", {}) or {}).get("responding_orgs")
+    # provenance (counts-reconciliation fix, 2026-06-28): the ACTUAL number of metrics in this
+    # domain the org has ANSWERED (matches the header's "N benchmarks", ~58 — NOT the positioned
+    # subset of 13, which mislabelled positioned as answered and collided with the header), and
+    # the CUT's peer count (the header's n=15 — NOT the whole-pool nominal of 220; D4 reversed).
+    answered_count = sum(1 for qid, q in qs.items()
+                         if (q.sub_power or "General") == name and entitled(q)
+                         and any(k[0] == qid for k in answers))
+    peer_pool_size = _cut_peer_n(conn, org, cut)
+    small_sample = bool(peer_pool_size and peer_pool_size < 20)   # <20 thin cut — read directionally
     return {
         "domain": name,
         "has_position": has_pos,
@@ -3722,6 +3746,7 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
                       "pool": appr.get("pool")} if (not has_pos and appr.get("pool")) else None),
         "alignment": alignment,
         "provenance": {"answered_count": answered_count, "peer_pool_size": peer_pool_size},
+        "small_sample": small_sample,
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
     }
 

@@ -6220,3 +6220,27 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   past the space-based guard — harmless/contrastive, and the floor stays the net; a hyphen-aware validator tweak is
   a possible future item (would need a ruling, since validator-stays-strict was the #4 decision). NEXT: flag-on is
   David's call.
+
+2026-06-28 — DOMAIN PAGE — COUNTS RECONCILIATION (the Pay page showed four unreconciled totals — 60 benchmarks /
+  60 shown / 13 position-donut / 35 prevalence-donut). PHASE A diagnosis: the four are CORRECT but overlapping —
+  60 = 13 positioned + 35 prevalence − 6 (in BOTH donuts) + 18 (in neither: Design/multi_select, neutral numerics,
+  unanswered, non-rate practices); "60 benchmarks" === "60 shown" (same all.length); the donuts are subset LENSES,
+  not a partition. Two real faults surfaced + ruled. (1) §2 PROVENANCE BUG (gated flag-on): the summary said
+  "across your 13 answered Pay benchmarks, compared with a peer pool of 220" — 13 was position_metrics.pool
+  (positioned, mislabelled "answered", colliding with the header's 60) and 220 was the whole-pool nominal (not the
+  cut's 15). FIXED in build_domain_summary_payload: answered_count = the ACTUAL count of answered domain questions
+  (any answer key per qid — matrices with partial rows count; = 60 for the fully-populated demo, matching the
+  header exactly; David's "~58" estimate was a Phase-A artifact of checking the (qid,"") key, wrong for matrices);
+  peer_pool_size = the CUT's peer count via new _cut_peer_n() (mirrors the client cutSize + board-pack cut_n:
+  industry→industries[value]=15, fte_band→fte_bands, twin/group→member count, all→responding_orgs). This REVERSES
+  the D4 ruling (was responding_orgs nominal) — the cut peer-n is correct AND matches the header. (2) SMALL SAMPLE
+  (gated flag-on): the <20 "directional" caveat lived ONLY on the overview hero. Added a thin-cut caveat to the
+  DOMAIN page (CategoryPage: thinSample = insights_unlocked && 5<=cutSize<20 → "Small sample · N peers · treat as
+  directional", reusing .indic-flag); and the §2 summary now carries a small_sample payload flag → prompt rule 10 +
+  the deterministic floor append "— a small peer group, so read this as directional" when the cut is thin. (3)
+  DONUT/HEADER LEGIBILITY (correct-but-unlabelled) — LOWER priority, does NOT gate flag-on, deferred. PROOF (live,
+  Pay @ Retail & Consumer Goods, n=15): header "60 benchmarks · Retail & Consumer Goods"; thin caveat "Small
+  sample · 15 peers" present; §2 (flag-on, deterministic) provenance "Across your 60 Pay benchmarks, compared with
+  15 peers — a small peer group, so read this as directional"; qa_domain_summary 127/127; 0 console errors.
+  GEN_VERSION v2-voice -> v3-provenance; cache v280 -> v281. Flag still OFF. NEXT: #3 donut/header subset-lens
+  labelling (a follow-up, non-gating).

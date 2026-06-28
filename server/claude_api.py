@@ -570,7 +570,7 @@ Hard rules — violating any makes the output unusable:
 7. No advice, no considerations: Do NOT offer considerations, options, suggestions, or things to "look at", "explore", "review", or "consider". Describe only. No "organisations sometimes...", no hedged suggestion of any kind. No legal/regulatory/financial adjudication. No directive phrasing ("you should/must/need to").
 8. Neutral framing: State gaps and strengths neutrally ("widest gap: X, at P9") — no evaluative adjectives ("concerning", "lagging badly", "serious") and no alarm words (serious/concerning/critical/alarming). Measured on a weak position, non-complacent on a strong one.
 9. Coverage honesty: If few metrics are answered or positioned, hedge accordingly ("on the few positioned metrics here...") and never generalize beyond the answered set. Scope to THIS domain only — never compare to other domains.
-10. Provenance: Anchor to the org's own data ("Across your N Domain benchmarks, compared with N peers...") — using ONLY the two provenance figures in the payload.
+10. Provenance: Anchor to the org's own data ("Across your N Domain benchmarks, compared with N peers...") — using ONLY the two provenance figures in the payload. If the payload's small_sample flag is true, say plainly that this rests on a small peer group and the read is directional (e.g. "...compared with N peers — a small group, so read this as directional.").
 
 Return STRICT JSON, no markdown fences, with exactly these keys:
   "position": the market-position pattern — the below/on/above-market counts and, if present, the strategy-alignment clause (or, for a non-competitive domain, a plain note that this domain has no market position),
@@ -591,7 +591,7 @@ DOMAIN_SUMMARY_SCHEMA = {
 
 # Bump when the generator logic changes so the persisted domain_summary cache
 # self-invalidates (the cache key is keyed on the payload hash + this string).
-DOMAIN_SUMMARY_GEN_VERSION = "2026-06-28.domain-v2-voice"
+DOMAIN_SUMMARY_GEN_VERSION = "2026-06-28.domain-v3-provenance"
 
 # Worded proportions a count must never become (rule 1) — the numeric allowlist only
 # catches DIGITS, so the conversion-in-words has to be caught here. "most" is forbidden
@@ -697,8 +697,9 @@ def _deterministic_domain_summary(payload):
     prov = payload.get("provenance") or {}
     ac, pp = prov.get("answered_count"), prov.get("peer_pool_size")
     if pp is not None:
-        provenance = ("Across your %s %s benchmarks, compared with %s peers in this group."
-                      % (ac, dom, pp))
+        tail = (" — a small peer group, so read this as directional"
+                if payload.get("small_sample") else " in this group")
+        provenance = "Across your %s %s benchmarks, compared with %s peers%s." % (ac, dom, pp, tail)
     else:
         provenance = "Across your %s %s benchmarks in this group." % (ac, dom)
 

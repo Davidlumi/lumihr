@@ -1611,6 +1611,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
   const dot = hero && hero.dot;
+  // counts-reconciliation (2026-06-28): the <20 thin-cut caveat must reach the DOMAIN page too —
+  // otherwise the "small sample · directional" qualifier lives only on the overview hero, and a
+  // user reading §1/§2/grid at n=15 sees no warning. Same window [5, 20) + insights-unlocked gate.
+  const sampleN = cutSize(cut, cuts, me.peer_pool);
+  const thinSample = !!(ov.contribution && ov.contribution.insights_unlocked) && sampleN != null && sampleN >= 5 && sampleN < 20;
   // §1 (domain-page Pass 1, 2026-06-27): two RAG donuts via the shared <Donut>. CARD A (position)
   // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
   // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
@@ -1625,6 +1630,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   return html`
     <div class="category-page">
       ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"} · peer group: ${cutLabelOf(cut, cuts)}`)}
+
+      ${thinSample ? html`
+        <div class="cat-thin-caveat">
+          <span class="indic-flag" tabindex="0" role="note">
+            <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
+            <span class="indic-tip">This domain is compared against ${sampleN} organisations — treat the reads here as directional.</span>
+          </span>
+        </div>` : null}
 
       ${ov.strategy_complete ? html`
         <div class="cat-strat-bar">
