@@ -6374,3 +6374,38 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   active:true; master ON + withdrawn → features ALL false + route 403; consented org → §2 present, no prompt;
   never-decided org → consent prompt present (Review&enable→#/settings), §2 absent; Settings AI card renders the
   toggle; 0 console errors. COMMITTING WITH THE MASTER OFF — the switch-on is David's, post-review. Cache v285 -> v286.
+
+2026-06-28 — AI INSIGHTS — GO-LIVE PREP on solicitor sign-off (opt-out / legitimate interest), BUILT —
+  MASTER STILL OFF (the prod env flip is reserved for David). David confirmed solicitor approval with four
+  rulings: (1) lawful basis = LEGITIMATE INTEREST / opt-out, LIA on file; (2) approve the current draft legal
+  wording as-is (fill the placeholders, drop the draft banners); (3) prepare everything but leave the production
+  master flip to David; (4) name Anthropic as the AI sub-processor, its terms verified.
+  CONSENT MODE → opt_out. AI_CONSENT_MODE default flipped opt_in→opt_out: AI Insights are ON by default and a
+  member turns them off in Settings (records kind="ai_insights_withdrawn"); a never-decided member is active.
+  is_ai_consented / ai_gate / needs_decision already supported BOTH bases — only the default changed. Under
+  opt_out needs_decision is always False, so the opt_in domain-page "Review & enable" nudge goes dormant (right).
+  SIGNUP → DISCLOSURE, NOT A TICK. A default-unticked opt-in checkbox is the wrong pattern under legitimate
+  interest; both signup forms (register + accept-invite, auth.js) now show an informational NOTICE ("lumi
+  generates AI Insights … on by default; you can turn them off any time in Settings") with a terms link — no
+  checkbox, no accept_ai_insights field. The Settings card is reworded to opt-out ("on by default … turn them
+  off here"; button "Turn off AI Insights"); all DRAFT markers removed.
+  TERMS VERSION → 1.0 (AI_TERMS_VERSION "1.0-draft" → "1.0").
+  LEGAL FINALISED. legal/ai-insights-terms-v1.0.md (renamed from -draft; LEGAL_FILES + LEGAL_INDEX draft:false):
+  banners removed, Anthropic PBC named, lawful basis = legitimate interest (Art 6(1)(f) + LIA), Art 22 n/a,
+  opt-out control, "only aggregated/derived figures — no individual salaries". The Anthropic row was added to the
+  Sub-processor List (aggregated/derived only; no training on inputs; zero/limited retention; DPA + SCCs/UK
+  Addendum) and an AI-assisted-analysis section to the Privacy Notice. Those two pages REMAIN draft:true for
+  NON-AI residuals only (privacy contact address; hosting/email sub-processors) — David's to finalise; the
+  authoritative AI disclosure is the final AI Insights Terms that every AI surface links to.
+  MASTER STAYS OFF IN CODE. AI_INSIGHTS_ENABLED default remains "off" as the backstop; go-live is the single
+  prod env action LUMI_AI_INSIGHTS_ENABLED=on, reserved for David. GO_LIVE_CHECKLIST.md rewritten: steps 1-4
+  done, only the prod flip + DPA/Article-30 confirm remain.
+  VERIFICATION. Adversarial gates green (qa_domain_summary 127/127, qa_commentary 40/40). Live (master on via
+  env on the preview ONLY, opt_out): never-decided member → consented/active, all features true, domain route
+  200, §2 renders, NO consent prompt; withdrawn → 403, §2 absent; re-enable works; Settings shows "Turn off AI
+  Insights" + v1.0, no draft; register form shows the AI NOTICE (not a tick), only the platform-terms checkbox;
+  legal page final (no DRAFT, names Anthropic, legitimate interest); 0 console errors. A 4-lens adversarial
+  workflow swept for leftover draft text, opt_in residue, legal-claim↔payload accuracy and cross-doc consistency:
+  NO high findings; the load-bearing "no individual salaries" claim VERIFIED true across all 8 AI call sites
+  (strip_internal drops _-prefixed peer values; no individual-pay field exists in the schema); the only flags were
+  the now-fixed stale checklist and the accepted non-AI draft residuals. Cache v286 -> v287. Committing master OFF.

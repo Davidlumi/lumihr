@@ -36,6 +36,24 @@ Account and usage data: our legitimate interest in providing and securing the
 service, and performance of our contract with your organisation. Marketing
 contact, where applicable, rests on consent you can withdraw at any time.
 
+## AI-assisted analysis (AI Insights)
+
+When AI Insights is active for your account, we process aggregated, derived
+figures from your benchmark data — domain-level position counts, named metrics
+with their percentile and sample-size figures, prevalence figures, and your
+peer-group size — to generate plain-language descriptive summaries. **Individual
+salaries and base-pay levels are not used.**
+
+Generation is performed by our AI sub-processor, **Anthropic PBC**, which
+processes the figures on our instructions and, under its commercial API terms,
+does not retain them or use them to train its models (see the Sub-processor
+List). Our lawful basis is **legitimate interest** (Art. 6(1)(f)), supported by a
+Legitimate Interests Assessment; AI Insights are on by default and you can turn
+them off at any time in Settings. The output is descriptive only and makes no
+automated decision with legal or similarly significant effect (Art. 22 does not
+apply). Cached summaries are regenerated when your underlying data changes. See
+the **AI Insights Terms** for full detail.
+
 ## Retention
 
 Account data is kept while your account is active and for a limited period

@@ -88,14 +88,13 @@ function LoginForm({ onAuthed }) {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(false);
-  const [aiTick, setAiTick] = useState(false);   // AI Insights consent — UNBUNDLED + unticked-by-default
   const [showTerms, setShowTerms] = useState(false);
   const go = async (e) => {
     e.preventDefault();
     setErr(null); setMsg(null); setBusy(true);
     try {
       if (mode === "login") { await api("/api/auth/login", { method: "POST", body: { email, password: pw } }); onAuthed(); }
-      else if (mode === "register") { await api("/api/auth/register", { method: "POST", body: { org_name: orgName, email, password: pw, display_name: name, accept_platform_terms: tick, accept_ai_insights: aiTick } }); onAuthed(); }
+      else if (mode === "register") { await api("/api/auth/register", { method: "POST", body: { org_name: orgName, email, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
       else { const r = await api("/api/auth/request-reset", { method: "POST", body: { email } }); setMsg(r.message); }
     } catch (ex) { setErr(ex.message); }
     setBusy(false);
@@ -112,9 +111,9 @@ function LoginForm({ onAuthed }) {
             I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
           <//>`}
         ${mode === "register" && html`
-          <${TermsTick} checked=${aiTick} onChange=${setAiTick}>
-            <b>Optional —</b> I consent to lumi generating <a onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }} style=${{ cursor: "pointer" }}>AI Insights</a> from my benchmark figures (a description of my data, not advice). You can change this any time in Settings.${" "}<span style=${{ color: "var(--ink-faint)", fontWeight: 700, fontSize: "var(--fs-micro)" }}>DRAFT</span>
-          <//>`}
+          <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
+            lumi generates <a onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }} style=${{ cursor: "pointer" }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
+          </div>`}
         ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }} style=${{ cursor: "pointer" }}>Terms of Use</a>
           ${" "}and <a onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }} style=${{ cursor: "pointer" }}>Privacy Notice</a>.</div>`}
@@ -163,13 +162,12 @@ function InviteForm({ token, onAuthed }) {
   const [pw, setPw] = useState("");
   const [name, setName] = useState("");
   const [tick, setTick] = useState(false);
-  const [aiTick, setAiTick] = useState(false);   // AI Insights consent — UNBUNDLED + unticked-by-default
   const [showTerms, setShowTerms] = useState(false);
   const [aiDoc, setAiDoc] = useState(false);
   useEffect(() => { api("/api/invite/" + token).then(setInfo).catch(e => setErr(e.message)); }, [token]);
   const go = async (e) => {
     e.preventDefault(); setErr(null);
-    try { await api("/api/auth/accept-invite", { method: "POST", body: { token, password: pw, display_name: name, accept_platform_terms: tick, accept_ai_insights: aiTick } }); onAuthed(); }
+    try { await api("/api/auth/accept-invite", { method: "POST", body: { token, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
     catch (ex) { setErr(ex.message); }
   };
   return html`
@@ -183,9 +181,9 @@ function InviteForm({ token, onAuthed }) {
         <${TermsTick} checked=${tick} onChange=${setTick}>
           I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
         <//>
-        <${TermsTick} checked=${aiTick} onChange=${setAiTick}>
-          <b>Optional —</b> I consent to lumi generating <a onClick=${e => { e.preventDefault(); setAiDoc(true); }} style=${{ cursor: "pointer" }}>AI Insights</a> from my benchmark figures (a description of my data, not advice). Change any time in Settings.${" "}<span style=${{ color: "var(--ink-faint)", fontWeight: 700, fontSize: "var(--fs-micro)" }}>DRAFT</span>
-        <//>
+        <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
+          lumi generates <a onClick=${e => { e.preventDefault(); setAiDoc(true); }} style=${{ cursor: "pointer" }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
+        </div>
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${!tick}>Join ${info.org_name}</button>

@@ -133,19 +133,23 @@ AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "
 # The MASTER switch for ALL member-facing AI insight features (commentary, analyst, board
 # pack, pulse, strategy diagnosis, domain summary). Default OFF — this holds production dark
 # regardless of the per-feature flags above (five of which still default on), so AI-generated,
-# member-facing content derived from member data ships to NOBODY until David flips this himself,
-# AFTER solicitor sign-off on the compliance track (DPA / privacy notice / sub-processors).
+# member-facing content derived from member data ships to NOBODY until the prod env flip.
+# Solicitor sign-off was RECEIVED on 2026-06-28 (legitimate-interest/opt-out basis, legal text
+# finalised, Anthropic named as sub-processor). The code default stays OFF as a backstop: the
+# go-live is the single deploy-env action LUMI_AI_INSIGHTS_ENABLED=on, which is David's to make.
 # Every AI feature renders iff:  AI_INSIGHTS_ENABLED on  AND  its own flag on  AND  the member
 # has consented (per AI_CONSENT_MODE). Demo/review runs the COMPLETE flow on test data via
 # LUMI_AI_INSIGHTS_ENABLED=on; real members see nothing while it's off. See GO_LIVE_CHECKLIST.md.
 AI_INSIGHTS_ENABLED = os.environ.get("LUMI_AI_INSIGHTS_ENABLED", "off").lower() == "on"
-# Lawful-basis switch the solicitor rules on — built to support EITHER without a code change.
-#   opt_in  (default, conservative): no AI for a member until they explicitly consent.
-#   opt_out (legitimate interest):   AI on by default; a member can disable it (records withdrawal).
-AI_CONSENT_MODE = os.environ.get("LUMI_AI_CONSENT_MODE", "opt_in").lower()
-# The AI-Insights terms version the consent record pins. "-draft" until the solicitor finalises
-# the wording; a bump can force re-consent (the solicitor defines what change is "material").
-AI_TERMS_VERSION = "1.0-draft"
+# Lawful-basis switch — the solicitor RULED legitimate interest (opt-out) on 2026-06-28, with a
+# documented LIA on file. AI Insights are on by default and a member can disable them in Settings
+# (records a withdrawal). Built to support EITHER basis without a code change.
+#   opt_out (default, legitimate interest): AI on unless the member withdraws.
+#   opt_in  (consent):                      no AI for a member until they explicitly consent.
+AI_CONSENT_MODE = os.environ.get("LUMI_AI_CONSENT_MODE", "opt_out").lower()
+# The AI-Insights terms version the consent/withdrawal record pins. Finalised to "1.0" on solicitor
+# sign-off (2026-06-28); a future material change bumps this and can force re-consent.
+AI_TERMS_VERSION = "1.0"
 COMPLETION_THRESHOLD = float(os.environ.get("LUMI_COMPLETION_THRESHOLD", "0.90"))
 
 # ---------------------------------------------------------------- launch focus
@@ -365,7 +369,7 @@ LEGAL_FILES = {
     "privacy": "privacy-notice-v1.0-draft.md",
     "cookies": "cookie-policy-v1.0-draft.md",
     "subprocessors": "sub-processors-v1.0-draft.md",
-    "ai_insights": "ai-insights-terms-v1.0-draft.md",
+    "ai_insights": "ai-insights-terms-v1.0.md",
 }
 
 # The Legal index (chrome spec section 4.3): each document is its own page;
@@ -382,7 +386,7 @@ LEGAL_INDEX = [
     {"key": "data_contribution", "title": "Data Contribution Terms", "draft": False},
     {"key": "dpa", "title": "Data Sharing Agreement (DPA)", "draft": False},
     {"key": "subprocessors", "title": "Sub-processor List", "draft": True},
-    {"key": "ai_insights", "title": "AI Insights Terms", "draft": True},
+    {"key": "ai_insights", "title": "AI Insights Terms", "draft": False},
 ]
 
 

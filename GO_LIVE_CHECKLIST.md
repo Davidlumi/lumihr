@@ -1,67 +1,58 @@
 # AI Insights — Go-Live Checklist
 
-The AI Insights consent infrastructure is built and reviewable on demo/test data, but
-**AI Insights are OFF in production**. The master gate `AI_INSIGHTS_ENABLED` is default-OFF,
-so **no real member sees any AI-generated content** — including the five features that used
-to default-on (commentary, analyst, board pack, pulse, strategy diagnosis). They go dark the
-moment this lands and stay dark until David flips the master switch himself, after the steps
-below.
+**Status: solicitor sign-off RECEIVED (2026-06-28). Prep complete. ONE step remains — David's
+production env flip.** The lawful basis is **legitimate interest (opt-out)** with an LIA on file;
+the legal text is finalised, Anthropic is named as the AI sub-processor, and the terms version is
+`1.0`. The master gate `AI_INSIGHTS_ENABLED` is still **default-OFF in code** as a backstop, so
+**no real member sees any AI-generated content** until the single env flip below.
 
-This document is the switch-on runbook. **Every step is David's, post-solicitor — nothing
-here is automated.**
-
-## How the gate works (so the order is clear)
+## How the gate works (unchanged)
 
 Any AI feature renders **iff all three are true**:
 
 1. `AI_INSIGHTS_ENABLED` (the master switch) is **on**, AND
 2. that feature's own kill-switch is on (`LUMI_AI_COMMENTARY`, `LUMI_AI_ANALYST`,
    `LUMI_AI_BOARDPACK`, `LUMI_AI_PULSE`, `LUMI_AI_STRATEGY`, `LUMI_AI_DOMAIN_SUMMARY`), AND
-3. the **member has consented** (per `AI_CONSENT_MODE`).
+3. the **member has not opted out** (`AI_CONSENT_MODE=opt_out`: on by default; a member who turns
+   AI Insights off in Settings records `kind="ai_insights_withdrawn"` and goes dark next request).
 
-So flipping the master on does **not** expose AI to everyone — only to members who have
-consented (opt-in) or not withdrawn (opt-out). A member's consent is recorded per-person in
-the `terms_acceptances` audit log (`kind="ai_insights"` / `"ai_insights_withdrawn"`), versioned
-to `AI_TERMS_VERSION`.
+Under opt-out, flipping the master on exposes AI Insights to every member who has **not** opted
+out — including members who joined before the feature existed (they are informed at signup / in the
+privacy notice, and can opt out any time). Each member's choice is recorded per-person in the
+`terms_acceptances` audit log, versioned to `AI_TERMS_VERSION` (`1.0`).
 
-## Reviewing the full flow on test data (before go-live)
+## What was done on sign-off (steps 1–4 — COMPLETE)
 
-Run the complete flow without touching production by setting the env var on the demo/preview
-instance only:
+1. **Legal text finalised.** `legal/ai-insights-terms-v1.0.md` (draft suffix dropped,
+   `LEGAL_INDEX` `draft:false`): banners removed, **Anthropic PBC** named as sub-processor,
+   lawful basis set to legitimate interest, opt-out control wording.
+2. **Lawful basis + mode set.** `AI_CONSENT_MODE` default is now **`opt_out`** (legitimate
+   interest); LIA confirmed on file.
+3. **Terms version bumped** `1.0-draft → 1.0` (`AI_TERMS_VERSION`).
+4. **Sub-processor + privacy disclosure.** The Anthropic row was added to the Sub-processor List
+   (aggregated/derived figures only — no individual salaries; no training on inputs; zero/limited
+   retention; DPA + transfer safeguards), and an **AI-assisted analysis** section was added to the
+   Privacy Notice. Confirm the DPA / Article 30 records cover the AI processing and Anthropic.
 
-```
-LUMI_AI_INSIGHTS_ENABLED=on        # master on for THIS instance only
-LUMI_AI_CONSENT_MODE=opt_in        # (default) or opt_out
-# the per-feature flags are already on by default; ANTHROPIC_API_KEY in server/.env.local
-```
+### Two NON-AI residual items (David's, not blocking the AI flip, but tidy before/soon after)
 
-Then exercise: sign up → tick the (separate, unticked) AI consent → AI insights render for
-that consented test user → Settings → "Turn off AI Insights" (withdrawal) → AI disappears →
-"Turn on" again → re-consent. A non-consented test user sees no AI, only the "review & enable"
-prompt where a summary would be. Real members (production, master off) see nothing throughout.
+- **Privacy Notice contact address** — still says "the address published in the final notice".
+  Set a real data-subject-rights contact, then flip `LEGAL_INDEX["privacy"].draft → false`.
+- **Hosting + transactional-email sub-processors** — still "to be confirmed". Name them, then flip
+  `LEGAL_INDEX["subprocessors"].draft → false`.
+  (The authoritative AI disclosure is the final **AI Insights Terms** page, which every AI surface
+  links to; these two pages remain `draft:true` only for the non-AI items above.)
 
-## Go-live steps — David's, AFTER solicitor sign-off (in order)
+## The remaining step — David's, in production (step 5)
 
-1. **Replace the placeholder legal text.** Swap the draft files for the solicitor-approved
-   final wording and drop the `-draft` suffix + `draft:true` flags:
-   - `legal/ai-insights-terms-v1.0-draft.md` → final, update `LEGAL_FILES["ai_insights"]`
-     and the `LEGAL_INDEX` entry (`draft: false`).
-   - `legal/privacy-notice-v1.0-draft.md` and `legal/sub-processors-v1.0-draft.md` likewise
-     (name the AI sub-processor in the latter).
-   - Update the signup/settings copy that says "DRAFT — pending review."
-2. **Confirm the lawful basis and set the mode.** The solicitor rules opt-in (consent) vs
-   opt-out (legitimate interest). Set `LUMI_AI_CONSENT_MODE` accordingly (default `opt_in`).
-   If opt-out, confirm the LIA (legitimate interests assessment) is on file and the privacy
-   notice reflects it.
-3. **Bump the terms version if the wording is materially different.** Set `AI_TERMS_VERSION`
-   to the final version (e.g. `"1.0"`); a bump means existing consents pin the old version
-   (re-consent can be required per the solicitor's definition of "material").
-4. **Confirm the DPA / Article 30 records** cover the AI processing and the named sub-processor.
-5. **Flip the master switch on:** `LUMI_AI_INSIGHTS_ENABLED=on` in production. AI Insights now
-   render for consented members only, feature-by-feature (each per-feature flag still
-   independently killable without a deploy).
-6. **Re-run the adversarial gate** (`python3 server/qa_domain_summary.py`, and `qa_commentary.py`)
-   on production config before/after, and watch the first live generations.
+5. **Flip the master switch on:** set `LUMI_AI_INSIGHTS_ENABLED=on` in the production environment.
+   AI Insights then render for all non-opted-out members, feature-by-feature (each per-feature flag
+   still independently killable without a deploy). Note `LUMI_AI_DOMAIN_SUMMARY` defaults OFF — set
+   it `=on` too if the per-domain summary should ship. Ensure `ANTHROPIC_API_KEY` is configured in
+   prod (without it, every surface shows its validated deterministic fallback).
+
+6. **Re-run the adversarial gates on prod config** (`python3 server/qa_domain_summary.py`,
+   `python3 server/qa_commentary.py`) and watch the first live generations.
 
 ## Kill switches (any time, no deploy)
 
