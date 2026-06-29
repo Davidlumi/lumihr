@@ -6550,3 +6550,43 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   qa_signals_system 9/9, qa_ordered_routing 17/17). Cache v289 -> v290. Passes 1-3 committed together as one
   "Practice Alignment rename" unit. Outstanding (non-blocking): live-MODEL phrase sweep (keyed env) + a
   30-second on-sight check that a Signals tag renders as ONE badge across the em-dash.
+
+2026-06-29 — REW_PAY_MKT_POS_01 RETIRED (soft-delete, status='retired' in DB + CSV, NOT hard delete).
+  Base-salary positioning ("where does base salary sit versus market median by level", a self-reported
+  % of market median) in tension with the structure/policy-not-base-pay promise — David's positioning-
+  scope ruling. No £ figure was ever collected (privacy intact); this is scope, not a privacy fix.
+  MECHANISM: single source of truth = questions.status, the gate visible_questions() reads (app.py:290);
+  set 'retired' via releases.retire_question() (DB) + a byte-surgical one-field edit to the CSV seed
+  (data/lumi_questions.csv, durability across re-seed) by the guarded server/retire_metric.py (dry-run
+  default, --write to apply). NO skip-list, NO engine-logic change — the metric drops by DATA/status, and
+  git diff is the new script + the CSV one field only (no app.py/positions.py/signals.py/claude_api.py).
+  ANSWERS PRESERVED: answer rows for REW_PAY_MKT_POS_01 = 1023 before AND after (answers_history 1
+  unchanged); the questions row stays (FK answers.question_id REFERENCES questions(id) intact) — no
+  delete, no orphan. Reversible: verified active↔retired round-trip restores it (60/visible) and re-
+  retires (59/hidden) with answers intact; left in 'retired' (DB + CSV agree).
+  COUNTS recompute from source (no hardcoded literals): Pay 60 -> 59 (the 7-employee-level MATRIX counted
+  as 1 benchmark, NOT 7 — only its "Head of" row was positioned); position donut 13 -> 12 (its sole
+  positioned item); alignment donut 35 -> 35 (unchanged — not a prevalence metric). 12 + 35 = 47 of 59:
+  the 12-metric denominator GAP is UNCHANGED (before 60-48=12; after 59-47=12) — so the 13+35!=60 finding
+  is SEPARATE (12 Pay metrics are neither positioned nor alignment-rated) and is NOT resolved by this
+  retirement. The AI-summary gap "base salary versus market median for Head of, at the 2nd percentile
+  (n=147)" is GONE; Pay's widest gaps now read allowance premiums (Weekend P5/Night P7/Bank-holiday P8).
+  Three base-pay POLICY questions RETAINED (REW_FAI_128, REW_BEN_REM_PAY_001, REW_PAY_019 — status active,
+  still benchmarked). Gates green: qa_release (0 fail), qa_hero 57/57, qa_domain_summary, qa_status_audit;
+  qa_engine_audit pre-existing-red on UNRELATED metrics (323ffcf1 store drift / ALLOW_02 / PROP_9e4ad87f
+  rounding — REW_PAY_MKT_POS_01 in 0 failures; same failures with the metric temporarily active). NOT
+  committed pending David's number review.
+
+2026-06-29 — RETIRE REW_PAY_MKT_POS_01 — cache purge + commit. Purged 3 stale domain_summary cache
+  rows (all Thornbridge), TWO distinct causes in one sweep: 2 Pay rows (retirement — held the retired
+  "base salary versus market median by employee level — Head of" content) + 1 Benefits row (rename-era
+  residue — pre-rename "match the market majority" vocab). Deleted by exact (org_id, domain, cut_key,
+  payload_hash); NOT a domain-wide or whole-cache clear. Incentives/all::strat ("% of base salary" =
+  REW_INC_111 bonus-as-%-of-base, the LEGITIMATE structure metric Lumi keeps) and Pay/all::strat (clean)
+  explicitly preserved (5 -> 2 rows). Post-purge cache grep: "base salary versus market median" = 0,
+  "match the market majority" = 0, "REW_PAY_MKT_POS_01" = 0 — cache matches current reality, not just the
+  live render. Committed as its own unit, SEPARATE from the Practice Alignment rename (84a58b5); diff is
+  DATA-ONLY (data/lumi_questions.csv one field + server/retire_metric.py + DECISIONS.md; no engine files;
+  the cache purge is a runtime DB delete, not a tracked file). .claude/launch.json (local master-on demo)
+  excluded. OPEN: the denominator gap — 12 Pay metrics neither positioned nor alignment-rated (12 + 35 =
+  47 of 59) — is a SEPARATE finding, not resolved here; next.
