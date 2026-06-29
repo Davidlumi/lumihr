@@ -150,7 +150,7 @@ good = {
                    if pay_pay.get("alignment") else ""),
     "notable": ("Widest gaps: " + ca._named_items(pay_pay["gaps"]) + ".") if pay_pay["gaps"]
                else "No metric here sits below market.",
-    "prevalence": "On practices, %s match the market majority of %s assessed."
+    "prevalence": "On practices, %s are common choices, of %s assessed."
                   % ((pay_pay.get("prevalence") or {}).get("match_market_majority", 0),
                      (pay_pay.get("prevalence") or {}).get("pool", 0)) if pay_pay.get("prevalence")
                   else "No practice questions are assessed in this domain.",

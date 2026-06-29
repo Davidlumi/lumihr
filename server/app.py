@@ -67,6 +67,7 @@ import notifications
 from db import get_conn, init_schema, j, uj, get_meta, set_meta
 from library import load_questions, slugify
 import positions as pos
+import practice_axis
 import peer_twin
 from aggregate import run_snapshot, coerce_number, score_polarity, SUPPRESSION_FLOOR, matrix_value
 
@@ -1545,6 +1546,15 @@ async def overview(request: Request):
                             DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
                             practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
                             mp_config=mp_cfg, strategy=_strategy)
+    # Practice Alignment: attach the member-facing title/states/verdict ALONGSIDE the frozen
+    # engine keys on each domain's prevalence object, so the frontend reads them instead of
+    # hardcoding. UNCONDITIONAL + None-safe (Pass 2 / Option A): every domain carries title +
+    # states even with no practice questions (verdict null then), so the frontend never needs a
+    # hardcoded fallback. with_display spreads the original dict — engine keys untouched. This is
+    # the browser object only; the model payload (build_domain_summary_payload) is built separately
+    # and never gains these display fields.
+    for _d in hero.get("domains", []):
+        _d["prevalence"] = practice_axis.with_display(_d.get("prevalence"))
     reg_rows = build_gap_register(request, user, org, cut).get("rows", [])
     hero["action_gaps"] = sum(1 for r in reg_rows
                               if r.get("org_answered") and r.get("in_place") is False and (r.get("gap") or 0) > 0)

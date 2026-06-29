@@ -862,7 +862,7 @@ const LENS_DESC = { attract: "how you draw talent in", retain: "what keeps peopl
   engage: "how people experience work", save: "where your spend sits vs the market" };
 // legacy fallback tags (the engine now supplies s.tag in plain market language)
 const KIND_LABEL = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
-  prevalence: "MOST DO THIS", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "FEW OFFER THIS" };
+  prevalence: "COMMON — YOU DON'T", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "A RARE CHOICE" };
 // Every row reads the same three things in the same order: what it is (bold) ·
 // where you stand (the market fact) · the categorical tag. "Worth a look" leads
 // only where there's a supported worse direction (behind / a common practice you
@@ -969,7 +969,7 @@ function SignalsLocked({ contrib, me }) {
   const teasers = [
     { lens: "save", icon: "coins", tag: "£ GAP", name: "Bonus opportunity", stand: "sits below the market median for your size" },
     { lens: "retain", icon: "magnet", tag: "LOWER THAN MARKET", name: "Company sick pay", stand: "below where most of your peers land" },
-    { lens: "engage", icon: "users", tag: "MOST DO THIS", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
+    { lens: "engage", icon: "users", tag: "COMMON — YOU DON'T", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
     { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market — a story worth telling" },
   ];
   return html`
@@ -1265,7 +1265,7 @@ function CategoryTile({ d, pending, aim, view }) {
         <div class="tile-band" style=${{ margin: "2px 0 0" }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>
-        ${prev.with_majority != null && html`<div class="caption num" title="practices in line with the market majority">${prev.with_majority}/${prev.pool} in line with the market</div>`}`}
+        ${prev.with_majority != null && html`<div class="caption num" title=${prev.verdict || ""}>${prev.with_majority}/${prev.pool} ${prev.states.with_majority}</div>`}`}
       ${/* PASS (tile alignment label): a quiet STRATEGY row beneath the POSITION bar, mirroring
             its "POSITION" label (same .cat-axis) so the abbreviated state word reads against it
             ("STRATEGY: Behind/On/Ahead"). Position primary (the fixed fact), alignment secondary
@@ -1450,43 +1450,6 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         </div>`)}
     </div>`;
 };
-
-// A part-to-whole donut for practice prevalence: the three buckets (match the
-// majority / a common alternative / a rarer choice) partition the assessed pool.
-// Neutral blue tones, NOT the performance palette — prevalence informs, it doesn't
-// judge. Centre holds the headline count; the legend names each slice.
-function prevDonut(prev) {
-  const segs = [
-    { k: "majority", v: prev.with_majority || 0, c: "var(--blue-deep)", label: "match the market majority" },
-    { k: "common", v: prev.established || 0, c: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))", label: "a common alternative" },
-    { k: "rare", v: prev.less_common || 0, c: "color-mix(in srgb, var(--blue) 16%, var(--surface-sunk))", label: "a rarer choice" },
-  ].filter(s => s.v > 0);
-  const total = prev.pool, r = 54, C = 2 * Math.PI * r;
-  let acc = 0;
-  const arcs = segs.map(s => {
-    const len = (s.v / total) * C, off = -acc; acc += len;
-    return html`<circle key=${s.k} cx="70" cy="70" r=${r} fill="none" stroke=${s.c} stroke-width="15"
-      stroke-dasharray=${len + " " + (C - len)} stroke-dashoffset=${off} transform="rotate(-90 70 70)" />`;
-  });
-  return html`
-    <div class="cat-prev-wrap">
-      <div class="cat-donut" role="img"
-        aria-label=${prev.with_majority + " of " + total + " practices match the market majority"}>
-        <svg viewBox="0 0 140 140" aria-hidden="true">
-          <circle cx="70" cy="70" r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width="15" />
-          ${arcs}
-        </svg>
-        <div class="cat-donut-center"><b>${prev.with_majority}</b><span>of ${total}</span></div>
-      </div>
-      <div class="cat-prev-legend">
-        ${segs.map(s => html`
-          <div key=${s.k} class="cat-leg-row">
-            <span class="cat-leg-dot" style=${{ background: s.c }}></span>
-            <b>${s.v}</b><span>${s.label}</span>
-          </div>`)}
-      </div>
-    </div>`;
-}
 
 // -------------------------------------------------- category detail --------
 /* The dedicated expanded view for one sub-domain (Pay, Benefits, …). It mirrors
@@ -1675,19 +1638,19 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
                   onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
             </div>` :
-            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on practice prevalence.</div>`}
+            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on ${prev.title.toLowerCase()}.</div>`}
         </div>
         <div class="card cat-pos-card">
-          <div class="cat-hero-label">Practice prevalence${prev.pool ? html` <span class="cat-lens-of">· ${prev.pool} of ${all.length}</span>` : ""}</div>
+          <div class="cat-hero-label">${prev.title}${prev.pool ? html` <span class="cat-lens-of">· ${prev.pool} of ${all.length}</span>` : ""}</div>
           ${prev.pool ? html`
             <${Donut} segments=${prevSegs} total=${prev.pool} centerNum=${prev.with_majority} sub=${"of " + prev.pool + " practice" + (prev.pool === 1 ? "" : "s")} size=${210} stroke=${28} />
-            <div class="cat-card-cap">match the market majority</div>
+            <div class="cat-card-cap">${prev.verdict}</div>
             <div class="cat-card-counts num">
-              <span><b>${prev.with_majority}</b> match</span><span><b>${prev.established}</b> common alt</span><span><b>${prev.less_common}</b> rarer</span>
+              <span><b>${prev.with_majority}</b> ${prev.states.with_majority}</span><span><b>${prev.established}</b> ${prev.states.established}</span><span><b>${prev.less_common}</b> ${prev.states.less_common}</span>
             </div>
-            <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by practice prevalence">
+            <div class="cat-card-chips sig-chips" role="group" aria-label=${"Filter the grid by " + prev.title.toLowerCase()}>
               <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-              ${[{ k: "match", n: prev.with_majority, lab: "match" }, { k: "common_alt", n: prev.established, lab: "common alt" }, { k: "rarer", n: prev.less_common, lab: "rarer" }].filter(p => p.n).map(p => html`
+              ${[{ k: "match", n: prev.with_majority, lab: prev.states.with_majority }, { k: "common_alt", n: prev.established, lab: prev.states.established }, { k: "rarer", n: prev.less_common, lab: prev.states.less_common }].filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
                   onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}

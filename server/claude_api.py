@@ -12,6 +12,8 @@ import re
 
 import anthropic
 
+import practice_axis
+
 # Current flagship; the env override lets ops pin a specific model without a code change.
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
 
@@ -564,9 +566,9 @@ Hard rules — violating any makes the output unusable:
 1. Numbers: Use ONLY the numbers in the JSON payload (domain counts, named gaps/strengths with their percentiles/n, prevalence figures, the two provenance figures). NEVER introduce, estimate, derive, or recall any other number, GBP value, percentage, or "typical" figure. State counts EXACTLY as given ("8 of 13 metrics"). NEVER convert a count to a proportion, fraction, or percentage — forbidden: "two-thirds", "a majority", "most", "nearly all", "a handful", or any percentage not literally in the payload.
 2. No external facts: No market claims ("industry typically...", "best practice says..."). Interpret the supplied data only.
 3. Vocabulary lock (two separate axes — never cross them): Market position uses ONLY: below market / on market / above market. Strategy alignment uses ONLY: behind strategy / on strategy / ahead of strategy. NEVER write "behind market", "below strategy", "ahead of market", or any blend. Keep their words apart, in separate clauses. Apply this SILENTLY: never mention, explain, comment on, or narrate this separation — or ANY of these rules — in your output. The reader sees the effect, never the rule (no sentences like "position and alignment are described separately").
-4. Describe the pattern: Say how many metrics sit below / on / above market (as counts), name the widest gaps AND the notable strengths (ONLY from the payload's gaps and strengths lists, each phrased "at the Nth percentile (n=X)" using its integer percentile and n exactly as given), and describe whether practices are common or unusual (using the payload's prevalence buckets — match the market majority / an established alternative / less common — never invented words like "rare/standard"). Synthesize the shape — but only what the numbers say. Forbid causal claims between metrics ("X is dragging down Y" — the data shows co-occurrence, never mechanism). If the gaps list is empty, say plainly that no metric sits below market; never manufacture a gap. Likewise, if there are no strengths, do not invent one.
+4. Describe the pattern: Say how many metrics sit below / on / above market (as counts), name the widest gaps AND the notable strengths (ONLY from the payload's gaps and strengths lists, each phrased "at the Nth percentile (n=X)" using its integer percentile and n exactly as given), and describe whether practices are common or unusual (using the payload's prevalence buckets — common / alternative / rare — never invent other words). The payload field names match_market_majority, established_alternative, less_common are LEGACY KEYS meaning, respectively, the count of practices that are common, alternative, and rare; describe them only in that vocabulary and NEVER echo a field name as a phrase — never write "match the market majority", "established alternative", or "less common" as words. Synthesize the shape — but only what the numbers say. Forbid causal claims between metrics ("X is dragging down Y" — the data shows co-occurrence, never mechanism). If the gaps list is empty, say plainly that no metric sits below market; never manufacture a gap. Likewise, if there are no strengths, do not invent one.
 5. Alignment (only if present): If the payload carries a strategy alignment field (behind/on/ahead strategy), you MAY state it — in its own clause, in strategy vocabulary only (rule 3). If alignment is absent, describe market position only, with NO alignment verdict.
-6. No position where there is none: If the payload says this domain has no market position (non-competitive), state plainly that it has no market position to read, then describe prevalence and approach only. Do NOT enumerate or mention "below / on / above market" AT ALL — not even to deny it ("no metric sits below market" / "no below-market reading" are themselves forbidden) — in ANY slot, not just position. Just say the domain has no market position and move to prevalence and approach (e.g. "This domain has no market position to read; it is assessed on practice prevalence and approach."). For such a domain the "notable" slot states plainly there are no gaps or strengths to name — with no market words at all.
+6. No position where there is none: If the payload says this domain has no market position (non-competitive), state plainly that it has no market position to read, then describe prevalence and approach only. Do NOT enumerate or mention "below / on / above market" AT ALL — not even to deny it ("no metric sits below market" / "no below-market reading" are themselves forbidden) — in ANY slot, not just position. Just say the domain has no market position and move to prevalence and approach (e.g. "This domain has no market position to read; it is assessed on practice alignment and approach."). For such a domain the "notable" slot states plainly there are no gaps or strengths to name — with no market words at all.
 7. No advice, no considerations: Do NOT offer considerations, options, suggestions, or things to "look at", "explore", "review", or "consider". Describe only. No "organisations sometimes...", no hedged suggestion of any kind. No legal/regulatory/financial adjudication. No directive phrasing ("you should/must/need to").
 8. Neutral framing: State gaps and strengths neutrally ("widest gap: X, at P9") — no evaluative adjectives ("concerning", "lagging badly", "serious") and no alarm words (serious/concerning/critical/alarming). Measured on a weak position, non-complacent on a strong one.
 9. Coverage honesty: If few metrics are answered or positioned, hedge accordingly ("on the few positioned metrics here...") and never generalize beyond the answered set. Scope to THIS domain only — never compare to other domains.
@@ -609,6 +611,15 @@ DOMAIN_ALARM_RE = re.compile(
     r"\b(serious(?:ly)?|concerning|critical(?:ly)?|alarming|worrying|dire|severe(?:ly)?|lagging badly|falling behind)\b", re.I)
 DOMAIN_MKTPOS_RE = re.compile(r"\b(?:below|on|above)\s+market\b", re.I)
 DOMAIN_ALIGN_RE = re.compile(r"\b(?:behind|on|ahead of)\s+strategy\b", re.I)
+# Legacy practice-axis vocabulary ("Practice Prevalence" was renamed to "Practice Alignment",
+# 2026-06-29). Reject WHOLE legacy phrases so no generation surfaces the old words — including
+# the old axis name ("practice prevalence") and the three old state labels. The model sees the
+# legacy AI-payload field names (match_market_majority / established_alternative) and may anchor
+# on them, so both are blocked as phrases. NOT blocked: bare "less common" (innocent in ordinary
+# prose). The deterministic floor is new-vocab by construction and passes this gate.
+DOMAIN_LEGACY_RE = re.compile(
+    r"\bmatch the market majority\b|\bestablished alternative\b|\bpractice prevalence\b|"
+    r"\bcommon alt\b|\brarer\b", re.I)
 
 
 def _domain_numbers(payload):
@@ -670,6 +681,8 @@ def validate_domain_summary(parts, payload):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
     if DOMAIN_BADVOCAB_RE.search(text_all):
         return False, "crossed vocabulary: %s" % DOMAIN_BADVOCAB_RE.search(text_all).group(0)
+    if DOMAIN_LEGACY_RE.search(text_all):
+        return False, "legacy prevalence vocabulary: %s" % DOMAIN_LEGACY_RE.search(text_all).group(0)
     if DOMAIN_ALARM_RE.search(text_all):
         return False, "alarm/evaluative wording: %s" % DOMAIN_ALARM_RE.search(text_all).group(0)
     if not payload.get("has_position") and DOMAIN_MKTPOS_RE.search(text_all):
@@ -724,7 +737,7 @@ def _deterministic_domain_summary(payload):
             notable = "No metric here sits notably below or above market."
     else:
         position = ("This domain has no market position to read; lumi assesses it on practice "
-                    "prevalence and approach instead.")
+                    "alignment and approach instead.")
         appr = payload.get("approach") or {}
         if appr.get("pool"):
             notable = ("Of the practices here, %s differ from the market norm and %s are in line."
@@ -734,10 +747,14 @@ def _deterministic_domain_summary(payload):
 
     prev = payload.get("prevalence") or {}
     if prev.get("pool"):
-        prevalence = ("On practices, %s match the market majority, %s take an established alternative "
-                      "and %s are less common, of %s assessed."
-                      % (prev.get("match_market_majority", 0), prev.get("established_alternative", 0),
-                         prev.get("less_common", 0), prev.get("pool", 0)))
+        # New-vocab prose (Practice Alignment). Counts read from the FROZEN AI-payload keys
+        # (match_market_majority / established_alternative / less_common / pool — unchanged);
+        # the member words come from the central map via practice_axis.bucket_phrase.
+        prevalence = ("On practices, %s, %s and %s, of %s assessed."
+                      % (practice_axis.bucket_phrase(prev.get("match_market_majority", 0), "with_majority"),
+                         practice_axis.bucket_phrase(prev.get("established_alternative", 0), "established"),
+                         practice_axis.bucket_phrase(prev.get("less_common", 0), "less_common"),
+                         prev.get("pool", 0)))
     else:
         prevalence = "No practice questions are assessed in this domain."
     return {"position": position, "notable": notable, "prevalence": prevalence, "provenance": provenance}

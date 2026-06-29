@@ -6439,3 +6439,114 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   the attestation BEFORE shipping. Treat "does this change the AI payload?" as a hard release checkpoint on
   the AI surfaces (commentary, analyst, board pack, pulse, strategy, domain summary).
   C4 (non-AI placeholders) handled separately; master default stays OFF — the prod flip is David's.
+
+2026-06-29 — PRACTICE PREVALENCE -> PRACTICE ALIGNMENT (Pass 1 of 4: central map + AI floor/prompt +
+  validator guard + QA harness), BUILT (server-side only; frontend labels are Pass 3). Created the
+  central single-source map server/practice_axis.py: PRACTICE_AXIS (title "Practice Alignment"; states
+  with_majority->common / established->alternative / less_common->rare), prevalence_verdict() (variant
+  verdict line — was a FIXED string "match the market majority"; now largest-bucket-driven from the
+  _prev_summary counts, tie resolves common>alternative>rare), bucket_phrase() (singular/plural grammar —
+  a bucket count of exactly 1 DOES occur in real data, so "1 is a common choice"/"1 follows an alternative
+  pattern"/"1 is rare" handled), and with_display() (spreads the frozen keys, adds title/states/verdict).
+  API: the /api/overview handler attaches title/states/verdict ALONGSIDE the frozen keys on each domain's
+  prevalence object (NOT app.py:3885 — that is the model-only payload the browser never sees; placing the
+  verdict there would feed the model "most…" and risk an echo). The verdict string is FRONTEND-EXCLUSIVE —
+  asserted to appear in NO model payload and NO floor string (qa SECTION 4), because prompt rule 1 bans
+  "most" in model output.
+  AI deterministic floor (claude_api.py): the prevalence sentence migrated to new vocab via bucket_phrase
+  (counts read from the FROZEN AI-payload keys match_market_majority/established_alternative/less_common —
+  byte-for-byte); the non-competitive POSITION sentence "practice prevalence"->"practice alignment"
+  (claude_api.py:726-727 — mandatory: the new blocklist would otherwise reject the floor itself and break
+  the no-loop guarantee). Prompt: rule-4 vocabulary swapped to common/alternative/rare + an explicit note
+  that the legacy field names match_market_majority/established_alternative/less_common must be described in
+  the new vocabulary and NEVER echoed as phrases (the model SEES those field names); the no-position example
+  (rule 6) "practice prevalence"->"practice alignment"; the old forbidden-word "rare" removed (it is now
+  canonical). :578 left untouched (already neutral). Runtime guard: DOMAIN_LEGACY_RE rejects the WHOLE
+  legacy phrases — match the market majority | established alternative (Addition 1) | practice prevalence |
+  common alt | rarer — and falls to the (new-vocab) floor. Deliberately NOT blocked: bare "less common"
+  (innocent prose) and bare "prevalence" at runtime (prompt :578 still says "prevalence buckets", so a
+  runtime block would over-fall to the floor); bare "prevalence" is instead guarded in the LIVE-QA grep.
+  TWO INTERNAL KEY SETS FROZEN, byte-for-byte: engine keys (with_majority/established/less_common/pool,
+  positions._prev_summary — positions.py untouched) and the AI-payload contract keys
+  (match_market_majority/established_alternative/less_common/pool — app.py:3885 + claude_api floor .get()s).
+  No pre-existing floor bug (writer/reader key-match verified 2026-06-29). qa_domain_summary.py SECTION C
+  hand-written sample migrated off "match the market majority" (the new guard would have failed it).
+  QA: server/qa_prevalence_rename.py — floor-only here (70/70 PASS): map unit logic, new floor across all
+  domains x strat (valid + new-vocab + no legacy), validator rejects each legacy phrase, verdict
+  frontend-exclusive, singular count=1 grammatical + valid. Live-sampling section self-skips without a key
+  (run LUMI_QA_WITH_MODEL=on in a keyed env — greps generations for the forbidden phrases incl. bare
+  "prevalence"). Existing gates stay green: qa_domain_summary 127/127, qa_commentary 40/40. Live /api/overview
+  verified end-to-end: frozen keys intact + display fields present + §2 floor new-vocab. ALL SANDBOX CHECKS
+  FLOOR-ONLY; live model-phrase QA deferred to the keyed harness (Addition: stress-tested vocab vs real
+  metrics 2026-06-29).
+
+2026-06-29 — PRACTICE ALIGNMENT (Pass 2 of 4: frontend migration), BUILT. Pointed every user-facing
+  pages.js practice-axis site at the API-supplied display fields Pass 1 attached to hero.prevalence
+  (prev.title / prev.states / prev.verdict) — words stay SINGLE-SOURCED in server/practice_axis.py, never
+  re-hardcoded on the frontend. Seven sites: 1681 card title -> prev.title (CSS uppercases to "PRACTICE
+  ALIGNMENT"); 1684 verdict cap -> prev.verdict (was a FIXED "match the market majority"; now variant-driven);
+  1686 count row words -> prev.states (counts still prev.with_majority/established/less_common); 1688 aria ->
+  prev.title.toLowerCase(); 1690 chip LABELS -> prev.states (chip KEYS match/common_alt/rarer UNCHANGED —
+  filtering intact); 1678 fallback caption -> prev.title.toLowerCase(); 1268 overview tile -> prev.states
+  .with_majority + prev.verdict tooltip. OPTION A (the only backend touch): practice_axis.with_display is now
+  None-safe + the /api/overview handler calls it UNCONDITIONALLY, so every domain's prevalence carries
+  title+states even with no practice questions (verdict null then) — no frontend fallback string needed
+  (uniqueness invariant preserved). Model payload (build_domain_summary_payload @3885) unaffected — verified
+  it carries ONLY the frozen AI-payload keys, no title/states/verdict (verdict must never reach the model;
+  prompt rule 1 bans "most"). Null-verdict safety: 1684 cap is inside the prev.pool conditional (verdict is a
+  real sentence whenever pool>0); 1268 tooltip is prev.verdict || "". Chip/engine keys and pages.js:740
+  (Governance approach axis "in line with the market") and match_count (2354) untouched. Cache v287 -> v288.
+  QA (deterministic, Thornbridge Retail Group plc): title "PRACTICE ALIGNMENT · 35 of 60"; count row "18
+  common / 9 alternative / 8 rare"; chips common/alternative/rare with filtering still working (alternative
+  chip -> "9 shown", key common_alt intact); VERDICT VARIANTS all three render from the API (common-led Pay:
+  "most of your practices are common choices"; alternative-led Incentives real data: "many of your practices
+  follow an alternative pattern"; rare-led injected: "several of your practices are rare choices" — proves the
+  cap renders whatever the API sends, not a hardcoded common); overview clean (no "in line with the market
+  majority", no "prevalence"); no-pool domain injected -> title renders cleanly, cap absent (no "null"),
+  tooltip empty-safe; DOM grep on emitted Pay page for prevalence|market majority|common alt|rarer = ZERO,
+  new vocab common/alternative/rare present; 0 console errors. NOT committed — Passes 1-3 commit together.
+
+2026-06-29 — PRACTICE ALIGNMENT (Pass 3 of 4: Signals tag alignment + dead code), BUILT. PART A:
+  the Signals gap-tags now read in the Practice Alignment register, neutral fact-not-judgment:
+  "MOST DO THIS" -> "COMMON — YOU DON'T" (a common thing you LACK — peers do it, you don't; the gap),
+  "FEW OFFER THIS" -> "A RARE CHOICE" (a rare thing you HAVE — worth=False, a difference, never a
+  deficiency). Applied at every site (replace_all, byte-identical producer + comparator): signals.py
+  engine display (552/722/806/854/895 + 718/749), the _signal_position LOCKSTEP comparators (275/277 —
+  the tag string is both display AND a position key; both swapped together, BEHAVIOUR BYTE-IDENTICAL —
+  proved: COMMON — YOU DON'T → below for Level/Provision else differs; A RARE CHOICE → differs, matching
+  the old MOST DO THIS / FEW OFFER THIS mapping exactly), both SIG_KIND fallback maps (card.js:354 +
+  pages.js:865, fallback-only behind sig.tag), and the hardcoded sample signal (pages.js:972). Signal-kind
+  internal keys (prevalence/rare) FROZEN — display only. Uniqueness verified: nothing compares loosely
+  against "RARE"/"COMMON" (only the lowercase kind key "rare", a different variable). PART B (prevDonut
+  delete): HELD — a reference was found at apply time in server/qa_hero.py (lines 255-258 inspect
+  prevDonut's source), so per the rule "if any reference is found, leave it and flag", prevDonut was
+  RESTORED and left in place (dead but referenced by the gate). qa_hero.py:259-260 was a STALE assertion
+  for the OLD tile caption (`title="practices in line with the market majority"`) that Pass 2 replaced with
+  `title=${prev.verdict}`; updated it to assert the new neutral caption (same intent — test maintenance
+  tracking the approved Pass-2 change, like qa_domain_summary.py:153 in Pass 1). ENGINE UNCHANGED:
+  prevalence_floor / prevalence_lenses / multi_prevalence / practice_status / _prev_summary keys /
+  STATUS_POINTS byte-identical (signals.py diff is tag literals only; positions.py / aggregate.py / the
+  JSON configs untouched). QA (all FLOOR-ONLY / deterministic): _signal_position byte-identical proof;
+  gates green — qa_signals_system 9/9, qa_ordered_routing 17/17, qa_release 0-fail, qa_status_audit, qa_hero
+  59/59, qa_commentary 40/40, qa_domain_summary 127/127, qa_prevalence_rename 70/70; live cross-surface
+  (Thornbridge) — engine emits tag "COMMON — YOU DON'T" for the prevalence signal "Salary range in job
+  adverts" (stand "58% of the market does this, you don't"), and the Pay page shows the alignment card
+  ("PRACTICE ALIGNMENT", "18 common / 9 alternative / 8 rare") AND the flagged practice ("COMMON — YOU
+  DON'T") in one view — ONE vocabulary; DOM grep on the emitted page for prevalence|market majority|common
+  alt|rarer|MOST DO THIS|FEW OFFER THIS = ZERO; 0 console errors. Cache v288 -> v289. The live-MODEL phrase
+  sweep (qa_prevalence_rename §LIVE) still self-skips without a key — the one outstanding keyed-env
+  confirmation. Rename now consistent across card + overview + AI summary + Signals (one vocabulary), with
+  prevDonut dead-code cleanup the only deferred item (Pass 3 Part B held pending the qa_hero.py reference).
+
+2026-06-29 — PRACTICE ALIGNMENT (Pass 3 FINALISED). prevDonut delete un-held: the only reference was
+  the stale qa_hero.py:254-258 source-inspection of the dead function (a gate testing dead UI, not a
+  live dependency). Deleted prevDonut (pages.js, the ~37-line function + comment) AND removed those two
+  prevDonut checks from qa_hero.py. The repointed qa_hero.py tile-caption assertion KEEPS TEETH:
+  `'class="caption num" title=${prev.verdict' in js` — fails if the overview tile prevalence line is ever
+  rewritten to a performance/RAG-coloured class (it pins the neutral .caption num + verdict tooltip), so
+  it still tests neutrality, not an always-pass. Repo-wide grep (web/js + server/): ZERO prevDonut
+  references. qa_hero 59 -> 57 checks (dropped exactly the 2 prevDonut checks), 57/57 pass; full gate green
+  (qa_release, qa_status_audit, qa_commentary, qa_domain_summary, qa_prevalence_rename 70/70,
+  qa_signals_system 9/9, qa_ordered_routing 17/17). Cache v289 -> v290. Passes 1-3 committed together as one
+  "Practice Alignment rename" unit. Outstanding (non-blocking): live-MODEL phrase sweep (keyed env) + a
+  30-second on-sight check that a Signals tag renders as ONE badge across the em-dash.

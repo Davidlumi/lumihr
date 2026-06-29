@@ -249,15 +249,10 @@ print("=" * 100)
 web = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web")
 css = open(os.path.join(web, "css", "app.css"), encoding="utf-8").read()
 js = open(os.path.join(web, "js", "pages.js"), encoding="utf-8").read()
-# prevalence is now rendered by the prevDonut (neutral blue tones) + the tile
-# prevalence line; the old .prev-line/PrevLine were retired with the dead HeroSignals.
-donut_src = js[js.index("function prevDonut"):js.index("function prevDonut") + 900]
-check("prevDonut uses blue/neutral tones, never the performance vars",
-      "favourable" not in donut_src and "unfavourable" not in donut_src and "var(--blue" in donut_src)
-check("prevDonut carries no pos-pill / verdict classes",
-      "pos-pill" not in donut_src and "good" not in donut_src and "bad" not in donut_src)
+# Practice Alignment: the overview tile prevalence line must stay a NEUTRAL caption —
+# the shared `.caption num` carrying the verdict tooltip, never a performance/RAG colour.
 check("tile prevalence line is a neutral caption (no performance colour)",
-      'title="practices in line with the market majority"' in js)
+      'class="caption num" title=${prev.verdict' in js)
 check("maturity score tiles removed from the gap register",
       "your maturity" not in open(os.path.join(web, "js", "commercial.js"), encoding="utf-8").read())
 

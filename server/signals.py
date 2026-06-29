@@ -272,9 +272,9 @@ def _signal_position(sig, cls):
     if cls in ("Practice", "Design"):
         return "differs"
     tag = sig.get("tag", "")
-    if tag == "FEW OFFER THIS":
+    if tag == "A RARE CHOICE":
         return "differs"
-    if tag == "MOST DO THIS":          # a market provision you lack reads below; a practice differs
+    if tag == "COMMON — YOU DON'T":          # a market provision you lack reads below; a practice differs
         return "below" if cls in ("Level", "Provision") else "differs"
     if tag == "£ GAP":
         return "below"
@@ -549,7 +549,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if adoption >= prev_floor:
             out.append({
                 "lens": lens, "kind": "prevalence", "question_id": qid,
-                "name": _label(qid, q), "tag": "MOST DO THIS", "worth": True,
+                "name": _label(qid, q), "tag": "COMMON — YOU DON'T", "worth": True,
                 "stand": "%d%% of the market does this, you don't" % round(adoption),
                 "value_display": "%d%%" % round(adoption),
                 "label_short": "of peers %s" % _short(_phrase(q.display_title)),
@@ -715,11 +715,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         _, knd, lab, a = best
         if knd == "rare":
             detail = "you selected “%s” — only %d%% of peers do" % (lab, round(a))
-            tag, worth = "FEW OFFER THIS", False
+            tag, worth = "A RARE CHOICE", False
             stand = "only %d%% of the market offers it" % round(a)
         else:
             detail = "%d%% of peers select “%s” — you don't" % (round(a), lab)
-            tag, worth = "MOST DO THIS", True
+            tag, worth = "COMMON — YOU DON'T", True
             stand = "%d%% of the market does this, you don't" % round(a)
         # the OPTION is the label here — never the multi-select question stem
         out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
@@ -746,7 +746,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             continue
         if max(opts.values()) >= 50 and a <= floor:
             out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
-                        "name": _label(qid, q), "tag": "FEW OFFER THIS", "worth": False,
+                        "name": _label(qid, q), "tag": "A RARE CHOICE", "worth": False,
                         "stand": "only %d%% of the market does this — you do" % round(a),
                         "value_display": mine, "label_short": "%s · %s" % (_short(q.display_title), mine),
                         "detail": "you answered “%s” — only %d%% of peers do" % (mine, round(a)),
@@ -803,7 +803,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                     # a common practice you lack — prevalence framing (adoption fact keeps
                     # "the market" per the ruling; only the position label changed).
                     _pct = round(adoption)
-                    s["kind"] = "prevalence"; s["tag"] = "MOST DO THIS"
+                    s["kind"] = "prevalence"; s["tag"] = "COMMON — YOU DON'T"
                     s["stand"] = "%d%% of the market does this, you don't" % _pct
                     s["value_display"] = "%d%%" % _pct
                     s["label_short"] = "of peers %s" % _short(_ttl)
@@ -851,7 +851,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             if was_behind and adoption is not None and adoption >= prev_floor:
                 _pct = round(adoption)
                 s["kind"] = "prevalence"
-                s["tag"] = "MOST DO THIS"
+                s["tag"] = "COMMON — YOU DON'T"
                 s["stand"] = "%d%% of the market does this, you don't" % _pct
                 s["value_display"] = "%d%%" % _pct
                 s["label_short"] = "of peers %s" % _short(_ttl)
@@ -881,7 +881,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         # difference is never a market verdict, so route ANY residual directional market tag on
         # a differs signal to rarity/approach/peer vocab — keyed on the FINAL position (what
         # decides the tab), not the kind. Mirrors the non-competitive branching (a common
-        # practice you lack → MOST DO THIS; a yes/no approach → DIFFERS FROM PEERS; a quantity →
+        # practice you lack → COMMON — YOU DON'T; a yes/no approach → DIFFERS FROM PEERS; a quantity →
         # HIGHER/LOWER THAN PEERS). DISPLAY-ONLY: tag + the stand/detail/label copy. position,
         # kind, impact, counts, ranking and the gauge are all left untouched (byte-identical).
         _ftag = s.get("tag") or ""
@@ -892,7 +892,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             _fadopt = _market_adoption(_q, get_block(s["question_id"]) if _q else None)
             if _fadopt is not None and _fadopt >= prev_floor:
                 _fpct = round(_fadopt)
-                s["tag"] = "MOST DO THIS"
+                s["tag"] = "COMMON — YOU DON'T"
                 s["stand"] = "%d%% of the market does this, your approach differs" % _fpct
                 s["value_display"] = "%d%%" % _fpct
                 s["label_short"] = "of peers %s" % _short(_fttl)
