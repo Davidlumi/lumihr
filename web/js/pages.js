@@ -373,8 +373,8 @@ function CountUp({ to, ms = 750 }) {
    value that bands the verdict word, so needle and word agree by construction.
    The band joins sit at the verdict threshold (±lean_threshold), so the band
    the needle rests in IS the verdict. The 34/46/14 counts move to a hairline
-   legend — they are not the gauge's job. (Historical note: this retired arc once used a
-   traffic-light palette; the live gauge is the neutral slate <Donut> — see POS_SOFT/POS_RICH.) */
+   legend — they are not the gauge's job. Real traffic-light palette
+   (below=red · on=amber · above=green) on warm paper. */
 // Proportional "Where you stand" arc geometry (2026-06-15). Shared by the
 // needle-rotation helper and the render so they never diverge.
 const ARC = { CX: 140, CY: 138, R: 102, W: 15 };
@@ -416,43 +416,38 @@ function targetCopy(t) {
   if (t.alignment === "ahead") return "Ahead of strategy — you aim to sit " + w;
   return "Behind strategy — you aim to sit " + w;
 }
-// ---- market-position colour code. NEUTRALISED 2026-06-30 (Q3=Mirror): the aggregate POSITION
-// card is a neutral ORDINAL SLATE ramp — POS_SOFT/POS_RICH, keyed by band, below->on->above by
-// LIGHTNESS only, NO valence (no --favourable/--unfavourable/--amber-bright on any band, so
-// above=red is structurally impossible — Q4). It drives the hero gauge donut, the category tiles,
-// the MarketSpectrum bands and the cat-hero chip, strategy-INVARIANT. Direction is read from the
-// lightness order + the neutral-ink verdict word + legend — colour never judges below/on/above as
-// good/bad (the mirror principle; matches the de-judged Practice Alignment card). The org's
-// STRATEGY stays a SEPARATE navy channel (AlignmentChip pill + the spectrum's "your aim" bracket).
-// marketTone (below) now serves the per-signal CHANNEL B ONLY (polarity-aware per-metric tone).
+// ---- market-position colour code. After the RAG/strategy separation sweep (2026-06-27, see
+// DECISIONS), POSITION is one fixed colour language everywhere: marketTone maps below=amber /
+// on=green / above=red, strategy-INVARIANT. It drives the hero gauge donut, the category tiles,
+// the MarketSpectrum bands and the cat-hero chip — identical strategy-on or off. The org's
+// STRATEGY (alignment vs its declared aim) is a SEPARATE navy channel — the AlignmentChip pill +
+// the spectrum's "your aim" bracket, strategy-on only — and NEVER recolours position. The per-
+// signal rows keep their own polarity-aware tone (a below-market lower-is-better metric is
+// honestly green). The retired attainment lens (attainTone / bandToneAim / ATTAIN_ALIGN) is gone.
 const MKT_BIDX = { below: 0, on: 1, at: 1, above: 2 };
 function marketAim(market) {
   return market && market.target ? ({ lag: 0, match: 1, lead: 2 })[market.target.stance] : null;
 }
-function marketTone(key) {                  // CHANNEL B ONLY (per-signal tone): below=amber · on=green · above=red. Channel A (the Position card) is neutral slate — see POS_SOFT/POS_RICH.
+function marketTone(key) {                  // absolute market DIRECTION: below=amber · on=green · above=red (a fact, no stance)
   const idx = MKT_BIDX[key];
   if (idx == null) return "neutral";
   return idx === 0 ? "amber" : idx === 1 ? "green" : "red";   // below=amber · on=green · above=red (position lens)
 }
 // (Retired 2026-06-27, RAG/strategy separation sweep: the attainment lens — POS_RANK,
 // bandToneAim, attainTone, ATTAIN_ALIGN — colour-bled strategy into position and is fully
-// removed. Position now colours via the neutral POS_SOFT/POS_RICH slate ramp; alignment rides the
-// AlignmentChip. The old valence maps MKT_SOFT/RICH/CHIP/VCLS were removed in the 2026-06-30
-// neutralisation — they encoded below=amber/on=green(--favourable)/above=red(--unfavourable).)
-// CHANNEL A — the neutral Position ramp (R-slate). Keyed by BAND NAME (below/on/at/above) so the
-// Position card never routes through marketTone. Slate lightness encodes the below->on->above
-// ORDER; ZERO valence tokens => above=red is impossible by construction (Q4). POS_RICH = the
-// verdict band (more saturated, so the eye lands); POS_SOFT = the other bands.
-const POS_SOFT = { below: "color-mix(in srgb, var(--grey-neutral) 20%, var(--surface))",
-                   on:    "color-mix(in srgb, var(--grey-neutral) 44%, var(--surface))",
-                   at:    "color-mix(in srgb, var(--grey-neutral) 44%, var(--surface))",
-                   above: "color-mix(in srgb, var(--grey-neutral-ink) 84%, var(--surface))" };
-const POS_RICH = { below: "color-mix(in srgb, var(--grey-neutral) 34%, var(--surface))",
-                   on:    "color-mix(in srgb, var(--grey-neutral) 58%, var(--surface))",
-                   at:    "color-mix(in srgb, var(--grey-neutral) 58%, var(--surface))",
-                   above: "var(--grey-neutral-ink)" };
-const POS_CHIP = { below: "chip-pos-lo", on: "chip-pos-mid", at: "chip-pos-mid", above: "chip-pos-hi" };
-const POS_VCLS = { below: "v-pos-lo", on: "v-pos-mid", at: "v-pos-mid", above: "v-pos-hi" };
+// removed. Position now colours via marketTone above; alignment rides the AlignmentChip.)
+const MKT_SOFT = { green: "var(--gauge-on)", amber: "var(--gauge-below)", red: "var(--gauge-above)",
+                   redover: "color-mix(in srgb, var(--unfavourable-deep) 42%, var(--surface))",
+                   grey: "color-mix(in srgb, var(--grey-neutral) 30%, var(--surface))",
+                   neutral: "color-mix(in srgb, var(--chart-band-mid) 65%, var(--surface))" };
+const MKT_RICH = { green: "color-mix(in srgb, var(--favourable) 56%, var(--surface))",
+                   amber: "color-mix(in srgb, var(--amber-bright) 58%, var(--surface))",
+                   red: "color-mix(in srgb, var(--unfavourable) 54%, var(--surface))",
+                   redover: "color-mix(in srgb, var(--unfavourable-deep) 72%, var(--surface))",
+                   grey: "color-mix(in srgb, var(--grey-neutral) 62%, var(--surface))",
+                   neutral: "var(--chart-band-mid)" };
+const MKT_CHIP = { green: "chip-good", red: "chip-bad", redover: "chip-bad-over", amber: "chip-mid", grey: "chip-neutral-mkt", neutral: "chip-practice" };
+const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber: "v-below", grey: "v-neutral-mkt", neutral: "v-practice" };
 
 // ── ALIGNMENT INDICATOR — the SEPARATE strategy channel (RAG/strategy separation, Phase B,
 // 2026-06-27, ruling R2). The aggregate-position surfaces (the hero gauge + the category
@@ -498,13 +493,15 @@ function MarketSpectrum({ market, aim }) {
     { k: "on", a: s1, b: s2, on: v === "at" },
     { k: "above", a: s2, b: s3, on: v === "above" },
   ].filter(g => g.b - g.a > 0.004).map(g => {
-    // NEUTRALISED 2026-06-30 (Q3=Mirror): each band carries its neutral POS slate step by band
-    // (below->on->above by lightness, NO valence), the verdict band rich. Strategy NEVER enters the
-    // band hue (on==off parity). Alignment stays SPATIAL: the navy "your aim" bracket + the
-    // you-marker show where your aim sits vs where you are. No band is good/bad — the lightness
-    // order is the only directional read in colour; the zone labels + you-marker carry direction.
+    // PASS 3 (RAG/strategy separation, 2026-06-27): POSITION lens, not attainment — each band
+    // carries its OWN marketTone hue (below=amber / on=green / above=red), the verdict band rich.
+    // Strategy NEVER enters the band hue now → strategy-off and strategy-on render identical bands
+    // (on==off parity). Alignment stays SPATIAL: the navy "your aim" bracket + the you-marker show
+    // where your aim sits vs where you are — strategy-on only, recoloured navy to match the
+    // alignment channel (the gauge/tile AlignmentChip). On the scale, ABOVE-market is now a red BAND.
+    const tone = marketTone(g.k);   // PER-BAND: below=amber / on=green / above=red (not one verdict hue)
     const n = g.k === "below" ? market.below : g.k === "on" ? market.at : market.above;
-    return { k: g.k, x0: spx(g.a), x1: spx(g.b), col: g.on ? POS_RICH[g.k] : POS_SOFT[g.k], on: g.on, n };
+    return { k: g.k, x0: spx(g.a), x1: spx(g.b), col: g.on ? MKT_RICH[tone] : MKT_SOFT[tone], on: g.on, n };
   });
   const cF = v === "above" ? lerpC(s2, s3, (lean - T) / (1 - T))
            : v === "below" ? lerpC(s0, s1, (lean + 1) / (1 - T))
@@ -642,11 +639,12 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
       Your overall position appears once enough of your data is comparable.</div></div>`;
   const v = market.verdict;                                   // "below" | "at" | "above"
   const word = verdictWord(v);                                // shared verdict-text helper
-  // The BANDS are a NEUTRAL slate ramp (below->on->above by lightness, NO valence — 2026-06-30
-  // Q3=Mirror) — the factual composition, sized by count, and must never hide the gap. The VERDICT
-  // WORD carries NO good/bad colour ("mirror, not consultant"): it renders in neutral ink,
-  // IDENTICAL on Strategy ON and OFF — the on-target meaning lives only in the footer line. The
-  // donut bands carry no good/bad hue; the word never judges below/on/above as success or failure.
+  // The BANDS stay ABSOLUTE RAG (below=red, on=amber, above=green) — they're the
+  // factual composition, sized by count, and must never hide the gap. The VERDICT
+  // WORD carries NO good/bad colour (2026-06-23, "mirror, not consultant"): the verdict
+  // word renders in neutral ink, IDENTICAL on Strategy ON and OFF — the on-target meaning
+  // lives only in the footer line. The donut bands keep their position colour; the word
+  // never judges below/on/above as success or failure.
   // (Retired 2026-06-27: the pre-Donut proportional-arc render — bands / seam ticks / needle,
   // all computed here but never rendered since the Donut replaced the dial — is removed along
   // with the attainment lens it depended on. The live gauge is the <Donut> below, per-band by
@@ -660,11 +658,12 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
   // below; strategy-off already showed these position strings, so strategy-on now matches (on==off).
   const headWord = word;
   const headLean = leanWord;
-  // NEUTRALISED 2026-06-30 (Q3=Mirror) — the ring colours by the neutral POS_SOFT/POS_RICH slate
-  // ramp keyed by band (below->on->above by lightness, NO valence), the verdict band richer so the
-  // eye lands. Strategy NEVER enters the gauge colour (on==off parity). The alignment relationship
-  // lives in the navy AlignmentChip below; direction is read from the lightness order + the
-  // neutral-ink verdict WORD + legend — colour no longer judges below/on/above as good/bad.
+  // PASS 1 (RAG/strategy separation, 2026-06-27) — the ring colours by POSITION, not
+  // attainment: each band carries its OWN marketTone hue (below=amber / on=green / above=red),
+  // the verdict band richer so the eye lands. Strategy NEVER enters the gauge colour now, so
+  // strategy-off and strategy-on render the SAME hue per band (on==off colour parity — the
+  // canary). The alignment relationship moved OUT of colour and INTO the navy AlignmentChip
+  // below. (Pass 5 also moved the verdict WORD to position — _onTarget is fully retired.)
 
   return html`
     <div class="card arc-card">
@@ -676,9 +675,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
         <${Donut}
           segments=${[
-            { value: market.below, color: (v === "below" ? POS_RICH : POS_SOFT).below },
-            { value: market.at, color: (v === "at" ? POS_RICH : POS_SOFT).at },
-            { value: market.above, color: (v === "above" ? POS_RICH : POS_SOFT).above },
+            { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
+            { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
+            { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
           ]}
           total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${210} stroke=${28} />
       </div>
@@ -914,18 +913,18 @@ const SIG_POSITIONS = [
 ];
 const SIG_DOMAINS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing", "Recognition", "Governance"];
 const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above market", differs: "differs from market", practice: "differs from peers" };
-// Solid per-signal tone for the signals distribution bar/legend (CHANNEL B — the per-metric
-// surface, NOT the neutralised Position card). below=amber / on=green; approach (differs) → purple.
-// Q4 (2026-06-30): above-market → "neutral" (--chart-band-mid), never --unfavourable — an
-// above-market position is favourable-adjusted (better than peers), so it must not read as alarm.
+// Solid stance-aware colour for a market position — the SAME palette the home gauge
+// uses, so the two surfaces speak one colour language (on the aim = green, past it =
+// amber, short of it = red). Approach (differs) carries no market stance → purple.
 const SIG_TONE_SOLID = { green: "var(--favourable)", amber: "var(--amber-bright)",
   red: "var(--unfavourable)", neutral: "var(--chart-band-mid)", approach: "var(--differs)" };
-function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[k === "above" ? "neutral" : marketTone(k)]; }
-// The factual position word stays true to the number; the per-signal COLOUR is polarity-aware.
-// Approach metrics (differs) and non-competitive practice signals (practice) carry no market
-// position → purple; neutral-polarity metrics are context → navy; lower-is-better metrics flip
-// (below the market = good = green, above = worse = red). Higher-is-better ABOVE market → neutral
-// grey (Q4, 2026-06-30): better-than-peers must never tag as the alarm red.
+function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k)]; }
+// The factual position word stays true to the number; the COLOUR is direction-corrected
+// absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
+// better than market green. Approach metrics (differs) and non-competitive practice
+// signals (practice) carry no market position → purple; neutral-polarity metrics are
+// context → navy; lower-is-better metrics flip (below the market = good = green, above
+// = worse = red).
 // severity ADVERB (Ruling A, 2026-06-26): per-metric REAL-TERMS %-gap from the peer median
 // calibrates the verdict word, mirroring the hero's depth adverb but per-metric (a reward director
 // judges materiality in gap SIZE, not percentile rank — so the hero stays percentile, the signal
@@ -944,9 +943,7 @@ function posTag(s) {
   if (s.position === "differs")  return { text, tone: "approach", hint: "" };
   const adv = severityAdverb(s);
   if (s.polarity === "lower")    return { text: adv + text, tone: s.position === "below" ? "green" : "red", hint: "lower is better" };
-  // Q4 (2026-06-30): higher-is-better ABOVE market → "neutral", not marketTone "red" — above is
-  // better-than-peers (favourable-adjusted), so it must not tag as alarm. below/on keep their tone.
-  return { text: adv + text, tone: s.position === "above" ? "neutral" : marketTone(s.position), hint: "" };
+  return { text: adv + text, tone: marketTone(s.position), hint: "" };
 }
 // ANCHOR PROVENANCE mark (stage 2, ruling B, 2026-06-26): the market-median anchor's source quality —
 // a QUIET, TEXT-ONLY mark on the figure line (so it composes near "market median £Y", distinct from the
@@ -1214,15 +1211,21 @@ function CategoryTile({ d, pending, aim, view }) {
   const evCount = ev ? ev.polarised + ev.practice : 0;
   const evNote = ev ? ("based on " + evCount + " positioned metric" + (evCount === 1 ? "" : "s") +
     (indicative ? " — indicative, not a full market verdict" : "")) : "";
-  // NEUTRALISED 2026-06-30 (Q3=Mirror) — tile chip / top-border / bar colour by the neutral POS
-  // slate ramp keyed by verdict band (below->on->above by lightness, NO valence), strategy-
-  // INVARIANT (on==off parity). The alignment relationship rides the compact navy AlignmentChip in
-  // the header. The chip TEXT stays the direction word (below / on market / above); no verdict
-  // (practice / no market rate) → practice tint. An above-market tile reaches POS_VCLS "v-pos-hi"
-  // (deep slate) + chip-pos-hi — a neutral category, NOT an alarm; above=red is gone (Q4).
+  // PASS 2 (RAG/strategy separation, 2026-06-27) — tile chip / top-border / bar colour by
+  // POSITION, not attainment: tone = marketTone(verdict) (below=amber / on=green / above=red),
+  // strategy-INVARIANT. Was ATTAIN_ALIGN[d.target.alignment] / attainTone(verdict, aim) — the
+  // org's aim recolouring the position. The alignment relationship now rides the compact navy
+  // AlignmentChip in the header (strategy-on only); strategy never enters the tile hue, so
+  // strategy-off and strategy-on render the SAME per-tile colour (on==off parity). The chip
+  // TEXT stays the direction word (below / on market / above); no verdict (practice / no market
+  // rate) → practice tint. R3: an above-market tile now reaches marketTone "red" → the v-above
+  // border + chip-bad, previously unreachable under the attainment lens (which only emitted
+  // green/amber/grey). (v-above-over / "redover" stays retired — it was a strategy-overshoot
+  // concept with no meaning in the pure position lens.)
+  const tone = verdict ? marketTone(verdict) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : noRate ? "no market rate" : "practice view";
-  const chipCls = verdict ? POS_CHIP[verdict] : "chip-practice";
-  const vCls = verdict ? POS_VCLS[verdict] : "v-practice";
+  const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
+  const vCls = tone ? MKT_VCLS[tone] : "v-practice";
   const positioned = !pending && post && post.pool > 0;
   const vKey = verdict === "below" ? "below" : verdict === "above" ? "above" : "on";
   const segs = positioned ? [{ k: "below", n: post.below }, { k: "on", n: post.at }, { k: "above", n: post.above }] : [];
@@ -1250,9 +1253,9 @@ function CategoryTile({ d, pending, aim, view }) {
           <div class="cat-bar" title=${evNote} role="img"
             aria-label=${post.below + " below, " + post.at + " on market, " + post.above + " above. " + evNote}>
             <div class="cat-bar-track">
-              ${segs.map(s => {   /* whole bar = one neutral slate step (the verdict band); the marker carries direction */
+              ${segs.map(s => { const st = tone;   /* FIX 1: whole bar = one attainment hue (per-domain via d.target); the marker carries direction */
                 return html`<div key=${s.k} class="cat-bar-seg"
-                  style=${{ width: (100 * s.n / post.pool).toFixed(2) + "%", background: s.k === vKey ? POS_RICH[verdict] : POS_SOFT[verdict] }}></div>`; })}
+                  style=${{ width: (100 * s.n / post.pool).toFixed(2) + "%", background: s.k === vKey ? MKT_RICH[st] : MKT_SOFT[st] }}></div>`; })}
             </div>
             <div class="cat-bar-mark" style=${{ left: (markFrac * 100).toFixed(1) + "%" }}><i></i></div>
           </div>
@@ -1588,13 +1591,16 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const indicative = hero && hero.position_basis === "indicative";
   const ev = hero && hero.position_evidence;
   const evC = ev ? ev.polarised + ev.practice : 0;
-  // NEUTRALISED 2026-06-30 (Q3=Mirror): the category-detail hero chip colours by the neutral POS
-  // slate ramp keyed by verdict band (below->on->above by lightness, NO valence), strategy-
-  // INVARIANT (on==off parity). The alignment relationship rides the navy AlignmentChip beside the
-  // verdict chip. aim is still read for the MarketSpectrum's spatial aim bracket.
+  // PASS 4 (RAG/strategy separation, 2026-06-27): the category-detail hero chip colours by
+  // POSITION, not attainment — tone = marketTone(verdict) (below=amber / on=green / above=red),
+  // strategy-INVARIANT. Was ATTAIN_ALIGN[hero.target.alignment] / attainTone(verdict, aim). The
+  // alignment relationship now rides the navy AlignmentChip beside the verdict chip (strategy-on
+  // only); strategy never enters the hero hue → strategy-off and strategy-on render the SAME chip
+  // colour (on==off parity). aim is still read for the MarketSpectrum's spatial aim bracket.
   const aim = marketAim(ov.hero && ov.hero.market);
+  const tone = verdict ? marketTone(verdict) : null;
   const chip = verdict === "below" ? "below" : verdict === "above" ? "above" : verdict ? "on market" : "practice view";
-  const chipCls = verdict ? POS_CHIP[verdict] : "chip-practice";
+  const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
   const dot = hero && hero.dot;
   // counts-reconciliation (2026-06-28): the <20 thin-cut caveat must reach the DOMAIN page too —
@@ -1602,12 +1608,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // user reading §1/§2/grid at n=15 sees no warning. Same window [5, 20) + insights-unlocked gate.
   const sampleN = cutSize(cut, cuts, me.peer_pool);
   const thinSample = !!(ov.contribution && ov.contribution.insights_unlocked) && sampleN != null && sampleN >= 5 && sampleN < 20;
-  // §1 (domain-page): two donuts via the shared <Donut>. CARD A (position) — neutral POS slate
-  // segments by band + a verdict-WORD centre (verdictWord/leanCaption, the SAME helpers as the home
-  // gauge). CARD B (prevalence/alignment) — its OWN blue palette (practice is not a market
-  // position), a count-HEADLINE centre, no alignment chip. The two palettes (slate vs blue) stay
-  // visually distinct so a member never confuses position with alignment.
-  const posSegs = posM ? ["below", "at", "above"].map(k => ({ value: posM[k] || 0, color: (verdict === k ? POS_RICH : POS_SOFT)[k] })) : [];
+  // §1 (domain-page Pass 1, 2026-06-27): two RAG donuts via the shared <Donut>. CARD A (position)
+  // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
+  // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
+  // practice is not a market position), a count-HEADLINE centre, no alignment chip.
+  const posSegs = posM ? ["below", "at", "above"].map(k => ({ value: posM[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
   const prevSegs = [
     { value: prev.with_majority || 0, color: "var(--blue-deep)" },
     { value: prev.established || 0, color: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))" },

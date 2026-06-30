@@ -1049,13 +1049,6 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-tile.v-at { border-top-color: var(--favourable); }
 .cat-tile.v-practice { border-top-color: var(--blue-tint-2); }
 .cat-tile.v-neutral-mkt { border-top-color: var(--grey-neutral); }   /* FIX 1: strategy-off attainment border */
-/* Position neutralised (2026-06-30, Q3=Mirror): the ordinal SLATE ramp — below->on->above by
-   lightness, NO valence. Distinct from .v-below/.v-at/.v-above (the shared good/bad tokens, left
-   intact for other uses) and from the blue Alignment palette. above=v-pos-hi is deep slate, a
-   neutral category — never the unfavourable red (Q4). */
-.cat-tile.v-pos-lo  { border-top-color: color-mix(in srgb, var(--grey-neutral) 34%, var(--surface)); }
-.cat-tile.v-pos-mid { border-top-color: color-mix(in srgb, var(--grey-neutral) 58%, var(--surface)); }
-.cat-tile.v-pos-hi  { border-top-color: var(--grey-neutral-ink); }
 /* FIX 5 (2026-06-23) — caveat distinction. "no market rate / N/A" (Governance: no peer
    data exists at all) reads as a MUTED, disabled-feeling card — distinct from the inline
    "indicative" caveat (a verdict shown on thin coverage: .chip-indicative + .indic-flag),
@@ -1095,13 +1088,6 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 /* FIX 1 — strategy-attainment OFF (no stance set): a neutral grey verdict chip. The label
    uses --grey-neutral-ink (AA-safe), not the lighter swatch token. */
 .chip-neutral-mkt { background: color-mix(in srgb, var(--grey-neutral) 18%, transparent); color: var(--grey-neutral-ink); }
-/* Position neutralised (2026-06-30, Q3=Mirror): the ordinal SLATE chip ramp — below->on->above by
-   background lightness, NO valence. Distinct from .chip-good/.chip-bad/.chip-mid (shared good/bad
-   tokens, left intact). chip-pos-hi (above market) is deeper slate, a neutral category — never the
-   unfavourable red (Q4). AA-safe --grey-neutral-ink text on all three. */
-.chip-pos-lo  { background: color-mix(in srgb, var(--grey-neutral) 14%, transparent); color: var(--grey-neutral-ink); }
-.chip-pos-mid { background: color-mix(in srgb, var(--grey-neutral) 28%, transparent); color: var(--grey-neutral-ink); }
-.chip-pos-hi  { background: color-mix(in srgb, var(--grey-neutral-ink) 22%, transparent); color: var(--grey-neutral-ink); }
 /* A2: indicative-verdict tiles (thin polarised evidence — e.g. Recognition's
    single metric) are visibly distinguished from strict verdicts on the face,
    not just in the tooltip — a board-pack trust surface. */

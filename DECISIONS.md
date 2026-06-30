@@ -6705,3 +6705,18 @@ DB-level qa_overview/qa_domain_summary were run without LUMI_DB so they opened t
 triggered a benign WAL CHECKPOINT (WAL->main merge) — live lumi.db bytes changed but data is identical
 (integrity_check ok, all counts intact, no QA write). lumi.db is gitignored, so this is not in any
 commit. Lesson: point LUMI_DB at the copy for DB-level qa scripts too, not just HTTP ones.
+
+## 2026-06-30 — Position card: RAG verdict-ring RESTORED (reverts the 3aca65f neutralisation)
+Per David's decision the Market Position card returns to its EXACT pre-3aca65f RAG state via
+`git revert 3aca65f` (byte-exact inverse, NOT a hand-rewrite): marketTone below=amber / on=green /
+above=red restored; the MKT_SOFT/RICH/CHIP/VCLS performance maps back (--gauge-on/--favourable,
+--gauge-below/--amber-bright, --gauge-above/--unfavourable); Channel-A routing back through
+marketTone; posColor (921) + posTag line-946 back to marketTone (no neutral override); the four
+colour comments back; cache v292->v291. The slate pos-* classes (.v-pos-lo/mid/hi, .chip-pos-lo/mid/
+hi) are removed. ACCEPTED CONSEQUENCE (ruled, not re-opened): above-market higher-is-better again
+tags RED on the Position card, the per-signal tag, and the signals distribution bar — the Q4
+"above=red" outcome is re-accepted as intended. This SUPERSEDES the 3aca65f neutralisation
+(Q3=Mirror / Q4) — that entry is KEPT above for history; this records the reversal + rationale.
+Frontend-only: engine/routing/mp_config (positions.py from 888d606) and the Alignment card (hero
+violet, domain CARD B blue) are untouched. Commits SEPARATELY from the signals common/alternative/
+rare wording fix.
