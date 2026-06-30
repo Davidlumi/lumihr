@@ -6614,3 +6614,37 @@ gate are ALL byte-identical; no metric moved pool, no score/signal changed. git 
 underlying gate conflation (score_direction proxy vs mp_config class, 42 metrics across 5 domains)
 remains OPEN as David's mp_config-authority decision. Do NOT read this as "denominator resolved" — the
 routing is unfixed; the card is merely honest about it.
+
+## 2026-06-30 — Position card neutralised (Q3=Mirror, Q4=above-red fixed), R-slate
+The Market Position card was wearing the product's good/bad performance palette (marketTone:
+below=amber / on=green=--favourable / above=red=--unfavourable) — colour doing judgment work that
+contradicted the neutral-mirror principle, and an INVERSION (the engine favourability-adjusts, so
+"above" already means BETTER than peers, yet rendered in the alarm red). David ruled Q3=MIRROR
+(neutralise, like the already-de-judged Practice Alignment card) and Q4=YES (fix above=red
+regardless). Brief: POSITION_RING_COLOUR_DECISION_BRIEF.md.
+PALETTE: R-slate — a sequential SLATE ordinal ramp (POS_SOFT/POS_RICH, keyed by band: below->on->
+above by LIGHTNESS, --grey-neutral / --grey-neutral-ink / --surface only). NO valence token on any
+band (zero --favourable/--unfavourable/--amber-bright) => above=red is impossible BY CONSTRUCTION
+(Q4). Slate (not the approved-N1 blue) was chosen at the collision check: the domain-page Practice
+Alignment donut (CARD B) is ALREADY a blue ramp, so a blue Position ramp beside it would be
+indistinguishable. Slate is self-contained — NO Alignment surface touched (hero stays violet
+--differs, CARD B stays blue). blue=position/violet=alignment full unification (R-blue) was
+considered and DEFERRED as a separate deliberate pass, not smuggled in.
+SCOPE: Channel A (the aggregate Position card) FULLY neutralised across all 6 consumers — hero gauge
+donut, MarketSpectrum bands, domain CARD A donut, category-tile bar + border + chip — keyed by band
+name; marketTone is now CHANNEL-B-ONLY. The 4 dead valence maps (MKT_SOFT/RICH/CHIP/VCLS) were
+removed (zero refs); new neutral classes .v-pos-lo/mid/hi + .chip-pos-lo/mid/hi added; the shared
+.v-below/.v-at/.v-above + .chip-good/.chip-bad/.chip-mid left BYTE-IDENTICAL (used elsewhere).
+above=red killed on ALL THREE channels: (A) Position card -> slate; (B) per-signal tag posTag line
+946 higher-is-better above -> "neutral" (navy context), below/on tones kept; (C) signals
+distribution bar posColor -> above -> "neutral" grey (--chart-band-mid). Channel B polarity-awareness
+otherwise intact (lower-is-better below=green, neutral-polarity=navy). Four stale colour comments
+(377, 642, 917-918, 923-924) + the inline hue comments rewritten to the slate map — the file no
+longer lies about its own colours. Verdict word + legend already neutral ink (unchanged).
+QA (Thornbridge, live): hero gauge + Pay/Benefits CARD A render slate (below->on->above by lightness,
+3 distinguishable steps; deep step = slate ink, reads as category not disabled); the live above-market
+metric (REW_BEN_045) renders slate on the card, navy pos-neutral on its signal tag, grey on the
+distribution chip — NEVER red. Alignment unchanged BOTH surfaces (hero violet, CARD B blue). Shared
+good/bad classes byte-identical. Gates green (qa_release 0, qa_hero 57/57, qa_domain_summary 127/127);
+engine/routing/mp_config byte-identical; console clean; cache v291->v292. Frontend colour/display only.
+CLOSES THE ORIGINAL REVIEW'S LAST VISUAL FINDING.
