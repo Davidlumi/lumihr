@@ -657,12 +657,18 @@ def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, tw
     defensible direction: how common the org's chosen approach is vs peers."""
     out = []
     twin_blocks_by_q = twin_blocks_by_q or {}
+    cfg = market_position_config()                      # Q1=C: routing authority (read-only, hot-reloaded, cached)
     for qid, q in questions.items():
         if not entitled(q) or q.type not in ("single_select", "yes_no"):
             continue
+        cls = (cfg.get("metrics", {}).get(qid) or {}).get("class")
         polarised = q.polarity in ("higher_is_better", "lower_is_better")
-        if polarised and q.is_scored and score_direction(q) != 0:
-            continue  # has a defensible rank -> market position handles it
+        # Q1=C routing (2026-06-30): Practice/Design route by mp_config class (always -> alignment);
+        # Level/Provision — and any UNCLASSIFIED metric (cls None) -> safe legacy default — keep
+        # score_direction routing. Scoring is untouched: this gate only reads score_direction, never
+        # alters it; score_answer/score_polarity (aggregate.py) are byte-identical.
+        if cls not in ("Practice", "Design") and polarised and q.is_scored and score_direction(q) != 0:
+            continue  # Level/Provision with a defensible rank -> market position handles it
         raw = org_answers.get((qid, ""))
         if raw is None:
             continue

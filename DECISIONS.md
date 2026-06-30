@@ -6648,3 +6648,39 @@ distribution chip — NEVER red. Alignment unchanged BOTH surfaces (hero violet,
 good/bad classes byte-identical. Gates green (qa_release 0, qa_hero 57/57, qa_domain_summary 127/127);
 engine/routing/mp_config byte-identical; console clean; cache v291->v292. Frontend colour/display only.
 CLOSES THE ORIGINAL REVIEW'S LAST VISUAL FINDING.
+
+## 2026-06-30 — Q1=C routing applied (FIRST engine-logic change in the sequence)
+The prevalence/position gate at positions.py:664 now routes Practice/Design by mp_config CLASS
+(always -> alignment); Level/Provision — and any unclassified metric (safe legacy default) — keep
+score_direction routing. The one edit: hoist `cfg = market_position_config()` once in
+prevalence_items, then guard the existing exclusion with `cls not in ("Practice","Design")` where
+`cls = (cfg.get("metrics", {}).get(qid) or {}).get("class")`. (NOTE: lookup is via .get("metrics") —
+market_position_config() returns the FULL JSON, not the metrics dict; the diagnosis's top-level
+.get(qid) would have silently no-op'd.) In-module loader, NO signature change, NO call-site churn
+(app.py:1416/1521/1679/1763/3832 untouched). Brief: PREVALENCE_ROUTING_DECISION_BRIEF.md (Q1=C, Q2=3
+amounts neutral).
+RESULT: 43 metrics re-home NEITHER->alignment (42 Practice + CAR_COST_02 Design): Pay +7 / Benefits
++10 / Time Off +13 / Governance +13 / Incentives,Recognition,Wellbeing +0. The 5 contested Level
+(PROP_634adacd, RED_COST_01, REW_PAY_HOURLY_MIN_1c6e096f, EXT_REW_GAP_002/007) STAY in alignment, OUT
+of gauge — Q2's 3 amounts (Level+neutral) land out of the gauge with NO direction correction (path:
+gauge_eligible needs Level/Provision+higher; neutral => out).
+SCORES BYTE-IDENTICAL (the blocking gate, PROVEN): snapshot of score_answer over every metric x every
+option label (5552 entries / 844 questions) BEFORE vs AFTER = ZERO diff. ALLOW_02 0.0 / RED_PROC_01
+100.0 / REW_BEN_SICK_001 33.33 unchanged. prevalence_items reads score_direction but never alters it;
+score_answer/score_polarity (aggregate.py) untouched. GAUGE byte-identical every domain (C adds
+nothing to the gauge). signals.py / claude_api.py / data/market_position_config.json untouched (read-
+only); AI privacy boundary intact — the re-homes are unit-less Practice/Design approach questions
+(no £/level), and build_domain_summary_payload carries prevalence COUNTS not levels.
+KNOWN DEBT (ruling d): the 19 de-dups (14 Provision / 5 Level) remain double-counted in the two
+donuts BY DESIGN — C does not touch Level/Provision routing. The honest-header union keeps the
+member-facing "rated" count correct (Pay not-yet-rated 18->11, Gov 18->5), so the debt is visual-only
+(the two donuts vs the headline). De-dup resolution, if ever wanted, is a separate ruled pass touching
+Level routing. Reconciles with the global-flip blast-radius: C avoids the 5 collateral regressions the
+flip caused, leaves the 19 de-dups as debt — strictly additive.
+GATES: qa_release 0, qa_hero 57/57, qa_domain_summary 127/127 GREEN. Two PRE-EXISTING failures
+(qa_overview 5b leanWord/depth_pctl render assertion; qa_focus boardpack pack_id) reproduce IDENTICALLY
+on committed code with this edit stashed — NOT introduced by Q1=C, unrelated to routing, flagged for a
+separate look. Backend-only change: no web/ asset touched, so NO cache bump (the new routing surfaces
+via API data, not ?v=-gated assets). Unclassed-default: 0 live select metrics lack a class (no
+fall-through today; safe degrade for future releases). FIRST engine-logic change; scores proven
+untouched.
