@@ -6590,3 +6590,27 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   the cache purge is a runtime DB delete, not a tracked file). .claude/launch.json (local master-on demo)
   excluded. OPEN: the denominator gap — 12 Pay metrics neither positioned nor alignment-rated (12 + 35 =
   47 of 59) — is a SEPARATE finding, not resolved here; next.
+
+## 2026-06-30 — Pay denominator: interim honest-header (Option B, copy/display only, pure-frontend)
+The category header (web/js/pages.js, SectionPage) now reads "{N} benchmarks · {R} rated · {X} not
+yet rated" instead of just "{N} benchmarks". Arithmetic closes (R + X = N; Pay = 59 = 41 + 18). The
+two donuts are subset lenses that don't sum (position 12 + alignment 35 = 47, with 6 in BOTH); the
+header discloses the DISTINCT-rated union (41) so a member can reconcile, and a hover tooltip/aria
+explains the non-sum ("41 rated = 12 positioned + 35 aligned (6 counted in both). 18 not yet rated.").
+Derived live from the per-card pool flags the page already holds (market_band ⇔ position donut,
+prevalence_band ⇔ alignment donut); a card in both pools is ONE card in `cards`, so the 6-overlap is
+counted once intrinsically — no overlap arithmetic to drift, no literal 59/41/18. Wording is "not yet
+rated" (NOT "recorded") because some of the remainder are unanswered, so "recorded" would be a false
+claim; "not yet rated" is true regardless of answered state. Graceful degradation verified both paths:
+recorded===0 drops the third clause ("4 benchmarks · 4 rated"); the reduced/data-pending contributor
+state (cards carry no band fields) suppresses the clause entirely ("27 benchmarks"), never "0 rated".
+Rendered + confirmed on Thornbridge for Pay (59=41+18), Recognition (11=10+1), Governance (50=32+18,
+no position donut — tooltip adaptively drops the empty "positioned" term: "32 rated = 32 aligned.").
+ISOLATION: pure frontend. positions.py / aggregate.py / mp_config / score_direction / polarity / the
+gate are ALL byte-identical; no metric moved pool, no score/signal changed. git diff = pages.js header
++ tooltip + degrade guard + cache bump (v290→v291). Gates green: qa_release (0 failures), qa_hero
+(57/57), qa_domain_summary (127/127). This is TRUTHFUL DISCLOSURE OF THE GAP, NOT the routing fix. The
+18 "not yet rated" (incl. the 7 single_select/yes_no routing orphans) remain in neither pool. The
+underlying gate conflation (score_direction proxy vs mp_config class, 42 metrics across 5 domains)
+remains OPEN as David's mp_config-authority decision. Do NOT read this as "denominator resolved" — the
+routing is unfixed; the card is merely honest about it.

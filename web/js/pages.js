@@ -1404,6 +1404,27 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     g.cards.push(c);
   }
   bySub.sort((a, b) => a.order - b.order);
+  // Honest-header (interim, 2026-06-30): disclose rated-vs-recorded so the two donut
+  // subset-lenses reconcile with the "N benchmarks" headline. PURE DISPLAY — derived
+  // from the pool flags each card already carries (market_band ⇔ position donut,
+  // prevalence_band ⇔ alignment donut). A card in BOTH pools is one card in `cards`,
+  // so the union counts each metric ONCE (no overlap arithmetic to drift). Respects the
+  // active filters because it reads the same post-filter `cards` the headline counts.
+  // NOT the routing fix — the "not yet rated" remainder is the open gate-conflation gap.
+  const _positioned = cards.filter(c => c.market_band).length;
+  const _aligned = cards.filter(c => c.prevalence_band).length;
+  const _both = cards.filter(c => c.market_band && c.prevalence_band).length;
+  const _rated = cards.filter(c => c.market_band || c.prevalence_band).length;
+  const _recorded = cards.length - _rated;
+  const _ratedParts = [_positioned ? `${_positioned} positioned` : null,
+                       _aligned ? `${_aligned} aligned` : null].filter(Boolean).join(" + ");
+  const _ratedTip = `${_rated} rated${_ratedParts ? " = " + _ratedParts : ""}`
+    + (_both ? ` (${_both} counted in both)` : "")
+    + (_recorded ? `. ${_recorded} not yet rated.` : ".");
+  // Suppressed in the reduced/data-pending contributor state: those cards carry no band
+  // fields, so any count would be a false "0 rated". Show the plain headline instead.
+  const _ratedClause = data.reduced ? null : html`<span style=${{ cursor: "help", borderBottom: "1px dotted currentColor" }}
+    title=${_ratedTip} aria-label=${_ratedTip}> · ${_rated} rated${_recorded ? ` · ${_recorded} not yet rated` : ""}</span>`;
   return html`
     <div>
       <div class="page-head">
@@ -1411,7 +1432,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
           <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
           <div>
             <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
-            <div class="caption meta">${cards.length} benchmarks${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
+            <div class="caption meta">${cards.length} benchmarks${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
         <div class="controls" style=${{ alignItems: "flex-start" }}>
