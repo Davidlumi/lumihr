@@ -904,21 +904,27 @@ const SIG_TABS = [
 // the NON-MARKET bucket: signals on a non-competitive domain (Governance) which has no
 // market rate, so they read "differs from peers", never a market verdict (Governance
 // scoping ruling — signals layer; same competitiveness flag the hero scopes by).
-const SIG_POSITIONS = [
-  { k: "below", label: "below market" },
-  { k: "on", label: "on market" },
-  { k: "above", label: "above market" },
-  { k: "differs", label: "differs from market" },
-  { k: "practice", label: "differs from peers" },
-];
 const SIG_DOMAINS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing", "Recognition", "Governance"];
-const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above market", differs: "differs from market", practice: "differs from peers" };
+// Per-row Position fallback text. The rendered row tag is s.tag (so Practice rows now read their
+// own common/alternative/rare tag directly); this is only a defensive fallback for a Position row
+// that somehow lacks a tag. The differs/practice entries retired with the chip re-bucket (2026-06-30).
+const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above market" };
 // Solid stance-aware colour for a market position — the SAME palette the home gauge
 // uses, so the two surfaces speak one colour language (on the aim = green, past it =
 // amber, short of it = red). Approach (differs) carries no market stance → purple.
 const SIG_TONE_SOLID = { green: "var(--favourable)", amber: "var(--amber-bright)",
   red: "var(--unfavourable)", neutral: "var(--chart-band-mid)", approach: "var(--differs)" };
 function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k)]; }
+// chip dot/bar colour by BUCKET: below/on/above keep the restored RAG (byte-identical to posColor
+// for those positions); common/alternative/rare = the practice violet; peer position + context =
+// neutral (no RAG). Used by the signals chips, which now group by s.bucket.
+function bucketColor(b) {
+  if (b === "below market") return SIG_TONE_SOLID.amber;
+  if (b === "on market")    return SIG_TONE_SOLID.green;
+  if (b === "above market")  return SIG_TONE_SOLID.red;
+  if (b === "peer position" || b === "context") return SIG_TONE_SOLID.neutral;
+  return SIG_TONE_SOLID.approach;   // common / alternative / rare
+}
 // The factual position word stays true to the number; the COLOUR is direction-corrected
 // absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
 // better than market green. Approach metrics (differs) and non-competitive practice
@@ -937,7 +943,7 @@ function severityAdverb(s) {
   return (g > 40 ? "clearly " : g >= 15 ? "moderately " : "marginally ");
 }
 function posTag(s) {
-  const text = POS_TAG_TEXT[s.position] || "differs from market";
+  const text = POS_TAG_TEXT[s.position] || "";   // fallback only; the row renders s.tag
   if (s.position === "practice") return { text, tone: "approach", hint: "" };
   if (s.polarity === "neutral") return { text, tone: "neutral", hint: "context, not a verdict" };
   if (s.position === "differs")  return { text, tone: "approach", hint: "" };
@@ -1081,14 +1087,23 @@ window.SignalsPage = function ({ me }) {
   // engine principle #5 — so they're excluded from the position bar/chip composition
   // (which is absolute RAG via posColor). They still render as rows with their navy
   // "context, not a verdict" tag, and stay reachable under the position filter.
-  const posCounts = {}; triaged.forEach(s => { if (s.polarity === "neutral") return; posCounts[s.position] = (posCounts[s.position] || 0) + 1; });
+  // CHIPS (2026-06-30): group by the server-computed s.bucket (ONE source). Neutral lands in the
+  // "context" bucket (no longer skipped). SIG_BUCKETS = the chip order; the three prevalence words
+  // come from window.PRACTICE_STATES (published from practice_axis) so no prevalence literal lives
+  // in the JS. below/on/above market unchanged; empty buckets auto-hide via filter(p=>posCounts[p.k]).
+  // chip list derived from the signals themselves: distinct s.bucket, ordered by s.bucket_order
+  // (both computed server-side from practice_axis). No window global, no prevalence literal in the JS;
+  // empty buckets never appear because only buckets that have a signal are listed.
+  const _bo = {}; triaged.forEach(s => { if (s.bucket != null && !(s.bucket in _bo)) _bo[s.bucket] = s.bucket_order; });
+  const SIG_BUCKETS = Object.keys(_bo).sort((a, b) => _bo[a] - _bo[b]).map(k => ({ k, label: k }));
+  const posCounts = {}; triaged.forEach(s => { posCounts[s.bucket] = (posCounts[s.bucket] || 0) + 1; });
   const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab emptied falls back
   // NEW-DATA filters (scoped B, 2026-06-26): provenance + risk are INDEPENDENT predicates that AND with the
   // position single-select — a director wants "below market AND verified source", not either/or. Pure VIEW op.
   const isVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.anchor_grade === "C";
   const provCount = triaged.filter(isVerified).length;
   const riskCount = triaged.filter(s => s.risk_framed).length;
-  const visible = triaged.filter(s => effPos === "all" || s.position === effPos)
+  const visible = triaged.filter(s => effPos === "all" || s.bucket === effPos)
     .filter(s => !provF || isVerified(s)).filter(s => !riskF || s.risk_framed);
   const order = groupBy === "domain" ? SIG_DOMAINS : LENS_ORDER;
   const groups = order.map(k => ({ key: k,
@@ -1102,7 +1117,7 @@ window.SignalsPage = function ({ me }) {
       <span class="signal-body">
         <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
         <span class="sig-stand">${s.stand || s.detail}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
-      <span class=${"pos-tag pos-" + pt.tone}>${pt.text}</span>
+      <span class=${"pos-tag pos-" + pt.tone}>${s.tag || pt.text}</span>
       <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
     </div>`; };
 
@@ -1127,19 +1142,19 @@ window.SignalsPage = function ({ me }) {
           </div>` : html`
         <div class="sig-summary card">
           <div class="sig-summary-top">
-            <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + (POS_TAG_TEXT[effPos] || effPos)}</span>
+            <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + effPos}</span>
             ${data.strategy_objective && html`<span class="sig-strat-order" title="Each area is ordered for your stance — pins stay on top. Set in your reward strategy.">
               <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
           </div>
           <div class="sig-bar" role="img" aria-label="Signals by market position">
-            ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: posColor(p.k) }}></span>`)}
+            ${SIG_BUCKETS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: bucketColor(p.k) }}></span>`)}
           </div>
           <div class="sig-controls">
             <div class="sig-chips">
               <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${triaged.length}</span></button>
-              ${SIG_POSITIONS.filter(p => posCounts[p.k]).map(p => html`
+              ${SIG_BUCKETS.filter(p => posCounts[p.k]).map(p => html`
                 <button key=${p.k} class=${"sig-chip" + (effPos === p.k ? " on" : "")} aria-pressed=${effPos === p.k} onClick=${() => setPosF(effPos === p.k ? "all" : p.k)}>
-                  <span class="sig-chip-dot" style=${{ background: posColor(p.k) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
+                  <span class="sig-chip-dot" style=${{ background: bucketColor(p.k) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
             </div>
             ${(provCount || riskCount) ? html`<div class="sig-filters" role="group" aria-label="Show only">
               <span class="sig-filters-lbl">show only</span>

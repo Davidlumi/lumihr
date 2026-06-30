@@ -25,6 +25,7 @@ TRUST RULES (enforced here, asserted by qa_hero):
 import json
 import os
 
+import practice_axis                       # single source for the prevalence words (common/alternative/rare)
 from db import get_conn
 
 CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
@@ -811,9 +812,9 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                     s["impact"] = 10000 + _pct * 10
                 elif _m.get("class") in ("Practice", "Design"):
                     # a yes/no approach with no clear majority — a peer-framed approach note
-                    s["kind"] = "approach"; s["tag"] = "DIFFERS FROM PEERS"
-                    s["stand"] = "your approach differs from the peer norm"
-                    s["detail"] = "your approach to %s differs from the peer norm" % _ttl
+                    s["kind"] = "approach"; s["tag"] = "AN %s CHOICE" % practice_axis.bucket_word("established").upper()
+                    s["stand"] = "an %s to the peer norm" % practice_axis.bucket_word("established")
+                    s["detail"] = "your approach to %s is an %s to the peer norm" % (_ttl, practice_axis.bucket_word("established"))
                     s["value_display"] = ""
                     s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
                     s["impact"] = 9000
@@ -868,10 +869,10 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 # market median" verdict never leaks into the persisted signal
                 # state or the change-alert email (notifications.py reads detail).
                 s["kind"] = "approach"
-                s["tag"] = "DIFFERS FROM MARKET"
-                s["stand"] = "your approach differs from the market norm"
+                s["tag"] = "AN %s CHOICE" % practice_axis.bucket_word("established").upper()
+                s["stand"] = "an %s to the market norm" % practice_axis.bucket_word("established")
                 s["value_display"] = ""
-                s["detail"] = "your approach to %s differs from the market norm" % _ttl
+                s["detail"] = "your approach to %s is an %s to the market norm" % (_ttl, practice_axis.bucket_word("established"))
                 s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
                 s["impact"] = 9000          # below floor-level prevalence; a no-verdict flag ranks lower
         # FIX 4 (2026-06-23) — PRACTICE-TAB VOCABULARY FIREWALL (the differs lane). The recast
@@ -898,11 +899,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 s["label_short"] = "of peers %s" % _short(_fttl)
                 s["detail"] = "of peers %s — your approach differs" % _fttl
             elif _m.get("class") in ("Practice", "Design"):
-                s["tag"] = "DIFFERS FROM PEERS"
-                s["stand"] = "your approach differs from the peer norm"
+                s["tag"] = "AN %s CHOICE" % practice_axis.bucket_word("established").upper()
+                s["stand"] = "an %s to the peer norm" % practice_axis.bucket_word("established")
                 s["value_display"] = ""
                 s["label_short"] = s.get("name") or _short(_q.display_title if _q else "")
-                s["detail"] = "your approach to %s differs from the peer norm" % _fttl
+                s["detail"] = "your approach to %s is an %s to the peer norm" % (_fttl, practice_axis.bucket_word("established"))
             else:
                 _fhigh = "HIGHER" in _ftag
                 s["tag"] = "HIGHER THAN PEERS" if _fhigh else "LOWER THAN PEERS"
@@ -952,6 +953,33 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             s["confirm"] = True
             s["impact"] = round((s.get("impact") or 0) * CONFIRM_DEMOTE_MULT)
     out = [s for s in out if not s.get("_suppress")]
+    # CHIP BUCKET (2026-06-30): ONE place computes each signal's filter chip, so the frontend
+    # renders/counts/filters by s["bucket"] only — no prevalence-word literals in the JS. Precedence:
+    # neutral FIRST (-> context, keeps neutral-below out of below-market), then Position RAG, then the
+    # prevalence tag via practice_axis (single word source: common/alternative/rare). Tags are final
+    # here (the approach recast above already set "AN ALTERNATIVE CHOICE"). DISPLAY-only — no effect
+    # on position/kind/impact/ranking/the gauge.
+    # canonical chip order (Position axis, then Prevalence common->alternative->rare, then Context);
+    # bucket_order ships per-signal so the frontend orders chips WITHOUT knowing the prevalence words.
+    _BUCKET_ORDER = {"below market": 0, "on market": 1, "above market": 2, "peer position": 3,
+                     practice_axis.bucket_word("with_majority"): 4, practice_axis.bucket_word("established"): 5,
+                     practice_axis.bucket_word("less_common"): 6, "context": 7}
+    for s in out:
+        if s.get("polarity") == "neutral":
+            s["bucket"] = "context"
+        elif s.get("position") in ("below", "on", "above"):
+            s["bucket"] = s["position"] + " market"
+        else:                                          # position in (differs, practice): practice / quantity
+            _btag = s.get("tag") or ""
+            if _btag in ("HIGHER THAN PEERS", "LOWER THAN PEERS"):
+                s["bucket"] = "peer position"
+            elif _btag == "COMMON — YOU DON'T":
+                s["bucket"] = practice_axis.bucket_word("with_majority")     # common
+            elif _btag == "A RARE CHOICE":
+                s["bucket"] = practice_axis.bucket_word("less_common")       # rare
+            else:                                       # approach ("AN ALTERNATIVE CHOICE")
+                s["bucket"] = practice_axis.bucket_word("established")        # alternative
+        s["bucket_order"] = _BUCKET_ORDER.get(s["bucket"], 99)
     # PER-METRIC GAP MAGNITUDE for the verdict severity adverb (clearly/moderately/marginally),
     # client-rendered on the Signals row (Ruling A, 2026-06-26). Mirrors the hero's depth adverb,
     # but per-METRIC and in REAL-TERMS %-gap from the peer median (not percentile — a reward

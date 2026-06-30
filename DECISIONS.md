@@ -6720,3 +6720,42 @@ tags RED on the Position card, the per-signal tag, and the signals distribution 
 Frontend-only: engine/routing/mp_config (positions.py from 888d606) and the Alignment card (hero
 violet, domain CARD B blue) are untouched. Commits SEPARATELY from the signals common/alternative/
 rare wording fix.
+
+## 2026-06-30 — Signal verdict vocabulary unified to common/alternative/rare + clean Position/Context axes
+ROOT CAUSE of the long-running "signals show differs from market" (the unreproducible ISSUE 2): the
+dedicated Signals-LIST Row (pages.js:1105) rendered pt.text = POS_TAG_TEXT[s.position] ("differs from
+market"/"differs from peers"), NOT s.tag — the 2026-06-29 rename updated s.tag (the home briefing, 875,
+was already correct) but missed this surface. Fix: the Row renders s.tag (so it reads its own
+COMMON—YOU—DON'T / A RARE CHOICE / AN ALTERNATIVE CHOICE tag); POS_TAG_TEXT differs/practice entries +
+the "differs from market" fallback removed.
+SINGLE WORD SOURCE: practice_axis.bucket_word(key) added (reads the existing states map: with_majority->
+common / established->alternative / less_common->rare). SURFACE 1 — the approach tag (signals.py 814/
+871/901) "DIFFERS FROM MARKET/PEERS" -> "AN ALTERNATIVE CHOICE" via bucket_word. SURFACE 3 — the verdict
+prose "your approach differs from the market/peer norm" -> "an alternative to the market/peer norm" via
+bucket_word (market/peers nuance kept in prose); the factual "X% of the market does this" kept.
+GATING FINDING (confirmed): "differs from market" vs "differs from peers" was NEVER two computations —
+it's the SAME prevalence axis labelled by domain competitiveness (signals.py:794 sets position="practice"
+only for non-competitive domains = Governance). So the collapse is data-clean; competitive/peers nuance
+kept in per-row prose, dropped from chips (David's ruling).
+CHIPS (SURFACE 2): the two "differs" chips collapsed to common/alternative/rare; the non-competitive
+Level peer-position outlier (HIGHER/LOWER THAN PEERS) -> its own "peer position" Position-axis chip (NOT
+merged into above-market — that would re-impose the Governance-stripped RAG); neutral-context -> own
+"context" chip (everything filterable; the pages.js:1084 neutral skip removed). Each signal gets a
+server-computed s["bucket"] + s["bucket_order"] (signals.py, ONE place, prevalence words via bucket_word);
+the frontend builds SIG_BUCKETS from the signals (distinct bucket, ordered by bucket_order) + counts/
+filters by s.bucket — ZERO prevalence literal in the JS, no window/me-timing dependency. (The first cut
+published window.PRACTICE_STATES from /api/me but the App-render me.config timing made it unreliable;
+dropped for the self-contained s.bucket_order — app.py/app.js reverted, not in the diff.)
+RECONCILIATION (Thornbridge all-peers): 87 signals = 76 Inbox (chipped) + 11 Dismissed. The 76 split
+below 46 · above 1 · peer position 1 · common 16 · alternative 4 · rare 7 · context 1 = 76 (every signal
+in exactly one chip; filter count==rows, e.g. common 16==16). Over signals_all (87): below 51/above 1/
+peer 1/common 21/alternative 4/rare 7/context 2.
+ISOLATION: Position RAG (below/above, restored in 57e9236) BYTE-IDENTICAL — above=red intact (HIGHER THAN
+MARKET -> pos-red); the re-bucket only assigns s.bucket, a COMMON—YOU—DON'T Level provision stays
+position=below -> below-market chip (rule 2 before rule 4). Engine routing (positions.py/aggregate.py/
+mp_config) untouched. Gates green on a THROWAWAY DB copy (qa_release 0, qa_hero 57/57, qa_domain_summary
+127/127, qa_overview 0, qa_prevalence_rename 70/70, qa_focus 26/0); live lumi.db byte-identical after
+(LUMI_DB redirected to the copy for the DB-level gates too — isolation lesson applied). Cache v291->v292.
+KNOWN/FLAGGED: the methodology "How lumi works" explainer (pages.js:2159/2165) still uses "differs from
+market" + a violet legend swatch — a SEPARATE educational surface explaining the market-vs-choice concept,
+not a signal tag/chip/prose. NOT changed this pass; David to rule whether it adopts the new vocab too.

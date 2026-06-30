@@ -58,6 +58,14 @@ def bucket_phrase(n, key):
     return ("%d is %s" if n == 1 else "%d are %s") % (n, word)   # rare -> "1 is rare" / "N are rare"
 
 
+def bucket_word(key):
+    """The member word for ONE prevalence bucket — the single source for the signal tags,
+    chips and prose (signals.py attaches s["bucket"] from this; the frontend renders it).
+    `key` is an engine bucket key (with_majority / established / less_common). Raises
+    KeyError on an unknown key so a typo can never render a blank chip/tag."""
+    return PRACTICE_AXIS["states"][key]   # with_majority->common · established->alternative · less_common->rare
+
+
 def with_display(prev):
     """Return the prevalence dict with display fields ADDED ALONGSIDE the frozen engine keys.
     The spread copies with_majority/established/less_common/pool through untouched; only
