@@ -6684,3 +6684,24 @@ separate look. Backend-only change: no web/ asset touched, so NO cache bump (the
 via API data, not ?v=-gated assets). Unclassed-default: 0 live select metrics lack a class (no
 fall-through today; safe degrade for future releases). FIRST engine-logic change; scores proven
 untouched.
+
+## 2026-06-30 — Two pre-existing gate failures resolved test-side (no product bug)
+qa_overview 5b: stale source-grep — broke when leanCaption was extracted (pre-baseline b3a6bcd); the
+old check grepped for depth_pctl within 600 chars of the first "leanWord" CALL SITE, but depth_pctl
+moved into the leanCaption HELPER. Retargeted to split on "function leanCaption" and check the helper
+body. Real contract still covered (sibling 5a green; and proven NOT fake-green: simulate removing
+depth_pctl from the adverb logic -> predicate goes red). qa_focus boardpack: app is CORRECT — boardpack
+AI is gated behind LUMI_AI_INSIGHTS_ENABLED (off by default pre-go-live, David's go-live action), so
+/api/boardpack/generate correctly 403s; the test assumed success and its api() helper swallowed the 403
+to {} -> KeyError pack_id. Made AI-gate-aware via me["features"]["boardpack"]: defers/passes-with-note
+when off (no crash), genuinely exercises generate->pack_id->fetch->leak/floor when on (+ api() hardened
+to surface the status, not mask it). Proven both states: AI off (default) -> deferred PASS no KeyError;
+AI on (forced on a THROWAWAY copy of lumi.db, deterministic narrative, no paid AI) -> 26 checks become
+29, boardpack genuinely tested. Test-only; no app/engine change; master AI switch untouched (David's
+go-live action). QA all green: qa_overview 0, qa_focus 26/0 (AI off), qa_hero 57/57, qa_domain_summary
+127/127, qa_release 0. Diff = only qa_overview.py + qa_focus.py. NOTE: the throwaway-DB proof was run
+correctly on a copy (board_pack inserted into the copy, not live: live board_packs stayed 92), but the
+DB-level qa_overview/qa_domain_summary were run without LUMI_DB so they opened the LIVE db read-only and
+triggered a benign WAL CHECKPOINT (WAL->main merge) — live lumi.db bytes changed but data is identical
+(integrity_check ok, all counts intact, no QA write). lumi.db is gitignored, so this is not in any
+commit. Lesson: point LUMI_DB at the copy for DB-level qa scripts too, not just HTTP ones.

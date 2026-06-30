@@ -132,9 +132,16 @@ exp_depth = round(statistics.median(pos._adj_percentile(i) for i in gauge_pool),
 check("5a. hero exposes depth_pctl == median adjusted percentile of the gauge pool",
       mkt.get("depth_pctl") is not None and exp_depth is not None and abs(mkt["depth_pctl"] - exp_depth) < 0.2,
       {"hero_depth": mkt.get("depth_pctl"), "recomputed": exp_depth})
-check("5b. render: the severity adverb (leanWord) is driven by depth_pctl, not the count lean",
-      "market.depth_pctl" in pagesjs and "depth_pctl" in pagesjs.split("leanWord", 1)[-1][:600],
-      "leanWord does not reference depth_pctl")
+# 5b retargeted 2026-06-30: the depth_pctl logic was EXTRACTED into the shared leanCaption helper
+# (pre-baseline b3a6bcd), so the old grep — depth_pctl within 600 chars of the first "leanWord"
+# CALL SITE — no longer matched (depth_pctl lives in the helper, not the call site). Look in the
+# leanCaption helper body instead. Still tests the real contract: if depth_pctl were removed from
+# the adverb logic, both "market.depth_pctl" in pagesjs AND its presence in the helper body go away.
+_lc = pagesjs.split("function leanCaption", 1)
+_lc_body = _lc[1][:600] if len(_lc) > 1 else ""
+check("5b. render: the severity adverb (leanCaption helper) is driven by depth_pctl, not the count lean",
+      "market.depth_pctl" in pagesjs and "depth_pctl" in _lc_body,
+      "leanCaption does not reference depth_pctl (adverb must read percentile DEPTH, not the count lean)")
 
 # --- 6. VERDICT VOCABULARY: below/on/above only — never lag/match/lead in user-facing strings ---
 import re
