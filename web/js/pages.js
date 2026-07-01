@@ -537,7 +537,10 @@ function MarketSpectrum({ market, aim }) {
 // centre. Replaces the needle dial (2026-06-23). Used for BOTH the market read
 // (below/on/above) and the practice read (differ/in-line); colours passed in by the
 // caller so it stays a dumb renderer. Segments draw from 12 o'clock, clockwise.
-function Donut({ segments, total, centerNum, sub, size, stroke, centerWord }) {
+// Optional onSeg (Signals redesign, 2026-07-01): when the caller keys its segments
+// (s.k) and passes onSeg, each painted arc becomes clickable (SVG visiblePainted =
+// the stroke only) and reports its key. No caller passing neither → byte-identical.
+function Donut({ segments, total, centerNum, sub, size, stroke, centerWord, onSeg }) {
   size = size || 188; stroke = stroke || 26;
   const r = (size - stroke) / 2, cx = size / 2, cy = size / 2, C = 2 * Math.PI * r;
   let acc = 0;
@@ -545,10 +548,12 @@ function Donut({ segments, total, centerNum, sub, size, stroke, centerWord }) {
     const len = total ? (s.value / total) * C : 0;
     const gap = len > 8 ? 3 : 0;             // a small breather between real segments; none for slivers
     const drawn = Math.max(0.5, len - gap);
+    const click = onSeg && s.k != null;
     const node = html`<circle key=${i} cx=${cx} cy=${cy} r=${r} fill="none" stroke=${s.color}
       stroke-width=${stroke} stroke-linecap="butt"
       stroke-dasharray=${drawn.toFixed(2) + " " + (C - drawn).toFixed(2)}
-      stroke-dashoffset=${(-acc).toFixed(2)} transform=${"rotate(-90 " + cx + " " + cy + ")"} />`;
+      stroke-dashoffset=${(-acc).toFixed(2)} transform=${"rotate(-90 " + cx + " " + cy + ")"}
+      style=${click ? { cursor: "pointer" } : null} onClick=${click ? () => onSeg(s.k) : null} />`;
     acc += len;
     return node;
   });
@@ -1017,7 +1022,8 @@ window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("inbox");
-  const [posF, setPosF] = useState("all");             // market-position filter (single-select)
+  const [axis, setAxis] = useState("market");          // Signals-OWN lens (market | practice) — local state, NEVER the shared _overview pref
+  const [posF, setPosF] = useState("all");             // bucket filter (single-select, within the axis)
   const [provF, setProvF] = useState(false);           // "verified source" filter (independent predicate)
   const [riskF, setRiskF] = useState(false);           // "risk only" filter (independent predicate)
   const [groupBy, setGroupBy] = useState("domain");    // domain · lens
@@ -1043,9 +1049,10 @@ window.SignalsPage = function ({ me }) {
       setTimeout(() => el.classList.remove("sig-group-flash"), 1700);
     }
     setJumpTo(null);
-  }, [jumpTo, tab, posF, groupBy]);
-  // surface the named domain's signals on the same page, then scroll to them
-  const goToDomain = (dom) => { setTab("inbox"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
+  }, [jumpTo, tab, posF, groupBy, axis]);
+  // surface the named domain's signals on the same page, then scroll to them.
+  // The strategy check diagnoses MARKET stance, so the jump lands on the market lens.
+  const goToDomain = (dom) => { setTab("inbox"); setAxis("market"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
   if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
   const contrib = data.contribution || {};
@@ -1083,28 +1090,34 @@ window.SignalsPage = function ({ me }) {
   // fires → rank collapses to priority?0 : saved?1 : 2 (pre-Pass-3).
   const rank = s => (s.status === "priority" ? 0 : s.confirm ? 3 : s.status === "saved" ? 1 : 2);
   const triaged = all.filter(cur.f);                              // current triage tab
-  // NEUTRAL-polarity signals (cost/spend context) are NEVER coloured by verdict —
-  // engine principle #5 — so they're excluded from the position bar/chip composition
-  // (which is absolute RAG via posColor). They still render as rows with their navy
-  // "context, not a verdict" tag, and stay reachable under the position filter.
-  // CHIPS (2026-06-30): group by the server-computed s.bucket (ONE source). Neutral lands in the
-  // "context" bucket (no longer skipped). SIG_BUCKETS = the chip order; the three prevalence words
-  // come from window.PRACTICE_STATES (published from practice_axis) so no prevalence literal lives
-  // in the JS. below/on/above market unchanged; empty buckets auto-hide via filter(p=>posCounts[p.k]).
-  // chip list derived from the signals themselves: distinct s.bucket, ordered by s.bucket_order
-  // (both computed server-side from practice_axis). No window global, no prevalence literal in the JS;
-  // empty buckets never appear because only buckets that have a signal are listed.
-  const _bo = {}; triaged.forEach(s => { if (s.bucket != null && !(s.bucket in _bo)) _bo[s.bucket] = s.bucket_order; });
-  const SIG_BUCKETS = Object.keys(_bo).sort((a, b) => _bo[a] - _bo[b]).map(k => ({ k, label: k }));
-  const posCounts = {}; triaged.forEach(s => { posCounts[s.bucket] = (posCounts[s.bucket] || 0) + 1; });
-  const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab emptied falls back
+  // AXIS + DONUT (Signals redesign, 2026-07-01): the page is scoped by a Signals-OWN
+  // Market/Practice lens (local state — never the shared _overview pref, so the two
+  // surfaces can't cross-drive). Every s.bucket lives on exactly ONE axis (buckets are
+  // disjoint + exhaustive, signals.py:967-982): market = the position reads (below/on/
+  // above market + the non-competitive peer-position outlier); practice = the three
+  // prevalence words + neutral context (context under practice per the ruling). So
+  // market + practice always reconciles to the triage tab's total — context counted
+  // once, nothing double-lives. Each axis list is already in s.bucket_order order.
+  const AXIS_BUCKETS = { market: ["below market", "on market", "above market", "peer position"],
+                         practice: ["common", "alternative", "rare", "context"] };
+  const scoped = triaged.filter(s => AXIS_BUCKETS[axis].includes(s.bucket));
+  // ONE filter source: the donut segments, its chips and the list all read the same
+  // per-bucket tally of the scoped set (server-computed s.bucket) — they cannot diverge.
+  const posCounts = {}; scoped.forEach(s => { posCounts[s.bucket] = (posCounts[s.bucket] || 0) + 1; });
+  const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab/axis emptied falls back
   // NEW-DATA filters (scoped B, 2026-06-26): provenance + risk are INDEPENDENT predicates that AND with the
   // position single-select — a director wants "below market AND verified source", not either/or. Pure VIEW op.
   const isVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.anchor_grade === "C";
-  const provCount = triaged.filter(isVerified).length;
-  const riskCount = triaged.filter(s => s.risk_framed).length;
-  const visible = triaged.filter(s => effPos === "all" || s.bucket === effPos)
+  const provCount = scoped.filter(isVerified).length;
+  const riskCount = scoped.filter(s => s.risk_framed).length;
+  const visible = scoped.filter(s => effPos === "all" || s.bucket === effPos)
     .filter(s => !provF || isVerified(s)).filter(s => !riskF || s.risk_framed);
+  // the axis donut — built from the SAME posCounts tally the chips read, coloured by
+  // bucketColor (the chip-dot palette), via the shared <Donut> primitive (:540).
+  const donutSegs = AXIS_BUCKETS[axis].map(b => ({ value: posCounts[b] || 0, color: bucketColor(b), k: b }));
+  const axisTotal = scoped.length;
+  const donutAria = axisTotal + (axis === "market" ? " market-position" : " practice") + " signal" + (axisTotal === 1 ? "" : "s")
+    + (axisTotal ? ": " + AXIS_BUCKETS[axis].filter(b => posCounts[b]).map(b => posCounts[b] + " " + b).join(", ") + "." : ".");
   const order = groupBy === "domain" ? SIG_DOMAINS : LENS_ORDER;
   const groups = order.map(k => ({ key: k,
     items: visible.filter(s => (groupBy === "domain" ? s.domain : s.lens) === k).sort((a, b) => rank(a) - rank(b)) }))
@@ -1125,9 +1138,13 @@ window.SignalsPage = function ({ me }) {
     <div class="signals-page" style=${{ maxWidth: "880px" }}>
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
-      ${unlocked ? html`<p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's signals — grounded in your peer data, never advice. Each shows where you sit against the market, or a practice most peers have that you don't; <b>we flag, you decide</b> whether it matters. Prioritise, save or dismiss to triage what's worth your attention.</p>` : null}
-      ${unlocked && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
+      ${unlocked ? html`<p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's signals — grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />` : html`
+        <div class="ov-seg sig-axis-seg" role="group" aria-label="Signals lens">
+          ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
+            <button key=${k} type="button" class=${"ov-seg-btn" + (axis === k ? " on" : "")} aria-pressed=${axis === k}
+              onClick=${() => { setAxis(k); setPosF("all"); }}>${lab}</button>`)}
+        </div>
         <div class="sig-tabs">
           ${SIG_TABS.map(t => html`<button key=${t.k} class=${"sig-tab" + (tab === t.k ? " on" : "")} onClick=${() => setTab(t.k)}>
             <${Icon} name=${t.icon} size=${14} /> ${t.label} <span class="num">${counts[t.k]}</span></button>`)}
@@ -1146,16 +1163,25 @@ window.SignalsPage = function ({ me }) {
             ${data.strategy_objective && html`<span class="sig-strat-order" title="Each area is ordered for your stance — pins stay on top. Set in your reward strategy.">
               <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
           </div>
-          <div class="sig-bar" role="img" aria-label="Signals by market position">
-            ${SIG_BUCKETS.filter(p => posCounts[p.k]).map(p => html`<span key=${p.k} class=${effPos === "all" || effPos === p.k ? "" : "dim"} style=${{ flex: posCounts[p.k], background: bucketColor(p.k) }}></span>`)}
+          <div class="sig-hero">
+            ${axisTotal ? html`
+              <div class="sig-donut" role="img" aria-label=${donutAria}>
+                <${Donut} segments=${donutSegs} total=${axisTotal} centerNum=${axisTotal} sub="signals"
+                  centerWord=${axis === "market" && data.hero && data.hero.market ? verdictWord(data.hero.market.verdict) : undefined}
+                  onSeg=${b => setPosF(effPos === b ? "all" : b)} size=${170} stroke=${24} />
+              </div>` : html`
+              <div class="caption sig-donut-empty">${axis === "market"
+                ? "No market-position signals in this view — everything here reads on practice."
+                : "No practice signals in this view yet."}</div>`}
+            <div class="sig-chips sig-axis-chips" role="group" aria-label="Filter the list by signal type">
+              <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${scoped.length}</span></button>
+              ${AXIS_BUCKETS[axis].map(b => { const n = posCounts[b] || 0; const zero = !n; return html`
+                <button key=${b} class=${"sig-chip" + (effPos === b ? " on" : "") + (zero ? " is-zero" : "")} disabled=${zero} aria-disabled=${zero}
+                  aria-pressed=${effPos === b} onClick=${zero ? undefined : () => setPosF(effPos === b ? "all" : b)}>
+                  <span class="sig-chip-dot" style=${{ background: bucketColor(b) }}></span>${b} <span class="n">${n}</span></button>`; })}
+            </div>
           </div>
           <div class="sig-controls">
-            <div class="sig-chips">
-              <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${triaged.length}</span></button>
-              ${SIG_BUCKETS.filter(p => posCounts[p.k]).map(p => html`
-                <button key=${p.k} class=${"sig-chip" + (effPos === p.k ? " on" : "")} aria-pressed=${effPos === p.k} onClick=${() => setPosF(effPos === p.k ? "all" : p.k)}>
-                  <span class="sig-chip-dot" style=${{ background: bucketColor(p.k) }}></span>${p.label} <span class="n">${posCounts[p.k]}</span></button>`)}
-            </div>
             ${(provCount || riskCount) ? html`<div class="sig-filters" role="group" aria-label="Show only">
               <span class="sig-filters-lbl">show only</span>
               ${provCount ? html`<button class=${"sig-fchip" + (provF ? " on" : "")} aria-pressed=${provF} onClick=${() => setProvF(v => !v)} title="Show only verdicts backed by a verified, published source (the rest are estimate-flagged or unsourced).">verified source <span class="n">${provCount}</span></button>` : null}
@@ -1179,6 +1205,7 @@ window.SignalsPage = function ({ me }) {
             </div>
             <div class="signals-list">${g.items.map(Row)}</div>
           </section>`)}`}
+        ${data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
         <div class="sig-register-foot">
           <${Icon} name="table" size=${15} />
           <div>

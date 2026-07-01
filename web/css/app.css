@@ -977,6 +977,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-chip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .sig-chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 .sig-chip.on .n { color: rgba(255,255,255,.72); }
+/* Signals redesign (2026-07-01): the axis donut + its chips ARE the filter (the sig-bar +
+   standalone strip retired). Zero-count chips stay visible for a stable layout but are inert. */
+.sig-axis-seg { margin: 0 0 var(--s3); }
+.sig-hero { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; margin: var(--s2) 0 var(--s3); }
+.sig-donut { flex: 0 0 auto; }
+.sig-hero .sig-chips { flex: 1 1 240px; align-content: center; }
+.sig-donut-empty { flex: 1 1 240px; max-width: 300px; }
+.sig-chip.is-zero { opacity: .45; cursor: default; pointer-events: none; }
 /* NEW-DATA filter toggles (scoped B, 2026-06-26) — an INDEPENDENT group that ANDs with the single-select
    position chips. Visually distinct so they read "add these on", not "pick one of these instead": DASHED
    border (vs the chips' solid) + a TINTED on-state (vs the chips' solid-dark fill). */
