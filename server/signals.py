@@ -894,10 +894,10 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             if _fadopt is not None and _fadopt >= prev_floor:
                 _fpct = round(_fadopt)
                 s["tag"] = "COMMON — YOU DON'T"
-                s["stand"] = "%d%% of the market does this, your approach differs" % _fpct
+                s["stand"] = "%d%% of the market does this, you don't" % _fpct
                 s["value_display"] = "%d%%" % _fpct
                 s["label_short"] = "of peers %s" % _short(_fttl)
-                s["detail"] = "of peers %s — your approach differs" % _fttl
+                s["detail"] = "of peers %s — you don't yet" % _fttl
             elif _m.get("class") in ("Practice", "Design"):
                 s["tag"] = "AN %s CHOICE" % practice_axis.bucket_word("established").upper()
                 s["stand"] = "an %s to the peer norm" % practice_axis.bucket_word("established")
