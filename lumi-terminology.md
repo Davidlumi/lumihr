@@ -6,8 +6,8 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 ## Locked decisions
 
 - **signal** is the noun; **flag** is the verb only ("we flag, you decide").
-- Users filter and read by **market position** — below / on / above market, or differs
-  from market. The engine's signal **class** (Level / Provision / Practice / Design) is
+- Users filter and read by **market position** — below / on / above market, or a practice
+  choice. The engine's signal **class** (Level / Provision / Practice / Design) is
   internal: it drives the tags and the headline but is **never** the user-facing filter.
 - **domain** is the default grouping; **lens** is an optional "group by" toggle.
 - **company** is a member of the peer group.
@@ -20,7 +20,7 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 |---|---|---|---|
 | Unit of comparison | **metric** | one comparable thing — a pay element, policy, or practice | "data point" |
 | Result vs market | **position** | below market / on market / above market | "higher / lower than market" |
-| A choice with no better/worse | **differs from market** | you do it differently; no rate to be under or over | "non-standard" |
+| A choice with no better/worse | **a practice choice** | you do it differently; no rate to be under or over | "non-standard" |
 | Lower-is-better, on the good side | **favourable** | e.g. a small pay gap or CEO ratio | "good" / "ahead" *in the tag* |
 | No inherent good direction | **context** | a fact to weigh, not a verdict (e.g. cost ratio) | "neutral" *(user-facing)* |
 | Confidence caveat | **indicative** | shown when evidence is thin; the confident state carries no label | "firm" |
@@ -28,7 +28,7 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 | The act of surfacing | **flag** (verb) | "we flag, you decide" | — |
 | Default grouping | **domain** | Pay, Incentives, Benefits, Time Off, Wellbeing, Recognition, Governance | "category" |
 | Alternative grouping | **lens** | a strategic view (e.g. how you Attract) — a "group by" toggle | — |
-| The user-facing filter | **market position** | All · below market · above market · differs from market | "class" (that's internal) |
+| The user-facing filter | **market position** | All · below market · above market | "class" (that's internal) |
 | Comparison set | **peer group** (the **peers**) | the companies you're compared against | — |
 | A member of it | **company** | one company in the peer group | "org", "organisation" |
 | Triage | **Prioritise / Save / Dismiss** → Priority / Saved / Dismissed | the three triage actions and their tabs | "pin" as a label |
@@ -52,7 +52,7 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 
 - **Substance** (Level + Provision) = the "market-rate" stuff → tags as below / on / above
   market, and feeds the headline.
-- **Approach** (Practice + Design) = the "choices" stuff → tags as differs from market,
+- **Approach** (Practice + Design) = the "choices" stuff → tags as a practice choice,
   never in the headline.
 - Class is assigned per metric **by meaning, not by how it's measured** — a transparency
   policy is measured yes/no but is a Practice, not a Provision.
@@ -66,14 +66,14 @@ Every tag states a direction relative to market; the subtitle carries the detail
 | Substance — market rate | below market · on market · above market | amber · green · coral |
 | Substance — lower-is-better | below/on/above market (factual), read as **favourable** when on the good side | green |
 | Substance — no good direction | below/on/above market (factual), shown as **context** | navy |
-| Approach — choices | differs from market · in line with market | purple |
+| Approach — choices | a practice choice | purple |
 
 Worked examples:
 
 | Signal | Tag | Subtitle |
 |---|---|---|
 | Base pay (senior) | below market | you P40 · market P50 |
-| Pay review frequency | differs from market | you quarterly · market annually |
+| Pay review frequency | a practice choice | you quarterly · market annually |
 | CEO pay ratio | below market *(favourable)* | you 22:1 · market 35:1 |
 | Workforce cost % | below market *(context)* | you 25% · market 37% |
 

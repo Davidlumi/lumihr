@@ -1105,7 +1105,7 @@ function SearchPop({ qIndex, search, onGo, onRequest, activeHit, onActiveHit }) 
 // Analyst/detailed view (spec §6.3): the engine's internal class/register made
 // legible on the single-metric page — never on the default chip rows.
 function mpReadChip(cl) {
-  if (cl.register === "Approach") return { cls: "differs", text: "differs from market" };
+  if (cl.register === "Approach") return { cls: "differs", text: "a practice choice" };
   if (cl.register === "Substance") {
     if (!cl.competitive_domain) return { cls: "context", text: "beside the headline" };
     if (cl.direction === "neutral") return { cls: "context", text: "context" };
@@ -1119,7 +1119,7 @@ function mpReadCopy(cl) {
     const what = cl.cls === "Practice" ? "a practice — how, or how often, you do something"
       : "a structural choice — which approach you take";
     return "lumi reads this as a " + cl.cls + " (" + what + "). It has no better-or-worse, so it shows as "
-      + "“differs from market” and never feeds your competitiveness headline."
+      + "“a practice choice” and never feeds your competitiveness headline."
       + (cl.weight && cl.weight !== 1 ? " Weighted ×" + cl.weight + " for materiality." : "");
   }
   if (cl.register === "Substance") {

@@ -21,7 +21,7 @@ Every signal is one of four **classes**, which roll up into two **registers**:
 Only **Substance** (Level + Provision) feeds the below/on/above counts behind the
 gauge and the domain arcs — and of those, only `higher_is_better` metrics actually move
 the verdict (polarity carve-out, §5.5). **Approach** (Practice + Design) is the norm-fit
-tally ("differs from market") and is never folded into below/on/above. This is the line that
+tally ("a practice choice") and is never folded into below/on/above. This is the line that
 stops "pay review quarterly" being counted as "above market" on pay — and it's why the
 positioned count is lower than the total metric count.
 
@@ -85,7 +85,9 @@ so custom peer groups get this for free.
 Two registers only; every specific (£, prevalence %, cadence) lives in the subtitle.
 
 - **Substance** → `below market` · `on market` · `above market` — amber · green · coral, by direction
-- **Approach** → `differs from market` · `in line with market` — purple
+- **Approach** → `a practice choice` — purple
+
+> **Label update (2026-06-30, PATH B):** the Approach-register **display** label is now **"a practice choice"** (was "differs from market"). The internal register enum `Approach` and the `differs`/`var(--differs)` colour token are unchanged — display copy only (analyst chip app.js:1108, copy app.js:1122, glossary headword core.js:60). See DECISIONS.md.
 
 ---
 
@@ -138,6 +140,8 @@ count < 3. No `X/Y`. Approach as the companion line.
   chip row. Note that the position chips subsume the register split for free —
   below/above = Substance, differs = Approach — so no separate Substance/Approach control
   is needed.
+
+> **Note (superseded 2026-06-30, 9b042d8):** the Signals page no longer uses a "differs from market" position filter — per-signal prevalence now surfaces as common / alternative / rare chips; the Approach display label is "a practice choice" (§5). Full filter-spec rewrite deferred (out of scope).
 - Proportional bar coloured by **position** (below amber · above coral · differs purple);
   the chips filter it.
 - Default grouping **domain**, with a `group by: domain · lens` toggle.
@@ -191,7 +195,7 @@ Ordered by where the build breaks for the most users, not by build effort.
    *more* (per-metric n, match confidence, coverage), the SME generalist wants *less* (one
    answer + what to fix). Progressive disclosure: headline mode by default, depth on demand,
    restoring per-metric n behind the detailed view.
-5. **Stakes inside "differs from market".** Some Approach signals (transparency, compliance)
+5. **Stakes inside "a practice choice".** Some Approach signals (transparency, compliance)
    aren't "your call" — flatten a regulatory exposure into a neutral difference and the RD
    loses trust. Add a "notable" sub-flag for Approach signals with external stakes.
 

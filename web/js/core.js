@@ -57,7 +57,7 @@ window.GLOSSARY = {
   n: "The number of organisations behind this comparison. A benchmark without its sample size isn't publishable — so n is always shown.",
   indicative: "A modelled, directional figure built on the stated assumptions — useful for sizing a conversation, not for budgeting.",
   "market position": "Where you sit versus peers on a measure — below, on, or above market. The headline is built only from market-rate measures where higher is better, so it answers one question: how competitive is your reward?",
-  "differs from market": "You do something differently from most peers on a measure with no better-or-worse — a choice, not a gap to close.",
+  "a practice choice": "You do something differently from most peers on a measure with no better-or-worse — a choice, not a gap to close.",
   favourable: "A measure where being lower is the good outcome — such as a pay gap — and you sit on the good side of the market.",
   context: "A measure with no inherently good direction, shown as a fact to weigh rather than a verdict.",
 };
