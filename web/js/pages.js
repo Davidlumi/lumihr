@@ -726,7 +726,7 @@ function ApproachPanel({ approach, pending }) {
       <div class="card-head"><${Icon} name="layers" size=${15} /><span>How you compare on practice</span></div>
       <div class="appr-stage">
         <div class="arc-stage" role="img"
-          aria-label=${differ + " of " + pool + " practices differ from the market norm; " + inLine + " in line."}>
+          aria-label=${differ + " of " + pool + " practices off the norm; " + inLine + " in line."}>
           <${Donut}
             segments=${[
               { value: differ, color: "var(--differs)" },
@@ -734,9 +734,9 @@ function ApproachPanel({ approach, pending }) {
             ]}
             total=${pool} centerNum=${pool} sub="practices" size=${210} stroke=${28} />
         </div>
-        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} practices differ from market</div>
+        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} practices sit off the norm</div>
         <div class="appr-legend num">
-          <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> differ</span>
+          <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> off the norm</span>
           <span><span class="appr-dot appr-dot-inline"></span><b>${inLine}</b> in line with the market</span>
         </div>
       </div>
@@ -818,7 +818,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
         <${Icon} name="flag" size=${15} />
         <span>Signals${total > shown.length ? " · top " + shown.length : (shown.length ? " · " + shown.length : "")}</span>
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
-        <span class="sig-head-note">${view === "practice" ? "practice differences — we flag, you decide" : "market positions — we flag, you decide"}</span>
+        <span class="sig-head-note">${view === "practice" ? "practice patterns — we flag, you decide" : "market positions — we flag, you decide"}</span>
       </div>
       ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${view === "practice" ? "ranked by rarity" : "ranked by market gap"}</div>` : null}
       ${locked ? html`
@@ -1208,11 +1208,11 @@ function CategoryTile({ d, pending, aim, view }) {
           <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
         ${pending ? html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>Appears once unlocked</div>`
           : (pool ? html`
-            <div class="cat-axis num">differ</div>
-            <div class="catp-bar" title="How many of this area's practices differ from the market norm — a different way of doing things, not a gap."
-              role="img" aria-label=${differ + " of " + pool + " practices differ from the market norm."}>
+            <div class="cat-axis num">off the norm</div>
+            <div class="catp-bar" title="How many of this area's practices are off the norm — a different way of doing things, not a gap."
+              role="img" aria-label=${differ + " of " + pool + " practices off the norm."}>
               <div class="catp-bar-fill" style=${{ width: fr + "%" }}></div></div>
-            <div class="cat-differ num"><span class="cat-differ-dot"></span><span class="cat-differ-txt"><b>${differ}</b> of ${pool} differ</span></div>`
+            <div class="cat-differ num"><span class="cat-differ-dot"></span><span class="cat-differ-txt"><b>${differ}</b> of ${pool} off the norm</span></div>`
           : html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>${prev.pool || 0} practices tracked</div>`)}
       </div>`;
   }

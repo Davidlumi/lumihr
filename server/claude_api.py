@@ -577,7 +577,7 @@ Hard rules — violating any makes the output unusable:
 Return STRICT JSON, no markdown fences, with exactly these keys:
   "position": the market-position pattern — the below/on/above-market counts and, if present, the strategy-alignment clause (or, for a non-competitive domain, a plain note that this domain has no market position),
   "notable": the widest gaps and the notable strengths, named from the payload lists with their percentile/n (or a plain note when a list is empty),
-  "prevalence": whether practices are common or unusual, from the prevalence buckets (for a non-competitive domain, the approach figures — how many differ from the market norm),
+  "prevalence": whether practices are common or unusual, from the prevalence buckets (for a non-competitive domain, the approach figures — how many are off the norm),
   "provenance": the one-line anchor to the org's own benchmarks and the peer group.
 
 Each value is one short paragraph of plain prose on a single line: no line breaks, no backslashes, no escape sequences, no markdown."""
@@ -740,7 +740,7 @@ def _deterministic_domain_summary(payload):
                     "alignment and approach instead.")
         appr = payload.get("approach") or {}
         if appr.get("pool"):
-            notable = ("Of the practices here, %s differ from the market norm and %s are in line."
+            notable = ("Of the practices here, %s are off the norm and %s are in line."
                        % (appr.get("differ", 0), appr.get("in_line", 0)))
         else:
             notable = "There are no positioned market metrics in this domain."

@@ -123,7 +123,7 @@ check("hero not washed out (on-market share < 70%)", at_share < 0.70, "%.0f%% on
 check("headline comparable == gauge pool (dashboard / board pack / share agree)",
       ov["headline"]["comparable_metrics"] == m["pool"],
       (ov["headline"]["comparable_metrics"], m["pool"]))
-# the Approach companion ("N differ from market") tallies Practice/Design choices vs
+# the Approach companion ("N off the norm") tallies Practice/Design choices vs
 # the market mode — a separate register, never folded into the gauge's below/on/above
 ap = hero.get("approach")
 check("Approach companion present + internally consistent (differ + in_line == pool)",

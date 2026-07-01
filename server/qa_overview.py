@@ -194,7 +194,7 @@ check("9a. engine emits hero differ / pool / signals-total as integers (the numb
       and hero_differ_val <= hero_pool_val,
       {"differ": hero_differ_val, "pool": hero_pool_val, "signals_total": signals_total_val})
 check("9b. hero copy interpolates engine differ & pool RAW (rendered == engine; no literal, no off-by-one)",
-      "${approach.differ}</b> of ${approach.pool} practices differ from market" in pagesjs,
+      "${approach.differ}</b> of ${approach.pool} practices sit off the norm" in pagesjs,
       "hero differ/pool line is not interpolated raw from the engine fields")
 check("9c. 'See all N signals' count derives from the live signal set (view-filtered), not a hard-coded literal",
       '_viewSigs = (data.signals_all || []).filter(' in pagesjs
