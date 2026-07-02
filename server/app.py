@@ -2758,6 +2758,19 @@ def assemble_pack_payload(request, user, org, cut):
     money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                     org_answers_for(org), cut, tb)
     reg = build_gap_register(request, user, org, cut)
+    # Tier 2 (2026-07-02): the pack carries the app's richest insight surfaces.
+    # Signals = the SAME balanced top-5 briefing the home page shows, in the ABSOLUTE
+    # view (no per-user triage, no strategy lens — a board pack is org-level evidence).
+    _visq = org_visible_questions(org)
+    _answers = org_answers_for(org)
+    _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
+    _pack_sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
+                                           conn=conn, org_id=org["org_id"])
+    _strat = strategy_for_engine(conn, org["org_id"])
+    _strat_done = bool(conn.execute(
+        "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+        (org["org_id"],)).fetchone())
+    _snap_count = conn.execute("SELECT count(*) FROM snapshots").fetchone()[0]
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     cut_label = "All peers" if cut["dim"] == "all" else (
@@ -2777,6 +2790,8 @@ def assemble_pack_payload(request, user, org, cut):
         cut_n = pool.get("responding_orgs", 0)
     return {
         "cut_n": cut_n,
+        "cut": {"dim": cut["dim"], "value": cut.get("value")},   # for one-click regenerate
+        "methodology_version": 1,
         "organisation": {"name": org["name"], "industry": org["industry"],
                          "fte_band": org["fte_band"], "region": org["hq_region"]},
         "cut_label": cut_label,
@@ -2812,6 +2827,19 @@ def assemble_pack_payload(request, user, org, cut):
             for r in reg["rows"] if not r["suppressed"] and r["gap"] is not None and r["gap"] > 0
         ][:10],
         "maturity": reg["maturity"],
+        # Tier 2 sections — every consumer (render + narrative) treats these as optional
+        "by_section": {k: {"available": v["available"], "above": v["above"],
+                           "below": v["below"], "inline": v["inline"]}
+                       for k, v in (summary.get("by_section") or {}).items()},
+        "signals": [{"name": s.get("name") or s.get("label_short"), "domain": s.get("domain"),
+                     "stand": s.get("stand"), "tag": s.get("tag"),
+                     "risk": bool(s.get("risk_framed")), "bucket": s.get("bucket")}
+                    for s in _pack_sigs[:5]],
+        "strategy": {"complete": _strat_done,
+                     "objective": OBJECTIVE_LABELS.get(_strat.get("primary_objective")) if (
+                         _strat and (_strat.get("provenance") or {}).get("primary_objective") != "skipped") else None},
+        "movement": ("First benchmark period — movement appears from your next data cycle."
+                     if _snap_count <= 1 else None),
     }
 
 
@@ -2872,8 +2900,26 @@ async def boardpack_get(pack_id: str, request: Request):
                        (pack_id, org["org_id"])).fetchone()
     if not row:
         raise HTTPException(404, "Board pack not found")
+    # staleness signal: the CURRENT collection window, so the client can flag a pack
+    # generated from an older snapshot. previous: the prior pack's headline, for the
+    # "since your last pack" line. Both additive — old clients ignore them.
+    snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
+    prev = conn.execute(
+        "SELECT payload_json, created_at FROM board_packs WHERE org_id=? AND created_at < ? "
+        "ORDER BY created_at DESC LIMIT 1", (org["org_id"], row["created_at"])).fetchone()
+    prev_summary = None
+    if prev:
+        _pp = uj(prev["payload_json"], {})
+        _ph = _pp.get("headline") or {}
+        prev_summary = {"generated_date": _pp.get("generated_date"), "created_at": prev["created_at"],
+                        "comparable_metrics": _ph.get("comparable_metrics"),
+                        "above_median": _ph.get("above_median"), "below_median": _ph.get("below_median"),
+                        "broadly_in_line": _ph.get("broadly_in_line"),
+                        "verdict": (_ph.get("market") or {}).get("verdict")}
     return {"pack_id": pack_id, "payload": uj(row["payload_json"]),
-            "narrative": uj(row["narrative_json"]), "created_at": row["created_at"]}
+            "narrative": uj(row["narrative_json"]), "created_at": row["created_at"],
+            "current_collection_window": snap["collection_window"] if snap else None,
+            "previous": prev_summary}
 
 
 @app.get("/api/boardpacks")
@@ -2881,9 +2927,32 @@ async def boardpacks_list(request: Request):
     user, org = require_user(request)
     conn = get_conn()
     rows = conn.execute(
-        "SELECT pack_id, created_at FROM board_packs WHERE org_id=? ORDER BY created_at DESC LIMIT 20",
+        "SELECT b.pack_id, b.created_at, b.payload_json, b.narrative_json, u.display_name "
+        "FROM board_packs b LEFT JOIN users u ON u.user_id = b.created_by "
+        "WHERE b.org_id=? ORDER BY b.created_at DESC LIMIT 50",
         (org["org_id"],)).fetchall()
-    return {"packs": [dict(r) for r in rows]}
+    packs = []
+    for r in rows:
+        p = uj(r["payload_json"], {})
+        n = uj(r["narrative_json"], {})
+        packs.append({"pack_id": r["pack_id"], "created_at": r["created_at"],
+                      "cut_label": p.get("cut_label"), "collection_window": p.get("collection_window"),
+                      "ai": not n.get("_fallback"), "created_by": r["display_name"]})
+    return {"packs": packs}
+
+
+@app.delete("/api/boardpack/{pack_id}")
+async def boardpack_delete(pack_id: str, request: Request):
+    """Admin-only, org-scoped. Deleting a pack also strands any share links minted
+    for it (they 404 on open) — the confirm dialog says so."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    r = conn.execute("DELETE FROM board_packs WHERE pack_id=? AND org_id=?",
+                     (pack_id, org["org_id"]))
+    conn.commit()
+    if r.rowcount == 0:
+        raise HTTPException(404, "Board pack not found")
+    return {"ok": True}
 
 
 # =============================================================== SUBMISSION ==

@@ -142,9 +142,20 @@ function ExportBoardPack({ me, cut }) {
           ${packs == null && html`<div class="caption" style=${{ padding: "var(--s2)" }}>Loading…</div>`}
           ${packs && packs.length === 0 && !err && html`<div class="caption" style=${{ padding: "var(--s2)" }}>No packs yet — Export writes one from your live position.</div>`}
           ${(packs || []).map(p => html`
-            <button key=${p.pack_id} class="bp-menu-item" onClick=${() => nav("/boardpack/" + p.pack_id)}>
-              ${new Date(p.created_at + "Z").toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
-            </button>`)}
+            <div key=${p.pack_id} class="bp-menu-row">
+              <button class="bp-menu-item" onClick=${() => nav("/boardpack/" + p.pack_id)}>
+                <b>${p.cut_label || "All peers"}</b>${p.collection_window ? " · " + p.collection_window : ""}
+                <span class="caption" style=${{ display: "block" }}>
+                  ${new Date(p.created_at + "Z").toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}${p.created_by ? " · " + p.created_by : ""}${p.ai ? " · AI narrative" : ""}</span>
+              </button>
+              ${me.user.role === "admin" && html`<button class="bp-menu-del" aria-label="Delete this board pack" title="Delete"
+                onClick=${async (e) => { e.stopPropagation();
+                  if (!window.confirm("Delete this board pack? Any share links to it will stop working.")) return;
+                  try { await api("/api/boardpack/" + p.pack_id, { method: "DELETE" });
+                        setPacks(ps => (ps || []).filter(x => x.pack_id !== p.pack_id)); toast("Board pack deleted"); }
+                  catch (e2) { toast(e2.message, "error"); } }}>
+                <${Icon} name="close" size=${12} /></button>`}
+            </div>`)}
         </div>`}
     </div>`;
 }
@@ -576,6 +587,7 @@ function Donut({ segments, total, centerNum, sub, size, stroke, centerWord, onSe
       </div>
     </div>`;
 }
+window.Donut = Donut;   // shared primitive (board pack renders it from commercial.js, 2026-07-02)
 
 // Shared position-verdict TEXT (extracted 2026-06-27, domain-page Pass 1) — ONE source for the
 // verdict WORD + the magnitude caption, used by the home gauge AND the domain Market-position

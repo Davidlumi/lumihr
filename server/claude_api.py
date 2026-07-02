@@ -85,6 +85,15 @@ Hard rules — violating any of these makes the output unusable:
 6. Write for a CEO: a Reward Director should be able to read any sentence aloud without
    translating jargon. Percentiles may be glossed (e.g. "P18 — in the bottom quarter").
 
+The payload may also carry richer sections — use them where they sharpen the story,
+never invent beyond them: headline.market (the overall verdict word the dashboard
+shows — OPEN the executive summary with it), opportunity_totals (the aggregate £ —
+the CFO's number, cite it in the executive summary), by_section (per-area position
+counts), signals (the top flagged items, some risk-marked — weave the risk-marked
+ones into the narrative), strategy (the organisation's declared objective — one
+clause connecting the findings to it, never a judgement of the strategy itself),
+maturity and movement.
+
 Return STRICT JSON with keys:
   "executive_summary": 2-3 paragraphs (string),
   "strengths_narrative": one short paragraph introducing the strengths table,

@@ -99,18 +99,37 @@ function GapRow({ r, focused }) {
 window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const [pack, setPack] = useState(sharedData || null);
   const [shareLink, setShareLink] = useState(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [expiry, setExpiry] = useState(30);
+  const [regen, setRegen] = useState(false);
   useEffect(() => {
-    if (!sharedData) api("/api/boardpack/" + packId).then(setPack).catch(() => setPack({ error: true }));
+    if (!sharedData) { setPack(null); api("/api/boardpack/" + packId).then(setPack).catch(() => setPack({ error: true })); }
   }, [packId]);
   if (!pack) return html`<${PageLoading} />`;
   if (pack.error) return html`<${EmptyState} title="Board pack not found" />`;
   const p = pack.payload, n = pack.narrative;
-  const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v1`;
+  const mVerdict = p.headline.market && p.headline.market.verdict;
+  const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v${p.methodology_version || 1}`;
   const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>lumi · ${page}</span></div>`;
   const makeShare = async () => {
-    const r = await api("/api/shares", { method: "POST", body: { kind: "boardpack", config: { pack_id: packId }, expiry_days: 30 } });
-    setShareLink(window.location.origin + r.url);
+    setShareBusy(true);
+    try {
+      const r = await api("/api/shares", { method: "POST", body: { kind: "boardpack", config: { pack_id: packId }, expiry_days: expiry } });
+      setShareLink(window.location.origin + r.url);
+    } catch (e) { toast(e.message, "error"); }
+    setShareBusy(false);
   };
+  const regenerate = async () => {
+    setRegen(true);
+    try {
+      const r = await api("/api/boardpack/generate", { method: "POST",
+        body: { cut: (p.cut && p.cut.dim) || "all", cut_value: p.cut ? p.cut.value : null } });
+      nav("/boardpack/" + r.pack_id);
+    } catch (e) { toast(e.message, "error"); }
+    setRegen(false);
+  };
+  const stale = !shared && pack.current_collection_window && p.collection_window
+    && pack.current_collection_window !== p.collection_window;
   return html`
     <div>
       ${!shared && html`
@@ -118,23 +137,40 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           <button class="btn quiet" onClick=${() => nav("/overview")}>← Back</button>
           <div class="row">
             ${n._fallback && html`<${Chip} kind="warn">Standard narrative — AI-written commentary arrives at go-live<//>`}
-            ${me && me.user.role === "admin" && html`<button class="btn" onClick=${makeShare}>Create share link (30 days)</button>`}
+            <button class="btn" disabled=${regen} title="Write a fresh pack from your live benchmark on this pack's peer cut" onClick=${regenerate}>${regen ? "Writing…" : "Regenerate"}</button>
+            ${me && me.user.role === "admin" && html`
+              <select class="ctl" style=${{ width: "auto" }} value=${expiry} aria-label="Share link expiry"
+                onChange=${e => setExpiry(parseInt(e.target.value, 10))}>
+                <option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option>
+              </select>
+              <button class="btn" disabled=${shareBusy} onClick=${makeShare}>${shareBusy ? "Creating…" : "Create share link"}</button>`}
             <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + p.organisation.name + " — " + p.generated_date; window.print(); document.title = t; }}>Download PDF</button>
           </div>
         </div>`}
+      ${stale && html`
+        <div class="card no-print bp-stale" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
+          This pack reads from the <b>${p.collection_window}</b> snapshot; the benchmark has moved to
+          <b> ${pack.current_collection_window}</b>. Regenerate for current numbers.
+        </div>`}
       ${shareLink && html`
         <div class="card no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
-          Share link (read-only, 30 days): <a href=${shareLink}>${shareLink}</a>
+          Share link (read-only, ${expiry} days): <a href=${shareLink}>${shareLink}</a>
+          <button class="btn small" style=${{ marginLeft: "var(--s3)" }}
+            onClick=${() => { navigator.clipboard.writeText(shareLink); toast("Link copied", "success"); }}>Copy</button>
         </div>`}
 
       <div class="pack-page">
-        <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi UK reward benchmarking</div>
+        <div style=${{ marginTop: "36mm" }}>
+          ${window.LUMI_LOGO_SVG
+            ? html`<div class="bp-logo" dangerouslySetInnerHTML=${{ __html: window.LUMI_LOGO_SVG }}></div>`
+            : html`<div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi</div>`}
+          <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em", marginTop: "var(--s3)" }}>UK REWARD BENCHMARKING</div>
+          <div class=${"pack-accent" + (mVerdict ? " v-" + mVerdict : "")}></div>
           <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "var(--s3) 0 var(--s2)", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
           <div style=${{ fontSize: "var(--fs-card-title)", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "var(--s4)" }}>
             <${Chip} kind="accent">${p.organisation.industry || "Unclassified"}<//>
-            <${Chip}>${p.organisation.fte_band ? p.organisation.fte_band + " FTE" : ""}<//>
+            ${p.organisation.fte_band ? html`<${Chip}>${p.organisation.fte_band + " FTE"}<//>` : null}
             <${Chip}>Peer group: ${p.cut_label}<//>
           </div>
         </div>
@@ -142,15 +178,13 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">Executive position</h2>
+        <h2 class="section-title">Where you stand</h2>
         <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
-          ${(() => { const v = p.headline.market && p.headline.market.verdict;
-            const word = v === "below" ? "Below market" : v === "above" ? "Above market" : v === "at" ? "On market" : null;
-            return word ? html`<div>
-              <div class="metric-value">${word}</div>
+          ${mVerdict ? html`<div>
+              <div class="metric-value">${mVerdict === "below" ? "Below market" : mVerdict === "above" ? "Above market" : "On market"}</div>
               <div class="caption">overall position — the dashboard verdict</div>
-            </div>` : null; })()}
-          <div style=${p.headline.market && p.headline.market.verdict ? { borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" } : null}>
+            </div>` : null}
+          <div style=${mVerdict ? { borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" } : null}>
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
             <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
           </div>
@@ -160,19 +194,36 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </div>
         </div>
         ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "var(--fs-label)" }}>${para}</p>`)}
+        <div class="bp-position-row">
+          ${window.Donut && p.headline.comparable_metrics ? html`
+            <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " broadly in line, " + p.headline.above_median + " above."}>
+              <${window.Donut} segments=${[
+                  { value: p.headline.below_median, color: "var(--amber-bright)" },
+                  { value: p.headline.broadly_in_line, color: "var(--favourable)" },
+                  { value: p.headline.above_median, color: "var(--unfavourable)" },
+                ]} total=${p.headline.comparable_metrics} centerNum=${p.headline.comparable_metrics} sub="metrics"
+                centerWord=${mVerdict === "below" ? "Below" : mVerdict === "above" ? "Above" : mVerdict === "at" ? "On market" : undefined}
+                size=${150} stroke=${20} />
+              <div class="caption bp-donut-key"><span class="bp-key-dot" style=${{ background: "var(--amber-bright)" }}></span>below · <span class="bp-key-dot" style=${{ background: "var(--favourable)" }}></span>in line · <span class="bp-key-dot" style=${{ background: "var(--unfavourable)" }}></span>above</div>
+            </div>` : null}
+          ${p.by_section && Object.keys(p.by_section).length ? html`
+            <table class="data bp-domains">
+              <thead><tr><th>Area</th><th class="num">Above</th><th class="num">In line</th><th class="num">Below</th></tr></thead>
+              <tbody>${Object.entries(p.by_section).sort((a, b) => b[1].available - a[1].available)
+                .filter(([, v]) => v.available > 0).slice(0, 7).map(([k, v]) => html`
+                <tr key=${k}><td><b>${k}</b> <span class="caption">· ${v.available}</span></td>
+                  <td class="num">${v.above}</td><td class="num">${v.inline}</td><td class="num">${v.below}</td></tr>`)}
+              </tbody>
+            </table>` : null}
+        </div>
+        ${p.maturity && p.maturity.Reward && p.maturity.Reward.org_score != null ? html`
+          <p class="caption">Practice maturity: your average practice score is <b>${p.maturity.Reward.org_score}/100</b>${p.maturity.Reward.peer_median_score != null ? html` against a peer average of <b>${p.maturity.Reward.peer_median_score}/100</b>` : null}.</p>` : null}
+        ${pack.previous && pack.previous.comparable_metrics != null ? html`
+          <p class="caption">Since your last pack (${pack.previous.generated_date}): above the median ${pack.previous.above_median} → ${p.headline.above_median}, broadly in line ${pack.previous.broadly_in_line} → ${p.headline.broadly_in_line}, below ${pack.previous.below_median} → ${p.headline.below_median}.</p>` : null}
+        ${p.movement ? html`<p class="caption">${p.movement}</p>` : null}
         <p class="caption">Peer-group composition: ${p.peer_pool.total} UK organisations across 14 sectors (${p.peer_pool.classified} fully classified);
         comparisons use the ${p.cut_label} cut unless stated. Figures resting on fewer than 5 organisations are never shown.</p>
         <${Footer} page="1" />
-      </div>
-
-      <div class="pack-page">
-        <h2 class="section-title">Where ${p.organisation.name} leads</h2>
-        <p>${n.strengths_narrative}</p>
-        <${PackTable} rows=${p.strengths} good=${true} />
-        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Largest gaps to the market</h2>
-        <p>${n.gaps_narrative}</p>
-        <${PackTable} rows=${p.gaps} good=${false} />
-        <${Footer} page="2" />
       </div>
 
       <div class="pack-page">
@@ -196,15 +247,49 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </table>
           <p class="caption">Indicative modelling only. Assumptions: median salary £${(p.opportunity_assumptions.median_salary_gbp || 0).toLocaleString("en-GB")};
           cost per leaver ${p.opportunity_assumptions.cost_per_leaver_pct_salary}% of salary; agency premium ${p.opportunity_assumptions.agency_premium_pct}%;
-          FTE from band midpoints. Edit these in Settings and regenerate.</p>` :
+          FTE from band midpoints. Edit these in Settings and regenerate.</p>
+          <div class="bp-qbox">
+            <b>Questions the board may ask</b>
+            <ul>
+              ${p.opportunity_totals && p.opportunity_totals.investment_to_p50_gbp ? html`<li>"What would it cost to reach the market median?" — the modelled total is ${fmtGBPCompact(p.opportunity_totals.investment_to_p50_gbp)}/yr on the stated assumptions.</li>` : null}
+              ${p.opportunities[0] ? html`<li>"Which single lever moves us most?" — ${p.opportunities[0].label} (${fmtGBPCompact(p.opportunities[0].to_p50_gbp)}/yr to the median).</li>` : null}
+              <li>"How reliable are these figures?" — medians from n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations; anything resting on fewer than 5 is suppressed.</li>
+            </ul>
+          </div>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}
-        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Options to consider</h2>
+        <${Footer} page="2" />
+      </div>
+
+      <div class="pack-page">
+        <h2 class="section-title">What to watch</h2>
+        ${p.signals && p.signals.length ? html`
+          <p class="caption" style=${{ marginTop: "-4px" }}>The benchmark's top flagged items — the same balanced briefing the lumi dashboard shows, in the absolute view.</p>
+          <div class="bp-signals">
+            ${p.signals.map((s, i) => html`
+              <div key=${i} class="bp-signal">
+                <b>${s.name}</b>${s.risk ? html` <span class="bp-risk">Risk</span>` : null}
+                <div class="caption">${s.stand}${s.domain ? " · " + s.domain : ""}</div>
+              </div>`)}
+          </div>` : null}
+        ${p.strategy && p.strategy.objective ? html`
+          <p class="caption">Declared reward strategy: <b>${p.strategy.objective}</b> — the dashboard orders these signals for that stance.</p>` : null}
+        <h2 class="section-title" style=${{ marginTop: p.signals && p.signals.length ? "var(--s5)" : "0" }}>Options to consider</h2>
         <p class="caption" style=${{ marginTop: "-4px", marginBottom: "var(--s2)" }}>A starting point for your own judgement — not advice.
           lumi is a mirror, not a scoreboard: it tells you where you stand, never what you must do.</p>
         <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
           ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
         <${Footer} page="3" />
+      </div>
+
+      <div class="pack-page">
+        <h2 class="section-title">The evidence — where ${p.organisation.name} leads</h2>
+        <p>${n.strengths_narrative}</p>
+        <${PackTable} rows=${p.strengths} good=${true} />
+        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Largest gaps to the market</h2>
+        <p>${n.gaps_narrative}</p>
+        <${PackTable} rows=${p.gaps} good=${false} />
+        <${Footer} page="4" />
       </div>
 
       <div class="pack-page">
@@ -220,7 +305,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
         preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
         assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
-        <${Footer} page="4" />
+        <${Footer} page="5" />
       </div>
     </div>`;
 };
@@ -239,7 +324,7 @@ function PackTable({ rows, good }) {
           <tr key=${i}>
             <td><b>${r.label}</b><div class="caption">${r.superpower} · ${r.cut_label}${r.polarity === "lower_is_better" ? " · lower is better here" : ""}</div></td>
             <td class="num"><b>${r.value_display}</b></td>
-            <td class="num">${r.p50_display || "—"}</td>
+            <td class="num">${r.p50_display || html`<span class="caption" title="Score metric — peers are compared by score, not a single median value">score</span>`}</td>
             <td class="num"><span class=${"chip " + cls}>${pLabel(r.percentile)}</span></td>
             <td class="num">${r.n}</td>
           </tr>`; })}

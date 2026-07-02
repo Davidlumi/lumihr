@@ -1736,7 +1736,34 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
      screen; printing must ignore the scale so the PDF lands at full A4 */
   .pack-fit { height: auto !important; overflow: visible !important; }
   .pack-fit-inner { transform: none !important; width: auto !important; }
+  /* board-document body type: ~10.5pt beats the 13px screen size (inline styles
+     included) so the printed pack reads as a document, not a webpage */
+  .pack-page p, .pack-page li, .pack-page td, .pack-page th { font-size: 10.5pt !important; }
 }
+
+/* ---- board pack Tier 2/3 (2026-07-02): story-arc pages, charts, management ---- */
+.bp-logo svg { width: 42mm; height: auto; }
+.pack-accent { height: 6px; width: 64mm; border-radius: 3px; background: var(--blue); margin: var(--s4) 0 var(--s3); }
+.pack-accent.v-below { background: var(--amber-bright); }
+.pack-accent.v-above { background: var(--unfavourable); }
+.pack-accent.v-at { background: var(--favourable); }
+.bp-stale { border-left: 3px solid var(--amber-bright); }
+.bp-position-row { display: flex; gap: var(--s5); align-items: center; flex-wrap: wrap; margin: var(--s3) 0; }
+.bp-donut { flex: 0 0 auto; text-align: center; }
+.bp-donut-key { margin-top: var(--s2); }
+.bp-key-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+.bp-domains { flex: 1 1 240px; }
+.bp-qbox { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--s3) var(--s4); margin-top: var(--s4); }
+.bp-qbox ul { margin: var(--s2) 0 0; padding-left: var(--s5); font-size: var(--fs-label); }
+.bp-qbox li { margin-bottom: var(--s1); }
+.bp-signals { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
+.bp-signal { border-left: 3px solid var(--border); padding: var(--s1) 0 var(--s1) var(--s3); }
+.bp-risk { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; color: var(--unfavourable);
+  border: 1px solid var(--unfavourable); border-radius: 5px; padding: 0 var(--s1); vertical-align: 1px; }
+.bp-menu-row { display: flex; align-items: stretch; }
+.bp-menu-row .bp-menu-item { flex: 1; }
+.bp-menu-del { border: none; background: none; color: var(--ink-faint); cursor: pointer; padding: 0 var(--s3); }
+.bp-menu-del:hover { color: var(--unfavourable); }
 
 /* Shared board-pack viewport fit (share page only). The A4 pages are a fixed
    210mm wide; on a phone that overflows sideways. share.js measures the natural
