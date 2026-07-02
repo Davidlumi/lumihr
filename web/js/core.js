@@ -258,7 +258,7 @@ window.confettiBurst = function (opts) {
   const colors = opts.colors || [
     _tok("--blue-bright", "#2E62D9"), _tok("--favourable", "#2E7D52"),
     _tok("--amber-bright", "#F5A60A"), _tok("--lumi-coral", "#F08C6E"),
-    _tok("--blue", "#2547B0"), _tok("--differs", "#7A5AF8")];
+    _tok("--blue", "#2048B0"), _tok("--differs", "#6257C9")];
   const origin = opts.origin || { x: 0.5, y: 0.32 };
   const cv = document.createElement("canvas");
   cv.setAttribute("aria-hidden", "true");

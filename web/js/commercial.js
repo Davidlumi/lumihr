@@ -197,6 +197,13 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             ${p.organisation.fte_band ? html`<${Chip}>${p.organisation.fte_band + " FTE"}<//>` : null}
             <${Chip}>Peer group: ${p.cut_label}<//>
           </div>
+          <div class="bp-toc">
+            <div class="bp-toc-title">Contents</div>
+            ${[["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"],
+               ["What closing the gaps is worth", "4"], ["What to watch", "5"],
+               ["The evidence — strengths", "6"], ["The evidence — gaps", "7"], ["Appendix — peer practices", "8"]].map(([t, pg]) => html`
+              <div key=${pg} class="bp-toc-row"><span>${t}</span><span class="bp-toc-dots"></span><span class="num">${pg}</span></div>`)}
+          </div>
         </div>
         <${Footer} page="Cover" />
       </div>
@@ -229,7 +236,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">Where you stand</h2>
+        <h2 class="section-title">Executive summary</h2>
         <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
           ${mVerdict ? html`<div>
               <div class="metric-value">${mVerdict === "below" ? "Below market" : mVerdict === "above" ? "Above market" : "On market"}</div>
@@ -245,6 +252,30 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </div>
         </div>
         ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "var(--fs-label)" }}>${para}</p>`)}
+        ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
+          <div class="bp-scale-wrap">
+            <div class="bp-scale" role="img"
+              aria-label=${"Your typical comparable metric sits at the " + Math.round(p.headline.market.depth_pctl) + "th percentile; the on-market band runs P" + p.band.low + " to P" + p.band.high + "."}>
+              <div class="bp-scale-zone z-below" style=${{ width: p.band.low + "%" }}></div>
+              <div class="bp-scale-zone z-on" style=${{ width: (p.band.high - p.band.low) + "%" }}></div>
+              <div class="bp-scale-zone z-above" style=${{ width: (100 - p.band.high) + "%" }}></div>
+              <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, p.headline.market.depth_pctl)) + "%" }}><span>P${Math.round(p.headline.market.depth_pctl)}</span></div>
+            </div>
+            <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
+            <p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${Math.round(p.headline.market.depth_pctl)}</b>;${" "}
+              ${p.headline.broadly_in_line} of ${p.headline.comparable_metrics} comparable metrics sit within the on-market band.</p>
+          </div>` : null}
+        ${pack.previous && pack.previous.comparable_metrics != null
+          && (pack.previous.above_median !== p.headline.above_median
+              || pack.previous.broadly_in_line !== p.headline.broadly_in_line
+              || pack.previous.below_median !== p.headline.below_median) ? html`
+          <p class="caption">Since your last pack (${pack.previous.generated_date}): above the median ${pack.previous.above_median} → ${p.headline.above_median}, broadly in line ${pack.previous.broadly_in_line} → ${p.headline.broadly_in_line}, below ${pack.previous.below_median} → ${p.headline.below_median}.</p>` : null}
+        ${p.movement ? html`<p class="caption">${p.movement}</p>` : null}
+        <${Footer} page="2" />
+      </div>
+
+      <div class="pack-page">
+        <h2 class="section-title">Position by area</h2>
         <div class="bp-position-row">
           ${window.Donut && p.headline.comparable_metrics ? html`
             <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " broadly in line, " + p.headline.above_median + " above."}>
@@ -267,19 +298,6 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               </tbody>
             </table>` : null}
         </div>
-        ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
-          <div class="bp-scale-wrap">
-            <div class="bp-scale" role="img"
-              aria-label=${"Your typical comparable metric sits at the " + Math.round(p.headline.market.depth_pctl) + "th percentile; the on-market band runs P" + p.band.low + " to P" + p.band.high + "."}>
-              <div class="bp-scale-zone z-below" style=${{ width: p.band.low + "%" }}></div>
-              <div class="bp-scale-zone z-on" style=${{ width: (p.band.high - p.band.low) + "%" }}></div>
-              <div class="bp-scale-zone z-above" style=${{ width: (100 - p.band.high) + "%" }}></div>
-              <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, p.headline.market.depth_pctl)) + "%" }}><span>P${Math.round(p.headline.market.depth_pctl)}</span></div>
-            </div>
-            <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
-            <p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${Math.round(p.headline.market.depth_pctl)}</b>;
-              ${p.headline.broadly_in_line} of ${p.headline.comparable_metrics} comparable metrics sit within the on-market band.</p>
-          </div>` : null}
         ${p.band ? html`
           <div class="bp-callout">
             <b>What "competitive" means here</b>
@@ -289,12 +307,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </div>` : null}
         ${p.maturity && p.maturity.Reward && p.maturity.Reward.org_score != null ? html`
           <p class="caption">Practice maturity: your average practice score is <b>${p.maturity.Reward.org_score}/100</b>${p.maturity.Reward.peer_median_score != null ? html` against a peer average of <b>${p.maturity.Reward.peer_median_score}/100</b>` : null}.</p>` : null}
-        ${pack.previous && pack.previous.comparable_metrics != null ? html`
-          <p class="caption">Since your last pack (${pack.previous.generated_date}): above the median ${pack.previous.above_median} → ${p.headline.above_median}, broadly in line ${pack.previous.broadly_in_line} → ${p.headline.broadly_in_line}, below ${pack.previous.below_median} → ${p.headline.below_median}.</p>` : null}
-        ${p.movement ? html`<p class="caption">${p.movement}</p>` : null}
         <p class="caption">Peer-group composition: ${p.peer_pool.total} UK organisations across 14 sectors (${p.peer_pool.classified} fully classified);
         comparisons use the ${p.cut_label} cut unless stated. Figures resting on fewer than 5 organisations are never shown.</p>
-        <${Footer} page="2" />
+        <${Footer} page="3" />
       </div>
 
       <div class="pack-page">
@@ -328,7 +343,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             </ul>
           </div>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}
-        <${Footer} page="3" />
+        <${Footer} page="4" />
       </div>
 
       <div class="pack-page">
@@ -350,17 +365,21 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
           ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
-        <${Footer} page="4" />
+        <${Footer} page="5" />
       </div>
 
       <div class="pack-page">
         <h2 class="section-title">The evidence — where ${p.organisation.name} leads</h2>
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
-        <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Largest gaps to the market</h2>
+        <${Footer} page="6" />
+      </div>
+
+      <div class="pack-page">
+        <h2 class="section-title">The evidence — largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
-        <${Footer} page="5" />
+        <${Footer} page="7" />
       </div>
 
       <div class="pack-page">
@@ -376,7 +395,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
         preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
         assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
-        <${Footer} page="6" />
+        <${Footer} page="8" />
       </div>
     </div>`;
 };
@@ -390,7 +409,7 @@ function PackTable({ rows, good }) {
   const hasT = rows.some(r => r.p10_display || r.p90_display);
   const masked = rows.some(r => (r.p50_display && hasQ && !r.p25_display) || (r.p50_display && hasT && !r.p10_display));
   return html`
-    <table class="data">
+    <table class=${"data" + (hasT ? " bp-wide" : "")}>
       <thead><tr><th>Metric</th><th class="num">You</th>${hasT ? html`<th class="num">P10</th>` : null}${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">Peer P50</th>${hasQ ? html`<th class="num">P75</th>` : null}${hasT ? html`<th class="num">P90</th>` : null}<th class="num">Percentile</th><th class="num">n</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
