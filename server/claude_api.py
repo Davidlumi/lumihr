@@ -103,42 +103,171 @@ Return STRICT JSON with keys:
 Return ONLY the JSON object, no markdown fences."""
 
 
+BOARD_PACK_PARTS = ("executive_summary", "strengths_narrative", "gaps_narrative",
+                    "opportunity_narrative", "recommended_actions")
+
+# Structured output: exactly the five narrative fields (same pattern as
+# COMMENTARY_SCHEMA), so the only thing left to gate is groundedness.
+BOARD_PACK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "executive_summary": {"type": "string"},
+        "strengths_narrative": {"type": "string"},
+        "gaps_narrative": {"type": "string"},
+        "opportunity_narrative": {"type": "string"},
+        "recommended_actions": {"type": "array", "items": {"type": "string"},
+                                "minItems": 4, "maxItems": 6},
+    },
+    "required": list(BOARD_PACK_PARTS),
+    "additionalProperties": False,
+}
+
+_PACK_JARGON_RE = re.compile(r"\b(payload|JSON|fallback|deterministic)\b", re.I)
+
+
+def validate_pack_narrative(narrative, payload):
+    """The board pack's runtime trust gate — until now the flagship export was the
+    one AI surface without one ('the validator is what makes the prompt's rules
+    real'). Mirrors validate_commentary: shape, malformed-text screen, number
+    grounding against the payload, directive/legal screens — plus a jargon screen,
+    because engineering vocabulary must never reach a board page. (ok, reason)."""
+    if not isinstance(narrative, dict):
+        return False, "not an object"
+    texts = []
+    for k in BOARD_PACK_PARTS:
+        v = narrative.get(k)
+        if k == "recommended_actions":
+            if not isinstance(v, list) or not v or not all(isinstance(x, str) and x.strip() for x in v):
+                return False, "missing or empty %s" % k
+            texts += v
+        else:
+            if not isinstance(v, str) or (k != "opportunity_narrative" and not v.strip()):
+                return False, "missing or empty %s" % k
+            texts.append(v)
+    for t in texts:
+        if re.search(r"[\x00-\x1f\\]", t):
+            return False, "malformed text (control/escape chars)"
+        if "placeholder" in t.lower() or "lorem ipsum" in t.lower():
+            return False, "stub/placeholder text"
+    text_all = " ".join(texts)
+    allowed = _commentary_numbers(payload)
+    for tok in re.findall(r"\d+(?:\.\d+)?", text_all.replace(",", "")):
+        v = float(tok)
+        if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
+            return False, "ungrounded number: %s" % tok
+    if DIRECTIVE_RE.search(text_all):
+        return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
+    if LEGAL_RE.search(text_all):
+        return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
+    if _PACK_JARGON_RE.search(text_all):
+        return False, "engineering jargon: %s" % _PACK_JARGON_RE.search(text_all).group(0)
+    return True, ""
+
+
 def generate_board_pack_narrative(payload):
-    res = call_claude(BOARD_PACK_SYSTEM, json.dumps(payload, ensure_ascii=False), max_tokens=8000, effort="high")
-    if not res["ok"]:
-        return {"ok": False, "error": res["error"], "narrative": _deterministic_pack(payload)}
-    try:
-        text = res["text"].strip()
-        if text.startswith("```"):
-            text = text.strip("`").lstrip("json").strip()
-        narrative = json.loads(text)
-        return {"ok": True, "narrative": narrative}
-    except ValueError:
-        return {"ok": False, "error": "Model returned non-JSON output", "narrative": _deterministic_pack(payload)}
+    user_content = json.dumps(payload, ensure_ascii=False)
+    last_err = None
+    for _ in range(2):                          # one retry on a rejected/garbled attempt
+        res = call_claude(BOARD_PACK_SYSTEM, user_content, max_tokens=8000,
+                          schema=BOARD_PACK_SCHEMA, effort="high")
+        if not res["ok"]:
+            last_err = res["error"]
+            break                               # API-level failure — a retry won't conjure a key
+        try:
+            narrative = json.loads(res["text"].strip())
+        except ValueError:
+            last_err = "Model returned non-JSON output"
+            continue
+        ok, reason = validate_pack_narrative(narrative, payload)
+        if ok:
+            return {"ok": True, "narrative": narrative}
+        last_err = "narrative rejected: %s" % reason
+    return {"ok": False, "error": last_err or "generation failed",
+            "narrative": _deterministic_pack(payload)}
+
+
+def _pack_verdict_phrase(head):
+    """The dashboard verdict word + depth adverb, composed from the same
+    QA-hardened fields the gauge shows (headline.market) — the pack's opening
+    sentence must not diverge from the app's own read."""
+    m = (head or {}).get("market") or {}
+    v = m.get("verdict")
+    if v == "at":
+        return "broadly in line with the market"
+    if v not in ("below", "above"):
+        return None
+    dp = m.get("depth_pctl")
+    if v == "below":
+        adverb = "clearly" if (dp is not None and dp < 25) else ("moderately" if (dp is not None and dp < 40) else "marginally")
+    else:
+        adverb = "clearly" if (dp is not None and dp > 75) else ("moderately" if (dp is not None and dp > 60) else "marginally")
+    return "%s %s the market" % (adverb, v)
 
 
 def _deterministic_pack(payload):
-    """Rule-based fallback narrative (clearly labelled in the UI) built only
-    from the same payload — used when the Claude API is not configured."""
+    """Rule-based narrative built ONLY from the payload — the pack every member
+    gets until AI goes live, so it must stand on its own: verdict-led, specific,
+    measured. Same register the model is asked for; never directive."""
     org = payload.get("organisation", {})
     head = payload.get("headline", {})
-    s = ("%s sits above the peer median on %s of %s comparable metrics in this benchmark "
-         "(peer group: %s). The pages that follow set out the strongest areas of the people "
-         "proposition, the largest gaps to peers, and the indicative value of closing them.") % (
-        org.get("name", "The organisation"), head.get("above_median", "—"),
-        head.get("comparable_metrics", "—"), payload.get("cut_label", "All peers"))
-    gaps = payload.get("gaps", [])
+    name = org.get("name", "The organisation")
+    cutl = payload.get("cut_label", "All peers")
+    n_total = payload.get("cut_n") or (payload.get("peer_pool") or {}).get("total")
     strengths = payload.get("strengths", [])
-    acts = []
-    for g in gaps[:5]:
-        acts.append("%s currently sits at %s (P%s, %s, n=%s) — an area the board may wish to examine." % (
-            g["label"], g["value_display"], int(round(g["percentile"])), g["cut_label"], g["n"]))
+    gaps = payload.get("gaps", [])
+    totals = payload.get("opportunity_totals") or {}
+
+    counts = "%s of %s comparable metrics sit above the peer median, %s broadly in line and %s below" % (
+        head.get("above_median", "—"), head.get("comparable_metrics", "—"),
+        head.get("broadly_in_line", "—"), head.get("below_median", "—"))
+    where = " (peer group: %s%s)" % (cutl, ", n=%s" % n_total if n_total else "")
+    verdict = _pack_verdict_phrase(head)
+    para1 = ("%s sits %s on this benchmark: %s%s." % (name, verdict, counts, where)) if verdict \
+        else ("%s on this benchmark: %s%s." % (name, counts, where))
+
+    bits = []
+    if strengths:
+        tops = " and ".join("%s (P%s)" % (s["label"], s["percentile"]) for s in strengths[:2])
+        bits.append("The clearest genuine strengths are %s." % tops)
+    invest = totals.get("investment_to_p50_gbp")
+    if invest:
+        bits.append("Closing the largest measurable gaps to the peer median is an indicative "
+                    "investment of £{:,} a year on the stated assumptions; the detail and the "
+                    "assumptions behind it follow.".format(int(invest)))
+    savings = totals.get("savings_to_p50_gbp")
+    if savings:
+        bits.append("Indicative savings of £{:,} a year are modelled where the organisation "
+                    "sits above the market.".format(int(savings)))
+    para2 = " ".join(bits)
+
+    para3 = ("The pages that follow set out where %s leads, the largest gaps to peers, what closing "
+             "them is indicatively worth, and the practices common among peers but not yet in place. "
+             "lumi is a mirror, not a scoreboard: it shows where you stand; the judgement stays with "
+             "the board." % name)
+
+    templates = (
+        "%(label)s sits at %(val)s — P%(pct)s against %(cut)s (n=%(n)s); worth a closer look.",
+        "%(label)s is %(val)s, P%(pct)s against %(cut)s (n=%(n)s) — the board may want to understand what sits behind this.",
+        "%(label)s stands at %(val)s (P%(pct)s, %(cut)s, n=%(n)s) — an area to examine further.",
+    )
+    acts = [templates[ix % len(templates)] % {
+        "label": g["label"], "val": g["value_display"], "pct": int(round(g["percentile"])),
+        "cut": g["cut_label"], "n": g["n"]} for ix, g in enumerate(gaps[:5])]
+
     return {
-        "executive_summary": s,
-        "strengths_narrative": "The organisation is ahead of most similar organisations in the following areas." if strengths else "No statistically comparable strengths were identified in this cut.",
-        "gaps_narrative": "The largest gaps to the peer median, ranked by distance, are set out below." if gaps else "No statistically comparable gaps were identified in this cut.",
-        "opportunity_narrative": "Indicative annual values of moving to the peer median are shown below; all figures rest on the stated assumptions." if payload.get("opportunities") else "",
-        "recommended_actions": acts or ["Complete more of the questionnaire to unlock specific recommendations."],
+        "executive_summary": "\n\n".join(p for p in (para1, para2, para3) if p),
+        "strengths_narrative": (
+            "The strongest positions against the peer median — shown one per measure, ranked by "
+            "percentile distance — are set out below." if strengths
+            else "No comparable strengths stood clear of the peer median in this cut."),
+        "gaps_narrative": (
+            "The %d largest gaps to the peer median, ranked by distance and shown one per measure, "
+            "follow." % len(gaps) if gaps
+            else "No comparable gaps to the peer median were identified in this cut."),
+        "opportunity_narrative": ("Indicative annual values of moving to the peer median are shown "
+                                  "below; all figures rest on the stated assumptions."
+                                  if payload.get("opportunities") else ""),
+        "recommended_actions": acts or ["Complete more of the questionnaire to unlock specific areas to examine."],
         "_fallback": True,
     }
 

@@ -1723,8 +1723,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
      backgrounds by default) */
   body, .pack-page { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   body { background: #fff; }
-  .no-print, .sidebar, .topbar { display: none !important; }
-  .pack-page { box-shadow: none; margin: 0; page-break-after: always; width: auto; min-height: auto; }
+  .no-print, .sidebar, .topbar, .analyst-pane, .modal-back, #toast-host { display: none !important; }
+  /* keep the flex footer PINNED per sheet (min-height:auto would unpin it), one sheet
+     per .pack-page (296mm < the 297mm A4 @page with margin 0), and no trailing blank
+     sheet (break only BETWEEN pages, not after the last). Tables/cards/lists never
+     split across sheets. */
+  .pack-page { box-shadow: none; margin: 0; width: auto; min-height: 296mm; }
+  .pack-page:not(:last-child) { page-break-after: always; break-after: page; }
+  .pack-page table, .pack-page .card, .pack-page ol { break-inside: avoid; page-break-inside: avoid; }
   .content { padding: 0; max-width: none; }
   /* shared board-pack is wrapped in .pack-fit (share.js) to fit phone widths on
      screen; printing must ignore the scale so the PDF lands at full A4 */

@@ -117,9 +117,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <div class="row spread no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
           <button class="btn quiet" onClick=${() => nav("/overview")}>← Back</button>
           <div class="row">
-            ${n._fallback && html`<${Chip} kind="warn">Deterministic narrative — set ANTHROPIC_API_KEY for AI-written prose<//>`}
+            ${n._fallback && html`<${Chip} kind="warn">Standard narrative — AI-written commentary arrives at go-live<//>`}
             ${me && me.user.role === "admin" && html`<button class="btn" onClick=${makeShare}>Create share link (30 days)</button>`}
-            <button class="btn primary" onClick=${() => window.print()}>Download PDF</button>
+            <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + p.organisation.name + " — " + p.generated_date; window.print(); document.title = t; }}>Download PDF</button>
           </div>
         </div>`}
       ${shareLink && html`
@@ -144,7 +144,13 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       <div class="pack-page">
         <h2 class="section-title">Executive position</h2>
         <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
-          <div>
+          ${(() => { const v = p.headline.market && p.headline.market.verdict;
+            const word = v === "below" ? "Below market" : v === "above" ? "Above market" : v === "at" ? "On market" : null;
+            return word ? html`<div>
+              <div class="metric-value">${word}</div>
+              <div class="caption">overall position — the dashboard verdict</div>
+            </div>` : null; })()}
+          <div style=${p.headline.market && p.headline.market.verdict ? { borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" } : null}>
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
             <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
           </div>
@@ -173,6 +179,12 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">What closing the gaps is worth</h2>
         <p>${n.opportunity_narrative}</p>
         ${p.opportunities.length ? html`
+          ${p.opportunity_totals && (p.opportunity_totals.investment_to_p50_gbp || p.opportunity_totals.savings_to_p50_gbp) ? html`
+            <p style=${{ fontSize: "var(--fs-label)" }}><b>
+              ${p.opportunity_totals.investment_to_p50_gbp ? "Indicative total investment to reach the peer median: " + fmtGBPCompact(p.opportunity_totals.investment_to_p50_gbp) + "/yr" : ""}
+              ${p.opportunity_totals.investment_to_p50_gbp && p.opportunity_totals.savings_to_p50_gbp ? " · " : ""}
+              ${p.opportunity_totals.savings_to_p50_gbp ? "modelled savings: " + fmtGBPCompact(p.opportunity_totals.savings_to_p50_gbp) + "/yr" : ""}
+            </b></p>` : null}
           <table class="data" style=${{ marginBottom: "var(--s3)" }}>
             <thead><tr><th>Lever</th><th class="num">To market median</th><th class="num">To upper quartile</th><th>Type</th></tr></thead>
             <tbody>${p.opportunities.map(o => html`
@@ -219,14 +231,18 @@ function PackTable({ rows, good }) {
     <table class="data">
       <thead><tr><th>Metric</th><th class="num">You</th><th class="num">Peer P50</th><th class="num">Percentile</th><th class="num">n</th></tr></thead>
       <tbody>
-        ${rows.map((r, i) => html`
+        ${rows.map((r, i) => {
+          // colour by the metric's own direction when the pack carries it (2026-07-02);
+          // packs stored before that fall back to the old table-membership colour
+          const cls = r.favourable ? (r.favourable === "good" ? "good" : r.favourable === "bad" ? "bad" : "") : (good ? "good" : "bad");
+          return html`
           <tr key=${i}>
-            <td><b>${r.label}</b><div class="caption">${r.superpower} · ${r.cut_label}</div></td>
+            <td><b>${r.label}</b><div class="caption">${r.superpower} · ${r.cut_label}${r.polarity === "lower_is_better" ? " · lower is better here" : ""}</div></td>
             <td class="num"><b>${r.value_display}</b></td>
             <td class="num">${r.p50_display || "—"}</td>
-            <td class="num"><span class=${"chip " + (good ? "good" : "bad")}>${pLabel(r.percentile)}</span></td>
+            <td class="num"><span class=${"chip " + cls}>${pLabel(r.percentile)}</span></td>
             <td class="num">${r.n}</td>
-          </tr>`)}
+          </tr>`; })}
       </tbody>
     </table>`;
 }

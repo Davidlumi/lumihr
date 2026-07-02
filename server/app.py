@@ -2727,8 +2727,34 @@ def assemble_pack_payload(request, user, org, cut):
     summary = pos.overview_summary(items, mp_config=pos.market_position_config(),
                                    practice_items=prac_items,
                                    band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
-    strengths = pos.top_strengths(items, 5)
-    gaps = pos.top_gaps(items, 5)
+    # PACK-LAYER selection integrity (2026-07-02): the pack must agree with the app's
+    # market-position rulings, so (1) CONTEXT metrics (mp_config direction=neutral —
+    # e.g. workforce cost) are never verdicted in the app and cannot appear as board
+    # "strengths"/"gaps"; (2) one matrix question must not consume the whole table —
+    # keep the best/worst ROW per question, fill from the next distinct question.
+    # top_strengths/top_gaps themselves are untouched (other callers keep raw order);
+    # we over-fetch and filter here, at the pack layer only.
+    _mp_cfg = pos.market_position_config()
+    _mp_metrics = _mp_cfg.get("metrics", {})
+    # the same QA-hardened verdict the dashboard gauge shows — THE competitiveness
+    # feed (substance_pool) through _pool_verdict, word/needle agreeing by
+    # construction. NOT in overview_summary (that returns counts only).
+    _gauge_pool = pos.substance_pool(items, prac_items, _mp_cfg)
+    _market = pos._pool_verdict(_gauge_pool, MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN) or {}
+    def _pack_rows(ranked, k=5):
+        out, seen = [], set()
+        for i in ranked:
+            if (_mp_metrics.get(i["question_id"]) or {}).get("direction") == "neutral":
+                continue                    # context, not a verdict — the engine's own ruling
+            if i["question_id"] in seen:
+                continue                    # one row per matrix question family
+            seen.add(i["question_id"])
+            out.append(i)
+            if len(out) == k:
+                break
+        return out
+    strengths = _pack_rows(pos.top_strengths(items, 12))
+    gaps = _pack_rows(pos.top_gaps(items, 12))
     money = pos.money_opportunities(conn, org, visible_questions(), payloads(),
                                     org_answers_for(org), cut, tb)
     reg = build_gap_register(request, user, org, cut)
@@ -2762,6 +2788,11 @@ def assemble_pack_payload(request, user, org, cut):
             "above_median": summary["above_median"],
             "below_median": summary["below_median"],
             "broadly_in_line": summary["broadly_in_line"],
+            # the QA-hardened verdict the dashboard gauge shows (word + needle agree
+            # by construction) — the pack's headline must not diverge from it
+            "market": {"verdict": _market.get("verdict"),
+                       "lean": _market.get("lean"),
+                       "depth_pctl": _market.get("depth_pctl")},
         },
         "strengths": [_pack_item(i) for i in strengths],
         "gaps": [_pack_item(i) for i in gaps],
@@ -2769,6 +2800,9 @@ def assemble_pack_payload(request, user, org, cut):
                            "to_p50_gbp": i["to_p50_gbp"], "to_p75_gbp": i["to_p75_gbp"],
                            "formula": i["formula"], "cut_label": i["cut_label"]}
                           for i in money["items"]],
+        "opportunity_totals": {"savings_to_p50_gbp": money.get("total_savings_to_p50_gbp"),
+                               "investment_to_p50_gbp": money.get("total_investment_to_p50_gbp"),
+                               "fte_known": money.get("fte_known")},
         "opportunity_assumptions": {k: v for k, v in money["assumptions"].items()
                                     if k in ("median_salary_gbp", "cost_per_leaver_pct_salary",
                                              "agency_premium_pct", "fte_band_midpoints")},
@@ -2783,10 +2817,13 @@ def assemble_pack_payload(request, user, org, cut):
 
 def _pack_item(i):
     # percentiles rounded here so the narrative can only cite figures that
-    # appear verbatim in its input payload
+    # appear verbatim in its input payload. polarity/favourable ship so the
+    # RENDER and the narrative colour by direction (a low pay gap is favourable;
+    # the pre-fix render coloured by table membership alone).
     return {"label": i["label"], "value_display": i["value_display"],
             "percentile": int(round(i["percentile"])), "n": i["n"], "cut_label": i["cut_label"],
-            "p50_display": i["p50_display"], "superpower": i["superpower"]}
+            "p50_display": i["p50_display"], "superpower": i["superpower"],
+            "polarity": i.get("polarity"), "favourable": i.get("favourable")}
 
 
 @app.post("/api/boardpack/generate")
@@ -2798,6 +2835,20 @@ async def boardpack_generate(request: Request):
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
     body = await request.json()
     cut = {"dim": body.get("cut", "all"), "value": body.get("cut_value")}
+    if cut["dim"] not in ("all", "industry", "fte_band", "twin", "group"):
+        cut["dim"] = "all"
+    if cut["dim"] == "group":
+        # mirror parse_cut (:555-563): resolve the saved group's label + criteria; a
+        # stale or foreign group id falls back to all-peers rather than shipping a
+        # null label and empty criteria into a board document (the pre-fix bug).
+        row = get_conn().execute(
+            "SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+            (cut["value"] or "", org["org_id"])).fetchone()
+        if row is None:
+            cut = {"dim": "all", "value": None}
+        else:
+            cut["label"] = row["name"]
+            cut["criteria"] = uj(row["criteria_json"], {})
     if cut["dim"] == "industry" and not cut["value"]:
         cut["value"] = org["industry"]
     if cut["dim"] == "fte_band" and not cut["value"]:

@@ -66,7 +66,7 @@ function ShareApp() {
       <div class="share-boardpack" style=${{ padding: "var(--s5) var(--s3)" }}>
         <div class="row spread no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
           <span class="caption">Shared read-only by ${data.org_name} · powered by lumi</span>
-          <button class="btn primary" onClick=${() => window.print()}>Download PDF</button>
+          <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + data.org_name; window.print(); document.title = t; }}>Download PDF</button>
         </div>
         <${PackFit}>
           <${BoardPackView} packId=${null} shared=${true} sharedData=${data} />

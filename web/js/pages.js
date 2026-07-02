@@ -113,6 +113,9 @@ function ExportBoardPack({ me, cut }) {
     } catch (e) {}
   }, []);
   if (contrib && !contrib.insights_unlocked) return null;
+  // the export is an AI-gated feature (same pattern as domain_summary): pre-go-live
+  // the button hides rather than minting guaranteed-403 clicks
+  if (!(me.features && me.features.boardpack)) return null;
   const generate = async () => {
     setGen(true); setErr(null);
     try {
@@ -134,7 +137,8 @@ function ExportBoardPack({ me, cut }) {
         <${Icon} name="chevron-down" size=${13} /></button>
       ${open && html`
         <div class="card bp-menu">
-          ${err && html`<div class="error-text" style=${{ padding: "var(--s2)" }}>${err}</div>`}
+          ${err && html`<div class="caption" style=${{ padding: "var(--s2)", maxWidth: "280px" }}>${err}${" "}
+            <a href="#/settings" onClick=${e => { e.preventDefault(); nav("/settings"); }}>Review AI settings →</a></div>`}
           ${packs == null && html`<div class="caption" style=${{ padding: "var(--s2)" }}>Loading…</div>`}
           ${packs && packs.length === 0 && !err && html`<div class="caption" style=${{ padding: "var(--s2)" }}>No packs yet — Export writes one from your live position.</div>`}
           ${(packs || []).map(p => html`
