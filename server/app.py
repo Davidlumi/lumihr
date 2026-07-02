@@ -2791,6 +2791,8 @@ def assemble_pack_payload(request, user, org, cut):
     return {
         "cut_n": cut_n,
         "cut": {"dim": cut["dim"], "value": cut.get("value")},   # for one-click regenerate
+        "cut_criteria": cut.get("criteria"),                     # saved-group construction, printed on the methodology page
+        "band": {"low": MARKET_BAND_LOW, "high": MARKET_BAND_HIGH},   # the on-market band (scale zones + callout)
         "methodology_version": 1,
         "organisation": {"name": org["name"], "industry": org["industry"],
                          "fte_band": org["fte_band"], "region": org["hq_region"]},
@@ -2851,7 +2853,8 @@ def _pack_item(i):
     return {"label": i["label"], "value_display": i["value_display"],
             "percentile": int(round(i["percentile"])), "n": i["n"], "cut_label": i["cut_label"],
             "p50_display": i["p50_display"], "superpower": i["superpower"],
-            "polarity": i.get("polarity"), "favourable": i.get("favourable")}
+            "polarity": i.get("polarity"), "favourable": i.get("favourable"),
+            "p25_display": i.get("p25_display"), "p75_display": i.get("p75_display")}
 
 
 @app.post("/api/boardpack/generate")

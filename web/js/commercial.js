@@ -110,7 +110,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const p = pack.payload, n = pack.narrative;
   const mVerdict = p.headline.market && p.headline.market.verdict;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v${p.methodology_version || 1}`;
-  const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>lumi · ${page}</span></div>`;
+  const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential · prepared for ${p.organisation.name}</span><span>lumi · ${page}</span></div>`;
   const makeShare = async () => {
     setShareBusy(true);
     try {
@@ -178,6 +178,33 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
+        <h2 class="section-title">How to read this pack</h2>
+        <dl class="bp-method">
+          <dt>Data effective</dt>
+          <dd>${p.collection_window} collection window; figures are read from the live benchmark at generation (${p.generated_date}).
+            No aging or annualisation is applied — none is needed: the benchmark is live, not an annual survey.</dd>
+          <dt>Peer group</dt>
+          <dd>${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total}, drawn from a pool of ${p.peer_pool.total} UK organisations (${p.peer_pool.classified} fully classified).${
+            p.cut_criteria && Object.keys(p.cut_criteria).length
+              ? " Constructed from: " + Object.entries(p.cut_criteria).map(([k, v]) => k.replace(/_/g, " ") + ": " + (Array.isArray(v) ? v.join(", ") : v)).join(" · ") + "."
+              : ""}</dd>
+          <dt>Weighting</dt>
+          <dd>Organisation-weighted throughout — every organisation contributes once, regardless of size.</dd>
+          <dt>Suppression</dt>
+          <dd>Figures resting on fewer than 5 organisations are never shown — including to us.</dd>
+          <dt>Anonymity</dt>
+          <dd>Peer organisations are never named — by design. Every comparison is against the group, never an individual organisation.</dd>
+          <dt>Matching</dt>
+          <dd>Comparisons use lumi's registry of defined metrics: every organisation answers the same defined question, so figures compare
+            like with like. There is no job-title matching to go wrong.</dd>
+        </dl>
+        <p class="caption">Benchmarks are a steer, not a verdict. Where a comparison rests on a thin cut it is marked
+          <b> indicative</b> — interpret those with caution, and treat any single figure as the start of a conversation
+          rather than the end of one.</p>
+        <${Footer} page="1" />
+      </div>
+
+      <div class="pack-page">
         <h2 class="section-title">Where you stand</h2>
         <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
           ${mVerdict ? html`<div>
@@ -216,6 +243,26 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               </tbody>
             </table>` : null}
         </div>
+        ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
+          <div class="bp-scale-wrap">
+            <div class="bp-scale" role="img"
+              aria-label=${"Your typical comparable metric sits at the " + Math.round(p.headline.market.depth_pctl) + "th percentile; the on-market band runs P" + p.band.low + " to P" + p.band.high + "."}>
+              <div class="bp-scale-zone z-below" style=${{ width: p.band.low + "%" }}></div>
+              <div class="bp-scale-zone z-on" style=${{ width: (p.band.high - p.band.low) + "%" }}></div>
+              <div class="bp-scale-zone z-above" style=${{ width: (100 - p.band.high) + "%" }}></div>
+              <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, p.headline.market.depth_pctl)) + "%" }}><span>P${Math.round(p.headline.market.depth_pctl)}</span></div>
+            </div>
+            <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
+            <p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${Math.round(p.headline.market.depth_pctl)}</b>;
+              ${p.headline.broadly_in_line} of ${p.headline.comparable_metrics} comparable metrics sit within the on-market band.</p>
+          </div>` : null}
+        ${p.band ? html`
+          <div class="bp-callout">
+            <b>What "competitive" means here</b>
+            <p class="caption" style=${{ margin: "var(--s1) 0 0" }}>The reference point is the peer median (P50) — the middle of the market, not its ceiling.
+              A position between P${p.band.low} and P${p.band.high} reads as on market: small differences are never treated as gaps.
+              Percentiles locate you among peers — P25 means a quarter of them sit at or below you on that measure.</p>
+          </div>` : null}
         ${p.maturity && p.maturity.Reward && p.maturity.Reward.org_score != null ? html`
           <p class="caption">Practice maturity: your average practice score is <b>${p.maturity.Reward.org_score}/100</b>${p.maturity.Reward.peer_median_score != null ? html` against a peer average of <b>${p.maturity.Reward.peer_median_score}/100</b>` : null}.</p>` : null}
         ${pack.previous && pack.previous.comparable_metrics != null ? html`
@@ -223,7 +270,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         ${p.movement ? html`<p class="caption">${p.movement}</p>` : null}
         <p class="caption">Peer-group composition: ${p.peer_pool.total} UK organisations across 14 sectors (${p.peer_pool.classified} fully classified);
         comparisons use the ${p.cut_label} cut unless stated. Figures resting on fewer than 5 organisations are never shown.</p>
-        <${Footer} page="1" />
+        <${Footer} page="2" />
       </div>
 
       <div class="pack-page">
@@ -257,7 +304,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             </ul>
           </div>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}
-        <${Footer} page="2" />
+        <${Footer} page="3" />
       </div>
 
       <div class="pack-page">
@@ -279,7 +326,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
           ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
-        <${Footer} page="3" />
+        <${Footer} page="4" />
       </div>
 
       <div class="pack-page">
@@ -289,7 +336,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
-        <${Footer} page="4" />
+        <${Footer} page="5" />
       </div>
 
       <div class="pack-page">
@@ -305,16 +352,19 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
         preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
         assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
-        <${Footer} page="5" />
+        <${Footer} page="6" />
       </div>
     </div>`;
 };
 
 function PackTable({ rows, good }) {
   if (!rows || !rows.length) return html`<p class="caption">None identified in this peer group.</p>`;
+  // quartile columns render only when the pack carries them (2026-07-02, WTW/Mercer
+  // percentile-spread convention); packs stored earlier keep the old 5-column layout
+  const hasQ = rows.some(r => r.p25_display || r.p75_display);
   return html`
     <table class="data">
-      <thead><tr><th>Metric</th><th class="num">You</th><th class="num">Peer P50</th><th class="num">Percentile</th><th class="num">n</th></tr></thead>
+      <thead><tr><th>Metric</th><th class="num">You</th>${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">Peer P50</th>${hasQ ? html`<th class="num">P75</th>` : null}<th class="num">Percentile</th><th class="num">n</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
           // colour by the metric's own direction when the pack carries it (2026-07-02);
@@ -324,7 +374,9 @@ function PackTable({ rows, good }) {
           <tr key=${i}>
             <td><b>${r.label}</b><div class="caption">${r.superpower} · ${r.cut_label}${r.polarity === "lower_is_better" ? " · lower is better here" : ""}</div></td>
             <td class="num"><b>${r.value_display}</b></td>
+            ${hasQ ? html`<td class="num">${r.p25_display || "—"}</td>` : null}
             <td class="num">${r.p50_display || html`<span class="caption" title="Score metric — peers are compared by score, not a single median value">score</span>`}</td>
+            ${hasQ ? html`<td class="num">${r.p75_display || "—"}</td>` : null}
             <td class="num"><span class=${"chip " + cls}>${pLabel(r.percentile)}</span></td>
             <td class="num">${r.n}</td>
           </tr>`; })}

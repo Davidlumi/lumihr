@@ -256,6 +256,10 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         "n": blk["n"],
         "p50": blk.get("p50"),
         "p50_display": fmt_value(blk.get("p50"), q.unit_block()) if kind == "value" else None,
+        # additive display fields (board pack quartile columns, 2026-07-02) — no other
+        # consumer reads these; scoring/routing/gauge behaviour unchanged by construction
+        "p25_display": fmt_value(blk.get("p25"), q.unit_block()) if kind == "value" else None,
+        "p75_display": fmt_value(blk.get("p75"), q.unit_block()) if kind == "value" else None,
         "cut_label": cut_label,
         "unit": q.unit_block(),
         "tier": q.lumi_tier,

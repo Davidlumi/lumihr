@@ -1764,6 +1764,22 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .bp-menu-row .bp-menu-item { flex: 1; }
 .bp-menu-del { border: none; background: none; color: var(--ink-faint); cursor: pointer; padding: 0 var(--s3); }
 .bp-menu-del:hover { color: var(--unfavourable); }
+/* Sprint 1 credibility furniture (2026-07-02): methodology page, competitiveness scale, callout */
+.bp-method { margin: var(--s3) 0 var(--s4); font-size: var(--fs-label); }
+.bp-method dt { font-weight: 650; margin-top: var(--s3); }
+.bp-method dd { margin: 2px 0 0; color: var(--ink-soft); }
+.bp-callout { border-left: 3px solid var(--blue); background: var(--surface-sunk); border-radius: var(--radius-sm);
+  padding: var(--s3) var(--s4); margin: var(--s3) 0; }
+.bp-scale-wrap { margin: var(--s5) 0 var(--s3); }
+.bp-scale { position: relative; display: flex; height: 14px; }
+.bp-scale-zone { height: 100%; }
+.bp-scale .z-below { background: var(--amber-bright); border-radius: 7px 0 0 7px; }
+.bp-scale .z-on { background: var(--favourable); }
+.bp-scale .z-above { background: var(--unfavourable); border-radius: 0 7px 7px 0; }
+.bp-scale-marker { position: absolute; top: -5px; width: 2px; height: 24px; background: var(--ink); transform: translateX(-1px); }
+.bp-scale-marker span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+  font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
+.bp-scale-labels { display: flex; justify-content: space-between; margin-top: var(--s2); }
 
 /* Shared board-pack viewport fit (share page only). The A4 pages are a fixed
    210mm wide; on a phone that overflows sideways. share.js measures the natural
