@@ -161,6 +161,16 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   };
   const stale = !shared && pack.current_collection_window && p.collection_window
     && pack.current_collection_window !== p.collection_window;
+  // the Strategy-alignment page is conditional (needs a declared, completed strategy in
+  // the pack — old packs and strategy-less orgs skip it), so later page numbers shift
+  const hasStrat = !!(p.strategy_alignment && p.strategy_alignment.overall_aim);
+  const PN = { money: hasStrat ? 5 : 4, watch: hasStrat ? 6 : 5, evid: hasStrat ? 7 : 6, appx: hasStrat ? 8 : 7 };
+  const POS_WORD = { below: "below market", at: "on market", above: "above market" };
+  const ALIGN_WORD = { on_target: "on aim", ahead: "ahead of aim", behind: "behind aim" };
+  const toc = [["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"]]
+    .concat(hasStrat ? [["Strategy alignment", "4"]] : [])
+    .concat([["What closing the gaps is worth", String(PN.money)], ["What to watch", String(PN.watch)],
+             ["The evidence", String(PN.evid)], ["Appendix — peer practices", String(PN.appx)]]);
   return html`
     <div>
       ${!shared && html`
@@ -207,9 +217,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </div>
           <div class="bp-toc">
             <div class="bp-toc-title">Contents</div>
-            ${[["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"],
-               ["What closing the gaps is worth", "4"], ["What to watch", "5"],
-               ["The evidence", "6"], ["Appendix — peer practices", "7"]].map(([t, pg]) => html`
+            ${toc.map(([t, pg]) => html`
               <div key=${pg} class="bp-toc-row"><span>${t}</span><span class="bp-toc-dots"></span><span class="num">${pg}</span></div>`)}
           </div>
         </div>
@@ -326,8 +334,34 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <${Footer} page="3" />
       </div>
 
+      ${hasStrat ? html`
       <div class="pack-page">
-        <${PackSecHead} num=${4} title="What closing the gaps is worth" />
+        <${PackSecHead} num=${4} title="Strategy alignment" />
+        <p style=${{ fontSize: "var(--fs-label)" }}>
+          The board's declared reward strategy${p.strategy_alignment.objective ? html` centres on a <b>${p.strategy_alignment.objective}</b> objective` : null},
+          with an overall aim to sit <b>${p.strategy_alignment.overall_aim}</b>${p.strategy_alignment.domains.some(d => d.aim_is_override) ? " (with area-level aims where set below)" : ""}.
+          The table reads today's position in each area against that aim.
+        </p>
+        ${p.strategy_alignment.domains.length ? html`
+          <table class="data">
+            <thead><tr><th>Area</th><th>Your aim</th><th>Your position</th><th class="num">Read</th></tr></thead>
+            <tbody>${p.strategy_alignment.domains.map(d => html`
+              <tr key=${d.name}>
+                <td><b>${domainLabel(d.name)}</b>${d.aim_is_override ? html` <span class="caption">· area aim</span>` : null}</td>
+                <td>${d.aim || "—"}</td>
+                <td>${POS_WORD[d.position] || "—"}</td>
+                <td class="num"><span class=${"chip " + (d.alignment === "on_target" ? "good" : d.alignment === "behind" ? "bad" : "")}>${ALIGN_WORD[d.alignment] || "—"}</span></td>
+              </tr>`)}
+            </tbody>
+          </table>` : null}
+        ${n.strategy_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.strategy_commentary}</p>` : null}
+        <p class="caption">Alignment reads your position against your own declared aim — lumi never judges the strategy itself.
+          Aims are set by your Admins under Reward strategy and can be changed at any time.</p>
+        <${Footer} page="4" />
+      </div>` : null}
+
+      <div class="pack-page">
+        <${PackSecHead} num=${PN.money} title="What closing the gaps is worth" />
         <p>${n.opportunity_narrative}</p>
         ${p.opportunities.length ? html`
           ${p.opportunity_totals && (p.opportunity_totals.investment_to_p50_gbp || p.opportunity_totals.savings_to_p50_gbp) ? html`
@@ -357,11 +391,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             </ul>
           </div>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}
-        <${Footer} page="4" />
+        <${Footer} page=${String(PN.money)} />
       </div>
 
       <div class="pack-page">
-        <${PackSecHead} num=${5} title="What to watch" />
+        <${PackSecHead} num=${PN.watch} title="What to watch" />
         ${p.signals && p.signals.length ? html`
           <p class="caption" style=${{ marginTop: "-4px" }}>The benchmark's top flagged items — the same balanced briefing the lumi dashboard shows, in the absolute view.</p>
           <div class="bp-signals">
@@ -379,22 +413,22 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
           ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
-        <${Footer} page="5" />
+        <${Footer} page=${String(PN.watch)} />
       </div>
 
       <div class="pack-page">
-        <${PackSecHead} num=${6} title=${"The evidence — where " + p.organisation.name + " leads"} />
+        <${PackSecHead} num=${PN.evid} title=${"The evidence — where " + p.organisation.name + " leads"} />
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
         <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
         ${n.evidence_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.evidence_commentary}</p>` : null}
-        <${Footer} page="6" />
+        <${Footer} page=${String(PN.evid)} />
       </div>
 
       <div class="pack-page">
-        <${PackSecHead} num=${7} title="Appendix — practices common among peers but not in place" />
+        <${PackSecHead} num=${PN.appx} title="Appendix — practices common among peers but not in place" />
         ${p.gap_register_top.length ? html`
           <table class="data">
             <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th><th class="num">Peer adoption</th></tr></thead>
@@ -406,7 +440,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
         preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
         assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
-        <${Footer} page="7" />
+        <${Footer} page=${String(PN.appx)} />
       </div>
     </div>`;
 };

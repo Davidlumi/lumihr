@@ -105,6 +105,10 @@ Return STRICT JSON with keys:
   "evidence_commentary": 1-2 sentences on what the percentile spread in the gaps table shows (e.g.
      whether the largest gaps sit below the peer P25 — outside the middle half); empty string if
      quartiles are absent,
+  "strategy_commentary": 2-4 sentences reading strategy_alignment — restate the declared aim and
+     objective in plain words, say whether the organisation reads behind / on / ahead of its OWN aim
+     overall and name the areas on each side; close by noting alignment reads against the declared
+     aim, never a judgement of the strategy itself; empty string if strategy_alignment is absent,
   "strengths_narrative": one short paragraph introducing the strengths table,
   "gaps_narrative": one short paragraph introducing the gaps table,
   "opportunity_narrative": one short paragraph on the indicative £ opportunities (if present),
@@ -123,7 +127,7 @@ Return ONLY the JSON object, no markdown fences."""
 
 BOARD_PACK_PARTS = ("executive_summary", "key_findings", "strengths_narrative", "gaps_narrative",
                     "opportunity_narrative", "position_commentary", "evidence_commentary",
-                    "recommended_actions")
+                    "strategy_commentary", "recommended_actions")
 
 # Structured output: exactly the five narrative fields (same pattern as
 # COMMENTARY_SCHEMA), so the only thing left to gate is groundedness.
@@ -138,6 +142,7 @@ BOARD_PACK_SCHEMA = {
         "opportunity_narrative": {"type": "string"},
         "position_commentary": {"type": "string"},
         "evidence_commentary": {"type": "string"},
+        "strategy_commentary": {"type": "string"},
         "recommended_actions": {"type": "array", "items": {"type": "string"},
                                 "minItems": 4, "maxItems": 6},
     },
@@ -166,7 +171,7 @@ def validate_pack_narrative(narrative, payload):
         else:
             # the three secondary commentaries may legitimately be empty on thin data
             if not isinstance(v, str) or (k not in ("opportunity_narrative", "position_commentary",
-                                                    "evidence_commentary") and not v.strip()):
+                                                    "evidence_commentary", "strategy_commentary") and not v.strip()):
                 return False, "missing or empty %s" % k
             texts.append(v)
     for t in texts:
@@ -328,11 +333,33 @@ def _deterministic_pack(payload):
     elif val_gaps:
         evidence_commentary = "The quartile columns show where each gap sits against the middle half of the market (P25–P75)."
 
+    sa = payload.get("strategy_alignment") or {}
+    strategy_commentary = ""
+    if sa.get("overall_aim"):
+        _alw = {"behind": "currently reads behind that aim", "on_target": "currently reads on that aim",
+                "ahead": "currently reads ahead of that aim"}.get(sa.get("overall_alignment"),
+                                                                  "cannot yet be read against that aim")
+        strategy_commentary = "The declared aim is to sit %s%s. Overall, the organisation %s." % (
+            sa["overall_aim"],
+            " in service of a %s objective" % sa["objective"].lower() if sa.get("objective") else "",
+            _alw)
+        _sa_doms = sa.get("domains") or []
+        _by = []
+        for _lab, _key in (("on aim", "on_target"), ("ahead of it", "ahead"), ("behind it", "behind")):
+            _names = [d["name"] for d in _sa_doms if d.get("alignment") == _key]
+            if _names:
+                _by.append("%s %s" % (", ".join(_names), _lab))
+        if _by:
+            strategy_commentary += " By area: " + "; ".join(_by) + "."
+        strategy_commentary += (" Alignment is a reading against your own declared aim — "
+                                "it is not a judgement of the strategy itself.")
+
     return {
         "executive_summary": "\n\n".join(p for p in (para1, para2, para3) if p),
         "key_findings": findings[:6],
         "position_commentary": position_commentary,
         "evidence_commentary": evidence_commentary,
+        "strategy_commentary": strategy_commentary,
         "strengths_narrative": (
             "The strongest positions against the peer median — shown one per measure, ranked by "
             "percentile distance — are set out below." if strengths

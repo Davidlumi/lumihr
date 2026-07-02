@@ -2777,6 +2777,43 @@ def assemble_pack_payload(request, user, org, cut):
         "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
         (org["org_id"],)).fetchone())
     _snap_count = conn.execute("SELECT count(*) FROM snapshots").fetchone()[0]
+    # STRATEGY ALIGNMENT page (2026-07-03, David's ruling): the declared strategy plus
+    # the engine's own per-domain read against it — computed via the SAME hero path the
+    # dashboard uses (hero_signals with strategy applied), stances translated to member
+    # words (lag/match/lead never renders — the standing vocabulary rule).
+    _strat_align = None
+    if _strat and _strat_done:
+        _prev_items = pos.prevalence_items(org["org_id"], cut, _visq, payloads(),
+                                           _answers, make_entitled(user, org), tb)
+        _sec_order = []
+        for _q in _visq.values():
+            if _q.sub_power and _q.sub_power not in _sec_order:
+                _sec_order.append(_q.sub_power)
+        _sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in _visq.values() if q.sub_power == x))
+        _hero_s = pos.hero_signals(items, _prev_items, _sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                                   DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                                   practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                                   mp_config=_mp_cfg, strategy=_strat)
+        _stance_word = {"lag": "below market", "match": "on market", "lead": "above market"}
+        _overall_t = (_hero_s.get("market") or {}).get("target")
+        _dom_rows = []
+        for _d in _hero_s.get("domains", []):
+            _t = _d.get("target")
+            if not _t:
+                continue
+            _pos_v = (_d.get("position") or {}).get("verdict")
+            _dom_rows.append({"name": _d["name"],
+                              "aim": _stance_word.get(_t.get("stance")),
+                              "aim_is_override": _d["name"] in (_strat.get("domain_targets") or {}),
+                              "position": _pos_v,
+                              "alignment": _t.get("alignment")})
+        _strat_align = {
+            "objective": OBJECTIVE_LABELS.get(_strat.get("primary_objective")) if (
+                (_strat.get("provenance") or {}).get("primary_objective") != "skipped") else None,
+            "overall_aim": _stance_word.get(_strat.get("market_position")),
+            "overall_alignment": _overall_t.get("alignment") if _overall_t else None,
+            "domains": _dom_rows,
+        }
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     cut_label = "All peers" if cut["dim"] == "all" else (
@@ -2848,6 +2885,7 @@ def assemble_pack_payload(request, user, org, cut):
                          _strat and (_strat.get("provenance") or {}).get("primary_objective") != "skipped") else None},
         "movement": ("First benchmark period — movement appears from your next data cycle."
                      if _snap_count <= 1 else None),
+        "strategy_alignment": _strat_align,
     }
 
 
