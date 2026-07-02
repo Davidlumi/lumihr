@@ -1704,11 +1704,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   body, .pack-page { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   body { background: #fff; }
   .no-print, .sidebar, .topbar, .analyst-pane, .modal-back, #toast-host { display: none !important; }
-  /* keep the flex footer PINNED per sheet (min-height:auto would unpin it), one sheet
-     per .pack-page (296mm < the 297mm A4 @page with margin 0), and no trailing blank
-     sheet (break only BETWEEN pages, not after the last). Tables/cards/lists never
-     split across sheets. */
-  .pack-page { box-shadow: none; margin: 0; width: auto; min-height: 296mm; }
+  /* EXACT one sheet per .pack-page: fixed 296mm height (under the 297mm A4 @page,
+     margin 0) with overflow clipped, so a hair of content drift can never cascade
+     the page boundaries (min-height let footers orphan onto blank sheets). Footers
+     stay pinned by the flex column; break only BETWEEN pages. */
+  .pack-page { box-shadow: none; margin: 0; width: auto;
+    height: 296mm; min-height: 296mm; max-height: 296mm; overflow: hidden; }
+  .share-boardpack { padding: 0 !important; }
   .pack-page:not(:last-child) { page-break-after: always; break-after: page; }
   .pack-page table, .pack-page .card, .pack-page ol { break-inside: avoid; page-break-inside: avoid; }
   .content { padding: 0; max-width: none; }
@@ -1761,6 +1763,22 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
 .bp-scale-labels { display: flex; justify-content: space-between; margin-top: var(--s2); }
 .bp-masknote { margin-top: var(--s1); }
+/* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */
+.bp-statrow { display: flex; flex-direction: row; align-items: stretch; gap: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--s4) 0; margin-bottom: var(--s4); }
+.bp-stat { flex: 1 1 0; padding: 0 var(--s4); min-width: 0; }
+.bp-stat + .bp-stat { border-left: 1px solid var(--border); }
+/* the spread table: fixed layout so the label column ACTUALLY gets its width in print */
+.pack-page table.bp-wide { table-layout: fixed; width: 100%; }
+.pack-page table.bp-wide th:first-child, .pack-page table.bp-wide td:first-child { width: 30%; }
+/* explicit stat-column widths (fixed layout): n 7%, percentile 11%, the six value
+   columns share the rest (~8.7% each) — values stay whole, no ellipsis ever */
+.pack-page table.bp-wide th:nth-last-child(1), .pack-page table.bp-wide td:nth-last-child(1) { width: 7%; }
+.pack-page table.bp-wide th:nth-last-child(2), .pack-page table.bp-wide td:nth-last-child(2) { width: 11%; }
+.pack-page table.bp-wide td.num { white-space: nowrap; }
+.pack-page table.bp-wide th.num { white-space: normal; }
+.pack-footer .pack-pageno { white-space: nowrap; }
+.pack-footer > span:nth-child(2) { white-space: nowrap; }
 /* cover contents (WTW convention) */
 .bp-toc { margin-top: var(--s6, 32px); max-width: 120mm; }
 .bp-toc-title { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em; text-transform: uppercase;

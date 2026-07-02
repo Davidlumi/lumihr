@@ -110,7 +110,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const p = pack.payload, n = pack.narrative;
   const mVerdict = p.headline.market && p.headline.market.verdict;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v${p.methodology_version || 1}`;
-  const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential · prepared for ${p.organisation.name}</span><span>lumi · ${page}</span></div>`;
+  const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential</span><span class="pack-pageno">lumi · ${page}</span></div>`;
   const makeShare = async () => {
     setShareBusy(true);
     try {
@@ -201,7 +201,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             <div class="bp-toc-title">Contents</div>
             ${[["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"],
                ["What closing the gaps is worth", "4"], ["What to watch", "5"],
-               ["The evidence — strengths", "6"], ["The evidence — gaps", "7"], ["Appendix — peer practices", "8"]].map(([t, pg]) => html`
+               ["The evidence", "6"], ["Appendix — peer practices", "7"]].map(([t, pg]) => html`
               <div key=${pg} class="bp-toc-row"><span>${t}</span><span class="bp-toc-dots"></span><span class="num">${pg}</span></div>`)}
           </div>
         </div>
@@ -237,16 +237,16 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <h2 class="section-title">Executive summary</h2>
-        <div class="card banner" style=${{ marginBottom: "var(--s4)", boxShadow: "none" }}>
-          ${mVerdict ? html`<div>
+        <div class="bp-statrow">
+          ${mVerdict ? html`<div class="bp-stat">
               <div class="metric-value">${mVerdict === "below" ? "Below market" : mVerdict === "above" ? "Above market" : "On market"}</div>
               <div class="caption">overall position — the dashboard verdict</div>
             </div>` : null}
-          <div style=${mVerdict ? { borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" } : null}>
+          <div class="bp-stat">
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
             <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
           </div>
-          <div style=${{ borderLeft: "1px solid var(--border)", paddingLeft: "var(--s5)" }}>
+          <div class="bp-stat">
             <div class="metric-value">${p.peer_pool.total}</div>
             <div class="caption">organisations in the lumi peer pool</div>
           </div>
@@ -293,7 +293,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               <thead><tr><th>Area</th><th class="num">Above</th><th class="num">In line</th><th class="num">Below</th></tr></thead>
               <tbody>${Object.entries(p.by_section).sort((a, b) => b[1].available - a[1].available)
                 .filter(([, v]) => v.available > 0).slice(0, 7).map(([k, v]) => html`
-                <tr key=${k}><td><b>${k}</b> <span class="caption">· ${v.available}</span></td>
+                <tr key=${k}><td><b>${domainLabel(k)}</b> <span class="caption">· ${v.available}</span></td>
                   <td class="num">${v.above}</td><td class="num">${v.inline}</td><td class="num">${v.below}</td></tr>`)}
               </tbody>
             </table>` : null}
@@ -372,14 +372,10 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <h2 class="section-title">The evidence — where ${p.organisation.name} leads</h2>
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
-        <${Footer} page="6" />
-      </div>
-
-      <div class="pack-page">
-        <h2 class="section-title">The evidence — largest gaps to the market</h2>
+        <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
-        <${Footer} page="7" />
+        <${Footer} page="6" />
       </div>
 
       <div class="pack-page">
@@ -387,7 +383,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         ${p.gap_register_top.length ? html`
           <table class="data">
             <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th><th class="num">Peer adoption</th></tr></thead>
-            <tbody>${p.gap_register_top.map((r, i) => html`
+            <tbody>${p.gap_register_top.slice(0, 8).map((r, i) => html`
               <tr key=${i}><td>${r.name}</td><td>${r.superpower}</td><td class="caption">${r.your_status}</td>
               <td class="num"><b>${r.peer_adoption_pct}%</b> <span class="caption">(n=${r.n})</span></td></tr>`)}
             </tbody>
@@ -395,7 +391,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s3)" }}>Methodology: percentiles use linear interpolation; medians (P50) are
         preferred to means; aggregates resting on fewer than 5 organisations are suppressed; practice adoption is the share of
         assessable peer answers where the practice is at least partly in place ('Don't know' and 'Not applicable' answers excluded). Full methodology in the lumi platform.</p>
-        <${Footer} page="8" />
+        <${Footer} page="7" />
       </div>
     </div>`;
 };
@@ -410,7 +406,7 @@ function PackTable({ rows, good }) {
   const masked = rows.some(r => (r.p50_display && hasQ && !r.p25_display) || (r.p50_display && hasT && !r.p10_display));
   return html`
     <table class=${"data" + (hasT ? " bp-wide" : "")}>
-      <thead><tr><th>Metric</th><th class="num">You</th>${hasT ? html`<th class="num">P10</th>` : null}${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">Peer P50</th>${hasQ ? html`<th class="num">P75</th>` : null}${hasT ? html`<th class="num">P90</th>` : null}<th class="num">Percentile</th><th class="num">n</th></tr></thead>
+      <thead><tr><th>Metric</th><th class="num">You</th>${hasT ? html`<th class="num">P10</th>` : null}${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">${hasQ ? "P50" : "Peer P50"}</th>${hasQ ? html`<th class="num">P75</th>` : null}${hasT ? html`<th class="num">P90</th>` : null}<th class="num">${hasT ? "Pctl" : "Percentile"}</th><th class="num">n</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
           // colour by the metric's own direction when the pack carries it (2026-07-02);
