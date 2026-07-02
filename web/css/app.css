@@ -1780,6 +1780,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .bp-scale-marker span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
   font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
 .bp-scale-labels { display: flex; justify-content: space-between; margin-top: var(--s2); }
+.bp-masknote { margin-top: var(--s1); }
 
 /* Shared board-pack viewport fit (share page only). The A4 pages are a fixed
    210mm wide; on a phone that overflows sideways. share.js measures the natural

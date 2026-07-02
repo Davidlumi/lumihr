@@ -93,6 +93,12 @@ COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # requir
 _band = os.environ.get("LUMI_MARKET_BAND", "35-65").split("-")
 MARKET_BAND_LOW, MARKET_BAND_HIGH = float(_band[0]), float(_band[1])
 DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
+# Board-pack graduated DISPLAY thresholds (Sprint 2 ruling, 2026-07-02 — the Mercer
+# convention): the n<5 anonymity floor stays absolute everywhere; above it, quartiles
+# show at n>=7 and the P10/P90 tails at n>=10, masked cells rendering as '—'. Display
+# policy only — engine suppression untouched. David-tunable.
+PACK_QUARTILE_MIN_N = int(os.environ.get("LUMI_PACK_QUARTILE_MIN_N", "7"))
+PACK_TAIL_MIN_N = int(os.environ.get("LUMI_PACK_TAIL_MIN_N", "10"))
 # minimum distinct positioned questions for a tile's INDICATIVE verdict when
 # the strict floor isn't met (David-tunable; evidence counts ship to the UI)
 TILE_MIN_POSITIONED = int(os.environ.get("LUMI_TILE_MIN_POSITIONED", "1"))
@@ -2850,11 +2856,19 @@ def _pack_item(i):
     # appear verbatim in its input payload. polarity/favourable ship so the
     # RENDER and the narrative colour by direction (a low pay gap is favourable;
     # the pre-fix render coloured by table membership alone).
+    # graduated display (Sprint 2): the stored payload IS the graduated truth, so the
+    # narrative's number-grounding can never cite a masked statistic either
+    n = i["n"]
+    q_ok = n >= PACK_QUARTILE_MIN_N
+    t_ok = n >= PACK_TAIL_MIN_N
     return {"label": i["label"], "value_display": i["value_display"],
-            "percentile": int(round(i["percentile"])), "n": i["n"], "cut_label": i["cut_label"],
+            "percentile": int(round(i["percentile"])), "n": n, "cut_label": i["cut_label"],
             "p50_display": i["p50_display"], "superpower": i["superpower"],
             "polarity": i.get("polarity"), "favourable": i.get("favourable"),
-            "p25_display": i.get("p25_display"), "p75_display": i.get("p75_display")}
+            "p25_display": i.get("p25_display") if q_ok else None,
+            "p75_display": i.get("p75_display") if q_ok else None,
+            "p10_display": i.get("p10_display") if t_ok else None,
+            "p90_display": i.get("p90_display") if t_ok else None}
 
 
 @app.post("/api/boardpack/generate")

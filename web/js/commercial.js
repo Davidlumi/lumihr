@@ -128,6 +128,29 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
     } catch (e) { toast(e.message, "error"); }
     setRegen(false);
   };
+  // evidence CSV (Sprint 2): the vendor convention — the data behind the document,
+  // exported client-side from the pack's own stored payload (nothing recomputed)
+  const downloadCsv = () => {
+    const esc = v => v == null ? "" : /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+    const lines = [];
+    lines.push("# Board pack data — " + p.organisation.name);
+    lines.push("# " + foot + " · Private & confidential");
+    lines.push("section,metric,area,peer group,you,P10,P25,P50,P75,P90,percentile,n,notes");
+    const row = (section, r) => lines.push([section, r.label, r.superpower, r.cut_label, r.value_display,
+      r.p10_display, r.p25_display, r.p50_display, r.p75_display, r.p90_display, r.percentile, r.n,
+      r.polarity === "lower_is_better" ? "lower is better" : ""].map(esc).join(","));
+    (p.strengths || []).forEach(r => row("strength", r));
+    (p.gaps || []).forEach(r => row("gap", r));
+    (p.opportunities || []).forEach(o => lines.push(["opportunity", o.label, "", o.cut_label, "", "", "", "", "", "", "", "",
+      o.direction + " · to P50 " + o.to_p50_gbp + " GBP/yr · to P75 " + o.to_p75_gbp + " GBP/yr"].map(esc).join(",")));
+    (p.gap_register_top || []).forEach(r => lines.push(["practice gap", r.name, r.superpower, "", r.your_status,
+      "", "", "", "", "", "", r.n, "peer adoption " + r.peer_adoption_pct + "%"].map(esc).join(",")));
+    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Board pack data — " + p.organisation.name + " — " + p.generated_date + ".csv";
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+  };
   const stale = !shared && pack.current_collection_window && p.collection_window
     && pack.current_collection_window !== p.collection_window;
   return html`
@@ -144,6 +167,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 <option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option>
               </select>
               <button class="btn" disabled=${shareBusy} onClick=${makeShare}>${shareBusy ? "Creating…" : "Create share link"}</button>`}
+            <button class="btn" title="The data behind this document, as a spreadsheet" onClick=${downloadCsv}>Download data (CSV)</button>
             <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + p.organisation.name + " — " + p.generated_date; window.print(); document.title = t; }}>Download PDF</button>
           </div>
         </div>`}
@@ -359,12 +383,15 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
 function PackTable({ rows, good }) {
   if (!rows || !rows.length) return html`<p class="caption">None identified in this peer group.</p>`;
-  // quartile columns render only when the pack carries them (2026-07-02, WTW/Mercer
-  // percentile-spread convention); packs stored earlier keep the old 5-column layout
+  // quartile/tail columns render only when the pack carries them (2026-07-02, WTW/Mercer
+  // percentile-spread convention; Sprint-2 graduated display) — packs stored earlier keep
+  // the old 5-column layout. Masked statistics (thin cuts) show as '—' with the legend.
   const hasQ = rows.some(r => r.p25_display || r.p75_display);
+  const hasT = rows.some(r => r.p10_display || r.p90_display);
+  const masked = rows.some(r => (r.p50_display && hasQ && !r.p25_display) || (r.p50_display && hasT && !r.p10_display));
   return html`
     <table class="data">
-      <thead><tr><th>Metric</th><th class="num">You</th>${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">Peer P50</th>${hasQ ? html`<th class="num">P75</th>` : null}<th class="num">Percentile</th><th class="num">n</th></tr></thead>
+      <thead><tr><th>Metric</th><th class="num">You</th>${hasT ? html`<th class="num">P10</th>` : null}${hasQ ? html`<th class="num">P25</th>` : null}<th class="num">Peer P50</th>${hasQ ? html`<th class="num">P75</th>` : null}${hasT ? html`<th class="num">P90</th>` : null}<th class="num">Percentile</th><th class="num">n</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
           // colour by the metric's own direction when the pack carries it (2026-07-02);
@@ -374,14 +401,17 @@ function PackTable({ rows, good }) {
           <tr key=${i}>
             <td><b>${r.label}</b><div class="caption">${r.superpower} · ${r.cut_label}${r.polarity === "lower_is_better" ? " · lower is better here" : ""}</div></td>
             <td class="num"><b>${r.value_display}</b></td>
+            ${hasT ? html`<td class="num">${r.p10_display || "—"}</td>` : null}
             ${hasQ ? html`<td class="num">${r.p25_display || "—"}</td>` : null}
             <td class="num">${r.p50_display || html`<span class="caption" title="Score metric — peers are compared by score, not a single median value">score</span>`}</td>
             ${hasQ ? html`<td class="num">${r.p75_display || "—"}</td>` : null}
+            ${hasT ? html`<td class="num">${r.p90_display || "—"}</td>` : null}
             <td class="num"><span class=${"chip " + cls}>${pLabel(r.percentile)}</span></td>
             <td class="num">${r.n}</td>
           </tr>`; })}
       </tbody>
-    </table>`;
+    </table>
+    ${masked ? html`<p class="caption bp-masknote">— = sample too small for that statistic (quartiles need n≥7, P10/P90 need n≥10; nothing below n=5 is ever shown).</p>` : null}`;
 }
 window.PackTable = PackTable;
 

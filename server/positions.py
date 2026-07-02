@@ -256,10 +256,13 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         "n": blk["n"],
         "p50": blk.get("p50"),
         "p50_display": fmt_value(blk.get("p50"), q.unit_block()) if kind == "value" else None,
-        # additive display fields (board pack quartile columns, 2026-07-02) — no other
-        # consumer reads these; scoring/routing/gauge behaviour unchanged by construction
+        # additive display fields (board pack quartile columns, 2026-07-02; tails Sprint 2) —
+        # no other consumer reads these; scoring/routing/gauge behaviour unchanged by
+        # construction. The pack layer applies the graduated display thresholds.
         "p25_display": fmt_value(blk.get("p25"), q.unit_block()) if kind == "value" else None,
         "p75_display": fmt_value(blk.get("p75"), q.unit_block()) if kind == "value" else None,
+        "p10_display": fmt_value(blk.get("p10"), q.unit_block()) if kind == "value" else None,
+        "p90_display": fmt_value(blk.get("p90"), q.unit_block()) if kind == "value" else None,
         "cut_label": cut_label,
         "unit": q.unit_block(),
         "tier": q.lumi_tier,
