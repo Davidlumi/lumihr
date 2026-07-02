@@ -96,6 +96,14 @@ function GapRow({ r, focused }) {
 }
 
 // ------------------------------------------------------------ board pack ---// ------------------------------------------------------------ board pack ---
+/* numbered, colour-coded section head — the pack's document furniture (2026-07-02) */
+function PackSecHead({ num, title }) {
+  return html`<div class=${"bp-sechead bp-c" + num}>
+    <span class="bp-secnum num">${String(num).padStart(2, "0")}</span>
+    <h2 class="section-title">${title}</h2>
+  </div>`;
+}
+
 window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const [pack, setPack] = useState(sharedData || null);
   const [shareLink, setShareLink] = useState(null);
@@ -209,7 +217,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">How to read this pack</h2>
+        <${PackSecHead} num=${1} title="How to read this pack" />
         <dl class="bp-method">
           <dt>Data effective</dt>
           <dd>${p.collection_window} collection window; figures are read from the live benchmark at generation (${p.generated_date}).
@@ -236,7 +244,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">Executive summary</h2>
+        <${PackSecHead} num=${2} title="Executive summary" />
         <div class="bp-statrow">
           ${mVerdict ? html`<div class="bp-stat">
               <div class="metric-value">${mVerdict === "below" ? "Below market" : mVerdict === "above" ? "Above market" : "On market"}</div>
@@ -251,6 +259,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             <div class="caption">organisations in the lumi peer pool</div>
           </div>
         </div>
+        ${n.key_findings && n.key_findings.length ? html`
+          <div class="bp-findings">
+            <div class="bp-findings-title">Key findings</div>
+            <ol>${n.key_findings.map((f, i) => html`<li key=${i}>${f}</li>`)}</ol>
+          </div>` : null}
         ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "var(--fs-label)" }}>${para}</p>`)}
         ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
           <div class="bp-scale-wrap">
@@ -275,7 +288,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">Position by area</h2>
+        <${PackSecHead} num=${3} title="Position by area" />
         <div class="bp-position-row">
           ${window.Donut && p.headline.comparable_metrics ? html`
             <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " broadly in line, " + p.headline.above_median + " above."}>
@@ -298,6 +311,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               </tbody>
             </table>` : null}
         </div>
+        ${n.position_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.position_commentary}</p>` : null}
         ${p.band ? html`
           <div class="bp-callout">
             <b>What "competitive" means here</b>
@@ -313,7 +327,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">What closing the gaps is worth</h2>
+        <${PackSecHead} num=${4} title="What closing the gaps is worth" />
         <p>${n.opportunity_narrative}</p>
         ${p.opportunities.length ? html`
           ${p.opportunity_totals && (p.opportunity_totals.investment_to_p50_gbp || p.opportunity_totals.savings_to_p50_gbp) ? html`
@@ -347,7 +361,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">What to watch</h2>
+        <${PackSecHead} num=${5} title="What to watch" />
         ${p.signals && p.signals.length ? html`
           <p class="caption" style=${{ marginTop: "-4px" }}>The benchmark's top flagged items — the same balanced briefing the lumi dashboard shows, in the absolute view.</p>
           <div class="bp-signals">
@@ -369,17 +383,18 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">The evidence — where ${p.organisation.name} leads</h2>
+        <${PackSecHead} num=${6} title=${"The evidence — where " + p.organisation.name + " leads"} />
         <p>${n.strengths_narrative}</p>
         <${PackTable} rows=${p.strengths} good=${true} />
         <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
         <${PackTable} rows=${p.gaps} good=${false} />
+        ${n.evidence_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.evidence_commentary}</p>` : null}
         <${Footer} page="6" />
       </div>
 
       <div class="pack-page">
-        <h2 class="section-title">Appendix — practices common among peers but not in place</h2>
+        <${PackSecHead} num=${7} title="Appendix — practices common among peers but not in place" />
         ${p.gap_register_top.length ? html`
           <table class="data">
             <thead><tr><th>Practice / policy</th><th>Area</th><th>Your status</th><th class="num">Peer adoption</th></tr></thead>

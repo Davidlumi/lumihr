@@ -1779,6 +1779,26 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pack-page table.bp-wide th.num { white-space: normal; }
 .pack-footer .pack-pageno { white-space: nowrap; }
 .pack-footer > span:nth-child(2) { white-space: nowrap; }
+/* numbered colour-coded section heads + the findings panel (2026-07-02) */
+.bp-sechead { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4);
+  padding-bottom: var(--s2); border-bottom: 2px solid var(--border); }
+.bp-sechead .section-title { margin: 0; }
+.bp-secnum { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border-radius: 7px; color: #fff; font-weight: 750; font-size: var(--fs-label); flex: none; }
+.bp-c1 { border-bottom-color: var(--navy); }        .bp-c1 .bp-secnum { background: var(--navy); }
+.bp-c2 { border-bottom-color: var(--blue-deep); }   .bp-c2 .bp-secnum { background: var(--blue-deep); }
+.bp-c3 { border-bottom-color: var(--blue); }        .bp-c3 .bp-secnum { background: var(--blue); }
+.bp-c4 { border-bottom-color: var(--blue-bright); } .bp-c4 .bp-secnum { background: var(--blue-bright); }
+.bp-c5 { border-bottom-color: var(--blue-deep); }   .bp-c5 .bp-secnum { background: var(--blue-deep); }
+.bp-c6 { border-bottom-color: var(--blue); }        .bp-c6 .bp-secnum { background: var(--blue); }
+.bp-c7 { border-bottom-color: var(--navy); }        .bp-c7 .bp-secnum { background: var(--navy); }
+.bp-findings { background: color-mix(in srgb, var(--blue) 7%, #fff); border-left: 3px solid var(--blue-deep);
+  border-radius: var(--radius-sm); padding: var(--s3) var(--s4); margin: var(--s3) 0 var(--s4); }
+.bp-findings-title { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--blue-deep); margin-bottom: var(--s2); }
+.bp-findings ol { margin: 0; padding-left: var(--s5); font-size: var(--fs-label); }
+.bp-findings li { margin-bottom: var(--s2); }
+.bp-findings li:last-child { margin-bottom: 0; }
 /* cover contents (WTW convention) */
 .bp-toc { margin-top: var(--s6, 32px); max-width: 120mm; }
 .bp-toc-title { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em; text-transform: uppercase;

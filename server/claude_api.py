@@ -96,6 +96,15 @@ maturity and movement.
 
 Return STRICT JSON with keys:
   "executive_summary": 2-3 paragraphs (string),
+  "key_findings": array of 3-6 single-sentence findings a NED could quote — each grounded in a
+     payload figure (verdict, the widest/strongest area from by_section, the £ totals, the top gap
+     with its quartile position, the most-adopted missing practice). Numbered rendering is handled
+     by the client; do not number them yourself,
+  "position_commentary": 2-3 sentences reading the by_section table — name the widest-gap area and
+     the most in-line area with their counts; empty string if by_section is absent,
+  "evidence_commentary": 1-2 sentences on what the percentile spread in the gaps table shows (e.g.
+     whether the largest gaps sit below the peer P25 — outside the middle half); empty string if
+     quartiles are absent,
   "strengths_narrative": one short paragraph introducing the strengths table,
   "gaps_narrative": one short paragraph introducing the gaps table,
   "opportunity_narrative": one short paragraph on the indicative £ opportunities (if present),
@@ -112,8 +121,9 @@ Return STRICT JSON with keys:
 Return ONLY the JSON object, no markdown fences."""
 
 
-BOARD_PACK_PARTS = ("executive_summary", "strengths_narrative", "gaps_narrative",
-                    "opportunity_narrative", "recommended_actions")
+BOARD_PACK_PARTS = ("executive_summary", "key_findings", "strengths_narrative", "gaps_narrative",
+                    "opportunity_narrative", "position_commentary", "evidence_commentary",
+                    "recommended_actions")
 
 # Structured output: exactly the five narrative fields (same pattern as
 # COMMENTARY_SCHEMA), so the only thing left to gate is groundedness.
@@ -121,9 +131,13 @@ BOARD_PACK_SCHEMA = {
     "type": "object",
     "properties": {
         "executive_summary": {"type": "string"},
+        "key_findings": {"type": "array", "items": {"type": "string"},
+                         "minItems": 3, "maxItems": 6},
         "strengths_narrative": {"type": "string"},
         "gaps_narrative": {"type": "string"},
         "opportunity_narrative": {"type": "string"},
+        "position_commentary": {"type": "string"},
+        "evidence_commentary": {"type": "string"},
         "recommended_actions": {"type": "array", "items": {"type": "string"},
                                 "minItems": 4, "maxItems": 6},
     },
@@ -145,12 +159,14 @@ def validate_pack_narrative(narrative, payload):
     texts = []
     for k in BOARD_PACK_PARTS:
         v = narrative.get(k)
-        if k == "recommended_actions":
+        if k in ("recommended_actions", "key_findings"):
             if not isinstance(v, list) or not v or not all(isinstance(x, str) and x.strip() for x in v):
                 return False, "missing or empty %s" % k
             texts += v
         else:
-            if not isinstance(v, str) or (k != "opportunity_narrative" and not v.strip()):
+            # the three secondary commentaries may legitimately be empty on thin data
+            if not isinstance(v, str) or (k not in ("opportunity_narrative", "position_commentary",
+                                                    "evidence_commentary") and not v.strip()):
                 return False, "missing or empty %s" % k
             texts.append(v)
     for t in texts:
@@ -263,8 +279,60 @@ def _deterministic_pack(payload):
         "label": g["label"], "val": g["value_display"], "pct": int(round(g["percentile"])),
         "cut": g["cut_label"], "n": g["n"]} for ix, g in enumerate(gaps[:5])]
 
+    # --- the deterministic ANALYST layer (2026-07-02): findings + section commentary,
+    # every sentence composed only from payload figures ---
+    by_sec = payload.get("by_section") or {}
+    sec_rows = [(k, v) for k, v in by_sec.items() if (v.get("available") or 0) >= 3]
+    # widest by ABSOLUTE below-count (share would crown a 3-metric area over a 40-metric one)
+    widest = max(sec_rows, key=lambda kv: kv[1]["below"]) if sec_rows else None
+    strongest = max(sec_rows, key=lambda kv: (kv[1]["above"] + kv[1]["inline"]) / float(kv[1]["available"])) if sec_rows else None
+    findings = []
+    if verdict:
+        findings.append("%s sits %s: %s of %s comparable metrics are at or above the peer median." % (
+            name, verdict, head.get("above_median", 0) + head.get("broadly_in_line", 0), head.get("comparable_metrics", "—")))
+    if widest:
+        k, v = widest
+        findings.append("%s is the widest area — %s of its %s comparable metrics sit below the peer median." % (k, v["below"], v["available"]))
+    if strongest and widest and strongest[0] != widest[0]:
+        k, v = strongest
+        findings.append("%s holds up best: %s of %s metrics at or above the median." % (k, v["above"] + v["inline"], v["available"]))
+    if invest:
+        top_opp = (payload.get("opportunities") or [{}])[0]
+        findings.append("Reaching the peer median on the measurable gaps is an indicative £{:,} a year{}.".format(
+            int(invest), " — %s is the largest single lever" % top_opp.get("label") if top_opp.get("label") else ""))
+    if gaps:
+        g0 = gaps[0]
+        if g0.get("p25_display"):
+            findings.append("The largest gap, %s, sits at %s against a peer middle half of %s–%s." % (
+                g0["label"], g0["value_display"], g0["p25_display"], g0.get("p75_display") or "—"))
+        else:
+            findings.append("The largest gap is %s at %s (P%s, n=%s)." % (
+                g0["label"], g0["value_display"], int(round(g0["percentile"])), g0["n"]))
+    top_reg = (payload.get("gap_register_top") or [{}])[0]
+    if top_reg.get("name"):
+        findings.append("%s%% of peers have %s in place; %s does not." % (
+            top_reg.get("peer_adoption_pct"), top_reg["name"], name))
+    position_commentary = ""
+    if widest:
+        wk, wv = widest
+        position_commentary = "%s carries the most ground to make up: %s of its %s comparable metrics sit below the peer median." % (wk, wv["below"], wv["available"])
+        if strongest and strongest[0] != wk:
+            sk, sv = strongest
+            position_commentary += " %s reads closest to the market, with %s of %s at or above it." % (sk, sv["above"] + sv["inline"], sv["available"])
+        position_commentary += " Governance metrics sit beside the headline (no market rate) and are not counted here."
+    evidence_commentary = ""
+    val_gaps = [g for g in gaps if g.get("p25_display")]
+    if val_gaps and all(g["percentile"] < 25 for g in val_gaps):
+        evidence_commentary = ("Each of the largest gaps sits below the peer P25 — outside the middle half of the market, "
+                               "not a rounding difference.")
+    elif val_gaps:
+        evidence_commentary = "The quartile columns show where each gap sits against the middle half of the market (P25–P75)."
+
     return {
         "executive_summary": "\n\n".join(p for p in (para1, para2, para3) if p),
+        "key_findings": findings[:6],
+        "position_commentary": position_commentary,
+        "evidence_commentary": evidence_commentary,
         "strengths_narrative": (
             "The strongest positions against the peer median — shown one per measure, ranked by "
             "percentile distance — are set out below." if strengths
