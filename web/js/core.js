@@ -116,6 +116,14 @@ window.Modal = function ({ onClose, children, width, xl, label }) {
     </div>`;
 };
 
+// The one member-facing label that differs from the data key: the "Time Off" domain
+// renders sentence-case "Time off" everywhere (nav, tiles, headings). Display only —
+// routes, keys, CAT_ICON lookups and server strings keep "Time Off".
+window.domainLabel = n => n === "Time Off" ? "Time off" : n;
+
+// The standard centred page spinner — one atom instead of the copy-pasted row.
+window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+
 window.EmptyState = ({ icon, title, body, action }) => html`
   <div class="suppressed-box" style=${{ minHeight: "140px" }}>
     <div style=${{ color: "var(--ink-faint)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>

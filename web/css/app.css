@@ -122,6 +122,7 @@
 
   /* ---- motion: quick and calm ---- */
   --ease: 160ms ease;
+  --ease-fast: .12s ease;   /* the quick tier — chips, tabs, small controls */
 }
 
 * { box-sizing: border-box; }
@@ -351,6 +352,8 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .btn.danger { color: var(--unfavourable); border-color: var(--unfavourable-tint); background: #fff; }
 .btn.danger:hover { border-color: var(--unfavourable); }
 .btn.small { height: 28px; padding: 0 var(--s3); font-size: var(--fs-caption); }
+.btn.block { width: 100%; justify-content: center; }                 /* full-width form actions (auth) */
+.btn.disclose { padding: 0; height: 18px; color: var(--blue-bright); font-family: var(--font); }  /* inline "What this means" reveal */
 /* "Ask lumi" — a considered feature: blue-tinted pill */
 .btn.feature { border-color: var(--blue-tint-2); background: var(--blue-tint); color: var(--blue-deep);
   border-radius: 999px; padding: 0 var(--s4); }
@@ -787,6 +790,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .ov-seg-btn { font: inherit; font-size: var(--fs-caption); font-weight: 600; line-height: 1.6; padding: 4px var(--s3);
   border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: all var(--ease); }
 .ov-seg-btn.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(33, 27, 38, 0.10); }
+.ov-seg-btn:not(.on):hover { color: var(--ink); }
 .ov-strat { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: none; cursor: pointer;
   font: inherit; font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px; }
 .ov-strat-track { width: 30px; height: 17px; border-radius: 999px; background: var(--border); position: relative; transition: background var(--ease); flex: none; }
@@ -887,7 +891,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .signals-foot a { color: var(--lumi-navy); font-weight: 500; white-space: nowrap; }
 .signals-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--s3); text-align: center; padding: var(--s5) 0; }
+  gap: var(--s3); text-align: center; padding: var(--s5) 0; animation: riseIn .25s ease; }
 .signals-empty-ring { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; background: var(--surface-sunk); color: var(--ink-faint); }
 /* Signals briefing — dismiss → backfill choreography (pages.js SignalsPanel). The
@@ -932,7 +936,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    new signal row stays the SAME height as the others — no eyebrow line. */
 .sig-new-tag { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; color: #fff;
   background: var(--blue-bright); padding: 1px var(--s1); border-radius: 5px;
-  display: inline-block; vertical-align: middle; position: relative; top: -1px; }
+  display: inline-block; vertical-align: middle; position: relative; top: -1px;
+  animation: popIn .3s ease; }
 .sig-new-chip { font-size: var(--fs-micro); font-weight: 700; color: var(--blue); background: var(--blue-tint);
   padding: 1px var(--s2); border-radius: 9px; }
 .signal-row.is-new .signal-roundel { box-shadow: 0 0 0 2px var(--blue-bright), 0 0 0 4px color-mix(in srgb, var(--blue-bright) 22%, transparent); }
@@ -965,14 +970,17 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-summary { padding: var(--s4) var(--s4) var(--s4); margin-bottom: var(--s5); }
 .sig-summary-top { font-size: var(--fs-label); color: var(--ink-soft); margin-bottom: var(--s3); }
 .sig-summary-top b { font-size: var(--fs-subhead); color: var(--ink); font-weight: 650; margin-right: 2px; }
-.sig-bar { display: flex; gap: 3px; height: 11px; margin-bottom: var(--s4); }
-.sig-bar span { border-radius: 4px; min-width: 5px; transition: opacity .15s; }
-.sig-bar span.dim { opacity: .26; }
 .sig-controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s3); }
+/* THE canonical .sig-chip (consolidated 2026-07-02 from the two historical blocks; the
+   values below are the pre-consolidation COMPUTED winners, so every surface — Signals
+   axis chips + the Category donut filters — renders identically). */
 .sig-chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
-.sig-chip { display: inline-flex; align-items: center; gap: var(--s2); background: var(--surface); border: 1px solid var(--border);
-  border-radius: 22px; padding: var(--s2) var(--s3); font-size: var(--fs-label); font-family: inherit; color: var(--ink); cursor: pointer; transition: border-color .15s, background .15s; }
-.sig-chip:hover { border-color: var(--ink-faint); }
+.sig-chip { display: inline-flex; align-items: center; gap: var(--s2); background: var(--surface);
+  border: 1px solid var(--chrome-edge, var(--border)); border-radius: 999px; padding: var(--s2) var(--s3);
+  font-size: var(--fs-label); font-weight: 600; font-family: inherit; color: var(--ink-soft);
+  cursor: pointer; transition: all var(--ease-fast); }
+.sig-chip:hover { border-color: var(--ink-soft); color: var(--ink); }
+.sig-chip:active:not(.is-zero) { transform: scale(.97); }
 .sig-chip .sig-chip-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .sig-chip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .sig-chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
@@ -982,6 +990,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-axis-seg { margin: 0 0 var(--s3); }
 .sig-hero { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; margin: var(--s2) 0 var(--s3); }
 .sig-donut { flex: 0 0 auto; }
+/* arcs morph as the filter/tab/axis changes the counts; colour deliberately snaps (no RAG/violet
+   blending across an axis flip). The global reduced-motion backstop collapses this. */
+.sig-donut .donut-svg circle { transition: stroke-dasharray 300ms ease, stroke-dashoffset 300ms ease; }
+/* clickable arcs (the ones the caller keyed) hint on hover — the inline cursor marks them */
+.sig-donut .donut-svg circle[style*="pointer"]:hover { filter: brightness(1.08); }
 .sig-hero .sig-chips { flex: 1 1 240px; align-content: center; }
 .sig-donut-empty { flex: 1 1 240px; max-width: 300px; }
 .sig-chip.is-zero { opacity: .45; cursor: default; pointer-events: none; }
@@ -999,9 +1012,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-fchip-risk svg { color: var(--lumi-coral); flex: none; }
 .sig-fchip-risk.on { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); border-color: var(--lumi-coral); color: var(--ink); }
 .sig-groupby { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-label); color: var(--ink-soft); white-space: nowrap; }
-.sig-groupby .seg { display: flex; background: rgba(35,35,43,.05); border: 1px solid var(--border); border-radius: 9px; padding: 2px; }
-.sig-groupby .seg button { font-family: inherit; font-size: var(--fs-label); border: none; background: none; color: var(--ink-soft); padding: var(--s1) var(--s3); border-radius: 7px; cursor: pointer; }
-.sig-groupby .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); font-weight: 600; }
+/* (the bespoke .seg control converged onto the shared .ov-seg pill, 2026-07-02) */
 .sig-group { margin-bottom: var(--s4); scroll-margin-top: calc(var(--brandbar-h) + var(--s6)); }
 .sig-grouphead { display: flex; align-items: center; gap: var(--s2); margin: var(--s5) 0 var(--s3); }
 .sig-grouphead .gname { font-size: var(--fs-card-title); font-weight: 650; color: var(--ink); }
@@ -1216,19 +1227,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
   background: color-mix(in srgb, var(--favourable) 18%, transparent); padding: 0 var(--s2); border-radius: 5px; }
 .sig-onplan svg { color: var(--favourable); flex: none; }
-/* ---- dedicated Signals explore page (2026-06-13) ---- */
-.signals-page .sig-filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
-.sig-chip { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: 999px;
-  border: 1px solid var(--chrome-edge, var(--border)); background: var(--surface); color: var(--ink-soft);
-  font-size: var(--fs-label); font-weight: 600; cursor: pointer; transition: all .12s ease; }
-.sig-chip:hover { border-color: var(--ink-soft); color: var(--ink); }
-.sig-chip .num { font-variant-numeric: tabular-nums; opacity: .7; }
-.sig-chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-.sig-chip.on .num { opacity: .85; }
-.sig-chip.lens-save.on    { background: var(--lens-save); border-color: var(--lens-save); }
-.sig-chip.lens-attract.on { background: var(--lens-attract); border-color: var(--lens-attract); }
-.sig-chip.lens-retain.on  { background: var(--lens-retain); border-color: var(--lens-retain); }
-.sig-chip.lens-engage.on  { background: var(--lens-engage); border-color: var(--lens-engage); }
+/* ---- dedicated Signals explore page (2026-06-13) ----
+   (the duplicate .sig-chip block + dead .num/lens-*.on rules and the legacy
+   .signals-page .sig-filters margin were consolidated into the canonical
+   .sig-chip block above, 2026-07-02) */
 .sig-lens-sec { margin-bottom: var(--s5); }
 .sig-lens-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s2);
   padding-bottom: var(--s2); border-bottom: 1px solid var(--chart-grid); }
@@ -1317,7 +1319,6 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-flag-link svg { color: var(--blue); transition: transform var(--ease); }
 .cat-flag-link:hover svg { transform: translateX(1px); }
 /* the position filter chips reuse the neutral .sig-chip pill (no marketTone dot) */
-.cat-pos-chips { flex-wrap: wrap; }
 .cat-type { margin-left: auto; }
 
 /* thin-cut (<20 peers) caveat on the domain page — reuses the overview's .indic-flag pill */
@@ -1487,8 +1488,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   border-bottom: 1px solid var(--chart-grid); }
 .sig-tab { display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border: 0;
   background: none; color: var(--ink-soft); font-size: var(--fs-label); font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; }
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--ease-fast), border-bottom-color var(--ease-fast); }
 .sig-tab:hover { color: var(--ink); }
+.sig-tab:not(.on):hover { border-bottom-color: var(--ink-faint); }
 .sig-tab .num { font-variant-numeric: tabular-nums; font-size: var(--fs-caption); padding: 1px var(--s2);
   border-radius: 9px; background: var(--surface-sunk); color: var(--ink-soft); }
 .sig-tab.on { color: var(--blue); border-bottom-color: var(--blue); }
@@ -1910,7 +1912,7 @@ textarea.suggest-input { resize: vertical; min-height: 72px; }
 button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible,
 textarea:focus-visible, [tabindex]:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--blue) 45%, transparent);
-  outline-offset: 1px; border-radius: var(--radius-sm);
+  outline-offset: 1px;
 }
 
 #toast-host { position: fixed; left: 20px; bottom: 20px; z-index: 200;
@@ -1921,6 +1923,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   max-width: 340px; }
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.error { background: var(--unfavourable); }
+.toast.success { background: var(--favourable); }
 
 .idle-count { font-variant-numeric: tabular-nums; font-weight: 700; }
 
@@ -2546,7 +2549,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
 .strat-diag > :not(.card-spot) { position: relative; z-index: 1; }
 .strat-diag:hover .card-spot { opacity: 1; }
-.strat-diag .card-head { display: flex; align-items: center; gap: var(--s2); }
 @media (prefers-reduced-motion: reduce) { .strat-diag { animation: none; } }
 .strat-badge { margin-left: auto; font-size: var(--fs-micro); font-weight: 600; color: color-mix(in srgb, var(--neutral-perf) 80%, var(--ink));
   background: var(--neutral-perf-tint); padding: 2px var(--s2); border-radius: 999px; }

@@ -56,7 +56,7 @@ function Shell({ children, sub }) {
     <div class="auth-wrap">
       <div class="card auth-card">
         <div class="logo" style=${{ padding: 0, marginBottom: "var(--s1)" }}>lumi<span>.benchmark</span></div>
-        <div class="caption" style=${{ marginBottom: "var(--s5)" }}>${sub || "People analytics benchmarking for UK HR teams"}</div>
+        <div class="caption" style=${{ marginBottom: "var(--s5)" }}>${sub || "Reward benchmarking for UK HR teams"}</div>
         ${children}
       </div>
       <div class="auth-footer">
@@ -108,18 +108,18 @@ function LoginForm({ onAuthed }) {
         ${mode !== "forgot" && html`<${Field} label="Password" type="password" value=${pw} onInput=${setPw} />`}
         ${mode === "register" && html`
           <${TermsTick} checked=${tick} onChange=${setTick}>
-            I accept the lumi <a onClick=${e => { e.preventDefault(); setShowTerms(true); }} style=${{ cursor: "pointer" }}>Platform Terms of Use</a>.
+            I accept the lumi <a href="#" onClick=${e => { e.preventDefault(); setShowTerms(true); }}>Platform Terms of Use</a>.
           <//>`}
         ${mode === "register" && html`
           <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-            lumi generates <a onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }} style=${{ cursor: "pointer" }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
+            lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
           </div>`}
         ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-          By continuing you agree to our <a onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }} style=${{ cursor: "pointer" }}>Terms of Use</a>
-          ${" "}and <a onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }} style=${{ cursor: "pointer" }}>Privacy Notice</a>.</div>`}
+          By continuing you agree to our <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }}>Terms of Use</a>
+          ${" "}and <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }}>Privacy Notice</a>.</div>`}
         ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         ${msg && html`<div class="ok-text" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>`}
-        <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${busy || (mode === "register" && !tick)}>
+        <button class="btn primary block" disabled=${busy || (mode === "register" && !tick)}>
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
         </button>
         ${mode === "register" && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
@@ -129,8 +129,8 @@ function LoginForm({ onAuthed }) {
         ${legalDoc && html`<${LegalDocModal} docKey=${legalDoc} onClose=${() => setLegalDoc(null)} />`}
       </form>
       <div class="row spread" style=${{ marginTop: "var(--s4)" }}>
-        ${mode !== "login" ? html`<a onClick=${() => setMode("login")} style=${{ cursor: "pointer" }}>Sign in</a>` : html`<a onClick=${() => setMode("register")} style=${{ cursor: "pointer" }}>New organisation</a>`}
-        ${mode !== "forgot" && html`<a onClick=${() => setMode("forgot")} style=${{ cursor: "pointer" }}>Forgotten password?</a>`}
+        ${mode !== "login" ? html`<a href="#" onClick=${e => { e.preventDefault(); setMode("login"); }}>Sign in</a>` : html`<a href="#" onClick=${e => { e.preventDefault(); setMode("register"); }}>New organisation</a>`}
+        ${mode !== "forgot" && html`<a href="#" onClick=${e => { e.preventDefault(); setMode("forgot"); }}>Forgotten password?</a>`}
       </div>
     <//>`;
 }
@@ -151,7 +151,7 @@ function ResetForm({ token, onAuthed }) {
       html`<form onSubmit=${go}>
         <${Field} label="New password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoFocus=${true} />
         ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
-        <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }}>Set password</button>
+        <button class="btn primary block">Set password</button>
       </form>`}
     <//>`;
 }
@@ -186,7 +186,7 @@ function InviteForm({ token, onAuthed }) {
         </div>
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
-        <button class="btn primary" style=${{ width: "100%", justifyContent: "center" }} disabled=${!tick}>Join ${info.org_name}</button>
+        <button class="btn primary block" disabled=${!tick}>Join ${info.org_name}</button>
         <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your organisation's Data Contribution Terms were
           already accepted by your Admin — you don't accept those again.</div>
       </form>`}

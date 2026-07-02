@@ -22,7 +22,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   const setSp = v => { setSpRaw(v); onPref && onPref("_ui_gap", { ...ui, sp: v }); };
   const setShow = v => { setShowRaw(v); onPref && onPref("_ui_gap", { ...ui, show: v }); };
   useEffect(() => { setData(null); api("/api/gap-register?" + cutQS(cut)).then(setData); }, [cutKeyOf(cut)]);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const focused = window.SCOPE && window.SCOPE.focused;
   let rows = data.rows.filter(r => !r.suppressed);
   if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
@@ -102,7 +102,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   useEffect(() => {
     if (!sharedData) api("/api/boardpack/" + packId).then(setPack).catch(() => setPack({ error: true }));
   }, [packId]);
-  if (!pack) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!pack) return html`<${PageLoading} />`;
   if (pack.error) return html`<${EmptyState} title="Board pack not found" />`;
   const p = pack.payload, n = pack.narrative;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v1`;
@@ -129,7 +129,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
 
       <div class="pack-page">
         <div style=${{ marginTop: "40mm" }}>
-          <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi people analytics benchmark</div>
+          <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi UK reward benchmarking</div>
           <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "var(--s3) 0 var(--s2)", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
           <div style=${{ fontSize: "var(--fs-card-title)", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "var(--s4)" }}>
@@ -262,7 +262,7 @@ window.AnalystPane = function ({ onClose }) {
     <div class="analyst-pane">
       <div class="row spread" style=${{ padding: "var(--s4)", borderBottom: "1px solid var(--border)" }}>
         <b>Ask lumi</b>
-        <button class="iconbtn" aria-label="Close Ask lumi (Esc)" title="Close (Esc)" onClick=${onClose}>✕</button>
+        <button class="iconbtn" aria-label="Close Ask lumi (Esc)" title="Close (Esc)" onClick=${onClose}><${Icon} name="close" size=${14} /></button>
       </div>
       <div class="analyst-msgs">
         ${msgs.map((m, i) => html`
@@ -277,7 +277,9 @@ window.AnalystPane = function ({ onClose }) {
                   onClick=${() => { nav(l.route); onClose(); }}>${l.label} →</button>`)}</div>`}
             ${m.chips && m.chips.length > 0 && html`
               <div>${m.chips.map((c, j) => html`
-                <div key=${j} class="statchip" onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
+                <div key=${j} class="statchip" role=${c.question_id ? "button" : null} tabindex=${c.question_id ? "0" : null}
+                  onKeyDown=${c.question_id ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/metric/" + c.question_id); onClose(); } }) : null}
+                  onClick=${() => { c.question_id && nav("/metric/" + c.question_id); onClose(); }}>
                   <span>${c.label}</span><b>${c.value}</b><span>${c.sub}</span>
                   ${c.question_id && html`<span style=${{ color: "var(--blue-deep)" }}>View metric →</span>`}
                 </div>`)}</div>`}
@@ -354,7 +356,7 @@ window.SharesPage = function ({ embedded }) {
     } catch (e) { toast(e.message || "Couldn't create the share link", "error"); }
     setMaking(false);
   };
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "880px" }}>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
@@ -379,7 +381,7 @@ window.SharesPage = function ({ embedded }) {
                 <td><b>${s.kind === "boardpack" ? "Board pack" : "Dashboard"}</b></td>
                 <td>${s.revoked ? html`<span class="muted">revoked</span>` :
                   html`<a href=${s.url} target="_blank">${window.location.origin}${s.url.slice(0, 18)}…</a>
-                  <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); }}>⧉</button>`}</td>
+                  <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); }}><${Icon} name="copy" size=${14} /></button>`}</td>
                 <td>${s.expires_at ? new Date(s.expires_at + "Z").toLocaleDateString("en-GB") : "Never"}</td>
                 <td>${s.revoked ? html`<span class="chip bad">Revoked</span>` :
                   (s.expires_at && new Date(s.expires_at + "Z") < new Date()) ? html`<span class="chip warn">Expired</span>` :
@@ -395,7 +397,7 @@ window.SharesPage = function ({ embedded }) {
 
 // ------------------------------------------------------------------ team ---
 const ROLE_DESC = {
-  admin: "Full control — data, team, sharing, and accepting the org's data terms.",
+  admin: "Full control — data, team, sharing, and accepting the organisation's data terms.",
   contributor: "Submits and edits the organisation's reward data.",
   viewer: "Sees the benchmark and board packs — no editing.",
 };
@@ -431,11 +433,11 @@ window.TeamPage = function ({ me }) {
   };
   const remove = async (uEmail) => {
     setErr(null); setMsg(null);
-    if (!window.confirm(`Remove ${uEmail} from your organisation? Their account is deleted; the org's data is unaffected.`)) return;
+    if (!window.confirm(`Remove ${uEmail} from your organisation? Their account is deleted; your organisation's data is unaffected.`)) return;
     try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); toast(uEmail + " removed from your organisation"); }
     catch (e) { setErr(e.message); }
   };
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "800px" }}>
       <h1 class="display-title">Team</h1>
@@ -583,7 +585,7 @@ window.SettingsPage = function ({ me, refreshMe }) {
       agency_premium_pct: +a.agency_premium_pct } } });
     setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
   };
-  if (!a) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!a) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "640px" }}>
       <h1 class="display-title">Settings</h1>
@@ -761,7 +763,7 @@ window.SuggestMetricModal = function ({ onClose, userEmail }) {
         why_it_matters: matters.trim(), suggested_category: category || null } });
       setDone(true);
     } catch (e) {
-      if (e.status === 401) setGeneral("Please log in again to submit.");
+      if (e.status === 401) setGeneral("Please sign in again to submit.");
       else if (e.status === 400 && typeof e.message === "string") setGeneral(e.message);
       else setGeneral("Something went wrong. Please try again.");
       setBusy(false);

@@ -77,7 +77,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
             <div class="sample-caveat-line">
               <span class="indic-flag" tabindex="0" role="note">
                 <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
-                <span class="indic-tip">Verdicts are compared against ${sampleN} organisations — treat as directional.</span>
+                <span class="indic-tip">Verdicts are compared against ${sampleN} peers — treat as directional.</span>
               </span>
             </div>`}
         </div>
@@ -1054,7 +1054,7 @@ window.SignalsPage = function ({ me }) {
   // The strategy check diagnoses MARKET stance, so the jump lands on the market lens.
   const goToDomain = (dom) => { setTab("inbox"); setAxis("market"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const contrib = data.contribution || {};
   // Signals only exist once insights unlock. For everyone short of that — and
   // especially a brand-new 0%-data member — this page is the single biggest
@@ -1174,9 +1174,9 @@ window.SignalsPage = function ({ me }) {
                 ? "No market-position signals in this view — everything here reads on practice."
                 : "No practice signals in this view yet."}</div>`}
             <div class="sig-chips sig-axis-chips" role="group" aria-label="Filter the list by signal type">
-              <button class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${scoped.length}</span></button>
+              <button type="button" class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${scoped.length}</span></button>
               ${AXIS_BUCKETS[axis].map(b => { const n = posCounts[b] || 0; const zero = !n; return html`
-                <button key=${b} class=${"sig-chip" + (effPos === b ? " on" : "") + (zero ? " is-zero" : "")} disabled=${zero} aria-disabled=${zero}
+                <button key=${b} type="button" class=${"sig-chip" + (effPos === b ? " on" : "") + (zero ? " is-zero" : "")} disabled=${zero} aria-disabled=${zero}
                   aria-pressed=${effPos === b} onClick=${zero ? undefined : () => setPosF(effPos === b ? "all" : b)}>
                   <span class="sig-chip-dot" style=${{ background: bucketColor(b) }}></span>${b} <span class="n">${n}</span></button>`; })}
             </div>
@@ -1184,23 +1184,23 @@ window.SignalsPage = function ({ me }) {
           <div class="sig-controls">
             ${(provCount || riskCount) ? html`<div class="sig-filters" role="group" aria-label="Show only">
               <span class="sig-filters-lbl">show only</span>
-              ${provCount ? html`<button class=${"sig-fchip" + (provF ? " on" : "")} aria-pressed=${provF} onClick=${() => setProvF(v => !v)} title="Show only verdicts backed by a verified, published source (the rest are estimate-flagged or unsourced).">verified source <span class="n">${provCount}</span></button>` : null}
-              ${riskCount ? html`<button class=${"sig-fchip sig-fchip-risk" + (riskF ? " on" : "")} aria-pressed=${riskF} onClick=${() => setRiskF(v => !v)} title="Show only duty-of-care risk signals (statutory / floor exposures)."><${Icon} name="shield" size=${11} /> risk <span class="n">${riskCount}</span></button>` : null}
+              ${provCount ? html`<button type="button" class=${"sig-fchip" + (provF ? " on" : "")} aria-pressed=${provF} onClick=${() => setProvF(v => !v)} title="Show only verdicts backed by a verified, published source (the rest are estimate-flagged or unsourced).">verified source <span class="n">${provCount}</span></button>` : null}
+              ${riskCount ? html`<button type="button" class=${"sig-fchip sig-fchip-risk" + (riskF ? " on" : "")} aria-pressed=${riskF} onClick=${() => setRiskF(v => !v)} title="Show only duty-of-care risk signals (statutory / floor exposures)."><${Icon} name="shield" size=${11} /> risk <span class="n">${riskCount}</span></button>` : null}
             </div>` : null}
             <div class="sig-groupby">group by
-              <div class="seg" role="group" aria-label="Group by">
-                <button class=${groupBy === "domain" ? "on" : ""} aria-pressed=${groupBy === "domain"} onClick=${() => setGroupBy("domain")}>domain</button>
-                <button class=${groupBy === "lens" ? "on" : ""} aria-pressed=${groupBy === "lens"} onClick=${() => setGroupBy("lens")}>lens</button>
+              <div class="ov-seg" role="group" aria-label="Group by">
+                <button type="button" class=${"ov-seg-btn" + (groupBy === "domain" ? " on" : "")} aria-pressed=${groupBy === "domain"} onClick=${() => setGroupBy("domain")}>domain</button>
+                <button type="button" class=${"ov-seg-btn" + (groupBy === "lens" ? " on" : "")} aria-pressed=${groupBy === "lens"} onClick=${() => setGroupBy("lens")}>lens</button>
               </div>
             </div>
           </div>
         </div>
-        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — clear a filter to see more" : ""}.</div></div>` :
+        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><span class="signals-empty-ring"><${Icon} name="sliders" size=${18} /></span><div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — clear a filter to see more" : ""}.</div></div>` :
         groups.map(g => html`
           <section key=${g.key} id=${groupBy === "domain" ? "sig-dom-" + g.key : null} class="sig-group">
             <div class="sig-grouphead">
               ${groupBy === "lens" ? html`<span class=${"signal-roundel lens-" + g.key}><${Icon} name=${LENS_ICON[g.key]} size=${14} /></span>` : html`<span class="sig-grouphead-icon"><${Icon} name=${CAT_ICON[g.key] || "award"} size=${15} /></span>`}
-              <b class="gname">${groupBy === "domain" ? g.key : LENS_LABEL[g.key]}</b>
+              <b class="gname">${groupBy === "domain" ? domainLabel(g.key) : LENS_LABEL[g.key]}</b>
               <span class="gmeta">${groupBy === "lens" ? LENS_DESC[g.key] + " · " : ""}${g.items.length}</span>
             </div>
             <div class="signals-list">${g.items.map(Row)}</div>
@@ -1232,7 +1232,7 @@ function CategoryTile({ d, pending, aim, view }) {
     return html`
       <div class="card cat-tile cat-tile-practice" onClick=${() => nav("/category/" + encodeURIComponent(d.name))} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/category/" + encodeURIComponent(d.name)); } }} role="button" tabindex="0">
         <span style=${{ display: "inline-flex", alignItems: "center", gap: "var(--s2)", fontWeight: 600, fontSize: "var(--fs-label)" }}>
-          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
+          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${domainLabel(d.name)}</span>
         ${pending ? html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>Appears once unlocked</div>`
           : (pool ? html`
             <div class="cat-axis num">off the norm</div>
@@ -1284,7 +1284,7 @@ function CategoryTile({ d, pending, aim, view }) {
   return html`
     <div class=${"card cat-tile " + vCls + (noRate ? " cat-tile-norate" : "")} onClick=${() => nav("/category/" + encodeURIComponent(d.name))} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/category/" + encodeURIComponent(d.name)); } }} role="button" tabindex="0">
       <span style=${{ display: "inline-flex", alignItems: "center", gap: "var(--s2)", fontWeight: 600, fontSize: "var(--fs-label)" }}>
-        <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${d.name}</span>
+        <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${domainLabel(d.name)}</span>
       <span class="row" style=${{ gap: "var(--s1)", alignSelf: "flex-start", alignItems: "center" }}>
         <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
         ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
@@ -1541,7 +1541,7 @@ function DomainSummary({ name, cut, applyStrat }) {
   return html`
     <section class="cat-section cat-summary">
       <div class="cat-sec-head"><span class="cat-sec-ico cat-sum-ico"><${Icon} name="sparkle" size=${14} /></span>
-        <b>How your ${name} reads</b>
+        <b>How your ${domainLabel(name)} reads</b>
         <span class="cat-ai-tag">AI-generated · a description of your data, not advice</span></div>
       ${st.phase === "loading" ? html`
         <div class="cat-summary-body">${[0, 1, 2].map(i => html`<div key=${i} class="cat-sum-skel"></div>`)}</div>` :
@@ -1590,7 +1590,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <a class="caption back-link" href="#/overview"><${Icon} name="chevron-left" size=${13} /> Overview</a>
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <div class="cat-glyph"><${Icon} name=${CAT_ICON[name] || "award"} size=${20} /></div>
-          <div><h1 class="display-title">${name}</h1><div class="caption meta">${meta}</div></div>
+          <div><h1 class="display-title">${domainLabel(name)}</h1><div class="caption meta">${meta}</div></div>
         </div>
       </div>
     </div>`;
@@ -1669,7 +1669,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="cat-thin-caveat">
           <span class="indic-flag" tabindex="0" role="note">
             <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
-            <span class="indic-tip">This domain is compared against ${sampleN} organisations — treat the reads here as directional.</span>
+            <span class="indic-tip">This domain is compared against ${sampleN} peers — treat the reads here as directional.</span>
           </span>
         </div>` : null}
 
@@ -1814,7 +1814,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   }, [layout, cutKeyOf(cut)]);
   useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
 
-  if (!list || !layout) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!list || !layout) return html`<${PageLoading} />`;
   const active = list.find(d => d.id === activeId) || {};
   const activeName = active.name || "My dashboard";
 
@@ -2003,7 +2003,7 @@ window.CompletionRing = CompletionRing;
 window.YourDataPage = function ({ me }) {
   const [data, setData] = useState(null);
   useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   if (data.error) return html`<${EmptyState} title="Couldn't load your data" />`;
   const c = data.contribution || {};
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
@@ -2057,7 +2057,7 @@ window.YourDataPage = function ({ me }) {
           <div key=${d.name} class="card data-domain" role="button" tabindex="0"
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
             onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/your-data/" + encodeURIComponent(d.name)); } }}>
-            <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${d.name}</div>
+            <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${domainLabel(d.name)}</div>
             <${CompletionRing} pct=${d.pct} size=${78} stroke=${8} />
             ${d.answered >= d.total ? html`<div class="data-done"><${Icon} name="award" size=${11} /> Complete</div>`
               : html`<div class="caption">${d.answered} of ${d.total} · <span class="data-todo">${d.total - d.answered} to do</span></div>`}
@@ -2070,13 +2070,13 @@ window.DomainDataView = function ({ me, section }) {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState("all");
   useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const d = (data.domains || []).find(x => x.name === section);
   if (!d) return html`<${EmptyState} icon="table" title="Area not found"
     action=${html`<button class="btn small" onClick=${() => nav("/your-data")}>Back to Your data</button>`} />`;
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const tabs = [{ k: "all", label: "All", n: d.total }, { k: "answered", label: "Answered", n: d.answered },
-    { k: "unanswered", label: "To answer", n: d.total - d.answered }];
+    { k: "unanswered", label: "To do", n: d.total - d.answered }];
   const qs = d.questions.filter(x => filter === "all" || (filter === "answered") === x.answered);
   return html`
     <div class="yourdata">
@@ -2084,7 +2084,7 @@ window.DomainDataView = function ({ me, section }) {
       <div class="row spread" style=${{ alignItems: "center", margin: "var(--s1) 0 var(--s4)" }}>
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <span class="cat-glyph"><${Icon} name=${CAT_ICON[section] || "award"} size=${20} /></span>
-          <div><h1 class="display-title">${section}</h1>
+          <div><h1 class="display-title">${domainLabel(section)}</h1>
             <div class="caption meta">${d.answered} of ${d.total} answered</div></div>
         </div>
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
@@ -2161,7 +2161,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
     }, 220);
     return () => clearTimeout(t);
   }, [m, anchor]);
-  if (!m) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!m) return html`<${PageLoading} />`;
   const industries = Object.keys(m.composition);
   const sectionTab = (HOW_LUMI_TABS.find(t => t.key === anchor) || HOW_LUMI_TABS[0]).key;
   const go = (k) => nav("/how-lumi-works/" + k);
@@ -2193,7 +2193,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
             <span><i class="sw" style=${{ background: "var(--navy)" }}></i> context</span>
           </div>
           <p><b>The headline answers one question.</b> "Where you stand" is a read on how competitive your reward is — are you paying and providing at the market rate? So it's built only from the market-rate measures where higher is better. Governance (your pay ratio, your pay gap) isn't about competitiveness — you don't compete on a low pay ratio — so it sits beside the headline, not inside it. The same goes for any market-rate measure with no competitive direction, like your workforce cost as a share of revenue. That keeps the headline answering one clear thing rather than blending several.</p>
-          <p class="caption">Where a comparison rests on only a few companies, we mark the verdict <b>indicative</b> — a steer, not a precise figure.</p>
+          <p class="caption">Where a comparison rests on only a few organisations, we mark the verdict <b>indicative</b> — a steer, not a precise figure.</p>
         </div>
 
         <div class="card how-card" id="who-compared">
@@ -2263,7 +2263,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <div class="card how-card" id="glossary">
           <h3 class="section-title">Glossary</h3>
           ${Object.entries(GLOSSARY).map(([k, v]) => html`
-            <p key=${k} style=${{ margin: "var(--s2) 0" }}><b style=${{ textTransform: "capitalize" }}>${k}.</b> ${v}</p>`)}
+            <p key=${k} style=${{ margin: "var(--s2) 0" }}><b>${k.charAt(0).toUpperCase() + k.slice(1)}.</b> ${v}</p>`)}
           <p style=${{ margin: "var(--s2) 0" }}><b>Peer Twin.</b> A bespoke peer group of the organisations most similar to yours
           across industry, size, ownership and workforce shape, recalculated as the membership grows; member names are never shown.</p>
         </div>
@@ -2448,7 +2448,7 @@ window.GovernancePage = function ({ me }) {
   const refresh = () => api("/api/governance").then(setG).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, []);
   if (err) return html`<${EmptyState} icon="lock" title="Admins only" body=${err} />`;
-  if (!g) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!g) return html`<${PageLoading} />`;
   const addBacklog = async () => {
     if (!title.trim()) return;
     await api("/api/governance/backlog", { method: "POST", body: { title } });

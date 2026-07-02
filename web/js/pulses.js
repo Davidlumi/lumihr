@@ -11,11 +11,12 @@ window.PulsesPage = function ({ me }) {
   const [err, setErr] = useState(null);
   useEffect(() => { api("/api/pulses").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load pulses" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const open = data.pulses.filter(p => p.accepting);
   const past = data.pulses.filter(p => !p.accepting);
   const Card = (p) => html`
-    <div key=${p.pulse_id} class="card pulse-card" onClick=${() => nav("/pulse/" + p.pulse_id)}
+    <div key=${p.pulse_id} class="card pulse-card" role="button" tabindex="0" onClick=${() => nav("/pulse/" + p.pulse_id)}
+      onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/pulse/" + p.pulse_id); } }}
       style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", cursor: "pointer" }}>
       <div class="row spread">
         <b>${p.name}</b>
@@ -62,7 +63,7 @@ window.PulseDetailPage = function ({ me, pid }) {
   }).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, [pid]);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load this pulse" body=${err} />`;
-  if (!p) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!p) return html`<${PageLoading} />`;
 
   const editor = me.user.role === "admin" || me.user.role === "contributor";
   const join = async () => {
@@ -212,7 +213,7 @@ window.RunPulsePage = function ({ me }) {
   const [err, setErr] = useState(null);
   useEffect(() => { api("/api/org/pulses").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load your surveys" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const chip = (p) => {
     const ls = p.launch_status;
     const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "";
@@ -251,7 +252,8 @@ window.RunPulsePage = function ({ me }) {
           <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first survey</button>
         </div>` :
         html`<div style=${{ marginTop: "var(--s3)" }}>${data.pulses.map(p => html`
-          <div key=${p.pulse_id} class="card pulse-srow" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}>
+          <div key=${p.pulse_id} class="card pulse-srow" role="button" tabindex="0" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}
+            onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/run-a-pulse/" + p.pulse_id); } }}>
             <div class="row spread"><b>${p.name}</b>${chip(p)}</div>
             <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} response${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
           </div>`)}</div>`}
@@ -272,7 +274,7 @@ window.PulseBuilderPage = function ({ me, pid }) {
     }
   }, [pid]);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load this survey" body=${err} />`;
-  if (!detail) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!detail) return html`<${PageLoading} />`;
   const ls = detail.launch_status;
   const editable = ls === "building" || ls === "changes_requested";
 

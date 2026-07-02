@@ -17,7 +17,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   }, [state, section]);
   if (err) return html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task"
     body=${err} />`;
-  if (!state) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!state) return html`<${PageLoading} />`;
   if (!state.firmographics_done) return html`
     <div style=${{ maxWidth: "560px" }}>
       <h1 class="display-title">First, tell us who you are</h1>
@@ -33,7 +33,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   if (section === "review") return html`<${ReviewStep} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
   if (section) return html`<${DomainPage} sp=${section} state=${state} refresh=${refresh} refreshMe=${refreshMe} />`;
   // gates cleared, no section → redirecting to /your-data (above effect)
-  return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  return html`<${PageLoading} />`;
 };
 
 /* Layer 2 — the Data Contribution Terms. Accepted once, by an Admin, on
@@ -168,7 +168,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
   if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this area"
     body=${loadErr + " — your saved answers are safe."}
     action=${html`<button class="btn small primary" onClick=${() => nav("/your-data")}>Back to Your data</button>`} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
 
   const save = async (q, rowId, value) => {
     const key = q.id + "|" + (rowId || "");
@@ -306,7 +306,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
           <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
           <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
             ${!curAnswered && !cur.is_required && html`
-              <a class="qwiz-skip" onClick=${e => { e.preventDefault(); next(); }}>Skip for now</a>`}
+              <a class="qwiz-skip" href="#" onClick=${e => { e.preventDefault(); next(); }}>Skip for now</a>`}
             <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel}</button>
           </div>
         </div>
@@ -394,9 +394,9 @@ function QuestionInput({ q, drafts, issues, save, confirmValue }) {
           ${q.is_required && html` <span class="chip key-chip" title="Counts toward unlocking your insights">key</span>`}</div>
       </div>
       ${q.help_text && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>${q.help_text}
-        ${hasDef && html` <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a>`}</div>`}
+        ${hasDef && html` <a class="def-toggle" href="#" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a>`}</div>`}
       ${!q.help_text && hasDef && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>
-        <a class="def-toggle" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a></div>`}
+        <a class="def-toggle" href="#" onClick=${e => { e.preventDefault(); setShowDef(!showDef); }}>${showDef ? "Hide definition" : "What counts?"}</a></div>`}
       ${showDef && html`<div class="def-box">${q.definition}</div>`}
       <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${confirmValue} />
       <${IssueNotes} iss=${iss} onConfirm=${() => confirmValue(q, "")} />
@@ -614,7 +614,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
         the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>`}
     </div>`;
-  if (!val) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!val) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "680px" }}>
       <button class="btn quiet" onClick=${() => nav("/your-data")}>← Your data</button>

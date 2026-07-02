@@ -436,7 +436,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
   const total = qIndex.questions.filter(q => !q.locked).length;
   const allActive = route.startsWith("/benchmark") && !route.includes("cat=");
   const benchActive = route.startsWith("/benchmark") || route.startsWith("/category/");
-  const secLabel = n => n === "Time Off" ? "Time off" : n;
+  const secLabel = domainLabel;   // the shared display helper (core.js) — one source for the "Time off" label
 
   // COLLAPSED: the group can't show an inline child list, so the Benchmark
   // icon opens a flyout popover beside the rail with all eight categories +
@@ -496,7 +496,7 @@ window.ProfilePage = function ({ me, refreshMe }) {
     api("/api/org-profile").then(d => { setData(d); setVals(d.values); }).catch(e => setErr(e.message));
   }, []);
   if (err) return html`<${EmptyState} title="Couldn't load your profile" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   const canEdit = data.can_edit;
   const firstRun = !me.org.classified;
   const CORE = [["industry", "Industry / sector"], ["fte_band", "Organisation size (full-time employees)"],
@@ -1231,7 +1231,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
         ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
           ? html`<span class="pos-pill lg mid" title=${c.classification.register === "Approach"
               ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
-              : "This measure has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
+              : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
           : pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
       </div>
 

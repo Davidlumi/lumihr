@@ -233,7 +233,7 @@ window.StrategyPage = function ({ me }) {
     }).catch(e => setErr(e.message));
   }, []);
   if (err) return html`<${EmptyState} icon="compass" title="Couldn't load your strategy" body=${err} />`;
-  if (!data) return html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+  if (!data) return html`<${PageLoading} />`;
   if (!isAdmin) return html`<${EmptyState} icon="lock" title="Admin only"
     body="Your reward strategy is set by an organisation Admin. Ask yours to complete it — you'll see your results read through it." />`;
 

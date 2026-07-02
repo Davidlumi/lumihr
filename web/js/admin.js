@@ -13,7 +13,7 @@ const ADMIN_TABS = [
   { key: "metrics", label: "Metrics", icon: "target" },
 ];
 
-const adminSpinner = html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
+const adminSpinner = html`<${PageLoading} />`;
 
 window.AdminConsolePage = function ({ me, route }) {
   const sub = (route.replace(/^\/admin\/?/, "").split("?")[0].split("/")[0]) || "orgs";

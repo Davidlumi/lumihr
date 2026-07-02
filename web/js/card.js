@@ -274,8 +274,7 @@ window.WhatThisMeans = function ({ card: c, pos, defaultOpen }) {
   if (!lines) return null;
   return html`
     <div>
-      <button class="btn quiet small" style=${{ padding: "0", height: "18px", color: "var(--blue-bright)", fontFamily: "var(--font)" }}
-        onClick=${() => setOpen(!open)}>${open ? "▾" : "▸"} What this means</button>
+      <button class="btn quiet small disclose" onClick=${() => setOpen(!open)}>${open ? "▾" : "▸"} What this means</button>
       ${open && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>${lines}</div>`}
     </div>`;
 };
@@ -413,11 +412,11 @@ function cardSignalPill(c, sigs) {
   if (state === "add") {
     const href = c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data";
     return html`<a class="sig-pill is-add" href=${href} onClick=${e => e.stopPropagation()}
-      title=${"Add your data for this metric to see if it flags vs the market"}>
+      title=${"Add your data for this metric to see if it flags vs the market."}>
       <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
   }
   return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical market range.">
-    <${Icon} name="sparkle" size=${11} /> No flag</span>`;
+    <${Icon} name="sparkle" size=${11} /> No signal</span>`;
 }
 window.cardSignalPill = cardSignalPill;
 
@@ -441,7 +440,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
         ${c.you ? html`
           <div class="row spread" style=${{ marginBottom: "0" }}>
             <div class="metric-value">${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
-            ${c.block && html`<div class="caption">Peer <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
+            ${c.block && html`<div class="caption">Market <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
           </div>` :
         html`<div class="noanswer-box" style=${{ marginBottom: "var(--s1)" }}>Answer this to see where you stand among the peers below. <a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"}>Add your data</a></div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} median=${c.block ? c.block.p50 : null} showValues=${showValues} width=${W} />`
