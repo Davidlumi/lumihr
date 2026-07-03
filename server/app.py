@@ -47,6 +47,7 @@ def _load_local_env():
 
 _load_local_env()
 
+from anyio import to_thread
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, Response, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -1134,7 +1135,7 @@ async def pulse_commentary(pid: str, request: Request):
             m = next((o for o in blk["options"] if o["label"] == mine[0]), None)
             payload["your_answer_peer_share"] = m and m.get("pct")
             payload["you"] = "\u201c%s\u201d" % mine[0]
-    res = claude_api.generate_metric_commentary(payload)
+    res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     return {"parts": res["parts"], "source": res["source"], "cached": False,
             "caveats": {"illustrative": payload["illustrative_sample_data"]}}
 
@@ -1725,7 +1726,7 @@ async def strategy_diagnosis(request: Request):
     payload = strategy_diag.build_diagnosis_payload(
         strat, findings, (hero.get("market") or {}).get("target"), obj_label, on_plan,
         bool(get_meta("synthetic_pool", False)))
-    res = claude_api.generate_strategy_diagnosis(payload)
+    res = await to_thread.run_sync(claude_api.generate_strategy_diagnosis, payload)
     # Signpost: attach each finding's domain so the Signals page can deep-link the
     # narrative to the matching signal group. The validator guarantees the narrated
     # findings match the computed `findings` 1:1 and in order, so a positional zip is
@@ -2524,6 +2525,24 @@ async def benchmark_csv(request: Request):
 
 # ================================================================== ANALYST ==
 
+# Per-org budget guard: every benchmark question is potentially an uncached
+# model call, so cap the hourly rate (generous — a member reads answers far
+# slower than this) and the question length (retrieval + prompt weight).
+ANALYST_RATE_PER_HOUR = int(os.environ.get("LUMI_ANALYST_RATE_PER_HOUR", "40"))
+ANALYST_MAX_QUESTION_CHARS = int(os.environ.get("LUMI_ANALYST_MAX_QUESTION_CHARS", "500"))
+_analyst_asks = defaultdict(list)
+
+
+def _analyst_rate_limited(org_id):
+    import time as _t
+    now = _t.time()
+    _analyst_asks[org_id] = [t for t in _analyst_asks[org_id] if now - t < 3600]
+    if len(_analyst_asks[org_id]) >= ANALYST_RATE_PER_HOUR:
+        return True
+    _analyst_asks[org_id].append(now)
+    return False
+
+
 @app.post("/api/analyst")
 async def analyst(request: Request):
     user, org = require_user(request)
@@ -2532,6 +2551,12 @@ async def analyst(request: Request):
     question = (body.get("question") or "").strip()
     if not question:
         raise HTTPException(400, "Ask a question first.")
+    if len(question) > ANALYST_MAX_QUESTION_CHARS:
+        raise HTTPException(400, "That's a long one — keep questions under %d characters."
+                            % ANALYST_MAX_QUESTION_CHARS)
+    if _analyst_rate_limited(org["org_id"]):
+        raise HTTPException(429, "You've asked a lot in the last hour — give it a little "
+                                 "while and try again.")
     conn = get_conn()
     vis = org_visible_questions(org)
 
@@ -2540,19 +2565,30 @@ async def analyst(request: Request):
     # benchmark question and falls through to the strict, cited analyst below.
     intent, extra = guide.classify(question)
     if intent != "benchmark":
-        return _guide_response(question, intent, extra, org, vis)
+        return await _guide_response(question, intent, extra, org, vis)
 
     contrib = contribution_state(conn, org)
     if contrib["reduced"]:
         return {"answer": "Your full benchmark is paused until your reward data is complete — "
                           "finish your submission and I'll have every comparison ready for you again.",
                 "chips": [], "matched": [], "reduced": True}
-    qids = [x for x in retrieval.search_questions(question, limit=12) if x in vis][:6]
-    if qids and retrieval.distinctive_coverage(question, qids) < 0.34:
-        qids = []   # fuzzy noise, not real coverage — offer the request path
+
+    def _bench_matches(q):
+        hits = [x for x in retrieval.search_questions(q, limit=12) if x in vis][:6]
+        if hits and retrieval.distinctive_coverage(q, hits) < 0.34:
+            return []   # fuzzy noise, not real coverage — offer the request path
+        return hits
+    qids = _bench_matches(question)
+    if not qids:
+        # the retrieval tokenizer doesn't stem, so "how do our pensions compare?"
+        # misses the singular library term — retry singularised before we ever
+        # tell a member lumi doesn't benchmark something it does
+        alt = _depluralise(question)
+        if alt != question.lower():
+            qids = _bench_matches(alt)
     if not qids:
         return {"answer": "lumi doesn't benchmark that yet, so I won't guess at a figure. "
-                          "If it would be useful, ask us to add it — member requests shape "
+                          "If it would be useful, request it — member requests shape "
                           "what lumi measures next.",
                 "chips": [], "matched": [], "no_metric": True, "topic": question}
     answers = org_answers_for(org)
@@ -2578,41 +2614,49 @@ async def analyst(request: Request):
             entry["sector_cut"]["cut_label"] = org["industry"]
         data["metrics"].append(entry)
 
-    res = claude_api.analyst_answer(question, data)
+    # the SDK call is synchronous — run it off the event loop so one member's
+    # question can never stall every other request on this single-loop server
+    res = await to_thread.run_sync(claude_api.analyst_answer, question, data)
     if not res["ok"]:
-        # deterministic fallback: cite the top matches' readouts
+        # deterministic fallback: cite the closest matches' readouts, most
+        # on-topic first, each named — a member must be able to tell which
+        # metric every line describes
+        order = {qid: i for i, qid in
+                 enumerate(retrieval.topic_rank(question, [m["question_id"] for m in data["metrics"]]))}
+        ranked = sorted(data["metrics"], key=lambda m: order.get(m["question_id"], len(order)))
         lines = []
         chips = []
-        for m in data["metrics"][:3]:
+        for m in ranked[:3]:
             blk = m["all_peers"]
             if blk.get("readout"):
-                lines.append(blk["readout"])
+                lines.append("%s — %s" % (m["metric"], blk["readout"]))
             if blk.get("you_display") and blk.get("you_percentile") is not None:
                 chips.append({"label": m["metric"], "value": blk["you_display"],
                               "sub": "P%d · All peers · n=%d" % (round(blk["you_percentile"]), blk.get("n", 0)),
                               "question_id": m["question_id"]})
-        prefix = ("(AI analyst is not configured on this server — showing the matching benchmark "
-                  "readouts instead.)\n\n")
-        return {"answer": prefix + ("\n".join(lines) if lines else "No matching benchmark data found."),
+        if not lines:
+            return {"answer": "The closest matches don't have enough peer data to show safely "
+                              "yet — try a broader question, or open the metric itself for the "
+                              "full picture.",
+                    "chips": chips, "matched": qids, "fallback": True}
+        prefix = "Here's where you stand on the closest matches to your question:\n\n"
+        return {"answer": prefix + "\n\n".join(lines),
                 "chips": chips, "matched": qids, "fallback": True}
     return {"answer": res["answer"], "chips": res["chips"], "matched": qids}
 
 
 def _depluralise(question):
-    """Best-effort singularise each word so a plural find-query ('pensions',
-    'allowances', 'bonuses') still matches the singular library term — the
-    retrieval tokenizer doesn't stem. English plural rules, not naive 's'-strip
-    (which mangles 'allowances'→'allowanc')."""
-    def one(w):
-        if len(w) > 4 and re.search(r"(?:ses|xes|zes|ches|shes)$", w):
-            return w[:-2]                                  # bonuses->bonus, boxes->box
-        if len(w) > 4 and w.endswith("s") and not w.endswith("ss"):
-            return w[:-1]                                  # pensions->pension, allowances->allowance
-        return w
-    return " ".join(one(t) for t in question.lower().split())
+    """Best-effort singularise each word so a plural query ('pensions',
+    'allowances', 'EAPs') still matches the singular library term — the
+    retrieval tokenizer doesn't stem. Words are extracted with the same regex
+    the tokenizer uses (so trailing punctuation — 'pensions?' — can't defeat
+    it), and each candidate is vocabulary-checked against the library
+    (retrieval.singularise), so 'bonus' can never mangle to 'bonu'."""
+    words = re.findall(r"[a-z0-9%£]+", question.lower())
+    return " ".join(retrieval.singularise(w) for w in words)
 
 
-def _guide_response(question, intent, extra, org, vis):
+async def _guide_response(question, intent, extra, org, vis):
     """Ask lumi's non-benchmark side: find a metric · explain a term · how-to.
     Assembles the metric CATALOGUE (names/areas only — never values), the
     glossary and the feature guide, lets Claude phrase it warmly, and falls back
@@ -2662,7 +2706,7 @@ def _guide_response(question, intent, extra, org, vis):
            "features": [{"answer": f["answer"], "route": f["route"], "cta": f["cta"]} for f in guide.FEATURES],
            "metrics": metas, "term": extra if intent == "term" else None,
            "organisation": {"name": org["name"]}}
-    res = claude_api.guide_answer(ctx) if AI_ANALYST else {"ok": False}
+    res = (await to_thread.run_sync(claude_api.guide_answer, ctx)) if AI_ANALYST else {"ok": False}
     if res.get("ok"):
         answer = res["answer"]
         if res.get("links"):
@@ -2682,6 +2726,12 @@ def _analyst_block(card):
         if card.get("type") in ("single_select", "yes_no", "multi_select"):
             out["distribution"] = [{"label": o["label"], "pct": o["pct"]}
                                    for o in card["block"].get("options", [])]
+            if card.get("type") == "multi_select":
+                # organisations pick several options, so the shares legitimately
+                # sum past 100 — spelled out so the model can't misread the split
+                out["distribution_semantics"] = ("multi-select: each pct is the share of "
+                                                 "organisations selecting that option; "
+                                                 "shares can sum past 100")
     if card.get("matrix_rows"):
         out["rows"] = [{"label": r["label"],
                         "suppressed": r["suppressed"],
@@ -2690,23 +2740,41 @@ def _analyst_block(card):
                         "you_percentile": (r.get("you") or {}).get("percentile")}
                        for r in card["matrix_rows"]]
     you = card.get("you") or {}
-    out["you_value"] = you.get("value") or you.get("label")
-    out["you_display"] = you.get("display") or you.get("label")
+    # explicit None-checks: `or` would drop a legitimate 0 answer (0 days, 0%)
+    out["you_value"] = you["value"] if you.get("value") is not None else you.get("label")
+    out["you_display"] = you.get("display") if you.get("display") is not None else you.get("label")
     out["you_percentile"] = you.get("percentile")
     return out
 
 
+_starters_cache = {}                 # org_id → (monotonic ts, starters)
+_STARTERS_TTL = 600                  # the gap list moves when answers do — 10 min is plenty
+
+
 @app.get("/api/analyst/starters")
 async def analyst_starters(request: Request):
+    import time as _t
     user, org = require_user(request)
+    cached = _starters_cache.get(org["org_id"])
+    if cached and _t.monotonic() - cached[0] < _STARTERS_TTL:
+        return {"starters": cached[1]}
     items, _ = build_items(request, org, user, {"dim": "all"})
-    gaps = pos.top_gaps(items, 4)
+    gaps = pos.top_gaps(items, 6)
     # mix: a couple of benchmark questions from the org's biggest gaps, plus
     # guide examples so members discover that Ask lumi also finds metrics,
     # explains terms and helps with the platform.
     starters = []
-    for g in gaps[:3]:
-        starters.append("How does our %s compare with similar organisations?" % pos._lower_first(g["label"]))
+    seen_q = set()
+    for g in gaps:
+        # one starter per question family — two rows of the same matrix read
+        # as near-duplicates — and the label goes in quotes, because display
+        # titles jammed into a sentence produce broken grammar
+        if g.get("question_id") in seen_q:
+            continue
+        seen_q.add(g.get("question_id"))
+        starters.append("How do we compare on ‘%s’?" % g["label"])
+        if len(starters) == 3:
+            break
     bench_fallback = [
         "Where do we sit on employer pension contributions?",
         "How common are holiday purchase schemes?",
@@ -2717,7 +2785,9 @@ async def analyst_starters(request: Request):
     starters += ["Do you have any metrics on parental leave?",
                  "What does ‘percentile’ mean?",
                  "How do I add my data?"]
-    return {"starters": starters[:6]}
+    starters = starters[:6]
+    _starters_cache[org["org_id"]] = (_t.monotonic(), starters)
+    return {"starters": starters}
 
 
 # ================================================================ BOARD PACK ==
@@ -2937,7 +3007,7 @@ async def boardpack_generate(request: Request):
     if cut["dim"] == "fte_band" and not cut["value"]:
         cut["value"] = org["fte_band"]
     payload = assemble_pack_payload(request, user, org, cut)
-    result = claude_api.generate_board_pack_narrative(payload)
+    result = await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)
     pack_id = str(uuid.uuid4())
     conn = get_conn()
     conn.execute(
@@ -4193,7 +4263,7 @@ async def metric_commentary(request: Request):
         if row:
             return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
                     "generated_at": row["created_at"], "caveats": caveats}
-    res = claude_api.generate_metric_commentary(payload)
+    res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     conn.execute(
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
         "VALUES (?,?,?,?,?,?)",
@@ -4245,7 +4315,7 @@ async def domain_summary(request: Request):
         if row:
             return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
                     "generated_at": row["created_at"], "caveats": caveats}
-    res = claude_api.generate_domain_summary(payload)
+    res = await to_thread.run_sync(claude_api.generate_domain_summary, payload)
     conn.execute(
         "INSERT OR REPLACE INTO domain_summary(org_id, domain, cut_key, payload_hash, text, source) "
         "VALUES (?,?,?,?,?,?)",

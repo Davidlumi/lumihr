@@ -480,41 +480,92 @@ function PackTable({ rows, good }) {
 window.PackTable = PackTable;
 
 // ------------------------------------------------------------- Ask lumi ----
+const ANALYST_GREETING = { role: "bot", text: "Hi — I'm lumi. I can help you find a metric, explain a term, or show you how to use the platform. And ask how you compare on anything — I'll answer from the benchmark with the percentile, peer group and sample size cited." };
+
 window.AnalystPane = function ({ onClose }) {
+  const paneRef = useRef(null);
+  const inputRef = useRef(null);
+  // Esc anywhere closes (house idiom — Modal binds the same window listener);
+  // with focus trapped in the pane below, the global binding is effectively scoped.
   useEffect(() => {
     const onKey = e => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const [msgs, setMsgs] = useState([{ role: "bot", text: "Hi — I'm lumi. I can help you find a metric, explain a term, or show you how to use the platform. And ask how you compare on anything — I'll answer from the benchmark with the percentile, peer group and sample size cited." }]);
+  // Focus management (mirrors core.js Modal): capture the trigger, move focus
+  // to the question input on open, restore the trigger on close.
+  useEffect(() => {
+    const trigger = document.activeElement;
+    const t = setTimeout(() => { inputRef.current && inputRef.current.focus(); }, 0);
+    return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
+  }, []);
+  // Trap Tab/Shift+Tab within the pane (wrap first↔last, same idiom as Modal).
+  const trapTab = (e) => {
+    if (e.key !== "Tab" || !paneRef.current) return;
+    const f = [...paneRef.current.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.disabled && el.offsetParent);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  // The transcript survives close/reopen (one stray Esc must not wipe a
+  // conversation) — session-scoped, never persisted anywhere.
+  const [msgs, setMsgs] = useState(window._analystMsgs || [ANALYST_GREETING]);
+  useEffect(() => { window._analystMsgs = msgs; }, [msgs]);
   const [starters, setStarters] = useState([]);
+  const [showIdeas, setShowIdeas] = useState(msgs.length === 1);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const abortRef = useRef(null);
   const endRef = useRef(null);
   useEffect(() => { api("/api/analyst/starters").then(d => setStarters(d.starters)).catch(() => {}); }, []);
-  useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    endRef.current && endRef.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  }, [msgs, busy]);
+  useEffect(() => () => { abortRef.current && abortRef.current.abort(); }, []);
   const ask = async (q) => {
     if (!q.trim() || busy) return;
     setMsgs(m => [...m, { role: "user", text: q }]);
-    setInput(""); setBusy(true);
+    setInput(""); setBusy(true); setShowIdeas(false);
+    const ctl = new AbortController();
+    abortRef.current = ctl;
+    const timer = setTimeout(() => ctl.abort(), 60000);
     try {
-      const r = await api("/api/analyst", { method: "POST", body: { question: q } });
+      const r = await api("/api/analyst", { method: "POST", body: { question: q }, signal: ctl.signal });
       setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips, links: r.links, noMetric: r.no_metric, topic: r.topic }]);
     } catch (e) {
-      setMsgs(m => [...m, { role: "bot", text: "Sorry — something went wrong: " + e.message }]);
+      const friendly = (e && e.name === "AbortError")
+        ? "That took longer than it should — give it another go."
+        : (e.status === 400 || e.status === 403 || e.status === 429 || e.status === 0)
+          ? e.message
+          : "Sorry — something went wrong on our side. Try again in a moment.";
+      setMsgs(m => [...m, { role: "bot", text: friendly, retryQ: q }]);
     }
+    clearTimeout(timer);
+    abortRef.current = null;
     setBusy(false);
   };
   return html`
-    <div class="analyst-pane">
+    <div class="analyst-pane" ref=${paneRef} role="dialog" aria-modal="true" aria-label="Ask lumi" onKeyDown=${trapTab}>
       <div class="row spread" style=${{ padding: "var(--s4)", borderBottom: "1px solid var(--border)" }}>
         <b>Ask lumi</b>
-        <button class="iconbtn" aria-label="Close Ask lumi (Esc)" title="Close (Esc)" onClick=${onClose}><${Icon} name="close" size=${14} /></button>
+        <div class="row" style=${{ gap: "var(--s1)" }}>
+          <button class="iconbtn" aria-label="Ideas to try" title="Ideas to try" onClick=${() => setShowIdeas(v => !v)}><${Icon} name="sparkle" size=${14} /></button>
+          <button class="iconbtn" aria-label="Close Ask lumi (Esc)" title="Close (Esc)" onClick=${onClose}><${Icon} name="close" size=${14} /></button>
+        </div>
       </div>
-      <div class="analyst-msgs">
+      <div class="analyst-msgs" aria-live="polite" aria-relevant="additions">
         ${msgs.map((m, i) => html`
           <div key=${i} class=${"msg " + m.role}>
             ${m.text}
+            ${m.role === "bot" && i > 0 && m.text && !m.retryQ && html`
+              <button class="msg-copy" aria-label="Copy answer" title="Copy"
+                onClick=${() => { navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast("Copied")); }}><${Icon} name="copy" size=${12} /></button>`}
+            ${m.retryQ && html`
+              <div><button class="btn small" style=${{ marginTop: "var(--s2)" }}
+                onClick=${() => ask(m.retryQ)}>Try again</button></div>`}
             ${m.noMetric && html`
               <div><button class="btn small" style=${{ marginTop: "var(--s2)" }}
                 onClick=${() => window.openMetricRequest(m.topic, "ask-lumi")}>Request this metric</button></div>`}
@@ -531,8 +582,8 @@ window.AnalystPane = function ({ onClose }) {
                   ${c.question_id && html`<span style=${{ color: "var(--blue-deep)" }}>View metric →</span>`}
                 </div>`)}</div>`}
           </div>`)}
-        ${busy && html`<div class="msg bot"><${Spinner} /> Checking the benchmark…</div>`}
-        ${msgs.length === 1 && starters.length > 0 && html`
+        ${busy && html`<div class="msg bot"><span class="tdots" aria-hidden="true"><span></span><span></span><span></span></span> Looking that up…</div>`}
+        ${showIdeas && starters.length > 0 && html`
           <div>
             <div class="caption" style=${{ marginBottom: "var(--s2)" }}>Try one of these — compare, find a metric, learn a term, or get help:</div>
             ${starters.map((s, i) => html`
@@ -542,10 +593,11 @@ window.AnalystPane = function ({ onClose }) {
         <div ref=${endRef}></div>
       </div>
       <div style=${{ padding: "var(--s3)", borderTop: "1px solid var(--border)", display: "flex", gap: "var(--s2)" }}>
-        <input class="ctl" style=${{ flex: 1, maxWidth: "none" }} placeholder="Ask about a metric, a term, or how lumi works…"
+        <input class="ctl" ref=${inputRef} style=${{ flex: 1, maxWidth: "none" }}
+          placeholder="Ask about a metric, a term, or how lumi works…" aria-label="Ask lumi a question"
           value=${input} onInput=${e => setInput(e.target.value)}
-          onKeyDown=${e => { if (e.key === "Enter") ask(input); }} />
-        <button class="btn primary" disabled=${busy} onClick=${() => ask(input)}>Ask</button>
+          onKeyDown=${e => { if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) ask(input); }} />
+        <button class="btn primary" disabled=${busy} aria-busy=${busy ? "true" : "false"} onClick=${() => ask(input)}>Ask</button>
       </div>
     </div>`;
 };

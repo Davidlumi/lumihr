@@ -308,7 +308,8 @@ function App() {
         </div>
         <div class="topbar-right">
           <button class="btn feature suggest-pill" aria-label="Suggest a new metric" onClick=${() => setSuggestOpen(true)}>Suggest a metric</button>
-          <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>
+          ${me.features && me.features.analyst && html`
+          <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>`}
           <span class="topbar-sep" aria-hidden="true"></span>
           <${NotificationBell} me=${me} />
           <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }} />

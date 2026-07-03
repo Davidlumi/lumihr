@@ -22,11 +22,73 @@ metric metrics data figure figures number numbers stat stats anything something"
 
 
 def tokens(s):
-    return [t for t in re.findall(r"[a-z0-9%£]+", (s or "").lower()) if t not in STOP]
+    # single letters are contraction shrapnel ("what's" → "what","s"), never a
+    # topic — and as distinctive tokens they can veto a whole query's coverage
+    return [t for t in re.findall(r"[a-z0-9%£]+", (s or "").lower())
+            if t not in STOP and not (len(t) == 1 and t.isalpha())]
 
 
 def _bigrams(toks):
     return {" ".join(toks[i:i + 2]) for i in range(len(toks) - 1)}
+
+
+_vocab_cache = None
+
+
+def library_vocab():
+    """Every token appearing in any question's search text — the dictionary a
+    singularisation candidate must be found in before it may replace a word
+    (so 'pensions'→'pension' happens, 'bonus'→'bonu' never does)."""
+    global _vocab_cache
+    if _vocab_cache is None:
+        v = set()
+        for q in load_questions().values():
+            doc = (q.search_description or "") + " " + (q.display_title or "") + " " + (q.text or "")
+            v |= set(tokens(doc))
+        _vocab_cache = v
+    return _vocab_cache
+
+
+def singularise(word):
+    """Best-effort singular of one lowercase word, vocabulary-checked: a
+    candidate ships only if the library actually contains it. English plural
+    rules, not naive 's'-strip (which mangles 'allowances'→'allowanc')."""
+    w = word.lower()
+    vocab = library_vocab()
+    cands = []
+    if len(w) > 4 and re.search(r"(?:ses|xes|zes|ches|shes)$", w):
+        cands.append(w[:-2])                               # bonuses->bonus, boxes->box
+    if len(w) > 3 and w.endswith("ies"):
+        cands.append(w[:-3] + "y")                         # policies->policy
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        cands.append(w[:-1])                               # pensions->pension, eaps->eap
+    for c in cands:
+        if c in vocab:
+            return c
+    return w
+
+
+def topic_rank(query, qids):
+    """The given qids re-ordered by how much of the query's distinctive topic
+    each one actually carries (hit count desc, original order as tiebreak) —
+    so a fallback readout for 'pensions' leads with the pension metrics, not
+    whichever fuzzy match out-scored them."""
+    distinctive = [singularise(t) for t in set(tokens(query)) if t not in GENERIC]
+    if not distinctive:
+        return list(qids)
+    qs = load_questions()
+    def hits(qid):
+        q = qs.get(qid)
+        if not q:
+            return 0
+        # a topic word in the TITLE outranks one buried in the search text —
+        # search descriptions mention neighbouring topics ('pension' appears in
+        # the sick-pay doc), titles say what the metric actually is
+        title = set(tokens(q.display_title or ""))
+        desc = set(tokens(q.search_description or ""))
+        return sum(2 if t in title else (1 if t in desc else 0) for t in distinctive)
+    return [qid for _h, _i, qid in
+            sorted(((-hits(qid), i, qid) for i, qid in enumerate(qids)))]
 
 
 def distinctive_coverage(query, qids):

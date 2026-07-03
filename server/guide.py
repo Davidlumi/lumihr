@@ -23,7 +23,8 @@ GLOSSARY = {
     "market position": "Where you sit versus peers — below, on, or above market. The headline uses only market-rate measures where higher is better, so it answers one question: how competitive is your reward?",
     "favourable": "A measure where being lower is the good outcome — such as a pay gap — and you sit on the good side of the market.",
     "context": "A measure with no inherently good direction — shown as a fact to weigh, not a verdict.",
-    "signal": "A flag lumi raises where your position is worth a look — a gap to peers, an unusual choice, or new movement. We flag; you decide.",
+    "signal": "A flag lumi raises where your position is worth a look — a gap to peers, a practice off the norm, or new movement. We flag; you decide.",
+    "a practice choice": "You do something differently from most peers on a measure with no better-or-worse — a choice, not a gap to close.",
     "peer twin": "A peer group built from organisations most like yours across sector, size and shape — the closest comparison lumi can assemble for you.",
     "reward strategy": "Your captured intent — market stance, pay/benefits mix and this year's objective — which lumi uses to order what it shows you. It never changes the underlying figures.",
 }
@@ -47,20 +48,20 @@ _SYNONYM = {
 FEATURES = [
     {"keys": ["add data", "add my data", "submit", "enter data", "fill in", "your data",
               "my data", "complete", "questionnaire", "answer the questions", "input data"],
-     "answer": "Add or update your figures under Your data. Pick a domain, answer the questions (‘Not applicable’ counts), then submit — each answer immediately shows where you stand against peers.",
+     "answer": "Add or update your figures under Your data. Pick an area, answer the questions (‘Not applicable’ counts), then submit — each answer immediately shows where you stand against peers.",
      "route": "/your-data", "cta": "Go to Your data"},
     {"keys": ["peer group", "compare against", "comparing against", "change peers", "filter",
               "your sector", "your size", "organisations like", "similar organisations", "cut"],
      "answer": "Use the ‘Comparing against’ selector at the top of any benchmark page to switch peer group — everyone, your sector, your size, organisations like you, or a custom group you build. Every figure re-reads against the group you pick.",
      "route": "/benchmark", "cta": "Open the benchmark"},
     {"keys": ["dashboard", "dashboards", "my dashboards", "pin", "save a view", "my view", "arrange cards"],
-     "answer": "My dashboards lets you build and save as many views as you like. Pin any card with the star (☆), drag to arrange, and switch between dashboards with the tabs at the top.",
+     "answer": "My dashboards lets you build and save as many views as you like. Use the pin icon on any card to add it to a dashboard, drag to arrange, and switch between dashboards with the tabs at the top.",
      "route": "/dashboards", "cta": "Go to My dashboards"},
     {"keys": ["download", "export chart", "save chart", "png", "image", "picture of", "download chart", "save the chart"],
-     "answer": "Open any card's ‘⋮’ menu and choose ‘Download chart (PNG)’. The image carries the lumi logo, the peer group it's on, and the sample size — ready to drop into a deck or board pack.",
+     "answer": "Use the download icon on any benchmark card — or the ‘Download chart (PNG)’ button on a metric page. The image carries the lumi logo, the peer group it's on, and the sample size — ready to drop into a deck or board pack.",
      "route": None, "cta": None},
     {"keys": ["signal", "signals", "flag", "flags", "alert", "alerts", "what should i look at"],
-     "answer": "Signals is your flag list — where your position is worth a look: gaps to peers, unusual choices and new movement. lumi flags; you decide what to act on. You can mark each one priority, saved or dismissed.",
+     "answer": "Signals is your flag list — where your position is worth a look: gaps to peers, practices off the norm and new movement. lumi flags; you decide what to act on. You can mark each one priority, saved or dismissed.",
      "route": "/signals", "cta": "Open Signals"},
     {"keys": ["strategy", "reward strategy", "objectives", "philosophy", "market stance", "capture strategy"],
      "answer": "Reward strategy captures your intent — market stance, pay/benefits mix and this year's objective. lumi uses it to order what it surfaces for you; it never changes the underlying figures.",
@@ -71,7 +72,7 @@ FEATURES = [
     {"keys": ["pulse", "pulses"],
      "answer": "Pulses are short, focused check-ins that run alongside the core benchmark — same engine, separate surface. Open Pulse to see the ones available to you.",
      "route": "/pulse", "cta": "Open Pulse"},
-    {"keys": ["suppressed", "hidden", "not enough", "why can't i see", "why is it hidden", "n<5", "fewer than 5", "privacy", "anonymity"],
+    {"keys": ["suppressed", "suppression", "hidden", "not enough", "why can't i see", "why is it hidden", "n<5", "fewer than 5", "privacy", "anonymity"],
      "answer": "If fewer than 5 organisations sit behind a figure, lumi hides it so no single organisation's data can be worked out. Try a broader peer group — ‘All peers’ usually has the numbers.",
      "route": "/how-lumi-works/suppression", "cta": "Why figures are hidden"},
     {"keys": ["request", "suggest a metric", "missing metric", "add a metric", "can you add", "not benchmarked", "request a metric"],
@@ -97,6 +98,20 @@ FEATURES = [
 
 # regex intent signals
 _DEFN = re.compile(r"\b(what(?:'s| is| are| does)|what do you mean|define|defines|explain|meaning of|stands? for|in plain english)\b", re.I)
+# unmistakably definition-shaped — strong enough to override the _OWN veto, so
+# "what does suppressed mean on my dashboard?" reaches the glossary ("explain
+# our market position" stays benchmark: 'explain' is _DEFN but not _DEFN_STRONG)
+_DEFN_STRONG = re.compile(r"\b(what does\b.+\bmean|what do you mean by|define\b|meaning of|stands? for|in plain english)\b", re.I)
+# the sacred n<5 floor — every phrasing of "why is this hidden?" must land on
+# the suppression explainer, not fall to the benchmark analyst (whose 'request
+# a metric' refusal reads as nonsense for a question about hidden figures)
+_SUPP = re.compile(r"\b(suppress\w*|hidden|n\s*<\s*5|fewer than (?:5|five)|anonymi\w*|"
+                   r"can[’']?t (?:i |we |you )?see (?:the |any |my |our )?(?:[\w-]+ )?(?:figures?|numbers?|data|values?))\b", re.I)
+# methodology phrasings ("how is the median calculated?", "where does the data
+# come from?") — help-shaped but not "how do I…", so _HELP never caught them
+_METHOD = re.compile(r"\b(methodolog\w*|how (?:is|are) (?:the |a |my |our )?[\w %-]*?(?:calculated|worked out|computed)|"
+                     r"where (?:does|do) (?:the |our |my )?(?:data|numbers?|figures?) come from|"
+                     r"how do you (?:calculate|work out|compute))\b", re.I)
 _HELP = re.compile(r"\b(how (?:do|can|would|should|might) i|how to|how does .* work|where (?:do|can|is|are) i?|(?:can|could) i (?:add|edit|update|change|download|export|save|delete|remove|create|make|set|invite|find|filter|use|build|pin|reset|rename|duplicate|switch)|help me|walk me through|guide me|get started|getting started|what can you do|what can i ask|how do i use|show me around)\b", re.I)
 # bare help requests that aren't "how do I…" shaped — exact-ish prompts
 _HELP_BARE = re.compile(r"^\s*(help|i need help|need help|what can you do|what can i ask|get(ting)? started|how does (this|lumi) work\??)\s*$", re.I)
@@ -129,6 +144,10 @@ def help_match(q):
     return best if score > 0 else None
 
 
+def _feature_by_route(route):
+    return next((f for f in FEATURES if f.get("route") == route), None)
+
+
 def classify(q):
     """(intent, extra) where intent is benchmark|find|term|help. extra is the
     glossary key (term) or matched feature dict (help). Benchmark is the default
@@ -136,6 +155,16 @@ def classify(q):
     if _HELP_BARE.search(q):
         return "help", help_match(q)
     bench = bool(_BENCH.search(q))
+    # definition-shaped beats everything else non-bench — including the _OWN
+    # veto and the suppression route ("what does suppressed mean?" is a term)
+    if _DEFN_STRONG.search(q) and not bench:
+        key = glossary_key(q)
+        if key:
+            return "term", key
+    if _SUPP.search(q) and not bench:
+        return "help", _feature_by_route("/how-lumi-works/suppression") or help_match(q)
+    if _METHOD.search(q) and not bench:
+        return "help", _feature_by_route("/how-lumi-works/calculations") or help_match(q)
     if _HELP.search(q) and not bench:
         return "help", help_match(q)
     if _FIND.search(q) and not bench:
@@ -147,7 +176,9 @@ def classify(q):
     return "benchmark", None
 
 
-CAPABILITIES = FEATURES[-1]["answer"]
+# the "what can you do" blurb — looked up by its trigger key, not by position,
+# so appending a FEATURES entry can't silently swap the capabilities answer
+CAPABILITIES = next(f for f in FEATURES if "what can you do" in f["keys"])["answer"]
 
 
 def deterministic_answer(intent, extra, question, has_matches):
@@ -158,9 +189,11 @@ def deterministic_answer(intent, extra, question, has_matches):
     if intent == "find":
         if has_matches:
             topic = question.strip().rstrip("?").strip()
-            return "Here's what lumi benchmarks closest to “%s” — tap any to open it and see the full peer picture." % topic
+            if len(topic) > 80:
+                topic = topic[:79].rstrip() + "…"
+            return "Here's what lumi benchmarks closest to “%s” — open any to see the full peer picture." % topic
         return ("I couldn't find a lumi metric for that yet — so I won't guess. If it would be "
-                "useful, use ‘Suggest a metric’ and the team will consider it for a future cycle.")
+                "useful, use ‘Request this metric’ below and the team will consider it for a future cycle.")
     if intent == "help":
         return (extra or {}).get("answer") or CAPABILITIES
     return ""

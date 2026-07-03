@@ -1907,7 +1907,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
         <div>
           <h1 class="display-title">My dashboards</h1>
           <div class="caption" style=${{ marginTop: "var(--s1)" }}>
-            Build and save as many views as you like — pin cards from anywhere in lumi (☆), drag to arrange, and switch between them here.
+            Build and save as many views as you like — use the pin icon on any card, drag to arrange, and switch between them here.
           </div>
         </div>
         <div class="row">

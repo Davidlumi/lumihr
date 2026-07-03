@@ -14,9 +14,13 @@ window.api = async function (path, opts) {
     init.headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(opts.body);
   }
+  if (opts.signal) init.signal = opts.signal;
   let res;
   try { res = await fetch(path, init); }
-  catch (e) { throw new ApiError(0, "Couldn't reach lumi — check your connection and try again."); }
+  catch (e) {
+    if (e && e.name === "AbortError") throw e;   // caller-initiated — let them handle it
+    throw new ApiError(0, "Couldn't reach lumi — check your connection and try again.");
+  }
   if (res.status === 401) { window.dispatchEvent(new Event("lumi:unauth")); throw new ApiError(401, "Not signed in"); }
   let data = null;
   try { data = await res.json(); } catch (e) { /* non-JSON */ }
