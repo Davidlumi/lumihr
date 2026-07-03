@@ -448,6 +448,7 @@ def purge_ai_cache(conn, org_id):
     under the normal erasure/retention process, not this automatic cache purge."""
     conn.execute("DELETE FROM domain_summary WHERE org_id=?", (org_id,))
     conn.execute("DELETE FROM metric_commentary WHERE org_id=?", (org_id,))
+    conn.execute("DELETE FROM analyst_log WHERE org_id=?", (org_id,))
     conn.commit()
 
 
@@ -2543,6 +2544,20 @@ def _analyst_rate_limited(org_id):
     return False
 
 
+def _analyst_log(conn, org, user, question, intent, matched, source, answer):
+    """Audit trail for the chat surface — the sibling AI surfaces persist their
+    output; until now Ask lumi answers vanished on response. Reviewable when a
+    member reports a bad answer; purged with the AI caches on consent withdrawal
+    (purge_ai_cache). Logging must never break the answer path."""
+    try:
+        conn.execute("INSERT INTO analyst_log (org_id, user_id, question, intent, matched_json, source, answer) "
+                     "VALUES (?,?,?,?,?,?,?)",
+                     (org["org_id"], user["user_id"], question, intent, j(matched or []), source, answer))
+        conn.commit()
+    except Exception:
+        pass
+
+
 @app.post("/api/analyst")
 async def analyst(request: Request):
     user, org = require_user(request)
@@ -2565,13 +2580,27 @@ async def analyst(request: Request):
     # benchmark question and falls through to the strict, cited analyst below.
     intent, extra = guide.classify(question)
     if intent != "benchmark":
-        return await _guide_response(question, intent, extra, org, vis)
+        res = await _guide_response(question, intent, extra, org, vis)
+        _analyst_log(conn, org, user, question, intent, res.get("matched"),
+                     "guide-" + res.get("source", "deterministic"), res.get("answer", ""))
+        return res
 
     contrib = contribution_state(conn, org)
     if contrib["reduced"]:
-        return {"answer": "Your full benchmark is paused until your reward data is complete — "
+        resp = {"answer": "Your full benchmark is paused until your reward data is complete — "
                           "finish your submission and I'll have every comparison ready for you again.",
                 "chips": [], "matched": [], "reduced": True}
+        _analyst_log(conn, org, user, question, intent, [], "reduced", resp["answer"])
+        return resp
+
+    if retrieval.is_vague(question):
+        # nothing topic-shaped to match ("how much do peers usually offer?") —
+        # the capabilities nudge beats three readouts of whatever fuzzy-scored
+        resp = {"answer": guide.CAPABILITIES, "chips": [],
+                "links": [{"label": "How lumi works", "route": "/how-lumi-works"}],
+                "matched": [], "kind": "help"}
+        _analyst_log(conn, org, user, question, intent, [], "vague", resp["answer"])
+        return resp
 
     def _bench_matches(q):
         hits = [x for x in retrieval.search_questions(q, limit=12) if x in vis][:6]
@@ -2587,10 +2616,12 @@ async def analyst(request: Request):
         if alt != question.lower():
             qids = _bench_matches(alt)
     if not qids:
-        return {"answer": "lumi doesn't benchmark that yet, so I won't guess at a figure. "
+        resp = {"answer": "lumi doesn't benchmark that yet, so I won't guess at a figure. "
                           "If it would be useful, request it — member requests shape "
                           "what lumi measures next.",
                 "chips": [], "matched": [], "no_metric": True, "topic": question}
+        _analyst_log(conn, org, user, question, intent, [], "no_metric", resp["answer"])
+        return resp
     answers = org_answers_for(org)
     entitled = make_entitled(user, org)
     questions = vis
@@ -2635,13 +2666,17 @@ async def analyst(request: Request):
                               "sub": "P%d · All peers · n=%d" % (round(blk["you_percentile"]), blk.get("n", 0)),
                               "question_id": m["question_id"]})
         if not lines:
-            return {"answer": "The closest matches don't have enough peer data to show safely "
+            resp = {"answer": "The closest matches don't have enough peer data to show safely "
                               "yet — try a broader question, or open the metric itself for the "
                               "full picture.",
                     "chips": chips, "matched": qids, "fallback": True}
-        prefix = "Here's where you stand on the closest matches to your question:\n\n"
-        return {"answer": prefix + "\n\n".join(lines),
-                "chips": chips, "matched": qids, "fallback": True}
+        else:
+            resp = {"answer": "Here's where you stand on the closest matches to your question:\n\n"
+                              + "\n\n".join(lines),
+                    "chips": chips, "matched": qids, "fallback": True}
+        _analyst_log(conn, org, user, question, intent, qids, "fallback", resp["answer"])
+        return resp
+    _analyst_log(conn, org, user, question, intent, qids, "model", res["answer"])
     return {"answer": res["answer"], "chips": res["chips"], "matched": qids}
 
 
@@ -2673,6 +2708,12 @@ async def _guide_response(question, intent, extra, org, vis):
 
     # Only "find" needs the catalogue (its chips). Term/how-to questions never
     # show metric chips, so we skip the (full-catalogue) retrieval scan entirely.
+    if intent == "find" and retrieval.is_vague(question):
+        # "what metrics do you have?" — no topic to match; the capabilities
+        # blurb answers this shape properly, the request-a-metric refusal doesn't
+        return {"answer": guide.CAPABILITIES, "chips": [],
+                "links": [{"label": "How lumi works", "route": "/how-lumi-works"}],
+                "matched": [], "kind": "help", "source": "deterministic"}
     qids = []
     if intent == "find":
         qids = _matches(question)
@@ -2699,7 +2740,8 @@ async def _guide_response(question, intent, extra, org, vis):
     # nothing in the catalogue for a "find" → offer the request path, no chips
     if intent == "find" and not metas:
         return {"answer": guide.deterministic_answer("find", None, question, False),
-                "chips": [], "matched": [], "no_metric": True, "topic": question, "kind": "find"}
+                "chips": [], "matched": [], "no_metric": True, "topic": question,
+                "kind": "find", "source": "deterministic"}
 
     links = guide.links_for(intent, extra)
     ctx = {"intent": intent, "question": question, "glossary": guide.GLOSSARY,
@@ -2713,7 +2755,8 @@ async def _guide_response(question, intent, extra, org, vis):
             links = res["links"]
     else:
         answer = guide.deterministic_answer(intent, extra, question, bool(metas))
-    return {"answer": answer, "chips": chips, "links": links, "matched": qids, "kind": intent}
+    return {"answer": answer, "chips": chips, "links": links, "matched": qids, "kind": intent,
+            "source": "model" if res.get("ok") else "deterministic"}
 
 
 def _analyst_block(card):

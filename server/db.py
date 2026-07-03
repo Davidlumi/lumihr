@@ -395,6 +395,23 @@ CREATE TABLE IF NOT EXISTS domain_summary (
     PRIMARY KEY (org_id, domain, cut_key)
 );
 
+-- Ask lumi audit trail: every answer the chat surface ships (the sibling AI
+-- surfaces persist their output; chat answers used to vanish on response).
+-- Reviewable when a member reports a bad answer; purged with the AI caches on
+-- consent withdrawal (purge_ai_cache). source: model | fallback | guide-model |
+-- guide-deterministic | no_metric | vague | reduced.
+CREATE TABLE IF NOT EXISTS analyst_log (
+    org_id TEXT NOT NULL,
+    user_id TEXT,
+    question TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    matched_json TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_analyst_log_org ON analyst_log(org_id, created_at);
+
 -- Generated board packs (narrative cached so the print view is stable).
 CREATE TABLE IF NOT EXISTS board_packs (
     pack_id TEXT PRIMARY KEY,

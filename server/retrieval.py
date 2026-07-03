@@ -91,21 +91,32 @@ def topic_rank(query, qids):
             sorted(((-hits(qid), i, qid) for i, qid in enumerate(qids)))]
 
 
+def is_vague(query):
+    """True when the query carries no distinctive topic token at all ("how much
+    do peers usually offer?") — coverage can't be judged, so callers answer with
+    the capabilities nudge instead of readouts of whatever fuzzy-scored."""
+    return not any(t not in GENERIC for t in set(tokens(query)))
+
+
 def distinctive_coverage(query, qids):
-    """Share of the query's distinctive (non-generic) tokens that the matched
-    questions actually contain. Low coverage = the dataset doesn't really
-    cover this topic, however fuzzily it scored."""
+    """Share of the query's distinctive (non-generic) tokens that the BEST
+    single matched question contains. Per-question, deliberately NOT the union
+    across matches — six questions each covering one word of 'cycle to work
+    scheme' is fuzzy noise, not coverage. All-generic queries score 0.0
+    (nothing provable); callers pre-screen those with is_vague."""
     distinctive = [t for t in set(tokens(query)) if t not in GENERIC]
     if not distinctive:
-        return 1.0  # nothing distinctive to judge — let the matches speak
+        return 0.0
     qs = load_questions()
-    matched_doc = set()
+    best = 0.0
     for qid in qids:
         q = qs.get(qid)
-        if q:
-            matched_doc |= set(tokens((q.search_description or "") + " " + (q.display_title or "")))
-    hit = sum(1 for t in distinctive if t in matched_doc)
-    return hit / float(len(distinctive))
+        if not q:
+            continue
+        doc = set(tokens((q.search_description or "") + " " + (q.display_title or "")))
+        cov = sum(1 for t in distinctive if t in doc) / float(len(distinctive))
+        best = max(best, cov)
+    return best
 
 
 def search_questions(query, limit=6):
