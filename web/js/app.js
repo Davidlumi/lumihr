@@ -39,6 +39,24 @@ function cutToURL(cut) {
 function App() {
   const route = useRoute();
   const [me, setMe] = useState(undefined);          // undefined=loading, null=unauth
+  // Per-route document titles + focus handoff: SPAs are silent on navigation for
+  // screen-reader users unless the title changes and focus lands in the content.
+  const prevRouteRef = useRef(null);
+  useEffect(() => {
+    const TITLES = [["/overview", "Overview"], ["/dashboards", "My dashboards"], ["/signals", "Signals"],
+      ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
+      ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
+      ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
+      ["/profile", "Your profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
+      ["/governance", "Governance"]];
+    const hit = TITLES.find(([p]) => route.startsWith(p));
+    document.title = hit ? hit[1] + " · lumi" : "lumi · UK reward benchmarking";
+    if (prevRouteRef.current !== null && prevRouteRef.current !== route) {
+      const el = document.getElementById("main-content");
+      if (el) el.focus({ preventScroll: true });
+    }
+    prevRouteRef.current = route;
+  }, [route]);
   const [cut, setCut] = useState(cutFromURL());
   const [cuts, setCuts] = useState(null);
   const [prefs, setPrefs] = useState({});
@@ -91,7 +109,12 @@ function App() {
   const prefsTimer = useRef(null);
 
   const refreshMe = () => api("/api/me").then(setMe).catch(() => setMe(null));
-  useEffect(() => { refreshMe(); }, []);
+  useEffect(() => {
+    const pre = window._mePrefetch;
+    window._mePrefetch = null;                    // one shot — refreshes go through api()
+    if (pre) pre.then(d => { if (d) setMe(d); else refreshMe(); });
+    else refreshMe();
+  }, []);
   useEffect(() => {
     const f = () => setMe(null);
     window.addEventListener("lumi:unauth", f);
@@ -168,7 +191,8 @@ function App() {
     const next = { ...prefs, [qid]: p };
     setPrefs(next);
     clearTimeout(prefsTimer.current);
-    prefsTimer.current = setTimeout(() => api("/api/prefs", { method: "PUT", body: { prefs: next } }).catch(() => {}), 800);
+    prefsTimer.current = setTimeout(() => api("/api/prefs", { method: "PUT", body: { prefs: next } })
+      .catch(() => toast("Couldn't save your view settings — they may reset next visit.", "error")), 800);
   };
   // the global pin-star toggles a card on the user's ACTIVE dashboard
   const onPin = async (qid) => {
@@ -387,19 +411,18 @@ function App() {
    submitted" — nothing is lost by leaving; the benchmark just won't update
    until they submit. */
 function LeaveSubmitModal({ onReview, onLeave, onClose }) {
+  // through the house Modal so it traps/restores focus and closes on Escape
   return html`
-    <div class="modal-back" role="alertdialog" aria-label="Unsubmitted changes" onClick=${onClose}>
-      <div class="modal" style=${{ maxWidth: "460px" }} onClick=${e => e.stopPropagation()}>
-        <h2 class="section-title" style=${{ marginTop: 0 }}>You haven't submitted yet</h2>
-        <p>Your answers are <b>saved</b> — they'll be here when you come back. But they're${" "}
-        <b>not submitted to the benchmark yet</b>, so your position, signals and £ opportunity
-        won't update until you do.</p>
-        <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "flex-end" }}>
-          <button class="btn" onClick=${onLeave}>Leave for now</button>
-          <button class="btn primary" onClick=${onReview}>Review & submit</button>
-        </div>
+    <${Modal} onClose=${onClose} width="460px" role="alertdialog" label="Unsubmitted changes">
+      <h2 class="section-title" style=${{ marginTop: 0 }}>You haven't submitted yet</h2>
+      <p>Your answers are <b>saved</b> — they'll be here when you come back. But they're${" "}
+      <b>not submitted to the benchmark yet</b>, so your position, signals and £ opportunity
+      won't update until you do.</p>
+      <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "flex-end" }}>
+        <button class="btn" onClick=${onLeave}>Leave for now</button>
+        <button class="btn primary" onClick=${onReview}>Review & submit</button>
       </div>
-    </div>`;
+    <//>`;
 }
 
 /* The Benchmark group (chrome spec section 1.1): parent line is label +
@@ -509,8 +532,8 @@ window.ProfilePage = function ({ me, refreshMe }) {
                 ["operating_model", "How do you operate?"]];
   const Field = ([k, label], required) => html`
     <div class="field" key=${k}>
-      <label>${label}${required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</label>
-      <select value=${vals[k] || ""} disabled=${!canEdit} onChange=${e => setVals({ ...vals, [k]: e.target.value })}>
+      <label htmlFor=${"prof-" + k}>${label}${required && html`<span style=${{ color: "var(--unfavourable)" }}> *</span>`}</label>
+      <select id=${"prof-" + k} value=${vals[k] || ""} disabled=${!canEdit} onChange=${e => setVals({ ...vals, [k]: e.target.value })}>
         <option value="">Choose…</option>
         ${(data.choices[k] || []).map(o => html`<option key=${o} value=${o}>${o}</option>`)}
       </select>
@@ -717,9 +740,10 @@ window.IdleGuard = function ({ onSignOut }) {
   }, [warn]);
   if (!warn) return null;
   const stay = async () => { try { await api("/api/me"); } catch (e) { /* handled globally */ } last.current = Date.now(); setWarn(false); };
+  // house Modal = trap + restore; dismissing (Escape/backdrop) means "stay"
   return html`
-    <div class="modal-back" role="alertdialog" aria-label="Session timeout warning">
-      <div class="modal" style=${{ maxWidth: "420px", textAlign: "center" }}>
+    <${Modal} onClose=${stay} width="420px" role="alertdialog" label="Session timeout warning">
+      <div style=${{ textAlign: "center" }}>
         <h2 class="section-title">Still there?</h2>
         <p>You've been inactive for a while. For your organisation's data safety we'll sign you
         out in <span class="idle-count">${left}</span> seconds.</p>
@@ -728,7 +752,7 @@ window.IdleGuard = function ({ onSignOut }) {
           <button class="btn" onClick=${onSignOut}>Sign out now</button>
         </div>
       </div>
-    </div>`;
+    <//>`;
 };
 
 window.sectionList = function (qIndex) {
@@ -964,7 +988,7 @@ function NotificationBell() {
                   </button>`)}
               </div>`)}
           </div>`}
-          <div class="notif-foot"><a onClick=${() => { setOpen(false); nav("/settings"); }}>Notification settings →</a></div>
+          <div class="notif-foot"><a href="#" onClick=${e => { e.preventDefault(); setOpen(false); nav("/settings"); }}>Notification settings →</a></div>
         </div>`}
     </div>`;
 }

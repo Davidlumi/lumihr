@@ -21,7 +21,12 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   // filter choices persist per user, server-side, like chart prefs
   const setSp = v => { setSpRaw(v); onPref && onPref("_ui_gap", { ...ui, sp: v }); };
   const setShow = v => { setShowRaw(v); onPref && onPref("_ui_gap", { ...ui, show: v }); };
-  useEffect(() => { setData(null); api("/api/gap-register?" + cutQS(cut)).then(setData); }, [cutKeyOf(cut)]);
+  const [gerr, setGerr] = useState(null);
+  const [gretry, setGretry] = useState(0);
+  useEffect(() => { setData(null); setGerr(null);
+    api("/api/gap-register?" + cutQS(cut)).then(setData).catch(e => setGerr(e.message)); }, [cutKeyOf(cut), gretry]);
+  if (gerr) return html`<${EmptyState} title="Couldn't load the register" body=${gerr}
+    action=${html`<button class="btn small primary" onClick=${() => setGretry(k => k + 1)}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const focused = window.SCOPE && window.SCOPE.focused;
   let rows = data.rows.filter(r => !r.suppressed);
@@ -273,6 +278,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             <ol>${n.key_findings.map((f, i) => html`<li key=${i}>${f}</li>`)}</ol>
           </div>` : null}
         ${(n.executive_summary || "").split(/\n\n+/).map((para, i) => html`<p key=${i} style=${{ fontSize: "var(--fs-label)" }}>${para}</p>`)}
+        <p class="caption" style=${{ marginTop: "var(--s2)" }}>Narrative ${n._fallback
+          ? "composed directly from the figures in this pack"
+          : "written by lumi's AI analyst from the figures in this pack, with every number validated against them"} — nothing outside the pack's data is used.</p>
         ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
           <div class="bp-scale-wrap">
             <div class="bp-scale" role="img"
@@ -711,13 +719,15 @@ window.TeamPage = function ({ me }) {
   useEffect(() => { refresh(); }, []);
   const isAdmin = me.user.role === "admin";
   const [inviting, setInviting] = useState(false);
+  const [inviteLink, setInviteLink] = useState(null);
   const invite = async () => {
     if (inviting) return;
     setErr(null); setMsg(null); setInviting(true);
     try {
       const r = await api("/api/team/invite", { method: "POST", body: { email, role } });
-      setMsg(`Invite created (expires in ${r.expires_days} days). The link has been logged to the server console — in production this is emailed.`);
-      toast("Invite created for " + email);
+      setMsg(`Invite sent to ${email} — the link expires in ${r.expires_days} days. You can also copy it and share it yourself:`);
+      setInviteLink(r.link);
+      toast("Invite sent to " + email);
       setEmail(""); refresh();
     } catch (e) { setErr(e.message); }
     setInviting(false);
@@ -762,8 +772,13 @@ window.TeamPage = function ({ me }) {
                 <button class="btn small quiet" onClick=${() => remove(u.email)}>Remove</button></td>`}</tr>`)}
           </tbody>
         </table>
-        ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
-        ${err && html`<div class="error-text" style=${{ marginTop: "var(--s2)" }}>${err}</div>`}
+        ${msg && html`<div class="ok-text" role="status" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
+        ${inviteLink && html`<div class="row" style=${{ marginTop: "var(--s2)", gap: "var(--s2)" }}>
+          <input class="ctl" readonly value=${inviteLink} style=${{ flex: 1, maxWidth: "none" }} aria-label="Invite link"
+            onFocus=${e => e.target.select()} />
+          <button class="btn small" onClick=${() => { navigator.clipboard && navigator.clipboard.writeText(inviteLink).then(() => toast("Invite link copied")); }}>Copy link</button>
+        </div>`}
+        ${err && html`<div class="error-text" role="alert" style=${{ marginTop: "var(--s2)" }}>${err}</div>`}
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>
           <b>Admin</b> — ${ROLE_DESC.admin}<br/>
           <b>Contributor</b> — ${ROLE_DESC.contributor}<br/>
@@ -835,7 +850,7 @@ function NotificationsSettings() {
               aria-checked=${p.email_frequency === f} onClick=${() => save({ ...p, email_frequency: f })}>
               ${f.charAt(0).toUpperCase() + f.slice(1)}</button>`)}
         </div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Switch to Daily or Off any time; one-click unsubscribe on every email.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Switch to Daily or Off any time — and every email tells you how to unsubscribe.</div>
       </div>
       <div class="field">
         <label>What to hear about</label>
@@ -1091,21 +1106,21 @@ window.SuggestMetricModal = function ({ onClose, userEmail }) {
               <input id="sg-name" ref=${nameRef} class=${"suggest-input" + (errs.name ? " err" : "")} value=${name}
                 onInput=${e => setName(e.target.value)} placeholder="e.g. Internal mobility rate" />
               <div class="suggest-hint">Short and specific. What would you call this on a dashboard?</div>
-              ${errs.name && html`<div class="suggest-err">${errs.name}</div>`}
+              ${errs.name && html`<div class="suggest-err" role="alert">${errs.name}</div>`}
             </div>
             <div class="suggest-field">
               <label for="sg-measures">What it measures</label>
               <textarea id="sg-measures" rows="3" class=${"suggest-input" + (errs.measures ? " err" : "")} value=${measures}
                 onInput=${e => setMeasures(e.target.value)} placeholder="e.g. The percentage of open roles filled by internal candidates over a 12-month period."></textarea>
               <div class="suggest-hint">One or two sentences. Treat this as the definition.</div>
-              ${errs.measures && html`<div class="suggest-err">${errs.measures}</div>`}
+              ${errs.measures && html`<div class="suggest-err" role="alert">${errs.measures}</div>`}
             </div>
             <div class="suggest-field">
               <label for="sg-matters">Why it matters</label>
               <textarea id="sg-matters" rows="3" class=${"suggest-input" + (errs.matters ? " err" : "")} value=${matters}
                 onInput=${e => setMatters(e.target.value)} placeholder="e.g. It signals how well an organisation develops and retains internal talent — relevant for engagement and retention benchmarking."></textarea>
               <div class="suggest-hint">What decision would this help reward leaders make?</div>
-              ${errs.matters && html`<div class="suggest-err">${errs.matters}</div>`}
+              ${errs.matters && html`<div class="suggest-err" role="alert">${errs.matters}</div>`}
             </div>
             <div class="suggest-field">
               <label for="sg-cat">Suggested category</label>

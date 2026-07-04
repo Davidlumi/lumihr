@@ -30,6 +30,20 @@ window.api = async function (path, opts) {
 class ApiError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 window.ApiError = ApiError;
 
+// Session cache for GET payloads several surfaces share (/api/overview is
+// fetched by five pages) — back-navigation inside the TTL renders instantly
+// instead of re-running the whole engine pass. Keyed by full path+query, so
+// peer-cut and strategy variants never collide. Invalidate on writes.
+const _apiCache = new Map();
+window.apiCached = function (path, ttl) {
+  const hit = _apiCache.get(path);
+  if (hit && Date.now() - hit.ts < (ttl || 60000)) return Promise.resolve(hit.data);
+  return api(path).then(d => { _apiCache.set(path, { ts: Date.now(), data: d }); return d; });
+};
+window.apiCacheInvalidate = function (prefix) {
+  for (const k of [..._apiCache.keys()]) if (!prefix || k.startsWith(prefix)) _apiCache.delete(k);
+};
+
 // ----------------------------------------------------------- formatters ----
 window.fmtValue = function (v, unit) {
   if (v === null || v === undefined) return "—";
@@ -71,7 +85,9 @@ window.Term = function ({ word, children }) {
   const key = (word || (typeof children === "string" ? children : "")).toLowerCase();
   const def = GLOSSARY[key];
   if (!def) return html`<span>${children}</span>`;
-  return html`<span class="term">${children}<span class="tip">${def}</span></span>`;
+  // focusable so keyboard/touch users can reach the definition (hover-only
+  // excluded them); Escape blurs to dismiss the tip (WCAG 1.4.13)
+  return html`<span class="term" tabindex="0" onKeyDown=${e => { if (e.key === "Escape") e.target.blur(); }}>${children}<span class="tip" role="tooltip">${def}</span></span>`;
 };
 
 window.Chip = ({ kind, title, children }) =>
@@ -84,7 +100,7 @@ window.NBadge = ({ n, cutLabel }) => html`
 
 window.Spinner = () => html`<span class="spinner"></span>`;
 
-window.Modal = function ({ onClose, children, width, xl, label }) {
+window.Modal = function ({ onClose, children, width, xl, label, role }) {
   const cardRef = useRef(null);
   useEffect(() => {
     const onKey = e => { if (e.key === "Escape") onClose(); };
@@ -116,7 +132,7 @@ window.Modal = function ({ onClose, children, width, xl, label }) {
   };
   return html`
     <div class="modal-back" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null} ref=${cardRef} tabindex="-1" role="dialog" aria-modal="true" aria-label=${label || "Dialog"} onKeyDown=${onKeyDown}>${children}</div>
+      <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null} ref=${cardRef} tabindex="-1" role=${role || "dialog"} aria-modal="true" aria-label=${label || "Dialog"} onKeyDown=${onKeyDown}>${children}</div>
     </div>`;
 };
 
@@ -128,6 +144,15 @@ window.domainLabel = n => n === "Time Off" ? "Time off" : n;
 // The standard centred page spinner — one atom instead of the copy-pasted row.
 window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 
+// Reduced-motion-safe scroll: an explicit behavior:"smooth" option OVERRIDES the
+// CSS scroll-behavior backstop per spec, so every programmatic scroll goes
+// through here instead of calling scrollIntoView({behavior:"smooth"}) directly.
+window.scrollIntoViewSafe = function (el, opts) {
+  if (!el || !el.scrollIntoView) return;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ block: "center", ...(opts || {}), behavior: reduce ? "auto" : ((opts && opts.behavior) || "smooth") });
+};
+
 window.EmptyState = ({ icon, title, body, action }) => html`
   <div class="suppressed-box" style=${{ minHeight: "140px" }}>
     <div style=${{ color: "var(--ink-faint)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>
@@ -138,7 +163,7 @@ window.EmptyState = ({ icon, title, body, action }) => html`
 
 // ------------------------------------------------------------- toasts ------
 // Lightweight background-action feedback: bottom-left, auto-dismiss, no deps.
-window.toast = function (msg, kind) {
+window.toast = function (msg, kind, action) {
   let host = document.getElementById("toast-host");
   if (!host) {
     host = document.createElement("div");
@@ -150,9 +175,17 @@ window.toast = function (msg, kind) {
   const el = document.createElement("div");
   el.className = "toast" + (kind ? " " + kind : "");
   el.textContent = msg;
+  if (action && action.label && action.fn) {
+    const btn = document.createElement("button");
+    btn.className = "toast-action";
+    btn.textContent = action.label;
+    btn.onclick = () => { action.fn(); el.classList.remove("show"); setTimeout(() => el.remove(), 300); };
+    el.appendChild(btn);
+  }
   host.appendChild(el);
   setTimeout(() => el.classList.add("show"), 16);
-  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, 3600);
+  const ttl = action ? 6500 : 3600;   // undo needs a beat longer
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, ttl);
 };
 
 // ----------------------------------------------------- UK number inputs ----

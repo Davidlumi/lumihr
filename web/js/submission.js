@@ -7,7 +7,7 @@
 window.SubmissionPage = function ({ me, refreshMe, section }) {
   const [state, setState] = useState(null);
   const [err, setErr] = useState(null);
-  const refresh = () => api("/api/submission/state").then(setState).catch(e => setErr(e.message));
+  const refresh = () => api("/api/submission/state").then(setState).catch(e => setErr(e));
   useEffect(() => { refresh(); }, []);
   // The no-section route is now purely a gate on-ramp: once firmographics and
   // the data terms are cleared, bounce to the single "Your data" home — there
@@ -15,8 +15,10 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   useEffect(() => {
     if (state && !section && state.firmographics_done && state.data_terms_accepted) nav("/your-data");
   }, [state, section]);
-  if (err) return html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task"
-    body=${err} />`;
+  if (err) return err.status === 403
+    ? html`<${EmptyState} icon="lock" title="Submitting data is a Contributor task" body=${err.message} />`
+    : html`<${EmptyState} title="Couldn't load your data" body=${err.message + " — nothing is lost."}
+        action=${html`<button class="btn small primary" onClick=${() => { setErr(null); refresh(); }}>Retry</button>`} />`;
   if (!state) return html`<${PageLoading} />`;
   if (!state.firmographics_done) return html`
     <div style=${{ maxWidth: "560px" }}>
@@ -67,7 +69,7 @@ function DataTermsGate({ me, onAccepted }) {
         <div class="terms-li">• Hosted in the UK/EU. Never sold, never shared for third-party use, never used to train external AI.</div>
         <div class="terms-li">• You can export your own data any time, and ask for it to be deleted.</div>
         <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)" }}>
-          <a onClick=${e => { e.preventDefault(); setFull(!full); }} style=${{ cursor: "pointer" }}>
+          <a href="#" onClick=${e => { e.preventDefault(); setFull(!full); }}>
             ${full ? "Hide the full terms" : "Read the full terms"}</a>
           <a href="/api/terms/dpa" download>Download the full Data Sharing Agreement (DPA)</a>
         </div>
@@ -88,7 +90,7 @@ function DataTermsGate({ me, onAccepted }) {
           </label>
           <div class="caption" style=${{ margin: "var(--s1) 0 var(--s3)" }}>Your acceptance is recorded (organisation,
             your name, date, terms version) and starts your organisation's 30 days to contribute.</div>
-          ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
+          ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
           <button class="btn primary" disabled=${!tick || busy} onClick=${accept}>
             ${busy ? html`<${Spinner} />` : "Accept and begin"}</button>
         </div>` : html`
@@ -162,7 +164,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
     setMode("list"); setFilter("all"); setOpenId(qid);
     setTimeout(() => {
       const el = document.getElementById("dq-" + qid);
-      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("dq-flash"); setTimeout(() => el.classList.remove("dq-flash"), 1700); }
+      if (el) { scrollIntoViewSafe(el); el.classList.add("dq-flash"); setTimeout(() => el.classList.remove("dq-flash"), 1700); }
     }, 140);
   }, [data]);
   if (loadErr) return html`<${EmptyState} icon="info" title="Couldn't load this area"
@@ -180,8 +182,8 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       setIssues(s => ({ ...s, [key]: { errors: r.errors || [], warnings: r.warnings || [] } }));
       if (r.ok) { setSavedAt(new Date()); window.markUnsubmitted(); }
     } catch (e) {
-      setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — check your connection and change the value again to retry."], warnings: [] } }));
-      toast("Couldn't save your last answer — it will need re-entering.", "error");
+      setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — your value is still here, just not saved yet."], warnings: [] } }));
+      toast("Couldn't save your last answer", "error", { label: "Retry", fn: () => save(q, rowId, value) });
     } finally {
       window._pendingSaves = Math.max(0, window._pendingSaves - 1);
     }
@@ -253,7 +255,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
     <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
       <div>
         <h1 class="display-title" style=${{ margin: "0 0 3px" }}>${sp}</h1>
-        <div class=${"qwiz-saved" + (savedAt ? " on" : "")}>
+        <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
           ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : done + " of " + total + " answered · autosaves as you go"}</div>
       </div>
       <div style=${{ minWidth: "128px" }}>
@@ -407,7 +409,7 @@ function QuestionInput({ q, drafts, issues, save, confirmValue }) {
    confirm a genuine outlier ("warn, never block"). */
 function IssueNotes({ iss, onConfirm }) {
   return html`
-    ${iss.errors.map((e, i) => html`<div key=${"e" + i} class="error-text">${e}</div>`)}
+    ${iss.errors.map((e, i) => html`<div key=${"e" + i} class="error-text" role="alert">${e}</div>`)}
     ${iss.warnings.length > 0 && html`
       <div class="warn-panel">
         ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
@@ -577,7 +579,9 @@ function ReviewStep({ state, refresh, refreshMe }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [err, setErr] = useState(null);
-  useEffect(() => { api("/api/submission/validate", { method: "POST", body: {} }).then(setVal); }, []);
+  const runValidate = () => { setVal(null);
+    api("/api/submission/validate", { method: "POST", body: {} }).then(setVal).catch(() => setVal({ _error: true })); };
+  useEffect(() => { runValidate(); }, []);
   // The payoff: confetti when a submission lands — a full three-cannon volley
   // the moment insights unlock, a gentler single burst otherwise.
   useEffect(() => {
@@ -614,6 +618,9 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
         the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>`}
     </div>`;
+  if (val && val._error) return html`<${EmptyState} title="Couldn't check your submission"
+    body="Nothing is lost — your answers are saved. Try again in a moment."
+    action=${html`<button class="btn small primary" onClick=${runValidate}>Try again</button>`} />`;
   if (!val) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "680px" }}>
@@ -651,7 +658,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
       <div class="card" style=${{ padding: "var(--s5)" }}>
         <p>Submitting saves a timestamped version of your answers into the current collection window and refreshes the
         live benchmark. Nothing is ever overwritten — future windows will show your movement.</p>
-        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
+        ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         <button class="btn primary" disabled=${busy || val.problems.length > 0 || !(val.pending_changes > 0)} onClick=${submit}>
           ${busy ? html`<${Spinner} /> Submitting…` : val.pending_changes > 0 ? "Submit my data" : "Nothing new to submit"}</button>
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>

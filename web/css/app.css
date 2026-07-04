@@ -52,7 +52,7 @@
   --surface-sunk: #F4F1EC;
   --ink: #211B26;
   --ink-soft: #5B5560;
-  --ink-faint: #8E8893;
+  --ink-faint: #6E6874;  /* AA-safe tertiary text: 5.1:1 on paper, 4.8:1 on sunk (was #8E8893 at 3.3:1 — knowingly failing; darkened 2026-07-03) */
   /* FIX 1 (2026-06-23) — attainment "no strategy" neutral. The fill/swatch/border tone is
      #7A8A9C (≈3.5:1 on white — clears the WCAG 1.4.11 3:1 minimum for the card state-border
      and chart fills; the original #8A97A6 sat at ~2.96:1 and just missed it). For TEXT (chip
@@ -75,10 +75,11 @@
   /* ---- lumi brand kit (logo system) — see lumi_brand_kit/INTEGRATION.md ---- */
   --lumi-navy: var(--blue);   /* #2048B0 primary — alias, not a duplicate */
   --lumi-coral: #F08C6E;      /* accent / the "you" marker — NEVER use as text (2.42:1) */
+  --lumi-coral-deep: #B23A1F; /* coral's readable step — white text on it clears 5.9:1 (badges) */
   --lumi-ink: #243642;        /* wordmark / descriptor ink (wordmark itself is outlined in the SVG) */
   --lumi-tile: #EAF0FB;       /* soft icon background */
   --color-text-danger: #B42318;  /* form-error red — distinct from the verdict red (--unfavourable) */
-  --color-text-tertiary: #8E8893;  /* faintest text (= --ink-faint) — tertiary labels/qualifiers */
+  --color-text-tertiary: var(--ink-faint);  /* faintest text — tertiary labels/qualifiers (aliased so the AA fix covers both names) */
   --brandbar-h: 56px;         /* height of the full-width navy brand bar */
 
   /* ---- "you" marker = blue, the identity moment on every chart ---- */
@@ -109,7 +110,7 @@
   --quartile-fill: #2547B0;          /* deep blue — base the quartile dots mix toward by density */
 
   /* ---- chart inks (the data is quiet; the YOU is blue) ---- */
-  --chart-cat: #8598CF;              /* categorical peer-bar fill — legible on white (2.8:1, was cat-5 at 1.4:1) yet still clearly subordinate to the You accent */
+  --chart-cat: #7285C2;              /* categorical peer-bar fill — 3.4:1 on white (clears the 3:1 graphics floor; was #8598CF at 2.8:1) yet still clearly subordinate to the You accent */
   --chart-band: #E7E4EC;             /* P10–P90 track — cool pale grey, reads on warm paper */
   --chart-band-mid: #BFC6D6;         /* P25–P75 emphasis / hist + peer bars — cool mid grey, clearly defined */
   --chart-median: #4A4450;
@@ -123,6 +124,12 @@
   /* ---- motion: quick and calm ---- */
   --ease: 160ms ease;
   --ease-fast: .12s ease;   /* the quick tier — chips, tabs, small controls */
+
+  /* ---- THE keyboard focus indicator (WCAG 1.4.11 needs ≥3:1; blue-bright is
+     5.2:1 on paper). One token, consumed everywhere — the old per-component
+     rings ranged 1.5–3px at 2.0–2.2:1 alpha blues. On-dark (brandbar) keeps
+     its documented white variant. ---- */
+  --focus-outline: 2px solid var(--blue-bright);
 }
 
 * { box-sizing: border-box; }
@@ -175,7 +182,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .topbar-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
   color: var(--ink-faint); pointer-events: none; display: inline-flex; }
 .topbar-search .ctl { width: 100%; max-width: none; padding-left: 34px; padding-right: var(--s3); }
-.topbar-search .ctl:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(32,72,176,.12); }
+.topbar-search .ctl:focus { border-color: var(--blue); outline: 2px solid rgba(255,255,255,.85); outline-offset: 1px; }  /* on-dark ring: the search lives in the navy brandbar */
 .topbar-right { display: flex; align-items: center; gap: var(--s3); margin-left: auto; flex: none; }
 /* hairline divider separating the "do" actions (Ask lumi) from the "account" cluster (bell + avatar) */
 .topbar-sep { width: 1px; height: 22px; background: var(--chrome-edge); margin: 0 var(--s1); flex: none; }
@@ -210,7 +217,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 /* bell → white, badge → coral; avatar → navy fill (coral reserved for the badge + logo dot) */
 .brandbar .notif-btn { color: #fff; }
 .brandbar .notif-btn:hover, .brandbar .notif-btn.active { background: rgba(255,255,255,.16); color: #fff; }
-.brandbar .notif-badge { background: var(--lumi-coral); color: #fff; box-shadow: 0 0 0 2px var(--lumi-navy); }
+.brandbar .notif-badge { background: var(--lumi-coral-deep); color: #fff; box-shadow: 0 0 0 2px var(--lumi-navy); }  /* deep coral: white count at 5.9:1 (raw coral was 2.4:1) */
 .brandbar .avatar { background: var(--lumi-navy); border-color: rgba(255,255,255,.6); color: #fff; }
 .brandbar .avatar:hover { box-shadow: 0 0 0 4px rgba(255,255,255,.22); }
 .brandbar .avatar.active { box-shadow: 0 0 0 4px rgba(255,255,255,.32); }
@@ -275,6 +282,18 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 /* scrim behind the open drawer — rendered always (app.js), only visible when open */
 .nav-scrim { display: none; position: fixed; inset: 0; z-index: 45;
   background: rgba(20,32,64,.42); opacity: 0; transition: opacity 200ms ease; }
+
+/* <=640px: the brand bar must GROW when its children wrap — a fixed 56px bar with
+   overflow:visible painted the wrapped search/actions straight over the page
+   (the mobile-overlap bug). Search takes its own full-width row; the suggest
+   pill hides (the affordance also lives in the search empty state). */
+@media (max-width: 640px) {
+  .brandbar { height: auto; min-height: var(--brandbar-h); }
+  .topbar { row-gap: 0; padding-bottom: var(--s2); }
+  .topbar .suggest-pill { display: none; }
+  .topbar-search { order: 10; flex: 1 1 100%; min-width: 0; }
+  .topbar-right { margin-left: auto; }
+}
 
 @media (max-width: 900px) {
   /* sidebar becomes a left slide-in drawer (was display:none) */
@@ -380,10 +399,12 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   height: 22px; padding: 0 var(--s3); border-radius: 999px; font-size: var(--fs-caption); font-weight: 650;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sig-pill svg { flex: 0 0 auto; }
-.sig-pill.lens-save    { background: var(--lens-save-tint);    color: var(--lens-save); }
-.sig-pill.lens-attract { background: var(--lens-attract-tint); color: var(--lens-attract); }
-.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: var(--lens-retain); }
-.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: var(--lens-engage); }
+/* lens text darkened toward ink (raw lens hues sit at 3.8–4.4:1 on their tints —
+   under the 4.5:1 text floor; the 78%-ink mix is the same fix .chip.good uses) */
+.sig-pill.lens-save    { background: var(--lens-save-tint);    color: color-mix(in srgb, var(--lens-save) 72%, var(--ink)); }
+.sig-pill.lens-attract { background: var(--lens-attract-tint); color: color-mix(in srgb, var(--lens-attract) 72%, var(--ink)); }
+.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: color-mix(in srgb, var(--lens-retain) 72%, var(--ink)); }
+.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: color-mix(in srgb, var(--lens-engage) 72%, var(--ink)); }
 .sig-pill.is-clear { background: var(--surface-sunk); color: var(--ink-faint); font-weight: 600; }
 .sig-pill.is-add { background: var(--blue-tint); color: var(--blue); text-decoration: none;
   cursor: pointer; transition: background var(--ease), transform var(--ease); }
@@ -407,12 +428,11 @@ select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid va
   padding: var(--s2) var(--s6) var(--s2) var(--s4); cursor: pointer; max-width: 320px; border-radius: 999px; }
 .peerbar-pill .peer-ctl:focus { outline: none; }
 .peerbar-pill.narrowed .peer-ctl { color: var(--blue-deep); }
-.peerbar-pill:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 30%, transparent); border-color: var(--blue); }
+.peerbar-pill:focus-within { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
 .peerbar-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
   display: inline-flex; color: var(--ink-faint); pointer-events: none; }
 .peerbar-pill.narrowed .peerbar-caret { color: var(--blue); }
-select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--blue) 40%, transparent);
-  border-color: var(--blue); }
+select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color: var(--blue); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-card); }
@@ -431,6 +451,10 @@ select.ctl:focus, input.ctl:focus { outline: 3px solid color-mix(in srgb, var(--
   border-radius: var(--radius-sm); font-size: var(--fs-caption); line-height: 1.5; width: 230px; z-index: 90;
   font-weight: 400; white-space: normal; }
 .term:hover .tip, .hastip:hover .tip { display: block; }
+/* keyboard/touch parity: Term spans are focusable (core.js sets tabindex) —
+   same hover+focus pattern as .indic-flag; Escape blurs to dismiss (1.4.13) */
+.term:focus .tip, .term:focus-within .tip { display: block; }
+.term:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: 4px; }
 
 /* ======================================================== benchmark cards
    Fixed vertical skeleton: title (2-line clamp) → meta → chart region
@@ -593,8 +617,7 @@ td.num, th.num { text-align: right; }
 .field input, .field select, .field textarea { width: 100%; height: 36px; padding: 0 var(--s3);
   border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--fs-body); }
 .field textarea { height: auto; padding: var(--s2) var(--s3); }
-.field input:focus, .field select:focus { outline: 3px solid color-mix(in srgb, var(--blue) 40%, transparent);
-  border-color: var(--blue); }
+.field input:focus, .field select:focus { outline: var(--focus-outline); border-color: var(--blue); }
 .error-text { color: var(--unfavourable); font-size: var(--fs-label); margin-top: var(--s1); }
 .warn-text { color: var(--neutral-perf); font-size: var(--fs-label); margin-top: var(--s1); }
 .ok-text { color: var(--favourable); font-size: var(--fs-label); margin-top: var(--s1); }
@@ -651,8 +674,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .matrix-heat th.mh-you, .matrix-heat td.mh-you { width: 54px; }
 /* every row the same height; long level labels clamp to two centred lines so
    a 3-line label can't make its row taller than the rest */
-.matrix-heat td { height: 40px; vertical-align: middle; }
-.matrix-heat td.mh-lvl { text-align: left; color: var(--ink); padding-right: var(--s2); }
+.matrix-heat td, .matrix-heat tbody th { height: 40px; vertical-align: middle; }
+/* row labels are th scope="row" (screen-reader row context) — styled like the td they were */
+.matrix-heat td.mh-lvl, .matrix-heat tbody th.mh-lvl { text-align: left; color: var(--ink);
+  padding-right: var(--s2); font-weight: 600; background: transparent; border: 0; }
 .matrix-heat .mh-lvl-txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; font-size: var(--fs-label); font-weight: 600; line-height: 1.16; }
 .matrix-heat td.mh-cell { text-align: center; border-radius: 7px;
@@ -694,9 +719,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .matrix-num thead th.mn-strip-h { text-align: left; padding-left: var(--s4); }
 .matrix-num th.mn-lvl, .matrix-num td.mn-lvl { width: 116px; }
 .matrix-num th.mn-num, .matrix-num td.mn-num { width: 74px; }
-.matrix-num td { height: 42px; vertical-align: middle; border-bottom: 1px solid var(--chart-grid); }
+.matrix-num td, .matrix-num tbody th { height: 42px; vertical-align: middle; border-bottom: 1px solid var(--chart-grid); }
 .matrix-num tbody tr:last-child td { border-bottom: 0; }
-.matrix-num td.mn-lvl { text-align: left; padding-right: var(--s2); }
+.matrix-num td.mn-lvl, .matrix-num tbody th.mn-lvl { text-align: left; padding-right: var(--s2);
+  color: var(--ink); font-weight: 600; background: transparent; }
 .matrix-num .mn-lvl-txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; font-size: var(--fs-label); font-weight: 600; line-height: 1.16; color: var(--ink); }
 .matrix-num td.mn-num { text-align: right; padding: 0 var(--s2); font-variant-numeric: tabular-nums;
@@ -737,8 +763,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 /* the unit lives INSIDE the field: £ prefix, % suffix — no guessing what the number means */
 .unit-input { display: inline-flex; align-items: center; gap: var(--s1); border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface); padding: 0 var(--s2); height: 34px; }
-.unit-input:focus-within { outline: 3px solid color-mix(in srgb, var(--blue) 40%, transparent);
-  border-color: var(--blue); }
+.unit-input:focus-within { outline: var(--focus-outline); border-color: var(--blue); }
 .unit-input input { border: 0 !important; outline: none !important; background: transparent;
   width: 110px; height: 100%; text-align: right; font-size: var(--fs-body); padding: 0 !important; }
 .unit-input.compact { height: 30px; }
@@ -1032,7 +1057,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pos-approach { background: var(--differs-tint); color: var(--differs); }
 .pos-neutral  { background: #E9EBF6; color: var(--navy); }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s4); }
-@media (min-width: 1240px) {
+/* one 7-across row only when it genuinely fits beside the sidebar — at 1240-1399px
+   the forced row clipped the Governance tile off the viewport edge (auto-fit wraps 5+2) */
+@media (min-width: 1400px) {
   .cat-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .cat-tile { padding: var(--s3); }
 }
@@ -1084,9 +1111,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--blue-tint);
   display: inline-flex; align-items: center; justify-content: center; color: var(--blue); flex: 0 0 auto; }
 .tile-chip { font-size: var(--fs-micro); font-weight: 650; padding: 2px var(--s2); }
-.chip-bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
+.chip-bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .chip-bad-over { background: var(--unfavourable-tint); color: var(--unfavourable-deep); }   /* strategy: above your aim */
-.chip-good { background: var(--favourable-tint); color: var(--favourable); }
+.chip-good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .chip-mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .chip-practice { background: var(--blue-tint); color: var(--blue-deep); }
 /* FIX 1 — strategy-attainment OFF (no stance set): a neutral grey verdict chip. The label
@@ -1101,7 +1128,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .indic-flag { display: inline-flex; align-items: center; gap: 3px; position: relative;
   font-size: var(--fs-micro); font-weight: 500; color: var(--color-text-tertiary); white-space: nowrap; cursor: default; }
 .indic-flag svg { color: var(--color-text-tertiary); flex: 0 0 auto; }
-.indic-flag:focus-visible { outline: 2px solid color-mix(in srgb, var(--lumi-navy) 45%, transparent); outline-offset: 2px; border-radius: 4px; }
+.indic-flag:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: 4px; }
 .indic-tip { position: absolute; bottom: calc(100% + 6px); left: 0; width: 200px; white-space: normal;
   background: var(--ink); color: #fff; font-size: var(--fs-micro); font-weight: 400; line-height: 1.4; padding: var(--s2) var(--s2);
   border-radius: 6px; box-shadow: var(--shadow-pop, 0 8px 20px rgba(20,24,40,.18)); opacity: 0; visibility: hidden;
@@ -1155,8 +1182,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .chip-label { flex: 1; min-width: 0; font-size: var(--fs-label); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip-band { position: relative; width: 92px; height: 6px; background: var(--surface-sunk); border-radius: 3px; flex: 0 0 auto; }
 .p-pill { font-size: var(--fs-micro); font-weight: 650; border-radius: 9px; padding: 2px var(--s2); min-width: 36px; text-align: center; }
-.p-pill.good { background: var(--favourable-tint); color: var(--favourable); }
-.p-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable); }
+.p-pill.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.p-pill.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 
 /* ---- premium depth (2026-06-12): ambient aurora behind the hero, crisp
    hairlines, lens-hued hover glows. Quiet luxury, zero loops. ---- */
@@ -1396,7 +1423,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .data-q-none { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
 .data-q-flag { display: inline-flex; align-items: center; gap: var(--s1); flex: 0 0 auto; font-size: var(--fs-micro);
   font-weight: 650; padding: 3px var(--s2); border-radius: 999px; }
-.data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: var(--favourable); }
+.data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .data-q-flag.todo { background: var(--blue-tint); color: var(--blue); }
 .yourdata .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: var(--s1); }
 .data-done { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-caption);
@@ -1615,7 +1642,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pulse-step.done .pulse-step-dot { background: var(--blue-bright); }
 .pulse-step.current { background: var(--lumi-tile); color: var(--blue-deep); font-weight: 600; }
 .pulse-step.current .pulse-step-dot { background: var(--blue); }
-.pulse-step.warn { background: var(--unfavourable-tint); color: var(--unfavourable); }
+.pulse-step.warn { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .pulse-step.warn .pulse-step-dot { background: var(--unfavourable); }
 .pulse-libpick { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: var(--s2); }
 .pulse-librow { display: block; width: 100%; text-align: left; padding: var(--s2) var(--s3); border: 0;
@@ -1624,7 +1651,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pulse-librow:hover:not(:disabled) { background: var(--lumi-tile); }
 .pulse-librow:disabled { opacity: 0.5; cursor: default; }
 /* launch_status badges on the staff review queue + owner list */
-.admin-status-approved { background: var(--favourable-tint); color: var(--favourable); }
+.admin-status-approved { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .admin-status-in_review, .admin-status-changes_requested { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .admin-status-paid { background: var(--blue); color: #fff; }
 .admin-status-building { background: var(--lumi-tile); color: var(--blue-deep); }
@@ -1713,7 +1740,12 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   box-shadow: var(--shadow-card); position: relative; display: flex; flex-direction: column; }
 .pack-footer { margin-top: auto; padding-top: 8mm; border-top: 1px solid var(--border); font-size: var(--fs-micro);
   color: var(--ink-soft); display: flex; justify-content: space-between; }
-@page { size: A4; margin: 0; }
+@page { size: A4; margin: 0; }   /* zero-margin serves the board pack's exact-sheet layout */
+@media print {
+  /* printing a NORMAL page (Overview, a metric) must not sit flush to the paper
+     edge — non-pack content gets real margins (the pack keeps its own geometry) */
+  body:not(:has(.pack-page)) .content { padding: 14mm !important; }
+}
 @media print {
   /* force RAG verdict colours + tints to survive print-to-PDF (browsers drop
      backgrounds by default) */
@@ -1935,7 +1967,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .suggest-field label { font-size: var(--fs-label); font-weight: 500; color: var(--ink); margin-bottom: var(--s2); }
 .suggest-input { width: 100%; border: .5px solid #D7E3F7; border-radius: 8px; padding: var(--s3) var(--s3); font-size: var(--fs-label);
   font-family: inherit; color: var(--ink); background: #fff; }
-.suggest-input:focus { outline: none; border-color: var(--lumi-navy); box-shadow: 0 0 0 1.5px var(--lumi-navy); }
+.suggest-input:focus { outline: var(--focus-outline); outline-offset: 0; border-color: var(--lumi-navy); }
 textarea.suggest-input { resize: vertical; min-height: 72px; }
 .suggest-input.err { border-color: var(--color-text-danger); }
 .suggest-hint { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s1); }
@@ -1999,10 +2031,12 @@ textarea.suggest-input { resize: vertical; min-height: 72px; }
    clicks don't show it (:focus-visible), keyboard always does. */
 button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible,
 textarea:focus-visible, [tabindex]:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--blue) 45%, transparent);
+  outline: var(--focus-outline);
   outline-offset: 1px;
 }
 
+.toast-action { margin-left: var(--s3); background: none; border: 0; color: #fff;
+  font-weight: 700; text-decoration: underline; cursor: pointer; font-size: var(--fs-label); }
 #toast-host { position: fixed; left: 20px; bottom: 20px; z-index: 200;
   display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; }
 .toast { background: var(--navy); color: #fff; border-radius: var(--radius-sm);
@@ -2321,7 +2355,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .cr-tag { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); background: var(--blue-tint); padding: 3px var(--s2); border-radius: 5px; }
 .confirm-row select { font-family: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--ink); border: 1px solid var(--chrome-edge);
   border-radius: var(--radius-sm); padding: var(--s2) var(--s3); background: var(--paper); cursor: pointer; min-width: 180px; }
-.confirm-row select:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 1px; }
+.confirm-row select:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 .derived-note { background: var(--blue-tint); border: 1px dashed var(--blue-tint-2); border-radius: var(--radius-sm);
   padding: var(--s3) var(--s4); font-size: var(--fs-label); color: var(--blue-deep); display: flex; gap: var(--s2); align-items: flex-start; }
 .derived-note svg { flex: none; margin-top: 1px; }
@@ -2356,7 +2390,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .scale-stop.on .ot { color: var(--blue-deep); }
 .scale-stop.on .od { opacity: 1; }
 .scale-stop:hover .ot { color: var(--ink-soft); }
-.scale-stop:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 3px; border-radius: 8px; }
+.scale-stop:focus-visible { outline: var(--focus-outline); outline-offset: 3px; border-radius: 8px; }
 
 /* objective cards + benefit chips */
 .dial-opts { display: flex; flex-wrap: wrap; gap: var(--s2); }
@@ -2451,7 +2485,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   font-size: var(--fs-caption); font-weight: 600; }
 .arc-target svg { flex: none; }
 .arc-target-on_target, .arc-target-ahead { color: var(--favourable); }
-.arc-target-behind { color: var(--amber-bright); }   /* FIX 1: off target → attainment amber (was neutral-perf) */
+.arc-target-behind { color: var(--neutral-perf); }   /* was amber-bright (2.0:1 text — illegible); currently unrendered but kept legible against re-adoption */
 /* no-stance nudge: neutral until the org sets a market-position target */
 .arc-target-unset { width: 100%; background: none; border: 0; cursor: pointer;
   color: var(--blue-bright); font-family: inherit; padding: 2px var(--s2); border-radius: var(--radius-sm); }

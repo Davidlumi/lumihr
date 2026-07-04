@@ -280,13 +280,13 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
         <tbody>
           ${(rows || []).map(r => {
             if (r.suppressed || !r.block) return html`
-              <tr key=${r.row_id} class="mn-row"><td class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></td>
+              <tr key=${r.row_id} class="mn-row"><th scope="row" class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></th>
                 <td colspan="4" class="mn-supp caption">not enough organisations to show safely</td></tr>`;
             const b = r.block, you = r.you ? r.you.value : null;
             const f = favOf(you, b.p50);
             return html`
               <tr key=${r.row_id} class="mn-row">
-                <td class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></td>
+                <th scope="row" class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></th>
                 <td class="mn-num mn-p50">${fmtValue(b.p50, unit)}</td>
                 <td class="mn-strip">
                   <div class="mn-track">

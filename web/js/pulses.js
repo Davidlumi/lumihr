@@ -237,7 +237,7 @@ window.RunPulsePage = function ({ me }) {
       <div class="pulse-how">
         <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
         <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
-        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">Pay once · opens to all members</span></div></div>
+        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? fmtFee(me.config.pulse_launch_fee_pence) + " one-off launch fee (ex VAT)" : "Pay once"} · opens to all members</span></div></div>
       </div>
 
       ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />

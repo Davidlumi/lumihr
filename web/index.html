@@ -4,8 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>lumi · UK reward benchmarking</title>
-  <link rel="stylesheet" href="/static/css/fonts.css?v=309" />
-  <link rel="stylesheet" href="/static/css/app.css?v=309" />
+  <link rel="preload" href="/static/vendor/fonts/Inter-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/static/vendor/fonts/Inter-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/static/vendor/fonts/Poppins-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/static/css/fonts.css?v=310" />
+  <link rel="stylesheet" href="/static/css/app.css?v=310" />
   <!-- lumi logo system (lumi_brand_kit) — favicon is the simplified mark -->
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="/lumi_favicon.svg" type="image/svg+xml" />
@@ -15,20 +18,24 @@
 </head>
 <body>
   <div id="root"></div>
-  <script src="/static/vendor/react.min.js?v=309"></script>
-  <script src="/static/vendor/react-dom.min.js?v=309"></script>
-  <script src="/static/vendor/htm.js?v=309"></script>
-  <script src="/static/js/core.js?v=309"></script>
-  <script src="/static/js/icons.js?v=309"></script>
-  <script src="/static/js/charts.js?v=309"></script>
-  <script src="/static/js/card.js?v=309"></script>
-  <script src="/static/js/pages.js?v=309"></script>
-  <script src="/static/js/commercial.js?v=309"></script>
-  <script src="/static/js/submission.js?v=309"></script>
-  <script src="/static/js/pulses.js?v=309"></script>
-  <script src="/static/js/admin.js?v=309"></script>
-  <script src="/static/js/strategy.js?v=309"></script>
-  <script src="/static/js/auth.js?v=309"></script>
-  <script src="/static/js/app.js?v=309"></script>
+  <script>/* race the session lookup against script parse — the shell renders the
+    moment React is ready instead of waiting scripts -> /api/me serially */
+    window._mePrefetch = fetch("/api/me", { credentials: "same-origin" })
+      .then(r => r.ok ? r.json() : null).catch(() => null);</script>
+  <script src="/static/vendor/react.min.js?v=310"></script>
+  <script src="/static/vendor/react-dom.min.js?v=310"></script>
+  <script src="/static/vendor/htm.js?v=310"></script>
+  <script src="/static/js/core.js?v=310"></script>
+  <script src="/static/js/icons.js?v=310"></script>
+  <script src="/static/js/charts.js?v=310"></script>
+  <script src="/static/js/card.js?v=310"></script>
+  <script src="/static/js/pages.js?v=310"></script>
+  <script src="/static/js/commercial.js?v=310"></script>
+  <script src="/static/js/submission.js?v=310"></script>
+  <script src="/static/js/pulses.js?v=310"></script>
+  <script src="/static/js/admin.js?v=310"></script>
+  <script src="/static/js/strategy.js?v=310"></script>
+  <script src="/static/js/auth.js?v=310"></script>
+  <script src="/static/js/app.js?v=310"></script>
 </body>
 </html>

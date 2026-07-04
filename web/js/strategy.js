@@ -257,7 +257,7 @@ window.StrategyPage = function ({ me }) {
     const miss = missingFor(step);
     if (miss.length) {
       flash("Set " + miss.map(f => DIAL_LABEL[f]).join(" and ") + " first — they change how we read your results.");
-      const el = document.getElementById("dial-" + miss[0]); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const el = document.getElementById("dial-" + miss[0]); if (el) scrollIntoViewSafe(el);
       return;
     }
     setStep(s => Math.min(3, s + 1)); window.scrollTo({ top: 0, behavior: "auto" });

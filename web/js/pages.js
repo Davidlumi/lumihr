@@ -40,13 +40,14 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
   const [applyStrat, setApplyState] = useState(_ov.apply_strategy !== false);
   const setView = (v) => { setViewState(v); onPref("_overview", { view: v, apply_strategy: applyStrat }); };
   const setApplyStrat = (b) => { setApplyState(b); onPref("_overview", { view, apply_strategy: b }); };
+  const [retryKey, setRetryKey] = useState(0);
   useEffect(() => {
     setData(null); setErr(null);
-    api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")).then(setData).catch(e => setErr(e.message));
-  }, [cutKeyOf(cut), applyStrat]);
+    apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")).then(setData).catch(e => setErr(e.message));
+  }, [cutKeyOf(cut), applyStrat, retryKey]);
   if (err) return html`<${EmptyState} title="Couldn't load the overview"
     body=${err + " — nothing is lost; it usually works on a retry."}
-    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+    action=${html`<button class="btn small primary" onClick=${() => setRetryKey(k => k + 1)}>Retry</button>`} />`;
   if (!data) return html`
     <div>
       <div class="skel" style=${{ height: "30px", width: "320px", marginBottom: "var(--s3)" }}></div>
@@ -1046,7 +1047,7 @@ window.SignalsPage = function ({ me }) {
   const [acting, setActing] = useState({});            // optimistic status overrides
   const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
   useEffect(() => {
-    api("/api/overview").then(d => {
+    apiCached("/api/overview").then(d => {
       setData(d);
       // viewing the Signals page clears NEW: mark every current signal seen
       const ids = (d.signals_all || []).map(s => s.sig_id || s.question_id);
@@ -1060,7 +1061,7 @@ window.SignalsPage = function ({ me }) {
     if (!jumpTo) return;
     const el = document.getElementById("sig-dom-" + jumpTo);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      scrollIntoViewSafe(el, { block: "start" });
       el.classList.add("sig-group-flash");
       setTimeout(() => el.classList.remove("sig-group-flash"), 1700);
     }
@@ -1069,8 +1070,15 @@ window.SignalsPage = function ({ me }) {
   // surface the named domain's signals on the same page, then scroll to them.
   // The strategy check diagnoses MARKET stance, so the jump lands on the market lens.
   const goToDomain = (dom) => { setTab("inbox"); setAxis("market"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
-  if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err} />`;
-  if (!data) return html`<${PageLoading} />`;
+  if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (!data) return html`
+    <div>
+      <div class="skel" style=${{ height: "30px", width: "180px", marginBottom: "var(--s3)" }}></div>
+      <div class="skel" style=${{ height: "20px", width: "420px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "150px", marginBottom: "var(--s4)", borderRadius: "var(--radius)" }}></div>
+      ${[0, 1, 2, 3].map(i => html`<div key=${i} class="skel" style=${{ height: "56px", marginBottom: "var(--s2)", borderRadius: "var(--radius-sm)" }}></div>`)}
+    </div>`;
   const contrib = data.contribution || {};
   // Signals only exist once insights unlock. For everyone short of that — and
   // especially a brand-new 0%-data member — this page is the single biggest
@@ -1090,6 +1098,10 @@ window.SignalsPage = function ({ me }) {
   const setStatus = (sid, status) => {
     setActing(a => ({ ...a, [sid]: status }));
     api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active" } })
+      .then(() => {
+        apiCacheInvalidate("/api/overview");
+        if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => setStatus(sid, null) });
+      })
       .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
   };
   const toggle = (sid, cur, target) => setStatus(sid, cur === target ? null : target);
@@ -1425,14 +1437,14 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut)).then(setData).catch(e => setErr(e.message));
     // signals come from the same computed data the home/category pages use; one
     // fetch per page builds the qid -> signal map for every card's status pill
-    api("/api/overview?" + cutQS(cut)).then(o => {
+    apiCached("/api/overview?" + cutQS(cut)).then(o => {
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => setSigMap({}));
   }, [sp, cutKeyOf(cut)]);
   useEffect(() => {
     if (data && focusQ) {
       const el = document.getElementById("q-" + focusQ);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (el) scrollIntoViewSafe(el);
     }
   }, [data, focusQ]);
   if (err) return html`<${EmptyState} title="Couldn't load this section"
@@ -1592,13 +1604,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // as the overview at line ~45). Real-aim by default.
   const _ovp = (prefs && prefs._overview) || {};
   const applyStrat = _ovp.apply_strategy !== false;
+  const [catRetry, setCatRetry] = useState(0);
   useEffect(() => {
     setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]); setPrevSel([]);
     Promise.all([
-      api("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
-      api("/api/benchmarks/Reward?" + cutQS(cut)),
+      apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
+      apiCached("/api/benchmarks/Reward?" + cutQS(cut)),
     ]).then(([o, b]) => { setOv(o); setBench(b); }).catch(e => setErr(e.message));
-  }, [name, cutKeyOf(cut), applyStrat]);
+  }, [name, cutKeyOf(cut), applyStrat, catRetry]);
 
   const Head = (meta) => html`
     <div class="page-head">
@@ -1613,7 +1626,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
 
   if (err) return html`<${EmptyState} title="Couldn't load this category"
     body=${err + " — nothing is lost; it usually works on a retry."}
-    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+    action=${html`<button class="btn small primary" onClick=${() => setCatRetry(k => k + 1)}>Retry</button>`} />`;
   if (!ov || !bench) return html`<div>${Head("Loading…")}<${SkeletonGrid} count=${4} /></div>`;
 
   const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
@@ -1813,24 +1826,43 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     return () => window.removeEventListener("lumi:pins-changed", f);
   }, []);
   useEffect(() => {
-    api("/api/overview?" + cutQS(cut)).then(o => {
+    apiCached("/api/overview?" + cutQS(cut)).then(o => {
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => setSigMap({}));
   }, [cutKeyOf(cut)]);
   useEffect(() => {
     if (!layout) return;
-    layout.forEach(slot => {
-      const key = cardKey(slot);
-      if (cards[key]) return;
-      const c = slot.cut || cut;
-      api(`/api/benchmark/${slot.question_id}?` + cutQS(c))
-        .then(d => setCards(prev => ({ ...prev, [key]: d })))
-        .catch(() => setCards(prev => ({ ...prev, [key]: { error: true } })));
+    // one request per cut group instead of one per pinned card (20 pins was 20 GETs)
+    const missing = layout.filter(slot => !cards[cardKey(slot)]);
+    if (!missing.length) return;
+    const groups = new Map();
+    missing.forEach(slot => {
+      const qs = cutQS(slot.cut || cut);
+      if (!groups.has(qs)) groups.set(qs, []);
+      groups.get(qs).push(slot);
+    });
+    groups.forEach((slots, qs) => {
+      api(`/api/benchmark-batch?ids=${slots.map(s => s.question_id).join(",")}&` + qs)
+        .then(d => setCards(prev => {
+          const next = { ...prev };
+          slots.forEach(s => { next[cardKey(s)] = (d.cards && d.cards[s.question_id]) || { error: true }; });
+          return next;
+        }))
+        .catch(() => setCards(prev => {
+          const next = { ...prev };
+          slots.forEach(s => { next[cardKey(s)] = { error: true }; });
+          return next;
+        }));
     });
   }, [layout, cutKeyOf(cut)]);
   useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
 
-  if (!list || !layout) return html`<${PageLoading} />`;
+  if (!list || !layout) return html`
+    <div>
+      <div class="skel" style=${{ height: "30px", width: "240px", marginBottom: "var(--s3)" }}></div>
+      <div class="skel" style=${{ height: "36px", width: "420px", marginBottom: "var(--s4)", borderRadius: "999px" }}></div>
+      <${SkeletonGrid} count=${4} />
+    </div>`;
   const active = list.find(d => d.id === activeId) || {};
   const activeName = active.name || "My dashboard";
 
@@ -1838,7 +1870,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     setLayout(next);
     if (setPinned) setPinned(next.map(s => s.question_id));
     setList(l => l.map(d => d.id === activeId ? { ...d, count: next.length } : d));
-    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { layout: next } }).catch(() => {});
+    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { layout: next } })
+      .catch(() => toast("Couldn't save that change — it may reset next visit.", "error"));
   };
   const remove = qid => persist(layout.filter(s => s.question_id !== qid));
   const resize = (qid, size) => persist(layout.map(s => s.question_id === qid ? { ...s, size } : s));
@@ -1883,7 +1916,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     const nm = (nameDraft || "").trim().slice(0, 60) || activeName;
     setRenaming(false);
     setList(l => l.map(d => d.id === activeId ? { ...d, name: nm } : d));
-    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { name: nm } }).catch(() => {});
+    await api(`/api/dashboards/${activeId}`, { method: "PUT", body: { name: nm } })
+      .catch(() => toast("Couldn't save the name — it may reset next visit.", "error"));
   };
   const doDelete = async () => {
     setConfirmDel(false); setBusy(true);
@@ -2018,9 +2052,16 @@ window.CompletionRing = CompletionRing;
 
 window.YourDataPage = function ({ me }) {
   const [data, setData] = useState(null);
-  useEffect(() => { api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, []);
-  if (!data) return html`<${PageLoading} />`;
-  if (data.error) return html`<${EmptyState} title="Couldn't load your data" />`;
+  const [ydRetry, setYdRetry] = useState(0);
+  useEffect(() => { setData(null); api("/api/data-overview").then(setData).catch(() => setData({ error: true })); }, [ydRetry]);
+  if (!data) return html`
+    <div>
+      <div class="skel" style=${{ height: "30px", width: "200px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "120px", marginBottom: "var(--s4)", borderRadius: "var(--radius)" }}></div>
+      <${SkeletonGrid} count=${4} />
+    </div>`;
+  if (data.error) return html`<${EmptyState} title="Couldn't load your data"
+    action=${html`<button class="btn small primary" onClick=${() => setYdRetry(k => k + 1)}>Retry</button>`} />`;
   const c = data.contribution || {};
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const target = c.target_pct || 90;
@@ -2340,20 +2381,19 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
 window.LegalDocModal = function ({ docKey, onClose }) {
   const [d, setD] = useState(null);
   useEffect(() => { api("/api/legal/" + docKey).then(setD).catch(() => setD({ error: true })); }, [docKey]);
+  // house Modal so keyboard users get focus trap/restore + Escape on the one
+  // overlay members must be able to read before agreeing to anything
   return html`
-    <div class="modal-back" onClick=${onClose}>
-      <div class="card legal-modal" style=${{ maxWidth: "660px", width: "92%", maxHeight: "82vh", overflow: "auto", padding: "var(--s5)" }}
-        onClick=${e => e.stopPropagation()}>
-        <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
-          <h2 class="section-title" style=${{ margin: 0 }}>${d && d.title || "Legal"}</h2>
-          <button class="btn quiet small" onClick=${onClose}>Close</button>
-        </div>
-        ${!d ? html`<${Spinner} />`
-          : d.error ? html`<div class="error-text">Couldn't load this document.</div>`
-          : html`${d.draft && html`<div class="how-note" style=${{ marginBottom: "var(--s3)" }}>This document is <b>DRAFT — pending legal review</b>.</div>`}
-              <${TermsText} text=${d.text} />`}
+    <${Modal} onClose=${onClose} width="660px" label=${(d && d.title) || "Legal document"}>
+      <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
+        <h2 class="section-title" style=${{ margin: 0 }}>${d && d.title || "Legal"}</h2>
+        <button class="btn quiet small" onClick=${onClose}>Close</button>
       </div>
-    </div>`;
+      ${!d ? html`<${Spinner} />`
+        : d.error ? html`<div class="error-text" role="alert">Couldn't load this document.</div>`
+        : html`${d.draft && html`<div class="how-note" style=${{ marginBottom: "var(--s3)" }}>This document is <b>DRAFT — pending legal review</b>.</div>`}
+            <${TermsText} text=${d.text} />`}
+    <//>`;
 };
 
 // shared helpers

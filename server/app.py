@@ -49,7 +49,7 @@ _load_local_env()
 
 from anyio import to_thread
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, FileResponse, Response, PlainTextResponse
+from fastapi.responses import JSONResponse, FileResponse, Response, PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -270,12 +270,16 @@ def maybe_send_clock_reminder(conn, org, state):
     conn.commit()
     admins = [r["email"] for r in conn.execute(
         "SELECT email FROM users WHERE org_id=? AND role='admin'", (org["org_id"],))]
-    send_notification(
-        "lumi: %s left to unlock your insights" % ("7 days" if due == "7d" else "1 day"),
-        "Hello %s,\n\nYour reward benchmark is waiting — you're %s%% of the way to unlocking "
-        "your insights (£ opportunities, board pack and biggest gaps). Complete your reward "
-        "questions in the next %s to unlock them.\n\n— lumi (to: %s)"
-        % (org["name"], state["core_pct"], "7 days" if due == "7d" else "day", ", ".join(admins)))
+    # addressed to each Admin (defaulting to the ops inbox meant members never
+    # actually received the 7-day/1-day warnings once SMTP went live)
+    for a in admins:
+        send_notification(
+            "lumi: %s left to unlock your insights" % ("7 days" if due == "7d" else "1 day"),
+            "Hello %s,\n\nYour reward benchmark is waiting — you're %s%% of the way to unlocking "
+            "your insights (£ opportunities, board pack and biggest gaps). Complete your reward "
+            "questions in the next %s to unlock them.\n\n— lumi · UK reward benchmarking"
+            % (org["name"], state["core_pct"], "7 days" if due == "7d" else "day"),
+            to=a)
 
 
 TRONC_SECTORS = {"Hospitality, Leisure & Travel", "Retail & Consumer Goods"}
@@ -329,6 +333,10 @@ class SessionMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(SessionMiddleware)
+# Compress everything over 1KB — the benchmark JSON, app.css and the vendored
+# JS all shipped raw before this; one line is a 5-10× transfer cut on cold load.
+from fastapi.middleware.gzip import GZipMiddleware  # noqa: E402 (grouped with its consumer)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 def require_user(request):
@@ -795,9 +803,17 @@ async def request_reset(request: Request):
     user = auth_lib.find_user(email)
     if user:
         token = auth_lib.create_reset(user["user_id"])
-        # In production this is an email; here the tokenised link is console-logged.
-        print("\n[lumi] PASSWORD RESET LINK for %s:\n       http://localhost:8060/#/reset/%s\n" % (email, token))
-    return {"ok": True, "message": "If that email has an account, a reset link has been issued (see server console)."}
+        # a real member-facing email (send_notification console-logs it, link
+        # included, until SMTP is configured — same dev flow, no dev-copy leak)
+        send_notification(
+            "Reset your lumi password",
+            "Hello,\n\nSomeone asked to reset the lumi password for this address. If that was "
+            "you, choose a new password here:\n\n%s/app#/reset/%s\n\nThe link expires in 2 hours. "
+            "If you didn't ask for this, you can safely ignore this email — your password is "
+            "unchanged.\n\n— lumi · UK reward benchmarking" % (BASE_URL, token),
+            to=email)
+    return {"ok": True, "message": "If that email has an account, we've sent a reset link to it. "
+                                   "The link expires in 2 hours."}
 
 
 @app.post("/api/auth/reset")
@@ -839,7 +855,10 @@ async def me(request: Request):
         "ai_insights": _aig,
         # the market band the engine uses (LUMI_MARKET_BAND) so the client colours
         # cards on the SAME line as the tiles + signals — single source of truth.
-        "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH]},
+        "config": {"market_band": [MARKET_BAND_LOW, MARKET_BAND_HIGH],
+                   # the pulse launch fee, so the price is visible BEFORE a member
+                   # builds a survey (it used to appear only after review approval)
+                   "pulse_launch_fee_pence": PULSE_LAUNCH_FEE_PENCE},
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
@@ -883,6 +902,9 @@ async def team(request: Request):
     return {"users": users, "invites": invites if user["role"] == "admin" else []}
 
 
+ROLE_LABELS = {"admin": "Admin", "contributor": "Contributor", "viewer": "Viewer"}
+
+
 @app.post("/api/team/invite")
 async def invite(request: Request):
     user, org = require_admin(request)
@@ -895,8 +917,16 @@ async def invite(request: Request):
     if auth_lib.find_user(email):
         raise HTTPException(400, "That email already has a lumi account.")
     token = auth_lib.create_invite(org["org_id"], email, role, user["user_id"])
-    link = "http://localhost:8060/#/invite/%s" % token
-    print("\n[lumi] TEAM INVITE for %s (%s at %s):\n       %s\n" % (email, role, org["name"], link))
+    link = "%s/app#/invite/%s" % (BASE_URL, token)
+    inviter = user["display_name"] or user["email"]
+    send_notification(
+        "%s has invited you to lumi" % org["name"],
+        "Hello,\n\n%s has invited you to join %s on lumi — the UK reward benchmarking "
+        "co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\nThe link expires in "
+        "%d days. If you weren't expecting this, you can ignore this email.\n\n"
+        "— lumi · UK reward benchmarking" % (inviter, org["name"], ROLE_LABELS.get(role, role),
+                                             link, auth_lib.INVITE_TTL_DAYS),
+        to=email)
     return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
 
 
@@ -1296,6 +1326,50 @@ async def legal_doc(key: str):
     return {"key": key, "title": meta["title"], "draft": meta["draft"], "text": legal_text(key)}
 
 
+def _md_to_html(text):
+    """Minimal, safe markdown→HTML for the legal docs (headings, bullets, bold) —
+    mirrors the client TermsText renderer so public pages read the same."""
+    import html as _html
+    out = []
+    for line in (text or "").split("\n"):
+        esc = _html.escape(line)
+        esc = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", esc)
+        if esc.startswith("# "):
+            out.append("<h1>%s</h1>" % esc[2:])
+        elif esc.startswith("## "):
+            out.append("<h2>%s</h2>" % esc[3:])
+        elif esc.startswith("- "):
+            out.append("<p class='li'>• %s</p>" % esc[2:])
+        elif esc.strip():
+            out.append("<p>%s</p>" % esc)
+    return "\n".join(out)
+
+
+@app.get("/legal/{key}")
+async def legal_page(key: str):
+    """Public HTML render of a legal document — procurement and prospects must be
+    able to read Terms/Privacy from the marketing footer WITHOUT an account."""
+    meta = next((d for d in LEGAL_INDEX if d["key"] == key), None)
+    if meta is None or key not in LEGAL_FILES:
+        raise HTTPException(404, "Unknown legal document")
+    draft_note = ("<p style='background:#FBEFD9;padding:12px 16px;border-radius:10px'>"
+                  "This document is <b>DRAFT — pending legal review</b>.</p>") if meta["draft"] else ""
+    return HTMLResponse("""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>%s · lumi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:Inter,system-ui,sans-serif;background:#FBF9F6;color:#211B26;margin:0}
+.wrap{max-width:720px;margin:0 auto;padding:48px 24px}
+.logo{font-weight:700;font-size:20px;color:#2048B0;text-decoration:none}.logo span{color:#F08C6E}
+h1{font-size:26px;line-height:1.25}h2{font-size:18px;margin-top:28px}
+p{color:#3d3745;line-height:1.6}p.li{margin:4px 0 4px 12px}
+a{color:#2E62D9}footer{margin-top:48px;padding-top:16px;border-top:1px solid #EAE5DE;
+color:#6E6874;font-size:13px}</style></head>
+<body><div class="wrap"><a class="logo" href="/">lumi<span>.</span></a>
+%s%s
+<footer>© 2026 lumi · UK reward benchmarking · <a href="/">lumihr.co.uk</a> · questions: hello@lumihr.co.uk</footer>
+</div></body></html>""" % (meta["title"], draft_note, _md_to_html(legal_text(key))))
+
+
 @app.post("/api/terms/accept-data")
 async def accept_data_terms(request: Request):
     """The Admin accepts the Data Contribution Terms on behalf of the
@@ -1490,6 +1564,40 @@ async def single_benchmark(qid: str, request: Request):
             "feeds_gauge": bool(_reg == "Substance" and _m.get("direction") == "higher_is_better" and _comp),
         }
     return card
+
+
+@app.get("/api/benchmark-batch")
+async def benchmark_batch(request: Request):
+    """Several cards in one round-trip — the dashboards page was issuing one GET
+    per pinned card (20 pins = 20 requests). Same assembly, same suppression,
+    same reduced handling as the single route; no £ panel (dashboards never
+    render it)."""
+    user, org = require_user(request)
+    ids = [x for x in (request.query_params.get("ids") or "").split(",") if x][:60]
+    conn = get_conn()
+    vis = org_visible_questions(org)
+    entitled = make_entitled(user, org)
+    contrib = contribution_state(conn, org)
+    cut = parse_cut(request, org)
+    tb = twin_blocks_if_needed(conn, org, cut)
+    answers = org_answers_for(org)
+    cards = {}
+    for qid in ids:
+        q = vis.get(qid)
+        p = payloads().get(qid)
+        if q is None or p is None:
+            continue
+        if contrib["reduced"] and qid not in reduced_sample_ids():
+            cards[qid] = {"id": qid, "title": q.display_title, "question_text": q.text,
+                          "superpower": q.superpower, "subpower": q.sub_power,
+                          "sub_power_order": q.sub_power_order, "type": q.type,
+                          "category": q.category,
+                          "cut": {"dim": "all", "value": None, "label": "All peers"},
+                          "n": (p.get("all") or {}).get("n", 0), "reduced": True}
+            continue
+        cards[qid] = assemble_card(q, p, org, answers, cut,
+                                   {qid: tb.get(qid)} if tb else None, entitled)
+    return {"cards": cards}
 
 
 @app.get("/api/cuts")
@@ -4369,7 +4477,10 @@ async def domain_summary(request: Request):
 
 # ============================================================ METRIC REQUESTS ==
 
-NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "david@lumi.example")
+NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "hello@lumihr.co.uk")
+# Public origin for links inside outbound email (reset/invite). Localhost is the
+# dev default; production sets LUMI_BASE_URL once and every emailed link follows.
+BASE_URL = os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
 
 
 def send_notification(subject, body, to=None):
@@ -4385,9 +4496,12 @@ def send_notification(subject, body, to=None):
             import smtplib
             from email.message import EmailMessage
             msg = EmailMessage()
-            msg["From"] = os.environ.get("LUMI_SMTP_FROM", "noreply@lumi.example")
+            msg["From"] = os.environ.get("LUMI_SMTP_FROM", "lumi <noreply@lumihr.co.uk>")
             msg["To"] = recipient
             msg["Subject"] = subject
+            # deliverability + PECR courtesy on every outbound mail
+            msg["List-Unsubscribe"] = os.environ.get(
+                "LUMI_LIST_UNSUBSCRIBE", "<mailto:unsubscribe@lumihr.co.uk>")
             msg.set_content(body)
             with smtplib.SMTP(host, int(os.environ.get("LUMI_SMTP_PORT", "587")), timeout=10) as smtp:
                 if os.environ.get("LUMI_SMTP_USER"):
@@ -5144,6 +5258,27 @@ for _bn, _mt in (("favicon.ico", None), ("lumi_favicon.svg", "image/svg+xml"),
 
 
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+
+
+@app.exception_handler(404)
+async def not_found(request: Request, exc):
+    """A mistyped public URL (a PA re-typing a share link) gets a branded page,
+    not raw API JSON. API paths keep their JSON contract."""
+    if request.url.path.startswith("/api/"):
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    return HTMLResponse(status_code=404, content="""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Page not found · lumi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:Inter,system-ui,sans-serif;background:#FBF9F6;color:#211B26;display:flex;
+align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center}
+.card{background:#fff;border:1px solid #EAE5DE;border-radius:16px;padding:40px 48px;max-width:420px}
+.logo{font-weight:700;font-size:22px;color:#2048B0}.logo span{color:#F08C6E}
+p{color:#5B5560;line-height:1.5}a{color:#2E62D9}</style></head>
+<body><div class="card"><div class="logo">lumi<span>.</span></div>
+<h1 style="font-size:20px">That page doesn't exist</h1>
+<p>The link may have been mistyped or may have expired. If someone shared a lumi link
+with you, ask them to check it — shared links can be revoked or time out.</p>
+<p><a href="/">Go to lumi</a></p></div></body></html>""")
 
 
 # ================================================================== STARTUP ==
