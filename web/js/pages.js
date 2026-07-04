@@ -246,6 +246,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   useEffect(() => {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const onMove = (e) => {
       const el = e.target.closest && e.target.closest(".ov-top .card");
       if (!el) return;
@@ -299,6 +300,7 @@ function StrategyCheck({ onGoToDomain, signalDomains }) {
   // Cursor spotlight — the same alive, brand-tinted glow the home hero cards carry,
   // so this reads as part of the same dashboard family.
   useEffect(() => {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const el = cardRef.current; if (!el) return;
     const onMove = (e) => {
       const r = el.getBoundingClientRect();
@@ -563,7 +565,9 @@ function Donut({ segments, total, centerNum, sub, size, stroke, centerWord, onSe
   const arcs = (segments || []).filter(s => s.value > 0).map((s, i) => {
     const len = total ? (s.value / total) * C : 0;
     const gap = len > 8 ? 3 : 0;             // a small breather between real segments; none for slivers
-    const drawn = Math.max(0.5, len - gap);
+    // a 1-of-many segment must stay clickable (it's the filter affordance) — floor
+    // the DRAWN arc at ~6px so the smallest bucket isn't a 0.5px unhittable hairline
+    const drawn = Math.max(len > 0 ? 6 : 0.5, len - gap);
     const click = onSeg && s.k != null;
     const node = html`<circle key=${i} cx=${cx} cy=${cy} r=${r} fill="none" stroke=${s.color}
       stroke-width=${stroke} stroke-linecap="butt"
@@ -893,7 +897,7 @@ const sigParts = (s, pt) => [
   html`<span class=${"signal-roundel lens-" + s.lens} key="r"><${Icon} name=${LENS_ICON[s.lens] || "flag"} size=${15} /></span>`,
   html`<span class="signal-body" key="b">
     <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
-    <span class="sig-stand">${s.stand || s.detail}</span></span>`,
+    <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}</span></span>`,
   html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
 ];
 // Triage controls (prioritise · save · dismiss / restore) — ONE shared control on
@@ -1157,7 +1161,7 @@ window.SignalsPage = function ({ me }) {
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
       <span class="signal-body">
         <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
-        <span class="sig-stand">${s.stand || s.detail}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
+        <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
       <span class=${"pos-tag pos-" + pt.tone}>${s.tag || pt.text}</span>
       <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
     </div>`; };

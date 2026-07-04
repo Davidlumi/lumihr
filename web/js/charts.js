@@ -20,14 +20,21 @@ function youColour(fav) {
 function favGlyph(fav) { return fav === "good" ? "▲" : fav === "bad" ? "▼" : ""; }
 
 /* The single "you" marker: a filled blue diamond (performance-coloured where
-   polarity applies) with a value label. Same treatment on every chart. */
-function YouDot({ x, y, fav, label, labelY, anchor }) {
+   polarity applies) with a value label. Same treatment on every chart. When
+   `bounds` [minX, maxX] is given the middle-anchored label is clamped to stay
+   inside the canvas, so a "You · £12,345" at P90+ can't clip off the edge. */
+function YouDot({ x, y, fav, label, labelY, anchor, bounds }) {
   const r = 8;
+  let lx = x, la = anchor || "middle";
+  if (label && bounds && la === "middle") {
+    const halfW = (favGlyph(fav) ? 2 : 0) + label.length * 0.52 * 10.5 / 2;  // ~char width at fs 10.5
+    lx = Math.max(bounds[0] + halfW, Math.min(bounds[1] - halfW, x));
+  }
   return html`
     <g>
       <path d=${`M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`}
         fill=${youColour(fav)} stroke="#fff" stroke-width="1.8"/>
-      ${label && html`<text x=${x} y=${labelY} text-anchor=${anchor || "middle"} font-size="10.5"
+      ${label && html`<text x=${lx} y=${labelY} text-anchor=${la} font-size="10.5"
         font-weight="700" fill=${youColour(fav)}>${favGlyph(fav) ? favGlyph(fav) + " " : ""}${label}</text>`}
     </g>`;
 }
@@ -56,7 +63,7 @@ window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = tr
           <text x=${x(v)} y=${barY + barH + 18} text-anchor="middle" font-size="9" fill="var(--ink-faint)">${lbl}</text>
         </g>`)}
       ${you != null && html`<${YouDot} x=${x(you)} y=${barY + barH / 2} fav=${favourable}
-        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - 14} />`}
+        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - 14} bounds=${[padL, W - padR]} />`}
     </svg>`;
 };
 
@@ -86,7 +93,7 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
         <text x=${x(consensus)} y=${H - 5} text-anchor="middle" font-size="9" fill="var(--ink-faint)">Everyone: ${fmtValue(consensus, unit)}</text>
         ${you != null && html`
           <${YouDot} x=${xClamp(you)} y=${padT + (H - padT - padB) / 2} fav=${off ? favourable : "mid"}
-            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"}
+            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"} bounds=${[padL, W - padL]}
             label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${padT + (H - padT - padB) / 2 - 14} />`}
       </svg>`;
   }
@@ -111,7 +118,7 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
         <g>
           <line x1=${xClamp(you)} x2=${xClamp(you)} y1=${padT - 2} y2=${H - padB} stroke=${youColour(favourable)} stroke-width="2" />
           <${YouDot} x=${xClamp(you)} y=${padT - 2} fav=${favourable}
-            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"}
+            anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"} bounds=${[padL, W - padL]}
             label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${10} />
         </g>`}
     </svg>`;
@@ -135,7 +142,7 @@ window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, wi
       <text x=${x(block.p10)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P10</text>
       <text x=${x(block.p50)} y=${midY + 28} text-anchor="middle" font-size="9.5" fill="var(--ink-soft)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
       <text x=${x(block.p90)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P90</text>
-      ${you != null && html`<${YouDot} x=${x(you)} y=${midY} fav=${favourable}
+      ${you != null && html`<${YouDot} x=${x(you)} y=${midY} fav=${favourable} bounds=${[padL, W - padR]}
         label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${midY - boxH / 2 - 8} />`}
     </svg>`;
 };
@@ -256,8 +263,15 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
   const rawLo = lo, rawHi = hi, pad = ((hi - lo) || 1) * 0.06;
   lo -= pad; hi += pad;
   const X = v => ((v - lo) / ((hi - lo) || 1)) * 100;
-  const favOf = (you, p50) => {
+  const favOf = (you, p50, pctl) => {
     if (you == null || p50 == null) return null;
+    // percentile band (same MARKET_BAND the cards/tiles/signals use) so a matrix
+    // row's colour agrees with its own Position column, not a separate ±2% rule
+    if (pctl != null && polarity && polarity !== "neutral") {
+      const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
+      const adj = polarity === "lower_is_better" ? 100 - pctl : pctl;
+      return adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+    }
     const rel = p50 !== 0 ? (you - p50) / Math.abs(p50) : (you ? 1 : 0);
     if (Math.abs(rel) <= 0.02) return "mid";
     const above = rel > 0;
@@ -283,7 +297,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
               <tr key=${r.row_id} class="mn-row"><th scope="row" class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></th>
                 <td colspan="4" class="mn-supp caption">not enough organisations to show safely</td></tr>`;
             const b = r.block, you = r.you ? r.you.value : null;
-            const f = favOf(you, b.p50);
+            const f = favOf(you, b.p50, r.you ? r.you.percentile : null);
             return html`
               <tr key=${r.row_id} class="mn-row">
                 <th scope="row" class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></th>
@@ -446,8 +460,13 @@ function buildNumSVG(card, tok) {
   const Lw = 150, Mw = 66, Sw = 300, Yw = 70, Pw = 52, Hh = 24, Rh = 32;
   const Sx = Lw + Mw, W = Lw + Mw + Sw + Yw + Pw, R = rows.length, H = Hh + R * Rh + 4;
   const X = v => Sx + ((v - Lo) / ((Hi - Lo) || 1)) * Sw;
-  const favOf = (you, p50) => {
+  const favOf = (you, p50, pctl) => {
     if (you == null || p50 == null) return null;
+    if (pctl != null && polarity && polarity !== "neutral") {
+      const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
+      const adj = polarity === "lower_is_better" ? 100 - pctl : pctl;
+      return adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+    }
     const rel = p50 !== 0 ? (you - p50) / Math.abs(p50) : (you ? 1 : 0);
     if (Math.abs(rel) <= 0.02) return "mid";
     const a = rel > 0;
@@ -464,7 +483,7 @@ function buildNumSVG(card, tok) {
     const y = Hh + ri * Rh, cy = y + Rh / 2;
     s += `<text x="4" y="${cy + 4}" font-size="11" fill="${tok.ink}">${esc(clipTxt(r.label, 20))}</text>`;
     if (r.suppressed || !r.block) { s += `<text x="${Lw + Mw - 6}" y="${cy + 4}" text-anchor="end" font-size="10" fill="${tok.inkSoft}">n&lt;5</text>`; return; }
-    const b = r.block, yv = r.you ? r.you.value : null, f = favOf(yv, b.p50);
+    const b = r.block, yv = r.you ? r.you.value : null, f = favOf(yv, b.p50, r.you ? r.you.percentile : null);
     s += `<text x="${Lw + Mw - 6}" y="${cy + 4}" text-anchor="end" font-size="10.5" font-weight="600" fill="${tok.ink}">${esc(fmtValue(b.p50, unit))}</text>`;
     s += `<line x1="${Sx}" x2="${Sx + Sw}" y1="${cy}" y2="${cy}" stroke="${tok.grid}" stroke-width="1"/>`;
     s += `<rect x="${X(b.p25)}" y="${cy - 4.5}" width="${Math.max(2, X(b.p75) - X(b.p25))}" height="9" rx="4.5" fill="${tok.bandMid}"/>`;

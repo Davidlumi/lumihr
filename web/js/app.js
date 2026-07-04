@@ -1403,7 +1403,13 @@ function ExactFigures({ card: c }) {
   const cells = [];
   if (c.type === "numeric" && c.block) {
     if (c.you && c.you.display != null) cells.push(["You", c.you.display + (c.you.percentile != null ? " · " + pLabel(c.you.percentile) : "")]);
-    for (const [k, lbl] of [["p25", "Market P25"], ["p50", "Market median"], ["p75", "Market P75"]]) {
+    // full P10–P90 spread (was P25/50/75 only) — the board pack prints P10/P90, so
+    // the screen a director checks it against now shows the same tails. Same n≥10
+    // graduated-display rule the pack uses, so a thin sample never over-claims.
+    const cols = c.n >= 10
+      ? [["p10", "Market P10"], ["p25", "Market P25"], ["p50", "Market median"], ["p75", "Market P75"], ["p90", "Market P90"]]
+      : [["p25", "Market P25"], ["p50", "Market median"], ["p75", "Market P75"]];
+    for (const [k, lbl] of cols) {
       if (c.block[k] != null) cells.push([lbl, fmtValue(c.block[k], c.unit)]);
     }
   } else if (c.block && c.block.options) {

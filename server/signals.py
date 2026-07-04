@@ -764,8 +764,17 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     risk_set = set(cfg.get("risk_metrics") or [])   # RISK/POSITION split (David-curated; never a heuristic)
     vp_set = set(cfg.get("variable_pay_metrics") or [])   # variable_pay tag (David-curated): precise P4P keying
     tr_set = set(cfg.get("transparency_metrics") or [])   # transparency tag (David-curated): reconfirmed-open re-rank
+    # sample size per metric (the house "n is always shown" rule reaches signals too —
+    # a verdict-bearing row without its n was the one provenance gap)
+    _qid_n = {}
+    for _i in items:
+        _n = _i.get("n") or 0
+        if _n and _n > _qid_n.get(_i["question_id"], 0):
+            _qid_n[_i["question_id"]] = _n
     for s in out:
         s.setdefault("sig_id", s["question_id"])
+        if not s.get("n"):
+            s["n"] = _qid_n.get(s["question_id"])
         s["status"] = st.get(s["sig_id"])
         # market-position re-axis (spec §6.3): domain + position (below/on/above/
         # differs) + polarity, so the Signals page can chip-filter, group and colour

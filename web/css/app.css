@@ -480,6 +480,11 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .bench-words { flex: 1 1 190px; min-width: 180px; display: flex; flex-direction: column; gap: var(--s2); }
 /* sample-size line is always shown small text → --ink-soft (--ink-faint ~3.45:1 fails AA) */
 .bench-n { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: auto; cursor: help; }
+/* the scannable position — a quiet ink P-number in the foot so 12 cards read as
+   positions, not just flags (the RAG lives in the signal pill; this stays neutral) */
+.bench-pctl { font-size: var(--fs-caption); color: var(--ink); font-weight: 600;
+  font-variant-numeric: tabular-nums; margin-top: auto; cursor: help;
+  padding-right: var(--s2); margin-right: var(--s1); border-right: 1px solid var(--border); }
 .bench-lead { font-size: var(--fs-body); line-height: 23px; font-weight: 500; color: var(--ink); }
 .bench-proof { flex: 1.9 1 340px; min-width: 0; position: relative; }
 @media (max-width: 700px) {
@@ -604,7 +609,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 table.data { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
 /* light, ruled header (2026-06-13) — a form full of these shouldn't read like
    a database export; the bottom rule + small-caps carry the structure */
-table.data th { position: sticky; top: 0; z-index: 2; text-align: left; font-size: var(--fs-caption);
+table.data th { position: sticky; top: var(--brandbar-h); z-index: 2; text-align: left; font-size: var(--fs-caption);
   text-transform: uppercase; letter-spacing: .06em; background: var(--surface); color: var(--ink-soft);
   font-weight: 650; padding: var(--s2) var(--s3); white-space: nowrap;
   border-bottom: 1.5px solid var(--chrome-edge, var(--border)); }

@@ -93,6 +93,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       <div class="bench-foot">
         <${ComparePill} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
           onCut=${k => setOverride(k === globalKey ? null : k)} />
+        ${(() => { const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
         <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
         <div class="card-tools no-print">
           ${footTools && html`${footTools}<span class="tool-div" aria-hidden="true"></span>`}
@@ -337,6 +338,7 @@ function cardPosition(c) {
   const kind = adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
   return {
     kind,
+    pctl: Math.round(p),
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
     label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + " · P" + Math.round(p),
     tip: "Your position vs the market, adjusted for whether higher or lower is favourable.",
