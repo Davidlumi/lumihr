@@ -242,6 +242,7 @@ def contribution_state(conn, org):
     return {
         "core_pct": completion,
         "target_pct": TARGET_PCT,
+        "basis_total": len(completion_basis_questions()),   # the ~82 key questions the gate measures (for honest effort copy)
         "insights_unlocked": unlocked,
         "terms_accepted": terms is not None,
         "clock_started": bool(clock_start),

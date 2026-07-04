@@ -1015,7 +1015,7 @@ function SignalsLocked({ contrib, me }) {
         <div class="sig-unlock-prog">
           <div class="row spread" style=${{ marginBottom: "var(--s2)", alignItems: "baseline" }}>
             <b>Reward data ${pct}%</b>
-            <span class="caption">unlocks at ${target}%${days != null ? ` · ${days} days left` : ""}</span>
+            <span class="caption">unlocks at ${target}%${contrib.reduced ? " · paused to a sample — finish to restore" : (days != null ? ` · ${days} days left` : "")}</span>
           </div>
           <div class="progressbar"><div style=${{ width: Math.min(100, target ? 100 * pct / target : 0) + "%" }}></div></div>
         </div>

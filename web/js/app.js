@@ -296,7 +296,7 @@ function App() {
   // Combobox: the search popup is open at >1 char with an index; keep the
   // activatable-option list in a ref so the input's Enter handler can act on it.
   const searchPopOpen = !!(search.length > 1 && qIndex);
-  searchHitsRef.current = searchPopOpen ? searchOptions(qIndex, search) : [];
+  searchHitsRef.current = searchPopOpen ? searchOptions(qIndex, search, me.user.role) : [];
 
   return html`
     <div class="shell">
@@ -309,7 +309,7 @@ function App() {
           dangerouslySetInnerHTML=${{ __html: LUMI_LOGO_REVERSED_SVG }}></a>
         <div class="topbar-search">
           <span class="topbar-search-icon"><${Icon} name="search" size=${15} /></span>
-          <input ref=${searchRef} class="ctl" placeholder="Search reward metrics — try ‘pension’ or ‘sick pay’"
+          <input ref=${searchRef} class="ctl" placeholder="Search metrics, pages & help… (⌘K)"
             aria-label="Search reward metrics" value=${search}
             role="combobox" aria-controls="searchpop-list" aria-autocomplete="list"
             aria-expanded=${searchPopOpen} aria-activedescendant=${activeHit >= 0 ? "search-hit-" + activeHit : ""}
@@ -322,12 +322,12 @@ function App() {
               else if (e.key === "ArrowUp") { e.preventDefault(); if (opts.length) setActiveHit(i => (i <= 0 ? opts.length - 1 : i - 1)); }
               else if (e.key === "Enter") {
                 const q = opts[activeHit];
-                if (q) { e.preventDefault(); setSearch(""); setActiveHit(-1); openMetric(q.id); }
+                if (q) { e.preventDefault(); setSearch(""); setActiveHit(-1); q.kind === "nav" ? nav(q.route) : openMetric(q.id); }
               }
             }} />
-          ${searchPopOpen && html`<${SearchPop} qIndex=${qIndex} search=${search}
+          ${searchPopOpen && html`<${SearchPop} qIndex=${qIndex} search=${search} role=${me.user.role}
             activeHit=${activeHit} onActiveHit=${setActiveHit}
-            onGo=${(q) => { setSearch(""); setActiveHit(-1); openMetric(q.id); }}
+            onGo=${(q) => { setSearch(""); setActiveHit(-1); q.kind === "nav" ? nav(q.route) : openMetric(q.id); }}
             onRequest=${() => { const term = search; setSearch(""); setActiveHit(-1); setMetricReq({ prefill: term, source: "search" }); }} />`}
         </div>
         <div class="topbar-right">
@@ -460,7 +460,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
   const secs = sectionList(qIndex);
   const total = qIndex.questions.filter(q => !q.locked).length;
   const allActive = route.startsWith("/benchmark") && !route.includes("cat=");
-  const benchActive = route.startsWith("/benchmark") || route.startsWith("/category/");
+  const benchActive = route.startsWith("/benchmark") || route.startsWith("/category/") || route.startsWith("/metric");
   const secLabel = domainLabel;   // the shared display helper (core.js) — one source for the "Time off" label
 
   // COLLAPSED: the group can't show an inline child list, so the Benchmark
@@ -489,7 +489,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
   }
 
   return html`
-    <button class="nav-item nav-parent" aria-expanded=${open} aria-label="Benchmark" data-tip="Benchmark" onClick=${toggle}>
+    <button class=${"nav-item nav-parent" + (route.startsWith("/metric") ? " active" : "")} aria-expanded=${open} aria-label="Benchmark" data-tip="Benchmark" onClick=${toggle}>
       <${SpIcon} sp="Reward" /><span class="nav-txt">Benchmark</span>
       <span class=${"nav-chev" + (open ? " open" : "")}><${Icon} name="chevron-down" size=${14} /></span>
     </button>
@@ -801,6 +801,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
   // Source the onboarding numbers from live scope + the dynamic unlock threshold
   // so they never drift on a release (questions added/removed, threshold tuned).
   const scopeN = (me && me.scope && me.scope.question_count) || (window.SCOPE && window.SCOPE.question_count) || null;
+  const basisN = (contrib && contrib.basis_total) || (me && me.scope && me.scope.required_size) || null;
   const targetPct = Math.round(contrib.target_pct || 90);
   if (!contrib.terms_accepted) {
     /* First-run "you're set up — next steps": welcoming, not a wizard.
@@ -815,7 +816,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
       { n: 3, label: "Complete your reward data", done: false,
-        hint: (scopeN ? scopeN + " questions" : "Your reward questions") + " by section, autosaved — insights unlock once your key questions are answered." },
+        hint: (basisN ? "About " + basisN + " key questions (~" + Math.round(basisN * 0.6) + " min), by section" : "Your reward questions by section") + " — autosaved, resume any time; insights unlock at " + targetPct + "%." },
       { n: 4, label: "Invite your team", done: false,
         hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
     ];
@@ -853,7 +854,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
       </div>
       <div class="submit-banner-msg">
         <div class="submit-banner-head">Submit your reward data to unlock insights</div>
-        <p class="submit-banner-body">At ${targetPct}% complete, your benchmark unlocks — the £ opportunity, your board pack and your biggest gaps. After day 0, founding-member access closes.</p>
+        <p class="submit-banner-body">At ${targetPct}% complete, your benchmark unlocks — the £ opportunity, your board pack and your biggest gaps. If day 30 arrives first, your benchmark simply pauses to a sample until you finish — nothing is lost.</p>
         <div class="submit-banner-progress">
           <div class="progressbar"><div style=${{ width: Math.min(100, pct / targetPct * 100) + "%" }}></div></div>
           <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}% complete · autosaves</span>
@@ -938,7 +939,7 @@ const NOTIF_LENS = {
 };
 const NOTIF_LENS_ORDER = ["attract", "retain", "engage", "save"];
 
-function NotificationBell() {
+function NotificationBell({ me }) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
   const ref = useRef(null);
@@ -988,7 +989,9 @@ function NotificationBell() {
                   </button>`)}
               </div>`)}
           </div>`}
-          <div class="notif-foot"><a href="#" onClick=${e => { e.preventDefault(); setOpen(false); nav("/settings"); }}>Notification settings →</a></div>
+          <div class="notif-foot">${me && me.user.role === "admin"
+            ? html`<a href="#" onClick=${e => { e.preventDefault(); setOpen(false); nav("/settings"); }}>Notification settings →</a>`
+            : html`<span class="caption">Ask your Admin to adjust notification settings.</span>`}</div>
         </div>`}
     </div>`;
 }
@@ -1032,8 +1035,14 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline }) {
     </div>`;
 }
 
+// deep routes with no rail item of their own light up their parent, so the
+// sidebar always shows where you are (metric→Benchmark, priorities→Signals, …)
+const RAIL_PARENT = { "/metric": "/benchmark", "/category": "/benchmark",
+  "/priorities": "/signals", "/profile": "/your-data" };
 function navCls(route, path) {
-  const active = path === "/overview" ? (route === "/" || route === "" || route.startsWith("/overview")) : route.startsWith(path);
+  let r = route;
+  for (const pfx in RAIL_PARENT) { if (r.startsWith(pfx)) { r = RAIL_PARENT[pfx]; break; } }
+  const active = path === "/overview" ? (r === "/" || r === "" || r.startsWith("/overview")) : r.startsWith(path);
   return "nav-item" + (active ? " active" : "");
 }
 
@@ -1084,46 +1093,80 @@ function fuzzyMatches(questions, query) {
   return scored.slice(0, 3).map(x => x.q);
 }
 
-// The ordered list of activatable search options (direct hits, else fuzzy
-// suggestions). Shared by SearchPop (render) and the combobox keyboard handler
-// in App, so arrow-key navigation and the rendered rows can never drift.
-function searchOptions(qIndex, search) {
+// Command-palette destinations (⌘K reaches pages + help, not only metrics).
+// Each is a route; role-gated ones are filtered per member. kind="nav" so the
+// activation handlers can tell them from metric hits.
+const NAV_INDEX = [
+  { label: "Overview", route: "/overview", group: "Pages", kw: "home dashboard where you stand" },
+  { label: "My dashboards", route: "/dashboards", group: "Pages", kw: "pinned cards saved views" },
+  { label: "Signals", route: "/signals", group: "Pages", kw: "flags priorities inbox" },
+  { label: "Priorities — the gap register", route: "/priorities", group: "Pages", kw: "gaps register full list export csv" },
+  { label: "Pulse", route: "/pulse", group: "Pages", kw: "surveys check-ins" },
+  { label: "Benchmark", route: "/benchmark", group: "Pages", kw: "all metrics categories compare" },
+  { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
+  { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
+  { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
+  { label: "Settings", route: "/settings", group: "Pages", role: "admin", kw: "assumptions sharing notifications account" },
+  { label: "Your profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
+  { label: "How lumi works", route: "/how-lumi-works", group: "Help", kw: "help methodology co-op legal" },
+  { label: "How the numbers are calculated", route: "/how-lumi-works/calculations", group: "Help", kw: "methodology median percentile suppression method" },
+  { label: "Why figures are hidden", route: "/how-lumi-works/suppression", group: "Help", kw: "suppressed hidden anonymity fewer than 5 n<5" },
+  { label: "Glossary", route: "/how-lumi-works/glossary", group: "Help", kw: "terms definitions jargon percentile median" },
+];
+
+function navMatches(search, role) {
   const s = search.toLowerCase();
-  const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
-  if (hits.length) return hits;
-  return fuzzyMatches(qIndex.questions, search);
+  return NAV_INDEX.filter(n => !n.role || n.role === role)
+    .filter(n => n.label.toLowerCase().includes(s) || (n.kw || "").includes(s))
+    .slice(0, 5)
+    .map(n => ({ ...n, kind: "nav" }));
 }
 
-function SearchPop({ qIndex, search, onGo, onRequest, activeHit, onActiveHit }) {
+// The ordered list of activatable search options: metric hits (or fuzzy
+// suggestions when none) first, then matching pages/help below. Shared by
+// SearchPop (render) and the combobox keyboard handler in App, so arrow-key
+// navigation and the rendered rows can never drift.
+function searchOptions(qIndex, search, role) {
+  const s = search.toLowerCase();
+  const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
+  const metrics = hits.length ? hits : fuzzyMatches(qIndex.questions, search);
+  return [...metrics, ...navMatches(search, role)];
+}
+
+function SearchPop({ qIndex, search, role, onGo, onRequest, activeHit, onActiveHit }) {
   const s = search.toLowerCase();
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
   const suggestions = hits.length === 0 ? fuzzyMatches(qIndex.questions, search) : [];
+  const metrics = hits.length ? hits : suggestions;   // the metric rows (indices 0..M-1)
+  const navs = navMatches(search, role);              // pages/help (indices M..M+N-1)
   const request = () => (onRequest ? onRequest() : window.openMetricRequest(search, "search"));
   const setActive = (i) => onActiveHit && onActiveHit(i);
+  const metricRow = (q, i, extra) => html`
+    <div key=${q.id} id=${"search-hit-" + i} class=${"search-hit" + (extra || "")} role="option"
+      aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
+      <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
+      <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
+    </div>`;
   return html`
     <div class="searchpop" id="searchpop-list" role="listbox" aria-label="Search results">
-      ${hits.map((q, i) => html`
-        <div key=${q.id} id=${"search-hit-" + i} class="search-hit" role="option"
-          aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
-          <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
-          <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
-        </div>`)}
-      ${hits.length === 0 && html`
-        <div class="search-empty">
-          ${suggestions.length > 0 ? html`
-            <div class="caption" style=${{ padding: "0 0 var(--s1) 2px" }}>Did you mean…</div>
-            ${suggestions.map((q, i) => html`
-              <div key=${q.id} id=${"search-hit-" + i} class="search-hit search-suggest" role="option"
-                aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
-                <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b>
-                <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
-              </div>`)}
-            <div class="search-divider"></div>` : ""}
-          <div class="search-nores">
-            <div class="caption">No reward metric matches “${search}”.</div>
-            <button class="btn small" style=${{ marginTop: "var(--s2)" }} onClick=${request}>Request this metric</button>
-          </div>
-        </div>`}
+      ${hits.map((q, i) => metricRow(q, i))}
+      ${hits.length === 0 && suggestions.length > 0 && html`
+        <div class="caption" style=${{ padding: "var(--s1) 0 var(--s1) 2px" }}>Did you mean…</div>
+        ${suggestions.map((q, i) => metricRow(q, i, " search-suggest"))}`}
+      ${navs.length > 0 && html`
+        <div class="search-divider"></div>
+        <div class="caption" style=${{ padding: "0 0 var(--s1) 2px" }}>Pages & help</div>
+        ${navs.map((nItem, j) => { const idx = metrics.length + j; return html`
+          <div key=${nItem.route} id=${"search-hit-" + idx} class="search-hit search-nav" role="option"
+            aria-selected=${activeHit === idx} onMouseEnter=${() => setActive(idx)} onClick=${() => onGo(nItem)}>
+            <b style=${{ fontSize: "var(--fs-label)" }}>${nItem.label}</b>
+            <div class="caption">${nItem.group}</div>
+          </div>`; })}`}
+      ${metrics.length === 0 && navs.length === 0 && html`
+        <div class="search-empty"><div class="search-nores">
+          <div class="caption">No reward metric or page matches “${search}”.</div>
+          <button class="btn small" style=${{ marginTop: "var(--s2)" }} onClick=${request}>Request this metric</button>
+        </div></div>`}
     </div>`;
 }
 
