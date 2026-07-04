@@ -239,12 +239,19 @@ def contribution_state(conn, org):
         except (ValueError, TypeError):
             started = datetime.utcnow()
         days_left = max(0, CLOCK_DAYS - (datetime.utcnow() - started).days)
+    # team invited = any pending invite OR any member beyond the founding Admin —
+    # the "invite your team" setup step's done-state (persistent onboarding checklist)
+    team_invited = bool(conn.execute(
+        "SELECT 1 FROM invites WHERE org_id=? LIMIT 1", (org["org_id"],)).fetchone()
+        or conn.execute("SELECT 1 FROM users WHERE org_id=? AND role!='admin' LIMIT 1",
+                        (org["org_id"],)).fetchone())
     return {
         "core_pct": completion,
         "target_pct": TARGET_PCT,
         "basis_total": len(completion_basis_questions()),   # the ~82 key questions the gate measures (for honest effort copy)
         "insights_unlocked": unlocked,
         "terms_accepted": terms is not None,
+        "team_invited": team_invited,
         "clock_started": bool(clock_start),
         "clock_start": clock_start,
         "days_left": days_left,

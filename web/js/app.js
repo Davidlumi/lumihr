@@ -846,6 +846,19 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         </div>
       </div>`;
   }
+  // post-terms: the submit banner PLUS a persistent, itemised setup checklist so
+  // the multi-session journey isn't represented by one % bar. Steps carry real
+  // done-state (profile/terms/data/team) and don't evaporate the moment terms
+  // are accepted — they run until insights unlock.
+  const profiledPost = !!(me && me.org && me.org.classified);
+  const setupSteps = [
+    { label: "Tell us about your organisation", done: profiledPost },
+    { label: "Accept the Data Contribution Terms", done: true },
+    { label: "Complete your reward data", done: pct >= targetPct, now: pct < targetPct,
+      note: pct + "% of " + targetPct + "%" },
+    { label: "Invite your team", done: !!contrib.team_invited, optional: true },
+  ];
+  const doneCount = setupSteps.filter(s => s.done).length;
   return html`
     <div class="submit-banner">
       <div class="submit-banner-counter">
@@ -861,6 +874,17 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         </div>
       </div>
       <button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data/submit")}>Continue submission</button>
+    </div>
+    <div class="setup-checklist card">
+      <div class="setup-checklist-head"><span class="eyebrow">Setup · ${doneCount} of ${setupSteps.length}</span></div>
+      <div class="setup-steps">
+        ${setupSteps.map((s, i) => html`
+          <div key=${i} class=${"setup-step" + (s.done ? " done" : "") + (s.now ? " now" : "")}>
+            <span class="setup-tick">${s.done ? html`<${Icon} name="check" size=${13} />` : html`<span class="setup-dot"></span>`}</span>
+            <span class="setup-label">${s.label}${s.optional && !s.done ? html` <span class="caption">· optional</span>` : null}</span>
+            ${s.note ? html`<span class="caption setup-note num">${s.note}</span>` : null}
+          </div>`)}
+      </div>
     </div>`;
 };
 

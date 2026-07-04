@@ -87,9 +87,34 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
+      ${unlocked && !(prefs && prefs._seen && prefs._seen.unlock) &&
+        html`<${UnlockMoment} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
+
       <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
         view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat} />
 
+    </div>`;
+};
+
+// Org-wide unlock moment: insights unlock for the WHOLE organisation the moment
+// one member submits (sticky, server-stamped) — so every OTHER member next signs
+// in to a silently different product. This one-time, per-user (prefs._seen.unlock)
+// banner introduces the three things that just came alive. Shown to whoever hasn't
+// dismissed it, not only the person who clicked Submit.
+window.UnlockMoment = function ({ onDismiss }) {
+  return html`
+    <div class="card unlock-moment" role="status">
+      <button class="iconbtn unlock-x" aria-label="Dismiss" onClick=${onDismiss}><${Icon} name="close" size=${14} /></button>
+      <div class="unlock-spark"><${Icon} name="sparkle" size=${22} /></div>
+      <div style=${{ flex: 1, minWidth: "240px" }}>
+        <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>Your insights are live</b>
+        <p style=${{ margin: "2px 0 var(--s3)" }}>Your organisation's reward data is in — here's what just came alive:</p>
+        <div class="unlock-links">
+          <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="flag" size=${13} /> Your signals</button>
+          <button class="btn small" onClick=${() => onDismiss && onDismiss()}><${Icon} name="coins" size=${13} /> £ opportunity (below)</button>
+          <button class="btn small" onClick=${() => onDismiss && onDismiss()}><${Icon} name="file-text" size=${13} /> Export a board pack (top right)</button>
+        </div>
+      </div>
     </div>`;
 };
 
