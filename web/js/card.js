@@ -164,7 +164,7 @@ function ComparePill({ c, cuts, effectiveKey, globalKey, onCut }) {
           ${choices.map(ch => html`
             <button key=${ch.key} role="menuitemradio" aria-checked=${effectiveKey === ch.key}
               class=${"kebab-item" + (effectiveKey === ch.key ? " on" : "")} onClick=${() => pick(ch.key)}>
-              <span class="kebab-check">${effectiveKey === ch.key ? "✓" : ""}</span>${ch.label}
+              <span class="kebab-check">${effectiveKey === ch.key ? html`<${Icon} name="check" size=${12} />` : ""}</span>${ch.label}
               ${ch.key === globalKey ? html`<span class="caption" style=${{ marginLeft: "auto" }}>page</span>` : null}
             </button>`)}
           ${unprofiled && html`<button role="menuitem" class="kebab-item" onClick=${() => { setOpen(false); nav("/profile"); }}>
@@ -215,7 +215,7 @@ function AddToDashboard({ c }) {
             dl.map(d => html`
               <button key=${d.id} role="menuitemcheckbox" aria-checked=${d.has_card}
                 class=${"kebab-item kebab-pickrow" + (d.has_card ? " on" : "")} onClick=${() => toggleDash(d)}>
-                <span class=${"kebab-box" + (d.has_card ? " on" : "")}>${d.has_card ? "✓" : ""}</span>
+                <span class=${"kebab-box" + (d.has_card ? " on" : "")}>${d.has_card ? html`<${Icon} name="check" size=${12} />` : ""}</span>
                 <span class="kebab-pickname">${d.name}</span>
                 <span class="caption" style=${{ marginLeft: "auto" }}>${d.count}</span>
               </button>`)}
