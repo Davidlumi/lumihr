@@ -609,6 +609,13 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 table.data { width: 100%; border-collapse: collapse; font-size: var(--fs-label); }
 /* light, ruled header (2026-06-13) — a form full of these shouldn't read like
    a database export; the bottom rule + small-caps carry the structure */
+/* sortable table headers — the gap register (and any data table) can sort by column */
+.th-sort { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  text-transform: inherit; letter-spacing: inherit; display: inline-flex; align-items: center; gap: 3px; }
+.th-sort:hover { color: var(--ink); }
+.gap-table td { font-size: var(--fs-label); vertical-align: top; padding: var(--s2) var(--s3); }
+.gap-table .gap-sentence { margin-top: 2px; max-width: 46ch; }
+.gap-table td.num { white-space: nowrap; }
 table.data th { position: sticky; top: var(--brandbar-h); z-index: 2; text-align: left; font-size: var(--fs-caption);
   text-transform: uppercase; letter-spacing: .06em; background: var(--surface); color: var(--ink-soft);
   font-weight: 650; padding: var(--s2) var(--s3); white-space: nowrap;
@@ -1058,6 +1065,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-prov-ok  { color: var(--ink-soft); }
 .sig-prov-est { color: var(--neutral-perf); font-style: italic; }
 .pos-tag { font-size: var(--fs-micro); font-weight: 650; letter-spacing: .015em; padding: var(--s1) var(--s3); border-radius: 999px; white-space: nowrap; flex: none; }
+/* signal magnitude: length proportional to the gap from the market median so a
+   45% gap and a 4% gap don't render identically. Quiet neutral ink — length IS
+   the encoding, never RAG. */
+.sig-mag { flex: 0 0 auto; width: 44px; height: 4px; border-radius: 999px; background: var(--surface-sunk); overflow: hidden; align-self: center; }
+.sig-mag i { display: block; height: 100%; background: var(--ink-faint); border-radius: 999px; }
 /* verdict tags: darken green/red onto their tints with the same color-mix recipe
    as .chip/.pos-pill so the text clears AA (≥4.5:1); amber already ships the deep
    contrast-safe text amber (--neutral-perf), so it stays. */

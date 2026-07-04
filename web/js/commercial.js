@@ -23,6 +23,9 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   const setShow = v => { setShowRaw(v); onPref && onPref("_ui_gap", { ...ui, show: v }); };
   const [gerr, setGerr] = useState(null);
   const [gretry, setGretry] = useState(0);
+  // client-side column sort. Default: peer adoption desc (the server's "most
+  // commonly held missing items lead" order); STATUS_RANK orders the status column.
+  const [sort, setSort] = useState({ key: "peer_adoption_pct", dir: -1 });
   useEffect(() => { setData(null); setGerr(null);
     api("/api/gap-register?" + cutQS(cut)).then(setData).catch(e => setGerr(e.message)); }, [cutKeyOf(cut), gretry]);
   if (gerr) return html`<${EmptyState} title="Couldn't load the register" body=${gerr}
@@ -32,6 +35,16 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   let rows = data.rows.filter(r => !r.suppressed);
   if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
   if (show === "gaps") rows = rows.filter(r => r.org_answered && r.in_place === false && (r.gap || 0) > 0);
+  const STATUS_RANK = { not_in_place: 0, partial: 1, unknown: 2, in_place: 3 };
+  const sortVal = (r, k) => k === "name" ? (r.name || "").toLowerCase()
+    : k === "area" ? (focused ? (r.subpower || "") : r.superpower || "").toLowerCase()
+    : k === "status" ? (STATUS_RANK[r.status] != null ? STATUS_RANK[r.status] : 9)
+    : (r[k] == null ? -1 : r[k]);   // numerics; nulls sort last on desc
+  rows = [...rows].sort((a, b) => { const av = sortVal(a, sort.key), bv = sortVal(b, sort.key);
+    return av < bv ? -sort.dir : av > bv ? sort.dir : 0; });
+  const onSort = (k) => setSort(s => s.key === k ? { key: k, dir: -s.dir } : { key: k, dir: k === "name" || k === "area" ? 1 : -1 });
+  const sortArrow = (k) => sort.key === k ? html` <span aria-hidden="true">${sort.dir === 1 ? "▲" : "▼"}</span>` : null;
+  const areaLabel = focused ? "Section" : "Area";
   return html`
     <div>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
@@ -60,44 +73,56 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
 
       ${rows.length === 0 ? html`<${EmptyState} icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
         body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
-      html`<div class="card" style=${{ padding: "var(--s2) var(--s5)" }}>
-        ${rows.slice(0, 80).map(r => html`<${GapRow} key=${r.question_id} r=${r} focused=${focused} />`)}
-        ${rows.length > 80 && html`<div class="caption" style=${{ padding: "var(--s3) 0" }}>Showing the top 80 of ${rows.length} — download the CSV for the full register.</div>`}
+      html`<div class="card" style=${{ padding: "0", overflow: "hidden" }}>
+        <div style=${{ overflowX: "auto" }}>
+        <table class="data gap-table">
+          <thead><tr>
+            <th><button class="th-sort" onClick=${() => onSort("name")}>Metric${sortArrow("name")}</button></th>
+            <th><button class="th-sort" onClick=${() => onSort("area")}>${areaLabel}${sortArrow("area")}</button></th>
+            <th><button class="th-sort" onClick=${() => onSort("status")}>Your status${sortArrow("status")}</button></th>
+            <th class="num"><button class="th-sort" onClick=${() => onSort("peer_adoption_pct")}>Market${sortArrow("peer_adoption_pct")}</button></th>
+            <th class="num"><button class="th-sort" onClick=${() => onSort("sector_adoption_pct")}>Sector${sortArrow("sector_adoption_pct")}</button></th>
+            <th class="num"><button class="th-sort" onClick=${() => onSort("n")}>n${sortArrow("n")}</button></th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r => { const c = gapStatusChip(r); return html`
+              <tr key=${r.question_id}>
+                <td><a href=${"#/metric/" + r.question_id}>${r.name}</a>
+                  <div class="caption gap-sentence">${gapSentence(r)}</div></td>
+                <td class="caption">${focused ? (r.subpower || "") : r.superpower}</td>
+                <td><span class=${"chip " + c[0]}>${c[1]}</span></td>
+                <td class="num">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"}</td>
+                <td class="num">${r.sector_adoption_pct != null ? r.sector_adoption_pct + "%" : "—"}</td>
+                <td class="num">${r.n}</td>
+              </tr>`; })}
+          </tbody>
+        </table>
+        </div>
+        <div class="caption" style=${{ padding: "var(--s3) var(--s5)" }}>${rows.length} metric${rows.length === 1 ? "" : "s"} shown · click a column to sort · download the CSV for the raw data.</div>
       </div>`}
     </div>`;
 };
 
-/* 8.4 — each gap reads as a sentence a colleague would say, not a table row */
-function GapRow({ r, focused }) {
+// the "reads like a colleague would say it" sentence + status chip — kept as the
+// table row's detail line so sortability doesn't cost the plain-English voice
+function gapSentence(r) {
   const x = r.peer_adoption_pct != null ? Math.round(r.peer_adoption_pct / 10) : null;
-  const peers = x == null ? null : x >= 10 ? "Almost all similar organisations have this"
+  const peers = x == null ? "Not enough market data to compare safely."
+    : x >= 10 ? "Almost all similar organisations have this"
     : x <= 0 ? "Very few similar organisations have this"
     : `About ${x} in 10 similar organisations have this`;
-  const you = r.status === "in_place" ? "— and so do you."
-    : r.status === "partial" ? "— you're partly there."
-    : r.status === "not_in_place" ? "— you don't yet."
-    : r.org_answered ? "— yours isn't assessable from your answer."
-    : "— you haven't answered this yet.";
-  const chip = r.status === "in_place" ? ["good", "In place"]
+  const you = r.status === "in_place" ? " — and so do you."
+    : r.status === "partial" ? " — you're partly there."
+    : r.status === "not_in_place" ? " — you don't yet."
+    : r.org_answered ? " — yours isn't assessable from your answer."
+    : " — you haven't answered this yet.";
+  return peers + (x == null ? " " : "") + you;
+}
+function gapStatusChip(r) {
+  return r.status === "in_place" ? ["good", "In place"]
     : r.status === "partial" ? ["warn", "Partially"]
     : r.status === "not_in_place" ? ["bad", "Not in place"]
     : ["", r.org_answered ? "Not assessable" : "Not answered"];
-  return html`
-    <div class="gap-row">
-      <div style=${{ flex: 1, minWidth: 0 }}>
-        <div class="gap-name"><a href=${"#/metric/" + r.question_id}>${r.name}</a>
-          <span class="caption" style=${{ marginLeft: "var(--s2)" }}>${focused ? (r.subpower || "") : r.superpower}</span></div>
-        <div class="caption" style=${{ marginTop: "2px" }}>
-          ${peers ? html`${peers} <b>${you}</b>` : html`Not enough market data to compare safely. <b>${you}</b>`}
-          ${r.org_answered && r.status !== "unknown" ? html` <span class="muted">Your answer: “${String(r.org_status).slice(0, 48)}”.</span>` : null}
-        </div>
-      </div>
-      <div class="gap-side">
-        <span class=${"chip " + chip[0]}>${chip[1]}</span>
-        <span class="caption num" title="Share of assessable market answers at least partly in place">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"} of the market
-          ${r.sector_adoption_pct != null ? html` · ${r.sector_adoption_pct}% in your sector` : null} · n=${r.n}</span>
-      </div>
-    </div>`;
 }
 
 // ------------------------------------------------------------ board pack ---// ------------------------------------------------------------ board pack ---

@@ -717,6 +717,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         <span><span class="arc-leg-fig">${market.at}</span> On market</span>
         <span><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
+      ${market.depth_pctl != null && window.MARKET_BAND ? html`
+        <${PercentileRuler} pctl=${market.depth_pctl} band=${window.MARKET_BAND}
+          comparable=${market.pool} inLine=${market.at} />` : null}
       ${market.target ? html`
         <div class="arc-target"><${AlignmentChip} target=${market.target} /></div>`
       : stratOff ? html`
@@ -898,6 +901,7 @@ const sigParts = (s, pt) => [
   html`<span class="signal-body" key="b">
     <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
     <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}</span></span>`,
+  s.gap_pct != null ? html`<span class="sig-mag" key="m" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null,
   html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
 ];
 // Triage controls (prioritise · save · dismiss / restore) — ONE shared control on
@@ -1162,6 +1166,7 @@ window.SignalsPage = function ({ me }) {
       <span class="signal-body">
         <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
         <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
+      ${s.gap_pct != null ? html`<span class="sig-mag" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
       <span class=${"pos-tag pos-" + pt.tone}>${s.tag || pt.text}</span>
       <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
     </div>`; };
@@ -1726,6 +1731,8 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-card-counts num">
               <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
             </div>
+            ${pos.depth_pctl != null && window.MARKET_BAND ? html`
+              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND} compact=${true} />` : null}
             ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
             <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
               <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>

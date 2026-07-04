@@ -144,6 +144,28 @@ window.domainLabel = n => n === "Time Off" ? "Time off" : n;
 // The standard centred page spinner — one atom instead of the copy-pasted row.
 window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 
+// "You are here on a ruler" — the percentile scale strip the board pack prints,
+// now a shared atom so the SCREEN shows the same instant read (below ← on market
+// → above, with a P-marker). band=[low,high] from window.MARKET_BAND. Zone colours
+// match the Overview donut's marketTone (amber/green/red). Pass comparable+inLine
+// for the one-line context sentence; omit for the compact strip.
+window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) {
+  if (pctl == null || !band || band.length !== 2) return null;
+  const lo = band[0], hi = band[1], p = Math.round(pctl);
+  return html`
+    <div class="bp-scale-wrap" style=${compact ? { margin: "var(--s3) 0 0" } : null}>
+      <div class="bp-scale" role="img"
+        aria-label=${"Your typical comparable metric sits at the " + p + "th percentile; the on-market band runs P" + lo + " to P" + hi + "."}>
+        <div class="bp-scale-zone z-below" style=${{ width: lo + "%" }}></div>
+        <div class="bp-scale-zone z-on" style=${{ width: (hi - lo) + "%" }}></div>
+        <div class="bp-scale-zone z-above" style=${{ width: (100 - hi) + "%" }}></div>
+        <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, pctl)) + "%" }}><span>P${p}</span></div>
+      </div>
+      <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
+      ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} sit within the on-market band.</p>` : null}
+    </div>`;
+};
+
 // Reduced-motion-safe scroll: an explicit behavior:"smooth" option OVERRIDES the
 // CSS scroll-behavior backstop per spec, so every programmatic scroll goes
 // through here instead of calling scrollIntoView({behavior:"smooth"}) directly.
