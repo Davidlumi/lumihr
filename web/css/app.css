@@ -245,8 +245,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .notif-mark:hover { text-decoration: underline; }
 .notif-list { overflow-y: auto; flex: 1; padding: var(--s1) 0; }
 .notif-group { padding: var(--s1) 0; }
-.notif-group-head { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s4) var(--s1);
-  font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.notif-group-head { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s4) var(--s1); }
 .notif-group-head.lens-save { color: var(--lens-save); }
 .notif-group-head.lens-attract { color: var(--lens-attract); }
 .notif-group-head.lens-retain { color: var(--lens-retain); }
@@ -320,8 +319,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
    header carries only the collapse toggle. */
 
 .nav-group { margin-bottom: var(--s4); }
-.nav-label { font-size: var(--fs-caption); text-transform: uppercase; letter-spacing: .07em;
-  color: var(--ink-faint); padding: 0 var(--s2); margin-bottom: var(--s2); font-weight: 650; }
+.nav-label { color: var(--ink-faint); padding: 0 var(--s2); margin-bottom: var(--s2); }
 .nav-item { display: flex; align-items: center; gap: var(--s3); width: 100%; text-align: left;
   height: 42px; padding: 0 var(--s3); border: 0; background: none; border-radius: var(--radius-sm);
   cursor: pointer; color: var(--ink-faint); font-weight: 500; font-size: var(--fs-label);
@@ -574,8 +572,19 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 /* ================================================================ overview */
 .opp-hero { flex: 1.4 1 300px; min-width: 280px; border-left: 1px solid var(--border);
   padding-left: var(--s5); display: flex; flex-direction: column; gap: var(--s2); }
-.eyebrow { font-size: var(--fs-caption); font-weight: 650; text-transform: uppercase;
-  letter-spacing: .07em; color: var(--ink-soft); }
+/* Eyebrow — ONE typography source per tier (2026-07-04, was 14 bespoke micro-label
+   declarations). Each listed class keeps ONLY its own colour + layout below. */
+.eyebrow, .nav-label, .rail-flyout-head, .strat-eyebrow,
+.notif-group-head, .sig-worth, .sig-teaser-label, .kebab-label, .cat-sum-label,
+.cat-filter-cue, .cat-axis, .mp-class-label, .bp-toc-title, .cat-hero-label {
+  text-transform: uppercase; }
+.eyebrow, .nav-label, .rail-flyout-head, .strat-eyebrow {
+  font-size: var(--fs-caption); font-weight: 650; letter-spacing: .06em; }
+.notif-group-head, .sig-worth, .sig-teaser-label, .kebab-label, .cat-sum-label,
+.cat-filter-cue, .cat-axis, .mp-class-label, .bp-toc-title {
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .05em; }
+.cat-hero-label { font-size: var(--fs-body); font-weight: 700; letter-spacing: .04em; }
+.eyebrow { color: var(--ink-soft); }
 .opp-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
   padding: var(--s1) 0; border-bottom: 1px solid var(--chart-grid); font-size: var(--fs-label); }
 .opp-row:last-of-type { border-bottom: 0; }
@@ -939,8 +948,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .sig-unlock-ring { animation: none; } }
 .sig-unlock-prog { max-width: 360px; margin: var(--s4) auto 0; text-align: left; }
 .sig-unlock-cta { margin-top: var(--s4); }
-.sig-teaser-label { text-align: center; margin: var(--s5) 0 var(--s2);
-  text-transform: uppercase; letter-spacing: .07em; font-weight: 700; font-size: var(--fs-micro); color: var(--ink-faint); }
+.sig-teaser-label { text-align: center; margin: var(--s5) 0 var(--s2); color: var(--ink-faint); }
 .sig-teaser-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
 @media (max-width: 640px) { .sig-teaser-grid { grid-template-columns: 1fr; } }
 .sig-teaser { cursor: default; pointer-events: none; }
@@ -956,8 +964,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sig-lead { display: inline-flex; align-items: center; gap: var(--s2); }
 .sig-lead:empty { display: none; }
-.sig-worth { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--ink-faint); margin-bottom: 1px; }
+.sig-worth { color: var(--ink-faint); margin-bottom: 1px; }
 /* new-since-last-seen markers */
 /* NEW badge sits inline at the start of the name line (vertical-aligned) so a
    new signal row stays the SAME height as the others — no eyebrow line. */
@@ -1115,8 +1122,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    below/on/above POSITION bar; Practice = a "how many DIFFER" fill bar). A one-word axis
    label names what the bar measures, so the two are never read on the same scale. The
    negative bottom margin neutralises the card's flex gap so the label hugs its bar. */
-.cat-axis { font-size: 9.5px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--ink-faint); margin-bottom: calc(2px - var(--s3)); }
+.cat-axis { color: var(--ink-faint); margin-bottom: calc(2px - var(--s3)); }
 /* Governance / non-competitive: a DELIBERATE "N/A" slot where the spectrum bar would sit,
    so the absence reads as not-applicable by design, never as a bar that failed to load
    (the real bars are solid + coloured). */
@@ -1287,8 +1293,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 @media (max-width: 760px) { .cat-hero { grid-template-columns: 1fr; } }
 .cat-hero-cell { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: var(--s4) var(--s4) var(--s4); }
-.cat-hero-label { font-size: var(--fs-body); font-weight: 800; text-transform: uppercase;
-  letter-spacing: .04em; color: var(--ink); margin-bottom: var(--s3); }
+.cat-hero-label { color: var(--ink); margin-bottom: var(--s3); }
 /* the "· N of 60" lens-of-total anchor — subordinate to the lens name (the donut is a
    subset lens of the page's 60 benchmarks, not a partition that should sum to it) */
 .cat-lens-of { font-weight: 400; text-transform: none; letter-spacing: 0;
@@ -1322,8 +1327,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-card-chips { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
   gap: var(--s2); margin-top: auto; padding-top: var(--s3); border-top: 1px solid var(--border); }
 /* the "Filter" affordance — signals the pills are interactive controls, not static stats */
-.cat-filter-cue { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-micro);
-  font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint);
+.cat-filter-cue { display: inline-flex; align-items: center; gap: var(--s1); color: var(--ink-faint);
   margin-right: 2px; }
 .cat-filter-cue svg { color: var(--ink-soft); }
 .cat-pos-card .donut { margin-top: var(--s2); }
@@ -1383,8 +1387,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   letter-spacing: .01em; white-space: nowrap; }
 .cat-summary-body { margin-top: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
 .cat-sum-part { }
-.cat-sum-label { font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--ink-soft); margin-bottom: 2px; }
+.cat-sum-label { color: var(--ink-soft); margin-bottom: 2px; }
 .cat-sum-text { margin: 0; line-height: 1.5; color: var(--ink); }
 .cat-sum-prov { font-size: var(--fs-caption); color: var(--ink-soft); padding-top: var(--s2);
   border-top: 1px solid var(--border); }
@@ -1857,7 +1860,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .bp-scale-marker { position: absolute; top: -5px; width: 2px; height: 24px; background: var(--ink); transform: translateX(-1px); }
 .bp-scale-marker span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
   font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
-.bp-scale-labels { display: flex; justify-content: space-between; margin-top: var(--s2); }
+.bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
+.bp-scale-labels span:nth-child(2) { text-align: center; }
+.bp-scale-labels span:last-child { text-align: right; }
 .bp-masknote { margin-top: var(--s1); }
 /* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */
 .bp-statrow { display: flex; flex-direction: row; align-items: stretch; gap: 0;
@@ -1898,8 +1903,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .bp-findings li:last-child { margin-bottom: 0; }
 /* cover contents (WTW convention) */
 .bp-toc { margin-top: var(--s6, 32px); max-width: 120mm; }
-.bp-toc-title { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--ink-faint); margin-bottom: var(--s2); }
+.bp-toc-title { color: var(--ink-faint); margin-bottom: var(--s2); }
 .bp-toc-row { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--fs-label); padding: 3px 0; }
 .bp-toc-dots { flex: 1; border-bottom: 1px dotted var(--border); transform: translateY(-3px); }
 /* wide evidence tables: keep the metric name readable and the stats on one line —
@@ -2171,8 +2175,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .kebab-menu::-webkit-scrollbar-track { background: transparent; }
 /* flip above the button when there isn't room below (long menu / card near the fold) */
 .kebab-menu.up { top: auto; bottom: 30px; transform-origin: bottom right; }
-.kebab-label { font-size: var(--fs-micro); letter-spacing: .06em; text-transform: uppercase;
-  color: var(--ink-faint); font-weight: 700; padding: var(--s2) var(--s3) var(--s1); }
+.kebab-label { color: var(--ink-faint); padding: var(--s2) var(--s3) var(--s1); }
 .kebab-item { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
   background: none; border: none; cursor: pointer; padding: var(--s2) var(--s3); border-radius: 7px;
   font: 500 var(--fs-label)/1.2 var(--font-body); color: var(--ink); }
@@ -2250,7 +2253,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* metric page · "How lumi reads this" — the analyst/detailed class view (spec §6.3) */
 .mp-class-note { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px dashed var(--border); }
 .mp-class-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s1); flex-wrap: wrap; }
-.mp-class-label { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); }
+.mp-class-label { color: var(--ink-faint); }
 .mp-class-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: 6px; white-space: nowrap; }
 .mp-class-chip.headline { background: var(--favourable-tint); color: var(--favourable); }
 .mp-class-chip.differs  { background: var(--differs-tint); color: var(--differs); }
@@ -2318,8 +2321,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .rail-flyout-wrap { position: relative; }
 .rail-flyout { position: absolute; left: calc(100% + 10px); top: 0; min-width: 188px; z-index: var(--z-popover);
   padding: var(--s2); box-shadow: var(--shadow-pop); }
-.rail-flyout-head { font-size: var(--fs-caption); text-transform: uppercase; letter-spacing: .07em;
-  color: var(--ink-faint); font-weight: 650; padding: var(--s1) var(--s2) var(--s2); }
+.rail-flyout-head { color: var(--ink-faint); padding: var(--s1) var(--s2) var(--s2); }
 .rail-flyout-item { display: flex; align-items: center; width: 100%; text-align: left; border: 0;
   background: none; padding: var(--s2) var(--s3); border-radius: 8px; font-size: var(--fs-label); color: var(--ink);
   cursor: pointer; }
@@ -2384,8 +2386,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-seg.active .strat-meta, .strat-seg.active .strat-letter { color: var(--blue); }
 .strat-seg.done .strat-meta, .strat-seg.done .strat-letter { color: var(--favourable); }
 @media (prefers-reduced-motion: reduce) { .strat-bar > i { transition: none; } }
-.strat-eyebrow { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s3); }
+.strat-eyebrow { display: inline-flex; align-items: center; gap: var(--s2); color: var(--ink-faint); margin-bottom: var(--s3); }
 .strat-mode { padding: 3px var(--s2); border-radius: 999px; font-size: var(--fs-micro); font-weight: 700; text-transform: none; letter-spacing: .01em; }
 .strat-mode.confirm { background: var(--blue-tint); color: var(--blue-deep); }
 /* DECISION §4.1: choose-mode is neutral warm-grey, NOT amber (amber = lagging verdict) */
