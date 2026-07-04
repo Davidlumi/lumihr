@@ -226,7 +226,7 @@ function AddToDashboard({ c }) {
                 onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); createDash(); } else if (e.key === "Escape") { setCreating(false); } }} />
               <button class="btn small primary" onClick=${createDash}>Add</button>
             </div>` : html`
-            <button role="menuitem" class="kebab-item kebab-new" onClick=${() => setCreating(true)}><span class="kebab-plus" aria-hidden="true">＋</span> New dashboard…</button>`}
+            <button role="menuitem" class="kebab-item kebab-new" onClick=${() => setCreating(true)}><span class="kebab-plus" aria-hidden="true">+</span> New dashboard…</button>`}
         </div>`}
     </div>`;
 }

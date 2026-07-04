@@ -1,24 +1,25 @@
+/* Variable fonts (2026-07-04): Inter (body/data) and Plus Jakarta Sans (headings)
+   ship as single weight-axis files covering the whole 100–900 range, so every
+   font-weight the app requests (400/500/550/570/600/650/700/750/800) renders as
+   a REAL interpolated weight. Before this, three byte-identical static files per
+   family faked the hierarchy — 550–800 all rendered as one weight (synthetic
+   bold at the browser's mercy, incl. the printed board pack). Both are SIL OFL. */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 900;
   font-display: swap;
-  src: url('/static/vendor/fonts/Inter-400.woff2') format('woff2');
+  src: url('/static/vendor/fonts/InterVariable.woff2') format('woff2-variations');
 }
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Plus Jakarta Sans';
   font-style: normal;
-  font-weight: 500;
+  font-weight: 200 800;
   font-display: swap;
-  src: url('/static/vendor/fonts/Inter-500.woff2') format('woff2');
+  src: url('/static/vendor/fonts/PlusJakartaSans-Variable.woff2') format('woff2-variations');
 }
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/static/vendor/fonts/Inter-600.woff2') format('woff2');
-}
+
+/* Poppins kept as the --font-head fallback (real per-weight statics). */
 @font-face {
   font-family: 'Poppins';
   font-style: normal;
@@ -39,26 +40,4 @@
   font-weight: 700;
   font-display: swap;
   src: url('/static/vendor/fonts/Poppins-700.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/static/vendor/fonts/PlusJakartaSans-500.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/static/vendor/fonts/PlusJakartaSans-600.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/static/vendor/fonts/PlusJakartaSans-700.woff2') format('woff2');
 }

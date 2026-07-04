@@ -631,7 +631,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
         <div>
           <div class="row spread">
             <h2 class="section-title" style=${{ marginBottom: 0 }}>Your peer groups</h2>
-            <button class="btn primary small" onClick=${startNew}>＋ Create peer group</button>
+            <button class="btn primary small" onClick=${startNew}>+ Create peer group</button>
           </div>
           <p class="caption">Build a comparison group from company facts — sector, size, region and more.
           Private to your organisation. You'll only ever see <b>how many</b> organisations match, never which —
@@ -1018,7 +1018,7 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline }) {
               ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
                 ${g.name}${g.too_small ? " (too few orgs)" : ` · ${g.match_count}`}</option>`)}
             </optgroup>`}
-          ${me.org.classified && html`<option value="manage-groups">＋ Create / manage peer groups…</option>`}
+          ${me.org.classified && html`<option value="manage-groups">+ Create / manage peer groups…</option>`}
         </select>
         <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
       </span>

@@ -1959,7 +1959,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
             <span class="dash-tab-count">${d.count}</span>
           </button>`)}
         <button class="dash-tab dash-tab-new" onClick=${createNew} disabled=${busy} title="Create a new dashboard">
-          <span aria-hidden="true">＋</span> New</button>
+          <span aria-hidden="true">+</span> New</button>
       </div>
 
       <div class="dash-toolbar">
@@ -1991,7 +1991,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
         </div>`}
 
       ${layout.length === 0 && html`<${EmptyState} icon="star" title="This dashboard is empty"
-        body="Pin a card with the star (☆) on any benchmark — across Overview, Benchmark or Signals — and it lands here."
+        body="Use the pin icon on any benchmark card — across Overview, Benchmark or Signals — and it lands here."
         action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
 
       <div class=${"bench-grid" + (busy ? " is-busy" : "")}>
