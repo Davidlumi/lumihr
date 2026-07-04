@@ -21,9 +21,19 @@ _client = None
 
 
 def _client_or_none():
-    """Lazily build the SDK client. Returns None when no key is configured, so
-    callers degrade to the deterministic generator instead of raising."""
+    """Lazily build the SDK client. Returns None (→ deterministic fallback) unless
+    the paid API is BOTH explicitly enabled AND a key is present.
+
+    POSITIVE LIVE-SWITCH (2026-07-04): LUMI_AI_LIVE defaults off, so "keyless /
+    deterministic" is the default and no longer depends on remembering to blank
+    ANTHROPIC_API_KEY at launch. Before this, a real key in server/.env.local meant
+    a restart WITHOUT the empty-key env var silently went live-keyed and started
+    spending. Now go-live is a deliberate LUMI_AI_LIVE=on (alongside the surface
+    gate LUMI_AI_INSIGHTS_ENABLED and a configured key); a leaked/present key alone
+    can never trigger paid calls."""
     global _client
+    if os.environ.get("LUMI_AI_LIVE", "").lower() != "on":
+        return None
     if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
         return None
     if _client is None:

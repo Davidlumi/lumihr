@@ -2653,15 +2653,23 @@ def _analyst_rate_limited(org_id):
     return False
 
 
+ANALYST_LOG_RETENTION_DAYS = int(os.environ.get("LUMI_ANALYST_LOG_RETENTION_DAYS", "180"))
+
+
 def _analyst_log(conn, org, user, question, intent, matched, source, answer):
     """Audit trail for the chat surface — the sibling AI surfaces persist their
     output; until now Ask lumi answers vanished on response. Reviewable when a
     member reports a bad answer; purged with the AI caches on consent withdrawal
-    (purge_ai_cache). Logging must never break the answer path."""
+    (purge_ai_cache). Retention: rows older than LUMI_ANALYST_LOG_RETENTION_DAYS
+    (default 180) are pruned opportunistically on write (data-minimisation — the
+    log is an operational audit trail, not a permanent record). Logging must
+    never break the answer path."""
     try:
         conn.execute("INSERT INTO analyst_log (org_id, user_id, question, intent, matched_json, source, answer) "
                      "VALUES (?,?,?,?,?,?,?)",
                      (org["org_id"], user["user_id"], question, intent, j(matched or []), source, answer))
+        conn.execute("DELETE FROM analyst_log WHERE created_at < datetime('now', ?)",
+                     ("-%d days" % ANALYST_LOG_RETENTION_DAYS,))
         conn.commit()
     except Exception:
         pass

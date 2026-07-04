@@ -60,17 +60,23 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 
 ## The remaining step — David's, in production (step 5)
 
-5. **Flip the master switch on:** set `LUMI_AI_INSIGHTS_ENABLED=on` in the production environment.
-   AI Insights then render for all non-opted-out members, feature-by-feature (each per-feature flag
-   still independently killable without a deploy). Note `LUMI_AI_DOMAIN_SUMMARY` defaults OFF — set
-   it `=on` too if the per-domain summary should ship. Ensure `ANTHROPIC_API_KEY` is configured in
-   prod (without it, every surface shows its validated deterministic fallback).
+5. **Flip the switches on:** in the production environment set BOTH
+   `LUMI_AI_INSIGHTS_ENABLED=on` (the member-facing surface gate) AND `LUMI_AI_LIVE=on`
+   (the positive paid-API switch — added 2026-07-04). AI Insights then render for all
+   non-opted-out members, feature-by-feature (each per-feature flag still independently
+   killable without a deploy). Note `LUMI_AI_DOMAIN_SUMMARY` defaults OFF — set it `=on`
+   too if the per-domain summary should ship. Ensure `ANTHROPIC_API_KEY` is configured in
+   prod. **Until `LUMI_AI_LIVE=on` is set, every surface stays keyless/deterministic even
+   with a key present** — so a key sitting in `.env.local` can never trigger paid calls on
+   its own (closes the pre-go-live "empty-key env var is load-bearing" landmine).
 
 6. **Re-run the adversarial gates on prod config** (`python3 server/qa_domain_summary.py`,
    `python3 server/qa_commentary.py`) and watch the first live generations.
 
 ## Kill switches (any time, no deploy)
 
-- `LUMI_AI_INSIGHTS_ENABLED=off` — cuts ALL AI insights instantly (the master).
+- `LUMI_AI_LIVE=off` (or unset) — the paid Anthropic client never builds; every surface
+  falls to its validated deterministic floor. This is the hard "no spend" switch.
+- `LUMI_AI_INSIGHTS_ENABLED=off` — cuts ALL AI insight SURFACES instantly (the master).
 - `LUMI_AI_<FEATURE>=off` — cuts one feature.
 - A member toggles off in Settings — withdrawal recorded, their gate closes next request.
