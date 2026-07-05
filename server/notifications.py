@@ -139,6 +139,7 @@ def rebaseline(conn, org_id, fresh_signals):
 def event_is_confirm(event):
     """True iff this event confirms the org's strategy aim (payload.confirm) — quiet, never leads
     the bell and never emailed. Accepts a DB row (payload_json) or an in-flight event dict."""
+    event = dict(event)                    # sqlite3.Row has no .get — same normalise as render_event
     p = event.get("payload") if isinstance(event.get("payload"), dict) else None
     if p is None:
         try:
@@ -286,6 +287,12 @@ def render_event(event):
     payload = event["payload"] if isinstance(event.get("payload"), dict) else json.loads(event["payload_json"])
     kind = event["event_kind"]
     name = payload.get("name") or _label(event["question_id"])
+    # COMPLETE SENTENCES ONLY: the prevalence signal's stored detail ("of peers X —
+    # you don't yet") is written to sit AFTER the value the Signals page renders
+    # beside it. A notification (and the email digest) has no such neighbour, so
+    # compose the value back in at read time — heals already-stored events too.
+    if (payload.get("detail") or "").startswith("of peers") and payload.get("value_display"):
+        payload = dict(payload, detail="%s %s" % (payload["value_display"], payload["detail"]))
     if kind == "cleared":
         title = "Cleared"
         body = payload.get("detail") or ("%s no longer flags against your peers." % name)

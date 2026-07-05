@@ -49,14 +49,23 @@ function App() {
       ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
       ["/profile", "Your profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
-    const hit = TITLES.find(([p]) => route.startsWith(p));
-    document.title = hit ? hit[1] + " · lumi" : "lumi · UK reward benchmarking";
+    // named routes first (category/superpower carry their name in the path);
+    // the signed-out shell is always "Sign in", never a page it isn't showing
+    let m;
+    if (me === null) document.title = "Sign in · lumi";
+    else if ((m = route.match(/^\/(?:category|superpower)\/([^?]+)/)))
+      document.title = decodeURIComponent(m[1]) + " · lumi";
+    else if (route.startsWith("/boardpack/")) document.title = "Board pack · lumi";
+    else {
+      const hit = TITLES.find(([p]) => route.startsWith(p));
+      document.title = hit ? hit[1] + " · lumi" : "lumi · UK reward benchmarking";
+    }
     if (prevRouteRef.current !== null && prevRouteRef.current !== route) {
       const el = document.getElementById("main-content");
       if (el) el.focus({ preventScroll: true });
     }
     prevRouteRef.current = route;
-  }, [route]);
+  }, [route, me]);
   const [cut, setCut] = useState(cutFromURL());
   const [cuts, setCuts] = useState(null);
   const [prefs, setPrefs] = useState({});
@@ -703,8 +712,12 @@ window.NotFoundPage = function ({ route }) {
     <div style=${{ maxWidth: "480px", margin: "var(--s7) auto", textAlign: "center" }}>
       <div style=${{ color: "var(--ink-faint)", marginBottom: "var(--s3)" }}><${Icon} name="search" size=${26} /></div>
       <h1 class="display-title">That page doesn't exist</h1>
-      <p class="caption">There's nothing at <b>${route}</b> — it may be an old or mistyped link.</p>
-      <button class="btn primary" onClick=${() => nav("/overview")}>Back to your overview</button>
+      <p class="caption">There's nothing at <b>${route}</b> — it may be an old or mistyped link.
+        If someone shared it with you, ask them for a fresh one — shared links can expire.</p>
+      <div class="row" style=${{ gap: "var(--s2)", justifyContent: "center", flexWrap: "wrap" }}>
+        <button class="btn primary" onClick=${() => nav("/overview")}>Back to your overview</button>
+        <button class="btn quiet" onClick=${() => nav("/how-lumi-works")}>How lumi works</button>
+      </div>
     </div>`;
 };
 
