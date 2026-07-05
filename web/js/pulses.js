@@ -301,7 +301,7 @@ window.RunPulsePage = function ({ me }) {
       <div class="pulse-how">
         <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
         <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
-        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? fmtFee(me.config.pulse_launch_fee_pence) + " one-off launch fee (ex VAT)" : "Pay once"} · opens to all members</span></div></div>
+        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? "from " + fmtFee(me.config.pulse_launch_fee_pence) + " (ex VAT), confirmed at approval" : "Pay once"} · opens to all members</span></div></div>
       </div>
 
       ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
@@ -332,9 +332,23 @@ window.PulseBuilderPage = function ({ me, pid }) {
   const load = () => { if (!isNew) api("/api/org/pulses/" + pid).then(setDetail).catch(e => setErr(e.message)); };
   useEffect(() => {
     load();
-    if (!isNew && window.location.hash.indexOf("paid=1") >= 0) {
-      toast("Payment received — your pulse is launching to the community.", "success");
-      nav("/run-a-pulse/" + pid);   // strip the ?paid query
+    if (isNew) return;
+    const h = window.location.hash;
+    if (h.indexOf("cancelled=1") >= 0) {
+      toast("Payment cancelled — your survey is still approved, you can try again.", "error");
+      nav("/run-a-pulse/" + pid);
+    } else if (h.indexOf("paid=1") >= 0) {
+      // DON'T trust the redirect — reconcile the Stripe session server-side so a
+      // delayed/unconfigured webhook can't leave a paid-but-never-live pulse
+      nav("/run-a-pulse/" + pid);   // strip the query first
+      toast("Confirming your payment…");
+      api("/api/org/pulses/" + pid + "/confirm-payment", { method: "POST", body: {} })
+        .then(r => {
+          if (r.state === "live") toast("Payment confirmed — your pulse is live to the community.", "success");
+          else toast("Payment received — we're finalising your launch; this page will update shortly.");
+          load();
+        })
+        .catch(() => { toast("We're confirming your payment — refresh in a moment."); load(); });
     }
   }, [pid]);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load this survey" body=${err} />`;
@@ -498,6 +512,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
       <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Pay the one-off launch fee and your survey opens to the whole community.</p>
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · a VAT invoice and receipt are issued on payment</div>
       <button class="btn primary" onClick=${pay}>${detail.payments_enabled ? "Pay & launch →" : "Request launch"}</button>
       ${!detail.payments_enabled ? html`<p class="caption" style=${{ marginTop: "var(--s3)" }}>Card payments are being switched on — a lumi admin will confirm your launch.</p>` : ""}
     </div>

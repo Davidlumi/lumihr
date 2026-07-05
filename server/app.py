@@ -4961,6 +4961,34 @@ async def org_pulse_checkout(pid: str, request: Request):
     return {"ok": True, "mode": "stripe", "order_id": oid, "checkout_url": url}
 
 
+@app.post("/api/org/pulses/{pid}/confirm-payment")
+async def org_pulse_confirm_payment(pid: str, request: Request):
+    """Reconcile the Stripe Checkout Session on the ?paid=1 return — DON'T trust
+    the redirect. Verifies the session is actually paid and marks the order paid
+    (idempotent with the webhook), so a delayed/unconfigured webhook can't leave
+    a paid-but-never-live pulse. Returns the true launch_status."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    p = _owned_pulse(conn, pid, org)
+    if p["launch_status"] == "paid":
+        return {"ok": True, "launch_status": "paid", "state": "live"}
+    order = pulses_mod.latest_order(pid, conn)
+    if order is None or not order["stripe_session_id"]:
+        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
+    if not payments_mod.is_configured():
+        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
+    try:
+        sess = payments_mod.get_checkout_session(order["stripe_session_id"])
+    except Exception:
+        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
+    if sess and sess.get("payment_status") == "paid":
+        pulses_mod.mark_order_paid(order["order_id"],
+                                   payment_intent=sess.get("payment_intent"), conn=conn)
+        return {"ok": True, "launch_status": "paid", "state": "live",
+                "receipt_url": (sess.get("invoice") and None) or None}
+    return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
+
+
 @app.post("/api/stripe/webhook")
 async def stripe_webhook(request: Request):
     """Stripe -> us (public, signature-verified). On checkout.session.completed

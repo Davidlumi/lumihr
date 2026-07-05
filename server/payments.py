@@ -68,7 +68,13 @@ def create_checkout_session(*, amount_pence, currency, product_name,
         "line_items[0][price_data][currency]": currency,
         "line_items[0][price_data][unit_amount]": str(int(amount_pence)),
         "line_items[0][price_data][product_data][name]": product_name,
+        # a proper VAT invoice for the B2B charge (Stripe applies tax per the
+        # account's tax settings); the customer also gets an emailed receipt
+        "invoice_creation[enabled]": "true",
     }
+    # opt-in automatic VAT once Stripe Tax is configured on the account
+    if os.environ.get("LUMI_STRIPE_AUTOMATIC_TAX", "").lower() == "on":
+        data["automatic_tax[enabled]"] = "true"
     for k, v in (metadata or {}).items():
         data["metadata[%s]" % k] = str(v)
     resp = httpx.post(STRIPE_API + "/checkout/sessions", data=data,
@@ -76,6 +82,18 @@ def create_checkout_session(*, amount_pence, currency, product_name,
     resp.raise_for_status()
     body = resp.json()
     return body["id"], body["url"]
+
+
+def get_checkout_session(session_id):
+    """Fetch a Checkout Session from Stripe (for reconciling the success redirect
+    instead of trusting the URL). Returns the parsed session dict, or None when
+    payments aren't configured. Raises httpx.HTTPStatusError on a Stripe error."""
+    if not is_configured() or not session_id:
+        return None
+    resp = httpx.get(STRIPE_API + "/checkout/sessions/" + session_id,
+                     auth=(secret_key(), ""), timeout=20)
+    resp.raise_for_status()
+    return resp.json()
 
 
 def verify_webhook(payload_bytes, sig_header, tolerance=300):
