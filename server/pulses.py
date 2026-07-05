@@ -488,6 +488,13 @@ def pulse_report(pulse_id, conn=None):
         entry = {"question_id": qid, "title": q.display_title, "text": q.text,
                  "type": q.type, "unit": q.unit_block(), "polarity": q.polarity,
                  "block": blk, "as_asked_version": q.question_version}
+        # author-declared favourable option (single-choice only) — surfaced for the
+        # render layer straight from the as-asked definition; the core engine's option
+        # blocks are untouched, so the benchmark snapshot stays byte-identical.
+        if q.type in ("single_select", "yes_no"):
+            favlbl = next((o.get("label") for o in (q.options or []) if o.get("is_favourable")), None)
+            if favlbl:
+                entry["favourable_label"] = favlbl
         if mr is not None:
             entry["matrix_rows"] = [{"row_id": m["row_id"], "label": m["label"], "block": m["block"]} for m in mr]
         out.append(entry)

@@ -286,14 +286,39 @@ check("org-authored pulse sentinel is NOT in the core answers store",
 check("self-service authored question is pulse-origin (out of core scope)",
       sp_q not in appmod.visible_questions())
 
+print("== favourable-answer flag: round-trip definition -> report (P8) ==")
+fav_qid = "PULSE_QA_FAV"
+conn.execute("DELETE FROM questions WHERE id=?", (fav_qid,)); conn.commit()
+pid4 = pulses.create_pulse(
+    "qa-fav-fixture", "favourable flag", question_ids=[],
+    new_questions=[{"id": fav_qid, "title": "IP", "text": "Do you offer income protection?", "type": "yes_no",
+                    "options": [{"code": "YES", "label": "Yes", "order": 1, "is_na": False, "is_favourable": True},
+                                {"code": "NO", "label": "No", "order": 2, "is_na": False}]}], conn=conn)
+stored_opts = uj(conn.execute("SELECT options_json FROM questions WHERE id=?", (fav_qid,)).fetchone()[0], [])
+check("authored favourable option persists is_favourable in options_json (no migration)",
+      sum(1 for o in stored_opts if o.get("is_favourable")) == 1
+      and next(o["label"] for o in stored_opts if o.get("is_favourable")) == "Yes")
+pulses.open_pulse(pid4, conn)
+for oid in orgs[:5]:
+    pulses.join_pulse(pid4, oid, conn)
+    pulses.save_response(pid4, oid, fav_qid, "", "Yes", conn)
+    pulses.submit_pulse(pid4, oid, conn)
+rep_fav = pulses.pulse_report(pid4, conn)
+efav = next(q for q in rep_fav["questions"] if q["question_id"] == fav_qid)
+check("pulse_report surfaces favourable_label for the render layer",
+      efav.get("favourable_label") == "Yes", efav.get("favourable_label"))
+# the core engine's option block is untouched — no is_favourable leaked into the aggregate
+check("aggregate option block carries NO is_favourable (core engine untouched)",
+      all("is_favourable" not in o for o in (efav["block"].get("options") or [])))
+
 # ------------------------------------------------------------- CLEANUP -----
 print("== fixture cleanup ==")
-for fpid in (pid, pid2, pid3):
+for fpid in (pid, pid2, pid3, pid4):
     conn.execute("DELETE FROM pulse_responses WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulse_participants WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulse_launch_orders WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulses WHERE pulse_id=?", (fpid,))
-conn.execute("DELETE FROM questions WHERE id IN (?,?)", (gqid, sp_q))
+conn.execute("DELETE FROM questions WHERE id IN (?,?,?)", (gqid, sp_q, fav_qid))
 conn.execute("DELETE FROM orgs WHERE org_id='qa-pulse-locked'")
 conn.commit()
 appmod.load_questions.cache_clear()

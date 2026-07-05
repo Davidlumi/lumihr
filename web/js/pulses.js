@@ -266,6 +266,10 @@ function PulseQuestionBlock({ q, pid, me }) {
   const youLabels = q.you && q.type !== "numeric"
     ? (q.type === "multi_select" ? String(q.you).split(";").map(s => s.trim()).filter(Boolean) : [String(q.you)])
     : [];
+  // author-declared favourable answer: green ▲ on the org's bar when it chose that
+  // option, neutral otherwise (a pulse mirrors the cohort — it never marks a choice bad)
+  const favNorm = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const fav = q.favourable_label && youLabels.some(l => favNorm(l) === favNorm(q.favourable_label)) ? "good" : null;
   return html`
     <div class="q-block">
       <div style=${{ fontWeight: 600, marginBottom: "var(--s2)" }}>${q.title}</div>
@@ -275,7 +279,7 @@ function PulseQuestionBlock({ q, pid, me }) {
           ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} />`}
           ${blk.options && (q.type === "multi_select"
             ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
-            : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} />`)}
+            : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} />`)}
           ${q.matrix_rows && html`
             <table class="data" style=${{ marginTop: "var(--s2)" }}>
               <thead><tr><th>Level</th><th class="num">Cohort</th><th class="num">You</th></tr></thead>
@@ -456,7 +460,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   useEffect(() => { if (showLib && lib === null) api("/api/questions").then(d => setLib(d.questions || [])).catch(() => setLib([])); }, [showLib]);
   const removeKeep = (id) => setKeep(k => k.filter(x => x.id !== id));
   const addLib = (x) => setKeep(k => k.some(i => i.id === x.id) ? k : [...k, { id: x.id, text: x.title, type: x.type }]);
-  const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo", unitKind: "none", unitLabel: "", hint: "" }]);
+  const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo", unitKind: "none", unitLabel: "", hint: "", favLabel: "" }]);
   const setNQ = (i, patch) => setNewQs(n => n.map((x, j) => j === i ? { ...x, ...patch } : x));
   const removeNQ = (i) => setNewQs(n => n.filter((_, j) => j !== i));
   const moveNQ = (i, d) => setNewQs(n => { const j = i + d; if (j < 0 || j >= n.length) return n;
@@ -490,8 +494,11 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
     const bespoke = liveNew().map(nq => {
       const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
       const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
+      // favourable answer applies only to the single-choice types (ambiguous for multi)
+      const favL = ["single_select", "yes_no"].includes(nq.type) ? (nq.favLabel || "").trim() : "";
       const q = { text: nq.text.trim(), type: nq.type, polarity: nq.polarity || "neutral",
-        options: isSel ? labels.map((l, i) => ({ code: l.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "") || ("OPT" + i), label: l, order: i + 1, is_na: false })) : undefined };
+        options: isSel ? labels.map((l, i) => ({ code: l.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "") || ("OPT" + i), label: l, order: i + 1, is_na: false,
+          ...(favL && l === favL ? { is_favourable: true } : {}) })) : undefined };
       const hint = (nq.hint || "").trim();
       if (hint) q.help_text = hint;
       const u = pulseUnit(nq);
@@ -558,6 +565,12 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
           ${["single_select", "yes_no", "multi_select"].includes(nq.type) && html`
             <label>Options <span class="caption" style=${{ fontWeight: 400 }}>· one per line</span>
               <textarea class="ctl" rows=${3} value=${nq.optionsText} onInput=${e => setNQ(i, { optionsText: e.target.value })}></textarea></label>`}
+          ${["single_select", "yes_no"].includes(nq.type) && html`
+            <label>Favourable answer <span class="caption" style=${{ fontWeight: 400 }}>· optional — marks the “better” answer in the results</span>
+              <select class="ctl" value=${nq.favLabel || ""} onChange=${e => setNQ(i, { favLabel: e.target.value })}>
+                <option value="">no preference</option>
+                ${(nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean).map(l => html`<option key=${l} value=${l}>${l}</option>`)}
+              </select></label>`}
           <label>Hint for members <span class="caption" style=${{ fontWeight: 400 }}>· optional — shown under the question</span>
             <input class="ctl" maxlength="160" value=${nq.hint || ""} onInput=${e => setNQ(i, { hint: e.target.value })} placeholder="A short note to help members answer accurately." /></label>
         </div>`)}
