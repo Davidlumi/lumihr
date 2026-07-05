@@ -301,6 +301,10 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
         ${optionalStart && html`
           <div class="qwiz-divider"><span>Optional from here</span> — these add depth to your benchmarks when you have the data to hand.</div>`}
         <div class="qwiz-card card">
+          <div class="qwiz-qhead">
+            <span class=${"pulse-q-num" + (curAnswered ? " done" : "")}>${curAnswered ? "✓" : at + 1}</span>
+            <span class="caption">${cur.is_required ? "Key question" : "Optional question"} · ${at + 1} of ${total}</span>
+          </div>
           <${QuestionInput} key=${cur.id} q=${cur} drafts=${drafts}
             issues=${issues} save=${save} confirmValue=${confirmValue} />
         </div>
