@@ -1729,6 +1729,12 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .setup-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .setup-note { flex: 0 0 auto; }
 
+.pulse-teaser { background: var(--surface-sunk); border-radius: var(--radius-sm); padding: var(--s3) var(--s4); }
+.pulse-teaser ul { margin: 0; padding-left: var(--s5); }
+.pulse-teaser li { margin: 3px 0; font-size: var(--fs-label); color: var(--ink); }
+.pulse-close { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro); font-weight: 600;
+  color: var(--ink-soft); background: var(--surface-sunk); border-radius: 999px; padding: 1px var(--s2); }
+.pulse-close.soon { color: color-mix(in srgb, var(--neutral-perf) 82%, var(--ink)); background: var(--neutral-perf-tint); }
 /* pulse report — narrative/key-findings panel + a polished print document */
 .pulse-narrative { background: var(--surface-sunk); border-radius: var(--radius-sm); padding: var(--s4); margin: var(--s3) 0 var(--s4); }
 .pulse-findings { margin-top: var(--s2); }

@@ -6,6 +6,24 @@
 /* global html, useState, useEffect, api, Spinner, EmptyState, PageLoading, nav, toast, Icon,
    fmtValue, PercentileBand, OptionBars, OrderedDist, InputForType */
 
+// deadline urgency — a relative read with a "soon" flag for the amber cue
+function closesIn(iso, accepting) {
+  if (!iso) return accepting ? { text: "open — no close date yet", soon: false } : null;
+  const d = new Date(iso.replace(" ", "T"));
+  if (isNaN(d)) return null;
+  if (!accepting) return { text: "closed " + iso.slice(0, 10), soon: false };
+  const days = Math.ceil((d - new Date()) / 86400000);
+  if (days <= 0) return { text: "closing now", soon: true };
+  if (days === 1) return { text: "closes tomorrow", soon: true };
+  if (days <= 7) return { text: "closes in " + days + " days", soon: days <= 3 };
+  return { text: "closes " + iso.slice(0, 10), soon: false };
+}
+function CloseChip({ p }) {
+  const c = closesIn(p.closes_at, p.accepting);
+  if (!c) return null;
+  return html`<span class=${"pulse-close" + (c.soon ? " soon" : "")}>${c.soon ? html`<${Icon} name="flag" size=${11} /> ` : ""}${c.text}</span>`;
+}
+
 window.PulsesPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -23,10 +41,11 @@ window.PulsesPage = function ({ me }) {
         <span class="chip ${p.accepting ? "pulse-chip" : ""}">${p.accepting ? "open" : p.status}</span>
       </div>
       <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>${p.description}</div>
-      <div class="caption num">${p.questions} questions · ${p.participants} participating
-        ${p.closes_at ? " · closes " + p.closes_at.slice(0, 10) : ""}
-        ${p.participated ? html` · <b style=${{ color: "var(--blue)" }}>you've taken part — report available</b>` :
-          p.joined ? " · you've joined — finish your answers" : ""}</div>
+      <div class="caption num" style=${{ display: "flex", flexWrap: "wrap", gap: "var(--s1) var(--s2)", alignItems: "center" }}>
+        <span>${p.questions} questions · ${p.participants} participating</span>
+        <${CloseChip} p=${p} />
+        ${p.participated ? html`<b style=${{ color: "var(--blue)" }}>you've taken part — report available</b>` :
+          p.joined ? html`<span>you've joined — finish your answers</span>` : ""}</div>
     </div>`;
   return html`
     <div style=${{ maxWidth: "760px" }}>
@@ -52,6 +71,8 @@ window.PulseDetailPage = function ({ me, pid }) {
   const [err, setErr] = useState(null);
   const [drafts, setDrafts] = useState({});
   const [issues, setIssues] = useState({});
+  const [savedAt, setSavedAt] = useState(null);
+  const [busy, setBusy] = useState(false);
   const refresh = () => api("/api/pulses/" + pid).then(d => {
     setP(d);
     const init = {};
@@ -70,27 +91,50 @@ window.PulseDetailPage = function ({ me, pid }) {
     try { await api("/api/pulses/" + pid + "/join", { method: "POST", body: {} }); toast("You're in — answer what applies and submit."); refresh(); }
     catch (e) { toast(e.message, "error"); }
   };
+  // mirror the core wizard's data-loss safety: track in-flight saves (the global
+  // beforeunload guard reads window._pendingSaves) and flush before submit so a
+  // value being typed can't be lost when Submit fires (DebouncedNumber commits on blur)
+  const flush = async () => {
+    const el = document.activeElement; if (el && el.blur) el.blur();
+    await new Promise(r => setTimeout(r, 60));
+    let g = 0; while (window._pendingSaves > 0 && g < 80) { await new Promise(r => setTimeout(r, 50)); g++; }
+  };
   const save = async (q, rowId, value) => {
     const key = q.id + "|" + (rowId || "");
     setDrafts(d => ({ ...d, [key]: value }));
+    window._pendingSaves++;
     try {
       const r = await api("/api/pulses/" + pid + "/response", { method: "PUT",
         body: { question_id: q.id, matrix_row_id: rowId || "", value } });
       setIssues(s => ({ ...s, [key]: { errors: r.errors || [], warnings: r.warnings || [] } }));
-    } catch (e) { toast(e.message, "error"); }
+      if (r.ok !== false) setSavedAt(new Date());
+    } catch (e) { toast("Couldn't save your last answer — it's still here.", "error", { label: "Retry", fn: () => save(q, rowId, value) }); }
+    finally { window._pendingSaves = Math.max(0, window._pendingSaves - 1); }
   };
   const submit = async () => {
-    try { await api("/api/pulses/" + pid + "/submit", { method: "POST", body: {} }); toast("Thank you — this pulse's report is now yours."); refresh(); }
-    catch (e) { toast(e.message, "error"); }
+    setBusy(true);
+    await flush();
+    const first = !p.participated;
+    try {
+      await api("/api/pulses/" + pid + "/submit", { method: "POST", body: {} });
+      toast(first ? "Thank you — this pulse's report is now yours." : "Your answers are updated.", "success");
+      if (first && window.confettiBurst) window.confettiBurst({ count: 120, duration: 2400, origin: { x: 0.5, y: 0.3 } });
+      refresh();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
   };
+  const answeredCount = (p.question_list || []).filter(q => q.type === "matrix"
+    ? (q.matrix_rows || []).some(r => drafts[q.id + "|" + r.row_id] != null && drafts[q.id + "|" + r.row_id] !== "")
+    : (drafts[q.id + "|"] != null && drafts[q.id + "|"] !== "")).length;
 
   return html`
     <div style=${{ maxWidth: "780px" }}>
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
       <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>
-      <p class="caption">${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating
-        ${p.closes_at ? " · " + (p.accepting ? "closes" : "closed") + " " + p.closes_at.slice(0, 10) : ""}</p>
+      <p class="caption" style=${{ display: "flex", flexWrap: "wrap", gap: "var(--s1) var(--s2)", alignItems: "center" }}>
+        <span>${p.description} · ${p.participants} organisation${p.participants === 1 ? "" : "s"} participating</span>
+        <${CloseChip} p=${p} /></p>
 
       ${p.report && html`<${PulseReport} report=${p.report} pid=${pid} me=${me} />`}
 
@@ -99,8 +143,14 @@ window.PulseDetailPage = function ({ me, pid }) {
           <b>Take part to see this pulse's report</b>
           <p class="caption" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Free for participants. Answer what applies —
             partial answers count. Taking part doesn't change your core benchmark or its unlock.</p>
-          ${editor ? html`<button class="btn primary" onClick=${join}>Join this pulse</button>` :
-            html`<div class="caption">Ask an Admin or Contributor on your team to join and answer.</div>`}
+          ${(p.question_list || []).length ? html`
+            <div class="pulse-teaser">
+              <div class="eyebrow" style=${{ marginBottom: "var(--s2)" }}>What this pulse asks · ${p.question_list.length} question${p.question_list.length === 1 ? "" : "s"}</div>
+              <ul>${p.question_list.slice(0, 6).map((q, i) => html`<li key=${i}>${q.text}</li>`)}</ul>
+              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your report unlocks the whole-cohort answer to each — once ${5}+ organisations have taken part.</div>
+            </div>` : null}
+          ${editor ? html`<button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${join}>Join this pulse</button>` :
+            html`<div class="caption" style=${{ marginTop: "var(--s3)" }}>Ask an Admin or Contributor on your team to join and answer.</div>`}
         </div>`}
       ${!p.joined && !p.accepting && !p.report && html`
         <${EmptyState} icon="lock" title="This pulse has closed"
@@ -108,7 +158,11 @@ window.PulseDetailPage = function ({ me, pid }) {
 
       ${p.joined && p.accepting && html`
         <div class="card" style=${{ margin: "var(--s4) 0" }}>
-          <div class="qsec-head"><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
+          <div class="qsec-head row spread">
+            <div><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
+            <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
+              ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : answeredCount + " of " + p.question_list.length + " answered · autosaves"}</div>
+          </div>
           ${p.question_list.map(q => html`
             <div key=${q.id} class="q-block">
               <div style=${{ fontWeight: 600, fontSize: "var(--fs-label)", marginBottom: "var(--s1)" }}>${q.text}</div>
@@ -118,7 +172,7 @@ window.PulseDetailPage = function ({ me, pid }) {
               ${(issues[q.id + "|"] || { warnings: [] }).warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
             </div>`)}
           <div style=${{ padding: "var(--s4)" }}>
-            <button class="btn primary" onClick=${submit}>${p.participated ? "Update my submission" : "Submit and see the report"}</button>
+            <button class="btn primary" disabled=${busy} aria-busy=${busy ? "true" : "false"} onClick=${submit}>${busy ? html`<${Spinner} />` : (p.participated ? "Update my submission" : "Submit and see the report")}</button>
           </div>
         </div>`}
     </div>`;
@@ -153,22 +207,24 @@ function printPulse(report) {
 }
 
 function PulseReport({ report, pid, me }) {
-  if (report.below_floor) return html`
+  // the deterministic narrative ships in the payload (opens with it instantly);
+  // when the AI surface is live it upgrades to the grounded model narrative.
+  // Hooks run unconditionally BEFORE any early return (below_floor).
+  const [nar, setNar] = useState(report.narrative || {});
+  const belowFloor = report.below_floor;
+  useEffect(() => {
+    if (belowFloor || !(me.features && me.features.pulse_ai)) return;
+    api("/api/pulses/" + pid + "/narrative", { method: "POST", body: {} })
+      .then(r => { if (r && r.narrative && r.source === "model") setNar(r.narrative); })
+      .catch(() => {});
+  }, [pid]);
+  if (belowFloor) return html`
     <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0", textAlign: "center" }}>
       <div class="unlock-spark" style=${{ margin: "0 auto var(--s2)" }}><${Icon} name="flag" size=${20} /></div>
       <b>Your responses are in — results appear once ${report.floor}+ organisations have taken part.</b>
       <div class="caption" style=${{ marginTop: "var(--s2)" }}>${report.participants} of ${report.floor} so far.
         Every answer stays protected by the same ${report.floor}-organisation rule as the core benchmark.</div>
     </div>`;
-  // the deterministic narrative ships in the payload (opens with it instantly);
-  // when the AI surface is live it upgrades to the grounded model narrative
-  const [nar, setNar] = useState(report.narrative || {});
-  useEffect(() => {
-    if (!(me.features && me.features.pulse_ai)) return;
-    api("/api/pulses/" + pid + "/narrative", { method: "POST", body: {} })
-      .then(r => { if (r && r.narrative && r.source === "model") setNar(r.narrative); })
-      .catch(() => {});
-  }, [pid]);
   const genDate = (report.generated_at || "").slice(0, 10);
   return html`
     <div class="pulse-report-doc" style=${{ margin: "var(--s4) 0" }}>
