@@ -1963,6 +1963,12 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .bp-menu-row .bp-menu-item { flex: 1; }
 .bp-menu-del { border: none; background: none; color: var(--ink-faint); cursor: pointer; padding: 0 var(--s3); }
 .bp-menu-del:hover { color: var(--unfavourable); }
+.bp-menu-all { border-top: 1px solid var(--border); color: var(--blue-deep); font-weight: 600; }
+/* board packs home (#/boardpack) — the stored-pack register (U2) */
+.bp-list { display: flex; flex-direction: column; gap: var(--s3); }
+.bp-list-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); }
+.bp-list-main { flex: 1; min-width: 0; cursor: pointer; border-radius: var(--radius-sm); padding: var(--s1) var(--s2); }
+.bp-list-main:hover { background: var(--lumi-tile); }
 /* Sprint 1 credibility furniture (2026-07-02): methodology page, competitiveness scale, callout */
 .bp-method { margin: var(--s3) 0 var(--s4); font-size: var(--fs-label); }
 .bp-method dt { font-weight: 650; margin-top: var(--s3); }
@@ -2250,6 +2256,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
   justify-content: center; cursor: zoom-in; border-radius: var(--radius-sm);
   margin-bottom: var(--s3); position: relative; }
 .bench-chart-full:hover { background: color-mix(in srgb, var(--surface-sunk) 45%, transparent); }
+/* a suppressed card has no full view to open — stop advertising one (U2) */
+.bench-chart-full.suppressed { cursor: default; }
+.bench-chart-full.suppressed:hover { background: transparent; }
 .bench-chart-full > * { width: 100%; }
 .bench-chart-full svg { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; }
 /* A matrix-select card renders a <table>, not an SVG — the fixed chart height

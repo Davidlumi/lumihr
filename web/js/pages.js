@@ -182,6 +182,7 @@ function ExportBoardPack({ me, cut }) {
                   catch (e2) { toast(e2.message, "error"); } }}>
                 <${Icon} name="close" size=${12} /></button>`}
             </div>`)}
+          <button class="bp-menu-item bp-menu-all" onClick=${() => nav("/boardpack")}>All board packs →</button>
         </div>`}
     </div>`;
 }
@@ -829,6 +830,8 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
       setStOv(p => ({ ...p, [sid]: status || "active" }));
       signalAction(sid, status).catch(() => {});
     }
+    // same recovery the Signals page offers — a home-briefing dismiss was one-way
+    if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(sid, null) });
   };
   const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0, 3);   // filter-before-slice: a dismiss backfills #4 from the tail
   // FLIP the briefing on every commit: survivors slide up from where they were, the

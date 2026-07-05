@@ -255,10 +255,8 @@ window.mapLegacyRoute = function (r) {
   if (r.startsWith("/reward")) return "/benchmark" + r.slice("/reward".length);
   if (r.startsWith("/mydata")) return "/your-data";
   if (r.startsWith("/submission")) return "/your-data/submit" + r.slice("/submission".length);
-  if (r === "/boardpack" || r === "/boardpack/") {
-    try { sessionStorage.setItem("lumi-bp-migrated", "1"); } catch (e) {}
-    return "/overview";
-  }
+  // /boardpack was a legacy no-op that bounced to Overview; it's now the real
+  // board-packs home (U2), so it routes normally — no remap.
   if (r.startsWith("/shares")) return "/settings?tab=sharing";
   return null;
 };

@@ -46,6 +46,7 @@ function App() {
     const TITLES = [["/overview", "Overview"], ["/dashboards", "My dashboards"], ["/signals", "Signals"],
       ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
+      ["/boardpack", "Board packs"],
       ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
       ["/profile", "Your profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
@@ -240,6 +241,8 @@ function App() {
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
     page = html`<${BoardPackView} packId=${m[1]} me=${me} />`;
+  } else if (route.startsWith("/boardpack")) {   // bare route = the packs home (used to fall through to Overview)
+    page = html`<${BoardPacksPage} me=${me} />`;
   } else if (route.startsWith("/myview")) { nav("/dashboards"); page = null; }   // legacy → renamed surface
   else if (route.startsWith("/dashboards")) page = html`<${DashboardsPage} ...${pageProps} />`;
   else if (route.startsWith("/your-data/submit")) {

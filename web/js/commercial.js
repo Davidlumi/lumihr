@@ -1163,3 +1163,48 @@ window.SuggestMetricModal = function ({ onClose, userEmail }) {
       </div>
     </div>`;
 };
+
+// --------------------------------------------------- board packs home (U2) ---
+/* Every stored pack, org-scoped, with open + admin delete. The export menu's
+   dropdown stays the quick path; this page gives packs a real URL (#/boardpack)
+   — before it, the bare route fell through to Overview and a pack was only
+   reachable right after generating or via a kept link. */
+window.BoardPacksPage = function ({ me }) {
+  const [packs, setPacks] = useState(null);
+  const [err, setErr] = useState(null);
+  const load = () => { setErr(null); api("/api/boardpacks").then(d => setPacks(d.packs || [])).catch(e => setErr(e.message)); };
+  useEffect(() => { load(); }, []);
+  const del = async (p) => {
+    if (!window.confirm("Delete this board pack? Any share links minted for it will stop working.")) return;
+    try { await api("/api/boardpack/" + p.pack_id, { method: "DELETE" }); toast("Board pack deleted."); load(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load your board packs" body=${err}
+    action=${html`<button class="btn small primary" onClick=${load}>Try again</button>`} />`;
+  if (!packs) return html`<${PageLoading} />`;
+  return html`
+    <div style=${{ maxWidth: "720px" }}>
+      <a class="caption back-link" href="#/overview"><${Icon} name="chevron-left" size=${13} /> Overview</a>
+      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>Board packs</h1>
+      <p class="caption" style=${{ marginBottom: "var(--s4)" }}>Every pack your team has generated — each a snapshot
+        of your position when it was written. Export a fresh one from Overview.</p>
+      ${packs.length === 0 ? html`<${EmptyState} icon="file-text" title="No board packs yet"
+        body="Export writes a board-ready narrative of your position under the current peer filter."
+        action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Go to Overview</button>`}/>` :
+      html`<div class="bp-list">
+        ${packs.map(p => html`
+          <div key=${p.pack_id} class="card bp-list-row">
+            <div class="bp-list-main" role="button" tabindex="0" aria-label=${"Open board pack — " + (p.cut_label || "All peers")}
+              onClick=${() => nav("/boardpack/" + p.pack_id)}
+              onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/boardpack/" + p.pack_id); } }}>
+              <b>${p.cut_label || "All peers"}</b>${p.collection_window ? html` <span class="caption">· ${p.collection_window}</span>` : ""}
+              <div class="caption">${new Date(p.created_at + "Z").toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}${p.created_by ? " · " + p.created_by : ""}${p.ai ? " · AI narrative" : ""}</div>
+            </div>
+            <div class="row" style=${{ gap: "var(--s2)", flex: "none" }}>
+              <button class="btn small" onClick=${() => nav("/boardpack/" + p.pack_id)}>Open</button>
+              ${me.user.role === "admin" && html`<button class="btn small quiet" onClick=${() => del(p)}>Delete</button>`}
+            </div>
+          </div>`)}
+      </div>`}
+    </div>`;
+};

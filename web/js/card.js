@@ -80,10 +80,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
         ${cardSignalPill(c, signal)}
       </div>
-      <div class=${"bench-chart-full" + (cutBusy ? " busy" : "")}
+      <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
         role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
-        title=${c.suppressed ? undefined : "Open full view"}>
+        title=${c.suppressed ? "Protected — fewer than 5 organisations behind this figure, so there's no chart to open" : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
           html`<${CardBody} card=${c} chart=${chart} showP1090=${pref.p1090 !== false} showValues=${pref.values !== false} fav=${cfav} wide=${true} />`}
       </div>
