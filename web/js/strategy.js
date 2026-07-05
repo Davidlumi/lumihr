@@ -111,12 +111,21 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
     }
     prevIdx.current = idx;
   }, [idx]);
-  useLayoutEffect(() => {
+  const measureThumb = () => {
     const wrap = stopsRef.current; if (!wrap || idx < 0) { setThumb(null); return; }
-    const btns = wrap.querySelectorAll(".scale-stop");
-    const el = btns[idx]; if (!el) return;
-    const c = el.offsetLeft + el.offsetWidth / 2;       // measured centre, not a guessed %
-    setThumb({ left: c });
+    const el = wrap.querySelectorAll(".scale-stop")[idx]; if (!el) return;
+    setThumb({ left: el.offsetLeft + el.offsetWidth / 2 });   // measured centre, not a guessed %
+  };
+  useLayoutEffect(measureThumb, [idx, value]);
+  // the px position above goes stale when the track's width changes (window
+  // resize, tablet rotation, a parent reflow) — re-anchor the thumb + fill on any
+  // resize so the dial never detaches from the selected stop.
+  useEffect(() => {
+    const wrap = stopsRef.current;
+    if (!wrap || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measureThumb());
+    ro.observe(wrap);
+    return () => ro.disconnect();
   }, [idx, value]);
   const move = (e) => {
     if (idx < 0) return;

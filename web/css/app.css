@@ -2579,8 +2579,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .cr-val { display: flex; align-items: center; gap: var(--s3); flex-shrink: 0; }
 .cr-tag { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); background: var(--blue-tint); padding: 3px var(--s2); border-radius: 5px; }
 .confirm-row select { font-family: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--ink); border: 1px solid var(--chrome-edge);
-  border-radius: var(--radius-sm); padding: var(--s2) var(--s3); background: var(--paper); cursor: pointer; min-width: 180px; }
-.confirm-row select:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+  border-radius: var(--radius); height: 44px; padding: 0 var(--s3); background: var(--paper); cursor: pointer; min-width: 180px;
+  transition: border-color .15s, box-shadow .15s; }
+.confirm-row select:hover { border-color: var(--ink-faint); }
+.confirm-row select:focus, .confirm-row select:focus-visible { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
 .derived-note { background: var(--blue-tint); border: 1px dashed var(--blue-tint-2); border-radius: var(--radius-sm);
   padding: var(--s3) var(--s4); font-size: var(--fs-label); color: var(--blue-deep); display: flex; gap: var(--s2); align-items: flex-start; }
 .derived-note svg { flex: none; margin-top: 1px; }
