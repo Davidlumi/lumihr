@@ -123,9 +123,10 @@ window.PulseDetailPage = function ({ me, pid }) {
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
-  const answeredCount = (p.question_list || []).filter(q => q.type === "matrix"
+  const isAnswered = (q) => q.type === "matrix"
     ? (q.matrix_rows || []).some(r => drafts[q.id + "|" + r.row_id] != null && drafts[q.id + "|" + r.row_id] !== "")
-    : (drafts[q.id + "|"] != null && drafts[q.id + "|"] !== "")).length;
+    : (drafts[q.id + "|"] != null && drafts[q.id + "|"] !== "");
+  const answeredCount = (p.question_list || []).filter(isAnswered).length;
 
   return html`
     <div style=${{ maxWidth: "780px" }}>
@@ -157,21 +158,34 @@ window.PulseDetailPage = function ({ me, pid }) {
           body="Its report belongs to the organisations that took part during the window." />`}
 
       ${p.joined && p.accepting && html`
-        <div class="card" style=${{ margin: "var(--s4) 0" }}>
-          <div class="qsec-head row spread">
-            <div><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
-            <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
-              ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : answeredCount + " of " + p.question_list.length + " answered · autosaves"}</div>
+        <div class="card pulse-survey" style=${{ margin: "var(--s4) 0" }}>
+          <div class="pulse-survey-head">
+            <div class="row spread" style=${{ alignItems: "baseline", gap: "var(--s2)" }}>
+              <div><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
+              <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
+                ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : answeredCount + " of " + p.question_list.length + " answered · autosaves"}</div>
+            </div>
+            <div class="pulse-progress" role="progressbar" aria-valuenow=${answeredCount} aria-valuemin="0" aria-valuemax=${p.question_list.length}
+              aria-label=${answeredCount + " of " + p.question_list.length + " answered"}>
+              <div class="pulse-progress-fill" style=${{ width: (p.question_list.length ? Math.round(100 * answeredCount / p.question_list.length) : 0) + "%" }}></div>
+            </div>
           </div>
-          ${p.question_list.map(q => html`
-            <div key=${q.id} class="q-block">
-              <div style=${{ fontWeight: 600, fontSize: "var(--fs-label)", marginBottom: "var(--s1)" }}>${q.text}</div>
-              ${q.help_text && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>${q.help_text}</div>`}
-              <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${() => {}} />
-              ${(issues[q.id + "|"] || { errors: [] }).errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
-              ${(issues[q.id + "|"] || { warnings: [] }).warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
-            </div>`)}
-          <div style=${{ padding: "var(--s4)" }}>
+          <div class="pulse-survey-body">
+            ${p.question_list.map((q, qi) => { const ans = isAnswered(q); return html`
+              <div key=${q.id} class=${"pulse-q" + (ans ? " answered" : "")}>
+                <div class="pulse-q-head">
+                  <span class="pulse-q-num" aria-hidden="true">${ans ? "✓" : qi + 1}</span>
+                  <span class="pulse-q-text">${q.text}</span>
+                </div>
+                ${q.help_text && html`<div class="pulse-q-hint">${q.help_text}</div>`}
+                <div class="pulse-q-input">
+                  <${InputForType} q=${q} drafts=${drafts} issues=${issues} save=${save} confirmValue=${() => {}} />
+                  ${(issues[q.id + "|"] || { errors: [] }).errors.map((e, i) => html`<div key=${i} class="error-text">${e}</div>`)}
+                  ${(issues[q.id + "|"] || { warnings: [] }).warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
+                </div>
+              </div>`; })}
+          </div>
+          <div class="pulse-survey-foot">
             <button class="btn primary" disabled=${busy} aria-busy=${busy ? "true" : "false"} onClick=${submit}>${busy ? html`<${Spinner} />` : (p.participated ? "Update my submission" : "Submit and see the report")}</button>
           </div>
         </div>`}

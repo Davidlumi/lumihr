@@ -1692,6 +1692,45 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pulse-preview-label { font-weight: 600; margin-bottom: var(--s2); }
 .pulse-preview-num { color: var(--ink-soft); font-weight: 700; margin-right: 4px; }
 .pulse-preview-reused { margin: 0; font-style: italic; }
+
+/* --- participant survey: a branded, tactile answer experience (2026-07) ---
+   ALL scoped under .pulse-survey so the shared core submission form (.q-block,
+   .radio-row, .seg-toggle) and the report keep their plain styling. */
+.pulse-survey { padding: 0; overflow: hidden; }
+.pulse-survey-head { padding: var(--s4) var(--s4) var(--s4); background: var(--lumi-tile);
+  border-bottom: 1px solid var(--border); }
+.pulse-progress { height: 8px; border-radius: 999px; background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border); overflow: hidden; margin-top: var(--s3); }
+.pulse-progress-fill { height: 100%; border-radius: 999px; min-width: 0;
+  background: linear-gradient(90deg, var(--blue), var(--blue-bright));
+  transition: width .4s cubic-bezier(.4, 0, .2, 1); }
+.pulse-survey-body { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
+.pulse-q { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  padding: var(--s4); transition: border-color .2s, background .2s, box-shadow .2s; }
+.pulse-q:hover { box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06); }
+.pulse-q.answered { border-color: color-mix(in srgb, var(--favourable) 45%, var(--border));
+  background: color-mix(in srgb, var(--favourable-tint) 32%, var(--surface)); }
+.pulse-q-head { display: flex; align-items: flex-start; gap: var(--s3); margin-bottom: var(--s2); }
+.pulse-q-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; font-size: var(--fs-label); font-weight: 700;
+  background: var(--surface-sunk); color: var(--blue-deep); box-shadow: inset 0 0 0 1px var(--border);
+  transition: background .2s, color .2s, box-shadow .2s; }
+.pulse-q.answered .pulse-q-num { background: var(--favourable); color: #fff; box-shadow: none; }
+.pulse-q-text { font-weight: 600; font-size: var(--fs-body); line-height: 1.4; padding-top: 3px; }
+.pulse-q-hint { font-size: var(--fs-caption); color: var(--ink-soft);
+  margin: 0 0 var(--s3) calc(28px + var(--s3)); }
+.pulse-q-input { margin-left: calc(28px + var(--s3)); }
+.pulse-survey-foot { padding: var(--s4); border-top: 1px solid var(--border); background: var(--surface-sunk); }
+/* tactile controls — scoped, so the core benchmark form keeps the compact rows */
+.pulse-survey .seg-toggle { border-radius: var(--radius); }
+.pulse-survey .seg-btn { padding: var(--s3) var(--s5); font-weight: 500; }
+.pulse-survey .radio-row, .pulse-survey .check-row { align-items: center; padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: var(--s2);
+  transition: background .15s, border-color .15s; }
+.pulse-survey .radio-row:last-child, .pulse-survey .check-row:last-child { margin-bottom: 0; }
+.pulse-survey .radio-row:hover, .pulse-survey .check-row:hover { background: var(--lumi-tile); }
+.pulse-survey .radio-row:has(input:checked), .pulse-survey .check-row:has(input:checked) {
+  background: var(--blue-tint); border-color: var(--blue); }
 /* launch_status badges on the staff review queue + owner list */
 .admin-status-approved { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .admin-status-in_review, .admin-status-changes_requested { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
