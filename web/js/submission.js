@@ -28,7 +28,8 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
       ${me.user.role === "admin"
         ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
         : html`<${EmptyState} icon="lock" title="Waiting on your Admin"
-            body="Your organisation's Admin completes the company profile first — then the data terms, then the questionnaire opens." />`}
+            body="Your organisation's Admin sets up the company profile and accepts the data terms first — then your questionnaire opens. Nothing is needed from you yet."
+            action=${html`<button class="btn small" onClick=${() => nav("/how-lumi-works")}>See how lumi works</button>`} />`}
     </div>`;
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
     onAccepted=${() => { refresh(); refreshMe(); }} />`;

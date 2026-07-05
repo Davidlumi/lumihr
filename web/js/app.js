@@ -762,7 +762,8 @@ window.IdleGuard = function ({ onSignOut }) {
       <div style=${{ textAlign: "center" }}>
         <h2 class="section-title">Still there?</h2>
         <p>You've been inactive for a while. For your organisation's data safety we'll sign you
-        out in <span class="idle-count">${left}</span> seconds.</p>
+        out in <span class="idle-count">${left}</span> seconds. Your saved answers are safe —
+        the questionnaire autosaves as you go.</p>
         <div class="row" style=${{ justifyContent: "center" }}>
           <button class="btn primary" autoFocus onClick=${stay}>Stay signed in</button>
           <button class="btn" onClick=${onSignOut}>Sign out now</button>

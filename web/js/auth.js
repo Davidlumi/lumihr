@@ -132,7 +132,8 @@ function LoginForm({ onAuthed, initialMode }) {
           ${" "}and <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }}>Privacy Notice</a>.</div>`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         ${msg && html`<div class="ok-text" role="status" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>`}
-        <button class="btn primary block" disabled=${busy || (mode === "register" && !tick)}>
+        <button class="btn primary block" disabled=${busy || (mode === "register" && !tick)}
+          title=${mode === "register" && !tick ? "Accept the Platform Terms of Use above to continue" : null}>
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
         </button>
         ${mode === "register" && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
