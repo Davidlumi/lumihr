@@ -360,8 +360,8 @@ window.PulseBuilderPage = function ({ me, pid }) {
     try { const r = await api("/api/org/pulses", { method: "POST", body }); toast("Draft saved.", "success"); nav("/run-a-pulse/" + r.pulse_id); }
     catch (e) { toast(e.message, "error"); } setBusy(false); };
   const submitUpdate = async (body) => { setBusy(true);
-    try { await api("/api/org/pulses/" + pid, { method: "PUT", body }); toast("Saved.", "success"); load(); }
-    catch (e) { toast(e.message, "error"); } setBusy(false); };
+    try { await api("/api/org/pulses/" + pid, { method: "PUT", body }); toast("Saved.", "success"); load(); setBusy(false); return true; }
+    catch (e) { toast(e.message, "error"); setBusy(false); return false; } };
   const submitForReview = async () => { setBusy(true);
     try {
       await api("/api/org/pulses/" + pid + "/submit-for-review", { method: "POST", body: {} });
@@ -420,17 +420,23 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
     return true;
   };
   const save = () => { if (valid()) onSubmit(buildBody()); };
-  const saveThenReview = async () => { if (!valid()) return; await onSubmit(buildBody()); onSubmitReview(); };
+  // transactional: only submit for review if the save actually succeeded (a
+  // failed PUT used to still fire the review call, submitting a stale draft)
+  const saveThenReview = async () => {
+    if (!valid()) return;
+    const ok = await onSubmit(buildBody());
+    if (ok !== false) onSubmitReview();
+  };
   const needle = libQ.trim().toLowerCase();
   const libRows = (lib || []).filter(x => !needle || (x.title || "").toLowerCase().includes(needle) || (x.subpower || "").toLowerCase().includes(needle));
   return html`
     <div class="card pulse-form" style=${{ padding: "var(--s5)", marginTop: "var(--s3)" }}>
       <h2 class="section-title">${isNew ? "New survey" : "Edit your survey"}</h2>
       <p class="caption" style=${{ marginTop: "2px" }}>Members answer what applies; you get back anonymised aggregates (5+ organisations).</p>
-      <label>Survey name<input class="ctl" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
-      <label>Description<textarea class="ctl" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)} placeholder="One line on what you're asking and why."></textarea></label>
-      <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional</span>
-        <input class="ctl" value=${closesAt} onInput=${e => setClosesAt(e.target.value)} placeholder="YYYY-MM-DD HH:MM:SS" /></label>
+      <label>Survey name<input class="ctl" maxlength="120" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
+      <label>Description<textarea class="ctl" maxlength="280" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)} placeholder="One line on what you're asking and why."></textarea></label>
+      <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional — closes at end of that day</span>
+        <input class="ctl" type="date" value=${(closesAt || "").slice(0, 10)} onInput=${e => setClosesAt(e.target.value)} /></label>
 
       <div class="qsec-head" style=${{ marginTop: "var(--s4)" }}><b>Questions</b> <span class="caption">· ${keep.length + liveNew().length} so far</span></div>
       ${keep.map(k => html`
@@ -441,7 +447,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         <div key=${"n" + i} class="pulse-newq">
           <div class="row spread"><b class="caption">New question ${i + 1}</b>
             <button class="btn small quiet" onClick=${() => removeNQ(i)}>Remove</button></div>
-          <label>Question<input class="ctl" value=${nq.text} onInput=${e => setNQ(i, { text: e.target.value })} placeholder="What do you want to ask?" /></label>
+          <label>Question<input class="ctl" maxlength="200" value=${nq.text} onInput=${e => setNQ(i, { text: e.target.value })} placeholder="What do you want to ask?" /></label>
           <div class="row" style=${{ gap: "var(--s3)" }}>
             <label style=${{ flex: 1 }}>Answer type<select class="ctl" value=${nq.type} onChange=${e => setNQ(i, { type: e.target.value })}>
               ${PULSE_BUILD_TYPES.map(t => html`<option key=${t} value=${t}>${TYPE_LABEL[t]}</option>`)}</select></label>
@@ -453,8 +459,8 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
               <textarea class="ctl" rows=${3} value=${nq.optionsText} onInput=${e => setNQ(i, { optionsText: e.target.value })}></textarea></label>`}
         </div>`)}
       <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
-        <button class="btn small" onClick=${addNew}>＋ Add a question</button>
-        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "＋ Add from the lumi library"}</button>
+        <button class="btn small" onClick=${addNew}>+ Add a question</button>
+        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "+ Add from the lumi library"}</button>
       </div>
       ${showLib && html`
         <div style=${{ marginTop: "var(--s2)" }}>

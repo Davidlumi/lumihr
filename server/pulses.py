@@ -47,18 +47,44 @@ def _now():
 PULSE_NEW_TYPES = ("yes_no", "single_select", "multi_select", "numeric")
 
 
+def validate_new_questions(new_questions):
+    """Guardrails on authored pulse questions — shared by the API body parse and
+    the assembly step so a broken survey (one option, a delimiter-breaking label,
+    duplicates, an over-long question) can never reach review or launch. Mirrors
+    the core metric validator. Raises ValueError with a member-facing message."""
+    for nq in (new_questions or []):
+        if nq.get("type") not in PULSE_NEW_TYPES:
+            raise ValueError("unsupported question type: %s" % nq.get("type"))
+        text = (nq.get("text") or "").strip()
+        if not text:
+            raise ValueError("every question needs text")
+        if len(text) > 200:
+            raise ValueError("keep each question under 200 characters")
+        if nq["type"] in ("yes_no", "single_select", "multi_select"):
+            labels = [(o.get("label") or "").strip() for o in (nq.get("options") or [])]
+            labels = [l for l in labels if l]
+            if len(labels) < 2:
+                raise ValueError("“%s” needs at least two answer options" % text[:40])
+            if nq["type"] == "yes_no" and len(labels) != 2:
+                raise ValueError("a Yes/No question needs exactly two options")
+            for l in labels:
+                if ";" in l or "," in l:
+                    raise ValueError("answer options can't contain ';' or ',' (delimiter-safe storage)")
+                if len(l) > 80:
+                    raise ValueError("keep each answer option under 80 characters")
+            if len({l.lower() for l in labels}) != len(labels):
+                raise ValueError("answer options must be distinct")
+
+
 def _assemble_questions(question_ids, new_questions, conn):
     """Build the final ordered question-id list for a pulse from reused library
     ids + newly authored pulse questions. Newly authored questions are inserted
     into `questions` flagged pulse-origin (superpower='Pulse') so they can never
     leak into the core scope filter or a core release — the firewall holds for
     self-service authors exactly as it does for staff."""
+    validate_new_questions(new_questions)
     qids = list(question_ids or [])
     for nq in (new_questions or []):
-        if nq.get("type") not in PULSE_NEW_TYPES:
-            raise ValueError("unsupported question type: %s" % nq.get("type"))
-        if not (nq.get("text") or "").strip():
-            raise ValueError("every question needs text")
         qid = nq.get("id") or ("PULSE_" + uuid.uuid4().hex[:10].upper())
         cols = {
             "id": qid, "text": nq["text"], "short_description": nq.get("title"),

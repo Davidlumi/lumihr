@@ -4853,17 +4853,39 @@ def _parse_pulse_body(body):
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Your pulse needs a name.")
+    if len(name) > 120:
+        raise HTTPException(400, "Keep the survey name under 120 characters.")
+    description = (body.get("description") or "").strip()
+    if len(description) > 280:
+        raise HTTPException(400, "Keep the description under 280 characters.")
     qids = body.get("question_ids") or []
     new_qs = body.get("new_questions") or []
     if not qids and not new_qs:
         raise HTTPException(400, "Add at least one question.")
-    for nq in new_qs:
-        if nq.get("type") not in pulses_mod.PULSE_NEW_TYPES:
-            raise HTTPException(400, "Each new question needs a supported type (%s)."
-                                % ", ".join(pulses_mod.PULSE_NEW_TYPES))
-        if not (nq.get("text") or "").strip():
-            raise HTTPException(400, "Each new question needs text.")
-    return name, (body.get("description") or "").strip(), qids, new_qs, (body.get("closes_at") or None)
+    # the full new-question validation (types, options, lengths) lives in
+    # pulses._assemble_questions and runs at create/update — surface its message
+    try:
+        pulses_mod.validate_new_questions(new_qs)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    closes_at = (body.get("closes_at") or "").strip() or None
+    if closes_at is not None:
+        parsed, date_only = None, False
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                parsed = datetime.strptime(closes_at, fmt)
+                date_only = (fmt == "%Y-%m-%d")
+                break
+            except ValueError:
+                continue
+        if parsed is None:
+            raise HTTPException(400, "Close date must look like YYYY-MM-DD or YYYY-MM-DD HH:MM.")
+        if date_only:
+            parsed = parsed.replace(hour=23, minute=59, second=59)   # a date closes at end of day
+        if parsed <= datetime.utcnow():
+            raise HTTPException(400, "The close date needs to be in the future.")
+        closes_at = parsed.strftime("%Y-%m-%d %H:%M:%S")   # store ISO, never free text
+    return name, description, qids, new_qs, closes_at
 
 
 @app.get("/api/org/pulses")
