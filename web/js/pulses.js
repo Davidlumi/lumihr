@@ -456,7 +456,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   useEffect(() => { if (showLib && lib === null) api("/api/questions").then(d => setLib(d.questions || [])).catch(() => setLib([])); }, [showLib]);
   const removeKeep = (id) => setKeep(k => k.filter(x => x.id !== id));
   const addLib = (x) => setKeep(k => k.some(i => i.id === x.id) ? k : [...k, { id: x.id, text: x.title, type: x.type }]);
-  const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo" }]);
+  const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo", unitKind: "none", unitLabel: "", hint: "" }]);
   const setNQ = (i, patch) => setNewQs(n => n.map((x, j) => j === i ? { ...x, ...patch } : x));
   const removeNQ = (i) => setNewQs(n => n.filter((_, j) => j !== i));
   const moveNQ = (i, d) => setNewQs(n => { const j = i + d; if (j < 0 || j >= n.length) return n;
@@ -465,20 +465,38 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   const [pvDrafts, setPvDrafts] = useState({});
   const pvSave = (q, rowId, v) => setPvDrafts(d => ({ ...d, [q.id + "|" + (rowId || "")]: v }));
   const liveNew = () => newQs.filter(nq => (nq.text || "").trim());
+  // resolve a numeric draft's unit into the fields the server + report expect.
+  // The schema already reads unit_type/unit/unit_display_name in _assemble_questions
+  // and unit_block() derives the symbol — so this is a pure frontend addition.
+  const pulseUnit = (nq) => {
+    if (nq.type !== "numeric") return null;
+    if (nq.unitKind === "percentage") return { unit_type: "percentage", unit: "%", unit_display_name: "%", block: { type: "percentage", symbol: "%", display_name: "%" } };
+    if (nq.unitKind === "currency") return { unit_type: "currency", unit: "GBP", unit_display_name: "£", block: { type: "currency", symbol: "£", display_name: "£", currency_code: "GBP" } };
+    const lbl = (nq.unitLabel || "").trim();
+    if (nq.unitKind === "custom" && lbl) return { unit_type: "none", unit: lbl, unit_display_name: lbl, block: { type: "none", symbol: "", display_name: lbl } };
+    return { unit_type: "none", unit: null, unit_display_name: "", block: { type: "none", symbol: "", display_name: "" } };
+  };
   // build an InputForType-shaped question from a composer draft, for the preview
   const previewQ = (nq, i) => {
     const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
     const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
+    const u = pulseUnit(nq);
     return { id: "pv-" + i, text: nq.text, title: nq.text, type: nq.type,
       options: isSel ? labels.map((l, j) => ({ code: "O" + j, label: l })) : [],
-      na_allowed: nq.type === "numeric", matrix_rows: [], unit: {} };
+      na_allowed: nq.type === "numeric", matrix_rows: [],
+      unit: u ? u.block : {}, unit_display_name: u ? u.unit_display_name : "", help_text: (nq.hint || "").trim() };
   };
   const buildBody = () => {
     const bespoke = liveNew().map(nq => {
       const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
       const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
-      return { text: nq.text.trim(), type: nq.type, polarity: nq.polarity || "neutral",
+      const q = { text: nq.text.trim(), type: nq.type, polarity: nq.polarity || "neutral",
         options: isSel ? labels.map((l, i) => ({ code: l.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "") || ("OPT" + i), label: l, order: i + 1, is_na: false })) : undefined };
+      const hint = (nq.hint || "").trim();
+      if (hint) q.help_text = hint;
+      const u = pulseUnit(nq);
+      if (u && nq.unitKind && nq.unitKind !== "none") { q.unit_type = u.unit_type; q.unit = u.unit; q.unit_display_name = u.unit_display_name; }
+      return q;
     });
     return { name: name.trim(), description: desc.trim(), closes_at: closesAt.trim() || null,
       question_ids: keep.map(k => k.id), new_questions: bespoke };
@@ -528,9 +546,20 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
             ${nq.type === "numeric" && html`<label style=${{ flex: 1 }}>Better when<select class="ctl" value=${nq.polarity} onChange=${e => setNQ(i, { polarity: e.target.value })}>
               <option value="neutral">no preference</option><option value="higher_is_better">higher</option><option value="lower_is_better">lower</option></select></label>`}
           </div>
+          ${nq.type === "numeric" && html`
+            <div class="row" style=${{ gap: "var(--s3)" }}>
+              <label style=${{ flex: 1 }}>Unit<select class="ctl" value=${nq.unitKind || "none"} onChange=${e => setNQ(i, { unitKind: e.target.value })}>
+                <option value="none">no unit</option>
+                <option value="percentage">percentage (%)</option>
+                <option value="currency">£ (GBP)</option>
+                <option value="custom">custom…</option></select></label>
+              ${nq.unitKind === "custom" && html`<label style=${{ flex: 1 }}>Unit label<input class="ctl" maxlength="16" value=${nq.unitLabel || ""} onInput=${e => setNQ(i, { unitLabel: e.target.value })} placeholder="e.g. days, FTE" /></label>`}
+            </div>`}
           ${["single_select", "yes_no", "multi_select"].includes(nq.type) && html`
             <label>Options <span class="caption" style=${{ fontWeight: 400 }}>· one per line</span>
               <textarea class="ctl" rows=${3} value=${nq.optionsText} onInput=${e => setNQ(i, { optionsText: e.target.value })}></textarea></label>`}
+          <label>Hint for members <span class="caption" style=${{ fontWeight: 400 }}>· optional — shown under the question</span>
+            <input class="ctl" maxlength="160" value=${nq.hint || ""} onInput=${e => setNQ(i, { hint: e.target.value })} placeholder="A short note to help members answer accurately." /></label>
         </div>`)}
       <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
         <button class="btn small" onClick=${addNew}>+ Add a question</button>
@@ -568,6 +597,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
             ${liveNew().map((nq, i) => { const q = previewQ(nq, i); return html`
               <div key=${"pvn" + i} class="pulse-preview-q">
                 <div class="pulse-preview-label"><span class="pulse-preview-num">${keep.length + i + 1}</span> ${nq.text}</div>
+                ${(nq.hint || "").trim() ? html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>${nq.hint}</div>` : ""}
                 <${InputForType} q=${q} drafts=${pvDrafts} issues=${{}} save=${pvSave} confirmValue=${() => {}} />
               </div>`; })}
           </div>
