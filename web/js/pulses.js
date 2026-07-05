@@ -546,15 +546,21 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
       <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional — closes at end of that day</span>
         <input class="ctl" type="date" value=${(closesAt || "").slice(0, 10)} onInput=${e => setClosesAt(e.target.value)} /></label>
 
-      <div class="qsec-head" style=${{ marginTop: "var(--s4)" }}><b>Questions</b> <span class="caption">· ${keep.length + liveNew().length} so far</span></div>
-      ${keep.map(k => html`
+      <div class="qsec-head" style=${{ marginTop: "var(--s5)" }}><b>Questions</b> <span class="pulse-count-chip">${keep.length + liveNew().length}</span> <span class="caption">— the order members will see</span></div>
+      ${keep.map((k, ki) => html`
         <div key=${k.id} class="pulse-keep-row">
-          <span>${k.text} <span class="caption">· ${TYPE_LABEL[k.type] || k.type}</span></span>
+          <span class="pulse-q-num">${ki + 1}</span>
+          <div class="pulse-keep-main">
+            <div class="pulse-keep-text">${k.text}</div>
+            <div class="pulse-keep-meta"><span class="pulse-lib-tag">reused</span> <span class="caption">${TYPE_LABEL[k.type] || k.type}</span></div>
+          </div>
           <button class="btn small quiet" onClick=${() => removeKeep(k.id)}>Remove</button></div>`)}
       ${newQs.map((nq, i) => html`
         <div key=${"n" + i} class="pulse-newq">
-          <div class="row spread"><b class="caption">New question ${i + 1}</b>
-            <div class="row" style=${{ gap: "2px" }}>
+          <div class="pulse-newq-head">
+            <span class="pulse-q-num">${keep.length + i + 1}</span>
+            <b>New question</b>
+            <div class="pulse-newq-tools">
               <button class="btn small quiet" title="Move up" aria-label="Move question up"
                 disabled=${i === 0} onClick=${() => moveNQ(i, -1)}>↑</button>
               <button class="btn small quiet" title="Move down" aria-label="Move question down"
@@ -588,9 +594,9 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
           <label>Hint for members <span class="caption" style=${{ fontWeight: 400 }}>· optional — shown under the question</span>
             <input class="ctl" maxlength="160" value=${nq.hint || ""} onInput=${e => setNQ(i, { hint: e.target.value })} placeholder="A short note to help members answer accurately." /></label>
         </div>`)}
-      <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
-        <button class="btn small" onClick=${addNew}>+ Add a question</button>
-        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "+ Add from the lumi library"}</button>
+      <button class="pulse-add-tile" onClick=${addNew}>+ Add a question</button>
+      <div class="row" style=${{ marginTop: "var(--s2)" }}>
+        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "+ Or add one from the lumi library"}</button>
       </div>
       ${showLib && html`
         <div style=${{ marginTop: "var(--s2)" }}>

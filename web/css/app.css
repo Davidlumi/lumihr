@@ -1739,14 +1739,34 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 
 /* --- self-service builder: on-brand form + page furniture (2026-06-22) --- */
 .pulse-form label { display: block; font-size: var(--fs-label); font-weight: 600;
-  color: var(--ink-soft); margin: var(--s3) 0 var(--s1); }
+  color: var(--ink-soft); margin: var(--s4) 0 var(--s1); }
 .pulse-form .ctl { width: 100%; }
 .pulse-form h2 { margin-top: 0; }
-.pulse-newq { border: 1px solid var(--border); border-left: 3px solid var(--blue-bright);
-  border-radius: var(--radius-sm); background: var(--surface); padding: var(--s3) var(--s4) var(--s4); margin: var(--s3) 0; }
-.pulse-keep-row { display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
-  padding: var(--s3) 0; border-bottom: 1px solid var(--border); }
-.pulse-keep-row:last-of-type { border-bottom: 0; }
+/* Questions section header: a tinted band with a count chip */
+.pulse-form .qsec-head { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+  background: var(--lumi-tile); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s3) var(--s4); }
+.pulse-count-chip { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--blue);
+  color: #fff; font-size: var(--fs-caption); font-weight: 700; }
+/* authored + reused questions as numbered panels, in survey order */
+.pulse-newq { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  padding: var(--s4) var(--s5) var(--s5); margin: var(--s4) 0 0; }
+.pulse-newq-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s1); }
+.pulse-newq-head b { flex: 1; }
+.pulse-newq-tools { display: flex; gap: 2px; }
+.pulse-keep-row { display: flex; align-items: center; gap: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-sunk);
+  padding: var(--s3) var(--s4); margin: var(--s4) 0 0; }
+.pulse-keep-main { flex: 1; min-width: 0; }
+.pulse-keep-text { font-weight: 600; font-size: var(--fs-body); }
+.pulse-keep-meta { display: flex; align-items: center; gap: var(--s2); margin-top: 3px; }
+/* the inviting "add a question" drop-tile */
+.pulse-add-tile { width: 100%; margin-top: var(--s4); padding: var(--s4); cursor: pointer;
+  border: 1.5px dashed var(--blue-soft); border-radius: var(--radius); background: var(--blue-tint);
+  color: var(--blue-deep); font-weight: 600; font-size: var(--fs-body);
+  transition: background .15s, border-color .15s; }
+.pulse-add-tile:hover { background: var(--lumi-tile); border-color: var(--blue); }
 /* lead intro + "how it works" rail */
 .pulse-lead { max-width: 60ch; color: var(--ink-soft); margin: var(--s2) 0 0; }
 .pulse-how { display: flex; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
