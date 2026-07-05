@@ -1800,7 +1800,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
 
       <section class="cat-section">
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
-          <b>All metrics</b><span class="caption">${cards.length} shown</span>
+          <b>All metrics</b><span class="pulse-count-chip">${cards.length}</span><span class="caption">shown</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
           <div class="cat-head-ctl">
             ${(posSel.length || prevSel.length) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); }}>Clear filter</button>` : null}

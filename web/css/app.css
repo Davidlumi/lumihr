@@ -273,6 +273,14 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .notif-lens-check .lens-attract { color: var(--lens-attract); }
 .notif-lens-check .lens-retain { color: var(--lens-retain); }
 .notif-lens-check .lens-engage { color: var(--lens-engage); }
+/* U3: the tactile answer-control theme, brought to notification prefs (digest
+   toggle + "what to hear about" checks) — scoped to .notif-prefs, nothing else shifts */
+.notif-prefs .seg-btn { padding: var(--s3) var(--s5); font-weight: 500; }
+.notif-prefs .notif-lens-check { align-items: center; margin: 0; padding: var(--s2) var(--s3);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  transition: background .15s, border-color .15s; }
+.notif-prefs .notif-lens-check:hover { background: var(--lumi-tile); }
+.notif-prefs .notif-lens-check:has(input:checked) { background: var(--blue-tint); border-color: var(--blue); }
 .content { padding: var(--s5); max-width: 1320px; width: 100%; margin: 0 auto; }
 
 /* hamburger lives in the brand bar; hidden on desktop, shown only as the drawer
@@ -1345,7 +1353,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .cat-leg-row b { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 11px; text-align: right; }
 .cat-section { margin-bottom: var(--s5); }
-.cat-sec-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }
+.cat-sec-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3);
+  background: var(--lumi-tile); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s3) var(--s4); flex-wrap: wrap; }
 .cat-sec-head > b { font-size: var(--fs-body); }
 .cat-sec-ico { width: 24px; height: 24px; border-radius: 7px; background: var(--blue-tint); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
