@@ -1670,11 +1670,28 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .pulse-step.warn { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .pulse-step.warn .pulse-step-dot { background: var(--unfavourable); }
 .pulse-libpick { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: var(--s2); }
-.pulse-librow { display: block; width: 100%; text-align: left; padding: var(--s2) var(--s3); border: 0;
-  border-bottom: 1px solid var(--border); background: #fff; cursor: pointer; font: inherit; }
+.pulse-librow { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  width: 100%; text-align: left; padding: var(--s2) var(--s3); border: 0;
+  border-bottom: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; }
 .pulse-librow:last-child { border-bottom: 0; }
 .pulse-librow:hover:not(:disabled) { background: var(--lumi-tile); }
 .pulse-librow:disabled { opacity: 0.5; cursor: default; }
+.pulse-lib-tags { flex: none; display: flex; gap: 4px; align-items: center; }
+.pulse-lib-tag { font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap;
+  padding: 3px 7px; border-radius: 999px; background: var(--surface-sunk); color: var(--ink-soft); }
+.pulse-lib-tag.added { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.pulse-lib-tag.locked { display: inline-flex; align-items: center; gap: 3px; background: var(--lumi-tile); color: var(--blue-deep); }
+/* participant preview inside the builder */
+.pulse-preview { border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface-sunk); margin-top: var(--s3); overflow: hidden; }
+.pulse-preview-head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); background: var(--surface); }
+.pulse-preview-body { padding: var(--s4) var(--s4) var(--s5); }
+.pulse-preview-title { margin: 0; font-size: var(--fs-card-title); }
+.pulse-preview-q { padding: var(--s4) 0; border-bottom: 1px solid var(--border); }
+.pulse-preview-q:last-child { border-bottom: 0; }
+.pulse-preview-label { font-weight: 600; margin-bottom: var(--s2); }
+.pulse-preview-num { color: var(--ink-soft); font-weight: 700; margin-right: 4px; }
+.pulse-preview-reused { margin: 0; font-style: italic; }
 /* launch_status badges on the staff review queue + owner list */
 .admin-status-approved { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .admin-status-in_review, .admin-status-changes_requested { background: var(--neutral-perf-tint); color: var(--neutral-perf); }

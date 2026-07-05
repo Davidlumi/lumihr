@@ -459,7 +459,20 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   const addNew = () => setNewQs(n => [...n, { text: "", type: "yes_no", polarity: "neutral", optionsText: "Yes\nNo" }]);
   const setNQ = (i, patch) => setNewQs(n => n.map((x, j) => j === i ? { ...x, ...patch } : x));
   const removeNQ = (i) => setNewQs(n => n.filter((_, j) => j !== i));
+  const moveNQ = (i, d) => setNewQs(n => { const j = i + d; if (j < 0 || j >= n.length) return n;
+    const c = [...n]; [c[i], c[j]] = [c[j], c[i]]; return c; });
+  const [preview, setPreview] = useState(false);
+  const [pvDrafts, setPvDrafts] = useState({});
+  const pvSave = (q, rowId, v) => setPvDrafts(d => ({ ...d, [q.id + "|" + (rowId || "")]: v }));
   const liveNew = () => newQs.filter(nq => (nq.text || "").trim());
+  // build an InputForType-shaped question from a composer draft, for the preview
+  const previewQ = (nq, i) => {
+    const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
+    const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
+    return { id: "pv-" + i, text: nq.text, title: nq.text, type: nq.type,
+      options: isSel ? labels.map((l, j) => ({ code: "O" + j, label: l })) : [],
+      na_allowed: nq.type === "numeric", matrix_rows: [], unit: {} };
+  };
   const buildBody = () => {
     const bespoke = liveNew().map(nq => {
       const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
@@ -502,7 +515,12 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
       ${newQs.map((nq, i) => html`
         <div key=${"n" + i} class="pulse-newq">
           <div class="row spread"><b class="caption">New question ${i + 1}</b>
-            <button class="btn small quiet" onClick=${() => removeNQ(i)}>Remove</button></div>
+            <div class="row" style=${{ gap: "2px" }}>
+              <button class="btn small quiet" title="Move up" aria-label="Move question up"
+                disabled=${i === 0} onClick=${() => moveNQ(i, -1)}>↑</button>
+              <button class="btn small quiet" title="Move down" aria-label="Move question down"
+                disabled=${i === newQs.length - 1} onClick=${() => moveNQ(i, 1)}>↓</button>
+              <button class="btn small quiet" onClick=${() => removeNQ(i)}>Remove</button></div></div>
           <label>Question<input class="ctl" maxlength="200" value=${nq.text} onInput=${e => setNQ(i, { text: e.target.value })} placeholder="What do you want to ask?" /></label>
           <div class="row" style=${{ gap: "var(--s3)" }}>
             <label style=${{ flex: 1 }}>Answer type<select class="ctl" value=${nq.type} onChange=${e => setNQ(i, { type: e.target.value })}>
@@ -524,8 +542,36 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
           <div class="pulse-libpick">
             ${lib === null ? html`<${Spinner} />` : libRows.slice(0, 120).map(x => html`
               <button key=${x.id} class="pulse-librow" disabled=${keep.some(k => k.id === x.id)} onClick=${() => addLib(x)}>
-                ${x.title} <span class="caption">· ${x.subpower || "—"} · ${x.type}</span></button>`)}
+                <span>${x.title} <span class="caption">· ${x.subpower || "—"} · ${TYPE_LABEL[x.type] || x.type}</span></span>
+                <span class="pulse-lib-tags">
+                  ${keep.some(k => k.id === x.id) ? html`<span class="pulse-lib-tag added">added</span>` : ""}
+                  ${x.answered ? html`<span class="pulse-lib-tag" title="Your organisation has already answered this in the core benchmark">in your benchmark</span>` : ""}
+                  ${x.locked ? html`<span class="pulse-lib-tag locked" title="A core benchmark metric — your benchmark result for it is behind the give-to-get wall, but you can still ask it as a pulse"><${Icon} name="lock" size=${11} /> core</span>` : ""}
+                </span></button>`)}
           </div></div>`}
+      ${(keep.length || liveNew().length) ? html`
+        <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s4)" }}>
+          <button class="btn small quiet" onClick=${() => setPreview(p => !p)}>
+            ${preview ? "Hide preview" : "Preview as a member"}</button>
+        </div>` : ""}
+      ${preview && html`
+        <div class="pulse-preview">
+          <div class="pulse-preview-head"><b>Preview</b> <span class="caption">· how a member sees your survey — answers here aren't saved</span></div>
+          <div class="pulse-preview-body">
+            <h3 class="pulse-preview-title">${name || "Untitled survey"}</h3>
+            ${desc ? html`<p class="caption" style=${{ marginTop: "2px" }}>${desc}</p>` : ""}
+            ${keep.map((k, i) => html`
+              <div key=${"pvk" + k.id} class="pulse-preview-q">
+                <div class="pulse-preview-label"><span class="pulse-preview-num">${i + 1}</span> ${k.text}</div>
+                <p class="caption pulse-preview-reused">Reused lumi library question · ${TYPE_LABEL[k.type] || k.type} — members answer with the standard control.</p>
+              </div>`)}
+            ${liveNew().map((nq, i) => { const q = previewQ(nq, i); return html`
+              <div key=${"pvn" + i} class="pulse-preview-q">
+                <div class="pulse-preview-label"><span class="pulse-preview-num">${keep.length + i + 1}</span> ${nq.text}</div>
+                <${InputForType} q=${q} drafts=${pvDrafts} issues=${{}} save=${pvSave} confirmValue=${() => {}} />
+              </div>`; })}
+          </div>
+        </div>` }
       <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s5)", flexWrap: "wrap" }}>
         <button class="btn" disabled=${busy} onClick=${save}>${isNew ? "Save draft" : "Save changes"}</button>
         ${!isNew && onSubmitReview && html`<button class="btn primary" disabled=${busy} onClick=${saveThenReview}>Submit for review →</button>`}
