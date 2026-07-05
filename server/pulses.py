@@ -465,9 +465,65 @@ def pulse_report(pulse_id, conn=None):
         if mr is not None:
             entry["matrix_rows"] = [{"row_id": m["row_id"], "label": m["label"], "block": m["block"]} for m in mr]
         out.append(entry)
-    return {"pulse_id": pulse_id, "name": p["name"], "status": p["status"],
-            "participants": len(cohort), "floor": SUPPRESSION_FLOOR,
-            "below_floor": len(cohort) < SUPPRESSION_FLOOR, "questions": out}
+    report = {"pulse_id": pulse_id, "name": p["name"], "status": p["status"],
+              "description": p["description"],
+              "participants": len(cohort), "floor": SUPPRESSION_FLOOR,
+              "below_floor": len(cohort) < SUPPRESSION_FLOOR, "questions": out,
+              "closes_at": p["closes_at"], "generated_at": _now()}
+    report["narrative"] = pulse_narrative_deterministic(report)
+    return report
+
+
+def _pct_word(pct):
+    if pct >= 75: return "most"
+    if pct >= 55: return "over half"
+    if pct >= 45: return "nearly half"
+    if pct >= 28: return "around a third"
+    if pct >= 15: return "a minority"
+    return "a few"
+
+
+def pulse_narrative_deterministic(report):
+    """The always-present report headline — an honest read composed straight
+    from the cohort figures (no model needed; this is the keyless floor and the
+    fallback the AI path validates against). Returns {summary, key_findings}."""
+    n = report["participants"]
+    qs = [q for q in report["questions"] if not (q.get("block") or {}).get("suppressed")]
+    shown = len(qs)
+    total = len(report["questions"])
+    summary = ("%d organisation%s took part in “%s”. " % (n, "" if n == 1 else "s", report["name"]))
+    if shown == 0:
+        summary += "Every question is still below the 5-organisation floor, so no figures are shown yet."
+        return {"summary": summary, "key_findings": [], "_fallback": True}
+    summary += ("Results below are the whole-cohort view across %d question%s%s, each held to the same "
+                "5-organisation suppression as the core benchmark." %
+                (shown, "" if shown == 1 else "s",
+                 "" if shown == total else " of %d" % total))
+    findings = []
+    for q in qs:
+        blk = q.get("block") or {}
+        opts = blk.get("options") or []
+        if opts:
+            top = max(opts, key=lambda o: o.get("pct", 0))
+            findings.append("On “%s”, %s of the cohort chose “%s” (%s%%, n=%s)." %
+                            (q["title"], _pct_word(top.get("pct", 0)), top.get("label", ""),
+                             top.get("pct", 0), blk.get("n", n)))
+        elif blk.get("p50") is not None:
+            findings.append("On “%s”, the cohort median is %s (n=%s)." %
+                            (q["title"], _fmt_num(blk["p50"], q.get("unit")), blk.get("n", n)))
+    return {"summary": summary, "key_findings": findings[:5],
+            "_fallback": True}
+
+
+def _fmt_num(v, unit):
+    ut = (unit or {}).get("type") if isinstance(unit, dict) else None
+    try:
+        s = ("%.1f" % float(v)).rstrip("0").rstrip(".")
+    except (TypeError, ValueError):
+        return str(v)
+    if ut == "percentage": return s + "%"
+    if ut == "currency": return "£" + s
+    return s
 
 
 # ----------------------------------------------------------------- graduation

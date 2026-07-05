@@ -1078,8 +1078,26 @@ async def pulse_detail(pid: str, request: Request):
     # results). Below the floor, the honest holding state is shown (never blank).
     view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
     if view["participated"] or view["is_owner"]:
-        rep = pulses_mod.pulse_report(pid, conn)
-        view["report"] = strip_internal(rep)
+        rep = strip_internal(pulses_mod.pulse_report(pid, conn))
+        # thread the org's OWN answer into each report question so the report can
+        # mark "you" against the cohort — a benchmark that never shows 'you' isn't one.
+        # Values store as the display label (selects), "; "-joined labels (multi), or
+        # a number (numeric/matrix); the client resolves the marker from `you`.
+        for rq in rep.get("questions", []):
+            qid = rq["question_id"]
+            if rq.get("matrix_rows"):
+                for mrow in rq["matrix_rows"]:
+                    v = mine.get((qid, mrow["row_id"]))
+                    if v not in (None, ""):
+                        mrow["you"] = v
+            else:
+                v = mine.get((qid, ""))
+                if v not in (None, ""):
+                    rq["you"] = v
+        # illustrative flag: a keyless/synthetic pool must never present seeded
+        # numbers as real, in the report the same as in the commentary caveat
+        rep["illustrative"] = bool(get_meta("synthetic_pool", False))
+        view["report"] = rep
     return view
 
 
@@ -1177,6 +1195,29 @@ async def pulse_commentary(pid: str, request: Request):
     res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     return {"parts": res["parts"], "source": res["source"], "cached": False,
             "caveats": {"illustrative": payload["illustrative_sample_data"]}}
+
+
+@app.post("/api/pulses/{pid}/narrative")
+async def pulse_narrative(pid: str, request: Request):
+    """AI-enhanced report-level narrative (summary + key findings). Keyless it
+    returns the deterministic floor already in the report; live it upgrades to a
+    grounded, validated model narrative. Same gates as commentary."""
+    user, org = require_user(request)
+    require_ai(get_conn(), user, AI_PULSE)
+    conn = get_conn()
+    try:
+        p = pulses_mod.get_pulse(pid, conn)
+    except ValueError:
+        raise HTTPException(404, "Unknown pulse")
+    part = pulses_mod.participant(pid, org["org_id"], conn)
+    is_owner = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
+    if not ((part and part["submission_complete"]) or is_owner):
+        raise HTTPException(403, "Participate in this pulse to see its report.")
+    rep = strip_internal(pulses_mod.pulse_report(pid, conn))
+    if rep.get("below_floor"):
+        raise HTTPException(400, "Report not available below the suppression floor.")
+    res = await to_thread.run_sync(claude_api.generate_pulse_narrative, rep)
+    return {"narrative": res["narrative"], "source": res["source"]}
 
 
 # ============================================ CORE-SET GOVERNANCE / TRENDS ==

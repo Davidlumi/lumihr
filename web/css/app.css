@@ -1729,6 +1729,24 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .setup-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .setup-note { flex: 0 0 auto; }
 
+/* pulse report — narrative/key-findings panel + a polished print document */
+.pulse-narrative { background: var(--surface-sunk); border-radius: var(--radius-sm); padding: var(--s4); margin: var(--s3) 0 var(--s4); }
+.pulse-findings { margin-top: var(--s2); }
+.pulse-findings ol { margin: var(--s1) 0 0; padding-left: var(--s5); }
+.pulse-findings li { margin: 3px 0; font-size: var(--fs-label); }
+.pulse-pdf-head, .pulse-pdf-foot { display: none; }
+.pulse-pdf-head .logo { font-weight: 700; color: var(--blue); }
+.pulse-pdf-head .logo span { color: var(--lumi-coral); }
+@media print {
+  .pulse-pdf-head { display: block; font-size: 10pt; color: var(--ink-soft); border-bottom: 1px solid var(--border);
+    padding-bottom: 6pt; margin-bottom: 12pt; }
+  .pulse-pdf-foot { display: block; font-size: 8.5pt; color: var(--ink-soft); border-top: 1px solid var(--border);
+    padding-top: 6pt; margin-top: 16pt; }
+  .pulse-report-doc .card { box-shadow: none; border: 0; margin: 0; padding: 0; }
+  .pulse-report-doc .q-block { break-inside: avoid; page-break-inside: avoid; }
+  .pulse-narrative { break-inside: avoid; background: var(--surface-sunk) !important; }
+}
+
 /* org-wide insights-unlock moment — one-time, per-user, celebratory but on-brand */
 .unlock-moment { position: relative; display: flex; gap: var(--s4); align-items: flex-start;
   padding: var(--s5); margin-bottom: var(--s4); border: 1px solid var(--blue-tint-2);

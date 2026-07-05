@@ -3,8 +3,8 @@
    give-to-get per pulse, fully independent of the core unlock gate.
    Reuses the submission input components (same file-global functions) and
    the chart primitives — but never the core nav/aggregates. */
-/* global html, useState, useEffect, api, Spinner, EmptyState, nav, toast, Icon,
-   PercentileBand, OptionBars, OrderedDist, InputForType */
+/* global html, useState, useEffect, api, Spinner, EmptyState, PageLoading, nav, toast, Icon,
+   fmtValue, PercentileBand, OptionBars, OrderedDist, InputForType */
 
 window.PulsesPage = function ({ me }) {
   const [data, setData] = useState(null);
@@ -124,19 +124,76 @@ window.PulseDetailPage = function ({ me, pid }) {
     </div>`;
 };
 
+function pulseCsv(report) {
+  const esc = s => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+  const rows = [["Question", "Answer / level", "Cohort %", "Cohort median", "n", "Your answer"]];
+  (report.questions || []).forEach(q => {
+    const blk = q.block || {};
+    if (blk.suppressed) { rows.push([q.title, "(suppressed — fewer than 5)", "", "", "", ""]); return; }
+    if (blk.options && blk.options.length) blk.options.forEach(o => rows.push([q.title, o.label, o.pct, "", blk.n, ""]));
+    else if (blk.p50 != null) rows.push([q.title, "", "", blk.p50, blk.n, q.you || ""]);
+    (q.matrix_rows || []).forEach(r => rows.push([q.title + " — " + r.label, "", "",
+      (r.block && r.block.p50) != null ? r.block.p50 : "", (r.block && r.block.n) || "", r.you || ""]));
+  });
+  return rows.map(r => r.map(esc).join(",")).join("\r\n");
+}
+function downloadPulseCsv(report) {
+  const blob = new Blob(["﻿" + pulseCsv(report)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url;
+  a.download = "lumi-pulse-" + String(report.name || "report").replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 40) + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function printPulse(report) {
+  const t = document.title;
+  document.title = "lumi pulse — " + (report.name || "report");
+  window.print();
+  setTimeout(() => { document.title = t; }, 500);
+}
+
 function PulseReport({ report, pid, me }) {
   if (report.below_floor) return html`
     <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0", textAlign: "center" }}>
-      <div style=${{ fontSize: "var(--fs-metric)" }}>⏳</div>
+      <div class="unlock-spark" style=${{ margin: "0 auto var(--s2)" }}><${Icon} name="flag" size=${20} /></div>
       <b>Your responses are in — results appear once ${report.floor}+ organisations have taken part.</b>
       <div class="caption" style=${{ marginTop: "var(--s2)" }}>${report.participants} of ${report.floor} so far.
         Every answer stays protected by the same ${report.floor}-organisation rule as the core benchmark.</div>
     </div>`;
+  // the deterministic narrative ships in the payload (opens with it instantly);
+  // when the AI surface is live it upgrades to the grounded model narrative
+  const [nar, setNar] = useState(report.narrative || {});
+  useEffect(() => {
+    if (!(me.features && me.features.pulse_ai)) return;
+    api("/api/pulses/" + pid + "/narrative", { method: "POST", body: {} })
+      .then(r => { if (r && r.narrative && r.source === "model") setNar(r.narrative); })
+      .catch(() => {});
+  }, [pid]);
+  const genDate = (report.generated_at || "").slice(0, 10);
   return html`
-    <div class="card" style=${{ margin: "var(--s4) 0" }}>
-      <div class="qsec-head"><b>Pulse report</b> <span class="caption">· ${report.participants} organisations ·
-        same methodology and ${report.floor}+ suppression as the core · whole-cohort view</span></div>
-      ${report.questions.map(q => html`<${PulseQuestionBlock} key=${q.question_id} q=${q} pid=${pid} me=${me} />`)}
+    <div class="pulse-report-doc" style=${{ margin: "var(--s4) 0" }}>
+      <div class="pulse-pdf-head" aria-hidden="true"><span class="logo">lumi<span>.</span></span> · Pulse report</div>
+      <div class="card">
+        <div class="qsec-head row spread">
+          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · ${report.floor}+ suppression · whole-cohort view${genDate ? " · " + genDate : ""}</span></div>
+          <div class="row no-print" style=${{ gap: "var(--s2)" }}>
+            <button class="btn small" onClick=${() => downloadPulseCsv(report)}><${Icon} name="download" size=${13} /> CSV</button>
+            <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Download PDF</button>
+          </div>
+        </div>
+        ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--neutral-perf)" }}>Illustrative sample data — figures shown for demonstration.</div>`}
+        ${(nar.summary || (nar.key_findings || []).length) && html`
+          <div class="pulse-narrative">
+            ${nar.summary && html`<p style=${{ margin: "0 0 var(--s2)" }}>${nar.summary}</p>`}
+            ${(nar.key_findings || []).length ? html`
+              <div class="pulse-findings">
+                <div class="eyebrow" style=${{ marginBottom: "var(--s1)" }}>Key findings</div>
+                <ol>${nar.key_findings.map((f, i) => html`<li key=${i}>${f}</li>`)}</ol>
+              </div>` : null}
+          </div>`}
+        ${report.questions.map(q => html`<${PulseQuestionBlock} key=${q.question_id} q=${q} pid=${pid} me=${me} />`)}
+        <div class="pulse-pdf-foot" aria-hidden="true">Private & confidential · Generated by lumi${genDate ? " · " + genDate : ""} · figures resting on fewer than 5 organisations are never shown</div>
+      </div>
     </div>`;
 }
 
@@ -147,27 +204,34 @@ function PulseQuestionBlock({ q, pid, me }) {
     try { setCom("…"); setCom(await api("/api/pulses/" + pid + "/commentary", { method: "POST", body: { question_id: q.question_id } })); }
     catch (e) { setCom(null); toast(e.message, "error"); }
   };
+  // the org's OWN answer, resolved to what the charts expect: a number for
+  // numeric, or the chosen label(s) for selects ("; "-joined for multi)
+  const youNum = q.you != null && q.you !== "" && !isNaN(parseFloat(q.you)) ? parseFloat(q.you) : null;
+  const youLabels = q.you && q.type !== "numeric"
+    ? (q.type === "multi_select" ? String(q.you).split(";").map(s => s.trim()).filter(Boolean) : [String(q.you)])
+    : [];
   return html`
     <div class="q-block">
       <div style=${{ fontWeight: 600, marginBottom: "var(--s2)" }}>${q.title}</div>
       ${blk.suppressed ? html`
         <div class="caption">Fewer than 5 cohort answers for this question — protected, not shown.</div>` : html`
         <div>
-          ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${null} unit=${q.unit} favourable=${null} />`}
+          ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} />`}
           ${blk.options && (q.type === "multi_select"
-            ? html`<${OptionBars} options=${blk.options} youLabels=${[]} />`
-            : html`<${OrderedDist} options=${blk.options} youLabels=${[]} />`)}
+            ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
+            : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} />`)}
           ${q.matrix_rows && html`
             <table class="data" style=${{ marginTop: "var(--s2)" }}>
-              <thead><tr><th>Level</th><th class="num">Cohort</th></tr></thead>
+              <thead><tr><th>Level</th><th class="num">Cohort</th><th class="num">You</th></tr></thead>
               <tbody>${q.matrix_rows.map(r => html`
                 <tr key=${r.row_id}><td>${r.label}</td>
                   <td class="num">${r.block && r.block.suppressed ? "—" :
                     r.block && r.block.p50 != null ? "median " + fmtValue(r.block.p50, q.unit) :
                     r.block && r.block.modal_label ? r.block.modal_label + " (" + r.block.modal_pct + "%)" : "—"}
-                    ${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td></tr>`)}
+                    ${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td>
+                  <td class="num" style=${{ color: r.you != null && r.you !== "" ? "var(--blue-deep)" : "var(--ink-faint)", fontWeight: 600 }}>${r.you != null && r.you !== "" ? fmtValue(parseFloat(r.you), q.unit) : "—"}</td></tr>`)}
               </tbody></table>`}
-          <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}</div>
+          <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}${q.you != null && q.you !== "" && q.type !== "matrix" ? " · your answer marked" : ""}</div>
           ${me.features && me.features.pulse_ai && html`
             <div style=${{ marginTop: "var(--s2)" }}>
               ${!com ? html`<button class="btn small" onClick=${askAI}><${Icon} name="sparkle" size=${12} /> Commentary</button>` :
