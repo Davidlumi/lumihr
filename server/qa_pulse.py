@@ -103,6 +103,59 @@ check("pulse matrix row aggregates (n=5, p50=22)",
       row and row["block"].get("n") == 5 and abs(row["block"]["p50"] - 22.0) < 1e-9,
       row and row["block"])
 
+print("== report narrative: keyless floor + AI trust gate (P1) ==")
+import claude_api
+# the report ships to the narrative route strip_internal'd — mirror that exactly
+rep5_ship = appmod.strip_internal(pulses.pulse_report(pid, conn))
+nar5 = rep5_ship.get("narrative") or {}
+# A. a served report always carries a structurally sound deterministic narrative
+check("served report carries a deterministic narrative (summary + >=1 finding)",
+      isinstance(nar5.get("summary"), str) and nar5["summary"].strip()
+      and isinstance(nar5.get("key_findings"), list) and len(nar5["key_findings"]) >= 1,
+      nar5)
+# B. THE headline invariant: the KEYLESS shipped narrative is validator-clean —
+#    the deterministic floor must pass the very gate the model path is held to,
+#    so number-grounding/directive/legal/jargon can never reject the product.
+okB, whyB = claude_api.validate_pulse_narrative(nar5, rep5_ship)
+check("keyless deterministic narrative passes its own trust gate", okB, whyB)
+# C. findings are grounded in real cohort figures + whole-cohort framing
+check("a key finding cites the numeric cohort median",
+      any("median is" in f for f in nar5["key_findings"]),
+      nar5["key_findings"])
+check("summary frames the whole cohort, not a single-org verdict",
+      "cohort" in nar5["summary"].lower() and " you " not in (" " + nar5["summary"].lower() + " "))
+# D. below-floor report -> honest floor message, ZERO figures leak into findings
+nar4 = rep4.get("narrative") or {}
+check("below-floor narrative shows NO figures (empty key_findings)", nar4.get("key_findings") == [],
+      nar4.get("key_findings"))
+check("below-floor narrative states the 5-organisation floor honestly",
+      "5-organisation floor" in nar4.get("summary", ""))
+# E-I. the trust gate BITES: each screen must reject an adversarial narrative that
+#      is otherwise well-formed (grounded findings) so we isolate the one screen.
+good_kf = nar5["key_findings"]
+adversarial = [
+    ("ungrounded number", {"summary": nar5["summary"] + " An outlier figure of 987654 stands out.",
+                           "key_findings": good_kf}),
+    ("directive phrasing", {"summary": "Across the cohort, you must raise pay this year.",
+                           "key_findings": good_kf}),
+    ("legal adjudication", {"summary": "Across the cohort, several organisations are in breach of the rules.",
+                           "key_findings": good_kf}),
+    ("engineering jargon", {"summary": "The payload shows the cohort's answers clearly.",
+                           "key_findings": good_kf}),
+    ("empty key_findings", {"summary": nar5["summary"], "key_findings": []}),
+    ("control/escape chars", {"summary": "First line\nsecond line snuck through.",
+                             "key_findings": good_kf}),
+]
+for label, bad in adversarial:
+    ok, _why = claude_api.validate_pulse_narrative(bad, rep5_ship)
+    check("trust gate rejects %s" % label, not ok, "unexpectedly accepted")
+# J. and it still ACCEPTS a faithful, measured narrative built from real figures
+faithful = {"summary": nar5["summary"],
+            "key_findings": ["The cohort's answers are shown across the whole group, "
+                             "each figure held to the same 5-organisation floor."]}
+okJ, whyJ = claude_api.validate_pulse_narrative(faithful, rep5_ship)
+check("trust gate accepts a faithful, grounded narrative", okJ, whyJ)
+
 print("== HARD SEPARATION (the cardinal rule) ==")
 core_after = json.loads(conn.execute(
     "SELECT payload_json FROM benchmark_snapshots WHERE snapshot_id=1 AND question_id=?", (QID,)).fetchone()[0])
