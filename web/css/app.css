@@ -1767,8 +1767,20 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 
 /* --- self-service builder: on-brand form + page furniture (2026-06-22) --- */
 .pulse-form label { display: block; font-size: var(--fs-label); font-weight: 600;
-  color: var(--ink-soft); margin: var(--s4) 0 var(--s1); }
-.pulse-form .ctl { width: 100%; }
+  color: var(--ink); margin: var(--s4) 0 var(--s1); }
+/* P11: modern full-width fields. The global input.ctl/select.ctl caps width at
+   260px + height 32px, which left capped inputs sitting INLINE beside their
+   labels (only textareas, uncapped, stacked) — the dated look. Scoped to
+   .pulse-form so the search bar / filters / admin forms keep their compact ctl. */
+.pulse-form .ctl { width: 100%; max-width: none; font-size: var(--fs-body);
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+.pulse-form input.ctl, .pulse-form select.ctl { height: 44px; padding: 0 var(--s4); }
+.pulse-form textarea.ctl { min-height: 76px; padding: var(--s3) var(--s4); line-height: 1.5; }
+.pulse-form .ctl::placeholder { color: var(--ink-faint); }
+.pulse-form .ctl:hover { border-color: var(--ink-faint); }
+.pulse-form .ctl:focus, .pulse-form .ctl:focus-visible { outline: none; border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-tint); }
 .pulse-form h2 { margin-top: 0; }
 /* Questions section header: a tinted band with a count chip */
 .pulse-form .qsec-head { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
