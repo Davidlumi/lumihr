@@ -647,11 +647,18 @@ td.num, th.num { text-align: right; }
 .auth-card { width: 400px; max-width: 100%; padding: var(--s6); }
 .field { margin-bottom: var(--s4); }
 .field label { display: block; font-size: var(--fs-label); font-weight: 600; margin-bottom: var(--s1);
-  color: var(--ink-soft); }
-.field input, .field select, .field textarea { width: 100%; height: 36px; padding: 0 var(--s3);
-  border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: var(--fs-body); }
-.field textarea { height: auto; padding: var(--s2) var(--s3); }
-.field input:focus, .field select:focus { outline: var(--focus-outline); border-color: var(--blue); }
+  color: var(--ink); }
+/* P12: modern member-facing fields — same language as the pulse builder (P11).
+   .field is used only by member surfaces (profile/firmographics, metric-request,
+   auth, invite/team); the staff /admin console uses neither .field nor .ctl. */
+.field input, .field select, .field textarea { width: 100%; height: 44px; padding: 0 var(--s4);
+  border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--fs-body);
+  background: var(--surface); color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+.field textarea { height: auto; min-height: 76px; padding: var(--s3) var(--s4); line-height: 1.5; }
+.field input::placeholder, .field textarea::placeholder { color: var(--ink-faint); }
+.field input:hover, .field select:hover, .field textarea:hover { border-color: var(--ink-faint); }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none;
+  border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
 .error-text { color: var(--unfavourable); font-size: var(--fs-label); margin-top: var(--s1); }
 .warn-text { color: var(--neutral-perf); font-size: var(--fs-label); margin-top: var(--s1); }
 .ok-text { color: var(--favourable); font-size: var(--fs-label); margin-top: var(--s1); }
@@ -2163,10 +2170,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .suggest-body { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s5); margin-top: var(--s5); }
 .suggest-field { display: flex; flex-direction: column; }
 .suggest-field label { font-size: var(--fs-label); font-weight: 500; color: var(--ink); margin-bottom: var(--s2); }
-.suggest-input { width: 100%; border: .5px solid #D7E3F7; border-radius: 8px; padding: var(--s3) var(--s3); font-size: var(--fs-label);
-  font-family: inherit; color: var(--ink); background: #fff; }
-.suggest-input:focus { outline: var(--focus-outline); outline-offset: 0; border-color: var(--lumi-navy); }
-textarea.suggest-input { resize: vertical; min-height: 72px; }
+.suggest-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 var(--s4); height: 44px;
+  font-size: var(--fs-body); font-family: inherit; color: var(--ink); background: var(--surface); transition: border-color .15s, box-shadow .15s; }
+.suggest-input:hover { border-color: var(--ink-faint); }
+.suggest-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+textarea.suggest-input { resize: vertical; min-height: 76px; height: auto; padding: var(--s3) var(--s4); line-height: 1.5; }
 .suggest-input.err { border-color: var(--color-text-danger); }
 .suggest-hint { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s1); }
 .suggest-err { font-size: var(--fs-caption); color: var(--color-text-danger); margin-top: var(--s1); }
