@@ -812,7 +812,7 @@ window.TeamPage = function ({ me }) {
         </div>
       </div>
       ${isAdmin && html`
-        <div class="card" style=${{ padding: "var(--s4)" }}>
+        <div class="card invite-form" style=${{ padding: "var(--s4)" }}>
           <h2 class="section-title">Invite a colleague</h2>
           <div class="row">
             <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" aria-label="Colleague's email address"
