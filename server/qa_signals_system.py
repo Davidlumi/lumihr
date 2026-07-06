@@ -131,7 +131,10 @@ def main():
         op.open(urllib.request.Request(BASE + "/api/auth/login",
                 data=json.dumps({"email": "director@thornbridge.example", "password": "lumi-demo-2026"}).encode(),
                 headers={"Content-Type": "application/json"}, method="POST"))
-        sigs = json.loads(op.open(urllib.request.Request(BASE + "/api/overview"), timeout=120).read()).get("signals") or []
+        _ov = json.loads(op.open(urllib.request.Request(BASE + "/api/overview"), timeout=120).read())
+        # per-view briefings (2026-07-06): with caps lifted the FULL fired set is the
+        # union of the market briefing + the practice briefing — audit both.
+        sigs = (_ov.get("signals") or []) + (_ov.get("signals_practice") or [])
     finally:
         json.dump(base, open(SL, "w"), indent=2, ensure_ascii=False)
 

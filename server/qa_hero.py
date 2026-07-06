@@ -267,6 +267,17 @@ check("signal count within caps (max %d, %d/lens)" % (cfg["max_signals"], cfg["m
       len(sigs) <= cfg["max_signals"] and all(
           sum(1 for x in sigs if x["lens"] == l) <= cfg["max_per_lens"] for l in {x["lens"] for x in sigs}),
       [(x["lens"], x["kind"]) for x in sigs])
+# per-view briefings (2026-07-06): the practice-view briefing rides signals_practice
+# under the SAME ratified knobs, and neither briefing may leak the other view's rows.
+sigs_p = ov_sig.get("signals_practice") or []
+check("practice briefing within the same ratified caps (max %d, %d/lens)" % (cfg["max_signals"], cfg["max_per_lens"]),
+      len(sigs_p) <= cfg["max_signals"] and all(
+          sum(1 for x in sigs_p if x["lens"] == l) <= cfg["max_per_lens"] for l in {x["lens"] for x in sigs_p}),
+      [(x["lens"], x["kind"]) for x in sigs_p])
+check("briefings are view-pure (market = below/on/above; practice = never)",
+      all(x.get("position") in ("below", "on", "above") for x in sigs)
+      and all(x.get("position") not in ("below", "on", "above") for x in sigs_p),
+      {"mkt": [x.get("position") for x in sigs], "prac": [x.get("position") for x in sigs_p]})
 vis_ids = {q["id"] for q in api("/api/questions")["questions"]}
 check("every signal points at a live, visible metric",
       all(x["question_id"] in vis_ids for x in sigs),

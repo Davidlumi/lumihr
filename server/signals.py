@@ -1041,8 +1041,21 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if s["status"] == "priority":
             s["impact"] += 100000000
     cap_cfg = (ordered_routing().get("_david_ratified_2026_06_13", {}) or {}).get("briefing_cap", {})
-    capped = cap_briefing(pool, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
-                          cap_cfg.get("max_behind", 3))
+    # Per-view briefings (2026-07-06): the home split into Market/Practice lenses
+    # (2026-06-23) but the briefing stayed ONE mixed capped set, which the client
+    # bypassed in favour of raw impact order — silently retiring the ratified
+    # balance (<=max_behind behind + a reserved non-behind slot, <=max_per_lens
+    # per lens). The balance now applies WITHIN each view: the market-position
+    # pool and the practice pool are capped separately with the SAME ratified
+    # function and knobs, so each view's top-of-panel is the balanced briefing.
+    # (For the practice pool 'behind' never occurs, so cap_briefing degrades to
+    # impact order under the per-lens cap — one policy function, no fork.)
+    mkt_pool = [s for s in pool if s.get("position") in ("below", "on", "above")]
+    prac_pool = [s for s in pool if s.get("position") not in ("below", "on", "above")]
+    capped = (cap_briefing(mkt_pool, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
+                           cap_cfg.get("max_behind", 3))
+              + cap_briefing(prac_pool, cfg.get("max_signals", 5), cfg.get("max_per_lens", 2),
+                             cap_cfg.get("max_behind", 3)))
     for s in capped:
         s.pop("impact", None)
     return capped

@@ -578,8 +578,17 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .page-head .controls { display: flex; gap: var(--s2); align-items: center; }
 
 /* ================================================================ overview */
-.opp-hero { flex: 1.4 1 300px; min-width: 280px; border-left: 1px solid var(--border);
-  padding-left: var(--s5); display: flex; flex-direction: column; gap: var(--s2); }
+/* (.opp-hero / .opp-row deleted 2026-07-06 — OpportunityTile retired; zero consumers.) */
+/* org title + the co-op trust line beneath it (pool depth + collection window) */
+.hero-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hero-sub { font-size: var(--fs-caption); color: var(--ink-soft); letter-spacing: .005em; }
+/* "Your journey" strip — slim band between the hero row and the domain grid */
+.ov-journey { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s4);
+  padding: var(--s2) var(--s4); border: 1px solid var(--border); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--blue-tint) 40%, var(--surface)); }
+.ov-journey-spark { width: 130px; flex: 0 0 auto; display: block; }
+.ov-journey-copy { color: var(--ink-soft); }
+.ov-journey-copy b { color: var(--blue); }
 /* Eyebrow — ONE typography source per tier (2026-07-04, was 14 bespoke micro-label
    declarations). Each listed class keeps ONLY its own colour + layout below. */
 .eyebrow, .nav-label, .rail-flyout-head, .strat-eyebrow,
@@ -593,10 +602,6 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .05em; }
 .cat-hero-label { font-size: var(--fs-body); font-weight: 700; letter-spacing: .04em; }
 .eyebrow { color: var(--ink-soft); }
-.opp-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
-  padding: var(--s1) 0; border-bottom: 1px solid var(--chart-grid); font-size: var(--fs-label); }
-.opp-row:last-of-type { border-bottom: 0; }
-.opp-row b { font-size: var(--fs-body); }
 .hero { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
 /* peer-cut + board-pack grouped on the right of the title row (Overview) */
 .hero-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
@@ -854,7 +859,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 /* ---- the 80/20 home hero (2026-06-12, polished) ---- */
 .ov-top { display: grid; grid-template-columns: 356px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
 .ov-wrap .grid2 { gap: var(--s4) !important; margin: var(--s4) 0 !important; }
-@media (max-width: 1000px) { .ov-top { grid-template-columns: 1fr; } }
+/* stacked hero: minmax(0,1fr), NEVER bare 1fr — a 1fr track's minimum is the content's
+   min-width, so one unbreakable row (~530px of tag+actions) blew the track past a phone
+   viewport and main{overflow-x:clip} silently amputated the right third of the hero
+   (donut edge, position tags, ALL triage buttons — unreachable, 2026-07-06 dive). */
+@media (max-width: 1000px) { .ov-top { grid-template-columns: minmax(0, 1fr); } }
+/* narrow phones: the signal row's one-line anatomy (roundel · body · bar · tag · triage)
+   exceeds the card — let the fact line own line 1 and the read/act cluster wrap to line 2 */
+@media (max-width: 640px) {
+  .signal-row { flex-wrap: wrap; row-gap: var(--s2); }
+  .signal-row .signal-body { flex: 1 1 60%; }
+  .signal-row .sig-actions { margin-left: auto; }
+}
 
 /* Home dashboard lens controls (2026-06-23): Market/Practice view toggle + strategy on/off */
 .ov-controls { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s3); }
@@ -894,7 +910,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .card-head { display: flex; align-items: center; gap: var(--s2); padding-bottom: var(--s3);
   border-bottom: 1px solid var(--border); margin-bottom: var(--s1); }
 .card-head > svg { color: var(--ink-faint); flex: 0 0 auto; }
-.card-head > span { font-size: var(--fs-label); font-weight: 500; color: var(--ink-soft); letter-spacing: .01em; }
+.card-head > span, .card-head > .card-head-title { font-size: var(--fs-label); font-weight: 500; color: var(--ink-soft); letter-spacing: .01em; }
+/* card titles are REAL headings now (h2 — the page outline was h1-only); visually
+   identical to the span they replace, so the heading is semantic, not typographic */
+.card-head > .card-head-title { margin: 0; font-family: inherit; line-height: inherit; }
 /* Overview section-heading icons → navy chrome accent (compass = Where you stand, flag = Signals).
    Scoped to these two cards; other card-head icons stay neutral. */
 .arc-card .card-head > svg, .signals-card .card-head > svg { color: var(--lumi-navy); }
@@ -996,6 +1015,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row svg { flex: 0 0 auto; }
 /* every row: what it is (bold) · where you stand (the market fact) · the tag */
 .signal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* the body is a real <button> now (a11y un-nesting: the row div is mouse-only, the
+   body is the keyboard control, triage buttons are siblings) — strip UA chrome so
+   it renders exactly as the span it replaces; focus comes from the global rule */
+button.sig-open { font: inherit; color: inherit; text-align: left; background: none;
+  border: 0; padding: 0; cursor: pointer; }
 .sig-lead { display: inline-flex; align-items: center; gap: var(--s2); }
 .sig-lead:empty { display: none; }
 .sig-worth { color: var(--ink-faint); margin-bottom: 1px; }
@@ -1153,7 +1177,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-tile.cat-tile-norate { border-top-color: color-mix(in srgb, var(--ink-faint) 38%, transparent);
   background: color-mix(in srgb, var(--surface-sunk) 55%, var(--surface)); }
 .cat-tile-norate .cat-icon { background: color-mix(in srgb, var(--ink-faint) 16%, transparent); color: var(--ink-soft); }
-.cat-tile-norate > span:first-child { color: var(--ink-soft); }
+.cat-tile-norate .cat-open { color: var(--ink-soft); }
+/* tile name = h3 > button (a11y un-nesting, same pattern as the signal body):
+   the h3 joins the outline, the button is the tile's one real control, and the
+   focusable indic-flag is no longer a descendant of an interactive. Same look
+   as the old inline-styled span. */
+.cat-tile-name { margin: 0; font-size: var(--fs-label); font-weight: 600; line-height: inherit; font-family: inherit; }
+.cat-tile-name .cat-open { display: inline-flex; align-items: center; gap: var(--s2);
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
 /* FIX 6 (2026-06-23) — the card's chart grammar changes between tabs (Market = a
    below/on/above POSITION bar; Practice = a "how many DIFFER" fill bar). A one-word axis
    label names what the bar measures, so the two are never read on the same scale. The

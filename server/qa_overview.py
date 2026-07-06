@@ -197,7 +197,11 @@ check("9b. hero copy interpolates engine differ & pool RAW (rendered == engine; 
       "${approach.differ}</b> of ${approach.pool} practices sit off the norm" in pagesjs,
       "hero differ/pool line is not interpolated raw from the engine fields")
 check("9c. 'See all N signals' count derives from the live signal set (view-filtered), not a hard-coded literal",
-      '_viewSigs = (data.signals_all || []).filter(' in pagesjs
+      # per-view briefings (2026-07-06): the pool binding renamed (_pool) and the panel
+      # list became briefing-first + impact tail — the INVARIANT is unchanged: the total
+      # is the length of the live view-filtered ENGINE set, never a literal.
+      '_pool = (data.signals_all || []).filter(' in pagesjs
+      and '_viewSigs = [..._brief, ..._pool.filter(' in pagesjs
       and '_viewLive = _viewSigs.filter(s => s.status !== "dismissed")' in pagesjs
       and '_viewTotal = _viewLive.length' in pagesjs
       and '"See all " + total + " signals' in pagesjs,

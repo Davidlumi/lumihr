@@ -1753,9 +1753,14 @@ async def overview(request: Request):
     # degrades byte-identical. Drives confirm-suppression inside build_signals.
     _dom_align = {d["name"]: (d.get("target") or {}).get("alignment")
                   for d in hero["domains"] if d.get("target")}
-    sigs = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
-                                     conn=conn, org_id=org["org_id"], statuses=_statuses,
-                                     strategy=_strategy, domain_alignment=_dom_align)
+    _sigs_brief = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
+                                            conn=conn, org_id=org["org_id"], statuses=_statuses,
+                                            strategy=_strategy, domain_alignment=_dom_align)
+    # per-view briefings (signals.py caps each position pool separately):
+    # `signals` KEEPS its meaning — the market-view balanced briefing (qa_hero
+    # asserts its caps) — while the practice-view briefing rides alongside.
+    sigs = [s for s in _sigs_brief if s.get("position") in ("below", "on", "above")]
+    sigs_practice = [s for s in _sigs_brief if s.get("position") not in ("below", "on", "above")]
     # full uncapped set for the dedicated Signals explore page (home stays capped)
     sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
                                          conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses,
@@ -1769,7 +1774,7 @@ async def overview(request: Request):
         s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
         s["snooze_until"] = _snooze_until.get(s.get("sig_id") or s["question_id"])
     _new_ids = {(s.get("sig_id") or s["question_id"]) for s in sigs_all}  # current sig_ids
-    for s in sigs:
+    for s in sigs + sigs_practice:
         s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
         s["snooze_until"] = _snooze_until.get(s.get("sig_id") or s["question_id"])
     signals_new = sum(1 for s in sigs_all if s["new"] and s.get("status") not in ("dismissed", "snoozed"))
@@ -1797,6 +1802,7 @@ async def overview(request: Request):
         "contribution": contrib,
         "hero": hero,
         "signals": sigs,
+        "signals_practice": sigs_practice,
         "signals_all": sigs_all,
         "signals_new": signals_new,
         # reward strategy completion — drives the dashboard nudge for Admins who
