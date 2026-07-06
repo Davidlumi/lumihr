@@ -1437,7 +1437,8 @@ function CategoryTile({ d, pending, aim, view }) {
           </div>
         </div>` : noRate ? html`
         <div class="cat-na num" style=${{ marginTop: "var(--s2)" }}
-          title="No market rate to be under or over — these are approach choices, not a market position.">N/A</div>` : html`
+          title="No market rate to be under or over — these are approach choices, not a market position.">N/A</div>
+        <div class="cat-na-note">Approach choices — no market rate to sit above or below.</div>` : html`
         <div class="tile-band" style=${{ margin: "2px 0 0" }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>

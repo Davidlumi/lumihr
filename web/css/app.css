@@ -1131,7 +1131,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-tile .row.spread { flex-wrap: wrap; gap: var(--s1); }
 .cat-tile { padding: var(--s4); cursor: pointer; transition: transform var(--ease), box-shadow var(--ease);
   border-top: 3px solid var(--border); border-radius: 0 0 var(--radius) var(--radius);
-  display: flex; flex-direction: column; gap: var(--s3); }
+  display: flex; flex-direction: column; gap: var(--s2); }
 .cat-tile .row.spread { min-height: 26px; }
 /* The compact navy AlignmentChip rides its OWN line (the name line is too narrow for a labelled
    chip beside longer category names). It now sits under a quiet "STRATEGY" .cat-axis label,
@@ -1158,7 +1158,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    below/on/above POSITION bar; Practice = a "how many DIFFER" fill bar). A one-word axis
    label names what the bar measures, so the two are never read on the same scale. The
    negative bottom margin neutralises the card's flex gap so the label hugs its bar. */
-.cat-axis { color: var(--ink-faint); margin-bottom: calc(2px - var(--s3)); }
+.cat-axis { color: var(--ink-faint); margin-bottom: calc(2px - var(--s2)); line-height: var(--lh-micro); }
 /* Governance / non-competitive: a DELIBERATE "N/A" slot where the spectrum bar would sit,
    so the absence reads as not-applicable by design, never as a bar that failed to load
    (the real bars are solid + coloured). */
@@ -1166,6 +1166,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   background: color-mix(in srgb, var(--surface-sunk) 50%, transparent);
   display: flex; align-items: center; justify-content: center;
   font-size: var(--fs-caption); font-weight: 700; letter-spacing: 0.06em; color: var(--ink-faint); }
+/* the no-market-rate tile carries no bar/chip, so it would otherwise sit hollow —
+   a quiet one-line reason fills the space AND explains WHY there's no position. */
+.cat-na-note { margin-top: var(--s2); font-size: var(--fs-micro); line-height: var(--lh-micro);
+  color: var(--ink-faint); }
 /* data-pending gauge (below the insights-unlock threshold): neutral, no verdict tone */
 .arc-word.arc-word-pending { font-size: var(--fs-subhead); font-weight: 600; line-height: 1.2; letter-spacing: 0;
   color: var(--ink-soft); max-width: 220px; margin: 0 auto; }
