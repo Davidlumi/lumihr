@@ -314,9 +314,17 @@ VERDICT = ("behind", "ahead", "better", "worse", "lagging", "leading", "you shou
 check("ordered-outlier signals carry no verdict word (position + peer fact only)",
       all(not any(v in x["detail"].lower() for v in VERDICT) for x in _out_sigs),
       [x["question_id"] for x in _out_sigs if any(v in x["detail"].lower() for v in VERDICT)])
+# matrix-row outliers (sig_id qid::row) are POSITION outliers that auto-route — they
+# carry kind "outlier" but are NOT ordered-scale metrics, so they legitimately never
+# appear in scales/ordered_outlier (the same auto-route convention qa_signals_system
+# asserts). Only TRUE ordered-scale outliers must declare an explicit scale. (This
+# check silently assumed no matrix outlier could reach the capped briefing; the
+# 2026-07-06 per-view briefing split changed the market-set composition and surfaced
+# one — a7ed418e::night_premium — exposing the missing filter, not an engine fault.)
+_scale_out = [x for x in _out_sigs if "::" not in (x.get("sig_id") or "")]
 check("every ordered-outlier signal fires off an EXPLICIT scale (no index inference)",
-      all(x["question_id"] in _ord.get("scales", {}) and x["question_id"] in _ord.get("ordered_outlier", []) for x in _out_sigs),
-      [x["question_id"] for x in _out_sigs if x["question_id"] not in _ord.get("scales", {})])
+      all(x["question_id"] in _ord.get("scales", {}) and x["question_id"] in _ord.get("ordered_outlier", []) for x in _scale_out),
+      [x["question_id"] for x in _scale_out if x["question_id"] not in _ord.get("scales", {})])
 check("Phase-3 re-routed metrics never fire as ordered-outlier",
       not (set(_ord.get("_david_ratified_2026_06_13", {}).get("reroute_to_phase3_prevalence", [])) & {x["question_id"] for x in _out_sigs}))
 # Mechanism B (depth-of-provision): also position + peer fact, never a verdict.

@@ -2329,6 +2329,23 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .metric-lead { font-size: var(--fs-section); font-family: var(--font-head); color: var(--ink);
   max-width: 720px; margin: var(--s4) 0 0; line-height: 1.45; }
 .pos-pill.lg { font-size: var(--fs-body); padding: var(--s2) var(--s3); flex: none; }
+/* metric-page header side stack: position pill, the declared-aim read, and the
+   Download/Share actions (lifted from the page foot to the top, 2026-07-06). */
+.metric-head-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s2); flex: none; }
+.metric-aim { display: inline-flex; align-items: center; gap: var(--s2); }
+.metric-aim-lbl { font-size: var(--fs-caption); color: var(--ink-soft); }
+.metric-head-actions { display: flex; gap: var(--s2); flex-wrap: wrap; justify-content: flex-end; }
+/* "why you're here" — the signal that opened this page + its triage controls */
+.metric-sigbar { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3);
+  padding: var(--s2) var(--s3); border: 1px solid var(--border); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--blue-tint) 30%, var(--surface)); }
+.metric-sigbar-txt { flex: 1; min-width: 0; font-size: var(--fs-label); }
+.metric-sigbar-txt .caption { color: var(--ink-soft); }
+.metric-sigbar .sig-actions { flex: 0 0 auto; }
+@media (max-width: 640px) {
+  .row.spread .metric-head-side { align-items: flex-start; }
+  .metric-sigbar { flex-wrap: wrap; }
+}
 .cut-row { display: flex; gap: var(--s5); align-items: center; padding: var(--s3) 0;
   border-bottom: 1px solid var(--border); }
 .cut-row:last-of-type { border-bottom: none; }

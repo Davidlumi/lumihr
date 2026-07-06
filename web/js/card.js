@@ -282,16 +282,29 @@ window.WhatThisMeans = function ({ card: c, pos, defaultOpen }) {
 
 function meaningLines(c, pos) {
   const p50 = c.block && c.block.p50 != null ? fmtValue(c.block.p50, c.unit) : null;
+  let base;
   if (pos.kind === "bad") {
-    if (c.category === "practice" || c.category === "policy") {
-      return "Most similar organisations are further ahead here — a more formal approach has become standard practice at your size and sector.";
-    }
-    return "You're behind most similar organisations on this measure." + (p50 ? ` The market median sits at ${p50}.` : "");
+    base = (c.category === "practice" || c.category === "policy")
+      ? "Most similar organisations are further ahead here — a more formal approach has become standard practice at your size and sector."
+      : "You're behind most similar organisations on this measure." + (p50 ? ` The market median sits at ${p50}.` : "");
+  } else if (pos.kind === "good") {
+    base = "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
+  } else {
+    base = "You're broadly in line with similar organisations — no urgent action, but watch your movement from the next cycle.";
   }
-  if (pos.kind === "good") {
-    return "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
+  // strategy read-through: the market position is only half the story — read it
+  // against the org's DECLARED aim for this area (the "mirror, not consultant"
+  // line: their stance decides whether below-market is a gap or the plan).
+  const aim = metricAim(c, pos);
+  if (aim) {
+    const verb = STANCE_VERB[aim.stance] || ("aim " + aim.stance);
+    base += aim.alignment === "behind"
+      ? ` Set against your aim to ${verb} on ${aim.domain}, this sits behind your plan — worth a look.`
+      : aim.alignment === "ahead"
+      ? ` That's ahead of your aim to ${verb} on ${aim.domain} — more than your strategy asks for here.`
+      : ` That's on plan for your aim to ${verb} on ${aim.domain}.`;
   }
-  return "You're broadly in line with similar organisations — no urgent action, but watch your movement from the next cycle.";
+  return base;
 }
 
 /* only name the peer group on the card when it differs from the page filter */
@@ -345,6 +358,25 @@ function cardPosition(c) {
   };
 }
 window.cardPosition = cardPosition;
+
+/* the org's declared aim for this metric's DOMAIN, and how THIS metric reads
+   against it — the strategy read-through (2026-07-06). Server ships card.domain_aim
+   (the stance, competitive domains only, completed strategy only); the alignment is
+   computed here from the metric's own competitiveness position with the SAME
+   below/at/above vs lag/match/lead compare as pos._market_target, so the chip speaks
+   the hero's exact vocabulary. Returns {domain, stance, alignment} or null. */
+const STANCE_VERB = { lag: "lag the market", match: "match the market", lead: "lead the market" };
+window.STANCE_VERB = STANCE_VERB;
+function metricAim(c, pos) {
+  const aim = c && c.domain_aim;
+  if (!aim || !aim.stance || !pos || pos.kind == null) return null;
+  const rank = pos.kind === "good" ? 2 : pos.kind === "bad" ? 0 : 1;   // above / on / below market
+  const aimIdx = { lag: 0, match: 1, lead: 2 }[aim.stance];
+  if (aimIdx == null) return null;
+  const alignment = rank < aimIdx ? "behind" : rank === aimIdx ? "on_target" : "ahead";
+  return { domain: aim.domain, stance: aim.stance, alignment };
+}
+window.metricAim = metricAim;
 
 /* The per-card status pill: every card carries exactly one. Either the metric's
    signal (lens-coloured flag, never a verdict), or — if the user hasn't answered

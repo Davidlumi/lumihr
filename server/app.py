@@ -1612,6 +1612,21 @@ async def single_benchmark(qid: str, request: Request):
             "weight": _m.get("weight", 1), "competitive_domain": bool(_comp),
             "feeds_gauge": bool(_reg == "Substance" and _m.get("direction") == "higher_is_better" and _comp),
         }
+    # STRATEGY READ-THROUGH (2026-07-06): carry the org's DECLARED aim for this
+    # metric's domain so the detail page reads against it — the same "against your
+    # aim" language the hero, signals and board pack speak (until now the funnel's
+    # destination dropped the stance entirely). Fact only — the per-metric alignment
+    # vs this aim is computed client-side from the card's own position, reusing the
+    # SAME below/at/above vs lag/match/lead compare as pos._market_target, so the
+    # vocabulary matches everywhere. Gated on a COMPLETED strategy AND a competitive
+    # domain (no aim on a no-market-rate area like Governance).
+    _strat = strategy_for_engine(conn, org["org_id"])
+    if _strat and conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                               (org["org_id"],)).fetchone():
+        _stance = (_strat.get("domain_targets") or {}).get(q.sub_power) or _strat.get("market_position")
+        _comp_dom = (_mp.get("_domains") or {}).get(q.sub_power, {}).get("competitiveness", True)
+        if _stance and _comp_dom:
+            card["domain_aim"] = {"domain": q.sub_power, "stance": _stance}
     return card
 
 

@@ -1243,6 +1243,43 @@ function mpReadCopy(cl) {
   }
   return "lumi tracks this metric but hasn’t classified it for the competitiveness headline.";
 }
+// The signal that brought you here: the breadcrumb (WHY it flagged) + the SAME triage
+// controls the signal carried (pin / save / snooze / dismiss), so a director can act on
+// the metric from its own page instead of bouncing back to the briefing. Sourced from
+// the warm /api/overview cache (you almost always arrive from it); no signal → renders
+// nothing. Acts on question_id — the key signal_actions already uses.
+const LENS_WORD = { save: "cost", attract: "attraction", retain: "retention", engage: "engagement" };
+function MetricSignalBar({ qid }) {
+  const [sig, setSig] = useState(null);
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    let dead = false;
+    apiCached("/api/overview").then(o => {
+      if (dead) return;
+      const s = (o.signals_all || []).find(x => x.question_id === qid && x.status !== "dismissed") || null;
+      setSig(s); setStatus(s ? s.status : null);
+    }).catch(() => {});
+    return () => { dead = true; };
+  }, [qid]);
+  if (!sig) return null;
+  const onSet = (sid, st, days) => {
+    setStatus(st || "active");
+    signalAction(qid, st, days).catch(() => {});
+    if (st === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(qid, null) });
+    else if (st === "snoozed") toast("Snoozed", null, { label: "Undo", fn: () => onSet(qid, null) });
+  };
+  const word = LENS_WORD[sig.lens] || "the market";
+  return html`
+    <div class="metric-sigbar">
+      <span class=${"signal-roundel lens-" + sig.lens}><${Icon} name=${LENS_ICON[sig.lens] || "flag"} size=${14} /></span>
+      <div class="metric-sigbar-txt">
+        <b>Flagged in your signals</b> — for ${word}${sig.risk_framed ? " · a risk floor" : ""}
+        ${sig.stand || sig.detail ? html`<span class="caption"> · ${sig.stand || sig.detail}</span>` : null}
+      </div>
+      <${SignalActions} status=${status === "active" ? null : status} sid=${qid} onSet=${onSet} />
+    </div>`;
+}
+
 function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const org = me.org;
   // the page's own cut — initialised from the global selector / deep link,
@@ -1290,6 +1327,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
 
   const c = card;
   const pos = cardPosition(c);
+  const aim = metricAim(c, pos);   // strategy read-through: this metric vs the org's declared domain aim
   const sent = humanSentence(c);
   // honest chart options only (curated per data type); the session preference
   // applies only where valid — normaliseChart falls back to this metric's default
@@ -1338,12 +1376,23 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
             ${period && html`<${Chip}>${period}<//>`}
           </div>
         </div>
-        ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
-          ? html`<span class="pos-pill lg mid" title=${c.classification.register === "Approach"
-              ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
-              : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
-          : pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+        <div class="metric-head-side">
+          ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
+            ? html`<span class="pos-pill lg mid" title=${c.classification.register === "Approach"
+                ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
+                : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
+            : pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+          ${aim && html`<div class="metric-aim" title="How this metric reads against the aim you declared for this area.">
+            <span class="metric-aim-lbl">Your ${c.domain_aim.domain} aim: ${STANCE_VERB[c.domain_aim.stance] || c.domain_aim.stance}</span>
+            <${AlignmentChip} target=${aim} compact=${true} />
+          </div>`}
+          <div class="metric-head-actions">
+            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn small" onClick=${doExport} title="Download this chart as a labelled PNG"><${Icon} name="download" size=${13} /> Download</button>`}
+            <button class="btn small" onClick=${share} title="Copy a link that opens this metric on the current peer group"><${Icon} name="link" size=${13} /> Share</button>
+          </div>
+        </div>
       </div>
+      <${MetricSignalBar} qid=${qid} />
 
       <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
         <div class="row spread metric-controls">
@@ -1420,8 +1469,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           <h2 class="section-title">What this means for you</h2>
           <${WhatThisMeans} card=${c} pos=${pos} defaultOpen=${true} />
           <div class="row" style=${{ marginTop: "var(--s3)", flexWrap: "wrap" }}>
-            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn" onClick=${doExport}><${Icon} name="download" size=${13} /> Download chart (PNG)</button>`}
-            <button class="btn" onClick=${share}><${Icon} name="link" size=${13} /> Copy link to this metric</button>
+            ${/* Download + Share moved to the page header (top); this keeps only the
+                  secondary "ask for more" action here. */ ""}
             <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
           </div>
         </div>
