@@ -306,6 +306,7 @@ function meaningLines(c, pos) {
   }
   return base;
 }
+window.meaningLines = meaningLines;   // the metric page renders the deterministic line directly (in the primary narrative card)
 
 /* only name the peer group on the card when it differs from the page filter */
 function cutNote(c) {

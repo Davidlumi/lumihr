@@ -1295,6 +1295,12 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const [err, setErr] = useState(null);
   const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref"); } catch (e) { return null; } });
   const chartRef = useRef(null);
+  // primary narrative state, lifted here (was inside MetricCommentary) so the one-pager
+  // can ENSURE the commentary is written before it opens the print dialog.
+  const [commentary, setCommentary] = useState(null);
+  const [cmBusy, setCmBusy] = useState(false);
+  const [cmErr, setCmErr] = useState(null);
+  useEffect(() => { setCommentary(null); setCmErr(null); }, [qid, sel.dim, sel.value]);
   useEffect(() => { setSel(globalSel); }, [cutKeyOf(cut)]);
   useEffect(() => {
     let dead = false;
@@ -1360,11 +1366,27 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
     navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + qid + cutPart);
     toast("Link copied — opens this metric on " + c.cut.label);
   };
-  // One-pager (PDF): the chart PLUS the written story, via the browser print pipeline
-  // (same pattern as the pulse report / board pack). A print-only header + footer show
-  // and the interactive chrome drops (@media print) so it lands as one clean sheet —
-  // no new dependency, no server round-trip. The chart-only PNG (doExport) stays.
-  const printMetric = () => {
+  const genCommentary = async (force) => {
+    if (cmBusy) return null;
+    setCmBusy(true); setCmErr(null);
+    try {
+      const r = await api("/api/metric-commentary", { method: "POST",
+        body: { question_id: qid, cut: sel.dim, cut_value: sel.value, force: !!force } });
+      setCommentary(r); return r;
+    } catch (e) { setCmErr(e.message); return null; }
+    finally { setCmBusy(false); }
+  };
+  // One-pager (PDF): the written story is the CENTREPIECE, so ensure it's generated
+  // first (AI when live, deterministic keyless — the endpoint always returns a
+  // structured read), then print. Already generated → prints straight away. The
+  // chart-only PNG (doExport) stays. Reuses the browser print pipeline (pulse/board
+  // pack pattern) — no new dependency, no server round-trip.
+  const printMetric = async () => {
+    if (!commentary && !cmBusy && me.features && me.features.commentary) {
+      toast("Writing your commentary for the one-pager…");
+      await genCommentary(false);
+      await new Promise(r => setTimeout(r, 400));   // let the narrative paint before the print dialog
+    }
     const t = document.title;
     document.title = "lumi — " + c.title + " · one-pager";
     window.print();
@@ -1456,14 +1478,23 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           <${ExactFigures} card=${c} />`}
       </div>
 
-      ${me.features && me.features.commentary && html`
-        <${MetricCommentary} qid=${qid} sel=${sel} card=${c} />`}
+      ${/* THE primary read — promoted directly under the chart (2026-07-06). Always
+            present: a deterministic aim-aware base line, upgraded by Generate to the
+            full structured commentary. The standalone "What this means for you" card
+            is retired into this. Shown whenever AI is available OR there's a
+            deterministic read to give (practice metrics only get the AI version). */ ""}
+      ${(me.features && me.features.commentary) || (pos && !c.suppressed) ? html`
+        <${MetricCommentary} commentary=${commentary} busy=${cmBusy} err=${cmErr} onGenerate=${genCommentary}
+          pos=${pos} card=${c} featureOn=${!!(me.features && me.features.commentary)} />` : null}
 
       <${MetricTrend} qid=${qid} />
 
-      <div class="grid2" style=${{ marginTop: "var(--s4)", gap: "var(--s4)" }}>
-        <div class="card" style=${{ padding: "var(--s5)" }}>
-          <h2 class="section-title">What this measures</h2>
+      ${/* methodology demoted to a collapsed "About this metric" — reference detail
+            (definition, how it's calculated, how lumi reads it), below the read, not
+            competing with it. Was a co-equal card that mostly repeated the question. */ ""}
+      <details class="card metric-about" style=${{ padding: "var(--s4) var(--s5)", marginTop: "var(--s4)" }}>
+        <summary class="metric-about-sum"><span class="section-title" style=${{ margin: 0 }}>About this metric</span></summary>
+        <div class="metric-about-body">
           ${c.definition && html`<p>${c.definition}</p>`}
           ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
           <p class="caption"><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer
@@ -1478,17 +1509,11 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
               </div>
               <p class="caption">${mpReadCopy(c.classification)}</p>
             </div>`}
-        </div>
-        <div class="card" style=${{ padding: "var(--s5)" }}>
-          <h2 class="section-title">What this means for you</h2>
-          <${WhatThisMeans} card=${c} pos=${pos} defaultOpen=${true} />
-          <div class="row" style=${{ marginTop: "var(--s3)", flexWrap: "wrap" }}>
-            ${/* Download + Share moved to the page header (top); this keeps only the
-                  secondary "ask for more" action here. */ ""}
+          <div class="row" style=${{ marginTop: "var(--s3)" }}>
             <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
           </div>
         </div>
-      </div>
+      </details>
       <div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
         From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category of your reward benchmark.
       </div>
@@ -1500,36 +1525,33 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
 
 /* AI commentary: on-demand, per metric + cut, grounded server-side and
    validated before anything is shown. Framed to sanity-check, not to obey. */
-function MetricCommentary({ qid, sel, card }) {
-  const [data, setData] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(null);
-  useEffect(() => { setData(null); setErr(null); }, [qid, sel.dim, sel.value]);
-  const generate = async (force) => {
-    if (busy) return;
-    setBusy(true); setErr(null);
-    try {
-      const r = await api("/api/metric-commentary", { method: "POST",
-        body: { question_id: qid, cut: sel.dim, cut_value: sel.value, force: !!force } });
-      setData(r);
-    } catch (e) { setErr(e.message); }
-    setBusy(false);
-  };
+// PRIMARY interpretation card — "What this means for you". Presentational (2026-07-06):
+// MetricPage owns the state + generate so the one-pager can ensure it's written before
+// print. Base = the deterministic aim-aware read (always there for positioned metrics);
+// Generate upgrades it to the structured 4-part commentary (AI live, deterministic
+// keyless — the endpoint always returns a structured narrative).
+function MetricCommentary({ commentary, busy, err, onGenerate, pos, card, featureOn }) {
+  const data = commentary;
   const PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
                  ["implications", "Implications"], ["considerations", "Considerations"]];
+  const detBase = !data && pos && !card.suppressed && window.meaningLines ? window.meaningLines(card, pos) : null;
   return html`
     <div class=${"card metric-commentary" + (data ? " has-narrative" : "")} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <div class="row spread" style=${{ alignItems: "flex-start" }}>
-        <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> Commentary</h2>
-        ${data && html`<span class="chip warn">AI-generated — review before use</span>`}
+        <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> What this means for you</h2>
+        ${data && html`<span class="chip warn no-print">AI-generated — review before use</span>`}
       </div>
-      ${!data && !busy && html`
-        <p class="caption">A short, structured interpretation of this metric for your organisation —
-        generated from the figures on this page only, as a starting point to sanity-check, not advice.</p>
-        ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
-        <button class="btn primary" onClick=${() => generate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
+      ${detBase && html`<p style=${{ margin: "var(--s2) 0 0" }}>${detBase}</p>`}
+      ${!data && !busy && featureOn && html`
+        <p class="caption commentary-cta" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>${detBase
+          ? "Want the fuller read? A short, structured interpretation — generated from the figures on this page, to sanity-check, not advice."
+          : "A short, structured interpretation of this metric for your organisation — generated from the figures on this page only, to sanity-check, not advice."}</p>
+        ${err && html`<div class="error-text no-print" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
+        <button class="btn primary" onClick=${() => onGenerate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
+      ${!data && !busy && !featureOn && !detBase && html`
+        <p class="caption" style=${{ marginTop: "var(--s2)" }}>An interpretation appears here once your organisation's AI insights are switched on.</p>`}
       ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
-      ${data && !busy && html`
+      ${data && html`
         <div style=${{ marginTop: "var(--s3)" }}>
           ${PARTS.map(([k, label]) => data.parts[k] && html`
             <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
@@ -1540,8 +1562,8 @@ function MetricCommentary({ qid, sel, card }) {
             A starting point for your own judgement — not advice. Consider your own context and seek
             professional input where relevant.
           </div>
-          <div class="row" style=${{ marginTop: "var(--s2)" }}>
-            <button class="btn small quiet" onClick=${() => generate(true)}>Regenerate</button>
+          <div class="row no-print" style=${{ marginTop: "var(--s2)" }}>
+            <button class="btn small quiet" onClick=${() => onGenerate(true)}>Regenerate</button>
             ${data.cached && html`<span class="caption">Saved from ${new Date((data.generated_at || "") + "Z").toLocaleDateString("en-GB") || "earlier"} — regenerates automatically when the figures change.</span>`}
           </div>
         </div>`}
