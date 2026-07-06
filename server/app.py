@@ -2437,6 +2437,35 @@ async def signal_action(request: Request):
     return {"ok": True, "question_id": qid, "status": status}
 
 
+@app.post("/api/signals/action-bulk")
+async def signal_action_bulk(request: Request):
+    """Batch triage: set ONE status on many signals at once ("dismiss all in this
+    view", and the Undo that restores them). Atomic. Snooze is excluded — it needs
+    a per-signal duration, so it stays on the single-action route."""
+    user, org = require_user(request)
+    body = await request.json()
+    qids = [str(q).strip() for q in (body.get("question_ids") or []) if str(q).strip()][:500]
+    status = body.get("status")
+    if not qids:
+        return {"ok": True, "count": 0, "status": status}
+    conn = get_conn()
+    if status in (None, "", "active", "new"):
+        conn.executemany("DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND question_id=?",
+                         [(org["org_id"], user["user_id"], q) for q in qids])
+        status = None
+    elif status in ("priority", "saved", "dismissed"):
+        conn.executemany(
+            "INSERT INTO signal_actions(org_id, user_id, question_id, status, snooze_until, updated_at) "
+            "VALUES (?,?,?,?,NULL,datetime('now')) "
+            "ON CONFLICT(org_id, user_id, question_id) DO UPDATE SET status=excluded.status, "
+            "snooze_until=NULL, updated_at=datetime('now')",
+            [(org["org_id"], user["user_id"], q, status) for q in qids])
+    else:
+        raise HTTPException(400, "bad status")
+    conn.commit()
+    return {"ok": True, "count": len(qids), "status": status}
+
+
 @app.post("/api/signals/seen")
 async def signals_seen(request: Request):
     """Mark signals as seen for this user (clears their NEW state). The client

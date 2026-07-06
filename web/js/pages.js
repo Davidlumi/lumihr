@@ -1218,6 +1218,23 @@ window.SignalsPage = function ({ me }) {
   const riskCount = scoped.filter(s => s.risk_framed).length;
   const visible = scoped.filter(s => effPos === "all" || s.bucket === effPos)
     .filter(s => !provF || isVerified(s)).filter(s => !riskF || s.risk_framed);
+  // Bulk dismiss ("clear this screenful"): targets only the UNTRIAGED signals in
+  // the current view — pinned and saved ones are left alone, so a one-tap Undo can
+  // safely restore the batch to active without wiping a prior pin/save.
+  const dismissable = visible.filter(s => !s.status);
+  const bulkDismiss = async () => {
+    const ids = dismissable.map(s => s.sig_id || s.question_id);
+    if (!ids.length) return;
+    if (!window.confirm("Dismiss all " + ids.length + " untriaged signals in this view? Pinned and saved signals stay — and you can undo right after.")) return;
+    setActing(a => { const n = { ...a }; ids.forEach(id => n[id] = "dismissed"); return n; });
+    const restore = () => { setActing(a => { const n = { ...a }; ids.forEach(id => delete n[id]); return n; });
+      api("/api/signals/action-bulk", { method: "POST", body: { question_ids: ids, status: "active" } }).catch(() => {}); apiCacheInvalidate("/api/overview"); };
+    try {
+      await api("/api/signals/action-bulk", { method: "POST", body: { question_ids: ids, status: "dismissed" } });
+      apiCacheInvalidate("/api/overview");
+      toast(ids.length + " signals dismissed", null, { label: "Undo", fn: restore });
+    } catch (e) { restore(); toast("Couldn't dismiss those — try again", "error"); }
+  };
   // the axis donut — built from the SAME posCounts tally the chips read, coloured by
   // bucketColor (the chip-dot palette), via the shared <Donut> primitive (:540).
   const donutSegs = AXIS_BUCKETS[axis].map(b => ({ value: posCounts[b] || 0, color: bucketColor(b), k: b }));
@@ -1272,6 +1289,8 @@ window.SignalsPage = function ({ me }) {
             <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + effPos}</span>
             ${data.strategy_objective && html`<span class="sig-strat-order" title="Each area is ordered for your stance — pins stay on top. Set in your reward strategy.">
               <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
+            ${tab === "inbox" && dismissable.length > 1 ? html`<button class="btn small quiet sig-bulk-dismiss" onClick=${bulkDismiss}
+              title="Dismiss every untriaged signal shown here (pinned and saved stay)"><${Icon} name="close" size=${12} /> Dismiss all ${dismissable.length}</button>` : null}
           </div>
           <div class="sig-hero">
             ${axisTotal ? html`

@@ -69,6 +69,20 @@ def check_snooze():
         "SELECT question_id,status FROM signal_actions WHERE user_id=?", (u,))}
     check("open snooze is kept (status stays snoozed)", left.get("QA_SNZ_FUTURE") == "snoozed", left)
     check("expired snooze auto-returns to inbox (row cleared)", "QA_SNZ_PAST" not in left, left)
+    # bulk triage (P17): set many at once, then clear many (the Undo path)
+    ids = ["QA_BULK_%d" % i for i in range(6)]
+    conn.executemany(
+        "INSERT INTO signal_actions(org_id,user_id,question_id,status,snooze_until,updated_at) "
+        "VALUES(?,?,?,'dismissed',NULL,datetime('now')) "
+        "ON CONFLICT(org_id,user_id,question_id) DO UPDATE SET status='dismissed'",
+        [(org, u, q) for q in ids])
+    conn.commit()
+    n_set = conn.execute("SELECT COUNT(*) FROM signal_actions WHERE user_id=? AND status='dismissed'", (u,)).fetchone()[0]
+    check("bulk dismiss sets many rows at once", n_set == len(ids), n_set)
+    conn.executemany("DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND question_id=?", [(org, u, q) for q in ids])
+    conn.commit()
+    n_left = conn.execute("SELECT COUNT(*) FROM signal_actions WHERE user_id=? AND status='dismissed'", (u,)).fetchone()[0]
+    check("bulk restore (Undo) clears them all", n_left == 0, n_left)
     conn.execute("DELETE FROM signal_actions WHERE user_id=?", (u,))
     conn.commit()
 
