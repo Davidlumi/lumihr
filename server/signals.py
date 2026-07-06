@@ -1034,9 +1034,9 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         for s in out:
             s.pop("impact", None)
         return out
-    # home briefing: a dismissed signal never shows; a user-prioritised one
-    # jumps the queue (a big impact boost so the cap picks it first).
-    pool = [s for s in out if s["status"] != "dismissed"]
+    # home briefing: a dismissed OR snoozed signal never shows; a user-prioritised
+    # one jumps the queue (a big impact boost so the cap picks it first).
+    pool = [s for s in out if s["status"] not in ("dismissed", "snoozed")]
     for s in pool:
         if s["status"] == "priority":
             s["impact"] += 100000000

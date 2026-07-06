@@ -818,22 +818,24 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view }) 
   // fades it out in place, count stays 3), then after the fade COMMIT the dismiss so the
   // row drops from `shown` and the next-ranked signal backfills the tail. Pin/Save never
   // change membership, so they commit instantly; reduced-motion commits instantly too.
-  const onSet = (sid, status) => {
-    if (status === "dismissed" && !reduceMotion) {
+  const onSet = (sid, status, days) => {
+    // dismiss AND snooze both remove the signal from the briefing — animate them out
+    if ((status === "dismissed" || status === "snoozed") && !reduceMotion) {
       setLeaving(p => ({ ...p, [sid]: true }));
-      signalAction(sid, status).catch(() => {});
+      signalAction(sid, status, days).catch(() => {});
       setTimeout(() => {
-        setStOv(p => ({ ...p, [sid]: "dismissed" }));
+        setStOv(p => ({ ...p, [sid]: status }));
         setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
       }, 260);
     } else {
       setStOv(p => ({ ...p, [sid]: status || "active" }));
-      signalAction(sid, status).catch(() => {});
+      signalAction(sid, status, days).catch(() => {});
     }
-    // same recovery the Signals page offers — a home-briefing dismiss was one-way
+    // same recovery the Signals page offers — a home-briefing dismiss/snooze was one-way
     if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(sid, null) });
+    else if (status === "snoozed") toast("Snoozed · " + snoozeReturn(new Date(Date.now() + days * 86400000).toISOString()), null, { label: "Undo", fn: () => onSet(sid, null) });
   };
-  const shown = sigs.filter(s => effStatus(s) !== "dismissed").slice(0, 3);   // filter-before-slice: a dismiss backfills #4 from the tail
+  const shown = sigs.filter(s => effStatus(s) !== "dismissed" && effStatus(s) !== "snoozed").slice(0, 3);   // filter-before-slice: a dismiss/snooze backfills #4 from the tail
   // FLIP the briefing on every commit: survivors slide up from where they were, the
   // backfilled row rises + fades in. Runs before paint so there's no flash at the old
   // layout; the first paint (posRef null) only records positions — no entrance on load.
@@ -938,25 +940,59 @@ const sigParts = (s, pt) => [
 // is the final state (null = back to active/inbox). Toggle logic lives here so every
 // surface behaves identically.
 function SignalActions({ status, sid, onSet }) {
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    if (!snoozeOpen) return;
+    const away = e => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setSnoozeOpen(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [snoozeOpen]);
+  const snooze = days => { setSnoozeOpen(false); onSet(sid, "snoozed", days); };
   return html`<span class="sig-actions" onClick=${e => e.stopPropagation()}>
     ${status === "dismissed" ? html`
-      <button class="sig-act" title="Restore to inbox" aria-label="Restore signal to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
+      <button class="sig-act" title="Restore to inbox" aria-label="Restore signal to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>`
+    : status === "snoozed" ? html`
+      <button class="sig-act" title="Return to inbox now" aria-label="Un-snooze signal, return to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
       <button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>
       <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
+      <span class="sig-snooze-wrap" ref=${wrapRef}>
+        <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — revisit next cycle" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
+        ${snoozeOpen ? html`<div class="sig-snooze-menu" role="menu">
+          <div class="sig-snooze-lbl">Snooze until…</div>
+          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(14)}>2 weeks</button>
+          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(42)}>6 weeks</button>
+          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(90)}>3 months</button>
+        </div>` : null}
+      </span>
       <button class="sig-act" title="Dismiss" aria-label="Dismiss signal" onClick=${() => onSet(sid, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
   </span>`;
 }
 // Persist a triage action (home panel + domain pages call this; the Signals page keeps
 // its own statuses state). Best-effort — the optimistic UI is the caller's.
-function signalAction(sid, status) {
-  return api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active" } });
+function signalAction(sid, status, days) {
+  return api("/api/signals/action", { method: "POST",
+    body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } });
 }
 const SIG_TABS = [
-  { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" },
+  { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" && s.status !== "snoozed" },
   { k: "priority", label: "Priority", icon: "pin", f: s => s.status === "priority" },
   { k: "saved", label: "Saved", icon: "star", f: s => s.status === "saved" },
+  { k: "snoozed", label: "Snoozed", icon: "clock", f: s => s.status === "snoozed" },
   { k: "dismissed", label: "Dismissed", icon: "close", f: s => s.status === "dismissed" },
 ];
+// friendly "back in ~N weeks/days" from a snooze_until — accepts both the SQLite
+// "YYYY-MM-DD HH:MM:SS" (UTC, no tz) form and a full ISO string.
+function snoozeReturn(until) {
+  if (!until) return "";
+  const iso = until.includes("T") ? until : until.replace(" ", "T") + "Z";
+  const ms = new Date(iso).getTime() - Date.now();
+  if (isNaN(ms) || ms <= 0) return "due back now";
+  const days = Math.ceil(ms / 86400000);
+  if (days >= 14) return "back in ~" + Math.round(days / 7) + " weeks";
+  if (days > 1) return "back in " + days + " days";
+  return "back tomorrow";
+}
 // Market-position axis (spec §6.3): the cut users come for. below/above = Substance,
 // differs = Approach — so this single control subsumes the register split. `practice` is
 // the NON-MARKET bucket: signals on a non-competitive domain (Governance) which has no
@@ -1081,6 +1117,7 @@ window.SignalsPage = function ({ me }) {
   const [riskF, setRiskF] = useState(false);           // "risk only" filter (independent predicate)
   const [groupBy, setGroupBy] = useState("domain");    // domain · lens
   const [acting, setActing] = useState({});            // optimistic status overrides
+  const [actingSnz, setActingSnz] = useState({});      // optimistic snooze_until (ISO) so the chip shows before a refetch
   const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
   useEffect(() => {
     apiCached("/api/overview").then(d => {
@@ -1121,7 +1158,9 @@ window.SignalsPage = function ({ me }) {
   // reason to submit, so it gets an engaging teaser rather than a dead end.
   const unlocked = data.contribution ? !!contrib.insights_unlocked : !(data.callouts && data.callouts.gaps_locked);
   // triage identity is sig_id (= question_id, or qid::row_id for a matrix row)
-  const all = (data.signals_all || []).map(s => { const sid = s.sig_id || s.question_id; return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null) }; });
+  const all = (data.signals_all || []).map(s => { const sid = s.sig_id || s.question_id;
+    return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null),
+             snooze_until: actingSnz[sid] !== undefined ? actingSnz[sid] : s.snooze_until }; });
   // domains that have at least one live signal — so the strategy check only
   // signposts where there's actually something to land on.
   const signalDomains = new Set(all.filter(s => s.status !== "dismissed").map(s => s.domain).filter(Boolean));
@@ -1131,12 +1170,15 @@ window.SignalsPage = function ({ me }) {
   // icon/treatment, never by colour. (No stance `aim` here — that was orphaned attainment plumbing
   // from the removed alignTone; the tiles, which ARE domains, colour by attainment via attainTone.)
 
-  const setStatus = (sid, status) => {
+  const setStatus = (sid, status, days) => {
     setActing(a => ({ ...a, [sid]: status }));
-    api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active" } })
+    // stash an optimistic snooze_until so the return-date chip renders before the next refetch
+    setActingSnz(m => ({ ...m, [sid]: status === "snoozed" ? new Date(Date.now() + days * 86400000).toISOString() : null }));
+    api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } })
       .then(() => {
         apiCacheInvalidate("/api/overview");
         if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => setStatus(sid, null) });
+        else if (status === "snoozed") toast("Snoozed · " + snoozeReturn(new Date(Date.now() + days * 86400000).toISOString()), null, { label: "Undo", fn: () => setStatus(sid, null) });
       })
       .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
   };
@@ -1192,7 +1234,7 @@ window.SignalsPage = function ({ me }) {
       onClick=${() => openMetric(s.question_id)}
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMetric(s.question_id); } }}>
       <span class="signal-body">
-        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
+        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}${s.status === "snoozed" && s.snooze_until ? html` <span class="sig-snoozed-until"><${Icon} name="clock" size=${11} /> ${snoozeReturn(s.snooze_until)}</span>` : null}</b>
         <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></span>
       ${s.gap_pct != null ? html`<span class="sig-mag" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
       <span class=${"pos-tag pos-" + pt.tone}>${s.tag || pt.text}</span>
@@ -1222,6 +1264,7 @@ window.SignalsPage = function ({ me }) {
                 ? "All clear — every signal triaged. New ones appear here as your position or the market moves."
                 : "Nothing to flag yet — signals appear here as your position or the market moves.")
               : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a signal to clear it from your inbox and the home briefing."
+              : tab === "snoozed" ? "Nothing snoozed. Use the clock on any signal to set it aside — it returns to your inbox next cycle."
               : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any signal to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
           </div>` : html`
         <div class="sig-summary card">

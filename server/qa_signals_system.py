@@ -45,11 +45,40 @@ def firing_classes(sl, ordr):
     }
 
 
+def check_snooze():
+    """DB-level snooze invariant (P16): a snoozed row survives while its window is
+    open and AUTO-RETURNS (is cleared) once snooze_until has passed. Self-contained
+    — no server needed; runs against LUMI_DB via the same read-path SQL app.py uses."""
+    sys.path.insert(0, HERE)
+    import db
+    conn = db.get_conn(); db.init_schema(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(signal_actions)")]
+    check("signal_actions carries snooze_until (migration applied)", "snooze_until" in cols)
+    org = conn.execute("SELECT org_id FROM orgs LIMIT 1").fetchone()[0]
+    u = "qa-snooze-user"
+    conn.execute("DELETE FROM signal_actions WHERE user_id=?", (u,))
+    conn.execute("INSERT INTO signal_actions(org_id,user_id,question_id,status,snooze_until,updated_at) "
+                 "VALUES(?,?,?,?,datetime('now','+42 days'),datetime('now'))", (org, u, "QA_SNZ_FUTURE", "snoozed"))
+    conn.execute("INSERT INTO signal_actions(org_id,user_id,question_id,status,snooze_until,updated_at) "
+                 "VALUES(?,?,?,?,datetime('now','-1 days'),datetime('now'))", (org, u, "QA_SNZ_PAST", "snoozed"))
+    conn.commit()
+    conn.execute("DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND status='snoozed' "
+                 "AND snooze_until IS NOT NULL AND snooze_until<=datetime('now')", (org, u))
+    conn.commit()
+    left = {r["question_id"]: r["status"] for r in conn.execute(
+        "SELECT question_id,status FROM signal_actions WHERE user_id=?", (u,))}
+    check("open snooze is kept (status stays snoozed)", left.get("QA_SNZ_FUTURE") == "snoozed", left)
+    check("expired snooze auto-returns to inbox (row cleared)", "QA_SNZ_PAST" not in left, left)
+    conn.execute("DELETE FROM signal_actions WHERE user_id=?", (u,))
+    conn.commit()
+
+
 def main():
     sl = json.load(open(SL))
     ordr = json.load(open(OR))
     classes = firing_classes(sl, ordr)
     firing = set().union(*classes.values())
+    check_snooze()
 
     # --- config invariants (no server) ---
     names = list(classes)

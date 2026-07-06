@@ -186,7 +186,8 @@ CREATE TABLE IF NOT EXISTS signal_actions (
     org_id TEXT NOT NULL REFERENCES orgs(org_id),
     user_id TEXT NOT NULL,
     question_id TEXT NOT NULL,
-    status TEXT NOT NULL,                -- priority | saved | dismissed
+    status TEXT NOT NULL,                -- priority | saved | dismissed | snoozed
+    snooze_until TEXT,                   -- ISO datetime; set only for status=snoozed, else NULL
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (org_id, user_id, question_id)
 );
@@ -619,7 +620,10 @@ def init_schema(conn=None):
                 "ALTER TABLE pulses ADD COLUMN visibility TEXT NOT NULL DEFAULT 'community'",
                 # per-domain market-position target (step-3 layer 1, 2026-06-24):
                 # nullable JSON {domain: lag|match|lead}; null → global fallback.
-                "ALTER TABLE org_strategy ADD COLUMN domain_targets TEXT"):
+                "ALTER TABLE org_strategy ADD COLUMN domain_targets TEXT",
+                # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
+                # signal leaves the inbox until snooze_until passes, then auto-returns.
+                "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

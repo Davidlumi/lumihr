@@ -1594,6 +1594,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signal-row:hover .sig-act { opacity: .92; }
 .signal-row .sig-act:hover { background: rgba(15,23,42,.08); color: var(--ink); opacity: 1; }
 .signal-row .sig-act.on { color: var(--blue); opacity: 1; }
+/* snooze duration menu (P16) */
+.sig-snooze-wrap { position: relative; display: inline-flex; }
+.sig-snooze-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 148px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-card); padding: var(--s2); display: flex; flex-direction: column; gap: 2px; }
+.sig-snooze-lbl { font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px var(--s2) 4px; }
+.sig-snooze-opt { text-align: left; border: 0; background: none; font: inherit; font-size: var(--fs-label);
+  padding: var(--s2); border-radius: var(--radius-sm); cursor: pointer; color: var(--ink); }
+.sig-snooze-opt:hover { background: var(--lumi-tile); color: var(--blue-deep); }
+.sig-snoozed-until { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
+  font-weight: 600; color: var(--ink-soft); background: var(--surface-sunk); padding: 1px 7px;
+  border-radius: 999px; vertical-align: 1px; }
 .signal-row .sig-act.on svg { fill: color-mix(in srgb, var(--blue) 20%, transparent); }
 .signal-row.is-dismissed { opacity: .62; }
 .signal-row.is-dismissed:hover { opacity: 1; }

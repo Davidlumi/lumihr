@@ -1731,9 +1731,21 @@ async def overview(request: Request):
     _visq = org_visible_questions(org)
     _answers = org_answers_for(org)
     _get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, cut, (tb or {}).get(qid))[0] if payloads().get(qid) else None
-    _statuses = {r["question_id"]: r["status"] for r in conn.execute(
-        "SELECT question_id, status FROM signal_actions WHERE org_id=? AND user_id=?",
-        (org["org_id"], user["user_id"]))}
+    # Signals snooze auto-return: a snoozed row whose window has passed is cleared
+    # here (lazily, on read), so the signal drops back to the inbox as if never
+    # snoozed. datetime('now') is UTC, same clock the snooze_until was written on.
+    conn.execute(
+        "DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND status='snoozed' "
+        "AND snooze_until IS NOT NULL AND snooze_until <= datetime('now')",
+        (org["org_id"], user["user_id"]))
+    conn.commit()
+    _statuses, _snooze_until = {}, {}
+    for r in conn.execute(
+            "SELECT question_id, status, snooze_until FROM signal_actions WHERE org_id=? AND user_id=?",
+            (org["org_id"], user["user_id"])):
+        _statuses[r["question_id"]] = r["status"]
+        if r["status"] == "snoozed":
+            _snooze_until[r["question_id"]] = r["snooze_until"]
     # step-3 layer 4: per-domain alignment map from the layer-3 hero output (the SINGLE
     # source of truth — alignment is NOT recomputed in signals.py, which has no domain
     # aggregate verdict). {domain: alignment} over competitive domains that carry a target;
@@ -1755,10 +1767,12 @@ async def overview(request: Request):
         (org["org_id"], user["user_id"]))}
     for s in sigs_all:
         s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
+        s["snooze_until"] = _snooze_until.get(s.get("sig_id") or s["question_id"])
     _new_ids = {(s.get("sig_id") or s["question_id"]) for s in sigs_all}  # current sig_ids
     for s in sigs:
         s["new"] = (s.get("sig_id") or s["question_id"]) not in _seen
-    signals_new = sum(1 for s in sigs_all if s["new"] and s.get("status") != "dismissed")
+        s["snooze_until"] = _snooze_until.get(s.get("sig_id") or s["question_id"])
+    signals_new = sum(1 for s in sigs_all if s["new"] and s.get("status") not in ("dismissed", "snoozed"))
     dots = signals_mod.domain_dots(items)
     prac_dots = signals_mod.domain_dots(prac_items)
     sig_by_cat = {}
@@ -2396,11 +2410,26 @@ async def signal_action(request: Request):
         conn.execute("DELETE FROM signal_actions WHERE org_id=? AND user_id=? AND question_id=?",
                      (org["org_id"], user["user_id"], qid))
         status = None
+    elif status == "snoozed":
+        # "real, but not this cycle": hide until snooze_until, then auto-return (read path).
+        # Clamp the requested window to a sane range; default ~6 weeks ("next cycle").
+        try:
+            days = int(body.get("snooze_days") or 42)
+        except (TypeError, ValueError):
+            days = 42
+        days = max(1, min(days, 365))
+        conn.execute(
+            "INSERT INTO signal_actions(org_id, user_id, question_id, status, snooze_until, updated_at) "
+            "VALUES (?,?,?,?,datetime('now', ?),datetime('now')) "
+            "ON CONFLICT(org_id, user_id, question_id) DO UPDATE SET status=excluded.status, "
+            "snooze_until=excluded.snooze_until, updated_at=datetime('now')",
+            (org["org_id"], user["user_id"], qid, status, "+%d days" % days))
     elif status in ("priority", "saved", "dismissed"):
         conn.execute(
-            "INSERT INTO signal_actions(org_id, user_id, question_id, status, updated_at) "
-            "VALUES (?,?,?,?,datetime('now')) "
-            "ON CONFLICT(org_id, user_id, question_id) DO UPDATE SET status=excluded.status, updated_at=datetime('now')",
+            "INSERT INTO signal_actions(org_id, user_id, question_id, status, snooze_until, updated_at) "
+            "VALUES (?,?,?,?,NULL,datetime('now')) "
+            "ON CONFLICT(org_id, user_id, question_id) DO UPDATE SET status=excluded.status, "
+            "snooze_until=NULL, updated_at=datetime('now')",
             (org["org_id"], user["user_id"], qid, status))
     else:
         raise HTTPException(400, "bad status")
