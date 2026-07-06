@@ -2326,6 +2326,28 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* ----- single-metric full page ----- */
 .metric-page { max-width: 980px; }
+/* one-pager print masthead/footer — hidden on screen, shown only when printing to PDF */
+.metric-pdf-head, .metric-pdf-foot { display: none; }
+@media print {
+  /* METRIC ONE-PAGER: the chart + the written story as one clean sheet. The global
+     print block already hides the app shell and sets 14mm page margins; here we show
+     the masthead/footer, drop every interactive control (buttons, the cut select, the
+     chart-type switch, the signal-triage bar) and the empty AI-commentary prompt, and
+     keep chart + figures + the aim-aware narrative. */
+  .metric-pdf-head { display: block; font-size: 10pt; color: var(--ink-soft);
+    border-bottom: 1px solid var(--border); padding-bottom: 6pt; margin-bottom: 12pt; }
+  .metric-pdf-head .logo { font-weight: 800; color: var(--ink); }
+  .metric-pdf-foot { display: block; font-size: 8.5pt; color: var(--ink-soft);
+    border-top: 1px solid var(--border); padding-top: 6pt; margin-top: 14pt; }
+  .metric-page .metric-controls, .metric-page .chart-switch, .metric-page button,
+  .metric-page select, .metric-page .metric-sigbar,
+  .metric-page .metric-commentary:not(.has-narrative) { display: none !important; }
+  .metric-page .card { box-shadow: none; border: 1px solid var(--border);
+    break-inside: avoid; page-break-inside: avoid; margin-top: 10pt; }
+  .metric-page .metric-xl { --chart-h: 250px; break-inside: avoid; }
+  .metric-page .grid2 { grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .metric-page h1.display-title { font-size: 20pt; line-height: 1.1; }
+}
 .metric-lead { font-size: var(--fs-section); font-family: var(--font-head); color: var(--ink);
   max-width: 720px; margin: var(--s4) 0 0; line-height: 1.45; }
 .pos-pill.lg { font-size: var(--fs-body); padding: var(--s2) var(--s3); flex: none; }

@@ -1360,10 +1360,23 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
     navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + qid + cutPart);
     toast("Link copied — opens this metric on " + c.cut.label);
   };
+  // One-pager (PDF): the chart PLUS the written story, via the browser print pipeline
+  // (same pattern as the pulse report / board pack). A print-only header + footer show
+  // and the interactive chrome drops (@media print) so it lands as one clean sheet —
+  // no new dependency, no server round-trip. The chart-only PNG (doExport) stays.
+  const printMetric = () => {
+    const t = document.title;
+    document.title = "lumi — " + c.title + " · one-pager";
+    window.print();
+    setTimeout(() => { document.title = t; }, 500);
+  };
 
   return html`
     <div class="metric-page">
-      <button class="btn quiet" onClick=${goBack}>← Back</button>
+      ${/* print-only masthead for the one-pager PDF (hidden on screen) */ ""}
+      <div class="metric-pdf-head" aria-hidden="true">
+        <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · n=${c.n}${period ? " · " + period : ""}</div>
+      <button class="btn quiet no-print" onClick=${goBack}>← Back</button>
       <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s2)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
           <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>${c.title}</h1>
@@ -1386,8 +1399,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
             <span class="metric-aim-lbl">Your ${c.domain_aim.domain} aim: ${STANCE_VERB[c.domain_aim.stance] || c.domain_aim.stance}</span>
             <${AlignmentChip} target=${aim} compact=${true} />
           </div>`}
-          <div class="metric-head-actions">
-            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn small" onClick=${doExport} title="Download this chart as a labelled PNG"><${Icon} name="download" size=${13} /> Download</button>`}
+          <div class="metric-head-actions no-print">
+            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn small" onClick=${doExport} title="Download just the chart as a labelled PNG image"><${Icon} name="download" size=${13} /> Chart</button>`}
+            ${!c.suppressed && html`<button class="btn small" onClick=${printMetric} title="Download a one-page PDF — the chart plus the written story (what it means for you)"><${Icon} name="file-text" size=${13} /> One-pager</button>`}
             <button class="btn small" onClick=${share} title="Copy a link that opens this metric on the current peer group"><${Icon} name="link" size=${13} /> Share</button>
           </div>
         </div>
@@ -1475,9 +1489,12 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
           </div>
         </div>
       </div>
-      <div class="caption" style=${{ margin: "var(--s4) 0" }}>
+      <div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
         From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category of your reward benchmark.
       </div>
+      ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
+      <div class="metric-pdf-foot" aria-hidden="true">
+        Source: lumi HR${period ? " · " + period : ""} · generated ${new Date().toLocaleDateString("en-GB")} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.</div>
     </div>`;
 }
 
@@ -1501,7 +1518,7 @@ function MetricCommentary({ qid, sel, card }) {
   const PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
                  ["implications", "Implications"], ["considerations", "Considerations"]];
   return html`
-    <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+    <div class=${"card metric-commentary" + (data ? " has-narrative" : "")} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <div class="row spread" style=${{ alignItems: "flex-start" }}>
         <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> Commentary</h2>
         ${data && html`<span class="chip warn">AI-generated — review before use</span>`}
