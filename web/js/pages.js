@@ -1218,7 +1218,9 @@ window.SignalsPage = function ({ me }) {
           <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
             <span class="signals-empty-ring"><${Icon} name=${cur.icon} size=${18} /></span>
             <div class="caption" style=${{ maxWidth: "360px" }}>${
-              tab === "inbox" ? "Inbox zero — every signal triaged, or nothing crosses a threshold yet."
+              tab === "inbox" ? (counts.dismissed || counts.priority || counts.saved
+                ? "All clear — every signal triaged. New ones appear here as your position or the market moves."
+                : "Nothing to flag yet — signals appear here as your position or the market moves.")
               : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a signal to clear it from your inbox and the home briefing."
               : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any signal to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
           </div>` : html`
@@ -1260,7 +1262,12 @@ window.SignalsPage = function ({ me }) {
             </div>
           </div>
         </div>
-        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}><span class="signals-empty-ring"><${Icon} name="sliders" size=${18} /></span><div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — clear a filter to see more" : ""}.</div></div>` :
+        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}>
+            <span class="signals-empty-ring"><${Icon} name="sliders" size=${18} /></span>
+            <div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — your filters have narrowed it down." : "."}</div>
+            ${(provF || riskF || effPos !== "all") ? html`<button class="btn small" style=${{ marginTop: "var(--s3)" }}
+              onClick=${() => { setPosF("all"); setProvF(false); setRiskF(false); }}>Clear all filters</button>` : null}
+          </div>` :
         groups.map(g => html`
           <section key=${g.key} id=${groupBy === "domain" ? "sig-dom-" + g.key : null} class="sig-group">
             <div class="sig-grouphead">
