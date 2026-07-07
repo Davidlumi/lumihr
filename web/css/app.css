@@ -2951,6 +2951,30 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 .bench-grid.is-busy { opacity: .5; pointer-events: none; transition: opacity .15s; }
 
+/* Download PDF: the print header/footer exist only on paper. On screen they're
+   hidden; @media print reveals them and drops the tabs/toolbar so the PDF reads
+   as a clean document (the app chrome + peer bar are already .no-print). The
+   global @page gives non-pack content 14mm margins, so nothing is added here. */
+.dash-print-head, .dash-print-foot { display: none; }
+@media print {
+  .dash-tabs, .dash-toolbar { display: none !important; }
+  .dash-print-head { display: block !important; border-bottom: 2px solid var(--blue);
+    padding-bottom: 5mm; margin-bottom: 7mm; }
+  .dash-print-brand { font-family: var(--font-head); font-weight: 800; letter-spacing: -0.02em;
+    font-size: 15pt; color: var(--blue); }
+  .dash-print-brand span { color: var(--ink-faint); font-weight: 600; }
+  .dash-print-brand span::before { content: " · "; }
+  .dash-print-title { font-family: var(--font-head); font-weight: 700; font-size: 21pt;
+    color: var(--ink); margin: 3mm 0 1.5mm; }
+  .dash-print-meta { font-size: 9.5pt; color: var(--ink-soft); }
+  .dash-print-foot { display: block !important; margin-top: 8mm; padding-top: 4mm;
+    border-top: 1px solid var(--border); font-size: 8.5pt; color: var(--ink-faint); text-align: center; }
+  /* one column so every card lands full-width and legible; never split a card */
+  .bench-grid { grid-template-columns: 1fr !important; gap: 7mm !important; }
+  .bench-grid > * { break-inside: avoid; page-break-inside: avoid; animation: none !important; }
+  .bench-card.w2, .bench-grid > [style*="span 2"] { grid-column: span 1 !important; }
+}
+
 /* kebab → "Add to dashboard" picker (create new / toggle existing) */
 .kebab-item.kebab-haschild { display: flex; align-items: center; }
 .kebab-chev { margin-left: auto; color: var(--ink-faint); font-weight: 700; font-size: var(--fs-body); padding-left: var(--s2); }
