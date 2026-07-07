@@ -15,11 +15,11 @@
   <meta property="og:description" content="See where your pay, benefits and policies really stand against similar UK organisations — every figure cited with its peer group and sample size." />
   <meta property="og:url" content="https://lumihr.co.uk/" />
   <meta property="og:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="lumi · UK reward benchmarking for HR teams" />
   <meta name="twitter:description" content="See where your pay, benefits and policies really stand against similar UK organisations — every figure cited with its peer group and sample size." />
   <meta name="twitter:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
-  <link rel="stylesheet" href="/static/css/fonts.css?v=311" />
+  <link rel="stylesheet" href="/static/css/fonts.css?v=353" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="/lumi_favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -162,6 +162,34 @@
     .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease;}
     .reveal.in{opacity:1;transform:none;}
     @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}.btn:hover{transform:none;}}
+
+    /* proof band — real coverage (220+ orgs, 14 sectors) */
+    .proof{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper);}
+    .proof .wrap{padding:38px 24px;text-align:center;}
+    .proof-stat{font-family:var(--head);font-weight:800;font-size:clamp(19px,2.5vw,25px);color:var(--ink);}
+    .proof-stat b{color:var(--blue);}
+    .proof-sub{color:var(--ink-soft);font-size:15px;margin-top:8px;}
+    .sector-chips{display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:center;margin-top:22px;}
+    .chip{font-size:13px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);
+      border-radius:999px;padding:6px 13px;white-space:nowrap;}
+
+    /* what you'll see in a demo */
+    .demo-covers{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;}
+    .dc{display:flex;gap:14px;align-items:flex-start;}
+    .dc .dc-ic{width:40px;height:40px;flex:none;border-radius:11px;background:var(--tile);color:var(--blue);
+      display:flex;align-items:center;justify-content:center;}
+    .dc h4{font-family:var(--head);font-size:16.5px;margin:3px 0 5px;}
+    .dc p{color:var(--ink-soft);font-size:14.5px;}
+    @media(max-width:720px){.demo-covers{grid-template-columns:1fr;gap:24px;}}
+
+    /* testimonial (fill with a real quote before enabling) */
+    .quote{max-width:760px;margin:0 auto;text-align:center;}
+    .quote blockquote{font-family:var(--head);font-weight:600;font-size:clamp(20px,2.6vw,27px);
+      line-height:1.34;color:var(--ink);margin:0;letter-spacing:-.01em;}
+    .quote .q-attr{color:var(--ink-soft);font-size:15px;margin-top:18px;}
+
+    /* keep the mobile nav CTA from overflowing 375px — drop the secondary "Sign in" */
+    @media(max-width:520px){.nav-cta .btn-ghost{display:none;}}
   </style>
 </head>
 <body>
@@ -173,10 +201,11 @@
         <a href="#what">What you get</a>
         <a href="#how">How it works</a>
         <a href="#trust">Trust</a>
+        <a href="#demo">Book a demo</a>
       </nav>
       <div class="nav-cta">
         <a class="btn btn-ghost btn-sm" href="/app">Sign in</a>
-        <a class="btn btn-primary btn-sm" href="/app#/register">Get your benchmark</a>
+        <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
       </div>
     </div>
   </header>
@@ -191,10 +220,10 @@
           <p class="lede">lumi shows how your pay, benefits and policies compare with similar UK organisations —
             every figure cited with its peer group and sample size. No more guessing before the board meeting.</p>
           <div class="hero-cta">
-            <a class="btn btn-primary" href="/app">Sign in to lumi</a>
+            <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
             <a class="btn btn-ghost" href="#how">See how it works</a>
           </div>
-          <div class="hero-note"><span class="dot"></span> Medians, not averages · figures under 5 organisations are never shown</div>
+          <div class="hero-note"><span class="dot"></span> A guided walkthrough on your organisation's data — no obligation</div>
         </div>
 
         <!-- product glimpse -->
@@ -233,6 +262,30 @@
         <span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Real UK peer data — sector, size, or organisations like you</span>
         <span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Every figure cites percentile, peer group and n</span>
         <span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Anonymised — under 5 organisations is suppressed</span>
+      </div>
+    </div>
+
+    <!-- PROOF BAND — real coverage figures (220+ orgs across 14 sectors) -->
+    <div class="proof">
+      <div class="wrap reveal">
+        <div class="proof-stat"><b>220+</b> UK organisations · <b>14</b> sectors · every figure cited with its peer group and n</div>
+        <div class="proof-sub">The benchmark is built from real reward data submitted by UK employers — not modelled or scraped.</div>
+        <div class="sector-chips">
+          <span class="chip">Manufacturing &amp; Engineering</span>
+          <span class="chip">Construction &amp; Infrastructure</span>
+          <span class="chip">Retail &amp; Consumer Goods</span>
+          <span class="chip">Logistics &amp; Transport</span>
+          <span class="chip">Hospitality &amp; Leisure</span>
+          <span class="chip">Public Sector</span>
+          <span class="chip">Media &amp; Creative</span>
+          <span class="chip">Education</span>
+          <span class="chip">Professional Services</span>
+          <span class="chip">Healthcare &amp; Life Sciences</span>
+          <span class="chip">Financial Services</span>
+          <span class="chip">Technology &amp; Software</span>
+          <span class="chip">Energy &amp; Utilities</span>
+          <span class="chip">Charity &amp; Non-Profit</span>
+        </div>
       </div>
     </div>
 
@@ -301,14 +354,51 @@
       </div>
     </section>
 
+    <!-- WHAT A DEMO COVERS -->
+    <section id="demo" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">Book a demo</span>
+          <h2 style="margin-top:12px;">See it on your organisation's data</h2>
+          <p>A quick, no-obligation walkthrough — we'll show you exactly where you stand and answer anything.</p>
+        </div>
+        <div class="demo-covers">
+          <div class="dc reveal">
+            <div class="dc-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+            <div><h4>Your live position</h4><p>We load a peer group and show where your pay, benefits and policies actually sit — with the distribution behind each number.</p></div>
+          </div>
+          <div class="dc reveal">
+            <div class="dc-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+            <div><h4>A board-ready pack</h4><p>See how lumi turns your position into a cited, board-room document — with anything too small to show safely held back.</p></div>
+          </div>
+          <div class="dc reveal">
+            <div class="dc-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div><h4>Your questions answered</h4><p>Ask anything — how the peer groups work, where the data comes from, or how anonymity is protected.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIAL — paste a REAL customer quote + attribution below, then uncomment to enable.
+         Do NOT ship a fabricated quote. Structure + styling are ready.
+    <section style="padding-bottom:0;">
+      <div class="wrap">
+        <div class="quote reveal">
+          <blockquote>“A real customer quote goes here.”</blockquote>
+          <div class="q-attr">— Name, Job title, Organisation</div>
+        </div>
+      </div>
+    </section>
+    -->
+
     <!-- FINAL CTA -->
     <section style="padding-top:0;">
       <div class="wrap">
         <div class="cta-band reveal">
           <img class="cta-logo" src="/static/lumi_horizontal_reversed.svg" alt="lumi" />
-          <h2>Know exactly where your reward stands.</h2>
-          <p>Sign in to pick up your benchmark, or get started in minutes — your first answer shows you a comparison straight away.</p>
-          <a class="btn btn-light" href="/app#/register">Get your benchmark</a>
+          <h2>See exactly where your reward stands.</h2>
+          <p>Book a demo and we'll walk you through your position against similar UK organisations — live, on real data.</p>
+          <a class="btn btn-light" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
           <a class="btn btn-light" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55)" href="/app">Sign in</a>
         </div>
       </div>
@@ -331,8 +421,8 @@
           </div>
           <div class="foot-col">
             <h5>Get started</h5>
+            <a data-demo href="https://cal.com/lumi/demo">Book a demo</a>
             <a href="/app">Sign in</a>
-            <a href="/app#/register">Get your benchmark</a>
           </div>
           <div class="foot-col">
             <h5>Legal</h5>
@@ -355,6 +445,15 @@
     </div>
   </footer>
 
+  <script>
+    // ── BOOK-A-DEMO ─────────────────────────────────────────────────────────
+    // ONE place to set your scheduler. Replace with your real Calendly / cal.com /
+    // HubSpot meetings link. Every "Book a demo" button (data-demo) points here.
+    var DEMO_URL = "https://cal.com/lumi/demo";   // TODO: swap for the live scheduler URL
+    document.querySelectorAll("a[data-demo]").forEach(function(a){
+      a.setAttribute("href", DEMO_URL); a.target = "_blank"; a.rel = "noopener";
+    });
+  </script>
   <script>
     // gentle scroll-reveal (reduced-motion users get everything shown immediately via CSS)
     (function(){
