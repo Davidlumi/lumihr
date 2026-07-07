@@ -1803,7 +1803,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
 
   return html`
     <div class="category-page">
-      ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"} · peer group: ${cutLabelOf(cut, cuts)}`)}
+      ${/* "peer group: …" dropped 2026-07-07 — duplicated the "Comparing against" peer
+            bar above (same trim as the benchmark grid header; consistency). */ ""}
+      ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"}`)}
 
       ${thinSample ? html`
         <div class="cat-thin-caveat">

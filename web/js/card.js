@@ -154,7 +154,10 @@ function ComparePill({ c, cuts, effectiveKey, globalKey, onCut }) {
         title=${"Comparing against " + c.cut.label + (overridden ? " — differs from the page" : "")}
         onClick=${() => setOpen(!open)}>
         <${Icon} name="users" size=${13} />
-        <span class="cmp-pill-label">${c.cut.label}</span>
+        ${/* label shown only when this card is compared against a DIFFERENT cut than the
+              page (declutter 2026-07-07): at the default cut it just repeated the page's
+              "Comparing against" bar on every card, so the pill goes icon-only there. */ ""}
+        ${overridden ? html`<span class="cmp-pill-label">${c.cut.label}</span>` : null}
         <${Icon} name="chevron-down" size=${12} />
       </button>
       ${open && html`
