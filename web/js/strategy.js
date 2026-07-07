@@ -181,7 +181,9 @@ function DialCard({ field, value, onPick, required, context, extra }) {
       <div class="dial-head">
         <span class=${"dial-roundel" + (flagged ? " flagged" : "")}><${Icon} name=${DIAL_ICON[field] || "target"} size=${16} /></span>
         <div>
-          <div class="dial-title">${DIAL_LABEL[field]} ${tag}${context ? html` <span class="strat-ctx">Context</span>` : null}</div>
+          ${/* the "Context" title chip dropped 2026-07-07 — it duplicated the clearer
+                "Kept for context — doesn't shape your signals yet" note below the dial. */ ""}
+          <div class="dial-title">${DIAL_LABEL[field]} ${tag}</div>
           <div class="dial-q" dangerouslySetInnerHTML=${{ __html: q }}></div>
         </div>
       </div>

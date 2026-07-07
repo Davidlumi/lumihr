@@ -304,7 +304,10 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
         <div class="qwiz-card card">
           <div class="qwiz-qhead">
             <span class=${"pulse-q-num" + (curAnswered ? " done" : "")}>${curAnswered ? "✓" : at + 1}</span>
-            <span class="caption">${cur.is_required ? "Key question" : "Optional question"} · ${at + 1} of ${total}</span>
+            ${/* "· N of total" dropped 2026-07-07 — the modebar ("question N of total")
+                  and the pip row already show the position; this repeated it a third time.
+                  The Key/Optional word stays (it signals whether the Q counts to unlock). */ ""}
+            <span class="caption">${cur.is_required ? "Key question" : "Optional question"}</span>
           </div>
           <${QuestionInput} key=${cur.id} q=${cur} drafts=${drafts}
             issues=${issues} save=${save} confirmValue=${confirmValue} />

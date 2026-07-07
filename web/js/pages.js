@@ -76,11 +76,9 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
                 anything. Pool + collection window straight from the payload. */ ""}
           ${data.peer_pool && data.peer_pool.responding_orgs ? html`
             <div class="hero-sub num">Benchmarked against ${data.peer_pool.responding_orgs} UK organisations${data.snapshot && data.snapshot.window ? " · " + data.snapshot.window : ""}</div>` : null}
-        </div>
-        <div class="hero-actions">
-          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true} />
-          <${ExportBoardPack} me=${me} cut=${cut} />
-          <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
+          ${/* thin-sample caveat demoted here (2026-07-07) — it used to float in the
+                hero-actions row competing with Export/Share; it belongs with the peer-
+                depth story, as a quiet note under the trust line. */ ""}
           ${thinSample && html`
             <div class="sample-caveat-line">
               <span class="indic-flag" tabindex="0" role="note">
@@ -88,6 +86,11 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
                 <span class="indic-tip">Verdicts are compared against ${sampleN} peers — treat as directional.</span>
               </span>
             </div>`}
+        </div>
+        <div class="hero-actions">
+          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true} />
+          <${ExportBoardPack} me=${me} cut=${cut} />
+          <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
         </div>
       </div>
 
@@ -1610,7 +1613,9 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
           <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
           <div>
             <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
-            <div class="caption meta">${cards.length} benchmarks${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""} · peer group: ${cutLabelOf(cut, cuts)}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
+            ${/* "peer group: …" dropped 2026-07-07 — it duplicated the "Comparing against"
+                  peer bar directly above this header (declutter). */ ""}
+            <div class="caption meta">${cards.length} benchmarks${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
         <div class="controls" style=${{ alignItems: "flex-start" }}>
@@ -1620,7 +1625,6 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
               <option value="metric">Metrics</option><option value="practice">Practices</option>
               <option value="policy">Policies</option><option value="benefit">Benefits</option>
             </select>
-            <div class="hint">Show only one kind of question.</div>
           </div>
           <div class="ctlgroup">
             <select class="ctl" aria-label="Filter by signal" value=${sigF} onChange=${e => setSigF(e.target.value)}>
@@ -1629,7 +1633,6 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
               <option value="add">Needs data · ${sigCounts.add}</option>
               <option value="clear">No signal · ${sigCounts.clear}</option>
             </select>
-            <div class="hint">Flagged, needs data, or no signal.</div>
           </div>
         </div>
       </div>

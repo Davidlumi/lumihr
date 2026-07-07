@@ -2990,6 +2990,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .bench-foot { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding-top: var(--s3); flex-wrap: wrap; }
 .bench-card .bench-foot .bench-n { margin: 0; padding: 0; }
 .bench-foot .card-tools { margin-left: auto; }
+/* Declutter (2026-07-07): the per-card action cluster (open/info/pin/copy/download/link)
+   is revealed on hover or keyboard focus, not parked on every one of ~120 grid cards at
+   rest — the chart already opens on click, and the informative cut · P · n stay visible.
+   opacity (not display) keeps the footer height stable — no reflow on hover — and the
+   buttons stay keyboard-reachable (focus-within reveals them). Touch devices have no
+   hover, so the @media guard leaves them always-visible there. */
+@media (hover: hover) and (pointer: fine) {
+  .bench-card .card-tools { opacity: 0; transition: opacity var(--ease); }
+  .bench-card:hover .card-tools, .bench-card:focus-within .card-tools { opacity: 1; }
+}
 .tool-div { width: 1px; min-height: 16px; align-self: stretch; background: var(--border); margin: 2px var(--s1); flex: none; }
 
 /* ----- Reward strategy check (AI strategy-execution diagnosis — heads the Signals page) -----
