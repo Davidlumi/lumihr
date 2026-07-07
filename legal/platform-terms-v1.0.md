@@ -39,4 +39,4 @@ Admin.
 - These terms are governed by the law of England and Wales, and the courts of
   England and Wales have exclusive jurisdiction.
 
-*Questions: members@lumi.example*
+*Questions: hello@lumihr.co.uk*
