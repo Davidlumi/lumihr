@@ -2016,6 +2016,39 @@ def run_signal_sweep(conn=None, verbose=True):
     return swept, total_events
 
 
+def _signal_scheduler():
+    """Daemon loop: once a day at LUMI_SWEEP_HOUR (UTC, default 07) run the signal
+    sweep, then the email digest — so members are proactively emailed when their
+    position moves. Weekly-digest users are included one weekday a week
+    (LUMI_WEEKLY_DAY, Mon=0). Uses a thread-local connection (db.get_conn is
+    thread-local, so this thread gets its own). ENV-GATED off by default — dev,
+    tests and the QA suite never start it. Assumes a SINGLE app instance; with
+    multiple workers, leave this OFF and drive POST /api/notifications/run-sweep
+    ?digest=daily,weekly from one external cron instead (each worker would
+    otherwise sweep in parallel). Emails only actually leave once LUMI_SMTP_HOST
+    is set; otherwise send_notification console-logs them."""
+    import time as _time
+    while True:
+        try:
+            hour = int(os.environ.get("LUMI_SWEEP_HOUR", "7")) % 24
+            weekly_day = int(os.environ.get("LUMI_WEEKLY_DAY", "0"))
+            now = datetime.utcnow()
+            nxt = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if nxt <= now:
+                nxt += timedelta(days=1)
+            _time.sleep(max(30.0, (nxt - now).total_seconds()))
+            conn = get_conn()
+            swept, events = run_signal_sweep(conn, verbose=False)
+            freqs = ["daily"] + (["weekly"] if datetime.utcnow().weekday() == weekly_day else [])
+            sent = notifications.run_email_digest(
+                conn, base_url=os.environ.get("LUMI_BASE_URL", ""), frequencies=tuple(freqs))
+            print("[lumi] signal scheduler: swept %d orgs, %d change events, %d digests sent (%s)"
+                  % (swept, events, sent, ",".join(freqs)), flush=True)
+        except Exception as e:
+            print("[lumi] signal scheduler error (retrying in 1h): %s" % e, flush=True)
+            _time.sleep(3600)
+
+
 # ================================================================== MY DATA ==
 
 @app.get("/api/my-data")
@@ -2598,13 +2631,24 @@ async def unsubscribe_email(request: Request):
 
 @app.post("/api/notifications/run-sweep")
 async def trigger_sweep(request: Request):
-    """Manual trigger for the nightly sweep (no cron in this environment).
-    Platform-admin only — recomputes change events and fans out notifications
-    for EVERY org (a cross-tenant write), so it carries no org scope and must
-    not be reachable by an ordinary org admin."""
+    """Manual trigger for the nightly pipeline (the in-process scheduler is env-
+    gated by LUMI_SIGNAL_SWEEP; this runs it on demand). Platform-admin only —
+    recomputes change events and fans out notifications for EVERY org (a cross-
+    tenant write), so it carries no org scope. Pass ?digest=daily,weekly to ALSO
+    send the email digest (real emails when LUMI_SMTP_HOST is set, else console-
+    logged) — used to smoke-test the full pipeline at go-live."""
     require_platform_admin(request)
-    swept, events = run_signal_sweep(get_conn(), verbose=False)
-    return {"ok": True, "orgs_swept": swept, "events": events}
+    conn = get_conn()
+    swept, events = run_signal_sweep(conn, verbose=False)
+    out = {"ok": True, "orgs_swept": swept, "events": events}
+    dig = (request.query_params.get("digest") or "").strip()
+    if dig:
+        freqs = tuple(f for f in (x.strip() for x in dig.split(",")) if f in ("daily", "weekly"))
+        if freqs:
+            out["digests_sent"] = notifications.run_email_digest(
+                conn, base_url=os.environ.get("LUMI_BASE_URL", ""), frequencies=freqs)
+            out["digest_frequencies"] = list(freqs)
+    return out
 
 
 # ==================================================================== PREFS ==
@@ -5668,3 +5712,16 @@ def startup():
         print("       Contributor: %s / %s" % DEMO_CONTRIBUTOR)
         print("       Viewer     : %s / %s\n" % DEMO_VIEWER)
     backfill_terms(conn)
+    # proactive signal alerts (the marketing "we email you when it moves"): the
+    # nightly sweep + email digest. Env-gated OFF by default so dev/tests/QA never
+    # start it; set LUMI_SIGNAL_SWEEP=on in production (SINGLE instance) to email
+    # members when their position moves. Emails actually leave only once
+    # LUMI_SMTP_HOST is set — otherwise they are console-logged.
+    if os.environ.get("LUMI_SIGNAL_SWEEP", "").lower() == "on":
+        import threading
+        threading.Thread(target=_signal_scheduler, name="lumi-signal-sweep", daemon=True).start()
+        print("[lumi] SIGNAL SCHEDULER: ON — daily sweep + email digest at %02dh UTC | SMTP: %s"
+              % (int(os.environ.get("LUMI_SWEEP_HOUR", "7")) % 24,
+                 "configured" if os.environ.get("LUMI_SMTP_HOST") else "NOT set (emails console-logged)"), flush=True)
+    else:
+        print("[lumi] SIGNAL SCHEDULER: OFF (set LUMI_SIGNAL_SWEEP=on for proactive alerts)", flush=True)
