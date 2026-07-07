@@ -1300,7 +1300,17 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const [commentary, setCommentary] = useState(null);
   const [cmBusy, setCmBusy] = useState(false);
   const [cmErr, setCmErr] = useState(null);
-  useEffect(() => { setCommentary(null); setCmErr(null); }, [qid, sel.dim, sel.value]);
+  // hydrate an existing (AI or edited) commentary on load — peek never generates, so a
+  // saved edit reappears on return and the CTA can't silently overwrite it.
+  useEffect(() => {
+    let dead = false;
+    setCommentary(null); setCmErr(null);
+    api("/api/metric-commentary", { method: "POST",
+      body: { question_id: qid, cut: sel.dim, cut_value: sel.value, peek: true } })
+      .then(r => { if (!dead && r && r.parts) setCommentary(r); })
+      .catch(() => {});
+    return () => { dead = true; };
+  }, [qid, sel.dim, sel.value]);
   useEffect(() => { setSel(globalSel); }, [cutKeyOf(cut)]);
   useEffect(() => {
     let dead = false;
@@ -1375,6 +1385,12 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
       setCommentary(r); return r;
     } catch (e) { setCmErr(e.message); return null; }
     finally { setCmBusy(false); }
+  };
+  // save a member-edited commentary — the org's own words become the stored draft
+  const saveCommentary = async (parts) => {
+    const r = await api("/api/metric-commentary/save", { method: "POST",
+      body: { question_id: qid, cut: sel.dim, cut_value: sel.value, parts } });
+    setCommentary(r); return r;
   };
   // One-pager (PDF): the written story is the CENTREPIECE, so ensure it's generated
   // first (AI when live, deterministic keyless — the endpoint always returns a
@@ -1485,6 +1501,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
             deterministic read to give (practice metrics only get the AI version). */ ""}
       ${(me.features && me.features.commentary) || (pos && !c.suppressed) ? html`
         <${MetricCommentary} commentary=${commentary} busy=${cmBusy} err=${cmErr} onGenerate=${genCommentary}
+          onSave=${saveCommentary} canEdit=${!!(me.user && me.user.role !== "viewer")}
           pos=${pos} card=${c} featureOn=${!!(me.features && me.features.commentary)} />` : null}
 
       <${MetricTrend} qid=${qid} />
@@ -1526,45 +1543,78 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
 /* AI commentary: on-demand, per metric + cut, grounded server-side and
    validated before anything is shown. Framed to sanity-check, not to obey. */
 // PRIMARY interpretation card — "What this means for you". Presentational (2026-07-06):
-// MetricPage owns the state + generate so the one-pager can ensure it's written before
-// print. Base = the deterministic aim-aware read (always there for positioned metrics);
-// Generate upgrades it to the structured 4-part commentary (AI live, deterministic
-// keyless — the endpoint always returns a structured narrative).
-function MetricCommentary({ commentary, busy, err, onGenerate, pos, card, featureOn }) {
+// MetricPage owns generate/save so the one-pager can ensure it's written before print.
+// Base = the deterministic aim-aware read; Generate upgrades to the AI-drafted 4-part
+// commentary; EDIT (2026-07-07) lets a member reshape the draft into their own reviewed
+// note — advice and recommendations they OWN (server stores source='edited', unvalidated
+// for directives, deliberately: the human owns their words).
+const CM_PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
+                  ["implications", "Implications"], ["considerations", "Recommendations"]];
+function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, pos, card, featureOn }) {
   const data = commentary;
-  const PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
-                 ["implications", "Implications"], ["considerations", "Considerations"]];
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const edited = data && data.source === "edited";
   const detBase = !data && pos && !card.suppressed && window.meaningLines ? window.meaningLines(card, pos) : null;
+  const startEdit = () => { setDraft({ ...(data.parts || {}) }); setEditing(true); };
+  const doSave = async () => {
+    setSaving(true);
+    try { await onSave(draft); setEditing(false); toast("Commentary saved — this is now your note."); }
+    catch (e) { toast(e.message || "Couldn't save", "error"); }
+    setSaving(false);
+  };
+  const regen = () => {
+    if (edited && !window.confirm("Regenerating replaces your edited version with a fresh AI draft. Continue?")) return;
+    onGenerate(true);
+  };
   return html`
     <div class=${"card metric-commentary" + (data ? " has-narrative" : "")} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <div class="row spread" style=${{ alignItems: "flex-start" }}>
         <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> What this means for you</h2>
-        ${data && html`<span class="chip warn no-print">AI-generated — review before use</span>`}
+        ${edited ? html`<span class="chip" style=${{ background: "var(--blue-tint)", color: "var(--blue-deep)" }}>Edited by your team</span>`
+          : data ? html`<span class="chip warn no-print">AI draft — review &amp; edit</span>` : null}
       </div>
       ${detBase && html`<p style=${{ margin: "var(--s2) 0 0" }}>${detBase}</p>`}
       ${!data && !busy && featureOn && html`
         <p class="caption commentary-cta" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>${detBase
-          ? "Want the fuller read? A short, structured interpretation — generated from the figures on this page, to sanity-check, not advice."
-          : "A short, structured interpretation of this metric for your organisation — generated from the figures on this page only, to sanity-check, not advice."}</p>
+          ? "Want the fuller read? A short, structured interpretation drafted from the figures on this page — yours to review, edit and make your own."
+          : "A short, structured interpretation of this metric for your organisation, drafted from the figures on this page — yours to review, edit and make your own."}</p>
         ${err && html`<div class="error-text no-print" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         <button class="btn primary" onClick=${() => onGenerate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
       ${!data && !busy && !featureOn && !detBase && html`
         <p class="caption" style=${{ marginTop: "var(--s2)" }}>An interpretation appears here once your organisation's AI insights are switched on.</p>`}
       ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
-      ${data && html`
+      ${data && !editing && html`
         <div style=${{ marginTop: "var(--s3)" }}>
-          ${PARTS.map(([k, label]) => data.parts[k] && html`
+          ${CM_PARTS.map(([k, label]) => data.parts[k] && html`
             <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
               <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)" }}>${label}</div>
-              <p style=${{ margin: "2px 0 0" }}>${data.parts[k]}</p>
+              <p style=${{ margin: "2px 0 0", whiteSpace: "pre-wrap" }}>${data.parts[k]}</p>
             </div>`)}
-          <div class="caption" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
-            A starting point for your own judgement — not advice. Consider your own context and seek
-            professional input where relevant.
+          <div class="caption metric-cm-foot" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
+            ${edited
+              ? html`Edited by your team${data.edited_by ? " (" + data.edited_by + ")" : ""}${data.edited_at ? " · " + new Date(data.edited_at + "Z").toLocaleDateString("en-GB") : ""} — your organisation's own words. Consider your own context and seek professional input where relevant.`
+              : "An AI-drafted starting point — edit it into your own advice, or take it as a prompt for your own judgement. Consider your own context and seek professional input where relevant."}
           </div>
-          <div class="row no-print" style=${{ marginTop: "var(--s2)" }}>
-            <button class="btn small quiet" onClick=${() => onGenerate(true)}>Regenerate</button>
-            ${data.cached && html`<span class="caption">Saved from ${new Date((data.generated_at || "") + "Z").toLocaleDateString("en-GB") || "earlier"} — regenerates automatically when the figures change.</span>`}
+          <div class="row no-print" style=${{ marginTop: "var(--s2)", gap: "var(--s2)", flexWrap: "wrap" }}>
+            ${canEdit && html`<button class="btn small" onClick=${startEdit}><${Icon} name="pencil" size=${13} /> Edit</button>`}
+            <button class="btn small quiet" onClick=${regen}>Regenerate</button>
+            ${data.cached && !edited && html`<span class="caption">Regenerates automatically when the figures change.</span>`}
+          </div>
+        </div>`}
+      ${data && editing && html`
+        <div style=${{ marginTop: "var(--s3)" }}>
+          <p class="caption" style=${{ marginTop: 0 }}>Edit any section — write it in your own words, including advice and recommendations. This becomes your organisation's saved note (it replaces the AI draft) and appears on the one-pager.</p>
+          ${CM_PARTS.map(([k, label]) => html`
+            <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
+              <label class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)", display: "block", marginBottom: "2px" }}>${label}</label>
+              <textarea class="ctl metric-cm-edit" rows=${3} value=${draft[k] || ""}
+                onInput=${e => setDraft(d => ({ ...d, [k]: e.target.value }))}></textarea>
+            </div>`)}
+          <div class="row" style=${{ gap: "var(--s2)" }}>
+            <button class="btn primary small" disabled=${saving} onClick=${doSave}>${saving ? "Saving…" : "Save your commentary"}</button>
+            <button class="btn quiet small" disabled=${saving} onClick=${() => setEditing(false)}>Cancel</button>
           </div>
         </div>`}
     </div>`;

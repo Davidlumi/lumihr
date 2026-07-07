@@ -601,6 +601,13 @@ def init_schema(conn=None):
                 "ALTER TABLE metric_suggestions ADD COLUMN reviewed_by TEXT",
                 "ALTER TABLE metric_suggestions ADD COLUMN reviewed_at TEXT",
                 "ALTER TABLE metric_suggestions ADD COLUMN review_notes TEXT",
+                # editable AI commentary (2026-07-07): a member can edit the AI draft
+                # into their own reviewed note (source='edited'); who + when for the
+                # "edited by X" attribution. The edit is the org's own words, so it is
+                # NOT run through the directive/legal validator (that gate stays on the
+                # AI generation path only).
+                "ALTER TABLE metric_commentary ADD COLUMN edited_by TEXT",
+                "ALTER TABLE metric_commentary ADD COLUMN edited_at TEXT",
                 # "My dashboards" (multi-dashboard): per-user pointer to the
                 # dashboard the global pin-star targets and the page opens on.
                 "ALTER TABLE users ADD COLUMN active_dashboard_id TEXT",

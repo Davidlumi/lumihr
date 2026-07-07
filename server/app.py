@@ -4549,7 +4549,14 @@ async def metric_commentary(request: Request):
             (org["org_id"], qid, cut_key, phash)).fetchone()
         if row:
             return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
-                    "generated_at": row["created_at"], "caveats": caveats}
+                    "generated_at": row["created_at"], "caveats": caveats,
+                    "edited_by": row["edited_by"], "edited_at": row["edited_at"]}
+    # PEEK (2026-07-07): hydrate an existing (AI or edited) commentary on page load
+    # WITHOUT spending a generation — nothing cached for this hash → return empty, and
+    # the page shows the Generate prompt. Keeps a saved EDIT visible on return (and
+    # stops the CTA overwriting it).
+    if body.get("peek"):
+        return {"parts": None, "source": None, "cached": False, "caveats": caveats}
     res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     conn.execute(
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
@@ -4557,6 +4564,46 @@ async def metric_commentary(request: Request):
         (org["org_id"], qid, cut_key, phash, j(res["parts"]), res["source"]))
     conn.commit()
     return {"parts": res["parts"], "source": res["source"], "cached": False, "caveats": caveats}
+
+
+@app.post("/api/metric-commentary/save")
+async def metric_commentary_save(request: Request):
+    """Save a member-EDITED metric commentary — the org's OWN words (AI-assisted).
+    The "edit and make it yours" path (2026-07-07): deliberately NOT run through the
+    directive/legal validator that gates AI GENERATION. The member reviews and OWNS
+    this note and may phrase it as advice/recommendations — the mirror-vs-consultant
+    line stays on lumi's auto-generated text, not on the human's edit. Keyed to the
+    current payload_hash so it self-invalidates like the AI cache when the figures
+    move. Editor-only: the commentary is org-shared, so an edit changes it for all."""
+    user, org = require_editor(request)
+    require_ai(get_conn(), user, AI_COMMENTARY)
+    body = await request.json()
+    qid = body.get("question_id")
+    conn = get_conn()
+    dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
+    value = body.get("cut_value")
+    payload = build_commentary_payload(conn, org, user, qid, dim, value)
+    if payload is None:
+        raise HTTPException(404, "That metric isn't part of your benchmark.")
+    parts_in = body.get("parts") or {}
+    parts = {}
+    for k in claude_api.COMMENTARY_PARTS:
+        v = str(parts_in.get(k) or "")[:2000]
+        parts[k] = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", " ", v).strip()   # strip control chars; the member's words otherwise stand
+    if not any(parts.values()):
+        raise HTTPException(400, "Nothing to save.")
+    cut_key = dim + "::" + (value or "")
+    phash = hashlib.sha256((j(payload) + "|" + claude_api.COMMENTARY_GEN_VERSION).encode()).hexdigest()[:16]
+    who = user["email"]
+    conn.execute(
+        "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source, edited_by, edited_at) "
+        "VALUES (?,?,?,?,?,?,?,datetime('now'))",
+        (org["org_id"], qid, cut_key, phash, j(parts), "edited", who))
+    conn.commit()
+    row = conn.execute("SELECT edited_at FROM metric_commentary WHERE org_id=? AND question_id=? AND cut_key=?",
+                       (org["org_id"], qid, cut_key)).fetchone()
+    return {"parts": parts, "source": "edited", "edited_by": who,
+            "edited_at": row["edited_at"] if row else None, "cached": True}
 
 
 @app.post("/api/domain-summary")

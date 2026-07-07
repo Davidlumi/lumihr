@@ -2326,6 +2326,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* ----- single-metric full page ----- */
 .metric-page { max-width: 980px; }
+/* editable AI commentary — the member reshapes the draft into their own note */
+.metric-cm-edit { width: 100%; resize: vertical; min-height: 62px; font: inherit;
+  line-height: 1.5; padding: var(--s2) var(--s3); }
+.metric-commentary .metric-cm-foot { color: var(--ink-soft); }
 /* "About this metric" — methodology demoted to a collapsed disclosure below the read */
 .metric-about > summary.metric-about-sum { cursor: pointer; list-style: none; display: inline-flex;
   align-items: center; gap: var(--s2); }
