@@ -205,27 +205,33 @@ function ExportBoardPack({ me, cut }) {
    Export board pack on the Overview header and on My dashboards. Posts
    kind=dashboard, config {cut, cut_value, name}, 30-day expiry; on success the
    dialog shows the public link with a copy button. */
-function ShareButton({ me, cut, name }) {
+function ShareButton({ me, cut, name, layout }) {
   const [open, setOpen] = useState(false);
   if (!me || !me.user || me.user.role !== "admin") return null;
   return html`
     <button class="btn small" onClick=${() => setOpen(true)}
       title="Create a read-only public link to your benchmark summary (30 days).">
       <${Icon} name="link" size=${14} /> Share</button>
-    ${open && html`<${ShareDialog} cut=${cut} name=${name} onClose=${() => setOpen(false)} />`}`;
+    ${open && html`<${ShareDialog} cut=${cut} name=${name} layout=${layout} onClose=${() => setOpen(false)} />`}`;
 }
 
-function ShareDialog({ cut, name, onClose }) {
+function ShareDialog({ cut, name, layout, onClose }) {
   const [link, setLink] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [copied, setCopied] = useState(false);
+  // when the caller passes a dashboard layout, the link shows THOSE cards; otherwise
+  // it falls back to the org's team-default selection (server side).
+  const hasLayout = Array.isArray(layout) && layout.length > 0;
   const create = async () => {
     setBusy(true); setErr(null);
     try {
       const r = await api("/api/shares", { method: "POST", body: {
         kind: "dashboard",
-        config: { cut: (cut && cut.dim) || "all", cut_value: (cut && cut.value) || null, name: name || null },
+        config: {
+          cut: (cut && cut.dim) || "all", cut_value: (cut && cut.value) || null, name: name || null,
+          layout: hasLayout ? layout.map(s => ({ question_id: s.question_id, row_id: s.row_id, size: s.size })) : undefined,
+        },
         expiry_days: 30 } });
       setLink(window.location.origin + "/share/" + r.token);
     } catch (e) { setErr(e.message); }
@@ -240,7 +246,7 @@ function ShareDialog({ cut, name, onClose }) {
       <div style=${{ padding: "var(--s4)" }}>
         <h2 style=${{ margin: "0 0 var(--s2)", fontSize: "var(--fs-subhead)" }}>Share this view</h2>
         <p class="caption" style=${{ marginTop: 0 }}>
-          Create a read-only public link to your organisation's benchmark summary — headline position, leads and gaps, and your team's pinned cards. Anyone with the link can view it for 30 days; no sign-in needed.</p>
+          Create a read-only public link to your organisation's benchmark summary — headline position, leads and gaps, and ${hasLayout ? "the cards on this dashboard" : "your team's pinned cards"}. Anyone with the link can view it for 30 days; no sign-in needed.</p>
         ${err && html`<div class="error-text" style=${{ margin: "var(--s2) 0" }}>${err}</div>`}
         ${!link ? html`
           <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
@@ -1916,7 +1922,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   const [nameDraft, setNameDraft] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [dlOpen, setDlOpen] = useState(false);   // Download menu (PDF / CSV)
   const nameRef = useRef(null);
+  const dlRef = useRef(null);
   const cancelRename = useRef(false);   // Escape sets this so the input's onBlur doesn't commit
 
   const applyActive = (id, lay) => {
@@ -1971,6 +1979,14 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     });
   }, [layout, cutKeyOf(cut)]);
   useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
+  useEffect(() => {
+    if (!dlOpen) return;
+    const onDown = e => { if (dlRef.current && !dlRef.current.contains(e.target)) setDlOpen(false); };
+    const onKey = e => { if (e.key === "Escape") setDlOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [dlOpen]);
 
   if (!list || !layout) return html`
     <div>
@@ -2083,10 +2099,21 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
         </div>
         <div class="row">
           ${saved && html`<${Chip} kind="good">${saved}<//>`}
-          <button class="btn small" onClick=${downloadPDF} disabled=${layout.length === 0}
-            title=${layout.length === 0 ? "Add a card first" : "Download this dashboard as a PDF"}>
-            <${Icon} name="download" size=${14} /> Download</button>
-          <${ShareButton} me=${me} cut=${null} name=${activeName} />
+          <div class="dash-dl" ref=${dlRef}>
+            <button class="btn small" onClick=${() => setDlOpen(o => !o)} disabled=${layout.length === 0}
+              aria-haspopup="menu" aria-expanded=${dlOpen}
+              title=${layout.length === 0 ? "Add a card first" : "Download this dashboard"}>
+              <${Icon} name="download" size=${14} /> Download <span class="dash-dl-chev" aria-hidden="true">▾</span></button>
+            ${dlOpen && html`
+              <div class="dash-dl-menu" role="menu">
+                <button role="menuitem" class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
+                  <b>PDF</b><small>Print-ready document — every card</small></button>
+                <a role="menuitem" class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(cut)}
+                  download onClick=${() => setDlOpen(false)}>
+                  <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
+              </div>`}
+          </div>
+          <${ShareButton} me=${me} cut=${null} name=${activeName} layout=${layout} />
           ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members start from this layout">Save as team default</button>`}
         </div>
       </div>

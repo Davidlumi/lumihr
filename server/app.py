@@ -2706,6 +2706,38 @@ async def gap_register_csv(request: Request):
 
 # ============================================================== BENCHMARK CSV ==
 
+# quantitative CSV shape shared by the whole-benchmark export and the per-dashboard
+# export — one row per metric, numbers matching the cards exactly (same assemble_card
+# path), suppressed cells blank + suppressed=true so a small-cell distribution never leaks.
+BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value",
+                    "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"]
+
+
+def _bench_csv_row(qid, q, card):
+    suppressed = bool(card.get("suppressed"))
+    cut_label = (card.get("cut") or {}).get("label", "")
+    # your_value: numeric value, else the selected label (multi_select joined)
+    you = card.get("you") or {}
+    if "value" in you:
+        your_value = you["value"]
+    elif you.get("labels"):
+        your_value = "; ".join(you["labels"])
+    elif "label" in you:
+        your_value = you["label"]
+    else:
+        your_value = ""
+    # percentiles only exist for numeric distributions; suppressed cells stay blank
+    blk = card.get("block") if not suppressed else None
+    if blk and q.type == "numeric":
+        stats = [blk.get("p10", ""), blk.get("p25", ""), blk.get("p50", ""),
+                 blk.get("p75", ""), blk.get("p90", "")]
+    else:
+        stats = ["", "", "", "", ""]
+    return [qid, q.display_title, q.sub_power, your_value,
+            *stats, card.get("n", 0), cut_label,
+            "true" if suppressed else "false"]
+
+
 @app.get("/api/benchmark.csv")
 async def benchmark_csv(request: Request):
     """Quantitative export: one row per org-visible metric, numbers matching the
@@ -2720,8 +2752,7 @@ async def benchmark_csv(request: Request):
 
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["question_id", "title", "subpower", "your_value",
-                "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"])
+    w.writerow(BENCH_CSV_HEADER)
 
     rows = []
     for qid, q in org_visible_questions(org).items():
@@ -2729,37 +2760,52 @@ async def benchmark_csv(request: Request):
         if p is None:
             continue
         card = assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None, entitled)
-        suppressed = bool(card.get("suppressed"))
-        cut_label = (card.get("cut") or {}).get("label", "")
-
-        # your_value: numeric value, else the selected label (multi_select joined)
-        you = card.get("you") or {}
-        if "value" in you:
-            your_value = you["value"]
-        elif you.get("labels"):
-            your_value = "; ".join(you["labels"])
-        elif "label" in you:
-            your_value = you["label"]
-        else:
-            your_value = ""
-
-        # percentiles only exist for numeric distributions; suppressed cells stay blank
-        blk = card.get("block") if not suppressed else None
-        if blk and q.type == "numeric":
-            stats = [blk.get("p10", ""), blk.get("p25", ""), blk.get("p50", ""),
-                     blk.get("p75", ""), blk.get("p90", "")]
-        else:
-            stats = ["", "", "", "", ""]
-
-        rows.append([qid, q.display_title, q.sub_power, your_value,
-                     *stats, card.get("n", 0), cut_label,
-                     "true" if suppressed else "false"])
+        rows.append(_bench_csv_row(qid, q, card))
 
     rows.sort(key=lambda r: (r[2] or "", r[1] or ""))
     for r in rows:
         w.writerow(r)
 
     fname = "lumi-benchmark-%s.csv" % (cut.get("dim") or "all")
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="%s"' % fname})
+
+
+@app.get("/api/dashboards/{did}/export.csv")
+async def dashboard_csv(did: str, request: Request):
+    """The numbers behind one saved dashboard — one row per pinned card, in the
+    dashboard's own order, with the same stats/suppression as the benchmark
+    export. Honours a slot's own peer cut where set, else the page cut."""
+    user, org = require_user(request)
+    conn = get_conn()
+    row = _own_dashboard(conn, did, org, user)
+    if row is None:
+        raise HTTPException(404, "No such dashboard.")
+    vis = org_visible_questions(org)
+    entitled = make_entitled(user, org)
+    req_cut = parse_cut(request, org)
+    answers = org_answers_for(org)
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(BENCH_CSV_HEADER)
+    seen = set()
+    for slot in _dash_visible_layout(row, vis):
+        qid = slot.get("question_id")
+        if not qid or qid in seen:
+            continue
+        seen.add(qid)
+        q = vis.get(qid)
+        p = payloads().get(qid)
+        if q is None or p is None:
+            continue
+        eff_cut = slot.get("cut") or req_cut
+        tb = twin_blocks_if_needed(conn, org, eff_cut)
+        card = assemble_card(q, p, org, answers, eff_cut, {qid: tb.get(qid)} if tb else None, entitled)
+        w.writerow(_bench_csv_row(qid, q, card))
+
+    safe = re.sub(r"[^A-Za-z0-9 _-]+", "", row["name"] or "dashboard").strip()[:40] or "dashboard"
+    fname = "lumi-dashboard-%s.csv" % safe
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="%s"' % fname})
 
@@ -5366,6 +5412,22 @@ async def create_share(request: Request):
         if not conn.execute("SELECT 1 FROM board_packs WHERE pack_id=? AND org_id=?",
                             (config.get("pack_id"), org["org_id"])).fetchone():
             raise HTTPException(404, "Board pack not found")
+    if kind == "dashboard":
+        # snapshot the shared dashboard's card selection (question_id/row_id/size only —
+        # per-slot cuts are dropped so a bespoke peer group is never exposed on a public
+        # link). The link then renders THESE cards, not the org's team-default layout.
+        lay = config.get("layout")
+        clean = []
+        if isinstance(lay, list):
+            for s in lay[:24]:
+                if isinstance(s, dict) and s.get("question_id"):
+                    clean.append({"question_id": str(s["question_id"]),
+                                  "row_id": s.get("row_id"),
+                                  "size": 2 if s.get("size") == 2 else 1})
+        if clean:
+            config["layout"] = clean
+        else:
+            config.pop("layout", None)
     expiry_days = body.get("expiry_days")
     expires = None
     if expiry_days in (7, 30, 90):
@@ -5424,8 +5486,11 @@ async def share_data(token: str, request: Request):
         return {"kind": "boardpack", "org_name": org["name"],
                 "payload": uj(row["payload_json"]), "narrative": uj(row["narrative_json"]),
                 "created_at": row["created_at"]}
-    # dashboard share: overview + the org's pinned/starter cards under a fixed cut
-    cut = config.get("cut") or {"dim": "all"}
+    # dashboard share: overview + the org's pinned/starter cards under a fixed cut.
+    # The client stores cut as a dim STRING plus a separate cut_value (not a dict), so
+    # rebuild the {dim,value} shape the engine expects — a bare string here used to 500.
+    raw_cut = config.get("cut")
+    cut = raw_cut if isinstance(raw_cut, dict) else {"dim": raw_cut or "all", "value": config.get("cut_value")}
     if cut.get("dim") in ("twin", "group"):
         cut = {"dim": "all"}  # bespoke groups never exposed on anonymous links
     answers = pos.get_org_answers(conn, org["org_id"], CURRENT_SNAPSHOT)
@@ -5437,11 +5502,18 @@ async def share_data(token: str, request: Request):
                                    band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
     co = pos.callouts(items, org_visible_questions(org), k=3)
     cards = []
-    layout_row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
-                              (org["org_id"],)).fetchone()
-    layout = uj(layout_row["layout_json"], []) if layout_row else \
-        [{"question_id": it["question_id"], "row_id": it["row_id"], "size": 1}
-         for it in (pos.top_gaps(items, 8) + pos.top_strengths(items, 4))]
+    # prefer the dashboard's own snapshot (set at share time) so the link shows the
+    # cards the user actually shared; fall back to the org team-default, then to an
+    # auto strengths/gaps selection for links created before this field existed.
+    cfg_layout = config.get("layout")
+    if isinstance(cfg_layout, list) and cfg_layout:
+        layout = cfg_layout
+    else:
+        layout_row = conn.execute("SELECT layout_json FROM pinned_views WHERE org_id=? AND user_id=''",
+                                  (org["org_id"],)).fetchone()
+        layout = uj(layout_row["layout_json"], []) if layout_row else \
+            [{"question_id": it["question_id"], "row_id": it["row_id"], "size": 1}
+             for it in (pos.top_gaps(items, 8) + pos.top_strengths(items, 4))]
     seen = set()
     for slot in layout[:12]:
         qid = slot.get("question_id")
