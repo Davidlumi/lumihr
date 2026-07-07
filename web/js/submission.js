@@ -344,7 +344,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       ${visible.length === 0 ? html`
         <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
           <span class="signals-empty-ring"><${Icon} name=${filter === "unanswered" ? "award" : "table"} size=${18} /></span>
-          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + sp + " — fully complete." : "No questions here yet."}</div>
+          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + sp + " — fully complete." : "No questions to show in this view."}</div>
         </div>` :
       html`<div class="dq-list">
         ${visible.map(q => {

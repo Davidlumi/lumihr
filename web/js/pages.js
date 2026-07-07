@@ -1398,7 +1398,7 @@ function CategoryTile({ d, pending, aim, view }) {
       <div class="card cat-tile cat-tile-practice" onClick=${() => nav("/category/" + encodeURIComponent(d.name))}>
         <h3 class="cat-tile-name"><button class="cat-open" onClick=${e => { e.stopPropagation(); nav("/category/" + encodeURIComponent(d.name)); }}>
           <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${domainLabel(d.name)}</button></h3>
-        ${pending ? html`<div class="caption num" style=${{ marginTop: "var(--s2)" }}>Appears once unlocked</div>`
+        ${pending ? html`<div class="caption num cat-pending-note">Appears once your data is in</div>`
           : (pool ? html`
             <div class="cat-axis num">off the norm</div>
             <div class="catp-bar" title="How many of this area's practices are off the norm — a different way of doing things, not a gap."
@@ -1411,7 +1411,19 @@ function CategoryTile({ d, pending, aim, view }) {
 
   // MARKET LENS (default): the verdict chip + proportional below/on/above bar with the
   // per-domain lean needle. The practice differ line now lives in the Practice view.
-  // Data-pending: a per-category verdict on ~1% of data isn't credible — neutral fallback.
+  // PENDING (brand-new org, gaps_locked): the market view had NO pending guard, so a
+  // no-data tile fell through to the "practice view" chip + an empty bar — the 7 tiles
+  // read as populated jargon while the gauge + signals above correctly said "not enough
+  // data". Match the practice view's pending treatment so the whole hero speaks with one
+  // voice on day one. (2026-07-07 new-user empty-state review.)
+  if (pending) {
+    return html`
+      <div class="card cat-tile v-practice cat-tile-pending" onClick=${() => nav("/category/" + encodeURIComponent(d.name))}>
+        <h3 class="cat-tile-name"><button class="cat-open" onClick=${e => { e.stopPropagation(); nav("/category/" + encodeURIComponent(d.name)); }}>
+          <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${domainLabel(d.name)}</button></h3>
+        <div class="caption num cat-pending-note">Appears once your data is in</div>
+      </div>`;
+  }
   const verdict = pending ? null : (post ? post.verdict : null);
   const ev = d.position_evidence;
   const indicative = pending ? false : (d.position_basis === "indicative");

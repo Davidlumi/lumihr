@@ -1207,6 +1207,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .arc-pending .arc-lean { color: var(--ink-faint); max-width: 250px; margin: var(--s1) auto 0; }
 .arc-pending .arc-legend { justify-content: center; }
 .arc-pending-note { color: var(--ink-soft); font-weight: 600; font-size: var(--fs-caption); }
+/* brand-new-org pending tile: a quiet "no data yet" caption, consistent across the
+   Market + Practice views so the 7 tiles speak with the gauge's "not enough data" voice */
+.cat-pending-note { margin-top: var(--s2); color: var(--ink-faint); }
 .cat-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--blue-tint);
   display: inline-flex; align-items: center; justify-content: center; color: var(--blue); flex: 0 0 auto; }
 .tile-chip { font-size: var(--fs-micro); font-weight: 650; padding: 2px var(--s2); }

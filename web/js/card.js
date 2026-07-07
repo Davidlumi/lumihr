@@ -485,7 +485,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   }
   if (c.type === "single_select" || c.type === "yes_no" || c.type === "multi_select") {
     const youLabels = c.you ? c.you.labels : [];
-    if (!c.block) return html`<div class="suppressed-box">No distribution available.</div>`;
+    if (!c.block) return html`<div class="suppressed-box">No peer distribution to show for this group yet — try a wider peer group.</div>`;
     return html`
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "var(--s2)" }}><a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"} style=${{ color: "inherit" }}>Answer this to see where you stand.</a></div>`}
