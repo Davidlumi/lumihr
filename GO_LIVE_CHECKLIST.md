@@ -13,7 +13,7 @@ Any AI feature renders **iff all three are true**:
 1. `AI_INSIGHTS_ENABLED` (the master switch) is **on**, AND
 2. that feature's own kill-switch is on (`LUMI_AI_COMMENTARY`, `LUMI_AI_ANALYST`,
    `LUMI_AI_BOARDPACK`, `LUMI_AI_PULSE`, `LUMI_AI_STRATEGY`, `LUMI_AI_DOMAIN_SUMMARY`), AND
-3. the **member has not opted out** (`AI_CONSENT_MODE=opt_out`: on by default; a member who turns
+3. the **member has not opted out** (`LUMI_AI_CONSENT_MODE=opt_out`: on by default; a member who turns
    AI Insights off in Settings records `kind="ai_insights_withdrawn"` and goes dark next request).
 
 Under opt-out, flipping the master on exposes AI Insights to every member who has **not** opted
@@ -26,7 +26,7 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 1. **Legal text finalised.** `legal/ai-insights-terms-v1.0.md` (draft suffix dropped,
    `LEGAL_INDEX` `draft:false`): banners removed, **Anthropic PBC** named as sub-processor,
    lawful basis set to legitimate interest, opt-out control wording.
-2. **Lawful basis + mode set.** `AI_CONSENT_MODE` default is now **`opt_out`** (legitimate
+2. **Lawful basis + mode set.** `LUMI_AI_CONSENT_MODE` default is now **`opt_out`** (legitimate
    interest); LIA confirmed on file.
 3. **Terms version bumped** `1.0-draft → 1.0` (`AI_TERMS_VERSION`).
 4. **Sub-processor + privacy disclosure.** The Anthropic row was added to the Sub-processor List

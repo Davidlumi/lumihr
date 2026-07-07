@@ -154,7 +154,11 @@ AI_INSIGHTS_ENABLED = os.environ.get("LUMI_AI_INSIGHTS_ENABLED", "off").lower() 
 # (records a withdrawal). Built to support EITHER basis without a code change.
 #   opt_out (default, legitimate interest): AI on unless the member withdraws.
 #   opt_in  (consent):                      no AI for a member until they explicitly consent.
-AI_CONSENT_MODE = os.environ.get("LUMI_AI_CONSENT_MODE", "opt_out").lower()
+# Accept BOTH env names so neither silently no-ops: the go-live checklist historically
+# named this AI_CONSENT_MODE, the codebase convention is LUMI_AI_CONSENT_MODE. Canonical
+# (LUMI_-prefixed, like every other switch) wins; the un-prefixed alias is honoured too.
+AI_CONSENT_MODE = (os.environ.get("LUMI_AI_CONSENT_MODE")
+                   or os.environ.get("AI_CONSENT_MODE") or "opt_out").lower()
 # The AI-Insights terms version the consent/withdrawal record pins. Finalised to "1.0" on solicitor
 # sign-off (2026-06-28); a future material change bumps this and can force re-consent.
 AI_TERMS_VERSION = "1.0"
@@ -5552,6 +5556,21 @@ def backfill_terms(conn):
 @app.on_event("startup")
 def startup():
     init_schema()
+    # AI go-live status — ONE grep-able line printed on every boot, so a restart
+    # confirms at a glance exactly what's live (the go-live switches are env-only by
+    # design). "LIVE — paid Claude" needs all three: the master gate, LUMI_AI_LIVE=on,
+    # and a key; miss any and members get the deterministic draft.
+    _key = bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    _live = os.environ.get("LUMI_AI_LIVE", "").lower() == "on"
+    _feats = [n for n, on in (("commentary", AI_COMMENTARY), ("analyst", AI_ANALYST),
+              ("pulse", AI_PULSE), ("boardpack", AI_BOARDPACK), ("strategy", AI_STRATEGY),
+              ("domain_summary", AI_DOMAIN_SUMMARY)) if on]
+    _real = AI_INSIGHTS_ENABLED and _live and _key
+    print("[lumi] AI INSIGHTS: %s | model: %s (LUMI_AI_LIVE=%s, key=%s) | consent=%s | features: %s"
+          % ("ON" if AI_INSIGHTS_ENABLED else "OFF (set LUMI_AI_INSIGHTS_ENABLED=on)",
+             "LIVE — paid Claude calls" if _real else "deterministic draft (no live model)",
+             "on" if _live else "off", "present" if _key else "ABSENT",
+             AI_CONSENT_MODE, ", ".join(_feats) or "none"), flush=True)
     conn = get_conn()
     # core-set governance: backfill the library's versioning fields (one-time)
     # and capture the baseline release if none exists. Both idempotent.
