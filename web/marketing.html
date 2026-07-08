@@ -420,55 +420,6 @@
     .pc-path p{color:var(--ink-soft);font-size:14px;line-height:1.55;}
     @media(max-width:820px){.pc-paths{grid-template-columns:1fr;}.pulsecta{padding:38px 28px;}}
 
-    /* ----------------- product reel (autoplaying animated demo) --------------- */
-    .reel{max-width:940px;margin:0 auto;}
-    .reel-stage{overflow:hidden;box-shadow:var(--shadow-big);}
-    .reel-view{position:relative;height:452px;background:var(--paper);}
-    .scene{position:absolute;inset:0;padding:26px 30px;opacity:0;visibility:hidden;transition:opacity .55s ease;}
-    .scene.on{opacity:1;visibility:visible;}
-    .scene-cap{position:absolute;left:30px;bottom:18px;font-size:12px;color:var(--ink-faint);}
-    .reel-center{height:100%;display:flex;align-items:center;justify-content:center;}
-    .reel-nav{display:flex;gap:8px;justify-content:center;margin-top:22px;flex-wrap:wrap;}
-    .reel-dot{font-family:var(--head);font-weight:600;font-size:13px;color:var(--ink-soft);background:var(--surface);
-      border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;display:inline-flex;
-      align-items:center;gap:8px;transition:color .18s,background .18s,border-color .18s;}
-    .reel-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line);flex:none;transition:background .18s;}
-    .reel-dot.on{color:#fff;background:var(--blue);border-color:var(--blue);}
-    .reel-dot.on::before{background:var(--coral);}
-    .reel-progress{position:absolute;left:0;top:0;height:3px;background:var(--coral);width:0;z-index:3;}
-    .reel-stage{position:relative;}
-    /* entrance animations play only while a scene is .on */
-    @keyframes reelUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-    @keyframes reelIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
-    @keyframes reelPop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
-    @keyframes reelFade{from{opacity:0}to{opacity:1}}
-    @keyframes reelGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-    @keyframes reelDraw{from{stroke-dashoffset:339}to{stroke-dashoffset:105}}
-    .scene.on .r-arc{animation:reelDraw 1.15s ease both;}
-    .scene.on .arc-read{animation:reelUp .55s .3s both;}
-    .scene.on .dom{animation:reelUp .5s both;}
-    .scene.on .dom:nth-child(1){animation-delay:.20s}.scene.on .dom:nth-child(2){animation-delay:.28s}
-    .scene.on .dom:nth-child(3){animation-delay:.36s}.scene.on .dom:nth-child(4){animation-delay:.44s}
-    .scene.on .dom:nth-child(5){animation-delay:.52s}.scene.on .dom:nth-child(6){animation-delay:.60s}
-    .scene.on .dom:nth-child(7){animation-delay:.68s}.scene.on .dom:nth-child(8){animation-delay:.76s}
-    .scene.on .sig-row{animation:reelIn .5s both;}
-    .scene.on .sig-row:nth-of-type(2){animation-delay:.18s}.scene.on .sig-row:nth-of-type(3){animation-delay:.36s}
-    .scene.on .sig-row .sb-fill{transform-origin:left;animation:reelGrow .7s .3s ease both;}
-    .scene.on .dtab{animation:reelUp .4s both;}
-    .scene.on .dtab:nth-child(2){animation-delay:.08s}.scene.on .dtab:nth-child(3){animation-delay:.16s}.scene.on .dtab:nth-child(4){animation-delay:.24s}
-    .scene.on .dmini{animation:reelPop .5s both;}
-    .scene.on .dmini:nth-child(1){animation-delay:.15s}.scene.on .dmini:nth-child(2){animation-delay:.28s}
-    .scene.on .dmini:nth-child(3){animation-delay:.41s}.scene.on .dmini:nth-child(4){animation-delay:.54s}
-    .scene.on .page{animation:reelFade .55s both;}
-    .scene.on .page-1{animation-delay:.1s}.scene.on .page-3{animation-delay:.25s}.scene.on .page-2{animation-delay:.4s}
-    .scene.on .r-actions{animation:reelUp .5s .55s both;}
-    .r-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;}
-    .r-chip{font-family:var(--head);font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:999px;
-      display:inline-flex;align-items:center;gap:7px;}
-    .r-chip.primary{background:var(--blue);color:#fff;}
-    .r-chip.ghost{background:var(--surface);color:var(--blue);border:1px solid var(--tile-deep);}
-    @media(max-width:640px){.reel-view{height:420px;}.scene{padding:18px 16px;}}
-
     /* =============================== reveal ============================== */
     /* testimonials */
     .voices{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
@@ -489,8 +440,6 @@
       .btn:hover,.step:hover{transform:none;}
       .float-sig,.float-dist{animation:none;}
       .marquee-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto;}
-      .scene{transition:none;}.scene.on *{animation:none !important;}
-      .scene.on .r-arc{stroke-dashoffset:105;}.reel-progress{display:none;}
       .mobile-nav{transition:none;}
       html{scroll-behavior:auto;}
     }
@@ -692,114 +641,18 @@
         <div class="sec-head">
           <span class="eyebrow">See it in action</span>
           <h2 style="margin-top:14px;">From first answer to board pack</h2>
-          <p>Where you stand, what to act on, and how it reaches the board — a real recording of the live product, then step through it yourself.</p>
+          <p>A real recording of the live product — where you stand, the signals worth acting on, and the dashboards your team builds.</p>
         </div>
-        <div class="reel reveal" style="margin-bottom:30px;">
+        <div class="reveal" style="max-width:960px;margin:0 auto;">
           <div class="app-card">
             <div class="app-bar" aria-hidden="true">
               <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
               <span class="b-addr">lumihr.co.uk/app · live recording</span>
             </div>
-            <img src="/static/lumi-platform-tour.webp" width="1280" height="800" loading="lazy" style="width:100%;height:auto;display:block;background:var(--paper);"
-              alt="A screen recording of the lumi platform showing the Overview benchmark and a saved dashboard for a demo organisation" />
+            <img src="/static/lumi-platform-tour.webp" width="1120" height="700" loading="lazy" style="width:100%;height:auto;display:block;background:var(--paper);"
+              alt="A screen recording of the lumi platform: the Overview benchmark for a demo organisation, the Signals list, and a saved dashboard." />
           </div>
-          <div style="text-align:center;margin-top:12px;font-size:13px;color:var(--ink-soft);">A real screen recording of lumi — the demo organisation's live benchmark, not a mock-up.</div>
-        </div>
-        <div class="reel reveal" data-reel role="group" aria-label="Interactive preview of the lumi platform, cycling through where you stand, signals, your dashboard, and the board pack">
-          <div class="reel-stage app-card">
-            <span class="reel-progress" data-reel-progress></span>
-            <div class="app-bar" aria-hidden="true">
-              <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
-              <span class="b-addr">lumihr.co.uk/app</span>
-            </div>
-            <div class="reel-view">
-
-              <!-- Scene 1 · Where you stand -->
-              <div class="scene s1 on" aria-hidden="true">
-                <div class="app-head"><span class="app-title">Where you stand</span><span class="app-peer">All peers · 220 organisations</span></div>
-                <div class="arc-row" style="margin-top:6px;">
-                  <svg width="128" height="128" viewBox="0 0 132 132">
-                    <circle cx="66" cy="66" r="54" fill="none" stroke="#EAF0FB" stroke-width="13"/>
-                    <circle class="r-arc" cx="66" cy="66" r="54" fill="none" stroke="#2048B0" stroke-width="13"
-                      stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="105" transform="rotate(-90 66 66)"/>
-                    <text x="66" y="61" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="800" font-size="22" fill="#211B26">69%</text>
-                    <text x="66" y="79" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#8E8893">of metrics in line</text>
-                  </svg>
-                  <div class="arc-read">
-                    <div class="r1">Broadly in line with the market</div>
-                    <div class="r2">36 of 52 answered metrics sit within the middle half of similar organisations.</div>
-                  </div>
-                </div>
-                <div class="dom-grid">
-                  <div class="dom"><div class="d-name">Pay practice</div><div class="d-band"><i style="left:58%;"></i></div></div>
-                  <div class="dom"><div class="d-name">Incentives</div><div class="d-band"><i style="left:48%;"></i></div></div>
-                  <div class="dom"><div class="d-name">Benefits</div><div class="d-band"><i style="left:66%;"></i></div></div>
-                  <div class="dom hot"><div class="d-name">Time Off</div><div class="d-band"><i style="left:18%;"></i></div></div>
-                  <div class="dom"><div class="d-name">Wellbeing</div><div class="d-band"><i style="left:52%;"></i></div></div>
-                  <div class="dom"><div class="d-name">Recognition</div><div class="d-band"><i style="left:44%;"></i></div></div>
-                  <div class="dom"><div class="d-name">Governance</div><div class="d-band"><i style="left:38%;"></i></div></div>
-                  <div class="dom" style="display:flex;align-items:center;justify-content:center;background:var(--tile);border-color:var(--tile-deep);"><span style="font-family:var(--head);font-weight:700;font-size:10.5px;color:var(--blue);">View all →</span></div>
-                </div>
-                <div class="scene-cap">1 · Your position, overall and by area</div>
-              </div>
-
-              <!-- Scene 2 · Signals -->
-              <div class="scene s2" aria-hidden="true">
-                <div class="sh-head" style="margin-bottom:14px;"><span class="sh-title" style="font-size:16px;">Signals</span><span class="sh-sub">3 worth a look · emailed to you</span></div>
-                <div class="sig-row">
-                  <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
-                  <div class="sig-main"><div class="sig-t">Annual leave sits in the bottom quarter of the market</div><div class="sig-m">Below market · all peers · n=96</div></div>
-                  <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:82%;"></div></div><div class="sb-lbl">gap</div></div>
-                </div>
-                <div class="sig-row">
-                  <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-                  <div class="sig-main"><div class="sig-t">Private medical cover is common among peers — you don't offer it</div><div class="sig-m">Practice differs from market · n=213</div></div>
-                  <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:64%;"></div></div><div class="sb-lbl">prevalence</div></div>
-                </div>
-                <div class="sig-row">
-                  <div class="sig-ic cool"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
-                  <div class="sig-main"><div class="sig-t">Enhanced maternity pay is ahead of most of your peers</div><div class="sig-m">Ahead of market · all peers · n=142</div></div>
-                  <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:72%;background:var(--blue);"></div></div><div class="sb-lbl">lead</div></div>
-                </div>
-                <div class="scene-cap">2 · Signals flag what's worth a look — and email you when it moves</div>
-              </div>
-
-              <!-- Scene 3 · Your dashboard -->
-              <div class="scene s3" aria-hidden="true">
-                <div class="dtabs"><span class="dtab on">Board view <b>6</b></span><span class="dtab">Benefits <b>4</b></span><span class="dtab">Time off <b>3</b></span><span class="dtab plus">+ New</span></div>
-                <div class="dgrid">
-                  <div class="dmini"><div class="dmini-h"><span>Employer pension</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=181 · <span style="color:var(--good);font-weight:600;">P74</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="44" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="96" y1="12" x2="96" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="142" cy="20" r="4" fill="#2048B0"/></svg></div>
-                  <div class="dmini"><div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-text);font-weight:600;">P24</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg></div>
-                  <div class="dmini"><div class="dmini-h"><span>Enhanced maternity</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=142 · <span style="color:var(--good);font-weight:600;">common</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="120" height="8" rx="4" fill="#9DB4EA"/><rect x="12" y="24" width="150" height="8" rx="4" fill="#2048B0"/></svg></div>
-                  <div class="dmini"><div class="dmini-h"><span>Sabbatical policy</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=168 · <span style="color:var(--ink-soft);font-weight:600;">in line</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="150" height="8" rx="4" fill="#2048B0"/><rect x="12" y="24" width="96" height="8" rx="4" fill="#9DB4EA"/></svg></div>
-                </div>
-                <div class="scene-cap">3 · Pin the metrics you watch into a saved dashboard</div>
-              </div>
-
-              <!-- Scene 4 · Board pack -->
-              <div class="scene s4" aria-hidden="true">
-                <div class="reel-center" style="flex-direction:column;">
-                  <div class="pack-fan" style="height:300px;width:100%;max-width:560px;transform:scale(.86);">
-                    <div class="page page-1"><div class="pg-rule"></div><div class="pg-title">Reward benchmark<br/>board pack</div><div class="pg-cap">Private &amp; confidential · July 2026</div><div class="pg-line w80" style="margin-top:16px;"></div><div class="pg-line w60"></div><div class="pg-line w80"></div><div class="pg-cap" style="margin-top:14px;">Contents · Executive summary · Position by area · The evidence</div></div>
-                    <div class="page page-2"><div class="pg-rule"></div><div class="pg-title">Executive summary</div><div class="pg-cap">All peers · 220 orgs · figures under n=5 suppressed</div><div class="pg-stat"><div class="ps"><b>P58</b><span>overall position</span></div><div class="ps"><b>36/52</b><span>metrics in line</span></div><div class="ps"><b>4</b><span>gaps flagged</span></div></div><div class="pg-line w80" style="margin-top:14px;"></div><div class="pg-line"></div><div class="pg-line w60"></div></div>
-                    <div class="page page-3"><div class="pg-rule"></div><div class="pg-title">Biggest gaps to the market</div><div class="pg-cap">Each row cites peer group, percentile and n</div><div class="pg-tbl"><div class="pg-tr"><b>Annual leave</b><span class="neg">P24 · n=96</span></div><div class="pg-tr"><b>Private medical</b><span class="neg">not offered</span></div><div class="pg-tr"><b>Enhanced paternity</b><span class="neg">P31 · n=88</span></div><div class="pg-tr"><b>Pension</b><span>P74 · n=181</span></div></div></div>
-                  </div>
-                  <div class="r-actions">
-                    <span class="r-chip primary"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</span>
-                    <span class="r-chip ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share link</span>
-                  </div>
-                </div>
-                <div class="scene-cap">4 · One click to a board-ready pack — download or share</div>
-              </div>
-
-            </div>
-          </div>
-          <div class="reel-nav" role="tablist" aria-label="Jump to a scene">
-            <button type="button" class="reel-dot on" data-reel-dot="0">Where you stand</button>
-            <button type="button" class="reel-dot" data-reel-dot="1">Signals</button>
-            <button type="button" class="reel-dot" data-reel-dot="2">Your dashboard</button>
-            <button type="button" class="reel-dot" data-reel-dot="3">Board pack</button>
-          </div>
+          <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">A real screen recording of lumi — the demo organisation's live benchmark, not a mock-up.</div>
         </div>
       </div>
     </section>
@@ -1521,30 +1374,6 @@
         es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
       }, { threshold:.12 });
       document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
-    })();
-    // ── PRODUCT REEL ─ autoplaying scene loop (pauses off-screen and on hover) ─
-    (function(){
-      var reel = document.querySelector("[data-reel]"); if(!reel) return;
-      var scenes = reel.querySelectorAll(".scene");
-      var dots = reel.querySelectorAll("[data-reel-dot]");
-      var bar = reel.querySelector("[data-reel-progress]");
-      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var DUR = 4600, i = 0, timer = null, t0 = 0, raf = null, playing = false, visible = false, hovered = false;
-      function show(n){
-        i = (n % scenes.length + scenes.length) % scenes.length;
-        for (var k=0;k<scenes.length;k++) scenes[k].classList.toggle("on", k===i);
-        for (var d=0;d<dots.length;d++){ var a = d===i; dots[d].classList.toggle("on", a); dots[d].setAttribute("aria-selected", a?"true":"false"); }
-      }
-      function tickBar(ts){ if(!playing) return; if(!t0) t0=ts; var p=Math.min(1,(ts-t0)/DUR); if(bar) bar.style.width=(p*100)+"%"; raf=requestAnimationFrame(tickBar); }
-      function advance(){ show(i+1); t0=0; }
-      function play(){ if(reduce||playing||!visible||hovered) return; playing=true; t0=0; timer=setInterval(advance,DUR); raf=requestAnimationFrame(tickBar); }
-      function pause(){ playing=false; clearInterval(timer); if(raf) cancelAnimationFrame(raf); }
-      for (var d=0; d<dots.length; d++){ (function(k){ dots[k].addEventListener("click", function(){ pause(); show(k); play(); }); })(d); }
-      reel.addEventListener("mouseenter", function(){ hovered=true; pause(); });
-      reel.addEventListener("mouseleave", function(){ hovered=false; play(); });
-      var io2 = new IntersectionObserver(function(es){ es.forEach(function(e){ visible=e.isIntersecting; if(visible){ play(); } else { pause(); } }); }, { threshold:.35 });
-      io2.observe(reel);
-      show(0);
     })();
   </script>
 </body>
