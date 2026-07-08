@@ -24,13 +24,19 @@
       --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC;
       --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      --maxw:1180px; --r:18px; --shadow:0 1px 2px rgba(20,38,79,.05),0 12px 34px rgba(20,38,79,.08);
+      --maxw:1180px; --r:18px; --r-lg:20px; --r-xl:28px;
+      --coral-text:#C2521F;
+      --fs-caption:13px; --fs-body:15px; --fs-body-lg:17px; --fs-lede:19px; --fs-h3:20px;
+      --fs-h2:clamp(30px,3.6vw,44px); --fs-cta:clamp(28px,3.4vw,42px);
+      --sec-y:92px;
+      --shadow:0 1px 2px rgba(20,38,79,.05),0 12px 34px rgba(20,38,79,.08);
     }
     *{box-sizing:border-box;} html{scroll-behavior:smooth;}
     body{margin:0;font-family:var(--body);color:var(--ink);background:var(--paper);line-height:1.65;
       -webkit-font-smoothing:antialiased;overflow-x:hidden;}
     a{color:inherit;text-decoration:none;} img,svg{max-width:100%;}
-    h1,h2,h3{font-family:var(--head);font-weight:700;line-height:1.1;letter-spacing:-.015em;margin:0;}
+    h1,h2,h3{font-family:var(--head);font-weight:700;line-height:1.08;letter-spacing:-.015em;margin:0;}
+    h3{line-height:1.2;}
     p{margin:0;} .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
     .eyebrow{font-family:var(--head);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
       color:var(--blue);display:inline-flex;align-items:center;gap:8px;}
@@ -44,26 +50,43 @@
     .btn-primary:hover{background:var(--blue-deep);}
     .btn-ghost{background:transparent;color:var(--blue);border-color:rgba(32,72,176,.30);}
     .btn-ghost:hover{border-color:var(--blue);background:rgba(32,72,176,.05);}
-    .btn-sm{height:42px;padding:0 20px;font-size:14.5px;}
+    .btn-sm{height:44px;padding:0 20px;font-size:14.5px;}
     header.nav{position:sticky;top:0;z-index:80;background:rgba(251,249,246,.85);backdrop-filter:saturate(150%) blur(12px);
-      -webkit-backdrop-filter:saturate(150%) blur(12px);border-bottom:1px solid var(--line);}
+      -webkit-backdrop-filter:saturate(150%) blur(12px);border-bottom:1px solid transparent;transition:border-color .2s ease,box-shadow .2s ease;}
+    header.nav.scrolled{border-bottom-color:var(--line);box-shadow:0 4px 24px rgba(20,38,79,.06);}
     .nav-row{display:flex;align-items:center;justify-content:space-between;height:74px;gap:18px;}
     .nav-logo img{height:30px;display:block;}
     .nav-links{display:flex;align-items:center;gap:32px;}
-    .nav-links a{font-size:15px;color:var(--ink-soft);font-weight:520;}
+    .nav-links a{font-size:15px;color:var(--ink-soft);font-weight:500;}
     .nav-links a:hover,.nav-links a.on{color:var(--ink);}
     .nav-cta{display:flex;align-items:center;gap:12px;flex:none;}
-    @media(max-width:960px){.nav-links{display:none;}}
+    .nav-toggle{display:none;width:44px;height:44px;flex:none;align-items:center;justify-content:center;
+      border:1px solid var(--line);background:var(--surface);border-radius:12px;color:var(--ink);cursor:pointer;}
+    .nav-toggle svg{width:22px;height:22px;}
+    .mobile-nav{display:none;}
+    @media(max-width:960px){
+      .nav-links{display:none;}
+      .nav-toggle{display:inline-flex;}
+      .mobile-nav{display:block;position:fixed;left:0;right:0;top:74px;z-index:79;background:var(--paper);
+        border-bottom:1px solid var(--line);box-shadow:0 12px 30px rgba(20,38,79,.10);padding:8px 0 16px;
+        opacity:0;visibility:hidden;transform:translateY(-10px);
+        transition:opacity .2s ease,transform .2s ease,visibility .2s ease;}
+      .mobile-nav.open{opacity:1;visibility:visible;transform:none;}
+      .mobile-nav a{display:flex;align-items:center;min-height:52px;padding:0 24px;color:var(--ink);
+        font-family:var(--head);font-weight:600;font-size:16px;border-bottom:1px solid var(--line);}
+      .mobile-nav .mn-cta{display:block;padding:16px 24px 4px;border-bottom:none;}
+      .mobile-nav .mn-cta .btn{width:100%;height:50px;}
+    }
     @media(max-width:520px){.nav-cta .btn-ghost{display:none;}}
     .shero{padding:70px 0 24px;text-align:center;position:relative;overflow:hidden;}
     .shero::before{content:"";position:absolute;inset:0;background:radial-gradient(44rem 24rem at 50% -12%,rgba(32,72,176,.10),transparent 62%);}
     .shero .wrap{position:relative;z-index:1;}
     .shero h1{font-size:clamp(32px,4.4vw,50px);margin-top:16px;}
     .shero .lede{font-size:18.5px;color:var(--ink-soft);max-width:52ch;margin:20px auto 0;}
-    section{padding:44px 0;}
+    section{padding:var(--sec-y) 0;}
     .sec-head{max-width:680px;margin:0 auto 40px;text-align:center;}
-    .sec-head h2{font-size:clamp(26px,3vw,36px);}
-    .sec-head p{font-size:17px;color:var(--ink-soft);margin-top:12px;}
+    .sec-head h2{font-size:var(--fs-h2);}
+    .sec-head p{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:12px;}
     .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1040px;margin:0 auto;}
     .scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;}
     .scard .s-ic{width:42px;height:42px;border-radius:11px;background:var(--tile);color:var(--blue);
@@ -92,10 +115,11 @@
     @media(max-width:640px){.subp-row{grid-template-columns:1fr;gap:4px;}.subp-row:first-child{display:none;}
       .subp-row span::before{content:attr(data-l) " — ";color:var(--ink-faint);font-weight:600;}}
     .cta-band{max-width:1000px;margin:0 auto;background:linear-gradient(135deg,var(--navy-deep),var(--blue-deep) 60%,var(--blue));
-      color:#fff;border-radius:28px;padding:56px 44px;text-align:center;position:relative;overflow:hidden;}
+      color:#fff;border-radius:var(--r-xl);padding:72px 56px;text-align:center;position:relative;overflow:hidden;}
     .cta-band::after{content:"";position:absolute;right:-60px;top:-70px;width:240px;height:240px;border-radius:50%;
       background:radial-gradient(circle,rgba(240,140,110,.30),transparent 68%);}
-    .cta-band h2{color:#fff;font-size:clamp(24px,3vw,34px);position:relative;z-index:1;}
+    .cta-band h2{color:#fff;font-size:var(--fs-cta);position:relative;z-index:1;}
+    @media(max-width:640px){.cta-band{padding:48px 26px;}}
     .cta-band p{color:rgba(255,255,255,.82);font-size:16.5px;margin:14px auto 26px;max-width:48ch;position:relative;z-index:1;}
     .cta-band .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
     footer{padding:56px 0 40px;border-top:1px solid var(--line);margin-top:80px;}
@@ -108,15 +132,16 @@
     .foot-base{margin-top:44px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-faint);}
     .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease;}
     .reveal.in{opacity:1;transform:none;}
-    @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}.btn:hover{transform:none;}html{scroll-behavior:auto;}}
+    @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}.btn:hover{transform:none;}.mobile-nav{transition:none;}html{scroll-behavior:auto;}}
   </style>
 </head>
 <body>
-  <header class="nav">
+  <header class="nav" id="topnav">
     <div class="wrap nav-row">
       <a class="nav-logo" href="/" aria-label="lumi home"><img src="/static/lumi_horizontal.svg" alt="lumi" /></a>
       <nav class="nav-links" aria-label="Primary">
         <a href="/#product">Product</a>
+        <a href="/#coverage">Coverage</a>
         <a href="/pricing">Pricing</a>
         <a href="/security" class="on" aria-current="page">Security</a>
         <a href="/#faq">FAQ</a>
@@ -124,8 +149,20 @@
       <div class="nav-cta">
         <a class="btn btn-ghost btn-sm" href="/app">Sign in</a>
         <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobilenav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
       </div>
     </div>
+    <nav class="mobile-nav" id="mobilenav" aria-label="Primary (mobile)">
+      <a href="/#product">Product</a>
+      <a href="/#coverage">Coverage</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/security">Security</a>
+      <a href="/#faq">FAQ</a>
+      <a href="/app">Sign in</a>
+      <div class="mn-cta"><a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a></div>
+    </nav>
   </header>
 
   <main>
@@ -268,11 +305,12 @@
             <a href="/#faq">FAQ</a>
           </div>
           <div class="foot-col">
-            <h3>Trust</h3>
+            <h3>Trust &amp; legal</h3>
             <a href="/security">Security</a>
             <a href="/legal/privacy">Privacy Notice</a>
-            <a href="/legal/subprocessors">Sub-processors</a>
             <a href="/legal/platform">Terms of Use</a>
+            <a href="/legal/cookies">Cookie Policy</a>
+            <a href="/legal/subprocessors">Sub-processors</a>
           </div>
           <div class="foot-col">
             <h3>Get started</h3>
@@ -296,6 +334,19 @@
   <script>
     var DEMO_URL = "https://cal.com/lumi/demo";   // TODO: swap for the live scheduler URL
     document.querySelectorAll("a[data-demo]").forEach(function(a){ a.setAttribute("href", DEMO_URL); a.target = "_blank"; a.rel = "noopener"; });
+    (function(){
+      var nav = document.getElementById("topnav"); if(!nav) return;
+      var onScroll = function(){ nav.classList.toggle("scrolled", window.scrollY > 8); };
+      window.addEventListener("scroll", onScroll, { passive:true }); onScroll();
+    })();
+    (function(){
+      var t = document.querySelector(".nav-toggle"), m = document.getElementById("mobilenav");
+      if(!t || !m) return;
+      function set(open){ t.setAttribute("aria-expanded", open?"true":"false"); t.setAttribute("aria-label", open?"Close menu":"Open menu"); m.classList.toggle("open", open); }
+      t.addEventListener("click", function(){ set(t.getAttribute("aria-expanded") !== "true"); });
+      m.addEventListener("click", function(e){ if(e.target.closest("a")) set(false); });
+      document.addEventListener("keydown", function(e){ if(e.key === "Escape") set(false); });
+    })();
     (function(){
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
         document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); }); return; }

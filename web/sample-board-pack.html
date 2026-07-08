@@ -11,10 +11,10 @@
   <meta name="theme-color" content="#2048B0" />
   <style>
     :root{
-      --blue:#2048B0; --blue-deep:#1E3A8A; --navy:#14264F; --coral:#F08C6E; --coral-deep:#E0744F;
+      --blue:#2048B0; --blue-deep:#1E3A8A; --navy:#14264F; --coral:#F08C6E; --coral-deep:#E0744F; --coral-text:#C2521F;
       --ink:#211B26; --ink-soft:#5B5560; --ink-faint:#6B6570;
-      --paper:#EEEAE3; --surface:#fff; --tile:#EAF0FB; --line:#E7E1D8;
-      --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC; --bad:#B23B2E; --bad-tint:#FBE9E6;
+      --paper:#F1EDE6; --surface:#fff; --tile:#EAF0FB; --line:#ECE7E0;
+      --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC; --bad:#C2521F; --bad-tint:#FBE7DF;
       --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     }
@@ -29,9 +29,9 @@
     .bar .l img{height:22px;}
     .bar .tag{background:rgba(240,140,110,.28);color:#FCD9CB;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
     .bar .r{display:flex;gap:10px;flex-wrap:wrap;}
-    .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;border-radius:999px;font-family:var(--head);
+    .btn{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 20px;border-radius:999px;font-family:var(--head);
       font-weight:600;font-size:13.5px;cursor:pointer;border:1.5px solid transparent;}
-    .btn-primary{background:var(--coral-deep);color:#fff;}
+    .btn-primary{background:var(--blue);color:#fff;}
     .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);}
     .notice{max-width:840px;margin:20px auto 0;padding:0 22px;font-size:13px;color:var(--ink-soft);text-align:center;}
     /* the document */
@@ -59,7 +59,7 @@
     .track .fill{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--blue);}
     .track .fill.lo{background:var(--coral-deep);}
     .arow .ap{font-family:var(--head);font-weight:700;font-size:13px;text-align:right;}
-    .arow .ap.lo{color:var(--coral-deep);}
+    .arow .ap.lo{color:var(--coral-text);}
     /* table */
     table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px;}
     th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);}
@@ -77,9 +77,13 @@
     .opp .amt{font-family:var(--head);font-weight:800;color:var(--blue);white-space:nowrap;}
     .pg-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-faint);line-height:1.5;}
     .backcta{text-align:center;margin:10px auto 0;}
+    .docfoot{max-width:840px;margin:0 auto;padding:26px 22px 50px;border-top:1px solid var(--line);text-align:center;}
+    .df-links{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+    .df-links a{color:var(--ink-soft);font-size:14px;} .df-links a:hover{color:var(--ink);}
+    .df-base{font-size:12px;color:var(--ink-faint);}
     @media(max-width:620px){.page{padding:30px 22px;}.stat-strip{grid-template-columns:1fr;}.arow{grid-template-columns:110px 1fr 40px;}.doc h1{font-size:24px;}}
     @media print{
-      body{background:#fff;} .bar,.notice,.backcta{display:none !important;}
+      body{background:#fff;} .bar,.notice,.backcta,.docfoot{display:none !important;}
       .doc{max-width:none;margin:0;padding:0;} .page{box-shadow:none;border:none;border-radius:0;margin:0;padding:26mm 20mm;page-break-after:always;}
       .page:last-child{page-break-after:auto;}
       @page{size:A4;margin:0;}
@@ -167,7 +171,7 @@
           <line x1="150" y1="30" x2="150" y2="60" stroke="#E0744F" stroke-width="2.4"/>
           <polygon points="150,60 141,74 159,74" fill="#E0744F"/>
           <circle cx="150" cy="24" r="7" fill="#F08C6E"/>
-          <text x="150" y="12" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#E0744F">You · 23</text>
+          <text x="150" y="12" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#C2521F">You · 23</text>
         </svg>
         <div class="read">You give <b>23 days</b> — below about <b>3 in 4</b> comparable organisations (P24). Moving to the market median of 25 days would bring Northgate into line on a benefit staff notice quickly.</div>
       </div>
@@ -208,6 +212,18 @@
       <div style="margin-top:12px;"><a href="/" style="color:var(--ink-soft);font-size:14px;">← Back to lumi</a></div>
     </div>
   </div>
+
+  <footer class="docfoot">
+    <div class="df-links">
+      <a href="/">Home</a>
+      <a href="/#product">Product</a>
+      <a href="/#coverage">What we benchmark</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/security">Security</a>
+      <a data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+    </div>
+    <div class="df-base">© 2026 lumi · UK reward benchmarking · illustrative sample for a fictional organisation</div>
+  </footer>
 
   <script>
     var DEMO_URL = "https://cal.com/lumi/demo";   // TODO: swap for the live scheduler URL

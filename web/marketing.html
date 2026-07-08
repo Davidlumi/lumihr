@@ -34,7 +34,11 @@
       --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC;
       --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      --maxw:1180px; --r:18px; --r-sm:12px;
+      --maxw:1180px; --r:18px; --r-sm:12px; --r-lg:20px; --r-xl:28px;
+      --coral-text:#C2521F;
+      --fs-caption:13px; --fs-body:15px; --fs-body-lg:17px; --fs-lede:19px; --fs-h3:20px;
+      --fs-h2:clamp(30px,3.6vw,44px); --fs-cta:clamp(28px,3.4vw,42px);
+      --sec-y:92px;
       --shadow:0 1px 2px rgba(20,38,79,.05),0 12px 34px rgba(20,38,79,.08);
       --shadow-big:0 2px 6px rgba(20,38,79,.06),0 28px 70px rgba(20,38,79,.14);
     }
@@ -45,6 +49,7 @@
       overflow-x:hidden;}
     a{color:inherit;text-decoration:none;}
     h1,h2,h3{font-family:var(--head);font-weight:700;line-height:1.08;letter-spacing:-.015em;margin:0;}
+    h3{line-height:1.2;}
     p{margin:0;}
     img,svg{max-width:100%;}
     .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
@@ -66,9 +71,9 @@
     .btn-primary:hover .arr{transform:translateX(3px);}
     .btn-ghost{background:transparent;color:var(--blue);border-color:rgba(32,72,176,.30);}
     .btn-ghost:hover{border-color:var(--blue);background:rgba(32,72,176,.05);}
-    .btn-light{background:#fff;color:var(--navy);box-shadow:0 8px 24px rgba(0,0,0,.22);}
-    .btn-light:hover{box-shadow:0 14px 34px rgba(0,0,0,.28);}
-    .btn-sm{height:42px;padding:0 20px;font-size:14.5px;}
+    .btn-light{background:#fff;color:var(--navy);box-shadow:0 8px 24px rgba(20,38,79,.22);}
+    .btn-light:hover{box-shadow:0 14px 34px rgba(20,38,79,.28);}
+    .btn-sm{height:44px;padding:0 20px;font-size:14.5px;}
 
     /* ================================ nav ================================ */
     header.nav{position:sticky;top:0;z-index:80;background:rgba(251,249,246,.85);
@@ -79,13 +84,29 @@
     .nav-logo{display:flex;align-items:center;flex:none;}
     .nav-logo img{height:30px;width:auto;display:block;}
     .nav-links{display:flex;align-items:center;gap:32px;}
-    .nav-links a{font-size:15px;color:var(--ink-soft);font-weight:520;position:relative;padding:6px 0;}
+    .nav-links a{font-size:15px;color:var(--ink-soft);font-weight:500;position:relative;padding:6px 0;}
     .nav-links a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;
       background:var(--coral);border-radius:2px;transition:right .2s ease;}
     .nav-links a:hover{color:var(--ink);}
     .nav-links a:hover::after{right:0;}
     .nav-cta{display:flex;align-items:center;gap:12px;flex:none;}
-    @media(max-width:960px){.nav-links{display:none;}}
+    .nav-toggle{display:none;width:44px;height:44px;flex:none;align-items:center;justify-content:center;
+      border:1px solid var(--line);background:var(--surface);border-radius:12px;color:var(--ink);cursor:pointer;}
+    .nav-toggle svg{width:22px;height:22px;}
+    .mobile-nav{display:none;}
+    @media(max-width:960px){
+      .nav-links{display:none;}
+      .nav-toggle{display:inline-flex;}
+      .mobile-nav{display:block;position:fixed;left:0;right:0;top:74px;z-index:79;background:var(--paper);
+        border-bottom:1px solid var(--line);box-shadow:0 12px 30px rgba(20,38,79,.10);padding:8px 0 16px;
+        opacity:0;visibility:hidden;transform:translateY(-10px);
+        transition:opacity .2s ease,transform .2s ease,visibility .2s ease;}
+      .mobile-nav.open{opacity:1;visibility:visible;transform:none;}
+      .mobile-nav a{display:flex;align-items:center;min-height:52px;padding:0 24px;color:var(--ink);
+        font-family:var(--head);font-weight:600;font-size:16px;border-bottom:1px solid var(--line);}
+      .mobile-nav .mn-cta{display:block;padding:16px 24px 4px;border-bottom:none;}
+      .mobile-nav .mn-cta .btn{width:100%;height:50px;}
+    }
     @media(max-width:520px){.nav-cta .btn-ghost{display:none;}}
 
     /* ================================ hero =============================== */
@@ -105,7 +126,7 @@
     .hero h1{font-size:clamp(40px,5.2vw,64px);}
     .hero h1 .accent{color:var(--blue);position:relative;white-space:nowrap;}
     .hero h1 .accent svg{position:absolute;left:0;right:0;bottom:-10px;width:100%;height:12px;}
-    .hero .lede{font-size:19.5px;color:var(--ink-soft);margin-top:24px;max-width:42ch;line-height:1.6;}
+    .hero .lede{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:24px;max-width:44ch;line-height:1.6;}
     .hero .lede b{color:var(--ink);font-weight:600;}
     .hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap;}
     .hero-note{margin-top:20px;font-size:14px;color:var(--ink-faint);display:flex;align-items:center;gap:9px;}
@@ -114,7 +135,7 @@
 
     /* ------------------------ hero product visual ----------------------- */
     .stage{position:relative;}
-    .app-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+    .app-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
       box-shadow:var(--shadow-big);overflow:hidden;}
     .app-bar{display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;
       background:linear-gradient(180deg,#FDFCFA,#F7F4EF);border-bottom:1px solid var(--line);}
@@ -172,7 +193,7 @@
 
     /* =========================== sector marquee ========================== */
     .sectors{padding:34px 0 8px;overflow:hidden;}
-    .sectors .s-lead{text-align:center;font-size:13px;color:var(--ink-faint);font-weight:520;
+    .sectors .s-lead{text-align:center;font-size:13px;color:var(--ink-faint);font-weight:500;
       letter-spacing:.05em;text-transform:uppercase;font-family:var(--head);margin-bottom:20px;}
     .marquee{position:relative;overflow:hidden;
       -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
@@ -184,11 +205,11 @@
       border-radius:999px;padding:8px 16px;white-space:nowrap;flex:none;}
 
     /* ============================= sections ============================== */
-    section{padding:96px 0;}
+    section{padding:var(--sec-y) 0;}
     .sec-head{max-width:680px;margin:0 auto 56px;text-align:center;}
-    .sec-head h2{font-size:clamp(30px,3.6vw,44px);}
-    .sec-head p{font-size:18px;color:var(--ink-soft);margin-top:16px;line-height:1.6;}
-    @media(max-width:720px){section{padding:68px 0;}}
+    .sec-head h2{font-size:var(--fs-h2);}
+    .sec-head p{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:16px;line-height:1.6;}
+    @media(max-width:720px){:root{--sec-y:64px;}}
 
     /* ============================ pain cards ============================= */
     .pains{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
@@ -238,7 +259,7 @@
     .sig-bar{width:74px;flex:none;}
     .sig-bar .sb-track{height:5px;border-radius:3px;background:var(--tile);overflow:hidden;}
     .sig-bar .sb-fill{height:100%;border-radius:3px;background:var(--coral-deep);}
-    .sig-bar .sb-lbl{font-size:9.5px;color:var(--ink-faint);text-align:right;margin-top:3px;}
+    .sig-bar .sb-lbl{font-size:10px;color:var(--ink-faint);text-align:right;margin-top:3px;}
 
     /* board pack mock */
     .pack-fan{position:relative;height:360px;}
@@ -260,7 +281,7 @@
     .pg-tr{display:flex;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid #F1EDE6;
       font-size:8.5px;color:var(--ink-soft);}
     .pg-tr b{color:var(--ink);font-weight:600;}
-    .pg-tr .neg{color:var(--coral-deep);font-weight:700;}
+    .pg-tr .neg{color:var(--coral-text);font-weight:700;}
     @media(max-width:520px){.pack-fan{height:300px;}.page{width:180px;height:258px;}
       .page-2{left:calc(50% - 90px);}}
 
@@ -280,8 +301,8 @@
     @media(max-width:860px){.steps{grid-template-columns:1fr;}}
 
     /* ============================ trust band ============================= */
-    .trustband{background:linear-gradient(160deg,var(--navy-deep),var(--navy) 55%,#1B3468);
-      border-radius:32px;padding:76px 60px;position:relative;overflow:hidden;color:#fff;}
+    .trustband{background:linear-gradient(160deg,var(--navy-deep),var(--navy) 55%,var(--blue-deep));
+      border-radius:var(--r-xl);padding:72px 56px;position:relative;overflow:hidden;color:#fff;}
     .trustband::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;
       background:radial-gradient(circle,rgba(240,140,110,.28),transparent 68%);}
     .trustband .sec-head{margin-bottom:44px;}
@@ -322,12 +343,12 @@
 
     /* ============================= final CTA ============================= */
     .cta-band{background:linear-gradient(135deg,var(--navy-deep),var(--blue-deep) 60%,var(--blue));color:#fff;
-      border-radius:32px;padding:78px 48px;text-align:center;position:relative;overflow:hidden;}
+      border-radius:var(--r-xl);padding:72px 56px;text-align:center;position:relative;overflow:hidden;}
     .cta-band::before{content:"";position:absolute;left:-70px;bottom:-90px;width:280px;height:280px;border-radius:50%;
       background:radial-gradient(circle,rgba(240,140,110,.30),transparent 68%);}
     .cta-band::after{content:"";position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;
       background:radial-gradient(circle,rgba(159,182,232,.25),transparent 70%);}
-    .cta-band h2{color:#fff;font-size:clamp(30px,3.8vw,46px);position:relative;z-index:1;}
+    .cta-band h2{color:#fff;font-size:var(--fs-cta);position:relative;z-index:1;}
     .cta-band p{color:rgba(255,255,255,.82);font-size:18px;margin:18px auto 34px;max-width:48ch;position:relative;z-index:1;}
     .cta-band .cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
     .cta-logo{height:30px;margin-bottom:26px;position:relative;z-index:1;}
@@ -338,7 +359,7 @@
     .foot-logo img{height:28px;}
     .foot-blurb{color:var(--ink-soft);font-size:14px;max-width:34ch;margin-top:14px;line-height:1.6;}
     .foot-links{display:flex;gap:52px;flex-wrap:wrap;}
-    .foot-col .foot-h{font-family:var(--head);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+    .foot-col h3{font-family:var(--head);font-weight:700;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
       color:var(--ink-faint);margin:0 0 13px;}
     .foot-col a{display:flex;align-items:center;min-height:44px;color:var(--ink-soft);font-size:14.5px;padding:4px 0;}
     .foot-col a:hover{color:var(--ink);}
@@ -470,6 +491,7 @@
       .marquee-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto;}
       .scene{transition:none;}.scene.on *{animation:none !important;}
       .scene.on .r-arc{stroke-dashoffset:105;}.reel-progress{display:none;}
+      .mobile-nav{transition:none;}
       html{scroll-behavior:auto;}
     }
   </style>
@@ -489,8 +511,20 @@
       <div class="nav-cta">
         <a class="btn btn-ghost btn-sm" href="/app">Sign in</a>
         <a class="btn btn-primary btn-sm" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobilenav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
       </div>
     </div>
+    <nav class="mobile-nav" id="mobilenav" aria-label="Primary (mobile)">
+      <a href="#product">Product</a>
+      <a href="#coverage">Coverage</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/security">Security</a>
+      <a href="#faq">FAQ</a>
+      <a href="/app">Sign in</a>
+      <div class="mn-cta"><a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a></div>
+    </nav>
   </header>
 
   <main>
@@ -500,8 +534,8 @@
         <div>
           <span class="eyebrow">UK reward benchmarking, built by its members</span>
           <h1 style="margin-top:18px;">Know exactly where your <span class="accent">reward stands<svg viewBox="0 0 220 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 60 2, 160 2, 217 8" fill="none" stroke="#F08C6E" stroke-width="4.5" stroke-linecap="round"/></svg></span></h1>
-          <p class="lede">lumi shows how your benefits, policies and reward practices compare with <b>220+ UK organisations</b> —
-            every figure cited with its <b>peer group and sample size</b>, ready for the board. Real member data, never scraped or modelled.</p>
+          <p class="lede">lumi benchmarks the <b>whole of reward except base pay</b> — benefits, pension, time off, wellbeing and the
+            policies around pay — against <b>220+ UK organisations</b>. Every figure cited with its <b>peer group and sample size</b>, ready for the board.</p>
           <div class="hero-cta">
             <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo
               <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
@@ -652,56 +686,13 @@
       </div>
     </section>
 
-    <!-- ============================= TESTIMONIALS ========================== -->
-    <section class="voices" id="voices">
-      <div class="wrap">
-        <div class="sec-head">
-          <span class="eyebrow">In their words</span>
-          <h2 style="margin-top:14px;">What reward teams say</h2>
-          <p>Attributed by role and sector — the people who benchmark their reward with lumi.</p>
-        </div>
-        <div class="vgrid">
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">This platform gives the HR team instant credibility in the boardroom with ironclad, defensible financial data.</p>
-            <div class="vattr"><b>Group HR Director</b>Financial Services</div>
-          </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">We can finally benchmark every facet of total reward, not just base pay. It's the comprehensive view we've been missing.</p>
-            <div class="vattr"><b>Head of Compensation &amp; Benefits</b>Professional Services</div>
-          </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">The ROI was immediate: our offer acceptance rates went up, turnover went down, and we finally have a data-driven hiring edge.</p>
-            <div class="vattr"><b>Chief People Officer</b>Biotech &amp; Life Sciences</div>
-          </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">lumi's always-on, 24/7 benchmarking gives us a continuous pulse on our benefits and wider reward practices versus the market — shifting our strategy from reactive troubleshooting to proactive risk mitigation.</p>
-            <div class="vattr"><b>VP of Total Rewards</b>FinTech</div>
-          </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">The ability to visualise exactly where we stand across all our reward practices is a massive step forward for our team.</p>
-            <div class="vattr"><b>HR Director</b>Retail &amp; E-Commerce</div>
-          </div>
-          <div class="vcard reveal">
-            <div class="vqm">&ldquo;</div>
-            <p class="vq">Beautifully designed and exceptionally easy to navigate.</p>
-            <div class="vattr"><b>People Operations Manager</b>Technology</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ============================ PRODUCT REEL ============================ -->
-    <section id="in-action" style="padding-top:24px;">
+    <section id="in-action">
       <div class="wrap">
         <div class="sec-head">
           <span class="eyebrow">See it in action</span>
           <h2 style="margin-top:14px;">From first answer to board pack</h2>
-          <p>A real recording of the live product — where you stand, what to act on, and how it reaches the board. Step through it yourself below.</p>
+          <p>Where you stand, what to act on, and how it reaches the board — a real recording of the live product, then step through it yourself.</p>
         </div>
         <div class="reel reveal" style="margin-bottom:30px;">
           <div class="app-card">
@@ -778,7 +769,7 @@
                 <div class="dtabs"><span class="dtab on">Board view <b>6</b></span><span class="dtab">Benefits <b>4</b></span><span class="dtab">Time off <b>3</b></span><span class="dtab plus">+ New</span></div>
                 <div class="dgrid">
                   <div class="dmini"><div class="dmini-h"><span>Employer pension</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=181 · <span style="color:var(--good);font-weight:600;">P74</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="44" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="96" y1="12" x2="96" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="142" cy="20" r="4" fill="#2048B0"/></svg></div>
-                  <div class="dmini"><div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg></div>
+                  <div class="dmini"><div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-text);font-weight:600;">P24</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg></div>
                   <div class="dmini"><div class="dmini-h"><span>Enhanced maternity</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=142 · <span style="color:var(--good);font-weight:600;">common</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="120" height="8" rx="4" fill="#9DB4EA"/><rect x="12" y="24" width="150" height="8" rx="4" fill="#2048B0"/></svg></div>
                   <div class="dmini"><div class="dmini-h"><span>Sabbatical policy</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=168 · <span style="color:var(--ink-soft);font-weight:600;">in line</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="150" height="8" rx="4" fill="#2048B0"/><rect x="12" y="24" width="96" height="8" rx="4" fill="#9DB4EA"/></svg></div>
                 </div>
@@ -818,8 +809,8 @@
       <div class="wrap">
         <div class="sec-head">
           <span class="eyebrow">The product</span>
-          <h2 style="margin-top:14px;">From first answer to board pack</h2>
-          <p>Everything below is the real product — this is what your team works in from day one.</p>
+          <h2 style="margin-top:14px;">Everything your team works in</h2>
+          <p>Five surfaces, one source of truth — the real product your team lives in from day one.</p>
         </div>
 
         <!-- 1 · position -->
@@ -853,11 +844,11 @@
                 <g font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="10" text-anchor="middle">
                   <text x="69"  y="64"  fill="#2048B0">P68</text>
                   <text x="129" y="90"  fill="#2048B0">P58</text>
-                  <text x="189" y="196" fill="#E0744F">P27</text>
+                  <text x="189" y="196" fill="#C2521F">P27</text>
                   <text x="249" y="80"  fill="#2048B0">P61</text>
                   <text x="309" y="52"  fill="#2048B0">P72</text>
                   <text x="369" y="95"  fill="#2048B0">P55</text>
-                  <text x="429" y="168" fill="#E0744F">P38</text>
+                  <text x="429" y="168" fill="#C2521F">P38</text>
                 </g>
               </svg>
               <div class="sh-sub" style="margin-top:10px;">Illustrative demo data · every figure in the product cites percentile, peer group and n</div>
@@ -895,7 +886,7 @@
                 <line x1="121" y1="36" x2="121" y2="67" stroke="#E0744F" stroke-width="2.2"/>
                 <polygon points="121,67 113,79 129,79" fill="#E0744F"/>
                 <circle cx="121" cy="30" r="7" fill="#F08C6E"/>
-                <text x="121" y="18" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#E0744F">You · 23</text>
+                <text x="121" y="18" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#C2521F">You · 23</text>
                 <text x="240" y="140" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#5B5560">You give <tspan font-weight="700" fill="#211B26">23 days</tspan> — below about <tspan font-weight="700" fill="#211B26">3 in 4</tspan> similar organisations (P24).</text>
               </svg>
             </div>
@@ -1037,7 +1028,7 @@
                 </div>
                 <div class="dmini">
                   <div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div>
+                  <div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-text);font-weight:600;">P24</span></div>
                   <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg>
                 </div>
                 <div class="dmini">
@@ -1215,6 +1206,44 @@
         </div>
         <div class="coop reveal"><b>lumi is a benchmarking co-operative.</b> Members contribute their real reward data,
           and everyone benchmarks against the pool — that's why the figures are real, current, and never scraped.</div>
+      </div>
+    </section>
+
+    <!-- ============================= TESTIMONIALS ========================== -->
+    <section class="voices" id="voices">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">In their words</span>
+          <h2 style="margin-top:14px;">What reward teams say</h2>
+          <p>Attributed by role and sector — the people who benchmark their reward with lumi.</p>
+        </div>
+        <div class="vgrid">
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">This platform gives the HR team instant credibility in the boardroom with ironclad, defensible financial data.</p>
+            <div class="vattr"><b>Group HR Director</b>Financial Services</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">We can finally benchmark every facet of total reward, not just base pay. It's the comprehensive view we've been missing.</p>
+            <div class="vattr"><b>Head of Compensation &amp; Benefits</b>Professional Services</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">lumi's always-on, 24/7 benchmarking gives us a continuous pulse on our benefits and wider reward practices versus the market — shifting our strategy from reactive troubleshooting to proactive risk mitigation.</p>
+            <div class="vattr"><b>VP of Total Rewards</b>FinTech</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">The ability to visualise exactly where we stand across all our reward practices is a massive step forward for our team.</p>
+            <div class="vattr"><b>HR Director</b>Retail &amp; E-Commerce</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">Beautifully designed and exceptionally easy to navigate.</p>
+            <div class="vattr"><b>People Operations Manager</b>Technology</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1425,21 +1454,14 @@
         </div>
         <div class="foot-links">
           <div class="foot-col">
-            <h3 class="foot-h">Product</h3>
+            <h3>Product</h3>
             <a href="#product">Product tour</a>
             <a href="#coverage">What we benchmark</a>
             <a href="/pricing">Pricing</a>
-            <a href="#pulse">Pulse &amp; requests</a>
-            <a href="#trust">Data &amp; trust</a>
             <a href="#faq">FAQ</a>
           </div>
           <div class="foot-col">
-            <h3 class="foot-h">Get started</h3>
-            <a data-demo href="https://cal.com/lumi/demo">Book a demo</a>
-            <a href="/app">Sign in</a>
-          </div>
-          <div class="foot-col">
-            <h3 class="foot-h">Trust &amp; legal</h3>
+            <h3>Trust &amp; legal</h3>
             <a href="/security">Security</a>
             <a href="/legal/privacy">Privacy Notice</a>
             <a href="/legal/platform">Terms of Use</a>
@@ -1447,7 +1469,12 @@
             <a href="/legal/subprocessors">Sub-processors</a>
           </div>
           <div class="foot-col">
-            <h3 class="foot-h">Contact</h3>
+            <h3>Get started</h3>
+            <a data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+            <a href="/app">Sign in</a>
+          </div>
+          <div class="foot-col">
+            <h3>Contact</h3>
             <a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a>
             <a href="mailto:dpo@lumihr.co.uk">Data protection</a>
           </div>
@@ -1475,6 +1502,15 @@
       var nav = document.getElementById("topnav");
       var onScroll = function(){ nav.classList.toggle("scrolled", window.scrollY > 8); };
       window.addEventListener("scroll", onScroll, { passive:true }); onScroll();
+    })();
+    // mobile nav drawer
+    (function(){
+      var t = document.querySelector(".nav-toggle"), m = document.getElementById("mobilenav");
+      if(!t || !m) return;
+      function set(open){ t.setAttribute("aria-expanded", open?"true":"false"); t.setAttribute("aria-label", open?"Close menu":"Open menu"); m.classList.toggle("open", open); }
+      t.addEventListener("click", function(){ set(t.getAttribute("aria-expanded") !== "true"); });
+      m.addEventListener("click", function(e){ if(e.target.closest("a")) set(false); });
+      document.addEventListener("keydown", function(e){ if(e.key === "Escape") set(false); });
     })();
     // gentle scroll-reveal (reduced-motion users get everything shown immediately via CSS)
     (function(){
