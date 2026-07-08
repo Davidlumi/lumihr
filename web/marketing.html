@@ -449,6 +449,18 @@
     @media(max-width:640px){.reel-view{height:420px;}.scene{padding:18px 16px;}}
 
     /* =============================== reveal ============================== */
+    /* testimonials */
+    .voices{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+    .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+    .vcard{border:1px solid var(--line);border-radius:16px;padding:26px 26px 24px;display:flex;flex-direction:column;background:var(--paper);}
+    .vcard .vqm{color:var(--coral);font-family:Georgia,"Times New Roman",serif;font-size:46px;line-height:.5;height:22px;}
+    .vcard .vq{font-size:15.5px;line-height:1.6;color:var(--ink);margin-top:8px;}
+    .vcard .vattr{margin-top:auto;padding-top:20px;font-size:13px;color:var(--ink-soft);}
+    .vcard .vattr b{display:block;color:var(--ink);font-weight:600;font-family:var(--head);font-size:13.5px;}
+    @media(max-width:920px){.vgrid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:640px){.vgrid{grid-template-columns:1fr;}}
+    .quotemark{color:var(--coral);font-family:Georgia,serif;font-size:56px;line-height:0;}
+
     .reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease;}
     .reveal.in{opacity:1;transform:none;}
     @media(prefers-reduced-motion:reduce){
@@ -637,6 +649,49 @@
         </div>
         <p class="pivot reveal">lumi replaces all three for everything except base pay — <b>one living benchmark that sits alongside your salary survey</b> — built from real member data,
           cited on every figure, and ready whenever the board asks.</p>
+      </div>
+    </section>
+
+    <!-- ============================= TESTIMONIALS ========================== -->
+    <section class="voices" id="voices">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">In their words</span>
+          <h2 style="margin-top:14px;">What reward teams say</h2>
+          <p>Attributed by role and sector — the people who benchmark their reward with lumi.</p>
+        </div>
+        <div class="vgrid">
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">This platform gives the HR team instant credibility in the boardroom with ironclad, defensible financial data.</p>
+            <div class="vattr"><b>Group HR Director</b>Financial Services</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">We can finally benchmark every facet of total reward, not just base pay. It's the comprehensive view we've been missing.</p>
+            <div class="vattr"><b>Head of Compensation &amp; Benefits</b>Professional Services</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">The ROI was immediate: our offer acceptance rates went up, turnover went down, and we finally have a data-driven hiring edge.</p>
+            <div class="vattr"><b>Chief People Officer</b>Biotech &amp; Life Sciences</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">lumi's always-on, 24/7 benchmarking gives us a continuous pulse on our benefits and wider reward practices versus the market — shifting our strategy from reactive troubleshooting to proactive risk mitigation.</p>
+            <div class="vattr"><b>VP of Total Rewards</b>FinTech</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">The ability to visualise exactly where we stand across all our reward practices is a massive step forward for our team.</p>
+            <div class="vattr"><b>HR Director</b>Retail &amp; E-Commerce</div>
+          </div>
+          <div class="vcard reveal">
+            <div class="vqm">&ldquo;</div>
+            <p class="vq">Beautifully designed and exceptionally easy to navigate.</p>
+            <div class="vattr"><b>People Operations Manager</b>Technology</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1225,6 +1280,12 @@
           <h2 style="margin-top:14px;">See it on your organisation's data</h2>
           <p>Twenty minutes, no obligation. We'll show you exactly where you stand — live — and answer anything.</p>
         </div>
+        <figure style="max-width:720px;margin:0 auto 40px;text-align:center;">
+          <span class="quotemark" aria-hidden="true">&ldquo;</span>
+          <blockquote style="font-family:var(--head);font-weight:600;font-size:clamp(19px,2.4vw,24px);line-height:1.4;color:var(--ink);margin:0;">
+            The ROI was immediate: our offer acceptance rates went up, turnover went down, and we finally have a data-driven hiring edge.</blockquote>
+          <figcaption style="margin-top:16px;font-size:14px;color:var(--ink-soft);"><b style="color:var(--ink);font-weight:600;">Chief People Officer</b> · Biotech &amp; Life Sciences</figcaption>
+        </figure>
         <div class="demo-grid">
           <div class="dcard reveal">
             <div class="d-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
