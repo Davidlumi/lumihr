@@ -5611,6 +5611,16 @@ async def app_shell():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
 
 
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    return FileResponse(os.path.join(WEB_DIR, "robots.txt"), media_type="text/plain")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    return FileResponse(os.path.join(WEB_DIR, "sitemap.xml"), media_type="application/xml")
+
+
 # Brand assets at the document root (browsers request /favicon.ico by default,
 # and the lumi_brand_kit head snippet uses root paths). Served from web/.
 for _bn, _mt in (("favicon.ico", None), ("lumi_favicon.svg", "image/svg+xml"),
