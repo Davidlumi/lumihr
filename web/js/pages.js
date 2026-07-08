@@ -828,13 +828,13 @@ function ApproachPanel({ approach, pending }) {
             ]}
             total=${pool} centerNum=${pool} sub="practices" size=${210} stroke=${28} />
         </div>
-        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} practices sit off the norm</div>
+        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} comparable practices differ from the peer norm</div>
         <div class="appr-legend num">
           <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> off the norm</span>
           <span><span class="appr-dot appr-dot-inline"></span><b>${inLine}</b> in line with the market</span>
         </div>
       </div>
-      <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
+      <div class="appr-note caption">Whether you <b>differ</b> from the peer pattern — a different question from the domain table's <b>how common</b> each choice is. A different way of doing things, not a gap to close; the ones worth acting on appear in your signals.</div>
     </div>`;
 }
 
@@ -948,9 +948,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               <i class="di-zone" style=${{ left: "65%", width: "35%", background: "var(--gauge-above)" }}></i>
             </span>
             <span class="di-axis-lab di-lab-min" style=${{ left: "0%" }}>P0</span>
-            <span class="di-axis-lab" style=${{ left: "25%" }}>P25</span>
+            <span class="di-axis-lab di-lab-q" style=${{ left: "25%" }}>P25</span>
             <span class="di-axis-lab di-axis-med" style=${{ left: "50%" }}>P50 · median</span>
-            <span class="di-axis-lab" style=${{ left: "75%" }}>P75</span>
+            <span class="di-axis-lab di-lab-q" style=${{ left: "75%" }}>P75</span>
             <span class="di-axis-lab di-lab-max" style=${{ left: "100%" }}>P100</span>
             ${overallP != null ? html`<span class="di-axis-you" style=${{ left: Math.min(92, Math.max(8, overallP)) + "%" }}>You overall · P${Math.round(overallP)}</span>` : null}`}
         </span>
@@ -1006,9 +1006,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               </span>
               <span class="di-cell di-evid num">
                 ${pending ? null : practice
-                  ? (pv.pool ? html`n ${pv.pool}` : null)
+                  ? (pv.pool ? html`${pv.pool} practices` : null)
                   : noRate ? html`${pv.pool || 0} practices`
-                  : pos ? html`<b>${pos.below}</b>↓ <b>${pos.at}</b>· <b>${pos.above}</b>↑ <span class="di-n">n ${pos.pool}</span>` : null}
+                  : pos ? html`<span class="di-ev-split"><span class="di-g"><b>${pos.below}</b>↓</span><span class="di-g"><b>${pos.at}</b>·</span><span class="di-g"><b>${pos.above}</b>↑</span></span> <span class="di-n">${pos.pool} metrics</span>` : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -1024,8 +1024,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         })}
       </div>
       ${pending ? null : practice
-        ? html`<div class="di-foot num"><b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare — your ${sum.ppool} tracked practices</div>`
-        : html`<div class="di-foot num"><b>${sum.below}</b> below · <b>${sum.at}</b> on market · <b>${sum.above}</b> above — sums to the dial</div>`}
+        ? html`<div class="di-foot num">Of your ${sum.ppool} tracked practices — <b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare (how common each choice is).</div>`
+        : html`<div class="di-foot num"><b>${sum.below}</b> below · <b>${sum.at}</b> on market · <b>${sum.above}</b> above — sums to the dial</div>
+            <div class="di-legend">Each row counts your comparable metrics below (<b>↓</b>), on (<b>·</b>) and above (<b>↑</b>) the market.</div>`}
     </div>`;
 }
 

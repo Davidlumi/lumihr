@@ -3122,7 +3122,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-standfirst-pending { color: var(--ink-soft); }
 /* shared row grid: identity · track · evidence · scent · strategy chip · chevron */
 .di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
-  grid-template-columns: 132px minmax(0, 1fr) 112px 24px 62px 16px; }
+  grid-template-columns: 132px minmax(0, 1fr) 150px 24px 56px 16px; }
 .di-axis { margin: var(--s2) 0 0; }
 .di-axis-scale { position: relative; height: 34px; }
 .di-axis-strip { position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 2px; overflow: hidden; }
@@ -3137,7 +3137,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: color-mix(in srgb, var(--navy) 8%, var(--surface)); border-radius: 999px; padding: 0 6px; }
 .di-axis-cap { position: absolute; left: 0; bottom: 12px; font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
-.di-row { min-height: 48px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
+.di-row { min-height: 46px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
   border-top: 1px solid var(--border); cursor: pointer;
   border-radius: var(--radius-sm); transition: background var(--ease); }
 .di-row:first-child { border-top: 0; }
@@ -3192,7 +3192,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .di-evid b { color: var(--ink); font-weight: 650; }
-.di-n { color: var(--ink-faint); margin-left: 2px; }
+.di-ev-split .di-g + .di-g { margin-left: 5px; }        /* stop "9·" jamming the next group */
+.di-n { color: var(--ink-faint); margin-left: 6px; }    /* "24 metrics" — labelled, never mistaken for orgs */
+/* per-domain strategy chip: full weight for the exceptions (Behind/Ahead), quiet for the
+   many on-target rows so seven identical "On" badges don't read as noise */
+.di-chipcol .align-on_target { opacity: .5; }
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
 .di-scent { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer;
   font-size: 10.5px; font-weight: 700; line-height: 1; padding: 0;
@@ -3201,11 +3205,15 @@ textarea:focus-visible, [tabindex]:focus-visible {
   transition: transform var(--ease), background var(--ease); }
 .di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
 .di-chipcol { display: flex; justify-content: flex-end; }
-.di-chev { color: var(--blue-bright); opacity: 0; transform: translateX(-4px);
-  transition: opacity var(--ease), transform var(--ease); display: inline-flex; }
+/* faint by default so the whole row reads as click-through; sharpens on hover */
+.di-chev { color: var(--ink-faint); opacity: .38; transform: none;
+  transition: opacity var(--ease), transform var(--ease), color var(--ease); display: inline-flex; }
+.di-row:hover .di-chev { opacity: 1; color: var(--blue-bright); transform: translateX(1px); }
 .di-foot { margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--border);
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-foot b { color: var(--ink-soft); font-weight: 650; }
+.di-legend { margin-top: 3px; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1.4; }
+.di-legend b { color: var(--ink-soft); font-weight: 700; }
 /* the signals band below the hero — full width; internals untouched */
 .ov-signals-band { margin-top: var(--s4); }
 .sig-count-pill { font-size: var(--fs-micro); font-weight: 700; color: var(--blue);
@@ -3214,11 +3222,15 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 1180px) {
   .di-axis, .di-row { grid-template-columns: 112px minmax(0, 1fr) 96px 24px 16px; }
   .di-chipcol { display: none; }
+  .di-ev-split { display: none; }          /* tablet: keep just the labelled "N metrics" (full split is in the row tooltip) */
+  .di-n { margin-left: 0; }
 }
 @media (max-width: 700px) {
-  .di-axis, .di-row { grid-template-columns: 96px minmax(0, 1fr) 24px 16px; column-gap: var(--s2); }
+  .di-axis, .di-row { grid-template-columns: 96px minmax(0, 1fr) 24px 16px; column-gap: var(--s2); min-height: 44px; }
   .di-evid { display: none; }
   .di-sub { display: none; }
+  .di-lab-q, .di-axis-cap { display: none; }   /* drop P25/P75 so the ruler labels stop colliding on a phone */
+  .di-norate { white-space: normal; line-height: 1.35; }
 }
 @media (prefers-reduced-motion: reduce) {
   .di-dot { animation: none !important; }
