@@ -157,6 +157,17 @@
     }
     @media(max-width:520px){.nav-cta .btn-ghost{display:none;}}
 
+    /* sticky mobile CTA — the page is long; keep Book a demo reachable */
+    .mobile-cta{display:none;}
+    @media(max-width:720px){
+      .mobile-cta{display:block;position:fixed;left:0;right:0;bottom:0;z-index:70;
+        padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+        background:rgba(251,249,246,.92);backdrop-filter:saturate(150%) blur(10px);
+        -webkit-backdrop-filter:saturate(150%) blur(10px);border-top:1px solid var(--line);}
+      .mobile-cta .btn{width:100%;height:50px;}
+      body{padding-bottom:78px;}
+    }
+
     /* ================================ hero =============================== */
     .hero{position:relative;padding:92px 0 84px;overflow:hidden;}
     .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
@@ -538,7 +549,8 @@
               <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
             <a class="btn btn-ghost" href="#product">Explore the product</a>
           </div>
-          <div class="hero-note"><span class="dot"></span> A guided walkthrough on your organisation's data — 20 minutes, no obligation</div>
+          <div class="hero-note"><span class="dot"></span> Built for HR teams, not just reward specialists — leads and gaps in plain English, nothing to integrate.</div>
+          <div class="hero-note" style="margin-top:9px;"><span class="dot"></span> First cited comparison in minutes · a board-ready pack the same day · <a href="/sample-board-pack" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600;">see a sample&nbsp;&rarr;</a></div>
         </div>
 
         <!-- faithful recreation of the real product: overview arc + domain tiles,
@@ -697,7 +709,7 @@
               <span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span>
               <span class="b-addr">lumihr.co.uk/app · live recording</span>
             </div>
-            <img src="/static/lumi-platform-tour.webp" width="1120" height="700" loading="lazy" style="width:100%;height:auto;display:block;background:var(--paper);"
+            <img src="/static/lumi-platform-tour.webp" width="1120" height="700" loading="lazy" style="width:100%;height:auto;display:block;background:url(/static/lumi-platform-tour-poster.jpg) center/cover no-repeat, var(--paper);"
               alt="A screen recording of the lumi platform: the Overview benchmark for a demo organisation, the Signals list, and a saved dashboard." />
           </div>
           <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">A real screen recording of lumi — the demo organisation's live benchmark, not a mock-up.</div>
@@ -957,7 +969,7 @@
           <span class="eyebrow">What we benchmark</span>
           <h2 style="margin-top:14px;">240+ live metrics, across seven areas of reward</h2>
           <p>We benchmark <b>how you reward people</b> — benefits, time off, pension, policies and practice:
-            everything in reward <em>except</em> base salary. It's the part a pay survey never covers, built to sit
+            everything in reward <em>except</em> base pay. It's the part a pay survey never covers, built to sit
             alongside it — not replace it. Here's what's covered.</p>
         </div>
         <div class="mindex">
@@ -1183,8 +1195,9 @@
               <div><h3>No agenda at review time</h3><p>lumi has nothing to sell you when the decision lands — it surfaces the gap, cites the evidence, and stops there. The strategy stays yours.</p></div>
             </div>
           </div>
-          <div style="text-align:center;margin-top:36px;position:relative;z-index:1;">
-            <a href="/security" style="color:#fff;font-family:var(--head);font-weight:600;font-size:15px;border-bottom:2px solid var(--coral);padding-bottom:2px;">How we secure your data — security &amp; compliance →</a>
+          <div style="text-align:center;margin-top:36px;position:relative;z-index:1;display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">
+            <a href="/methodology" style="color:#fff;font-family:var(--head);font-weight:600;font-size:15px;border-bottom:2px solid var(--coral);padding-bottom:2px;">How the numbers hold up — the methodology &rarr;</a>
+            <a href="/security" style="color:#fff;font-family:var(--head);font-weight:600;font-size:15px;border-bottom:2px solid var(--coral);padding-bottom:2px;">How we protect your data — security &rarr;</a>
           </div>
         </div>
       </div>
@@ -1265,7 +1278,8 @@
             <summary>How do you keep self-reported data reliable?<span class="fx">+</span></summary>
             <div class="fa">Every metric has one standard definition, so everyone answers the same question the same way; responses
               are validated as they're entered and out-of-range answers are flagged. Comparisons are medians and percentiles, so a
-              single odd entry can't skew your read — which is exactly what makes the benchmark comparable and defensible.</div>
+              single odd entry can't skew your read — which is exactly what makes the benchmark comparable and defensible.
+              <a href="/methodology" style="color:var(--blue);font-weight:600;">See the full methodology &rarr;</a></div>
           </details>
           <details class="reveal">
             <summary>Can other members see our data?<span class="fx">+</span></summary>
@@ -1346,6 +1360,10 @@
     </section>
   </main>
 
+  <div class="mobile-cta">
+    <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+  </div>
+
   <footer>
     <div class="wrap">
       <div class="foot-row">
@@ -1358,6 +1376,7 @@
             <h3>Product</h3>
             <a href="#product">Product tour</a>
             <a href="#coverage">What we benchmark</a>
+            <a href="/methodology">Methodology</a>
             <a href="/pricing">Pricing</a>
             <a href="#faq">FAQ</a>
           </div>

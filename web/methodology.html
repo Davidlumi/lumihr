@@ -4,22 +4,22 @@
   <script>(function(){var h=location.hash;if(h&&h.slice(0,2)==="#/")location.replace("/app"+location.search+h);})();</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Security &amp; data protection · lumi</title>
-  <meta name="description" content="How lumi protects your reward data — UK/EEA hosting, encryption in transit, tenant isolation, the n≥5 anonymity floor, UK GDPR, a DPA on request, and an honest certification roadmap." />
-  <link rel="canonical" href="https://lumihr.co.uk/security" />
-  <meta property="og:title" content="Security & data protection · lumi" />
-  <meta property="og:description" content="Reward data is sensitive. Here's exactly how lumi protects it — and an honest view of where we are on certifications." />
-  <meta property="og:url" content="https://lumihr.co.uk/security" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <title>Methodology · how the benchmark holds up · lumi</title>
+  <meta name="description" content="How lumi builds a defensible reward benchmark — one standard definition per metric, validation on entry, medians and percentiles (not averages), the n≥5 anonymity floor, real peer-group depth, and how often it refreshes." />
+  <link rel="canonical" href="https://lumihr.co.uk/methodology" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="lumi" />
+  <meta property="og:title" content="Methodology · how the benchmark holds up · lumi" />
+  <meta property="og:description" content="One standard definition per metric, validation on entry, medians and percentiles not averages, the n≥5 floor, real peer-group depth, and refresh cadence — how a lumi figure survives boardroom scrutiny." />
+  <meta property="og:url" content="https://lumihr.co.uk/methodology" />
   <meta property="og:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
-  <meta name="twitter:title" content="Security &amp; data protection · lumi" />
-  <meta name="twitter:description" content="How lumi protects your reward data — UK/EEA hosting, encryption in transit, tenant isolation, the n≥5 anonymity floor, UK GDPR and an honest certification roadmap." />
-  <meta name="twitter:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
-  <meta property="og:image:alt" content="lumi security &amp; data protection — how UK reward data is protected" />
-  <meta name="twitter:image:alt" content="lumi security &amp; data protection — how UK reward data is protected" />
+  <meta property="og:image:alt" content="lumi methodology — how a defensible reward benchmark is built" />
   <meta property="og:locale" content="en_GB" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Methodology · how the benchmark holds up · lumi" />
+  <meta name="twitter:description" content="One standard definition per metric, validation on entry, medians/percentiles, the n≥5 floor, real peer-group depth, and refresh cadence." />
+  <meta name="twitter:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
+  <meta name="twitter:image:alt" content="lumi methodology — how a defensible reward benchmark is built" />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
   <script type="application/ld+json">
   {
@@ -27,7 +27,7 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://lumihr.co.uk/" },
-      { "@type": "ListItem", "position": 2, "name": "Security", "item": "https://lumihr.co.uk/security" }
+      { "@type": "ListItem", "position": 2, "name": "Methodology", "item": "https://lumihr.co.uk/methodology" }
     ]
   }
   </script>
@@ -38,14 +38,13 @@
   <style>
     :root{
       --blue:#2048B0; --blue-deep:#1E3A8A; --navy:#14264F; --navy-deep:#0E1B3A;
-      --coral:#F08C6E; --coral-deep:#E0744F;
+      --coral:#F08C6E; --coral-deep:#E0744F; --coral-text:#C2521F;
       --ink:#211B26; --ink-soft:#5B5560; --ink-faint:#6B6570;
       --paper:#FBF9F6; --surface:#fff; --tile:#EAF0FB; --tile-deep:#DCE6F9; --line:#ECE7E0;
       --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC;
       --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       --maxw:1180px; --r:18px; --r-lg:20px; --r-xl:28px;
-      --coral-text:#C2521F;
       --fs-caption:13px; --fs-body:15px; --fs-body-lg:17px; --fs-lede:19px; --fs-h3:20px;
       --fs-h2:clamp(30px,3.6vw,44px); --fs-cta:clamp(28px,3.4vw,42px);
       --sec-y:92px;
@@ -102,46 +101,43 @@
     .shero::before{content:"";position:absolute;inset:0;background:radial-gradient(44rem 24rem at 50% -12%,rgba(32,72,176,.10),transparent 62%);}
     .shero .wrap{position:relative;z-index:1;}
     .shero h1{font-size:clamp(32px,4.4vw,50px);margin-top:16px;}
-    .shero .lede{font-size:18.5px;color:var(--ink-soft);max-width:52ch;margin:20px auto 0;}
+    .shero .lede{font-size:var(--fs-lede);color:var(--ink-soft);max-width:56ch;margin:20px auto 0;}
     section{padding:var(--sec-y) 0;}
-    .sec-head{max-width:680px;margin:0 auto 40px;text-align:center;}
+    .sec-head{max-width:720px;margin:0 auto 40px;text-align:center;}
     .sec-head h2{font-size:var(--fs-h2);}
     .sec-head p{font-size:var(--fs-lede);color:var(--ink-soft);margin-top:12px;}
     .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1040px;margin:0 auto;}
     .scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;}
     .scard .s-ic{width:42px;height:42px;border-radius:11px;background:var(--tile);color:var(--blue);
       display:flex;align-items:center;justify-content:center;margin-bottom:15px;}
-    .scard h3{font-size:17px;margin-bottom:7px;}
+    .scard h3{font-size:var(--fs-h3);margin-bottom:7px;}
     .scard p{color:var(--ink-soft);font-size:14px;line-height:1.55;}
     @media(max-width:860px){.sgrid{grid-template-columns:1fr;max-width:520px;}}
     .band{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
     .two{display:grid;grid-template-columns:1fr 1fr;gap:40px;max-width:1000px;margin:0 auto;align-items:start;}
-    .two h3{font-size:20px;margin-bottom:12px;}
+    .two h3{font-size:var(--fs-h3);margin-bottom:12px;}
     .tlist{list-style:none;margin:0;padding:0;display:grid;gap:10px;}
     .tlist li{display:flex;gap:11px;font-size:15px;color:var(--ink);line-height:1.45;align-items:flex-start;}
     .tlist .tick{width:18px;height:18px;flex:none;margin-top:2px;color:var(--good);}
     @media(max-width:760px){.two{grid-template-columns:1fr;gap:28px;}}
-    .roadmap{max-width:820px;margin:0 auto;background:var(--amber-tint);border:1px solid #EBD9AE;border-radius:var(--r);padding:28px 30px;}
-    .roadmap h3{font-size:19px;margin-bottom:10px;color:var(--ink);}
-    .roadmap p{color:#6a5324;font-size:14.5px;line-height:1.6;}
-    .roadmap .rrow{display:flex;gap:10px;align-items:baseline;font-size:14.5px;color:var(--ink);margin-top:10px;}
-    .roadmap .st{font-family:var(--head);font-weight:700;font-size:11px;letter-spacing:.05em;text-transform:uppercase;
-      background:#fff;border:1px solid #EBD9AE;color:var(--amber);border-radius:999px;padding:3px 10px;flex:none;}
-    .subp{max-width:1000px;margin:0 auto;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);}
-    .subp-row{display:grid;grid-template-columns:1.1fr 1.3fr 1fr;gap:16px;padding:16px 22px;border-top:1px solid var(--line);font-size:14px;}
-    .subp-row:first-child{border-top:none;background:#FAF8F4;font-family:var(--head);font-weight:700;font-size:12px;
+    /* depth table — proves n stays >=5 as the peer cut narrows */
+    .depth{max-width:820px;margin:26px auto 0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);}
+    .drow{display:grid;grid-template-columns:1.5fr 1fr 74px;gap:14px;padding:15px 22px;border-top:1px solid var(--line);align-items:center;font-size:14.5px;}
+    .drow:first-child{border-top:none;background:#FAF8F4;font-family:var(--head);font-weight:700;font-size:12px;
       letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);}
-    .subp-row b{font-weight:600;}
-    @media(max-width:640px){.subp-row{grid-template-columns:1fr;gap:4px;}.subp-row:first-child{display:none;}
-      .subp-row span::before{content:attr(data-l) " — ";color:var(--ink-faint);font-weight:600;}}
+    .drow b{font-weight:600;font-family:var(--head);}
+    .drow .n{font-family:var(--head);font-weight:800;color:var(--blue);text-align:right;font-size:16px;}
+    .drow .n.sup{color:var(--coral-text);}
+    .depth-cap{max-width:820px;margin:14px auto 0;font-size:13px;color:var(--ink-faint);text-align:center;line-height:1.55;}
+    @media(max-width:560px){.drow{grid-template-columns:1fr 60px;}.drow .mid{display:none;}}
     .cta-band{max-width:1000px;margin:0 auto;background:linear-gradient(135deg,var(--navy-deep),var(--blue-deep) 60%,var(--blue));
       color:#fff;border-radius:var(--r-xl);padding:72px 56px;text-align:center;position:relative;overflow:hidden;}
     .cta-band::after{content:"";position:absolute;right:-60px;top:-70px;width:240px;height:240px;border-radius:50%;
       background:radial-gradient(circle,rgba(240,140,110,.30),transparent 68%);}
     .cta-band h2{color:#fff;font-size:var(--fs-cta);position:relative;z-index:1;}
-    @media(max-width:640px){.cta-band{padding:48px 26px;}}
     .cta-band p{color:rgba(255,255,255,.82);font-size:16.5px;margin:14px auto 26px;max-width:48ch;position:relative;z-index:1;}
     .cta-band .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
+    @media(max-width:640px){.cta-band{padding:48px 26px;}}
     footer{padding:56px 0 40px;border-top:1px solid var(--line);margin-top:80px;}
     .foot-row{display:flex;justify-content:space-between;align-items:flex-start;gap:34px;flex-wrap:wrap;}
     .foot-logo img{height:28px;} .foot-blurb{color:var(--ink-soft);font-size:14px;max-width:34ch;margin-top:14px;}
@@ -163,7 +159,7 @@
         <a href="/#product">Product</a>
         <a href="/#coverage">Coverage</a>
         <a href="/pricing">Pricing</a>
-        <a href="/security" class="on" aria-current="page">Security</a>
+        <a href="/security">Security</a>
         <a href="/#faq">FAQ</a>
       </nav>
       <div class="nav-cta">
@@ -188,10 +184,11 @@
   <main>
     <section class="shero" style="padding-bottom:0;">
       <div class="wrap">
-        <span class="eyebrow">Security &amp; data protection</span>
-        <h1 style="margin-top:16px;">Reward data is sensitive.<br/>Here's exactly how we protect it.</h1>
-        <p class="lede">We'd rather tell you plainly what we do — and where we're headed — than hide behind a logo.
-          Below is the real picture, including what we don't yet have.</p>
+        <span class="eyebrow">Methodology</span>
+        <h1 style="margin-top:16px;">How the numbers hold up</h1>
+        <p class="lede">A benchmark is only worth as much as it can be defended. Here is exactly how a lumi figure is
+          built — the definition behind it, how the data is validated, how the maths works, and how deep your peer group
+          really is — so it survives a Remuneration Committee, not just a first glance.</p>
       </div>
     </section>
 
@@ -199,34 +196,34 @@
       <div class="wrap">
         <div class="sgrid">
           <div class="scard reveal">
-            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-            <h3>Encrypted in transit</h3>
-            <p>All traffic to lumi is served over HTTPS/TLS. Your data is encrypted between your browser and our servers.</p>
+            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <h3>One standard definition</h3>
+            <p>Every metric has a single, published definition and unit, so every member answers the same question the same way. No two organisations are quietly measuring different things.</p>
           </div>
           <div class="scard reveal">
-            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-            <h3>Hosted in the UK/EEA</h3>
-            <p>lumi runs on established cloud infrastructure in the UK/EEA. Data residency and hosting are set out in our DPA.</p>
+            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></div>
+            <h3>Validated on entry</h3>
+            <p>Answers are checked as they are entered — units are enforced, and out-of-range or internally inconsistent responses are flagged before they ever reach the pool.</p>
           </div>
           <div class="scard reveal">
-            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-            <h3>Tenant isolation</h3>
-            <p>Every organisation's data is logically separated. Members only ever see anonymised aggregates — never another organisation's raw answers.</p>
-          </div>
-          <div class="scard reveal">
-            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
-            <h3>Hardened accounts</h3>
-            <p>Passwords are stored with bcrypt (never in plain text). Sessions are HttpOnly and SameSite; sign-in and password-reset are rate-limited against brute force, with tokenised, expiring reset and invite links.</p>
-          </div>
-          <div class="scard reveal">
-            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg></div>
-            <h3>Audit logging</h3>
-            <p>Key actions are logged, so access and changes are traceable — the basis for accountability in any data-protection review.</p>
+            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg></div>
+            <h3>Medians, not averages</h3>
+            <p>Every comparison is a median or percentile across valid peer answers. One unusually generous — or unusually lean — organisation can't drag your position around.</p>
           </div>
           <div class="scard reveal">
             <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-            <h3>Anonymity floor (n≥5)</h3>
-            <p>Any figure resting on fewer than 5 organisations is suppressed everywhere — on screen, in exports, in board packs. No individual organisation's data can be reverse-engineered from the benchmark.</p>
+            <h3>The n≥5 floor</h3>
+            <p>Any figure resting on fewer than 5 organisations is suppressed everywhere — on screen, in exports, in board packs. If a peer cut is too thin to be safe, you see that, not a fragile number.</p>
+          </div>
+          <div class="scard reveal">
+            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <h3>Percentiles, cited</h3>
+            <p>Percentiles are computed by linear interpolation across the valid peer set, and every figure carries its percentile, peer group and n (the number of organisations behind it). Nothing is unattributed.</p>
+          </div>
+          <div class="scard reveal">
+            <div class="s-ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <h3>Real member data</h3>
+            <p>Every figure comes from a real UK organisation that submitted it. Nothing is scraped, purchased or modelled — which is exactly why each number can cite the organisations behind it.</p>
           </div>
         </div>
       </div>
@@ -234,63 +231,63 @@
 
     <section class="band">
       <div class="wrap">
-        <div class="sec-head" style="margin-bottom:36px;">
-          <span class="eyebrow">Data protection</span>
-          <h2 style="margin-top:12px;">Handled under UK GDPR</h2>
+        <div class="sec-head" style="margin-bottom:34px;">
+          <span class="eyebrow">Peer-group depth</span>
+          <h2 style="margin-top:12px;">How deep is <em>your</em> peer group?</h2>
+          <p>The honest answer to the question every RemCo asks. You choose the lens; lumi shows you the depth behind it — and suppresses anything too thin.</p>
         </div>
         <div class="two">
           <div>
-            <h3>Your data, your rights</h3>
+            <h3>Choose your lens</h3>
             <ul class="tlist">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Used for one thing — the shared benchmark. <b>Never sold, never passed to third parties</b> for their own purposes.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Data minimisation</b> — lumi collects reward practice and policy answers, not individual employee records.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Export any time</b>, and request deletion — we delete your data within 30 days of a verified request.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>A <b>Data Processing Agreement</b> is available on request for members who need one.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>All peers</b> — the full UK pool, the deepest cut.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Your sector</b> — one of 14 UK sectors.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Your size band</b> — from 50 to 10,000+ employees.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Organisations most like you</b>, or a <b>custom</b> peer group you build.</span></li>
             </ul>
           </div>
           <div>
-            <h3>Less to review, by design</h3>
+            <h3>And how many sit behind it</h3>
             <ul class="tlist">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>No HRIS integration</b> and no data pulled from your systems — lumi is a guided questionnaire, so there's far less for IT and InfoSec to review.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>No individual employee data</b> ever enters lumi — nothing personal to breach.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Full <b>sub-processor list</b> published and kept current (below).</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Happy to complete your <b>security questionnaire or DPIA</b> — just ask.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Roughly <b>150–220 organisations</b> at the all-peer level.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>29–37</b> in each employee-size band.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>8–16</b> in each sector, where virtually every metric still clears the floor.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Cross a sector <em>and</em> a size band and the pool thins — where fewer than 5 organisations remain, lumi suppresses the figure rather than show you something fragile.</span></li>
             </ul>
-            <div style="margin-top:18px;"><a class="btn btn-ghost btn-sm" href="/legal/privacy">Read the Privacy Notice</a></div>
           </div>
         </div>
+
+        <div class="depth reveal">
+          <div class="drow"><span>Peer group for one metric</span><span class="mid">Example</span><span class="n" style="text-align:right;">n</span></div>
+          <div class="drow"><span><b>All peers</b></span><span class="mid">Annual leave allowance</span><span class="n">220</span></div>
+          <div class="drow"><span><b>Your size band</b> · 1,000–4,999 employees</span><span class="mid">Annual leave allowance</span><span class="n">32</span></div>
+          <div class="drow"><span><b>Your sector</b> · Healthcare &amp; Life Sciences</span><span class="mid">Annual leave allowance</span><span class="n">9</span></div>
+          <div class="drow"><span><b>Sector × size band</b> · Healthcare, 1,000–4,999</span><span class="mid">Annual leave allowance</span><span class="n sup">—</span></div>
+        </div>
+        <p class="depth-cap">Illustrative, for a fictional organisation. The last row falls below the n≥5 floor, so lumi suppresses it (shown as “—”) rather than publish a figure resting on too few organisations. On the demo, we show the real depth for <em>your</em> cut.</p>
       </div>
     </section>
 
     <section>
       <div class="wrap">
-        <div class="sec-head" style="margin-bottom:28px;">
-          <span class="eyebrow">Sub-processors</span>
-          <h2 style="margin-top:12px;">Who touches your data</h2>
-          <p>A short, current list — nothing more than we need to run the service.</p>
-        </div>
-        <div class="subp reveal">
-          <div class="subp-row"><span>Provider</span><span>Purpose</span><span>Region</span></div>
-          <div class="subp-row"><span data-l="Provider"><b>Amazon Web Services</b></span><span data-l="Purpose">Cloud hosting &amp; storage</span><span data-l="Region">UK / EEA</span></div>
-          <div class="subp-row"><span data-l="Provider"><b>Amazon SES</b></span><span data-l="Purpose">Transactional email (invites, resets, alerts)</span><span data-l="Region">EU</span></div>
-          <div class="subp-row"><span data-l="Provider"><b>Anthropic</b></span><span data-l="Purpose">AI narrative for board packs &amp; guidance (only when AI features are enabled)</span><span data-l="Region">US · under SCCs / UK Addendum</span></div>
-        </div>
-        <p style="text-align:center;margin-top:16px;font-size:13.5px;color:var(--ink-faint);">
-          The definitive list lives in our <a href="/legal/subprocessors" style="color:var(--blue);font-weight:600;">sub-processors page</a>.
-        </p>
-      </div>
-    </section>
-
-    <section style="padding-top:20px;">
-      <div class="wrap">
-        <div class="roadmap reveal">
-          <h3>Certifications — the honest version</h3>
-          <p>We don't yet hold SOC 2 or ISO 27001, and we won't claim a certification we don't have. Here's where we actually are,
-            and where we're going. If you need something below sooner for a procurement process, tell us on the call — it helps us prioritise.</p>
-          <div class="rrow"><span class="st">In progress</span><span><b>Cyber Essentials</b> — the UK government-backed baseline; our first formal certification.</span></div>
-          <div class="rrow"><span class="st">On the roadmap</span><span><b>Single sign-on (SSO / SAML)</b> — for annual members with an identity provider.</span></div>
-          <div class="rrow"><span class="st">On the roadmap</span><span><b>SOC 2 / ISO 27001</b> — as we scale, the recognised enterprise standards.</span></div>
-          <div class="rrow"><span class="st">Available now</span><span><b>Security questionnaire &amp; DPIA support</b> — we'll complete yours on request.</span></div>
+        <div class="two">
+          <div>
+            <h3>Kept current</h3>
+            <ul class="tlist">
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>The benchmark <b>recomputes as members contribute and update</b> their data — it is a living pool, not a once-a-year snapshot.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>When your position <b>moves against your peers</b>, a signal fires and lumi <b>emails the right people</b> — ranked by materiality, with the evidence and n attached.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Every figure states the peer group and n <b>at the moment it was produced</b>, so an exported board pack is always self-describing.</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3>What lumi deliberately does not do</h3>
+            <ul class="tlist">
+              <li><span class="tick" style="color:var(--coral-text);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span>It does <b>not benchmark base salary</b> — it benchmarks the rest of reward, and is designed to sit alongside a pay survey, not replace it.</span></li>
+              <li><span class="tick" style="color:var(--coral-text);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span>It holds <b>no individual employee records</b> — it benchmarks reward practices and policies, so there is nothing personal in the pool.</span></li>
+              <li><span class="tick" style="color:var(--coral-text);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span>It does <b>not fill gaps with modelled or estimated numbers</b> — if the data isn't there or is too thin, you're told, not shown a guess.</span></li>
+            </ul>
+            <div style="margin-top:18px;"><a class="btn btn-ghost btn-sm" href="/security">How we protect the data &rarr;</a></div>
+          </div>
         </div>
       </div>
     </section>
@@ -298,11 +295,11 @@
     <section style="padding-top:24px;">
       <div class="wrap">
         <div class="cta-band reveal">
-          <h2>Questions your InfoSec team should ask?</h2>
-          <p>Bring them to the demo, or email our data-protection contact directly — we'd rather answer plainly than send you a brochure.</p>
+          <h2>See it computed on your own data</h2>
+          <p>Book a 20-minute walkthrough — we'll show you the real depth of your peer group and how each figure is built, live.</p>
           <div class="row">
-            <a class="btn btn-light" style="background:#fff;color:var(--navy);" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
-            <a class="btn" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55);" href="mailto:dpo@lumihr.co.uk">Email data protection</a>
+            <a class="btn" style="background:#fff;color:var(--navy);" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+            <a class="btn" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55);" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack</a>
           </div>
         </div>
       </div>

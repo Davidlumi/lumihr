@@ -39,6 +39,7 @@ Website: https://lumihr.co.uk · Contact: hello@lumihr.co.uk
 - [Home](https://lumihr.co.uk/): product overview, coverage index, FAQ.
 - [Pricing](https://lumihr.co.uk/pricing): transparent, two-line pricing.
 - [Security & data protection](https://lumihr.co.uk/security): UK/EEA hosting, encryption in transit, tenant isolation, n≥5 floor, UK GDPR, honest certification roadmap.
+- [Methodology](https://lumihr.co.uk/methodology): how the benchmark is built — one standard definition per metric, validation on entry, medians/percentiles, the n≥5 floor, peer-group depth, and refresh cadence.
 - [Sample board pack](https://lumihr.co.uk/sample-board-pack): an illustrative board pack for a fictional organisation.
 - [Full AI/LLM reference](https://lumihr.co.uk/llms-full.txt): fuller fact sheet, methodology and complete FAQ.
 
