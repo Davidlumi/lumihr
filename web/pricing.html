@@ -5,11 +5,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pricing · lumi</title>
-  <meta name="description" content="Simple, transparent pricing for lumi — UK reward benchmarking. £5,000/year full membership (unlimited users and usage), or £10,000 without contributing your data. Join this month for £2,500." />
+  <meta name="description" content="Simple, transparent pricing for lumi — UK reward benchmarking. £5,000/year full membership with unlimited users and usage, or £10,000 without contributing your data." />
   <link rel="canonical" href="https://lumihr.co.uk/pricing" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Pricing · lumi" />
-  <meta property="og:description" content="One transparent price. £5,000/year, unlimited users and usage — or £10,000 without contributing your data. Join this month for £2,500." />
+  <meta property="og:description" content="One transparent price. £5,000/year, unlimited users and usage — or £10,000 without contributing your data." />
   <meta property="og:url" content="https://lumihr.co.uk/pricing" />
   <meta property="og:image" content="https://lumihr.co.uk/lumi_app_navy_512.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -77,23 +77,15 @@
     .phero .lede{font-size:19px;color:var(--ink-soft);max-width:46ch;margin:20px auto 0;}
 
     section{padding:20px 0 84px;}
-    /* offer banner */
-    .offer-band{max-width:1000px;margin:34px auto 40px;background:linear-gradient(135deg,var(--coral),var(--coral-deep));
-      color:#fff;border-radius:18px;padding:20px 28px;display:flex;align-items:center;justify-content:center;gap:10px;
-      text-align:center;font-family:var(--head);font-weight:600;font-size:17px;flex-wrap:wrap;
-      box-shadow:0 12px 30px rgba(224,116,79,.28);}
-    .offer-band .tag{background:rgba(255,255,255,.22);border-radius:999px;padding:4px 12px;font-size:12.5px;
-      font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
-    .offer-band b{font-weight:800;}
-
-    /* price cards */
-    .price-grid{display:grid;grid-template-columns:1.04fr .96fr;gap:26px;align-items:start;max-width:1000px;margin:0 auto;}
-    .pcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:38px 34px;position:relative;}
+    /* price cards — equal height, CTAs bottom-aligned */
+    .price-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:stretch;max-width:1000px;margin:0 auto;}
+    .pcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:38px 34px;position:relative;
+      display:flex;flex-direction:column;}
     .pcard.feature{border:2px solid var(--blue);box-shadow:var(--shadow-big);}
     .p-badge{position:absolute;top:-14px;left:34px;background:var(--blue);color:#fff;font-family:var(--head);
       font-weight:700;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;padding:6px 14px;border-radius:999px;}
     .p-name{font-family:var(--head);font-weight:700;font-size:21px;}
-    .p-sub{color:var(--ink-soft);font-size:14.5px;margin-top:8px;min-height:46px;}
+    .p-sub{color:var(--ink-soft);font-size:14.5px;margin-top:8px;min-height:66px;}
     .p-price{display:flex;align-items:baseline;gap:7px;margin:20px 0 2px;}
     .p-price .amt{font-family:var(--head);font-weight:800;font-size:clamp(40px,5vw,52px);letter-spacing:-.02em;color:var(--ink);}
     .p-price .per{color:var(--ink-faint);font-size:15px;}
@@ -108,7 +100,7 @@
     .p-ic.yes{color:var(--good);} .p-ic.no{color:var(--coral-deep);}
     .p-list li.lost{color:var(--ink-soft);}
     .p-note{margin-top:18px;font-size:13px;color:var(--ink-faint);font-style:italic;}
-    .p-cta{margin-top:26px;}
+    .p-cta{margin-top:auto;padding-top:28px;}
     .p-cta .btn{width:100%;}
     @media(max-width:820px){.price-grid{grid-template-columns:1fr;max-width:520px;}.p-sub{min-height:0;}}
 
@@ -172,13 +164,8 @@
       </div>
     </section>
 
-    <section style="padding-top:34px;">
+    <section style="padding-top:52px;">
       <div class="wrap">
-        <div class="offer-band reveal">
-          <span class="tag">Founding offer</span>
-          <span>Join this month and your first year is <b>£2,500</b> — half price.</span>
-        </div>
-
         <div class="price-grid">
           <!-- FULL MEMBERSHIP -->
           <div class="pcard feature reveal">
@@ -186,10 +173,6 @@
             <div class="p-name">Contribute &amp; unlock everything</div>
             <div class="p-sub">Add your reward data and the whole platform opens up — your position, your signals, your board packs.</div>
             <div class="p-price"><span class="amt">£5,000</span><span class="per">/ year</span></div>
-            <div class="p-offer">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-              Join this month: <b style="margin-left:2px;">£2,500</b> for year one
-            </div>
             <div class="p-line"></div>
             <div class="p-kicker">Everything, for everyone in your team</div>
             <ul class="p-list">
@@ -203,6 +186,7 @@
               <li><svg class="p-ic yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><b>Reward-strategy stance</b> — your aim, read against the market</span></li>
               <li><svg class="p-ic yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Run your own <b>pulse surveys</b> · request new metrics</span></li>
             </ul>
+            <div class="p-note">One flat fee — your whole team, unlimited use, no surprises.</div>
             <div class="p-cta"><a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a></div>
           </div>
 
