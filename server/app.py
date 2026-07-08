@@ -5596,6 +5596,11 @@ async def pricing_page():
     return FileResponse(os.path.join(WEB_DIR, "pricing.html"))
 
 
+@app.get("/security")
+async def security_page():
+    return FileResponse(os.path.join(WEB_DIR, "security.html"))
+
+
 @app.get("/app")
 async def app_shell():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
