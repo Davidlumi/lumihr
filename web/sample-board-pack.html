@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sample board pack · lumi</title>
+  <meta name="description" content="A sample lumi reward-benchmark board pack for a fictional UK organisation — the real format, cited on every figure, so you can see the deliverable before you book a demo." />
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/static/css/fonts.css?v=353" />
+  <link rel="icon" href="/lumi_favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#2048B0" />
+  <style>
+    :root{
+      --blue:#2048B0; --blue-deep:#1E3A8A; --navy:#14264F; --coral:#F08C6E; --coral-deep:#E0744F;
+      --ink:#211B26; --ink-soft:#5B5560; --ink-faint:#6B6570;
+      --paper:#EEEAE3; --surface:#fff; --tile:#EAF0FB; --line:#E7E1D8;
+      --good:#2A7049; --good-tint:#E4F0E9; --amber:#8A5A00; --amber-tint:#FBF0DC; --bad:#B23B2E; --bad-tint:#FBE9E6;
+      --head:"Plus Jakarta Sans","Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--body);color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;}
+    h1,h2,h3,h4{font-family:var(--head);font-weight:700;line-height:1.15;letter-spacing:-.01em;margin:0;}
+    a{color:inherit;text-decoration:none;}
+    /* top control bar (screen only) */
+    .bar{position:sticky;top:0;z-index:10;background:rgba(20,38,79,.97);color:#fff;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 22px;flex-wrap:wrap;}
+    .bar .l{display:flex;align-items:center;gap:12px;font-family:var(--head);font-weight:600;font-size:14.5px;}
+    .bar .l img{height:22px;}
+    .bar .tag{background:rgba(240,140,110,.28);color:#FCD9CB;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+    .bar .r{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;border-radius:999px;font-family:var(--head);
+      font-weight:600;font-size:13.5px;cursor:pointer;border:1.5px solid transparent;}
+    .btn-primary{background:var(--coral-deep);color:#fff;}
+    .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4);}
+    .notice{max-width:840px;margin:20px auto 0;padding:0 22px;font-size:13px;color:var(--ink-soft);text-align:center;}
+    /* the document */
+    .doc{max-width:840px;margin:22px auto 60px;padding:0 22px;}
+    .page{background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 1px 2px rgba(20,38,79,.05),0 18px 44px rgba(20,38,79,.10);
+      padding:44px 48px;margin-bottom:24px;}
+    .pg-accent{height:6px;width:66px;border-radius:3px;background:var(--blue);margin-bottom:20px;}
+    .doc-brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;}
+    .doc-brand img{height:22px;} .doc-brand .conf{font-size:11px;color:var(--ink-faint);letter-spacing:.04em;text-transform:uppercase;}
+    .doc h1{font-size:30px;margin:14px 0 6px;}
+    .doc .sub{color:var(--ink-soft);font-size:14px;}
+    h2.sec{font-size:20px;margin:0 0 4px;} .sec-cap{font-size:12px;color:var(--ink-faint);margin-bottom:18px;}
+    .stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 22px;}
+    .stat{background:#FAF8F4;border:1px solid var(--line);border-radius:10px;padding:16px 16px;}
+    .stat b{display:block;font-family:var(--head);font-weight:800;font-size:26px;color:var(--blue);letter-spacing:-.02em;}
+    .stat span{font-size:12px;color:var(--ink-soft);display:block;margin-top:2px;}
+    .lede{font-size:14.5px;color:var(--ink);line-height:1.6;}
+    .lede b{font-weight:600;}
+    /* position by area */
+    .areas{display:grid;gap:12px;margin-top:6px;}
+    .arow{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:14px;}
+    .arow .an{font-size:13.5px;font-weight:600;font-family:var(--head);}
+    .track{position:relative;height:10px;border-radius:5px;background:#EFEBE4;}
+    .track .mid{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:#CFC9BF;}
+    .track .fill{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--blue);}
+    .track .fill.lo{background:var(--coral-deep);}
+    .arow .ap{font-family:var(--head);font-weight:700;font-size:13px;text-align:right;}
+    .arow .ap.lo{color:var(--coral-deep);}
+    /* table */
+    table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px;}
+    th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);}
+    th{font-family:var(--head);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);}
+    td.r,th.r{text-align:right;}
+    .pill{font-family:var(--head);font-weight:700;font-size:11px;padding:3px 9px;border-radius:999px;display:inline-block;}
+    .pill.bad{background:var(--bad-tint);color:var(--bad);} .pill.amber{background:var(--amber-tint);color:var(--amber);}
+    .pill.good{background:var(--good-tint);color:var(--good);}
+    /* evidence dist */
+    .ev{border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-top:14px;}
+    .ev .evh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:2px;}
+    .ev .evt{font-family:var(--head);font-weight:700;font-size:15px;} .ev .evc{font-size:11.5px;color:var(--ink-faint);}
+    .ev .read{font-size:13.5px;color:var(--ink);margin-top:10px;} .ev .read b{color:var(--ink);}
+    .opp{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;}
+    .opp .amt{font-family:var(--head);font-weight:800;color:var(--blue);white-space:nowrap;}
+    .pg-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-faint);line-height:1.5;}
+    .backcta{text-align:center;margin:10px auto 0;}
+    @media(max-width:620px){.page{padding:30px 22px;}.stat-strip{grid-template-columns:1fr;}.arow{grid-template-columns:110px 1fr 40px;}.doc h1{font-size:24px;}}
+    @media print{
+      body{background:#fff;} .bar,.notice,.backcta{display:none !important;}
+      .doc{max-width:none;margin:0;padding:0;} .page{box-shadow:none;border:none;border-radius:0;margin:0;padding:26mm 20mm;page-break-after:always;}
+      .page:last-child{page-break-after:auto;}
+      @page{size:A4;margin:0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <div class="l"><img src="/static/lumi_horizontal_reversed.svg" alt="lumi" /> Sample board pack <span class="tag">Illustrative</span></div>
+    <div class="r">
+      <button class="btn btn-ghost" onclick="window.print()">Print / save as PDF</button>
+      <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo">Book a demo</a>
+    </div>
+  </div>
+  <p class="notice">This is a <b>sample</b> for a <b>fictional organisation</b> (Northgate Care Group), to show the format and rigour of a lumi board pack.
+    Every figure your own pack cites is drawn from live member data, with the peer group and sample size attached. Figures under 5 organisations are never shown.</p>
+
+  <div class="doc">
+    <!-- PAGE 1 · cover + executive summary -->
+    <div class="page">
+      <div class="doc-brand"><img src="/static/lumi_horizontal.svg" alt="lumi" /><span class="conf">Private &amp; confidential</span></div>
+      <div class="pg-accent"></div>
+      <h1>Reward benchmark — board pack</h1>
+      <div class="sub">Northgate Care Group <em>(illustrative)</em> · ~1,200 employees · All peers · 220 organisations · July 2026</div>
+
+      <h2 class="sec" style="margin-top:30px;">Executive summary</h2>
+      <div class="sec-cap">How our reward package sits against similar UK organisations. Figures under 5 organisations suppressed throughout.</div>
+      <div class="stat-strip">
+        <div class="stat"><b>P58</b><span>Overall position — broadly in line with the market</span></div>
+        <div class="stat"><b>36 / 52</b><span>Answered metrics within the middle half of peers</span></div>
+        <div class="stat"><b>4</b><span>Gaps flagged as worth a look</span></div>
+      </div>
+      <p class="lede">Northgate's reward package sits <b>broadly in line with the market</b> overall, with clear strengths in pension and
+        benefits and a small number of gaps that are worth a decision this cycle. The most material is <b>annual leave</b>, which sits
+        in the bottom quarter of the market, and the <b>absence of private medical cover</b>, now common among peers. Pension provision is
+        a genuine strength — ahead of roughly three in four comparable organisations. None of the figures below rests on fewer than five
+        organisations; each carries its peer group and sample size so it can be cited directly in committee.</p>
+    </div>
+
+    <!-- PAGE 2 · position by area + gaps -->
+    <div class="page">
+      <div class="pg-accent"></div>
+      <h2 class="sec">Position by area</h2>
+      <div class="sec-cap">Percentile against all peers (50 = market median). All peers · 220 organisations.</div>
+      <div class="areas">
+        <div class="arow"><span class="an">Pay practice</span><span class="track"><span class="mid"></span><span class="fill" style="width:55%;"></span></span><span class="ap">P55</span></div>
+        <div class="arow"><span class="an">Incentives</span><span class="track"><span class="mid"></span><span class="fill" style="width:61%;"></span></span><span class="ap">P61</span></div>
+        <div class="arow"><span class="an">Benefits</span><span class="track"><span class="mid"></span><span class="fill" style="width:68%;"></span></span><span class="ap">P68</span></div>
+        <div class="arow"><span class="an">Time off</span><span class="track"><span class="mid"></span><span class="fill lo" style="width:34%;"></span></span><span class="ap lo">P34</span></div>
+        <div class="arow"><span class="an">Wellbeing</span><span class="track"><span class="mid"></span><span class="fill" style="width:49%;"></span></span><span class="ap">P49</span></div>
+        <div class="arow"><span class="an">Recognition</span><span class="track"><span class="mid"></span><span class="fill" style="width:52%;"></span></span><span class="ap">P52</span></div>
+        <div class="arow"><span class="an">Governance</span><span class="track"><span class="mid"></span><span class="fill lo" style="width:44%;"></span></span><span class="ap lo">P44</span></div>
+      </div>
+
+      <h2 class="sec" style="margin-top:34px;">Biggest gaps to the market</h2>
+      <div class="sec-cap">Ranked by materiality. Each row cites peer group, percentile and n (organisations behind the figure).</div>
+      <table>
+        <thead><tr><th>Metric</th><th>Peer group</th><th class="r">Position</th><th class="r">n</th></tr></thead>
+        <tbody>
+          <tr><td><b>Annual leave allowance</b></td><td>All peers</td><td class="r"><span class="pill bad">P24</span></td><td class="r">96</td></tr>
+          <tr><td><b>Private medical cover</b></td><td>All peers</td><td class="r"><span class="pill bad">Not offered</span></td><td class="r">213</td></tr>
+          <tr><td><b>Enhanced paternity pay</b></td><td>All peers</td><td class="r"><span class="pill amber">P31</span></td><td class="r">88</td></tr>
+          <tr><td><b>Governance — pay-gap analysis cadence</b></td><td>All peers</td><td class="r"><span class="pill amber">P38</span></td><td class="r">150</td></tr>
+          <tr><td>Employer pension contribution</td><td>All peers</td><td class="r"><span class="pill good">P74</span></td><td class="r">181</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGE 3 · evidence + opportunities -->
+    <div class="page">
+      <div class="pg-accent"></div>
+      <h2 class="sec">The evidence</h2>
+      <div class="sec-cap">The distribution behind two headline figures.</div>
+
+      <div class="ev">
+        <div class="evh"><span class="evt">Annual leave allowance (days)</span><span class="pill bad">Below market</span></div>
+        <div class="evc">All peers · n=96</div>
+        <svg viewBox="0 0 620 120" width="100%" style="margin-top:12px;" role="img" aria-label="Distribution with your position below the peer median">
+          <rect x="170" y="46" width="280" height="28" rx="7" fill="#EAF0FB"/>
+          <line x1="40" y1="60" x2="580" y2="60" stroke="#E3DED6" stroke-width="2"/>
+          <line x1="310" y1="40" x2="310" y2="80" stroke="#8E8893" stroke-width="2.2"/>
+          <text x="310" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#8E8893">P50 · 25 days</text>
+          <text x="40" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6B6570">P10</text>
+          <text x="580" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6B6570">P90</text>
+          <line x1="150" y1="30" x2="150" y2="60" stroke="#E0744F" stroke-width="2.4"/>
+          <polygon points="150,60 141,74 159,74" fill="#E0744F"/>
+          <circle cx="150" cy="24" r="7" fill="#F08C6E"/>
+          <text x="150" y="12" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#E0744F">You · 23</text>
+        </svg>
+        <div class="read">You give <b>23 days</b> — below about <b>3 in 4</b> comparable organisations (P24). Moving to the market median of 25 days would bring Northgate into line on a benefit staff notice quickly.</div>
+      </div>
+
+      <div class="ev">
+        <div class="evh"><span class="evt">Employer pension contribution</span><span class="pill good">Above market</span></div>
+        <div class="evc">All peers · n=181</div>
+        <svg viewBox="0 0 620 120" width="100%" style="margin-top:12px;" role="img" aria-label="Distribution with your position above the peer median">
+          <rect x="170" y="46" width="280" height="28" rx="7" fill="#EAF0FB"/>
+          <line x1="40" y1="60" x2="580" y2="60" stroke="#E3DED6" stroke-width="2"/>
+          <line x1="310" y1="40" x2="310" y2="80" stroke="#8E8893" stroke-width="2.2"/>
+          <text x="310" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#8E8893">P50 · 6%</text>
+          <text x="40" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6B6570">P10</text>
+          <text x="580" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6B6570">P90</text>
+          <line x1="452" y1="30" x2="452" y2="60" stroke="#2048B0" stroke-width="2.4"/>
+          <polygon points="452,60 443,74 461,74" fill="#2048B0"/>
+          <circle cx="452" cy="24" r="7" fill="#F08C6E"/>
+          <text x="452" y="12" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" font-size="12" fill="#2048B0">You · 8%</text>
+        </svg>
+        <div class="read">You contribute <b>8%</b> — ahead of about <b>3 in 4</b> comparable organisations (P74). A genuine strength worth protecting and stating in the retention story.</div>
+      </div>
+
+      <h2 class="sec" style="margin-top:34px;">Where to look first</h2>
+      <div class="sec-cap">Indicative, for discussion — not a recommendation. lumi flags; the committee decides.</div>
+      <div class="opp"><span class="amt">Annual leave</span><span>Bottom-quartile against the market on a visible, low-cost-to-move benefit — the clearest single gap to close this cycle.</span></div>
+      <div class="opp"><span class="amt">Private medical</span><span>Now common among peers and absent here; worth a deliberate decision (offer, or decide not to and hold the line knowingly).</span></div>
+      <div class="opp"><span class="amt">Governance</span><span>Pay-gap analysis cadence trails the market as transparency expectations rise — a low-cost, high-signal area to tighten.</span></div>
+
+      <div class="pg-foot">
+        Generated by lumi · UK reward benchmarking · percentiles use linear interpolation · <b>n = the number of organisations behind each figure</b> ·
+        figures resting on fewer than 5 organisations are suppressed throughout · illustrative figures for a fictional organisation.
+        Private &amp; confidential.
+      </div>
+    </div>
+
+    <div class="backcta">
+      <a class="btn btn-primary" data-demo href="https://cal.com/lumi/demo" style="height:46px;padding:0 24px;font-size:15px;">See this on your own data — book a demo</a>
+      <div style="margin-top:12px;"><a href="/" style="color:var(--ink-soft);font-size:14px;">← Back to lumi</a></div>
+    </div>
+  </div>
+
+  <script>
+    var DEMO_URL = "https://cal.com/lumi/demo";   // TODO: swap for the live scheduler URL
+    document.querySelectorAll("a[data-demo]").forEach(function(a){ a.setAttribute("href", DEMO_URL); a.target = "_blank"; a.rel = "noopener"; });
+  </script>
+</body>
+</html>

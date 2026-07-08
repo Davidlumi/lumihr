@@ -5601,6 +5601,11 @@ async def security_page():
     return FileResponse(os.path.join(WEB_DIR, "security.html"))
 
 
+@app.get("/sample-board-pack")
+async def sample_board_pack_page():
+    return FileResponse(os.path.join(WEB_DIR, "sample-board-pack.html"))
+
+
 @app.get("/app")
 async def app_shell():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))

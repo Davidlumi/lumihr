@@ -377,6 +377,10 @@
     .ma-list li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;
       background:var(--coral);}
     .mindex-note{text-align:center;margin-top:26px;font-size:13.5px;color:var(--ink-faint);}
+    .depth-list{display:grid;gap:6px;}
+    .depth-list span{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-soft);
+      border-bottom:1px solid var(--line);padding-bottom:5px;}
+    .depth-list span b{color:var(--ink);font-weight:700;font-family:var(--head);}
     @media(max-width:960px){.mindex{grid-template-columns:1fr 1fr;}.marea.ma-wide{grid-column:span 2;}
       .ma-list.ma-list-wide{grid-template-columns:1fr;}}
     @media(max-width:640px){.mindex{grid-template-columns:1fr;}.marea.ma-wide{grid-column:span 1;}}
@@ -698,7 +702,7 @@
                 <div class="sh-head" style="margin-bottom:14px;"><span class="sh-title" style="font-size:16px;">Signals</span><span class="sh-sub">3 worth a look · emailed to you</span></div>
                 <div class="sig-row">
                   <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
-                  <div class="sig-main"><div class="sig-t">Annual leave sits in the bottom quarter of your sector</div><div class="sig-m">Below market · your sector · n=96</div></div>
+                  <div class="sig-main"><div class="sig-t">Annual leave sits in the bottom quarter of the market</div><div class="sig-m">Below market · all peers · n=96</div></div>
                   <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:82%;"></div></div><div class="sb-lbl">gap</div></div>
                 </div>
                 <div class="sig-row">
@@ -708,7 +712,7 @@
                 </div>
                 <div class="sig-row">
                   <div class="sig-ic cool"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
-                  <div class="sig-main"><div class="sig-t">Enhanced maternity pay is ahead of most of your peers</div><div class="sig-m">Ahead of market · your sector · n=142</div></div>
+                  <div class="sig-main"><div class="sig-t">Enhanced maternity pay is ahead of most of your peers</div><div class="sig-m">Ahead of market · all peers · n=142</div></div>
                   <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:72%;background:var(--blue);"></div></div><div class="sb-lbl">lead</div></div>
                 </div>
                 <div class="scene-cap">2 · Signals flag what's worth a look — and email you when it moves</div>
@@ -719,7 +723,7 @@
                 <div class="dtabs"><span class="dtab on">Board view <b>6</b></span><span class="dtab">Benefits <b>4</b></span><span class="dtab">Time off <b>3</b></span><span class="dtab plus">+ New</span></div>
                 <div class="dgrid">
                   <div class="dmini"><div class="dmini-h"><span>Employer pension</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=181 · <span style="color:var(--good);font-weight:600;">P74</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="44" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="96" y1="12" x2="96" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="142" cy="20" r="4" fill="#2048B0"/></svg></div>
-                  <div class="dmini"><div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">Your sector · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg></div>
+                  <div class="dmini"><div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg></div>
                   <div class="dmini"><div class="dmini-h"><span>Enhanced maternity</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=142 · <span style="color:var(--good);font-weight:600;">common</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="120" height="8" rx="4" fill="#9DB4EA"/><rect x="12" y="24" width="150" height="8" rx="4" fill="#2048B0"/></svg></div>
                   <div class="dmini"><div class="dmini-h"><span>Sabbatical policy</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div><div class="dmini-sub">All peers · n=168 · <span style="color:var(--ink-soft);font-weight:600;">in line</span></div><svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="12" y="10" width="150" height="8" rx="4" fill="#2048B0"/><rect x="12" y="24" width="96" height="8" rx="4" fill="#9DB4EA"/></svg></div>
                 </div>
@@ -825,7 +829,7 @@
                 <span class="sh-title">Annual leave allowance (days)</span>
                 <span class="pill pill-amber">Below market</span>
               </div>
-              <div class="sh-sub">Your sector · n=96</div>
+              <div class="sh-sub">All peers · n=96</div>
               <svg viewBox="0 0 480 150" width="100%" style="margin-top:12px;" role="img" aria-label="Distribution of annual leave allowance with your position below the peer median">
                 <rect x="130" y="52" width="212" height="30" rx="7" fill="#EAF0FB"/>
                 <line x1="36" y1="67" x2="446" y2="67" stroke="#E3DED6" stroke-width="2"/>
@@ -863,8 +867,8 @@
               <div class="sig-row">
                 <div class="sig-ic warm"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
                 <div class="sig-main">
-                  <div class="sig-t">Annual leave sits in the bottom quarter of your sector</div>
-                  <div class="sig-m">Below market · your sector · n=96</div>
+                  <div class="sig-t">Annual leave sits in the bottom quarter of the market</div>
+                  <div class="sig-m">Below market · all peers · n=96</div>
                 </div>
                 <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:82%;"></div></div><div class="sb-lbl">gap</div></div>
               </div>
@@ -880,7 +884,7 @@
                 <div class="sig-ic cool"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg></div>
                 <div class="sig-main">
                   <div class="sig-t">Enhanced maternity pay is ahead of most of your peers</div>
-                  <div class="sig-m">Ahead of market · your sector · n=142</div>
+                  <div class="sig-m">Ahead of market · all peers · n=142</div>
                 </div>
                 <div class="sig-bar"><div class="sb-track"><div class="sb-fill" style="width:72%;background:var(--blue);"></div></div><div class="sb-lbl">lead</div></div>
               </div>
@@ -901,8 +905,10 @@
               <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Download as PDF or CSV, or share a secure link</b> — every dashboard, chart and pack, with logo, peer group and n baked in.</span></li>
               <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Anything too small to show safely is held back</b> — the anonymity floor follows your data into print.</span></li>
             </ul>
+            <div style="margin-top:24px;"><a class="btn btn-ghost" href="/sample-board-pack" target="_blank" rel="noopener">See a sample board pack →</a></div>
           </div>
           <div class="t-visual reveal">
+            <a href="/sample-board-pack" target="_blank" rel="noopener" title="Open a sample board pack" style="display:block;">
             <div class="pack-fan" role="img" aria-label="Three pages of a lumi board pack: cover, position summary and gaps table">
               <div class="page page-1">
                 <div class="pg-rule"></div>
@@ -942,6 +948,7 @@
                 </div>
               </div>
             </div>
+            </a>
           </div>
         </div>
 
@@ -975,7 +982,7 @@
                 </div>
                 <div class="dmini">
                   <div class="dmini-h"><span>Annual leave</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#2048B0" stroke="#2048B0" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
-                  <div class="dmini-sub">Your sector · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div>
+                  <div class="dmini-sub">All peers · n=96 · <span style="color:var(--coral-deep);font-weight:600;">P24</span></div>
                   <svg viewBox="0 0 200 40" width="100%" style="margin-top:8px;"><rect x="60" y="14" width="96" height="12" rx="4" fill="#EAF0FB"/><line x1="12" y1="20" x2="188" y2="20" stroke="#E3DED6" stroke-width="1.6"/><line x1="108" y1="12" x2="108" y2="28" stroke="#8E8893" stroke-width="1.6"/><circle cx="44" cy="20" r="4" fill="#E0744F"/></svg>
                 </div>
                 <div class="dmini">
@@ -1073,10 +1080,38 @@
           </div>
         </div>
         <p class="mindex-note reveal">Illustrative examples · the library grows as members ask for new benchmarks — see below.</p>
-        <div class="coop reveal" style="max-width:820px;margin-top:34px;">
-          <b>Deep enough to cut with confidence.</b> Every metric rests on <b>150–220 organisations</b> at the all-peer level;
-          <b>8–16</b> in each of 14 sectors; <b>29–37</b> in each size band from 50 to 10,000+ employees. And lumi only ever
-          shows a figure where at least <b>5 organisations</b> sit behind it — so your peer cut is real, or it isn't shown at all.
+        <div class="coop reveal" style="max-width:840px;margin-top:34px;">
+          <b>Deep enough to cut with confidence.</b> Every metric rests on <b>150–220 organisations</b> at the all-peer level,
+          and <b>29–37</b> in each size band from 50 to 10,000+ employees. Narrow to one of the 14 sectors and you're comparing
+          against <b>8–16 organisations</b> — where virtually every metric still clears the floor. lumi only ever shows a figure
+          backed by at least <b>5 organisations</b> (<i>n</i> = the organisations behind each figure) — so your peer cut is real,
+          or it simply isn't shown.
+          <details style="margin-top:16px;">
+            <summary style="cursor:pointer;font-family:var(--head);font-weight:600;color:var(--blue);font-size:14px;">See depth by sector and size &rarr;</summary>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px 40px;margin-top:16px;text-align:left;">
+              <div>
+                <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By sector &middot; organisations</div>
+                <div class="depth-list">
+                  <span>Manufacturing &amp; Engineering<b>16</b></span><span>Construction &amp; Infrastructure<b>16</b></span>
+                  <span>Retail &amp; Consumer Goods<b>15</b></span><span>Logistics &amp; Transport<b>15</b></span>
+                  <span>Hospitality &amp; Leisure<b>15</b></span><span>Public Sector<b>12</b></span>
+                  <span>Media &amp; Creative<b>10</b></span><span>Education<b>10</b></span>
+                  <span>Professional Services<b>9</b></span><span>Healthcare &amp; Life Sciences<b>9</b></span>
+                  <span>Financial Services<b>9</b></span><span>Technology &amp; Software<b>8</b></span>
+                  <span>Energy &amp; Utilities<b>8</b></span><span>Charity &amp; Non-Profit<b>8</b></span>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By size band &middot; organisations</div>
+                <div class="depth-list">
+                  <span>50&ndash;249 employees<b>30</b></span><span>250&ndash;999<b>29</b></span>
+                  <span>1,000&ndash;4,999<b>32</b></span><span>5,000&ndash;9,999<b>37</b></span>
+                  <span>10,000+<b>32</b></span>
+                </div>
+                <p style="font-size:12.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;">Cross a sector with a size band and the pool naturally thins — where fewer than 5 organisations sit behind a figure, lumi suppresses it rather than show you something thin. On the demo we'll show the exact depth for <em>your</em> cut.</p>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </section>
@@ -1246,6 +1281,14 @@
             <div class="fa">No. Members only ever see anonymised aggregates — medians and distributions across the pool. Any figure
               resting on fewer than 5 organisations is suppressed, so no individual organisation's answers can be worked out, and
               your raw submissions are never exposed to anyone.</div>
+          </details>
+          <details class="reveal">
+            <summary>How do the proactive signals work?<span class="fx">+</span></summary>
+            <div class="fa">Each time the benchmark recomputes — as members contribute or update their data — lumi re-reads your
+              position and compares it to last time. A signal fires when something crosses a threshold: your percentile moves
+              across a band (say, from mid-market to below), a practice becomes common among peers that you don't offer, or a gap
+              to the market widens. It's ranked by materiality and emailed to the right people, and you can snooze or dismiss any of
+              them. Every signal carries the evidence and sample size behind it — never a directive.</div>
           </details>
           <details class="reveal">
             <summary>Is our data safe?<span class="fx">+</span></summary>
