@@ -294,12 +294,24 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   const _viewTotal = _viewLive.length;                 // slices top-3 AFTER its optimistic dismiss filter
                                                        // (filter-before-slice, so a dismiss backfills #4 from the tail)
   const _viewNew = _viewSigs.filter(s => s.new && s.status !== "dismissed").length;
+  // Per-domain live signal counts for the instrument's scent dots — derived from the
+  // SAME filter-before-slice pool that feeds the band's "See all N", so the seven
+  // counts always total the band's number (never raw signals_all, which still holds
+  // dismissed rows).
+  const _domCounts = {};
+  _viewLive.forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
+  const scrollToSignals = () => {
+    const el = document.querySelector(".ov-signals-band");
+    if (el) scrollIntoViewSafe(el, { block: "start" });
+  };
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
+  // (.ov-wrap scope, 2026-07-08: the signals card moved below the hero row, so the
+  // old ".ov-top .card" selector silently dropped its spotlight when it moved.)
   useEffect(() => {
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const onMove = (e) => {
-      const el = e.target.closest && e.target.closest(".ov-top .card");
+      const el = e.target.closest && e.target.closest(".ov-wrap .card");
       if (!el) return;
       const r = el.getBoundingClientRect();
       el.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
@@ -333,11 +345,12 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         ${view === "practice"
           ? html`<${ApproachPanel} approach=${data.hero.approach} pending=${locked} />`
           : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
-        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} />
+        <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
+          view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals} />
       </div>
       ${!locked && html`<${TrajectoryTile} windowLabel=${data.snapshot && data.snapshot.window} />`}
-      <div class="cat-grid">
-        ${(data.hero.domains || []).map(d => html`<${CategoryTile} key=${d.name} d=${d} pending=${locked} aim=${marketAim(m)} view=${view} />`)}
+      <div class="ov-signals-band">
+        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} />
       </div>
     </div>`;
 }
@@ -829,6 +842,184 @@ function ApproachPanel({ approach, pending }) {
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
   "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
+
+// ═══ DOMAIN INSTRUMENT (2026-07-08 hero redesign) — the per-domain analysis that sits
+// BESIDE the summary donut: seven rows on ONE shared P0–P100 ruler, so the domains are
+// comparable at a glance for the first time. Two connective devices weld it to the donut:
+// a dashed navy hairline at the org's OVERALL percentile runs through every row, and the
+// evidence column sums exactly to the donut's below/on/above counts ("sums to the dial").
+// DATA RULES (verified against the live payload, 2026-07-08 judge pass):
+//   · rows read d.position.* uniformly — Recognition's `market` key is null (indicative
+//     basis), its counts live under position and are REQUIRED for the footer sum;
+//   · dots plot position.depth_pctl, NEVER d.dot (Wellbeing dot=79.4 contradicts its
+//     "below" verdict; depth_pctl=25.2 agrees);
+//   · dot colour is navy always — position is strategy-INVARIANT; the strategy
+//     relationship rides the separate navy AlignmentChip (on==off dot parity canary).
+// PRACTICE LENS: same skeleton, re-skinned to prevalence (with_majority/established/
+// less_common) — the ONLY practice decomposition that sums to the overall (92/47/36/175);
+// approach.* deliberately NOT used for rows (domain approach sums ≠ the ApproachPanel).
+function domainStandfirst(market, doms, view, prevalence) {
+  if (view === "practice") {
+    if (!prevalence || !prevalence.pool) return null;
+    const share = prevalence.with_majority / prevalence.pool;
+    const opener = share >= 0.5 ? "Most of your practices are common choices"
+                                : "Many of your practices follow their own pattern";
+    const ranked = doms.filter(d => d.prevalence && d.prevalence.pool >= 5)
+      .map(d => ({ name: domainLabel(d.name), share: d.prevalence.with_majority / d.prevalence.pool }))
+      .sort((a, b) => a.share - b.share);
+    const tail = ranked.length ? "; " + ranked[0].name + " differs most from the peer pattern" : "";
+    return opener + " — " + prevalence.with_majority + " of your " + prevalence.pool +
+      " tracked practices sit with the majority" + tail + ".";
+  }
+  if (!market || market.depth_pctl == null) return null;
+  const p = Math.round(market.depth_pctl);
+  const mk = doms.filter(d => d.position_basis === "market" && d.position && d.position.depth_pctl != null)
+    .map(d => ({ name: domainLabel(d.name), p: Math.round(d.position.depth_pctl) }))
+    .sort((a, b) => a.p - b.p);
+  const base = "Your typical comparable metric sits at P" + p;
+  if (mk.length < 2) return base + ".";
+  if (market.verdict === "above") {
+    const hi = mk.slice(-2).reverse(), lo = mk[0];
+    return base + " — lifted furthest by " + hi[0].name + " (P" + hi[0].p + ") and " + hi[1].name +
+      " (P" + hi[1].p + "); " + lo.name + " (P" + lo.p + ") sits closest to the market.";
+  }
+  const lo = mk.slice(0, 2), hi = mk[mk.length - 1];
+  return base + " — held furthest back by " + lo[0].name + " (P" + lo[0].p + ") and " + lo[1].name +
+    " (P" + lo[1].p + "); " + hi.name + " (P" + hi.p + ") sits closest to the market.";
+}
+// one citable sentence per row — the tooltip AND the row button's aria-label
+function domainRowSentence(d, view) {
+  const label = domainLabel(d.name);
+  if (view === "practice") {
+    const pv = d.prevalence || {};
+    if (!pv.pool) return label + " — no practices tracked yet.";
+    return label + ": " + (pv.verdict || "practice alignment") + " · " + pv.with_majority +
+      " common, " + pv.established + " alternative, " + pv.less_common + " rare of " + pv.pool + " tracked.";
+  }
+  const pos = d.position;
+  if (d.competitiveness === false) return label + " — no market rate; approach choices only. See the Practice lens.";
+  if (!pos || pos.depth_pctl == null) return label + " — no comparable market position yet.";
+  const s = "Your typical comparable metric in " + label + " sits at P" + Math.round(pos.depth_pctl) +
+    " of the market · " + pos.below + " below, " + pos.at + " on market, " + pos.above +
+    " above of " + pos.pool + " comparable.";
+  return d.position_basis === "indicative" ? s + " Indicative — thin coverage, not a full market verdict." : s;
+}
+function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent }) {
+  const doms = domains || [];
+  const practice = view === "practice";
+  const overallP = !practice && market && market.depth_pctl != null ? market.depth_pctl : null;
+  // footer sums — the "sums to the dial" claim, computed from the SAME fields the rows show
+  const sum = { below: 0, at: 0, above: 0, pool: 0, common: 0, alt: 0, rare: 0, ppool: 0 };
+  doms.forEach(d => {
+    const p = d.position; if (p) { sum.below += p.below || 0; sum.at += p.at || 0; sum.above += p.above || 0; sum.pool += p.pool || 0; }
+    const pv = d.prevalence; if (pv && pv.pool) { sum.common += pv.with_majority || 0; sum.alt += pv.established || 0; sum.rare += pv.less_common || 0; sum.ppool += pv.pool || 0; }
+  });
+  const stand = pending
+    ? "Your per-domain position appears here once enough of your data is comparable — complete your key reward questions to unlock it."
+    : domainStandfirst(market, doms, view, prevalence);
+  const openDomain = (name) => nav("/category/" + encodeURIComponent(name));
+  return html`
+    <div class="card dom-instr">
+      <div class="card-spot" aria-hidden="true"></div>
+      <div class="card-head">
+        <${Icon} name="layers" size=${15} />
+        <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
+      </div>
+      ${stand ? html`<p class=${"di-standfirst" + (pending ? " di-standfirst-pending" : "")}>${stand}</p>` : null}
+      <div class="di-axis" aria-hidden="true">
+        <span class="di-cell di-ident"></span>
+        <span class="di-cell di-trackcell di-axis-scale">
+          ${practice ? html`
+            <span class="di-axis-lab di-lab-min" style=${{ left: "0%" }}>0%</span>
+            <span class="di-axis-lab" style=${{ left: "50%" }}>50%</span>
+            <span class="di-axis-lab di-lab-max" style=${{ left: "100%" }}>100%</span>
+            <span class="di-axis-cap">how common your choices are among peers</span>`
+          : html`
+            <span class="di-axis-strip">
+              <i class="di-zone" style=${{ left: 0, width: "35%", background: "var(--gauge-below)" }}></i>
+              <i class="di-zone" style=${{ left: "35%", width: "30%", background: "var(--gauge-on)" }}></i>
+              <i class="di-zone" style=${{ left: "65%", width: "35%", background: "var(--gauge-above)" }}></i>
+            </span>
+            <span class="di-axis-lab di-lab-min" style=${{ left: "0%" }}>P0</span>
+            <span class="di-axis-lab" style=${{ left: "25%" }}>P25</span>
+            <span class="di-axis-lab di-axis-med" style=${{ left: "50%" }}>P50 · median</span>
+            <span class="di-axis-lab" style=${{ left: "75%" }}>P75</span>
+            <span class="di-axis-lab di-lab-max" style=${{ left: "100%" }}>P100</span>
+            ${overallP != null ? html`<span class="di-axis-you" style=${{ left: Math.min(92, Math.max(8, overallP)) + "%" }}>You overall · P${Math.round(overallP)}</span>` : null}`}
+        </span>
+        <span class="di-cell di-evid"></span>
+        <span class="di-cell di-scentcol"></span>
+        <span class="di-cell di-chipcol"></span>
+        <span class="di-cell di-chev"></span>
+      </div>
+      <div class="di-rows">
+        ${doms.map((d, i) => {
+          const label = domainLabel(d.name);
+          const sentence = domainRowSentence(d, view);
+          const pos = d.position;
+          const noRate = d.competitiveness === false;
+          const indic = d.position_basis === "indicative";
+          const pv = d.prevalence || {};
+          const nSig = (sigCounts && sigCounts[d.name]) || 0;
+          const pct = pos && pos.depth_pctl != null ? Math.min(99, Math.max(1, pos.depth_pctl)) : null;
+          return html`
+            <div key=${d.name} class="di-row" title=${sentence} onClick=${() => openDomain(d.name)}>
+              <span class="di-cell di-ident">
+                <h3 class="di-name"><button class="di-open" aria-label=${sentence}
+                  onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>
+                  <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${13} /></span>${label}</button></h3>
+                ${pending ? null : practice
+                  ? html`<span class="di-sub">${pv.pool ? (pv.verdict || "") : "no practices tracked yet"}</span>`
+                  : html`<span class="di-sub">${noRate ? "practice choices only" : pos && pos.verdict ? leanCaption(pos) : "no position yet"}${indic ? html` · <i class="di-indic">indicative</i>` : null}</span>`}
+              </span>
+              <span class="di-cell di-trackcell">
+                ${pending ? html`<span class="di-track di-track-pending" aria-hidden="true"></span>`
+                : practice ? (pv.pool ? html`
+                  <span class="di-track" aria-hidden="true">
+                    ${[["with_majority", "di-seg-common"], ["established", "di-seg-alt"], ["less_common", "di-seg-rare"]].reduce((acc, [k, cls]) => {
+                      const v = pv[k] || 0, w = 100 * v / pv.pool;
+                      acc.nodes.push(html`<i key=${k} class=${"di-seg " + cls} style=${{ left: acc.x + "%", width: w + "%" }}>${w >= 13 ? html`<b>${v}</b>` : null}</i>`);
+                      acc.x += w; return acc;
+                    }, { x: 0, nodes: [] }).nodes}
+                  </span>`
+                  : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
+                : noRate ? html`<span class="di-norate">No market rate — practice choices only · see the Practice lens</span>`
+                : pct != null ? html`
+                  <span class="di-track" aria-hidden="true">
+                    <i class="di-grid" style=${{ left: "25%" }}></i>
+                    <i class="di-grid di-grid-med" style=${{ left: "50%" }}></i>
+                    <i class="di-grid" style=${{ left: "75%" }}></i>
+                    ${overallP != null ? html`<i class="di-hair" style=${{ left: overallP + "%" }}></i>` : null}
+                    <i class=${"di-dot" + (indic ? " di-dot-indic" : "")} style=${{ "--p": pct + "%" }}></i>
+                    <b class=${"di-plabel" + (pct > 84 ? " di-plabel-left" : "")} style=${{ "--p": pct + "%" }}>P${Math.round(pos.depth_pctl)}</b>
+                  </span>`
+                : html`<span class="di-norate">no comparable position yet</span>`}
+              </span>
+              <span class="di-cell di-evid num">
+                ${pending ? null : practice
+                  ? (pv.pool ? html`n ${pv.pool}` : null)
+                  : noRate ? html`${pv.pool || 0} practices`
+                  : pos ? html`<b>${pos.below}</b>↓ <b>${pos.at}</b>· <b>${pos.above}</b>↑ <span class="di-n">n ${pos.pool}</span>` : null}
+              </span>
+              <span class="di-cell di-scentcol">
+                ${!pending && nSig > 0 ? html`
+                  <button class="di-scent" title=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — jump to signals"}
+                    aria-label=${nSig + " signals in " + label + ", jump to the signals list"}
+                    onClick=${e => { e.stopPropagation(); onScent && onScent(); }}>${nSig}</button>` : null}
+              </span>
+              <span class="di-cell di-chipcol">
+                ${!pending && d.target ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null}
+              </span>
+              <span class="di-cell di-chev" aria-hidden="true"><${Icon} name="chevron-right" size=${15} /></span>
+            </div>`;
+        })}
+      </div>
+      ${pending ? null : practice
+        ? html`<div class="di-foot num"><b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare — your ${sum.ppool} tracked practices</div>`
+        : html`<div class="di-foot num"><b>${sum.below}</b> below · <b>${sum.at}</b> on market · <b>${sum.above}</b> above — sums to the dial</div>`}
+    </div>`;
+}
+
 function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn }) {
   const sigs = signals || [];
   // triage actions are available on every signal — the home briefing keeps a local
@@ -902,6 +1093,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
         <h2 class="card-head-title">Signals${total > shown.length ? " · top " + shown.length : (shown.length ? " · " + shown.length : "")}</h2>
+        ${total > shown.length ? html`<span class="sig-count-pill num" title=${total + " live signals"}>${total}</span>` : null}
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
         <span class="sig-head-note">${view === "practice" ? "practice patterns — we flag, you decide" : "market positions — we flag, you decide"}</span>
       </div>

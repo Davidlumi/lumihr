@@ -118,13 +118,17 @@ check("3. distinct differs-position signals <= hero differ (differs-signals are 
 check("4a. the unbenchmarkable domain carries competitiveness=False and NO market verdict",
       all(d.get("market") is None for d in gov) if gov else True,
       [(d["name"], d.get("market")) for d in gov])
-# render contract: the noRate tile branch in CategoryTile shows the honest line, no differ.
+# render contract (2026-07-08 hero redesign): the live no-market-rate surface is the
+# DomainInstrument row — its noRate branch must show the honest "No market rate" note
+# and never a market-relative differ chip or a position dot. (The old CategoryTile
+# cat-na branch retired from the Overview render with the tiles.)
 nb = pagesjs.split("noRate ? html`", 1)
 norate_branch = nb[1].split(": html`", 1)[0] if len(nb) > 1 else ""
-check("4b. render: the 'no market rate' tile branch shows the honest N/A treatment and NO differ chip",
-      'noRate ? "no market rate"' in pagesjs and "cat-na" in norate_branch
+_norate_note = norate_branch.split("`", 1)[0]   # the noRate arm alone, before the next template
+check("4b. render: the 'no market rate' row branch shows the honest note and NO differ chip",
+      "di-norate" in _norate_note and "No market rate" in _norate_note
       and "differLine" not in norate_branch and "cat-differ" not in norate_branch,
-      "noRate branch leaked a differ chip" if ("cat-differ" in norate_branch or "differLine" in norate_branch) else "honest N/A treatment missing")
+      "noRate branch leaked a differ chip" if ("cat-differ" in norate_branch or "differLine" in norate_branch) else "honest no-market-rate note missing")
 
 # --- 5. VERDICT INTEGRITY: severity adverb from percentile DEPTH, not headcount ---
 gauge_pool = pos.substance_pool(items, prac_items, mp_cfg)

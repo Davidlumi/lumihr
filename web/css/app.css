@@ -916,10 +916,13 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .card-head > .card-head-title { margin: 0; font-family: inherit; line-height: inherit; }
 /* Overview section-heading icons → navy chrome accent (compass = Where you stand, flag = Signals).
    Scoped to these two cards; other card-head icons stay neutral. */
-.arc-card .card-head > svg, .signals-card .card-head > svg { color: var(--lumi-navy); }
+.arc-card .card-head > svg, .signals-card .card-head > svg, .dom-instr .card-head > svg { color: var(--lumi-navy); }
 .sig-head-note { margin-left: auto; font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 400;
   letter-spacing: 0; white-space: nowrap; }
-@media (max-width: 1180px) { .sig-head-note { display: none; } }
+/* (2026-07-08 hero redesign: the ≤1180px .sig-head-note hide retired — the signals band
+   is full-width below the hero now, so "we flag, you decide" always has room. On narrow
+   phones it wraps to its own line instead of clipping at the card edge.) */
+@media (max-width: 700px) { .sig-head-note { flex-basis: 100%; margin-left: 0; white-space: normal; } }
 /* FIX 3 (2026-06-23) — ranking scaffold: a one-line note under each Signals header
    naming HOW the shown items are ordered (Market = by market gap, Practice = by rarity),
    so "top 4" never reads as an arbitrary slice. The note text is view-derived, not a literal. */
@@ -1298,12 +1301,12 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   animation: aurora-drift 24s ease-in-out infinite alternate; will-change: transform; }
 @keyframes aurora-drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-14px, 7px, 0) scale(1.05); } }
 .ov-wrap > :not(.ov-aurora) { position: relative; z-index: 1; }
-.ov-top .card, .cat-tile, .grid2 .card { box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.85); }
+.ov-top .card, .ov-signals-band .card, .cat-tile, .grid2 .card { box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.85); }
 .card-spot { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0; opacity: 0;
   transition: opacity .4s ease;
   background: radial-gradient(440px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--blue) 8%, transparent), transparent 60%); }
-.ov-top .card:hover .card-spot { opacity: 1; }
-.arc-card > *:not(.card-spot), .signals-card > *:not(.card-spot) { position: relative; z-index: 1; }
+.ov-top .card:hover .card-spot, .ov-signals-band .card:hover .card-spot { opacity: 1; }
+.arc-card > *:not(.card-spot), .signals-card > *:not(.card-spot), .dom-instr > *:not(.card-spot) { position: relative; z-index: 1; }
 .n-pill { font-size: var(--fs-caption); color: var(--ink-soft); background: var(--surface-sunk);
   border-radius: var(--radius-sm); padding: 2px var(--s3); }
 .signal-roundel { width: 30px; height: 30px; border-radius: 50%; background: var(--surface);
@@ -1676,13 +1679,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .signal-row:nth-child(4) { animation-delay: 360ms; }
 .signal-row:nth-child(5) { animation-delay: 440ms; }
 .cat-tile { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
-.cat-grid .cat-tile:nth-child(1) { animation-delay: 160ms; }
-.cat-grid .cat-tile:nth-child(2) { animation-delay: 220ms; }
-.cat-grid .cat-tile:nth-child(3) { animation-delay: 280ms; }
-.cat-grid .cat-tile:nth-child(4) { animation-delay: 340ms; }
-.cat-grid .cat-tile:nth-child(5) { animation-delay: 400ms; }
-.cat-grid .cat-tile:nth-child(6) { animation-delay: 460ms; }
-.cat-grid .cat-tile:nth-child(7) { animation-delay: 520ms; }
+/* (2026-07-08 hero redesign: the Overview .cat-grid tile stagger retired with the tiles —
+   the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */
+.ov-signals-band .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
 .grid2 .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
 .arc-verdict, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 320ms; }
 .arc-median { animation: ov-rise 460ms ease-out both; animation-delay: 600ms; }
@@ -3106,3 +3105,117 @@ textarea:focus-visible, [tabindex]:focus-visible {
   }
 }
 @media (prefers-reduced-motion: reduce) { .sig-group-flash { animation: none; } }
+
+/* ═══ DOMAIN INSTRUMENT (2026-07-08 hero redesign) — seven domains on ONE shared
+   P0–P100 ruler beside the summary donut. Column widths are FIXED on every row and
+   the axis header so the tracks align — the per-row gridlines, the dashed navy
+   overall-percentile hairline and the dots then read as one continuous instrument.
+   Dot = position.depth_pctl, navy always (position is strategy-invariant; strategy
+   rides the AlignmentChip). The signals card moved to a full-width .ov-signals-band
+   below the trajectory strip — mount move only, all triage choreography untouched. */
+.dom-instr { display: flex; flex-direction: column; }
+.di-standfirst { font-size: var(--fs-label); color: var(--ink); line-height: 1.55;
+  margin: var(--s1) 0 var(--s2); max-width: 72ch; }
+.di-standfirst-pending { color: var(--ink-soft); }
+/* shared row grid: identity · track · evidence · scent · strategy chip · chevron */
+.di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
+  grid-template-columns: 132px minmax(0, 1fr) 112px 24px 62px 16px; }
+.di-axis { margin: var(--s2) 0 0; }
+.di-axis-scale { position: relative; height: 34px; }
+.di-axis-strip { position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 2px; overflow: hidden; }
+.di-axis-strip .di-zone { position: absolute; top: 0; bottom: 0; }
+.di-axis-lab { position: absolute; bottom: 0; transform: translateX(-50%); font-size: var(--fs-micro);
+  color: var(--ink-faint); white-space: nowrap; }
+.di-axis-lab.di-lab-min { transform: none; }
+.di-axis-lab.di-lab-max { transform: translateX(-100%); }
+.di-axis-med { font-weight: 650; color: var(--ink-soft); }
+.di-axis-you { position: absolute; top: -7px; transform: translateX(-50%); font-size: var(--fs-micro);
+  font-weight: 700; color: var(--navy); white-space: nowrap;
+  background: color-mix(in srgb, var(--navy) 8%, var(--surface)); border-radius: 999px; padding: 0 6px; }
+.di-axis-cap { position: absolute; left: 0; bottom: 12px; font-size: var(--fs-micro); color: var(--ink-faint); }
+.di-rows { display: flex; flex-direction: column; flex: 1; }
+.di-row { min-height: 52px; padding: var(--s1) 0; border-top: 1px solid var(--border); cursor: pointer;
+  border-radius: var(--radius-sm); transition: background var(--ease); }
+.di-row:hover { background: color-mix(in srgb, var(--surface-sunk) 62%, transparent); }
+.di-row:hover .di-chev { opacity: 1; transform: none; }
+.di-ident { min-width: 0; }
+.di-name { margin: 0; font-size: var(--fs-label); font-weight: 600; line-height: 1.25; font-family: inherit; }
+.di-name .di-open { display: inline-flex; align-items: center; gap: var(--s2); font: inherit; color: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.di-sub { display: block; font-size: var(--fs-micro); color: var(--ink-faint); line-height: var(--lh-micro);
+  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.di-indic { font-style: normal; font-weight: 650; color: var(--ink-soft); letter-spacing: .02em; }
+/* the track — every geometric element positions by % so all rows share one x-space */
+.di-trackcell { min-width: 0; }
+.di-track { position: relative; display: block; height: 34px; }
+.di-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: var(--border); }
+.di-grid { position: absolute; top: 7px; bottom: 7px; width: 1px; background: var(--border); opacity: .55; }
+.di-grid-med { opacity: .95; }
+.di-hair { position: absolute; top: 0; bottom: 0; width: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--navy) 52%, transparent); }
+.di-dot { position: absolute; left: var(--p); top: calc(50% - 5px); width: 10px; height: 10px;
+  margin-left: -5px; border-radius: 50%; background: var(--navy);
+  box-shadow: 0 0 0 2px var(--surface), 0 1px 3px rgba(33,27,38,.28);
+  animation: di-slide 220ms ease-out both; }
+.di-dot-indic { background: var(--surface); border: 2px dashed var(--navy); box-sizing: border-box; }
+@keyframes di-slide { from { left: 50%; opacity: 0; } }
+.di-row:nth-child(2) .di-dot { animation-delay: 40ms; }
+.di-row:nth-child(3) .di-dot { animation-delay: 80ms; }
+.di-row:nth-child(4) .di-dot { animation-delay: 120ms; }
+.di-row:nth-child(5) .di-dot { animation-delay: 160ms; }
+.di-row:nth-child(6) .di-dot { animation-delay: 200ms; }
+.di-row:nth-child(7) .di-dot { animation-delay: 240ms; }
+.di-plabel { position: absolute; left: var(--p); top: calc(50% - 16px); margin-left: 9px;
+  font-size: var(--fs-micro); font-weight: 700; color: var(--navy); line-height: 1; white-space: nowrap; }
+.di-plabel-left { margin-left: 0; transform: translateX(calc(-100% - 9px)); }
+.di-norate { font-size: var(--fs-micro); color: var(--ink-faint); font-style: italic; }
+.di-track-pending { position: relative; display: block; height: 10px; border-radius: 5px;
+  border: 1.5px dashed var(--border); background: color-mix(in srgb, var(--surface-sunk) 50%, transparent); }
+/* practice lens: proportional prevalence bar (common / alternative / rare) — navy family,
+   never RAG; counts render inside segments wide enough to hold them */
+.di-seg { position: absolute; top: calc(50% - 6px); height: 12px; display: inline-flex;
+  align-items: center; justify-content: center; }
+.di-seg b { font-size: 10px; font-weight: 700; line-height: 1; }
+.di-seg-common { background: var(--navy); border-radius: 3px 0 0 3px; }
+.di-seg-common b { color: #fff; }
+.di-seg-alt { background: color-mix(in srgb, var(--navy) 38%, var(--surface)); }
+.di-seg-alt b { color: var(--navy); }
+.di-seg-rare { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); border-radius: 0 3px 3px 0; }
+.di-seg-rare b { color: var(--ink-soft); }
+/* evidence column — the citable counts; tabular so the seven rows align digit-for-digit */
+.di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.di-evid b { color: var(--ink); font-weight: 650; }
+.di-n { color: var(--ink-faint); margin-left: 2px; }
+/* signal scent — count from the SAME filtered pool as the band's "See all N" */
+.di-scent { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer;
+  font-size: 10.5px; font-weight: 700; line-height: 1; padding: 0;
+  background: var(--blue-tint); color: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform var(--ease), background var(--ease); }
+.di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
+.di-chipcol { display: flex; justify-content: flex-end; }
+.di-chev { color: var(--blue-bright); opacity: 0; transform: translateX(-4px);
+  transition: opacity var(--ease), transform var(--ease); display: inline-flex; }
+.di-foot { margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--border);
+  font-size: var(--fs-micro); color: var(--ink-faint); }
+.di-foot b { color: var(--ink-soft); font-weight: 650; }
+/* the signals band below the hero — full width; internals untouched */
+.ov-signals-band { margin-top: var(--s4); }
+.sig-count-pill { font-size: var(--fs-micro); font-weight: 700; color: var(--blue);
+  background: var(--blue-tint); border-radius: 999px; padding: 1px 8px; }
+/* responsive: evidence + chip columns yield first; identity shrinks last */
+@media (max-width: 1180px) {
+  .di-axis, .di-row { grid-template-columns: 112px minmax(0, 1fr) 96px 24px 16px; }
+  .di-chipcol { display: none; }
+}
+@media (max-width: 700px) {
+  .di-axis, .di-row { grid-template-columns: 96px minmax(0, 1fr) 24px 16px; column-gap: var(--s2); }
+  .di-evid { display: none; }
+  .di-sub { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .di-dot { animation: none !important; }
+  .ov-signals-band .card { animation: none !important; opacity: 1; transform: none !important; }
+}
