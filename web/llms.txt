@@ -1,0 +1,50 @@
+# lumi
+
+> lumi is a UK reward-benchmarking co-operative. Members benchmark the whole of reward **except base salary** — benefits, pension, time off, wellbeing, recognition, and the policies and practices around pay — against 220+ UK organisations. Every figure is cited with its peer group and sample size, and any figure resting on fewer than 5 organisations is suppressed.
+
+lumi is for UK HR and reward teams — from HR business partners to Heads of Reward and Chief People Officers — who need to know, and defend to a board, whether their total reward package is competitive. It is a living benchmark, not an annual PDF: positions update as members contribute, and proactive email alerts flag when your position moves.
+
+Website: https://lumihr.co.uk · Contact: hello@lumihr.co.uk
+
+## What lumi is (and is not)
+- lumi **benchmarks the whole of reward except base pay**. It sits alongside a salary survey; it does not replace one.
+- lumi **does not benchmark salaries** — this is deliberate. For base pay, use a pay survey.
+- lumi is **not** scraped or modelled data: every figure is real, member-contributed UK reward data.
+- lumi is a UK-only pool, handled under UK GDPR.
+
+## What it covers
+240+ live metrics across 7 areas of reward:
+- Pay practice (59) — how pay is set, structured and communicated (not the salary numbers).
+- Incentives (21) — bonus, commission and long-term incentive design.
+- Benefits (56) — pension, private medical, protection, company car, flexible benefits.
+- Time off (36) — annual leave, enhanced family leave, sick pay, sabbaticals.
+- Wellbeing (10) — EAP, mental-health support, financial wellbeing, health screening.
+- Recognition (11) — long-service awards, recognition budgets, peer-to-peer.
+- Governance (50) — pay-gap analysis cadence, pay transparency readiness, reward strategy.
+
+## Key facts
+- 220+ UK organisations in the pool; 14 sectors; 5 employee-size bands (50 to 10,000+ employees).
+- Anonymity floor: any figure behind fewer than 5 organisations (n<5) is never shown — on screen, in exports or in board packs.
+- Comparisons are medians and percentiles, never averages, so one unusual organisation cannot skew a read.
+- Co-operative model: members contribute their reward data and benchmark against the shared pool; contributors pay less.
+- Proactive signals: when the benchmark recomputes and your position moves, lumi emails the right people, ranked by materiality.
+- Board-ready packs: one click to a cited, print-grade board pack; download as PDF or share a read-only link.
+- No HRIS integration — lumi is a guided questionnaire, so there is little for IT/InfoSec to review.
+
+## Pricing
+- Full membership — £5,000/year. Contribute your reward data; unlimited users and usage.
+- Benchmark access — £10,000/year. Read-only market benchmark, without contributing your own data.
+
+## Pages
+- [Home](https://lumihr.co.uk/): product overview, coverage index, FAQ.
+- [Pricing](https://lumihr.co.uk/pricing): transparent, two-line pricing.
+- [Security & data protection](https://lumihr.co.uk/security): UK/EEA hosting, encryption in transit, tenant isolation, n≥5 floor, UK GDPR, honest certification roadmap.
+- [Sample board pack](https://lumihr.co.uk/sample-board-pack): an illustrative board pack for a fictional organisation.
+- [Full AI/LLM reference](https://lumihr.co.uk/llms-full.txt): fuller fact sheet, methodology and complete FAQ.
+
+## Common questions (short answers)
+- Does lumi benchmark salaries? No — it benchmarks the rest of reward (benefits, time off, pension, wellbeing, recognition and pay practices), the things a salary survey never covers.
+- Where does the data come from? From members — real UK employers that submit their own reward data. Nothing is scraped, purchased or modelled.
+- How is your data kept safe/anonymous? Figures behind fewer than 5 organisations are suppressed everywhere; comparisons are medians/percentiles; data is never sold and is handled under UK GDPR.
+- How is it different from a reward survey? A survey is a snapshot delivered months later as a PDF; lumi is a living benchmark that updates, emails you when your position moves, lets you re-cut peers instantly, and cites every figure.
+- What does it cost? £5,000/year for full membership (unlimited users and usage), or £10,000/year for read-only benchmark access without contributing data.
