@@ -3113,9 +3113,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
    Dot = position.depth_pctl, navy always (position is strategy-invariant; strategy
    rides the AlignmentChip). The signals card moved to a full-width .ov-signals-band
    below the trajectory strip — mount move only, all triage choreography untouched. */
-.dom-instr { display: flex; flex-direction: column; }
-.di-standfirst { font-size: var(--fs-label); color: var(--ink); line-height: 1.55;
-  margin: var(--s1) 0 var(--s2); max-width: 72ch; }
+/* padding matches .arc-card exactly so the two hero cards share one inset (their
+   headings align x AND y); rows trim to 48px so the taller table still equals the
+   donut card's height (no align-items:stretch gap). */
+.dom-instr { display: flex; flex-direction: column; padding: var(--s4) var(--s4) var(--s3); }
+.di-standfirst { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5;
+  margin: 2px 0 var(--s3); max-width: 68ch; }
 .di-standfirst-pending { color: var(--ink-soft); }
 /* shared row grid: identity · track · evidence · scent · strategy chip · chevron */
 .di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
@@ -3134,9 +3137,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: color-mix(in srgb, var(--navy) 8%, var(--surface)); border-radius: 999px; padding: 0 6px; }
 .di-axis-cap { position: absolute; left: 0; bottom: 12px; font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
-.di-row { min-height: 52px; padding: var(--s1) 0; border-top: 1px solid var(--border); cursor: pointer;
+.di-row { min-height: 48px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
+  border-top: 1px solid var(--border); cursor: pointer;
   border-radius: var(--radius-sm); transition: background var(--ease); }
-.di-row:hover { background: color-mix(in srgb, var(--surface-sunk) 62%, transparent); }
+.di-row:first-child { border-top: 0; }
+.di-row:hover { background: color-mix(in srgb, var(--surface-sunk) 70%, transparent); }
 .di-row:hover .di-chev { opacity: 1; transform: none; }
 .di-ident { min-width: 0; }
 .di-name { margin: 0; font-size: var(--fs-label); font-weight: 600; line-height: 1.25; font-family: inherit; }

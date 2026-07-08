@@ -887,6 +887,13 @@ function domainStandfirst(market, doms, view, prevalence) {
   return base + " — held furthest back by " + lo[0].name + " (P" + lo[0].p + ") and " + lo[1].name +
     " (P" + lo[1].p + "); " + hi.name + " (P" + hi.p + ") sits closest to the market.";
 }
+// short prevalence subline for a practice row — the full prevalence.verdict is a
+// sentence that overflows the identity column; this fits.
+function prevShort(pv) {
+  if (!pv || !pv.pool) return "";
+  const s = pv.with_majority / pv.pool;
+  return s >= 0.55 ? "mostly common choices" : s >= 0.34 ? "a mixed pattern" : "often its own pattern";
+}
 // one citable sentence per row — the tooltip AND the row button's aria-label
 function domainRowSentence(d, view) {
   const label = domainLabel(d.name);
@@ -969,8 +976,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                   onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>
                   <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${13} /></span>${label}</button></h3>
                 ${pending ? null : practice
-                  ? html`<span class="di-sub">${pv.pool ? (pv.verdict || "") : "no practices tracked yet"}</span>`
-                  : html`<span class="di-sub">${noRate ? "practice choices only" : pos && pos.verdict ? leanCaption(pos) : "no position yet"}${indic ? html` · <i class="di-indic">indicative</i>` : null}</span>`}
+                  ? html`<span class="di-sub">${pv.pool ? prevShort(pv) : "no practices tracked yet"}</span>`
+                  : html`<span class="di-sub">${noRate ? "practice choices only"
+                      : indic ? html`<i class="di-indic">indicative read</i>`
+                      : pos && pos.verdict ? leanCaption(pos).replace(" the market", "") : "no position yet"}</span>`}
               </span>
               <span class="di-cell di-trackcell">
                 ${pending ? html`<span class="di-track di-track-pending" aria-hidden="true"></span>`
