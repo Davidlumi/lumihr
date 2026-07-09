@@ -1039,10 +1039,16 @@
           </div>
         </div>
         <p class="mindex-note reveal">Illustrative examples · the library grows as members ask for new benchmarks — see below.</p>
+        <!-- 2026-07-09 ship review B8 + Pack-3.3: "every metric rests on 150–220" was falsified by the
+             product's own metric cards (9 live metrics below 150, min n=27 — e.g. tronc n=27, LTI n=90),
+             and the depth ranges/cells had drifted +1 vs live /api/methodology (29–36 not 29–37; 8–15 not
+             8–16). Reworded to the defensible truth; figures below re-derived from /api/methodology on
+             2026-07-09 — do NOT hand-edit these counts again, regenerate from the API at deploy. -->
         <div class="coop reveal" style="max-width:840px;margin-top:34px;">
-          <b>Deep enough to cut with confidence.</b> Every metric rests on <b>150–220 organisations</b> at the all-peer level,
-          and <b>29–37</b> in each size band from 50 to 10,000+ employees. Narrow to one of the 14 sectors and you're comparing
-          against <b>8–16 organisations</b> — where virtually every metric still clears the floor. lumi only ever shows a figure
+          <b>Deep enough to cut with confidence.</b> Most metrics rest on <b>150–220 organisations</b> at the all-peer level
+          — specialist metrics run thinner, and every figure carries its exact <i>n</i> — with <b>29–36</b> organisations
+          in each size band from 50 to 10,000+ employees. Narrow to one of the 14 sectors and you're comparing
+          against <b>8–15 organisations</b> — where virtually every metric still clears the floor. lumi only ever shows a figure
           backed by at least <b>5 organisations</b> (<i>n</i> = the organisations behind each figure) — so your peer cut is real,
           or it simply isn't shown.
           <details style="margin-top:16px;">
@@ -1051,7 +1057,7 @@
               <div>
                 <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By sector &middot; organisations</div>
                 <div class="depth-list">
-                  <span>Manufacturing &amp; Engineering<b>16</b></span><span>Construction &amp; Infrastructure<b>16</b></span>
+                  <span>Manufacturing &amp; Engineering<b>15</b></span><span>Construction &amp; Infrastructure<b>15</b></span>
                   <span>Retail &amp; Consumer Goods<b>15</b></span><span>Logistics &amp; Transport<b>15</b></span>
                   <span>Hospitality &amp; Leisure<b>15</b></span><span>Public Sector<b>12</b></span>
                   <span>Media &amp; Creative<b>10</b></span><span>Education<b>10</b></span>
@@ -1064,7 +1070,7 @@
                 <div style="font-family:var(--head);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;">By size band &middot; organisations</div>
                 <div class="depth-list">
                   <span>50&ndash;249 employees<b>30</b></span><span>250&ndash;999<b>29</b></span>
-                  <span>1,000&ndash;4,999<b>32</b></span><span>5,000&ndash;9,999<b>37</b></span>
+                  <span>1,000&ndash;4,999<b>31</b></span><span>5,000&ndash;9,999<b>36</b></span>
                   <span>10,000+<b>32</b></span>
                 </div>
                 <p style="font-size:12.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;">Cross a sector with a size band and the pool naturally thins — where fewer than 5 organisations sit behind a figure, lumi suppresses it rather than show you something thin. On the demo we'll show the exact depth for <em>your</em> cut.</p>

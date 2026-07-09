@@ -196,6 +196,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const hasStrat = !!(p.strategy_alignment && p.strategy_alignment.overall_aim);
   const PN = { money: hasStrat ? 5 : 4, watch: hasStrat ? 6 : 5, evid: hasStrat ? 7 : 6, appx: hasStrat ? 8 : 7 };
   const POS_WORD = { below: "below market", at: "on market", above: "above market" };
+  // B6 (2026-07-09 ship review): strategy alignment is NAVY, never RAG. The §04 chip
+  // previously rendered on_target green / behind red (and left 'ahead' bare — an
+  // asymmetric scale) on the same page that says "lumi never judges the strategy
+  // itself". Render the navy .align-chip (app.css:2869 — the in-app AlignmentChip's
+  // carrier) for all three states so the pack matches the dashboard's own read.
   const ALIGN_WORD = { on_target: "on aim", ahead: "ahead of aim", behind: "behind aim" };
   const toc = [["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"]]
     .concat(hasStrat ? [["Strategy alignment", "4"]] : [])
@@ -333,14 +338,18 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <div class="bp-position-row">
           ${window.Donut && p.headline.comparable_metrics ? html`
             <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " broadly in line, " + p.headline.above_median + " above."}>
+              ${"" /* soft gauge palette (2026-07-09 ship review, colour-doctrine pack): market
+                     position renders in the muted --gauge-* mixes everywhere (Overview donut,
+                     domain instruments) — this pack donut was the last full-strength RAG hold-out.
+                     Segments AND key dots swap together; print-color-adjust is already exact. */}
               <${window.Donut} segments=${[
-                  { value: p.headline.below_median, color: "var(--amber-bright)" },
-                  { value: p.headline.broadly_in_line, color: "var(--favourable)" },
-                  { value: p.headline.above_median, color: "var(--unfavourable)" },
+                  { value: p.headline.below_median, color: "var(--gauge-below)" },
+                  { value: p.headline.broadly_in_line, color: "var(--gauge-on)" },
+                  { value: p.headline.above_median, color: "var(--gauge-above)" },
                 ]} total=${p.headline.comparable_metrics} centerNum=${p.headline.comparable_metrics} sub="metrics"
                 centerWord=${mVerdict === "below" ? "Below" : mVerdict === "above" ? "Above" : mVerdict === "at" ? "On market" : undefined}
                 size=${150} stroke=${20} />
-              <div class="caption bp-donut-key"><span class="bp-key-dot" style=${{ background: "var(--amber-bright)" }}></span>below · <span class="bp-key-dot" style=${{ background: "var(--favourable)" }}></span>in line · <span class="bp-key-dot" style=${{ background: "var(--unfavourable)" }}></span>above</div>
+              <div class="caption bp-donut-key"><span class="bp-key-dot" style=${{ background: "var(--gauge-below)" }}></span>below · <span class="bp-key-dot" style=${{ background: "var(--gauge-on)" }}></span>in line · <span class="bp-key-dot" style=${{ background: "var(--gauge-above)" }}></span>above</div>
             </div>` : null}
           ${p.by_section && Object.keys(p.by_section).length ? html`
             <table class="data bp-domains">
@@ -383,7 +392,9 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 <td><b>${domainLabel(d.name)}</b>${d.aim_is_override ? html` <span class="caption">· area aim</span>` : null}</td>
                 <td>${d.aim || "—"}</td>
                 <td>${POS_WORD[d.position] || "—"}</td>
-                <td class="num"><span class=${"chip " + (d.alignment === "on_target" ? "good" : d.alignment === "behind" ? "bad" : "")}>${ALIGN_WORD[d.alignment] || "—"}</span></td>
+                <td class="num">${ALIGN_WORD[d.alignment]
+                  ? html`<span class=${"align-chip align-" + d.alignment}><${Icon} name="target" size=${11} /> ${ALIGN_WORD[d.alignment]}</span>`
+                  : "—"}</td>
               </tr>`)}
             </tbody>
           </table>` : null}
@@ -432,9 +443,14 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         ${p.signals && p.signals.length ? html`
           <p class="caption" style=${{ marginTop: "-4px" }}>The benchmark's top flagged items — the same balanced briefing the lumi dashboard shows, in the absolute view.</p>
           <div class="bp-signals">
-            ${p.signals.map((s, i) => html`
+            ${p.signals.map((s, i) =>
+              // context metrics (2026-07-09 ship review, Pack-3 §2): the engine refuses to
+              // verdict these (bucket='context'), yet in the pack they read like genuine gaps
+              // ("Workforce cost per FTE" as a £16.5k underpayment). Mark them with the navy
+              // not-a-verdict chip; packs stored before the bucket field simply show no chip.
+              html`
               <div key=${i} class="bp-signal">
-                <b>${s.name}</b>${s.risk ? html` <span class="bp-risk">Risk</span>` : null}
+                <b>${s.name}</b>${s.risk ? html` <span class="bp-risk">Risk</span>` : null}${s.bucket === "context" ? html` <span class="align-chip">Context — not a verdict</span>` : null}
                 <div class="caption">${s.stand}${s.domain ? " · " + s.domain : ""}</div>
               </div>`)}
           </div>` : null}
@@ -678,6 +694,9 @@ window.SharesPage = function ({ embedded }) {
   const refresh = () => api("/api/shares").then(setData);
   useEffect(() => { refresh(); }, []);
   const [making, setMaking] = useState(false);
+  // B10 + high-pack 2·5 (2026-07-09 ship review): revoked links collapse behind a toggle —
+  // every link ever minted rendered forever (122 rows, 111 revoked → a 16,500px Settings page).
+  const [showRevoked, setShowRevoked] = useState(false);
   const revoke = async (t) => { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); toast("Share link revoked"); };
   const createDash = async (days) => {
     if (making) return;
@@ -705,10 +724,22 @@ window.SharesPage = function ({ embedded }) {
       ${data.shares.length === 0 ? html`<${EmptyState} icon="link" title="No share links yet"
         body="Create a dashboard share above, or share a board pack from its page." />` :
       html`<div class="card" style=${{ padding: "var(--s4)" }}>
+        ${(() => {
+          // B10 (2026-07-09 ship review): the 894px table bled 300px+ past the ~590px settings
+          // card onto bare canvas — contain it in an overflow-x:auto wrap (house pattern:
+          // the gap-register table above / .matrix-heat-wrap, app.css). The audit trail —
+          // the widest, tallest cell — now shows the latest event only, with earlier events
+          // behind a native <details> disclosure (high-pack 2·5; audit arrives oldest-first).
+          const fmtAudit = a => `${a.action} by ${a.email || "?"} · ${new Date(a.at + "Z").toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}`;
+          const revokedShares = data.shares.filter(s => s.revoked);
+          const rows = showRevoked ? data.shares : data.shares.filter(s => !s.revoked);
+          return html`
+        ${rows.length === 0 ? html`<p class="caption" style=${{ margin: 0 }}>No live share links.</p>` : html`
+        <div style=${{ overflowX: "auto" }}>
         <table class="data">
           <thead><tr><th>Type</th><th>Link</th><th>Expires</th><th>Status</th><th>Activity</th><th></th></tr></thead>
           <tbody>
-            ${data.shares.map(s => html`
+            ${rows.map(s => html`
               <tr key=${s.token} style=${s.revoked ? { opacity: 0.55 } : null}>
                 <td><b>${s.kind === "boardpack" ? "Board pack" : "Dashboard"}</b></td>
                 <td>${s.revoked ? html`<span class="muted">revoked</span>` :
@@ -718,11 +749,22 @@ window.SharesPage = function ({ embedded }) {
                 <td>${s.revoked ? html`<span class="chip bad">Revoked</span>` :
                   (s.expires_at && new Date(s.expires_at + "Z") < new Date()) ? html`<span class="chip warn">Expired</span>` :
                   html`<span class="chip good">Live</span>`}</td>
-                <td class="caption">${s.audit.map((a, i) => html`<div key=${i}>${a.action} by ${a.email || "?"} · ${new Date(a.at + "Z").toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}</div>`)}</td>
+                <td class="caption">${s.audit.length === 0 ? "—" : html`
+                  <div>${fmtAudit(s.audit[s.audit.length - 1])}</div>
+                  ${s.audit.length > 1 ? html`
+                    <details>
+                      <summary style=${{ cursor: "pointer" }}>${s.audit.length - 1} earlier event${s.audit.length === 2 ? "" : "s"}</summary>
+                      ${s.audit.slice(0, -1).reverse().map((a, i) => html`<div key=${i}>${fmtAudit(a)}</div>`)}
+                    </details>` : null}`}</td>
                 <td>${!s.revoked && html`<button class="btn small danger" onClick=${() => revoke(s.token)}>Revoke</button>`}</td>
               </tr>`)}
           </tbody>
         </table>
+        </div>`}
+        ${revokedShares.length > 0 ? html`
+          <button class="btn small quiet" style=${{ marginTop: "var(--s3)" }} onClick=${() => setShowRevoked(v => !v)}>
+            ${showRevoked ? "Hide revoked" : "Show revoked (" + revokedShares.length + ")"}</button>` : null}`;
+        })()}
       </div>`}
     </div>`;
 };
@@ -905,6 +947,12 @@ function NotificationsSettings() {
     </div>`;
 }
 
+// high-pack 2·4 (2026-07-09 ship review): early acceptances were logged against "1.0-draft"
+// terms ids while the published docs and server constants are v1.0 finals (app.py:164) —
+// Settings rendered the internal suffix verbatim on the trust surface. Strip it at render;
+// the stored-row migration ('1.0-draft'→'1.0') is tracked server-side.
+const termsVer = v => String(v == null ? "" : v).replace(/-draft$/, "");
+
 window.SettingsPage = function ({ me, refreshMe }) {
   const [a, setA] = useState(null);
   const [editable, setEditable] = useState(false);
@@ -957,7 +1005,7 @@ window.SettingsPage = function ({ me, refreshMe }) {
           <div>
             <b>${ai.consented ? "On for you" : "Off"}</b>${ai.consented && ai.consented_at ? html`
               <span class="caption"> · since ${new Date(ai.consented_at + "Z").toLocaleDateString("en-GB")}
-              ${" "}(v${ai.version || ai.terms_version})</span>` : null}
+              ${" "}(v${termsVer(ai.version || ai.terms_version)})</span>` : null}
           </div>
           <button class=${"btn small" + (ai.consented ? "" : " primary")} disabled=${aiBusy}
             onClick=${() => setAiConsent(!ai.consented)}>
@@ -980,7 +1028,7 @@ window.SettingsPage = function ({ me, refreshMe }) {
         <h2 class="section-title">Terms & agreements</h2>
         ${me.org.data_terms && me.org.data_terms.accepted ? html`
           <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on
-            ${" "}${new Date(me.org.data_terms.accepted_at + "Z").toLocaleDateString("en-GB")} (v${me.org.data_terms.version}).
+            ${" "}${new Date(me.org.data_terms.accepted_at + "Z").toLocaleDateString("en-GB")} (v${termsVer(me.org.data_terms.version)}).
             This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
           <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
             them on the <a href="#/your-data/submit">Your data</a> page before the first submission.</p>`}

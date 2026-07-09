@@ -66,7 +66,11 @@ function ShareApp() {
     return html`
       <div class="share-boardpack" style=${{ padding: "var(--s5) var(--s3)" }}>
         <div class="row spread no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)" }}>
-          <span class="caption">Shared read-only by ${data.org_name} · powered by <a href="/">lumi</a></span>
+          ${"" /* Pack-3 §1 (2026-07-09 ship review): a stored pack can drift from the live
+                 benchmark within a collection window, and shared viewers get no stale banner
+                 (that check is owner-only) — so the topbar states the as-at date up front. */}
+          <span class="caption">Shared read-only by ${data.org_name}${data.payload && data.payload.generated_date
+            ? " · reflects the benchmark as at " + data.payload.generated_date : ""} · powered by <a href="/">lumi</a></span>
           <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + data.org_name; window.print(); document.title = t; }}>Download PDF</button>
         </div>
         <${PackFit}>
@@ -75,13 +79,21 @@ function ShareApp() {
       </div>`;
   }
   const h = data.headline;
+  // B5 (2026-07-09 ship review): peer_pool.responding_orgs is the GLOBAL pool — rendering
+  // it as the cut's size claimed "Retail & Consumer Goods (220 organisations)" beside
+  // callouts citing n=15 on the same page. Prefer the cut-scoped cut_n the API now returns;
+  // the global figure is only correct for (and only falls back on) the all-peers cut.
+  // Links served by a pre-cut_n backend on a real cut show the label with no count at all —
+  // never the wrong number.
+  const cutN = data.cut_n != null ? data.cut_n
+    : (data.cut && data.cut.dim === "all" ? (data.peer_pool || {}).responding_orgs : null);
   return html`
     <div class="share-dashboard" style=${{ maxWidth: "1180px", margin: "0 auto", padding: "var(--s5) var(--s4)" }}>
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <div class="logo" style=${{ padding: 0 }}>lumi<span>.benchmark</span></div>
           <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${data.org_name}</h1>
-          <div class="caption">Shared read-only benchmark view · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value} (${(data.peer_pool || {}).responding_orgs} organisations)</div>
+          <div class="caption">Shared read-only benchmark view · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
         </div>
         <${Chip} kind="accent">Read-only<//>
       </div>

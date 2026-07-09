@@ -232,7 +232,15 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
   const total = ordered.length;
   const done = ordered.filter(answeredQ).length;
   const pct = total ? Math.round(100 * done / total) : 0;
-  const sections = state.sections.map(s => s.section);
+  // Ship review 2026-07-09 B1 (frontend half): two mis-tagged library rows
+  // (sub_power_order=2 on 'Pay') made the server mint a DUPLICATE 'Pay' section;
+  // sections.indexOf(sp) then resolved the last section back to index 0 and the
+  // guided flow cycled Pay ↔ Incentives forever, with duplicate '← Pay'/'Pay →'
+  // footer buttons. Dedupe by name — first occurrence wins (lowest order, the
+  // same rule as sectionList() in app.js) — so section navigation stays correct
+  // even if the library ever regresses; the data + server-side dedupe fix is
+  // the other half of this blocker.
+  const sections = [...new Set(state.sections.map(s => s.section))];
   const idx = sections.indexOf(sp);
 
   // Flush any debounced/in-flight edit before we navigate or switch mode, so a

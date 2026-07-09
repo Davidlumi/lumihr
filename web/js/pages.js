@@ -62,10 +62,26 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
   const [applyStrat, setApplyState] = useState(_ov.apply_strategy !== false);
   const setView = (v) => { setViewState(v); onPref("_overview", { view: v, apply_strategy: applyStrat }); };
   const setApplyStrat = (b) => { setApplyState(b); onPref("_overview", { view, apply_strategy: b }); };
+  // Ship review 2026-07-09 Pack 1 §3: prefs arrive async (GET /api/prefs lands after
+  // mount), so the one-shot useState initializers above read {} on a cold load / deep
+  // link and silently discard a saved practice-view / strategy-off choice. Sync the
+  // lens state from the pref once it lands — idempotent: a user toggle writes the pref
+  // via onPref, so the echo re-set is a no-op re-assign of the same value.
+  useEffect(() => {
+    setViewState(_ov.view === "practice" ? "practice" : "market");
+    setApplyState(_ov.apply_strategy !== false);
+  }, [_ov.view, _ov.apply_strategy]);
   const [retryKey, setRetryKey] = useState(0);
   useEffect(() => {
+    // Ship review 2026-07-09 B4 (cut-switch race): the live-flag guard — the house
+    // pattern from DomainSummary/MetricPage/BenchmarkCard — so a slow older response
+    // can never land after a newer cut's fetch and render the wrong peer group's
+    // numbers under the new cut's label.
+    let live = true;
     setData(null); setErr(null);
-    apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")).then(setData).catch(e => setErr(e.message));
+    apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off"))
+      .then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(e.message); });
+    return () => { live = false; };
   }, [cutKeyOf(cut), applyStrat, retryKey]);
   if (err) return html`<${EmptyState} title="Couldn't load the overview"
     body=${err + " — nothing is lost; it usually works on a retry."}
@@ -366,7 +382,8 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             clause moved into the header subtitle ("baseline — movement shows from your next
             cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
       <div class="ov-signals-band">
-        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} />
+        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied}
+          cutActive=${!!(cut && cut.dim && cut.dim !== "all")} />
       </div>
     </div>`;
 }
@@ -1100,7 +1117,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     </div>`;
 }
 
-function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn }) {
+function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, cutActive }) {
   const sigs = signals || [];
   // triage actions are available on every signal — the home briefing keeps a local
   // optimistic overlay so a dismiss/priority/save updates instantly (the server has
@@ -1207,7 +1224,10 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
       </div>`,
       html`<div class="signals-foot" key="foot">
         <span></span>
-        <a href="#/signals">${total > shown.length ? "See all " + total + " signals →" : "See all signals →"}</a>
+        ${/* Ship review 2026-07-09 Pack 1 §6: the Signals page always reads the ALL-PEERS
+              basis (its fetch carries no cut — App doesn't pass one), so when the home is on
+              a narrower cut this link silently switches peer group. Say so on the link. */ ""}
+        <a href="#/signals">${(total > shown.length ? "See all " + total + " signals" : "See all signals") + (cutActive ? " (all peers)" : "") + " →"}</a>
       </div>`]}
     </div>`;
 }
@@ -1289,7 +1309,12 @@ function SignalActions({ status, sid, onSet }) {
 // its own statuses state). Best-effort — the optimistic UI is the caller's.
 function signalAction(sid, status, days) {
   return api("/api/signals/action", { method: "POST",
-    body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } });
+    body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } })
+    // Ship review 2026-07-09 Pack 1 §4: a triage from the home briefing / metric page
+    // never invalidated the cached /api/overview, so a dismissed signal resurrected for
+    // up to 60s on the next surface. Same invalidate-on-write the SignalsPage already
+    // does in its own setStatus.
+    .then(r => { apiCacheInvalidate("/api/overview"); return r; });
 }
 const SIG_TABS = [
   { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" && s.status !== "snoozed" },
@@ -1335,6 +1360,19 @@ function bucketColor(b) {
   if (b === "above market")  return SIG_TONE_SOLID.red;
   if (b === "peer position" || b === "context") return SIG_TONE_SOLID.neutral;
   return SIG_TONE_SOLID.approach;   // common / alternative / rare
+}
+// Ship review 2026-07-09 Pack 4 §2: the Signals header donut speaks the SOFT gauge
+// palette — the same --gauge-* mixes as the Overview donut one click away, so the two
+// donuts share one colour weight. The solid SIG_TONE_SOLID stays on the chip DOTS only
+// (bucketColor above), which are legitimate thin accents at that size. Practice buckets
+// take the soft rung of the purple ladder (one hue for the axis, matching bucketColor's
+// single approach hue — the chips' dot colour still keys the segments).
+function bucketColorSoft(b) {
+  if (b === "below market") return "var(--gauge-below)";
+  if (b === "on market")    return "var(--gauge-on)";
+  if (b === "above market") return "var(--gauge-above)";
+  if (b === "peer position" || b === "context") return SIG_TONE_SOLID.neutral;
+  return "var(--prev-alt)";         // common / alternative / rare — soft practice violet
 }
 // The factual position word stays true to the number; the COLOUR is direction-corrected
 // absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
@@ -1424,25 +1462,49 @@ function SignalsLocked({ contrib, me }) {
     </div>`;
 }
 
+// Ship review 2026-07-09 Pack 1 §1/§2: triage/filter state survives the open-signal→Back
+// round trip. The pages stash their working set in sessionStorage on every change; on mount
+// they restore it ONLY when this render IS the Back leg — detected by the lumi-return marker
+// (openMetric writes it, core.js; App's scroll-restore effect consumes it AFTER children
+// initialise, so during a child's useState initializers it still points at this hash). A
+// fresh navigation carries no matching marker → clean defaults, exactly as before.
+function returnUiState(key) {
+  try {
+    const r = JSON.parse(sessionStorage.getItem("lumi-return") || "null");
+    if (!r || r.hash !== window.location.hash) return null;
+    return JSON.parse(sessionStorage.getItem(key) || "null");
+  } catch (e) { return null; }
+}
+function saveUiState(key, obj) { try { sessionStorage.setItem(key, JSON.stringify(obj)); } catch (e) {} }
+
 window.SignalsPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [tab, setTab] = useState("inbox");
-  const [axis, setAxis] = useState("market");          // Signals-OWN lens (market | practice) — local state, NEVER the shared _overview pref
-  const [posF, setPosF] = useState("all");             // bucket filter (single-select, within the axis)
-  const [provF, setProvF] = useState(false);           // "verified source" filter (independent predicate)
-  const [riskF, setRiskF] = useState(false);           // "risk only" filter (independent predicate)
-  const [groupBy, setGroupBy] = useState("domain");    // domain · lens
+  const _ret = returnUiState("lumi-signals-ui") || {};   // Back-leg restore (Pack 1 §1)
+  const [tab, setTab] = useState(_ret.tab || "inbox");
+  const [axis, setAxis] = useState(_ret.axis || "market"); // Signals-OWN lens (market | practice) — local state, NEVER the shared _overview pref
+  const [posF, setPosF] = useState(_ret.posF || "all");    // bucket filter (single-select, within the axis)
+  const [provF, setProvF] = useState(!!_ret.provF);        // "verified source" filter (independent predicate)
+  const [riskF, setRiskF] = useState(!!_ret.riskF);        // "risk only" filter (independent predicate)
+  const [groupBy, setGroupBy] = useState(_ret.groupBy || "domain"); // domain · lens
   const [acting, setActing] = useState({});            // optimistic status overrides
   const [actingSnz, setActingSnz] = useState({});      // optimistic snooze_until (ISO) so the chip shows before a refetch
   const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
+  // …and stash the working set on every change, so the next openMetric→Back restores it.
+  useEffect(() => { saveUiState("lumi-signals-ui", { tab, axis, posF, provF, riskF, groupBy }); },
+    [tab, axis, posF, provF, riskF, groupBy]);
   useEffect(() => {
+    // live-flag guard (Ship review 2026-07-09 B4 house pattern) — defensive only here
+    // (the effect runs once), but keeps every overview fetch on the same idiom.
+    let live = true;
     apiCached("/api/overview").then(d => {
+      if (!live) return;
       setData(d);
       // viewing the Signals page clears NEW: mark every current signal seen
       const ids = (d.signals_all || []).map(s => s.sig_id || s.question_id);
       if (ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
-    }).catch(e => setErr(e.message));
+    }).catch(e => { if (live) setErr(e.message); });
+    return () => { live = false; };
   }, []);
   // Strategy-check signpost: once the view has re-rendered to show the target
   // domain's group, scroll it into view and flash it. Runs after the state the
@@ -1553,8 +1615,10 @@ window.SignalsPage = function ({ me }) {
     } catch (e) { restore(); toast("Couldn't dismiss those — try again", "error"); }
   };
   // the axis donut — built from the SAME posCounts tally the chips read, coloured by
-  // bucketColor (the chip-dot palette), via the shared <Donut> primitive (:540).
-  const donutSegs = AXIS_BUCKETS[axis].map(b => ({ value: posCounts[b] || 0, color: bucketColor(b), k: b }));
+  // bucketColorSoft (Ship review 2026-07-09 Pack 4 §2 — the soft gauge palette, one
+  // colour weight with the Overview donut; the chips keep the solid dots), via the
+  // shared <Donut> primitive (:540).
+  const donutSegs = AXIS_BUCKETS[axis].map(b => ({ value: posCounts[b] || 0, color: bucketColorSoft(b), k: b }));
   const axisTotal = scoped.length;
   const donutAria = axisTotal + (axis === "market" ? " market-position" : " practice") + " signal" + (axisTotal === 1 ? "" : "s")
     + (axisTotal ? ": " + AXIS_BUCKETS[axis].filter(b => posCounts[b]).map(b => posCounts[b] + " " + b).join(", ") + "." : ".");
@@ -1580,6 +1644,12 @@ window.SignalsPage = function ({ me }) {
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
       ${unlocked ? html`<p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's signals — grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
+      ${/* Ship review 2026-07-09 Pack 1 §6: this page's fetch carries NO cut (App passes none),
+            so its numbers always read the all-peers pool — while the Overview the user linked
+            from may be on a 15-org cut. State the basis so the two surfaces can't silently
+            disagree; the home's "See all signals" link now says "(all peers)" too. */ ""}
+      ${unlocked ? html`<div class="caption num" style=${{ marginTop: 0, marginBottom: "var(--s3)" }}>
+        Peer group: All peers${data.peer_pool && data.peer_pool.responding_orgs ? " · " + data.peer_pool.responding_orgs + " organisations" : ""}</div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />` : html`
         <div class="ov-seg sig-axis-seg" role="group" aria-label="Signals lens">
           ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
@@ -1827,13 +1897,21 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   const setCat = v => { setCatRaw(v); onPref && onPref("_ui_section", { ...ui, cat: v }); };
 
   useEffect(() => {
+    // Ship review 2026-07-09 B4 (cut-switch race, reproduced live: all 243 cards swapped
+    // to n=220 figures under a "Retail · 15" selector): the live-flag guard — the house
+    // pattern from DomainSummary/MetricPage/BenchmarkCard — so a slower older cut's
+    // response can never land after the newer one and render under the wrong label.
+    let live = true;
     setData(null); setErr(null);
-    api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut)).then(setData).catch(e => setErr(e.message));
+    api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut))
+      .then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(e.message); });
     // signals come from the same computed data the home/category pages use; one
     // fetch per page builds the qid -> signal map for every card's status pill
     apiCached("/api/overview?" + cutQS(cut)).then(o => {
+      if (!live) return;
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
-    }).catch(() => setSigMap({}));
+    }).catch(() => { if (live) setSigMap({}); });
+    return () => { live = false; };
   }, [sp, cutKeyOf(cut)]);
   useEffect(() => {
     if (data && focusQ) {
@@ -1987,10 +2065,17 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [ov, setOv] = useState(null);
   const [bench, setBench] = useState(null);
   const [err, setErr] = useState(null);
-  const [type, setType] = useState("");
-  const [posSel, setPosSel] = useState([]);     // market-position chip filter (multi-select; [] = all)
-  const [prevSel, setPrevSel] = useState([]);   // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
-  const [noneSel, setNoneSel] = useState(false); // "no reading yet" chip (cards in neither lens)
+  // Ship review 2026-07-09 Pack 1 §2: the chip/type filters ride the same Back-leg
+  // restore as the Signals page (returnUiState — only when lumi-return points here),
+  // so the scroll offset App restores lands on the SAME working set, not a reset grid.
+  const _fret = returnUiState("lumi-cat-ui");
+  const _fl = (_fret && _fret.name === name) ? _fret : null;
+  const [type, setType] = useState(_fl ? _fl.type || "" : "");
+  const [posSel, setPosSel] = useState(_fl ? _fl.posSel || [] : []);     // market-position chip filter (multi-select; [] = all)
+  const [prevSel, setPrevSel] = useState(_fl ? _fl.prevSel || [] : []);  // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
+  const [noneSel, setNoneSel] = useState(_fl ? !!_fl.noneSel : false);   // "no reading yet" chip (cards in neither lens)
+  useEffect(() => { saveUiState("lumi-cat-ui", { name, type, posSel, prevSel, noneSel }); },
+    [name, type, posSel, prevSel, noneSel]);
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
   // stays consistent across surfaces: when the user has turned their strategy OFF on the
   // overview (persisted pref _overview.apply_strategy === false), fetch this category with
@@ -2000,12 +2085,22 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const _ovp = (prefs && prefs._overview) || {};
   const applyStrat = _ovp.apply_strategy !== false;
   const [catRetry, setCatRetry] = useState(0);
+  const _fltMounted = useRef(false);   // skip the filter reset on mount so a Back-leg restore survives
   useEffect(() => {
-    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false);
+    // Ship review 2026-07-09 B4 (cut-switch race): live-flag guard (house pattern —
+    // DomainSummary/MetricPage/BenchmarkCard) so a slower older cut's response can't
+    // land after the newer one and paint the wrong peer group under the new label.
+    let live = true;
+    setOv(null); setBench(null); setErr(null);
+    // filters still reset on a REAL name/cut change — just not on the first run,
+    // which may carry the restored Back-leg working set (Pack 1 §2 above).
+    if (_fltMounted.current) { setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false); }
+    _fltMounted.current = true;
     Promise.all([
       apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
       apiCached("/api/benchmarks/Reward?" + cutQS(cut)),
-    ]).then(([o, b]) => { setOv(o); setBench(b); }).catch(e => setErr(e.message));
+    ]).then(([o, b]) => { if (live) { setOv(o); setBench(b); } }).catch(e => { if (live) setErr(e.message); });
+    return () => { live = false; };
   }, [name, cutKeyOf(cut), applyStrat, catRetry]);
 
   const Head = (meta) => html`
@@ -2248,9 +2343,14 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     return () => window.removeEventListener("lumi:pins-changed", f);
   }, []);
   useEffect(() => {
+    // Ship review 2026-07-09 B4 (cut-switch race): live-flag guard so a slower older
+    // cut's overview can't repaint the signal pills after the newer cut's map landed.
+    let live = true;
     apiCached("/api/overview?" + cutQS(cut)).then(o => {
+      if (!live) return;
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
-    }).catch(() => setSigMap({}));
+    }).catch(() => { if (live) setSigMap({}); });
+    return () => { live = false; };
   }, [cutKeyOf(cut)]);
   useEffect(() => {
     if (!layout) return;
@@ -2798,12 +2898,16 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <h2 class="how-section-head" id="co-op">How the co-op works</h2>
         <div class="card how-card">
           <h3 class="section-title">A give-to-get co-operative</h3>
+          ${/* Ship review 2026-07-09 B7 (minimal-consistency fix): this card claimed contributors
+                benchmark FREE + a founding-year-free promise, while /pricing ships £5,000 contributing
+                vs £10,000 non-contributing. The unverifiable "free" claims are removed and pricing is
+                deferred to the one authoritative surface. DAVID DECISION STILL OPEN: does the
+                founding-year-free promise stand? If yes, restore it here date-scoped AND on /pricing;
+                the sentence is deleted (not softened) until that call is made. */ ""}
           <p>lumi is a benchmarking co-operative: the data you see comes from members like you, so the value depends on
-          everyone contributing. <b>Participating organisations benchmark for free</b> — you give your reward data and,
-          in return, you get the peer picture. Organisations that want the benchmark without contributing pay; members
-          who contribute do not.</p>
-          <p><b>Founding membership.</b> Organisations joining in the launch phase are founding members and benchmark
-          free for their first year while the pool builds.</p>
+          everyone contributing. <b>Contributing members pay less</b> — you give your reward data and, in return, you
+          get the full peer picture at a lower membership rate than organisations that want the benchmark without
+          contributing. Current rates are on <a href="/pricing" target="_blank" rel="noopener">the pricing page</a>.</p>
         </div>
         <div class="card how-card">
           <h3 class="section-title">How your data is shared — and how it isn't</h3>
@@ -2913,7 +3017,14 @@ window.cutSize = function (cut, cuts, peerPool) {
    divider sits between segments — never a continuous line across a break. */
 window.MetricTrend = function ({ qid }) {
   const [t, setT] = useState(null);
-  useEffect(() => { setT(null); api("/api/trend/" + qid).then(setT).catch(() => setT(false)); }, [qid]);
+  // Ship review 2026-07-09 B4: live-flag guard — a slower older qid's trend response
+  // must never land after a newer metric's fetch and draw under the wrong metric.
+  useEffect(() => {
+    let live = true;
+    setT(null);
+    api("/api/trend/" + qid).then(d => { if (live) setT(d); }).catch(() => { if (live) setT(false); });
+    return () => { live = false; };
+  }, [qid]);
   if (!t || t.periods < 2) return null;   // one period = nothing to trend yet
   const pts = t.segments.flat();
   const vals = pts.map(p => p.p50 != null ? p.p50 : p.modal_pct).filter(v => v != null);

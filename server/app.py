@@ -3327,10 +3327,17 @@ def assemble_pack_payload(request, user, org, cut):
         "by_section": {k: {"available": v["available"], "above": v["above"],
                            "below": v["below"], "inline": v["inline"]}
                        for k, v in (summary.get("by_section") or {}).items()},
+        # CONTEXT signals excluded (2026-07-09 ship review, Pack 3.2): context-bucket
+        # metrics (mp_config direction=neutral — e.g. workforce cost per FTE) are
+        # facts the engine deliberately refuses to verdict, so they must not ship in
+        # the pack's "What to watch" indistinguishable from genuine gaps (the live
+        # repro read as a £16.5k underpayment). Mirrors _pack_rows' context filter
+        # above — the pack layer only; the in-app signals surface keeps them with
+        # its own context labelling.
         "signals": [{"name": s.get("name") or s.get("label_short"), "domain": s.get("domain"),
                      "stand": s.get("stand"), "tag": s.get("tag"),
                      "risk": bool(s.get("risk_framed")), "bucket": s.get("bucket")}
-                    for s in _pack_sigs[:5]],
+                    for s in [x for x in _pack_sigs if x.get("bucket") != "context"][:5]],
         "strategy": {"complete": _strat_done,
                      "objective": OBJECTIVE_LABELS.get(_strat.get("primary_objective")) if (
                          _strat and (_strat.get("provenance") or {}).get("primary_objective") != "skipped") else None},
@@ -3422,10 +3429,49 @@ async def boardpack_get(pack_id: str, request: Request):
                         "above_median": _ph.get("above_median"), "below_median": _ph.get("below_median"),
                         "broadly_in_line": _ph.get("broadly_in_line"),
                         "verdict": (_ph.get("market") or {}).get("verdict")}
-    return {"pack_id": pack_id, "payload": uj(row["payload_json"]),
+    payload = uj(row["payload_json"])
+    # LIVE-DRIFT check (2026-07-09 ship review, Pack 3.1): the window-only stale
+    # check misses drift WITHIN a collection window — a stored pack can say
+    # "behind aim"/1-of-91 while the live dashboard says "on aim"/3-of-93, with no
+    # banner. Recompute the headline through the SAME engine path generation used,
+    # under the pack's own stored cut, and ship it additively so the client can
+    # banner the divergence (old clients ignore the field). Best-effort: a failure
+    # here must never block serving the stored pack.
+    live_headline = None
+    try:
+        _cut = dict(payload.get("cut") or {"dim": "all"})
+        if payload.get("cut_criteria"):
+            _cut["criteria"] = payload["cut_criteria"]
+        _tb = twin_blocks_if_needed(conn, org, _cut) if _cut.get("dim") in ("twin", "group") else None
+        _qs = org_visible_questions(org)
+        _ent = make_entitled(user, org)
+        _ans = org_answers_for(org)
+        _items = pos.position_items(org["org_id"], _cut, _qs, payloads(), _ans, _ent, _tb)
+        _prac = pos.practice_position_items(org["org_id"], _cut, _qs, payloads(), _ans, _ent, _tb)
+        _mp_cfg = pos.market_position_config()
+        _s = pos.overview_summary(_items, mp_config=_mp_cfg, practice_items=_prac,
+                                  band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
+        _mkt = pos._pool_verdict(pos.substance_pool(_items, _prac, _mp_cfg),
+                                 MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN) or {}
+        _ph = payload.get("headline") or {}
+        live_headline = {
+            "comparable_metrics": _s["comparable_metrics"], "above_median": _s["above_median"],
+            "below_median": _s["below_median"], "broadly_in_line": _s["broadly_in_line"],
+            "verdict": _mkt.get("verdict"),
+            "drifted": bool(_ph) and (
+                _s["comparable_metrics"] != _ph.get("comparable_metrics")
+                or _s["above_median"] != _ph.get("above_median")
+                or _s["below_median"] != _ph.get("below_median")
+                or _s["broadly_in_line"] != _ph.get("broadly_in_line")
+                or _mkt.get("verdict") != (_ph.get("market") or {}).get("verdict")),
+        }
+    except Exception:
+        live_headline = None
+    return {"pack_id": pack_id, "payload": payload,
             "narrative": uj(row["narrative_json"]), "created_at": row["created_at"],
             "current_collection_window": snap["collection_window"] if snap else None,
-            "previous": prev_summary}
+            "previous": prev_summary,
+            "live_headline": live_headline}
 
 
 @app.get("/api/boardpacks")
@@ -3915,13 +3961,21 @@ async def submission_state(request: Request):
     have = answered | drafted
     # Sections are SUB-powers (Pay, Benefits, Incentives, Transparency,
     # Progression) — one digestible page each, with progress per section.
+    # DEDUPED BY NAME (2026-07-09 ship review, blocker B1): two library rows carry
+    # sub_power_order=2 on 'Pay' (the other 58 are order=1), so keying on the full
+    # (order, name, superpower) tuple minted a DUPLICATE 'Pay' section and trapped
+    # the guided flow in a Pay↔Incentives loop (submission.js walks sections by
+    # name via indexOf). Key on the sub-power NAME, keep the minimum (order,
+    # superpower) — mirroring the frontend's own sectionList() dedupe
+    # (web/js/app.js:775-783). Section names are now unique by construction.
     sections = []
-    sub_order = []
+    sub_order = {}
     for q in questions.values():
-        key = (q.sub_power_order or 999, q.sub_power or "General", q.superpower)
-        if key not in sub_order:
-            sub_order.append(key)
-    for _o, sub, sp in sorted(sub_order):
+        sub = q.sub_power or "General"
+        key = (q.sub_power_order or 999, q.superpower)
+        if sub not in sub_order or key < sub_order[sub]:
+            sub_order[sub] = key
+    for sub, (_o, sp) in sorted(sub_order.items(), key=lambda kv: (kv[1][0], kv[0], kv[1][1])):
         qs = [q for q in questions.values() if (q.sub_power or "General") == sub]
         sections.append({
             "section": sub, "superpower": sp, "questions": len(qs),
@@ -5574,7 +5628,20 @@ async def share_data(token: str, request: Request):
             "callouts": {"strengths": [c["text"] for c in co["strengths"]],
                          "gaps": [c["text"] for c in co["gaps"]]},
             "cards": cards,
-            "peer_pool": get_meta("peer_pool", {})}
+            # CUT-SCOPED peer-group size (2026-07-09 ship review, blocker B5): the
+            # share page renders peer_pool.responding_orgs beside the cut label, so
+            # serving the global meta made a 15-org sector cut read "(220
+            # organisations)" next to callouts citing n=15 on the same page. Serve
+            # the SAME number the in-app header shows for this cut (_cut_peer_n,
+            # D4 counts-reconciliation ruling); for the all-peers cut _cut_peer_n
+            # returns responding_orgs itself. Also stops shipping the full
+            # per-industry/per-band pool breakdown on an anonymous public link —
+            # the page only ever read this one field.
+            # cut_n: the top-level field share.js PREFERS (B5 integration fix — the two
+            # halves landed under different names; serving both closes the seam, and old
+            # links keep working via the peer_pool fallback on all-peers cuts).
+            "cut_n": _cut_peer_n(conn, org, cut),
+            "peer_pool": {"responding_orgs": _cut_peer_n(conn, org, cut)}}
 
 
 # ================================================================== STATIC ===

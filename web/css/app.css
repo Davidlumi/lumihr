@@ -261,6 +261,11 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .notif-mark { border: 0; background: transparent; color: var(--blue); font-size: var(--fs-caption); font-weight: 600; cursor: pointer; }
 .notif-mark:hover { text-decoration: underline; }
 .notif-list { overflow-y: auto; flex: 1; padding: var(--s1) 0; }
+/* 2026-07-09 ship review (pack 2.6): the popover clipped rows at the fold with no
+   scroll cue — a sticky bottom fade signals more content; it parks in its own
+   26px run-out at scroll end, so nothing is ever obscured when fully scrolled */
+.notif-list::after { content: ""; display: block; position: sticky; bottom: 0; height: 26px;
+  background: linear-gradient(to bottom, transparent, var(--surface)); pointer-events: none; }
 .notif-group { padding: var(--s1) 0; }
 .notif-group-head { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s4) var(--s1); }
 .notif-group-head.lens-save { color: var(--lens-save); }
@@ -297,6 +302,9 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   transition: background .15s, border-color .15s; }
 .notif-prefs .notif-lens-check:hover { background: var(--lumi-tile); }
+/* 2026-07-09 ship review B11: complete the .check-row treatment — the selected
+   tile reads like .yourdata/.pulse-survey check-rows (blue tint + blue border) */
+.notif-prefs .notif-lens-check:has(input:checked) { background: var(--blue-tint); border-color: var(--blue); }
 .notif-prefs .notif-lens-check:has(input:checked) { background: var(--blue-tint); border-color: var(--blue); }
 .content { padding: var(--s5); max-width: 1320px; width: 100%; margin: 0 auto; }
 
@@ -428,11 +436,12 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sig-pill svg { flex: 0 0 auto; }
 /* lens text darkened toward ink (raw lens hues sit at 3.8–4.4:1 on their tints —
-   under the 4.5:1 text floor; the 78%-ink mix is the same fix .chip.good uses) */
-.sig-pill.lens-save    { background: var(--lens-save-tint);    color: color-mix(in srgb, var(--lens-save) 72%, var(--ink)); }
-.sig-pill.lens-attract { background: var(--lens-attract-tint); color: color-mix(in srgb, var(--lens-attract) 72%, var(--ink)); }
-.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: color-mix(in srgb, var(--lens-retain) 72%, var(--ink)); }
-.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: color-mix(in srgb, var(--lens-engage) 72%, var(--ink)); }
+   under the 4.5:1 text floor; the 78%-ink mix is the same fix .chip.good uses)
+   2026-07-09 ship review (pack 4.3): 72% drifted from the house 78% recipe — aligned */
+.sig-pill.lens-save    { background: var(--lens-save-tint);    color: color-mix(in srgb, var(--lens-save) 78%, var(--ink)); }
+.sig-pill.lens-attract { background: var(--lens-attract-tint); color: color-mix(in srgb, var(--lens-attract) 78%, var(--ink)); }
+.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: color-mix(in srgb, var(--lens-retain) 78%, var(--ink)); }
+.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: color-mix(in srgb, var(--lens-engage) 78%, var(--ink)); }
 .sig-pill.is-clear { background: var(--surface-sunk); color: var(--ink-faint); font-weight: 600; }
 .sig-pill.is-add { background: var(--blue-tint); color: var(--blue); text-decoration: none;
   cursor: pointer; transition: background var(--ease), transform var(--ease); }
@@ -689,7 +698,10 @@ td.num, th.num { text-align: right; }
 /* P12: modern member-facing fields — same language as the pulse builder (P11).
    .field is used only by member surfaces (profile/firmographics, metric-request,
    auth, invite/team); the staff /admin console uses neither .field nor .ctl. */
-.field input, .field select, .field textarea { width: 100%; height: 44px; padding: 0 var(--s4);
+/* 2026-07-09 ship review B11: exclude checkboxes/radios — the 44px text-field
+   recipe was inflating the notify-prefs lens tiles' native checkboxes to 156×44px */
+.field input:not([type=checkbox]):not([type=radio]), .field select, .field textarea {
+  width: 100%; height: 44px; padding: 0 var(--s4);
   border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--fs-body);
   background: var(--surface); color: var(--ink); transition: border-color .15s, box-shadow .15s; }
 .field textarea { height: auto; min-height: 76px; padding: var(--s3) var(--s4); line-height: 1.5; }
@@ -2028,7 +2040,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 }
 
 /* ============================================================ modal/drawer */
-.modal-back { position: fixed; inset: 0; background: rgba(16,18,20,.4); z-index: 95; display: flex;
+/* 2026-07-09 ship review (pack 4.4): one modal shell — z-index onto the token scale
+   (95 bypassed --z-modal) and the navy-ink backdrop shared with .suggest-back */
+.modal-back { position: fixed; inset: 0; background: rgba(36,54,66,.45); z-index: var(--z-modal); display: flex;
   align-items: center; justify-content: center; padding: var(--s5); }
 .modal { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 560px;
   max-width: 100%; max-height: 90vh; overflow-y: auto; padding: var(--s5); }
@@ -2265,8 +2279,10 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* Suggest a metric modal — header + footer fixed, field stack scrolls internally */
 .suggest-back { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(36,54,66,.45);
   display: flex; align-items: center; justify-content: center; padding: var(--s4); }
-.suggest-modal { position: relative; background: var(--surface); border-radius: 12px; width: 100%; max-width: 560px;
-  max-height: 90vh; padding: var(--s6) var(--s6) var(--s6); box-shadow: 0 12px 32px rgba(36,54,66,.18);
+/* 2026-07-09 ship review (pack 4.4): shell converged with .modal — token radius +
+   --shadow-pop replace the one-off 12px / hardcoded shadow */
+.suggest-modal { position: relative; background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 560px;
+  max-height: 90vh; padding: var(--s6) var(--s6) var(--s6); box-shadow: var(--shadow-pop);
   display: flex; flex-direction: column; }
 .suggest-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border: 0; background: none;
   color: var(--ink-faint); cursor: pointer; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
@@ -2286,8 +2302,11 @@ textarea.suggest-input { resize: vertical; min-height: 76px; height: auto; paddi
 .suggest-hint { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s1); }
 .suggest-err { font-size: var(--fs-caption); color: var(--color-text-danger); margin-top: var(--s1); }
 .suggest-foot { flex: none; display: flex; justify-content: space-between; align-items: center; margin-top: var(--s5); }
-.suggest-cancel { background: none; border: 0; color: var(--lumi-navy); padding: var(--s3) var(--s4); }
-.suggest-submit { background: var(--lumi-navy); border-color: var(--lumi-navy); color: #fff; padding: var(--s3) var(--s4); border-radius: 8px; height: auto; }
+/* 2026-07-09 ship review (pack 4.4): both buttons already carry .btn quiet / .btn
+   primary — dropped the off-token navy colour + 8px radius overrides so the house
+   button tokens render; sizing overrides kept (layout unchanged) */
+.suggest-cancel { padding: var(--s3) var(--s4); }
+.suggest-submit { padding: var(--s3) var(--s4); height: auto; }
 .suggest-done { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--s5) 0; }
 .suggest-done-ring { width: 48px; height: 48px; border-radius: 50%; background: var(--lumi-tile); display: inline-flex;
   align-items: center; justify-content: center; color: var(--lumi-navy); margin-bottom: var(--s4); }
@@ -2510,7 +2529,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .chart-switch-btn.on { background: var(--blue-tint); color: var(--blue-deep); }
 .chart-switch-btn:hover:not(.on) { color: var(--ink); }
 
-.next-step-n.done { background: var(--favourable-tint); color: var(--favourable); }
+/* 2026-07-09 ship review (pack 4.3): raw --favourable on its tint is 4.30:1 — the
+   house 78%-ink mix (see .pos-pill) lifts it over the 4.5:1 AA floor */
+.next-step-n.done { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 
 /* the profile-gating prompt must never truncate — it's the path to peer cuts */
 .ctlgroup .hint.hint-wide { max-width: 420px; white-space: normal; line-height: 1.3; }
@@ -2571,10 +2592,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .mp-class-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s1); flex-wrap: wrap; }
 .mp-class-label { color: var(--ink-faint); }
 .mp-class-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: 6px; white-space: nowrap; }
-.mp-class-chip.headline { background: var(--favourable-tint); color: var(--favourable); }
+/* 2026-07-09 ship review (pack 4.3): .headline/.fav were raw --favourable (4.30:1,
+   member-facing on the metric page) — 78%-ink mix per the house AA recipe */
+.mp-class-chip.headline { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .mp-class-chip.differs  { background: var(--differs-tint); color: var(--differs); }
 .mp-class-chip.context  { background: #E9EBF6; color: var(--navy); }
-.mp-class-chip.fav      { background: var(--favourable-tint); color: var(--favourable); }
+.mp-class-chip.fav      { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .how-note { background: var(--neutral-perf-tint); border-radius: var(--radius-sm); padding: var(--s3) var(--s4);
   margin-bottom: var(--s3); font-size: var(--fs-body); }
 .anchor-flash { animation: anchor-flash 1.6s ease-out; }
@@ -2668,8 +2691,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: 8px; background: var(--lumi-tile); color: var(--blue-deep); white-space: nowrap; }
 .admin-status { display: inline-block; font-size: var(--fs-micro); font-weight: 600; padding: 1px var(--s2);
   border-radius: 8px; text-transform: capitalize; background: var(--surface-sunk); color: var(--ink); white-space: nowrap; }
-.admin-status-open, .admin-status-accepted, .admin-status-applied { background: var(--favourable-tint); color: var(--favourable); }
-.admin-status-closed, .admin-status-rejected { background: var(--unfavourable-tint); color: var(--unfavourable); }
+/* 2026-07-09 ship review (pack 4.3): raw hues measured 4.30/4.44:1 on their tints —
+   78%-ink mix per the house AA recipe */
+.admin-status-open, .admin-status-accepted, .admin-status-applied { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.admin-status-closed, .admin-status-rejected { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .admin-status-draft, .admin-status-queued, .admin-status-new { background: var(--lumi-tile); color: var(--blue-deep); }
 .admin-status-archived, .admin-status-reviewed, .admin-status-scheduled { background: var(--surface-sunk); color: var(--color-text-tertiary); }
 .admin-yes { color: #1B7740; font-weight: 600; font-size: var(--fs-caption); }
@@ -2816,7 +2841,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .dom-inherit { font-size: var(--fs-micro); color: var(--ink-faint); }
 .dom-clear { font-size: var(--fs-micro); font-weight: 600; color: var(--blue); background: none; border: 0; cursor: pointer; padding: 0; }
 .dom-clear:hover { text-decoration: underline; }
-.se-pill.green { background: var(--favourable-tint); color: var(--favourable); }
+/* 2026-07-09 ship review (pack 4.3): raw --favourable is 4.30:1 on its tint — 78%-ink mix */
+.se-pill.green { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .se-pill.amber { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .se-pill.blue { background: var(--blue-tint); color: var(--blue-deep); }
 

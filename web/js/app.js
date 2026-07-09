@@ -35,6 +35,10 @@ function cutToURL(cut) {
   const next = base + (base.includes("?") ? "&" : "?") + "cut=" + enc;
   if (next !== h) history.replaceState(null, "", next);
 }
+// The benchmark-family routes are the only surfaces whose URL carries the peer
+// cut (mirrors the benchRoute test in App) — everything else stays clean.
+const CUT_ROUTES = ["/overview", "/benchmark", "/superpower", "/myview", "/dashboards", "/metric", "/priorities", "/category/"];
+const isCutRoute = r => r === "" || r === "/" || CUT_ROUTES.some(p => r.startsWith(p));
 
 function App() {
   const route = useRoute();
@@ -69,7 +73,10 @@ function App() {
   }, [route, me]);
   const [cut, setCut] = useState(cutFromURL());
   const [cuts, setCuts] = useState(null);
-  const [prefs, setPrefs] = useState({});
+  // prefs: null = not loaded yet, {} = loaded-and-empty. Pages read saved view
+  // prefs (strategy off, practice view) in one-shot useState initializers, so
+  // the distinction matters — see the prefs gate below (ship review, Pack 1.3).
+  const [prefs, setPrefs] = useState(null);
   const [layoutIds, setLayoutIds] = useState(new Set());
   const [analystOpen, setAnalystOpen] = useState(false);
   const [metricReq, setMetricReq] = useState(null);   // {prefill, source} | null
@@ -82,8 +89,23 @@ function App() {
   const [activeHit, setActiveHit] = useState(-1);  // combobox: active option index (-1 = none)
   const searchHitsRef = useRef([]);                // current activatable search options (for Enter)
   const searchRef = useRef(null);
+  const searchWrapRef = useRef(null);              // the .topbar-search container (popup + input)
   // Reset the combobox active option whenever the query changes.
   useEffect(() => { setActiveHit(-1); }, [search]);
+  // Ship review 2026-07-09 (Pack 1.5): the results popup used to ride over every
+  // subsequent page — it only closed on Escape or a hit click. Close it on any
+  // route change and on mousedown outside the search container (same pattern as
+  // the BenchmarkNav flyout below).
+  useEffect(() => { setSearch(""); setActiveHit(-1); }, [route]);
+  useEffect(() => {
+    if (!search) return;
+    const onDoc = (e) => {
+      const w = searchWrapRef.current;
+      if (w && !w.contains(e.target)) { setSearch(""); setActiveHit(-1); }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [!!search]);
   // Keep the keyboard-active option scrolled into view in the results listbox.
   useEffect(() => {
     if (activeHit < 0) return;
@@ -133,11 +155,31 @@ function App() {
   useEffect(() => {
     if (!me) return;
     api("/api/cuts").then(setCuts);
-    api("/api/prefs").then(d => setPrefs(d.prefs || {}));
+    // a failed prefs fetch resolves to {} so the prefs gate below can never hang
+    api("/api/prefs").then(d => setPrefs(d.prefs || {})).catch(() => setPrefs({}));
     api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id))));
     api("/api/questions").then(setQIndex);
   }, [me && me.org && me.org.name]);
-  useEffect(() => { cutToURL(cut); }, [cutKeyOf(cut)]);
+  // Ship review 2026-07-09 B3 (+ the hashchange companion): nav() writes a bare
+  // hash, so keying this effect on the cut alone meant every route change ERASED
+  // ?cut= — a refresh then silently swapped Directional·15 for the 220-org pool,
+  // breaking the deep-link promise above. Reconcile both ways on navigation:
+  // a hash that carries its own cut (shared link, back button, hand-edited URL)
+  // wins and is adopted into state; a bare hash on a benchmark surface gets the
+  // active cut re-serialised so refresh/copy always reproduce the view. A cut
+  // change without a route change (the selector) writes through as before.
+  const cutRouteRef = useRef(route);
+  useEffect(() => {
+    const routeChanged = cutRouteRef.current !== route;
+    cutRouteRef.current = route;
+    if (routeChanged) {
+      if (/[?&]cut=/.test(window.location.hash || "")) {
+        const urlCut = cutFromURL();
+        if (urlCut.dim !== cut.dim || (urlCut.value || null) !== (cut.value || null)) { setCut(urlCut); return; }
+      } else if (!isCutRoute(route)) return;   // never pollute non-benchmark URLs
+    }
+    cutToURL(cut);
+  }, [route, cutKeyOf(cut)]);
   // Unsubmitted-changes reminder: seed the flag from the server on load (so a
   // returning member with leftover drafts is reminded), then follow live edits.
   useEffect(() => {
@@ -190,6 +232,13 @@ function App() {
   if (me && me.config && me.config.market_band) window.MARKET_BAND = me.config.market_band;
   const activeSupers = scope.superpowers;
   if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
+  // Ship review 2026-07-09 (Pack 1.3): pages read saved view prefs (strategy
+  // off / practice view / rail state) in one-shot useState initializers, so a
+  // cold load or deep link used to mount with EMPTY prefs, render the default
+  // view, then re-run the whole engine pass when the real prefs landed. Hold
+  // the shell one beat until /api/prefs resolves (null = still loading; a
+  // fetch failure resolves to {} above, so this can never hang).
+  if (prefs === null) return html`<div class="auth-wrap"><${Spinner} /></div>`;
 
   // collapsible rail (nav pkg Item 3): persisted per user alongside the
   // Benchmark expand-state. Manual choice is authoritative — no resize override.
@@ -237,7 +286,10 @@ function App() {
     page = html`<${SuperpowerPage} ...${pageProps} sp="Reward" focusQ=${focusQ} subF=${subF} />`;
   } else if ((m = route.match(/^\/category\/([^?]+)/))) {
     page = html`<${CategoryPage} ...${pageProps} name=${decodeURIComponent(m[1])} />`;
-  } else if ((m = route.match(/^\/metric\/(.+)$/))) {
+  } else if ((m = route.match(/^\/metric\/([^?]+)/))) {
+    // ship review 2026-07-09 B2: match must stop at the query string — (.+$)
+    // swallowed "?cut=…" into the qid, so every link the Share button mints
+    // fetched a mangled id and hung on the cardStale skeleton forever.
     page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
     page = html`<${BoardPackView} packId=${m[1]} me=${me} />`;
@@ -312,14 +364,22 @@ function App() {
 
   return html`
     <div class="shell">
-      <a class="skip-link" href="#main-content">Skip to content</a>
+      ${/* ship review 2026-07-09 B9: href alone set the hash, and the router
+            resolved "main-content" → the 404 page for every keyboard user
+            (WCAG 2.4.1). Focus the target directly (it carries tabindex="-1")
+            and leave the URL untouched. href stays for skip-link semantics. */ ""}
+      <a class="skip-link" href="#main-content" onClick=${e => {
+        e.preventDefault();
+        const el = document.getElementById("main-content");
+        if (el) el.focus();
+      }}>Skip to content</a>
       <${IdleGuard} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setMe(null); }} />
       <header class="topbar brandbar no-print">
         <button class="nav-hamburger" aria-label="Open menu" aria-expanded=${navOpen}
           onClick=${() => setNavOpen(o => !o)}><${Icon} name="menu" size=${20} /></button>
         <a class="brandbar-logo" href="#/overview" aria-label="lumi benchmark home"
           dangerouslySetInnerHTML=${{ __html: LUMI_LOGO_REVERSED_SVG }}></a>
-        <div class="topbar-search">
+        <div class="topbar-search" ref=${searchWrapRef}>
           <span class="topbar-search-icon"><${Icon} name="search" size=${15} /></span>
           <input ref=${searchRef} class="ctl" placeholder="Search metrics, pages & help… (⌘K)"
             aria-label="Search reward metrics" value=${search}

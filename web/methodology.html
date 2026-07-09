@@ -249,9 +249,15 @@
           <div>
             <h3>And how many sit behind it</h3>
             <ul class="tlist">
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Roughly <b>150–220 organisations</b> at the all-peer level.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>29–37</b> in each employee-size band.</span></li>
-              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>8–16</b> in each sector, where virtually every metric still clears the floor.</span></li>
+              <!-- 2026-07-09 ship review B8 + Pack-3.3/3.4: "roughly 150–220" overstated the floor (9 live
+                   metrics sit below 150, min n=27) and both ranges had drifted +1 vs live /api/methodology
+                   (29–36 not 29–37; 8–15 not 8–16). Reworded to the defensible truth + published the
+                   confidence-tier thresholds (>=20 High confidence / 5–19 Directional — same values as the
+                   in-app ConfidenceChip, pages.js). Re-derive counts from /api/methodology at deploy. -->
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Most metrics: <b>150–220 organisations</b> at the all-peer level. Specialist metrics run thinner — every figure carries its exact <i>n</i>.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>29–36</b> in each employee-size band.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>8–15</b> in each sector, where virtually every metric still clears the floor.</span></li>
+              <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Every peer cut carries a confidence label: <b>20 or more</b> organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.</span></li>
               <li><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Cross a sector <em>and</em> a size band and the pool thins — where fewer than 5 organisations remain, lumi suppresses the figure rather than show you something fragile.</span></li>
             </ul>
           </div>
@@ -260,7 +266,7 @@
         <div class="depth reveal">
           <div class="drow"><span>Peer group for one metric</span><span class="mid">Example</span><span class="n" style="text-align:right;">n</span></div>
           <div class="drow"><span><b>All peers</b></span><span class="mid">Annual leave allowance</span><span class="n">220</span></div>
-          <div class="drow"><span><b>Your size band</b> · 1,000–4,999 employees</span><span class="mid">Annual leave allowance</span><span class="n">32</span></div>
+          <div class="drow"><span><b>Your size band</b> · 1,000–4,999 employees</span><span class="mid">Annual leave allowance</span><span class="n">31</span></div>
           <div class="drow"><span><b>Your sector</b> · Healthcare &amp; Life Sciences</span><span class="mid">Annual leave allowance</span><span class="n">9</span></div>
           <div class="drow"><span><b>Sector × size band</b> · Healthcare, 1,000–4,999</span><span class="mid">Annual leave allowance</span><span class="n sup">—</span></div>
         </div>
