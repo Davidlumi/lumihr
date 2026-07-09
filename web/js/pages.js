@@ -942,24 +942,31 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
       </div>
       ${stand ? html`<p class=${"di-standfirst" + (pending ? " di-standfirst-pending" : "")}>${stand}</p>` : null}
-      ${/* market lens: NO key row — the donut card's swatched legend is the whole screen's
-            single colour key (2026-07-09 subtraction). Practice keeps its key: the navy
+      ${/* market lens (Option 1 ruler): a word-only direction axis — "further below · market ·
+            ahead" — teaches the shared geometry with ZERO numbers; the donut card's swatched
+            legend remains the colour key. Practice keeps its swatch key: the navy
             common/alternative/rare family is defined nowhere else. */ ""}
-      ${practice ? html`
       <div class="di-axis" aria-hidden="true">
         <span class="di-cell di-ident"></span>
         <span class="di-cell di-trackcell di-axis-scale">
+          ${practice ? html`
           <span class="di-axis-key">
             <span class="di-kk"><i class="di-sw di-seg-common"></i>common</span>
             <span class="di-kk"><i class="di-sw di-seg-alt"></i>alternative</span>
             <span class="di-kk"><i class="di-sw di-seg-rare"></i>rare</span>
-          </span>
+          </span>`
+          : html`
+          <span class="di-axis-words">
+            <span class="di-ax-lo">further below</span>
+            <span class="di-ax-mid">market</span>
+            <span class="di-ax-hi">ahead</span>
+          </span>`}
         </span>
         <span class="di-cell di-evid"></span>
         <span class="di-cell di-scentcol"></span>
         <span class="di-cell di-chipcol"></span>
         <span class="di-cell di-chev"></span>
-      </div>` : null}
+      </div>
       <div class="di-rows">
         ${doms.map((d, i) => {
           const label = domainLabel(d.name);
@@ -998,13 +1005,25 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                   </span>`
                   : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
                 : noRate ? html`<span class="di-norate">No market rate — see the Practice lens</span>`
-                : pos && pos.pool ? html`
-                  <span class="di-track di-bar" aria-hidden="true">
-                    ${[["di-seg-below", pos.below], ["di-seg-on", pos.at], ["di-seg-above", pos.above]].reduce((acc, [cls, v]) => {
-                      const w = 100 * (v || 0) / pos.pool;
-                      if (v > 0) acc.nodes.push(html`<i key=${cls} class=${"di-seg " + cls + (indic ? " di-seg-ind" : "")} style=${{ left: acc.x + "%", width: w + "%" }}></i>`);
-                      acc.x += w; return acc;
-                    }, { x: 0, nodes: [] }).nodes}
+                : pos && pos.pool && pos.depth_pctl != null ? html`
+                  ${/* OPTION 1 (David, 2026-07-09): RAG dot on ONE shared ruler — colour is the
+                        RAG read (below=amber / on=green / above=red, the dot = marketTone of the
+                        verdict), position is how far. Soft RAG zone tints teach the geometry; the
+                        on-market band is the real configured band (window.MARKET_BAND). NO
+                        numbers on the axis — the RAG-only law holds (zero P-anything); the
+                        citable count stays in the evidence column. */ ""}
+                  <span class="di-track di-ruler" aria-hidden="true">
+                    ${(() => {
+                      const MB = (window.MARKET_BAND && window.MARKET_BAND.length === 2) ? window.MARKET_BAND : [35, 65];
+                      const pct = Math.min(98.5, Math.max(1.5, pos.depth_pctl));
+                      const tone = marketTone(pos.verdict);
+                      return html`
+                        <i class="di-zone" style=${{ left: 0, width: MB[0] + "%", background: "var(--gauge-below)" }}></i>
+                        <i class="di-zone" style=${{ left: MB[0] + "%", width: (MB[1] - MB[0]) + "%", background: "var(--gauge-on)" }}></i>
+                        <i class="di-zone" style=${{ left: MB[1] + "%", width: (100 - MB[1]) + "%", background: "var(--gauge-above)" }}></i>
+                        <i class="di-mid"></i>
+                        <i class=${"di-dot di-dot-" + tone + (indic ? " di-dot-indic" : "")} style=${{ "--p": pct + "%" }}></i>`;
+                    })()}
                   </span>`
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>

@@ -3150,6 +3150,40 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-norate { font-size: var(--fs-micro); color: var(--ink-faint); font-style: italic; }
 .di-track-pending { position: relative; display: block; height: 10px; border-radius: 5px;
   border: 1.5px dashed var(--border); background: color-mix(in srgb, var(--surface-sunk) 50%, transparent); }
+/* OPTION 1 ruler (market lens, 2026-07-09): one shared axis per card — soft RAG zone tints
+   (the on-market band is the real configured band), a market mid-line, and a full-strength
+   RAG dot per domain at its position. Colour answers "how do I read it", position answers
+   "how far" — no numbers anywhere on the axis. */
+.di-ruler .di-zone { position: absolute; top: calc(50% - 3px); height: 6px; }
+.di-ruler .di-zone:first-child { border-radius: 3px 0 0 3px; }
+.di-ruler .di-zone:nth-child(3) { border-radius: 0 3px 3px 0; }
+.di-mid { position: absolute; left: 50%; top: calc(50% - 8px); height: 16px; width: 1px;
+  background: color-mix(in srgb, var(--ink-faint) 55%, transparent); }
+.di-dot { position: absolute; left: var(--p); top: calc(50% - 6px); width: 12px; height: 12px;
+  margin-left: -6px; border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface), 0 1px 3px rgba(33,27,38,.3);
+  animation: di-slide 240ms ease-out both; }
+.di-dot-amber { background: var(--amber-bright); }
+.di-dot-green { background: var(--favourable); }
+.di-dot-red   { background: var(--unfavourable); }
+.di-dot-neutral { background: var(--ink-faint); }
+/* indicative (thin coverage): hollow dashed ring in the row's own RAG hue */
+.di-dot-indic { background: var(--surface); border: 2px dashed currentColor; box-sizing: border-box; }
+.di-dot-amber.di-dot-indic { color: var(--amber-bright); }
+.di-dot-green.di-dot-indic { color: var(--favourable); }
+.di-dot-red.di-dot-indic   { color: var(--unfavourable); }
+@keyframes di-slide { from { left: 50%; opacity: 0; } }
+.di-row:nth-child(2) .di-dot { animation-delay: 40ms; }
+.di-row:nth-child(3) .di-dot { animation-delay: 80ms; }
+.di-row:nth-child(4) .di-dot { animation-delay: 120ms; }
+.di-row:nth-child(5) .di-dot { animation-delay: 160ms; }
+.di-row:nth-child(6) .di-dot { animation-delay: 200ms; }
+/* word-only direction axis over the ruler */
+.di-axis-words { position: absolute; inset: 0; font-size: var(--fs-micro); color: var(--ink-faint); }
+.di-axis-words span { position: absolute; bottom: 4px; white-space: nowrap; }
+.di-ax-lo { left: 0; }
+.di-ax-mid { left: 50%; transform: translateX(-50%); color: var(--ink-soft); font-weight: 600; }
+.di-ax-hi { right: 0; }
 /* proportional segments — length + colour carry the read; the numbers live once, in the
    evidence column (in-bar numerals retired 2026-07-09) */
 .di-seg { position: absolute; top: calc(50% - 7px); height: 14px; }
@@ -3223,5 +3257,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .di-norate { white-space: normal; line-height: 1.35; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .di-dot { animation: none !important; }
   .ov-signals-band .card { animation: none !important; opacity: 1; transform: none !important; }
 }
