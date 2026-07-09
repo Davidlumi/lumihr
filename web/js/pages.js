@@ -75,7 +75,7 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
                 dropdown ("All peers · 220"); a NED should read it without opening
                 anything. Pool + collection window straight from the payload. */ ""}
           ${data.peer_pool && data.peer_pool.responding_orgs ? html`
-            <div class="hero-sub num">Benchmarked against ${data.peer_pool.responding_orgs} UK organisations${data.snapshot && data.snapshot.window ? " · " + data.snapshot.window : ""}</div>` : null}
+            <div class="hero-sub num">Benchmarked against ${data.peer_pool.responding_orgs} UK organisations${data.snapshot && data.snapshot.window ? " · " + data.snapshot.window + " baseline — movement shows from your next cycle" : ""}</div>` : null}
           ${/* thin-sample caveat demoted here (2026-07-07) — it used to float in the
                 hero-actions row competing with Export/Share; it belongs with the peer-
                 depth story, as a quiet note under the trust line. */ ""}
@@ -348,7 +348,10 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals} />
       </div>
-      ${!locked && html`<${TrajectoryTile} windowLabel=${data.snapshot && data.snapshot.window} />`}
+      ${/* TrajectoryTile retired from the scan path (2026-07-09 subtraction): a full card band
+            promising the future between the hero and the action queue. Its one load-bearing
+            clause moved into the header subtitle ("baseline — movement shows from your next
+            cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
       <div class="ov-signals-band">
         <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} />
       </div>
@@ -777,14 +780,18 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
               adverb (clearly/moderately/marginally below/above the market) as one quiet caption. */ ""}
         <div class="arc-lean">${headLean}</div>
       </div>
+      ${/* swatched legend (2026-07-09): with the domain card's key row retired, this is the
+            whole screen's single place where RAG colour meets word meets count. */ ""}
       <div class="arc-legend num">
-        <span><span class="arc-leg-fig">${market.below}</span> Below</span>
-        <span><span class="arc-leg-fig">${market.at}</span> On market</span>
-        <span><span class="arc-leg-fig">${market.above}</span> Above</span>
+        <span><i class="arc-leg-dot di-seg-below" aria-hidden="true"></i><span class="arc-leg-fig">${market.below}</span> Below</span>
+        <span><i class="arc-leg-dot di-seg-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> On market</span>
+        <span><i class="arc-leg-dot di-seg-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
-      ${market.depth_pctl != null && window.MARKET_BAND ? html`
-        <${PercentileRuler} pctl=${market.depth_pctl} band=${window.MARKET_BAND}
-          comparable=${market.pool} inLine=${market.at} />` : null}
+      ${/* PercentileRuler retired from the Overview (2026-07-09, "RAG is the ONLY position
+            indicator"): it was a second position scale — bolder RAG zones + a P-number + a
+            sentence repeating the P-number — on a card that already encodes position in the
+            donut, the centre word and the lean caption. The shared component lives on for the
+            category page + board pack. */ ""}
       ${market.target ? html`
         <div class="arc-target"><${AlignmentChip} target=${market.target} /></div>`
       : stratOff ? html`
@@ -817,7 +824,8 @@ function ApproachPanel({ approach, pending }) {
   return html`
     <div class="card arc-card">
       <div class="card-spot" aria-hidden="true"></div>
-      <div class="card-head"><${Icon} name="layers" size=${15} /><h2 class="card-head-title">How you compare on practice</h2></div>
+      <div class="card-head" title="Whether you differ from the peer pattern — a different question from the domain table's how-common-each-choice-is read.">
+        <${Icon} name="layers" size=${15} /><h2 class="card-head-title">How you compare on practice</h2></div>
       <div class="appr-stage">
         <div class="arc-stage" role="img"
           aria-label=${differ + " of " + pool + " practices off the norm; " + inLine + " in line."}>
@@ -828,13 +836,14 @@ function ApproachPanel({ approach, pending }) {
             ]}
             total=${pool} centerNum=${pool} sub="practices" size=${210} stroke=${28} />
         </div>
-        <div class="appr-headline num"><b>${approach.differ}</b> of ${approach.pool} comparable practices differ from the peer norm</div>
+        ${/* headline retired (2026-07-09): the swatched legend below states the same two
+              counts with colour — one citable surface, not two. */ ""}
         <div class="appr-legend num">
           <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> off the norm</span>
           <span><span class="appr-dot appr-dot-inline"></span><b>${inLine}</b> in line with the market</span>
         </div>
       </div>
-      <div class="appr-note caption">Whether you <b>differ</b> from the peer pattern — a different question from the domain table's <b>how common</b> each choice is. A different way of doing things, not a gap to close; the ones worth acting on appear in your signals.</div>
+      <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
     </div>`;
 }
 
@@ -871,21 +880,21 @@ function domainStandfirst(market, doms, view, prevalence) {
     return opener + " — " + prevalence.with_majority + " of your " + prevalence.pool +
       " tracked practices sit with the majority" + tail + ".";
   }
-  if (!market || market.depth_pctl == null) return null;
-  const p = Math.round(market.depth_pctl);
-  const mk = doms.filter(d => d.position_basis === "market" && d.position && d.position.depth_pctl != null)
-    .map(d => ({ name: domainLabel(d.name), p: Math.round(d.position.depth_pctl) }))
-    .sort((a, b) => a.p - b.p);
-  const base = "Your typical comparable metric sits at P" + p;
+  if (!market || !market.pool) return null;
+  const vw = market.verdict === "above" ? "above" : market.verdict === "at" ? "broadly in line with" : "below";
+  const base = "You're " + vw + " the market across your reward areas";
+  const mk = doms.filter(d => d.position_basis === "market" && d.position && d.position.pool)
+    .map(d => ({ name: domainLabel(d.name), below: d.position.below || 0, above: d.position.above || 0, pool: d.position.pool,
+                 bshare: (d.position.below || 0) / d.position.pool, ashare: (d.position.above || 0) / d.position.pool }));
   if (mk.length < 2) return base + ".";
   if (market.verdict === "above") {
-    const hi = mk.slice(-2).reverse(), lo = mk[0];
-    return base + " — lifted furthest by " + hi[0].name + " (P" + hi[0].p + ") and " + hi[1].name +
-      " (P" + hi[1].p + "); " + lo.name + " (P" + lo.p + ") sits closest to the market.";
+    const r = mk.slice().sort((a, b) => b.ashare - a.ashare);
+    return base + " — furthest ahead on " + r[0].name + " and " + r[1].name + "; " +
+      r[r.length - 1].name + " sits closest to the market.";
   }
-  const lo = mk.slice(0, 2), hi = mk[mk.length - 1];
-  return base + " — held furthest back by " + lo[0].name + " (P" + lo[0].p + ") and " + lo[1].name +
-    " (P" + lo[1].p + "); " + hi.name + " (P" + hi.p + ") sits closest to the market.";
+  const r = mk.slice().sort((a, b) => b.bshare - a.bshare);
+  return base + " — furthest behind on " + r[0].name + " and " + r[1].name + "; " +
+    r[r.length - 1].name + " sits closest to the market.";
 }
 // short prevalence subline for a practice row — the full prevalence.verdict is a
 // sentence that overflows the identity column; this fits.
@@ -905,10 +914,10 @@ function domainRowSentence(d, view) {
   }
   const pos = d.position;
   if (d.competitiveness === false) return label + " — no market rate; approach choices only. See the Practice lens.";
-  if (!pos || pos.depth_pctl == null) return label + " — no comparable market position yet.";
-  const s = "Your typical comparable metric in " + label + " sits at P" + Math.round(pos.depth_pctl) +
-    " of the market · " + pos.below + " below, " + pos.at + " on market, " + pos.above +
-    " above of " + pos.pool + " comparable.";
+  if (!pos || !pos.pool) return label + " — no comparable market position yet.";
+  // counts-only + the verbal adverb — no P-number anywhere (RAG-only law, 2026-07-09)
+  const s = label + ": " + pos.below + " below, " + pos.at + " on market, " + pos.above +
+    " above of " + pos.pool + " comparable — " + leanCaption(pos) + ".";
   return d.position_basis === "indicative" ? s + " Indicative — thin coverage, not a full market verdict." : s;
 }
 function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent }) {
@@ -933,32 +942,24 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
       </div>
       ${stand ? html`<p class=${"di-standfirst" + (pending ? " di-standfirst-pending" : "")}>${stand}</p>` : null}
+      ${/* market lens: NO key row — the donut card's swatched legend is the whole screen's
+            single colour key (2026-07-09 subtraction). Practice keeps its key: the navy
+            common/alternative/rare family is defined nowhere else. */ ""}
+      ${practice ? html`
       <div class="di-axis" aria-hidden="true">
         <span class="di-cell di-ident"></span>
         <span class="di-cell di-trackcell di-axis-scale">
-          ${practice ? html`
-            <span class="di-axis-lab di-lab-min" style=${{ left: "0%" }}>0%</span>
-            <span class="di-axis-lab" style=${{ left: "50%" }}>50%</span>
-            <span class="di-axis-lab di-lab-max" style=${{ left: "100%" }}>100%</span>
-            <span class="di-axis-cap">how common your choices are among peers</span>`
-          : html`
-            <span class="di-axis-strip">
-              <i class="di-zone" style=${{ left: 0, width: "35%", background: "var(--gauge-below)" }}></i>
-              <i class="di-zone" style=${{ left: "35%", width: "30%", background: "var(--gauge-on)" }}></i>
-              <i class="di-zone" style=${{ left: "65%", width: "35%", background: "var(--gauge-above)" }}></i>
-            </span>
-            <span class="di-axis-lab di-lab-min" style=${{ left: "0%" }}>P0</span>
-            <span class="di-axis-lab di-lab-q" style=${{ left: "25%" }}>P25</span>
-            <span class="di-axis-lab di-axis-med" style=${{ left: "50%" }}>P50 · median</span>
-            <span class="di-axis-lab di-lab-q" style=${{ left: "75%" }}>P75</span>
-            <span class="di-axis-lab di-lab-max" style=${{ left: "100%" }}>P100</span>
-            ${overallP != null ? html`<span class="di-axis-you" style=${{ left: Math.min(92, Math.max(8, overallP)) + "%" }}>You overall · P${Math.round(overallP)}</span>` : null}`}
+          <span class="di-axis-key">
+            <span class="di-kk"><i class="di-sw di-seg-common"></i>common</span>
+            <span class="di-kk"><i class="di-sw di-seg-alt"></i>alternative</span>
+            <span class="di-kk"><i class="di-sw di-seg-rare"></i>rare</span>
+          </span>
         </span>
         <span class="di-cell di-evid"></span>
         <span class="di-cell di-scentcol"></span>
         <span class="di-cell di-chipcol"></span>
         <span class="di-cell di-chev"></span>
-      </div>
+      </div>` : null}
       <div class="di-rows">
         ${doms.map((d, i) => {
           const label = domainLabel(d.name);
@@ -975,11 +976,15 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 <h3 class="di-name"><button class="di-open" aria-label=${sentence}
                   onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>
                   <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${13} /></span>${label}</button></h3>
+                ${/* sublines survive ONLY where they carry something the bar can't: the
+                      indicative caveat and the empty state. The five near-identical
+                      leanCaption phrases died in the 2026-07-09 subtraction pass — the
+                      adverb still rides every row tooltip/aria via domainRowSentence. */ ""}
                 ${pending ? null : practice
                   ? html`<span class="di-sub">${pv.pool ? prevShort(pv) : "no practices tracked yet"}</span>`
-                  : html`<span class="di-sub">${noRate ? "practice choices only"
-                      : indic ? html`<i class="di-indic">indicative read</i>`
-                      : pos && pos.verdict ? leanCaption(pos).replace(" the market", "") : "no position yet"}</span>`}
+                  : indic ? html`<span class="di-sub"><i class="di-indic">indicative read</i></span>`
+                  : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
+                  : null}
               </span>
               <span class="di-cell di-trackcell">
                 ${pending ? html`<span class="di-track di-track-pending" aria-hidden="true"></span>`
@@ -987,20 +992,19 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                   <span class="di-track" aria-hidden="true">
                     ${[["with_majority", "di-seg-common"], ["established", "di-seg-alt"], ["less_common", "di-seg-rare"]].reduce((acc, [k, cls]) => {
                       const v = pv[k] || 0, w = 100 * v / pv.pool;
-                      acc.nodes.push(html`<i key=${k} class=${"di-seg " + cls} style=${{ left: acc.x + "%", width: w + "%" }}>${w >= 13 ? html`<b>${v}</b>` : null}</i>`);
+                      acc.nodes.push(html`<i key=${k} class=${"di-seg " + cls} style=${{ left: acc.x + "%", width: w + "%" }}></i>`);
                       acc.x += w; return acc;
                     }, { x: 0, nodes: [] }).nodes}
                   </span>`
                   : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
-                : noRate ? html`<span class="di-norate">No market rate — practice choices only · see the Practice lens</span>`
-                : pct != null ? html`
-                  <span class="di-track" aria-hidden="true">
-                    <i class="di-grid" style=${{ left: "25%" }}></i>
-                    <i class="di-grid di-grid-med" style=${{ left: "50%" }}></i>
-                    <i class="di-grid" style=${{ left: "75%" }}></i>
-                    ${overallP != null ? html`<i class="di-hair" style=${{ left: overallP + "%" }}></i>` : null}
-                    <i class=${"di-dot" + (indic ? " di-dot-indic" : "")} style=${{ "--p": pct + "%" }}></i>
-                    <b class=${"di-plabel" + (pct > 84 ? " di-plabel-left" : "")} style=${{ "--p": pct + "%" }}>P${Math.round(pos.depth_pctl)}</b>
+                : noRate ? html`<span class="di-norate">No market rate — see the Practice lens</span>`
+                : pos && pos.pool ? html`
+                  <span class="di-track di-bar" aria-hidden="true">
+                    ${[["di-seg-below", pos.below], ["di-seg-on", pos.at], ["di-seg-above", pos.above]].reduce((acc, [cls, v]) => {
+                      const w = 100 * (v || 0) / pos.pool;
+                      if (v > 0) acc.nodes.push(html`<i key=${cls} class=${"di-seg " + cls + (indic ? " di-seg-ind" : "")} style=${{ left: acc.x + "%", width: w + "%" }}></i>`);
+                      acc.x += w; return acc;
+                    }, { x: 0, nodes: [] }).nodes}
                   </span>`
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>
@@ -1008,7 +1012,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 ${pending ? null : practice
                   ? (pv.pool ? html`${pv.pool} practices` : null)
                   : noRate ? html`${pv.pool || 0} practices`
-                  : pos ? html`<span class="di-ev-split"><span class="di-g"><b>${pos.below}</b>↓</span><span class="di-g"><b>${pos.at}</b>·</span><span class="di-g"><b>${pos.above}</b>↑</span></span> <span class="di-n">${pos.pool} metrics</span>` : null}
+                  : pos ? html`<b>${pos.verdict === "above" ? pos.above : pos.verdict === "at" ? pos.at : pos.below}</b> of ${pos.pool} <span class="di-n">${pos.verdict === "above" ? "above" : pos.verdict === "at" ? "on market" : "below"}</span>` : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -1017,16 +1021,20 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     onClick=${e => { e.stopPropagation(); onScent && onScent(); }}>${nSig}</button>` : null}
               </span>
               <span class="di-cell di-chipcol">
-                ${!pending && d.target ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null}
+                ${/* exceptions only (2026-07-09): six identical "On" chips were repetition —
+                      the donut card's chip is the ambient confirmation; a row chip now appears
+                      ONLY when a domain is off its aim, which makes it louder, not quieter. */ ""}
+                ${!pending && d.target && d.target.alignment !== "on_target" ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null}
               </span>
               <span class="di-cell di-chev" aria-hidden="true"><${Icon} name="chevron-right" size=${15} /></span>
             </div>`;
         })}
       </div>
-      ${pending ? null : practice
-        ? html`<div class="di-foot num">Of your ${sum.ppool} tracked practices — <b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare (how common each choice is).</div>`
-        : html`<div class="di-foot num"><b>${sum.below}</b> below · <b>${sum.at}</b> on market · <b>${sum.above}</b> above — sums to the dial</div>
-            <div class="di-legend">Each row counts your comparable metrics below (<b>↓</b>), on (<b>·</b>) and above (<b>↑</b>) the market.</div>`}
+      ${/* market footer retired (2026-07-09): it repeated the donut legend digit-for-digit.
+            The practice footer stays — it is the only surface where the common/alt/rare
+            totals are citable. */ ""}
+      ${pending || !practice ? null
+        : html`<div class="di-foot num">Of your ${sum.ppool} tracked practices — <b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare</div>`}
     </div>`;
 }
 
@@ -1102,15 +1110,15 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="flag" size=${15} />
-        <h2 class="card-head-title">Signals${total > shown.length ? " · top " + shown.length : (shown.length ? " · " + shown.length : "")}</h2>
-        ${total > shown.length ? html`<span class="sig-count-pill num" title=${total + " live signals"}>${total}</span>` : null}
+        <h2 class="card-head-title">Signals</h2>
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
-        <span class="sig-head-note">${view === "practice" ? "practice patterns — we flag, you decide" : "market positions — we flag, you decide"}</span>
       </div>
-      ${/* the rank caption must stay TRUE: with the strategy lens applied the engine
-            re-ranks by stance (P4P / transparency multipliers), so the plain-gap claim
-            only holds strategy-off. Same toggle vocabulary as the switch above. */ ""}
-      ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(view === "practice" ? "ranked by rarity" : "ranked by market gap") + (stratOn ? " · strategy applied" : "")}</div>` : null}
+      ${/* ONE quiet meta line (2026-07-09 header collapse): scope + rank + posture, replacing
+            the title suffix + count pill + slogan note + separate ranknote. The rank caption
+            must stay TRUE: with the strategy lens applied the engine re-ranks by stance, so
+            the plain-gap claim only holds strategy-off. "we flag, you decide" kept visible
+            here by the founder's call (brand posture earns its one clause). */ ""}
+      ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(total > shown.length ? "top " + shown.length + " of " + total + " · " : "") + (view === "practice" ? "ranked by rarity" : "ranked by market gap") + (stratOn ? " · strategy applied" : "") + " · we flag, you decide"}</div>` : null}
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
@@ -1136,7 +1144,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
           </div>`; })}
       </div>`,
       html`<div class="signals-foot" key="foot">
-        <span>Tap a signal to open the metric · prioritise, save or dismiss with the icons.</span>
+        <span></span>
         <a href="#/signals">${total > shown.length ? "See all " + total + " signals →" : "See all signals →"}</a>
       </div>`]}
     </div>`;
@@ -1165,8 +1173,13 @@ const sigParts = (s, pt) => [
   html`<button class="signal-body sig-open" key="b" onClick=${e => { e.stopPropagation(); openMetric(s.question_id); }}>
     <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
     <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}</span></button>`,
-  s.gap_pct != null ? html`<span class="sig-mag" key="m" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null,
-  html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
+  // 2026-07-09 row diet (home briefing only — the explore page keeps both):
+  // · the unlabelled grey gap-dash read as noise on the calm home band — retired here;
+  // · ONE verdict carrier per row — prevalence/rare bodies state the fact in the sentence
+  //   ("67% of the market does this, you don't"), so their caps pill was a duplicate;
+  //   the pill stays where it is the sole verdict word (value gaps).
+  (s.kind === "prevalence" || s.kind === "rare") ? null :
+    html`<span class=${"pos-tag pos-" + (pt ? pt.tone : "neutral")} key="t">${s.tag || KIND_LABEL[s.kind] || s.kind}</span>`,
 ];
 // Triage controls (prioritise · save · dismiss / restore) — ONE shared control on
 // EVERY signal wherever it appears: the home briefing, each domain page, and the

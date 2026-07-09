@@ -1121,11 +1121,18 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .sig-row-axis { border-left: 3px solid transparent; }
 /* stance-aware row tones (mirror the home gauge palette: green = on aim, amber = past
    it, red = short of it; approach = practice/purple; neutral = context/navy) */
-.sig-tone-green     { background: var(--favourable-tint); border-left-color: var(--favourable); }
-.sig-tone-amber     { background: color-mix(in srgb, var(--amber-bright) 9%, var(--surface)); border-left-color: var(--amber-bright); }
-.sig-tone-red       { background: var(--unfavourable-tint); border-left-color: var(--unfavourable); }
-.sig-tone-approach  { background: var(--differs-tint); border-left-color: var(--differs); }
-.sig-tone-neutral   { background: #EEF0F7; border-left-color: var(--navy); }
+/* 2026-07-09 calm pass: rows sit on surface (the 3px spine + roundel carry the tone);
+   the verdict tint now appears on hover — same palette, less permanent paint */
+.sig-tone-green     { background: var(--surface); border-left-color: var(--favourable); }
+.sig-tone-amber     { background: var(--surface); border-left-color: var(--amber-bright); }
+.sig-tone-red       { background: var(--surface); border-left-color: var(--unfavourable); }
+.sig-tone-approach  { background: var(--surface); border-left-color: var(--differs); }
+.sig-tone-neutral   { background: var(--surface); border-left-color: var(--navy); }
+.sig-tone-green:hover     { background: var(--favourable-tint); }
+.sig-tone-amber:hover     { background: color-mix(in srgb, var(--amber-bright) 9%, var(--surface)); }
+.sig-tone-red:hover       { background: var(--unfavourable-tint); }
+.sig-tone-approach:hover  { background: var(--differs-tint); }
+.sig-tone-neutral:hover   { background: #EEF0F7; }
 .sig-row-axis .sig-stand { opacity: 1; color: var(--ink-soft); }
 .sig-hint { color: var(--ink-faint); font-style: italic; }
 /* anchor provenance mark (stage 2, ruling B 2026-06-26): quiet text on the figure line; hover shows the
@@ -1672,12 +1679,8 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 @keyframes arc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes dot-pop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
 .arc-card, .ov-top .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
-.signal-row { animation: ov-rise 380ms cubic-bezier(.2,.7,.3,1) both; }
-.signal-row:nth-child(1) { animation-delay: 120ms; }
-.signal-row:nth-child(2) { animation-delay: 200ms; }
-.signal-row:nth-child(3) { animation-delay: 280ms; }
-.signal-row:nth-child(4) { animation-delay: 360ms; }
-.signal-row:nth-child(5) { animation-delay: 440ms; }
+/* (2026-07-09 calm pass: the per-row entrance stagger retired — the band card's single
+   rise is the entrance; rows appear settled.) */
 .cat-tile { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
 /* (2026-07-08 hero redesign: the Overview .cat-grid tile stagger retired with the tiles —
    the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */
@@ -3113,31 +3116,22 @@ textarea:focus-visible, [tabindex]:focus-visible {
    Dot = position.depth_pctl, navy always (position is strategy-invariant; strategy
    rides the AlignmentChip). The signals card moved to a full-width .ov-signals-band
    below the trajectory strip — mount move only, all triage choreography untouched. */
-/* padding matches .arc-card exactly so the two hero cards share one inset (their
-   headings align x AND y); rows trim to 48px so the taller table still equals the
-   donut card's height (no align-items:stretch gap). */
+/* ═══ DOMAIN INSTRUMENT (2026-07-09 subtraction rebuild) — RAG proportional bars only.
+   Padding matches .arc-card exactly so the two hero cards share one inset. The old
+   percentile-ruler CSS (dots, P-labels, gridlines, hairline, axis scale, slide anim)
+   retired with the ruler itself: RAG is the only position indicator. */
 .dom-instr { display: flex; flex-direction: column; padding: var(--s4) var(--s4) var(--s3); }
 .di-standfirst { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5;
   margin: 2px 0 var(--s3); max-width: 68ch; }
 .di-standfirst-pending { color: var(--ink-soft); }
-/* shared row grid: identity · track · evidence · scent · strategy chip · chevron */
+/* shared row grid: identity · bar · evidence · scent · strategy chip (auto → collapses to 0
+   when no exception chips render) · chevron */
 .di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
-  grid-template-columns: 132px minmax(0, 1fr) 150px 24px 56px 16px; }
+  grid-template-columns: 132px minmax(0, 1fr) 150px 24px auto 16px; }
 .di-axis { margin: var(--s2) 0 0; }
-.di-axis-scale { position: relative; height: 34px; }
-.di-axis-strip { position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 2px; overflow: hidden; }
-.di-axis-strip .di-zone { position: absolute; top: 0; bottom: 0; }
-.di-axis-lab { position: absolute; bottom: 0; transform: translateX(-50%); font-size: var(--fs-micro);
-  color: var(--ink-faint); white-space: nowrap; }
-.di-axis-lab.di-lab-min { transform: none; }
-.di-axis-lab.di-lab-max { transform: translateX(-100%); }
-.di-axis-med { font-weight: 650; color: var(--ink-soft); }
-.di-axis-you { position: absolute; top: -7px; transform: translateX(-50%); font-size: var(--fs-micro);
-  font-weight: 700; color: var(--navy); white-space: nowrap;
-  background: color-mix(in srgb, var(--navy) 8%, var(--surface)); border-radius: 999px; padding: 0 6px; }
-.di-axis-cap { position: absolute; left: 0; bottom: 12px; font-size: var(--fs-micro); color: var(--ink-faint); }
+.di-axis-scale { position: relative; height: 30px; }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
-.di-row { min-height: 46px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
+.di-row { min-height: 40px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
   border-top: 1px solid var(--border); cursor: pointer;
   border-radius: var(--radius-sm); transition: background var(--ease); }
 .di-row:first-child { border-top: 0; }
@@ -3147,56 +3141,46 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-name { margin: 0; font-size: var(--fs-label); font-weight: 600; line-height: 1.25; font-family: inherit; }
 .di-name .di-open { display: inline-flex; align-items: center; gap: var(--s2); font: inherit; color: inherit;
   background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+/* sublines exist ONLY for honesty cases now (indicative read / no position yet / practice reads) */
 .di-sub { display: block; font-size: var(--fs-micro); color: var(--ink-faint); line-height: var(--lh-micro);
   margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .di-indic { font-style: normal; font-weight: 650; color: var(--ink-soft); letter-spacing: .02em; }
-/* the track — every geometric element positions by % so all rows share one x-space */
 .di-trackcell { min-width: 0; }
-.di-track { position: relative; display: block; height: 34px; }
-.di-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
-  background: var(--border); }
-.di-grid { position: absolute; top: 7px; bottom: 7px; width: 1px; background: var(--border); opacity: .55; }
-.di-grid-med { opacity: .95; }
-.di-hair { position: absolute; top: 0; bottom: 0; width: 0;
-  border-left: 1px dashed color-mix(in srgb, var(--navy) 52%, transparent); }
-.di-dot { position: absolute; left: var(--p); top: calc(50% - 5px); width: 10px; height: 10px;
-  margin-left: -5px; border-radius: 50%; background: var(--navy);
-  box-shadow: 0 0 0 2px var(--surface), 0 1px 3px rgba(33,27,38,.28);
-  animation: di-slide 220ms ease-out both; }
-.di-dot-indic { background: var(--surface); border: 2px dashed var(--navy); box-sizing: border-box; }
-@keyframes di-slide { from { left: 50%; opacity: 0; } }
-.di-row:nth-child(2) .di-dot { animation-delay: 40ms; }
-.di-row:nth-child(3) .di-dot { animation-delay: 80ms; }
-.di-row:nth-child(4) .di-dot { animation-delay: 120ms; }
-.di-row:nth-child(5) .di-dot { animation-delay: 160ms; }
-.di-row:nth-child(6) .di-dot { animation-delay: 200ms; }
-.di-row:nth-child(7) .di-dot { animation-delay: 240ms; }
-.di-plabel { position: absolute; left: var(--p); top: calc(50% - 16px); margin-left: 9px;
-  font-size: var(--fs-micro); font-weight: 700; color: var(--navy); line-height: 1; white-space: nowrap; }
-.di-plabel-left { margin-left: 0; transform: translateX(calc(-100% - 9px)); }
+.di-track { position: relative; display: block; height: 28px; }
 .di-norate { font-size: var(--fs-micro); color: var(--ink-faint); font-style: italic; }
 .di-track-pending { position: relative; display: block; height: 10px; border-radius: 5px;
   border: 1.5px dashed var(--border); background: color-mix(in srgb, var(--surface-sunk) 50%, transparent); }
-/* practice lens: proportional prevalence bar (common / alternative / rare) — navy family,
-   never RAG; counts render inside segments wide enough to hold them */
-.di-seg { position: absolute; top: calc(50% - 6px); height: 12px; display: inline-flex;
-  align-items: center; justify-content: center; }
-.di-seg b { font-size: 10px; font-weight: 700; line-height: 1; }
-.di-seg-common { background: var(--navy); border-radius: 3px 0 0 3px; }
-.di-seg-common b { color: #fff; }
+/* proportional segments — length + colour carry the read; the numbers live once, in the
+   evidence column (in-bar numerals retired 2026-07-09) */
+.di-seg { position: absolute; top: calc(50% - 7px); height: 14px; }
+.di-seg:first-child { border-radius: 4px 0 0 4px; } .di-seg:last-child { border-radius: 0 4px 4px 0; }
+.di-seg:only-child { border-radius: 4px; }
+/* practice prevalence bar (navy family — "how common", not position) */
+.di-seg-common { background: var(--navy); }
 .di-seg-alt { background: color-mix(in srgb, var(--navy) 38%, var(--surface)); }
-.di-seg-alt b { color: var(--navy); }
-.di-seg-rare { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); border-radius: 0 3px 3px 0; }
-.di-seg-rare b { color: var(--ink-soft); }
-/* evidence column — the citable counts; tabular so the seven rows align digit-for-digit */
+.di-seg-rare { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+/* market position bar (RAG — same tones as the donut: below=amber · on=green · above=red).
+   below+on+above always sum to the pool, so the segments fill the track. */
+.di-seg-below { background: var(--amber-bright); }
+.di-seg-on { background: var(--favourable); }
+.di-seg-above { background: var(--unfavourable); }
+/* indicative (thin-coverage) rows: same RAG hues, faded + edged — quieter than the hatch,
+   still visibly "not a full-confidence read"; the verbal caveat rides subline + tooltip */
+.di-seg-ind { opacity: .55; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent); }
+/* practice colour key (the navy family is defined nowhere else; the market lens key retired —
+   the donut card's swatched legend is the whole screen's single RAG key) */
+.di-axis-key { display: flex; align-items: center; gap: 14px; height: 30px; overflow: hidden; }
+.di-kk { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro); color: var(--ink-soft); white-space: nowrap; }
+.di-sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.di-sw.di-seg-rare { box-shadow: inset 0 0 0 1px var(--border); }
+/* swatches for the donut card's legend — the one place colour meets word meets count */
+.arc-leg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+  margin-right: 5px; vertical-align: -1px; }
+/* evidence column — the single citable count per row */
 .di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .di-evid b { color: var(--ink); font-weight: 650; }
-.di-ev-split .di-g + .di-g { margin-left: 5px; }        /* stop "9·" jamming the next group */
-.di-n { color: var(--ink-faint); margin-left: 6px; }    /* "24 metrics" — labelled, never mistaken for orgs */
-/* per-domain strategy chip: full weight for the exceptions (Behind/Ahead), quiet for the
-   many on-target rows so seven identical "On" badges don't read as noise */
-.di-chipcol .align-on_target { opacity: .5; }
+.di-n { color: var(--ink-faint); margin-left: 6px; }
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
 .di-scent { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer;
   font-size: 10.5px; font-weight: 700; line-height: 1; padding: 0;
@@ -3209,30 +3193,35 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-chev { color: var(--ink-faint); opacity: .38; transform: none;
   transition: opacity var(--ease), transform var(--ease), color var(--ease); display: inline-flex; }
 .di-row:hover .di-chev { opacity: 1; color: var(--blue-bright); transform: translateX(1px); }
+/* footer: practice lens only (the market footer duplicated the donut legend) */
 .di-foot { margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--border);
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-foot b { color: var(--ink-soft); font-weight: 650; }
-.di-legend { margin-top: 3px; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1.4; }
-.di-legend b { color: var(--ink-soft); font-weight: 700; }
 /* the signals band below the hero — full width; internals untouched */
 .ov-signals-band { margin-top: var(--s4); }
-.sig-count-pill { font-size: var(--fs-micro); font-weight: 700; color: var(--blue);
-  background: var(--blue-tint); border-radius: 999px; padding: 1px 8px; }
-/* responsive: evidence + chip columns yield first; identity shrinks last */
+/* responsive: tablet narrows columns; phones stack each row to two lines
+   (line 1: name · scent · chip · chevron; line 2: bar + citable count — the count
+   must stay visible on mobile, it is the row's only number) */
 @media (max-width: 1180px) {
-  .di-axis, .di-row { grid-template-columns: 112px minmax(0, 1fr) 96px 24px 16px; }
-  .di-chipcol { display: none; }
-  .di-ev-split { display: none; }          /* tablet: keep just the labelled "N metrics" (full split is in the row tooltip) */
-  .di-n { margin-left: 0; }
+  .di-axis, .di-row { grid-template-columns: 112px minmax(0, 1fr) 110px 24px auto 16px; }
 }
 @media (max-width: 700px) {
-  .di-axis, .di-row { grid-template-columns: 96px minmax(0, 1fr) 24px 16px; column-gap: var(--s2); min-height: 44px; }
-  .di-evid { display: none; }
-  .di-sub { display: none; }
-  .di-lab-q, .di-axis-cap { display: none; }   /* drop P25/P75 so the ruler labels stop colliding on a phone */
+  .di-axis { grid-template-columns: minmax(0, 1fr); }
+  .di-axis .di-cell:not(.di-trackcell) { display: none; }
+  .di-axis-scale { height: auto; }
+  .di-axis-key { height: auto; flex-wrap: wrap; gap: 4px 12px; overflow: visible; }
+  .di-row { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s2);
+    row-gap: 2px; padding: var(--s2); min-height: 0; }
+  .di-ident { order: 1; flex: 1 0 52%; }   /* min 52% so the bar can never join line 1 (short names like Pay) */
+  .di-scentcol { order: 2; flex: none; }
+  .di-chipcol { order: 3; flex: none; }
+  .di-chev { order: 4; flex: none; }
+  .di-trackcell { order: 5; flex: 1 1 60%; }
+  .di-evid { order: 6; flex: 1 0 auto; font-size: var(--fs-micro); }
+  .di-track { height: 20px; }
+  .di-seg { top: calc(50% - 6px); height: 12px; }
   .di-norate { white-space: normal; line-height: 1.35; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .di-dot { animation: none !important; }
   .ov-signals-band .card { animation: none !important; opacity: 1; transform: none !important; }
 }

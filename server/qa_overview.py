@@ -198,8 +198,12 @@ check("9a. engine emits hero differ / pool / signals-total as integers (the numb
       and hero_differ_val <= hero_pool_val,
       {"differ": hero_differ_val, "pool": hero_pool_val, "signals_total": signals_total_val})
 check("9b. hero copy interpolates engine differ & pool RAW (rendered == engine; no literal, no off-by-one)",
-      "${approach.differ}</b> of ${approach.pool} comparable practices differ from the peer norm" in pagesjs,
-      "hero differ/pool line is not interpolated raw from the engine fields")
+      "const differ = approach.differ, inLine = approach.in_line" in pagesjs
+      and "<b>${differ}</b> off the norm" in pagesjs
+      and "<b>${inLine}</b> in line with the market" in pagesjs,
+      "hero differ/in-line legend is not interpolated raw from the engine fields "
+      "(2026-07-09: the headline sentence retired in the subtraction pass; the swatched "
+      "legend is now the citable surface, so the raw-interpolation contract moved there)")
 check("9c. 'See all N signals' count derives from the live signal set (view-filtered), not a hard-coded literal",
       # per-view briefings (2026-07-06): the pool binding renamed (_pool) and the panel
       # list became briefing-first + impact tail — the INVARIANT is unchanged: the total
