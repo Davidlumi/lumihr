@@ -596,9 +596,25 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 
 /* ================================================================ overview */
 /* (.opp-hero / .opp-row deleted 2026-07-06 — OpportunityTile retired; zero consumers.) */
-/* org title + the co-op trust line beneath it (pool depth + collection window) */
+/* org title (the "Benchmarked against…" subtitle retired 2026-07-09 — the masthead trust
+   surface is now the confidence chip, .conf-chip below) */
 .hero-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.hero-sub { font-size: var(--fs-label); color: var(--ink-soft); letter-spacing: .005em; }
+/* masthead confidence area (2026-07-09, David: "the sample should have its own area with a
+   confidence rating"): a full-row wrap under the peer-selector cluster, right-aligned, rating
+   the ACTIVE peer set — >=20 High confidence · 5–19 Directional (below 5 the cut is suppressed
+   server-side). NAVY/neutral — confidence is trust, never RAG. */
+.conf-line { flex-basis: 100%; display: flex; justify-content: flex-end; margin-top: 2px; }
+.conf-chip { position: relative; display: inline-flex; align-items: center; gap: var(--s2);
+  border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+  padding: 4px 12px; font-size: var(--fs-caption); color: var(--ink-soft); }
+.conf-chip b { color: var(--ink); font-weight: 650; }
+.conf-n { color: var(--ink-faint); }
+.conf-meter { display: inline-flex; gap: 2.5px; }
+.conf-meter i { width: 5px; height: 12px; border-radius: 2px; background: var(--navy); flex: none; }
+.conf-directional .conf-meter i { background: color-mix(in srgb, var(--navy) 62%, var(--surface)); }
+.conf-meter i.off { background: var(--border); }
+.conf-chip .indic-tip { left: auto; right: 0; width: 240px; }
+.conf-chip:hover .indic-tip, .conf-chip:focus .indic-tip, .conf-chip:focus-within .indic-tip { opacity: 1; visibility: visible; }
 /* "Your journey" strip — slim band between the hero row and the domain grid */
 .ov-journey { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s4);
   padding: var(--s2) var(--s4); border: 1px solid var(--border); border-radius: var(--radius);

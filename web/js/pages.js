@@ -28,6 +28,28 @@ function StrategyNudge() {
         onClick=${() => { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} setHidden(true); }}><${Icon} name="close" size=${15} /></button>
     </div>`;
 }
+// Masthead CONFIDENCE area (2026-07-09, David: "the sample should have its own area with a
+// confidence rating"; the "Benchmarked against…" subtitle removed entirely). The single trust
+// surface: an always-on chip (once insights unlock) rating the ACTIVE peer set by its live n,
+// on the published thresholds — >=20 = High confidence, 5–19 = Directional; below 5 the cut is
+// suppressed server-side, so no third state ever renders. NAVY/neutral — confidence is trust,
+// never RAG. The baseline-window + movement explainer moved into this tooltip when the subtitle
+// died. Sits right-aligned under the peer selector and updates with every cut switch.
+function ConfidenceChip({ n, window: win }) {
+  if (n == null || n < 5) return null;
+  const high = n >= 20;
+  const tip = (high
+    ? "Verdicts are compared against " + n + " peer organisations — a solid sample."
+    : "Verdicts are compared against " + n + " peers — treat as directional.")
+    + (win ? " " + win + " baseline — movement shows from your next cycle." : "");
+  return html`
+    <span class=${"conf-chip" + (high ? "" : " conf-directional")} tabindex="0" role="note">
+      <span class="conf-meter" aria-hidden="true"><i></i><i></i><i class=${high ? "" : "off"}></i></span>
+      <b>${high ? "High confidence" : "Directional"}</b>
+      <span class="conf-n num">${n} peers${high ? "" : " — treat as a steer, not a verdict"}</span>
+      <span class="indic-tip">${tip}</span>
+    </span>`;
+}
 window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut, onTwinInfo }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -57,41 +79,32 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
     </div>`;
   const h = data.headline;
   const pctAbove = h.comparable_metrics ? Math.round(100 * h.above_median / h.comparable_metrics) : 0;
-  // Single source of truth for peer-sample confidence. The caveat is the ONLY
-  // surface that flags a thin cut; gauge / cards / panels / signals read this and
-  // render nothing extra. Gated on insights unlocked so it never stacks on the
-  // data-pending gauge (below the 90% gate). Window [5, 20): below 5 a cut is
-  // fully suppressed (no verdict to caveat, = SUPPRESSION_FLOOR); 20 is the round
-  // upper edge (DECISIONS.md).
+  // Single source of truth for peer-sample confidence: the masthead ConfidenceChip
+  // (2026-07-09 — replaced the "Benchmarked against…" subtitle AND the thin-sample
+  // caveat as the one trust surface; David: "the sample should have its own area with
+  // a confidence rating"). Gauge / cards / panels / signals render nothing extra.
+  // Gated on insights unlocked so it never stacks on the data-pending gauge (below
+  // the 90% gate). Thresholds unchanged: >=20 High, [5, 20) Directional, below 5 a
+  // cut is fully suppressed (= SUPPRESSION_FLOOR, DECISIONS.md).
   const unlocked = !!(data.contribution && data.contribution.insights_unlocked);
   const sampleN = cutSize(cut, cuts, me.peer_pool);
-  const thinSample = unlocked && sampleN != null && sampleN >= 5 && sampleN < 20;
   return html`
     <div>
       <div class="hero">
         <div class="hero-title-wrap">
           <h1 class="display-title">${data.org.name}</h1>
-          ${/* the co-op's depth IS the trust anchor — it lived only inside the peer
-                dropdown ("All peers · 220"); a NED should read it without opening
-                anything. Pool + collection window straight from the payload. */ ""}
-          ${data.peer_pool && data.peer_pool.responding_orgs ? html`
-            <div class="hero-sub num">Benchmarked against ${data.peer_pool.responding_orgs} UK organisations${data.snapshot && data.snapshot.window ? " · " + data.snapshot.window + " baseline — movement shows from your next cycle" : ""}</div>` : null}
-          ${/* thin-sample caveat demoted here (2026-07-07) — it used to float in the
-                hero-actions row competing with Export/Share; it belongs with the peer-
-                depth story, as a quiet note under the trust line. */ ""}
-          ${thinSample && html`
-            <div class="sample-caveat-line">
-              <span class="indic-flag" tabindex="0" role="note">
-                <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
-                <span class="indic-tip">Verdicts are compared against ${sampleN} peers — treat as directional.</span>
-              </span>
-            </div>`}
         </div>
         <div class="hero-actions">
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true} />
           <${ExportBoardPack} me=${me} cut=${cut} />
           <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
         </div>
+        ${/* confidence area: full-row wrap under the selector cluster, right-aligned —
+              rates whatever peer set is active (same flex-basis trick the old caveat used) */ ""}
+        ${unlocked ? html`
+          <div class="conf-line">
+            <${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />
+          </div>` : null}
       </div>
 
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
