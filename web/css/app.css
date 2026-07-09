@@ -967,12 +967,15 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-tip-glow { transform-box: fill-box; transform-origin: center; opacity: .5;
   animation: tip-pulse 2.6s ease-in-out infinite; }
 @keyframes tip-pulse { 0%, 100% { transform: scale(1); opacity: .42; } 50% { transform: scale(2.1); opacity: 0; } }
-.arc-verdict { text-align: center; margin-top: var(--s3); }
+.arc-verdict { text-align: center; margin-top: var(--s2); }
 .arc-word { font-family: var(--font-head); font-size: var(--fs-display); font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; }
 .arc-lean { font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); margin-top: var(--s1); letter-spacing: .005em; }
 .arc-caption { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: 2px; }
-.arc-legend { display: flex; justify-content: space-between; font-size: var(--fs-caption); color: var(--ink-soft);
-  border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s4); }
+/* legend: centred cluster with an even gap (was space-between, which flung the three items to
+   the card edges and read as loose). Dots use the soft gauge tones — same RAG fill as the donut
+   and the domain bars, so the key matches what it keys (2026-07-09). */
+.arc-legend { display: flex; justify-content: center; gap: var(--s5); font-size: var(--fs-caption); color: var(--ink-soft);
+  border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s3); }
 .arc-leg-fig { font-weight: 650; color: var(--ink); margin-right: 3px; }
 /* Approach companion — a quiet line under the legend, never on the arc (spec §6.1).
    Purple dot + muted text: a count of choices that differ, not a verdict. */

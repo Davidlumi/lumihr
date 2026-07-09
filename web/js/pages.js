@@ -798,9 +798,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
       ${/* swatched legend (2026-07-09): with the domain card's key row retired, this is the
             whole screen's single place where RAG colour meets word meets count. */ ""}
       <div class="arc-legend num">
-        <span><i class="arc-leg-dot di-seg-below" aria-hidden="true"></i><span class="arc-leg-fig">${market.below}</span> Below</span>
-        <span><i class="arc-leg-dot di-seg-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> On market</span>
-        <span><i class="arc-leg-dot di-seg-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> Above</span>
+        <span><i class="arc-leg-dot di-fill-below" aria-hidden="true"></i><span class="arc-leg-fig">${market.below}</span> Below</span>
+        <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> On market</span>
+        <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
       ${/* PercentileRuler retired from the Overview (2026-07-09, "RAG is the ONLY position
             indicator"): it was a second position scale — bolder RAG zones + a P-number + a
@@ -933,7 +933,6 @@ function domainRowSentence(d, view) {
   // counts-only + the verbal adverb — no P-number anywhere (RAG-only law, 2026-07-09)
   let s = label + ": " + pos.below + " below, " + pos.at + " on market, " + pos.above +
     " above of " + pos.pool + " comparable — " + leanCaption(pos) + ".";
-  if (d.position_basis === "indicative") s += " Indicative — thin coverage, not a full market verdict.";
   // strategy channel (2026-07-09): the row glyph is decorative, so the on-aim / behind / ahead
   // read must ride the accessible name — words only, never a lag/match/lead literal or a P-number.
   if (d.target && STRAT_CLAUSE[d.target.alignment]) s += " " + STRAT_CLAUSE[d.target.alignment];
@@ -949,9 +948,12 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     const p = d.position; if (p) { sum.below += p.below || 0; sum.at += p.at || 0; sum.above += p.above || 0; sum.pool += p.pool || 0; }
     const pv = d.prevalence; if (pv && pv.pool) { sum.common += pv.with_majority || 0; sum.alt += pv.established || 0; sum.rare += pv.less_common || 0; sum.ppool += pv.pool || 0; }
   });
+  // standfirst removed (David 2026-07-09): the per-domain rows carry the read; the summary
+  // sentence duplicated the donut + repeated what the bars already show. Kept ONLY for the
+  // pending/locked state, where there are no rows yet to explain themselves.
   const stand = pending
     ? "Your per-domain position appears here once enough of your data is comparable — complete your key reward questions to unlock it."
-    : domainStandfirst(market, doms, view, prevalence);
+    : null;
   const openDomain = (name) => nav("/category/" + encodeURIComponent(name));
   // strategy summary (2026-07-09): an always-on anchor so the navy channel says something even at
   // zero drift — "all N on aim" flips to "N off aim". Reads ONLY targets (strategy-off → no targets
@@ -1001,7 +1003,6 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
           const sentence = domainRowSentence(d, view);
           const pos = d.position;
           const noRate = d.competitiveness === false;
-          const indic = d.position_basis === "indicative";
           const pv = d.prevalence || {};
           const nSig = (sigCounts && sigCounts[d.name]) || 0;
           const pct = pos && pos.depth_pctl != null ? Math.min(99, Math.max(1, pos.depth_pctl)) : null;
@@ -1009,15 +1010,12 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
             <div key=${d.name} class="di-row" title=${sentence} onClick=${() => openDomain(d.name)}>
               <span class="di-cell di-ident">
                 <h3 class="di-name"><button class="di-open" aria-label=${sentence}
-                  onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>
-                  <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${13} /></span>${label}</button></h3>
-                ${/* sublines survive ONLY where they carry something the bar can't: the
-                      indicative caveat and the empty state. The five near-identical
-                      leanCaption phrases died in the 2026-07-09 subtraction pass — the
-                      adverb still rides every row tooltip/aria via domainRowSentence. */ ""}
+                  onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>${label}</button></h3>
+                ${/* sublines survive ONLY for the empty state now (domain icons + the
+                      indicative subline removed, David 2026-07-09). Practice keeps its
+                      short prevalence read. */ ""}
                 ${pending ? null : practice
                   ? html`<span class="di-sub">${pv.pool ? prevShort(pv) : "no practices tracked yet"}</span>`
-                  : indic ? html`<span class="di-sub"><i class="di-indic">indicative read</i></span>`
                   : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
                   : null}
               </span>
@@ -1038,10 +1036,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                         on=green / above=red, segments sized to the METRIC COUNT in each band with the
                         count printed INSIDE (min-width floor so a lone 1 never floats out). Soft
                         gauge tones — the platform's one RAG fill, same as the donut. RAG-only law
-                        holds: colours + counts, zero P-anything. The count is now the citation, so
-                        the separate evidence line is retired. Indicative → whole-bar hatch + the
-                        counts on solid chips so the citable digit stays crisp. */ ""}
-                  <span class=${"di-bar" + (indic ? " di-bar-ind" : "")} aria-hidden="true">
+                        holds: colours + counts, zero P-anything. The count is the citation, so the
+                        separate evidence line is retired. */ ""}
+                  <span class="di-bar" aria-hidden="true">
                     ${[["below", "di-fill-below"], ["at", "di-fill-on"], ["above", "di-fill-above"]].map(([k, cls]) => {
                       const v = pos[k] || 0;
                       if (!v) return null;
