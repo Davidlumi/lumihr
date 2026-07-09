@@ -659,13 +659,31 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
 from aggregate import score_direction
 
 
+def market_pool_qids(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q=None):
+    """The set of metrics the MARKET lens rates — substance-pool MEMBERSHIP (band values
+    irrelevant), computed from the same items + practice_position_items + config gate the
+    gauge counts. This is the PARTITION AUTHORITY for one-category-per-metric (David,
+    2026-07-09): a metric in this set is market-rated (below/on/above) and must never
+    also be prevalence-rated (common/alternative/rare). prevalence_items excludes by this
+    set, so the two lenses are disjoint BY CONSTRUCTION on every surface."""
+    cfg = market_position_config()
+    items = position_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q)
+    prac = practice_position_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q)
+    return {i["question_id"] for i in substance_pool(items, prac, cfg)}
+
+
 def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q=None):
     """One item per answered, unsuppressed select/yes_no practice with no
-    defensible direction: how common the org's chosen approach is vs peers."""
+    defensible direction: how common the org's chosen approach is vs peers.
+    PARTITIONED (2026-07-09): any metric the market lens rates is excluded here
+    (market wins) — one category per metric, the two pools disjoint."""
     out = []
     twin_blocks_by_q = twin_blocks_by_q or {}
     cfg = market_position_config()                      # Q1=C: routing authority (read-only, hot-reloaded, cached)
+    _market = market_pool_qids(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q)
     for qid, q in questions.items():
+        if qid in _market:
+            continue  # market-rated -> the market lens owns it (one category per metric)
         if not entitled(q) or q.type not in ("single_select", "yes_no"):
             continue
         cls = (cfg.get("metrics", {}).get(qid) or {}).get("class")

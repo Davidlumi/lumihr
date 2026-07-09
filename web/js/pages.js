@@ -1990,6 +1990,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [type, setType] = useState("");
   const [posSel, setPosSel] = useState([]);     // market-position chip filter (multi-select; [] = all)
   const [prevSel, setPrevSel] = useState([]);   // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
+  const [noneSel, setNoneSel] = useState(false); // "no reading yet" chip (cards in neither lens)
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
   // stays consistent across surfaces: when the user has turned their strategy OFF on the
   // overview (persisted pref _overview.apply_strategy === false), fetch this category with
@@ -2000,7 +2001,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const applyStrat = _ovp.apply_strategy !== false;
   const [catRetry, setCatRetry] = useState(0);
   useEffect(() => {
-    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]); setPrevSel([]);
+    setOv(null); setBench(null); setErr(null); setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false);
     Promise.all([
       apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
       apiCached("/api/benchmarks/Reward?" + cutQS(cut)),
@@ -2040,9 +2041,19 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // empties the grid; only one group is ever non-empty, enforced in the chip handlers), so this
   // AND-chains as a no-op when prevSel is empty. null-safe (includes(null) is false).
   const cardPrevBand = c => c.prevalence_band;
-  let cards = type ? all.filter(c => c.category === type) : all;
+  // FILTER FIXES (2026-07-09, David: "the filters seem odd"): (a) chip counts recompute against
+  // the TYPE-filtered set, so a chip's number always equals what clicking it shows (they lied
+  // under the type dropdown before); (b) "no reading yet" chip — after the one-category
+  // partition, cards with neither band were invisible to every filter; now a filterable state;
+  // (c) Clear clears EVERYTHING including the type dropdown.
+  const typed = type ? all.filter(c => c.category === type) : all;
+  const chipN = k => typed.filter(c => cardBand(c) === k).length;
+  const prevChipN = k => typed.filter(c => cardPrevBand(c) === k).length;
+  const noneN = typed.filter(c => !cardBand(c) && !cardPrevBand(c)).length;
+  let cards = typed;
   if (posSel.length) cards = cards.filter(c => posSel.includes(cardBand(c)));
   if (prevSel.length) cards = cards.filter(c => prevSel.includes(cardPrevBand(c)));
+  if (noneSel) cards = cards.filter(c => !cardBand(c) && !cardPrevBand(c));
 
   // position read (same traffic-light language as the tile / hero gauge)
   const pos = hero && (hero.position || hero.market);
@@ -2072,16 +2083,19 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // otherwise the "small sample · directional" qualifier lives only on the overview hero, and a
   // user reading §1/§2/grid at n=15 sees no warning. Same window [5, 20) + insights-unlocked gate.
   const sampleN = cutSize(cut, cuts, me.peer_pool);
-  const thinSample = !!(ov.contribution && ov.contribution.insights_unlocked) && sampleN != null && sampleN >= 5 && sampleN < 20;
+  // (thinSample retired 2026-07-09 — the always-on ConfidenceChip carries the rating; its own
+  // thresholds live inside the component, same source as the home masthead.)
   // §1 (domain-page Pass 1, 2026-06-27): two RAG donuts via the shared <Donut>. CARD A (position)
   // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
   // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
   // practice is not a market position), a count-HEADLINE centre, no alignment chip.
   const posSegs = posM ? ["below", "at", "above"].map(k => ({ value: posM[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
+  // practice donut on the PURPLE ladder (2026-07-09 harmonisation) — the same --prev-* trio as
+  // the home PracticeArc + the overview practice bars; the old blue family is retired here.
   const prevSegs = [
-    { value: prev.with_majority || 0, color: "var(--blue-deep)" },
-    { value: prev.established || 0, color: "color-mix(in srgb, var(--blue) 46%, var(--surface-sunk))" },
-    { value: prev.less_common || 0, color: "color-mix(in srgb, var(--blue) 16%, var(--surface-sunk))" },
+    { value: prev.with_majority || 0, color: "var(--prev-common)" },
+    { value: prev.established || 0, color: "var(--prev-alt)" },
+    { value: prev.less_common || 0, color: "var(--prev-rare)" },
   ];
 
   return html`
@@ -2090,12 +2104,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             bar above (same trim as the benchmark grid header; consistency). */ ""}
       ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"}`)}
 
-      ${thinSample ? html`
+      ${/* confidence area (2026-07-09): the same masthead chip as the home — always on once
+            insights unlock, rating the ACTIVE peer set; replaces the thin-only floating
+            "Small sample" flag (trust language now consistent across surfaces). */ ""}
+      ${(ov.contribution && ov.contribution.insights_unlocked) ? html`
         <div class="cat-thin-caveat">
-          <span class="indic-flag" tabindex="0" role="note">
-            <${Icon} name="info" size=${11} /> Small sample · ${sampleN} peers
-            <span class="indic-tip">This domain is compared against ${sampleN} peers — treat the reads here as directional.</span>
-          </span>
+          <${ConfidenceChip} n=${sampleN} window=${ov.snapshot && ov.snapshot.window} />
         </div>` : null}
 
       ${ov.strategy_complete ? html`
@@ -2118,14 +2132,16 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-card-counts num">
               <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
             </div>
-            ${pos.depth_pctl != null && window.MARKET_BAND ? html`
-              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND} compact=${true} />` : null}
+            ${/* PercentileRuler retired here too (2026-07-09): it printed a P-number + a harsh
+                  less/more-competitive strip — the RAG-only law reached the domain page. The
+                  donut + verdict word + lean caption carry the read. */ ""}
             ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
             <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
               <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-              ${[{ k: "below", n: posM.below, lab: "below" }, { k: "on", n: posM.at, lab: "on market" }, { k: "above", n: posM.above, lab: "above" }].filter(p => p.n).map(p => html`
+              ${[{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }].map(p => ({ ...p, n: chipN(p.k) })).filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
-                  onClick=${() => { setPrevSel([]); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
+                  title="Filters the grid by market position — replaces any practice filter"
+                  onClick=${() => { setPrevSel([]); setNoneSel(false); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
             </div>` :
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on ${prev.title.toLowerCase()}.</div>`}
@@ -2140,9 +2156,10 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             </div>
             <div class="cat-card-chips sig-chips" role="group" aria-label=${"Filter the grid by " + prev.title.toLowerCase()}>
               <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-              ${[{ k: "match", n: prev.with_majority, lab: prev.states.with_majority }, { k: "common_alt", n: prev.established, lab: prev.states.established }, { k: "rarer", n: prev.less_common, lab: prev.states.less_common }].filter(p => p.n).map(p => html`
+              ${[{ k: "match", lab: prev.states.with_majority }, { k: "common_alt", lab: prev.states.established }, { k: "rarer", lab: prev.states.less_common }].map(p => ({ ...p, n: prevChipN(p.k) })).filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
-                  onClick=${() => { setPosSel([]); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
+                  title="Filters the grid by practice prevalence — replaces any position filter"
+                  onClick=${() => { setPosSel([]); setNoneSel(false); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
             </div>` :
             html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>No practice questions assessed in this category yet.</div>`}
@@ -2162,7 +2179,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
           <b>All metrics</b><span class="pulse-count-chip">${cards.length}</span><span class="caption">shown</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
           <div class="cat-head-ctl">
-            ${(posSel.length || prevSel.length) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); }}>Clear filter</button>` : null}
+            ${noneN ? html`
+              <button type="button" class=${"sig-chip" + (noneSel ? " on" : "")} aria-pressed=${noneSel}
+                title="Metrics with no market or practice reading yet — unanswered, thin data, or awaiting a rating method"
+                onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(v => !v); }}>
+                no reading yet <span class="n">${noneN}</span></button>` : null}
+            ${(posSel.length || prevSel.length || noneSel || type) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(false); setType(""); }}>Clear filters</button>` : null}
             <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
               <option value="">All types</option><option value="metric">Metrics</option>
               <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
@@ -2170,7 +2192,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
           </div>
         </div>
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
-          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); }}>Clear filters</button>`} /> ` :
+          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false); }}>Clear filters</button>`} /> ` :
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>
