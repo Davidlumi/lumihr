@@ -557,6 +557,21 @@ function AlignmentChip({ target, compact }) {
   return html`<span class=${"align-chip align-" + target.alignment + (compact ? " align-chip-sm" : "")}
     title=${targetCopy(target)}><${Icon} name="target" size=${compact ? 11 : 12} /> ${label}</span>`;
 }
+// The DomainInstrument's strategy channel (David 2026-07-09): the same navy AlignmentChip data,
+// collapsed to ONE glyph per row so the wide RAG bar owns the row. NAVY only (never RAG hues) and
+// walled into its own column — arrows/tick read as strategy, not market movement. on_target = calm
+// outlined tick; behind = filled disc, down arrow; ahead = filled disc, up arrow (the filled discs
+// draw the eye to anything off strategy). No target → renders nothing, so strategy-off degrades to
+// pure RAG position with zero strategy indicators (on==off parity holds). Full read rides the row
+// aria-label + this title; the glyph is decorative.
+const STRAT_GLYPH = { on_target: { cls: "on", icon: "check" }, behind: { cls: "off", icon: "arrow-down" }, ahead: { cls: "off", icon: "arrow-up" } };
+const STRAT_CLAUSE = { on_target: "On strategy — you're on aim.", behind: "Behind strategy — short of your aim.", ahead: "Ahead of strategy — past your aim." };
+function StrategyMark({ target }) {
+  const g = target && STRAT_GLYPH[target.alignment];
+  if (!g) return null;
+  return html`<span class=${"di-smark di-smark-" + g.cls} title=${targetCopy(target)} aria-hidden="true">
+    <${Icon} name=${g.icon} size=${13} strokeWidth=${2.4} /></span>`;
+}
 
 // Shared "market spectrum" marker chart — the proportional below/on/above blocks
 // unrolled onto a below↔above axis, with the org's declared AIM drawn on the axis
@@ -916,9 +931,13 @@ function domainRowSentence(d, view) {
   if (d.competitiveness === false) return label + " — no market rate; approach choices only. See the Practice lens.";
   if (!pos || !pos.pool) return label + " — no comparable market position yet.";
   // counts-only + the verbal adverb — no P-number anywhere (RAG-only law, 2026-07-09)
-  const s = label + ": " + pos.below + " below, " + pos.at + " on market, " + pos.above +
+  let s = label + ": " + pos.below + " below, " + pos.at + " on market, " + pos.above +
     " above of " + pos.pool + " comparable — " + leanCaption(pos) + ".";
-  return d.position_basis === "indicative" ? s + " Indicative — thin coverage, not a full market verdict." : s;
+  if (d.position_basis === "indicative") s += " Indicative — thin coverage, not a full market verdict.";
+  // strategy channel (2026-07-09): the row glyph is decorative, so the on-aim / behind / ahead
+  // read must ride the accessible name — words only, never a lag/match/lead literal or a P-number.
+  if (d.target && STRAT_CLAUSE[d.target.alignment]) s += " " + STRAT_CLAUSE[d.target.alignment];
+  return s;
 }
 function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent }) {
   const doms = domains || [];
@@ -934,12 +953,21 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     ? "Your per-domain position appears here once enough of your data is comparable — complete your key reward questions to unlock it."
     : domainStandfirst(market, doms, view, prevalence);
   const openDomain = (name) => nav("/category/" + encodeURIComponent(name));
+  // strategy summary (2026-07-09): an always-on anchor so the navy channel says something even at
+  // zero drift — "all N on aim" flips to "N off aim". Reads ONLY targets (strategy-off → no targets
+  // → null → nothing renders, on==off parity). Position view only; words only (no lag/match/lead).
+  const withTarget = practice ? [] : doms.filter(d => d.target && ALIGN_LABEL[d.target.alignment]);
+  const offAim = withTarget.filter(d => d.target.alignment !== "on_target").length;
+  const stratSum = (pending || !withTarget.length) ? null
+    : offAim === 0 ? "Strategy · all " + withTarget.length + " on aim"
+    : "Strategy · " + offAim + " off aim";
   return html`
     <div class="card dom-instr">
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="layers" size=${15} />
         <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
+        ${stratSum ? html`<span class="di-strat-sum">${stratSum}</span>` : null}
       </div>
       ${stand ? html`<p class=${"di-standfirst" + (pending ? " di-standfirst-pending" : "")}>${stand}</p>` : null}
       ${/* market lens (Option 1 ruler): a word-only direction axis — "further below · market ·
@@ -956,10 +984,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
             <span class="di-kk"><i class="di-sw di-seg-rare"></i>rare</span>
           </span>`
           : html`
-          <span class="di-axis-words">
-            <span class="di-ax-lo">further below</span>
-            <span class="di-ax-mid">market</span>
-            <span class="di-ax-hi">ahead</span>
+          <span class="di-axis-key">
+            <span class="di-kk"><i class="di-sw di-fill-below"></i>below</span>
+            <span class="di-kk"><i class="di-sw di-fill-on"></i>on market</span>
+            <span class="di-kk"><i class="di-sw di-fill-above"></i>above</span>
           </span>`}
         </span>
         <span class="di-cell di-evid"></span>
@@ -1005,33 +1033,32 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                   </span>`
                   : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
                 : noRate ? html`<span class="di-norate">No market rate — see the Practice lens</span>`
-                : pos && pos.pool && pos.depth_pctl != null ? html`
-                  ${/* OPTION 1 (David, 2026-07-09): RAG dot on ONE shared ruler — colour is the
-                        RAG read (below=amber / on=green / above=red, the dot = marketTone of the
-                        verdict), position is how far. Soft RAG zone tints teach the geometry; the
-                        on-market band is the real configured band (window.MARKET_BAND). NO
-                        numbers on the axis — the RAG-only law holds (zero P-anything); the
-                        citable count stays in the evidence column. */ ""}
-                  <span class="di-track di-ruler" aria-hidden="true">
-                    ${(() => {
-                      const MB = (window.MARKET_BAND && window.MARKET_BAND.length === 2) ? window.MARKET_BAND : [35, 65];
-                      const pct = Math.min(98.5, Math.max(1.5, pos.depth_pctl));
-                      const tone = marketTone(pos.verdict);
-                      return html`
-                        <i class="di-zone" style=${{ left: 0, width: MB[0] + "%", background: "var(--gauge-below)" }}></i>
-                        <i class="di-zone" style=${{ left: MB[0] + "%", width: (MB[1] - MB[0]) + "%", background: "var(--gauge-on)" }}></i>
-                        <i class="di-zone" style=${{ left: MB[1] + "%", width: (100 - MB[1]) + "%", background: "var(--gauge-above)" }}></i>
-                        <i class="di-mid"></i>
-                        <i class=${"di-dot di-dot-" + tone + (indic ? " di-dot-indic" : "")} style=${{ "--p": pct + "%" }}></i>`;
-                    })()}
+                : pos && pos.pool ? html`
+                  ${/* STACKED RAG BAR (David, 2026-07-09): each row is one bar split below=amber /
+                        on=green / above=red, segments sized to the METRIC COUNT in each band with the
+                        count printed INSIDE (min-width floor so a lone 1 never floats out). Soft
+                        gauge tones — the platform's one RAG fill, same as the donut. RAG-only law
+                        holds: colours + counts, zero P-anything. The count is now the citation, so
+                        the separate evidence line is retired. Indicative → whole-bar hatch + the
+                        counts on solid chips so the citable digit stays crisp. */ ""}
+                  <span class=${"di-bar" + (indic ? " di-bar-ind" : "")} aria-hidden="true">
+                    ${[["below", "di-fill-below"], ["at", "di-fill-on"], ["above", "di-fill-above"]].map(([k, cls]) => {
+                      const v = pos[k] || 0;
+                      if (!v) return null;
+                      const mw = (String(v).length * 8 + 18) + "px";
+                      return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
+                    })}
                   </span>`
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>
               <span class="di-cell di-evid num">
+                ${/* position view: the stacked bar now prints every count, so the separate
+                      "N of M below" line is retired (2026-07-09) — one citation, not two.
+                      Practice keeps its practices-count; it has no in-bar numbers. */ ""}
                 ${pending ? null : practice
                   ? (pv.pool ? html`${pv.pool} practices` : null)
                   : noRate ? html`${pv.pool || 0} practices`
-                  : pos ? html`<b>${pos.verdict === "above" ? pos.above : pos.verdict === "at" ? pos.at : pos.below}</b> of ${pos.pool} <span class="di-n">${pos.verdict === "above" ? "above" : pos.verdict === "at" ? "on market" : "below"}</span>` : null}
+                  : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -1039,11 +1066,15 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     aria-label=${nSig + " signals in " + label + ", jump to the signals list"}
                     onClick=${e => { e.stopPropagation(); onScent && onScent(); }}>${nSig}</button>` : null}
               </span>
-              <span class="di-cell di-chipcol">
-                ${/* exceptions only (2026-07-09): six identical "On" chips were repetition —
-                      the donut card's chip is the ambient confirmation; a row chip now appears
-                      ONLY when a domain is off its aim, which makes it louder, not quieter. */ ""}
-                ${!pending && d.target && d.target.alignment !== "on_target" ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null}
+              <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
+                ${/* strategy channel (2026-07-09): position view shows the navy target glyph on
+                      EVERY row (David: "see if you're aligned or not"); the header carries the
+                      count. Practice view is unchanged — the strategy aim is a position concept,
+                      so it keeps its rare off-target AlignmentChip and nothing else. */ ""}
+                ${pending ? null
+                  : practice ? (d.target && d.target.alignment !== "on_target" ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null)
+                  : noRate ? (stratSum ? html`<span class="di-smark-dash" aria-hidden="true">—</span>` : null)
+                  : html`<${StrategyMark} target=${d.target} />`}
               </span>
               <span class="di-cell di-chev" aria-hidden="true"><${Icon} name="chevron-right" size=${15} /></span>
             </div>`;
