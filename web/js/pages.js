@@ -343,7 +343,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         </div>`}
       <div class="ov-top">
         ${view === "practice"
-          ? html`<${ApproachPanel} approach=${data.hero.approach} pending=${locked} />`
+          ? html`<${PracticeArc} prevalence=${data.hero.prevalence} pending=${locked} />`
           : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals} />
@@ -822,41 +822,52 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
 }
 
 
-// PRACTICE lens for the hero (the dashboard toggle's "Practice" view): the approach
-// read — how many competitive practices differ from the market norm — as the headline,
-// with a proportional differ/in-line bar. The market gauge's sibling, shown INSTEAD of
-// it (the two-axis split: market position vs practice difference, never mixed on screen).
-function ApproachPanel({ approach, pending }) {
-  if (pending || !approach || !approach.pool) return html`
+// PRACTICE lens for the hero — the TWIN of OverallArc (the market donut), in the PURPLE theme
+// (2026-07-09 harmonisation). Shows PREVALENCE (common / alternative / rare) on a purple ladder
+// donut + centred legend, mirroring "Where you stand" exactly — same build, different hue. Practice
+// is "how common", never good/bad, so it stays purple and never enters the RAG channel. (Was
+// ApproachPanel — a 2-way "off the norm / in line" split that used a different framing AND colour
+// from its own 3-way domain bars; that differ read lives on in signals + the category page.)
+function PracticeArc({ prevalence, pending }) {
+  if (pending || !prevalence || !prevalence.pool) return html`
     <div class="card arc-card">
       <div class="card-head"><${Icon} name="layers" size=${15} /><h2 class="card-head-title">How you compare on practice</h2></div>
       <div class="caption" style=${{ padding: "var(--s4) var(--s2)" }}>
         ${pending ? "Your practice mix appears once enough of your data is comparable."
                   : "No practice metrics are comparable in this peer set yet."}</div>
     </div>`;
-  const differ = approach.differ, inLine = approach.in_line, pool = approach.pool;
-  const fr = pool ? Math.round(1000 * differ / pool) / 10 : 0;
+  // interpolated RAW from the engine prevalence fields (rendered == engine; qa_overview 9b)
+  const common = prevalence.with_majority, alt = prevalence.established, rare = prevalence.less_common, pool = prevalence.pool;
+  // centre word + caption derive from ONE rule so they never contradict (descriptive, never a
+  // grade): a majority-common mix → "Typical" / "mostly common choices"; a rare-led mix →
+  // "Distinctive" / "often its own pattern"; anything else → "Varied" / "a mixed pattern".
+  // Mirrors the market donut's verdict-word-plus-caption pairing.
+  const share = pool ? common / pool : 0;
+  const word = (common >= alt && common >= rare)
+    ? (share >= 0.5 ? "Typical" : "Varied")
+    : (rare >= alt && rare >= common) ? "Distinctive" : "Varied";
+  const cap = word === "Typical" ? "mostly common choices"
+            : word === "Distinctive" ? "often its own pattern" : "a mixed pattern";
   return html`
     <div class="card arc-card">
       <div class="card-spot" aria-hidden="true"></div>
-      <div class="card-head" title="Whether you differ from the peer pattern — a different question from the domain table's how-common-each-choice-is read.">
+      <div class="card-head" title="How common each of your practice choices is among peers — a different question from the market-position read.">
         <${Icon} name="layers" size=${15} /><h2 class="card-head-title">How you compare on practice</h2></div>
-      <div class="appr-stage">
-        <div class="arc-stage" role="img"
-          aria-label=${differ + " of " + pool + " practices off the norm; " + inLine + " in line."}>
-          <${Donut}
-            segments=${[
-              { value: differ, color: "var(--differs)" },
-              { value: inLine, color: "var(--chart-band-mid)" },
-            ]}
-            total=${pool} centerNum=${pool} sub="practices" size=${210} stroke=${28} />
-        </div>
-        ${/* headline retired (2026-07-09): the swatched legend below states the same two
-              counts with colour — one citable surface, not two. */ ""}
-        <div class="appr-legend num">
-          <span><span class="appr-dot appr-dot-differ"></span><b>${differ}</b> off the norm</span>
-          <span><span class="appr-dot appr-dot-inline"></span><b>${inLine}</b> in line with the market</span>
-        </div>
+      <div class="arc-stage" role="img"
+        aria-label=${"How you compare on practice: of " + pool + " tracked practices, " + common + " common, " + alt + " alternative, " + rare + " rare."}>
+        <${Donut}
+          segments=${[
+            { value: common, color: "var(--prev-common)" },
+            { value: alt, color: "var(--prev-alt)" },
+            { value: rare, color: "var(--prev-rare)" },
+          ]}
+          total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${210} stroke=${28} />
+      </div>
+      <div class="arc-verdict"><div class="arc-lean">${cap}</div></div>
+      <div class="arc-legend num">
+        <span><i class="arc-leg-dot di-fill-common" aria-hidden="true"></i><span class="arc-leg-fig">${common}</span> Common</span>
+        <span><i class="arc-leg-dot di-fill-alt" aria-hidden="true"></i><span class="arc-leg-fig">${alt}</span> Alternative</span>
+        <span><i class="arc-leg-dot di-fill-rare" aria-hidden="true"></i><span class="arc-leg-fig">${rare}</span> Rare</span>
       </div>
       <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
     </div>`;
@@ -941,13 +952,7 @@ function domainRowSentence(d, view) {
 function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent }) {
   const doms = domains || [];
   const practice = view === "practice";
-  const overallP = !practice && market && market.depth_pctl != null ? market.depth_pctl : null;
-  // footer sums — the "sums to the dial" claim, computed from the SAME fields the rows show
-  const sum = { below: 0, at: 0, above: 0, pool: 0, common: 0, alt: 0, rare: 0, ppool: 0 };
-  doms.forEach(d => {
-    const p = d.position; if (p) { sum.below += p.below || 0; sum.at += p.at || 0; sum.above += p.above || 0; sum.pool += p.pool || 0; }
-    const pv = d.prevalence; if (pv && pv.pool) { sum.common += pv.with_majority || 0; sum.alt += pv.established || 0; sum.rare += pv.less_common || 0; sum.ppool += pv.pool || 0; }
-  });
+  // (footer sums retired 2026-07-09 with both footers — the donut legends carry the org totals.)
   // standfirst removed (David 2026-07-09): the per-domain rows carry the read; the summary
   // sentence duplicated the donut + repeated what the bars already show. Kept ONLY for the
   // pending/locked state, where there are no rows yet to explain themselves.
@@ -972,18 +977,17 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         ${stratSum ? html`<span class="di-strat-sum">${stratSum}</span>` : null}
       </div>
       ${stand ? html`<p class=${"di-standfirst" + (pending ? " di-standfirst-pending" : "")}>${stand}</p>` : null}
-      ${/* market lens (Option 1 ruler): a word-only direction axis — "further below · market ·
-            ahead" — teaches the shared geometry with ZERO numbers; the donut card's swatched
-            legend remains the colour key. Practice keeps its swatch key: the navy
-            common/alternative/rare family is defined nowhere else. */ ""}
+      ${/* both lenses now key their stacked bar with a swatch row: market = soft RAG (below/on/
+            above), practice = the purple ladder (common/alternative/rare). Same construction,
+            each keeps its own theme. */ ""}
       <div class="di-axis" aria-hidden="true">
         <span class="di-cell di-ident"></span>
         <span class="di-cell di-trackcell di-axis-scale">
           ${practice ? html`
           <span class="di-axis-key">
-            <span class="di-kk"><i class="di-sw di-seg-common"></i>common</span>
-            <span class="di-kk"><i class="di-sw di-seg-alt"></i>alternative</span>
-            <span class="di-kk"><i class="di-sw di-seg-rare"></i>rare</span>
+            <span class="di-kk"><i class="di-sw di-fill-common"></i>common</span>
+            <span class="di-kk"><i class="di-sw di-fill-alt"></i>alternative</span>
+            <span class="di-kk"><i class="di-sw di-fill-rare"></i>rare</span>
           </span>`
           : html`
           <span class="di-axis-key">
@@ -1011,23 +1015,27 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               <span class="di-cell di-ident">
                 <h3 class="di-name"><button class="di-open" aria-label=${sentence}
                   onClick=${e => { e.stopPropagation(); openDomain(d.name); }}>${label}</button></h3>
-                ${/* sublines survive ONLY for the empty state now (domain icons + the
-                      indicative subline removed, David 2026-07-09). Practice keeps its
-                      short prevalence read. */ ""}
+                ${/* sublines survive ONLY for the empty states now — the bar carries the read in
+                      both lenses (harmonised 2026-07-09: the practice "mostly common" subline
+                      dropped, matching the market rows' name-only identity). */ ""}
                 ${pending ? null : practice
-                  ? html`<span class="di-sub">${pv.pool ? prevShort(pv) : "no practices tracked yet"}</span>`
+                  ? (pv.pool ? null : html`<span class="di-sub">no practices tracked yet</span>`)
                   : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
                   : null}
               </span>
               <span class="di-cell di-trackcell">
                 ${pending ? html`<span class="di-track di-track-pending" aria-hidden="true"></span>`
                 : practice ? (pv.pool ? html`
-                  <span class="di-track" aria-hidden="true">
-                    ${[["with_majority", "di-seg-common"], ["established", "di-seg-alt"], ["less_common", "di-seg-rare"]].reduce((acc, [k, cls]) => {
-                      const v = pv[k] || 0, w = 100 * v / pv.pool;
-                      acc.nodes.push(html`<i key=${k} class=${"di-seg " + cls} style=${{ left: acc.x + "%", width: w + "%" }}></i>`);
-                      acc.x += w; return acc;
-                    }, { x: 0, nodes: [] }).nodes}
+                  ${/* PRACTICE STACKED BAR (2026-07-09 harmonisation): the SAME flex bar as market,
+                        counts inside common/alternative/rare, on the purple ladder — practice reads
+                        as the market lens's twin. */ ""}
+                  <span class="di-bar" aria-hidden="true">
+                    ${[["with_majority", "di-fill-common"], ["established", "di-fill-alt"], ["less_common", "di-fill-rare"]].map(([k, cls]) => {
+                      const v = pv[k] || 0;
+                      if (!v) return null;
+                      const mw = (String(v).length * 8 + 18) + "px";
+                      return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
+                    })}
                   </span>`
                   : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
                 : noRate ? html`<span class="di-norate">No market rate — see the Practice lens</span>`
@@ -1049,13 +1057,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>
               <span class="di-cell di-evid num">
-                ${/* position view: the stacked bar now prints every count, so the separate
-                      "N of M below" line is retired (2026-07-09) — one citation, not two.
-                      Practice keeps its practices-count; it has no in-bar numbers. */ ""}
-                ${pending ? null : practice
-                  ? (pv.pool ? html`${pv.pool} practices` : null)
-                  : noRate ? html`${pv.pool || 0} practices`
-                  : null}
+                ${/* both stacked bars now print their counts inside, so the evidence column is
+                      retired in both lenses (2026-07-09). It survives only for the market
+                      no-market-rate row (Governance), which has no bar to carry its count. */ ""}
+                ${(!pending && !practice && noRate) ? html`${pv.pool || 0} practices` : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -1066,10 +1071,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
                 ${/* strategy channel (2026-07-09): position view shows the navy target glyph on
                       EVERY row (David: "see if you're aligned or not"); the header carries the
-                      count. Practice view is unchanged — the strategy aim is a position concept,
-                      so it keeps its rare off-target AlignmentChip and nothing else. */ ""}
-                ${pending ? null
-                  : practice ? (d.target && d.target.alignment !== "on_target" ? html`<${AlignmentChip} target=${d.target} compact=${true} />` : null)
+                      count. Practice view shows NOTHING here — strategy alignment is a market-
+                      position concept, it has no meaning against the practice mix (harmonised). */ ""}
+                ${pending || practice ? null
                   : noRate ? (stratSum ? html`<span class="di-smark-dash" aria-hidden="true">—</span>` : null)
                   : html`<${StrategyMark} target=${d.target} />`}
               </span>
@@ -1077,11 +1081,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
             </div>`;
         })}
       </div>
-      ${/* market footer retired (2026-07-09): it repeated the donut legend digit-for-digit.
-            The practice footer stays — it is the only surface where the common/alt/rare
-            totals are citable. */ ""}
-      ${pending || !practice ? null
-        : html`<div class="di-foot num">Of your ${sum.ppool} tracked practices — <b>${sum.common}</b> common · <b>${sum.alt}</b> alternative · <b>${sum.rare}</b> rare</div>`}
+      ${/* both footers retired (2026-07-09): each repeated its donut legend digit-for-digit.
+            The practice donut (PracticeArc) now cites the org common/alt/rare totals, so the
+            practice footer is redundant too — dropped, matching the market lens. */ ""}
     </div>`;
 }
 

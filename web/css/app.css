@@ -18,7 +18,7 @@
   --font-body: var(--font);
 
   /* ---- type scale (1.25 ratio, named roles) ---- */
-  --fs-display: 30px;  --lh-display: 40px;  --fw-display: 700;
+  --fs-display: 30px;  --lh-display: 38px;  --fw-display: 700;   /* lh 40→38 (2026-07-09 polish): tighter display leading */
   --fs-section: 22px;  --lh-section: 30px;  --fw-section: 600;
   --fs-subhead: 18px;  --lh-subhead: 24px;  /* between section and card-title */
   --fs-card-title: 16px; --lh-card-title: 22px; --fw-card-title: 600;
@@ -40,18 +40,29 @@
   --disabled-opacity: .5;
   /* z-index scale (was ad-hoc 0-200) — nav < popover < pane < modal < toast */
   --z-nav: 40; --z-popover: 60; --z-pane: 80; --z-modal: 100; --z-toast: 200;
-  --border: #EAE5DE;
+  --border: #E2DBD0;   /* deepened 2026-07-09 polish (was #EAE5DE — 1.16:1, invisible on bright screens); still clearly lighter than --chrome-edge */
   --chrome-edge: #D4CCC0;   /* rail/top-bar dividers — must register on warm paper */
   /* hero gauge: quiet desaturated scale (the arc is backdrop, the needle is data) */
   --gauge-below: color-mix(in srgb, var(--amber-bright) 42%, var(--surface));
-  --gauge-on:    color-mix(in srgb, var(--favourable) 40%, var(--surface));
-  --gauge-above: color-mix(in srgb, var(--unfavourable) 38%, var(--surface));
+  --gauge-on:    color-mix(in srgb, var(--favourable) 46%, var(--surface));    /* 40→46% (2026-07-09 polish): presence parity with the amber */
+  --gauge-above: color-mix(in srgb, var(--unfavourable) 44%, var(--surface));  /* 38→44% */
   /* count text ON the soft gauge fills — a darker relative of each hue, legible on the pastel
-     (2026-07-09 stacked-bar: the fills are the universal RAG, these ink the numerals inside them) */
-  --below-ink: color-mix(in srgb, var(--amber-bright) 60%, #3a2600);
+     (2026-07-09 stacked-bar: the fills are the universal RAG, these ink the numerals inside them;
+     below-ink deepened 60→38% amber in the polish pass — the old mix measured 3.0:1, AA fail) */
+  --below-ink: color-mix(in srgb, var(--amber-bright) 38%, #3a2600);
   --on-ink:    color-mix(in srgb, var(--favourable) 42%, var(--ink));
   --above-ink: color-mix(in srgb, var(--unfavourable) 46%, var(--ink));
-  --shadow-card: 0 1px 2px rgba(33,27,38,.04), 0 4px 12px rgba(33,27,38,.05);
+  /* practice prevalence ladder — the PURPLE theme so the practice lens mirrors the market bar's
+     construction while staying non-RAG (it's "how common", never good/bad). Deepened in the
+     2026-07-09 premium polish (was 44/24/9 — David: "way too light, barely visible"): common
+     anchors at FULL brand purple (white counts, 5.7:1), alt/alt-rare step down evenly; the count
+     ink is a dark purple, 4.85:1 on alt / 8.8:1 on rare. */
+  --prev-common: var(--differs);
+  --prev-alt:    color-mix(in srgb, var(--differs) 55%, var(--surface));
+  --prev-rare:   color-mix(in srgb, var(--differs) 18%, var(--surface));
+  --prev-ink:    color-mix(in srgb, var(--differs) 40%, var(--ink));
+  /* two-tier card shadow (premium polish): key + mid + pooled ambient, one system via the token */
+  --shadow-card: 0 1px 2px rgba(33,27,38,.05), 0 3px 8px rgba(33,27,38,.04), 0 14px 28px -12px rgba(33,27,38,.07);
   --shadow-lift: 0 6px 20px rgba(33,27,38,.08);
   --shadow-pop: 0 8px 28px rgba(33,27,38,.14), 0 2px 6px rgba(33,27,38,.08);
   --shadow-soft: var(--shadow-card);
@@ -134,6 +145,7 @@
   /* ---- motion: quick and calm ---- */
   --ease: 160ms ease;
   --ease-fast: .12s ease;   /* the quick tier — chips, tabs, small controls */
+  --ease-out: 200ms cubic-bezier(.2,0,0,1);   /* the decel tier — hover lifts, knob, chevron (2026-07-09 polish) */
 
   /* ---- THE keyboard focus indicator (WCAG 1.4.11 needs ≥3:1; blue-bright is
      5.2:1 on paper). One token, consumed everywhere — the old per-component
@@ -454,7 +466,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   box-shadow: var(--shadow-card); }
 .section-title { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
   font-weight: var(--fw-section); letter-spacing: 0.005em; margin: 0 0 var(--s3); }
-.display-title { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display);
+.display-title { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display); letter-spacing: -0.015em;
   font-weight: var(--fw-display); letter-spacing: 0; margin: 0; }
 .caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ink-soft); }
 .label { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--ink-soft); font-weight: 570; }
@@ -586,7 +598,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 /* (.opp-hero / .opp-row deleted 2026-07-06 — OpportunityTile retired; zero consumers.) */
 /* org title + the co-op trust line beneath it (pool depth + collection window) */
 .hero-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.hero-sub { font-size: var(--fs-caption); color: var(--ink-soft); letter-spacing: .005em; }
+.hero-sub { font-size: var(--fs-label); color: var(--ink-soft); letter-spacing: .005em; }
 /* "Your journey" strip — slim band between the hero row and the domain grid */
 .ov-journey { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s4);
   padding: var(--s2) var(--s4); border: 1px solid var(--border); border-radius: var(--radius);
@@ -878,18 +890,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 }
 
 /* Home dashboard lens controls (2026-06-23): Market/Practice view toggle + strategy on/off */
-.ov-controls { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s3); }
-.ov-seg { display: inline-flex; background: var(--surface-sunk); border-radius: 999px; padding: 3px; gap: 2px; }
-.ov-seg-btn { font: inherit; font-size: var(--fs-caption); font-weight: 600; line-height: 1.6; padding: var(--s1) var(--s3);
-  border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: all var(--ease); }
-.ov-seg-btn.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(33, 27, 38, 0.10); }
+.ov-controls { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+.ov-seg { display: inline-flex; background: var(--surface-sunk); border-radius: 999px; padding: 3px; gap: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 5%, transparent); }
+.ov-seg-btn { font: inherit; font-size: var(--fs-label); font-weight: 600; line-height: 1.6; padding: var(--s1) var(--s3);
+  border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: background var(--ease-fast), color var(--ease-fast), box-shadow var(--ease-fast); }
+.ov-seg-btn.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(33,27,38,.12), 0 0 0 1px rgba(33,27,38,.04); }
 .ov-seg-btn:not(.on):hover { color: var(--ink); }
 .ov-strat { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: none; cursor: pointer;
   font: inherit; font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px; }
-.ov-strat-track { width: 30px; height: 17px; border-radius: 999px; background: var(--border); position: relative; transition: background var(--ease); flex: none; }
-.ov-strat-knob { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(33, 27, 38, 0.18); transition: left var(--ease); }
+.ov-strat-track { width: 34px; height: 20px; border-radius: 999px; background: var(--chrome-edge); position: relative; transition: background var(--ease); flex: none; box-shadow: inset 0 0 0 1px rgba(33,27,38,.06); }
+.ov-strat-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(33,27,38,.22), 0 0 0 .5px rgba(33,27,38,.05); transition: transform var(--ease-out); }
 .ov-strat.on .ov-strat-track { background: var(--blue); }
-.ov-strat.on .ov-strat-knob { left: 15px; }
+.ov-strat.on .ov-strat-knob { transform: translateX(14px); }
 .ov-strat.on .ov-strat-lbl { color: var(--ink); font-weight: 600; }
 
 /* Practice hero panel — the Practice view's sibling to the market gauge */
@@ -908,17 +920,19 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-tile-practice .catp-bar-fill { height: 100%; background: var(--differs); border-radius: 5px; transition: width var(--ease); }
 .cat-tile-practice .cat-differ { margin-top: var(--s2); }
 /* Hero gauge (2026-06-13 rebuild) — instrument, not segments */
-.arc-card { padding: var(--s4) var(--s4) var(--s3); display: flex; flex-direction: column;
+.arc-card { padding: var(--s5) var(--s5) var(--s4); display: flex; flex-direction: column;   /* 2026-07-09 polish: insets past the radius */
   position: relative; }
 .arc-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; border-radius: var(--radius) var(--radius) 0 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); pointer-events: none; }
 .card-head { display: flex; align-items: center; gap: var(--s2); padding-bottom: var(--s3);
   border-bottom: 1px solid var(--border); margin-bottom: var(--s1); }
 .card-head > svg { color: var(--ink-faint); flex: 0 0 auto; }
-.card-head > span, .card-head > .card-head-title { font-size: var(--fs-label); font-weight: 500; color: var(--ink-soft); letter-spacing: .01em; }
+/* card titles get their voice (2026-07-09 polish): the display face at label size, ink-strong —
+   the section's premium byline rather than a grey whisper */
+.card-head > span, .card-head > .card-head-title { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 650; color: var(--ink); letter-spacing: .015em; }
 /* card titles are REAL headings now (h2 — the page outline was h1-only); visually
    identical to the span they replace, so the heading is semantic, not typographic */
-.card-head > .card-head-title { margin: 0; font-family: inherit; line-height: inherit; }
+.card-head > .card-head-title { margin: 0; font-family: var(--font-head); line-height: inherit; }
 /* Overview section-heading icons → navy chrome accent (compass = Where you stand, flag = Signals).
    Scoped to these two cards; other card-head icons stay neutral. */
 .arc-card .card-head > svg, .signals-card .card-head > svg, .dom-instr .card-head > svg { color: var(--lumi-navy); }
@@ -946,9 +960,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    NEUTRAL ink — the ring carries the RAG colour, so the word is not re-coloured (no doubled
    cue). The metric total is demoted to a small line beneath. centerWord is opt-in: the market
    gauge passes it; the practice donut keeps its count-centric centre. Sized to fit "On market". */
-.donut-word { font-family: var(--font-head); font-size: 24px; line-height: 26px; font-weight: 650;
-  letter-spacing: -0.01em; color: var(--ink); text-align: center; }
-.donut-count { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.donut-word { font-family: var(--font-head); font-size: 24px; line-height: 26px; font-weight: 700;
+  letter-spacing: -0.015em; color: var(--ink); text-align: center; }
+.donut-count { font-size: var(--fs-caption); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
 /* spectrum hero SVG: mirror .arc-svg so it can't collapse to 0 width in WebKit
    (an SVG with only a viewBox and no width rule has no intrinsic size here) */
 .spectrum-svg { width: 100%; max-width: 300px; display: block; }
@@ -969,27 +983,27 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 @keyframes tip-pulse { 0%, 100% { transform: scale(1); opacity: .42; } 50% { transform: scale(2.1); opacity: 0; } }
 .arc-verdict { text-align: center; margin-top: var(--s2); }
 .arc-word { font-family: var(--font-head); font-size: var(--fs-display); font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; }
-.arc-lean { font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); margin-top: var(--s1); letter-spacing: .005em; }
-.arc-caption { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: 2px; }
+.arc-lean { font-size: var(--fs-label); font-weight: 500; color: var(--ink-soft); margin-top: var(--s1); letter-spacing: .005em; }
+.arc-caption { font-size: var(--fs-micro); color: var(--ink-faint); margin-top: var(--s1); }
 /* legend: centred cluster with an even gap (was space-between, which flung the three items to
    the card edges and read as loose). Dots use the soft gauge tones — same RAG fill as the donut
    and the domain bars, so the key matches what it keys (2026-07-09). */
 .arc-legend { display: flex; justify-content: center; gap: var(--s5); font-size: var(--fs-caption); color: var(--ink-soft);
   border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s3); }
-.arc-leg-fig { font-weight: 650; color: var(--ink); margin-right: 3px; }
+.arc-leg-fig { font-size: var(--fs-label); font-weight: 650; color: var(--ink); margin-right: 3px; }
 /* Approach companion — a quiet line under the legend, never on the arc (spec §6.1).
    Purple dot + muted text: a count of choices that differ, not a verdict. */
 .arc-differ { display: flex; align-items: center; justify-content: center; gap: var(--s2);
   font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s3); }
 .arc-differ .arc-differ-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--differs); flex: none; }
 .arc-differ b { font-weight: 650; color: var(--differs); }
-.signals-card { display: flex; flex-direction: column; padding: var(--s4) var(--s4) var(--s3); }
-.signals-list { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s2);
+.signals-card { display: flex; flex-direction: column; padding: var(--s5) var(--s5) var(--s4); }
+.signals-list { display: flex; flex-direction: column; gap: var(--s3); margin-top: 0;
   flex: 1; justify-content: space-evenly; }
 .signals-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding-top: var(--s3); border-top: 1px solid var(--border);
-  font-size: var(--fs-micro); color: var(--ink-faint); }
-.signals-foot a { color: var(--lumi-navy); font-weight: 500; white-space: nowrap; }
+  font-size: var(--fs-caption); color: var(--ink-faint); }
+.signals-foot a { color: var(--lumi-navy); font-weight: 600; white-space: nowrap; }
 .signals-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--s3); text-align: center; padding: var(--s5) 0; animation: riseIn .25s ease; }
 .signals-empty-ring { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center;
@@ -1022,7 +1036,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-teaser-lock { flex: 0 0 auto; color: var(--ink-faint); opacity: .7; display: inline-flex; }
 .signal-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s4) var(--s3); border-radius: var(--radius-sm);
   cursor: pointer; transition: transform var(--ease), box-shadow var(--ease); border: 1px solid transparent; }
-.signal-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+.signal-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .signal-row svg { flex: 0 0 auto; }
 /* every row: what it is (bold) · where you stand (the market fact) · the tag */
 .signal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -1132,7 +1146,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* 2026-07-09 calm pass: rows sit on surface (the 3px spine + roundel carry the tone);
    the verdict tint now appears on hover — same palette, less permanent paint */
 .sig-tone-green     { background: var(--surface); border-left-color: var(--favourable); }
-.sig-tone-amber     { background: var(--surface); border-left-color: var(--amber-bright); }
+.sig-tone-amber     { background: var(--surface); border-left-color: color-mix(in srgb, var(--amber-bright) 65%, #3a2600); }   /* 2.0→3.7:1 (1.4.11); richer ochre, not harsh */
 .sig-tone-red       { background: var(--surface); border-left-color: var(--unfavourable); }
 .sig-tone-approach  { background: var(--surface); border-left-color: var(--differs); }
 .sig-tone-neutral   { background: var(--surface); border-left-color: var(--navy); }
@@ -2822,7 +2836,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 640px) { .confirm-row { flex-wrap: wrap; } .strat-flow { padding-left: var(--s4); padding-right: var(--s4); } }
 
 /* strategy market_position reframe — target alignment line under the gauge (§5.2) */
-.arc-target { display: flex; align-items: center; justify-content: center; gap: var(--s2); margin-top: var(--s2);
+.arc-target { display: flex; align-items: center; justify-content: center; gap: var(--s2); margin-top: var(--s3);
   font-size: var(--fs-caption); font-weight: 600; }
 .arc-target svg { flex: none; }
 .arc-target-on_target, .arc-target-ahead { color: var(--favourable); }
@@ -3129,9 +3143,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
    position indicator (soft gauge fills + counts, zero P-anything); strategy rides a SEPARATE
    navy channel (the target glyph), never recolouring position. The percentile-ruler CSS it
    replaced (dots, zones, mid-line, word axis, slide anim) is retired. */
-.dom-instr { display: flex; flex-direction: column; padding: var(--s4) var(--s4) var(--s3); }
+.dom-instr { display: flex; flex-direction: column; padding: var(--s5) var(--s5) var(--s4); }
 .di-standfirst { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5;
-  margin: 2px 0 var(--s3); max-width: 68ch; }
+  margin: var(--s1) 0 var(--s3); max-width: 68ch; }
 .di-standfirst-pending { color: var(--ink-soft); }
 /* shared row grid: identity · bar · evidence(auto → collapses to 0 in position view, where the
    stacked bar carries the counts; sizes to "N practices" in practice view) · scent · strategy
@@ -3141,10 +3155,14 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-axis { margin: var(--s2) 0 0; }
 .di-axis-scale { position: relative; height: 30px; }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
-.di-row { min-height: 40px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
-  border-top: 1px solid var(--border); cursor: pointer;
+/* 44px pitch (2026-07-09 polish): air between hover pills + WCAG 2.5.8 tap target. Dividers are
+   inset ::before rules (not border-top) so every rule in the card shares ONE width — the old
+   full-bleed row borders sat 8px wider per side than the card-head rule, the most visible slip. */
+.di-row { min-height: 44px; padding: var(--s1) var(--s2); margin: 0 calc(-1 * var(--s2));
+  position: relative; cursor: pointer;
   border-radius: var(--radius-sm); transition: background var(--ease); }
-.di-row:first-child { border-top: 0; }
+.di-row + .di-row::before { content: ""; position: absolute; top: 0; left: var(--s2); right: var(--s2);
+  height: 1px; background: var(--border); }
 .di-row:hover { background: color-mix(in srgb, var(--surface-sunk) 70%, transparent); }
 .di-row:hover .di-chev { opacity: 1; transform: none; }
 .di-ident { min-width: 0; }
@@ -3165,14 +3183,24 @@ textarea:focus-visible, [tabindex]:focus-visible {
    printed inside. Soft gauge tones = the platform's one RAG fill (identical to the donut).
    Flex, not absolute, so segments self-size; a per-segment min-width floor (set inline) keeps
    every numeral inside its own block — no floating labels, no JS measuring. */
-.di-bar { position: relative; display: flex; height: 18px; border-radius: 5px; overflow: hidden;
+.di-bar { position: relative; display: flex; height: 20px; border-radius: 6px; overflow: hidden;
   background: var(--surface-sunk); }
+/* the bar as a machined object (2026-07-09 polish): a 1px ink perimeter over the fills gives the
+   edge definition the pastels can't provide themselves */
+.di-bar::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent); }
 .di-fill { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden;
-  font-size: var(--fs-micro); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; line-height: 1; font-variant-numeric: tabular-nums; }
 .di-fill + .di-fill { border-left: 1px solid var(--surface); }
 .di-fill-below { background: var(--gauge-below); color: var(--below-ink); }
 .di-fill-on    { background: var(--gauge-on);    color: var(--on-ink); }
 .di-fill-above { background: var(--gauge-above); color: var(--above-ink); }
+/* practice lens (2026-07-09): same flex stacked bar, PURPLE ladder — common / alternative / rare.
+   common is full brand purple (white counts); rare is the lightest, hairlined in its own hue. */
+.di-fill-common { background: var(--prev-common); color: #fff; }
+.di-fill-alt    { background: var(--prev-alt);    color: var(--prev-ink); }
+.di-fill-rare   { background: var(--prev-rare);   color: var(--prev-ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--differs) 30%, var(--surface)); }
 /* indicative (thin coverage): hatch the WHOLE bar (every band is thin, not just amber) and sit
    each count on a small solid chip so the citable digit stays crisp over the stripes */
 .di-bar-ind::after { content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -3190,11 +3218,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding-left: var(--s2); }
 .di-smark { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; flex: none; }
-.di-smark-on  { color: var(--navy); border: 1.6px solid var(--navy); background: var(--surface); }
-.di-smark-off { color: #fff; background: var(--navy); }
-.di-smark-dash { color: var(--ink-faint); opacity: .5; }
+.di-smark-on  { color: var(--navy); border: 1.5px solid var(--navy); background: var(--surface); }
+.di-smark-off { color: #fff; background: var(--navy); box-shadow: 0 1px 2px rgba(31,42,68,.28); }
+.di-smark-dash { color: var(--ink-faint); opacity: .75; }
 /* always-on header anchor beside the card title — "all N on aim" / "N off aim" */
-.di-strat-sum { margin-left: auto; font-size: var(--fs-caption); font-weight: 650; color: var(--navy);
+.di-strat-sum { margin-left: auto; font-size: var(--fs-caption); font-weight: 650; letter-spacing: .01em; color: var(--navy);
   white-space: nowrap; }
 /* proportional segments — length + colour carry the read; the numbers live once, in the
    evidence column (in-bar numerals retired 2026-07-09) */
@@ -3216,11 +3244,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* practice colour key (the navy family is defined nowhere else; the market lens key retired —
    the donut card's swatched legend is the whole screen's single RAG key) */
 .di-axis-key { display: flex; align-items: center; gap: 14px; height: 30px; overflow: hidden; }
-.di-kk { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro); color: var(--ink-soft); white-space: nowrap; }
+.di-kk { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); white-space: nowrap; }
 .di-sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
 .di-sw.di-seg-rare { box-shadow: inset 0 0 0 1px var(--border); }
 /* swatches for the donut card's legend — the one place colour meets word meets count */
-.arc-leg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+.arc-leg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(33,27,38,.10);
   margin-right: 5px; vertical-align: -1px; }
 /* evidence column — the single citable count per row */
 .di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
@@ -3230,21 +3258,22 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
 .di-scent { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer;
   font-size: 10.5px; font-weight: 700; line-height: 1; padding: 0;
-  background: var(--blue-tint); color: var(--blue);
+  background: var(--blue-tint-2); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--ease), background var(--ease); }
-.di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
+  transition: transform var(--ease-out), background var(--ease-fast); }
+.di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 28%, var(--surface)); }
 .di-chipcol { display: flex; justify-content: flex-end; }
 /* faint by default so the whole row reads as click-through; sharpens on hover */
-.di-chev { color: var(--ink-faint); opacity: .38; transform: none;
+.di-chev { color: var(--ink-faint); opacity: .55; transform: none;
   transition: opacity var(--ease), transform var(--ease), color var(--ease); display: inline-flex; }
-.di-row:hover .di-chev { opacity: 1; color: var(--blue-bright); transform: translateX(1px); }
+.di-row:hover .di-chev { opacity: 1; color: var(--blue-bright); transform: translateX(3px); }
 /* footer: practice lens only (the market footer duplicated the donut legend) */
 .di-foot { margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--border);
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-foot b { color: var(--ink-soft); font-weight: 650; }
 /* the signals band below the hero — full width; internals untouched */
-.ov-signals-band { margin-top: var(--s4); }
+.ov-signals-band { margin-top: var(--s5); }   /* hero↔signals groups looser than sibling cards (polish) */
+@media (max-width: 700px) { .arc-card, .dom-instr, .signals-card { padding: var(--s4) var(--s4) var(--s3); } }   /* keep phone insets tighter (polish) */
 /* responsive: tablet narrows columns; phones stack each row to two lines
    (line 1: name · scent · chip · chevron; line 2: bar + citable count — the count
    must stay visible on mobile, it is the row's only number) */
@@ -3257,7 +3286,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .di-axis-scale { height: auto; }
   .di-axis-key { height: auto; flex-wrap: wrap; gap: 4px 12px; overflow: visible; }
   .di-row { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s2);
-    row-gap: 2px; padding: var(--s2); min-height: 0; }
+    row-gap: var(--s1); padding: var(--s2); min-height: 0; }
   .di-ident { order: 1; flex: 1 0 52%; }   /* min 52% so the bar can never join line 1 (short names like Pay) */
   .di-scentcol { order: 2; flex: none; }
   .di-chipcol { order: 3; flex: none; }
@@ -3267,7 +3296,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .di-evid { order: 6; flex: 1 0 auto; font-size: var(--fs-micro); }
   .di-track { height: 20px; }
   .di-seg { top: calc(50% - 6px); height: 12px; }
-  .di-strat-sum { flex-basis: 100%; margin: 2px 0 0; }   /* wrap under the title, don't crowd it */
+  .di-strat-sum { flex-basis: 100%; margin: var(--s1) 0 0; }   /* wrap under the title, don't crowd it */
   .di-norate { white-space: normal; line-height: 1.35; }
 }
 @media (prefers-reduced-motion: reduce) {

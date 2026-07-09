@@ -190,20 +190,27 @@ check("8. zero non-competitive-domain signals carry a market-relative position (
 # forced-wrong number (a hard-coded "31", or an off-by-one like `approach.differ + 1`)
 # breaks the raw-field match and FAILS here. Same derive-not-literal principle, applied to
 # the copy. (differ↔signals framing, 2026-06-22 — see DECISIONS.md.)
-hero_differ_val = hero_appr.get("differ")
-hero_pool_val = hero_appr.get("pool")
+# 2026-07-09 practice harmonisation: the overview practice donut now shows PREVALENCE
+# (common/alternative/rare — mirroring the market donut) instead of the old differ/in-line
+# split, so the raw-interpolation contract moved to the prevalence fields. (The differ read
+# lives on in signals + the category page; hero_appr is still validated at check 7 above.)
+hero_prev = hero.get("prevalence") or {}
+prev_common = hero_prev.get("with_majority")
+prev_alt = hero_prev.get("established")
+prev_rare = hero_prev.get("less_common")
+prev_pool = hero_prev.get("pool")
 signals_total_val = len([s for s in sigs_all if s.get("status") != "dismissed"])   # the 'See all N' set
-check("9a. engine emits hero differ / pool / signals-total as integers (the numbers the copy shows; differ<=pool)",
-      all(isinstance(v, int) for v in (hero_differ_val, hero_pool_val, signals_total_val))
-      and hero_differ_val <= hero_pool_val,
-      {"differ": hero_differ_val, "pool": hero_pool_val, "signals_total": signals_total_val})
-check("9b. hero copy interpolates engine differ & pool RAW (rendered == engine; no literal, no off-by-one)",
-      "const differ = approach.differ, inLine = approach.in_line" in pagesjs
-      and "<b>${differ}</b> off the norm" in pagesjs
-      and "<b>${inLine}</b> in line with the market" in pagesjs,
-      "hero differ/in-line legend is not interpolated raw from the engine fields "
-      "(2026-07-09: the headline sentence retired in the subtraction pass; the swatched "
-      "legend is now the citable surface, so the raw-interpolation contract moved there)")
+check("9a. engine emits hero prevalence common/alt/rare/pool + signals-total as integers (the numbers the practice donut shows; parts sum to pool)",
+      all(isinstance(v, int) for v in (prev_common, prev_alt, prev_rare, prev_pool, signals_total_val))
+      and (prev_common + prev_alt + prev_rare) == prev_pool,
+      {"common": prev_common, "alt": prev_alt, "rare": prev_rare, "pool": prev_pool, "signals_total": signals_total_val})
+check("9b. practice donut legend interpolates engine prevalence RAW (rendered == engine; no literal, no off-by-one)",
+      "const common = prevalence.with_majority, alt = prevalence.established, rare = prevalence.less_common" in pagesjs
+      and "${common}</span> Common" in pagesjs
+      and "${rare}</span> Rare" in pagesjs,
+      "practice donut common/alt/rare legend is not interpolated raw from the engine prevalence "
+      "fields (2026-07-09 harmonisation: the practice lens now mirrors the market donut — "
+      "prevalence, not differ/in-line — so the raw-interpolation contract moved there)")
 check("9c. 'See all N signals' count derives from the live signal set (view-filtered), not a hard-coded literal",
       # per-view briefings (2026-07-06): the pool binding renamed (_pool) and the panel
       # list became briefing-first + impact tail — the INVARIANT is unchanged: the total
