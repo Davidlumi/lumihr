@@ -68,6 +68,9 @@ const ICON_PATHS = {
   "arrow-down": [["l", 12, 5, 12, 19], ["pl", "19 12 12 19 5 12"]],
   "arrow-up": [["l", 12, 19, 12, 5], ["pl", "5 12 12 5 19 12"]],
   clock: [["c", 12, 12, 10], ["pl", "12 6 12 12 16 14"]],
+  // Signals folders (2026-07-10): folder pills + "New folder…" affordances
+  folder: [["p", "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"]],
+  plus: [["p", "M5 12h14"], ["p", "M12 5v14"]],
 };
 
 window.Icon = function ({ name, size = 16, strokeWidth = 1.75, style }) {

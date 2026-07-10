@@ -1316,13 +1316,8 @@ function signalAction(sid, status, days) {
     // does in its own setStatus.
     .then(r => { apiCacheInvalidate("/api/overview"); return r; });
 }
-const SIG_TABS = [
-  { k: "inbox", label: "Inbox", icon: "flag", f: s => s.status !== "dismissed" && s.status !== "snoozed" },
-  { k: "priority", label: "Priority", icon: "pin", f: s => s.status === "priority" },
-  { k: "saved", label: "Saved", icon: "star", f: s => s.status === "saved" },
-  { k: "snoozed", label: "Snoozed", icon: "clock", f: s => s.status === "snoozed" },
-  { k: "dismissed", label: "Dismissed", icon: "close", f: s => s.status === "dismissed" },
-];
+// (SIG_TABS retired 2026-07-09 with the Briefing rebuild — the five status tabs became the
+// navy-footer lifecycle strip; pins simply stay in the brief.)
 // friendly "back in ~N weeks/days" from a snooze_until — accepts both the SQLite
 // "YYYY-MM-DD HH:MM:SS" (UTC, no tz) form and a full ISO string.
 function snoozeReturn(until) {
@@ -1351,29 +1346,10 @@ const POS_TAG_TEXT = { below: "below market", on: "on market", above: "above mar
 const SIG_TONE_SOLID = { green: "var(--favourable)", amber: "var(--amber-bright)",
   red: "var(--unfavourable)", neutral: "var(--chart-band-mid)", approach: "var(--differs)" };
 function posColor(k) { return (k === "differs" || k === "practice") ? SIG_TONE_SOLID.approach : SIG_TONE_SOLID[marketTone(k)]; }
-// chip dot/bar colour by BUCKET: below/on/above keep the restored RAG (byte-identical to posColor
-// for those positions); common/alternative/rare = the practice violet; peer position + context =
-// neutral (no RAG). Used by the signals chips, which now group by s.bucket.
-function bucketColor(b) {
-  if (b === "below market") return SIG_TONE_SOLID.amber;
-  if (b === "on market")    return SIG_TONE_SOLID.green;
-  if (b === "above market")  return SIG_TONE_SOLID.red;
-  if (b === "peer position" || b === "context") return SIG_TONE_SOLID.neutral;
-  return SIG_TONE_SOLID.approach;   // common / alternative / rare
-}
-// Ship review 2026-07-09 Pack 4 §2: the Signals header donut speaks the SOFT gauge
-// palette — the same --gauge-* mixes as the Overview donut one click away, so the two
-// donuts share one colour weight. The solid SIG_TONE_SOLID stays on the chip DOTS only
-// (bucketColor above), which are legitimate thin accents at that size. Practice buckets
-// take the soft rung of the purple ladder (one hue for the axis, matching bucketColor's
-// single approach hue — the chips' dot colour still keys the segments).
-function bucketColorSoft(b) {
-  if (b === "below market") return "var(--gauge-below)";
-  if (b === "on market")    return "var(--gauge-on)";
-  if (b === "above market") return "var(--gauge-above)";
-  if (b === "peer position" || b === "context") return SIG_TONE_SOLID.neutral;
-  return "var(--prev-alt)";         // common / alternative / rare — soft practice violet
-}
+// (bucketColor retired 2026-07-09 with the Briefing rebuild — ledger dots key by the
+// direction-corrected TONE via BRF_DOT, so lower-is-better metrics keep their flip.)
+// (bucketColorSoft retired 2026-07-09 with the Briefing rebuild — the header donut died with
+// the summary card; the soft gauge palette lives on in the brief-card chips via CSS tokens.)
 // The factual position word stays true to the number; the COLOUR is direction-corrected
 // absolute RAG, exactly like the home dashboard — worse than market red, on market amber,
 // better than market green. Approach metrics (differs) and non-competitive practice
@@ -1477,25 +1453,166 @@ function returnUiState(key) {
 }
 function saveUiState(key, obj) { try { sessionStorage.setItem(key, JSON.stringify(obj)); } catch (e) {} }
 
-window.SignalsPage = function ({ me }) {
+/* SIGNALS PAGE — "FOLDERS" (founder simplification, 2026-07-10; replaces the two-tier
+   Briefing). Founder's spec, verbatim intent: "keep it simple — just load ALL of the
+   signals", then let the user SAVE to a folder they NAME, SNOOZE to a snooze folder on a
+   user-set timeline (returns to the feed when it elapses), and DISMISS to a dismissed
+   folder where it can be RECOVERED. So: ONE flat feed of every live signal (the Briefing's
+   evidence-card anatomy, machine order and per-card triage kept exactly), and a single
+   folder-nav row of pills — no tabs, donut, chips, group-by, brief/ledger split or family
+   rows. Signal STATUS stays on the existing /api/signals/action contract (saved / snoozed /
+   dismissed — unchanged); folder NAMES + {sig_id → folder} assignments ride the SAME
+   per-user prefs store other pages use (key "_signals": { folders: [...], assign: {} }) —
+   see onPref in app.js. PRESERVED exactly: triage API + optimistic overrides + Undo (on the
+   confirmation toast since 2026-07-10 — the in-place stub rows retired, David: toast instead),
+   seen-marking on load, strategy-check goToDomain jump + flash, gap-register
+   navy footer + "nothing is deleted", locked teaser, returnUiState back-leg restore (now the
+   active folder), openMetric deep links, the all-peers basis line, "we flag, you decide". */
+// card/chip tone — prevalence & rare reads are PRACTICE observations (purple) even when their
+// position bucket is market (the EAP case); everything else follows posTag's direction-corrected
+// tone (soft RAG; approach=purple; neutral=navy). Doctrine: soft RAG = market position only.
+function brfTone(s) {
+  if (s.kind === "prevalence" || s.kind === "rare") return "approach";
+  return posTag(s).tone || "neutral";
+}
+// the labelled-provenance rule clause: WHY the engine flagged this, in one plain sentence
+// (NN/g labelled provenance — never hover-hidden). Calibrated by the same severityAdverb the
+// old rows used; risk appended as the duty-of-care clause.
+function brfRule(s) {
+  let r;
+  if (s.kind === "money") r = "the gap carries a £ cost against the peer median";
+  else if (s.kind === "prevalence") r = "most of your peers provide this and you don't";
+  else if (s.kind === "rare") r = "few of your peers make this choice";
+  else if (s.position === "below" || s.position === "above")
+    r = "your value sits " + severityAdverb(s) + (s.position === "below" ? "below" : "above") + " the peer median";
+  else if (s.bucket === "peer position") r = "you sit apart from most of your peers here";
+  else if (s.bucket === "context") r = "a neutral peer read — context, not a verdict";
+  else r = "your approach differs from the usual peer pattern";
+  if (s.risk_framed) r += ", and it carries duty-of-care risk";
+  return r;
+}
+function brfChipText(s) {
+  if (s.kind === "prevalence" || s.kind === "rare" || s.position === "differs" || s.position === "practice")
+    return (s.tag || s.bucket || "").toLowerCase();
+  const pt = posTag(s);
+  return pt.text || (s.tag || s.bucket || "").toLowerCase();
+}
+const brfCap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+const brfVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.anchor_grade === "C";
+// (brfFamKey / BRF_MKT_BUCKETS / BRF_DOT / BrfLater / BrfOverflow retired 2026-07-10 with the
+// Folders simplification — the ledger bands and family roll-ups died with the two-tier split.)
+
+// Snooze options — the same snooze_days API; the menu shows the actual return date.
+const SIG_SNOOZE = [["1 week", 7], ["2 weeks", 14], ["Next cycle", 42]];
+const sigRetDate = days => new Date(Date.now() + days * 86400000)
+  .toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+// shared dropdown chrome: close on outside click / Escape (focus back on the trigger)
+function useMenuClose(ref, open, setOpen) {
+  useEffect(() => {
+    if (!open) return;
+    const away = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") { setOpen(false); const t = ref.current && ref.current.querySelector("button"); if (t) t.focus(); } };
+    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+}
+// "Snooze ▾" verb — labelled "Until…", each option shows its return date.
+function SigSnoozeMenu({ onPick }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useMenuClose(ref, open, setOpen);
+  return html`<span class="brf-later-wrap" ref=${ref}>
+    <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
+      onClick=${() => setOpen(o => !o)}>Snooze <span class="sfold-caret" aria-hidden="true">▾</span></button>
+    ${open ? html`<div class="brf-menu" role="menu">
+      <div class="brf-menu-lbl">Until…</div>
+      ${SIG_SNOOZE.map(([lab, days]) => html`<button key=${days} role="menuitem" class="brf-menu-opt"
+        onClick=${() => { setOpen(false); onPick(days, lab); }}>${lab}<span class="sfold-ret num">${sigRetDate(days)}</span></button>`)}
+    </div>` : null}
+  </span>`;
+}
+// "Save ▾" / "Move to… ▾" verb — existing folder names + an inline "New folder…" name input.
+function SigFolderMenu({ label, folders, exclude, onPick }) {
+  const [open, setOpen] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [nm, setNm] = useState("");
+  const ref = useRef(null);
+  useMenuClose(ref, open, setOpen);
+  const pick = name => { setOpen(false); setNaming(false); setNm(""); onPick(name); };
+  const commit = () => { const t = nm.trim(); if (t) pick(t); };
+  const opts = (folders || []).filter(f => f !== exclude);
+  return html`<span class="brf-later-wrap" ref=${ref}>
+    <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
+      onClick=${() => { setOpen(o => !o); setNaming(false); setNm(""); }}>${label} <span class="sfold-caret" aria-hidden="true">▾</span></button>
+    ${open ? html`<div class="brf-menu" role="menu">
+      ${opts.length ? html`<div class="brf-menu-lbl">To folder…</div>` : null}
+      ${opts.map(f => html`<button key=${f} role="menuitem" class="brf-menu-opt" onClick=${() => pick(f)}>
+        <${Icon} name="folder" size=${12} /> ${f}</button>`)}
+      ${naming ? html`<div class="sfold-newrow">
+        <input type="text" class="sfold-newinput" placeholder="Folder name" maxlength="40" value=${nm}
+          ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
+          onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
+        <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
+      </div>` : html`<button role="menuitem" class="brf-menu-opt" onClick=${() => setNaming(true)}>
+        <${Icon} name="plus" size=${12} /> New folder…</button>`}
+    </div>` : null}
+  </span>`;
+}
+// small "…" on the ACTIVE folder pill — Rename / Delete, kept minimal (delete returns the
+// folder's signals to the plain feed; it never deletes a signal).
+function SigFolderOps({ name, onRename, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nm, setNm] = useState(name);
+  const ref = useRef(null);
+  useMenuClose(ref, open, setOpen);
+  const commit = () => { const t = nm.trim(); if (t && t !== name) onRename(t); setOpen(false); setRenaming(false); };
+  return html`<span class="brf-later-wrap" ref=${ref}>
+    <button type="button" class="sfold-ops" aria-haspopup="true" aria-expanded=${open}
+      aria-label=${"Folder options — " + name} title="Rename or delete this folder"
+      onClick=${() => { setOpen(o => !o); setRenaming(false); setNm(name); }}><span aria-hidden="true">⋯</span></button>
+    ${open ? html`<div class="brf-menu" role="menu">
+      ${renaming ? html`<div class="sfold-newrow">
+        <input type="text" class="sfold-newinput" maxlength="40" value=${nm}
+          ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
+          onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
+        <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Save</button>
+      </div>` : [
+        html`<button key="r" role="menuitem" class="brf-menu-opt" onClick=${() => setRenaming(true)}><${Icon} name="pencil" size=${12} /> Rename</button>`,
+        html`<button key="d" role="menuitem" class="brf-menu-opt" onClick=${() => { setOpen(false); onDelete(); }}><${Icon} name="close" size=${12} /> Delete folder</button>`,
+      ]}
+    </div>` : null}
+  </span>`;
+}
+
+window.SignalsPage = function ({ me, prefs, onPref }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const _ret = returnUiState("lumi-signals-ui") || {};   // Back-leg restore (Pack 1 §1)
-  const [tab, setTab] = useState(_ret.tab || "inbox");
-  const [axis, setAxis] = useState(_ret.axis || "market"); // Signals-OWN lens (market | practice) — local state, NEVER the shared _overview pref
-  const [posF, setPosF] = useState(_ret.posF || "all");    // bucket filter (single-select, within the axis)
-  const [provF, setProvF] = useState(!!_ret.provF);        // "verified source" filter (independent predicate)
-  const [riskF, setRiskF] = useState(!!_ret.riskF);        // "risk only" filter (independent predicate)
-  const [groupBy, setGroupBy] = useState(_ret.groupBy || "domain"); // domain · lens
+  // active view: {kind:"all"} | {kind:"folder",name} | {kind:"snoozed"} | {kind:"dismissed"}
+  const [view, setView] = useState(_ret.view && _ret.view.kind ? _ret.view : { kind: "all" });
+  // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
+  // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
   const [acting, setActing] = useState({});            // optimistic status overrides
   const [actingSnz, setActingSnz] = useState({});      // optimistic snooze_until (ISO) so the chip shows before a refetch
   const [jumpTo, setJumpTo] = useState(null);          // strategy-check → domain signpost
-  // …and stash the working set on every change, so the next openMetric→Back restores it.
-  useEffect(() => { saveUiState("lumi-signals-ui", { tab, axis, posF, provF, riskF, groupBy }); },
-    [tab, axis, posF, provF, riskF, groupBy]);
+  const [navNaming, setNavNaming] = useState(false);   // "+ New folder" inline name input
+  const [navNm, setNavNm] = useState("");
+  // Folder names + assignments persist on the SAME per-user prefs store the other pages use
+  // (OverviewPage's onPref pattern; PUT /api/prefs debounced in app.js), under "_signals".
+  // localStorage is only a defensive fallback for a mount without the prefs props — the
+  // router passes them (app.js route table), so it shouldn't run in practice.
+  const [lsSig, setLsSig] = useState(() => { try { return JSON.parse(localStorage.getItem("lumi-signals-folders") || "null"); } catch (e) { return null; } });
+  const sigP = (prefs && prefs._signals) || (onPref ? null : lsSig) || {};
+  const folders = sigP.folders || [];
+  const assign = sigP.assign || {};
+  const writeSig = next => {
+    if (onPref) onPref("_signals", next);
+    else { try { localStorage.setItem("lumi-signals-folders", JSON.stringify(next)); } catch (e) {} setLsSig(next); }
+  };
+  // …stash the working set on every change, so the next openMetric→Back restores it
+  useEffect(() => { saveUiState("lumi-signals-ui", { view }); }, [view]);
   useEffect(() => {
-    // live-flag guard (Ship review 2026-07-09 B4 house pattern) — defensive only here
-    // (the effect runs once), but keeps every overview fetch on the same idiom.
     let live = true;
     apiCached("/api/overview").then(d => {
       if (!live) return;
@@ -1506,234 +1623,230 @@ window.SignalsPage = function ({ me }) {
     }).catch(e => { if (live) setErr(e.message); });
     return () => { live = false; };
   }, []);
-  // Strategy-check signpost: once the view has re-rendered to show the target
-  // domain's group, scroll it into view and flash it. Runs after the state the
-  // jump set (tab/filter/groupBy) has committed.
+  // Strategy-check signpost: the feed is flat now, so jump to the FIRST card of the target
+  // domain (every card carries data-dom) and flash it — same sig-group-flash as before.
   useEffect(() => {
     if (!jumpTo) return;
-    const el = document.getElementById("sig-dom-" + jumpTo);
+    const el = document.querySelector('.brf-card[data-dom="' + (window.CSS && CSS.escape ? CSS.escape(jumpTo) : jumpTo) + '"]');
     if (el) {
       scrollIntoViewSafe(el, { block: "start" });
       el.classList.add("sig-group-flash");
       setTimeout(() => el.classList.remove("sig-group-flash"), 1700);
     }
     setJumpTo(null);
-  }, [jumpTo, tab, posF, groupBy, axis]);
-  // surface the named domain's signals on the same page, then scroll to them.
-  // The strategy check diagnoses MARKET stance, so the jump lands on the market lens.
-  const goToDomain = (dom) => { setTab("inbox"); setAxis("market"); setPosF("all"); setProvF(false); setRiskF(false); setGroupBy("domain"); setJumpTo(dom); };
+  }, [jumpTo, view]);
+  const goToDomain = (dom) => { setView({ kind: "all" }); setJumpTo(dom); };
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
     <div>
       <div class="skel" style=${{ height: "30px", width: "180px", marginBottom: "var(--s3)" }}></div>
       <div class="skel" style=${{ height: "20px", width: "420px", marginBottom: "var(--s4)" }}></div>
-      <div class="skel" style=${{ height: "150px", marginBottom: "var(--s4)", borderRadius: "var(--radius)" }}></div>
-      ${[0, 1, 2, 3].map(i => html`<div key=${i} class="skel" style=${{ height: "56px", marginBottom: "var(--s2)", borderRadius: "var(--radius-sm)" }}></div>`)}
+      <div class="skel" style=${{ height: "36px", width: "520px", marginBottom: "var(--s4)", borderRadius: "999px" }}></div>
+      ${[0, 1, 2, 3].map(i => html`<div key=${i} class="skel" style=${{ height: "120px", marginBottom: "var(--s3)", borderRadius: "14px" }}></div>`)}
     </div>`;
   const contrib = data.contribution || {};
-  // Signals only exist once insights unlock. For everyone short of that — and
-  // especially a brand-new 0%-data member — this page is the single biggest
-  // reason to submit, so it gets an engaging teaser rather than a dead end.
   const unlocked = data.contribution ? !!contrib.insights_unlocked : !(data.callouts && data.callouts.gaps_locked);
   // triage identity is sig_id (= question_id, or qid::row_id for a matrix row)
-  const all = (data.signals_all || []).map(s => { const sid = s.sig_id || s.question_id;
+  const sidOf = s => s.sig_id || s.question_id;
+  const all = (data.signals_all || []).map(s => { const sid = sidOf(s);
     return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null),
              snooze_until: actingSnz[sid] !== undefined ? actingSnz[sid] : s.snooze_until }; });
-  // domains that have at least one live signal — so the strategy check only
-  // signposts where there's actually something to land on.
   const signalDomains = new Set(all.filter(s => s.status !== "dismissed").map(s => s.domain).filter(Boolean));
-  // Signals rows colour by market DIRECTION (below/on/above) — a per-metric FACT, NOT an
-  // attainment verdict: a metric has a position, not a stance; attainment is domain-level (the
-  // MetricPage ruling). The strategy relationship (confirm / tension) is carried by the row's
-  // icon/treatment, never by colour. (No stance `aim` here — that was orphaned attainment plumbing
-  // from the removed alignTone; the tiles, which ARE domains, colour by attainment via attainTone.)
 
   const setStatus = (sid, status, days) => {
     setActing(a => ({ ...a, [sid]: status }));
-    // stash an optimistic snooze_until so the return-date chip renders before the next refetch
     setActingSnz(m => ({ ...m, [sid]: status === "snoozed" ? new Date(Date.now() + days * 86400000).toISOString() : null }));
     api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } })
-      .then(() => {
-        apiCacheInvalidate("/api/overview");
-        if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => setStatus(sid, null) });
-        else if (status === "snoozed") toast("Snoozed · " + snoozeReturn(new Date(Date.now() + days * 86400000).toISOString()), null, { label: "Undo", fn: () => setStatus(sid, null) });
-      })
+      .then(() => apiCacheInvalidate("/api/overview"))
       .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
   };
-  const toggle = (sid, cur, target) => setStatus(sid, cur === target ? null : target);
 
-  const counts = {}; SIG_TABS.forEach(t => { counts[t.k] = all.filter(t.f).length; });
-  const cur = SIG_TABS.find(t => t.k === tab) || SIG_TABS[0];
-  // Triage order within a domain group (Pass 3.5, ruling A — PIN beats confirm). PIN is checked
-  // FIRST: a pinned ("priority") row lifts to the group TOP even when confirm — the user's explicit
-  // "keep this up top" is a POSITION instruction that wins the genuine conflict with confirm's
-  // position-demotion. UNPINNED confirm still sinks to the TAIL (rank 3 — Pass 3's L4 demote-not-
-  // delete mirror, fully preserved). SAVE stays rank 1: it's a RETRIEVAL instruction (orthogonal to
-  // position), so a saved+confirm row still tail-clumps — no conflict to resolve (A′ rejected as
-  // over-reach). Degrades byte-identical: strategy-off → s.confirm falsy → the confirm?3 branch never
-  // fires → rank collapses to priority?0 : saved?1 : 2 (pre-Pass-3).
-  const rank = s => (s.status === "priority" ? 0 : s.confirm ? 3 : s.status === "saved" ? 1 : 2);
-  const triaged = all.filter(cur.f);                              // current triage tab
-  // AXIS + DONUT (Signals redesign, 2026-07-01): the page is scoped by a Signals-OWN
-  // Market/Practice lens (local state — never the shared _overview pref, so the two
-  // surfaces can't cross-drive). Every s.bucket lives on exactly ONE axis (buckets are
-  // disjoint + exhaustive, signals.py:967-982): market = the position reads (below/on/
-  // above market + the non-competitive peer-position outlier); practice = the three
-  // prevalence words + neutral context (context under practice per the ruling). So
-  // market + practice always reconciles to the triage tab's total — context counted
-  // once, nothing double-lives. Each axis list is already in s.bucket_order order.
-  const AXIS_BUCKETS = { market: ["below market", "on market", "above market", "peer position"],
-                         practice: ["common", "alternative", "rare", "context"] };
-  const scoped = triaged.filter(s => AXIS_BUCKETS[axis].includes(s.bucket));
-  // ONE filter source: the donut segments, its chips and the list all read the same
-  // per-bucket tally of the scoped set (server-computed s.bucket) — they cannot diverge.
-  const posCounts = {}; scoped.forEach(s => { posCounts[s.bucket] = (posCounts[s.bucket] || 0) + 1; });
-  const effPos = (posF !== "all" && !posCounts[posF]) ? "all" : posF;   // a filter the tab/axis emptied falls back
-  // NEW-DATA filters (scoped B, 2026-06-26): provenance + risk are INDEPENDENT predicates that AND with the
-  // position single-select — a director wants "below market AND verified source", not either/or. Pure VIEW op.
-  const isVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.anchor_grade === "C";
-  const provCount = scoped.filter(isVerified).length;
-  const riskCount = scoped.filter(s => s.risk_framed).length;
-  const visible = scoped.filter(s => effPos === "all" || s.bucket === effPos)
-    .filter(s => !provF || isVerified(s)).filter(s => !riskF || s.risk_framed);
-  // Bulk dismiss ("clear this screenful"): targets only the UNTRIAGED signals in
-  // the current view — pinned and saved ones are left alone, so a one-tap Undo can
-  // safely restore the batch to active without wiping a prior pin/save.
-  const dismissable = visible.filter(s => !s.status);
-  const bulkDismiss = async () => {
-    const ids = dismissable.map(s => s.sig_id || s.question_id);
-    if (!ids.length) return;
-    if (!window.confirm("Dismiss all " + ids.length + " untriaged signals in this view? Pinned and saved signals stay — and you can undo right after.")) return;
-    setActing(a => { const n = { ...a }; ids.forEach(id => n[id] = "dismissed"); return n; });
-    const restore = () => { setActing(a => { const n = { ...a }; ids.forEach(id => delete n[id]); return n; });
-      api("/api/signals/action-bulk", { method: "POST", body: { question_ids: ids, status: "active" } }).catch(() => {}); apiCacheInvalidate("/api/overview"); };
-    try {
-      await api("/api/signals/action-bulk", { method: "POST", body: { question_ids: ids, status: "dismissed" } });
-      apiCacheInvalidate("/api/overview");
-      toast(ids.length + " signals dismissed", null, { label: "Undo", fn: restore });
-    } catch (e) { restore(); toast("Couldn't dismiss those — try again", "error"); }
+  // ---- verbs (2026-07-10, David: toast instead of stub rows). Every action lets the card
+  // leave the list with a soft exit (leaveThen), then a single confirmation toast carries
+  // the Undo — the same restore paths the in-place stubs used, so nothing is lost.
+  const sigToast = (msg, undo) => {
+    const h = document.getElementById("toast-host"); if (h) h.textContent = "";   // one at a time
+    toast(msg, null, { label: "Undo", fn: undo }); };
+  const leaveThen = (sid, fn) => {
+    const esc = window.CSS && CSS.escape ? CSS.escape(sid) : sid;
+    const el = document.querySelector('.brf-card[data-sid="' + esc + '"]');
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!el || reduce) { fn(); return; }                 // reduced-motion (or no node): snap
+    el.style.height = el.offsetHeight + "px";
+    void el.offsetHeight;                                // commit the measured height first
+    el.classList.add("brf-leave");
+    el.style.height = "0px";
+    setTimeout(fn, 240);
   };
-  // the axis donut — built from the SAME posCounts tally the chips read, coloured by
-  // bucketColorSoft (Ship review 2026-07-09 Pack 4 §2 — the soft gauge palette, one
-  // colour weight with the Overview donut; the chips keep the solid dots), via the
-  // shared <Donut> primitive (:540).
-  const donutSegs = AXIS_BUCKETS[axis].map(b => ({ value: posCounts[b] || 0, color: bucketColorSoft(b), k: b }));
-  const axisTotal = scoped.length;
-  const donutAria = axisTotal + (axis === "market" ? " market-position" : " practice") + " signal" + (axisTotal === 1 ? "" : "s")
-    + (axisTotal ? ": " + AXIS_BUCKETS[axis].filter(b => posCounts[b]).map(b => posCounts[b] + " " + b).join(", ") + "." : ".");
-  const order = groupBy === "domain" ? SIG_DOMAINS : LENS_ORDER;
-  const groups = order.map(k => ({ key: k,
-    items: visible.filter(s => (groupBy === "domain" ? s.domain : s.lens) === k).sort((a, b) => rank(a) - rank(b)) }))
-    .filter(g => g.items.length);
+  const sigName = s => s.name || s.label_short;
 
-  const Row = (s) => { const sid = s.sig_id || s.question_id; const pt = posTag(s); return html`
-    <div key=${sid} class=${"signal-row sig-row-axis sig-tone-" + pt.tone + (s.status === "dismissed" ? " is-dismissed" : "") + (s.new ? " is-new" : "") + (s.risk_framed ? " is-risk" : "") + (s.confirm ? " is-confirm" : "")}
-      onClick=${() => openMetric(s.question_id)}>
-      ${/* body = the row's one real control (same un-nesting as the home briefing) */ ""}
-      <button class="signal-body sig-open" onClick=${e => { e.stopPropagation(); openMetric(s.question_id); }}>
-        <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}${s.status === "snoozed" && s.snooze_until ? html` <span class="sig-snoozed-until"><${Icon} name="clock" size=${11} /> ${snoozeReturn(s.snooze_until)}</span>` : null}</b>
-        <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}${provMark(s)}${pt.hint ? html`<span class="sig-hint"> · ${pt.hint}</span>` : null}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</span></button>
-      ${s.gap_pct != null ? html`<span class="sig-mag" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
-      <span class=${"pos-tag pos-" + pt.tone}>${s.tag || pt.text}</span>
-      <${SignalActions} status=${s.status} sid=${sid} onSet=${setStatus} />
-    </div>`; };
+  const saveTo = (s, name) => { const sid = sidOf(s); leaveThen(sid, () => {
+    const fl = folders.includes(name) ? folders : [...folders, name];
+    writeSig({ folders: fl, assign: { ...assign, [sid]: name } });
+    setStatus(sid, "saved");
+    sigToast("Saved to “" + name + "” — " + sigName(s), () => {
+      const na = { ...assign }; delete na[sid]; writeSig({ folders: fl, assign: na });
+      setStatus(sid, null); }); }); };
+  const snoozeIt = (s, days) => { const sid = sidOf(s); leaveThen(sid, () => {
+    setStatus(sid, "snoozed", days);
+    sigToast("Snoozed until " + sigRetDate(days) + " — " + sigName(s), () => setStatus(sid, null)); }); };
+  const dismissIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
+    setStatus(sid, "dismissed");
+    sigToast("Dismissed — recover any time from the Dismissed folder", () => setStatus(sid, null)); }); };
 
+  // ---- folder-view verbs (same pattern: exit + toast-borne Undo)
+  const moveTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
+    const fl = folders.includes(name) ? folders : [...folders, name];
+    writeSig({ folders: fl, assign: { ...assign, [sid]: name } });
+    sigToast("Moved to “" + name + "” — " + sigName(s), () => writeSig({ folders: fl, assign: { ...assign, [sid]: prev } })); }); };
+  const unfolder = (s) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
+    const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na });
+    setStatus(sid, null);
+    sigToast("Back in your feed — " + sigName(s),
+      () => { writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
+  const wake = (s) => { const sid = sidOf(s);
+    const iso = s.snooze_until ? (s.snooze_until.includes("T") ? s.snooze_until : s.snooze_until.replace(" ", "T") + "Z") : null;
+    const days = iso ? Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)) : 14;
+    leaveThen(sid, () => { setStatus(sid, null);
+      sigToast("Awake — back in your feed — " + sigName(s), () => setStatus(sid, "snoozed", days)); }); };
+  const recover = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, null);
+    sigToast("Recovered — back in your feed — " + sigName(s), () => setStatus(sid, "dismissed")); }); };
+
+  // ---- folder ops (rename keeps every assignment; delete returns signals to the feed —
+  // assignments clear, statuses untouched, nothing is deleted)
+  const renameFolder = (from, to) => {
+    if (folders.includes(to)) { toast("A folder with that name already exists", "error"); return; }
+    const na = {}; Object.keys(assign).forEach(k => { na[k] = assign[k] === from ? to : assign[k]; });
+    writeSig({ folders: folders.map(f => f === from ? to : f), assign: na });
+    if (view.kind === "folder" && view.name === from) setView({ kind: "folder", name: to }); };
+  const deleteFolder = (name) => {
+    const ids = Object.keys(assign).filter(k => assign[k] === name);
+    const na = { ...assign }; ids.forEach(k => delete na[k]);
+    writeSig({ folders: folders.filter(f => f !== name), assign: na });
+    setView({ kind: "all" });
+    toast('Folder "' + name + '" deleted — ' + (ids.length ? "its " + ids.length + " signal" + (ids.length === 1 ? "" : "s") + " returned to your feed" : "it was empty")); };
+  const commitNavFolder = () => { const t = navNm.trim(); if (!t) return;
+    if (!folders.includes(t)) writeSig({ folders: [...folders, t], assign });
+    setNavNaming(false); setNavNm(""); setView({ kind: "folder", name: t }); };
+
+  // ---- the sets. The feed is every live (non-snoozed, non-dismissed) signal that isn't
+  // filed in a named folder; folders + Snoozed + Dismissed partition the rest, so the pill
+  // counts always reconcile to the total. Machine order kept from the Briefing:
+  // new → risk → worth → |gap| → n, one flat list, ALL loaded (no pagination).
+  const present = new Set(all.map(sidOf));
+  const cntFolder = name => Object.keys(assign).filter(k => assign[k] === name && present.has(k)).length;
+  // (stubFor retired 2026-07-10, David: toast instead of stub rows — an actioned card simply
+  // leaves the feed; the Undo lives on the toast, so no placeholder row holds its slot.)
+  const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed" && !assign[sidOf(s)]);
+  const ordKey = s => [s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
+  feedItems.sort((a, b) => { const ka = ordKey(a), kb = ordKey(b);
+    for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; });
+  const feedN = feedItems.length;
+  const snoozedItems = all.filter(s => s.status === "snoozed");
+  const dismissedItems = all.filter(s => s.status === "dismissed");
+  // a folder deleted elsewhere (another tab) can leave a stale view — fall back to the feed
+  const v = (view.kind === "folder" && !folders.includes(view.name)) ? { kind: "all" } : view;
+  const viewItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
+    : v.kind === "snoozed" ? snoozedItems
+    : v.kind === "dismissed" ? dismissedItems
+    : feedItems;
+  const emptyLine = v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.'
+    : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
+    : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
+    : "Everything is filed — every signal is saved to a folder, snoozed or dismissed.";
+
+  // ---- the evidence card (Briefing anatomy, unchanged): caption + risk shield, stand-
+  // sentence headline, "Flagged because … · n · verified/estimate", soft chips, gap bar,
+  // lens tag, On plan, "See the evidence →". Verbs vary by the active folder view.
+  const sigCard = (s) => {
+    const sid = sidOf(s);
+    // (the in-place stub row retired 2026-07-10, David: toast instead of stub rows)
+    const tone = brfTone(s);
+    return html`<article key=${sid} class=${"brf-card brf-tone-" + tone} data-dom=${s.domain || ""} data-sid=${sid}>
+      <div class="brf-cap">
+        <span class="brf-cap-name">${s.name || s.label_short}</span>
+        ${s.domain ? html`<span class="brf-cap-dom">· ${domainLabel(s.domain)}</span>` : null}
+        ${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}
+        ${s.risk_framed ? html`<span class="brf-shield"><${Icon} name="shield" size=${10} /> risk</span>` : null}
+        ${v.kind === "snoozed" && s.snooze_until ? html`<span class="sfold-snz"><${Icon} name="clock" size=${10} /> ${snoozeReturn(s.snooze_until)}</span>` : null}
+      </div>
+      <h3 class="brf-head">${brfCap(s.stand || s.detail)}</h3>
+      <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num"> · n=${s.n}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
+      <div class="brf-chips">
+        <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
+        ${s.gap_pct != null ? html`<span class="brf-gapbar" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
+        ${s.lens ? html`<span class="brf-lens">${s.lens}</span>` : null}
+        ${s.confirm ? html`<span class="brf-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}
+      </div>
+      <div class="brf-verbs">
+        ${v.kind === "all" ? html`
+          <${SigFolderMenu} label="Save" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
+          <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
+        : v.kind === "folder" ? html`
+          <${SigFolderMenu} label="Move to…" folders=${folders} exclude=${v.name} onPick=${n => moveTo(s, n)} />
+          <button type="button" class="brf-verb" onClick=${() => unfolder(s)}>Remove from folder</button>`
+        : v.kind === "snoozed" ? html`
+          <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`
+        : html`
+          <button type="button" class="sfold-recover" onClick=${() => recover(s)}><${Icon} name="refresh" size=${12} /> Recover</button>`}
+        <button type="button" class="brf-see" onClick=${() => openMetric(s.question_id)}>See the evidence <span aria-hidden="true">→</span></button>
+      </div>
+    </article>`;
+  };
+
+  const isFold = f => v.kind === "folder" && v.name === f;
   return html`
-    <div class="signals-page" style=${{ maxWidth: "880px" }}>
+    <div class="signals-page brf-page" style=${{ maxWidth: "880px" }}>
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
-      ${unlocked ? html`<p style=${{ maxWidth: "680px", marginTop: 0 }}>Your organisation's signals — grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
-      ${/* Ship review 2026-07-09 Pack 1 §6: this page's fetch carries NO cut (App passes none),
-            so its numbers always read the all-peers pool — while the Overview the user linked
-            from may be on a 15-org cut. State the basis so the two surfaces can't silently
-            disagree; the home's "See all signals" link now says "(all peers)" too. */ ""}
+      ${unlocked ? html`<p class="brf-std" style=${{ maxWidth: "680px", marginTop: 0 }}>Grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
+      ${/* this page's fetch carries NO cut (App passes none), so its numbers always read the
+            all-peers pool — state the basis so it can't silently disagree with a cut Overview */ ""}
       ${unlocked ? html`<div class="caption num" style=${{ marginTop: 0, marginBottom: "var(--s3)" }}>
         Peer group: All peers${data.peer_pool && data.peer_pool.responding_orgs ? " · " + data.peer_pool.responding_orgs + " organisations" : ""}</div>` : null}
-      ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />` : html`
-        <div class="ov-seg sig-axis-seg" role="group" aria-label="Signals lens">
-          ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
-            <button key=${k} type="button" class=${"ov-seg-btn" + (axis === k ? " on" : "")} aria-pressed=${axis === k}
-              onClick=${() => { setAxis(k); setPosF("all"); }}>${lab}</button>`)}
+      ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
+      : all.length === 0 ? html`
+        <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
+          <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
+          <div class="caption" style=${{ maxWidth: "360px" }}>Nothing to flag yet — signals appear here as your position or the market moves.</div>
+        </div>`
+      : html`
+        ${/* FOLDER NAV — the only control above the feed: All · user folders · Snoozed ·
+              Dismissed · a quiet + New folder. The active user folder carries a small "…"
+              (Rename / Delete). */ ""}
+        <div class="sfold-nav" role="group" aria-label="Signal folders">
+          <button type="button" class=${"sfold-pill" + (v.kind === "all" ? " on" : "")} aria-pressed=${v.kind === "all"}
+            onClick=${() => setView({ kind: "all" })}>All signals <b class="num">${feedN}</b></button>
+          ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
+            <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
+              onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
+            ${isFold(f) ? html`<${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />` : null}
+          </span>`)}
+          <button type="button" class=${"sfold-pill" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
+            onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
+          <button type="button" class=${"sfold-pill" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
+            onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="check" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
+          ${navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
+            <input type="text" class="sfold-newinput" placeholder="Folder name" maxlength="40" value=${navNm}
+              ref=${el => el && el.focus()} onInput=${e => setNavNm(e.target.value)}
+              onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitNavFolder(); }
+                if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
+            <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
+          </span>` : html`<button type="button" class="sfold-new" onClick=${() => setNavNaming(true)}>+ New folder</button>`}
         </div>
-        <div class="sig-tabs">
-          ${SIG_TABS.map(t => html`<button key=${t.k} class=${"sig-tab" + (tab === t.k ? " on" : "")} onClick=${() => setTab(t.k)}>
-            <${Icon} name=${t.icon} size=${14} /> ${t.label} <span class="num">${counts[t.k]}</span></button>`)}
-        </div>
-        ${triaged.length === 0 ? html`
-          <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
-            <span class="signals-empty-ring"><${Icon} name=${cur.icon} size=${18} /></span>
-            <div class="caption" style=${{ maxWidth: "360px" }}>${
-              tab === "inbox" ? (counts.dismissed || counts.priority || counts.saved
-                ? "All clear — every signal triaged. New ones appear here as your position or the market moves."
-                : "Nothing to flag yet — signals appear here as your position or the market moves.")
-              : tab === "dismissed" ? "Nothing dismissed. Tip: dismiss a signal to clear it from your inbox and the home briefing."
-              : tab === "snoozed" ? "Nothing snoozed. Use the clock on any signal to set it aside — it returns to your inbox next cycle."
-              : "Nothing " + cur.label.toLowerCase() + " yet — use the " + (tab === "priority" ? "pin" : "star") + " on any signal to " + (tab === "priority" ? "prioritise" : "save") + " it."}</div>
-          </div>` : html`
-        <div class="sig-summary card">
-          <div class="sig-summary-top">
-            <span class="num"><b>${visible.length}</b> signal${visible.length === 1 ? "" : "s"}${effPos === "all" ? "" : " · " + effPos}</span>
-            ${data.strategy_objective && html`<span class="sig-strat-order" title="Each area is ordered for your stance — pins stay on top. Set in your reward strategy.">
-              <${Icon} name="compass" size=${12} /> ordered for your <b>${data.strategy_objective}</b> strategy${data.strategy_can_edit ? html` · <a onClick=${(e) => { e.preventDefault(); nav("/strategy"); }} href="#/strategy">edit</a>` : null}</span>`}
-            ${tab === "inbox" && dismissable.length > 1 ? html`<button class="btn small quiet sig-bulk-dismiss" onClick=${bulkDismiss}
-              title="Dismiss every untriaged signal shown here (pinned and saved stay)"><${Icon} name="close" size=${12} /> Dismiss all ${dismissable.length}</button>` : null}
+
+        ${viewItems.length === 0 ? html`<div class="sfold-empty caption">${emptyLine}</div>` : viewItems.map(sigCard)}
+
+        ${v.kind === "all" && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
+        ${/* navy trust footer: the register + the promise — filing is never deletion */ ""}
+        <div class="brf-navy">
+          <div class="brf-navy-reg">
+            <${Icon} name="table" size=${15} />
+            <span><b>Full gap register</b> — every metric's presence against the market, beyond what crosses a threshold. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href="/api/gap-register.csv" download>Download CSV</a>` : null}</span>
           </div>
-          <div class="sig-hero">
-            ${axisTotal ? html`
-              <div class="sig-donut" role="img" aria-label=${donutAria}>
-                <${Donut} segments=${donutSegs} total=${axisTotal} centerNum=${axisTotal} sub="signals"
-                  centerWord=${axis === "market" && data.hero && data.hero.market ? verdictWord(data.hero.market.verdict) : undefined}
-                  onSeg=${b => setPosF(effPos === b ? "all" : b)} size=${170} stroke=${24} />
-              </div>` : html`
-              <div class="caption sig-donut-empty">${axis === "market"
-                ? "No market-position signals in this view — everything here reads on practice."
-                : "No practice signals in this view yet."}</div>`}
-            <div class="sig-chips sig-axis-chips" role="group" aria-label="Filter the list by signal type">
-              <button type="button" class=${"sig-chip" + (effPos === "all" ? " on" : "")} aria-pressed=${effPos === "all"} onClick=${() => setPosF("all")}>All <span class="n">${scoped.length}</span></button>
-              ${AXIS_BUCKETS[axis].map(b => { const n = posCounts[b] || 0; const zero = !n; return html`
-                <button key=${b} type="button" class=${"sig-chip" + (effPos === b ? " on" : "") + (zero ? " is-zero" : "")} disabled=${zero} aria-disabled=${zero}
-                  aria-pressed=${effPos === b} onClick=${zero ? undefined : () => setPosF(effPos === b ? "all" : b)}>
-                  <span class="sig-chip-dot" style=${{ background: bucketColor(b) }}></span>${b} <span class="n">${n}</span></button>`; })}
-            </div>
-          </div>
-          <div class="sig-controls">
-            ${(provCount || riskCount) ? html`<div class="sig-filters" role="group" aria-label="Show only">
-              <span class="sig-filters-lbl">show only</span>
-              ${provCount ? html`<button type="button" class=${"sig-fchip" + (provF ? " on" : "")} aria-pressed=${provF} onClick=${() => setProvF(v => !v)} title="Show only verdicts backed by a verified, published source (the rest are estimate-flagged or unsourced).">verified source <span class="n">${provCount}</span></button>` : null}
-              ${riskCount ? html`<button type="button" class=${"sig-fchip sig-fchip-risk" + (riskF ? " on" : "")} aria-pressed=${riskF} onClick=${() => setRiskF(v => !v)} title="Show only duty-of-care risk signals (statutory / floor exposures)."><${Icon} name="shield" size=${11} /> risk <span class="n">${riskCount}</span></button>` : null}
-            </div>` : null}
-            <div class="sig-groupby">group by
-              <div class="ov-seg" role="group" aria-label="Group by">
-                <button type="button" class=${"ov-seg-btn" + (groupBy === "domain" ? " on" : "")} aria-pressed=${groupBy === "domain"} onClick=${() => setGroupBy("domain")}>domain</button>
-                <button type="button" class=${"ov-seg-btn" + (groupBy === "lens" ? " on" : "")} aria-pressed=${groupBy === "lens"} onClick=${() => setGroupBy("lens")}>lens</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        ${groups.length === 0 ? html`<div class="signals-empty" style=${{ marginTop: "var(--s4)" }}>
-            <span class="signals-empty-ring"><${Icon} name="sliders" size=${18} /></span>
-            <div class="caption">No signals match this view${(provF || riskF || effPos !== "all") ? " — your filters have narrowed it down." : "."}</div>
-            ${(provF || riskF || effPos !== "all") ? html`<button class="btn small" style=${{ marginTop: "var(--s3)" }}
-              onClick=${() => { setPosF("all"); setProvF(false); setRiskF(false); }}>Clear all filters</button>` : null}
-          </div>` :
-        groups.map(g => html`
-          <section key=${g.key} id=${groupBy === "domain" ? "sig-dom-" + g.key : null} class="sig-group">
-            <div class="sig-grouphead">
-              ${groupBy === "lens" ? html`<span class=${"signal-roundel lens-" + g.key}><${Icon} name=${LENS_ICON[g.key]} size=${14} /></span>` : html`<span class="sig-grouphead-icon"><${Icon} name=${CAT_ICON[g.key] || "award"} size=${15} /></span>`}
-              <b class="gname">${groupBy === "domain" ? domainLabel(g.key) : LENS_LABEL[g.key]}</b>
-              <span class="gmeta">${groupBy === "lens" ? LENS_DESC[g.key] + " · " : ""}${g.items.length}</span>
-            </div>
-            <div class="signals-list">${g.items.map(Row)}</div>
-          </section>`)}`}
-        ${data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
-        <div class="sig-register-foot">
-          <${Icon} name="table" size=${15} />
-          <div>
-            <b>Want the complete picture?</b> Signals shows only the signals that cross a threshold.
-            The <a href="#/priorities">full gap register</a> lists every metric's presence against the market.
-            ${me.user.role === "admin" ? html` <a href="/api/gap-register.csv" download>Download CSV</a>.` : null}
-          </div>
+          <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
         </div>`}
     </div>`;
 };

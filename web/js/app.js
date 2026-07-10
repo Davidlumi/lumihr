@@ -325,7 +325,7 @@ function App() {
     page = html`<${HowLumiWorksPage} me=${me} anchor=${anchor} />`;
   }
   else if (route.startsWith("/methodology")) { nav("/how-lumi-works/calculations"); page = null; }
-  else if (route.startsWith("/signals")) page = html`<${SignalsPage} me=${me} />`;
+  else if (route.startsWith("/signals")) page = html`<${SignalsPage} me=${me} prefs=${prefs} onPref=${onPref} />`;
   else if (route.startsWith("/priorities")) page = html`<${GapRegisterPage} ...${pageProps} />`;
   else if (route.startsWith("/team")) page = me.user.role === "admin"
     ? html`<${TeamPage} me=${me} />`
