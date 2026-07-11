@@ -379,7 +379,7 @@ window.RunPulsePage = function ({ me }) {
       </div>
 
       ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
-        <span>Card payments are being switched on — for now a lumi admin confirms your launch once it's approved.</span></div>`}
+        <span>Once your pulse is approved, a lumi admin confirms and opens your launch to the community.</span></div>`}
 
       ${!data.pulses.length ? html`
         <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center", marginTop: "var(--s3)" }}>
@@ -685,7 +685,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
       <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · a VAT invoice and receipt are issued on payment</div>
       <button class="btn primary" onClick=${pay}>${detail.payments_enabled ? "Pay & launch →" : "Request launch"}</button>
-      ${!detail.payments_enabled ? html`<p class="caption" style=${{ marginTop: "var(--s3)" }}>Card payments are being switched on — a lumi admin will confirm your launch.</p>` : ""}
+      ${!detail.payments_enabled ? html`<p class="caption" style=${{ marginTop: "var(--s3)" }}>A lumi admin will confirm and open your launch once it's approved.</p>` : ""}
     </div>
     ${QList()}`;
   if (ls === "paid") return html`

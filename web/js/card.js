@@ -346,6 +346,9 @@ function cardPosition(c) {
   // carry classification, so they're unaffected.
   if (c.classification && c.classification.direction) pol = c.classification.direction;
   if (p == null || pol === "neutral" || !pol) return null;
+  // §4.8(5): a practice/approach card (a how-often/how-you-do-it choice) has no market verdict —
+  // a bare "P1" percentile on a yes/no practice reads as an unexplained judgement. Suppress it.
+  if (c.classification && c.classification.register === "Approach") return null;
   const adj = pol === "lower_is_better" ? 100 - p : p;
   // Use the SAME market band the tiles + signals use — sourced from the engine
   // (window.MARKET_BAND, set from /api/me) so the card colour can never drift
