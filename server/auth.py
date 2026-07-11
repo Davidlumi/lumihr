@@ -42,7 +42,7 @@ RATE_WINDOW = 300   # seconds
 
 def rate_limited(key):
     now = time.time()
-    limit = RATE_MAX_IP if key.startswith("login-ip:") else RATE_MAX
+    limit = RATE_MAX_IP if "-ip:" in key else RATE_MAX  # any per-IP key gets the generous NAT-friendly tier
     _attempts[key] = [t for t in _attempts[key] if now - t < RATE_WINDOW]
     if len(_attempts[key]) >= limit:
         return True

@@ -351,6 +351,17 @@ from fastapi.middleware.gzip import GZipMiddleware  # noqa: E402 (grouped with i
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
+async def _json(request):
+    """Parse the request body as JSON, returning a clean 400 instead of a raw 500 on
+    malformed input (§4.7). Behaviour is identical to request.json() on valid bodies."""
+    try:
+        return await request.json()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(400, "Request body must be valid JSON.")
+
+
 def require_user(request):
     if request.state.user is None or request.state.org is None:
         raise HTTPException(401, "Not signed in")
@@ -739,7 +750,7 @@ pos.score_answer_safe = _score_answer
 
 @app.post("/api/auth/login")
 async def login(request: Request):
-    body = await request.json()
+    body = await _json(request)
     email = (body.get("email") or "").lower().strip()
     ip = request.client.host if request.client else "?"
     if auth_lib.rate_limited("login:%s" % email) or auth_lib.rate_limited("login-ip:%s" % ip):
@@ -767,7 +778,11 @@ async def logout(request: Request):
 @app.post("/api/auth/register")
 async def register(request: Request):
     """New member organisation sign-up (tier: core)."""
-    body = await request.json()
+    ip = request.client.host if request.client else "?"
+    # per-IP throttle — mass-signup abuse guard (login and reset already rate-limit; §4.7)
+    if auth_lib.rate_limited("register-ip:%s" % ip):
+        raise HTTPException(429, "Too many sign-up attempts — please wait a few minutes and try again.")
+    body = await _json(request)
     for f in ("org_name", "email", "password"):
         if not body.get(f):
             raise HTTPException(400, "Missing %s" % f)
@@ -808,7 +823,7 @@ async def register(request: Request):
 
 @app.post("/api/auth/request-reset")
 async def request_reset(request: Request):
-    body = await request.json()
+    body = await _json(request)
     email = (body.get("email") or "").strip()
     if auth_lib.rate_limited("reset:%s" % email.lower()):
         raise HTTPException(429, "Too many attempts — please wait a few minutes.")
@@ -830,7 +845,7 @@ async def request_reset(request: Request):
 
 @app.post("/api/auth/reset")
 async def do_reset(request: Request):
-    body = await request.json()
+    body = await _json(request)
     row = auth_lib.get_valid_reset(body.get("token") or "")
     if not row:
         raise HTTPException(400, "That reset link has expired or already been used.")
@@ -923,7 +938,7 @@ ROLE_LABELS = {"admin": "Admin", "contributor": "Contributor", "viewer": "Viewer
 @app.post("/api/team/invite")
 async def invite(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     email = (body.get("email") or "").strip()
     # Admins are made by promotion after joining, never by invite
     role = body.get("role") if body.get("role") in ("contributor", "viewer") else "viewer"
@@ -950,7 +965,7 @@ async def change_role(request: Request):
     """Admin promotes/demotes a member. An org can never be left without an
     Admin: demoting the sole Admin is blocked with a clear message."""
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     email = (body.get("email") or "").strip().lower()
     role = body.get("role")
     if role not in ("admin", "contributor", "viewer"):
@@ -974,7 +989,7 @@ async def change_role(request: Request):
 @app.delete("/api/team/member")
 async def remove_member(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     email = (body.get("email") or "").strip().lower()
     conn = get_conn()
     target = conn.execute("SELECT * FROM users WHERE org_id=? AND lower(email)=?",
@@ -1121,7 +1136,7 @@ async def pulse_join(pid: str, request: Request):
 @app.put("/api/pulses/{pid}/response")
 async def pulse_response(pid: str, request: Request):
     user, org = require_editor(request)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     conn = get_conn()
     try:
@@ -1161,7 +1176,7 @@ async def pulse_commentary(pid: str, request: Request):
     LUMI_AI_PULSE kill switch joins the per-surface family."""
     user, org = require_user(request)
     require_ai(get_conn(), user, AI_PULSE)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     conn = get_conn()
     try:
@@ -1251,7 +1266,7 @@ async def governance(request: Request):
 @app.post("/api/governance/backlog")
 async def governance_backlog_add(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     title = (body.get("title") or "").strip()
     if not title:
         raise HTTPException(400, "A title is needed.")
@@ -1272,7 +1287,7 @@ async def governance_emergency(request: Request):
     """The between-release lane. High bar by design: refused without BOTH the
     external trigger that made the question factually wrong AND a sign-off."""
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     try:
         releases.emergency_change(
             body.get("question_id"), body.get("new_version"),
@@ -1432,7 +1447,7 @@ async def accept_data_terms(request: Request):
     organisation — once. This logged acceptance IS the organisational
     agreement, and it starts the 30-day contribution clock."""
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     if body.get("accept") is not True:
         raise HTTPException(400, "Tick the acceptance box to accept the terms.")
     conn = get_conn()
@@ -1459,7 +1474,7 @@ async def invite_info(token: str):
 
 @app.post("/api/auth/accept-invite")
 async def accept_invite(request: Request):
-    body = await request.json()
+    body = await _json(request)
     row = auth_lib.get_valid_invite(body.get("token") or "")
     if not row:
         raise HTTPException(400, "This invite link has expired or already been used.")
@@ -1493,7 +1508,7 @@ async def ai_consent(request: Request):
     the gate re-reads the latest event next request, so withdrawal closes the gate at once.
     Per-user (each member decides for themselves), versioned (pins AI_TERMS_VERSION)."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     if body.get("consent") is True:
         record_ai_consent(conn, org["org_id"], user["user_id"])
@@ -1968,7 +1983,7 @@ async def set_org_signal_peers(request: Request):
     2026-07-10). Restricted to firmographic cuts (or 'all' to clear). This is the ORG-level
     default that powers notifications; the per-USER landing default is a client pref."""
     user, org = require_editor(request)
-    body = await request.json()
+    body = await _json(request)
     raw = (body.get("cut") or "all").strip()
     dim = raw.split("::", 1)[0]
     if raw != "all" and dim not in SWEEP_CUT_DIMS:
@@ -2235,7 +2250,7 @@ async def get_myview(request: Request):
 @app.put("/api/myview")
 async def put_myview(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     conn.execute(
         "INSERT INTO pinned_views(org_id, user_id, layout_json, updated_at) VALUES (?,?,?,datetime('now')) "
@@ -2248,7 +2263,7 @@ async def put_myview(request: Request):
 @app.post("/api/myview/save-default")
 async def save_default_view(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     conn.execute(
         "INSERT INTO pinned_views(org_id, user_id, layout_json, updated_at) VALUES (?,'',?,datetime('now')) "
@@ -2373,7 +2388,7 @@ async def get_dashboard(did: str, request: Request):
 @app.post("/api/dashboards")
 async def create_dashboard(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     _ensure_dashboards(request, org, user, conn)
     name = (body.get("name") or "New dashboard").strip()[:60] or "New dashboard"
@@ -2401,7 +2416,7 @@ async def create_dashboard(request: Request):
 @app.put("/api/dashboards/{did}")
 async def update_dashboard(did: str, request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     row = _own_dashboard(conn, did, org, user)
     if row is None:
@@ -2459,7 +2474,7 @@ async def pin_to_dashboard(request: Request):
     """Toggle a metric on the user's ACTIVE dashboard — the target the global
     pin-star points at from anywhere in the app."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     if not qid:
         raise HTTPException(400, "question_id required")
@@ -2479,7 +2494,7 @@ async def pin_to_dashboard(request: Request):
 async def toggle_card_on_dashboard(did: str, request: Request):
     """Add/remove a metric on a SPECIFIC dashboard — the card's picker target."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     if not qid:
         raise HTTPException(400, "question_id required")
@@ -2501,7 +2516,7 @@ async def signal_action(request: Request):
     a signal, or clear it (status=active/None). Keyed by question_id — the per-
     metric cap means one signal per metric."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     qid = (body.get("question_id") or "").strip()
     status = body.get("status")
     if not qid:
@@ -2544,7 +2559,7 @@ async def signal_action_bulk(request: Request):
     view", and the Undo that restores them). Atomic. Snooze is excluded — it needs
     a per-signal duration, so it stays on the single-action route."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     qids = [str(q).strip() for q in (body.get("question_ids") or []) if str(q).strip()][:500]
     status = body.get("status")
     if not qids:
@@ -2573,7 +2588,7 @@ async def signals_seen(request: Request):
     posts the sig_ids it is currently showing — called when the Signals page is
     viewed. Idempotent."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     ids = [str(s) for s in (body.get("sig_ids") or []) if s][:2000]
     if ids:
         conn = get_conn()
@@ -2617,7 +2632,7 @@ async def list_notifications(request: Request):
 @app.post("/api/notifications/read")
 async def mark_notifications_read(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     if body.get("all"):
         conn.execute("UPDATE notification_reads SET read_at=datetime('now') WHERE user_id=? AND read_at IS NULL",
@@ -2643,7 +2658,7 @@ async def get_notify_prefs(request: Request):
 @app.put("/api/notify-prefs")
 async def put_notify_prefs(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     p = body.get("prefs") or {}
     clean = {
         "inbox_enabled": bool(p.get("inbox_enabled", True)),
@@ -2705,7 +2720,7 @@ async def get_prefs(request: Request):
 @app.put("/api/prefs")
 async def put_prefs(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     conn = get_conn()
     conn.execute("UPDATE users SET chart_prefs_json=? WHERE user_id=?",
                  (j(body.get("prefs") or {}), user["user_id"]))
@@ -2725,7 +2740,7 @@ async def get_assumptions_route(request: Request):
 @app.put("/api/assumptions")
 async def put_assumptions(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     allowed = {"median_salary_gbp", "cost_per_leaver_pct_salary", "agency_premium_pct"}
     overrides = {k: v for k, v in (body.get("assumptions") or {}).items() if k in allowed}
     for k, v in overrides.items():
@@ -2943,7 +2958,7 @@ def _analyst_log(conn, org, user, question, intent, matched, source, answer):
 async def analyst(request: Request):
     user, org = require_user(request)
     require_ai(get_conn(), user, AI_ANALYST)
-    body = await request.json()
+    body = await _json(request)
     question = (body.get("question") or "").strip()
     if not question:
         raise HTTPException(400, "Ask a question first.")
@@ -3417,7 +3432,7 @@ async def boardpack_generate(request: Request):
     contrib = contribution_state(get_conn(), org)
     if not contrib["insights_unlocked"]:
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
-    body = await request.json()
+    body = await _json(request)
     cut = {"dim": body.get("cut", "all"), "value": body.get("cut_value")}
     if cut["dim"] not in ("all", "industry", "fte_band", "twin", "group"):
         cut["dim"] = "all"
@@ -3654,7 +3669,7 @@ async def peer_group_preview(request: Request):
     """Live match count while building. Returns ONLY the count — never which
     organisations match."""
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     criteria = validate_group_criteria(body.get("criteria") or {})
     match = len(peer_twin.group_org_ids(get_conn(), criteria))
     return {"match_count": match, "min_orgs": SUPPRESSION_FLOOR,
@@ -3673,7 +3688,7 @@ async def peer_groups_list(request: Request):
 @app.post("/api/peer-groups")
 async def peer_groups_create(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     name = (body.get("name") or "").strip()
     if not name or len(name) > 60:
         raise HTTPException(400, "Give the group a name (up to 60 characters).")
@@ -3694,7 +3709,7 @@ async def peer_groups_update(gid: str, request: Request):
                        (gid, org["org_id"])).fetchone()
     if row is None:
         raise HTTPException(404, "No such peer group.")
-    body = await request.json()
+    body = await _json(request)
     name = (body.get("name") or row["name"]).strip()[:60] or row["name"]
     criteria = validate_group_criteria(body["criteria"]) if body.get("criteria") else uj(row["criteria_json"], {})
     conn.execute("UPDATE peer_groups SET name=?, criteria_json=?, updated_at=datetime('now') WHERE group_id=?",
@@ -3760,7 +3775,7 @@ async def put_org_profile(request: Request):
     """Admin-only; deliberately does NOT require the data terms — the profile
     is the step before them in the lifecycle."""
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     choices = profile_choices()
     vals = {}
     for f in PROFILE_CORE + PROFILE_RICH:
@@ -3888,7 +3903,7 @@ async def put_strategy(request: Request):
     never silent coerce). completed_at is set server-side only when all three
     required dials are non-null — the gate is not UI-only."""
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     incoming = body.get("strategy") or {}
     vals, prov = {}, {}
     for f, allowed in STRATEGY_ENUMS.items():
@@ -4049,7 +4064,7 @@ async def submission_state(request: Request):
 async def put_firmographics(request: Request):
     user, org = require_editor(request)
     require_data_terms(get_conn(), org)
-    body = await request.json()
+    body = await _json(request)
     vals = {}
     if body.get("industry") and body["industry"] not in INDUSTRIES:
         raise HTTPException(400, "Unknown industry")
@@ -4378,7 +4393,7 @@ def cross_field_warnings(conn, org, q, row_id, value):
 async def save_draft(request: Request):
     user, org = require_editor(request)
     require_data_terms(get_conn(), org)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     row_id = body.get("matrix_row_id") or ""
     q = load_questions().get(qid)
@@ -4410,7 +4425,7 @@ async def confirm_value(request: Request):
     quietly (who/field/value/threshold) so David can scan confirmed outliers
     later. Logging only; nothing is ever blocked or altered."""
     user, org = require_editor(request)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     row_id = body.get("matrix_row_id") or ""
     q = load_questions().get(qid)
@@ -4721,7 +4736,7 @@ async def metric_commentary(request: Request):
     per org+metric+cut until the underlying numbers change."""
     user, org = require_user(request)
     require_ai(get_conn(), user, AI_COMMENTARY)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     conn = get_conn()
     dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
@@ -4768,7 +4783,7 @@ async def metric_commentary_save(request: Request):
     move. Editor-only: the commentary is org-shared, so an edit changes it for all."""
     user, org = require_editor(request)
     require_ai(get_conn(), user, AI_COMMENTARY)
-    body = await request.json()
+    body = await _json(request)
     qid = body.get("question_id")
     conn = get_conn()
     dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
@@ -4806,7 +4821,7 @@ async def domain_summary(request: Request):
     always returns the validated deterministic floor when the model is down or rejected."""
     user, org = require_user(request)
     require_ai(get_conn(), user, AI_DOMAIN_SUMMARY)
-    body = await request.json()
+    body = await _json(request)
     name = body.get("domain")
     conn = get_conn()
     dim = body.get("cut") if body.get("cut") in ("all", "industry", "fte_band", "twin", "group") else "all"
@@ -4893,7 +4908,7 @@ def send_notification(subject, body, to=None):
 @app.post("/api/metric-requests")
 async def create_metric_request(request: Request):
     user, org = require_user(request)
-    body = await request.json()
+    body = await _json(request)
     text = (body.get("text") or "").strip()
     if not text:
         raise HTTPException(400, "Tell us what you'd like to benchmark first.")
@@ -4932,7 +4947,7 @@ def notify_suggestion_team(s):
 @app.post("/api/suggestions")
 async def create_suggestion(request: Request):
     user, org = require_user(request)               # 401 if session invalid
-    body = await request.json()
+    body = await _json(request)
     name = (body.get("metric_name") or "").strip()
     measures = (body.get("what_it_measures") or "").strip()
     matters = (body.get("why_it_matters") or "").strip()
@@ -5011,7 +5026,7 @@ async def admin_suggestions(request: Request):
 @app.put("/api/admin/suggestions/{sid}")
 async def admin_suggestion_update(sid: int, request: Request):
     user = require_platform_admin(request)
-    body = await request.json()
+    body = await _json(request)
     status = body.get("status")
     if status not in SUGGESTION_STATUSES:
         raise HTTPException(400, "status must be one of: " + ", ".join(SUGGESTION_STATUSES))
@@ -5055,7 +5070,7 @@ async def admin_pulses(request: Request):
 @app.post("/api/admin/pulses")
 async def admin_pulse_create(request: Request):
     require_platform_admin(request)
-    body = await request.json()
+    body = await _json(request)
     name = (body.get("name") or "").strip()
     desc = (body.get("description") or "").strip()
     if not name:
@@ -5105,7 +5120,7 @@ async def admin_pulse_archive(pid: str, request: Request):
 @app.post("/api/admin/pulses/{pid}/extend")
 async def admin_pulse_extend(pid: str, request: Request):
     require_platform_admin(request)
-    body = await request.json()
+    body = await _json(request)
     new_close = (body.get("closes_at") or "").strip()
     if not new_close:
         raise HTTPException(400, "Provide a new close date/time (YYYY-MM-DD HH:MM:SS).")
@@ -5224,7 +5239,7 @@ async def org_pulse_detail(pid: str, request: Request):
 @app.post("/api/org/pulses")
 async def org_pulse_create(request: Request):
     user, org = require_admin(request)
-    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await request.json())
+    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await _json(request))
     try:
         pid = pulses_mod.create_pulse(name, desc, qids, new_qs, closes_at,
                                       owner_org_id=org["org_id"], created_by=user["user_id"])
@@ -5238,7 +5253,7 @@ async def org_pulse_update(pid: str, request: Request):
     user, org = require_admin(request)
     conn = get_conn()
     _owned_pulse(conn, pid, org)
-    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await request.json())
+    name, desc, qids, new_qs, closes_at = _parse_pulse_body(await _json(request))
     try:
         pulses_mod.update_pulse_draft(pid, org["org_id"], name, desc, qids, new_qs, closes_at, conn)
     except (ValueError, KeyError) as e:
@@ -5362,7 +5377,7 @@ async def admin_pulse_reviews(request: Request):
 @app.post("/api/admin/pulses/{pid}/review")
 async def admin_pulse_review(pid: str, request: Request):
     staff = require_platform_admin(request)
-    body = await request.json()
+    body = await _json(request)
     decision = body.get("decision")
     notes = (body.get("notes") or "").strip()
     fee = body.get("fee_pence")
@@ -5486,7 +5501,7 @@ async def admin_backlog(request: Request):
 @app.post("/api/admin/metrics/draft")
 async def admin_metric_draft(request: Request):
     require_platform_admin(request)
-    body = await request.json()
+    body = await _json(request)
     metric = _validate_metric_def(body)
     conn = get_conn()
     cur = conn.execute(
@@ -5543,7 +5558,7 @@ async def list_shares(request: Request):
 @app.post("/api/shares")
 async def create_share(request: Request):
     user, org = require_admin(request)
-    body = await request.json()
+    body = await _json(request)
     kind = body.get("kind")
     if kind not in ("boardpack", "dashboard"):
         raise HTTPException(400, "Unknown share type")
