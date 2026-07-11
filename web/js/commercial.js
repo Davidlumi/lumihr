@@ -962,19 +962,24 @@ window.SettingsPage = function ({ me, refreshMe }) {
   const [msg, setMsg] = useState(null);
   const [aiDoc, setAiDoc] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [err, setErr] = useState(null);   // §4.10(2): don't hang on the loader if settings fail
   const ai = me.ai_insights || {};
   const setAiConsent = async (consent) => {
     if (aiBusy) return; setAiBusy(true);
     try { await api("/api/ai-consent", { method: "POST", body: { consent } }); await refreshMe(); } catch (e) {}
     setAiBusy(false);
   };
-  useEffect(() => { api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }); }, []);
+  const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
+  useEffect(() => { loadA(); }, []);
   const save = async () => {
     await api("/api/assumptions", { method: "PUT", body: { assumptions: {
       median_salary_gbp: +a.median_salary_gbp, cost_per_leaver_pct_salary: +a.cost_per_leaver_pct_salary,
       agency_premium_pct: +a.agency_premium_pct } } });
     setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
   };
+  if (err) return html`<${EmptyState} title="Couldn't load settings"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${loadA}>Retry</button>`} />`;
   if (!a) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "640px" }}>

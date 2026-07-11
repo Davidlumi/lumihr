@@ -2938,7 +2938,9 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
   const [m, setM] = useState(null);
   const [legal, setLegal] = useState(null);
   const [doc, setDoc] = useState(null);   // open legal document key | null
-  useEffect(() => { api("/api/methodology").then(setM); api("/api/legal").then(d => setLegal(d.documents)); }, []);
+  const [err, setErr] = useState(null);   // §4.10(2): don't hang on the loader if methodology fails
+  const load = () => { setErr(null); api("/api/methodology").then(setM).catch(e => setErr(e.message)); };
+  useEffect(() => { load(); api("/api/legal").then(d => setLegal(d.documents)).catch(() => {}); }, []);
   // deep-link: /how-lumi-works/<anchor> scrolls that element into view once
   // the content has rendered.
   useEffect(() => {
@@ -2956,6 +2958,9 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
     }, 220);
     return () => clearTimeout(t);
   }, [m, anchor]);
+  if (err) return html`<${EmptyState} title="Couldn't load how lumi works"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${load}>Retry</button>`} />`;
   if (!m) return html`<${PageLoading} />`;
   const industries = Object.keys(m.composition);
   const sectionTab = (HOW_LUMI_TABS.find(t => t.key === anchor) || HOW_LUMI_TABS[0]).key;
