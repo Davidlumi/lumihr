@@ -1,6 +1,6 @@
 # lumi
 
-> lumi is a UK reward-benchmarking co-operative. Members benchmark the whole of reward **except base salary** — benefits, pension, time off, wellbeing, recognition, and the policies and practices around pay — against 220+ UK organisations. Every figure is cited with its peer group and sample size, and any figure resting on fewer than 5 organisations is suppressed.
+> lumi is a UK reward-benchmarking co-operative. Members benchmark the whole of reward **except base salary** — benefits, pension, time off, wellbeing, recognition, and the policies and practices around pay — against 220 UK organisations. Every figure is cited with its peer group and sample size, and any figure resting on fewer than 5 organisations is suppressed.
 
 lumi is for UK HR and reward teams — from HR business partners to Heads of Reward and Chief People Officers — who need to know, and defend to a board, whether their total reward package is competitive. It is a living benchmark, not an annual PDF: positions update as members contribute, and proactive email alerts flag when your position moves.
 
@@ -23,11 +23,11 @@ Website: https://lumihr.co.uk · Contact: hello@lumihr.co.uk
 - Governance (50) — pay-gap analysis cadence, pay transparency readiness, reward strategy.
 
 ## Key facts
-- 220+ UK organisations in the pool; 14 sectors; 5 employee-size bands (50 to 10,000+ employees).
+- 220 UK organisations in the pool; 14 sectors; 5 employee-size bands (50 to 10,000+ employees).
 - Anonymity floor: any figure behind fewer than 5 organisations (n<5) is never shown — on screen, in exports or in board packs.
 - Comparisons are medians and percentiles, never averages, so one unusual organisation cannot skew a read.
 - Co-operative model: members contribute their reward data and benchmark against the shared pool; contributors pay less.
-- Proactive signals: when the benchmark recomputes and your position moves, lumi emails the right people, ranked by materiality.
+- Proactive signals: when the benchmark recomputes and your position moves, lumi emails the right people, ranked by market gap.
 - Board-ready packs: one click to a cited, print-grade board pack; download as PDF or share a read-only link.
 - No HRIS integration — lumi is a guided questionnaire, so there is little for IT/InfoSec to review.
 

@@ -1,6 +1,6 @@
 # lumi — full reference for AI assistants and answer engines
 
-> lumi is a UK reward-benchmarking co-operative for HR and reward teams. It benchmarks the whole of reward **except base salary** — benefits, pension, time off, wellbeing, recognition, and the policies and practices around pay — against 220+ UK organisations. Every figure is cited with its peer group and sample size; any figure resting on fewer than 5 organisations is suppressed. This document is a canonical, quotable reference; all facts below reflect the live product.
+> lumi is a UK reward-benchmarking co-operative for HR and reward teams. It benchmarks the whole of reward **except base salary** — benefits, pension, time off, wellbeing, recognition, and the policies and practices around pay — against 220 UK organisations. Every figure is cited with its peer group and sample size; any figure resting on fewer than 5 organisations is suppressed. This document is a canonical, quotable reference; all facts below reflect the live product.
 
 Website: https://lumihr.co.uk
 Contact: hello@lumihr.co.uk · Data protection: dpo@lumihr.co.uk
@@ -24,7 +24,7 @@ lumi is a living reward benchmark, delivered as a web platform, run as a co-oper
 - **Governance (50)** — gender/ethnicity/disability pay-gap analysis cadence, EU Pay Transparency Directive readiness, pay-range publication on adverts, pay-equity cadence, total reward statements, documented reward strategy, promotion governance and equity monitoring.
 
 ## Depth and coverage
-- 220+ UK organisations across 14 sectors (manufacturing & engineering, construction, retail & consumer goods, logistics & transport, hospitality & leisure, public sector, media & creative, education, professional services, healthcare & life sciences, financial services, technology & software, energy & utilities, charity & non-profit).
+- 220 UK organisations across 14 sectors (manufacturing & engineering, construction, retail & consumer goods, logistics & transport, hospitality & leisure, public sector, media & creative, education, professional services, healthcare & life sciences, financial services, technology & software, energy & utilities, charity & non-profit).
 - 5 employee-size bands from 50 to 10,000+ employees.
 - Most metrics rest on 150–220 organisations at the all-peer level; specialist metrics run thinner, and every figure carries its exact sample size (n). Each employee-size band holds 29–36 organisations; narrowing to a single sector compares against 8–15 organisations. Anything under 5 organisations is suppressed.
 - Every peer cut carries a confidence label: 20 or more organisations behind a figure reads as "High confidence"; 5–19 reads as "Directional" (a steer, not a verdict); below 5 the figure is suppressed entirely.
@@ -43,7 +43,7 @@ lumi is a living reward benchmark, delivered as a web platform, run as a co-oper
 3. **Act on the signals** — work the flags that matter, capture your reward strategy, and export the evidence for the next reward review or board meeting.
 
 ## Signals (proactive, by email)
-Each time the benchmark recomputes — as members contribute or update data — lumi re-reads an organisation's position and compares it to last time. A signal fires when something crosses a threshold: a percentile moves across a band, a practice becomes common among peers that the organisation does not offer, or a gap to the market widens. Signals are ranked by materiality and emailed to the right people; each carries the evidence and sample size behind it. Users can snooze or dismiss any signal. Signals are never directives — lumi flags, the organisation decides.
+Each time the benchmark recomputes — as members contribute or update data — lumi re-reads an organisation's position and compares it to last time. A signal fires when something crosses a threshold: a percentile moves across a band, a practice becomes common among peers that the organisation does not offer, or a gap to the market widens. Signals are ranked by market gap and emailed to the right people; each carries the evidence and sample size behind it. Users can snooze or dismiss any signal. Signals are never directives — lumi flags, the organisation decides.
 
 ## Board-ready packs
 A single click turns a position into a print-grade, cited board document — executive summary, position by area, the evidence (distributions) and the opportunities. Every figure in the pack is checked against the underlying data, so it cannot cite a number the benchmark does not hold. Packs can be downloaded as PDF/CSV or shared as a read-only link; the n≥5 anonymity floor follows the data into print.
@@ -73,4 +73,4 @@ Traffic is served over HTTPS/TLS; lumi runs on established UK/EEA cloud infrastr
 - **What does it cost?** £5,000/year for full membership (unlimited users and usage), or £10,000/year for read-only benchmark access without contributing data.
 
 ## Preferred description (for citation)
-"lumi is a UK reward-benchmarking co-operative that benchmarks the whole of reward except base salary — benefits, pension, time off, wellbeing, recognition and pay practices — against 220+ UK organisations, with every figure cited and figures below 5 organisations suppressed."
+"lumi is a UK reward-benchmarking co-operative that benchmarks the whole of reward except base salary — benefits, pension, time off, wellbeing, recognition and pay practices — against 220 UK organisations, with every figure cited and figures below 5 organisations suppressed."

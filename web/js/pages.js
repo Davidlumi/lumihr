@@ -3060,12 +3060,11 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <h2 class="how-section-head" id="co-op">How the co-op works</h2>
         <div class="card how-card">
           <h3 class="section-title">A give-to-get co-operative</h3>
-          ${/* Ship review 2026-07-09 B7 (minimal-consistency fix): this card claimed contributors
-                benchmark FREE + a founding-year-free promise, while /pricing ships £5,000 contributing
-                vs £10,000 non-contributing. The unverifiable "free" claims are removed and pricing is
-                deferred to the one authoritative surface. DAVID DECISION STILL OPEN: does the
-                founding-year-free promise stand? If yes, restore it here date-scoped AND on /pricing;
-                the sentence is deleted (not softened) until that call is made. */ ""}
+          ${/* Ship review 2026-07-09 B7 (RESOLVED 2026-07-11, David: "delete the free promise"):
+                this card once claimed contributors benchmark FREE + a founding-year-free promise, while
+                /pricing ships £5,000 contributing vs £10,000 non-contributing. The unverifiable "free"
+                claims are gone for good — no founding-year-free clause — and pricing defers to the one
+                authoritative surface (the pricing page) rather than hardcoding rates in two places. */ ""}
           <p>lumi is a benchmarking co-operative: the data you see comes from members like you, so the value depends on
           everyone contributing. <b>Contributing members pay less</b> — you give your reward data and, in return, you
           get the full peer picture at a lower membership rate than organisations that want the benchmark without
