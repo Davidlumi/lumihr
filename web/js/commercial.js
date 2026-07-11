@@ -119,9 +119,12 @@ function gapSentence(r) {
   return peers + (x == null ? " " : "") + you;
 }
 function gapStatusChip(r) {
-  return r.status === "in_place" ? ["good", "In place"]
-    : r.status === "partial" ? ["warn", "Partially"]
-    : r.status === "not_in_place" ? ["bad", "Not in place"]
+  // §4.5(1): practice presence is a NEUTRAL fact, never a RAG verdict. "In place" reads in the
+  // purple practice channel (you hold this practice); a gap or partial is a quiet neutral chip —
+  // not red/amber. lumi shows where you stand on practice, it never scores the choice.
+  return r.status === "in_place" ? ["chip-practice", "In place"]
+    : r.status === "partial" ? ["", "Partially"]
+    : r.status === "not_in_place" ? ["", "Not in place"]
     : ["", r.org_answered ? "Not assessable" : "Not answered"];
 }
 

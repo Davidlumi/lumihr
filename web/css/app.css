@@ -2744,11 +2744,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* dial card */
 .dial-card { background: var(--surface); border: 1px solid var(--chrome-edge);
   padding: var(--s4) var(--s5); margin-bottom: var(--s3); box-shadow: var(--shadow-soft); }
-.dial-card.flagged { border-color: var(--amber-bright); box-shadow: 0 0 0 3px var(--neutral-perf-tint); }
+/* required-but-unset dial: the ATTENTION channel (coral), not RAG amber — amber is a market
+   verdict, this is "needs your input" (mirrors .sig-fchip-risk.on / .signal-row.is-risk). */
+.dial-card.flagged { border-color: var(--lumi-coral); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); }
 .dial-head { display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s4); }
 .dial-roundel { width: 34px; height: 34px; border-radius: 9px; background: var(--lumi-tile); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.dial-roundel.flagged { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+.dial-roundel.flagged { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); color: var(--lumi-coral-deep); }
 .dial-title { font-size: var(--fs-body); font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: var(--s2); margin-bottom: 2px; }
 .dial-q { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.45; }
 .strat-req { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--blue); background: var(--blue-tint); padding: 2px var(--s2); border-radius: 5px; }
