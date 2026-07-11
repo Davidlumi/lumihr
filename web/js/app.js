@@ -1368,7 +1368,7 @@ function MetricSignalBar({ qid }) {
     </div>`;
 }
 
-function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
+function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   const org = me.org;
   // the page's own cut — initialised from the global selector / deep link,
   // and re-synced when the global selector changes (same semantics as cards)
@@ -1381,7 +1381,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   const [card, setCard] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref"); } catch (e) { return null; } });
+  const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref:" + qid); } catch (e) { return null; } });
   const chartRef = useRef(null);
   // primary narrative state, lifted here (was inside MetricCommentary) so the one-pager
   // can ENSURE the commentary is written before it opens the print dialog.
@@ -1437,7 +1437,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
   // applies only where valid — normaliseChart falls back to this metric's default
   const alts = chartAlternatives(c);
   const chart = normaliseChart(c, chartSel);
-  const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref", t); } catch (e) {} };
+  const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref:" + qid, t); } catch (e) {} };
   const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
   const backTo = "/benchmark" + (c.subpower ? "?cat=" + encodeURIComponent(c.subpower) : "");
   const goBack = () => {
@@ -1529,6 +1529,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref }) {
             ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn small" onClick=${doExport} title="Download just the chart as a labelled PNG image"><${Icon} name="download" size=${13} /> Chart</button>`}
             ${!c.suppressed && html`<button class="btn small" onClick=${printMetric} title="Download a one-page PDF — the chart plus the written story (what it means for you)"><${Icon} name="file-text" size=${13} /> One-pager</button>`}
             <button class="btn small" onClick=${share} title="Copy a link that opens this metric on the current peer group"><${Icon} name="link" size=${13} /> Share</button>
+            ${onPin && pinnedIds && html`<button class=${"btn small" + (pinnedIds.has(qid) ? " primary" : "")} onClick=${() => onPin(qid)}
+              title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}>
+              <${Icon} name=${pinnedIds.has(qid) ? "check" : "plus"} size=${13} /> ${pinnedIds.has(qid) ? "Pinned" : "Pin"}</button>`}
           </div>
         </div>
       </div>
