@@ -43,7 +43,8 @@ function ConfidenceChip({ n, window: win }) {
     : "Verdicts are compared against " + n + " peers — treat as directional.")
     + (win ? " " + win + " baseline — movement shows from your next cycle." : "");
   return html`
-    <span class=${"conf-chip" + (high ? "" : " conf-directional")} tabindex="0" role="note">
+    <span class=${"conf-chip" + (high ? "" : " conf-directional")} tabindex="0" role="note"
+      onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}>
       <span class="conf-meter" aria-hidden="true"><i></i><i></i><i class=${high ? "" : "off"}></i></span>
       <b>${high ? "High confidence" : "Directional"}</b>
       <span class="conf-n num">${n} peers${high ? "" : " — treat as a steer, not a verdict"}</span>
@@ -1096,7 +1097,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
                   <button class="di-scent" title=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — jump to signals"}
-                    aria-label=${nSig + " signals in " + label + ", jump to the signals list"}
+                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + ", jump to the signals list"}
                     onClick=${e => { e.stopPropagation(); onScent && onScent(); }}>${nSig}</button>` : null}
               </span>
               <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
@@ -1985,7 +1986,7 @@ function CategoryTile({ d, pending, aim, view }) {
         <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>${domainLabel(d.name)}</button></h3>
       <span class="row" style=${{ gap: "var(--s1)", alignSelf: "flex-start", alignItems: "center" }}>
         <span class=${"chip tile-chip " + chipCls + (indicative ? " chip-indicative" : "")} title=${evNote}>${chip}</span>
-        ${indicative && html`<span class="indic-flag" tabindex="0" role="note"><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
+        ${indicative && html`<span class="indic-flag" tabindex="0" role="note" onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}><${Icon} name="info" size=${11} /> indicative<span class="indic-tip">Verdict shown with limited comparable data — treat as a directional read.</span></span>`}
       </span>
       ${positioned ? html`
         <div class="cat-axis num">position</div>

@@ -649,7 +649,7 @@ window.OpportunityPanel = function ({ opp }) {
 
 window.CardDetail = function ({ card: c, onClose }) {
   return html`
-    <${Modal} onClose=${onClose}>
+    <${Modal} onClose=${onClose} label=${c.title || "Metric detail"}>
       <h2 class="section-title">${c.title}</h2>
       <p><b>Question asked:</b> ${c.question_text}</p>
       ${c.definition && html`<p><b>Definition:</b> ${c.definition}</p>`}

@@ -707,9 +707,9 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
     toast("Peer group deleted"); refresh();
   };
 
-  if (!options || !groups) return html`<${Modal} onClose=${onClose}><${Spinner} /><//>`;
+  if (!options || !groups) return html`<${Modal} onClose=${onClose} label="Manage peer groups"><${Spinner} /><//>`;
   return html`
-    <${Modal} onClose=${onClose} xl=${true}>
+    <${Modal} onClose=${onClose} xl=${true} label="Manage peer groups">
       ${editing === null ? html`
         <div>
           <div class="row spread">

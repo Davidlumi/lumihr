@@ -3280,7 +3280,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-evid b { color: var(--ink); font-weight: 650; }
 .di-n { color: var(--ink-faint); margin-left: 6px; }
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
-.di-scent { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer;
+.di-scent { width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;  /* 24px = WCAG 2.5.8 min touch target */
   font-size: 10.5px; font-weight: 700; line-height: 1; padding: 0;
   background: var(--blue-tint-2); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center;

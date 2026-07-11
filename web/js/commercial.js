@@ -664,7 +664,7 @@ window.PeerTwinPanel = function ({ onUse, onClose }) {
   const [data, setData] = useState(null);
   useEffect(() => { api("/api/peer-twin").then(setData).catch(e => setData({ available: false, message: e.message })); }, []);
   return html`
-    <${Modal} onClose=${onClose}>
+    <${Modal} onClose=${onClose} label="Organisations like you">
       <h2 class="section-title">Organisations like you</h2>
       ${!data ? html`<${Spinner} />` :
       !data.available ? html`<p>${data.message}</p>` :
@@ -1065,7 +1065,7 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
     setBusy(false);
   };
   return html`
-    <${Modal} onClose=${onClose}>
+    <${Modal} onClose=${onClose} label="Request a metric">
       ${done ? html`
         <div style=${{ textAlign: "center", padding: "var(--s4) 0" }}>
           <div style=${{ color: "var(--blue)", marginBottom: "var(--s2)" }}><${Icon} name="sparkle" size=${22} /></div>
