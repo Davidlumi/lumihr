@@ -92,6 +92,7 @@
   --blue-tint: #EBF0FA;
   --blue-tint-2: #D7E0F4;
   --navy: #1F2A44;
+  --navy-tint: color-mix(in srgb, var(--navy) 8%, #fff);  /* pale navy — strategy/trust channel backgrounds (.brf-strat) */
 
   /* ---- lumi brand kit (logo system) — see lumi_brand_kit/INTEGRATION.md ---- */
   --lumi-navy: var(--blue);   /* #2048B0 primary — alias, not a duplicate */
@@ -128,7 +129,7 @@
   /* ---- distribution inks — NOT a multi-hue ramp. Since the 2026-06-12 redesign
      categorical charts are mono blue (--chart-cat) with the You accent; the only
      other distribution ink still in use is the quartile-dot density base below. ---- */
-  --quartile-fill: #2547B0;          /* deep blue — base the quartile dots mix toward by density */
+  --quartile-fill: var(--blue);          /* deep blue — base the quartile dots mix toward by density */
 
   /* ---- chart inks (the data is quiet; the YOU is blue) ---- */
   --chart-cat: #7285C2;              /* categorical peer-bar fill — 3.4:1 on white (clears the 3:1 graphics floor; was #8598CF at 2.8:1) yet still clearly subordinate to the You accent */
@@ -727,7 +728,7 @@ td.num, th.num { text-align: right; }
   font-size: var(--fs-body); transition: border-color .15s, box-shadow .15s; }
 .invite-form .ctl:hover { border-color: var(--ink-faint); }
 .invite-form .ctl:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
-.error-text { color: var(--unfavourable); font-size: var(--fs-label); margin-top: var(--s1); }
+.error-text { color: var(--color-text-danger); font-size: var(--fs-label); margin-top: var(--s1); }
 .warn-text { color: var(--neutral-perf); font-size: var(--fs-label); margin-top: var(--s1); }
 .ok-text { color: var(--favourable); font-size: var(--fs-label); margin-top: var(--s1); }
 
@@ -1261,7 +1262,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .chip-bad-over { background: var(--unfavourable-tint); color: var(--unfavourable-deep); }   /* strategy: above your aim */
 .chip-good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .chip-mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
-.chip-practice { background: var(--blue-tint); color: var(--blue-deep); }
+.chip-practice { background: var(--differs-tint); color: color-mix(in srgb, var(--differs) 78%, var(--ink)); }
 /* FIX 1 — strategy-attainment OFF (no stance set): a neutral grey verdict chip. The label
    uses --grey-neutral-ink (AA-safe), not the lighter swatch token. */
 .chip-neutral-mkt { background: color-mix(in srgb, var(--grey-neutral) 18%, transparent); color: var(--grey-neutral-ink); }
@@ -1336,7 +1337,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .ov-wrap { position: relative; }
 .ov-aurora { position: absolute; inset: -28px -20px auto -20px; height: 420px; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(560px 300px at 12% 0%, rgba(37, 71, 176, 0.055), transparent 70%),
+    radial-gradient(560px 300px at 12% 0%, color-mix(in srgb, var(--blue) 5.5%, transparent), transparent 70%),
     radial-gradient(640px 320px at 88% 8%, rgba(194, 84, 46, 0.04), transparent 70%),
     radial-gradient(420px 260px at 55% 0%, rgba(14, 138, 95, 0.035), transparent 70%);
   animation: aurora-drift 24s ease-in-out infinite alternate; will-change: transform; }
@@ -2256,7 +2257,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .submit-banner-pct { color: var(--ink-soft); white-space: nowrap; }
 .submit-banner-cta { flex: none; align-self: center; height: auto; padding: var(--s3) var(--s4);
   transition: background 150ms ease, transform 100ms ease; }   /* 2.4 — anticipation */
-.submit-banner-cta:hover { background: #1B3F9E; }
+.submit-banner-cta:hover { background: var(--blue-deep); }
 .submit-banner-cta:active { transform: scale(.98); }
 @media (max-width: 760px) { .submit-banner { flex-wrap: wrap; gap: var(--s4); } .submit-banner-cta { width: 100%; } }
 
@@ -2914,12 +2915,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* dial card — premium surface, hover lift, gradient roundel */
 .dial-card { border-radius: 14px; transition: box-shadow .22s ease, transform .22s ease, border-color .2s; }
 .dial-card:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
-.dial-roundel { background: linear-gradient(135deg, var(--lumi-tile), var(--blue-tint)); box-shadow: inset 0 0 0 1px rgba(37,71,176,.07); transition: transform .2s ease; }
+.dial-roundel { background: linear-gradient(135deg, var(--lumi-tile), var(--blue-tint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 7%, transparent); transition: transform .2s ease; }
 .dial-card:hover .dial-roundel { transform: scale(1.06) rotate(-3deg); }
 
 /* scale track — thicker, springy thumb, hover-grow labels */
 .scale-thumb { width: 18px; height: 18px; border-width: 4px;
-  box-shadow: 0 2px 8px rgba(37,71,176,.28), 0 0 0 5px color-mix(in srgb, var(--blue) 9%, transparent); }
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--blue) 28%, transparent), 0 0 0 5px color-mix(in srgb, var(--blue) 9%, transparent); }
 .scale-thumb.settling { animation: thumbPop .44s cubic-bezier(.34,1.56,.64,1); }
 @keyframes thumbPop { 0%{transform:translate(-50%,-50%) scale(1)} 38%{transform:translate(-50%,-50%) scale(1.4)} 100%{transform:translate(-50%,-50%) scale(1)} }
 .scale-fill { background: linear-gradient(90deg, var(--blue), var(--blue-bright)); }
@@ -2951,7 +2952,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .review-row:hover { background: var(--paper); }
 
 /* footer buttons — premium primary, saved success */
-.strat-next, .strat-footer .btn.primary { box-shadow: 0 2px 10px rgba(37,71,176,.22); }
+.strat-next, .strat-footer .btn.primary { box-shadow: 0 2px 10px color-mix(in srgb, var(--blue) 22%, transparent); }
 .strat-saved { background: var(--favourable) !important; border-color: var(--favourable) !important;
   box-shadow: 0 2px 12px rgba(31,122,82,.3) !important; animation: savedPop .4s cubic-bezier(.34,1.56,.64,1); }
 @keyframes savedPop { 0%{transform:scale(.94)} 60%{transform:scale(1.05)} 100%{transform:scale(1)} }
@@ -2972,7 +2973,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: 999px; font-size: var(--fs-label); font-weight: 600; cursor: pointer; white-space: nowrap;
   transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
 .dash-tab:hover { color: var(--ink); border-color: var(--ink-faint); }
-.dash-tab.on { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(37,71,176,.22); }
+.dash-tab.on { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--blue) 22%, transparent); }
 .dash-tab-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .dash-tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
   padding: 0 var(--s1); border-radius: 999px; font-size: var(--fs-micro); font-weight: 700; background: var(--surface-sunk); color: var(--ink-soft); }
