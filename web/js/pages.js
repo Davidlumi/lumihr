@@ -2481,6 +2481,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   const [nameDraft, setNameDraft] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);          // §4.10(2): a failed load must not hang on the skeleton
   const [dlOpen, setDlOpen] = useState(false);   // Download menu (PDF / CSV)
   const nameRef = useRef(null);
   const dlRef = useRef(null);
@@ -2493,9 +2494,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   // cache key folds in the EFFECTIVE peer cut, so changing the global filter
   // (or a slot's own cut) yields a fresh key → refetch, not a stale card.
   const cardKey = slot => slotKey(slot) + "|" + cutKeyOf(slot.cut || cut);
-  const reload = () => api("/api/dashboards").then(d => {
+  const reload = () => { setErr(null); return api("/api/dashboards").then(d => {
     setList(d.dashboards); applyActive(d.active_id, d.active.layout);
-  });
+  }).catch(e => setErr(e.message)); };
   useEffect(() => { reload(); }, []);
   // a card's "Add to dashboard" picker (anywhere) can change this dashboard's
   // contents — keep the tab counts + the active grid in sync without a full reset.
@@ -2552,6 +2553,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [dlOpen]);
 
+  if (err) return html`<${EmptyState} title="Couldn't load your dashboards"
+    body=${err + " — nothing is lost; it usually works on a retry."}
+    action=${html`<button class="btn small primary" onClick=${() => { setList(null); reload(); }}>Retry</button>`} />`;
   if (!list || !layout) return html`
     <div>
       <div class="skel" style=${{ height: "30px", width: "240px", marginBottom: "var(--s3)" }}></div>
