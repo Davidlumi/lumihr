@@ -1391,8 +1391,11 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   // hydrate an existing (AI or edited) commentary on load — peek never generates, so a
   // saved edit reappears on return and the CTA can't silently overwrite it.
   useEffect(() => {
-    let dead = false;
     setCommentary(null); setCmErr(null);
+    // §4.10(1): only peek when commentary is enabled — with the feature off there is no
+    // generate/save path, so nothing exists to hydrate, and the call would 403 on every load.
+    if (!(me.features && me.features.commentary)) return;
+    let dead = false;
     api("/api/metric-commentary", { method: "POST",
       body: { question_id: qid, cut: sel.dim, cut_value: sel.value, peek: true } })
       .then(r => { if (!dead && r && r.parts) setCommentary(r); })

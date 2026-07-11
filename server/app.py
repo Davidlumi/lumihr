@@ -5775,7 +5775,18 @@ for _bn, _mt in (("favicon.ico", None), ("lumi_favicon.svg", "image/svg+xml"),
     app.add_api_route("/" + _bn, _brand_asset(), methods=["GET"], include_in_schema=False)
 
 
-app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+class _CachedStatic(StaticFiles):
+    """§4.10(4): assets are ?v=N-versioned, so a versioned request is immutable — cache it hard
+    (a ?v bump busts it). Unversioned requests keep the default (revalidating) behaviour, so a
+    stale asset can never be pinned for a year."""
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        if b"v=" in scope.get("query_string", b""):
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
+
+
+app.mount("/static", _CachedStatic(directory=WEB_DIR), name="static")
 
 
 @app.exception_handler(404)
