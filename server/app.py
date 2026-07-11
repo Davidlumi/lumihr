@@ -3428,7 +3428,11 @@ def _pack_item(i):
 @app.post("/api/boardpack/generate")
 async def boardpack_generate(request: Request):
     user, org = require_user(request)
-    require_ai(get_conn(), user, AI_BOARDPACK)
+    # §4.3 medium (surfaced by David 2026-07-11, "the board pack has disappeared"): the pack has a
+    # complete deterministic narrative floor, so GENERATION must not hide behind the AI gate — a
+    # keyless/AI-off/unconsented member still gets the full pack, honestly labelled "composed
+    # directly from the figures". Only the CLAUDE CALL is AI; the gate now scopes to it alone.
+    _ai_ok = ai_feature_on(ai_gate(get_conn(), user), AI_BOARDPACK)
     contrib = contribution_state(get_conn(), org)
     if not contrib["insights_unlocked"]:
         raise HTTPException(403, "Your board pack unlocks once you've answered %d%% of your key reward questions." % int(TARGET_PCT))
@@ -3453,7 +3457,9 @@ async def boardpack_generate(request: Request):
     if cut["dim"] == "fte_band" and not cut["value"]:
         cut["value"] = org["fte_band"]
     payload = assemble_pack_payload(request, user, org, cut)
-    result = await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)
+    result = (await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)) if _ai_ok \
+        else {"ok": False, "error": "AI narrative not enabled for this member",
+              "narrative": claude_api._deterministic_pack(payload)}
     pack_id = str(uuid.uuid4())
     conn = get_conn()
     conn.execute(

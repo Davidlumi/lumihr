@@ -1129,6 +1129,7 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
     <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
       <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
       <span class=${"peerbar-pill" + (cut.dim !== "all" ? " narrowed" : "")}>
+        <span class="peerbar-selwrap">
         <select aria-label="Choose your peer group" class="peer-ctl"
           value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
           onChange=${e => { if (e.target.value === "twin-info") { onTwinInfo(); } else onSelect(e.target.value); }}>
@@ -1147,13 +1148,16 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
           ${me.org.classified && html`<option value="manage-groups">+ Create / manage peer groups…</option>`}
         </select>
         <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
+        </span>
+        ${/* ★/🔔 live INSIDE the pill as joined segments (David 2026-07-11, "does not look
+              premium" — they floated as two orphan circles): one capsule = selector | ★ | 🔔. */ ""}
+        ${onPref ? html`<button type="button" class=${"peer-def" + (isMyDefault ? " on" : "")} aria-pressed=${isMyDefault}
+          title=${isMyDefault ? "This is your default view — click to clear" : "Open lumi on this peer group by default"}
+          onClick=${setMine}><${Icon} name="star" size=${14} /></button>` : null}
+        ${canSetOrg ? html`<button type="button" class=${"peer-def peer-def-bell" + (isOrgDefault ? " on" : "")} aria-pressed=${isOrgDefault}
+          title=${isOrgDefault ? "Your team's signal emails compare against this group — click to reset to all peers" : "Use this peer group for your team's signal emails"}
+          onClick=${setOrg}><${Icon} name="bell" size=${14} /></button>` : null}
       </span>
-      ${onPref ? html`<button type="button" class=${"peer-def" + (isMyDefault ? " on" : "")} aria-pressed=${isMyDefault}
-        title=${isMyDefault ? "This is your default view — click to clear" : "Open lumi on this peer group by default"}
-        onClick=${setMine}><${Icon} name="star" size=${14} /></button>` : null}
-      ${canSetOrg ? html`<button type="button" class=${"peer-def peer-def-bell" + (isOrgDefault ? " on" : "")} aria-pressed=${isOrgDefault}
-        title=${isOrgDefault ? "Your team's signal emails compare against this group — click to reset to all peers" : "Use this peer group for your team's signal emails"}
-        onClick=${setOrg}><${Icon} name="bell" size=${14} /></button>` : null}
       ${cut.dim === "twin" && html`<button class="btn small" onClick=${onTwinInfo}>Why these peers?</button>`}
       ${note && html`
         <span class="peerset-note">${!me.org.classified

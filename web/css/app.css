@@ -470,18 +470,19 @@ select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid va
 .peerbar-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
   display: inline-flex; color: var(--ink-faint); pointer-events: none; }
 .peerbar-pill.narrowed .peerbar-caret { color: var(--blue); }
-/* ★ my-default-view + 🔔 org-email-default toggles beside the peer selector (2026-07-10).
-   Quiet circular ghost buttons; the pressed (.on) state fills the primary-blue family —
-   deliberately NOT amber/green/red, which the RAG palette reserves for verdicts (doctrine).
-   Star and bell share the .on style; icon + tooltip carry the distinction. */
-.peer-def { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-  flex: none; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
-  color: var(--ink-faint); cursor: pointer;
-  transition: color var(--ease), border-color var(--ease), background var(--ease); }
-.peer-def:hover { border-color: var(--blue); color: var(--blue); }
-.peer-def:focus-visible { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
-.peer-def.on { background: var(--blue-tint); border-color: var(--blue); color: var(--blue-deep); }
-.peer-def.on:hover { color: var(--blue-deep); }
+/* ★ my-default-view + 🔔 org-email-default toggles — JOINED SEGMENTS inside the peer pill
+   (2026-07-11, David: floating circles "did not look premium" — one capsule = selector | ★ | 🔔).
+   Pressed (.on) fills the primary-blue family — deliberately NOT amber/green/red, which the
+   RAG palette reserves for verdicts (doctrine). Icon + tooltip carry the star/bell distinction. */
+.peerbar-selwrap { position: relative; display: inline-flex; align-items: center; }
+.peer-def { display: inline-flex; align-items: center; justify-content: center; width: 34px;
+  align-self: stretch; flex: none; padding: 0; border: 0; border-left: 1px solid var(--border);
+  background: transparent; color: var(--ink-faint); cursor: pointer;
+  transition: color var(--ease), background var(--ease); }
+.peer-def:hover { color: var(--blue); background: var(--blue-tint); }
+.peer-def:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.peer-def.on { background: var(--blue-tint); color: var(--blue-deep); }
+.peerbar-pill { overflow: hidden; }   /* clip the segment fills to the capsule radius */
 select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color: var(--blue); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -2125,16 +2126,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
 .bp-scale-labels span:nth-child(2) { text-align: center; }
 .bp-scale-labels span:last-child { text-align: right; }
-/* mini variant — the hairline dot-scale the "Position by domain" rows carry under their
-   stacked count bars (PercentileRuler mini). Ink dot = you; hollow = indicative basis. */
-.pr-mini { position: relative; display: flex; height: 6px; width: 100%; margin-top: 3px; }
-.pr-mini-zone { height: 100%; }
-.pr-mini .z-below { background: var(--gauge-below); border-radius: 3px 0 0 3px; }
-.pr-mini .z-on { background: var(--gauge-on); }
-.pr-mini .z-above { background: var(--gauge-above); border-radius: 0 3px 3px 0; }
-.pr-mini-dot { position: absolute; top: -2px; width: 10px; height: 10px; border-radius: 50%;
-  background: var(--ink); transform: translateX(-50%); }
-.pr-mini-dot.hollow { background: var(--surface); border: 2px solid var(--ink); box-sizing: border-box; }
+/* banded domain bar (2026-07-11, Option B — "combine the position in market with the stacked
+   bar"): the row bar is a fixed-zone percentile scale (P35/P65, the home strip's grammar) with
+   the metric counts printed inside their zones and an ink marker at the true depth percentile. */
+.di-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink);
+  transform: translateX(-1px); z-index: 2; }
 .bp-masknote { margin-top: var(--s1); }
 /* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */
 .bp-statrow { display: flex; flex-direction: row; align-items: stretch; gap: 0;

@@ -228,10 +228,15 @@ corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8"
 check("10a. home gauge renders the PercentileRuler from market.depth_pctl (engine value)",
       "PercentileRuler} pctl=${market.depth_pctl}" in pagesjs,
       "the overview ruler is not bound to the engine depth_pctl")
-check("10b. domain rows + category hero render the ruler from pos.depth_pctl (per-domain engine value)",
-      "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs
-      and 'hollow=${d.position_basis === "indicative"}' in pagesjs,
-      "domain rulers not bound to per-domain depth_pctl / indicative basis")
+check("10b. domain rows carry the banded bar with an engine-bound marker; category hero renders the ruler from pos.depth_pctl",
+      # Option B (2026-07-11): the row bar is a fixed-band zone scale with counts inside and an
+      # ink marker at the TRUE depth percentile — marker left% must bind to depth, never a literal,
+      # and the indicative basis must reach the row's aria.
+      "di-bar-banded" in pagesjs
+      and 'class="di-marker" style=${{ left: Math.min(99, Math.max(1, depth)) + "%" }}' in pagesjs
+      and 'd.position_basis === "indicative" ? " (indicative)"' in pagesjs
+      and "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs,
+      "the banded domain bar / category ruler is not bound to per-domain engine depth_pctl")
 check("10c. ruler band comes from the engine (window.MARKET_BAND, /api/me-sourced) at every pages.js call site",
       "band=${window.MARKET_BAND || [35, 65]}" in pagesjs
       and not re.search(r"PercentileRuler\}[^\n]*band=\$\{\[", pagesjs),

@@ -182,9 +182,10 @@ function ExportBoardPack({ me, cut }) {
     } catch (e) {}
   }, []);
   if (contrib && !contrib.insights_unlocked) return null;
-  // the export is an AI-gated feature (same pattern as domain_summary): pre-go-live
-  // the button hides rather than minting guaranteed-403 clicks
-  if (!(me.features && me.features.boardpack)) return null;
+  // UN-GATED 2026-07-11 (David: "the board pack has disappeared"): the pack composes fully
+  // without AI (deterministic narrative, labelled "composed directly from the figures"), so
+  // hiding the button behind me.features.boardpack hid a working feature whenever AI was off.
+  // The flag now scopes the Claude call server-side; the button always renders.
   const generate = async () => {
     setGen(true); setErr(null);
     try {
@@ -1082,20 +1083,21 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                         gauge tones — the platform's one RAG fill, same as the donut. RAG-only law
                         holds: colours + counts, zero P-anything. The count is the citation, so the
                         separate evidence line is retired. */ ""}
-                  <span class="di-bar" aria-hidden="true">
-                    ${[["below", "di-fill-below"], ["at", "di-fill-on"], ["above", "di-fill-above"]].map(([k, cls]) => {
-                      const v = pos[k] || 0;
-                      if (!v) return null;
-                      const mw = (String(v).length * 8 + 18) + "px";
-                      return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
-                    })}
-                  </span>
-                  ${/* per-domain position depth (2026-07-11 resurrection): the hairline dot-scale
-                        under the counts — WHERE the typical metric sits, not just how many fall
-                        each side. Hollow dot = indicative basis (thin domain pool). */ ""}
-                  ${pos.depth_pctl != null ? html`
-                    <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]}
-                      mini=${true} hollow=${d.position_basis === "indicative"} />` : null}`
+                  ${/* ONE combined bar (David 2026-07-11, "combine the position in market with the
+                        stacked bar" — Option B): fixed BAND zones (P35/P65 from the engine, the same
+                        spatial grammar as the home strip), the metric COUNTS printed inside their
+                        zones, and an ink marker at the TRUE percentile. Segment width no longer
+                        encodes count — the printed number is the citation; the marker never lies. */ ""}
+                  ${(() => {
+                    const band = window.MARKET_BAND || [35, 65];
+                    const depth = pos.depth_pctl;
+                    return html`<span class="di-bar di-bar-banded" role="img"
+                      aria-label=${(pos.below || 0) + " below, " + (pos.at || 0) + " on market, " + (pos.above || 0) + " above; typical metric at the " + (depth != null ? Math.round(depth) : "—") + "th percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
+                      ${[["below", "di-fill-below", band[0]], ["at", "di-fill-on", band[1] - band[0]], ["above", "di-fill-above", 100 - band[1]]].map(([k, cls, w]) => html`
+                        <span key=${k} class=${"di-fill " + cls} style=${{ flexBasis: w + "%", flexGrow: 0, flexShrink: 0 }}>${(pos[k] || 0) > 0 ? html`<span class="di-fillnum">${pos[k]}</span>` : null}</span>`)}
+                      ${depth != null ? html`<span class="di-marker" style=${{ left: Math.min(99, Math.max(1, depth)) + "%" }}></span>` : null}
+                    </span>`;
+                  })()}`
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>
               <span class="di-cell di-evid num">
