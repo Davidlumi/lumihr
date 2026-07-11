@@ -5890,3 +5890,8 @@ def startup():
                  "configured" if os.environ.get("LUMI_SMTP_HOST") else "NOT set (emails console-logged)"), flush=True)
     else:
         print("[lumi] SIGNAL SCHEDULER: OFF (set LUMI_SIGNAL_SWEEP=on for proactive alerts)", flush=True)
+    # go-live guard (§4.2): emailed invite/reset links are built from BASE_URL — if it still
+    # defaults to localhost, every link a recipient clicks is dead. Warn loudly at boot.
+    if "localhost" in BASE_URL or "127.0.0.1" in BASE_URL:
+        print("[lumi] ⚠ LUMI_BASE_URL is unset — invite/reset/share links point at %s and will "
+              "break for real recipients. Set LUMI_BASE_URL before go-live." % BASE_URL, flush=True)

@@ -354,7 +354,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   return html`
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
-      ${data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
+      ${!locked && data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
       ${!locked && html`
         <div class="ov-controls">
           <div class="ov-seg" role="group" aria-label="Dashboard lens">
@@ -769,7 +769,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
       </div>
       <div class="arc-verdict">
         <div class="arc-word arc-word-pending">Not enough data to position yet</div>
-        <div class="arc-lean">Keep submitting — your position appears once enough data is comparable.</div>
+        <div class="arc-lean">${(pct || 0) === 0
+          ? "Add your reward data — your position appears once enough of it is comparable."
+          : "Keep submitting — your position appears once enough data is comparable."}</div>
       </div>
       <div class="arc-legend num"><span class="arc-pending-note">Data pending — ${pct || 0}% of key reward questions submitted</span></div>
     </div>`;
@@ -2878,7 +2880,7 @@ window.DomainDataView = function ({ me, section }) {
         </div>
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <${CompletionRing} pct=${d.pct} size=${56} stroke=${7} />
-          ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(section))}><${Icon} name="pencil" size=${14} /> ${d.answered < d.total ? "Complete" : "Edit"} ${section}</button>`}
+          ${canEdit && html`<button class="btn primary" onClick=${() => nav("/your-data/submit/" + encodeURIComponent(section))}><${Icon} name="pencil" size=${14} /> ${d.answered < d.total ? "Complete" : "Edit"} ${domainLabel(section)}</button>`}
         </div>
       </div>
 

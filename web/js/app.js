@@ -904,7 +904,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
       { n: 3, label: "Complete your reward data", done: false,
-        hint: (basisN ? "About " + basisN + " key questions (~" + Math.round(basisN * 0.6) + " min), by section" : "Your reward questions by section") + " — autosaved, resume any time; insights unlock at " + targetPct + "%." },
+        hint: (basisN ? "About " + basisN + " key questions (~" + Math.round(basisN * 0.6 / 10) * 10 + " min), by section" : "Your reward questions by section") + " — autosaved, resume any time; insights unlock at " + targetPct + "%." },
       { n: 4, label: "Invite your team", done: false,
         hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
     ];
