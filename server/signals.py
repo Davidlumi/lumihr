@@ -372,6 +372,68 @@ def _transparency_mult(strategy, qid, transparency_set):
     return TRANSPARENCY_MULT.get(strategy.get("transparency"), 1.0)
 
 
+# ── FOUR MORE strategy re-rankers (David 2026-07-10, "do we take account of ALL the strategy
+# inputs?" — these four were captured in the wizard but did NOTHING to signals until now). All
+# RE-RANK ONLY (fold into the SAME capped ≤2.0 product as objective × p4p × transparency); none
+# suppress — the only opt-out suppressors stay location=agnostic + family=over. Neutral (1.0) when
+# the field is absent/skipped, so strategy-off / unset degrades byte-for-byte. Every non-1.0 result
+# is recorded as a per-signal `strategy_influence` at the application site (the card's "why ranked"
+# line). Defaults chosen 2026-07-10 (founder-approved), tunable here.
+
+# budget_direction — appetite to spend, keyed on the signal's market DIRECTION. pressure sinks
+# "you're below, spend to catch up" and lifts "above your aim" (cost-saving opportunities);
+# investing leans into below-market gaps; flat/unset → neutral.
+def _budget_mult(strategy, position):
+    bd = _strategy_field(strategy, "budget_direction")
+    if not bd or position not in ("below", "above"):
+        return 1.0
+    if bd == "investing":
+        return 1.3 if position == "below" else 1.0
+    if bd == "pressure":
+        return 0.7 if position == "below" else 1.3
+    return 1.0                                            # flat
+
+# acute_pressure — a scaling org surfaces hiring-relevant (attract/retain) flags first; a shock
+# org surfaces retention + engagement. Keyed on lens, like the objective re-ranker.
+ACUTE_LENS_MULT = {
+    "scaling": {"attract": 1.3, "retain": 1.25},
+    "shock":   {"retain": 1.35, "engage": 1.15},
+}
+def _acute_mult(strategy, lens):
+    ap = _strategy_field(strategy, "acute_pressure")
+    if not ap:
+        return 1.0
+    return (ACUTE_LENS_MULT.get(ap) or {}).get(lens, 1.0)
+
+# risk_appetite — how readily the org acts on distinctive practice, keyed on the "rare" kind (a
+# choice few peers make). early → lift (lead); wait → sink (prefer proven norms); follow/unset →
+# neutral. Never hides — a wait org still sees its rare-choice signals, just lower.
+def _risk_appetite_mult(strategy, kind):
+    ra = _strategy_field(strategy, "risk_appetite")
+    if not ra or kind != "rare":
+        return 1.0
+    return 1.3 if ra == "early" else 0.7 if ra == "wait" else 1.0
+
+# benefits_lead (multi-select wellbeing themes) — lift signals in the domains the org named as its
+# wellbeing focus. Neutral when nothing was chosen / skipped.
+BENEFIT_THEME_DOMAINS = {
+    "mental":    {"Wellbeing"},
+    "physical":  {"Wellbeing", "Benefits"},
+    "financial": {"Pay", "Benefits", "Incentives"},
+    "worklife":  {"Time Off", "Wellbeing"},
+}
+def _benefits_mult(strategy, domain):
+    if not strategy or (strategy.get("provenance") or {}).get("benefits_lead") == "skipped":
+        return 1.0
+    leads = strategy.get("benefits_lead") or []
+    if not leads or not domain:
+        return 1.0
+    doms = set()
+    for t in leads:
+        doms |= BENEFIT_THEME_DOMAINS.get(t, set())
+    return 1.25 if domain in doms else 1.0
+
+
 # STEP-3 LAYER 4 confirm-shedding demote (David 2026-06-24, ruling C). A non-risk signal
 # whose DOMAIN confirms its aim (alignment == on_target — on_target ONLY: ahead=overspend
 # and behind=gap both stay actionable) is the lowest briefing priority. This impact demote
@@ -934,9 +996,40 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         # the COMBINED strategy multiplier to 2.0 so a strong-P4P + attract org can't double-
         # boost incentive-attract signals past the cap. 1.0 when strategy is absent/skipped
         # (objective alone ≤1.7 < cap, P4P 1.0 off-variable-pay/moderate/unset → byte-identical).
-        _strat_mult = min(_objective_mult(strategy, s.get("lens")) * _p4p_mult(strategy, s.get("question_id"), vp_set)
-                          * _transparency_mult(strategy, s.get("question_id"), tr_set), 2.0)
+        # SEVEN strategy re-rankers now (2026-07-10): objective/p4p/transparency + the four newly
+        # wired (budget/acute/risk_appetite/benefits). Compute each with its declared value so the
+        # ones that ACTUALLY moved this signal (mult != 1.0) become its `strategy_influence` — the
+        # card's "why this is ranked" line. Same capped ≤2.0 product; 1.0-everywhere → byte-identical.
+        _parts = [
+            ("primary_objective",   strategy and strategy.get("primary_objective"),  _objective_mult(strategy, s.get("lens"))),
+            ("pay_for_performance", _strategy_field(strategy, "pay_for_performance"), _p4p_mult(strategy, s.get("question_id"), vp_set)),
+            ("transparency",        strategy and strategy.get("transparency"),        _transparency_mult(strategy, s.get("question_id"), tr_set)),
+            ("budget_direction",    _strategy_field(strategy, "budget_direction"),    _budget_mult(strategy, s.get("position"))),
+            ("acute_pressure",      _strategy_field(strategy, "acute_pressure"),      _acute_mult(strategy, s.get("lens"))),
+            ("risk_appetite",       _strategy_field(strategy, "risk_appetite"),       _risk_appetite_mult(strategy, s.get("kind"))),
+            ("benefits_lead",       (strategy or {}).get("benefits_lead"),            _benefits_mult(strategy, s.get("domain"))),
+        ]
+        _prod = 1.0
+        for _f, _v, _mm in _parts:
+            _prod *= _mm
+        _strat_mult = min(_prod, 2.0)
         s["impact"] = round(s["impact"] * _strat_mult)
+        # the card line names the STRONGEST drivers only (top 2 by |mult-1|) — the objective
+        # touches nearly every lens, so listing all seven would be a paragraph; two keeps it a
+        # scannable fact. The aim (below) is always kept and shown first for behind/ahead signals.
+        _infl_all = sorted(
+            ({"field": _f, "value": _v, "dir": "up" if _mm > 1.0 else "down", "_m": abs(_mm - 1.0)}
+             for _f, _v, _mm in _parts if abs(_mm - 1.0) > 1e-6),
+            key=lambda x: -x["_m"])
+        _infl = [{k: v for k, v in x.items() if k != "_m"} for x in _infl_all[:2]]
+        # the aim itself is the strongest per-signal strategy link for a behind/ahead alignment
+        # signal (market_position / per-domain target) — surface it first, as a fact (no direction).
+        if s.get("kind") in ("behind", "ahead") and strategy:
+            _aim = (strategy.get("domain_targets") or {}).get(s.get("domain")) or _strategy_field(strategy, "market_position")
+            if _aim:
+                _infl.insert(0, {"field": "aim", "value": _aim, "dir": "aim", "domain": s.get("domain")})
+        if _infl:
+            s["strategy_influence"] = _infl
         # applicability + family reframes (§5.2) — config tags gate them, the opt-in
         # stance drives them; both no-ops when untagged/unset (degrade byte-for-byte)
         if _strategy_field(strategy, "location_approach") == "agnostic" and _m.get("location_scoped"):

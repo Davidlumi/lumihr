@@ -630,7 +630,13 @@ def init_schema(conn=None):
                 "ALTER TABLE org_strategy ADD COLUMN domain_targets TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
-                "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT"):
+                "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",
+                # ORG DEFAULT PEER GROUP for the nightly signal-email sweep (2026-07-10,
+                # David: "for this default power notifications"). Nullable "dim::value"
+                # (e.g. "industry::Technology, Software & Digital"); NULL → all-peers, the
+                # historical frame. Per-USER landing default is a client pref (_peer_default);
+                # this org-level one drives the emails, since the sweep is per-org.
+                "ALTER TABLE orgs ADD COLUMN default_cut TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

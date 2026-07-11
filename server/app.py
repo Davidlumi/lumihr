@@ -878,6 +878,9 @@ async def me(request: Request):
                  "platform_admin": bool(user.get("platform_admin"))},
         "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
+                # the org's DEFAULT peer group for the signal-email sweep (2026-07-10) — the
+                # PeerSetBar marks it + editors set it; NULL = all-peers.
+                "signal_peer_cut": org.get("default_cut"),
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
                 "profile_rich_complete": all(org.get(f) for f in PROFILE_RICH),
                 "tier_entitlement": org["tier_entitlement"], "source": org["source"],
@@ -1943,6 +1946,40 @@ async def strategy_diagnosis(request: Request):
 
 # ============================================================ NOTIFICATIONS ==
 
+# cuts a nightly, request-free sweep can safely build: the firmographic peer sets (their
+# blocks are pre-aggregated), never twin (needs the org's similarity vector) or group
+# (needs membership). Anything else → all-peers.
+SWEEP_CUT_DIMS = ("industry", "fte_band")
+
+def _org_sweep_cut(org):
+    """The org's default_cut as a cut dict for the signal-email sweep — restricted to the
+    stable firmographic dims; NULL / unsupported → all-peers (the historical frame)."""
+    raw = (org.get("default_cut") or "").strip()
+    if "::" in raw:
+        dim, val = raw.split("::", 1)
+        if dim in SWEEP_CUT_DIMS and val:
+            return {"dim": dim, "value": val}
+    return {"dim": "all", "value": None}
+
+
+@app.put("/api/org/signal-peers")
+async def set_org_signal_peers(request: Request):
+    """Editor-only: set the org's default peer group for the nightly signal EMAILS (David
+    2026-07-10). Restricted to firmographic cuts (or 'all' to clear). This is the ORG-level
+    default that powers notifications; the per-USER landing default is a client pref."""
+    user, org = require_editor(request)
+    body = await request.json()
+    raw = (body.get("cut") or "all").strip()
+    dim = raw.split("::", 1)[0]
+    if raw != "all" and dim not in SWEEP_CUT_DIMS:
+        return JSONResponse({"error": "Signal emails can only default to an industry or size peer group."}, status_code=400)
+    val = None if raw == "all" else raw
+    conn = get_conn()
+    conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?", (val, org["org_id"]))
+    conn.commit()
+    return {"ok": True, "signal_peer_cut": val}
+
+
 def org_signals(conn, org):
     """The org's full (uncapped) signal set on the default all-peers cut, built
     request-free for the nightly sweep — the same machinery /api/overview uses,
@@ -1952,8 +1989,14 @@ def org_signals(conn, org):
     confirming non-risk signals carry s["confirm"] (the event layer quiets them; risk_framed stays
     exempt by the same not-risk_framed gate). The peer cut stays the canonical all-peers frame
     (RULED). strategy None / no override → empty alignment map → no confirm flags → byte-identical
-    to the pre-coherence (strategy-blind) sweep (degrade)."""
-    cut = {"dim": "all", "value": None}
+    to the pre-coherence (strategy-blind) sweep (degrade).
+
+    PEER GROUP (2026-07-10, David: "for this default power notifications"): the org's
+    default_cut drives the sweep now — the emails flag against the peers the org actually
+    cares about, not always all-peers (the old RULED frame). Restricted to the stable
+    firmographic cuts (industry/fte_band) so a nightly, request-free build never depends on
+    twin vectors / group membership; NULL or anything else → all-peers (byte-identical)."""
+    cut = _org_sweep_cut(org)
     items, tb = build_items(None, org, None, cut)
     visq = org_visible_questions(org)
     answers = org_answers_for(org)

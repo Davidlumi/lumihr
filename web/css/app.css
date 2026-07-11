@@ -469,6 +469,18 @@ select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid va
 .peerbar-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
   display: inline-flex; color: var(--ink-faint); pointer-events: none; }
 .peerbar-pill.narrowed .peerbar-caret { color: var(--blue); }
+/* ★ my-default-view + 🔔 org-email-default toggles beside the peer selector (2026-07-10).
+   Quiet circular ghost buttons; the pressed (.on) state fills the primary-blue family —
+   deliberately NOT amber/green/red, which the RAG palette reserves for verdicts (doctrine).
+   Star and bell share the .on style; icon + tooltip carry the distinction. */
+.peer-def { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  flex: none; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+  color: var(--ink-faint); cursor: pointer;
+  transition: color var(--ease), border-color var(--ease), background var(--ease); }
+.peer-def:hover { border-color: var(--blue); color: var(--blue); }
+.peer-def:focus-visible { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
+.peer-def.on { background: var(--blue-tint); border-color: var(--blue); color: var(--blue-deep); }
+.peer-def.on:hover { color: var(--blue-deep); }
 select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color: var(--blue); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -3396,6 +3408,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-why { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.5; }
 .brf-why b { color: var(--ink); font-weight: 600; }
 .brf-chips { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s3) 0; }
+/* the reward-strategy "why this is ranked" line (2026-07-10) — NAVY (trust/strategy channel,
+   never RAG): explains which strategy inputs shaped the signal, a fact, not advice. */
+.brf-strat { display: flex; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s1)) 0 var(--s2);
+  font-size: var(--fs-micro); color: var(--navy); background: var(--navy-tint);
+  border-radius: var(--radius-xs); padding: 3px var(--s2); width: fit-content; max-width: 100%; }
+.brf-strat svg { color: var(--navy); flex: none; }
 .brf-pos { font-size: var(--fs-micro); font-weight: 650; border-radius: 999px; padding: var(--s1) var(--s3); white-space: nowrap; }
 .brf-pos-amber    { background: var(--gauge-below); color: var(--brf-below-ink); }
 .brf-pos-red      { background: var(--gauge-above); color: var(--brf-above-ink); }

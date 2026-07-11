@@ -50,7 +50,7 @@ function ConfidenceChip({ n, window: win }) {
       <span class="indic-tip">${tip}</span>
     </span>`;
 }
-window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut, onTwinInfo }) {
+window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut, onTwinInfo }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   // Home dashboard lens (persisted in prefs._overview): MARKET view (gauge + below/
@@ -111,7 +111,8 @@ window.OverviewPage = function ({ me, cut, cuts, prefs, onPref, onPin, pinnedIds
           <h1 class="display-title">${data.org.name}</h1>
         </div>
         <div class="hero-actions">
-          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true} />
+          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
+            prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
           <${ExportBoardPack} me=${me} cut=${cut} />
           <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
         </div>
@@ -1585,7 +1586,43 @@ function SigFolderOps({ name, onRename, onDelete }) {
   </span>`;
 }
 
-window.SignalsPage = function ({ me, prefs, onPref }) {
+// The per-signal "why this is ranked" line (David 2026-07-10): renders the engine's
+// strategy_influence (which reward-strategy inputs moved this signal + direction) as ONE quiet
+// navy fact — explains the ranking, never advises. Empty when strategy is off/unset. Navy, not RAG.
+const STRAT_AIM_TEXT = { lag: "below-market", match: "on-market", lead: "above-market" };
+// natural per-(field, value) phrase — so the line reads "…by your cost objective" / "…by your
+// crisis footing", never "your shock current pressure". Fallback: the field's generic phrase.
+const STRAT_PHRASE = {
+  primary_objective: { cost: "your cost objective", attract: "your attract objective", retain: "your retention objective", compliance: "your compliance objective", hold: "your steady-state objective" },
+  pay_for_performance: { strong: "your strong pay-for-performance stance", egal: "your egalitarian-pay stance" },
+  transparency: { open: "your open-pay goal" },
+  budget_direction: { investing: "your investment budget", pressure: "your budget pressure" },
+  acute_pressure: { scaling: "your scaling push", shock: "your crisis footing" },
+  risk_appetite: { early: "your early-adopter appetite", wait: "your wait-and-see stance" },
+  benefits_lead: {},
+};
+const STRAT_FIELD_GENERIC = {
+  primary_objective: "your reward objective", pay_for_performance: "your pay-for-performance stance",
+  transparency: "your transparency stance", budget_direction: "your budget direction",
+  acute_pressure: "your current pressure", risk_appetite: "your risk appetite", benefits_lead: "your wellbeing focus",
+};
+function _stratPhrase(x) {
+  return (STRAT_PHRASE[x.field] || {})[x.value] || STRAT_FIELD_GENERIC[x.field] || "your strategy";
+}
+function sigStratLine(infl) {
+  if (!infl || !infl.length) return null;
+  const aim = infl.find(x => x.field === "aim");
+  const nudge = (dir) => infl.filter(x => x.dir === dir).map(_stratPhrase);
+  const parts = [];
+  if (aim) parts.push("against your " + (STRAT_AIM_TEXT[aim.value] || aim.value) + " aim" + (aim.domain ? " on " + domainLabel(aim.domain) : ""));
+  const ups = nudge("up"), downs = nudge("down");
+  if (ups.length) parts.push("ranked up by " + ups.join(", "));
+  if (downs.length) parts.push("ranked down by " + downs.join(", "));
+  if (!parts.length) return null;
+  const s = parts.join(" · ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const _ret = returnUiState("lumi-signals-ui") || {};   // Back-leg restore (Pack 1 §1)
@@ -1612,9 +1649,16 @@ window.SignalsPage = function ({ me, prefs, onPref }) {
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
   useEffect(() => { saveUiState("lumi-signals-ui", { view }); }, [view]);
+  // Signals now honour the app-wide PEER CUT (David 2026-07-10: the page hardcoded all-peers and
+  // ignored the selector) AND the overview strategy toggle (so the strategy re-rank + the per-signal
+  // "why ranked" line degrade to pure market when strategy is off). Same source-of-truth params as
+  // every other bench surface — cutQS + &strategy=off — so the feed recomputes on the chosen group.
+  const _applyStrat = ((prefs && prefs._overview) || {}).apply_strategy !== false;
+  const _cutKey = cut ? cutKeyOf(cut) : "all";
   useEffect(() => {
     let live = true;
-    apiCached("/api/overview").then(d => {
+    setData(null);
+    apiCached("/api/overview?" + cutQS(cut) + (_applyStrat ? "" : "&strategy=off")).then(d => {
       if (!live) return;
       setData(d);
       // viewing the Signals page clears NEW: mark every current signal seen
@@ -1622,7 +1666,7 @@ window.SignalsPage = function ({ me, prefs, onPref }) {
       if (ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
     }).catch(e => { if (live) setErr(e.message); });
     return () => { live = false; };
-  }, []);
+  }, [_cutKey, _applyStrat]);
   // Strategy-check signpost: the feed is flat now, so jump to the FIRST card of the target
   // domain (every card carries data-dom) and flash it — same sig-group-flash as before.
   useEffect(() => {
@@ -1779,6 +1823,8 @@ window.SignalsPage = function ({ me, prefs, onPref }) {
         ${s.lens ? html`<span class="brf-lens">${s.lens}</span>` : null}
         ${s.confirm ? html`<span class="brf-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}
       </div>
+      ${s.strategy_influence && s.strategy_influence.length ? html`
+        <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs">
         ${v.kind === "all" ? html`
           <${SigFolderMenu} label="Save" folders=${folders} onPick=${n => saveTo(s, n)} />
@@ -1802,10 +1848,13 @@ window.SignalsPage = function ({ me, prefs, onPref }) {
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
       ${unlocked ? html`<p class="brf-std" style=${{ maxWidth: "680px", marginTop: 0 }}>Grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
-      ${/* this page's fetch carries NO cut (App passes none), so its numbers always read the
-            all-peers pool — state the basis so it can't silently disagree with a cut Overview */ ""}
-      ${unlocked ? html`<div class="caption num" style=${{ marginTop: 0, marginBottom: "var(--s3)" }}>
-        Peer group: All peers${data.peer_pool && data.peer_pool.responding_orgs ? " · " + data.peer_pool.responding_orgs + " organisations" : ""}</div>` : null}
+      ${/* the page now HONOURS the peer selector (2026-07-10) — so its trust surface is the same
+            ConfidenceChip as the masthead, reading the ACTIVE cut's n. The old hardcoded
+            "Peer group: All peers · 220" line lied the moment a cut was chosen (David: "comparing
+            against shows different sample to the text"). */ ""}
+      ${unlocked ? html`<div class="conf-line" style=${{ justifyContent: "flex-start", marginTop: 0, marginBottom: "var(--s3)" }}>
+        <${ConfidenceChip} n=${cutSize(cut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
+      </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`
         <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
