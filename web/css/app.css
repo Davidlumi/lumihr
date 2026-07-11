@@ -2716,7 +2716,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-mode { padding: 3px var(--s2); border-radius: 999px; font-size: var(--fs-micro); font-weight: 700; text-transform: none; letter-spacing: .01em; }
 .strat-mode.confirm { background: var(--blue-tint); color: var(--blue-deep); }
 /* DECISION §4.1: choose-mode is neutral warm-grey, NOT amber (amber = lagging verdict) */
-.strat-mode.choose { background: #F1ECE4; color: var(--ink-soft); border: 1px solid var(--chrome-edge); }
+.strat-mode.choose { background: #F1ECE4; color: var(--ink-soft); border: 1px solid var(--border); }
 .strat-title { font-family: var(--font-head); font-size: var(--fs-metric); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; margin-bottom: var(--s2); }
 .strat-sub { font-size: var(--fs-body); color: var(--ink-soft); max-width: 60ch; margin-bottom: var(--s5); }
 .strat-faint { color: var(--ink-faint); }
@@ -2726,7 +2726,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* Plane A confirm rows */
 .confirm-grid { display: flex; flex-direction: column; gap: var(--s3); }
-.confirm-row { background: var(--surface); border: 1px solid var(--chrome-edge); border-radius: var(--radius);
+.confirm-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: var(--s4) var(--s4); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); box-shadow: var(--shadow-soft); }
 .cr-label { font-size: var(--fs-label); font-weight: 600; color: var(--ink); margin-bottom: 3px; }
 .cr-why { font-size: var(--fs-caption); color: var(--ink-faint); line-height: 1.4; }
