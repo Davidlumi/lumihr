@@ -2112,16 +2112,29 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   padding: var(--s3) var(--s4); margin: var(--s3) 0; }
 .bp-scale-wrap { margin: var(--s5) 0 var(--s3); }
 .bp-scale { position: relative; display: flex; height: 14px; }
-.bp-scale-zone { height: 100%; }
-.bp-scale .z-below { background: var(--amber-bright); border-radius: 7px 0 0 7px; }
-.bp-scale .z-on { background: var(--favourable); }
-.bp-scale .z-above { background: var(--unfavourable); border-radius: 0 7px 7px 0; }
+.bp-scale-zone { height: 100%; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+/* zones moved to the SOFT gauge tints (2026-07-11, PercentileRuler resurrection) — the
+   full-strength RAG fills predated the 2026-07-09 soft-palette doctrine; the pack's own
+   donut already made this move (§4.4 Pack 4), the strip now matches it and the home gauge. */
+.bp-scale .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
+.bp-scale .z-on { background: var(--gauge-on); }
+.bp-scale .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
 .bp-scale-marker { position: absolute; top: -5px; width: 2px; height: 24px; background: var(--ink); transform: translateX(-1px); }
 .bp-scale-marker span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
   font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
 .bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
 .bp-scale-labels span:nth-child(2) { text-align: center; }
 .bp-scale-labels span:last-child { text-align: right; }
+/* mini variant — the hairline dot-scale the "Position by domain" rows carry under their
+   stacked count bars (PercentileRuler mini). Ink dot = you; hollow = indicative basis. */
+.pr-mini { position: relative; display: flex; height: 6px; width: 100%; margin-top: 3px; }
+.pr-mini-zone { height: 100%; }
+.pr-mini .z-below { background: var(--gauge-below); border-radius: 3px 0 0 3px; }
+.pr-mini .z-on { background: var(--gauge-on); }
+.pr-mini .z-above { background: var(--gauge-above); border-radius: 0 3px 3px 0; }
+.pr-mini-dot { position: absolute; top: -2px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--ink); transform: translateX(-50%); }
+.pr-mini-dot.hollow { background: var(--surface); border: 2px solid var(--ink); box-sizing: border-box; }
 .bp-masknote { margin-top: var(--s1); }
 /* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */
 .bp-statrow { display: flex; flex-direction: row; align-items: stretch; gap: 0;
@@ -3278,6 +3291,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .di-evid b { color: var(--ink); font-weight: 650; }
+.di-evid-ind { font-size: var(--fs-micro); color: var(--ink-faint); }   /* indicative-basis tag beside a row's P-number */
 .di-n { color: var(--ink-faint); margin-left: 6px; }
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
 .di-scent { width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;  /* 24px = WCAG 2.5.8 min touch target */

@@ -314,19 +314,12 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <p class="caption" style=${{ marginTop: "var(--s2)" }}>Narrative ${n._fallback
           ? "composed directly from the figures in this pack"
           : "written by lumi's AI analyst from the figures in this pack, with every number validated against them"} — nothing outside the pack's data is used.</p>
+        ${/* the shared PercentileRuler atom (2026-07-11) — this inline strip was its origin;
+              deduped when the atom was resurrected on the home + domain surfaces, so screen
+              and pack can never drift. Same DOM, same classes; zones now the soft gauge tints. */ ""}
         ${p.band && p.headline.market && p.headline.market.depth_pctl != null ? html`
-          <div class="bp-scale-wrap">
-            <div class="bp-scale" role="img"
-              aria-label=${"Your typical comparable metric sits at the " + Math.round(p.headline.market.depth_pctl) + "th percentile; the on-market band runs P" + p.band.low + " to P" + p.band.high + "."}>
-              <div class="bp-scale-zone z-below" style=${{ width: p.band.low + "%" }}></div>
-              <div class="bp-scale-zone z-on" style=${{ width: (p.band.high - p.band.low) + "%" }}></div>
-              <div class="bp-scale-zone z-above" style=${{ width: (100 - p.band.high) + "%" }}></div>
-              <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, p.headline.market.depth_pctl)) + "%" }}><span>P${Math.round(p.headline.market.depth_pctl)}</span></div>
-            </div>
-            <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
-            <p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${Math.round(p.headline.market.depth_pctl)}</b>;${" "}
-              ${p.headline.broadly_in_line} of ${p.headline.comparable_metrics} comparable metrics sit within the on-market band.</p>
-          </div>` : null}
+          <${PercentileRuler} pctl=${p.headline.market.depth_pctl} band=${[p.band.low, p.band.high]}
+            comparable=${p.headline.comparable_metrics} inLine=${p.headline.broadly_in_line} />` : null}
         ${pack.previous && pack.previous.comparable_metrics != null
           && (pack.previous.above_median !== p.headline.above_median
               || pack.previous.broadly_in_line !== p.headline.broadly_in_line

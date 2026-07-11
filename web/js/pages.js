@@ -836,11 +836,13 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> On market</span>
         <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> Above</span>
       </div>
-      ${/* PercentileRuler retired from the Overview (2026-07-09, "RAG is the ONLY position
-            indicator"): it was a second position scale — bolder RAG zones + a P-number + a
-            sentence repeating the P-number — on a card that already encodes position in the
-            donut, the centre word and the lean caption. The shared component lives on for the
-            category page + board pack. */ ""}
+      ${/* PercentileRuler RESURRECTED here (2026-07-11, David: "we do need the user to be able
+            to see their position in the market overall") — reverses the 2026-07-09 retirement.
+            Now the SOFT-tinted strip (not the old bolder zones), compact (no sentence — the
+            marker label carries the number once), fed by the same depth_pctl that already
+            drives the lean adverb, band from the engine via window.MARKET_BAND. */ ""}
+      ${market.depth_pctl != null ? html`
+        <${PercentileRuler} pctl=${market.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}
       ${market.target ? html`
         <div class="arc-target"><${AlignmentChip} target=${market.target} /></div>`
       : stratOff ? html`
@@ -1087,14 +1089,21 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       const mw = (String(v).length * 8 + 18) + "px";
                       return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
                     })}
-                  </span>`
+                  </span>
+                  ${/* per-domain position depth (2026-07-11 resurrection): the hairline dot-scale
+                        under the counts — WHERE the typical metric sits, not just how many fall
+                        each side. Hollow dot = indicative basis (thin domain pool). */ ""}
+                  ${pos.depth_pctl != null ? html`
+                    <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]}
+                      mini=${true} hollow=${d.position_basis === "indicative"} />` : null}`
                 : html`<span class="di-norate">no comparable position yet</span>`}
               </span>
               <span class="di-cell di-evid num">
-                ${/* both stacked bars now print their counts inside, so the evidence column is
-                      retired in both lenses (2026-07-09). It survives only for the market
-                      no-market-rate row (Governance), which has no bar to carry its count. */ ""}
-                ${(!pending && !practice && noRate) ? html`${pv.pool || 0} practices` : null}
+                ${/* both stacked bars print their counts inside (2026-07-09); this column carries
+                      the Governance practices count (no bar) and — since the 2026-07-11 ruler
+                      resurrection — the domain's P-number beside its dot-scale. */ ""}
+                ${(!pending && !practice && noRate) ? html`${pv.pool || 0} practices`
+                : (!pending && !practice && pos && pos.depth_pctl != null) ? html`<b>P${Math.round(pos.depth_pctl)}</b>${d.position_basis === "indicative" ? html`<span class="di-evid-ind"> ind.</span>` : null}` : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -2392,9 +2401,11 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-card-counts num">
               <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
             </div>
-            ${/* PercentileRuler retired here too (2026-07-09): it printed a P-number + a harsh
-                  less/more-competitive strip — the RAG-only law reached the domain page. The
-                  donut + verdict word + lean caption carry the read. */ ""}
+            ${/* PercentileRuler RESURRECTED here too (2026-07-11, with the home gauge) — the
+                  soft-tinted strip, compact, this domain's own depth on the engine band. The
+                  indicative basis already rides the lean caption above. */ ""}
+            ${pos && pos.depth_pctl != null ? html`
+              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}
             ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
             <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
               <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>

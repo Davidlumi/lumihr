@@ -145,13 +145,26 @@ window.domainLabel = n => n === "Time Off" ? "Time off" : n;
 window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;
 
 // "You are here on a ruler" — the percentile scale strip the board pack prints,
-// now a shared atom so the SCREEN shows the same instant read (below ← on market
-// → above, with a P-marker). band=[low,high] from window.MARKET_BAND. Zone colours
-// match the Overview donut's marketTone (amber/green/red). Pass comparable+inLine
-// for the one-line context sentence; omit for the compact strip.
-window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) {
+// a shared atom so the SCREEN shows the same instant read (below ← on market
+// → above, with a P-marker). band=[low,high] from window.MARKET_BAND (engine-sourced).
+// Zone colours are the SOFT gauge tints — the platform's one RAG fill, same as the donut.
+// Pass comparable+inLine for the one-line context sentence; compact = strip + labels only;
+// mini = the hairline dot-scale the domain rows use (hollow = indicative basis).
+// RESURRECTED 2026-07-11 (David: "on reflection we do need the user to be able to see their
+// position in the market overall and for each domain") — reverses the 2026-07-09 "RAG is the
+// ONLY position indicator" retirement. The explained-P form (band context + n + basis flags)
+// is the pattern the board pack already ratified; bare unexplained P-numbers stay banned.
+window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact, mini, hollow }) {
   if (pctl == null || !band || band.length !== 2) return null;
   const lo = band[0], hi = band[1], p = Math.round(pctl);
+  if (mini) return html`
+    <span class="pr-mini" role="img"
+      aria-label=${"Typical metric at the " + p + "th percentile" + (hollow ? " (indicative)" : "") + "; the on-market band runs P" + lo + " to P" + hi + "."}>
+      <span class="pr-mini-zone z-below" style=${{ width: lo + "%" }}></span>
+      <span class="pr-mini-zone z-on" style=${{ width: (hi - lo) + "%" }}></span>
+      <span class="pr-mini-zone z-above" style=${{ width: (100 - hi) + "%" }}></span>
+      <span class=${"pr-mini-dot" + (hollow ? " hollow" : "")} style=${{ left: Math.min(97, Math.max(3, pctl)) + "%" }}></span>
+    </span>`;
   return html`
     <div class="bp-scale-wrap" style=${compact ? { margin: "var(--s3) 0 0" } : null}>
       <div class="bp-scale" role="img"
@@ -162,7 +175,7 @@ window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) 
         <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, pctl)) + "%" }}><span>P${p}</span></div>
       </div>
       <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
-      ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} sit within the on-market band.</p>` : null}
+      ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} comparable metrics sit within the on-market band.</p>` : null}
     </div>`;
 };
 

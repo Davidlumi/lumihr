@@ -222,6 +222,24 @@ check("9c. 'See all N signals' count derives from the live signal set (view-filt
       and '"See all " + total + " signals' in pagesjs,
       "the See-all count is not bound to the engine signal set")
 
+# --- 10. PercentileRuler resurrection (2026-07-11, David: "see their position in the market
+#     overall and for each domain") — the ruler must be FED BY THE ENGINE, never a literal.
+corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8").read()
+check("10a. home gauge renders the PercentileRuler from market.depth_pctl (engine value)",
+      "PercentileRuler} pctl=${market.depth_pctl}" in pagesjs,
+      "the overview ruler is not bound to the engine depth_pctl")
+check("10b. domain rows + category hero render the ruler from pos.depth_pctl (per-domain engine value)",
+      "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs
+      and 'hollow=${d.position_basis === "indicative"}' in pagesjs,
+      "domain rulers not bound to per-domain depth_pctl / indicative basis")
+check("10c. ruler band comes from the engine (window.MARKET_BAND, /api/me-sourced) at every pages.js call site",
+      "band=${window.MARKET_BAND || [35, 65]}" in pagesjs
+      and not re.search(r"PercentileRuler\}[^\n]*band=\$\{\[", pagesjs),
+      "a pages.js ruler call hardcodes the band instead of reading the engine's MARKET_BAND")
+check("10d. the shared atom guards its inputs (null pctl / malformed band renders nothing)",
+      "if (pctl == null || !band || band.length !== 2) return null;" in corejs,
+      "PercentileRuler lost its null/malformed-input guard")
+
 print("\nNOTE: read-only gate — no fixtures created, nothing to clean. Reads the live")
 print("snapshot via the same engine path as /api/overview (no HTTP).")
 print("\nRESULTS: %d failures" % len(FAILS))
