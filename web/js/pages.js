@@ -39,8 +39,8 @@ function ConfidenceChip({ n, window: win }) {
   if (n == null || n < 5) return null;
   const high = n >= 20;
   const tip = (high
-    ? "Verdicts are compared against " + n + " peer organisations — a solid sample."
-    : "Verdicts are compared against " + n + " peers — treat as directional.")
+    ? "High confidence: 20 or more peer organisations behind the verdict (this cut has " + n + ")."
+    : "Directional: 5–19 peer organisations (this cut has " + n + ") — treat as a steer. Any cut below 5 is suppressed.")
     + (win ? " " + win + " baseline — movement shows from your next cycle." : "");
   return html`
     <span class=${"conf-chip" + (high ? "" : " conf-directional")} tabindex="0" role="note"
@@ -3025,6 +3025,8 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           see "not enough organisations to show this safely" instead. This floor is the single suppression rule, applied
           to <b>every</b> peer group — including bespoke groups such as Peer Twin and your own custom groups — and it is
           enforced in one place in the calculation engine, so no view can route around it.</p>
+          <p>Above the floor, every peer cut carries a confidence label so you can weigh the sample: <b>20 or more</b>
+          organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.</p>
           <p class="caption">No peer figure is ever derived from a single organisation, and member identities are never
           shown in any group.</p>
         </div>
