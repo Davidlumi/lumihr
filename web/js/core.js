@@ -155,19 +155,28 @@ window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "cent
 // position in the market overall and for each domain") — reverses the 2026-07-09 "RAG is the
 // ONLY position indicator" retirement. The explained-P form (band context + n + basis flags)
 // is the pattern the board pack already ratified; bare unexplained P-numbers stay banned.
+// "3rd", "21st", "12th" — every spoken percentile goes through this (a P3 domain read "3th").
+window.pctlOrdinal = function (n) {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
 window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) {
   if (pctl == null || !band || band.length !== 2) return null;
   const lo = band[0], hi = band[1], p = Math.round(pctl);
   return html`
     <div class="bp-scale-wrap" style=${compact ? { margin: "var(--s3) 0 0" } : null}>
       <div class="bp-scale" role="img"
-        aria-label=${"Your typical comparable metric sits at the " + p + "th percentile; the on-market band runs P" + lo + " to P" + hi + "."}>
+        aria-label=${"Your typical comparable metric sits at the " + pctlOrdinal(p) + " percentile; the on-market band runs P" + lo + " to P" + hi + "."}>
         <div class="bp-scale-zone z-below" style=${{ width: lo + "%" }}></div>
         <div class="bp-scale-zone z-on" style=${{ width: (hi - lo) + "%" }}></div>
         <div class="bp-scale-zone z-above" style=${{ width: (100 - hi) + "%" }}></div>
         <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, pctl)) + "%" }}><span>P${p}</span></div>
       </div>
-      <div class="caption bp-scale-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></div>
+      ${/* vocabulary harmonised (fix class B, David 2026-07-11 ruling): ONE register —
+            below/on/above market — everywhere this atom renders, INCLUDING the board pack
+            ("less/more competitive" is retired product-wide). */ ""}
+      <div class="caption bp-scale-labels"><span>below market</span><span>on market</span><span>above market</span></div>
       ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} comparable metrics sit within the on-market band.</p>` : null}
     </div>`;
 };

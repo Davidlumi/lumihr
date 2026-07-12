@@ -1050,7 +1050,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 identical zone bands per row was wallpaper); rows below stay quiet. */ ""}
           <span class="di-axis-poskey">
             <span class="di-pk-strip"><span class="z-below" style=${{ width: (window.MARKET_BAND || [35, 65])[0] + "%" }}></span><span class="z-on" style=${{ width: ((window.MARKET_BAND || [35, 65])[1] - (window.MARKET_BAND || [35, 65])[0]) + "%" }}></span><span class="z-above" style=${{ width: (100 - (window.MARKET_BAND || [35, 65])[1]) + "%" }}></span></span>
-            <span class="di-pk-labels"><span>less competitive</span><span>on market</span><span>more competitive</span></span>
+            <span class="di-pk-labels"><span>below market</span><span>on market</span><span>above market</span></span>
           </span>`
           : html`
           <span class="di-axis-key">
@@ -1097,6 +1097,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 ${pending ? null : practice
                   ? (pv.pool ? null : html`<span class="di-sub">no practices tracked yet</span>`)
                   : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
+                  : (barMode === "position" && pos && pos.pool) ? html`
+                    ${/* D2 sub-label (fix class B): the live engine counts ride under the name in
+                          the marker view — the marker shows position, this keeps the mass. */ ""}
+                    <span class="di-sub num">${(pos.below || 0) + " below · " + (pos.at || 0) + " on · " + (pos.above || 0) + " above"}</span>`
                   : null}
               </span>
               <span class="di-cell di-trackcell">
@@ -1150,13 +1154,14 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     if (depth == null) return html`<span class="di-norate">no position depth yet</span>`;
                     const left = Math.min(99, Math.max(1, depth));
                     return html`<span class="di-markrow" role="img"
-                      aria-label=${"Typical metric at the " + Math.round(depth) + "th percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
+                      aria-label=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
                       <span class="di-mk-zone z-below" style=${{ width: band[0] + "%" }}></span>
                       <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>
                       <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
                       <span class="di-mk-centre" aria-hidden="true"></span>
                       <span class=${"di-dot" + (d.position_basis === "indicative" ? " ring" : "")} style=${{ left: left + "%" }}></span>
-                      <span class=${"di-plabel num" + (left > 82 ? " flip" : "")} style=${{ left: left + "%" }}>P${Math.round(depth)}</span>
+                      <span class=${"di-plabel num" + (left > 82 ? " flip" : "")} style=${{ left: left + "%" }}
+                        title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of this domain's per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
                     </span>`;
                   })()}`
                 : html`<span class="di-norate">no comparable position yet</span>`}

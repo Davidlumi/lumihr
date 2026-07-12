@@ -253,6 +253,11 @@ check("10c. ruler band comes from the engine (window.MARKET_BAND, /api/me-source
 check("10d. the shared atom guards its inputs (null pctl / malformed band renders nothing)",
       "if (pctl == null || !band || band.length !== 2) return null;" in corejs,
       "PercentileRuler lost its null/malformed-input guard")
+check("10e. ONE verdict register — below/on/above market; 'less/more competitive' retired product-wide (fix class B, 2026-07-11)",
+      "less competitive" not in pagesjs and "more competitive" not in pagesjs
+      and "less competitive" not in corejs and "more competitive" not in corejs
+      and "<span>below market</span>" in corejs,
+      "the retired less/more-competitive register has crept back onto a position surface")
 
 print("\nNOTE: read-only gate — no fixtures created, nothing to clean. Reads the live")
 print("snapshot via the same engine path as /api/overview (no HTTP).")
