@@ -205,22 +205,27 @@ check("9a. engine emits hero prevalence common/alt/rare/pool + signals-total as 
       and (prev_common + prev_alt + prev_rare) == prev_pool,
       {"common": prev_common, "alt": prev_alt, "rare": prev_rare, "pool": prev_pool, "signals_total": signals_total_val})
 check("9b. practice donut legend interpolates engine prevalence RAW (rendered == engine; no literal, no off-by-one)",
+      # polish 2026-07-11: the legend merged into the one-line arc-caption and its words went
+      # lowercase (matching the market caption) — same raw-interpolation contract, new casing.
       "const common = prevalence.with_majority, alt = prevalence.established, rare = prevalence.less_common" in pagesjs
-      and "${common}</span> Common" in pagesjs
-      and "${rare}</span> Rare" in pagesjs,
+      and "${common}</span> common" in pagesjs
+      and "${rare}</span> rare" in pagesjs,
       "practice donut common/alt/rare legend is not interpolated raw from the engine prevalence "
       "fields (2026-07-09 harmonisation: the practice lens now mirrors the market donut — "
       "prevalence, not differ/in-line — so the raw-interpolation contract moved there)")
-check("9c. 'See all N signals' count derives from the live signal set (view-filtered), not a hard-coded literal",
+check("9c. the signals total shown on the card derives from the live signal set (view-filtered), never a literal",
       # per-view briefings (2026-07-06): the pool binding renamed (_pool) and the panel
-      # list became briefing-first + impact tail — the INVARIANT is unchanged: the total
-      # is the length of the live view-filtered ENGINE set, never a literal.
+      # list became briefing-first + impact tail. Polish 2026-07-11: the count moved from
+      # the See-all link (which repeated it) to the ranknote's "top N of TOTAL" — the
+      # INVARIANT is unchanged: the total is the length of the live view-filtered ENGINE
+      # set, rendered from the `total` binding, never a literal.
       '_pool = (data.signals_all || []).filter(' in pagesjs
       and '_viewSigs = [..._brief, ..._pool.filter(' in pagesjs
       and '_viewLive = _viewSigs.filter(s => s.status !== "dismissed")' in pagesjs
       and '_viewTotal = _viewLive.length' in pagesjs
-      and '"See all " + total + " signals' in pagesjs,
-      "the See-all count is not bound to the engine signal set")
+      and '" of " + total + " · "' in pagesjs
+      and '"See all " + total + " signals' not in pagesjs,
+      "the card's signals total is not bound to the engine signal set")
 
 # --- 10. PercentileRuler resurrection (2026-07-11, David: "see their position in the market
 #     overall and for each domain") — the ruler must be FED BY THE ENGINE, never a literal.
@@ -228,15 +233,19 @@ corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8"
 check("10a. home gauge renders the PercentileRuler from market.depth_pctl (engine value)",
       "PercentileRuler} pctl=${market.depth_pctl}" in pagesjs,
       "the overview ruler is not bound to the engine depth_pctl")
-check("10b. domain rows carry the banded bar with an engine-bound marker; category hero renders the ruler from pos.depth_pctl",
-      # Option B (2026-07-11): the row bar is a fixed-band zone scale with counts inside and an
-      # ink marker at the TRUE depth percentile — marker left% must bind to depth, never a literal,
-      # and the indicative basis must reach the row's aria.
-      "di-bar-banded" in pagesjs
-      and 'class="di-marker" style=${{ left: Math.min(99, Math.max(1, depth)) + "%" }}' in pagesjs
+check("10b. the domain rows' Position view is an engine-bound diverging lollipop; category hero renders the ruler from pos.depth_pctl",
+      # Position mode (REBUILT 2026-07-11): a lollipop from mid-market — the stem spans
+      # min(depth,50)..max(depth,50), the dot/label sit at the TRUE depth percentile, both bound
+      # to the engine value (never literals); the indicative basis reaches the aria (hollow dot
+      # carries it visually; the "ind." text tag was removed on David's call).
+      "di-lolli" in pagesjs
+      and 'const left = Math.min(99, Math.max(1, depth));' in pagesjs
+      and 'const stemL = Math.min(left, 50), stemW = Math.abs(left - 50);' in pagesjs
+      and 'd.position_basis === "indicative" ? " hollow"' in pagesjs
       and 'd.position_basis === "indicative" ? " (indicative)"' in pagesjs
+      and ">P${Math.round(depth)}</span>" in pagesjs
       and "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs,
-      "the banded domain bar / category ruler is not bound to per-domain engine depth_pctl")
+      "the position lollipop / category ruler is not bound to per-domain engine depth_pctl")
 check("10c. ruler band comes from the engine (window.MARKET_BAND, /api/me-sourced) at every pages.js call site",
       "band=${window.MARKET_BAND || [35, 65]}" in pagesjs
       and not re.search(r"PercentileRuler\}[^\n]*band=\$\{\[", pagesjs),

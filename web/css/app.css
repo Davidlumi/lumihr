@@ -369,9 +369,12 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .nav-chev { margin-left: auto; display: inline-flex; color: var(--ink-faint); transition: transform 160ms ease; transform: rotate(-90deg); }
 .nav-chev.open { transform: rotate(0deg); }
 .nav-child { padding-left: var(--s6); }
-.bp-export { display: flex; gap: 2px; position: relative; }
-/* Export board pack → navy icon/label accent (text only; keeps its surface + border) */
+/* Export + history caret read as ONE capsule (polish 2026-07-11 — the 2px-gapped split
+   button was an orphan circle; joined segments, shared hairline, like the peer pill). */
+.bp-export { display: inline-flex; gap: 0; position: relative; }
 .bp-export .btn.small { color: var(--lumi-navy); }
+.bp-export .btn.small:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); border-right: 0; }
+.bp-export .btn.small:nth-child(2) { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border-left: 1px solid var(--border); padding: 0 var(--s2); }
 .bp-menu { position: absolute; right: 0; top: calc(100% + 4px); min-width: 240px; z-index: var(--z-nav);
   padding: var(--s2); box-shadow: var(--shadow-pop); }
 .bp-menu-item { display: block; width: 100%; text-align: left; border: 0; background: none;
@@ -938,6 +941,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: background var(--ease-fast), color var(--ease-fast), box-shadow var(--ease-fast); }
 .ov-seg-btn.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(33,27,38,.12), 0 0 0 1px rgba(33,27,38,.04); }
 .ov-seg-btn:not(.on):hover { color: var(--ink); }
+/* compact variant for card headers (2026-07-11 — the domain-bar Counts/Position toggle) */
+.ov-seg-mini { padding: 2px; }
+.ov-seg-mini .ov-seg-btn { font-size: var(--fs-micro); font-weight: 600; line-height: 1.4; padding: 2px var(--s2); }
 .ov-strat { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: none; cursor: pointer;
   font: inherit; font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px; }
 .ov-strat-track { width: 34px; height: 20px; border-radius: 999px; background: var(--chrome-edge); position: relative; transition: background var(--ease); flex: none; box-shadow: inset 0 0 0 1px rgba(33,27,38,.06); }
@@ -1033,6 +1039,15 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-legend { display: flex; justify-content: center; gap: var(--s5); font-size: var(--fs-caption); color: var(--ink-soft);
   border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s3); }
 .arc-leg-fig { font-size: var(--fs-label); font-weight: 650; color: var(--ink); margin-right: 3px; }
+/* merged caption (polish 2026-07-11): lean adverb + swatched counts on ONE centred line —
+   replaces the stacked lean row + legend row on the hero arc cards. */
+.arc-caption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
+  gap: var(--s2) var(--s3); font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s3); }
+.arc-caption .arc-lean { margin-top: 0; }
+.arc-caption-sep { color: var(--ink-faint); }
+.arc-card .bp-scale-labels { font-size: var(--fs-micro); }   /* quiet axis words under the strip */
+.card-head-side { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2);
+  font-size: var(--fs-caption); }
 /* Approach companion — a quiet line under the legend, never on the arc (spec §6.1).
    Purple dot + muted text: a count of choices that differ, not a verdict. */
 .arc-differ { display: flex; align-items: center; justify-content: center; gap: var(--s2);
@@ -1673,11 +1688,14 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    --ink-faint (effectively invisible at rest, so the controls read as decoration, not
    actions). Raised to a visible-but-quiet resting state; row-hover and per-button hover
    stay the active emphasis. */
+/* triage actions rest QUIET (polish 2026-07-11 — four always-on icons per row were most of
+   the card's noise); the row's hover/keyboard focus brings them up. Never opacity:0 — touch
+   devices have no hover, so the affordance must stay findable. */
 .signal-row .sig-act { width: 30px; height: 30px; display: inline-flex; align-items: center;
-  justify-content: center; border: 0; background: none; color: var(--ink-soft); opacity: .72;
+  justify-content: center; border: 0; background: none; color: var(--ink-soft); opacity: .28;
   border-radius: var(--radius-sm); cursor: pointer; transition: all .12s; }
 .signal-row .sig-act svg { color: inherit; }
-.signal-row:hover .sig-act { opacity: .92; }
+.signal-row:hover .sig-act, .signal-row:focus-within .sig-act { opacity: .92; }
 .signal-row .sig-act:hover { background: rgba(15,23,42,.08); color: var(--ink); opacity: 1; }
 .signal-row .sig-act.on { color: var(--blue); opacity: 1; }
 /* snooze duration menu (P16) */
@@ -1722,7 +1740,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */
 .ov-signals-band .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
 .grid2 .card { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
-.arc-verdict, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 320ms; }
+.arc-verdict, .arc-caption, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 320ms; }
 .arc-median { animation: ov-rise 460ms ease-out both; animation-delay: 600ms; }
 .tile-dot { animation: dot-pop 460ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
 .chip-band .tile-dot { animation-delay: 700ms; }
@@ -2126,11 +2144,51 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
 .bp-scale-labels span:nth-child(2) { text-align: center; }
 .bp-scale-labels span:last-child { text-align: right; }
-/* banded domain bar (2026-07-11, Option B — "combine the position in market with the stacked
-   bar"): the row bar is a fixed-zone percentile scale (P35/P65, the home strip's grammar) with
-   the metric counts printed inside their zones and an ink marker at the true depth percentile. */
-.di-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink);
-  transform: translateX(-1px); z-index: 2; }
+/* position lollipop (REBUILT 2026-07-11) — a diverging dot plot from mid-market: hairline
+   axis + faint on-band underlay + P50 tick per row; a stem from mid to the position (length =
+   distance from mid-market, colour = landing zone, full-strength hues as thin accents per
+   doctrine); ink dot + P-label at the end (hollow dot = indicative). The zone scale itself
+   lives ONCE in the column header (.di-axis-poskey), not repeated per row. */
+.di-lolli { position: relative; display: block; height: 20px; width: 100%; }
+.di-lolli-axis { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--border); border-radius: 1px; }
+.di-lolli-band { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 6px;
+  background: color-mix(in srgb, var(--favourable) 14%, transparent); }
+.di-lolli-mid { position: absolute; left: 50%; top: 50%; width: 2px; height: 12px; margin: -6px 0 0 -1px;
+  background: var(--ink-faint); opacity: .5; border-radius: 1px; }
+.di-lolli-stem { position: absolute; top: 50%; height: 5px; margin-top: -2.5px; border-radius: 3px;
+  animation: di-stem-grow .45s cubic-bezier(.22,.61,.36,1) both; }
+.di-lolli-stem.st-below { background: var(--amber-bright); }
+.di-lolli-stem.st-on    { background: var(--favourable); }
+.di-lolli-stem.st-above { background: var(--unfavourable); }
+.di-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ink); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--surface);
+  animation: di-dot-in .3s ease-out .18s both; }
+.di-dot.hollow { background: var(--surface); border: 2px solid var(--ink); box-sizing: border-box; }
+.di-plabel { position: absolute; top: 50%; transform: translate(10px, -50%);
+  font-size: var(--fs-micro); font-weight: 700; color: var(--ink); line-height: 1;
+  animation: di-dot-in .3s ease-out .18s both; }
+.di-plabel.flip { transform: translate(calc(-100% - 10px), -50%); }
+/* the once-stated scale key in the header + micro column headers */
+.di-axis-poskey { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 30px; }
+.di-pk-strip { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
+.di-pk-strip .z-below { background: var(--gauge-below); }
+.di-pk-strip .z-on { background: var(--gauge-on); }
+.di-pk-strip .z-above { background: var(--gauge-above); }
+.di-pk-labels { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1; }
+.di-pk-labels span:nth-child(2) { text-align: center; }
+.di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; text-align: center; white-space: nowrap; }
+/* mode-transition (David 2026-07-11, "add animation as you transition"): the rows container
+   is keyed by mode, so a toggle remounts it and the entrance plays; stems grow from mid,
+   dots/labels fade in a beat later. */
+.di-rows-anim { animation: di-mode-in .30s ease-out both; }
+@keyframes di-mode-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes di-stem-grow { from { transform: scaleX(0); } }
+@keyframes di-dot-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .di-rows-anim, .di-lolli-stem, .di-dot, .di-plabel { animation: none; }
+}
 .bp-masknote { margin-top: var(--s1); }
 /* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */
 .bp-statrow { display: flex; flex-direction: row; align-items: stretch; gap: 0;
@@ -3184,7 +3242,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
    stacked bar carries the counts; sizes to "N practices" in practice view) · scent · strategy
    glyph · chevron */
 .di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
-  grid-template-columns: 132px minmax(0, 1fr) auto 24px auto 16px; }
+  /* scent/aim columns are max-content so their new HEADERS (Signals / Aim) size them and the
+     24px controls centre beneath (David 2026-07-11: the naked count + tick weren't obvious). */
+  grid-template-columns: 132px minmax(0, 1fr) auto max-content max-content 16px; }
 .di-axis { margin: var(--s2) 0 0; }
 .di-axis-scale { position: relative; height: 30px; }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
@@ -3208,7 +3268,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-indic { font-style: normal; font-weight: 650; color: var(--ink-soft); letter-spacing: .02em; }
 .di-trackcell { min-width: 0; }
 .di-track { position: relative; display: block; height: 28px; }
-.di-norate { font-size: var(--fs-micro); color: var(--ink-faint); font-style: italic; }
+.di-norate { font-size: var(--fs-micro); color: var(--ink-faint); }   /* de-italicised (polish 2026-07-11 — the page's only italic) */
 .di-track-pending { position: relative; display: block; height: 10px; border-radius: 5px;
   border: 1.5px dashed var(--border); background: color-mix(in srgb, var(--surface-sunk) 50%, transparent); }
 /* ═══ STACKED RAG BAR (market lens, 2026-07-09) — the row's position read: below=amber ·
@@ -3251,7 +3311,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding-left: var(--s2); }
 .di-smark { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center;
   justify-content: center; flex: none; }
-.di-smark-on  { color: var(--navy); border: 1.5px solid var(--navy); background: var(--surface); }
+/* on-aim = bare navy glyph (polish 2026-07-11 — an outlined ring beside the filled scent
+   circle made two circle styles per row; the OFF-aim filled disc keeps the weight instead) */
+.di-smark-on  { color: var(--navy); border: 0; background: none; }
 .di-smark-off { color: #fff; background: var(--navy); box-shadow: 0 1px 2px rgba(31,42,68,.28); }
 .di-smark-dash { color: var(--ink-faint); opacity: .75; }
 /* always-on header anchor beside the card title — "all N on aim" / "N off aim" */
@@ -3287,7 +3349,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-evid { font-size: var(--fs-caption); color: var(--ink-soft); text-align: right;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .di-evid b { color: var(--ink); font-weight: 650; }
-.di-evid-ind { font-size: var(--fs-micro); color: var(--ink-faint); }   /* indicative-basis tag beside a row's P-number */
 .di-n { color: var(--ink-faint); margin-left: 6px; }
 /* signal scent — count from the SAME filtered pool as the band's "See all N" */
 .di-scent { width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;  /* 24px = WCAG 2.5.8 min touch target */
@@ -3296,7 +3357,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   display: inline-flex; align-items: center; justify-content: center;
   transition: transform var(--ease-out), background var(--ease-fast); }
 .di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 28%, var(--surface)); }
-.di-chipcol { display: flex; justify-content: flex-end; }
+.di-scentcol { display: flex; justify-content: center; }   /* centre the 24px count under its "Signals" header */
+.di-chipcol { display: flex; justify-content: center; }    /* centre the aim glyph under its "Aim" header */
 /* faint by default so the whole row reads as click-through; sharpens on hover */
 .di-chev { color: var(--ink-faint); opacity: .55; transform: none;
   transition: opacity var(--ease), transform var(--ease), color var(--ease); display: inline-flex; }
