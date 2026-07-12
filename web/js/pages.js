@@ -829,29 +829,49 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
             <${Icon} name="target" size=${13} /><span>Strategy off</span>
           </span>` : null}
       </div>
-      <div class="arc-stage" role="img"
-        aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
-        <${Donut}
-          segments=${[
-            { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
-            { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
-            { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
-          ]}
-          total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${210} stroke=${28} />
+      ${/* FIX CLASS C (aggregate-marker rebuild 2026-07-11): donut and legend sit SIDE BY SIDE
+            (donut shows spread, marker shows position — different jobs, both kept; stacks under
+            the narrow breakpoint); the strip is replaced by the single overall marker on the
+            SAME scale grammar as the domain rows, at the overall depth_pctl (D4: unweighted
+            metric pool — domain-equal logged as the rejected alternative). */ ""}
+      <div class="arc-duo">
+        <div class="arc-stage" role="img"
+          aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
+          <${Donut}
+            segments=${[
+              { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
+              { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
+              { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
+            ]}
+            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${210} stroke=${28} />
+        </div>
+        <div class="arc-caption num">
+          <span class="arc-lean">${headLean}</span>
+          <span class="arc-caption-sep" aria-hidden="true">—</span>
+          <span><i class="arc-leg-dot di-fill-below" aria-hidden="true"></i><span class="arc-leg-fig">${market.below}</span> below</span>
+          <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> on market</span>
+          <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> above</span>
+        </div>
       </div>
-      ${/* polish 2026-07-11: the old five stacked rows (lean caption / legend / strip / axis
-            labels / strategy chip) collapsed to TWO — the strip (the position read; its marker
-            label carries the P once) and ONE merged caption: lean adverb + swatched counts.
-            This is still the screen's single place where RAG colour meets word meets count. */ ""}
-      ${market.depth_pctl != null ? html`
-        <${PercentileRuler} pctl=${market.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}
-      <div class="arc-caption num">
-        <span class="arc-lean">${headLean}</span>
-        <span class="arc-caption-sep" aria-hidden="true">—</span>
-        <span><i class="arc-leg-dot di-fill-below" aria-hidden="true"></i><span class="arc-leg-fig">${market.below}</span> below</span>
-        <span><i class="arc-leg-dot di-fill-on" aria-hidden="true"></i><span class="arc-leg-fig">${market.at}</span> on market</span>
-        <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> above</span>
-      </div>
+      ${(() => {
+        const band = window.MARKET_BAND || [35, 65];
+        const depth = market.depth_pctl;
+        if (depth == null) return null;
+        const left = Math.min(99, Math.max(1, depth));
+        return html`
+          <div class="arc-marker">
+            <span class="di-markrow arc-markscale" role="img"
+              aria-label=${"Overall: typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
+              <span class="di-mk-zone z-below" style=${{ width: band[0] + "%" }}></span>
+              <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>
+              <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
+              <span class="di-mk-centre" aria-hidden="true"></span>
+              <span class="di-dot" style=${{ left: left + "%" }}></span>
+            </span>
+            <div class="caption bp-scale-labels"><span>below market</span><span>on market</span><span>above market</span></div>
+            <div class="caption arc-marker-cap num">typical metric at <b>P${Math.round(depth)}</b> · on-market band P${band[0]}–${band[1]}</div>
+          </div>`;
+      })()}
       ${!market.target && !stratOff ? html`
         <button class="arc-target arc-target-unset" onClick=${() => nav("/strategy")}
           title="Set your market-position stance so lumi reads this against your aim, not a generic flag.">

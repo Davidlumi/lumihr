@@ -1045,6 +1045,22 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   gap: var(--s2) var(--s3); font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s3); }
 .arc-caption .arc-lean { margin-top: 0; }
 .arc-caption-sep { color: var(--ink-faint); }
+/* FIX CLASS C (2026-07-11): donut + legend side by side — the caption becomes a stacked
+   legend column beside the donut (spread beside the wheel); stacks back under ~640px. */
+.arc-duo { display: flex; align-items: center; justify-content: center; gap: var(--s5); }
+.arc-duo .arc-caption { flex-direction: column; align-items: flex-start; gap: var(--s2); margin-top: 0; }
+.arc-duo .arc-caption-sep { display: none; }
+@media (max-width: 640px) {
+  .arc-duo { flex-direction: column; gap: var(--s2); }
+  .arc-duo .arc-caption { flex-direction: row; align-items: baseline; justify-content: center; }
+}
+/* the single overall position marker (replaces the strip; same grammar as the domain rows) */
+.arc-marker { margin-top: var(--s4); }
+.arc-markscale { height: 16px; }
+.arc-markscale .z-below { border-radius: 8px 0 0 8px; }
+.arc-markscale .z-above { border-radius: 0 8px 8px 0; }
+.arc-marker-cap { text-align: center; margin-top: var(--s1); }
+.arc-marker .bp-scale-labels { margin-top: var(--s2); }
 .arc-card .bp-scale-labels { font-size: var(--fs-micro); }   /* quiet axis words under the strip */
 .card-head-side { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2);
   font-size: var(--fs-caption); }

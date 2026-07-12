@@ -230,9 +230,13 @@ check("9c. the signals total shown on the card derives from the live signal set 
 # --- 10. PercentileRuler resurrection (2026-07-11, David: "see their position in the market
 #     overall and for each domain") — the ruler must be FED BY THE ENGINE, never a literal.
 corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8").read()
-check("10a. home gauge renders the PercentileRuler from market.depth_pctl (engine value)",
-      "PercentileRuler} pctl=${market.depth_pctl}" in pagesjs,
-      "the overview ruler is not bound to the engine depth_pctl")
+check("10a. the home card renders the overall marker from market.depth_pctl (engine value, D4 unweighted pool)",
+      # FIX CLASS C (2026-07-11): the compact ruler strip is replaced by the single overall
+      # marker on the domain rows' scale grammar; the figure phrase is D2's "typical metric".
+      "arc-markscale" in pagesjs
+      and "const depth = market.depth_pctl;" in pagesjs
+      and "typical metric at <b>P${Math.round(depth)}</b>" in pagesjs,
+      "the overall marker is not bound to the engine depth_pctl / D2 phrasing")
 check("10b. the domain rows' Position view is the engine-bound single-marker scale; category hero renders the ruler from pos.depth_pctl",
       # FIX CLASS A (aggregate-marker rebuild 2026-07-11): one dot per domain at depth_pctl
       # (D1 — NEVER the lean), dashed market centre, worst-first sort, indicative = hollow
