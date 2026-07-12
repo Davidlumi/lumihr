@@ -1045,11 +1045,12 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
     - Governance — competitiveness=false, no headline role at all.
 
     Level positions come from `items` (scored/numeric ranks); Provision positions
-    come from `practice_items` (presence ranked vs peer take-up). Thresholds are
-    the config defaults (domain_min_polarised / tile_min_positioned)."""
-    defaults = cfg.get("defaults", {})
-    dmin = defaults.get("domain_min_polarised", domain_min)
-    tmin = defaults.get("tile_min_positioned", tile_min)
+    come from `practice_items` (presence ranked vs peer take-up). Thresholds come
+    from the CALLER (the env constants) — fix class D (2026-07-11): the silent
+    mp_config-defaults override that made the json a second, disagreeing authority
+    is removed; env is the single source (value ratified at the live 3)."""
+    dmin = domain_min
+    tmin = tile_min
 
     # Substance pool: Level (scored/numeric) + Provision (presence-ranked), routed
     # by the config — the SAME definition overview_summary's headline uses.

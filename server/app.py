@@ -93,7 +93,12 @@ COMPLETION_BASIS = os.environ.get("LUMI_COMPLETION_BASIS", "required")  # requir
 # card colour, the tile verdict and the signal all agree. Tune via env.
 _band = os.environ.get("LUMI_MARKET_BAND", "35-65").split("-")
 MARKET_BAND_LOW, MARKET_BAND_HIGH = float(_band[0]), float(_band[1])
-DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "5"))
+# 3 RATIFIED (fix class D, David 2026-07-11): the effective live floor was always 3 — the
+# mp_config defaults block silently overrode this env value (positions.py, hero classified
+# path) until that override was removed. The old "5" here was never a considered decision;
+# env is now the single authority. Domain floor (polarised-question count) is orthogonal to
+# the n<5 suppression floor (peer count).
+DOMAIN_MIN_POLARISED = int(os.environ.get("LUMI_DOMAIN_MIN_POLARISED", "3"))
 # Board-pack graduated DISPLAY thresholds (Sprint 2 ruling, 2026-07-02 — the Mercer
 # convention): the n<5 anonymity floor stays absolute everywhere; above it, quartiles
 # show at n>=7 and the P10/P90 tails at n>=10, masked cells rendering as '—'. Display

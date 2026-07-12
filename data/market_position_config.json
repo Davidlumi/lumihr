@@ -578,10 +578,7 @@
     "binary_prevalence_thresholds": [
       35,
       65
-    ],
-    "suppression_floor": 3,
-    "domain_min_polarised": 3,
-    "tile_min_positioned": 1
+    ]
   },
   "_domains": {
     "Pay": {
