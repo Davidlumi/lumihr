@@ -2144,30 +2144,24 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
 .bp-scale-labels span:nth-child(2) { text-align: center; }
 .bp-scale-labels span:last-child { text-align: right; }
-/* position lollipop (REBUILT 2026-07-11) — a diverging dot plot from mid-market: hairline
-   axis + faint on-band underlay + P50 tick per row; a stem from mid to the position (length =
-   distance from mid-market, colour = landing zone, full-strength hues as thin accents per
-   doctrine); ink dot + P-label at the end (hollow dot = indicative). The zone scale itself
-   lives ONCE in the column header (.di-axis-poskey), not repeated per row. */
-.di-lolli { position: relative; display: block; height: 20px; width: 100%; }
-.di-lolli-axis { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px;
-  background: var(--border); border-radius: 1px; }
-.di-lolli-band { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 6px;
-  background: color-mix(in srgb, var(--favourable) 14%, transparent); }
-.di-lolli-mid { position: absolute; left: 50%; top: 50%; width: 2px; height: 12px; margin: -6px 0 0 -1px;
-  background: var(--ink-faint); opacity: .5; border-radius: 1px; }
-.di-lolli-stem { position: absolute; top: 50%; height: 5px; margin-top: -2.5px; border-radius: 3px;
-  animation: di-stem-grow .45s cubic-bezier(.22,.61,.36,1) both; }
-.di-lolli-stem.st-below { background: var(--amber-bright); }
-.di-lolli-stem.st-on    { background: var(--favourable); }
-.di-lolli-stem.st-above { background: var(--unfavourable); }
+/* single-marker position row (FIX CLASS A, aggregate-marker rebuild 2026-07-11) — one shared
+   below/on/above-market scale per row: soft gauge zones (kept by David's ruling), a dashed
+   market centre line at P50, ONE ink dot at the org's depth_pctl. No connector/stem, no pill
+   (locked). Indicative = hollow DASHED ring; the word rides the aria. */
+.di-markrow { position: relative; display: flex; height: 14px; width: 100%; border-radius: 7px; }
+.di-mk-zone { height: 100%; }
+.di-markrow .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
+.di-markrow .z-on { background: var(--gauge-on); }
+.di-markrow .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
+.di-mk-centre { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
 .di-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
   background: var(--ink); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--surface);
-  animation: di-dot-in .3s ease-out .18s both; }
-.di-dot.hollow { background: var(--surface); border: 2px solid var(--ink); box-sizing: border-box; }
+  animation: di-dot-in .3s ease-out .12s both; }
+.di-dot.ring { background: var(--surface); border: 2px dashed var(--ink); box-sizing: border-box; }
 .di-plabel { position: absolute; top: 50%; transform: translate(10px, -50%);
   font-size: var(--fs-micro); font-weight: 700; color: var(--ink); line-height: 1;
-  animation: di-dot-in .3s ease-out .18s both; }
+  animation: di-dot-in .3s ease-out .12s both; }
 .di-plabel.flip { transform: translate(calc(-100% - 10px), -50%); }
 /* the once-stated scale key in the header + micro column headers */
 .di-axis-poskey { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 30px; }
@@ -2180,14 +2174,13 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600;
   letter-spacing: .04em; text-transform: uppercase; text-align: center; white-space: nowrap; }
 /* mode-transition (David 2026-07-11, "add animation as you transition"): the rows container
-   is keyed by mode, so a toggle remounts it and the entrance plays; stems grow from mid,
-   dots/labels fade in a beat later. */
+   is keyed by mode, so a toggle remounts it and the entrance plays; the marker dots and
+   P-labels fade in a beat later. */
 .di-rows-anim { animation: di-mode-in .30s ease-out both; }
 @keyframes di-mode-in { from { opacity: 0; transform: translateY(6px); } }
-@keyframes di-stem-grow { from { transform: scaleX(0); } }
 @keyframes di-dot-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .di-rows-anim, .di-lolli-stem, .di-dot, .di-plabel { animation: none; }
+  .di-rows-anim, .di-dot, .di-plabel { animation: none; }
 }
 .bp-masknote { margin-top: var(--s1); }
 /* exec-summary stat strip — purpose-built for print (the UI card stacked on A4) */

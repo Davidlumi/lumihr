@@ -233,19 +233,19 @@ corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8"
 check("10a. home gauge renders the PercentileRuler from market.depth_pctl (engine value)",
       "PercentileRuler} pctl=${market.depth_pctl}" in pagesjs,
       "the overview ruler is not bound to the engine depth_pctl")
-check("10b. the domain rows' Position view is an engine-bound diverging lollipop; category hero renders the ruler from pos.depth_pctl",
-      # Position mode (REBUILT 2026-07-11): a lollipop from mid-market — the stem spans
-      # min(depth,50)..max(depth,50), the dot/label sit at the TRUE depth percentile, both bound
-      # to the engine value (never literals); the indicative basis reaches the aria (hollow dot
-      # carries it visually; the "ind." text tag was removed on David's call).
-      "di-lolli" in pagesjs
+check("10b. the domain rows' Position view is the engine-bound single-marker scale; category hero renders the ruler from pos.depth_pctl",
+      # FIX CLASS A (aggregate-marker rebuild 2026-07-11): one dot per domain at depth_pctl
+      # (D1 — NEVER the lean), dashed market centre, worst-first sort, indicative = hollow
+      # dashed ring with the word in the aria. All bindings engine values, never literals.
+      "di-markrow" in pagesjs
       and 'const left = Math.min(99, Math.max(1, depth));' in pagesjs
-      and 'const stemL = Math.min(left, 50), stemW = Math.abs(left - 50);' in pagesjs
-      and 'd.position_basis === "indicative" ? " hollow"' in pagesjs
+      and 'd.position_basis === "indicative" ? " ring"' in pagesjs
       and 'd.position_basis === "indicative" ? " (indicative)"' in pagesjs
       and ">P${Math.round(depth)}</span>" in pagesjs
+      and "return da - db;" in pagesjs
+      and not re.search(r"di-markrow[^`]*\blean\b", pagesjs)
       and "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs,
-      "the position lollipop / category ruler is not bound to per-domain engine depth_pctl")
+      "the position marker row / category ruler is not bound to per-domain engine depth_pctl")
 check("10c. ruler band comes from the engine (window.MARKET_BAND, /api/me-sourced) at every pages.js call site",
       "band=${window.MARKET_BAND || [35, 65]}" in pagesjs
       and not re.search(r"PercentileRuler\}[^\n]*band=\$\{\[", pagesjs),

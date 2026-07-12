@@ -1067,7 +1067,18 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <span class="di-cell di-chev"></span>
       </div>
       <div class="di-rows di-rows-anim" key=${practice ? "practice" : barMode}>
-        ${doms.map((d, i) => {
+        ${/* FIX CLASS A (locked): the marker view sorts WORST-FIRST — lowest depth_pctl at the
+              top; rows with no position (Governance, not-yet) keep to the bottom. The counts
+              view keeps the canonical section order. */ ""}
+        ${(!practice && barMode === "position"
+          ? [...doms].sort((a, b) => {
+              const da = a.position && a.position.depth_pctl, db = b.position && b.position.depth_pctl;
+              if (da == null && db == null) return 0;
+              if (da == null) return 1;
+              if (db == null) return -1;
+              return da - db;
+            })
+          : doms).map((d, i) => {
           const label = domainLabel(d.name);
           const sentence = domainRowSentence(d, view);
           const pos = d.position;
@@ -1128,25 +1139,23 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     })}
                   </span>`
                   : (() => {
-                    // REBUILT 2026-07-11 (David: deep review) — a diverging lollipop from
-                    // mid-market: hairline axis, faint on-band underlay, P50 tick, a stem from
-                    // mid to your position (length = distance, colour = the zone you land in),
-                    // ink dot + P-label at the end. The scale itself is stated once in the
-                    // column header, not repeated per row.
+                    // FIX CLASS A (aggregate-marker rebuild, spec 2026-07-11): the single-marker
+                    // form — one shared below/on/above-market scale (soft zones KEPT by David's
+                    // ruling), a dashed market centre line, ONE ink dot at the org's depth_pctl
+                    // (D1 — never the lean). No connector/stem, no band pill (locked). Indicative
+                    // (fewer distinct polarised questions than the domain floor) = hollow dashed
+                    // ring; the word rides the aria.
                     const band = window.MARKET_BAND || [35, 65];
                     const depth = pos.depth_pctl;
                     if (depth == null) return html`<span class="di-norate">no position depth yet</span>`;
                     const left = Math.min(99, Math.max(1, depth));
-                    const stemL = Math.min(left, 50), stemW = Math.abs(left - 50);
-                    const tone = depth < band[0] ? "below" : depth > band[1] ? "above" : "on";
-                    return html`<span class="di-lolli" role="img"
-                      aria-label=${"Typical metric at the " + Math.round(depth) + "th percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + " — " + (tone === "on" ? "within" : tone) + " the on-market band (P" + band[0] + "–P" + band[1] + "), measured from mid-market."}>
-                      <span class="di-lolli-axis"></span>
-                      <span class="di-lolli-band" style=${{ left: band[0] + "%", width: (band[1] - band[0]) + "%" }}></span>
-                      <span class="di-lolli-mid"></span>
-                      ${stemW > 0.5 ? html`<span class=${"di-lolli-stem st-" + tone}
-                        style=${{ left: stemL + "%", width: stemW + "%", transformOrigin: depth < 50 ? "right center" : "left center" }}></span>` : null}
-                      <span class=${"di-dot" + (d.position_basis === "indicative" ? " hollow" : "")} style=${{ left: left + "%" }}></span>
+                    return html`<span class="di-markrow" role="img"
+                      aria-label=${"Typical metric at the " + Math.round(depth) + "th percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
+                      <span class="di-mk-zone z-below" style=${{ width: band[0] + "%" }}></span>
+                      <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>
+                      <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
+                      <span class="di-mk-centre" aria-hidden="true"></span>
+                      <span class=${"di-dot" + (d.position_basis === "indicative" ? " ring" : "")} style=${{ left: left + "%" }}></span>
                       <span class=${"di-plabel num" + (left > 82 ? " flip" : "")} style=${{ left: left + "%" }}>P${Math.round(depth)}</span>
                     </span>`;
                   })()}`
