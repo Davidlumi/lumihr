@@ -3143,12 +3143,20 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
 
         ${/* ---------- §4.1 Calculations ---------- */ ""}
         <h2 class="how-section-head" id="calculations">How the numbers are calculated</h2>
-        <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v1</p>
+        <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v${m.methodology_version || 1}</p>
 
         <div class="card how-card" id="market-position">
           <h3 class="section-title">Where you stand — your market position</h3>
           <p>For everything we measure, we compare your figure to the same measure across your peer group and place you in one of three positions: <b>below market</b> (under where most peers sit), <b>on market</b> (in line — we allow a sensible margin so tiny differences aren't treated as gaps), or <b>above market</b>. We do this measure by measure, roll it up for each area of reward, and bring it together into a single headline.</p>
           <p><b>Two kinds of thing we measure.</b> Some measures have a going rate — pay, pension, holiday, bonus levels — so "below, on or above market" genuinely means something. Others are choices with no right answer — which share scheme you run, how you structure a benefit, how often you review pay. There's no rate to be under or over; you're simply doing it differently. We show where your choice sits — <b>common</b> (what most peers do), an <b>alternative</b> pattern, or a <b>rare</b> choice — a difference to be aware of, not a gap to close. That's why your headline won't match the total number of things we measure: only the market-rate measures feed it.</p>
+          <p><b>Practices with more than one part.</b> Some choices are a set rather than a single
+          answer — which benefits you offer, which allowances you pay. For these we look at the
+          <b> market core</b>: the options at least half of your peer group offers. Offer the full core and
+          your set reads <b>common</b>; offer part of it, an <b>alternative</b> pattern; none of it, a
+          <b> rare</b> choice. Options you offer beyond the core never count against you. Where no single
+          option reaches half the market, we compare against the single most-offered option instead.
+          <span class="caption">(Methodology v2, introduced July 2026 — board packs generated before it
+          are labelled v1 and read as they were built.)</span></p>
           <p><b>When "below market" isn't a bad thing.</b> A few measures are better when they're lower — your CEO-to-employee pay ratio, your gender pay gap. Below market there is good news, so we show it as <b>favourable</b> rather than a gap. Some measures have no good direction at all — workforce cost as a share of revenue could mean you're lean, or under-investing. We show these as <b>context</b>: a fact to weigh, not a verdict. The label always tells the truth about the number; the colour tells you how to read it.</p>
           <div class="mp-legend">
             <span><i class="sw" style=${{ background: "var(--amber-bright)" }}></i> below market</span>

@@ -2212,6 +2212,9 @@ async def methodology(request: Request):
         "snapshot_date": snap["snapshot_date"],
         "suppression_floor": SUPPRESSION_FLOOR,
         "assumptions": assumptions,
+        # the SAME version the board pack stamps (assemble_pack_payload) — the page
+        # header and the pack footer can never claim different methodologies
+        "methodology_version": 2 if pos.MS_PREVALENCE else 1,
     }
 
 

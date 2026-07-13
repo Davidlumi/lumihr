@@ -673,11 +673,12 @@ def market_pool_qids(org_id, cut, questions, payloads, org_answers, entitled, tw
 
 
 # Multi-select prevalence (Option B "market-core coverage", David's ruling on the
-# 2026-07-13 decision paper): OFF by default — flip LUMI_MS_PREVALENCE=on to admit the
-# multi-selects (16 in the current Reward scope, previously rated by NEITHER lens) into
-# the practice pool. Core threshold is the ruled 50 (% of peers offering an option makes
-# it core); parameterised only so the gate can probe edge cases, not a tuning knob.
-MS_PREVALENCE = os.environ.get("LUMI_MS_PREVALENCE", "off").strip().lower() in ("on", "1", "true", "yes")
+# 2026-07-13 decision paper): ON by default since David's "flip" (2026-07-13, same day —
+# shipped dark in 2bb2a4a, flipped with the methodology-page paragraph). The env var is
+# retained as an OFF-switch (methodology_version drops back to 1 with it). Core threshold
+# is the ruled 50 (% of peers offering an option makes it core); parameterised only so
+# the gate can probe edge cases, not a tuning knob.
+MS_PREVALENCE = os.environ.get("LUMI_MS_PREVALENCE", "on").strip().lower() in ("on", "1", "true", "yes")
 MS_CORE_PCT = float(os.environ.get("LUMI_MS_CORE_PCT", "50"))
 
 
