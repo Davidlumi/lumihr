@@ -3453,6 +3453,12 @@ def _pack_item(i):
 @app.post("/api/boardpack/generate")
 async def boardpack_generate(request: Request):
     user, org = require_user(request)
+    # Deep-QA ruling 2026-07-13: generation is editor+ (it writes an org artefact and can
+    # spend an AI call); READING packs stays any-user — a Viewer's whole job is consuming them.
+    # Not require_editor(): its message talks about submitting data, wrong for this refusal.
+    if user["role"] not in ("admin", "contributor"):
+        raise HTTPException(403, "Generating a board pack is for Admins and Contributors — "
+                                 "Viewers can open any pack the team has already produced.")
     # §4.3 medium (surfaced by David 2026-07-11, "the board pack has disappeared"): the pack has a
     # complete deterministic narrative floor, so GENERATION must not hide behind the AI gate — a
     # keyless/AI-off/unconsented member still gets the full pack, honestly labelled "composed

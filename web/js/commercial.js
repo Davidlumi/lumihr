@@ -216,7 +216,8 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           <button class="btn quiet" onClick=${() => nav("/overview")}>← Back</button>
           <div class="row">
             ${n._fallback && html`<${Chip} kind="warn">Standard narrative — AI-written commentary arrives at go-live<//>`}
-            <button class="btn" disabled=${regen} title="Write a fresh pack from your live benchmark on this pack's peer cut" onClick=${regenerate}>${regen ? "Writing…" : "Regenerate"}</button>
+            ${me && (me.user.role === "admin" || me.user.role === "contributor") && html`
+              <button class="btn" disabled=${regen} title="Write a fresh pack from your live benchmark on this pack's peer cut" onClick=${regenerate}>${regen ? "Writing…" : "Regenerate"}</button>`}
             ${me && me.user.role === "admin" && html`
               <select class="ctl" style=${{ width: "auto" }} value=${expiry} aria-label="Share link expiry"
                 onChange=${e => setExpiry(parseInt(e.target.value, 10))}>
@@ -977,10 +978,13 @@ function NotificationsSettings() {
 // the stored-row migration ('1.0-draft'→'1.0') is tracked server-side.
 const termsVer = v => String(v == null ? "" : v).replace(/-draft$/, "");
 
-window.SettingsPage = function ({ me, refreshMe }) {
+window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const [a, setA] = useState(null);
   const [editable, setEditable] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [landMsg, setLandMsg] = useState(null);
+  const [sigMsg, setSigMsg] = useState(null);
+  const [sigBusy, setSigBusy] = useState(false);
   const [aiDoc, setAiDoc] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [err, setErr] = useState(null);   // §4.10(2): don't hang on the loader if settings fail
@@ -1025,6 +1029,64 @@ window.SettingsPage = function ({ me, refreshMe }) {
           we record it to your bell and (if you opt in) an email digest. These are personal to you.</p>
         <${NotificationsSettings} />
       </div>
+      <div class="card" id="defaults" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+        <h2 class="section-title">Default peer groups</h2>
+        <p class="caption">Two separate defaults: where <b>your</b> dashboard opens, and which peers the
+          organisation's signal emails watch. Narrowing on a page never changes either — set them here.</p>
+        ${(() => {
+          // Settings home for the two defaults (2026-07-13) — replaces the removed ★/🔔
+          // capsule icons. Landing = per-user pref (any peer group, mirrors the PeerSetBar
+          // list); signal emails = org-level, editor-set, firmographic cuts only (the sweep
+          // can't run on twins or saved groups — server rejects them).
+          const pool = (me.peer_pool || {}).responding_orgs || "—";
+          const opt = (v, label) => html`<option key=${v} value=${v}>${label}</option>`;
+          const firmo = !cuts || !me.org.classified ? [] :
+            Object.keys(cuts.industries || {}).map(i => opt("industry::" + i, `${i} · ${cuts.industries[i]}`)).concat(
+            Object.keys(cuts.fte_bands || {}).map(b => opt("fte_band::" + b, `${b} FTE · ${cuts.fte_bands[b]}`)));
+          const landOpts = [opt("all", `All peers · ${pool}`), ...firmo,
+            ...(cuts && cuts.twin_available ? [opt("twin", "Organisations like you")] : []),
+            ...((cuts && cuts.groups) || []).map(g => opt("group::" + g.group_id,
+              g.name + (g.too_small ? " (too few orgs)" : ` · ${g.match_count}`)))];
+          const sigVal = me.org.signal_peer_cut || "all";
+          const sigLabel = sigVal === "all" ? `All peers · ${pool}`
+            : sigVal.split("::", 2)[1] + (sigVal.startsWith("fte_band::") ? " FTE" : "");
+          const isEd = me.user.role === "admin" || me.user.role === "contributor";
+          const saveSig = async (v) => {
+            setSigBusy(true); setSigMsg(null);
+            try {
+              await api("/api/org/signal-peers", { method: "PUT", body: { cut: v } });
+              await refreshMe();
+              setSigMsg("Saved — tonight's sweep flags against this peer group.");
+              setTimeout(() => setSigMsg(null), 4000);
+            } catch (e) { toast(e.message, "error"); }
+            setSigBusy(false);
+          };
+          return html`
+            <div class="field"><label>Your landing peer group <span class="caption">— personal to you</span></label>
+              <select class="ctl" aria-label="Your landing peer group"
+                value=${(prefs && prefs._peer_default) || "all"}
+                onChange=${e => { onPref("_peer_default", e.target.value);
+                  setLandMsg("Saved — the dashboard opens here from your next sign-in.");
+                  setTimeout(() => setLandMsg(null), 4000); }}>${landOpts}</select>
+              ${landMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s1)" }}>${landMsg}</div>`}
+            </div>
+            <div class="field" style=${{ marginBottom: 0 }}>
+              <label>Signal-email peer group <span class="caption">— organisation-wide</span></label>
+              ${isEd ? html`
+                <select class="ctl" aria-label="Signal-email peer group" disabled=${sigBusy}
+                  value=${sigVal} onChange=${e => saveSig(e.target.value)}>
+                  ${[opt("all", `All peers · ${pool}`), ...firmo]}</select>` : html`
+                <div><span class="chip">${sigLabel}</span>
+                  <span class="caption"> — Admins and Contributors set this.</span></div>`}
+              ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s1)" }}>${sigMsg}</div>`}
+              <div class="caption" style=${{ marginTop: "var(--s1)" }}>Sector and size groups only — the nightly
+                sweep flags every member's email against these peers.</div>
+              ${!me.org.classified && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>
+                ${me.user.role === "admin" ? html`<a href="#/profile">Add your company profile</a> to unlock sector & size groups.`
+                  : "Your Admin can add the company profile to unlock sector & size groups."}</div>`}
+            </div>`;
+        })()}
+      </div>
       <div class="card" id="ai-insights" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">AI Insights</h2>
         <p class="caption">Short, written interpretations of <b>your own benchmark figures</b>, generated by AI —
@@ -1068,9 +1130,9 @@ window.SettingsPage = function ({ me, refreshMe }) {
           data-protection teams want the fuller instrument. These are the current
           ${" "}<span class="chip">published versions</span></div>
       </div>
-      <div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
+      ${me.user.role === "admin" && html`<div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <${SharesPage} embedded=${true} />
-      </div>
+      </div>`}
     </div>`;
 };
 

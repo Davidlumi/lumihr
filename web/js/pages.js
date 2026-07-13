@@ -206,13 +206,17 @@ function ExportBoardPack({ me, cut }) {
     setOpen(!open);
     if (!packs) api("/api/boardpacks").then(d => setPacks(d.packs || [])).catch(() => setPacks([]));
   };
+  // Generation is editor+ (server 403s Viewers since 2026-07-13); a Viewer gets one honest
+  // "Board packs" menu button instead of a dead Export half — same rule as the removed ★/🔔:
+  // never render a control that can't act.
+  const isEditor = me.user && (me.user.role === "admin" || me.user.role === "contributor");
   return html`
     <div class="bp-export">
-      <button class=${"btn small" + (pulse ? " pulse-once" : "")} disabled=${gen} onClick=${generate}
+      ${isEditor && html`<button class=${"btn small" + (pulse ? " pulse-once" : "")} disabled=${gen} onClick=${generate}
         title="A board-ready narrative of your reward position, written from your live benchmark under the current peer filter.">
-        <${Icon} name="file-text" size=${14} /> ${gen ? "Writing…" : "Export board pack"}</button>
+        <${Icon} name="file-text" size=${14} /> ${gen ? "Writing…" : "Export board pack"}</button>`}
       <button class="btn small" aria-label="Previous board packs" aria-expanded=${open} onClick=${toggle}>
-        <${Icon} name="chevron-down" size=${13} /></button>
+        ${isEditor ? null : html`<${Icon} name="file-text" size=${14} /> Board packs `}<${Icon} name="chevron-down" size=${13} /></button>
       ${open && html`
         <div class="card bp-menu">
           ${err && html`<div class="caption" style=${{ padding: "var(--s2)", maxWidth: "280px" }}>${err}${" "}

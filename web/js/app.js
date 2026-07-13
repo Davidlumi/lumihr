@@ -340,9 +340,12 @@ function App() {
   else if (route.startsWith("/team")) page = me.user.role === "admin"
     ? html`<${TeamPage} me=${me} />`
     : html`<${EmptyState} icon="lock" title="Team is an Admin area" body="Your organisation's Admin manages members and roles." />`;
-  else if (route.startsWith("/settings")) page = me.user.role === "admin"
-    ? html`<${SettingsPage} me=${me} refreshMe=${refreshMe} />`
-    : html`<${EmptyState} icon="lock" title="Settings is an Admin area" body="Your organisation's Admin manages assumptions and sharing." />`;
+  // Settings opened to ALL roles (2026-07-13, Defaults follow-up): it hosts settings that are
+  // personal to the signed-in user — notifications, AI consent, and the landing peer group the
+  // removed ★ used to set from the capsule. Org-level cards gate themselves per role inside
+  // SettingsPage (assumptions read-only, sharing hidden, signal-email default read-only).
+  else if (route.startsWith("/settings")) page =
+    html`<${SettingsPage} me=${me} refreshMe=${refreshMe} cuts=${cuts} prefs=${prefs} onPref=${onPref} />`;
   else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
   else if ((m = route.match(/^\/run-a-pulse\/([^?]+)/))) page = me.user.role === "admin"
     ? html`<${PulseBuilderPage} me=${me} pid=${m[1]} />`
@@ -1116,10 +1119,9 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
   const note = (!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts)));
   // ★/🔔 default-setters REMOVED from the capsule (David 2026-07-12, "the icons at the end of
   // the bar do nothing — remove"): on the default all-peers view both read as already-set, so
-  // they looked inert. The BEHAVIOUR survives — prefs._peer_default still drives the landing
-  // view (the load-default effect) and orgs.default_cut still drives the signal-email sweep
-  // (PUT /api/org/signal-peers stays live) — but they currently have NO UI; a Settings home
-  // for both is the natural follow-up if David wants them settable again.
+  // they looked inert. Both defaults are now set from Settings → Defaults (2026-07-13):
+  // prefs._peer_default drives the landing view (the load-default effect above) and
+  // orgs.default_cut drives the signal-email sweep (PUT /api/org/signal-peers).
   return html`
     <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
       <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
