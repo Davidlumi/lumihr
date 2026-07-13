@@ -1008,7 +1008,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    NEUTRAL ink — the ring carries the RAG colour, so the word is not re-coloured (no doubled
    cue). The metric total is demoted to a small line beneath. centerWord is opt-in: the market
    gauge passes it; the practice donut keeps its count-centric centre. Sized to fit "On market". */
-.donut-word { font-family: var(--font-head); font-size: 24px; line-height: 26px; font-weight: 700;
+.donut-word { font-family: var(--font-head); font-size: 28px; line-height: 30px; letter-spacing: -0.015em; font-weight: 700;
   letter-spacing: -0.015em; color: var(--ink); text-align: center; }
 .donut-count { font-size: var(--fs-caption); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
 /* spectrum hero SVG: mirror .arc-svg so it can't collapse to 0 width in WebKit
@@ -1045,17 +1045,23 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   gap: var(--s2) var(--s3); font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s3); }
 .arc-caption .arc-lean { margin-top: 0; }
 .arc-caption-sep { color: var(--ink-faint); }
-/* FIX CLASS C (2026-07-11): donut + legend side by side — the caption becomes a stacked
-   legend column beside the donut (spread beside the wheel); stacks back under ~640px. */
-.arc-duo { display: flex; align-items: center; justify-content: center; gap: var(--s5); }
-.arc-duo .arc-caption { flex-direction: column; align-items: flex-start; gap: var(--s2); margin-top: 0; }
-.arc-duo .arc-caption-sep { display: none; }
-@media (max-width: 640px) {
-  .arc-duo { flex-direction: column; gap: var(--s2); }
-  .arc-duo .arc-caption { flex-direction: row; align-items: baseline; justify-content: center; }
-}
+/* Left summary card composition (2026-07-12, David: "spilling out"): the .ov-top grid fixes
+   this column at 356px, so the fix-class-C side-by-side duo (donut 210 + legend 148 + gap)
+   can NEVER fit — it bled past the card edge at every width. Superseded by David's fix
+   ruling: a centred STACK — donut, then the lean + counts as one wrapped centred row, then
+   the marker. (The C-spec's "legend beside donut" is physically impossible in this column;
+   deviation flagged and ruled.) */
+.arc-duo { display: flex; flex-direction: column; align-items: center; gap: var(--s3); padding: var(--s2) 0 0; min-width: 0; }
+.arc-duo .arc-stage { margin-top: 0; flex: none; max-width: 100%; }
+.arc-duo .arc-caption { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center;
+  gap: var(--s2) var(--s3); margin-top: 0; min-width: 0; }
+.arc-duo .arc-caption .arc-lean { flex-basis: 100%; text-align: center; font-size: var(--fs-label); font-weight: 650; color: var(--ink); }
+.arc-duo .arc-caption > span:not(.arc-lean):not(.arc-caption-sep) { display: inline-flex; align-items: center; gap: var(--s2); }
+.arc-duo .arc-caption-sep { display: none; }   /* the em-dash reads as an orphan in the stacked form */
 /* the single overall position marker (replaces the strip; same grammar as the domain rows) */
-.arc-marker { margin-top: var(--s4); }
+/* the marker zone reads as the card's FOOTER (premium pass 2026-07-12): a hairline above it
+   gives the card head/body/foot structure instead of a floating strip. */
+.arc-marker { margin-top: var(--s4); border-top: 1px solid var(--border); padding-top: var(--s4); }
 .arc-markscale { height: 16px; }
 .arc-markscale .z-below { border-radius: 8px 0 0 8px; }
 .arc-markscale .z-above { border-radius: 0 8px 8px 0; }
@@ -1076,7 +1082,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .signals-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding-top: var(--s3); border-top: 1px solid var(--border);
   font-size: var(--fs-caption); color: var(--ink-faint); }
-.signals-foot a { color: var(--lumi-navy); font-weight: 600; white-space: nowrap; }
+.signals-foot a { color: var(--lumi-navy); font-weight: 600; white-space: nowrap;
+  display: inline-block; transition: transform var(--ease-out); }
+.signals-foot a:hover { transform: translateX(3px); }   /* the arrow leans into the click */
 .signals-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--s3); text-align: center; padding: var(--s5) 0; animation: riseIn .25s ease; }
 .signals-empty-ring { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center;
@@ -1129,7 +1137,13 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   display: inline-block; vertical-align: middle; position: relative; top: -1px;
   animation: popIn .3s ease; }
 .sig-new-chip { font-size: var(--fs-micro); font-weight: 700; color: var(--blue); background: var(--blue-tint);
-  padding: 1px var(--s2); border-radius: 9px; }
+  padding: 1px var(--s2); border-radius: 9px; animation: pulse-once 1.6s ease-out 600ms 2; }   /* one soft double-pulse on load — there's news here */
+/* active domain-filter chip beside the Signals title (scent-filter, 2026-07-12) */
+.sig-domchip { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-micro); font-weight: 700;
+  color: var(--blue-deep); background: var(--blue-tint); border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
+  padding: 1px var(--s2); border-radius: 9px; cursor: pointer; transition: background var(--ease-fast); }
+.sig-domchip:hover { background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
+.sig-domchip svg { flex: none; }
 .signal-row.is-new .signal-roundel { box-shadow: 0 0 0 2px var(--blue-bright), 0 0 0 4px color-mix(in srgb, var(--blue-bright) 22%, transparent); }
 .sig-name { font-size: var(--fs-label); font-weight: 650; color: var(--ink); line-height: 1.25; }
 .sig-stand { font-size: var(--fs-caption); line-height: 1.3; }
@@ -2181,22 +2195,20 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent); }
 .di-mk-centre { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 0;
   border-left: 1px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
-.di-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
-  background: var(--ink); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--surface);
-  animation: di-dot-in .3s ease-out .12s both; }
-.di-dot.ring { background: var(--surface); border: 2px dashed var(--ink); box-sizing: border-box; }
-.di-plabel { position: absolute; top: 50%; transform: translate(10px, -50%);
-  font-size: var(--fs-micro); font-weight: 700; color: var(--ink); line-height: 1;
-  animation: di-dot-in .3s ease-out .12s both; }
-.di-plabel.flip { transform: translate(calc(-100% - 10px), -50%); }
-/* the once-stated scale key in the header + micro column headers */
-.di-axis-poskey { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 30px; }
-.di-pk-strip { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
-/* the header scale key renders ONLY in the Position state, so it goes neutral with the rows
-   (same greys, same seam treatment) — the axis WORDS carry the meaning colour used to. */
-.di-pk-strip .z-below, .di-pk-strip .z-above { background: var(--surface-sunk); }
-.di-pk-strip .z-on { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
-.di-pk-strip span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+/* pill marker (2026-07-12, "new dot format"): the P rides INSIDE one ink pill — no separate
+   label to space; ONE marker grammar on the domain rows AND the overall gauge-card scale
+   (the bare .di-dot retired in the premium pass). Indicative = dashed pill on surface.
+   White-on-ink clears AA comfortably; rows lift their pill a beat on hover. */
+.di-pill { position: absolute; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; height: 19px; padding: 0 8px; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: var(--fs-micro); font-weight: 700; line-height: 1;
+  white-space: nowrap; box-shadow: 0 0 0 2px var(--surface); animation: di-dot-in .3s ease-out .12s both;
+  transition: transform var(--ease-out), box-shadow var(--ease-out); }
+.di-pill.ind { background: var(--surface); color: var(--ink); border: 1.5px dashed var(--ink); box-sizing: border-box; }
+.di-row:hover .di-pill { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 2px var(--surface), 0 2px 6px rgba(33,27,38,.18); }
+/* position-mode header: axis WORDS only (the reference strip removed 2026-07-12 — the rows'
+   own zone seams carry the band geometry) + micro column headers */
+.di-axis-poskey { display: flex; flex-direction: column; justify-content: center; height: 30px; }
 .di-pk-labels { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1; }
 .di-pk-labels span:nth-child(2) { text-align: center; }
 .di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600;
@@ -3297,7 +3309,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    printed inside. Soft gauge tones = the platform's one RAG fill (identical to the donut).
    Flex, not absolute, so segments self-size; a per-segment min-width floor (set inline) keeps
    every numeral inside its own block — no floating labels, no JS measuring. */
-.di-bar { position: relative; display: flex; height: 20px; border-radius: 6px; overflow: hidden;
+.di-bar { position: relative; display: flex; height: 20px; border-radius: 7px; overflow: hidden;
   background: var(--surface-sunk); }
 /* the bar as a machined object (2026-07-09 polish): a 1px ink perimeter over the fills gives the
    edge definition the pastels can't provide themselves */
@@ -3378,6 +3390,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   display: inline-flex; align-items: center; justify-content: center;
   transition: transform var(--ease-out), background var(--ease-fast); }
 .di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 28%, var(--surface)); }
+/* active = this domain is filtering the signals band below (2026-07-12 scent-filter) */
+.di-scent.on { background: var(--blue); color: #fff; }
 .di-scentcol { display: flex; justify-content: center; }   /* centre the 24px count under its "Signals" header */
 .di-chipcol { display: flex; justify-content: center; }    /* centre the aim glyph under its "Aim" header */
 /* faint by default so the whole row reads as click-through; sharpens on hover */

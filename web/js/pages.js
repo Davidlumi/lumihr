@@ -337,9 +337,27 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   // dismissed rows).
   const _domCounts = {};
   _viewLive.forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
-  const scrollToSignals = () => {
-    const el = document.querySelector(".ov-signals-band");
-    if (el) scrollIntoViewSafe(el, { block: "start" });
+  // scent-click → DOMAIN-FILTERED signals (David 2026-07-12, "if you click on the signals
+  // count it takes you to only those signals"): the count chip now scrolls AND filters the
+  // band below to that domain; the chip beside the Signals title clears it. Reset on lens
+  // switch (the pool changes meaning).
+  const [sigDomain, setSigDomain] = useState(null);
+  useEffect(() => { setSigDomain(null); }, [view]);
+  const scrollToSignals = (domain) => {
+    setSigDomain(domain && typeof domain === "string" ? domain : null);
+    // Chrome ABORTS a smooth scroll when the filter's row churn shifts layout at animation
+    // start (observed: scrollY dies at 1px). Self-healing scroll: smooth attempt after the
+    // re-render, then snap to the target if the smooth got cancelled. Reduced-motion snaps.
+    setTimeout(() => {
+      const el = document.querySelector(".ov-signals-band");
+      if (!el) return;
+      const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const target = () => Math.round(el.getBoundingClientRect().top + window.scrollY);
+      window.scrollTo({ top: target(), behavior: reduce ? "auto" : "smooth" });
+      if (!reduce) setTimeout(() => {
+        if (Math.abs(window.scrollY - target()) > 40) window.scrollTo({ top: target(), behavior: "auto" });
+      }, 500);
+    }, 60);
   };
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
@@ -384,7 +402,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
           : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
-          barMode=${barMode} setBarMode=${setBarMode} />
+          activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
       </div>
       ${/* TrajectoryTile retired from the scan path (2026-07-09 subtraction): a full card band
             promising the future between the hero and the action queue. Its one load-bearing
@@ -392,7 +410,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
       <div class="ov-signals-band">
         <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied}
-          cutActive=${!!(cut && cut.dim && cut.dim !== "all")} />
+          cutActive=${!!(cut && cut.dim && cut.dim !== "all")} domainFilter=${sigDomain} onClearDomain=${() => setSigDomain(null)} />
       </div>
     </div>`;
 }
@@ -857,7 +875,10 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
         const band = window.MARKET_BAND || [35, 65];
         const depth = market.depth_pctl;
         if (depth == null) return null;
-        const left = Math.min(99, Math.max(1, depth));
+        // premium pass 2026-07-12: ONE marker grammar everywhere — the overall marker is the
+        // same ink P-pill the domain rows carry (the bare dot retired); the caption keeps the
+        // load-bearing "typical metric" phrase without repeating the figure the pill shows.
+        const pl = Math.min(96, Math.max(4, depth));
         return html`
           <div class="arc-marker">
             <span class="di-markrow arc-markscale" role="img"
@@ -866,10 +887,11 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
               <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>
               <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
               <span class="di-mk-centre" aria-hidden="true"></span>
-              <span class="di-dot" style=${{ left: left + "%" }}></span>
+              <span class="di-pill num" style=${{ left: pl + "%" }}
+                title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of your per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
             </span>
             <div class="caption bp-scale-labels"><span>below market</span><span>on market</span><span>above market</span></div>
-            <div class="caption arc-marker-cap num">typical metric at <b>P${Math.round(depth)}</b> · on-market band P${band[0]}–${band[1]}</div>
+            <div class="caption arc-marker-cap num">typical metric · on-market band P${band[0]}–${band[1]}</div>
           </div>`;
       })()}
       ${!market.target && !stratOff ? html`
@@ -1011,7 +1033,7 @@ function domainRowSentence(d, view) {
   if (d.target && STRAT_CLAUSE[d.target.alignment]) s += " " + STRAT_CLAUSE[d.target.alignment];
   return s;
 }
-function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent, barMode, setBarMode }) {
+function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent, activeScent, barMode, setBarMode }) {
   const doms = domains || [];
   const practice = view === "practice";
   // (footer sums retired 2026-07-09 with both footers — the donut legends carry the org totals.)
@@ -1066,10 +1088,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
             <span class="di-kk"><i class="di-sw di-fill-rare"></i>rare</span>
           </span>`
           : barMode === "position" ? html`
-          ${/* position mode states the SCALE once up here (rebuild 2026-07-11 — repeating six
-                identical zone bands per row was wallpaper); rows below stay quiet. */ ""}
+          ${/* position mode: axis WORDS only up here — the reference strip is gone (David
+                2026-07-12, "remove the top reference bar"); the rows' own zone seams carry
+                the band geometry. */ ""}
           <span class="di-axis-poskey">
-            <span class="di-pk-strip"><span class="z-below" style=${{ width: (window.MARKET_BAND || [35, 65])[0] + "%" }}></span><span class="z-on" style=${{ width: ((window.MARKET_BAND || [35, 65])[1] - (window.MARKET_BAND || [35, 65])[0]) + "%" }}></span><span class="z-above" style=${{ width: (100 - (window.MARKET_BAND || [35, 65])[1]) + "%" }}></span></span>
             <span class="di-pk-labels"><span>below market</span><span>on market</span><span>above market</span></span>
           </span>`
           : html`
@@ -1117,11 +1139,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 ${pending ? null : practice
                   ? (pv.pool ? null : html`<span class="di-sub">no practices tracked yet</span>`)
                   : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
-                  : (barMode === "position" && pos && pos.pool) ? html`
-                    ${/* D2 sub-label (fix class B): the live engine counts ride under the name in
-                          the marker view — the marker shows position, this keeps the mass. */ ""}
-                    <span class="di-sub num">${(pos.below || 0) + " below · " + (pos.at || 0) + " on · " + (pos.above || 0) + " above"}</span>`
                   : null}
+                ${/* counts sub-label REMOVED from the marker view (David 2026-07-12, "remove the
+                      text below each domain") — the counts live in the Counts toggle state and
+                      the row aria; single-line rows restore the pitch. */ ""}
               </span>
               <span class="di-cell di-trackcell">
                 ${pending ? html`<span class="di-track di-track-pending" aria-hidden="true"></span>`
@@ -1177,14 +1198,18 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     // grey zones, ink markers; RAG lives in the Counts state. SCOPED to the
                     // domain rows only: the overall gauge-card marker reuses .di-markrow and
                     // must keep its soft-RAG per the keep-RAG ruling.
+                    // pill marker (David 2026-07-12, "new dot format"): ONE object — the P
+                    // rides INSIDE an ink pill, killing the dot/label spacing problem.
+                    // Indicative = dashed pill. Counts live in the aria (the sub-label they
+                    // used to ride under the name is gone).
+                    const pl = Math.min(96, Math.max(4, left));
                     return html`<span class="di-markrow mk-neutral" role="img"
-                      aria-label=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
+                      aria-label=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + ". " + (pos.below || 0) + " below, " + (pos.at || 0) + " on market, " + (pos.above || 0) + " above."}>
                       <span class="di-mk-zone z-below" style=${{ width: band[0] + "%" }}></span>
                       <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>
                       <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
                       <span class="di-mk-centre" aria-hidden="true"></span>
-                      <span class=${"di-dot" + (d.position_basis === "indicative" ? " ring" : "")} style=${{ left: left + "%" }}></span>
-                      <span class=${"di-plabel num" + (left > 82 ? " flip" : "")} style=${{ left: left + "%" }}
+                      <span class=${"di-pill num" + (d.position_basis === "indicative" ? " ind" : "")} style=${{ left: pl + "%" }}
                         title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of this domain's per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
                     </span>`;
                   })()}`
@@ -1200,9 +1225,12 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
-                  <button class="di-scent" title=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — jump to signals"}
-                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + ", jump to the signals list"}
-                    onClick=${e => { e.stopPropagation(); onScent && onScent(); }}>${nSig}</button>` : null}
+                  <button class=${"di-scent" + (activeScent === d.name ? " on" : "")} aria-pressed=${activeScent === d.name}
+                    title=${activeScent === d.name
+                      ? "Showing only " + label + "'s signals below — click to show all"
+                      : nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — show only these below"}
+                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — show only these in the signals list below"}
+                    onClick=${e => { e.stopPropagation(); onScent && onScent(activeScent === d.name ? null : d.name); }}>${nSig}</button>` : null}
               </span>
               <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
                 ${/* strategy channel (2026-07-09): position view shows the navy target glyph on
@@ -1223,8 +1251,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     </div>`;
 }
 
-function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, cutActive }) {
-  const sigs = signals || [];
+function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, cutActive, domainFilter, onClearDomain }) {
+  // domain filter (2026-07-12): a scent-chip click narrows the band to ONE domain's signals —
+  // uncapped (the count chip promised N; show N), the briefing cap applies only unfiltered.
+  const sigs = (signals || []).filter(s => !domainFilter || s.domain === domainFilter);
   // triage actions are available on every signal — the home briefing keeps a local
   // optimistic overlay so a dismiss/priority/save updates instantly (the server has
   // the truth on next load).
@@ -1255,7 +1285,8 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
     if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(sid, null) });
     else if (status === "snoozed") toast("Snoozed · " + snoozeReturn(new Date(Date.now() + days * 86400000).toISOString()), null, { label: "Undo", fn: () => onSet(sid, null) });
   };
-  const shown = sigs.filter(s => effStatus(s) !== "dismissed" && effStatus(s) !== "snoozed").slice(0, 3);   // filter-before-slice: a dismiss/snooze backfills #4 from the tail
+  const _live = sigs.filter(s => effStatus(s) !== "dismissed" && effStatus(s) !== "snoozed");
+  const shown = domainFilter ? _live : _live.slice(0, 3);   // filter-before-slice: a dismiss/snooze backfills #4 from the tail; a domain filter shows the domain WHOLE
   // FLIP the briefing on every commit: survivors slide up from where they were, the
   // backfilled row rises + fades in. Runs before paint so there's no flash at the old
   // layout; the first paint (posRef null) only records positions — no entrance on load.
@@ -1297,6 +1328,10 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
         <${Icon} name="flag" size=${15} />
         <h2 class="card-head-title">Signals</h2>
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
+        ${domainFilter ? html`
+          <button type="button" class="sig-domchip" onClick=${onClearDomain}
+            title="Showing this domain only — click to show all signals">
+            ${domainLabel(domainFilter)} only <${Icon} name="close" size=${11} /></button>` : null}
       </div>
       ${/* ONE quiet meta line (2026-07-09 header collapse): scope + rank + posture, replacing
             the title suffix + count pill + slogan note + separate ranknote. The rank caption
@@ -1305,7 +1340,9 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
             here by the founder's call (brand posture earns its one clause). */ ""}
       ${/* polish 2026-07-11: " · strategy applied" folded INTO the rank claim ("ranked by gap
             to your aim") — same truth, one clause fewer; the founder's posture clause stays. */ ""}
-      ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(total > shown.length ? "top " + shown.length + " of " + total + " · " : "") + (view === "practice" ? "ranked by rarity" : (stratOn ? "ranked by gap to your aim" : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
+      ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(domainFilter
+        ? domainLabel(domainFilter) + " · " + shown.length + " of " + total + " · "
+        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? "ranked by gap to your aim" : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">

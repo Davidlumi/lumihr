@@ -231,19 +231,22 @@ check("9c. the signals total shown on the card derives from the live signal set 
 #     overall and for each domain") — the ruler must be FED BY THE ENGINE, never a literal.
 corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8").read()
 check("10a. the home card renders the overall marker from market.depth_pctl (engine value, D4 unweighted pool)",
-      # FIX CLASS C (2026-07-11): the compact ruler strip is replaced by the single overall
-      # marker on the domain rows' scale grammar; the figure phrase is D2's "typical metric".
+      # FIX CLASS C (2026-07-11) + premium pass (2026-07-12): the overall marker is the SAME
+      # ink P-pill as the domain rows, bound to market.depth_pctl; the caption keeps D2's
+      # "typical metric" phrase (the pill carries the figure, so the caption doesn't repeat it).
       "arc-markscale" in pagesjs
       and "const depth = market.depth_pctl;" in pagesjs
-      and "typical metric at <b>P${Math.round(depth)}</b>" in pagesjs,
+      and "typical metric · on-market band P${band[0]}" in pagesjs,
       "the overall marker is not bound to the engine depth_pctl / D2 phrasing")
 check("10b. the domain rows' Position view is the engine-bound single-marker scale; category hero renders the ruler from pos.depth_pctl",
       # FIX CLASS A (aggregate-marker rebuild 2026-07-11): one dot per domain at depth_pctl
       # (D1 — NEVER the lean), dashed market centre, worst-first sort, indicative = hollow
       # dashed ring with the word in the aria. All bindings engine values, never literals.
+      # 2026-07-12 "new dot format": the marker is ONE ink pill with the P inside (di-pill;
+      # dashed .ind variant = indicative); still bound to engine depth, never the lean.
       "di-markrow" in pagesjs
       and 'const left = Math.min(99, Math.max(1, depth));' in pagesjs
-      and 'd.position_basis === "indicative" ? " ring"' in pagesjs
+      and 'd.position_basis === "indicative" ? " ind"' in pagesjs
       and 'd.position_basis === "indicative" ? " (indicative)"' in pagesjs
       and ">P${Math.round(depth)}</span>" in pagesjs
       and "return da - db;" in pagesjs
