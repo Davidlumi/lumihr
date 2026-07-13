@@ -169,6 +169,30 @@ window.pctlOrdinal = function (n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
+// ONE practice-prevalence word rule (extracted 2026-07-12 so the BOARD PACK and the home
+// PracticeArc can never contradict): majority-common → Typical / "mostly common choices";
+// rare-led → Distinctive / "often its own pattern"; else Varied / "a mixed pattern".
+// Descriptive, never a grade.
+window.prevalenceWord = function (common, alt, rare, pool) {
+  const share = pool ? common / pool : 0;
+  const word = (common >= alt && common >= rare)
+    ? (share >= 0.5 ? "Typical" : "Varied")
+    : (rare >= alt && rare >= common) ? "Distinctive" : "Varied";
+  const cap = word === "Typical" ? "mostly common choices"
+            : word === "Distinctive" ? "often its own pattern" : "a mixed pattern";
+  return { word, cap };
+};
+
+// ONE confidence-score rule (2026-07-12, the 10-point rating): monotonic in n, ANCHORED to
+// the published tiers — >=20 peers (High) spans 7–10 green; 5–19 (Directional) spans 4–6
+// amber; below 5 is suppressed so red 1–3 never renders live. Used by the dashboard badge
+// AND the board pack so the two can never disagree.
+window.confScore = function (n) {
+  if (n == null || n < 5) return null;
+  const score = n >= 150 ? 10 : n >= 100 ? 9 : n >= 60 ? 8 : n >= 20 ? 7 : n >= 15 ? 6 : n >= 10 ? 5 : 4;
+  return { score, band: score >= 7 ? "green" : "amber", tier: score >= 7 ? "high confidence" : "directional" };
+};
+
 window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) {
   if (pctl == null || !band || band.length !== 2) return null;
   const lo = band[0], hi = band[1], p = Math.round(pctl);
@@ -179,7 +203,10 @@ window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) 
         <div class="bp-scale-zone z-below" style=${{ width: lo + "%" }}></div>
         <div class="bp-scale-zone z-on" style=${{ width: (hi - lo) + "%" }}></div>
         <div class="bp-scale-zone z-above" style=${{ width: (100 - hi) + "%" }}></div>
-        <div class="bp-scale-marker" style=${{ left: Math.min(99, Math.max(1, pctl)) + "%" }}><span>P${p}</span></div>
+        ${/* the PILL marker (2026-07-12, pack-methodology incorporation) — the same one-object
+              P-inside-ink grammar as the dashboard rows and overall marker, so board pack,
+              category pages and home all speak one marker language. */ ""}
+        <div class="bp-scale-pill num" style=${{ left: Math.min(96, Math.max(4, pctl)) + "%" }}>P${p}</div>
       </div>
       ${/* vocabulary harmonised (fix class B, David 2026-07-11 ruling): ONE register —
             below/on/above market — everywhere this atom renders, INCLUDING the board pack

@@ -38,9 +38,9 @@ function StrategyNudge() {
 // NOTE: RAG on a trust surface reverses the 2026-07-09 navy-only ruling — David's explicit
 // call ("will leave with you"). The words stay tier-true so methodology copy still holds.
 function ConfidenceChip({ n, window: win }) {
-  if (n == null || n < 5) return null;
-  const score = n >= 150 ? 10 : n >= 100 ? 9 : n >= 60 ? 8 : n >= 20 ? 7 : n >= 15 ? 6 : n >= 10 ? 5 : 4;
-  const band = score >= 7 ? "green" : score >= 4 ? "amber" : "red";
+  const cs = confScore(n);   // the ONE score rule (core.js) — shared with the board pack
+  if (!cs) return null;
+  const score = cs.score, band = cs.band;
   const tip = "Confidence " + score + "/10 — " + n + " peer organisations behind this comparison. "
     + "20 or more peers rates 7–10 (high confidence); 5–19 rates 4–6 (directional — treat as a "
     + "steer, not a verdict); fewer than 5 is never shown."
@@ -935,15 +935,9 @@ function PracticeArc({ prevalence, pending }) {
   // interpolated RAW from the engine prevalence fields (rendered == engine; qa_overview 9b)
   const common = prevalence.with_majority, alt = prevalence.established, rare = prevalence.less_common, pool = prevalence.pool;
   // centre word + caption derive from ONE rule so they never contradict (descriptive, never a
-  // grade): a majority-common mix → "Typical" / "mostly common choices"; a rare-led mix →
-  // "Distinctive" / "often its own pattern"; anything else → "Varied" / "a mixed pattern".
-  // Mirrors the market donut's verdict-word-plus-caption pairing.
-  const share = pool ? common / pool : 0;
-  const word = (common >= alt && common >= rare)
-    ? (share >= 0.5 ? "Typical" : "Varied")
-    : (rare >= alt && rare >= common) ? "Distinctive" : "Varied";
-  const cap = word === "Typical" ? "mostly common choices"
-            : word === "Distinctive" ? "often its own pattern" : "a mixed pattern";
+  // grade) — the rule moved to core.js prevalenceWord (2026-07-12) so the BOARD PACK reads
+  // practice with the same words as this card. Mirrors the market donut's word+caption pairing.
+  const { word, cap } = prevalenceWord(common, alt, rare, pool);
   return html`
     <div class="card arc-card">
       <div class="card-spot" aria-hidden="true"></div>

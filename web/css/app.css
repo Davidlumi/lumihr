@@ -2199,9 +2199,13 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .bp-scale .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
 .bp-scale .z-on { background: var(--gauge-on); }
 .bp-scale .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
-.bp-scale-marker { position: absolute; top: -5px; width: 2px; height: 24px; background: var(--ink); transform: translateX(-1px); }
-.bp-scale-marker span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
-  font-size: var(--fs-micro); font-weight: 700; white-space: nowrap; }
+/* the atom's marker is the PILL (2026-07-12) — one marker grammar across pack, category
+   pages and the home dashboard. Prints exactly (the pack is a print artefact). */
+.bp-scale-pill { position: absolute; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; height: 19px; padding: 0 8px; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: var(--fs-micro); font-weight: 700; line-height: 1;
+  white-space: nowrap; box-shadow: 0 0 0 2px var(--surface);
+  print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 .bp-scale-labels { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
 .bp-scale-labels span:nth-child(2) { text-align: center; }
 .bp-scale-labels span:last-child { text-align: right; }

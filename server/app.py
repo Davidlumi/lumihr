@@ -3295,19 +3295,33 @@ def assemble_pack_payload(request, user, org, cut):
     # the engine's own per-domain read against it — computed via the SAME hero path the
     # dashboard uses (hero_signals with strategy applied), stances translated to member
     # words (lag/match/lead never renders — the standing vocabulary rule).
+    # hero hoisted OUT of the strategy gate (pack-methodology incorporation, David 2026-07-12):
+    # every pack now carries per-domain depth_pctl + the practice prevalence read, strategy or
+    # not (hero_signals degrades with strategy=None). The strategy-alignment page stays gated.
+    _prev_items = pos.prevalence_items(org["org_id"], cut, _visq, payloads(),
+                                       _answers, make_entitled(user, org), tb)
+    _sec_order = []
+    for _q in _visq.values():
+        if _q.sub_power and _q.sub_power not in _sec_order:
+            _sec_order.append(_q.sub_power)
+    _sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in _visq.values() if q.sub_power == x))
+    _hero_s = pos.hero_signals(items, _prev_items, _sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                               DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                               practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                               mp_config=_mp_cfg, strategy=_strat if (_strat and _strat_done) else None)
+    # per-domain typical-metric depth + basis, for the pack's Position-by-area table (the
+    # dashboard's Position view read); keyed by domain name to merge onto by_section.
+    _dom_depth = {d["name"]: {"depth_pctl": (d.get("position") or {}).get("depth_pctl"),
+                              "basis": d.get("position_basis")}
+                  for d in _hero_s.get("domains", []) if d.get("position")}
+    # the org-level practice prevalence read (common/alternative/rare) — replaces the retired
+    # maturity 0-100 language in the pack (the app removed maturity scores 2026-06-11).
+    _prev_sum = _hero_s.get("prevalence") or {}
+    _practice_prev = ({"common": _prev_sum.get("with_majority"), "alternative": _prev_sum.get("established"),
+                       "rare": _prev_sum.get("less_common"), "pool": _prev_sum.get("pool")}
+                      if _prev_sum.get("pool") else None)
     _strat_align = None
     if _strat and _strat_done:
-        _prev_items = pos.prevalence_items(org["org_id"], cut, _visq, payloads(),
-                                           _answers, make_entitled(user, org), tb)
-        _sec_order = []
-        for _q in _visq.values():
-            if _q.sub_power and _q.sub_power not in _sec_order:
-                _sec_order.append(_q.sub_power)
-        _sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in _visq.values() if q.sub_power == x))
-        _hero_s = pos.hero_signals(items, _prev_items, _sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
-                                   DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
-                                   practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
-                                   mp_config=_mp_cfg, strategy=_strat)
         _stance_word = {"lag": "below market", "match": "on market", "lead": "above market"}
         _overall_t = (_hero_s.get("market") or {}).get("target")
         _dom_rows = []
@@ -3385,10 +3399,16 @@ def assemble_pack_payload(request, user, org, cut):
              "peer_adoption_pct": r["peer_adoption_pct"], "n": r["n"]}
             for r in reg["rows"] if not r["suppressed"] and r["gap"] is not None and r["gap"] > 0
         ][:10],
-        "maturity": reg["maturity"],
-        # Tier 2 sections — every consumer (render + narrative) treats these as optional
+        "maturity": reg["maturity"],   # legacy field kept for STORED-pack renders; new packs read practice_prevalence
+        # the dashboard's practice read (common/alternative/rare, prevalence — never a 0-100
+        # score, which the app retired 2026-06-11); pack-methodology incorporation 2026-07-12
+        "practice_prevalence": _practice_prev,
+        # Tier 2 sections — every consumer (render + narrative) treats these as optional.
+        # depth_pctl/basis merged per domain (the Position view's typical-metric read).
         "by_section": {k: {"available": v["available"], "above": v["above"],
-                           "below": v["below"], "inline": v["inline"]}
+                           "below": v["below"], "inline": v["inline"],
+                           "depth_pctl": _dom_depth.get(k, {}).get("depth_pctl"),
+                           "basis": _dom_depth.get(k, {}).get("basis")}
                        for k, v in (summary.get("by_section") or {}).items()},
         # CONTEXT signals excluded (2026-07-09 ship review, Pack 3.2): context-bucket
         # metrics (mp_config direction=neutral — e.g. workforce cost per FTE) are

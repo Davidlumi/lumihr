@@ -339,7 +339,7 @@ def _pack_verdict_phrase(head):
     m = (head or {}).get("market") or {}
     v = m.get("verdict")
     if v == "at":
-        return "broadly in line with the market"
+        return "on market — broadly level with the peer median"
     if v not in ("below", "above"):
         return None
     dp = m.get("depth_pctl")
@@ -363,7 +363,7 @@ def _deterministic_pack(payload):
     gaps = payload.get("gaps", [])
     totals = payload.get("opportunity_totals") or {}
 
-    counts = "%s of %s comparable metrics sit above the peer median, %s broadly in line and %s below" % (
+    counts = "%s of %s comparable metrics sit above the peer median, %s on market and %s below" % (
         head.get("above_median", "—"), head.get("comparable_metrics", "—"),
         head.get("broadly_in_line", "—"), head.get("below_median", "—"))
     where = " (peer group: %s%s)" % (cutl, ", n=%s" % n_total if n_total else "")
@@ -982,7 +982,7 @@ def _deterministic_commentary(payload):
                           "size and sector, and size up what closing part of the gap would take and cost. Your own "
                           "budget, strategy and constraints come first — a starting point, not advice.")
     elif stance == "in line" and pctl is not None:
-        compare += " That is broadly in line with similar organisations (P%d)." % round(pctl)
+        compare += " That is on market against similar organisations (P%d)." % round(pctl)
         if median:
             compare += " The peer median is %s." % median
         implications = ("Sitting in line with peers suggests no immediate competitive exposure here — neither an "

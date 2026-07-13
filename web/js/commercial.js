@@ -298,12 +298,19 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             </div>` : null}
           <div class="bp-stat">
             <div class="metric-value">${p.headline.above_median} of ${p.headline.comparable_metrics}</div>
-            <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} broadly in line, ${p.headline.below_median} below)</div>
+            <div class="caption">comparable metrics above the market median (${p.headline.broadly_in_line} on market, ${p.headline.below_median} below)</div>
           </div>
           <div class="bp-stat">
             <div class="metric-value">${p.peer_pool.total}</div>
             <div class="caption">organisations in the lumi peer pool</div>
           </div>
+          ${/* the dashboard's 10-point confidence rating (core.js confScore — the ONE rule,
+                tier-anchored) reaches the pack too; derived from the stored cut_n. */ ""}
+          ${(() => { const cs = confScore(p.cut_n != null ? p.cut_n : p.peer_pool.total);
+            return cs ? html`<div class="bp-stat">
+              <div class="metric-value num">${cs.score}/10</div>
+              <div class="caption">confidence — ${(p.cut_n != null ? p.cut_n : p.peer_pool.total)} peers behind this cut (${cs.tier} tier)</div>
+            </div>` : null; })()}
         </div>
         ${n.key_findings && n.key_findings.length ? html`
           <div class="bp-findings">
@@ -324,7 +331,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           && (pack.previous.above_median !== p.headline.above_median
               || pack.previous.broadly_in_line !== p.headline.broadly_in_line
               || pack.previous.below_median !== p.headline.below_median) ? html`
-          <p class="caption">Since your last pack (${pack.previous.generated_date}): above the median ${pack.previous.above_median} → ${p.headline.above_median}, broadly in line ${pack.previous.broadly_in_line} → ${p.headline.broadly_in_line}, below ${pack.previous.below_median} → ${p.headline.below_median}.</p>` : null}
+          <p class="caption">Since your last pack (${pack.previous.generated_date}): above the median ${pack.previous.above_median} → ${p.headline.above_median}, on market ${pack.previous.broadly_in_line} → ${p.headline.broadly_in_line}, below ${pack.previous.below_median} → ${p.headline.below_median}.</p>` : null}
         ${p.movement ? html`<p class="caption">${p.movement}</p>` : null}
         <${Footer} page="2" />
       </div>
@@ -333,7 +340,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <${PackSecHead} num=${3} title="Position by area" />
         <div class="bp-position-row">
           ${window.Donut && p.headline.comparable_metrics ? html`
-            <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " broadly in line, " + p.headline.above_median + " above."}>
+            <div class="bp-donut" role="img" aria-label=${p.headline.below_median + " of " + p.headline.comparable_metrics + " comparable metrics below the market median, " + p.headline.broadly_in_line + " on market, " + p.headline.above_median + " above."}>
               ${"" /* soft gauge palette (2026-07-09 ship review, colour-doctrine pack): market
                      position renders in the muted --gauge-* mixes everywhere (Overview donut,
                      domain instruments) — this pack donut was the last full-strength RAG hold-out.
@@ -345,17 +352,28 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 ]} total=${p.headline.comparable_metrics} centerNum=${p.headline.comparable_metrics} sub="metrics"
                 centerWord=${mVerdict === "below" ? "Below" : mVerdict === "above" ? "Above" : mVerdict === "at" ? "On market" : undefined}
                 size=${150} stroke=${20} />
-              <div class="caption bp-donut-key"><span class="bp-key-dot" style=${{ background: "var(--gauge-below)" }}></span>below · <span class="bp-key-dot" style=${{ background: "var(--gauge-on)" }}></span>in line · <span class="bp-key-dot" style=${{ background: "var(--gauge-above)" }}></span>above</div>
+              <div class="caption bp-donut-key"><span class="bp-key-dot" style=${{ background: "var(--gauge-below)" }}></span>below · <span class="bp-key-dot" style=${{ background: "var(--gauge-on)" }}></span>on market · <span class="bp-key-dot" style=${{ background: "var(--gauge-above)" }}></span>above</div>
             </div>` : null}
-          ${p.by_section && Object.keys(p.by_section).length ? html`
+          ${p.by_section && Object.keys(p.by_section).length ? (() => {
+            // pack-methodology incorporation (2026-07-12): the table now carries the dashboard's
+            // Position read — a "Typical" P column (per-domain depth_pctl, ind. = indicative
+            // basis) and WORST-FIRST ordering, exactly as the home Position view sorts. Old
+            // stored payloads (no depth fields) keep the coverage sort and lose no columns.
+            const rows = Object.entries(p.by_section).filter(([, v]) => v.available > 0);
+            const hasDepth = rows.some(([, v]) => v.depth_pctl != null);
+            rows.sort(hasDepth
+              ? (a, b) => (a[1].depth_pctl == null) - (b[1].depth_pctl == null) || (a[1].depth_pctl || 0) - (b[1].depth_pctl || 0)
+              : (a, b) => b[1].available - a[1].available);
+            return html`
             <table class="data bp-domains">
-              <thead><tr><th>Area</th><th class="num">Above</th><th class="num">In line</th><th class="num">Below</th></tr></thead>
-              <tbody>${Object.entries(p.by_section).sort((a, b) => b[1].available - a[1].available)
-                .filter(([, v]) => v.available > 0).slice(0, 7).map(([k, v]) => html`
+              <thead><tr><th>Area</th>${hasDepth ? html`<th class="num">Typical</th>` : null}<th class="num">Above</th><th class="num">On market</th><th class="num">Below</th></tr></thead>
+              <tbody>${rows.slice(0, 7).map(([k, v]) => html`
                 <tr key=${k}><td><b>${domainLabel(k)}</b> <span class="caption">· ${v.available}</span></td>
+                  ${hasDepth ? html`<td class="num">${v.depth_pctl != null ? "P" + Math.round(v.depth_pctl) + (v.basis === "indicative" ? " ind." : "") : "—"}</td>` : null}
                   <td class="num">${v.above}</td><td class="num">${v.inline}</td><td class="num">${v.below}</td></tr>`)}
               </tbody>
-            </table>` : null}
+            </table>`;
+          })() : null}
         </div>
         ${n.position_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.position_commentary}</p>` : null}
         ${p.band ? html`
@@ -365,7 +383,17 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               A position between P${p.band.low} and P${p.band.high} reads as on market: small differences are never treated as gaps.
               Percentiles locate you among peers — P25 means a quarter of them sit at or below you on that measure.</p>
           </div>` : null}
-        ${p.maturity && p.maturity.Reward && p.maturity.Reward.org_score != null ? html`
+        ${/* the PRACTICE read (pack-methodology incorporation 2026-07-12): the dashboard's
+              prevalence language via the SAME shared word rule (core.js prevalenceWord) — the
+              app retired 0-100 maturity scores 2026-06-11; only OLD stored payloads without
+              practice_prevalence fall back to their frozen maturity line. */ ""}
+        ${p.practice_prevalence && p.practice_prevalence.pool ? (() => {
+          const pp = p.practice_prevalence;
+          const { word, cap } = prevalenceWord(pp.common, pp.alternative, pp.rare, pp.pool);
+          return html`<p class="caption">Practice: <b>${word}</b> — ${cap} across ${pp.pool} tracked practices
+            (${pp.common} common · ${pp.alternative} alternative · ${pp.rare} rare among these peers).
+            A different way of doing things is not a gap to close.</p>`;
+        })() : p.maturity && p.maturity.Reward && p.maturity.Reward.org_score != null ? html`
           <p class="caption">Practice maturity: your average practice score is <b>${p.maturity.Reward.org_score}/100</b>${p.maturity.Reward.peer_median_score != null ? html` against a peer average of <b>${p.maturity.Reward.peer_median_score}/100</b>` : null}.</p>` : null}
         <p class="caption">Peer-group composition: ${p.peer_pool.total} UK organisations across 14 sectors (${p.peer_pool.classified} fully classified);
         comparisons use the ${p.cut_label} cut unless stated. Figures resting on fewer than 5 organisations are never shown.</p>
