@@ -1444,11 +1444,11 @@ function SignalActions({ status, sid, onSet }) {
       <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
       <span class="sig-snooze-wrap" ref=${wrapRef}>
         <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — revisit next cycle" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
-        ${snoozeOpen ? html`<div class="sig-snooze-menu" role="menu">
+        ${snoozeOpen ? html`<div class="sig-snooze-menu" role="group">
           <div class="sig-snooze-lbl">Snooze until…</div>
-          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(14)}>2 weeks</button>
-          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(42)}>6 weeks</button>
-          <button role="menuitem" class="sig-snooze-opt" onClick=${() => snooze(90)}>3 months</button>
+          <button class="sig-snooze-opt" onClick=${() => snooze(14)}>2 weeks</button>
+          <button class="sig-snooze-opt" onClick=${() => snooze(42)}>6 weeks</button>
+          <button class="sig-snooze-opt" onClick=${() => snooze(90)}>3 months</button>
         </div>` : null}
       </span>
       <button class="sig-act" title="Dismiss" aria-label="Dismiss signal" onClick=${() => onSet(sid, "dismissed")}><${Icon} name="close" size=${15} /></button>`}
@@ -1673,9 +1673,9 @@ function SigSnoozeMenu({ onPick }) {
   return html`<span class="brf-later-wrap" ref=${ref}>
     <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
       onClick=${() => setOpen(o => !o)}>Snooze <span class="sfold-caret" aria-hidden="true">▾</span></button>
-    ${open ? html`<div class="brf-menu" role="menu">
+    ${open ? html`<div class="brf-menu" role="group">
       <div class="brf-menu-lbl">Until…</div>
-      ${SIG_SNOOZE.map(([lab, days]) => html`<button key=${days} role="menuitem" class="brf-menu-opt"
+      ${SIG_SNOOZE.map(([lab, days]) => html`<button key=${days} class="brf-menu-opt"
         onClick=${() => { setOpen(false); onPick(days, lab); }}>${lab}<span class="sfold-ret num">${sigRetDate(days)}</span></button>`)}
     </div>` : null}
   </span>`;
@@ -1693,16 +1693,16 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
   return html`<span class="brf-later-wrap" ref=${ref}>
     <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
       onClick=${() => { setOpen(o => !o); setNaming(false); setNm(""); }}>${label} <span class="sfold-caret" aria-hidden="true">▾</span></button>
-    ${open ? html`<div class="brf-menu" role="menu">
+    ${open ? html`<div class="brf-menu" role="group">
       ${opts.length ? html`<div class="brf-menu-lbl">To folder…</div>` : null}
-      ${opts.map(f => html`<button key=${f} role="menuitem" class="brf-menu-opt" onClick=${() => pick(f)}>
+      ${opts.map(f => html`<button key=${f} class="brf-menu-opt" onClick=${() => pick(f)}>
         <${Icon} name="folder" size=${12} /> ${f}</button>`)}
       ${naming ? html`<div class="sfold-newrow">
         <input type="text" class="sfold-newinput" placeholder="Folder name" maxlength="40" value=${nm}
           ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
-      </div>` : html`<button role="menuitem" class="brf-menu-opt" onClick=${() => setNaming(true)}>
+      </div>` : html`<button class="brf-menu-opt" onClick=${() => setNaming(true)}>
         <${Icon} name="plus" size=${12} /> New folder…</button>`}
     </div>` : null}
   </span>`;
@@ -1720,15 +1720,15 @@ function SigFolderOps({ name, onRename, onDelete }) {
     <button type="button" class="sfold-ops" aria-haspopup="true" aria-expanded=${open}
       aria-label=${"Folder options — " + name} title="Rename or delete this folder"
       onClick=${() => { setOpen(o => !o); setRenaming(false); setNm(name); }}><span aria-hidden="true">⋯</span></button>
-    ${open ? html`<div class="brf-menu" role="menu">
+    ${open ? html`<div class="brf-menu" role="group">
       ${renaming ? html`<div class="sfold-newrow">
         <input type="text" class="sfold-newinput" maxlength="40" value=${nm}
           ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Save</button>
       </div>` : [
-        html`<button key="r" role="menuitem" class="brf-menu-opt" onClick=${() => setRenaming(true)}><${Icon} name="pencil" size=${12} /> Rename</button>`,
-        html`<button key="d" role="menuitem" class="brf-menu-opt" onClick=${() => { setOpen(false); onDelete(); }}><${Icon} name="close" size=${12} /> Delete folder</button>`,
+        html`<button key="r" class="brf-menu-opt" onClick=${() => setRenaming(true)}><${Icon} name="pencil" size=${12} /> Rename</button>`,
+        html`<button key="d" class="brf-menu-opt" onClick=${() => { setOpen(false); onDelete(); }}><${Icon} name="close" size=${12} /> Delete folder</button>`,
       ]}
     </div>` : null}
   </span>`;
@@ -2820,10 +2820,10 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
               title=${layout.length === 0 ? "Add a card first" : "Download this dashboard"}>
               <${Icon} name="download" size=${14} /> Download <span class="dash-dl-chev" aria-hidden="true">▾</span></button>
             ${dlOpen && html`
-              <div class="dash-dl-menu" role="menu">
-                <button role="menuitem" class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
+              <div class="dash-dl-menu" role="group">
+                <button class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
                   <b>PDF</b><small>Print-ready document — every card</small></button>
-                <a role="menuitem" class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(cut)}
+                <a class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(cut)}
                   download onClick=${() => setDlOpen(false)}>
                   <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
               </div>`}

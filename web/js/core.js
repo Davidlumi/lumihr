@@ -35,13 +35,21 @@ window.ApiError = ApiError;
 // instead of re-running the whole engine pass. Keyed by full path+query, so
 // peer-cut and strategy variants never collide. Invalidate on writes.
 const _apiCache = new Map();
+const _apiInflight = new Map();   // §4.10(3): concurrent identical fetches share ONE request
 window.apiCached = function (path, ttl) {
   const hit = _apiCache.get(path);
   if (hit && Date.now() - hit.ts < (ttl || 60000)) return Promise.resolve(hit.data);
-  return api(path).then(d => { _apiCache.set(path, { ts: Date.now(), data: d }); return d; });
+  const flying = _apiInflight.get(path);
+  if (flying) return flying;   // two components asking during the same flight join it
+  const p = api(path)
+    .then(d => { _apiCache.set(path, { ts: Date.now(), data: d }); return d; })
+    .finally(() => _apiInflight.delete(path));
+  _apiInflight.set(path, p);
+  return p;
 };
 window.apiCacheInvalidate = function (prefix) {
   for (const k of [..._apiCache.keys()]) if (!prefix || k.startsWith(prefix)) _apiCache.delete(k);
+  for (const k of [..._apiInflight.keys()]) if (!prefix || k.startsWith(prefix)) _apiInflight.delete(k);
 };
 
 // ----------------------------------------------------------- formatters ----

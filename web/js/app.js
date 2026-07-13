@@ -558,12 +558,12 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
           <${SpIcon} sp="Reward" />
         </button>
         ${flyout && html`
-          <div class="card rail-flyout" role="menu">
+          <div class="card rail-flyout" role="group">
             <div class="rail-flyout-head">Benchmark</div>
-            <button class=${"rail-flyout-item" + (allActive ? " active" : "")} role="menuitem"
+            <button class=${"rail-flyout-item" + (allActive ? " active" : "")}
               onClick=${() => goCat("/benchmark")}>All<span class="nav-count">${total}</span></button>
             ${secs.map(sec => html`
-              <button key=${sec.name} role="menuitem"
+              <button key=${sec.name}
                 class=${"rail-flyout-item" + (route.includes("/category/" + encodeURIComponent(sec.name)) ? " active" : "")}
                 onClick=${() => goCat("/category/" + encodeURIComponent(sec.name))}>
                 ${secLabel(sec.name)}<span class="nav-count">${sec.count}</span></button>`)}
@@ -1027,17 +1027,17 @@ function ProfileMenu({ me, onSignOut }) {
       <button class=${"avatar" + (open ? " active" : "")} aria-haspopup="true" aria-expanded=${open}
         aria-label="Account menu" onClick=${() => setOpen(!open)}>${initialsOf(me.user)}</button>
       ${open && html`
-        <div class="card profile-pop" role="menu">
+        <div class="card profile-pop" role="group">
           <div class="profile-id">
             <div class="profile-id-name">${me.user.display_name || me.user.email}</div>
             <div class="profile-id-org">${me.org.name}</div>
           </div>
           <div class="profile-sep"></div>
-          <button class="profile-item" role="menuitem" onClick=${() => go("/profile")}>Your profile</button>
-          ${me.user.role === "admin" ? html`<button class="profile-item" role="menuitem" onClick=${() => go("/strategy")}>Reward strategy</button>` : null}
-          <button class="profile-item" role="menuitem" onClick=${() => go("/how-lumi-works")}>How lumi works</button>
+          <button class="profile-item" onClick=${() => go("/profile")}>Your profile</button>
+          ${me.user.role === "admin" ? html`<button class="profile-item" onClick=${() => go("/strategy")}>Reward strategy</button>` : null}
+          <button class="profile-item" onClick=${() => go("/how-lumi-works")}>How lumi works</button>
           <div class="profile-sep"></div>
-          <button class="profile-item" role="menuitem" onClick=${() => { setOpen(false); onSignOut(); }}>Sign out</button>
+          <button class="profile-item" onClick=${() => { setOpen(false); onSignOut(); }}>Sign out</button>
         </div>`}
     </div>`;
 }
@@ -1082,7 +1082,7 @@ function NotificationBell({ me }) {
         ${unread > 0 && html`<span class="notif-badge">${unread > 99 ? "99+" : unread}</span>`}
       </button>
       ${open && html`
-        <div class="card notif-pop" role="menu">
+        <div class="card notif-pop" role="group">
           <div class="notif-head">
             <b>Notifications</b>
             ${unread > 0 ? html`<button class="notif-mark" onClick=${markAll}>Mark all read</button>` : null}
@@ -1095,7 +1095,7 @@ function NotificationBell({ me }) {
               <div key=${g.lens} class="notif-group">
                 <div class=${"notif-group-head lens-" + g.lens}><${Icon} name=${NOTIF_LENS[g.lens].icon} size=${12} /> ${NOTIF_LENS[g.lens].label}</div>
                 ${g.items.map(ev => html`
-                  <button key=${ev.id} class=${"notif-row lens-" + g.lens + (ev.read ? "" : " unread")} role="menuitem" onClick=${() => openEvent(ev)}>
+                  <button key=${ev.id} class=${"notif-row lens-" + g.lens + (ev.read ? "" : " unread")} onClick=${() => openEvent(ev)}>
                     <span class="notif-row-title">${ev.title}</span>
                     <span class="notif-row-body">${ev.body}</span>
                   </button>`)}
