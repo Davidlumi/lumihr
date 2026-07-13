@@ -662,8 +662,14 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .cat-hero-label { font-size: var(--fs-body); font-weight: 700; letter-spacing: .04em; }
 .eyebrow { color: var(--ink-soft); }
 .hero { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
-/* peer-cut + board-pack grouped on the right of the title row (Overview) */
-.hero-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+/* peer-cut + board-pack grouped on the right of the title row (Overview).
+   Masthead spacing pass (2026-07-12, David: "cramped"): ONE control height — the topbar's
+   36px rule — across chip, capsule and buttons (they ran 28/31/32 on one row), and GROUPED
+   gaps: 16px between objects, while the "Comparing against" label hugs its own capsule at 8px
+   so proximity does the grouping. Scoped to the masthead — other surfaces keep house sizes. */
+.hero-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
+.hero-actions .conf-chip, .hero-actions .btn.small, .hero-actions .peerbar-pill { height: 36px; box-sizing: border-box; }
+.hero-actions .peerbar { gap: var(--s2); }
 .peerbar-inline { margin: 0; }
 .banner { padding: var(--s4) var(--s5); display: flex; gap: var(--s5); align-items: stretch; flex-wrap: wrap; }
 .banner .divider { border-left: 1px solid var(--border); padding-left: var(--s5); }

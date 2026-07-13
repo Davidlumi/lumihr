@@ -118,12 +118,14 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
           <h1 class="display-title">${data.org.name}</h1>
         </div>
         <div class="hero-actions">
-          ${/* one control cluster on the title line (polish 2026-07-11, David: "clunky" —
-                the chip's own right-aligned row + the split-button caret made three ragged
-                anchors). Status first (confidence), then the controls. */ ""}
-          ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
+          ${/* one control cluster on the title line (polish 2026-07-11; masthead spacing pass
+                2026-07-12, David: "cramped"). Reading order is one sentence — "Comparing
+                against [capsule] [High confidence · n peers]" — the comparison, then its
+                confidence, with the two n's adjacent; actions sit at the far right. All
+                controls share the topbar's 36px height rule. */ ""}
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+          ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
           <${ExportBoardPack} me=${me} cut=${cut} />
           <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
         </div>
