@@ -1173,7 +1173,11 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     const depth = pos.depth_pctl;
                     if (depth == null) return html`<span class="di-norate">no position depth yet</span>`;
                     const left = Math.min(99, Math.max(1, depth));
-                    return html`<span class="di-markrow" role="img"
+                    // mk-neutral (ruled 2026-07-12): the Position state is the NEUTRAL-MIRROR —
+                    // grey zones, ink markers; RAG lives in the Counts state. SCOPED to the
+                    // domain rows only: the overall gauge-card marker reuses .di-markrow and
+                    // must keep its soft-RAG per the keep-RAG ruling.
+                    return html`<span class="di-markrow mk-neutral" role="img"
                       aria-label=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile" + (d.position_basis === "indicative" ? " (indicative)" : "") + "; the on-market band runs P" + band[0] + " to P" + band[1] + "."}>
                       <span class="di-mk-zone z-below" style=${{ width: band[0] + "%" }}></span>
                       <span class="di-mk-zone z-on" style=${{ width: (band[1] - band[0]) + "%" }}></span>

@@ -2169,6 +2169,16 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .di-markrow .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
 .di-markrow .z-on { background: var(--gauge-on); }
 .di-markrow .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
+/* NEUTRAL-MIRROR variant (ruled 2026-07-12): the Position toggle state drops the RAG zones to
+   quiet greys — position is read from the DOT, not a colour verdict. The on-market band keeps
+   one deeper grey step + hairline seams so the band boundaries stay legible without colour.
+   SCOPED: applied only by the domain rows; the overall gauge-card marker (.arc-markscale,
+   which reuses .di-markrow) and the Counts state keep soft-RAG per the keep-RAG ruling. */
+.di-markrow.mk-neutral .z-below, .di-markrow.mk-neutral .z-above { background: var(--surface-sunk); }
+.di-markrow.mk-neutral .z-on { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
+.di-markrow.mk-neutral .di-mk-zone + .di-mk-zone { border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+.di-markrow.mk-neutral::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent); }
 .di-mk-centre { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 0;
   border-left: 1px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
 .di-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
@@ -2182,9 +2192,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* the once-stated scale key in the header + micro column headers */
 .di-axis-poskey { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 30px; }
 .di-pk-strip { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
-.di-pk-strip .z-below { background: var(--gauge-below); }
-.di-pk-strip .z-on { background: var(--gauge-on); }
-.di-pk-strip .z-above { background: var(--gauge-above); }
+/* the header scale key renders ONLY in the Position state, so it goes neutral with the rows
+   (same greys, same seam treatment) — the axis WORDS carry the meaning colour used to. */
+.di-pk-strip .z-below, .di-pk-strip .z-above { background: var(--surface-sunk); }
+.di-pk-strip .z-on { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
+.di-pk-strip span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
 .di-pk-labels { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1; }
 .di-pk-labels span:nth-child(2) { text-align: center; }
 .di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600;
