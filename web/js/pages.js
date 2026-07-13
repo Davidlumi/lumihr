@@ -396,7 +396,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         ${!locked ? html`
         <div class="ov-lens">
           <div class="ov-seg" role="group" aria-label="Dashboard lens">
-            ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
+            ${[["market", "Market"], ["practice", "Practice"]].map(([k, lab]) => html`
               <button key=${k} type="button" class=${"ov-seg-btn" + (view === k ? " on" : "")} aria-pressed=${view === k}
                 onClick=${() => setView && setView(k)}>${lab}</button>`)}
           </div>

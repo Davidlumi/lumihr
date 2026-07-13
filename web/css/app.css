@@ -956,10 +956,18 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .ov-ctx .peerbar { gap: var(--s2); }
 .ov-ctx .conf-chip, .ov-ctx .peerbar-pill { height: 36px; box-sizing: border-box; }
 .ov-lens { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
-.ov-seg { display: inline-flex; background: var(--surface-sunk); border-radius: 999px; padding: 3px; gap: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 5%, transparent); }
+/* segmented controls read as ONE enclosed track (2026-07-12, David: "make it more obvious
+   the toggle is a toggle") — a real border + a deeper well, so the raised active thumb
+   clearly sits INSIDE a switchable container instead of beside a floating grey label. */
+.ov-seg { display: inline-flex; background: color-mix(in srgb, var(--ink) 6%, var(--surface));
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px;
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--ink) 7%, transparent); }
 .ov-seg-btn { font: inherit; font-size: var(--fs-label); font-weight: 600; line-height: 1.6; padding: var(--s1) var(--s3);
   border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: background var(--ease-fast), color var(--ease-fast), box-shadow var(--ease-fast); }
-.ov-seg-btn.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(33,27,38,.12), 0 0 0 1px rgba(33,27,38,.04); }
+/* the selected segment takes the PRIMARY BLUE fill (2026-07-12, David: "even more obvious")
+   — the house selected-state (.dash-tab.on), unmistakable inside the bordered track and
+   matching the Strategy switch's blue. Applies to the Counts/Position mini too. */
+.ov-seg-btn.on { background: var(--blue); color: #fff; box-shadow: 0 1px 3px color-mix(in srgb, var(--blue) 35%, transparent); }
 .ov-seg-btn:not(.on):hover { color: var(--ink); }
 /* compact variant for card headers (2026-07-11 — the domain-bar Counts/Position toggle) */
 .ov-seg-mini { padding: 2px; }
