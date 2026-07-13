@@ -3298,9 +3298,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
    stacked bar carries the counts; sizes to "N practices" in practice view) · scent · strategy
    glyph · chevron */
 .di-axis, .di-row { display: grid; align-items: center; column-gap: var(--s3);
-  /* scent/aim columns are max-content so their new HEADERS (Signals / Aim) size them and the
-     24px controls centre beneath (David 2026-07-11: the naked count + tick weren't obvious). */
-  grid-template-columns: 132px minmax(0, 1fr) auto max-content max-content 16px; }
+  /* FIXED widths for the signals/aim columns (2026-07-12, David: "the bars are uneven"):
+     each row is its OWN grid, so max-content collapsed on rows without a signal chip and
+     their bars ran longer — per-row grids don't share column sizing. 52px fits the SIGNALS
+     header with the 24px chip centred beneath; 30px fits AIM + the tick. Every bar now ends
+     on the same line in every row, in both lenses. */
+  grid-template-columns: 132px minmax(0, 1fr) auto 52px 30px 16px; }
 .di-axis { margin: var(--s2) 0 0; }
 .di-axis-scale { position: relative; height: 30px; }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
