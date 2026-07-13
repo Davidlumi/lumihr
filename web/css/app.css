@@ -981,7 +981,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .appr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 .appr-dot-differ { background: var(--differs); }
 .appr-dot-inline { background: var(--chart-band-mid); }
-.appr-note { margin-top: auto; padding-top: var(--s2); }
+/* the practice card's FOOTER (mode-pass 2026-07-12): the note sits on a hairline, centred —
+   the structural rhyme of the market card's marker zone, so the twins read as one pair. */
+.appr-note { margin-top: auto; border-top: 1px solid var(--border);
+  padding-top: var(--s4); text-align: center; }
 
 /* Practice-view category card */
 .cat-tile-practice .catp-bar { height: 9px; border-radius: 5px; background: var(--differs-tint); overflow: hidden; margin-top: var(--s2); }

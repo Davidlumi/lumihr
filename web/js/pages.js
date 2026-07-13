@@ -949,24 +949,28 @@ function PracticeArc({ prevalence, pending }) {
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head" title="How common each of your practice choices is among peers — a different question from the market-position read.">
         <${Icon} name="layers" size=${15} /><h2 class="card-head-title">How you compare on practice</h2></div>
-      <div class="arc-stage" role="img"
-        aria-label=${"How you compare on practice: of " + pool + " tracked practices, " + common + " common, " + alt + " alternative, " + rare + " rare."}>
-        <${Donut}
-          segments=${[
-            { value: common, color: "var(--prev-common)" },
-            { value: alt, color: "var(--prev-alt)" },
-            { value: rare, color: "var(--prev-rare)" },
-          ]}
-          total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${210} stroke=${28} />
-      </div>
-      ${/* merged caption (polish 2026-07-11) — mirrors OverallArc's one-line lean + swatched
-            counts; the practice twin keeps the same anatomy as the market card. */ ""}
-      <div class="arc-caption num">
-        <span class="arc-lean">${cap}</span>
-        <span class="arc-caption-sep" aria-hidden="true">—</span>
-        <span><i class="arc-leg-dot di-fill-common" aria-hidden="true"></i><span class="arc-leg-fig">${common}</span> common</span>
-        <span><i class="arc-leg-dot di-fill-alt" aria-hidden="true"></i><span class="arc-leg-fig">${alt}</span> alternative</span>
-        <span><i class="arc-leg-dot di-fill-rare" aria-hidden="true"></i><span class="arc-leg-fig">${rare}</span> rare</span>
+      ${/* the practice twin missed the fix-class-C restructure (David 2026-07-12, "spacing
+            looks odd") — it now shares the market card's arc-duo wrapper, so the stacked
+            caption rules apply: lean on its own centred line, separator hidden, counts on
+            one centred row. Same anatomy, purple theme. */ ""}
+      <div class="arc-duo">
+        <div class="arc-stage" role="img"
+          aria-label=${"How you compare on practice: of " + pool + " tracked practices, " + common + " common, " + alt + " alternative, " + rare + " rare."}>
+          <${Donut}
+            segments=${[
+              { value: common, color: "var(--prev-common)" },
+              { value: alt, color: "var(--prev-alt)" },
+              { value: rare, color: "var(--prev-rare)" },
+            ]}
+            total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${210} stroke=${28} />
+        </div>
+        <div class="arc-caption num">
+          <span class="arc-lean">${cap}</span>
+          <span class="arc-caption-sep" aria-hidden="true">—</span>
+          <span><i class="arc-leg-dot di-fill-common" aria-hidden="true"></i><span class="arc-leg-fig">${common}</span> common</span>
+          <span><i class="arc-leg-dot di-fill-alt" aria-hidden="true"></i><span class="arc-leg-fig">${alt}</span> alternative</span>
+          <span><i class="arc-leg-dot di-fill-rare" aria-hidden="true"></i><span class="arc-leg-fig">${rare}</span> rare</span>
+        </div>
       </div>
       <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
     </div>`;
