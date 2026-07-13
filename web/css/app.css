@@ -176,7 +176,10 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 
 /* the full-width navy brand bar sits at the very top; sidebar + content row below it */
 .shell { display: flex; flex-direction: column; min-height: 100vh; }
-.shell-body { display: flex; flex: 1; min-height: 0; }
+/* §4.8(6) ultra-wide: cap and centre the shell as ONE unit — rail and content travel
+   together, so a 4K screen gets margins either side instead of a dead band between a
+   viewport-pinned rail and centred content. The brandbar's inner run aligns to the same cap. */
+.shell-body { display: flex; flex: 1; min-height: 0; max-width: 1720px; width: 100%; margin: 0 auto; }
 .sidebar { width: 224px; flex: 0 0 224px; background: var(--surface);
   border-right: 1px solid var(--chrome-edge); box-shadow: 4px 0 16px rgba(33,27,38,.025);
   padding: var(--s2) var(--s3) var(--s4); position: sticky; top: var(--brandbar-h); height: calc(100vh - var(--brandbar-h)); overflow-y: auto;
@@ -216,7 +219,8 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
    where green/amber/red verdicts and the coral gauge marker carry meaning.
    ========================================================================== */
 .brandbar { background: var(--lumi-navy); border-bottom: 0; height: var(--brandbar-h);
-  padding: 0 var(--s5); box-shadow: 0 1px 0 rgba(20,32,64,.16), 0 2px 8px rgba(20,32,64,.06); }
+  padding: 0 max(var(--s5), calc((100vw - 1720px) / 2 + var(--s5)));
+  box-shadow: 0 1px 0 rgba(20,32,64,.16), 0 2px 8px rgba(20,32,64,.06); }
 .brandbar-logo { display: inline-flex; align-items: center; flex: none; }
 /* reversed horizontal lockup (390:178) at the 32px legibility floor → 70px wide;
    nudged down 1.5px to sit optically centred against the search field */
