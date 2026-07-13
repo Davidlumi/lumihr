@@ -672,11 +672,26 @@ def market_pool_qids(org_id, cut, questions, payloads, org_answers, entitled, tw
     return {i["question_id"] for i in substance_pool(items, prac, cfg)}
 
 
+# Multi-select prevalence (Option B "market-core coverage", David's ruling on the
+# 2026-07-13 decision paper): OFF by default — flip LUMI_MS_PREVALENCE=on to admit the
+# multi-selects (16 in the current Reward scope, previously rated by NEITHER lens) into
+# the practice pool. Core threshold is the ruled 50 (% of peers offering an option makes
+# it core); parameterised only so the gate can probe edge cases, not a tuning knob.
+MS_PREVALENCE = os.environ.get("LUMI_MS_PREVALENCE", "off").strip().lower() in ("on", "1", "true", "yes")
+MS_CORE_PCT = float(os.environ.get("LUMI_MS_CORE_PCT", "50"))
+
+
 def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q=None):
     """One item per answered, unsuppressed select/yes_no practice with no
     defensible direction: how common the org's chosen approach is vs peers.
     PARTITIONED (2026-07-09): any metric the market lens rates is excluded here
-    (market wins) — one category per metric, the two pools disjoint."""
+    (market wins) — one category per metric, the two pools disjoint.
+    Multi-selects (flag-gated): rated by market-CORE coverage — the core is the set of
+    options >= MS_CORE_PCT of peers offer (the multi-select analogue of the modal
+    answer; an empty core falls back to the single most-offered option, and the card
+    copy says so). Full core -> match, part -> established, none -> less common —
+    carried as an explicit ms_band because per-option shares don't sum to 100 and the
+    single-select your_share rule has no honest set-valued reading."""
     out = []
     twin_blocks_by_q = twin_blocks_by_q or {}
     cfg = market_position_config()                      # Q1=C: routing authority (read-only, hot-reloaded, cached)
@@ -684,7 +699,43 @@ def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, tw
     for qid, q in questions.items():
         if qid in _market:
             continue  # market-rated -> the market lens owns it (one category per metric)
-        if not entitled(q) or q.type not in ("single_select", "yes_no"):
+        if not entitled(q):
+            continue
+        if q.type == "multi_select":
+            if not MS_PREVALENCE:
+                continue
+            raw = org_answers.get((qid, ""))
+            p = payloads.get(qid)
+            if raw is None or p is None:
+                continue
+            blk, cut_label = block_for(p, cut, twin_blocks_by_q.get(qid))
+            if is_suppressed(blk):
+                continue
+            opts = blk.get("options") or []
+            if not opts:
+                continue
+            mine = {t.strip() for t in raw.split(";") if t.strip()}
+            core = [o for o in opts if (o.get("pct") or 0) >= MS_CORE_PCT]
+            fallback_core = not core
+            if fallback_core:
+                core = [max(opts, key=lambda o: o.get("pct") or 0)]
+            offered = [o for o in core if o["label"] in mine]
+            cov = len(offered) / float(len(core))
+            out.append({
+                "question_id": qid, "label": q.display_title,
+                "superpower": q.superpower, "subpower": q.sub_power,
+                "your_answer": raw, "your_share": round(100.0 * cov, 1),   # share of the CORE you offer
+                "modal_answer": " + ".join(o["label"] for o in core),
+                "modal_share": min((o.get("pct") or 0) for o in core),
+                "is_modal": len(offered) == len(core),
+                "n": blk["n"], "cut_label": cut_label,
+                "routed_from_polarised": q.polarity in ("higher_is_better", "lower_is_better"),
+                "ms_band": "match" if len(offered) == len(core) else "common_alt" if offered else "rarer",
+                "ms_core_size": len(core), "ms_core_offered": len(offered),
+                "ms_core_fallback": fallback_core,
+            })
+            continue
+        if q.type not in ("single_select", "yes_no"):
             continue
         cls = (cfg.get("metrics", {}).get(qid) or {}).get("class")
         polarised = q.polarity in ("higher_is_better", "lower_is_better")
@@ -760,11 +811,27 @@ def _pool_verdict(pool, band_low, band_high, margin):
             "depth_pctl": round(depth, 1)}
 
 
+def _prev_band(i, uncommon_pct):
+    """One band per prevalence item — THE shared classifier for the donut counts
+    (_prev_summary) and the per-card chips (pool_prevalence_bands), so the two can
+    never disagree. Multi-selects carry an explicit ms_band (core coverage — see
+    prevalence_items); single_select/yes_no keep the legacy modal/share rule. The
+    override exists because a small partial coverage (say 1 core option of 6) must
+    read 'established' per the ruling, which the your_share<threshold rule would
+    misfile as 'rarer'."""
+    if i.get("ms_band"):
+        return i["ms_band"]
+    if i["is_modal"]:
+        return "match"
+    return "rarer" if (i["your_share"] or 0) < uncommon_pct else "common_alt"
+
+
 def _prev_summary(pool, uncommon_pct):
     if not pool:
         return None
-    modal = sum(1 for i in pool if i["is_modal"])
-    uncommon = sum(1 for i in pool if not i["is_modal"] and (i["your_share"] or 0) < uncommon_pct)
+    bands = [_prev_band(i, uncommon_pct) for i in pool]
+    modal = bands.count("match")
+    uncommon = bands.count("rarer")
     return {"with_majority": modal, "established": len(pool) - modal - uncommon,
             "less_common": uncommon, "pool": len(pool)}
 
@@ -926,16 +993,10 @@ def pool_prevalence_bands(prev_items, uncommon_pct):
     mode), rarer = less_common (off-mode AND held by < uncommon_pct of peers), common_alt =
     established (off-mode but not rare). One-per-question (prevalence_items has no matrix
     rows / per-option items), so summing per-card === the donut counts exactly — no
-    metric-vs-mass complication. A metric outside the prevalence pool is absent → null."""
-    out = {}
-    for i in prev_items:
-        if i["is_modal"]:
-            out[i["question_id"]] = "match"
-        elif (i["your_share"] or 0) < uncommon_pct:
-            out[i["question_id"]] = "rarer"
-        else:
-            out[i["question_id"]] = "common_alt"
-    return out
+    metric-vs-mass complication. A metric outside the prevalence pool is absent → null.
+    Delegates to _prev_band — the SAME classifier _prev_summary counts with, so parity
+    is by construction, not by parallel implementations."""
+    return {i["question_id"]: _prev_band(i, uncommon_pct) for i in prev_items}
 
 
 def _strategy_field(strategy, field):

@@ -3364,7 +3364,10 @@ def assemble_pack_payload(request, user, org, cut):
         "cut": {"dim": cut["dim"], "value": cut.get("value")},   # for one-click regenerate
         "cut_criteria": cut.get("criteria"),                     # saved-group construction, printed on the methodology page
         "band": {"low": MARKET_BAND_LOW, "high": MARKET_BAND_HIGH},   # the on-market band (scale zones + callout)
-        "methodology_version": 1,
+        # v2 = multi-select prevalence on (core-coverage read admits ~16 more practices to
+        # the pool; decision paper 2026-07-13) — a visible, dated methodology change, so
+        # stored v1 packs stay honestly labelled with the maths they were built under.
+        "methodology_version": 2 if pos.MS_PREVALENCE else 1,
         "organisation": {"name": org["name"], "industry": org["industry"],
                          "fte_band": org["fte_band"], "region": org["hq_region"]},
         "cut_label": cut_label,

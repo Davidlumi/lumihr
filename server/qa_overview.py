@@ -266,6 +266,44 @@ check("10e. ONE verdict register — below/on/above market; 'less/more competiti
       and "<span>below market</span>" in corejs,
       "the retired less/more-competitive register has crept back onto a position surface")
 
+# ---- 11. multi-select prevalence (Option B core coverage, decision paper 2026-07-13) ----
+# Runs in whichever flag state the environment sets, asserting that state's own contract:
+# OFF -> multi-selects stay out of the pool (the pre-ruling world, byte-identical);
+# ON  -> every multi-select item's band re-derives from its own payload block, the pool
+#        stays disjoint from the market lens, and the donut counts equal the card-chip
+#        sums (parity through the shared _prev_band classifier).
+_ms = [i for i in prev_items if i.get("ms_band")]
+if not pos.MS_PREVALENCE:
+    check("11a. flag OFF: no multi-select enters the prevalence pool",
+          not _ms and all(vis[i["question_id"]].type != "multi_select" for i in prev_items),
+          "a multi-select item leaked into the pool with LUMI_MS_PREVALENCE off")
+else:
+    check("11a. flag ON: multi-select items are produced for the scope",
+          len(_ms) > 0, "flag is on but zero multi-select items were produced")
+    _bad = []
+    for i in _ms:
+        _blk, _cl = pos.block_for(pls[i["question_id"]], cut, None)
+        _opts = _blk.get("options") or []
+        _core = ([o for o in _opts if (o.get("pct") or 0) >= pos.MS_CORE_PCT]
+                 or [max(_opts, key=lambda o: o.get("pct") or 0)])
+        _mine = {t.strip() for t in ans[(i["question_id"], "")].split(";") if t.strip()}
+        _off = sum(1 for o in _core if o["label"] in _mine)
+        _want = "match" if _off == len(_core) else "common_alt" if _off else "rarer"
+        if _want != i["ms_band"] or i["ms_core_size"] != len(_core) or i["ms_core_offered"] != _off:
+            _bad.append((i["question_id"], i["ms_band"], _want))
+    check("11b. every multi-select band re-derives from its own payload block", not _bad, repr(_bad[:4]))
+    check("11c. multi-select items stay disjoint from the market pool",
+          not ({i["question_id"] for i in _ms} &
+               pos.market_pool_qids(org["org_id"], cut, vis, pls, ans, ent, None)),
+          "a multi-select is rated by BOTH lenses — partition broken")
+from collections import Counter as _Ctr
+_cc = _Ctr(pos.pool_prevalence_bands(prev_items, A.UNCOMMON_PCT).values())
+_sm = pos._prev_summary(prev_items, A.UNCOMMON_PCT) or {"with_majority": 0, "established": 0, "less_common": 0}
+check("11d. donut counts == card-chip sums (shared _prev_band classifier, both flag states)",
+      (_cc.get("match", 0), _cc.get("common_alt", 0), _cc.get("rarer", 0)) ==
+      (_sm["with_majority"], _sm["established"], _sm["less_common"]),
+      "the prevalence donut and the card chips disagree")
+
 print("\nNOTE: read-only gate — no fixtures created, nothing to clean. Reads the live")
 print("snapshot via the same engine path as /api/overview (no HTTP).")
 print("\nRESULTS: %d failures" % len(FAILS))
