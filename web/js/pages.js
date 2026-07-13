@@ -1119,8 +1119,11 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <span class="di-cell di-evid"></span>
         ${/* column headers (David 2026-07-11: "the signal count is not obvious as they have no
               header, same with the strategy marker") */ ""}
-        <span class="di-cell di-scentcol di-colhead">${pending ? null : "Signals"}</span>
-        <span class="di-cell di-chipcol di-colhead">${pending || practice ? null : "Aim"}</span>
+        ${/* column headers follow their CONTENT (mode-pass fix 2026-07-12): SIGNALS hides when
+              no domain has a live signal; AIM hides when strategy renders no ticks (stratSum
+              null, e.g. strategy off) — a header must never float over an empty column. */ ""}
+        <span class="di-cell di-scentcol di-colhead">${pending || !Object.values(sigCounts || {}).some(v => v > 0) ? null : "Signals"}</span>
+        <span class="di-cell di-chipcol di-colhead">${pending || practice || !stratSum ? null : "Aim"}</span>
         <span class="di-cell di-chev"></span>
       </div>
       <div class="di-rows di-rows-anim" key=${practice ? "practice" : barMode}>
