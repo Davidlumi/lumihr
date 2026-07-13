@@ -477,19 +477,9 @@ select.ctl, input.ctl { height: 32px; padding: 0 var(--s2); border: 1px solid va
 .peerbar-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
   display: inline-flex; color: var(--ink-faint); pointer-events: none; }
 .peerbar-pill.narrowed .peerbar-caret { color: var(--blue); }
-/* ★ my-default-view + 🔔 org-email-default toggles — JOINED SEGMENTS inside the peer pill
-   (2026-07-11, David: floating circles "did not look premium" — one capsule = selector | ★ | 🔔).
-   Pressed (.on) fills the primary-blue family — deliberately NOT amber/green/red, which the
-   RAG palette reserves for verdicts (doctrine). Icon + tooltip carry the star/bell distinction. */
+/* (★/🔔 default-setter segments removed 2026-07-12 on David's call — see PeerSetBar) */
 .peerbar-selwrap { position: relative; display: inline-flex; align-items: center; }
-.peer-def { display: inline-flex; align-items: center; justify-content: center; width: 34px;
-  align-self: stretch; flex: none; padding: 0; border: 0; border-left: 1px solid var(--border);
-  background: transparent; color: var(--ink-faint); cursor: pointer;
-  transition: color var(--ease), background var(--ease); }
-.peer-def:hover { color: var(--blue); background: var(--blue-tint); }
-.peer-def:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
-.peer-def.on { background: var(--blue-tint); color: var(--blue-deep); }
-.peerbar-pill { overflow: hidden; }   /* clip the segment fills to the capsule radius */
+.peerbar-pill { overflow: hidden; }
 select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color: var(--blue); }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -641,8 +631,17 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .conf-n { color: var(--ink-faint); }
 .conf-meter { display: inline-flex; gap: 2.5px; }
 .conf-meter i { width: 5px; height: 12px; border-radius: 2px; background: var(--navy); flex: none; }
-.conf-directional .conf-meter i { background: color-mix(in srgb, var(--navy) 62%, var(--surface)); }
 .conf-meter i.off { background: var(--border); }
+/* 10-point rating bands (David 2026-07-12): icon + score only — the words live in the
+   tooltip/aria. Bars + score ink take the band hue (78%-ink mixes clear AA); the meter
+   fills 1/2/3 bars for red/amber/green. Reverses the navy-only trust ruling on David's call. */
+.conf-score { font-weight: 700; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.conf-green .conf-meter i:not(.off) { background: var(--favourable); }
+.conf-green .conf-score { color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.conf-amber .conf-meter i:not(.off) { background: var(--amber-bright); }
+.conf-amber .conf-score { color: color-mix(in srgb, var(--amber-bright) 38%, #3a2600); }
+.conf-red .conf-meter i:not(.off) { background: var(--unfavourable); }
+.conf-red .conf-score { color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .conf-chip .indic-tip { left: auto; right: 0; width: 240px; }
 .conf-chip:hover .indic-tip, .conf-chip:focus .indic-tip, .conf-chip:focus-within .indic-tip { opacity: 1; visibility: visible; }
 /* "Your journey" strip — slim band between the hero row and the domain grid */
@@ -665,7 +664,11 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .05em; }
 .cat-hero-label { font-size: var(--fs-body); font-weight: 700; letter-spacing: .04em; }
 .eyebrow { color: var(--ink-soft); }
-.hero { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+/* vertical breathing (2026-07-12, David: "still need more room to breathe"): the top zone's
+   rhythm opens from 24/16/16 to 32/24/24 — title sits lower off the brandbar, and both the
+   title row and the context toolbar get a full 24px beneath. .hero is Overview-only. */
+.hero { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  padding-top: var(--s2); margin-bottom: var(--s5); }
 /* peer-cut + board-pack grouped on the right of the title row (Overview).
    Masthead spacing pass (2026-07-12, David: "cramped"): ONE control height — the topbar's
    36px rule — across chip, capsule and buttons (they ran 28/31/32 on one row), and GROUPED
@@ -945,7 +948,14 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 }
 
 /* Home dashboard lens controls (2026-06-23): Market/Practice view toggle + strategy on/off */
-.ov-controls { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+/* the full-width CONTEXT TOOLBAR (spatial restructure 2026-07-12): peer context left, view
+   lenses right — space-between lets the row's width breathe instead of piling everything at
+   one edge. Capsule/chip keep the masthead's 36px control height here. */
+.ov-controls { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
+.ov-ctx { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; min-width: 0; }
+.ov-ctx .peerbar { gap: var(--s2); }
+.ov-ctx .conf-chip, .ov-ctx .peerbar-pill { height: 36px; box-sizing: border-box; }
+.ov-lens { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
 .ov-seg { display: inline-flex; background: var(--surface-sunk); border-radius: 999px; padding: 3px; gap: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 5%, transparent); }
 .ov-seg-btn { font: inherit; font-size: var(--fs-label); font-weight: 600; line-height: 1.6; padding: var(--s1) var(--s3);
   border: none; cursor: pointer; border-radius: 999px; background: transparent; color: var(--ink-soft); transition: background var(--ease-fast), color var(--ease-fast), box-shadow var(--ease-fast); }

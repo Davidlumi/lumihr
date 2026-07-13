@@ -1114,17 +1114,12 @@ function NotificationBell({ me }) {
    global state (App owns `cut`); this is just where it's surfaced. */
 function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref, refreshMe }) {
   const note = (!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts)));
-  // default peer group (2026-07-10, David): ★ = MY default landing view (a per-user pref); 🔔 =
-  // the ORG's default group for signal EMAILS (editor-only, firmographic cuts only — the sweep
-  // is per-org). Both toggle the CURRENT selection; clicking an active one clears to all-peers.
-  const curKey = cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value;
-  const isMyDefault = ((prefs && prefs._peer_default) || "all") === curKey;
-  const isOrgDefault = ((me.org && me.org.signal_peer_cut) || "all") === curKey;
-  const canSetOrg = me.user && (me.user.role === "admin" || me.user.role === "contributor")
-    && (cut.dim === "all" || cut.dim === "industry" || cut.dim === "fte_band");
-  const setMine = () => onPref && onPref("_peer_default", isMyDefault ? "all" : curKey);
-  const setOrg = () => api("/api/org/signal-peers", { method: "PUT", body: { cut: isOrgDefault ? "all" : curKey } })
-    .then(() => refreshMe && refreshMe()).catch(() => {});
+  // ★/🔔 default-setters REMOVED from the capsule (David 2026-07-12, "the icons at the end of
+  // the bar do nothing — remove"): on the default all-peers view both read as already-set, so
+  // they looked inert. The BEHAVIOUR survives — prefs._peer_default still drives the landing
+  // view (the load-default effect) and orgs.default_cut still drives the signal-email sweep
+  // (PUT /api/org/signal-peers stays live) — but they currently have NO UI; a Settings home
+  // for both is the natural follow-up if David wants them settable again.
   return html`
     <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
       <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
@@ -1149,14 +1144,6 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
         </select>
         <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
         </span>
-        ${/* ★/🔔 live INSIDE the pill as joined segments (David 2026-07-11, "does not look
-              premium" — they floated as two orphan circles): one capsule = selector | ★ | 🔔. */ ""}
-        ${onPref ? html`<button type="button" class=${"peer-def" + (isMyDefault ? " on" : "")} aria-pressed=${isMyDefault}
-          title=${isMyDefault ? "This is your default view — click to clear" : "Open lumi on this peer group by default"}
-          onClick=${setMine}><${Icon} name="star" size=${14} /></button>` : null}
-        ${canSetOrg ? html`<button type="button" class=${"peer-def peer-def-bell" + (isOrgDefault ? " on" : "")} aria-pressed=${isOrgDefault}
-          title=${isOrgDefault ? "Your team's signal emails compare against this group — click to reset to all peers" : "Use this peer group for your team's signal emails"}
-          onClick=${setOrg}><${Icon} name="bell" size=${14} /></button>` : null}
       </span>
       ${cut.dim === "twin" && html`<button class="btn small" onClick=${onTwinInfo}>Why these peers?</button>`}
       ${note && html`

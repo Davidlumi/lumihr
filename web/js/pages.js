@@ -28,26 +28,28 @@ function StrategyNudge() {
         onClick=${() => { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} setHidden(true); }}><${Icon} name="close" size=${15} /></button>
     </div>`;
 }
-// Masthead CONFIDENCE area (2026-07-09, David: "the sample should have its own area with a
-// confidence rating"; the "Benchmarked against…" subtitle removed entirely). The single trust
-// surface: an always-on chip (once insights unlock) rating the ACTIVE peer set by its live n,
-// on the published thresholds — >=20 = High confidence, 5–19 = Directional; below 5 the cut is
-// suppressed server-side, so no third state ever renders. NAVY/neutral — confidence is trust,
-// never RAG. The baseline-window + movement explainer moved into this tooltip when the subtitle
-// died. Sits right-aligned under the peer selector and updates with every cut switch.
+// Masthead CONFIDENCE badge (2026-07-09 chip; COMPACTED to a 10-point rating 2026-07-12,
+// David: "just the icon … a 10 rating scale with colour coding"). The single trust surface:
+// an always-on badge (once insights unlock) rating the ACTIVE peer set by its live n. The
+// 10-point score is ANCHORED to the published tiers — never invented: >=20 peers (the "High
+// confidence" tier) spans 7–10 (green); 5–19 ("Directional") spans 4–6 (amber); below 5 the
+// cut is suppressed server-side, so the red 1–3 band never renders on a live surface (it
+// exists for completeness). Monotonic in n; the full sentence lives in the tooltip + aria.
+// NOTE: RAG on a trust surface reverses the 2026-07-09 navy-only ruling — David's explicit
+// call ("will leave with you"). The words stay tier-true so methodology copy still holds.
 function ConfidenceChip({ n, window: win }) {
   if (n == null || n < 5) return null;
-  const high = n >= 20;
-  const tip = (high
-    ? "High confidence: 20 or more peer organisations behind the verdict (this cut has " + n + ")."
-    : "Directional: 5–19 peer organisations (this cut has " + n + ") — treat as a steer. Any cut below 5 is suppressed.")
+  const score = n >= 150 ? 10 : n >= 100 ? 9 : n >= 60 ? 8 : n >= 20 ? 7 : n >= 15 ? 6 : n >= 10 ? 5 : 4;
+  const band = score >= 7 ? "green" : score >= 4 ? "amber" : "red";
+  const tip = "Confidence " + score + "/10 — " + n + " peer organisations behind this comparison. "
+    + "20 or more peers rates 7–10 (high confidence); 5–19 rates 4–6 (directional — treat as a "
+    + "steer, not a verdict); fewer than 5 is never shown."
     + (win ? " " + win + " baseline — movement shows from your next cycle." : "");
   return html`
-    <span class=${"conf-chip" + (high ? "" : " conf-directional")} tabindex="0" role="note"
+    <span class=${"conf-chip conf-" + band} tabindex="0" role="note" aria-label=${tip}
       onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}>
-      <span class="conf-meter" aria-hidden="true"><i></i><i></i><i class=${high ? "" : "off"}></i></span>
-      <b>${high ? "High confidence" : "Directional"}</b>
-      <span class="conf-n num">${n} peers${high ? "" : " — treat as a steer, not a verdict"}</span>
+      <span class="conf-meter" aria-hidden="true"><i></i><i class=${score >= 4 ? "" : "off"}></i><i class=${score >= 7 ? "" : "off"}></i></span>
+      <span class="conf-score num">${score}/10</span>
       <span class="indic-tip">${tip}</span>
     </span>`;
 }
@@ -118,14 +120,11 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
           <h1 class="display-title">${data.org.name}</h1>
         </div>
         <div class="hero-actions">
-          ${/* one control cluster on the title line (polish 2026-07-11; masthead spacing pass
-                2026-07-12, David: "cramped"). Reading order is one sentence — "Comparing
-                against [capsule] [High confidence · n peers]" — the comparison, then its
-                confidence, with the two n's adjacent; actions sit at the far right. All
-                controls share the topbar's 36px height rule. */ ""}
-          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
-            prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
-          ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
+          ${/* SPATIAL restructure (2026-07-12, David: "still very cramped"): the title line
+                keeps ONLY the two actions — the peer capsule + confidence chip moved down into
+                the full-width context toolbar (ov-controls), where the row's width separates
+                peer context (left) from the view lenses (right) instead of piling five bordered
+                shapes against the right edge. */ ""}
           <${ExportBoardPack} me=${me} cut=${cut} />
           <${ShareButton} me=${me} cut=${cut} name=${data.org && data.org.name} />
         </div>
@@ -139,7 +138,9 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 
       <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
         view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat}
-        barMode=${barMode} setBarMode=${setBarMode} />
+        barMode=${barMode} setBarMode=${setBarMode}
+        me=${me} onCut=${onCut} onTwinInfo=${onTwinInfo} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe}
+        sampleN=${sampleN} unlocked=${unlocked} />
 
     </div>`;
 };
@@ -314,7 +315,8 @@ function ShareDialog({ cut, name, layout, onClose }) {
    category (seven tiles). Leads/gaps become micro-band chips. The £
    opportunity lives inside signals; the journey strip returns when a second
    data period exists. */
-function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setApplyStrat, barMode, setBarMode }) {
+function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setApplyStrat, barMode, setBarMode,
+                        me, onCut, onTwinInfo, prefs, onPref, refreshMe, sampleN, unlocked }) {
   const m = data.hero && data.hero.market;
   const locked = data.callouts && data.callouts.gaps_locked;
   // Signals follow the Market/Practice lens: MARKET view shows market-position signals
@@ -381,8 +383,18 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
       ${!locked && data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
-      ${!locked && html`
-        <div class="ov-controls">
+      ${/* the full-width CONTEXT TOOLBAR (spatial restructure 2026-07-12): peer context —
+            "Comparing against [capsule ★🔔] [confidence]" — anchors LEFT; the view lenses
+            (Market/Practice + strategy switch) anchor RIGHT; the row's width does the
+            separating. The peer picker shows even pre-unlock; the lenses need data. */ ""}
+      <div class="ov-controls">
+        <div class="ov-ctx">
+          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
+            prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+          ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
+        </div>
+        ${!locked ? html`
+        <div class="ov-lens">
           <div class="ov-seg" role="group" aria-label="Dashboard lens">
             ${[["market", "Market position"], ["practice", "Practice"]].map(([k, lab]) => html`
               <button key=${k} type="button" class=${"ov-seg-btn" + (view === k ? " on" : "")} aria-pressed=${view === k}
@@ -397,7 +409,8 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
               <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
               <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
             </button>`}
-        </div>`}
+        </div>` : null}
+      </div>
       <div class="ov-top">
         ${view === "practice"
           ? html`<${PracticeArc} prevalence=${data.hero.prevalence} pending=${locked} />`
