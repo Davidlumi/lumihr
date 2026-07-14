@@ -603,91 +603,91 @@
       "competitiveness": true
     },
     "Governance & Transparency": {
-      "competitiveness": false
+      "competitiveness": true
     }
   },
   "metrics": {
     "REW263_BEN_CICOVER": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_BEN_DENTAL": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_BEN_NEURO": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_BEN_PENBASIS": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_BEN_PMIEXCESS": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_BEN_PMIMH": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_GOV_BENOBJ": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_ETHDISREADY": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_FIREREHIRE": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_FLEXALLOW": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_MENOPLAN": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_REWTEAM": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -699,16 +699,16 @@
       "weight": 1
     },
     "REW263_GOV_UKPAYTRANS": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW263_GOV_UMBRELLA": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -734,9 +734,9 @@
       "weight": 1
     },
     "REW263_PAY_GUARHRSAVG": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -748,16 +748,16 @@
       "weight": 1
     },
     "REW263_PAY_SHIFTRIGHTS": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
     "REW263_PAY_SSPALIGN": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -769,79 +769,79 @@
       "weight": 1
     },
     "REW263_REC_IMPACT": {
-      "class": "Practice",
+      "class": "Provision",
       "type": "binary",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW263_REC_MGRBUDGET": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW263_REC_PEER": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW263_TIME_CARERPAID": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_DAYONELEAVE": {
-      "class": "Practice",
+      "class": "Provision",
       "type": "binary",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_FERTLEAVE": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_HOLRECORDS": {
-      "class": "Practice",
+      "class": "Provision",
       "type": "binary",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_IVF": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_NEONATAL": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_PATPAY": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW263_TIME_PREGLOSS": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
@@ -853,23 +853,23 @@
       "weight": 1
     },
     "REW263_WEL_FINWELL": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW263_WEL_MGRTRAIN": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW263_WEL_OH": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
@@ -881,16 +881,16 @@
       "weight": 1
     },
     "ALLOW_02": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "ALLOW_03": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -923,30 +923,30 @@
       "weight": 1
     },
     "PROP_168a6213": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
     "PROP_634adacd": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_8e0b6316": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_9e4ad87f": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
@@ -958,9 +958,9 @@
       "weight": 1
     },
     "PROP_dff9a2a5": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -972,16 +972,16 @@
       "weight": 1
     },
     "PROP_fe1a29ec": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW262_PAY_AISKILLSPAY": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -993,9 +993,9 @@
       "weight": 1
     },
     "REW262_PAY_GUARANTEEDHRS": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1007,16 +1007,16 @@
       "weight": 1
     },
     "REW26_PAY_JOBEVAL_COVERAGE": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW26_PAY_SKILLS_PAY": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1028,49 +1028,49 @@
       "weight": 1
     },
     "REW_FAIR_TIPS_DIST_7d34e570": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_128": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_FAI_CANCEL_1bbcc629": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_FAI_MIN_HOURS_8518a543": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_FAI_TRONC_GROUPS_e5639ac2": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_TRONC_TYPES_b5547658": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_005": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1091,49 +1091,49 @@
       "weight": 1
     },
     "REW_PAY_016": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_017": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_018": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_020": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_021": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_022": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_023": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1168,14 +1168,14 @@
       "weight": 1
     },
     "REW_PAY_TIPS_EXIST_7c80c508": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_TRONC_6db81475": {
-      "class": "Design",
+      "class": "Practice",
       "type": "binary",
       "direction": null,
       "lens": "save",
@@ -1196,14 +1196,14 @@
       "weight": 1
     },
     "REW_INC_060": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_INC_061": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1238,9 +1238,9 @@
       "weight": 1
     },
     "REW_INC_072": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1252,16 +1252,16 @@
       "weight": 1
     },
     "REW_INC_103": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_INC_104": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "neutral",
       "lens": "attract",
       "weight": 1
     },
@@ -1280,16 +1280,16 @@
       "weight": 1
     },
     "REW_INC_132": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_INC_133": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1301,7 +1301,7 @@
       "weight": 1
     },
     "REW_INC_136": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1338,21 +1338,21 @@
     "3faf1f0c-f753-497f-a395-384bba38c5e3": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
       "weight": 1
     },
     "CAR_BN_02": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "CAR_COST_02": {
-      "class": "Design",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -1371,23 +1371,23 @@
       "weight": 1
     },
     "EXT_REW_GAP_012": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_11a83d52": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "PROP_202fecc6": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
@@ -1399,23 +1399,23 @@
       "weight": 1
     },
     "PROP_3d4fc4e7": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_7d858df2": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "PROP_c1a3da61": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -1427,51 +1427,51 @@
       "weight": 1
     },
     "RED_NOTICE_01": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "RED_PAY_01": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "RED_PROC_01": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "RED_PROC_02": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "RED_PROC_03": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "RED_PROC_04": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "RED_PROC_05": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
@@ -1499,7 +1499,7 @@
     "REW26_BEN_PENSION_COST_SHARE": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
@@ -1511,9 +1511,9 @@
       "weight": 1
     },
     "REW26_BEN_PENSION_TYPE": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1532,23 +1532,23 @@
       "weight": 1
     },
     "REW_BEN_038": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_039": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW_BEN_044": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1560,16 +1560,16 @@
       "weight": 1
     },
     "REW_BEN_046": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_047": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1581,23 +1581,23 @@
       "weight": 1
     },
     "REW_BEN_055": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW_BEN_100": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_102": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1609,9 +1609,9 @@
       "weight": 1
     },
     "REW_BEN_139": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1637,16 +1637,16 @@
       "weight": 1
     },
     "REW_FAI_STUDY_TIME_93b6ef22": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_109": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "numeric",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1658,9 +1658,9 @@
       "weight": 1
     },
     "REW_Q049530": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1693,9 +1693,9 @@
       "weight": 1
     },
     "REW262_TIME_BEREAVEMENT": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1,
       "family_metric": true
@@ -1715,9 +1715,9 @@
       "weight": 1
     },
     "REW_BEN_FAM_001": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1,
       "family_metric": true
@@ -1747,45 +1747,45 @@
       "family_metric": true
     },
     "REW_BEN_FAM_007": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
       "family_metric": true
     },
     "REW_BEN_FAM_008": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_FAM_009": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_FAM_010": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_FAM_011": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_FAM_012": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
       "family_metric": true
@@ -1798,16 +1798,16 @@
       "weight": 1
     },
     "REW_BEN_HOL_002": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_HOL_003": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1819,9 +1819,9 @@
       "weight": 1
     },
     "REW_BEN_HOL_005": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1833,9 +1833,9 @@
       "weight": 1
     },
     "REW_BEN_HOL_007": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1847,9 +1847,9 @@
       "weight": 1
     },
     "REW_BEN_SICK_001": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1861,23 +1861,23 @@
       "weight": 1
     },
     "REW_BEN_SICK_004": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_SICK_005": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_BEN_SICK_006": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1889,21 +1889,21 @@
       "weight": 1
     },
     "EXT_REW_GAP_009": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "EXT_REW_GAP_010": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
       "weight": 1
     },
     "EXT_REW_GAP_011": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1931,9 +1931,9 @@
       "weight": 1
     },
     "REW26_WEL_MH_SUPPORT": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -1945,21 +1945,21 @@
       "weight": 1
     },
     "REW26_WEL_STRATEGY": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "REW_BEN_REM_PAY_001": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_BEN_REM_PAY_002": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -1974,9 +1974,9 @@
       "weight": 1
     },
     "REW_BEN_REM_PAY_004": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -2002,9 +2002,9 @@
       "weight": 1
     },
     "EXT_REW_GAP_003": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -2016,14 +2016,14 @@
       "weight": 1
     },
     "EXT_REW_GAP_005": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "EXT_REW_GAP_006": {
-      "class": "Design",
+      "class": "Practice",
       "type": "categorical",
       "direction": null,
       "lens": "attract",
@@ -2044,58 +2044,58 @@
       "weight": 1
     },
     "PAYTR_03_db0108d6": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "PROP_10d1211d": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_216f7323": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_34ffb6e2": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "PROP_38555969": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "PROP_674db2fc": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "PROP_8862fcad": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "engage",
       "weight": 1
     },
     "PROP_930043cc": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -2107,142 +2107,142 @@
       "weight": 1
     },
     "PROP_cdff5737": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_d65a16e9": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "PROP_d992b2ea": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "PROP_e1d1e604": {
-      "class": "Design",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "PROP_ef4ff31e": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_ACTIONPLAN": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_AIINPAY": {
-      "class": "Practice",
-      "type": "categorical",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_EQUALPAYAUDIT": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_EQUALVALUE": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_PAYINADVERTS": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW262_GOV_SALHISTORY": {
-      "class": "Practice",
-      "type": "binary",
-      "direction": null,
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW26_GOV_EU_PTD_PREP": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_FAI_079": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_081": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_082": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_085": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "save",
       "weight": 1
     },
     "REW_FAI_086": {
-      "class": "Practice",
-      "type": "ordinal",
-      "direction": null,
+      "class": "Provision",
+      "type": "binary",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_087": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_088": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_FAI_089": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -2254,37 +2254,37 @@
       "weight": 1
     },
     "REW_FAI_092": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },
     "REW_PAY_001": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_002": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_003": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PAY_006": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -2296,16 +2296,16 @@
       "weight": 1
     },
     "REW_PRO_030": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
     "REW_PRO_034": {
-      "class": "Practice",
+      "class": "Level",
       "type": "ordinal",
-      "direction": null,
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1
     },

@@ -74,7 +74,12 @@ check("strength/gap items: zero favourable<->market contradictions (%d checked)"
       not contradictions, contradictions[:2])
 lib = {q.id: q for q in load_questions().values()}
 lows = [q for q in lib.values() if q.superpower == "Reward" and q.polarity == "lower_is_better"]
-check("lower_is_better metrics exist in scope to exercise the inversion", len(lows) == 4, len(lows))
+# DERIVED, not the old literal ==4 (Diff 2, 2026-07-14): the ratified book deliberately
+# keeps a small ↓ set (BEN_047 IP waiting + the two workforce-cost PROPs; FAI_079's ↓ was
+# a reword stray, flipped ↑ by ruling). The gate needs the inversion EXERCISABLE, and any
+# ↓ metric must be one the engine actually inverts — count comes from the data, never a
+# swapped literal.
+check("lower_is_better metrics exist in scope to exercise the inversion", len(lows) >= 1, len(lows))
 
 print()
 print("=" * 100)
@@ -169,9 +174,15 @@ dm = {d["name"]: d for d in hero["domains"]}
 # David's ruling: re-derive for the merged domain, do not invert.
 _noncomp = [d for d in hero["domains"] if d.get("competitiveness") is False]
 comp = [d for d in hero["domains"] if d.get("competitiveness") is not False]
-check("exactly one non-competitive domain, carrying NO market verdict and NO tile position",
-      len(_noncomp) == 1 and _noncomp[0]["market"] is None and _noncomp[0]["position"] is None,
-      [(d["name"], d["market"], d["position"]) for d in _noncomp])
+# the EXPECTED non-competitive set comes from the config flags — with the G&T TRUE ruling
+# (Diff 2, 2026-07-14) it is EMPTY; the invariant is set-equality plus no-verdict on
+# whatever is flagged out, never a hardcoded count.
+_cfg_dom = pos.market_position_config().get("_domains", {})
+_expected_noncomp = {k for k, v in _cfg_dom.items() if v.get("competitiveness") is False}
+check("non-competitive set matches the config flags, each carrying NO verdict and NO position",
+      {d["name"] for d in _noncomp} == _expected_noncomp
+      and all(d["market"] is None and d["position"] is None for d in _noncomp),
+      {"hero": [d["name"] for d in _noncomp], "config": sorted(_expected_noncomp)})
 # eligibility = the engine's own market_eligible flag (DISTINCT-question floor —
 # polarised_comparable counts ITEMS, so a 4-row single-matrix domain is honestly
 # sub-floor; using items here mis-flagged Health & Protection on first run)
