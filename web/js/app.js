@@ -419,6 +419,7 @@ function App() {
             onRequest=${() => { const term = search; setSearch(""); setActiveHit(-1); setMetricReq({ prefill: term, source: "search" }); }} />`}
         </div>
         <div class="topbar-right">
+          <${DataProgressChip} contrib=${contrib} role=${me.user.role} />
           <button class="btn feature suggest-pill" aria-label="Suggest a new metric" onClick=${() => setSuggestOpen(true)}>Suggest a metric</button>
           ${me.features && me.features.analyst && html`
           <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>`}
@@ -864,6 +865,34 @@ window.sectionList = function (qIndex) {
 
 /* Gentle reminders as the deadline nears (7 days / 1 day), and the fair,
    forewarned day-30 message. Quiet banners, never modals. */
+/* Quiet data-completion chip in the brandbar (David 2026-07-13, "subtly provide a data
+   completed % — to prompt people to provide data"): a micro progress ring + percentage,
+   clicking through to Your data. Editors only (Viewers can't submit — never render a
+   control that can't act) and gone at 100% — its job is done, the bar stays clean. The
+   louder ContributionBanner still owns the pre-unlock deadline story; this is the gentle
+   always-there cue after that banner earns its retirement. */
+function DataProgressChip({ contrib, role }) {
+  if (!contrib || role === "viewer") return null;
+  const pct = Math.round(contrib.core_pct || 0);
+  if (pct >= 100) return null;
+  const c = 2 * Math.PI * 7;
+  const target = Math.round(contrib.target_pct || 90);
+  const tip = pct >= target
+    ? `${pct}% of your key reward questions answered — finishing the set sharpens every benchmark you get back.`
+    : `${pct}% of your key reward questions answered — ${target}% unlocks your full benchmark.`;
+  return html`
+    <button type="button" class="databar-chip" title=${tip} aria-label=${tip + " Open Your data."}
+      onClick=${() => nav("/your-data/submit")}>
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="2.5" />
+        <circle cx="9" cy="9" r="7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"
+          stroke-dasharray=${c} stroke-dashoffset=${c * (1 - Math.min(100, Math.max(0, pct)) / 100)}
+          transform="rotate(-90 9 9)" />
+      </svg>
+      <span class="num">${pct}%</span>
+    </button>`;
+}
+
 window.ContributionBanner = function ({ contrib }) {
   if (contrib.insights_unlocked || !contrib.clock_started) return null;
   const pct = Math.round(contrib.core_pct || 0);

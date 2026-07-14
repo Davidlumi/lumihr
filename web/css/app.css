@@ -233,6 +233,15 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   box-shadow: 0 0 0 3px rgba(255,255,255,.16); background: rgba(255,255,255,.18); }
 /* Ask lumi → inverts to solid white: the one bright CTA in the bar */
 .brandbar .btn.feature { background: #fff; border-color: #fff; color: var(--lumi-navy); }
+/* quiet data-completion chip (2026-07-13): micro ring + %, the brandbar's translucent
+   vocabulary; hidden under 900px (the bar gets tight before the chip earns its keep) */
+.databar-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px;
+  padding: 0 11px 0 7px; border-radius: 999px; border: .5px solid rgba(255,255,255,.28);
+  background: rgba(255,255,255,.12); color: #fff; font-size: var(--fs-caption);
+  font-weight: 600; cursor: pointer; transition: background var(--ease); }
+.databar-chip:hover { background: rgba(255,255,255,.24); }
+.databar-chip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 900px) { .databar-chip { display: none; } }
 .brandbar .btn.feature:hover { background: rgba(255,255,255,.92); border-color: rgba(255,255,255,.92); color: var(--lumi-navy); }
 /* "Suggest a metric" — the deliberate, secondary sibling of Ask lumi: same pill
    shape and size, but outlined (transparent) instead of solid white, so it reads
