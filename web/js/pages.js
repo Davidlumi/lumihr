@@ -2353,7 +2353,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
 // validated deterministic FLOOR when the model is down, so the block never disappears on infra.
 // Four describe-only slots (position / notable / prevalence-or-approach / provenance) rendered
 // as-is: NO client editorialising, no recommendations, no actions. It describes and stops.
-function DomainSummary({ name, cut, applyStrat }) {
+function DomainSummary({ name, cut, applyStrat, embedded, aiNudge }) {
   const [st, setSt] = useState({ phase: "loading" });
   useEffect(() => {
     let live = true;
@@ -2366,30 +2366,47 @@ function DomainSummary({ name, cut, applyStrat }) {
   }, [name, cutKeyOf(cut), applyStrat]);
   const f = st.parts || {};
   const SLOTS = [["position", "Market position"], ["notable", "Notable metrics"], ["prevalence", "Practices"]];
+  // EMBEDDED FORMAT (David 2026-07-13, "look at the format"): inside the briefing the
+  // "notable" slot is a wall of truncated fragments DUPLICATING the drivers list beside it,
+  // and the slot labels re-say what the read band above already shows — so embedded renders
+  // just position + practices as two clean paragraphs, provenance as the quiet foot. The
+  // standalone variant keeps all slots.
+  const EMB_SLOTS = SLOTS.filter(([k]) => k !== "notable");
+  // the tag is honest about the SOURCE (gate split 2026-07-13): AI wording only when the
+  // model actually wrote it; the deterministic floor is labelled as composed from figures
+  const tag = st.source === "model" ? "AI-generated · a description of your data, not advice"
+                                    : "written from your figures · not advice";
+  const mkBody = (slots, labels) => st.phase === "loading" ? html`
+      <div class="cat-summary-body">${[0, 1, 2].map(i => html`<div key=${i} class="cat-sum-skel"></div>`)}</div>` :
+    st.phase === "error" ? html`
+      <div class="cat-summary-body"><p class="caption">Couldn't load this summary — ${st.error}.</p></div>` :
+    html`
+      <div class="cat-summary-body">
+        ${slots.map(([k, label]) => f[k] ? html`
+          <div key=${k} class="cat-sum-part">
+            ${labels ? html`<div class="cat-sum-label">${label}</div>` : null}
+            <p class="cat-sum-text">${f[k]}</p>
+          </div>` : null)}
+        ${f.provenance ? html`<div class="cat-sum-prov">${f.provenance}</div>` : null}
+        ${aiNudge && st.phase === "done" && st.source !== "model" ? html`
+          <div class="cat-sum-caveat">AI Insights can write this in fuller prose — <a href="#/settings">review ${"&"} enable</a>.</div>` : null}
+      </div>`;
+  const body = mkBody(SLOTS, true);
+  if (embedded) return html`
+    <div class="cat-brief-narrwrap">
+      <div class="cat-brief-collab">The read <span class="cat-brief-collab-sub">· ${tag}</span></div>
+      ${mkBody(EMB_SLOTS, false)}
+    </div>`;
   return html`
     <section class="cat-section cat-summary">
       <div class="cat-sec-head"><span class="cat-sec-ico cat-sum-ico"><${Icon} name="sparkle" size=${14} /></span>
         <b>How your ${domainLabel(name)} reads</b>
-        <span class="cat-ai-tag">AI-generated · a description of your data, not advice</span></div>
-      ${st.phase === "loading" ? html`
-        <div class="cat-summary-body">${[0, 1, 2].map(i => html`<div key=${i} class="cat-sum-skel"></div>`)}</div>` :
-        st.phase === "error" ? html`
-        <div class="cat-summary-body"><p class="caption">Couldn't load this summary — ${st.error}.</p></div>` :
-        html`
-        <div class="cat-summary-body">
-          ${SLOTS.map(([k, label]) => f[k] ? html`
-            <div key=${k} class="cat-sum-part">
-              <div class="cat-sum-label">${label}</div>
-              <p class="cat-sum-text">${f[k]}</p>
-            </div>` : null)}
-          ${f.provenance ? html`<div class="cat-sum-prov">${f.provenance}</div>` : null}
-          ${st.source === "deterministic" ? html`
-            <div class="cat-sum-caveat">A plain-data summary, written from your figures.</div>` : null}
-        </div>`}
+        <span class="cat-ai-tag">${tag}</span></div>
+      ${body}
     </section>`;
 }
 
-window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedIds, me }) {
+window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedIds, me, onCut, onTwinInfo, refreshMe }) {
   const [ov, setOv] = useState(null);
   const [bench, setBench] = useState(null);
   const [err, setErr] = useState(null);
@@ -2402,6 +2419,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const [posSel, setPosSel] = useState(_fl ? _fl.posSel || [] : []);     // market-position chip filter (multi-select; [] = all)
   const [prevSel, setPrevSel] = useState(_fl ? _fl.prevSel || [] : []);  // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
   const [noneSel, setNoneSel] = useState(_fl ? !!_fl.noneSel : false);   // "no reading yet" chip (cards in neither lens)
+  const [dl, setDl] = useState(false);   // Download-analysis menu (hook stays ABOVE the early returns)
   useEffect(() => { saveUiState("lumi-cat-ui", { name, type, posSel, prevSel, noneSel }); },
     [name, type, posSel, prevSel, noneSel]);
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
@@ -2431,14 +2449,25 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
     return () => { live = false; };
   }, [name, cutKeyOf(cut), applyStrat, catRetry]);
 
-  const Head = (meta) => html`
-    <div class="page-head">
+  // ONE-ROW MASTHEAD (David 2026-07-13, "the nav takes way too much space"): crumb, title,
+  // confidence, peer selector and Download share a single row — the app-level PeerSetBar
+  // strip and the standalone badge row are gone (the Overview's own pattern). The selector
+  // and badge render in the LOADING state too, so switching cuts never loses the control.
+  const _unlocked = me.contribution && me.contribution.insights_unlocked;
+  const _sampleN = cutSize(cut, cuts, me.peer_pool);
+  // glyph + "N benchmarks" meta dropped (David 2026-07-13): the icon decorated, the count
+  // already lives in the briefing header ("of 59") and the grid header ("59 shown") — the
+  // masthead is crumb · title · controls, nothing else.
+  const Head = (meta, actions) => html`
+    <div class="page-head cat-masthead">
       <div class="titleblock">
-        <a class="caption back-link" href="#/overview"><${Icon} name="chevron-left" size=${13} /> Overview</a>
-        <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
-          <div class="cat-glyph"><${Icon} name=${CAT_ICON[name] || "award"} size=${20} /></div>
-          <div><h1 class="display-title">${domainLabel(name)}</h1><div class="caption meta">${meta}</div></div>
-        </div>
+        <h1 class="display-title">${domainLabel(name)}</h1>
+      </div>
+      <div class="controls cat-masthead-ctl">
+        ${_unlocked ? html`<${ConfidenceChip} n=${_sampleN} window=${me.peer_pool && me.peer_pool.collection_window} />` : null}
+        <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo}
+          inline=${true} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+        ${actions || null}
       </div>
     </div>`;
 
@@ -2477,6 +2506,21 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   if (posSel.length) cards = cards.filter(c => posSel.includes(cardBand(c)));
   if (prevSel.length) cards = cards.filter(c => prevSel.includes(cardPrevBand(c)));
   if (noneSel) cards = cards.filter(c => !cardBand(c) && !cardPrevBand(c));
+  // one bar, one vocabulary: chip labels for the practice group come from the engine's own
+  // state words (prev.states) with static fallbacks for domains with no practice pool
+  const _st = (hero && hero.prevalence && hero.prevalence.states) || {};
+  const _prevChipDefs = [
+    { k: "match", lab: _st.with_majority || "common", n: prevChipN("match") },
+    { k: "common_alt", lab: _st.established || "alternative", n: prevChipN("common_alt") },
+    { k: "rarer", lab: _st.less_common || "rare", n: prevChipN("rarer") },
+  ];
+  const _typeLab = { metric: "metrics", practice: "practices", policy: "policies", benefit: "benefits" };
+  const _fdesc = [
+    ...posSel.map(k => k === "on" ? "on market" : k + " market"),
+    ...prevSel.map(k => (_prevChipDefs.find(d => d.k === k) || {}).lab),
+    ...(noneSel ? ["no reading yet"] : []),
+    ...(type ? [_typeLab[type] || type] : []),
+  ].filter(Boolean).join(" · ");
 
   // position read (same traffic-light language as the tile / hero gauge)
   const pos = hero && (hero.position || hero.market);
@@ -2502,119 +2546,190 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const chipCls = tone ? MKT_CHIP[tone] : "chip-practice";
   const prev = (hero && hero.prevalence) || {};
   const dot = hero && hero.dot;
+  // insights collapse — per-user pref, applies to every domain page (one setting, not per-domain)
+  const catUi = (prefs && prefs._cat) || {};
+  const heroHidden = !!catUi.hero_hidden;
+  const setHeroHidden = v => onPref && onPref("_cat", { ...catUi, hero_hidden: v });
+  // ANALYSIS PACK (David 2026-07-13): a print product from the live page — the briefing +
+  // every metric card, with charts or figures-only. Client-side print (the board-pack
+  // "Download PDF" pattern); the pack mirrors the CURRENT view — cut, strategy state,
+  // folded insights and active filters all print as seen, which is the honest contract.
+  const printPack = (withCharts) => {
+    setDl(false);
+    const root = document.documentElement;
+    root.classList.add("print-analysis");
+    if (!withCharts) root.classList.add("print-nocharts");
+    const t = document.title;
+    document.title = `${domainLabel(name)} analysis — ${me.org.name}`;
+    setTimeout(() => {
+      window.print();
+      document.title = t;
+      root.classList.remove("print-analysis", "print-nocharts");
+    }, 60);
+  };
+  const cutLab = cut.dim === "all" ? "All peers" : cut.dim === "twin" ? "Organisations like you"
+    : cut.dim === "group" ? ((((cuts || {}).groups || []).find(g => g.group_id === cut.value)) || {}).name || "Your peer group"
+    : cut.value;
   // counts-reconciliation (2026-06-28): the <20 thin-cut caveat must reach the DOMAIN page too —
   // otherwise the "small sample · directional" qualifier lives only on the overview hero, and a
   // user reading §1/§2/grid at n=15 sees no warning. Same window [5, 20) + insights-unlocked gate.
   const sampleN = cutSize(cut, cuts, me.peer_pool);
   // (thinSample retired 2026-07-09 — the always-on ConfidenceChip carries the rating; its own
   // thresholds live inside the component, same source as the home masthead.)
-  // §1 (domain-page Pass 1, 2026-06-27): two RAG donuts via the shared <Donut>. CARD A (position)
-  // — per-band marketTone segments + a verdict-WORD centre (verdictWord/leanCaption, the SAME
-  // helpers as the home gauge). CARD B (prevalence) — its OWN blue palette (NOT marketTone:
-  // practice is not a market position), a count-HEADLINE centre, no alignment chip.
-  const posSegs = posM ? ["below", "at", "above"].map(k => ({ value: posM[k] || 0, color: (verdict === k ? MKT_RICH : MKT_SOFT)[marketTone(k)] })) : [];
-  // practice donut on the PURPLE ladder (2026-07-09 harmonisation) — the same --prev-* trio as
-  // the home PracticeArc + the overview practice bars; the old blue family is retired here.
-  const prevSegs = [
-    { value: prev.with_majority || 0, color: "var(--prev-common)" },
-    { value: prev.established || 0, color: "var(--prev-alt)" },
-    { value: prev.less_common || 0, color: "var(--prev-rare)" },
-  ];
+  // donut segment maps retired with the donuts (briefing build, 2026-07-13)
 
   return html`
     <div class="category-page">
+      <div class="pack-print-head" aria-hidden="true">
+        <div class="pack-print-brand">lumi</div>
+        <div class="pack-print-title">
+          <b>${domainLabel(name)} — reward analysis</b>
+          <span>${me.org.name} · Peer group: ${cutLab}${sampleN != null ? ` (n=${sampleN})` : ""} ·
+            ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
+        </div>
+      </div>
+      <div class="pack-print-foot" aria-hidden="true">
+        <span>${me.org.name} · ${domainLabel(name)} analysis</span>
+        <span>Private ${"&"} confidential</span><span>lumi</span>
+      </div>
       ${/* "peer group: …" dropped 2026-07-07 — duplicated the "Comparing against" peer
             bar above (same trim as the benchmark grid header; consistency). */ ""}
-      ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"}`)}
+      ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"}`, html`
+        <div class="bp-export">
+          <button class="btn small" aria-expanded=${dl} aria-haspopup="menu" onClick=${() => setDl(v => !v)}
+            title="Download this analysis as a document — the briefing plus every benchmark in this domain, on the current peer group.">
+            <${Icon} name="file-text" size=${14} /> Download analysis <${Icon} name="chevron-down" size=${12} /></button>
+          ${dl && html`<div class="card bp-menu" role="menu">
+            <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(true)}>
+              <b>With metric charts</b>
+              <span class="caption" style=${{ display: "block" }}>Every benchmark as shown — charts included</span></button>
+            <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(false)}>
+              <b>Figures only</b>
+              <span class="caption" style=${{ display: "block" }}>Positions, values and peer stats — no charts</span></button>
+          </div>`}
+        </div>`)}
 
-      ${/* confidence area (2026-07-09): the same masthead chip as the home — always on once
-            insights unlock, rating the ACTIVE peer set; replaces the thin-only floating
-            "Small sample" flag (trust language now consistent across surfaces). */ ""}
-      ${(ov.contribution && ov.contribution.insights_unlocked) ? html`
-        <div class="cat-thin-caveat">
-          <${ConfidenceChip} n=${sampleN} window=${ov.snapshot && ov.snapshot.window} />
-        </div>` : null}
+      ${/* confidence chip moved INTO the one-row masthead (2026-07-13) — the standalone
+            badge row below the title is gone. */ ""}
 
-      ${ov.strategy_complete ? html`
-        <div class="cat-strat-bar">
-          <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
-            onClick=${() => onPref && onPref("_overview", { ..._ovp, apply_strategy: !applyStrat })}
-            title=${applyStrat
-              ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your aim. Click for the absolute market view."
-              : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
-            <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
-            <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
-          </button>
-        </div>` : null}
-      <div class="cat-hero">
-        <div class="card cat-pos-card">
-          <div class="cat-hero-label">Market position${posM && posM.pool ? html` <span class="cat-lens-of">· ${posM.pool} of ${all.length}</span>` : ""}</div>
+      ${/* Insights collapse (David 2026-07-13, "allow the user to hide the dashboard"): the whole
+            pre-grid insight block — strategy bar, both read cards, AI summary — folds behind a
+            per-user pref (_cat.hero_hidden). Collapsed, a one-line strip keeps the essential read
+            (verdict chip + typical-metric P + practice word — all fields already computed) so the
+            page never goes headless; the confidence chip above stays (it rates the grid too). */ ""}
+      ${heroHidden ? html`
+        <div class="cat-insights-strip">
+          <span class=${"chip " + chipCls}>${chip}</span>
+          ${pos && pos.depth_pctl != null ? html`<span class="caption num">typical metric at P${Math.round(pos.depth_pctl)}${indicative ? " (indicative)" : ""}</span>` : null}
+          ${prev.pool ? (w => w ? html`<span class="caption">practice: ${w.word.toLowerCase()} — ${prev.with_majority} of ${prev.pool} common</span>` : null)(
+            window.prevalenceWord && prevalenceWord(prev.with_majority || 0, prev.established || 0, prev.less_common || 0, prev.pool)) : null}
+          <button type="button" class="btn small cat-insights-toggle" aria-expanded="false"
+            onClick=${() => setHeroHidden(false)}><${Icon} name="chevron-down" size=${13} /> Show insights</button>
+        </div>` : html`
+      ${/* THE BRIEFING (David's "build a", 2026-07-13): the donut cards retired for a
+            three-part band — compact read (home grammar: chip + ruler pill + counts),
+            drivers (top gaps + strength, the engine's own top_gaps definition), and the
+            narrative (deterministic floor for everyone; AI prose only behind the
+            compliance-reserved gate). ~200px where the donuts spent ~500 saying less. */ ""}
+      <div class="card cat-brief">
+        <div class="cat-brief-head">
+          ${/* label + lens counts dropped (David 2026-07-13) — the band speaks for itself;
+                the row carries only the two controls. */ ""}
+          ${ov.strategy_complete ? html`
+            <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
+              onClick=${() => onPref && onPref("_overview", { ..._ovp, apply_strategy: !applyStrat })}
+              title=${applyStrat
+                ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your aim. Click for the absolute market view."
+                : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
+              <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
+              <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
+            </button>` : null}
+          <button type="button" class="btn small cat-insights-toggle" aria-expanded="true"
+            onClick=${() => setHeroHidden(true)}><${Icon} name="chevron-up" size=${13} /> Hide insights</button>
+        </div>
+        <div class="cat-brief-read">
+          <span class="cat-brief-lab">Market</span>
           ${posM && posM.pool ? html`
-            <${Donut} segments=${posSegs} total=${posM.pool} centerNum=${posM.pool} sub="metrics" centerWord=${verdictWord(verdict)} size=${210} stroke=${28} />
-            <div class="cat-card-cap">${leanCaption(pos)}${indicative ? " · indicative" : ""}</div>
-            <div class="cat-card-counts num">
-              <span><b>${posM.below}</b> below</span><span><b>${posM.at}</b> on market</span><span><b>${posM.above}</b> above</span>
+            <span class=${"chip " + chipCls + (indicative ? " chip-indicative" : "")}>${chip}</span>
+            <div class="cat-brief-ruler">${pos && pos.depth_pctl != null ? html`
+              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
+            <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>` :
+            html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this category is assessed on practice.</span>`}
+          <span class="cat-brief-lab">Practice</span>
+          ${prev.pool ? (w => html`
+            <span class="chip chip-practice">${w ? w.word.toLowerCase() : "—"}</span>
+            <div class="cat-brief-minibar" role="img"
+              aria-label=${`${prev.with_majority} ${prev.states.with_majority}, ${prev.established} ${prev.states.established}, ${prev.less_common} ${prev.states.less_common} of ${prev.pool}`}>
+              <span style=${{ width: (100 * prev.with_majority / prev.pool) + "%", background: "var(--prev-common)" }}></span>
+              <span style=${{ width: (100 * prev.established / prev.pool) + "%", background: "var(--prev-alt)" }}></span>
+              <span style=${{ width: (100 * prev.less_common / prev.pool) + "%", background: "var(--prev-rare)" }}></span>
             </div>
-            ${/* PercentileRuler RESURRECTED here too (2026-07-11, with the home gauge) — the
-                  soft-tinted strip, compact, this domain's own depth on the engine band. The
-                  indicative basis already rides the lean caption above. */ ""}
-            ${pos && pos.depth_pctl != null ? html`
-              <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}
-            ${hero.target ? html`<div class="cat-card-align"><${AlignmentChip} target=${hero.target} /></div>` : null}
-            <div class="cat-card-chips sig-chips" role="group" aria-label="Filter the grid by market position">
-              <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
+            <span class="cat-brief-counts num"><b>${prev.with_majority}</b> ${prev.states.with_majority} · <b>${prev.established}</b> ${prev.states.established} · <b>${prev.less_common}</b> ${prev.states.less_common}</span>`)(
+            window.prevalenceWord && prevalenceWord(prev.with_majority || 0, prev.established || 0, prev.less_common || 0, prev.pool)) :
+            html`<span class="caption cat-brief-span">No practice questions assessed in this category yet.</span>`}
+        </div>
+        <div class="cat-brief-body">
+          <div class="cat-brief-drivers">
+            <div class="cat-brief-collab">What's driving it</div>
+            ${(hero.drivers || []).length ? (hero.drivers || []).map(d => html`
+              <button key=${d.question_id + d.kind} type="button" class="cat-driver" onClick=${() => openMetric(d.question_id)}
+                title=${"Open " + d.label}>
+                <${Icon} name=${d.kind === "gap" ? "arrow-down" : "arrow-up"} size=${13} />
+                <span class="cat-driver-lab">${d.label}</span>
+                <span class=${"num cat-driver-p " + d.kind}>P${Math.round(d.percentile)}${d.polarity === "lower_is_better" ? html` <i>· lower is better</i>` : ""}</span>
+              </button>`) : html`<div class="caption">No positioned metrics to rank yet.</div>`}
+            ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="Open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged in Signals →</a>` : null}
+          </div>
+          <div class="cat-brief-narr">
+            <${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} embedded=${true}
+              aiNudge=${!(me.features && me.features.domain_summary) && me.ai_insights && me.ai_insights.master && me.ai_insights.needs_decision} />
+          </div>
+        </div>
+      </div>`}
+
+      <section class="cat-section">
+        ${/* FILTERS SEPARATED from the insight cards (David 2026-07-13): one bar, one home for
+              the whole working set — position group + practice group + no-reading + type + Clear.
+              The cards above are pure reads now. The section head NAMES the active filter next to
+              the count, so the grid never changes silently. Mutual exclusion between the two chip
+              groups is unchanged — but now both groups sit side by side, so the swap is visible. */ ""}
+        <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
+          <b>All metrics</b><span class="pulse-count-chip">${cards.length}</span>
+          <span class="caption">shown${_fdesc ? html` · filtered to <b>${_fdesc}</b>` : ""}</span>
+          ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
+        </div>
+        <div class="cat-filterbar" role="group" aria-label="Filter the metrics">
+          <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
+          ${[{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }].map(p => ({ ...p, n: chipN(p.k) })).filter(p => p.n).length ? html`
+            <span class="cat-fgroup" role="group" aria-label="By market position">
+              <span class="cat-fgroup-lab">Position</span>
               ${[{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }].map(p => ({ ...p, n: chipN(p.k) })).filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
                   title="Filters the grid by market position — replaces any practice filter"
                   onClick=${() => { setPrevSel([]); setNoneSel(false); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </div>` :
-            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>Not enough positioned metrics here to read a market stance yet — this category is assessed on ${prev.title.toLowerCase()}.</div>`}
-        </div>
-        <div class="card cat-pos-card">
-          <div class="cat-hero-label">${prev.title}${prev.pool ? html` <span class="cat-lens-of">· ${prev.pool} of ${all.length}</span>` : ""}</div>
-          ${prev.pool ? html`
-            <${Donut} segments=${prevSegs} total=${prev.pool} centerNum=${prev.with_majority} sub=${"of " + prev.pool + " practice" + (prev.pool === 1 ? "" : "s")} size=${210} stroke=${28} />
-            <div class="cat-card-cap">${prev.verdict}</div>
-            <div class="cat-card-counts num">
-              <span><b>${prev.with_majority}</b> ${prev.states.with_majority}</span><span><b>${prev.established}</b> ${prev.states.established}</span><span><b>${prev.less_common}</b> ${prev.states.less_common}</span>
-            </div>
-            <div class="cat-card-chips sig-chips" role="group" aria-label=${"Filter the grid by " + prev.title.toLowerCase()}>
-              <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-              ${[{ k: "match", lab: prev.states.with_majority }, { k: "common_alt", lab: prev.states.established }, { k: "rarer", lab: prev.states.less_common }].map(p => ({ ...p, n: prevChipN(p.k) })).filter(p => p.n).map(p => html`
+            </span>` : null}
+          ${_prevChipDefs.filter(p => p.n).length ? html`
+            <span class="cat-fgroup" role="group" aria-label="By practice prevalence">
+              <span class="cat-fgroup-lab">Practice</span>
+              ${_prevChipDefs.filter(p => p.n).map(p => html`
                 <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
                   title="Filters the grid by practice prevalence — replaces any position filter"
                   onClick=${() => { setPosSel([]); setNoneSel(false); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
                   ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </div>` :
-            html`<div class="caption" style=${{ marginTop: "var(--s4)" }}>No practice questions assessed in this category yet.</div>`}
-        </div>
-      </div>
-
-      ${me.features && me.features.domain_summary ? html`<${DomainSummary} name=${name} cut=${cut} applyStrat=${applyStrat} />` :
-        (me.ai_insights && me.ai_insights.master && me.ai_insights.needs_decision ? html`
-          <div class="cat-ai-consent">
-            <span><${Icon} name="sparkle" size=${14} /> AI Insights can summarise this domain in plain English —
-              a description of your data, not advice.</span>
-            <a class="btn small primary" href="#/settings">Review & enable →</a>
-          </div>` : null)}
-
-      <section class="cat-section">
-        <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
-          <b>All metrics</b><span class="pulse-count-chip">${cards.length}</span><span class="caption">shown</span>
-          ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
-          <div class="cat-head-ctl">
-            ${noneN ? html`
-              <button type="button" class=${"sig-chip" + (noneSel ? " on" : "")} aria-pressed=${noneSel}
-                title="Metrics with no market or practice reading yet — unanswered, thin data, or awaiting a rating method"
-                onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(v => !v); }}>
-                no reading yet <span class="n">${noneN}</span></button>` : null}
+            </span>` : null}
+          ${noneN ? html`
+            <button type="button" class=${"sig-chip" + (noneSel ? " on" : "")} aria-pressed=${noneSel}
+              title="Metrics with no market or practice reading yet — unanswered, thin data, or awaiting a rating method"
+              onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(v => !v); }}>
+              no reading yet <span class="n">${noneN}</span></button>` : null}
+          <span class="cat-fbar-right">
             ${(posSel.length || prevSel.length || noneSel || type) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(false); setType(""); }}>Clear filters</button>` : null}
             <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
               <option value="">All types</option><option value="metric">Metrics</option>
               <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
             </select>
-          </div>
+          </span>
         </div>
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
           action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false); }}>Clear filters</button>`} /> ` :

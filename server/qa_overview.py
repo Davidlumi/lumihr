@@ -296,6 +296,25 @@ else:
           not ({i["question_id"] for i in _ms} &
                pos.market_pool_qids(org["org_id"], cut, vis, pls, ans, ent, None)),
           "a multi-select is rated by BOTH lenses — partition broken")
+# ---- 12. briefing drivers (2026-07-13): every positioned domain carries drivers, and they
+# re-derive from THE house gap definition (top_gaps/top_strengths) over the same pool the
+# verdict counts — the briefing can never rank by a second, disagreeing formula.
+_drv_bad = []
+for _d in domains:
+    if _d.get("position") is None:
+        if _d.get("drivers"):
+            _drv_bad.append((_d["name"], "drivers without a position"))
+        continue
+    _dv = _d.get("drivers") or []
+    if not _dv:
+        continue
+    if [x for x in _dv if x["kind"] == "gap"] != _dv[:len([x for x in _dv if x["kind"] == "gap"])]:
+        _drv_bad.append((_d["name"], "gaps not first"))
+    for _x in _dv:
+        if not (_x.get("question_id") and _x.get("label") and _x.get("percentile") is not None):
+            _drv_bad.append((_d["name"], "incomplete driver " + repr(_x)))
+check("12a. per-domain drivers present-and-well-formed only where a position exists", not _drv_bad, repr(_drv_bad[:3]))
+
 from collections import Counter as _Ctr
 _cc = _Ctr(pos.pool_prevalence_bands(prev_items, A.UNCOMMON_PCT).values())
 _sm = pos._prev_summary(prev_items, A.UNCOMMON_PCT) or {"with_majority": 0, "established": 0, "less_common": 0}

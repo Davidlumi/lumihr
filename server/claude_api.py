@@ -1210,7 +1210,17 @@ def _deterministic_domain_summary(payload):
         if payload.get("position_basis") == "indicative":
             position += " This is an indicative read on a small set of positioned metrics."
         if payload.get("alignment"):
-            position += " Against the strategy you have set, this domain reads %s." % payload["alignment"]
+            # the read RELATES to the strategy, not just scores it (David 2026-07-13): name
+            # the aim, then the standing. strategy_aim absent (older cached payloads) falls
+            # back to the original clause — degrade contract.
+            if payload.get("strategy_aim"):
+                position += (" Your strategy for this domain is to %s; this position reads %s."
+                             % (payload["strategy_aim"], payload["alignment"]))
+            else:
+                position += " Against the strategy you have set, this domain reads %s." % payload["alignment"]
+            if payload.get("mix_note") == "benefits":
+                position += (" Your declared reward mix is benefits-led — a lower cash position"
+                             " is the stated design, not a shortfall.")
         gaps, strengths = payload.get("gaps") or [], payload.get("strengths") or []
         if gaps and strengths:
             notable = "Widest gaps: %s. Notable strengths: %s." % (_named_items(gaps), _named_items(strengths))
@@ -1245,10 +1255,14 @@ def _deterministic_domain_summary(payload):
     return {"position": position, "notable": notable, "prevalence": prevalence, "provenance": provenance}
 
 
-def generate_domain_summary(payload):
+def generate_domain_summary(payload, allow_ai=True):
     """Four grounded describe-only parts on one domain. Model output passes
     validate_domain_summary or the deterministic floor ships — never an unvalidated
-    sentence. Mirrors generate_metric_commentary."""
+    sentence. Mirrors generate_metric_commentary.
+    allow_ai=False (gate split, David's path-(a) ruling 2026-07-13): return the validated
+    deterministic floor WITHOUT touching the model — the board-pack precedent: template
+    text composed from the member's own figures ships ungated; only the Claude call sits
+    behind the compliance-reserved AI gate (LUMI_AI_DOMAIN_SUMMARY + consent)."""
     fallback = _deterministic_domain_summary(payload)
     ok_fb, why_fb = validate_domain_summary(fallback, payload)
     if not ok_fb:  # belt-and-braces: the floor itself must pass its own gate
@@ -1256,6 +1270,9 @@ def generate_domain_summary(payload):
                     "prevalence": fallback.get("prevalence", "—"),
                     "provenance": fallback["provenance"]}
     last_note = why_fb if not ok_fb else None
+    if not allow_ai:
+        return {"ok": True, "parts": fallback, "source": "deterministic",
+                "note": "AI gate off — deterministic floor"}
     if _client_or_none() is None:
         return {"ok": True, "parts": fallback, "source": "deterministic",
                 "note": "no ANTHROPIC_API_KEY configured"}

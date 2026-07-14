@@ -1163,6 +1163,25 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
                     _bc[_v] += 1
             position_metrics = {"below": _bc["below"], "at": _bc["at"],
                                 "above": _bc["above"], "pool": len(_mb)}
+        # DRIVERS (briefing build, David 2026-07-13 "build a"): the domain's story — top 3
+        # gaps + biggest strength via top_gaps/top_strengths, THE house definition (board
+        # pack, starter layout, analyst all reuse it), over the SAME d_sub pool the verdict
+        # counts. Deduped by metric so a 3-row matrix can't fill the list with one question.
+        # Classified path only — the legacy path serves qa_hero's synthetic fixtures.
+        drivers = None
+        if position is not None and d_sub:
+            def _dd(seq, kind):
+                seen, out = set(), []
+                for i in seq:
+                    if i["question_id"] in seen:
+                        continue
+                    seen.add(i["question_id"])
+                    out.append({"question_id": i["question_id"], "label": i["label"],
+                                "percentile": round(i["percentile"], 1),
+                                "polarity": i["polarity"], "kind": kind})
+                return out
+            drivers = (_dd(top_gaps(d_sub, 6), "gap")[:3] +
+                       _dd(top_strengths(d_sub, 3), "strength")[:1]) or None
         d = {
             "name": sec, "market": strict,
             "market_eligible": d_questions >= dmin,
@@ -1172,6 +1191,7 @@ def _hero_signals_classified(items, prev_items, section_order, band_low, band_hi
             "position_evidence": ({"polarised": len(d_sub), "practice": 0}
                                   if position is not None else None),
             "competitiveness": True,
+            "drivers": drivers,
             "prevalence": _prev_summary(d_prev, uncommon_pct),
             "approach": _approach_summary(d_prev, cfg),
         }

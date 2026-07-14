@@ -1482,7 +1482,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   white-space: nowrap; opacity: .75; padding: 2px var(--s2); border-radius: 7px;
   background: color-mix(in srgb, currentColor 12%, transparent); }
 /* category detail page — hero (position + prevalence), signals, metric grid */
-.category-page .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: var(--s2); }
+/* the back-link sits INLINE in the centred title row (not stacked) — the old stacked-layout
+   margin-bottom pushed it 4px off the glyph's vertical centre (nav alignment pass 2026-07-13);
+   a quiet hairline now separates crumb from title. */
+.category-page .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: 0;
+  padding-right: var(--s3); border-right: 1px solid var(--border); align-self: center; }
 .cat-glyph { width: 40px; height: 40px; border-radius: var(--radius); background: var(--blue-tint);
   color: var(--blue); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .cat-hero { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); margin: var(--s3) 0 var(--s5); }
@@ -1512,6 +1516,106 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    strategy toggle bar above them. CARD A = position (marketTone, verdict-word centre, alignment
    chip); CARD B = prevalence (blue palette, count-headline centre, no chip). */
 .cat-strat-bar { display: flex; justify-content: flex-end; align-items: center; margin: var(--s4) 0 0; }
+/* insights collapse (2026-07-13, "allow the user to hide the dashboard"): a slim bar carries the
+   strategy switch (left) + the fold control (right) when open; folded, a one-line strip keeps the
+   essential read (verdict chip · typical-metric P · practice word) so the page never goes headless. */
+.cat-insights-bar { display: flex; justify-content: space-between; align-items: center; margin: var(--s4) 0 0; }
+.cat-insights-toggle { color: var(--ink-soft); }
+.cat-insights-strip { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s2) var(--s4); margin: var(--s4) 0 var(--s5); }
+.cat-insights-strip .cat-insights-toggle { margin-left: auto; }
+/* THE BRIEFING (2026-07-13, donuts retired): header row (label · counts · strategy · fold),
+   two compact read lines in the home grammar (chip + ruler/minibar + counts), then a
+   two-column body — drivers (top gaps + strength, clickable) and the narrative. */
+.cat-brief { padding: var(--s5) var(--s6); margin: var(--s5) 0 var(--s6); }
+.cat-brief-head { display: flex; align-items: center; justify-content: flex-end; gap: var(--s3); flex-wrap: wrap; }
+.cat-brief-head .cat-insights-toggle { margin-left: 0; }
+.cat-brief-head .ov-strat { margin-left: auto; }
+/* the read band (polish pass 2, 2026-07-13 "room to breathe"): SYMMETRIC rows — both bars
+   22px on one shared grid so the market ruler and practice bar start, end and centre on
+   identical edges; the ruler's axis words are dropped here (the pill + counts carry the
+   meaning; asymmetric label rows were the misalignment David could feel but not name). */
+.cat-brief-read { display: grid; grid-template-columns: 80px minmax(92px, auto) minmax(200px, 1fr) auto;
+  gap: var(--s4) var(--s5); align-items: center; padding: var(--s4) 0 var(--s5);
+  border-bottom: 1px solid var(--border); margin-top: var(--s4); }
+.cat-brief-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: .04em; }
+.cat-brief-read .chip { justify-self: start; min-width: 88px; justify-content: center; }
+.cat-brief-ruler .bp-scale-wrap { margin: 0; }
+.cat-brief-ruler .bp-scale { height: 22px; }
+.cat-brief-ruler .z-below { border-radius: 11px 0 0 11px; }
+.cat-brief-ruler .z-above { border-radius: 0 11px 11px 0; }
+.cat-brief-ruler .bp-scale-labels { display: none; }
+.cat-brief-minibar { display: flex; gap: 3px; height: 22px; }
+.cat-brief-minibar span { border-radius: 5px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cat-brief-minibar span:first-child { border-radius: 11px 5px 5px 11px; }
+.cat-brief-minibar span:last-child { border-radius: 5px 11px 11px 5px; }
+.cat-brief-counts { font-size: var(--fs-caption); color: var(--ink-soft); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: var(--s1); justify-self: end; }
+.cat-brief-span { grid-column: 2 / -1; }
+.cat-brief-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: var(--s4) var(--s6); padding-top: var(--s4); }
+@media (max-width: 980px) { .cat-brief-body { grid-template-columns: 1fr; } }
+.cat-brief-collab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: var(--s3); }
+.cat-brief-collab-sub { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.cat-driver { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
+  background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0;
+  padding: 10px 2px; cursor: pointer; font-size: var(--fs-body); color: var(--ink); }
+.cat-driver:hover .cat-driver-lab { color: var(--blue); text-decoration: underline; }
+.cat-driver svg { flex: none; color: var(--amber-deep, #854F0B); }
+.cat-driver:last-of-type { border-bottom: none; }
+.cat-driver-lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-driver-p { margin-left: auto; font-size: var(--fs-caption); font-weight: 600; color: var(--amber-deep, #854F0B); }
+.cat-driver-p i { font-style: normal; font-weight: 400; color: var(--ink-faint); }
+.cat-driver-p.strength, .cat-driver:has(.cat-driver-p.strength) svg { color: var(--green-deep, #3B6D11); }
+.cat-brief-drivers .cat-flag-link { display: inline-flex; margin-top: var(--s2); }
+/* embedded narrative = two clean paragraphs, readable size, generous leading (format pass
+   2026-07-13); the quiet provenance foot separates itself with a hairline */
+.cat-brief-narrwrap .cat-summary-body { display: flex; flex-direction: column; gap: var(--s3); }
+.cat-brief-narrwrap .cat-sum-text { font-size: 13.5px; line-height: 1.65; margin: 0; color: var(--ink); }
+.cat-brief-narrwrap .cat-sum-prov { border-top: 1px solid var(--border); padding-top: var(--s2);
+  margin-top: var(--s1); font-size: var(--fs-caption); color: var(--ink-faint); }
+/* the unified filter bar (2026-07-13, filters separated from the insight cards): one home for
+   the whole working set — position group · practice group · no-reading · type · Clear. Groups
+   are labelled so the two mutually-exclusive lenses read as distinct axes side by side. */
+.cat-filterbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  padding: var(--s3) var(--s4); margin-bottom: var(--s4);
+  background: color-mix(in srgb, var(--ink) 3%, transparent); border-radius: var(--radius); }
+.cat-fgroup { display: inline-flex; align-items: center; gap: var(--s2); }
+.cat-fgroup + .cat-fgroup { border-left: 1px solid var(--border); padding-left: var(--s3); }
+.cat-fgroup-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: .04em; }
+.cat-fbar-right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
+/* DOMAIN ANALYSIS PACK (2026-07-13): a print product from the live page — pack head/foot are
+   print-only; .print-analysis (set by the Download menu) frames the page and strips chrome;
+   .print-nocharts additionally drops every chart region for the figures-only variant. */
+.pack-print-head, .pack-print-foot { display: none; }
+@media print {
+  .print-analysis .peerbar, .print-analysis .cat-filterbar, .print-analysis .cat-insights-toggle,
+  .print-analysis .ov-strat, .print-analysis .cat-flag-link, .print-analysis .bp-export,
+  .print-analysis .back-link, .print-analysis .iconbtn, .print-analysis .brandbar,
+  .print-analysis .sidebar, .print-analysis .cat-clear, .print-analysis .cat-fbar-right,
+  .print-analysis .cat-sum-caveat { display: none !important; }
+  .print-analysis .content { max-width: none; padding: 0; }
+  .print-analysis .category-page { padding-bottom: 28pt; }
+  .print-analysis .pack-print-head { display: flex; align-items: center; gap: 12pt;
+    border-bottom: 1.5pt solid var(--ink); padding-bottom: 8pt; margin-bottom: 14pt; }
+  .print-analysis .pack-print-brand { font-weight: 700; font-size: 14pt; letter-spacing: -0.02em; }
+  .print-analysis .pack-print-title b { display: block; font-size: 12pt; }
+  .print-analysis .pack-print-title span { font-size: 9pt; color: var(--ink-soft); }
+  .print-analysis .pack-print-foot { display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+    justify-content: space-between; font-size: 8pt; color: var(--ink-soft);
+    border-top: 1px solid var(--border); padding-top: 4pt; background: #fff; }
+  .print-analysis .cat-brief, .print-analysis .bench-card { box-shadow: none !important;
+    break-inside: avoid; page-break-inside: avoid; }
+  .print-analysis .bench-grid { gap: 10pt; }
+  .print-analysis .cat-brief-minibar span, .print-analysis .di-pill { print-color-adjust: exact;
+    -webkit-print-color-adjust: exact; }
+  .print-analysis .cat-driver { cursor: default; }
+  .print-nocharts .bench-chart, .print-nocharts .bench-chart-full { display: none !important; }
+}
 .cat-pos-card { display: flex; flex-direction: column; align-items: center; text-align: center;
   gap: var(--s2); padding: var(--s4); }
 .cat-pos-card .cat-hero-label { align-self: flex-start; }
@@ -1557,8 +1661,24 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* the position filter chips reuse the neutral .sig-chip pill (no marketTone dot) */
 .cat-type { margin-left: auto; }
 
-/* thin-cut (<20 peers) caveat on the domain page — reuses the overview's .indic-flag pill */
-.cat-thin-caveat { margin: calc(-1 * var(--s2)) 0 var(--s4); }
+/* ONE-ROW MASTHEAD (2026-07-13): confidence chip + inline peer selector + Download share the
+   title row; the app-level peer strip and the standalone badge row are gone on this page.
+   The selector self-labels ("All peers · 220"), so the "Comparing against" lead is dropped. */
+.cat-masthead { align-items: center; }
+.cat-masthead-ctl { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.cat-masthead .peerbar { margin: 0; padding: 0; border: none; background: none; }
+.cat-masthead .peerbar-lead { display: none; }
+/* delight (2026-07-13): the read-band bars grow in on load — practice segments stagger,
+   the P-pill pops. Purely decorative; fully suppressed under prefers-reduced-motion. */
+@keyframes cat-bar-grow { from { transform: scaleX(0); } }
+@keyframes cat-pill-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+.cat-brief-minibar span { transform-origin: left; animation: cat-bar-grow 480ms cubic-bezier(.2,.7,.3,1) backwards; }
+.cat-brief-minibar span:nth-child(2) { animation-delay: 70ms; }
+.cat-brief-minibar span:nth-child(3) { animation-delay: 140ms; }
+.cat-brief-ruler .bp-scale-pill { animation: cat-pill-pop 360ms 260ms cubic-bezier(.2,.7,.3,1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .cat-brief-minibar span, .cat-brief-ruler .bp-scale-pill { animation: none; }
+}
 
 /* grid header controls (filters-under-their-donut restructure, 2026-06-28): the chips now
    live in each donut card's footer; the grid header keeps the orthogonal type select + a

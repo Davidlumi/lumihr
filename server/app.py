@@ -4656,6 +4656,13 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
     _ALIGN = {"behind": "behind strategy", "on_target": "on strategy", "ahead": "ahead of strategy"}
     tgt = d.get("target")
     alignment = _ALIGN.get((tgt or {}).get("alignment")) if (tgt and apply_strategy) else None
+    # the AIM itself travels with the alignment (David 2026-07-13, "the narrative needs to
+    # directly relate to the strategy") — the summary can then say WHAT the strategy wants
+    # here, not just how the domain scores against it. Display vocabulary; strategy-on only.
+    _AIM = {"lag": "sit deliberately below the market", "match": "match the market",
+            "lead": "lead the market"}
+    strategy_aim = _AIM.get((tgt or {}).get("stance")) if (tgt and apply_strategy) else None
+    mix_note = d.get("mix_note") if apply_strategy else None
     # provenance (counts-reconciliation fix, 2026-06-28): the ACTUAL number of metrics in this
     # domain the org has ANSWERED (matches the header's "N benchmarks", ~58 — NOT the positioned
     # subset of 13, which mislabelled positioned as answered and collided with the header), and
@@ -4683,6 +4690,8 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
         "approach": ({"differ": appr.get("differ"), "in_line": appr.get("in_line"),
                       "pool": appr.get("pool")} if (not has_pos and appr.get("pool")) else None),
         "alignment": alignment,
+        "strategy_aim": strategy_aim,
+        "mix_note": mix_note,
         "provenance": {"answered_count": answered_count, "peer_pool_size": peer_pool_size},
         "small_sample": small_sample,
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
@@ -4863,7 +4872,12 @@ async def domain_summary(request: Request):
     Mirrors /api/metric-commentary. Never errors on model failure — generate_domain_summary
     always returns the validated deterministic floor when the model is down or rejected."""
     user, org = require_user(request)
-    require_ai(get_conn(), user, AI_DOMAIN_SUMMARY)
+    # Gate SPLIT (David's path-(a) ruling, 2026-07-13, briefing build): the deterministic
+    # floor is template text composed from the member's own figures — NOT AI-generated
+    # content — so it ships ungated (the board-pack §4.3 precedent). Only the CLAUDE call
+    # honours the compliance-reserved gate (LUMI_AI_DOMAIN_SUMMARY default-off + consent);
+    # that flag's product-wide go-live remains reserved for David, unchanged.
+    _ai_ok = ai_feature_on(ai_gate(get_conn(), user), AI_DOMAIN_SUMMARY)
     body = await _json(request)
     name = body.get("domain")
     conn = get_conn()
@@ -4887,7 +4901,10 @@ async def domain_summary(request: Request):
     if payload is None:
         raise HTTPException(404, "That domain isn't part of your benchmark.")
 
-    cut_key = dim + "::" + (value or "") + "::" + ("strat" if apply_strategy else "abs")
+    # ai-state folds into the cache key so a deterministic-floor row can never be served
+    # to an AI-enabled user (or the reverse) — the two produce different text for one hash
+    cut_key = (dim + "::" + (value or "") + "::" + ("strat" if apply_strategy else "abs")
+               + "::" + ("ai" if _ai_ok else "det"))
     phash = hashlib.sha256(
         (j(payload) + "|" + claude_api.DOMAIN_SUMMARY_GEN_VERSION).encode()).hexdigest()[:16]
     caveats = {"illustrative": bool(payload["illustrative_sample_data"])}
@@ -4898,7 +4915,7 @@ async def domain_summary(request: Request):
         if row:
             return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
                     "generated_at": row["created_at"], "caveats": caveats}
-    res = await to_thread.run_sync(claude_api.generate_domain_summary, payload)
+    res = await to_thread.run_sync(claude_api.generate_domain_summary, payload, _ai_ok)
     conn.execute(
         "INSERT OR REPLACE INTO domain_summary(org_id, domain, cut_key, payload_hash, text, source) "
         "VALUES (?,?,?,?,?,?)",
