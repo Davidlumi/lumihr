@@ -2322,6 +2322,321 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
+    },
+    "REW264_GOV_AIPAYREVIEW": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_SALSACIMPACT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_SALSACRESPONSE": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_NICSHARING": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_CONTRIBTIER": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_AEDEFAULT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_AUTOESC": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_PENLEAVEGAP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_MIDLIFEMOT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_GREENDEFAULT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_CONTRIBFLEX": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_SIDECAR": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_HELPTOSAVE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_PAYROLLLOANS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PEN_PAYROLLGIVING": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_EWA": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_EWAFEES": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_EWACAP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_DEBTADVICE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_FINCOACH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_SEASONTICKET": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_COLACTION": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_RLWACCRED": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_WEL_MEALS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_INC_SHAREPLAN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_INC_EMICSOP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PAY_STARTPOLICY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_VIRTUALGP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_CASHPLAN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_OPTICAL": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_CANCERPATH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_WOMENSHEALTH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_MENSHEALTH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_FERTROUTE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_GENDERAFF": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_RISKFLEXUP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_SPOUSELIFE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_GIPREHAB": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_SECONDOPINION": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_HLT_BEREAVESUPPORT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_TIME_CHILDCARE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_TIME_FOURDAY": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_BEN_EVSALSAC": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_GOV_PAYEXPLAIN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW264_PAY_HOLPAYMETHOD": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
     }
   }
 }

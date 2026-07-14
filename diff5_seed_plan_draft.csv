@@ -1,0 +1,46 @@
+id,type,polarity,grade,anchor,offer_na,n_options,seed_rule
+REW264_GOV_AIPAYREVIEW,single_select,higher_is_better,A,31% of employers reflect AI proficiency in pay decisions,False,4,track-anchor
+REW264_PEN_SALSACIMPACT,single_select,higher_is_better,A,51% of employers believe the £2k sal-sac cap will increase t,True,4,track-anchor
+REW264_PEN_SALSACRESPONSE,single_select,neutral,E,No published intention split yet (maintain/restructure/withd,True,5,conservative-haircut
+REW264_PEN_NICSHARING,single_select,higher_is_better,E,Pass-through sharing prevalence unpublished,True,4,conservative-haircut
+REW264_PEN_CONTRIBTIER,single_select,higher_is_better,E,Tenure/age tiering prevalence unpublished; DC surveys report,True,4,conservative-haircut
+REW264_PEN_AEDEFAULT,single_select,higher_is_better,—,Majority of AE savers understood to sit at statutory default,True,5,unanchored-conservative
+REW264_PEN_AUTOESC,single_select,higher_is_better,—,UK employer adoption low; trial-stage,False,3,unanchored-conservative
+REW264_PEN_PENLEAVEGAP,single_select,higher_is_better,E,Employer contribution during unpaid parental/carer leave unp,False,3,conservative-haircut
+REW264_PEN_MIDLIFEMOT,single_select,higher_is_better,—,Employer-offered midlife MOT counts may exist,False,3,unanchored-conservative
+REW264_PEN_GREENDEFAULT,single_select,higher_is_better,—,Share of DC defaults with net-zero commitment,True,5,unanchored-conservative
+REW264_PEN_CONTRIBFLEX,single_select,higher_is_better,E,Flex-down-with-restore prevalence: provider research only,False,3,conservative-haircut
+REW264_PEN_SIDECAR,multi_select,higher_is_better,E,Sidecar/emergency-savings at trial stage; no prevalence,False,4,conservative-haircut
+REW264_PEN_HELPTOSAVE,single_select,higher_is_better,E,Employer signposting unpublished; HMRC publishes account sta,False,3,conservative-haircut
+REW264_PEN_PAYROLLLOANS,single_select,higher_is_better,—,Payroll-deducted loan scheme prevalence,False,4,unanchored-conservative
+REW264_PEN_PAYROLLGIVING,single_select,higher_is_better,A,"~4,000 organisations provide payroll giving of 45,000+ that ",False,3,track-anchor
+REW264_WEL_EWA,single_select,higher_is_better,A,~4m UK workers covered by EWA (Apr 2026); CIPP Code of Pract,False,4,track-anchor
+REW264_WEL_EWAFEES,single_select,higher_is_better,E,Fee-model split unpublished,True,4,conservative-haircut
+REW264_WEL_EWACAP,single_select,higher_is_better,E,Cap-design prevalence unpublished,True,4,conservative-haircut
+REW264_WEL_DEBTADVICE,single_select,higher_is_better,—,Employer-funded debt advice prevalence,False,3,unanchored-conservative
+REW264_WEL_FINCOACH,single_select,higher_is_better,—,1:1 financial coaching prevalence,False,4,unanchored-conservative
+REW264_WEL_SEASONTICKET,single_select,higher_is_better,—,Season ticket / commuting loan prevalence,False,2,unanchored-conservative
+REW264_WEL_COLACTION,multi_select,higher_is_better,—,Cost-of-living intervention types 2022-25,False,4,unanchored-conservative
+REW264_WEL_RLWACCRED,single_select,higher_is_better,A,"16,822 accredited Living Wage Employers; 1 in 7 UK workers w",False,4,track-anchor
+REW264_WEL_MEALS,single_select,higher_is_better,E,Free/subsidised meals prevalence unpublished economy-wide,False,3,conservative-haircut
+REW264_INC_SHAREPLAN,single_select,higher_is_better,A,"480 companies operated SAYE, 800 SIP (YE2025)",True,5,track-anchor
+REW264_INC_EMICSOP,single_select,higher_is_better,A,"18,570 companies operated EMI, 1,390 CSOP (YE2025)",True,5,track-anchor
+REW264_PAY_STARTPOLICY,single_select,neutral,—,Starting-salary positioning policy prevalence,False,4,unanchored-conservative
+REW264_HLT_VIRTUALGP,single_select,higher_is_better,—,Standalone virtual GP growth cited widely; standalone-vs-PMI,False,4,unanchored-conservative
+REW264_HLT_CASHPLAN,single_select,higher_is_better,—,Employer-funded cash plan penetration,False,4,unanchored-conservative
+REW264_HLT_OPTICAL,single_select,higher_is_better,E,Optical beyond DSE statutory: unpublished,False,2,conservative-haircut
+REW264_HLT_CANCERPATH,single_select,higher_is_better,—,Fast-track diagnostics/cancer pathway provision,False,3,unanchored-conservative
+REW264_HLT_WOMENSHEALTH,single_select,higher_is_better,—,Clinical women's-health benefits beyond menopause leave,False,3,unanchored-conservative
+REW264_HLT_MENSHEALTH,single_select,higher_is_better,E,Emerging category; unpublished,False,2,conservative-haircut
+REW264_HLT_FERTROUTE,single_select,higher_is_better,E,Delivery-route split (managed vs reimbursed vs PMI) unpublis,True,4,conservative-haircut
+REW264_HLT_GENDERAFF,single_select,higher_is_better,E,Provision prevalence unpublished,False,3,conservative-haircut
+REW264_HLT_RISKFLEXUP,single_select,higher_is_better,A,"Voluntary/flex layer: ~840k lives across 6,700+ CI policies;",False,3,track-anchor
+REW264_HLT_SPOUSELIFE,single_select,higher_is_better,E,Spouse/partner cover exists at product level (voluntary grou,False,3,conservative-haircut
+REW264_HLT_GIPREHAB,single_select,higher_is_better,A,"68% of GIP-supported absentees returned to work 2025; 5,590 ",True,4,track-anchor
+REW264_HLT_SECONDOPINION,single_select,higher_is_better,B,Second-opinion services ship embedded in major group product,False,2,track-anchor
+REW264_HLT_BEREAVESUPPORT,multi_select,higher_is_better,B,Bereavement/probate support lines embedded in major group li,False,4,track-anchor
+REW264_TIME_CHILDCARE,multi_select,higher_is_better,E,No free UK employer-prevalence figure located; US figures ex,False,5,conservative-haircut
+REW264_TIME_FOURDAY,single_select,higher_is_better,A,253 accredited four-day-week employers (Jan 2026); ~6% of UK,False,4,track-anchor
+REW264_BEN_EVSALSAC,single_select,higher_is_better,B,EV dominates the salary-sacrifice car channel,True,4,track-anchor
+REW264_GOV_PAYEXPLAIN,single_select,higher_is_better,—,Individual pay-explanation right prevalence,False,3,unanchored-conservative
+REW264_PAY_HOLPAYMETHOD,single_select,neutral,E,Rolled-up vs 52-week method split unpublished since Apr 2024,False,4,conservative-haircut
