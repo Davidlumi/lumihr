@@ -1224,9 +1224,9 @@
       "weight": 1
     },
     "REW_INC_070": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "lower_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1
     },
