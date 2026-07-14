@@ -1,0 +1,337 @@
+metric_id,status,domain,classification,direction,type,priority,question,note
+3faf1f0c-f753-497f-a395-384bba38c5e3,live,Health & Protection,market,cost (save-lens),matrix,,What is the average annual private medical insurance (P,market confirmed (R5)
+CAR_BN_02,live,Benefits & Lifestyle,market,↑,multi_select,,What criteria are used to determine eligibility for a b,
+CAR_COST_02,live,Benefits & Lifestyle,market,↑,single_select,,Are low-emission or electric vehicles mandated or prior,
+CAR_STATUS_01,live,Benefits & Lifestyle,market,↑,single_select,,Does your organisation provide company cars as a status,
+CAR_STATUS_03,live,Benefits & Lifestyle,market,↑,single_select,,Are employees eligible to choose between a status-based,
+EXT_REW_GAP_012,live,Benefits & Lifestyle,market,↑ provision,single_select,,Are employee benefits reviewed regularly to assess rele,
+PROP_11a83d52,live,Benefits & Lifestyle,market,↑,single_select,,Do benefits or health plans include support that is exp,
+PROP_202fecc6,live,Benefits & Lifestyle,market,↑,single_select,,Does the organisation track enrolment and utilisation f,
+PROP_36b990f9,live,Pensions & Savings,market,↑ (↓ for waiting/mileage),single_select,,What was employer pension contribution as a typical per,
+PROP_3d4fc4e7,live,Benefits & Lifestyle,market,↑,single_select,,What proportion of employees actively enrol in at least,
+PROP_7d858df2,live,Benefits & Lifestyle,market,↑,single_select,,"Are core benefits inclusive for LGBTQ+ employees (e.g.,",
+PROP_c1a3da61,live,Benefits & Lifestyle,market,↑,single_select,,Do you offer relocation support for hires who need to m,
+RED_COST_01,live,Benefits & Lifestyle,market,↑,single_select,,What was the average redundancy cost per employee in th,
+RED_NOTICE_01,live,Benefits & Lifestyle,market,↑,single_select,,How is notice typically handled in redundancy situation,
+RED_PAY_01,live,Benefits & Lifestyle,market,↑,single_select,,What pay basis is typically used to calculate redundanc,
+RED_PROC_01,live,Benefits & Lifestyle,market,↑,yes_no,,Is there a documented redundancy process applied consis,
+RED_PROC_02,live,Benefits & Lifestyle,market,↑,yes_no,,Are selection criteria for redundancy documented and ob,
+RED_PROC_03,live,Benefits & Lifestyle,market,↑,yes_no,,Are redundancy outcomes reviewed for fairness and bias?,
+RED_PROC_04,live,Benefits & Lifestyle,market,↑,single_select,,Is outplacement or career transition support offered?,
+RED_PROC_05,live,Benefits & Lifestyle,market,↑,yes_no,,Are line managers trained to manage redundancy conversa,
+RED_TERM_01,live,Benefits & Lifestyle,market,↑,single_select,,What redundancy pay terms does your organisation typica,
+RED_TERM_02,live,Benefits & Lifestyle,market,↑,single_select,,"What is the maximum redundancy pay multiple offered, ex",
+RED_TERM_03,live,Benefits & Lifestyle,market,↑,single_select,,What is the maximum number of weeks' pay used to calcul,
+REW263_BEN_CICOVER,live-2026_3,Health & Protection,market,↑ (cover multiple),single_select,,What level of critical illness cover is provided (lump,"audit-flip: magnitude — truncated text hid ""multiple"" from judge"
+REW263_BEN_DENTAL,live-2026_3,Health & Protection,market,↑ (employer-paid > voluntary),single_select,,Is dental cover employer-paid or employee-funded/volunt,audit-flip: funding generosity; consistent with NEW health-cash-plan row
+REW263_BEN_NEURO,live-2026_3,Benefits & Lifestyle,market,↑ provision,single_select,,Do you provide neurodiversity support and/or a formal r,confirm at questions-CSV import (R8)
+REW263_BEN_PENBASIS,live-2026_3,Pensions & Savings,market,↑ (full pay > qualifying band),single_select,,On what earnings basis are pension contributions calcul,audit-flip: orderable generosity
+REW263_BEN_PMIEXCESS,live-2026_3,Health & Protection,market,↓ (lower excess richer),single_select,,What employee cost-share or excess applies to PMI (if a,audit-flip: orderable generosity
+REW263_BEN_PMIMH,live-2026_3,Health & Protection,market,↑ provision,single_select,,Does your PMI include mental health cover and/or digita,confirm at questions-CSV import (R8)
+REW26_BEN_PENSION_COST_SHARE,live,Pensions & Savings,market,↑ (↓ for waiting/mileage),numeric,,Employer pension cost as a % of total reward spend?,
+REW26_BEN_PENSION_MATCH,live,Pensions & Savings,market,↑,single_select,,"Do you offer pension contribution matching, and up to w",
+REW26_BEN_PENSION_TYPE,live,Pensions & Savings,market,↑ (DB>hybrid>DC),single_select,,What type of pension scheme is offered to the main popu,market confirmed (R5)
+REW26_BEN_PLSA_QM,live,Pensions & Savings,market,↑,yes_no,,Does the scheme meet the PLSA quality-mark threshold (1,
+REW26_BEN_SALSAC,live,Pensions & Savings,market,↑,yes_no,,Is pension offered via salary sacrifice by default?,
+REW_BEN_038,live,Benefits & Lifestyle,practice,—,multi_select,,Which of the following benefits are currently offered t,
+REW_BEN_039,live,Benefits & Lifestyle,market,↑ provision,single_select,,Does your organisation operate a flexible benefits plat,
+REW_BEN_044,live,Health & Protection,market,↑ breadth,multi_select,,What are the private medical insurance (PMI) eligibilit,
+REW_BEN_045,live,Health & Protection,market,↑ (↓ for waiting/mileage),single_select,,What life assurance cover is provided for the main popu,
+REW_BEN_046,live,Health & Protection,market,↑ provision,single_select,,Does your organisation offer income protection?,
+REW_BEN_047,live,Health & Protection,market,↓ (shorter waiting richer),single_select,,"If income protection is offered, what is the typical wa",
+REW_BEN_048,live,Health & Protection,market,↑,single_select,,"If income protection is offered, what is the typical sa",
+REW_BEN_055,live,Benefits & Lifestyle,market,↑ provision,single_select,,Are benefit costs tracked centrally as part of total re,
+REW_BEN_100,live,Benefits & Lifestyle,market,↑,single_select,,What proportion of employees are eligible for employer-,
+REW_BEN_102,live,Benefits & Lifestyle,market,↑,single_select,,What proportion of employees participate in salary sacr,
+REW_BEN_112,live,Pensions & Savings,market,↑ (↓ for waiting/mileage),matrix,,What is the typical employer pension contribution by le,
+REW_BEN_139,live,Health & Protection,market,↑ eligibility breadth,matrix,,Which levels are eligible for employer-provided private,audit-flip: FIXED per David challenge — stay-regex precedence bug; engine already depth_matrix
+REW_BEN_FLEX_ALLOW_01,live,Benefits & Lifestyle,market,↑,matrix,,What is the annual flexible benefits allowance by emplo,
+REW_BEN_PENS_EE_MAX_01,live,Pensions & Savings,market,↑ (↓ for waiting/mileage),matrix,,What is the MAX employee pension contribution rate by e,
+REW_BEN_PENS_EMP_MAX_01,live,Pensions & Savings,market,↑,matrix,,What is the max employer pension contribution rate by e,
+REW_FAI_STUDY_TIME_93b6ef22,live,Benefits & Lifestyle,market,↑ provision,single_select,,Is paid study time provided for employees undertaking f,
+REW_PAY_109,live,Benefits & Lifestyle,market,↑ maturity/breadth,matrix,,Which role levels are eligible for a status car allowan,
+REW_PAY_EV_KWH_66ef252b,live,Benefits & Lifestyle,market,↑,single_select,,What reimbursement rate (in pence per kWh) do you apply,
+REW_Q049530,live,Benefits & Lifestyle,market,↑ (↓ for waiting/mileage),single_select,,What mileage is required to be eligible for a business,
+REW_Q524161,live,Benefits & Lifestyle,market,↑,matrix,,What is the employer notice period by level?,
+b1785613-96ed-4a64-9fd7-762d0ac65f19,live,Benefits & Lifestyle,market,↑,matrix,,What is the employee notice period by level?,
+fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf,live,Benefits & Lifestyle,market,↑ (↓ for waiting/mileage),matrix,,What is the annual car allowance amount by level?,
+OT_03_1a68c68a,live,Time Off & Family,market,↑,single_select,,Is time off in lieu (TOIL) offered as an alternative to,
+REW262_TIME_BEREAVEMENT,live,Time Off & Family,market,↑,single_select,,Do you offer paid bereavement leave above the statutory,
+REW262_TIME_SICKDAYONE,live,Time Off & Family,market,↑,yes_no,,Does your occupational sick pay apply from day one (no,
+REW263_TIME_CARERPAID,live-2026_3,Time Off & Family,market,↑ provision,single_select,,Do you offer enhanced carer's leave (paid) above the st,confirm at questions-CSV import (R8)
+REW263_TIME_DAYONELEAVE,live-2026_3,Time Off & Family,market,↑ provision,yes_no,,Have you made paternity and unpaid parental leave avail,audit-flip: readiness/provision binary; prefixed clause broke judge anchor
+REW263_TIME_FERTLEAVE,live-2026_3,Time Off & Family,market,↑ provision,single_select,,Do you provide dedicated paid fertility-treatment leave,confirm at questions-CSV import (R8)
+REW263_TIME_HOLRECORDS,live-2026_3,Time Off & Family,market,↑ provision,yes_no,,Do you maintain compliant annual-leave and holiday-pay,confirm at questions-CSV import (R8)
+REW263_TIME_IVF,live-2026_3,Time Off & Family,market,↑,single_select,,How many funded IVF/fertility treatment cycles (or fina,confirm at questions-CSV import (R8)
+REW263_TIME_NEONATAL,live-2026_3,Time Off & Family,market,↑ provision,single_select,,Do you provide paid neonatal care leave above the statu,confirm at questions-CSV import (R8)
+REW263_TIME_PATPAY,live-2026_3,Time Off & Family,market,↑ provision,single_select,,"Do you provide enhanced paternity pay above statutory,",confirm at questions-CSV import (R8)
+REW263_TIME_PREGLOSS,live-2026_3,Time Off & Family,market,↑ provision,single_select,,Do you provide paid leave for pregnancy loss / miscarri,confirm at questions-CSV import (R8)
+REW_BEN_041,live,Time Off & Family,market,↑,single_select,,What is the maximum additional leave that can typically,
+REW_BEN_FAM_001,live,Time Off & Family,market,↑,single_select,,How does your maternity and adoption pay compare to sta,
+REW_BEN_FAM_002,live,Time Off & Family,market,↑,single_select,,How many weeks of enhanced maternity and adoption pay a,
+REW_BEN_FAM_005,live,Time Off & Family,market,↑,single_select,,Do you provide enhanced shared parental pay above statu,
+REW_BEN_FAM_006,live,Time Off & Family,market,↑,single_select,,Do you provide any paid parental leave beyond statutory,
+REW_BEN_FAM_007,live,Time Off & Family,market,↑,single_select,,Do you provide paid carer's leave for employees with ca,
+REW_BEN_FAM_008,live,Time Off & Family,market,↑,single_select,,Do you provide paid emergency or compassionate leave?,
+REW_BEN_FAM_009,live,Time Off & Family,market,↑,single_select,,Do you provide paid study or exam leave?,
+REW_BEN_FAM_010,live,Time Off & Family,market,↑,single_select,,Do you provide paid volunteering leave?,
+REW_BEN_FAM_011,live,Time Off & Family,market,↑,single_select,,Do you offer sabbaticals or career breaks?,
+REW_BEN_FAM_012,live,Time Off & Family,market,↑,single_select,,Do you provide specific paid leave related to menopause,
+REW_BEN_HOL_001,live,Time Off & Family,market,↑,single_select,,"How much annual leave do employees typically receive, e",
+REW_BEN_HOL_002,live,Time Off & Family,market,↑,single_select,,How are UK bank holidays treated for most employees?,
+REW_BEN_HOL_003,live,Time Off & Family,market,↑,single_select,,Can employees buy or sell annual leave?,
+REW_BEN_HOL_004,live,Time Off & Family,market,↑,single_select,,Is additional annual leave provided based on length of,
+REW_BEN_HOL_005,live,Time Off & Family,market,↑,single_select,,Can unused annual leave be carried over into the next l,
+REW_BEN_HOL_006,live,Time Off & Family,market,↑,single_select,,What is the maximum number of additional annual leave d,
+REW_BEN_HOL_007,live,Time Off & Family,market,↑,single_select,,Are employees required to take annual leave during set,
+REW_BEN_HOL_008,live,Time Off & Family,market,↑,single_select,,Can employees swap UK bank holidays for alternative day,
+REW_BEN_SICK_001,live,Time Off & Family,market,↑,single_select,,How does your occupational sick pay compare to statutor,
+REW_BEN_SICK_002,live,Time Off & Family,market,↑,single_select,,For how long is enhanced occupational sick pay typicall,
+REW_BEN_SICK_004,live,Time Off & Family,market,↑,single_select,,Is there a waiting period before occupational sick pay,
+REW_BEN_SICK_005,live,Time Off & Family,market,↑,single_select,,Are eligibility rules for occupational sick pay clearly,
+REW_BEN_SICK_006,live,Time Off & Family,market,↑,single_select,,Are extended or repeated occupational sick pay cases re,
+REW_PAY_014,live,Time Off & Family,market,↑,single_select,,What is the standard premium for working on UK bank hol,
+ALLOW_02,live,Pay,market,↑,yes_no,,Are allowances reviewed regularly as part of reward gov,
+ALLOW_03,live,Pay,market,↑,single_select,,Are allowances pensionable?,
+ALLOW_04,live,Pay,market,↑,yes_no,,Are allowances differentiated by role level?,
+EXT_REW_GAP_009,live,Pay,market,↑ frequency,single_select,,"For roles that support remote working, how often are em",
+EXT_REW_GAP_010,live,Pay,practice,—,single_select,,Where are remote employees permitted to work from?,
+EXT_REW_GAP_011,live,Pay,practice,—,multi_select,,Which home-working expenses are typically reimbursed or,
+EXT_REW_GAP_013,live,Pay,practice,,single_select,,How often are employees typically paid?,market confirmed (R5) | vetoed to practice 2026-07-14 (veto gate)
+OT_04_b14623a6,live,Pay,market,↑,single_select,,Are shift premiums paid for unsocial hours?,
+PAYTR_02_131bd412,live,Pay,market,↑,single_select,,Are pay bands or salary ranges visible to employees?,
+PROP_168a6213,live,Pay,market,↑,single_select,,To what extent is pay differentiated based on scarce sk,
+PROP_634adacd,live,Pay,market,↑ (offer lens),single_select,,What was the typical (median) base salary increase for,market confirmed (R5)
+PROP_8e0b6316,live,Pay,market,↑,single_select,,How often is the organisation's main pay review cycle (,
+PROP_9e4ad87f,live,Pay,market,↑ (offer lens),numeric,,What was the overall salary increase budget (merit/annu,market confirmed (R5)
+PROP_d16bae79,live,Pay,market,↓,numeric,,What was total workforce cost per FTE in the last compl,
+PROP_dff9a2a5,live,Pay,market,↑,single_select,,What proportion of employees received a base pay increa,
+PROP_e63cf45a,live,Pay,market,↓,numeric,,What was total workforce cost as a percentage of revenu,
+PROP_fe1a29ec,live,Pay,market,↑,single_select,,Do you use external pay/benefits benchmarking data (e.g,
+REW262_PAY_AISKILLSPAY,live,Pay,market,↑ provision,yes_no,,Do you pay a premium specifically for AI skills?,
+REW262_PAY_CANCELLEDSHIFT,live,Pay,market,↑,yes_no,,Do you compensate workers for shifts cancelled at short,
+REW262_PAY_GUARANTEEDHRS,live,Pay,market,↑,single_select,,Do you proactively offer guaranteed-hours contracts to,
+REW262_PAY_SHIFTNOTICE,live,Pay,market,↑,single_select,,How much advance notice of shifts do you give?,
+REW263_PAY_COMPARATIO,live-2026_3,Pay,practice,,single_select,,What is your typical target compa-ratio / position-in-r,confirm at questions-CSV import (R8)
+REW263_PAY_GUARHRSAVG,live-2026_3,Pay,market,↑ provision,single_select,,"For zero-/low-hours workers, do you offer guaranteed-ho",audit-flip: guaranteed-hours offer; prefixed clause bug
+REW263_PAY_MERITMATRIX,live-2026_3,Pay,practice,,single_select,,Do you use a formal merit matrix (performance rating x,confirm at questions-CSV import (R8)
+REW263_PAY_SHIFTRIGHTS,live-2026_3,Pay,market,↑ provision,single_select,,Do you provide reasonable notice of shifts and short-no,confirm at questions-CSV import (R8)
+REW263_PAY_SSPALIGN,live-2026_3,Pay,market,↑ provision,single_select,,Following SSP reform (removal of lower earnings limit a,audit-flip: SSP-reform alignment readiness
+REW26_PAY_JOBEVAL_COVERAGE,live,Pay,market,↑,multi_select,,Which job levels are covered by a formal job-evaluation,
+REW26_PAY_SKILLS_PAY,live,Pay,market,↑ provision,yes_no,,Do you operate a skills- or capability-based pay framew,
+REW_BEN_058,live,Pay,market,↑ provision,single_select,,"In the last 12 months, have you enhanced benefits in re",
+REW_BEN_REM_PAY_001,live,Pay,market,↑ (maintain > reduce),single_select,,If an employee moves from office-based to remote workin,market confirmed (R5)
+REW_BEN_REM_PAY_002,live,Pay,practice,—,single_select,,Which location is typically used to determine base pay,
+REW_BEN_REM_PAY_003,live,Pay,practice,—,single_select,,How are remote roles typically benchmarked for market p,
+REW_BEN_REM_PAY_004,live,Pay,market,↑ provision,single_select,,Are pay decisions for remote roles reviewed to ensure c,
+REW_BEN_REM_PAY_005,live,Pay,market,↑ (discount<none<premium),single_select,,Do any pay premiums or discounts apply specifically to,market confirmed (R5)
+REW_FAIR_TIPS_DIST_7d34e570,live,Pay,practice,—,single_select,,How are tips or service charges distributed to employee,
+REW_FAI_128,live,Pay,market,↑ maturity/breadth,single_select,,Does your organisation test whether top performers are,
+REW_FAI_CANCEL_1bbcc629,live,Pay,market,↑,single_select,,Are hourly workers paid if scheduled shifts are cancell,
+REW_FAI_MIN_HOURS_8518a543,live,Pay,market,↑,single_select,,Do hourly-paid roles have guaranteed minimum contracted,
+REW_FAI_TRONC_GROUPS_e5639ac2,live,Pay,practice,—,matrix,,Which role levels participate in the tronc arrangement?,
+REW_FAI_TRONC_TYPES_b5547658,live,Pay,practice,—,single_select,,Which types of tips are included in the tronc arrangeme,
+REW_PAY_005,live,Pay,strategy-config,—,single_select,,What is your ideal market position for Pay?,"recategorised: strategy parameter, not a benchmark metric — feeds aim brackets/verdict grading, excluded from both lens counts"
+REW_PAY_007,live,Pay,practice,—,multi_select,,Which sources do you use for external pay benchmarks?,
+REW_PAY_011,live,Pay,market,↑ provision,single_select,,Do you pay overtime?,
+REW_PAY_016,live,Pay,practice,—,multi_select,,Which allowances or premiums are currently paid?,"options extended: +Homeworking, +Mobile/phone, +None (from ALLOW_01)"
+REW_PAY_017,live,Pay,practice,—,single_select,,"For on-call arrangements, how is the allowance typicall",
+REW_PAY_018,live,Pay,market,↑ (↓ for waiting/mileage),single_select,,Is there a minimum call-out payment for call-outs (e.g.,
+REW_PAY_021,live,Pay,market,↑ provision,single_select,,Are allowances included in holiday pay calculations whe,
+REW_PAY_023,live,Pay,practice,—,multi_select,,Which factors inform your annual pay budget?,reworded (R3)
+REW_PAY_097,live,Pay,practice,—,single_select,,Are pay increases differentiated by performance rating?,RATIFIED 2026-07-14: practice (override of in-doubt tiebreak — philosophy fork)
+REW_PAY_TIPS_EXIST_7c80c508,live,Pay,practice,—,single_select,,Do employees receive customer tips or service charges a,
+REW_PAY_TRONC_6db81475,live,Pay,practice,—,single_select,,Are tips or service charges distributed through a forma,
+a7ed418e-b057-4b70-ab58-31e897b7c1b6,live,Pay,market,↑ (↓ for waiting/mileage),matrix,,"On average, what is the total annual payment for each a",
+323ffcf1-749b-43f3-bf34-1de6b8b1ca67,live,Incentives & Recognition,market,↑,matrix,,What is your max bonus % opportunity by level?,
+REW263_INC_DEFERRAL,live-2026_3,Incentives & Recognition,practice,,single_select,,"For deferred bonuses, what is the typical deferral peri",audit-flip: orderable magnitude; consistent with deferral-presence ruling
+REW263_INC_POOLFUND,live-2026_3,Incentives & Recognition,practice,,single_select,,How is the main bonus pool funded (top-down profit shar,confirm at questions-CSV import (R8)
+REW_INC_060,live,Incentives & Recognition,practice,—,multi_select,,Which measures are used in your main bonus or incentive,
+REW_INC_061,live,Incentives & Recognition,practice,—,matrix,,What is the typical individual/business % split of your,
+REW_INC_065,live,Incentives & Recognition,practice,—,single_select,,"Is there a gatekeeper metric (e.g., profit, safety, com",
+REW_INC_069,live,Incentives & Recognition,practice,,single_select,,Are bonuses deferred for any population?,market confirmed (R5) | vetoed to practice 2026-07-14 (veto gate)
+REW_INC_070,live,Incentives & Recognition,practice,,single_select,,Are malus provisions used (reduce unpaid awards) for mi,2026-07-14: ruled practice per INC_069 precedent (malus = governance mechanism); executes in Diff 3
+REW_INC_071,live,Incentives & Recognition,market,↑ provision,single_select,,Are clawback provisions used (recover paid awards) in d,
+REW_INC_072,live,Incentives & Recognition,market,↑ provision,single_select,,Are sign-on bonuses used for any roles?,
+REW_INC_077,live,Incentives & Recognition,practice,—,single_select,,Are your incentives intended primarily to drive perform,
+REW_INC_103,live,Incentives & Recognition,market,↑,single_select,,What proportion of employees are eligible for a bonus s,
+REW_INC_104,live,Incentives & Recognition,market,context ↑,single_select,,"In the last 12 months, what was the average payout as a",market confirmed (R5)
+REW_INC_111,live,Incentives & Recognition,market,↑,matrix,,What is the target bonus opportunity by level (as % of,
+REW_INC_131,live,Incentives & Recognition,market,↑ provision,single_select,,Does your organisation operate any long-term incentive,
+REW_INC_132,live,Incentives & Recognition,practice,—,single_select,,Which types of long-term incentive plans are offered?,
+REW_INC_133,live,Incentives & Recognition,market,↑ eligibility breadth,matrix,,Which levels are eligible for long-term incentives?,audit-flip: same bug as REW_BEN_139
+REW_INC_135,live,Incentives & Recognition,market,↑ provision,single_select,,Does your organisation operate sales commission or comm,
+REW_INC_136,live,Incentives & Recognition,practice,—,single_select,,Which commission plan structures are used?,
+REW_INC_LTI_MAX_01,live,Incentives & Recognition,market,↑,matrix,,What is the max annual LTI as a % of base pay by employ,
+REW_INC_LTI_VALUE_TYP_01,live,Incentives & Recognition,market,↑,matrix,,What is the target annual LTI as a % of base pay by emp,
+REW_Q528801,live,Pay,market,↑,matrix,,What overtime multiplier is paid by shift type?,"QA: DB=Pay confirmed; premium-pay multiplier, not incentive design"
+REW_Q534581,live,Pay,market,↑,matrix,,"For hourly-paid roles, what pay multipliers apply by ti","QA: DB=Pay confirmed; premium-pay multiplier, not incentive design"
+REW263_WEL_DATA,live-2026_3,Wellbeing,practice,,multi_select,,Which wellbeing/health data do you actively track (abse,confirm at questions-CSV import (R8)
+REW263_WEL_FINWELL,live-2026_3,Wellbeing,market,↑ provision,single_select,,Is there a documented financial wellbeing strategy beyo,audit-flip: documented strategy = maturity provision
+REW263_WEL_MGRTRAIN,live-2026_3,Wellbeing,market,↑,single_select,,What proportion of people managers have completed menta,confirm at questions-CSV import (R8)
+REW263_WEL_OH,live-2026_3,Wellbeing,market,↑ provision,single_select,,"Do employees have access to occupational health, and wh",audit-flip: OH access provision
+REW26_WEL_BUDGET,live,Wellbeing,market,↑,numeric,,Is there an annual wellbeing budget per employee?,
+REW26_WEL_EAP,live,Wellbeing,market,↑,yes_no,,Do you provide an Employee Assistance Programme (EAP)?,
+REW26_WEL_FINWELL,live,Wellbeing,market,↑,yes_no,,Do you offer a financial wellbeing programme?,
+REW26_WEL_MH_SUPPORT,live,Wellbeing,market,↑,multi_select,,Which mental-health support provisions are offered?,
+REW26_WEL_SCREENING,live,Wellbeing,market,↑,yes_no,,Do you offer health screening or health assessments?,
+REW26_WEL_STRATEGY,live,Wellbeing,market,↑,single_select,,"Is there a documented wellbeing strategy, and how often",
+EXT_REW_GAP_001,live,Incentives & Recognition,market,↑,single_select,,Is there an approximate annual recognition budget per e,
+EXT_REW_GAP_002,live,Incentives & Recognition,market,↑,single_select,,What is the typical value of an individual recognition,
+EXT_REW_GAP_003,live,Incentives & Recognition,market,↑ frequency,single_select,,Are there limits on how frequently an individual can re,
+EXT_REW_GAP_004,live,Incentives & Recognition,market,↑ provision,single_select,,Do you operate a long service award scheme?,
+EXT_REW_GAP_005,live,Incentives & Recognition,market,↑ breadth,multi_select,,Which length-of-service milestones are recognised throu,
+EXT_REW_GAP_007,live,Incentives & Recognition,market,↑,single_select,,What is the typical value of a long service award at th,
+REW263_REC_CURRENCY,live-2026_3,Incentives & Recognition,practice,,single_select,,"Are recognition awards primarily monetary, experiential",confirm at questions-CSV import (R8)
+REW263_REC_IMPACT,live-2026_3,Incentives & Recognition,market,↑ provision,yes_no,,Do you measure the impact of recognition on engagement,audit-flip: measurement maturity
+REW263_REC_MGRBUDGET,live-2026_3,Incentives & Recognition,market,↑ provision,single_select,,Do you provide a personalised/flexible recognition budg,confirm at questions-CSV import (R8)
+REW263_REC_PEER,live-2026_3,Incentives & Recognition,market,↑,single_select,,Do you operate a peer-to-peer recognition programme (po,confirm at questions-CSV import (R8)
+PAYTR_01_42eae7ec,live,Governance & Transparency,market,↑,single_select,,Do job adverts typically include a salary or salary ran,
+PAYTR_03_db0108d6,live,Governance & Transparency,market,↑,single_select,,Is there a formal policy describing pay progression wit,
+PROP_10d1211d,live,Governance & Transparency,market,↑,single_select,,Does your organisation run disability pay gap analyses,
+PROP_216f7323,live,Governance & Transparency,market,↑,multi_select,,Which pillars are explicitly included in your total rew,
+PROP_34ffb6e2,live,Governance & Transparency,market,↑,single_select,,Which best describes how promotion decisions are govern,
+PROP_38555969,live,Governance & Transparency,market,↑,single_select,,Do you have a documented annual reward/benefits communi,
+PROP_674db2fc,live,Governance & Transparency,market,↑,single_select,,Does the organisation provide total reward statements t,
+PROP_8862fcad,live,Governance & Transparency,market,↑,single_select,,Does your organisation have a documented total rewards,
+PROP_930043cc,live,Governance & Transparency,market,↑,single_select,,Does your organisation run ethnicity pay gap analyses a,
+PROP_aa4061d5,live,Governance & Transparency,practice,—,multi_select,,How does your organisation measure the effectiveness of,
+PROP_cdff5737,live,Governance & Transparency,market,↑,single_select,,Does the organisation run pay equity analyses across co,
+PROP_d65a16e9,live,Governance & Transparency,market,↑,single_select,,When was your total rewards strategy last refreshed or,
+PROP_d992b2ea,live,Governance & Transparency,market,↑,single_select,,Is there a standard minimum time-in-role or time-in-gra,
+PROP_e1d1e604,live,Governance & Transparency,market,↑,single_select,,Approximately what proportion of employees receive an o,
+PROP_ef4ff31e,live,Governance & Transparency,market,↑,single_select,,Do you monitor promotion rates by protected characteris,
+REW262_GOV_ACTIONPLAN,live,Governance & Transparency,market,↑,multi_select,,"Do you have a published equality action plan, and which",
+REW262_GOV_AIINPAY,live,Governance & Transparency,market,↑,single_select,,"Do you use AI tools in pay decisions, and with what gov",
+REW262_GOV_EQUALPAYAUDIT,live,Governance & Transparency,market,↑,single_select,,"Do you run proactive equal-pay audits, and how often?",
+REW262_GOV_EQUALVALUE,live,Governance & Transparency,market,↑,single_select,,Can you group your workforce into categories of equal v,
+REW262_GOV_PAYINADVERTS,live,Governance & Transparency,market,↑,single_select,,Do you include pay or a pay range in job adverts?,
+REW262_GOV_SALHISTORY,live,Governance & Transparency,market,↑,yes_no,,Have you removed salary-history questions from your hir,
+REW263_GOV_BENOBJ,live-2026_3,Governance & Transparency,market,↑ maturity,single_select,,Are your employee benefits linked to defined objectives,audit-flip: objectives-linked benefits (CIPD 2026 headline finding)
+REW263_GOV_ETHDISREADY,live-2026_3,Governance & Transparency,market,↑ provision,single_select,,Are you prepared for mandatory ethnicity and disability,confirm at questions-CSV import (R8)
+REW263_GOV_FIREREHIRE,live-2026_3,Governance & Transparency,market,↑ provision,single_select,,"Where pay or pension/benefit terms are changed, do you",audit-flip: consultation practice provision
+REW263_GOV_FLEXALLOW,live-2026_3,Governance & Transparency,market,↑ provision,single_select,,Do you provide a personalised/flexible benefits allowan,confirm at questions-CSV import (R8)
+REW263_GOV_MENOPLAN,live-2026_3,Governance & Transparency,market,↑ provision,single_select,,Have you published (or do you plan to publish) a volunt,confirm at questions-CSV import (R8)
+REW263_GOV_REWTEAM,live-2026_3,Governance & Transparency,market,↑ (investment),single_select,,What is the size of your dedicated reward team relative,audit-flip: orderable ratio; in-doubt rule
+REW263_GOV_SIGNOFF,live-2026_3,Governance & Transparency,practice,,single_select,,Where does final sign-off on the annual pay/reward deci,confirm at questions-CSV import (R8)
+REW263_GOV_UKPAYTRANS,live-2026_3,Governance & Transparency,market,↑ maturity (posture ladder),single_select,,How would you describe your UK pay-transparency positio,audit-flip: ordinal stance; in-doubt rule
+REW263_GOV_UMBRELLA,live-2026_3,Governance & Transparency,market,↑ provision,single_select,,Do you apply reward parity / compliance checks for umbr,audit-flip: parity checks provision
+REW26_GOV_EU_PTD_PREP,live,Governance & Transparency,market,↑,single_select,,How prepared are you for the EU Pay Transparency Direct,
+REW_FAI_079,live,Governance & Transparency,market,↑ conducted/annual,single_select,,Does your organisation conduct gender pay gap analysis,"2026-07-14: reword-without-repolarise stray corrected; ruled market ↑, live polarity flips in Diff 2"
+REW_FAI_081,live,Governance & Transparency,market,↑ provision,single_select,,Are pay decisions reviewed for fairness before implemen,
+REW_FAI_082,live,Governance & Transparency,market,↑ maturity,single_select,,Are exceptions to standard pay rules formally documente,
+REW_FAI_085,live,Governance & Transparency,market,↑ provision,single_select,,Does your organisation review pay outcomes for compress,
+REW_FAI_086,live,Governance & Transparency,market,↑ provision,single_select,,Does your organisation review incentive outcomes by pro,
+REW_FAI_087,live,Governance & Transparency,market,↑ maturity,single_select,,Does your organisation have a documented pay transparen,
+REW_FAI_088,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Do employees have access to pay ranges for their grade/,
+REW_FAI_089,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Does your organisation publish pay ranges on job advert,
+REW_FAI_092,live,Governance & Transparency,market,↑,single_select,,Have you completed a pay transparency readiness assessm,
+REW_PAY_001,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Are formal pay ranges defined for all permanent roles?,
+REW_PAY_002,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Are pay ranges linked to a documented job evaluation or,
+REW_PAY_003,live,Governance & Transparency,market,↑ frequency,single_select,,How often are pay ranges reviewed and refreshed using m,
+REW_PAY_006,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Does your organisation use external pay benchmark data,
+REW_PAY_019,live,Governance & Transparency,practice,—,single_select,,Are allowances consolidated into base pay at any point,
+REW_PRO_030,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Is progression eligibility linked to performance outcom,
+REW_PRO_034,live,Governance & Transparency,market,↑ maturity/breadth,single_select,,Does your organisation use promotion guidelines that sp,
+REW_PRO_035,live,Governance & Transparency,practice,—,single_select,,What is pay progression based on outside of the annual,
+REW_PRO_098,live,Governance & Transparency,market,↑,single_select,,What is the typical maximum pay increase for promotions,
+REW264_GOV_AIPAYREVIEW,live-2026_4,Governance & Transparency,market,↑,single_select,P1,Does AI proficiency influence base pay review outcomes for any population?,id minted at 2026_4 import (was NEW_001)
+REW265_GOV_AIBENCH,live-2026_5,Governance & Transparency,market,↑,single_select,P2,Does your reward function use AI tools for benchmarking or market analysis?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_AITALENT,live-2026_5,Governance & Transparency,market,↑,single_select,P2,"Do you operate differentiated reward arrangements for AI/digital talent (e.g. separate ranges, RSUs, retention vehicles)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_AIREGRADE,live-2026_5,Governance & Transparency,market,↑,single_select,P2,Have any roles been re-graded or re-evaluated in the last 12 months specifically due to AI changing job content?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_AIDISCLOSE,live-2026_5,Governance & Transparency,market,↑,single_select,P3,Do you disclose to employees when AI has been used in decisions affecting their pay?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_PEN_SALSACIMPACT,live-2026_4,Pensions & Savings,market,↑,single_select,P1,"Have you assessed the workforce cost impact of the £2,000 NIC cap on pension salary sacrifice (April 2029)?",id minted at 2026_4 import (was NEW_006)
+REW264_PEN_SALSACRESPONSE,live-2026_4,Pensions & Savings,practice,—,single_select,P1,What is your intended response to the 2029 salary sacrifice cap?,id minted at 2026_4 import (was NEW_007)
+REW264_PEN_NICSHARING,live-2026_4,Pensions & Savings,market,↑,single_select,P1,Do you currently share employer NIC savings from pension salary sacrifice with employees (e.g. as contribution top-ups)?,id minted at 2026_4 import (was NEW_008)
+REW264_PEN_CONTRIBTIER,live-2026_4,Pensions & Savings,market,↑,single_select,P2,Do employer pension contributions increase with length of service or age?,id minted at 2026_4 import (was NEW_009)
+REW264_PEN_AEDEFAULT,live-2026_4,Pensions & Savings,market,↑,single_select,P2,What is the default employee contribution rate for auto-enrolled joiners (above statutory minimum)?,id minted at 2026_4 import (was NEW_010)
+REW264_PEN_AUTOESC,live-2026_4,Pensions & Savings,market,↑,single_select,P3,Do you operate auto-escalation of pension contributions (e.g. save-more-tomorrow)?,id minted at 2026_4 import (was NEW_011)
+REW264_PEN_PENLEAVEGAP,live-2026_4,Pensions & Savings,market,↑,single_select,P2,Do you make employer pension contributions during periods of unpaid parental or carers leave beyond statutory requirements?,id minted at 2026_4 import (was NEW_012)
+REW264_PEN_MIDLIFEMOT,live-2026_4,Pensions & Savings,market,↑,single_select,P2,Is a mid-life MOT or structured retirement-planning support offered?,id minted at 2026_4 import (was NEW_013)
+REW264_PEN_GREENDEFAULT,live-2026_4,Pensions & Savings,market,↑ = net-zero aligned,single_select,P3,Does your default pension fund have a published ESG or net-zero commitment?,direction RATIFIED 2026-07-14 | id minted at 2026_4 import (was NEW_014)
+REW264_PEN_CONTRIBFLEX,live-2026_4,Pensions & Savings,market,↑,single_select,P3,Do you offer pension contribution flexibility (e.g. reduce to statutory during cost-of-living pressure with easy restore)?,id minted at 2026_4 import (was NEW_015)
+REW264_PEN_SIDECAR,live-2026_4,Pensions & Savings,market,↑,multi_select,P1,"Do you offer a workplace savings vehicle alongside the pension (e.g. workplace ISA, sidecar savings, credit union payroll deduction)?",QA: single->multi | id minted at 2026_4 import (was NEW_016)
+REW264_PEN_HELPTOSAVE,live-2026_4,Pensions & Savings,market,↑,single_select,P3,Do you promote or facilitate Help to Save for eligible lower-paid employees?,id minted at 2026_4 import (was NEW_017)
+REW264_PEN_PAYROLLLOANS,live-2026_4,Pensions & Savings,market,↑,single_select,P2,Do you offer payroll-deducted loans or an internal hardship fund?,id minted at 2026_4 import (was NEW_018)
+REW264_PEN_PAYROLLGIVING,live-2026_4,Pensions & Savings,market,↑,single_select,P3,Do you offer payroll giving?,id minted at 2026_4 import (was NEW_019)
+REW264_WEL_EWA,live-2026_4,Wellbeing,market,↑,single_select,P1,Do you offer earned wage access / on-demand pay (employer-integrated)?,id minted at 2026_4 import (was NEW_020)
+REW264_WEL_EWAFEES,live-2026_4,Wellbeing,market,↑,single_select,P2,"If earned wage access is offered, who bears the transaction cost?",id minted at 2026_4 import (was NEW_021)
+REW264_WEL_EWACAP,live-2026_4,Wellbeing,market,↑ = cap in place (guardrail),single_select,P3,Do you cap earned wage access withdrawals (e.g. % of accrued pay)?,direction RATIFIED 2026-07-14 | id minted at 2026_4 import (was NEW_022)
+REW264_WEL_DEBTADVICE,live-2026_4,Wellbeing,market,↑,single_select,P2,Do you provide access to independent debt advice or a money-guidance service?,id minted at 2026_4 import (was NEW_023)
+REW264_WEL_FINCOACH,live-2026_4,Wellbeing,market,↑,single_select,P2,Do you provide one-to-one financial coaching or advice (beyond pensions)?,id minted at 2026_4 import (was NEW_024)
+REW264_WEL_SEASONTICKET,live-2026_4,Wellbeing,market,↑,single_select,P3,Do you offer season ticket or commuting loans?,id minted at 2026_4 import (was NEW_025)
+REW264_WEL_COLACTION,live-2026_4,Wellbeing,market,↑,multi_select,P2,"Have you made a discrete cost-of-living intervention in the last 24 months (one-off payment, targeted uplift, subsidy)?",id minted at 2026_4 import (was NEW_026)
+REW264_WEL_RLWACCRED,live-2026_4,Wellbeing,market,↑,single_select,P1,Are you accredited (or committed to accredit) as a real Living Wage employer?,id minted at 2026_4 import (was NEW_027)
+REW264_WEL_MEALS,live-2026_4,Wellbeing,market,↑,single_select,P3,Do you provide free or subsidised meals for staff?,id minted at 2026_4 import (was NEW_028)
+REW264_INC_SHAREPLAN,live-2026_4,Incentives & Recognition,market,↑,single_select,P1,Do you operate an all-employee share plan (SAYE/Sharesave or SIP)?,id minted at 2026_4 import (was NEW_029)
+REW265_INC_SAYEDISC,live-2026_5,Incentives & Recognition,market,↑,single_select,P2,"If SAYE is offered, what discount is applied to the option price?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_SIPELEM,live-2026_5,Incentives & Recognition,practice,—,multi_select,P2,"If a SIP is offered, which elements are used?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_SHAREPART,live-2026_5,Incentives & Recognition,market,↑,single_select,P2,What is the approximate employee participation rate in your all-employee share plan?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_INC_EMICSOP,live-2026_4,Incentives & Recognition,market,↑,single_select,P1,Do you operate discretionary tax-advantaged option plans (EMI or CSOP)?,id minted at 2026_4 import (was NEW_033)
+REW265_INC_EOT,live-2026_5,Incentives & Recognition,market,↑,single_select,P3,Is any employee-ownership structure in place or under consideration (e.g. EOT)?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_ESGINCENT,live-2026_5,Incentives & Recognition,market,↑,single_select,P2,"Do any incentive plans include ESG, safety or people measures?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_BONUSDISC,live-2026_5,Incentives & Recognition,practice,—,single_select,P2,How is discretion applied to formulaic bonus outcomes?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_BUYOUT,live-2026_5,Incentives & Recognition,market,↑,single_select,P3,Are bonus buy-outs offered to new senior hires?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_BONUSTIME,live-2026_5,Incentives & Recognition,practice,—,single_select,P3,When are annual bonuses typically paid relative to year end?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_PROFITSHARE,live-2026_5,Incentives & Recognition,market,↑,single_select,P2,Do you operate a profit-share or gainshare arrangement for the general population?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_COMMCAP,live-2026_5,Incentives & Recognition,market,↑ = uncapped (earning potential),single_select,P3,"For commission plans, are earnings capped?","direction RATIFIED 2026-07-14 | went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_INC_RETENTION,live-2026_5,Incentives & Recognition,market,↑,single_select,P3,Do you operate a retention or project-completion bonus practice for critical roles?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_PROMOPAY,live-2026_5,Pay,practice,—,single_select,P2,What is your typical promotion pay increase policy?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_PAY_STARTPOLICY,live-2026_4,Pay,practice,—,single_select,P1,What is your starting-salary positioning policy for new hires?,id minted at 2026_4 import (was NEW_043)
+REW265_PAY_COUNTEROFFER,live-2026_5,Pay,practice,—,single_select,P2,Do you operate a formal counter-offer policy?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_GEOPAY,live-2026_5,Pay,practice,—,single_select,P2,Do you apply geographic pay differentiation within the UK?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_RANGEMAX,live-2026_5,Pay,practice,—,single_select,P2,What is your policy on pay for employees at or above range maximum?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_MGRTRAIN,live-2026_5,Pay,market,↑,single_select,P2,Are line managers given pay-decision training or guidance before review cycles?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_PAYCOMMS,live-2026_5,Pay,market,↑,single_select,P2,How are pay review outcomes communicated to individuals?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_EARLYCAREER,live-2026_5,Pay,market,↑,single_select,P3,Do you operate an apprentice or graduate pay progression framework distinct from the main structure?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_ACTINGUP,live-2026_5,Pay,practice,—,single_select,P3,Is there a documented policy for pay during acting-up or secondment arrangements?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_HLT_VIRTUALGP,live-2026_4,Health & Protection,market,↑,single_select,P1,Do you provide a standalone virtual GP service (independent of PMI)?,id minted at 2026_4 import (was NEW_051)
+REW264_HLT_CASHPLAN,live-2026_4,Health & Protection,market,↑,single_select,P1,Do you offer a health cash plan?,id minted at 2026_4 import (was NEW_052)
+REW264_HLT_OPTICAL,live-2026_4,Health & Protection,market,↑,single_select,P3,Do you provide optical cover or eye-care vouchers beyond DSE statutory requirements?,id minted at 2026_4 import (was NEW_053)
+REW264_HLT_CANCERPATH,live-2026_4,Health & Protection,market,↑,single_select,P2,Do you fund private diagnostics or fast-track cancer pathways (beyond core PMI)?,id minted at 2026_4 import (was NEW_054)
+REW264_HLT_WOMENSHEALTH,live-2026_4,Health & Protection,market,↑,single_select,P2,"Do you provide women's health support beyond menopause leave (e.g. menopause HRT support, gynae pathways, endometriosis support)?",id minted at 2026_4 import (was NEW_055)
+REW264_HLT_MENSHEALTH,live-2026_4,Health & Protection,market,↑,single_select,P3,"Do you provide men's health support (e.g. screening, prostate/testicular pathways, targeted MH)?",id minted at 2026_4 import (was NEW_056)
+REW264_HLT_FERTROUTE,live-2026_4,Health & Protection,market,↑,single_select,P2,"If fertility support is funded, how is it delivered?",id minted at 2026_4 import (was NEW_057)
+REW264_HLT_GENDERAFF,live-2026_4,Health & Protection,market,↑,single_select,P3,Do you offer gender-affirming healthcare support within benefits?,id minted at 2026_4 import (was NEW_058)
+REW264_HLT_RISKFLEXUP,live-2026_4,Health & Protection,market,↑,single_select,P2,Can employees flex up group life or income protection cover at their own cost?,id minted at 2026_4 import (was NEW_059)
+REW264_HLT_SPOUSELIFE,live-2026_4,Health & Protection,market,↑,single_select,P3,Is spouse/partner life cover offered?,id minted at 2026_4 import (was NEW_060)
+REW264_HLT_GIPREHAB,live-2026_4,Health & Protection,market,↑,single_select,P2,"If group income protection is offered, are its embedded rehabilitation and early-intervention services actively used?",id minted at 2026_4 import (was NEW_061)
+REW264_HLT_SECONDOPINION,live-2026_4,Health & Protection,market,↑,single_select,P3,Do you provide a second-medical-opinion service?,id minted at 2026_4 import (was NEW_062)
+REW264_HLT_BEREAVESUPPORT,live-2026_4,Health & Protection,market,↑,multi_select,P3,"What bereavement support is provided beyond leave (e.g. counselling, probate/practical support)?",id minted at 2026_4 import (was NEW_063)
+REW264_TIME_CHILDCARE,live-2026_4,Time Off & Family,market,↑,multi_select,P1,Do you provide childcare support?,id minted at 2026_4 import (was NEW_064)
+REW265_TIME_BACKUPCARE,live-2026_5,Time Off & Family,market,↑,single_select,P2,Do you offer backup or emergency care days (child or adult dependants)?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_RTWSUPPORT,live-2026_5,Time Off & Family,market,↑,single_select,P2,"Is structured return-to-work support provided after extended family leave (e.g. coaching, phased return beyond statutory)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_GRANDPARENT,live-2026_5,Time Off & Family,market,↑,single_select,P3,Do you provide paid grandparental leave?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_SURROGACY,live-2026_5,Time Off & Family,market,↑,single_select,P3,Is surrogacy treated with parity to adoption in pay and leave policies?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_DOMABUSE,live-2026_5,Time Off & Family,market,↑,single_select,P2,Do you provide paid leave or formal support for employees experiencing domestic abuse?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_ELDERCARE,live-2026_5,Time Off & Family,market,↑,single_select,P2,Do you provide eldercare navigation or support services?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_BEREAVEDPAT,live-2026_5,Time Off & Family,market,↑,single_select,P2,Have you enhanced pay or leave for the new bereaved-partner paternity entitlement (ERA 2026)?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_TIME_FOURDAY,live-2026_4,Time Off & Family,market,"↑ = operates (fewer hours, same pay)",single_select,P1,Do you operate a four-day week or nine-day fortnight for any population?,direction RATIFIED 2026-07-14 | id minted at 2026_4 import (was NEW_072)
+REW265_TIME_FLEXPATTERN,live-2026_5,Time Off & Family,market,↑,multi_select,P2,Do you operate compressed hours or core-hours flexibility as standard?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_DISCONNECT,live-2026_5,Time Off & Family,market,↑,single_select,P3,Do you have a right-to-disconnect or out-of-hours communication policy?,"kept (R7): statutory CoP incoming | went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_EXTRADAYS,live-2026_5,Time Off & Family,market,↑,multi_select,P3,"Do you offer additional discretionary days (e.g. birthday leave, wellbeing days, volunteering already covered)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_LEAVEDONATE,live-2026_5,Time Off & Family,market,↑,single_select,P3,Can employees donate unused annual leave to colleagues?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_UNLIMITEDAL,live-2026_5,Time Off & Family,market,↑,single_select,P3,Do you offer unlimited or uncapped annual leave for any population?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_TIME_WORKATION,live-2026_5,Time Off & Family,market,↑ = higher/uncapped allowance,single_select,P3,Is there a formal cap on consecutive remote-working days abroad (workation policy)?,"direction RATIFIED 2026-07-14 | went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_BEN_EVSALSAC,live-2026_4,Benefits & Lifestyle,market,↑,single_select,P1,"If a salary sacrifice car scheme is offered, is it EV-only or EV-led?",id minted at 2026_4 import (was NEW_079)
+REW265_BEN_EVCHARGE,live-2026_5,Benefits & Lifestyle,market,↑,single_select,P2,Do you provide workplace EV charging?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_BEN_TRANSPORT,live-2026_5,Benefits & Lifestyle,market,↑,single_select,P3,Do you subsidise public transport beyond season-ticket loans?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_BEN_GREENBEN,live-2026_5,Benefits & Lifestyle,market,↑,multi_select,P3,"Do any benefits explicitly support sustainable choices (green pension option, carbon budget for travel, home-energy support)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_GOV_PAYEXPLAIN,live-2026_4,Governance & Transparency,market,↑,single_select,P1,Can employees request an explanation of how their individual pay was determined (documented process)?,id minted at 2026_4 import (was NEW_083)
+REW265_GOV_VOLGAPS,live-2026_5,Governance & Transparency,market,↑,multi_select,P2,Do you voluntarily publish any pay gap beyond statutory gender reporting?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_SOCIOECON,live-2026_5,Governance & Transparency,market,↑,single_select,P3,Do you monitor pay outcomes by socio-economic background?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_PAYAPPEAL,live-2026_5,Governance & Transparency,market,↑,single_select,P2,Is there an appeals or challenge route for pay review outcomes?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_EIA,live-2026_5,Governance & Transparency,market,↑,single_select,P3,Are reward changes subject to an equality impact assessment before implementation?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_AGENCYPAR,live-2026_5,Pay,market,↑,single_select,P2,"Do agency workers receive parity on pay-adjacent benefits beyond AWR week-12 requirements (e.g. recognition, discounts, EAP)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_PAY_CONTRACTOR,live-2026_5,Pay,market,↑,single_select,P3,"Are contractors/freelancers given access to any employee benefits (EAP, discounts, training)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW264_PAY_HOLPAYMETHOD,live-2026_4,Pay,practice,—,single_select,P1,How is holiday pay calculated for irregular-hours and part-year workers?,id minted at 2026_4 import (was NEW_090)
+REW265_PAY_SEASONAL,live-2026_5,Pay,market,↑,single_select,P3,Do you pay a premium or retention bonus for seasonal peaks?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_COMPSOFT,live-2026_5,Governance & Transparency,market,↑,single_select,P2,Do you use dedicated compensation management software for pay review cycles?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_BROKER,live-2026_5,Governance & Transparency,market,↑,single_select,P3,Do you use an external benefits broker or adviser?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_REBROKE,live-2026_5,Governance & Transparency,market,↑,single_select,P2,How frequently do you run a full benefits-market review or re-broke?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_TAKEUP,live-2026_5,Governance & Transparency,market,↑,single_select,P2,Do you measure benefits take-up and use it in design decisions?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_TRS,live-2026_5,Governance & Transparency,market,↑,single_select,P3,What proportion of total reward spend is communicated to employees (e.g. via TRS coverage)?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_BEN_ENHANCEDVR,live-2026_5,Benefits & Lifestyle,market,↑,single_select,P2,Do you offer voluntary redundancy terms enhanced above your compulsory terms?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_BEN_PENBRIDGE,live-2026_5,Benefits & Lifestyle,market,↑,single_select,P3,Is early-retirement or pension-bridging support offered in restructuring?,"went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW265_GOV_GPGNAMING,live-2026_5,Governance & Transparency,market,↑,single_select,P2,"Are you prepared to name providers of outsourced workers in your gender pay gap report (ERA requirement, commencement date TBC)?","went live 2026-07-14 (Diff 6, commit 6fa205c)"
+REW_PAY_020,live-active,Pensions & Savings,market,↑ pensionable,matrix,,Are allowances pensionable by employee level?,QA-restore: live answer-bearing metric (June regen) omitted by stale anchor-register snapshot

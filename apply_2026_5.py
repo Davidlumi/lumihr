@@ -161,6 +161,17 @@ for qid, r in rel.items():
         if o in assign and assign[o]:
             ans.append((o, 1, qid, "", assign[o], STAMP))
 
+# STANDING RULE (close-out 2026-07-14, ratification 3a): every sector rule must prove
+# NON-ZERO application — a silent no-op (the Industry-vs-Sector key slip) is a
+# prohibited failure shape and must die at apply, not at verify.
+for _qid, (_sects, _delta) in K.TILTS.items():
+    _hit = sum(1 for _o in orgs if any(_s in sector_of[_o] for _s in _sects))
+    assert _hit > 0, "TILT SILENT NO-OP: %s matched zero orgs (%s)" % (_qid, _sects[:3])
+assert sum(1 for _o in orgs if any(_s in sector_of[_o] for _s in K.SALES_HEAVY)) > 0, \
+    "COMMCAP sector gate matched zero orgs"
+assert sum(1 for _o in orgs if fte_band(_o) == "50-249") > 0, \
+    "GPG FTE-derived scope-out matched zero orgs"
+
 cur.executemany("INSERT INTO answers (org_id,snapshot_id,question_id,matrix_row_id,value,submitted_at) VALUES (?,?,?,?,?,?)", ans)
 c.commit()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
