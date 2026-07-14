@@ -64,8 +64,20 @@ try:
 except Exception:
     RESEED_2026_06_18 = set()
 
+# Diff 7 (14 July 2026, ruled) surgically reseeded the 99 wave metrics; diff7_seed_manifest.csv
+# is the ruled lineage record, whitelisted per the only-ruled-manifests rule. The whole REW264_/
+# REW265_ wave is DB-origin (seed scripts, absent from the response CSVs by convention — same
+# treatment as REW26_/REW262_).
+try:
+    DIFF7_MANIFEST = {r["metric_id"] for r in __import__("csv").DictReader(open(os.path.join(ROOT, "diff7_seed_manifest.csv")))
+                      if not r["metric_id"].startswith("__SUMMARY")}
+except Exception:
+    DIFF7_MANIFEST = set()
+
 
 def _db_origin(qid):
+    if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST:
+        return True
     return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18
 
 FAILS = []

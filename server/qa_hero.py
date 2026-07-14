@@ -371,8 +371,21 @@ check("rarity signals carry no verdict word",
 check("every rarity signal is routed (multi_prevalence or rarity), never set-rarity",
       all(x["question_id"] in _ord.get("multi_prevalence", {}) or x["question_id"] in _ord.get("rarity", {}) for x in _rare),
       [x["question_id"] for x in _rare if x["question_id"] not in _ord.get("multi_prevalence", {}) and x["question_id"] not in _ord.get("rarity", {})])
-check("per-metric cap holds — no metric yields two signals",
-      len({x["question_id"] for x in sigs}) == len(sigs))
+# The no-duplicate invariant is per SIGNAL IDENTITY (sig_id = qid::matrix_row), not per
+# question_id: the matrix-position outlier mechanism (signals.py — "every row that crosses
+# the band fires its OWN neutral signal … they coexist and triage independently", capped at
+# thresholds.matrix_max_rows) deliberately emits one outlier per off-market allowance row,
+# because a single per-metric flag would lie when rows sit off market in opposite directions.
+# check-77: the one-per-qid literal was stale — surfaced 2026-07-14 when Diff 7's signal
+# reshuffle let two allowance-row outliers (Night vs Bank-holiday premium) into the top-N.
+from collections import Counter as _Ctr
+_sig_ids = [x.get("sig_id") or x["question_id"] for x in sigs]
+_multi_q = {q for q, n in _Ctr(x["question_id"] for x in sigs).items() if n > 1}
+check("per-metric cap holds — duplicates only as distinct matrix-row outliers (sig_id unique)",
+      len(set(_sig_ids)) == len(_sig_ids)
+      and all(x["kind"] == "outlier" for x in sigs if x["question_id"] in _multi_q),
+      [(x["question_id"], x["kind"]) for x in sigs if x["question_id"] in _multi_q and x["kind"] != "outlier"]
+      or ([i for i in _sig_ids if _sig_ids.count(i) > 1] if len(set(_sig_ids)) != len(_sig_ids) else ""))
 dots = {d["name"]: d.get("dot") for d in ov_sig["hero"]["domains"]}
 check("category dots sit in [1,99] where present",
       all(v is None or (1 <= v <= 99) for v in dots.values()), dots)

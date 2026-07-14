@@ -1078,7 +1078,7 @@ DOMAIN_SUMMARY_SCHEMA = {
 
 # Bump when the generator logic changes so the persisted domain_summary cache
 # self-invalidates (the cache key is keyed on the payload hash + this string).
-DOMAIN_SUMMARY_GEN_VERSION = "2026-07-14.domain-v4-groundednames"
+DOMAIN_SUMMARY_GEN_VERSION = "2026-07-14.domain-v5-groundednums"
 
 # Worded proportions a count must never become (rule 1) — the numeric allowlist only
 # catches DIGITS, so the conversion-in-words has to be caught here. "most" is forbidden
@@ -1151,19 +1151,15 @@ def validate_domain_summary(parts, payload):
         if "placeholder" in parts[k].lower() or "lorem ipsum" in parts[k].lower():
             return False, "stub/placeholder text in %s" % k
     text_all = " ".join(parts[k] for k in DOMAIN_PARTS)
-    allowed = _domain_numbers(payload)
-    for tok in re.findall(r"\d+(?:\.\d+)?", text_all.replace(",", "")):
-        v = float(tok)
-        if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
-            return False, "ungrounded number: %s" % tok
-    # RULED (2026-07-14): word-list scanning applies to the residual prose after
-    # removing exact grounded metric-name phrases present in the payload — WHOLE-PHRASE
-    # removal only, never single-word or substring exemption (word boundaries guard the
-    # alphanumeric edges, so "…cover" never matches inside "…coverage"). Banned words
-    # surviving in the model's own prose still fail. Rationale: the B' remap made banned
-    # words legitimate metric names ("Critical illness cover", "…reviewed regularly");
-    # the deterministic floor was failing its own gate and blanking drivers on
-    # Pay/Wellbeing/H&P.
+    # RULED (2026-07-14): both the number scan and the word-list scans apply to the
+    # residual prose after removing exact grounded metric-name phrases present in the
+    # payload — WHOLE-PHRASE removal only, never single-word or substring exemption (word
+    # boundaries guard the alphanumeric edges, so "…cover" never matches inside "…coverage").
+    # Banned words / ungrounded numbers surviving in the model's OWN prose still fail.
+    # Rationale: the B' remap made banned words legitimate metric names ("Critical illness
+    # cover", "…reviewed regularly") and Diff 7 surfaced a metric name carrying a figure
+    # ("£2,000 NIC cap" -> "2000" after comma-strip, which _domain_numbers extracts pre-strip
+    # as 2/000, so it never matched) as a Pensions driver — the floor was failing its own gate.
     text_scan = text_all
     for lst in ("gaps", "strengths"):
         for g in payload.get(lst) or []:
@@ -1176,6 +1172,11 @@ def validate_domain_summary(parts, payload):
             if name[-1].isalnum():
                 pat = pat + r"\b"
             text_scan = re.sub(pat, " ", text_scan, flags=re.I)
+    allowed = _domain_numbers(payload)
+    for tok in re.findall(r"\d+(?:\.\d+)?", text_scan.replace(",", "")):
+        v = float(tok)
+        if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
+            return False, "ungrounded number: %s" % tok
     if DOMAIN_RATIO_RE.search(text_scan):
         return False, "worded proportion: %s" % DOMAIN_RATIO_RE.search(text_scan).group(0)
     if DIRECTIVE_RE.search(text_scan):

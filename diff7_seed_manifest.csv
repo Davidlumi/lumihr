@@ -1,0 +1,86 @@
+metric_id,fix_class,class,writes,target,achieved_top
+REW264_BEN_EVSALSAC,F2,Level,54,,Not applicable 56%; Fuel-neutral 30%; EV-led (EV prioritised) 10%; EV-only 5%
+REW264_GOV_PAYEXPLAIN,F5-jitter,Level,14,,No 64%; Formal right/process 19%; Informal via manager 17%
+REW264_HLT_CANCERPATH,F5-jitter,Level,27,,No 75%; Yes dedicated pathway 15%; Via PMI 10%
+REW264_HLT_CASHPLAN,F5-jitter,Level,29,,No 62%; Employer-paid all 17%; Employer-paid some 13%; Voluntary only 9%
+REW264_HLT_FERTROUTE,F5-jitter,Level,2,,Not applicable 90%; Specialist provider/insu 6%; Direct reimbursement 2%; Via PMI 1%
+REW264_HLT_GENDERAFF,F5-jitter,Level,3,,No 70%; Yes explicit 20%; PMI standard terms 11%
+REW264_HLT_MENSHEALTH,F5-jitter,Level,13,,No 76%; Yes 24%
+REW264_HLT_OPTICAL,F5-jitter,Level,14,,Yes 76%; Statutory DSE only 24%
+REW264_HLT_SPOUSELIFE,F5-jitter,Level,6,,No 69%; Employer-paid 20%; Voluntary 11%
+REW264_HLT_VIRTUALGP,F5-jitter,Level,33,,No 77%; Yes all employees 9%; Yes some 7%; Via PMI only 6%
+REW264_HLT_WOMENSHEALTH,F5-jitter,Level,28,,No 77%; Policy/awareness only 11%; Yes clinical benefit 11%
+REW264_INC_EMICSOP,F1,Level,59,,Neither 66%; Not applicable (no share 13%; EMI 12%; CSOP 6%; Both 3%
+REW264_INC_SHAREPLAN,F1,Level,57,,Neither 63%; Not applicable (no share 18%; SAYE 11%; SIP 5%; Both 3%
+REW264_PAY_HOLPAYMETHOD,F3/F4-target,Practice,159,52-week average=55;Accrual per GB regs=25;Rolled-up 12.07%=15;Unsure=5,52-week average 55%; Accrual per GB regs 25%; Rolled-up 12.07% 15%; Unsure 5%
+REW264_PAY_STARTPOLICY,F5-jitter,Practice,40,,No policy 61%; At/below range mid 15%; Range minimum to mid 13%; Anywhere in range 11%
+REW264_PEN_AEDEFAULT,F5-jitter,Level,32,,Statutory minimum only 71%; Not applicable (no DC sc 8%; 1-2pp above 8%; 3pp+ above 6%; Opt-up default (auto-esc 6%
+REW264_PEN_AUTOESC,F5-jitter,Level,12,,No 64%; Yes default 20%; Yes opt-in 16%
+REW264_PEN_CONTRIBFLEX,F5-jitter,Level,16,,No 76%; Yes formal flexibility 13%; Informal 11%
+REW264_PEN_CONTRIBTIER,F5-jitter,Level,8,,No flat structure 69%; Yes service-linked 15%; Yes age-linked 9%; Not applicable 7%
+REW264_PEN_GREENDEFAULT,F3/F4-target,Level,167,Standard default=45;ESG-tilted=30;Yes net-zero aligned=18;Unsure=7,Standard default 41%; ESG-tilted 28%; Yes net-zero aligned 16%; Not applicable (no DC de 8%; Unsure 6%
+REW264_PEN_HELPTOSAVE,F5-jitter,Level,33,,No 63%; Actively promote 19%; Signpost 18%
+REW264_PEN_MIDLIFEMOT,F5-jitter,Level,12,,No 70%; Yes structured programme 18%; Signposting only 12%
+REW264_PEN_NICSHARING,F5-jitter,Level,10,,No 45%; No sal-sac scheme 40%; Yes fully 7%; Yes partially 7%
+REW264_PEN_PAYROLLLOANS,F5-jitter,Level,34,,No 60%; Payroll-deducted loan sc 19%; Internal hardship fund 11%; Both 10%
+REW264_PEN_PENLEAVEGAP,F5-jitter,Level,14,,No 68%; Yes 18%; Case-by-case 14%
+REW264_PEN_SALSACIMPACT,F2,Level,66,,Not yet 44%; Yes modelled 31%; High-level review 15%; Not applicable (no sal-s 10%
+REW264_PEN_SALSACRESPONSE,F2,Practice,66,,Maintain scheme unchange 63%; Restructure (e.g. employ 15%; Not applicable (no sal-s 10%; Withdraw sal-sac 8%; Undecided 4%
+REW264_TIME_CHILDCARE,F3/F4-target,Level,78,Nursery partnership/subsidy=12;Backup/emergency care=8;Workplace nursery scheme=,None 70%; Nursery partnership/subs 10%; Backup/emergency care 8%; Workplace nursery scheme 8%; Childcare concierge 1%
+REW264_WEL_DEBTADVICE,F5-jitter,Level,8,,No 68%; Yes funded 20%; Signposted (e.g. MaPS) 13%
+REW264_WEL_EWACAP,F5-jitter,Level,4,,Not applicable 65%; No cap 26%; Yes <=50% 5%; Yes other cap 4%
+REW264_WEL_EWAFEES,F5-jitter,Level,10,,Not applicable 65%; Employer-funded (free to 21%; Employee pays per transa 9%; Subscription model 5%
+REW264_WEL_FINCOACH,F5-jitter,Level,42,,No 62%; Yes funded advice 14%; Subsidised 13%; Workshops only 11%
+REW264_WEL_MEALS,F5-jitter,Level,22,,No 79%; Free 13%; Subsidised 9%
+REW264_WEL_SEASONTICKET,F5-jitter,Level,31,,No 79%; Yes 21%
+REW265_BEN_ENHANCEDVR,F5-jitter,Level,13,,Same as compulsory terms 43%; Not applicable (VR not u 35%; Yes — enhanced VR terms 22%
+REW265_BEN_EVCHARGE,F5-jitter,Level,17,,No 74%; Paid workplace charging 15%; Free workplace charging 11%
+REW265_BEN_PENBRIDGE,F5-jitter,Level,6,,No 77%; Case-by-case 15%; Yes 8%
+REW265_BEN_TRANSPORT,F5-jitter,Level,12,,Neither 78%; Loans only 11%; Yes — subsidy 10%
+REW265_GOV_AIBENCH,F5-jitter,Level,79,,No 60%; Exploring 14%; Piloting 14%; Yes — embedded in proces 12%
+REW265_GOV_AIDISCLOSE,F5-jitter,Level,4,,No 53%; Not applicable (no AI us 29%; On request 11%; Yes — always disclosed 7%
+REW265_GOV_AIREGRADE,F5-jitter,Level,61,,No 63%; Review underway 15%; Yes — isolated cases 14%; Yes — several roles 8%
+REW265_GOV_AITALENT,F5-jitter,Level,43,,No 64%; Case-by-case 19%; Yes — formal programme 17%
+REW265_GOV_BROKER,F3/F4-target,Level,88,None=45;Project-based adviser=30;Full-service broker=25,None 45%; Project-based adviser 30%; Full-service broker 25%
+REW265_GOV_COMPSOFT,F5-jitter,Level,17,,Spreadsheets 75%; Outsourced 10%; HRIS module 9%; Dedicated comp tool 7%
+REW265_GOV_EIA,F5-jitter,Level,32,,No 64%; Major changes only 19%; Always 17%
+REW265_GOV_GPGNAMING,F5-jitter,Level,13,,Not started 69%; Not in scope (under 250  14%; Prepared 9%; Reviewing supplier data 9%
+REW265_GOV_PAYAPPEAL,F5-jitter,Level,14,,None 65%; Grievance route only 24%; Formal appeal route 11%
+REW265_GOV_REBROKE,F3/F4-target,Level,128,Never=35;Less often than every 3 years=30;Every 2–3 years=25;Annually=10,Never 35%; Less often than every 3  30%; Every 2–3 years 25%; Annually 10%
+REW265_GOV_SOCIOECON,F5-jitter,Level,12,,No 75%; Considering 15%; Yes 10%
+REW265_GOV_TAKEUP,F5-jitter,Level,13,,No 75%; Occasionally 14%; Systematically 11%
+REW265_GOV_TRS,F5-jitter,Level,22,,None 65%; Some populations 21%; All employees receive TR 15%
+REW265_INC_BONUSDISC,F3/F4-target,Practice,145,"Committee discretion, documented=40;Manager discretion=30;No discretion — formul","Committee discretion, do 40%; Manager discretion 30%; No discretion — formula  20%; Discretion applied, undo 10%"
+REW265_INC_BONUSTIME,F3/F4-target,Practice,205,Within 3 months of year end=55;3–4 months=35;Over 4 months=10,Within 3 months of year  55%; 3–4 months 35%; Over 4 months 10%
+REW265_INC_BUYOUT,F5-jitter,Level,44,,Never 63%; Exceptionally 20%; Routinely offered 16%
+REW265_INC_COMMCAP,F2,Level,124,,Not applicable (no commi 44%; Hard cap 28%; Soft cap or decelerator 20%; Uncapped 8%
+REW265_INC_EOT,F3/F4-target,Level,0,KEEP AS SEEDED (No=94;Under consideration=4;EOT-owned=2),No 94%; Under consideration 4%; EOT-owned 2%
+REW265_INC_ESGINCENT,F5-jitter,Level,17,,No 77%; Yes — modifier or underp 12%; Yes — weighted measures 10%
+REW265_INC_PROFITSHARE,F5-jitter,Level,17,,No 77%; Gainshare (site or team) 12%; Profit share — all-emplo 11%
+REW265_INC_RETENTION,F5-jitter,Level,48,,No 62%; Case-by-case 20%; Formal framework 17%
+REW265_INC_SAYEDISC,F3/F4-target,Level,39,20% (maximum)=55;10–19%=25;Under 10%=12;No discount=8,Not applicable 80%; 20% (maximum) 11%; 10–19% 5%; Under 10% 2%; No discount 1%
+REW265_INC_SHAREPART,F3/F4-target,Level,37,10–25%=40;26–50%=30;Under 10%=20;Over 50%=10,Not applicable 80%; 10–25% 8%; 26–50% 6%; Under 10% 4%; Over 50% 2%
+REW265_INC_SIPELEM,F3/F4-target,Practice,28,Partnership shares=75;Matching shares=55;Free shares=35;Dividend shares=15,No SIP operated 87%; Partnership shares;Match 3%; Partnership shares 3%; Partnership shares;Free  2%; Matching shares;Free sha 1%
+REW265_PAY_ACTINGUP,F5-jitter,Practice,16,,No 74%; Case-by-case 14%; Formal allowance or upli 12%
+REW265_PAY_AGENCYPAR,F5-jitter,Level,53,,Statutory only 60%; Partial 23%; Full parity 17%
+REW265_PAY_CONTRACTOR,F5-jitter,Level,7,,None 77%; EAP only 14%; Yes — several benefits 10%
+REW265_PAY_COUNTEROFFER,F5-jitter,Practice,28,,No policy 75%; Case-by-case with approv 9%; Routinely counter 9%; Never counter 8%
+REW265_PAY_EARLYCAREER,F5-jitter,Level,14,,Ad hoc 46%; Yes — structured framewo 29%; Not applicable (no appre 25%
+REW265_PAY_GEOPAY,F5-jitter,Practice,25,,National single structur 79%; Role-by-role 8%; Multi-zone structure 7%; London/SE weighting 6%
+REW265_PAY_MGRTRAIN,F5-jitter,Level,12,,Neither 72%; Guidance pack only 15%; Mandatory training 13%
+REW265_PAY_PAYCOMMS,F5-jitter,Level,35,,Varies 66%; Amount only 14%; Manager conversation req 11%; Statement with rationale 9%
+REW265_PAY_PROMOPAY,F5-jitter,Practice,34,,Fully discretionary 66%; To new range minimum 14%; Range-position driven 12%; Fixed % guideline 8%
+REW265_PAY_RANGEMAX,F5-jitter,Practice,32,,No formal ranges 68%; Continue increases 11%; Frozen until range moves 11%; Lump-sum in lieu 9%
+REW265_PAY_SEASONAL,F5-jitter,Level,72,,Neither 70%; Completion bonus 20%; Peak premium 10%
+REW265_TIME_BACKUPCARE,F5-jitter,Level,37,,No 62%; Discounted access 20%; Yes — funded days 19%
+REW265_TIME_BEREAVEDPAT,F5-jitter,Level,22,,Statutory only 67%; Enhanced pay 23%; Not yet reviewed 10%
+REW265_TIME_DISCONNECT,F5-jitter,Level,31,,No 68%; Guidance only 17%; Formal policy 15%
+REW265_TIME_DOMABUSE,F5-jitter,Level,28,,Neither 63%; Support pathway only 22%; Paid leave plus support  15%
+REW265_TIME_ELDERCARE,F5-jitter,Level,14,,No 76%; Yes 24%
+REW265_TIME_RTWSUPPORT,F5-jitter,Level,46,,Neither 63%; Phased return only 20%; Coaching plus phased ret 17%
+REW265_TIME_SURROGACY,F5-jitter,Level,22,,Not addressed 69%; Partial 20%; Full parity 12%
+REW265_TIME_WORKATION,F3/F4-target,Level,126,Case-by-case=45;Prohibited=25;Formal cap (days per year)=20;Uncapped=10,Case-by-case 45%; Prohibited 25%; Formal cap (days per yea 20%; Uncapped 10%
+__SUMMARY_headline,ledger,,,Thornbridge Retail 279->280,"net +1 (EMICSOP +1, COMMCAP -1 net 0 Incentives; SALSACIMPACT +1 Pensions); re-asserted vs live DB"
+__SUMMARY_cohort_F1,legal-form correction,,116,,"F1 share-form NA->Neither, +116 gauge-eligible readings"
+__SUMMARY_cohort_F2,false-NA correction,,136,,"COMMCAP +70, SALSAC-IMPACT +66 = +136 false-NA readings entering the market pool"
+__SUMMARY_cohort_total,false-NA correction,,252,,"cohort gauge-eligible readings 52201 -> 52453 (+252); CHILDCARE nursery ~9% floor override of the 4% target (binding, 20 old-book holders preserved)"
