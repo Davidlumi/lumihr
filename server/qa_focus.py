@@ -47,13 +47,16 @@ check("overview headline reward-scoped (comparable_metrics <= the Reward questio
       ov["headline"]["comparable_metrics"] <= me["scope"]["question_count"],
       (ov["headline"]["comparable_metrics"], me["scope"]["question_count"]))
 check("by_superpower keys == {Reward}", list(ov["headline"]["by_superpower"].keys()) == ["Reward"])
-# Governance is carved out of the competitiveness headline (competitiveness=false,
-# no headline role — see positions.py / the market-position re-axis), so by_section
-# carries the 6 competitive categories, not all 7.
-check("by_section has the 6 competitive categories (Governance carved out)",
-      sorted(ov["headline"]["by_section"].keys()) ==
-      ["Benefits", "Incentives", "Pay", "Recognition", "Time Off", "Wellbeing"],
-      sorted(ov["headline"]["by_section"].keys()))
+# by_section carries exactly the competitive domains — DERIVED from the mp config
+# flags, never a literal list (check-77 rule: the 7-category/6-competitive world
+# ended with Diff 1/2 on 2026-07-14; all 8 B' domains are competitive as of Diff 2).
+_mpc = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "..", "data", "market_position_config.json")))
+_competitive = sorted(d for d, v in _mpc.get("_domains", {}).items()
+                      if not d.startswith("_") and v.get("competitiveness"))
+check("by_section carries exactly the competitive domains (derived from mp config)",
+      sorted(ov["headline"]["by_section"].keys()) == _competitive,
+      (sorted(ov["headline"]["by_section"].keys()), _competitive))
 check("£ opportunity only reward metrics (pension; no agency/attrition)",
       all(i["label"] == "Employer pension contribution" for i in ov["opportunity"]["items"]),
       [i["label"] for i in ov["opportunity"]["items"]])
@@ -119,8 +122,12 @@ else:
 # cut sensitivity (2026-06-13): the single-metric endpoint must genuinely apply
 # a sector cut — a regression here is what the user hit on the metric page.
 # All-peers vs a sector must differ in n (and not silently fall back to all).
-st, b_all = api("/api/benchmark/ALLOW_01?cut=all")
-st, b_sec = api("/api/benchmark/ALLOW_01?cut=industry&cut_value=Retail%20%26%20Consumer%20Goods")
+# Probe metric DERIVED (widest-pool live market card) — the old ALLOW_01 literal
+# died with the Diff 3 retirement.
+_probe = max((c for c in rw["cards"] if not c.get("practice")),
+             key=lambda c: c.get("n") or 0)["id"]
+st, b_all = api("/api/benchmark/%s?cut=all" % _probe)
+st, b_sec = api("/api/benchmark/%s?cut=industry&cut_value=Retail%%20%%26%%20Consumer%%20Goods" % _probe)
 check("metric endpoint applies a sector cut (n differs from all-peers)",
       b_all.get("n") and b_sec.get("n") and b_sec["n"] != b_all["n"],
       (b_all.get("n"), b_sec.get("n")))
@@ -134,8 +141,11 @@ d = json.loads(anon.open(BASE + "/api/share/%s/data" % sh["token"], timeout=60).
 check("shared view clean of hidden areas", not leak(d) and all(c["superpower"] == "Reward" for c in d["cards"]))
 api("/api/shares/" + sh["token"], "DELETE")
 st, meth = api("/api/methodology")
-check("methodology scope = the 7 categories (2026.1)", meth["scope"]["focused"] and
-      sorted(meth["scope"]["sections"]) == ["Benefits", "Governance", "Incentives", "Pay", "Recognition", "Time Off", "Wellbeing"])
+check("methodology scope = the live domain taxonomy (derived from mp config)",
+      meth["scope"]["focused"] and
+      sorted(meth["scope"]["sections"]) ==
+      sorted(d for d in _mpc.get("_domains", {}) if not d.startswith("_")),
+      (sorted(meth["scope"]["sections"])))
 
 print("\n== FOCUS LEAK-CHECK: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
 for n, d in FAIL: print("  FAILED:", n, d)

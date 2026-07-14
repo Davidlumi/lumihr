@@ -84,8 +84,11 @@ print("SECTION B — validator REJECTS hostile model outputs (each must fail clo
 print("=" * 100)
 pay_pay = base_payloads.get(("Pay", True))            # has position + alignment
 pay_abs = base_payloads.get(("Pay", False))           # has position, alignment absent
-gov = next((p for (d, s), p in base_payloads.items() if d == "Governance" and s), None) \
-    or appmod.build_domain_summary_payload(conn, org, user, "Governance", CUTS[0], apply_strategy=True)
+# Domain name DERIVED from the live taxonomy ("Governance" became "Governance &
+# Transparency" at Diff 1; a literal here returned a None payload and crashed the gate).
+_gov_name = next(d for d in DOMAINS if d.startswith("Governance"))
+gov = next((p for (d, s), p in base_payloads.items() if d == _gov_name and s), None) \
+    or appmod.build_domain_summary_payload(conn, org, user, _gov_name, CUTS[0], apply_strategy=True)
 
 
 def floor(p):
@@ -128,9 +131,13 @@ expect_reject("alarm ('concerning') rejected", p, pay_pay)
 # 8 alignment stated with no alignment field (strategy off)
 p = floor(pay_abs); p["position"] = p["position"] + " This domain reads behind strategy."
 expect_reject("alignment with no alignment field rejected", p, pay_abs)
-# 9 market position on a non-competitive domain
+# 9 market position stated against a payload with NO position grounding. Diff 2
+# (2026-07-14) made all 8 domains competitive, so no live domain lacks has_position —
+# the validator branch is exercised on a synthetic has_position-stripped copy instead.
+import copy as _copy
+gov_np = _copy.deepcopy(gov); gov_np["has_position"] = False
 p = floor(gov); p["position"] = "Three of five metrics sit below market."
-expect_reject("market position on non-competitive domain rejected", p, gov)
+expect_reject("market position on non-competitive payload rejected", p, gov_np)
 # 10 provenance stripped of its numbers
 p = floor(pay_pay); p["provenance"] = "Across your benchmarks, compared with the peer group."
 expect_reject("provenance missing its figures rejected", p, pay_pay)

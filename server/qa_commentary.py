@@ -162,7 +162,13 @@ print()
 print("=" * 100)
 print("SECTION E — unanswered metric")
 print("=" * 100)
-un = appmod.build_commentary_payload(conn, org, user, "REW_BEN_FAM_006", "all", None)  # genuinely-unanswered metric (RED_COST_01 is now answered in the demo org)
+# Unanswered metric DERIVED at run time — hardcoded picks keep dying as seed waves land
+# (RED_COST_01, then REW_BEN_FAM_006 answered by the 2026_4/5 seeds).
+_answered = {r["question_id"] for r in conn.execute(
+    "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=1", (org["org_id"],))}
+_un_qid = next((q for q in sorted(appmod.org_visible_questions(org)) if q not in _answered), None)
+assert _un_qid, "demo org has answered every visible metric — section E needs a new fixture"
+un = appmod.build_commentary_payload(conn, org, user, _un_qid, "all", None)
 check("E", "unanswered metric: payload.you is None", un["you"] is None)
 parts = gen(un)
 check("E", "no fabricated 'you' position; peers described; invites an answer",

@@ -54,6 +54,20 @@ REGEN_WHITELIST = {
     "REW_PAY_020": {"No": 1092, "Yes": 448},
 }
 
+# The surgical coherence reseed (18 June 2026, David-confirmed — DECISIONS.md) rewrote
+# per-org values across the book WITHOUT moving top-lines; rew_live_meta.json was a ruled
+# input and names its question universe. Row-level CSV lineage for those qids ended that
+# day by design, so the L1 value diff skips them (same treatment as REGEN_WHITELIST —
+# found 2026-07-14 as 15,251 "mismatches", 50/50 qids inside the manifest).
+try:
+    RESEED_2026_06_18 = set(json.load(open(os.path.join(ROOT, "rew_live_meta.json"))))
+except Exception:
+    RESEED_2026_06_18 = set()
+
+
+def _db_origin(qid):
+    return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18
+
 FAILS = []
 WARNS = []
 
@@ -218,7 +232,7 @@ missing_in_db = mismatched = 0
 type_examples = {}
 for key, v in csv_rows.items():
     qid = key[0]
-    if qid in REGEN_WHITELIST:
+    if _db_origin(qid):
         continue
     dbv = raw_answers.get(key)
     if dbv is None:
@@ -236,7 +250,7 @@ for key, v in csv_rows.items():
 # release-addition seeds (REW26_*/REW262_*) are documented DB-origin data —
 # their lineage is the seed scripts + DECISIONS.md, not the response CSVs
 extra_in_db = [k for k in raw_answers
-               if k not in csv_rows and k[0] not in REGEN_WHITELIST and k[0] in META
+               if k not in csv_rows and not _db_origin(k[0]) and k[0] in META
                and not k[0].startswith(("REW26_", "REW262_"))]
 # question-level matrix N/A (row '') is a legitimate post-import state; so are drafts-era saves
 extra_real = [k for k in extra_in_db if not (META[k[0]]["type"] == "matrix" and k[2] == "")]
@@ -285,13 +299,20 @@ print("\n================ LAYER 2 — CALCULATION (independent recompute) ======
 op = login("analyst@thornbridge.example", "lumi-data-2026")
 demo_org = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
 
+# The reference pool mirrors the engine's documented completeness FIREWALL
+# (aggregate.run_snapshot): only submission-complete orgs contribute to the
+# published benchmark — a half-finished signup that answered one question must
+# not inflate ref counts either (the ALLOW_02 n=221-vs-220 case, the Tester org).
+_complete = {r[0] for r in conn.execute("SELECT org_id FROM orgs WHERE submission_complete=1")}
+bench_answers = {k: v for k, v in raw_answers.items() if k[1] in _complete}
+
 checked = {"numeric": 0, "single_select": 0, "yes_no": 0, "multi_select": 0,
            "matrix-numeric": 0, "matrix-categorical": 0}
 mismatches = 0
 
 
 def ref_select_counts(qid):
-    per_org = {o: v for (q2, o, r2), v in raw_answers.items() if q2 == qid and not r2 and str(v).strip()}
+    per_org = {o: v for (q2, o, r2), v in bench_answers.items() if q2 == qid and not r2 and str(v).strip()}
     return per_org
 
 
@@ -313,8 +334,10 @@ for qid, m in REWARD.items():
             if not (card.get("suppressed") or blk.get("suppressed")):
                 fail("L2", "%s numeric n=%d below floor but served" % (qid, n))
         else:
+            # stored percentiles are ROUNDED to 2dp, so a true value on a half-cent
+            # (3.275 -> stored 3.27) legitimately sits 0.005 away from the raw ref
             for p_, key in ((10, "p10"), (25, "p25"), (50, "p50"), (75, "p75"), (90, "p90")):
-                if not close(ref_pctl(vals, p_), blk.get(key), 1e-6):
+                if not close(ref_pctl(vals, p_), blk.get(key), 5.01e-3):
                     fail("L2", "%s %s: ref %.4f vs prod %s (raw n=%d)" % (qid, key, ref_pctl(vals, p_), blk.get(key), n))
                     mismatches += 1
                     break
@@ -376,7 +399,7 @@ for qid, m in REWARD.items():
         col = q_matrix_col(m)
         col_opts = col.get("options") or []
         by_row = {}
-        for (q2, o, r2), v in raw_answers.items():
+        for (q2, o, r2), v in bench_answers.items():
             if q2 == qid and r2 and str(v).strip():
                 by_row.setdefault(r2, {})[o] = str(v).strip()
         distinct = {v for per in by_row.values() for v in per.values()
@@ -426,8 +449,14 @@ print("recomputed per type: %s | value mismatches: %d" % (checked, mismatches))
 # Points model (documented, 2026-06-12): each selected non-na option scores its
 # option_score; none-ish options score 0 (assessed zero provision). The config
 # is DATA (questions table) — reading it keeps the code path independent.
-_cfg = json.loads(conn.execute("SELECT scoring_config_json FROM questions WHERE id='ALLOW_01'").fetchone()[0])
-_opt_code = {ref_norm(o["label"]): o["code"] for o in (REWARD["ALLOW_01"].get("options") or [])}
+# Spot metric DERIVED: first live scored multi-select in the reward-visible set that
+# the demo org has answered (the old ALLOW_01 literal died with the Diff 3 retirement).
+_spot = next(r["id"] for r in conn.execute(
+    "SELECT id FROM questions WHERE status='active' AND is_scored=1 AND type='multi_select' "
+    "AND scoring_config_json LIKE '%option_scores%' ORDER BY id")
+    if r["id"] in REWARD and demo_org in ref_select_counts(r["id"]))
+_cfg = json.loads(conn.execute("SELECT scoring_config_json FROM questions WHERE id=?", (_spot,)).fetchone()[0])
+_opt_code = {ref_norm(o["label"]): o["code"] for o in (REWARD[_spot].get("options") or [])}
 _scores, _na = _cfg["option_scores"], set(_cfg.get("na_codes") or [])
 _mx = float(sum(v for c, v in _scores.items() if c not in _na))
 
@@ -437,14 +466,14 @@ def _points(ans):
     return 100.0 * sum(_scores.get(c, 0) for c in sel if c and c not in _na) / _mx
 
 
-vals = sorted(_points(v) for v in ref_select_counts("ALLOW_01").values())
-st, card = api(op, "/api/benchmark/ALLOW_01?dim=all")
+vals = sorted(_points(v) for v in ref_select_counts(_spot).values())
+st, card = api(op, "/api/benchmark/%s?dim=all" % _spot)
 you_raw = "; ".join((card.get("you") or {}).get("labels") or [])
 mine = len((card.get("you") or {}).get("labels") or [])
 ref_p = ref_midrank(vals, _points(you_raw))
 prod_p = (card.get("score") or {}).get("percentile")
-print("polarity/verdict spot (ALLOW_01): you=%d options; ref midrank=%.1f vs prod %.1f; higher_is_better -> %s"
-      % (mine, ref_p, prod_p, "Behind" if ref_p < 45 else "Ahead" if ref_p > 55 else "In line"))
+print("polarity/verdict spot (%s): you=%d options; ref midrank=%.1f vs prod %.1f; higher_is_better -> %s"
+      % (_spot, mine, ref_p, prod_p, "Behind" if ref_p < 45 else "Ahead" if ref_p > 55 else "In line"))
 if not close(ref_p, prod_p, 0.51):
     fail("L2", "scored percentile diverges: ref %.1f vs prod %s" % (ref_p, prod_p))
 
@@ -565,7 +594,7 @@ for o in responding:
 
 stored = json.loads(conn.execute(
     "SELECT payload_json FROM benchmark_snapshots WHERE question_id='EXT_REW_GAP_013'").fetchone()[0])
-answered_013 = {o for (q2, o, r2) in raw_answers if q2 == "EXT_REW_GAP_013" and not r2}
+answered_013 = {o for (q2, o, r2) in bench_answers if q2 == "EXT_REW_GAP_013" and not r2}
 cut_checks = 0
 for (dim, val), org_set in sorted(ref_cut.items())[:0] or []:
     pass

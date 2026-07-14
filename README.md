@@ -46,6 +46,8 @@ cd server && python3 verify.py     # 37 checks: aggregation, tenancy, suppressio
 
 The suite creates throwaway probe orgs and removes them (and re-aggregates) on completion.
 
+`./run_gates.sh` is the canonical full-suite entry point: throwaway DB copy → fresh gate servers → all ten qa_* gates → restores the dev server (see the script header for the doctrine).
+
 ## Layout
 
 ```
