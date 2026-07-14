@@ -2637,6 +2637,384 @@
       "direction": null,
       "lens": "attract",
       "weight": 1
+    },
+    "REW265_GOV_AIBENCH": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_AITALENT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_AIREGRADE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_AIDISCLOSE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_SAYEDISC": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_SIPELEM": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_SHAREPART": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_EOT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_ESGINCENT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_BONUSDISC": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_BUYOUT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_BONUSTIME": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_PROFITSHARE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_COMMCAP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_INC_RETENTION": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_PROMOPAY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_COUNTEROFFER": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_GEOPAY": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_RANGEMAX": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_MGRTRAIN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_PAYCOMMS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_EARLYCAREER": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_ACTINGUP": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_BACKUPCARE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_RTWSUPPORT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_GRANDPARENT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_SURROGACY": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_DOMABUSE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_ELDERCARE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_BEREAVEDPAT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_FLEXPATTERN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_DISCONNECT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_EXTRADAYS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_LEAVEDONATE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_UNLIMITEDAL": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_TIME_WORKATION": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_BEN_EVCHARGE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_BEN_TRANSPORT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_BEN_GREENBEN": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_VOLGAPS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_SOCIOECON": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_PAYAPPEAL": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_EIA": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_AGENCYPAR": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_CONTRACTOR": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_PAY_SEASONAL": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_COMPSOFT": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_BROKER": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_REBROKE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_TAKEUP": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_TRS": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_BEN_ENHANCEDVR": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_BEN_PENBRIDGE": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
+    },
+    "REW265_GOV_GPGNAMING": {
+      "class": "Level",
+      "type": "ordinal",
+      "direction": "higher_is_better",
+      "lens": "attract",
+      "weight": 1
     }
   }
 }
