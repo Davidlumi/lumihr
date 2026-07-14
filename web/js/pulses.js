@@ -349,7 +349,22 @@ function LaunchStepper({ ls }) {
 window.RunPulsePage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  useEffect(() => { api("/api/org/pulses").then(setData).catch(e => setErr(e.message)); }, []);
+  // the LIVE moment (delight, 2026-07-13): the launch is the moment a member paid for,
+  // and it used to pass in silence — a status chip quietly flipping to "live". Once per
+  // pulse (localStorage marker), the owner gets the unlock-moment banner + a burst.
+  const [liveMoment, setLiveMoment] = useState(null);
+  useEffect(() => { api("/api/org/pulses").then(d => {
+    setData(d);
+    try {
+      const justLive = (d.pulses || []).filter(p => p.launch_status === "paid" && p.status === "open"
+        && !localStorage.getItem("lumi-pulse-live-" + p.pulse_id));
+      if (justLive.length) {
+        justLive.forEach(p => localStorage.setItem("lumi-pulse-live-" + p.pulse_id, "1"));
+        setLiveMoment(justLive[0]);
+        if (window.confettiBurst) confettiBurst({ count: 140, duration: 2600, origin: { x: 0.5, y: 0.25 } });
+      }
+    } catch (e) {}
+  }).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load your surveys" body=${err} />`;
   if (!data) return html`<${PageLoading} />`;
   const chip = (p) => {
@@ -377,6 +392,19 @@ window.RunPulsePage = function ({ me }) {
         <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
         <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? "from " + fmtFee(me.config.pulse_launch_fee_pence) + " (ex VAT), confirmed at approval" : "Pay once"} · opens to all members</span></div></div>
       </div>
+
+      ${liveMoment && html`
+        <div class="unlock-moment" role="status">
+          <div class="unlock-spark"><${Icon} name="sparkle" size=${20} /></div>
+          <div>
+            <b>“${liveMoment.name}” is live to the community</b>
+            <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can
+              now answer. Responses build behind the same 5-organisation protection as your core benchmark —
+              the report unlocks the moment it clears the floor.</p>
+          </div>
+          <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}>
+            <${Icon} name="close" size=${13} /></button>
+        </div>`}
 
       ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
         <span>Once your pulse is approved, a lumi admin confirms and opens your launch to the community.</span></div>`}

@@ -28,6 +28,7 @@ the seed script (seed_pulse.py) + these module functions — the back-office
 console remains unbuilt and flagged (DECISIONS.md D2).
 """
 import json
+import re
 import uuid
 from datetime import datetime
 
@@ -61,7 +62,13 @@ def validate_new_questions(new_questions):
         if len(text) > 200:
             raise ValueError("keep each question under 200 characters")
         if nq["type"] in ("yes_no", "single_select", "multi_select"):
-            labels = [(o.get("label") or "").strip() for o in (nq.get("options") or [])]
+            # options may arrive as dicts ({code,label}, the builder UI's shape) OR bare
+            # strings (API authors) — both are valid input; a string must never 500
+            # (E2E finding 1, 2026-07-13). Anything else (numbers, null) is not an option.
+            # Codes are normalised at assembly.
+            labels = [((o.get("label") or "") if isinstance(o, dict) else
+                       (o if isinstance(o, str) else "")).strip()
+                      for o in (nq.get("options") or [])]
             labels = [l for l in labels if l]
             if len(labels) < 2:
                 raise ValueError("“%s” needs at least two answer options" % text[:40])
@@ -74,6 +81,33 @@ def validate_new_questions(new_questions):
                     raise ValueError("keep each answer option under 80 characters")
             if len({l.lower() for l in labels}) != len(labels):
                 raise ValueError("answer options must be distinct")
+
+
+def _norm_options(opts):
+    """Normalise authored options to the full {code,label,order,is_na} shape the rest of
+    the platform assumes (E2E finding 2, 2026-07-13): validation accepts label-only dicts
+    and bare strings, so assembly must guarantee codes — otherwise an accepted pulse
+    500s its own page the moment it opens (the worst possible moment, post-launch).
+    Codes slug from the label (the builder UI's own convention), deduped defensively."""
+    out, seen = [], set()
+    for i, o in enumerate(opts or []):
+        if not isinstance(o, dict):
+            o = {"label": (o if isinstance(o, str) else "").strip()}
+        label = (o.get("label") or "").strip()
+        if not label:
+            continue   # non-option garbage (validation already guaranteed >= 2 real labels)
+        code = (o.get("code") or "").strip()
+        if not code:
+            code = re.sub(r"[^A-Z0-9]+", "_", label.upper()).strip("_") or ("OPT%d" % i)
+        base, k = code, 2
+        while code in seen:
+            code, k = "%s_%d" % (base, k), k + 1
+        seen.add(code)
+        # spread the ORIGINAL dict first — authored extras (is_favourable, help text)
+        # must survive normalisation (qa_pulse guards the favourable channel)
+        out.append({**o, "code": code, "label": label,
+                    "order": o.get("order", i + 1), "is_na": bool(o.get("is_na"))})
+    return out
 
 
 def _assemble_questions(question_ids, new_questions, conn):
@@ -91,7 +125,7 @@ def _assemble_questions(question_ids, new_questions, conn):
             "help_text": nq.get("help_text"), "definition": nq.get("definition"),
             "superpower": CATEGORY_PULSE, "sub_power": CATEGORY_PULSE,
             "sub_power_order": 99, "type": nq["type"], "category": nq.get("category") or "practice",
-            "options_json": j(nq.get("options")) if nq.get("options") else None,
+            "options_json": j(_norm_options(nq.get("options"))) if nq.get("options") else None,
             "default_chart_type": "quartile_band" if nq["type"] == "numeric" else "bar",
             "data_display_type": "mean" if nq["type"] == "numeric" else "percentage_distribution",
             "polarity": nq.get("polarity") or "neutral",

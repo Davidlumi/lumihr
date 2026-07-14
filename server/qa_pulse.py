@@ -311,14 +311,39 @@ check("pulse_report surfaces favourable_label for the render layer",
 check("aggregate option block carries NO is_favourable (core engine untouched)",
       all("is_favourable" not in o for o in (efav["block"].get("options") or [])))
 
+# ------------------------------------- ACCEPTED-MUST-RENDER (E2E findings, 2026-07-13) ----
+# Anything validate_new_questions ACCEPTS must render post-launch: label-only dicts and
+# bare-string options normalise to full {code,label} at assembly (a code-less option used
+# to 500 the pulse page AFTER launch — the worst possible moment).
+print("== authored-option normalisation ==")
+pid5 = pulses.create_pulse("qa-norm", "options without codes", [], [
+    {"text": "Label-only dict options?", "type": "single_select",
+     "options": [{"label": "Alpha choice"}, {"label": "Beta choice"}]},
+    {"text": "Bare string options?", "type": "multi_select",
+     "options": ["Gamma one", "Gamma two", "Gamma three"]},
+], owner_org_id=demo, created_by="qa")
+appmod.load_questions.cache_clear()
+_lib5 = appmod.load_questions()
+_new5 = [q for q in _lib5.values() if q.superpower == "Pulse"
+         and (q.text or "").startswith(("Label-only", "Bare string"))]
+check("both authored questions inserted", len(_new5) == 2, len(_new5))
+_bad5 = [(q.id, o) for q in _new5 for o in (q.options or [])
+         if not (isinstance(o, dict) and (o.get("code") or "").strip() and (o.get("label") or "").strip())]
+check("every accepted option normalised to {code,label} (renders, never 500s)", not _bad5, _bad5[:3])
+_codes5 = [[o["code"] for o in (q.options or [])] for q in _new5]
+check("normalised codes are distinct per question", all(len(c) == len(set(c)) for c in _codes5), _codes5)
+_q5clean = [q.id for q in _new5]
+
 # ------------------------------------------------------------- CLEANUP -----
 print("== fixture cleanup ==")
-for fpid in (pid, pid2, pid3, pid4):
+for fpid in (pid, pid2, pid3, pid4, pid5):
     conn.execute("DELETE FROM pulse_responses WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulse_participants WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulse_launch_orders WHERE pulse_id=?", (fpid,))
     conn.execute("DELETE FROM pulses WHERE pulse_id=?", (fpid,))
 conn.execute("DELETE FROM questions WHERE id IN (?,?,?)", (gqid, sp_q, fav_qid))
+for _qid in _q5clean:
+    conn.execute("DELETE FROM questions WHERE id=?", (_qid,))
 conn.execute("DELETE FROM orgs WHERE org_id='qa-pulse-locked'")
 conn.commit()
 appmod.load_questions.cache_clear()
