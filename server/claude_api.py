@@ -1078,7 +1078,7 @@ DOMAIN_SUMMARY_SCHEMA = {
 
 # Bump when the generator logic changes so the persisted domain_summary cache
 # self-invalidates (the cache key is keyed on the payload hash + this string).
-DOMAIN_SUMMARY_GEN_VERSION = "2026-06-28.domain-v3-provenance"
+DOMAIN_SUMMARY_GEN_VERSION = "2026-07-14.domain-v4-groundednames"
 
 # Worded proportions a count must never become (rule 1) — the numeric allowlist only
 # catches DIGITS, so the conversion-in-words has to be caught here. "most" is forbidden
@@ -1156,23 +1156,43 @@ def validate_domain_summary(parts, payload):
         v = float(tok)
         if v not in allowed and round(v) not in allowed and round(v, 1) not in allowed:
             return False, "ungrounded number: %s" % tok
-    if DOMAIN_RATIO_RE.search(text_all):
-        return False, "worded proportion: %s" % DOMAIN_RATIO_RE.search(text_all).group(0)
-    if DIRECTIVE_RE.search(text_all):
-        return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
-    if DOMAIN_ADVICE_RE.search(text_all):
-        return False, "advice/consideration: %s" % DOMAIN_ADVICE_RE.search(text_all).group(0)
-    if LEGAL_RE.search(text_all):
-        return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
-    if DOMAIN_BADVOCAB_RE.search(text_all):
-        return False, "crossed vocabulary: %s" % DOMAIN_BADVOCAB_RE.search(text_all).group(0)
-    if DOMAIN_LEGACY_RE.search(text_all):
-        return False, "legacy prevalence vocabulary: %s" % DOMAIN_LEGACY_RE.search(text_all).group(0)
-    if DOMAIN_ALARM_RE.search(text_all):
-        return False, "alarm/evaluative wording: %s" % DOMAIN_ALARM_RE.search(text_all).group(0)
-    if not payload.get("has_position") and DOMAIN_MKTPOS_RE.search(text_all):
+    # RULED (2026-07-14): word-list scanning applies to the residual prose after
+    # removing exact grounded metric-name phrases present in the payload — WHOLE-PHRASE
+    # removal only, never single-word or substring exemption (word boundaries guard the
+    # alphanumeric edges, so "…cover" never matches inside "…coverage"). Banned words
+    # surviving in the model's own prose still fail. Rationale: the B' remap made banned
+    # words legitimate metric names ("Critical illness cover", "…reviewed regularly");
+    # the deterministic floor was failing its own gate and blanking drivers on
+    # Pay/Wellbeing/H&P.
+    text_scan = text_all
+    for lst in ("gaps", "strengths"):
+        for g in payload.get(lst) or []:
+            name = str(g.get("metric") or "").strip()
+            if not name:
+                continue
+            pat = re.escape(name)
+            if name[0].isalnum():
+                pat = r"\b" + pat
+            if name[-1].isalnum():
+                pat = pat + r"\b"
+            text_scan = re.sub(pat, " ", text_scan, flags=re.I)
+    if DOMAIN_RATIO_RE.search(text_scan):
+        return False, "worded proportion: %s" % DOMAIN_RATIO_RE.search(text_scan).group(0)
+    if DIRECTIVE_RE.search(text_scan):
+        return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_scan).group(0)
+    if DOMAIN_ADVICE_RE.search(text_scan):
+        return False, "advice/consideration: %s" % DOMAIN_ADVICE_RE.search(text_scan).group(0)
+    if LEGAL_RE.search(text_scan):
+        return False, "legal adjudication: %s" % LEGAL_RE.search(text_scan).group(0)
+    if DOMAIN_BADVOCAB_RE.search(text_scan):
+        return False, "crossed vocabulary: %s" % DOMAIN_BADVOCAB_RE.search(text_scan).group(0)
+    if DOMAIN_LEGACY_RE.search(text_scan):
+        return False, "legacy prevalence vocabulary: %s" % DOMAIN_LEGACY_RE.search(text_scan).group(0)
+    if DOMAIN_ALARM_RE.search(text_scan):
+        return False, "alarm/evaluative wording: %s" % DOMAIN_ALARM_RE.search(text_scan).group(0)
+    if not payload.get("has_position") and DOMAIN_MKTPOS_RE.search(text_scan):
         return False, "market position stated on a non-competitive domain"
-    if not payload.get("alignment") and DOMAIN_ALIGN_RE.search(text_all):
+    if not payload.get("alignment") and DOMAIN_ALIGN_RE.search(text_scan):
         return False, "strategy alignment stated with no alignment field present"
     prov = payload.get("provenance") or {}
     prov_digits = set(re.findall(r"\d+(?:\.\d+)?", (parts.get("provenance") or "").replace(",", "")))
