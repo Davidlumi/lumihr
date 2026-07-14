@@ -147,7 +147,15 @@ window.Modal = function ({ onClose, children, width, xl, label, role }) {
 // The one member-facing label that differs from the data key: the "Time Off" domain
 // renders sentence-case "Time off" everywhere (nav, tiles, headings). Display only —
 // routes, keys, CAT_ICON lookups and server strings keep "Time Off".
-window.domainLabel = n => n === "Time Off" ? "Time off" : n;
+window.domainLabel = n => ({
+  "Time Off": "Time off",                                  // legacy key — stored payloads
+  "Pensions & Savings": "Pensions & savings",
+  "Health & Protection": "Health & protection",
+  "Benefits & Lifestyle": "Benefits & lifestyle",
+  "Time Off & Family": "Time off & family",
+  "Incentives & Recognition": "Incentives & recognition",
+  "Governance & Transparency": "Governance & transparency",
+}[n] || n);
 
 // The standard centred page spinner — one atom instead of the copy-pasted row.
 window.PageLoading = () => html`<div class="row" style=${{ justifyContent: "center", padding: "var(--s8)" }}><${Spinner} /></div>`;

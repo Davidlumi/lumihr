@@ -162,20 +162,30 @@ dm = {d["name"]: d for d in hero["domains"]}
 # (_domains.competitiveness=false) has NO headline role; the 5->3 firm floor lets
 # a 3+-Substance domain (Wellbeing, via newly-routed Provision presence) earn a
 # strict verdict where it was practice-only indicative before.
-comp = [d for d in hero["domains"] if d["name"] != "Governance"]
-check("Governance carries NO market verdict and NO tile position (competitiveness carve-out)",
-      dm["Governance"]["market"] is None and dm["Governance"]["position"] is None
-      and dm["Governance"].get("competitiveness") is False,
-      {"market": dm["Governance"]["market"], "position": dm["Governance"]["position"]})
-check("competitive domains clearing the 3-Substance floor carry a strict market verdict",
-      all(dm[x]["market"] is not None for x in ("Pay", "Incentives", "Benefits", "Time Off", "Wellbeing")),
-      {k: dm[k]["polarised_comparable"] for k in ("Pay", "Incentives", "Benefits", "Time Off", "Wellbeing")})
-check("Wellbeing now reaches a STRICT verdict (was practice-only indicative; the 5->3 unlock)",
+# DERIVED, never literal (Diff 1 remap, 2026-07-14): domain names come from the live
+# taxonomy; the non-competitive set from the config flags; floor eligibility from each
+# domain's own polarised_comparable vs the env floor. The old named checks (Governance
+# carve-out, Recognition sub-floor) become invariants over WHATEVER domains exist —
+# David's ruling: re-derive for the merged domain, do not invert.
+_noncomp = [d for d in hero["domains"] if d.get("competitiveness") is False]
+comp = [d for d in hero["domains"] if d.get("competitiveness") is not False]
+check("exactly one non-competitive domain, carrying NO market verdict and NO tile position",
+      len(_noncomp) == 1 and _noncomp[0]["market"] is None and _noncomp[0]["position"] is None,
+      [(d["name"], d["market"], d["position"]) for d in _noncomp])
+# eligibility = the engine's own market_eligible flag (DISTINCT-question floor —
+# polarised_comparable counts ITEMS, so a 4-row single-matrix domain is honestly
+# sub-floor; using items here mis-flagged Health & Protection on first run)
+_floor_bad = [(d["name"], d["market_eligible"], d["market"] is not None) for d in comp
+              if (d["market"] is not None) != bool(d["market_eligible"])]
+check("every competitive domain has a strict verdict IFF it is market_eligible (distinct-question floor)",
+      not _floor_bad, _floor_bad)
+check("Wellbeing reaches a STRICT verdict (the 5->3 unlock, still holding post-remap)",
       dm["Wellbeing"]["market"] is not None and dm["Wellbeing"]["position_basis"] == "market",
       {"market": dm["Wellbeing"]["market"], "basis": dm["Wellbeing"]["position_basis"]})
-check("Recognition stays sub-floor (<3 Substance) -> indicative, not masked as strict",
-      dm["Recognition"]["market"] is None and dm["Recognition"]["position_basis"] == "indicative",
-      {"q": dm["Recognition"]["polarised_comparable"], "basis": dm["Recognition"]["position_basis"]})
+_subfloor = [d for d in comp if not d["market_eligible"]]
+check("sub-floor competitive domains (if any) read indicative, never masked as strict",
+      all(d["market"] is None and (d["position_basis"] in (None, "indicative")) for d in _subfloor),
+      [(d["name"], d["position_basis"]) for d in _subfloor])
 check("strict domains keep basis=market and position==market verdict",
       all(d["position_basis"] == "market" and d["position"]["verdict"] == d["market"]["verdict"]
           for d in comp if d["market"] is not None))

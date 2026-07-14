@@ -976,8 +976,15 @@ function PracticeArc({ prevalence, pending }) {
 
 
 const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
-const CAT_ICON = { "Pay": "coins", "Incentives": "trending-up", "Benefits": "shield",
-  "Time Off": "sun", "Wellbeing": "heart", "Recognition": "award", "Governance": "list-checks" };
+// B' taxonomy (Diff 1, 2026-07-14): 8 domains. Legacy 7-domain keys retained below so
+// STORED payloads (board packs, cached summaries) keep their icons — degrade contract.
+const CAT_ICON = {
+  "Pay": "coins", "Pensions & Savings": "anchor", "Health & Protection": "shield",
+  "Benefits & Lifestyle": "layers", "Time Off & Family": "sun",
+  "Incentives & Recognition": "trending-up", "Wellbeing": "heart",
+  "Governance & Transparency": "list-checks",
+  "Incentives": "trending-up", "Benefits": "shield", "Time Off": "sun",
+  "Recognition": "award", "Governance": "list-checks" };
 
 // ═══ DOMAIN INSTRUMENT (2026-07-08 hero redesign) — the per-domain analysis that sits
 // BESIDE the summary donut: seven rows on ONE shared P0–P100 ruler, so the domains are

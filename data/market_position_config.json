@@ -584,22 +584,25 @@
     "Pay": {
       "competitiveness": true
     },
-    "Incentives": {
+    "Pensions & Savings": {
       "competitiveness": true
     },
-    "Benefits": {
+    "Health & Protection": {
       "competitiveness": true
     },
-    "Time Off": {
+    "Benefits & Lifestyle": {
+      "competitiveness": true
+    },
+    "Time Off & Family": {
+      "competitiveness": true
+    },
+    "Incentives & Recognition": {
       "competitiveness": true
     },
     "Wellbeing": {
       "competitiveness": true
     },
-    "Recognition": {
-      "competitiveness": true
-    },
-    "Governance": {
+    "Governance & Transparency": {
       "competitiveness": false
     }
   },
