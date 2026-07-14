@@ -399,11 +399,10 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
         </div>
         ${!locked ? html`
         <div class="ov-lens">
-          <div class="ov-seg" role="group" aria-label="Dashboard lens">
-            ${[["market", "Market"], ["practice", "Practice"]].map(([k, lab]) => html`
-              <button key=${k} type="button" class=${"ov-seg-btn" + (view === k ? " on" : "")} aria-pressed=${view === k}
-                onClick=${() => setView && setView(k)}>${lab}</button>`)}
-          </div>
+          ${/* the Market|Practice seg RETIRED (Diff 4 ruling 2, 2026-07-14): practice is one
+                bucket card on the market dashboard, and the lens view is reached through its
+                click-through only. The Counts|Position toggle on Position-by-domain is a
+                different control and stays. */ ""}
           ${data.strategy_complete && html`
             <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
               onClick=${() => setApplyStrat && setApplyStrat(!applyStrat)}
@@ -415,14 +414,28 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             </button>`}
         </div>` : null}
       </div>
+      ${/* practice LENS view (Diff 4): the PracticeArc donut is retired; the lens is the
+            practice-mode domain rows, full width, with an explicit way back (the retired
+            toggle used to be the exit). */ ""}
+      ${view === "practice" ? html`
+        <div class="ov-lensbar">
+          <b>Practice choices</b><span class="caption"> · how common each of your choices is among peers — in line or off the norm, never a market verdict</span>
+          <button type="button" class="btn small" onClick=${() => setView && setView("market")}>
+            <${Icon} name="chevron-left" size=${13} /> Back to market view</button>
+        </div>
+        <div class="ov-top ov-top-lens">
+          <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
+            view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
+            activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
+        </div>` : html`
       <div class="ov-top">
-        ${view === "practice"
-          ? html`<${PracticeArc} prevalence=${data.hero.prevalence} pending=${locked} />`
-          : html`<${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />`}
+        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
           activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
       </div>
+      ${!locked && data.practice_bucket ? html`<${PracticeBucketCard} bucket=${data.practice_bucket}
+        onOpen=${() => setView && setView("practice")} />` : null}`}
       ${/* TrajectoryTile retired from the scan path (2026-07-09 subtraction): a full card band
             promising the future between the hero and the action queue. Its one load-bearing
             clause moved into the header subtitle ("baseline — movement shows from your next
@@ -928,6 +941,38 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
 // is "how common", never good/bad, so it stays purple and never enters the RAG channel. (Was
 // ApproachPanel — a 2-way "off the norm / in line" split that used a different framing AND colour
 // from its own 3-way domain bars; that differ read lives on in signals + the category page.)
+/* THE PRACTICE BUCKET CARD (Diff 4, ratified 2026-07-14): practice as ONE aggregate
+   read on the market dashboard. Crop discipline: title + headline + split + basis sit
+   in the card's top region; rare stances render below. Locked vocabulary — in line /
+   off the norm; NO RAG colour anywhere on it (POSITION_RING brief unpre-empted);
+   descriptive, never prescriptive. Click-through = the practice lens view. */
+function PracticeBucketCard({ bucket, onOpen }) {
+  const b = bucket;
+  const splitBasis = b.in_line + b.off_norm;
+  return html`
+    <div class="card prac-bucket" role="button" tabindex="0"
+      onClick=${onOpen} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      title="Open the practice lens — every practice choice, with how common each is among your peers.">
+      <div class="prac-bucket-top">
+        <div class="cat-brief-collab" style=${{ marginBottom: 0 }}>Practice choices</div>
+        <div class="prac-bucket-head">You're in line with the norm on <b>${b.in_line}</b> of <b>${b.answered}</b> answered
+          <span class="prac-bucket-split num"><b>${b.in_line}</b> in line <span class="prac-dot">·</span>
+            <b>${b.off_norm}</b> off the norm <span class="prac-dot">·</span>
+            <b>${b.low_peer}</b> low peer data</span></div>
+        <div class="caption prac-bucket-basis">${b.answered} of ${b.book} answered · peer pools under 5 excluded${b.ms_excluded ? ` · split excludes ${b.ms_excluded} multi-select inventor${b.ms_excluded === 1 ? "y" : "ies"}` : ""}</div>
+      </div>
+      ${(b.rare_stances || []).length ? html`
+        <div class="prac-bucket-rare">
+          ${b.rare_stances.map(r => html`
+            <div key=${r.label} class="prac-rare-row">
+              <span class="prac-rare-lab">${r.label}</span>
+              <span class="caption">One of ${r.orgs} orgs (${r.share_pct}%) — “${r.stance}” · n=${r.n}</span>
+            </div>`)}
+        </div>` : null}
+      <div class="caption prac-bucket-foot">Rarity is the signal — whether it's deliberate is your call. Open the practice lens →</div>
+    </div>`;
+}
+
 function PracticeArc({ prevalence, pending }) {
   if (pending || !prevalence || !prevalence.pool) return html`
     <div class="card arc-card">
@@ -1047,7 +1092,8 @@ function domainRowSentence(d, view) {
       " common, " + pv.established + " alternative, " + pv.less_common + " rare of " + pv.pool + " tracked.";
   }
   const pos = d.position;
-  if (d.competitiveness === false) return label + " — no market rate; approach choices only. See the Practice lens.";
+  // G&T special-case sentence DELETED (Diff 4; dead since the Diff-2 competitiveness
+  // ruling — no live domain carries competitiveness=false).
   if (!pos || !pos.pool) return label + " — no comparable market position yet.";
   // counts-only + the verbal adverb — no P-number anywhere (RAG-only law, 2026-07-09)
   let s = label + ": " + pos.below + " below, " + pos.at + " on market, " + pos.above +
@@ -1151,7 +1197,8 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
           const label = domainLabel(d.name);
           const sentence = domainRowSentence(d, view);
           const pos = d.position;
-          const noRate = d.competitiveness === false;
+          // noRate DELETED (Diff 4): keyed on competitiveness===false — dead since Diff 2;
+          // a below-floor domain still gets the honest "no position yet" state below.
           const pv = d.prevalence || {};
           const nSig = (sigCounts && sigCounts[d.name]) || 0;
           const pct = pos && pos.depth_pctl != null ? Math.min(99, Math.max(1, pos.depth_pctl)) : null;
@@ -1165,7 +1212,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       dropped, matching the market rows' name-only identity). */ ""}
                 ${pending ? null : practice
                   ? (pv.pool ? null : html`<span class="di-sub">no practices tracked yet</span>`)
-                  : (!noRate && (!pos || !pos.pool)) ? html`<span class="di-sub">no position yet</span>`
+                  : (!pos || !pos.pool) ? html`<span class="di-sub">no position yet</span>`
                   : null}
                 ${/* counts sub-label REMOVED from the marker view (David 2026-07-12, "remove the
                       text below each domain") — the counts live in the Counts toggle state and
@@ -1186,7 +1233,6 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                     })}
                   </span>`
                   : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
-                : noRate ? html`<span class="di-norate">No market rate — see the Practice lens</span>`
                 : pos && pos.pool ? html`
                   ${/* STACKED RAG BAR (David, 2026-07-09): each row is one bar split below=amber /
                         on=green / above=red, segments sized to the METRIC COUNT in each band with the
@@ -1248,7 +1294,6 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       position dot itself (David 2026-07-11: "only show counts no p and vice
                       versa" — each mode is pure; the "ind." tag went with it, the hollow dot +
                       aria carry the indicative basis). */ ""}
-                ${(!pending && !practice && noRate) ? html`${pv.pool || 0} practices` : null}
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
@@ -1265,7 +1310,6 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       count. Practice view shows NOTHING here — strategy alignment is a market-
                       position concept, it has no meaning against the practice mix (harmonised). */ ""}
                 ${pending || practice ? null
-                  : noRate ? (stratSum ? html`<span class="di-smark-dash" aria-hidden="true">—</span>` : null)
                   : html`<${StrategyMark} target=${d.target} />`}
               </span>
               <span class="di-cell di-chev" aria-hidden="true"><${Icon} name="chevron-right" size=${15} /></span>
@@ -2378,7 +2422,9 @@ function DomainSummary({ name, cut, applyStrat, embedded, aiNudge }) {
   // and the slot labels re-say what the read band above already shows — so embedded renders
   // just position + practices as two clean paragraphs, provenance as the quiet foot. The
   // standalone variant keeps all slots.
-  const EMB_SLOTS = SLOTS.filter(([k]) => k !== "notable");
+  // "prevalence" retired from the embedded view too (Diff 4 ruling 4, 2026-07-14):
+  // domain pages exclude practice from analysis — the narrative reads position only here.
+  const EMB_SLOTS = SLOTS.filter(([k]) => k !== "notable" && k !== "prevalence");
   // the tag is honest about the SOURCE (gate split 2026-07-13): AI wording only when the
   // model actually wrote it; the deterministic floor is labelled as composed from figures
   const tag = st.source === "model" ? "AI-generated · a description of your data, not advice"
@@ -2662,18 +2708,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
             <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>` :
             html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this category is assessed on practice.</span>`}
-          <span class="cat-brief-lab">Practice</span>
-          ${prev.pool ? (w => html`
-            <span class="chip chip-practice">${w ? w.word.toLowerCase() : "—"}</span>
-            <div class="cat-brief-minibar" role="img"
-              aria-label=${`${prev.with_majority} ${prev.states.with_majority}, ${prev.established} ${prev.states.established}, ${prev.less_common} ${prev.states.less_common} of ${prev.pool}`}>
-              <span style=${{ width: (100 * prev.with_majority / prev.pool) + "%", background: "var(--prev-common)" }}></span>
-              <span style=${{ width: (100 * prev.established / prev.pool) + "%", background: "var(--prev-alt)" }}></span>
-              <span style=${{ width: (100 * prev.less_common / prev.pool) + "%", background: "var(--prev-rare)" }}></span>
-            </div>
-            <span class="cat-brief-counts num"><b>${prev.with_majority}</b> ${prev.states.with_majority} · <b>${prev.established}</b> ${prev.states.established} · <b>${prev.less_common}</b> ${prev.states.less_common}</span>`)(
-            window.prevalenceWord && prevalenceWord(prev.with_majority || 0, prev.established || 0, prev.less_common || 0, prev.pool)) :
-            html`<span class="caption cat-brief-span">No practice questions assessed in this category yet.</span>`}
+          ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
+                practice from analysis — the home bucket and the practice lens carry the
+                story; practice ROWS stay in the metric list below, tagged. */ ""}
         </div>
         <div class="cat-brief-body">
           <div class="cat-brief-drivers">
@@ -3287,7 +3324,13 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
             <span><i class="sw" style=${{ background: "var(--differs)" }}></i> a practice choice: common / alternative / rare</span>
             <span><i class="sw" style=${{ background: "var(--navy)" }}></i> context</span>
           </div>
-          <p><b>The headline answers one question.</b> "Where you stand" is a read on how competitive your reward is — are you paying and providing at the market rate? So it's built only from the market-rate measures where higher is better. Governance (your pay ratio, your pay gap) isn't about competitiveness — you don't compete on a low pay ratio — so it sits beside the headline, not inside it. The same goes for any market-rate measure with no competitive direction, like your workforce cost as a share of revenue. That keeps the headline answering one clear thing rather than blending several.</p>
+          ${/* replaced 2026-07-14 (Diff 4 ruling 5, verbatim copy) — the old paragraph taught
+                the Governance carve-out, retired by the Diff-2 competitiveness ruling. */ ""}
+          <p>Governance and transparency metrics that can be ordered by generosity or
+          maturity count toward your market position like any other domain. Practice
+          choices — where organisations differ by design rather than by generosity —
+          never carry a market verdict: they're shown as in line or off the norm,
+          with how common each choice is among your peers.</p>
           <p class="caption">Where a comparison rests on only a few organisations, we mark the verdict <b>indicative</b> — a steer, not a precise figure.</p>
         </div>
 

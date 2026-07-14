@@ -667,6 +667,12 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         # pool the §1 prevalence donut counts; null when not a prevalence-rated practice. Drives
         # the second (prevalence) chip dimension (prevalence-filtering Pass A, 2026-06-28).
         "prevalence_band": prevalence_band,
+        # practice-class flag (Diff 4, 2026-07-14): computed HERE from the cached config so
+        # every card path carries it (one implementation). Drives the "A practice choice"
+        # chip + position-pill suppression; distinct from prevalence_band, which is null
+        # for suppressed pools (that's the "low peer data" render state).
+        "practice": ((pos.market_position_config().get("metrics", {}).get(q.id) or {}).get("class")
+                     in ("Practice", "Design")) and q.id not in pos.STRATEGY_CONFIG_IDS,
     }
     if locked:
         return base
@@ -1843,6 +1849,12 @@ async def overview(request: Request):
         "headline": summary,
         "contribution": contrib,
         "hero": hero,
+        # the single-bucket practice read (Diff 4, 2026-07-14) — aggregated from the SAME
+        # prev_items the lens renders (one implementation); strategy-config rows are
+        # excluded at the engine boundary (positions.STRATEGY_CONFIG_IDS)
+        "practice_bucket": pos.practice_bucket(org_visible_questions(org),
+                                               pos.market_position_config(), prev_items,
+                                               org_answers_for(org), UNCOMMON_PCT),
         "signals": sigs,
         "signals_practice": sigs_practice,
         "signals_all": sigs_all,
@@ -3409,6 +3421,10 @@ def assemble_pack_payload(request, user, org, cut):
         # the dashboard's practice read (common/alternative/rare, prevalence — never a 0-100
         # score, which the app retired 2026-06-11); pack-methodology incorporation 2026-07-12
         "practice_prevalence": _practice_prev,
+        # the single-bucket practice read (Diff 4) — the SAME helper the dashboard card
+        # uses, over the SAME _prev_items; render treats it as optional (stored packs)
+        "practice_bucket": pos.practice_bucket(_visq, pos.market_position_config(),
+                                               _prev_items, org_answers_for(org), UNCOMMON_PCT),
         # Tier 2 sections — every consumer (render + narrative) treats these as optional.
         # depth_pctl/basis merged per domain (the Position view's typical-metric read).
         "by_section": {k: {"available": v["available"], "above": v["above"],

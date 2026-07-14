@@ -682,6 +682,14 @@ MS_PREVALENCE = os.environ.get("LUMI_MS_PREVALENCE", "on").strip().lower() in ("
 MS_CORE_PCT = float(os.environ.get("LUMI_MS_CORE_PCT", "50"))
 
 
+# Strategy-config rows are CONFIGURATION, not metrics (DECISIONS 2026-07-14, register
+# finalisation: REW_PAY_005 "strategy parameter — must not self-polarise"; Diff 4 ruling 1
+# confirmed the lens exclusion lands here). They carry cfg class Practice so the router
+# can't polarise them, but they belong in NO pool. Diff 5's import gate inherits: no new
+# strategy-config row without extending this constant.
+STRATEGY_CONFIG_IDS = {"REW_PAY_005"}
+
+
 def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q=None):
     """One item per answered, unsuppressed select/yes_no practice with no
     defensible direction: how common the org's chosen approach is vs peers.
@@ -698,6 +706,8 @@ def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, tw
     cfg = market_position_config()                      # Q1=C: routing authority (read-only, hot-reloaded, cached)
     _market = market_pool_qids(org_id, cut, questions, payloads, org_answers, entitled, twin_blocks_by_q)
     for qid, q in questions.items():
+        if qid in STRATEGY_CONFIG_IDS:
+            continue  # configuration, not a metric — never pools (Diff 4 ruling 1)
         if qid in _market:
             continue  # market-rated -> the market lens owns it (one category per metric)
         if not entitled(q):
@@ -810,6 +820,39 @@ def _pool_verdict(pool, band_low, band_high, margin):
     return {"verdict": verdict, "above": above, "at": at, "below": below,
             "pool": len(pool), "lean": round(lean, 4), "lean_threshold": margin,
             "depth_pctl": round(depth, 1)}
+
+
+def practice_bucket(questions, cfg, prev_items, org_answers, uncommon_pct):
+    """THE single-bucket practice read (Diff 4, ratified 2026-07-14) — aggregates the
+    EXISTING lens machinery (prevalence_items / is_modal / _prev_band), never a second
+    implementation. Vocabulary locked: in line / off the norm. The split computes over
+    single-choice practices only (multi_select inventories count in the book and render
+    in the lens but are excluded, disclosed in the basis line); n<5-suppressed practices
+    surface as low_peer. Book = cfg class Practice/Design minus STRATEGY_CONFIG_IDS."""
+    metrics = cfg.get("metrics", {})
+    book = [qid for qid, q in questions.items()
+            if (metrics.get(qid) or {}).get("class") in ("Practice", "Design")
+            and qid not in STRATEGY_CONFIG_IDS]
+    answered = [qid for qid in book if any(k[0] == qid for k in org_answers)]
+    by_id = {i["question_id"]: i for i in prev_items if i["question_id"] in set(book)}
+    single = [qid for qid in answered if qid in by_id and questions[qid].type != "multi_select"]
+    ms = [qid for qid in answered if qid in by_id and questions[qid].type == "multi_select"]
+    low_peer = [qid for qid in answered if qid not in by_id]
+    in_line = [qid for qid in single if by_id[qid]["is_modal"]]
+    off_norm = [qid for qid in single if not by_id[qid]["is_modal"]]
+    rare = sorted((by_id[qid] for qid in single
+                   if _prev_band(by_id[qid], uncommon_pct) == "rarer"),
+                  key=lambda i: (i["your_share"] or 0))
+    return {
+        "book": len(book), "answered": len(answered),
+        "in_line": len(in_line), "off_norm": len(off_norm),
+        "low_peer": len(low_peer), "ms_excluded": len(ms),
+        "rare_stances": [{
+            "label": i["label"], "stance": i["your_answer"],
+            "share_pct": round(i["your_share"] or 0),
+            "orgs": max(1, round((i["your_share"] or 0) * i["n"] / 100.0)), "n": i["n"],
+        } for i in rare[:3]],
+    }
 
 
 def _prev_band(i, uncommon_pct):

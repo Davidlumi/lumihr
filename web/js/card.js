@@ -93,7 +93,18 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       <div class="bench-foot">
         <${ComparePill} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
           onCut=${k => setOverride(k === globalKey ? null : k)} />
-        ${(() => { const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
+        ${/* practice rows carry NO position pill (Diff 4 ruling 6 — the grid fall-through
+              on classification.register let a practice card render P + below/above market;
+              c.practice is the server-computed class flag). */ ""}
+        ${(() => { if (c.practice) return null; const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
+        ${/* "A practice choice" tag + prevalence bucket (Diff 4, exact ruled string): the
+              bucket word only where the pool served (prevalence_band present); a practice
+              card with a suppressed pool reads "low peer data". Locked vocabulary; no RAG. */ ""}
+        ${c.practice ? html`
+          <span class="chip prac-tag">A practice choice</span>
+          <span class="caption prac-tag-band">${c.prevalence_band === "match" ? "common"
+            : c.prevalence_band === "common_alt" ? "alternative"
+            : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
         <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
         <div class="card-tools no-print">
           ${footTools && html`${footTools}<span class="tool-div" aria-hidden="true"></span>`}

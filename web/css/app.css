@@ -1597,6 +1597,37 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-fgroup-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-faint);
   text-transform: uppercase; letter-spacing: .04em; }
 .cat-fbar-right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
+/* THE PRACTICE BUCKET CARD (Diff 4, 2026-07-14): one aggregate practice read on the market
+   dashboard. Crop discipline — title/headline/split/basis in the top block, rare stances
+   below. NEUTRAL INK ONLY: no RAG on any practice surface (POSITION_RING brief open). */
+.prac-bucket { padding: var(--s3) var(--s5) var(--s4); margin-top: var(--s4); cursor: pointer;
+  transition: box-shadow var(--ease), transform var(--ease); }
+.prac-bucket:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+/* crop discipline: the summary block stays TIGHT (title/headline/split/basis complete in
+   the card's top third); the rare-stance block below breathes instead */
+.prac-bucket-top { display: flex; flex-direction: column; gap: 2px; }
+.prac-bucket-head { font-size: var(--fs-body); color: var(--ink); }
+.prac-bucket-head b { font-weight: 700; }
+.prac-bucket-split { display: inline-flex; gap: var(--s2); align-items: baseline; flex-wrap: wrap;
+  font-size: var(--fs-caption); color: var(--ink-soft); margin-left: var(--s3); }
+.prac-bucket-split b { color: var(--ink); }
+.prac-dot { color: var(--ink-faint); }
+.prac-bucket-basis { color: var(--ink-faint); }
+.prac-bucket-rare { border-top: 1px solid var(--border); margin-top: var(--s4); padding-top: var(--s4);
+  display: flex; flex-direction: column; gap: var(--s3); }
+.prac-rare-row { display: flex; gap: var(--s3); align-items: baseline; flex-wrap: wrap; }
+.prac-rare-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink); }
+.prac-bucket-foot { margin-top: var(--s3); color: var(--ink-faint); }
+/* the practice-lens header bar (the retired toggle's replacement exit) */
+.ov-lensbar { display: flex; align-items: center; gap: var(--s2); margin: var(--s4) 0 var(--s3); }
+.ov-lensbar .btn { margin-left: auto; }
+.ov-top-lens { grid-template-columns: 1fr; }
+/* "A practice choice" tag + its bucket word on grid cards — quiet, chip-practice family */
+.prac-tag { font-size: var(--fs-micro); }
+.prac-tag-band { color: var(--ink-soft); padding-right: var(--s2); margin-right: var(--s1);
+  border-right: 1px solid var(--border); }
+.pack-prac-rare { margin: 2pt 0 0 6pt; }
+
 /* DOMAIN ANALYSIS PACK (2026-07-13): a print product from the live page — pack head/foot are
    print-only; .print-analysis (set by the Download menu) frames the page and strips chrome;
    .print-nocharts additionally drops every chart region for the figures-only variant. */

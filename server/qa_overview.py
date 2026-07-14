@@ -118,17 +118,17 @@ check("3. distinct differs-position signals <= hero differ (differs-signals are 
 check("4a. the unbenchmarkable domain carries competitiveness=False and NO market verdict",
       all(d.get("market") is None for d in gov) if gov else True,
       [(d["name"], d.get("market")) for d in gov])
-# render contract (2026-07-08 hero redesign): the live no-market-rate surface is the
-# DomainInstrument row — its noRate branch must show the honest "No market rate" note
-# and never a market-relative differ chip or a position dot. (The old CategoryTile
-# cat-na branch retired from the Overview render with the tiles.)
-nb = pagesjs.split("noRate ? html`", 1)
-norate_branch = nb[1].split(": html`", 1)[0] if len(nb) > 1 else ""
-_norate_note = norate_branch.split("`", 1)[0]   # the noRate arm alone, before the next template
-check("4b. render: the 'no market rate' row branch shows the honest note and NO differ chip",
-      "di-norate" in _norate_note and "No market rate" in _norate_note
-      and "differLine" not in norate_branch and "cat-differ" not in norate_branch,
-      "noRate branch leaked a differ chip" if ("cat-differ" in norate_branch or "differLine" in norate_branch) else "honest no-market-rate note missing")
+# render contract RE-DERIVED (check-77 treatment, Diff 4 2026-07-14): the noRate branch
+# was DELETED by ruling (dead since the Diff-2 competitiveness ruling — no live domain is
+# flagged out; a below-floor domain reads the honest "no position yet" state instead). The
+# check now guards the DELETION: the retired G&T copy must never creep back into the live
+# DomainInstrument (the dead CategoryTile component is exempt until its cleanup pass).
+_di_src = pagesjs.split("function CategoryTile", 1)[0]   # everything before the dead component
+check("4b. render: the retired no-market-rate branch stays deleted from the live instrument",
+      "No market rate — see the Practice lens" not in _di_src
+      and "competitiveness === false" not in _di_src
+      and "no position yet" in _di_src,
+      "retired G&T copy or flag branch has crept back into the live render")
 
 # --- 5. VERDICT INTEGRITY: severity adverb from percentile DEPTH, not headcount ---
 gauge_pool = pos.substance_pool(items, prac_items, mp_cfg)
@@ -314,6 +314,26 @@ for _d in domains:
         if not (_x.get("question_id") and _x.get("label") and _x.get("percentile") is not None):
             _drv_bad.append((_d["name"], "incomplete driver " + repr(_x)))
 check("12a. per-domain drivers present-and-well-formed only where a position exists", not _drv_bad, repr(_drv_bad[:3]))
+
+# ---- 14. the practice bucket (Diff 4, 2026-07-14) ----
+# (a) sums: in_line + off_norm + ms_excluded + low_peer == answered <= book; book derives
+#     from cfg class Practice/Design minus STRATEGY_CONFIG_IDS — never a literal.
+# (b) every id in STRATEGY_CONFIG_IDS exists live and is class Practice (ruling 1b);
+#     Diff 5's import gate inherits this check.
+# (c) the ripple: no strategy-config id ever appears in the lens pool.
+_bkt = pos.practice_bucket(vis, mp_cfg, prev_items, ans, A.UNCOMMON_PCT)
+_book_derived = sum(1 for qid in vis
+                    if (mp_cfg.get("metrics", {}).get(qid) or {}).get("class") in ("Practice", "Design")
+                    and qid not in pos.STRATEGY_CONFIG_IDS)
+check("14a. bucket sums: split + exclusions == answered <= derived book",
+      _bkt["in_line"] + _bkt["off_norm"] + _bkt["ms_excluded"] + _bkt["low_peer"] == _bkt["answered"]
+      <= _bkt["book"] == _book_derived, _bkt)
+_sc_bad = [q for q in pos.STRATEGY_CONFIG_IDS
+           if q not in vis or (mp_cfg.get("metrics", {}).get(q) or {}).get("class") != "Practice"]
+check("14b. every STRATEGY_CONFIG_IDS id is live and class Practice", not _sc_bad, _sc_bad)
+check("14c. strategy-config rows never pool (the lens ripple holds)",
+      not (pos.STRATEGY_CONFIG_IDS & {i["question_id"] for i in prev_items}),
+      "strategy-config id found in prevalence pool")
 
 from collections import Counter as _Ctr
 _cc = _Ctr(pos.pool_prevalence_bands(prev_items, A.UNCOMMON_PCT).values())

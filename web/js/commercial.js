@@ -388,7 +388,23 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               prevalence language via the SAME shared word rule (core.js prevalenceWord) — the
               app retired 0-100 maturity scores 2026-06-11; only OLD stored payloads without
               practice_prevalence fall back to their frozen maturity line. */ ""}
-        ${p.practice_prevalence && p.practice_prevalence.pool ? (() => {
+        ${/* THE PRACTICE BUCKET (Diff 4, 2026-07-14): headline + split + rare stances,
+              descriptive only, neutral ink, locked vocabulary. Optional field — stored
+              packs fall through to the older prevalence line, then the frozen maturity. */ ""}
+        ${p.practice_bucket ? (() => {
+          const b = p.practice_bucket;
+          return html`
+            <div class="pack-prac-bucket">
+              <p class="caption"><b>Practice choices:</b> in line with the norm on <b>${b.in_line}</b> of
+                <b>${b.answered}</b> answered — ${b.in_line} in line · ${b.off_norm} off the norm ·
+                ${b.low_peer} low peer data. ${b.answered} of ${b.book} answered · peer pools under 5
+                excluded${b.ms_excluded ? ` · split excludes ${b.ms_excluded} multi-select inventor${b.ms_excluded === 1 ? "y" : "ies"}` : ""}.
+                A different way of doing things is not a gap to close.</p>
+              ${(b.rare_stances || []).map(r => html`
+                <p key=${r.label} class="caption pack-prac-rare">— ${r.label}: one of ${r.orgs} orgs (${r.share_pct}%)
+                  — “${r.stance}” · n=${r.n}</p>`)}
+            </div>`;
+        })() : p.practice_prevalence && p.practice_prevalence.pool ? (() => {
           const pp = p.practice_prevalence;
           const { word, cap } = prevalenceWord(pp.common, pp.alternative, pp.rare, pp.pool);
           return html`<p class="caption">Practice: <b>${word}</b> — ${cap} across ${pp.pool} tracked practices
