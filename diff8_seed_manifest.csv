@@ -1,0 +1,14 @@
+metric_id,type,option,target_pct,planned_n,achieved_n,achieved_pct
+REW265_TIME_FLEXPATTERN,multi_select,Compressed hours,34.0,75,75,34.1
+REW265_TIME_FLEXPATTERN,multi_select,Core hours,40.0,88,88,40.0
+REW265_TIME_FLEXPATTERN,multi_select,Flexitime with accrual,51.0,112,112,50.9
+REW265_TIME_FLEXPATTERN,multi_select,Annualised hours,22.0,48,48,21.8
+REW265_TIME_FLEXPATTERN,multi_select,None,derived,,30,13.6
+REW265_PAY_COUNTEROFFER,single_select,Never counter,35.0,77,77,35.0
+REW265_PAY_COUNTEROFFER,single_select,Case-by-case with approval,40.0,88,88,40.0
+REW265_PAY_COUNTEROFFER,single_select,Routinely counter,13.0,29,29,13.2
+REW265_PAY_COUNTEROFFER,single_select,No policy,12.0,26,26,11.8
+REW265_GOV_VOLGAPS,multi_select,Ethnicity pay gap published,18.0,40,40,18.2
+REW265_GOV_VOLGAPS,multi_select,Disability pay gap published,12.0,26,26,11.8
+REW265_GOV_VOLGAPS,multi_select,CEO pay ratio (voluntary),8.0,18,18,8.2
+REW265_GOV_VOLGAPS,multi_select,None,derived,,143,65.0

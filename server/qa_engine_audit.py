@@ -74,9 +74,16 @@ try:
 except Exception:
     DIFF7_MANIFEST = set()
 
+# Diff 8 (15 July 2026, ruled) reseeded 3 wave rows to verified CIPD primary figures;
+# diff8_seed_manifest.csv is the ruled lineage record, whitelisted on the same rule.
+try:
+    DIFF8_MANIFEST = {r["metric_id"] for r in __import__("csv").DictReader(open(os.path.join(ROOT, "diff8_seed_manifest.csv")))}
+except Exception:
+    DIFF8_MANIFEST = set()
+
 
 def _db_origin(qid):
-    if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST:
+    if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST or qid in DIFF8_MANIFEST:
         return True
     return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18
 
