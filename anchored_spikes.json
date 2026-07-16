@@ -1,0 +1,1688 @@
+{
+ "REW263_BEN_CICOVER": {
+  "target_share": 0.629,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "62.9% offer group CIC",
+  "option_order": [
+   "Not offered",
+   "Fixed lump sum",
+   "1x salary",
+   "2x+ salary"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_BEN_NEURO": {
+  "target_share": 0.66,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth Health & Wellbeing at Work 2025 (ref 8920, n=1,101 weighted UK)",
+  "anchor_note": "66% moderate/large neurodiversity provision (among H&W-active)",
+  "REVIEW": "base = H&W-active orgs, not all employers",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW26_BEN_PENSION_TYPE": {
+  "target_share": 0.29,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "29% all at >=6% min employer contribution (47% large/28% SME)",
+  "disposal_reason": "CONFIRMED MIS-MAP: anchor measures employer CONTRIBUTION LEVEL ('29% at >=6% min employer contribution'), question asks SCHEME TYPE (DC/DB/Hybrid/None). Reshaping it moved 152 orgs from DC to 'no scheme'. FLAGGED FOR REGISTER RE-SOURCE — the contribution figure may belong on a different metric. (ruled 2026-07-15)",
+  "FLAG_RESOURCE": "anchor is a contribution-level figure mis-mapped to a scheme-type question; re-source against the correct metric before any future spike"
+ },
+ "REW26_BEN_SALSAC": {
+  "target_share": 0.54,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD pension analysis Dec 2025",
+  "anchor_note": "54% large offer sal-sac",
+  "REVIEW": "54% is LARGE-only; all-employer ~15% (see REW_BEN_102)",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW_BEN_038": {
+  "target_share": 0.18,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward survey: Focus on employee benefits (Feb 2026), YouGov fieldwork Oct-Nov 2025, ",
+  "anchor_note": "PMI: 18% all employers (68-70% large)",
+  "disposal_reason": "per-option multi-select — many options each with own share (ruled 2026-07-15)"
+ },
+ "REW_BEN_039": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "40% all provide flexible working (57% large)",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures FLEXIBLE WORKING; question asks flexible BENEFITS PLATFORM",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_BEN_044": {
+  "target_share": 0.18,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "PMI 18% all UK orgs",
+  "disposal_reason": "per-option multi-select — PMI eligibility rules, per-option shares (ruled 2026-07-15)"
+ },
+ "REW_BEN_045": {
+  "target_share": 0.807,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "80.7% provide group life assurance",
+  "option_order": [
+   "Not offered",
+   "1×",
+   "2×",
+   "3×",
+   "4× or more"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_046": {
+  "target_share": 0.66,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "66% offer Group Income Protection",
+  "option_order": [
+   "No",
+   "Short-term only",
+   "Long-term only",
+   "Both"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_048": {
+  "target_share": 0.66,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "66% offer GIP; 50-59% replacement modal",
+  "REVIEW": "salary-replacement LEVEL is a within-offerer distribution, not a yes/no share",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "option_order": [
+   "<50%",
+   "50–65%",
+   "66–75%",
+   "76%+"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_102": {
+  "target_share": 0.15,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "~15% all offer pension sal-sac (54% large)",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures OFFERING sal-sac; question asks PARTICIPATION proportion",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_FAI_STUDY_TIME_93b6ef22": {
+  "target_share": 0.15,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward survey: Focus on employee benefits (Feb 2026), YouGov fieldwork Oct-Nov 2025, ",
+  "anchor_note": "study leave: 15% SME / 42% large; 15% all-proxy",
+  "REVIEW": "15% is SME; all-employer blend nearer ~20%",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW262_TIME_BEREAVEMENT": {
+  "target_share": 0.27,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "27% all paid bereavement leave",
+  "option_order": [
+   "Statutory only",
+   "1-5 days enhanced",
+   "5 or more days enhanced"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW262_TIME_SICKDAYONE": {
+  "target_share": 0.3,
+  "direction": "preserve",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "~30% OSP from day one (service-band choice)",
+  "REVIEW": "among OSP-havers; base = OSP orgs not all",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW263_TIME_FERTLEAVE": {
+  "target_share": 0.27,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD \"Workplace support for employees experiencing fertility challenges\" (May 2023, ref 83",
+  "anchor_note": "27% formal fertility policy (49% some support)",
+  "option_order": [
+   "No",
+   "Unpaid/flexible",
+   "Paid dedicated leave"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_TIME_IVF": {
+  "target_share": 0.05,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "CIPD \"Workplace support for employees experiencing fertility challenges\" (May 2023, ref 83",
+  "anchor_note": "~5% fund treatment cost",
+  "option_order": [
+   "None",
+   "1 cycle / capped",
+   "2-3 cycles",
+   "Unlimited/uncapped"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_TIME_PATPAY": {
+  "target_share": 0.67,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Bright Horizons Benchmark 2021; updated",
+  "anchor_note": "67% enhance paternity/partner pay",
+  "REVIEW": "67% 'top-tier' vs 21% enhance >2wks - confirm which the option means",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "option_order": [
+   "Statutory only",
+   "1-2 weeks enhanced",
+   "3-6 weeks enhanced",
+   "6+ weeks enhanced"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_FAM_011": {
+  "target_share": 0.28,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "~28% offer sabbatical/career break",
+  "option_order": [
+   "No specific provision",
+   "Yes - unpaid sabbaticals or career breaks only",
+   "Yes - paid sabbaticals are available"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_FAM_012": {
+  "target_share": 0.24,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD \"Menopause in the workplace: Employee experiences 2023\" (Oct 2023, ref 8456), n=2,185",
+  "anchor_note": "24% menopause policy (40% some provision)",
+  "option_order": [
+   "No specific provision",
+   "Support provided, but no specific paid leave",
+   "Yes - specific paid menopause leave"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_HOL_003": {
+  "target_share": 0.56,
+  "direction": "preserve",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "~56% offer holiday buy/sell (44.1% none)",
+  "option_order": [
+   "No",
+   "Yes - sell only",
+   "Yes - buy only",
+   "Yes - both buy and sell options are available"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_HOL_004": {
+  "target_share": 0.77,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "~77% offer service-based extra leave",
+  "option_order": [
+   "No",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_HOL_006": {
+  "target_share": 0.77,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "~77% offer long-service leave (26.8% up to 5d modal)",
+  "option_order": [
+   "Up to 5 days",
+   "6-10 days",
+   "More than 10 days"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_BEN_041": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "Drewberry UK Employee Benefits Benchmarking 2026 (n=626)",
+  "anchor_note": "~56% offer holiday purchase (buy/sell)",
+  "REVIEW": "'max additional leave' is a level distribution not a yes/no",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_BEN_SICK_005": {
+  "target_share": 0.88,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "88% provide full pay for some OSP period",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures FULL PAY provision; question asks whether OSP rules are DOCUMENTED",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "EXT_REW_GAP_009": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "65% require min office days (practice choice)",
+  "review_resolution": "demoted to context: positive side is a SET {1-2d,3+d}, not a single pole; B5 level distribution carries the office-days signal"
+ },
+ "PAYTR_02_131bd412": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "~40% always publish bands internally (32% never)"
+ },
+ "REW_BEN_058": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "73% same / 8% increase / 6% decrease (direction-of-travel)",
+  "REVIEW": "3-way DoT split, not a single share",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_BEN_REM_PAY_001": {
+  "target_share": 0.64,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "64% NOT reduced pay for remote (norm = no cut)",
+  "option_order": [
+   "Treatment varies by role or case",
+   "Base pay is protected"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_WEL_FINWELL": {
+  "target_share": 0.15,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "15% all have fin-wellbeing strategy (53% large have/plan)",
+  "option_order": [
+   "No",
+   "Ad hoc provision",
+   "Documented strategy"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_WEL_MGRTRAIN": {
+  "target_share": 0.29,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=",
+  "anchor_note": "29% train managers for MH",
+  "option_order": [
+   "None",
+   "Under 25%",
+   "25-75%",
+   "Over 75%"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW26_WEL_EAP": {
+  "target_share": 0.31,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "~31% offer EAP (Drewberry all-size)",
+  "REVIEW": "CIPD larger-employer EAP prevalence much higher; base differs",
+  "review_resolution": "confirm option wording only; target/direction stand"
+ },
+ "REW26_WEL_FINWELL": {
+  "target_share": 0.64,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward Survey Feb 2026",
+  "anchor_note": "64% have fin-wellbeing policy/strategy",
+  "REVIEW": "conflicts with REW263_WEL_FINWELL 15% - different question base; confirm mapping",
+  "review_resolution": "confirm option wording only; target/direction stand"
+ },
+ "REW26_WEL_SCREENING": {
+  "target_share": 0.35,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "35% health screening all (48% some access)"
+ },
+ "REW26_WEL_STRATEGY": {
+  "target_share": 0.57,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=",
+  "anchor_note": "57% stand-alone wellbeing strategy"
+ },
+ "REW263_REC_PEER": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "2026 State of Recognition Report, EMEA edition (Workhuman) — UK employee data",
+  "anchor_note": "23% EMEA employees experience peer recognition",
+  "REVIEW": "employee-reported %, not employer-prevalence",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "PAYTR_01_42eae7ec": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "~40% always include salary in ads (53% some)"
+ },
+ "PROP_10d1211d": {
+  "target_share": 0.27,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "27% large did disability pay analysis (9% small)",
+  "REVIEW": "27% is LARGE-only",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "PROP_674db2fc": {
+  "target_share": 0.34,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "34% provide Total Reward Statements",
+  "option_order": [
+   "Not provided",
+   "Provided but access not tracked",
+   "Provided and <25% access",
+   "Provided and 25%–49% access",
+   "Provided and 50%–74% access",
+   "Provided and 75%+ access"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "PROP_930043cc": {
+  "target_share": 0.28,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "28% ethnicity pay-gap analysis",
+  "option_order": [
+   "No",
+   "Partially",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "PROP_cdff5737": {
+  "target_share": 0.44,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, performance and transparency 2024 survey",
+  "anchor_note": "44% gender pay-gap analysis (equal pay audit 32%)",
+  "option_order": [
+   "No",
+   "Planned / in development",
+   "Yes – ad hoc",
+   "Yes – every 2 years",
+   "Yes – at least annually"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW262_GOV_EQUALPAYAUDIT": {
+  "target_share": 0.35,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "35% equal-pay audit last 12m",
+  "option_order": [
+   "No",
+   "Ad hoc",
+   "Annually",
+   "More than annually"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW262_GOV_PAYINADVERTS": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "~40% always pay-range in ads"
+ },
+ "REW263_GOV_BENOBJ": {
+  "target_share": 0.77,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "77% have benefits objectives (22% none)",
+  "option_order": [
+   "No objectives",
+   "Objectives not reviewed",
+   "Objectives reviewed annually",
+   "Objectives linked to productivity"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_GOV_MENOPLAN": {
+  "target_share": 0.24,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD \"Menopause in the workplace: Employee experiences 2023\" (Oct 2023, ref 8456), n=2,185",
+  "anchor_note": "24% stand-alone menopause policy",
+  "option_order": [
+   "No plans",
+   "Considering",
+   "Planned this year",
+   "Already published"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_GOV_UKPAYTRANS": {
+  "target_share": 0.62,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "62% publish salary ranges in ads (41% always)",
+  "REVIEW": "which option = ranges vs specific? confirm",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "option_order": [
+   "No transparency",
+   "Internal ranges only",
+   "Ranges on adverts",
+   "Published transparency policy"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_FAI_079": {
+  "target_share": 0.44,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "44% gender pay-gap analysis",
+  "option_order": [
+   "No",
+   "In development",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_FAI_081": {
+  "target_share": 0.55,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD \"Reward survey: Focus on employee benefits 2026\" (Feb 2026, ref 9075), n=1,059 UK rew",
+  "anchor_note": "55% regularly review pay for fairness",
+  "option_order": [
+   "No",
+   "Sometimes",
+   "Yes - always"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_FAI_088": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "~40% always publish grade ranges internally",
+  "option_order": [
+   "No",
+   "Partial",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_FAI_089": {
+  "target_share": 0.4,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "~40% always publish ranges in ads",
+  "option_order": [
+   "No",
+   "Some roles",
+   "All roles"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_PRO_030": {
+  "target_share": 0.6,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "60% link pay to performance for some staff",
+  "option_order": [
+   "Never",
+   "Sometimes",
+   "Always"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "PROP_634adacd": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Labour Market Outlook Spring 2026",
+  "anchor_note": "3% MEDIAN pay increase - a VALUE not a share",
+  "REVIEW": "3% is award size, NOT prevalence; do NOT spike as marginal",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "PROP_9e4ad87f": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Labour Market Outlook Spring 2026",
+  "anchor_note": "40% in 3-3.99% band (award distribution)",
+  "REVIEW": "pay-award band distribution, not yes/no",
+  "review_resolution": "demoted to context: award-size band distribution, not a cohort marginal (same class as PROP_634adacd)"
+ },
+ "REW26_WEL_MH_SUPPORT": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "top MH actions ~43% (counselling/phased return)",
+  "REVIEW": "multi_select - many options each with own share",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_INC_060": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "individual bonuses MPT 40% (multi-measure)",
+  "REVIEW": "multi_select measure list",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: per-option multi-select — 80 distinct concatenations, no lean pole"
+ },
+ "REW_PAY_023": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD/ADP Pay, performance and transparency 2024 (ref 8551, n=832)",
+  "anchor_note": "inflation top budget factor 62% (multi)",
+  "REVIEW": "multi_select factor list",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_INC_103": {
+  "target_share": 0.6,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "60% link pay/bonus to performance (some staff)",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures LINKING PAY TO PERFORMANCE; question asks BONUS ELIGIBILITY proportion",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete",
+  "option_order": [
+   "None",
+   "<10%",
+   "10–24%",
+   "25–49%",
+   "50–74%",
+   "75%+"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle)."
+ },
+ "REW_INC_131": {
+  "target_share": 0.16,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "~16% all-employee share plans (LTIP minority)"
+ },
+ "REW_INC_135": {
+  "target_share": 0.165,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "~16-17% use sales commission"
+ },
+ "RED_COST_01": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "gov.uk statutory redundancy pay (2025/26 cap £719/wk)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "RED_PAY_01": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 (effective 6 Apr 2026) + ERA 1996 s",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "RED_TERM_02": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "IRIS / theemploymentlawsolicitors 2026",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "RED_TERM_03": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 (effective 6 Apr 2026)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW26_BEN_PENSION_COST_SHARE": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_112": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_EV_KWH_66ef252b": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "HMRC Advisory Fuel/Electricity Rates (gov.uk, quarterly)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_Q049530": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "HMRC AMAP rates (gov.uk)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_Q524161": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 + ERA 1996 (ERA 1996 s.86)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 + ERA 1996 (ERA 1996 s.86)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_TIME_CARERPAID": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_TIME_DAYONELEAVE": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "CIPD Reward survey: Focus on employee benefits (Feb 2026), YouGov fieldwork Oct-Nov 2025 (",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_TIME_HOLRECORDS": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "ERA 2025 / CIPD annual leave law guide",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_TIME_NEONATAL": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "CIPD / Neonatal Care Act 2023",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_TIME_PREGLOSS": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "ERA 2025 / WEC; CIPD",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_FAM_001": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "CIPD \"Employer focus on working parents\" (Aug 2022, ref 8268), n=2,000 UK senior decision-",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_FAM_005": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "CIPD \"Employer focus on working parents\" (Aug 2022, ref 8268), n=2,000 UK senior decision-",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_FAM_006": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "CIPD \"Employer focus on working parents\" (Aug 2022, ref 8268), n=2,000 UK senior decision-",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_FAM_007": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_FAM_008": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 (effective 6 Apr 2026) (statutory f",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_HOL_001": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_HOL_002": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "gov.uk Working Time Regs / Boundless/Vacation-tracker",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_HOL_005": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "gov.uk WTR / Davidson Morris 2026",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_HOL_007": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "Working Time Regulations 1998 reg 15 (statutory right) + practice",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_HOL_008": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 + ERA 1996 (5.6wk includes BH; no s",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_BEN_SICK_001": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_014": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "gov.uk Rates and thresholds for employers 2026 to 2027 + ERA 1996 (no statutory BH premium",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "EXT_REW_GAP_011": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW262_PAY_CANCELLEDSHIFT": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW262_PAY_GUARANTEEDHRS": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW262_PAY_SHIFTNOTICE": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_PAY_GUARHRSAVG": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_PAY_SHIFTRIGHTS": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_FAIR_TIPS_DIST_7d34e570": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment (Allocation of Tips) Act 2023 + statutory Code of Practice on fair & transparen",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_FAI_CANCEL_1bbcc629": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 (Royal Assent 18 Dec 2025); zero/low-hours provisions phased — ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_FAI_MIN_HOURS_8518a543": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 (guaranteed hours, from 2027)",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_016": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "Incomes Data Research (IDR), Standby, Call-out and Shift Pay 2025 study; gov.uk/NMW Regula",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_018": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "Incomes Data Research (IDR), Standby, Call-out and Shift Pay 2025 study",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_HOURLY_MIN_1c6e096f": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "gov.uk NLW/NMW rates (Apr 2026) cross-checked vs HR DataHub NLW planning decks",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_PAY_TIPS_EXIST_7c80c508": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment (Allocation of Tips) Act 2023 + statutory Code of Practice on fair & transparen",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW_Q528801": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "Incomes Data Research (IDR), Standby, Call-out and Shift Pay 2025 study",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "EXT_REW_GAP_003": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "C",
+  "source": "Incentivesmart \"How Much Does an Employee Recognition Programme Cost? 2026\" (UK vendor gui",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW262_GOV_ACTIONPLAN": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "A",
+  "source": "Employment Rights Act 2025 + Equality (Race and Disability) Bill (consultation Mar-Jun 202",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "REW263_GOV_FIREREHIRE": {
+  "target_share": null,
+  "direction": "floor",
+  "mode": "floor",
+  "grade": "B",
+  "source": "gov.uk Statutory Code of Practice on Dismissal and Re-engagement (in force 18 Jul 2024) + ",
+  "anchor_note": "statutory/HMRC floor - most orgs at/above; no imposed marginal"
+ },
+ "CAR_COST_02": {
+  "target_share": 0.43,
+  "direction": "preserve",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "Broadstone UK Employee Benefits Landscape 2025 (via REBA)",
+  "anchor_note": "43% of benefit-changers introduced sal-sac",
+  "REVIEW": "base = post-Budget benefit-changers, not all employers",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "CAR_STATUS_03": {
+  "target_share": 0.59,
+  "direction": "preserve",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "Paydata UK Reward Management Survey, Spring 2026 (Key Findings)",
+  "anchor_note": "59% offer car allowances (practice choice vs status car)"
+ },
+ "EXT_REW_GAP_012": {
+  "target_share": 0.26,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "26% regularly review benefits for fairness",
+  "option_order": [
+   "No",
+   "Yes – occasionally",
+   "Yes – at least annually"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "PROP_202fecc6": {
+  "target_share": 0.42,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "CIPD Reward survey 2026 (n=1,059) Fig 4",
+  "anchor_note": "42% large track benefits utilisation",
+  "REVIEW": "42% is LARGE-only; all-employer lower",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "PROP_36b990f9": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD/Pensions Regulator 2025/26",
+  "anchor_note": "employer contribution 5-8% typical - a VALUE not a share",
+  "REVIEW": "6% is contribution rate not prevalence; do NOT spike marginal",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW263_BEN_DENTAL": {
+  "target_share": 0.805,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "dental within health cover; 80.5% offer some health cover",
+  "REVIEW": "dental not split out; using health-cover proxy",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW263_BEN_PMIMH": {
+  "target_share": 0.805,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "MH standard in modern PMI; 80.5% some health cover",
+  "REVIEW": "MH inclusion not split; health-cover proxy",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW26_BEN_PENSION_MATCH": {
+  "target_share": 0.54,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "CIPD Dec 2025",
+  "anchor_note": "54% large offer (matching common above AE min)",
+  "REVIEW": "54% is LARGE sal-sac figure; matching all-employer lower",
+  "review_resolution": "confirm option wording only; target/direction stand"
+ },
+ "REW26_BEN_PLSA_QM": {
+  "target_share": 0.1,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "Pension Quality Mark standard (PLSA/PQM); PLSA Retirement Living Standards",
+  "anchor_note": "~10% meet PLSA/PQM threshold (Standard 10%/Plus 15%)",
+  "REVIEW": "PQM-accredited prevalence not published; 10% is illustrative floor",
+  "review_resolution": "confirm option wording only; target/direction stand"
+ },
+ "REW_BEN_100": {
+  "target_share": 0.29,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large 250+ n=17",
+  "anchor_note": "29% all pension matching (57% large / 16% SME)",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures PENSION MATCHING; question asks PMI eligibility proportion",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_BEN_FAM_002": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD \"Employer focus on working parents\" (Aug 2022, ref 8268), n=2,000 UK senior decision-",
+  "anchor_note": "~21% offer near-full enhanced mat pay ~26wks",
+  "REVIEW": "'weeks at full rate' is a level distribution",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_BEN_FAM_009": {
+  "target_share": 0.15,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD Reward survey: Focus on employee benefits (Feb 2026), YouGov fieldwork Oct-Nov 2025, ",
+  "anchor_note": "study leave 15% SME / 42% large; 15% all-proxy",
+  "REVIEW": "15% is SME; all-employer blend higher",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW_BEN_SICK_002": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "A",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "enhanced OSP 2-4wks full pay modal 32.9% (level dist)",
+  "REVIEW": "duration level distribution not yes/no",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_BEN_SICK_004": {
+  "target_share": 0.3,
+  "direction": "preserve",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "~30% OSP from day one (service-band choice)",
+  "REVIEW": "among OSP-havers",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "PROP_dff9a2a5": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Labour Market Outlook Spring 2026",
+  "anchor_note": "~90%+ receive a base increase (freeze small tail)",
+  "REVIEW": "proportion-receiving, near-universal; confirm option",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW263_PAY_MERITMATRIX": {
+  "target_share": 0.41,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "CIPD Performance Related Pay factsheet + CIPD Pay, Performance & Transparency 2024 (n=832)",
+  "anchor_note": "merit pay MPT 41%; matrix established practice",
+  "REVIEW": "41% is merit-pay MPT proxy not matrix-specific",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW263_PAY_SSPALIGN": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "A",
+  "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=",
+  "anchor_note": "62% think SSP too low (SSP reform ERA2025)",
+  "REVIEW": "62% is an OPINION share not a practice prevalence",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_BEN_REM_PAY_005": {
+  "target_share": 0.04,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "only 4% reduced pay for remote (~15% incl planners)",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): KINDS not levels — premiums and discounts are opposite directions, not a ladder",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_INC_069": {
+  "target_share": 0.1,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "bonus deferral rare outside listed execs (~10% illustrative)",
+  "REVIEW": "no clean all-employer %; concentrated in FS/listed",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: polarity ambiguous — deferral is a restriction; 'wider population' is not more generous",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_INC_132": {
+  "target_share": 0.16,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "~16% all-employee share plans (SAYE/SIP)",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: kinds — LTIP types have no generosity axis",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW263_WEL_DATA": {
+  "target_share": 0.64,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "64% take steps to identify/reduce stress (data-use proxy)",
+  "REVIEW": "systematic analytics much lower (14% proactive OH)",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "disposal_reason": "per-option multi-select — wellbeing data tracked, per-option shares (ruled 2026-07-15)"
+ },
+ "REW263_WEL_OH": {
+  "target_share": 0.69,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "A",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "69% provide OH (86% large / 39% SME)",
+  "option_order": [
+   "No OH service",
+   "OH without SLA",
+   "OH SLA over 2 weeks",
+   "OH SLA within 2 weeks"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW26_WEL_BUDGET": {
+  "target_share": 0.38,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=376; SME n=",
+  "anchor_note": "38% with FW policy have wellbeing budget (54% large)",
+  "REVIEW": "base = FW-policy orgs",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "EXT_REW_GAP_004": {
+  "target_share": 0.85,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "WorldatWork Trends in Employee Recognition (via REBA \"Key global trends in reward and reco",
+  "anchor_note": "85% operate length-of-service recognition",
+  "option_order": [
+   "No",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW263_REC_CURRENCY": {
+  "target_share": null,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "B",
+  "source": "2026 State of Recognition Report, EMEA edition (Workhuman) — UK employee data",
+  "anchor_note": "non-specific monetary 46% most meaningful (recognition mix)",
+  "REVIEW": "EMEA employee-reported; multi-way split",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "PAYTR_03_db0108d6": {
+  "target_share": 0.74,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "IDS/IES \"Private sector practice on progression\", research report for the Office of Manpow",
+  "anchor_note": "74% operate defined pay progression"
+ },
+ "PROP_aa4061d5": {
+  "target_share": null,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD \"Reward survey: Focus on employee benefits 2026\" (Feb 2026, ref 9075), n=1,059 UK rew",
+  "anchor_note": "77% have benefits objectives (majority review effectiveness)",
+  "review_resolution": "demoted to context: multi_select (has \"No formal measurement\" option), per-option shares, no single lean pole; register anchor was mismatched to this metric"
+ },
+ "REW262_GOV_EQUALVALUE": {
+  "target_share": 0.54,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "B",
+  "source": "CIPD Pay, performance and transparency 2024 survey",
+  "anchor_note": "54% check employees understand pay (equal-value proxy)",
+  "REVIEW": "proxy; formal equal-value grouping lower",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW26_GOV_EU_PTD_PREP": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+  "anchor_note": "44% unable to predict PTD readiness (unreadiness, not practice)",
+  "REVIEW": "this is unreadiness %, invert or context-only",
+  "review_resolution": "demoted to context: anchor is not a cohort prevalence"
+ },
+ "REW_PAY_001": {
+  "target_share": 0.67,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "CIPD Pay Structures and Pay Progression factsheet (drawing on CIPD Reward Management Surve",
+  "anchor_note": "67% use a formal pay structure",
+  "option_order": [
+   "No",
+   "Partially",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15, authored verbatim against live option strings. 'Not applicable'/'Don't know' are N/A skips excluded from the ordering (engine only re-pairs values present in the order), not poles."
+ },
+ "REW_PAY_002": {
+  "target_share": 0.79,
+  "direction": "latent",
+  "mode": "prevalence",
+  "grade": "C",
+  "source": "CIPD Pay Structures and Pay Progression factsheet (drawing on CIPD Reward Management Surve",
+  "anchor_note": "~79% implement formal job grading (JE-linked)",
+  "REVIEW": "79% is 'developing job grading' proxy",
+  "hold_from_marginal": true,
+  "review_resolution": "HOLD: subgroup rate not cohort marginal; needs re-based figure before spiking",
+  "mode_effective": "context"
+ },
+ "REW_PRO_034": {
+  "target_share": 0.5,
+  "direction": "preserve",
+  "mode": "context",
+  "grade": "C",
+  "source": "IDS/IES \"Private sector practice on progression\", research report for the Office of Manpow",
+  "anchor_note": "~50% award COLA at range max (time-at-max practice)",
+  "REVIEW": "multi-way time-at-max behaviour",
+  "review_resolution": "confirm option wording only; target/direction stand",
+  "disposal_reason": "ANCHOR/QUESTION SUBJECT MISMATCH (ruled 2026-07-15): anchor measures COLA AT RANGE MAX; question asks PROMOTION GUIDELINES",
+  "FLAG_RESOURCE": "figure is valid but against a DIFFERENT metric — re-source in the register; do not delete"
+ },
+ "REW_PRO_035": {
+  "target_share": 0.74,
+  "direction": "latent",
+  "mode": "context",
+  "grade": "C",
+  "source": "IDS/IES \"Private sector practice on progression\", research report for the Office of Manpow",
+  "anchor_note": "74% operate pay progression (83% multi-factor)",
+  "review_resolution": "worst_option corrected to real label \"Not defined\"; target 0.74 = share NOT \"Not defined\"",
+  "disposal_reason": "genuinely nominal — progression basis is a KIND (tenure/performance/combination), not a level (ruled 2026-07-15)"
+ },
+ "CAR_STATUS_01": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Reward survey: Focus on employee benefits (Feb 2026), YouGov fieldwork Oct-Nov 2025, ",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_3d4fc4e7": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "Drewberry 2026 (understanding proxy)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_7d858df2": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD PPT 2024 (LGBT+ pay report 7%, adjacent)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_BEN_047": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "Drewberry \"UK Employee Benefits Benchmarking Report 2026\" (Feb 2026), n=626 UK HR/finance ",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_BEN_055": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Reward Survey 2026",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "OT_03_1a68c68a": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD Flexible Working 2025 (ref 8909, flexi-time/informal proxy)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_BEN_SICK_006": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/Simplyhealth \"Health and wellbeing at work 2025\" (Sep 2025, ref 8920), n=1,101 UK HR/",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_8e0b6316": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP Pay, performance and transparency 2024 (ref 8551, n=832) (annual-cycle framing)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_fe1a29ec": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Reward survey 2026 (n=1,059) / CIPD reward practice Fig 6 (benchmarking against peers",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_BEN_REM_PAY_002": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_BEN_REM_PAY_003": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (Jul 2025, ref 8909), employer survey",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_PAY_097": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP Pay, performance and transparency 2024 (ref 8551, n=832)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_PAY_126": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP Pay, performance and transparency 2024 (ref 8551, n=832) (context)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW263_INC_POOLFUND": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: kinds — pool funding (top-down/bottom-up/hybrid) has no generosity axis"
+ },
+ "REW_INC_077": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: kinds — incentive intent (performance/retention/cost control) are purposes, not levels"
+ },
+ "REW_INC_136": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: kinds — commission structures (margin/quota/revenue/units) have no generosity axis"
+ },
+ "PROP_216f7323": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD \"Reward survey: Focus on employee benefits 2026\" (Feb 2026, ref 9075), n=1,059 UK rew",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_8862fcad": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "PROP_d65a16e9": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD \"Reward survey: Focus on employee benefits 2026\" (Feb 2026, ref 9075), n=1,059 UK rew",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_FAI_085": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD \"Reward survey: Focus on employee benefits 2026\" (Feb 2026, ref 9075), n=1,059 UK rew",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_FAI_086": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_FAI_087": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_FAI_092": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "CIPD/ADP \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551), n=832 UK HR decisi",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_PAY_003": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "C",
+  "source": "Paydata UK Reward Management Survey 2025 (emerging trends) / Autumn 2025",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_PAY_006": {
+  "target_share": null,
+  "direction": "context",
+  "mode": "context",
+  "grade": "B",
+  "source": "CIPD Reward 2026 Fig 6 (45% large / 21% SME benchmark peers)",
+  "anchor_note": "no clean free prevalence target; latent-only, grade recorded as context"
+ },
+ "REW_INC_072": {
+  "option_order": [
+   "Not used",
+   "Used rarely in exceptional cases",
+   "Used for specific hard-to-fill roles",
+   "Used strategically as part of attraction strategy"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle)."
+ },
+ "REW_INC_104": {
+  "option_order": [
+   "<50%",
+   "50–69%",
+   "70–79%",
+   "80–89%",
+   "90%–100%"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle)."
+ },
+ "REW_INC_065": {
+  "option_order": [
+   "No",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle). POLARITY NOTE (ruled): malus/clawback/gatekeeper are GOVERNANCE STRENGTH, not employee generosity — 'more' is stricter. Coherent on the S (structure) factor; would be WRONG on G."
+ },
+ "REW_INC_070": {
+  "option_order": [
+   "No",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle). POLARITY NOTE (ruled): malus/clawback/gatekeeper are GOVERNANCE STRENGTH, not employee generosity — 'more' is stricter. Coherent on the S (structure) factor; would be WRONG on G."
+ },
+ "REW_INC_071": {
+  "option_order": [
+   "No",
+   "Yes"
+  ],
+  "option_order_note": "RULED 2026-07-15 (Incentives coverage / (d) experiment). Authored verbatim against live option strings. 'Not applicable'/'Don't know' excluded — N/A skips, not levels (CICOVER principle). POLARITY NOTE (ruled): malus/clawback/gatekeeper are GOVERNANCE STRENGTH, not employee generosity — 'more' is stricter. Coherent on the S (structure) factor; would be WRONG on G."
+ },
+ "REW263_INC_DEFERRAL": {
+  "mode": "context",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: polarity ambiguous — mixes duration and vehicle, and deferral is a RESTRICTION; ordering would rank multi-year share deferral as most generous (same trap as REW_INC_069)"
+ },
+ "REW_INC_061": {
+  "mode": "context",
+  "disposal_reason": "INCENTIVES COVERAGE RULING 2026-07-15: degenerate — n=1 org, single option '61%–70%'; no distribution exists"
+ }
+}

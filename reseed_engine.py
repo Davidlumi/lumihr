@@ -20,12 +20,177 @@ For non-ordinal / nominal questions (e.g. pension TYPE), we don't force an
 order; we leave them as-is (marginal and assignment untouched) UNLESS a
 sensible generosity order exists.
 """
-import sqlite3, json, hashlib, argparse
+import sqlite3, json, hashlib, argparse, os, re, random
 from collections import defaultdict
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ---- multi-factor config (B2: load, never hardcode) ---------------------------
+RHO = float(os.environ.get("LUMI_RHO", "0.45"))   # env-overridable for the qa_reseed sweep.
+#      Prior ruling 2026-07-15 (three-factor): 0.45 (rho_decision.json, revised). Feasible band is only {0.40,0.45}:
+             # 0.35 FAILS G4 (worst_r 0.268 < 0.30 floor); 0.50+ breaches the 0.70 cross-factor
+             # ceiling. G4 binds from BELOW (pulls rho UP) — measured on the real reseed, not
+             # assumed. 0.45 leaves +0.057 on G4 (vs +0.018 at 0.40) and +0.027 on the ceiling;
+             # the anticipated re-basing of the 15 held rows moves coherence = G4, so margin
+             # belongs there. G3 +0.240, G4 +0.357, cross-factor 0.673.
+
+def _load(name):
+    try:
+        return json.load(open(os.path.join(HERE, name), encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+
+CFG    = _load("persona_factor_config.json")
+FMAP   = _load("metric_factor_map.json")
+SPIKES = _load("anchored_spikes.json")
+LEVELS = _load("level_distributions.json")
 
 # ---- latent maturity from firmographics + signed sector tilt -------------------
 FTE_RANK={"50-249":0.15,"250-999":0.35,"1,000-4,999":0.55,"5,000-9,999":0.78,"10,000+":0.95}
 HR_RANK={"Basic":0.1,"Developing":0.45,"Advanced":0.85}
+
+# Semantic lean pole (kit rule 2, Diff 7): NEVER positional. A prevalence target_share is
+# the share NOT on the lean pole; a row with no natural lean option needs an explicit
+# worst-option key and hard-errors rather than guessing by position.
+LEAN_RE = re.compile(r"^(no\b|none\b|not offered|not provided|not applicable|not in scope|"
+                     r"neither\b|statutory only|no policy|no plans|never\b|not used|not measured)", re.I)
+
+def ruled_order(qid):
+    """RULED lean->generous ordering from the spike entry (2026-07-15). Authored verbatim
+    against live option strings and reviewed by David — never inferred by heuristic.
+    'Not applicable'/'Don't know' are deliberately EXCLUDED: they are N/A skips, not levels,
+    so the re-pair leaves those orgs' values untouched (it only reorders values present in
+    the ordering). Precedence: ruled key > option_order() inference > NOMINAL (hard gate)."""
+    o = (SPIKES.get(qid) or {}).get("option_order")
+    return list(o) if o else None
+
+def lean_pole(qid, opts):
+    """Kit rule 2 (Diff 7): the lean pole is SEMANTIC, never positional.
+    Order: explicit worst_option key from the spike entry -> semantic LEAN_RE -> HARD ERROR.
+    A prevalence target_share is the share NOT on this pole."""
+    wo = (SPIKES.get(qid) or {}).get("worst_option")
+    if wo:
+        for o in opts:
+            if o.strip().lower() == str(wo).strip().lower():
+                return o
+        for o in opts:                       # tolerant contains-match for keyed poles
+            if str(wo).strip().lower() in o.strip().lower():
+                return o
+        raise ValueError("worst_option %r not found in options for %s" % (wo, qid))
+    for o in opts:
+        if LEAN_RE.match(o):
+            return o
+    return None
+
+def clamp01(x):
+    return max(0.0, min(1.0, x))
+
+def canon_industry(ind):
+    """B2 silent-failure guard: explicit industry_canon map, never canon()'s prefix logic
+    (which drops 6 of 14 to 'Other'). Accepts BOTH forms: the 158 real personas carry the
+    LONG label ('Retail & Consumer Goods' = a map key); the 62 authored carry the SHORT
+    canonical ('Retail' = a map value). Keying on the map alone silently flattened 60 of
+    the 62 to 'Other'. Always returns the SHORT canonical, which is what the tilt tables
+    and the legacy SECTOR_TILT are keyed on."""
+    m = CFG.get("industry_canon") or {}
+    if ind in m:
+        return m[ind]
+    if ind in set(m.values()):
+        return ind
+    return "Other"
+
+def load_profiles(paths):
+    """B-ruling (1): accept a LIST artifact and key on org_id or source_org_id_live.
+    seed_personas_220.json is a provenance-flagged list; only the 158 real rows carry
+    org_id, the 62 authored carry source_org_id_live."""
+    prof = {}
+    for p in str(paths).split(","):
+        p = p.strip()
+        if not p:
+            continue
+        try:
+            d = json.load(open(p if os.path.exists(p) else os.path.join(HERE, p), encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        if isinstance(d, list):
+            for r in d:
+                key = r.get("org_id") or r.get("source_org_id_live")
+                if key:
+                    prof[str(key)] = r
+        else:
+            prof.update(d)
+    return prof
+
+def latent3(org_id, prof, rho=None):
+    """Factor vector per org. TWO-FACTOR as ruled 2026-07-15: {G, S}. Name kept for call
+    compatibility. All weights/encodings from persona_factor_config."""
+    rho = RHO if rho is None else rho
+    p = prof.get(org_id, {}) or {}
+    enc  = CFG.get("ordinal_encode") or {}
+    tilt = ((CFG.get("sector_tilts") or {}).get("normalised")) or {}
+    own  = CFG.get("ownership_c") or {}
+    damp = CFG.get("g_damper") or {}
+    sect = canon_industry(p.get("Industry"))
+
+    core = 0.45 * FTE_RANK.get(p.get("FTE_Band"), 0.4) + 0.30 * HR_RANK.get(p.get("HR_Maturity"), 0.45)
+    well = (tilt.get("sector_well_tilt") or {}).get(sect, 0.5)
+    gov  = (tilt.get("sector_gov_tilt")  or {}).get(sect, 0.5)
+    pay  = (tilt.get("sector_pay_tilt")  or {}).get(sect, 0.5)
+    bud  = (enc.get("Budget_Flexibility")  or {}).get(p.get("Budget_Flexibility"), 0.5)
+    reg  = (enc.get("Regulatory_Pressure") or {}).get(p.get("Regulatory_Pressure"), 0.5)
+    aud  = (enc.get("Audit_Scrutiny")      or {}).get(p.get("Audit_Scrutiny"), 0.5)
+    risk = (enc.get("Risk_Appetite")       or {}).get(p.get("Risk_Appetite"), 0.5)
+    front = (p.get("Workforce_Frontline_%") or 0) / 100.0
+    union = (p.get("Workforce_Unionised_%") or 0) / 100.0
+    gd = ((damp.get("Recent_Shock") or {}).get(p.get("Recent_Shock"), 0.0)
+          + (damp.get("Direction_of_Travel") or {}).get(p.get("Direction_of_Travel"), 0.0))
+    cbump = (own.get(p.get("Ownership_Type")) or {}).get("c_bump", 0.0)
+
+    G = rho * core + (1 - rho) * (0.35 * bud + 0.20 * well - 0.12 * front + gd)
+    # TWO-FACTOR MODEL (ruled 2026-07-15). M and C are merged into S (structure /
+    # competitiveness). Rationale: G4 failed on COVERAGE, not tuning — Incentives has only
+    # 2 of 23 metrics the re-pair can move (9%), so a separate C factor cannot express
+    # itself and its pairs (Benefits x Incentives, Governance x Incentives) are exactly the
+    # ones that collapse. Merge = average the two structure-side enrichment terms, so both
+    # signals (regulatory/audit/gov-tilt AND pay-tilt/risk/ownership) survive at scale.
+    _M = 0.30 * reg + 0.20 * aud + 0.15 * gov + 0.10 * union
+    _C = 0.25 * pay + 0.20 * risk + cbump - 0.08 * union
+    S = rho * core + (1 - rho) * 0.5 * (_M + _C)
+    return {k: clamp01(v + jitter(org_id, k)) for k, v in (("G", G), ("S", S))}
+
+def gates_for(org_id, prof):
+    """B3 — gate = MASK (§9.4). Removes impossible cases only; never sets a share."""
+    p = prof.get(org_id, {}) or {}
+    o = p.get("Ownership_Type"); sect = canon_industry(p.get("Industry"))
+    return {
+        "ltip":  bool(((CFG.get("ownership_c") or {}).get(o) or {}).get("ltip_gate")),
+        "shift": (p.get("Workforce_Shift_%") or 0) > 20,
+        "tronc": sect in ("Hospitality", "Retail") and (p.get("Workforce_Frontline_%") or 0) > 40,
+        "car":   o == "Partnership / LLP" or sect in ("Financial Services", "Professional Services"),
+    }
+
+# Two-factor merge map: the factor_map still says M/C; both are the structure factor now.
+FACTOR_MERGE = {"M": "S", "C": "S", "G": "G", "S": "S"}
+
+def factor_of(qid, meta):
+    """B2 — factor per metric: explicit metric_factor wins, else subpower_factor.
+    M and C are merged to S under the two-factor ruling (2026-07-15)."""
+    mf = (FMAP.get("metric_factor") or {}).get(qid)
+    if not mf:
+        sp = (meta.get(qid) or {}).get("sub_power")
+        mf = (FMAP.get("subpower_factor") or {}).get(sp, "G")
+    return FACTOR_MERGE.get(mf, "G")
+
+def spike_mode(qid):
+    """B4 — hold_from_marginal routes latent-only via mode_effective (David ruling, 15 rows)."""
+    s = SPIKES.get(qid) or {}
+    if s.get("hold_from_marginal"):
+        return s.get("mode_effective", "context")
+    return s.get("mode")
+
+def clean_marginal_ids():
+    """The tune set: mode==prevalence AND not held. Demoted/held rows never tune."""
+    return [q for q in SPIKES if spike_mode(q) == "prevalence"]
 # signed-off sector tilt: mean of the 6 axes, normalised to ~[-1,1] then to [0,1] weight
 SECTOR_TILT={  # mean of pension,disc,inc,pay,gov,well from the signed grid /2
  "Financial Services":+1.67,"Professional Services":+1.33,"Technology":+1.5,
@@ -147,58 +312,129 @@ def apply_spikes(cur, meta, lat, write):
         logs.append((q,f"spiked to ~66% better ({spec['_anchor']})"))
     return logs
 
+STAMP = "2026-07-15 16:30:00"
+
 def reseed(db, profiles, meta_path, write=False, confirmed=False):
+    """Three-factor reseed (Diff 9). Per metric: route on the spike mode, re-pair onto the
+    metric's OWN factor (G/M/C), layer level distributions. Append-only write discipline
+    (Diff 7/8 house pattern): snapshot the prior value into answers_history, DELETE the
+    answers row, INSERT the corrected value. Marginals only move where an anchor says so."""
     c=sqlite3.connect(db); cur=c.cursor()
     meta=json.load(open(meta_path)); rewq=set(meta)
-    prof={}
-    for p in profiles.split(","):
-        if p:
-            try: prof.update(json.load(open(p)))
-            except FileNotFoundError: pass
-    # regenerate bridge for any org missing a profile: name-inference fallback
-    allorgs=[o for (o,) in cur.execute("select distinct org_id from answers")]
-    lat={o:latent(o,prof) for o in allorgs}
+    prof=load_profiles(profiles)
+    allorgs=[o for (o,) in cur.execute("select distinct org_id from answers where snapshot_id=1")]
+    lat3={o:latent3(o,prof) for o in allorgs}
 
     reassignments=0; touched_q=0; skipped_nominal=0
+    modes=defaultdict(int); marg_hits=[]; nominal_rejects=[]
     plan=[]  # (question_id, matrix_row_id, [(org, old, new)])
-    # group answers by (question, matrix_row)
-    cur.execute("select question_id,matrix_row_id,org_id,value from answers")
+    cur.execute("select question_id,matrix_row_id,org_id,value from answers where snapshot_id=1")
     cells=defaultdict(list)
     for q,mr,o,v in cur.fetchall():
         if q in rewq and v: cells[(q,mr)].append((o,v))
-    for (q,mr),rows in cells.items():
-        opts=meta[q].get("options","")
-        if not opts:  # matrix / empty: derive ordering from observed values in THIS cell
-            opts=sorted({v for _,v in rows})
-        order=option_order(opts, meta[q].get("text",""))
-        if not order:
-            skipped_nominal+=1; continue
-        rank={opt:i for i,opt in enumerate(order)}
-        # only reorder rows whose value is in the ordering
-        ordr=[(o,v) for o,v in rows if v in rank]
-        if len(ordr)<5: continue
-        # the multiset of answers stays identical; sort it lean->generous
-        answers_sorted=sorted((v for _,v in ordr), key=lambda v: rank[v])
-        # orgs sorted by latent ascending -> lowest latent gets leanest answer
-        orgs_sorted=sorted((o for o,_ in ordr), key=lambda o: lat[o])
-        newmap=dict(zip(orgs_sorted, answers_sorted))
-        changes=[(o,dict(ordr).get(o), newmap[o]) for o in orgs_sorted if dict(ordr).get(o)!=newmap[o]]
+
+    for (q,mr),rows in sorted(cells.items()):
+        fac=factor_of(q,meta)
+        lat={o:(lat3.get(o) or {}).get(fac,0.5) for o,_ in rows}
+        cur_map=dict(rows)
+        mode=spike_mode(q)
+        obs=[v for _,v in rows]
+        newmap=None
+
+        if mode=="prevalence" and not mr:
+            # HARD GATE (kit rule 2, one level up — added after the Diff 9 nominal-reshape
+            # incident): a prevalence target_share is "the share NOT on the lean pole". That
+            # sentence is only meaningful on a genuine binary/ordinal OFFER axis. On a NOMINAL
+            # metric (pension TYPE = DC/DB/Hybrid/None) there is no such axis, and reshaping
+            # moved 152 orgs from "has a DC pension" to "no scheme". If option_order() cannot
+            # rank the metric, a prevalence spike is a category error -> NEVER reshape.
+            opts=sorted(set(obs))
+            _order = ruled_order(q) or option_order(meta[q].get("options","") or opts, meta[q].get("text",""))
+            if not _order:
+                nominal_rejects.append(q)
+                lean=None
+            else:
+                try: lean=lean_pole(q,opts)
+                except ValueError: lean=None
+            if lean is not None:
+                spec=SPIKES[q]; tgt=spec["target_share"]; n=len(rows)
+                pos_n=round(tgt*n); pos=[o for o in opts if o!=lean]
+                curc=defaultdict(int)
+                for v in obs:
+                    if v!=lean: curc[v]+=1
+                tot=sum(curc.values()) or 1
+                ms=[lean]*(n-pos_n)
+                for o in pos: ms+=[o]*round(pos_n*curc.get(o,0)/tot)
+                while len(ms)<n: ms.append(pos[0] if pos else lean)
+                ms=ms[:n]
+                rank={lean:0}
+                for i,o in enumerate(pos,1): rank[o]=i
+                ms=sorted(ms,key=lambda v:rank[v])
+                if spec.get("direction")=="preserve":
+                    # rarity is the signal: hit the share, do NOT tie to the factor
+                    rr=random.Random(int(hashlib.sha256(q.encode()).hexdigest()[:8],16))
+                    who=[o for o,_ in rows]; rr.shuffle(who)
+                else:
+                    who=sorted((o for o,_ in rows), key=lambda o: lat.get(o,0.5))
+                newmap=dict(zip(who,ms))
+                ach=sum(1 for v in newmap.values() if v!=lean)/n
+                marg_hits.append({"qid":q,"grade":spec.get("grade"),"target":tgt,
+                                  "achieved":round(ach,4),"dev":round(abs(ach-tgt),4)})
+                modes["prevalence"]+=1
+
+        if newmap is None:
+            # context / floor / held / unspiked -> latent-only monotone re-pair on the factor.
+            opts=meta[q].get("options","") or sorted({v for _,v in rows})
+            order=ruled_order(q) or option_order(opts, meta[q].get("text",""))
+            if not order:
+                skipped_nominal+=1; continue
+            rank={opt:i for i,opt in enumerate(order)}
+            ordr=[(o,v) for o,v in rows if v in rank]
+            if len(ordr)<5: continue
+            ms=sorted((v for _,v in ordr), key=lambda v: rank[v])
+            who=sorted((o for o,_ in ordr), key=lambda o: lat.get(o,0.5))
+            newmap=dict(zip(who,ms))
+            if not mr: modes[mode or "unspiked"]+=1
+
+        changes=[(o,cur_map.get(o),nv) for o,nv in newmap.items() if cur_map.get(o)!=nv]
         if changes:
             touched_q+=1; reassignments+=len(changes)
             plan.append((q,mr,changes))
-    # apply
-    if write and confirmed:
-        # checkpoint WAL first
-        cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        for q,mr,changes in plan:
-            for o,old,new in changes:
-                cur.execute("update answers set value=? where question_id=? and matrix_row_id=? and org_id=?",(new,q,mr,o))
-        spike_logs=apply_spikes(cur,meta,lat,True)
-        c.commit()
-    else:
-        spike_logs=[]
-    return {"spikes":spike_logs, "touched_questions":touched_q,"reassignments":reassignments,
-            "skipped_nominal":skipped_nominal,"applied":bool(write and confirmed)}
+
+    if not (write and confirmed):
+        return {"applied":False,"touched_questions":touched_q,"reassignments":reassignments,
+                "skipped_nominal":skipped_nominal,"modes":dict(modes),
+                "marginals":{"n":len(marg_hits),"max_dev":max([m["dev"] for m in marg_hits] or [0])},
+                "nominal_rejects":sorted(set(nominal_rejects))}
+
+    # ---- APPLY: append-only (history snapshot -> delete -> insert) ----
+    cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    def book_hash():
+        h=hashlib.sha256()
+        for r in cur.execute("select org_id,question_id,matrix_row_id,value from answers "
+                             "where question_id not in (%s) order by org_id,question_id,matrix_row_id"
+                             % ",".join("?"*len(rewq)), tuple(rewq)):
+            h.update(("|".join(str(x) for x in r)+"\n").encode())
+        return h.hexdigest()
+    h0=book_hash()
+    n=0
+    for q,mr,changes in plan:
+        for o,old,new in changes:
+            cur.execute("insert into answers_history (org_id,snapshot_id,question_id,matrix_row_id,value,recorded_at) "
+                        "values (?,1,?,?,?,?)",(o,q,mr or "",old,STAMP))
+            cur.execute("delete from answers where org_id=? and snapshot_id=1 and question_id=? "
+                        "and ifnull(matrix_row_id,'')=?",(o,q,mr or ""))
+            cur.execute("insert into answers (org_id,snapshot_id,question_id,matrix_row_id,value,submitted_at) "
+                        "values (?,1,?,?,?,?)",(o,q,mr or "",new,STAMP))
+            cur.execute("insert into answers_history (org_id,snapshot_id,question_id,matrix_row_id,value,recorded_at) "
+                        "values (?,1,?,?,?,?)",(o,q,mr or "",new,STAMP))
+            n+=1
+    c.commit(); cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    assert book_hash()==h0, "NON-REWARD BOOK MOVED — restore lumi.db.bak_pre_diff9_20260715"
+    return {"applied":True,"cells_written":n,"touched_questions":touched_q,
+            "reassignments":reassignments,"skipped_nominal":skipped_nominal,"modes":dict(modes),
+            "marginals":{"n":len(marg_hits),"max_dev":max([m["dev"] for m in marg_hits] or [0])},
+            "nominal_rejects":sorted(set(nominal_rejects)),"non_reward_book":"hash-identical"}
 
 if __name__=="__main__":
     ap=argparse.ArgumentParser()

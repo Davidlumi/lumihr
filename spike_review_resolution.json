@@ -1,0 +1,168 @@
+{
+  "category_errors_demoted": [
+    {
+      "metric_id": "REW_BEN_041",
+      "reason": "'max additional leave' is a level distribution not a yes/no"
+    },
+    {
+      "metric_id": "REW_BEN_058",
+      "reason": "3-way DoT split, not a single share"
+    },
+    {
+      "metric_id": "REW263_REC_PEER",
+      "reason": "employee-reported %, not employer-prevalence"
+    },
+    {
+      "metric_id": "PROP_634adacd",
+      "reason": "3% is award size, NOT prevalence; do NOT spike as marginal"
+    },
+    {
+      "metric_id": "REW26_WEL_MH_SUPPORT",
+      "reason": "multi_select - many options each with own share"
+    },
+    {
+      "metric_id": "REW_INC_060",
+      "reason": "multi_select measure list"
+    },
+    {
+      "metric_id": "REW_PAY_023",
+      "reason": "multi_select factor list"
+    },
+    {
+      "metric_id": "PROP_36b990f9",
+      "reason": "6% is contribution rate not prevalence; do NOT spike marginal"
+    },
+    {
+      "metric_id": "REW_BEN_FAM_002",
+      "reason": "'weeks at full rate' is a level distribution"
+    },
+    {
+      "metric_id": "REW_BEN_SICK_002",
+      "reason": "duration level distribution not yes/no"
+    },
+    {
+      "metric_id": "PROP_dff9a2a5",
+      "reason": "proportion-receiving, near-universal; confirm option"
+    },
+    {
+      "metric_id": "REW263_PAY_SSPALIGN",
+      "reason": "62% is an OPINION share not a practice prevalence"
+    },
+    {
+      "metric_id": "REW263_REC_CURRENCY",
+      "reason": "EMEA employee-reported; multi-way split"
+    },
+    {
+      "metric_id": "REW26_GOV_EU_PTD_PREP",
+      "reason": "this is unreadiness %, invert or context-only"
+    }
+  ],
+  "wrong_base_HELD": [
+    {
+      "metric_id": "REW263_BEN_NEURO",
+      "reason": "base = H&W-active orgs, not all employers"
+    },
+    {
+      "metric_id": "REW26_BEN_SALSAC",
+      "reason": "54% is LARGE-only; all-employer ~15% (see REW_BEN_102)"
+    },
+    {
+      "metric_id": "REW_FAI_STUDY_TIME_93b6ef22",
+      "reason": "15% is SME; all-employer blend nearer ~20%"
+    },
+    {
+      "metric_id": "REW262_TIME_SICKDAYONE",
+      "reason": "among OSP-havers; base = OSP orgs not all"
+    },
+    {
+      "metric_id": "PROP_10d1211d",
+      "reason": "27% is LARGE-only"
+    },
+    {
+      "metric_id": "CAR_COST_02",
+      "reason": "base = post-Budget benefit-changers, not all employers"
+    },
+    {
+      "metric_id": "PROP_202fecc6",
+      "reason": "42% is LARGE-only; all-employer lower"
+    },
+    {
+      "metric_id": "REW263_BEN_DENTAL",
+      "reason": "dental not split out; using health-cover proxy"
+    },
+    {
+      "metric_id": "REW263_BEN_PMIMH",
+      "reason": "MH inclusion not split; health-cover proxy"
+    },
+    {
+      "metric_id": "REW_BEN_FAM_009",
+      "reason": "15% is SME; all-employer blend higher"
+    },
+    {
+      "metric_id": "REW_BEN_SICK_004",
+      "reason": "among OSP-havers"
+    },
+    {
+      "metric_id": "REW263_PAY_MERITMATRIX",
+      "reason": "41% is merit-pay MPT proxy not matrix-specific"
+    },
+    {
+      "metric_id": "REW26_WEL_BUDGET",
+      "reason": "base = FW-policy orgs"
+    },
+    {
+      "metric_id": "REW262_GOV_EQUALVALUE",
+      "reason": "proxy; formal equal-value grouping lower"
+    },
+    {
+      "metric_id": "REW_PAY_002",
+      "reason": "79% is 'developing job grading' proxy"
+    }
+  ],
+  "confirm_option_only": [
+    {
+      "metric_id": "REW_BEN_048",
+      "reason": "salary-replacement LEVEL is a within-offerer distribution, not a yes/no share"
+    },
+    {
+      "metric_id": "REW263_TIME_PATPAY",
+      "reason": "67% 'top-tier' vs 21% enhance >2wks - confirm which the option means"
+    },
+    {
+      "metric_id": "REW26_WEL_EAP",
+      "reason": "CIPD larger-employer EAP prevalence much higher; base differs"
+    },
+    {
+      "metric_id": "REW26_WEL_FINWELL",
+      "reason": "conflicts with REW263_WEL_FINWELL 15% - different question base; confirm mapping"
+    },
+    {
+      "metric_id": "REW263_GOV_UKPAYTRANS",
+      "reason": "which option = ranges vs specific? confirm"
+    },
+    {
+      "metric_id": "PROP_9e4ad87f",
+      "reason": "pay-award band distribution, not yes/no"
+    },
+    {
+      "metric_id": "REW26_BEN_PENSION_MATCH",
+      "reason": "54% is LARGE sal-sac figure; matching all-employer lower"
+    },
+    {
+      "metric_id": "REW26_BEN_PLSA_QM",
+      "reason": "PQM-accredited prevalence not published; 10% is illustrative floor"
+    },
+    {
+      "metric_id": "REW_INC_069",
+      "reason": "no clean all-employer %; concentrated in FS/listed"
+    },
+    {
+      "metric_id": "REW263_WEL_DATA",
+      "reason": "systematic analytics much lower (14% proactive OH)"
+    },
+    {
+      "metric_id": "REW_PRO_034",
+      "reason": "multi-way time-at-max behaviour"
+    }
+  ]
+}

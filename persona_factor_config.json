@@ -1,0 +1,334 @@
+{
+  "industry_canon": {
+    "Retail & Consumer Goods": "Retail",
+    "Hospitality, Leisure & Travel": "Hospitality",
+    "Logistics, Transport & Distribution": "Logistics",
+    "Manufacturing & Engineering": "Manufacturing",
+    "Construction & Infrastructure": "Construction",
+    "Professional Services": "Professional Services",
+    "Financial Services": "Financial Services",
+    "Technology, Software & Digital": "Technology",
+    "Healthcare & Life Sciences": "Healthcare",
+    "Public Sector & Government": "Public Sector & Government",
+    "Education (Public & Private)": "Education (Public & Private)",
+    "Charity, Non-Profit & Social Enterprise": "Charity, Non-Profit & Social Enterprise",
+    "Energy, Utilities & Environmental Services": "Energy, Utilities & Environmental Services",
+    "Media, Communications & Creative Industries": "Media, Communications & Creative Industries"
+  },
+  "ordinal_encode": {
+    "Budget_Flexibility": {
+      "Tight": 0.15,
+      "Managed": 0.55,
+      "Flexible": 0.9
+    },
+    "Regulatory_Pressure": {
+      "Medium": 0.4,
+      "High": 0.85
+    },
+    "Audit_Scrutiny": {
+      "Low": 0.2,
+      "Medium": 0.5,
+      "High": 0.85
+    },
+    "Risk_Appetite": {
+      "Conservative": 0.3,
+      "Balanced": 0.55,
+      "Aggressive": 0.85
+    }
+  },
+  "ownership_c": {
+    "Public Listed (PLC)": {
+      "ltip_gate": true,
+      "c_bump": 0.1
+    },
+    "PE-backed": {
+      "ltip_gate": true,
+      "c_bump": 0.15
+    },
+    "VC-backed (Private)": {
+      "ltip_gate": true,
+      "c_bump": 0.1
+    },
+    "Partnership / LLP": {
+      "profit_share_gate": true,
+      "car_gate": true,
+      "c_bump": 0.05
+    },
+    "Subsidiary of Global Group": {
+      "ltip_gate": true,
+      "c_bump": 0.05
+    },
+    "Mutual / Co-operative": {
+      "ltip_gate": false,
+      "c_bump": -0.05
+    },
+    "Charity / Non-profit": {
+      "ltip_gate": false,
+      "c_bump": -0.1
+    },
+    "Public Sector Body": {
+      "ltip_gate": false,
+      "c_bump": -0.1
+    },
+    "Founder-led (Private)": {
+      "ltip_gate": false,
+      "c_bump": 0.0
+    },
+    "Private (UK-owned)": {
+      "ltip_gate": false,
+      "c_bump": 0.0
+    }
+  },
+  "g_damper": {
+    "Recent_Shock": {
+      "Cost reduction programme": -0.12
+    },
+    "Direction_of_Travel": {
+      "Deteriorating": -0.08,
+      "Improving": 0.04
+    }
+  },
+  "factor_formulas": {
+    "core": "0.45*FTE_RANK + 0.30*HR_RANK",
+    "G": "rho*core + (1-rho)*( 0.35*Budget_Flexibility + 0.20*sector_well_tilt - 0.12*(Frontline/100) + g_damper )",
+    "M": "rho*core + (1-rho)*( 0.30*Regulatory_Pressure + 0.20*Audit_Scrutiny + 0.15*sector_gov_tilt + 0.10*(Unionised/100) )",
+    "C": "rho*core + (1-rho)*( 0.25*sector_pay_tilt + 0.20*Risk_Appetite + ownership_c_bump - 0.08*(Unionised/100) )",
+    "notes": "all inputs 0..1; clamp to [0,1]; rho shared-core weight (~0.55 start); jitter(org,factor) added after"
+  },
+  "gates": {
+    "ltip_deferral": "ownership_c.ltip_gate == True  (else N/A skip -> feeds n<5 suppression)",
+    "car_allowance": "ownership in {Partnership/LLP} OR sector in {Financial Services,Professional Services}",
+    "shift_oncall_premium": "Workforce_Shift_% > 20 (else N/A skip)",
+    "tronc": "sector in {Hospitality,Retail} AND Workforce_Frontline_% > 40"
+  },
+  "denominator_note": "SUPERSEDED by `population`: live cohort 220; marginals reshape across 220; n<5 suppression asserts against 220. (was: 210 — stale design-basis figure)",
+  "population": {
+    "live_cohort_orgs": 220,
+    "personas_total": 210,
+    "personas_bridged_to_live": 220,
+    "live_orgs_without_persona": 0,
+    "personas_unused": 52,
+    "RULING_REQUIRED": "How the 62 inferred orgs get factor inputs. Options in build prompt. Until ruled, QA baselines below are CONDITIONAL on the choice.",
+    "denominator_for_suppression": 220,
+    "denominator_for_marginals": 220,
+    "NOTE": "anchor target_share is a 220-cohort marginal; reshape MUST span 220, not 210 or 158.",
+    "RULING_RESOLVED": "Option 5: 62 authored personas (generated:true). Cohort fully personaed at 220."
+  },
+  "gate_baselines_conditional": {
+    "if_62_bridged_or_derived": {
+      "ltip_eligible": 98,
+      "shift_eligible": 107,
+      "tronc_on": 30,
+      "basis": "full 220 with personas/derived for all"
+    },
+    "if_62_defaulted": {
+      "ltip_eligible": 74,
+      "shift_eligible": 93,
+      "car_or_tronc": 18,
+      "basis": "158 bridged evaluate; 62 gate-blind -> excluded from eligible counts",
+      "WARN": "assert against THESE if option 4 chosen; do NOT use 98/107/30"
+    },
+    "instruction": "B6 must select the baseline row matching the ruling. 'deviation = mis-wired gate' ONLY valid against the matching row.",
+    "RESOLVED": "Population ruling = author 62 (Option 5). Assert against gate_baselines_ACTUAL_220. The conditional rows are historical."
+  },
+  "B1_corrections": {
+    "tilt_target_file": "persona_factor_config.json (NOT market_position_config.json — that is gauge/classification config)",
+    "source_grid": "lumi_sector_tilt_table (2).xlsx -> sheet Sector_tilt_v3",
+    "column_map": {
+      "sector_well_tilt": "wellbeing_investment",
+      "sector_gov_tilt": "governance_maturity",
+      "sector_pay_tilt": "pay_structure"
+    },
+    "energy_cell_reconcile": "Energy/Utilities grid mean=1.333 (2,1,1,1,2,1) vs live SECTOR_TILT=1.17. Reconcile BEFORE rebuilding tilts; all 14 other sectors match. David to confirm which is right.",
+    "provenance_flag": "grid README still says 'SIGN-OFF — David: confirm 6x15 grid' — spec called it 'signed'. CONFIRM signed before use. sector_well_tilt is WEB-directional in 8/15 sectors; Charity row provisional (4/6 axes WEB). As a weighted factor input this is within the 'direction not marginal' discipline, but confirm acceptable.",
+    "energy_cell_RESOLVED": "Energy row = pension2/disc1/inc1/pay1/gov2/well1 (mean 1.333). The 3 EXTRACTED cells (pay=1 S13, gov=2 S14, well=1 WEB) are unaffected by the averaged-tilt 1.17 discrepancy. latent3 retires the average -> mismatch is MOOT for the new path. No ruling needed; note only.",
+    "well_tilt_web_sectors": {
+      "web_sourced": "8 of 15 sectors (FS, Prof, Tech, Energy, Education, Media, Construction, Charity)",
+      "discipline": "WEB cells set DIRECTION not a marginal number; as a weighted factor input this is within rule",
+      "DAVID_CONFIRM": "acceptable to use WEB-directional well-tilt as a factor input? (README rule permits)"
+    },
+    "grid_signoff": {
+      "readme": "'SIGN-OFF David: confirm the 6x15 grid. Register-anchored cells firm; web cells directional.'",
+      "DAVID_CONFIRM": "is the 6x15 grid signed off for use?"
+    }
+  },
+  "gate_baselines_ACTUAL_220": {
+    "ltip_eligible": 100,
+    "shift_eligible": 119,
+    "tronc_on": 42,
+    "car_eligible": 41,
+    "n_orgs": 220,
+    "basis": "REAL 220 = 158 bridged + 62 authored (personas_generated_62.json)",
+    "_tronc_restated": "30 -> 42 (ruled 2026-07-15). The 30 was computed with the canon bug: 60 short-named authored personas fell to 'Other' so their tronc gate never fired. Fixed lookup gates 12 genuine Retail/Hospitality frontline>40 orgs ON. LTIP/Shift/Car unaffected (ownership/workforce-keyed or identity-mapped sectors)."
+  },
+  "sector_tilts": {
+    "_source": "lumi_sector_tilt_table (2).xlsx -> Sector_tilt_v3 (B1 un-average; raw grid -2..+2). Grid signed off by David 2026-07-15.",
+    "_keying": "SHORT canonical (industry_canon VALUES) to match canon_industry() output and legacy SECTOR_TILT; source table is keyed on the LONG labels",
+    "_normalisation": "factor_formulas.notes requires 0..1 inputs -> norm=(raw+2)/4",
+    "_column_map": {
+      "sector_well_tilt": "wellbeing_investment",
+      "sector_gov_tilt": "governance_maturity",
+      "sector_pay_tilt": "pay_structure"
+    },
+    "raw": {
+      "sector_well_tilt": {
+        "Financial Services": 1,
+        "Professional Services": 1,
+        "Technology": 2,
+        "Energy, Utilities & Environmental Services": 1,
+        "Public Sector & Government": 1,
+        "Education (Public & Private)": 0,
+        "Healthcare": 1,
+        "Media, Communications & Creative Industries": 1,
+        "Manufacturing": 0,
+        "Construction": -1,
+        "Charity, Non-Profit & Social Enterprise": 1,
+        "Logistics": -1,
+        "Retail": -1,
+        "Hospitality": -1,
+        "Other": 0
+      },
+      "sector_gov_tilt": {
+        "Financial Services": 2,
+        "Professional Services": 1,
+        "Technology": 1,
+        "Energy, Utilities & Environmental Services": 2,
+        "Public Sector & Government": 2,
+        "Education (Public & Private)": 1,
+        "Healthcare": 1,
+        "Media, Communications & Creative Industries": 0,
+        "Manufacturing": 0,
+        "Construction": 0,
+        "Charity, Non-Profit & Social Enterprise": 0,
+        "Logistics": -1,
+        "Retail": -1,
+        "Hospitality": -1,
+        "Other": 0
+      },
+      "sector_pay_tilt": {
+        "Financial Services": 2,
+        "Professional Services": 2,
+        "Technology": 1,
+        "Energy, Utilities & Environmental Services": 1,
+        "Public Sector & Government": 1,
+        "Education (Public & Private)": 0,
+        "Healthcare": 0,
+        "Media, Communications & Creative Industries": 0,
+        "Manufacturing": 0,
+        "Construction": -1,
+        "Charity, Non-Profit & Social Enterprise": -1,
+        "Logistics": -1,
+        "Retail": -1,
+        "Hospitality": -2,
+        "Other": 0
+      }
+    },
+    "normalised": {
+      "sector_well_tilt": {
+        "Financial Services": 0.75,
+        "Professional Services": 0.75,
+        "Technology": 1.0,
+        "Energy, Utilities & Environmental Services": 0.75,
+        "Public Sector & Government": 0.75,
+        "Education (Public & Private)": 0.5,
+        "Healthcare": 0.75,
+        "Media, Communications & Creative Industries": 0.75,
+        "Manufacturing": 0.5,
+        "Construction": 0.25,
+        "Charity, Non-Profit & Social Enterprise": 0.75,
+        "Logistics": 0.25,
+        "Retail": 0.25,
+        "Hospitality": 0.25,
+        "Other": 0.5
+      },
+      "sector_gov_tilt": {
+        "Financial Services": 1.0,
+        "Professional Services": 0.75,
+        "Technology": 0.75,
+        "Energy, Utilities & Environmental Services": 1.0,
+        "Public Sector & Government": 1.0,
+        "Education (Public & Private)": 0.75,
+        "Healthcare": 0.75,
+        "Media, Communications & Creative Industries": 0.5,
+        "Manufacturing": 0.5,
+        "Construction": 0.5,
+        "Charity, Non-Profit & Social Enterprise": 0.5,
+        "Logistics": 0.25,
+        "Retail": 0.25,
+        "Hospitality": 0.25,
+        "Other": 0.5
+      },
+      "sector_pay_tilt": {
+        "Financial Services": 1.0,
+        "Professional Services": 1.0,
+        "Technology": 0.75,
+        "Energy, Utilities & Environmental Services": 0.75,
+        "Public Sector & Government": 0.75,
+        "Education (Public & Private)": 0.5,
+        "Healthcare": 0.5,
+        "Media, Communications & Creative Industries": 0.5,
+        "Manufacturing": 0.5,
+        "Construction": 0.25,
+        "Charity, Non-Profit & Social Enterprise": 0.25,
+        "Logistics": 0.25,
+        "Retail": 0.25,
+        "Hospitality": 0.0,
+        "Other": 0.5
+      }
+    },
+    "provenance": {
+      "sector_well_tilt": {
+        "Financial Services": "WEB",
+        "Professional Services": "WEB",
+        "Technology": "WEB",
+        "Energy, Utilities & Environmental Services": "WEB",
+        "Public Sector & Government": "S24",
+        "Education (Public & Private)": "WEB",
+        "Healthcare": "S24",
+        "Media, Communications & Creative Industries": "WEB",
+        "Manufacturing": "—",
+        "Construction": "WEB",
+        "Charity, Non-Profit & Social Enterprise": "WEB",
+        "Logistics": "S24",
+        "Retail": "S24",
+        "Hospitality": "S24",
+        "Other": "—"
+      },
+      "sector_gov_tilt": {
+        "Financial Services": "S23",
+        "Professional Services": "S23",
+        "Technology": "S23",
+        "Energy, Utilities & Environmental Services": "S14",
+        "Public Sector & Government": "S23",
+        "Education (Public & Private)": "S23",
+        "Healthcare": "S23",
+        "Media, Communications & Creative Industries": "—",
+        "Manufacturing": "—",
+        "Construction": "—",
+        "Charity, Non-Profit & Social Enterprise": "—",
+        "Logistics": "S23",
+        "Retail": "S23",
+        "Hospitality": "S23",
+        "Other": "—"
+      },
+      "sector_pay_tilt": {
+        "Financial Services": "S13",
+        "Professional Services": "S13",
+        "Technology": "S13",
+        "Energy, Utilities & Environmental Services": "S13",
+        "Public Sector & Government": "S13",
+        "Education (Public & Private)": "S13",
+        "Healthcare": "S13",
+        "Media, Communications & Creative Industries": "S13",
+        "Manufacturing": "S13",
+        "Construction": "S13",
+        "Charity, Non-Profit & Social Enterprise": "S13",
+        "Logistics": "S13",
+        "Retail": "S13",
+        "Hospitality": "S13",
+        "Other": "—"
+      }
+    }
+  },
+  "_B1_applied": "Tilts extracted + denominator corrected by Claude Code (Diff B1). NOTE: a source regeneration of this file at 15:28 clobbered the first application — re-apply B1 after any regeneration, or fold it into the generator."
+}

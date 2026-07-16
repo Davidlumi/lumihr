@@ -1,0 +1,176 @@
+{
+  "REW_BEN_045": {
+    "dimension": "life_multiple",
+    "bands": {
+      "2x salary": 0.22,
+      "3x": 0.195,
+      "4x": 0.136,
+      "fixed sum": 0.166,
+      "5x+": 0.029,
+      "other/unspecified": 0.254
+    },
+    "source": "Group life prevalence 80.7%; multiples within offerers"
+  },
+  "REW_BEN_046": {
+    "dimension": "ip_replacement",
+    "bands": {
+      "50-59% salary": 0.252,
+      "60-75%": 0.2,
+      "under 50%": 0.15,
+      "unspecified": 0.398
+    },
+    "source": "GIP 66% offer; 50-59% modal (25.2%)"
+  },
+  "REW_BEN_048": {
+    "dimension": "ip_replacement",
+    "bands": {
+      "50-59% salary": 0.252,
+      "60-75%": 0.2,
+      "under 50%": 0.15,
+      "unspecified": 0.398
+    },
+    "source": "same as REW_BEN_046 (replacement-level metric)"
+  },
+  "REW_BEN_SICK_002": {
+    "dimension": "osp_full_pay_weeks",
+    "bands": {
+      "2-4 weeks": 0.329,
+      "5-13 weeks": 0.232,
+      "14-26 weeks": 0.15,
+      "26+ weeks": 0.13,
+      "SSP only": 0.09,
+      "other": 0.069
+    },
+    "source": "OSP 2-4wks 32.9%, 5-13wks 23.2%, SSP-only ~9%"
+  },
+  "REW_BEN_SICK_004": {
+    "dimension": "osp_service_qualification",
+    "bands": {
+      "day one": 0.3,
+      "3 months": 0.13,
+      "6 months": 0.1,
+      "12 months": 0.23,
+      "2 years": 0.08,
+      "unspecified": 0.16
+    },
+    "source": "day-one 30%, 3mo 13%, 12mo 23%"
+  },
+  "REW262_TIME_SICKDAYONE": {
+    "dimension": "osp_service_qualification",
+    "bands": {
+      "day one": 0.3,
+      "3 months": 0.13,
+      "12 months": 0.23,
+      "other/service": 0.34
+    },
+    "source": "OSP eligibility from day one ~30% (43% public)"
+  },
+  "REW_BEN_HOL_001": {
+    "dimension": "annual_leave_days",
+    "bands": {
+      "20 (statutory)": 0.086,
+      "21-24": 0.189,
+      "25": 0.312,
+      "26-27": 0.1,
+      "28": 0.16,
+      "30+": 0.115,
+      "other": 0.038
+    },
+    "source": "25d modal 31.2%, 28d 16%, 30d 11.5%, 20d 8.6%"
+  },
+  "REW_BEN_HOL_004": {
+    "dimension": "service_extra_leave_days",
+    "bands": {
+      "none": 0.23,
+      "1-3 days": 0.2,
+      "up to 5 days": 0.268,
+      "more than 5": 0.1,
+      "unspecified": 0.202
+    },
+    "source": "up to 5 days modal 26.8%; none 23%"
+  },
+  "REW_BEN_HOL_006": {
+    "dimension": "service_extra_leave_days",
+    "bands": {
+      "none": 0.23,
+      "up to 5 days": 0.268,
+      "more than 5": 0.12,
+      "unspecified": 0.382
+    },
+    "source": "long-service max ~5 days modal 26.8%"
+  },
+  "REW_BEN_FAM_001": {
+    "dimension": "maternity_enhancement",
+    "bands": {
+      "statutory only": 0.33,
+      "4-13 weeks near-full": 0.18,
+      "~26 weeks near-full then SMP": 0.21,
+      "other enhanced": 0.28
+    },
+    "source": "stat-only 33%, 4-13wk 18%, 26wk 21%"
+  },
+  "REW_BEN_FAM_002": {
+    "dimension": "maternity_full_weeks",
+    "bands": {
+      "4-13 weeks": 0.18,
+      "~26 weeks": 0.21,
+      "other/less": 0.61
+    },
+    "source": "4-13wk 18%, 26wk 21% among enhancers"
+  },
+  "REW_BEN_FAM_006": {
+    "dimension": "paternity_leave_weeks",
+    "bands": {
+      "statutory 1-2 weeks": 0.49,
+      "3 weeks": 0.03,
+      "4 weeks": 0.09,
+      "5-28 weeks": 0.13,
+      "unspecified": 0.26
+    },
+    "source": "stat 1-2wk 49%, 3wk 3%, 4wk 9%, 5-28wk 13%"
+  },
+  "REW_BEN_SICK_001": {
+    "dimension": "osp_full_pay_weeks",
+    "bands": {
+      "SSP only": 0.09,
+      "2-4 weeks": 0.329,
+      "5-13 weeks": 0.232,
+      "14-26 weeks": 0.15,
+      "26+ weeks": 0.199
+    },
+    "source": "~91% enhance; 2-4wk modal 32.9%"
+  },
+  "EXT_REW_GAP_009": {
+    "dimension": "office_days_required",
+    "bands": {
+      "1 day": 0.0762,
+      "2 days": 0.3048,
+      "3 days": 0.4571,
+      "4 days": 0.1333,
+      "5 days": 0.0286,
+      "none/flex": 0.0
+    },
+    "source": "3d 48%, 2d 32%, 4d 14%, 1d 8% among those w/ weekly min"
+  },
+  "REW26_BEN_PENSION_TYPE": {
+    "dimension": "employer_pension_pct",
+    "bands": {
+      "3% (statutory)": 0.224,
+      "4%": 0.12,
+      "5%": 0.262,
+      "6%": 0.15,
+      "7-9%": 0.14,
+      "10%+": 0.104
+    },
+    "source": "5% modal 26.2%, 3% statutory 22.4%, 76% above statutory"
+  },
+  "REW263_REC_CURRENCY": {
+    "dimension": "recognition_currency",
+    "bands": {
+      "specific non-monetary": 0.39,
+      "non-specific monetary": 0.46,
+      "specific + monetary": 0.15
+    },
+    "source": "non-spec monetary 46%, specific non-money 39%, both 15%"
+  }
+}

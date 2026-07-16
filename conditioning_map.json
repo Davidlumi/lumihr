@@ -1,0 +1,11 @@
+[
+ {
+  "parent": "CAR_STATUS_01",
+  "child": "CAR_COST_02",
+  "child_lean": "No",
+  "parent_negatives": [
+   "No"
+  ],
+  "why": "no status cars -> no EV mandate for them"
+ }
+]

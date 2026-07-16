@@ -1,0 +1,15 @@
+{
+  "rho_decision": 0.45,
+  "rationale": "Only rho in {0.35,0.40,0.45} satisfies corr band [0.3,0.7]; corr(G,C) binding. 0.40 sits comfortably on both rails (worst pair 0.416, G/C 0.626, gradient +0.476). Chosen for margin: 15 held rows + confirm-option wording + possible re-basing will shift weights slightly; 0.40 is the only value with headroom on the BINDING constraint (G4/corr) to absorb that without re-tuning. 0.45 optimises G3 (which has headroom everywhere) at the cost of G4 (which is binding) \u2014 wrong trade.",
+  "rejected": {
+    "0.55": "infeasible - corr(G,C) breaches 0.7 ceiling",
+    "0.45": "G/C 0.673, only 0.027 under ceiling - fragile to later weight change",
+    "0.35": "M/C 0.327, only 0.027 above floor - mirror fragility"
+  },
+  "gate_naming_correction": "G3 = size gradient (slope>=0.10); G4 = coherence (min_r 0.30). My spec mislabelled G3 as coherence. Claude Code tunes/reports BOTH.",
+  "config_ownership": "persona_factor_config.json is ENGINE-OWNED from here (B1 tilts live in it). Claude produces no further edits to it; any Claude-side changes go to separate files.",
+  "note_for_david_only": "Factors top out ~0.55-0.67 because core maxes at 0.75. Irrelevant for rank-based re-pairing. Only matters if factors are ever read as ABSOLUTE scores - revisit core normalisation then, not now.",
+  "rho_CORRECTION": "Switched 0.40 -> 0.45 after Claude Code MEASURED G4 on the reseed. My 0.40 rationale was directionally wrong: I asserted G4 binds without measuring which way. G4 binds from BELOW (pulls rho UP). At 0.40 G4 margin +0.018; at 0.45 +0.057. Re-basing the 15 held rows moves coherence=G4, so 0.45 protects the constraint that actually binds and absorbs the change that's coming. Feasible band measured = {0.40,0.45}; 0.35 FAILS G4 (+0.268 < 0.30 floor).",
+  "tronc_baseline_correction": "tronc_on restated 30 -> 42. The 30 was computed WITH the canon bug (short-named authored personas dropped to Other, tronc never fired). Fixed lookup: 12 real Retail/Hospitality frontline>40 orgs correctly gate ON. 42 is correct; 30 was the buggy value. LTIP/Shift/Car unaffected. Authoritative copy = Claude Code engine-owned config.",
+  "lesson": "I made a confident directional claim about which way G4 binds without measured data - it was 50/50 and I got it wrong. Should have flagged 'predicted, pending measurement'. Measure gates on the real reseed before locking rho."
+}
