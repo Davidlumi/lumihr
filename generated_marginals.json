@@ -1,6 +1,53 @@
 {
  "_generated": "2026-07-16",
  "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
+ "ruled_distributions": {
+  "REW_PAY_005": {
+   "distribution": {
+    "Above Market": 3,
+    "Slightly Above": 7,
+    "On Market": 70,
+    "Slightly Below": 15,
+    "Below Market": 5
+   },
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "Ideal pay market position — peaked on On-Market (median-targeters dominate). Seeds over ANSWERING orgs only (N/A-Don't-know option stripped per standing rule; 28 answers n-excluded). STRATEGY-CONFIG metric (Diff 4): never pools, no verdict — reshape only, ruled 2026-07-18 ①."
+  },
+  "EXT_REW_GAP_010": {
+   "distribution": {
+    "Anywhere in the UK": 78,
+    "Within defined UK regions": 4,
+    "Internationally with restrictions": 2,
+    "Internationally without restrictions": 1,
+    "Location is tightly restricted": 15
+   },
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "Remote-work location permission — Anywhere-UK dominant, international a thin tail. Don't-know stripped (4 answers n-excluded). ANCHORED BUT NON-DIRECTIONAL (ruled 2026-07-18 ②): no honest better/worse pole; renders prevalence, no verdict."
+  },
+  "REW265_PAY_RANGEMAX": {
+   "distribution": {
+    "No formal ranges": 60,
+    "Lump-sum in lieu": 16,
+    "Frozen until range moves": 16,
+    "Continue increases": 8
+   },
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "Range-maximum policy, CONDITIONAL derivation: 40% have ranges; among range-havers 40/20/40 lump/continue/frozen. Cohort-average flat THIS diff; FTE-gradient flagged round 3. Non-directional (ruled ②), no verdict."
+  },
+  "PROP_fe1a29ec": {
+   "distribution": {
+    "Yes - formal/structured (survey data, provider, market analysis)": 60,
+    "Informally only (job adverts, ad hoc, online, ChatGPT)": 30,
+    "No benchmarking at all": 10
+   },
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "External benchmarking after option redesign (46-set surgery ruled 2026-07-18 ④): old Yes/Partially/No replaced; 60/30/10 cohort-centre flat, FTE-gradient round 3. SUPERSEDES the Drewberry 0.495 share-marginal (old construct died with the options). KEEPS higher_is_better (ordered maturity scale). First member of the shared FTE-maturity family."
+  }
+ },
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
  "marginals": {
   "CAR_STATUS_01": {
@@ -203,13 +250,6 @@
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
    "evidence": "\"internal ~40% always publish; 32% never\" (full anchor: \"Pay bands/ranges visible to employees: internal ~40% always publish; 32% never\"). ~40 recorded as 40 — tilde-approximate as written, not a rang"
-  },
-  "PROP_fe1a29ec": {
-   "target_share": 0.495,
-   "base_type": "single(ruled)",
-   "grade": "B",
-   "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown broker)",
-   "rule": "no-blend all-UK 0.495; caveats carried: BENEFITS-side benchmarking only (anchor self-disclaims pay-survey usage), no 'at"
   },
   "REW_BEN_REM_PAY_001": {
    "target_share": 0.64,
@@ -718,9 +758,6 @@
   },
   "REW_FAI_TRONC_TYPES_b5547658": {
    "why": "unanchored"
-  },
-  "REW_PAY_005": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_PAY_007": {
    "why": "unanchored"
@@ -1413,11 +1450,12 @@
   },
   "PROP_fe1a29ec": {
    "option_order": [
-    "No",
-    "Partially",
-    "Yes"
+    "No benchmarking at all",
+    "Informally only (job adverts, ad hoc, online, ChatGPT)",
+    "Yes - formal/structured (survey data, provider, market analysis)"
    ],
-   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+   "ruled": "2026-07-18 (Diff 15 option redesign ④)",
+   "note": "maturity scale none<informal<formal; supersedes No<Partially<Yes (construct replaced)."
   },
   "PROP_10d1211d": {
    "option_order": [

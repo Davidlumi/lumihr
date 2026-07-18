@@ -1,0 +1,8 @@
+metric_id,action,before,after
+REW_PAY_005,reshape,"{""Slightly Above"": 34, ""Slightly Below"": 63, ""Below Market"": 34, ""On Market"": 40, ""Above Market"": 21, ""Not applicable / Don't know"": 28}","{""Above Market"": 6, ""Slightly Above"": 13, ""On Market"": 134, ""Slightly Below"": 29, ""Below Market"": 10}"
+EXT_REW_GAP_010,reshape,"{""Location is tightly restricted"": 35, ""Anywhere in the UK"": 34, ""Within defined UK regions"": 47, ""Internationally with restrictions"": 36, ""Internationally without restrictions"": 9, ""Don't know"": 4}","{""Anywhere in the UK"": 126, ""Within defined UK regions"": 6, ""Internationally with restrictions"": 3, ""Internationally without restrictions"": 2, ""Location is tightly restricted"": 24}"
+REW265_PAY_RANGEMAX,reshape,"{""No formal ranges"": 150, ""Continue increases"": 25, ""Frozen until range moves"": 25, ""Lump-sum in lieu"": 20}","{""No formal ranges"": 132, ""Lump-sum in lieu"": 35, ""Frozen until range moves"": 35, ""Continue increases"": 18}"
+PROP_fe1a29ec,reshape,"{""No"": 109, ""Yes"": 72, ""Partially"": 34}","{""Yes - formal/structured (survey data, provider, market analysis)"": 129, ""Informally only (job adverts, ad hoc, online, ChatGPT)"": 65, ""No benchmarking at all"": 21}"
+REW26_BEN_PENSION_TYPE,reshape,"{""DC"": 186, ""DB"": 16, ""Hybrid"": 14, ""None"": 4}","{""DC"": 209, ""DB"": 7, ""Hybrid"": 4}"
+REW265_PAY_PAYCOMMS,matrix-rebuild,"{""single_select_answers"": 220}","{""matrix_rows"": 1540, ""conv_counts"": [198, 198, 198, 176, 154, 110, 44]}"
+REW264_PEN_PENLEAVEGAP,retire,220 seed answers,0

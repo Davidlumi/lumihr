@@ -9,7 +9,7 @@
   "REW26_BEN_SALSAC": {
    "subclass": "SINGLE_BASE",
    "rule": "do-not-emit: 0.54 is large-only AND measures offer-at-all, not default enrolment; if David rules the question means 'offered', blend 0.15/0.54 (pair on REW_BEN_102) -> 0.487",
-   "reasoning": "On-row figure is a single base: 54% large-only (CIPD Dec 2025; base field itself concedes 'mixed lower'). The task's SINGLE_BASE test \u2014 would emitting it unblended on an all-cohort question materially"
+   "reasoning": "On-row figure is a single base: 54% large-only (CIPD Dec 2025; base field itself concedes 'mixed lower'). The task's SINGLE_BASE test — would emitting it unblended on an all-cohort question materially"
   },
   "REW_BEN_044": {
    "subclass": "BLEND_ELIGIBLE",
@@ -19,12 +19,12 @@
   "REW_BEN_045": {
    "subclass": "BLEND_ELIGIBLE",
    "rule": "blend 0.185/0.62 (all-UK~SME 18-19% Fig28 / large 62% Fig24, on-row) -> 0.561 offer; emit 'Not offered' 0.439 only; salary-multiple bands stay unanchored",
-   "reasoning": "On-row anchor is an all/large split the blend can consume: 62% large (Fig24) vs ~18-19% all/SME (Fig28 UK-only 18%), CIPD Feb 2026 Grade A \u2014 the anchor itself equates all with SME ('~18-19% all/SME'),"
+   "reasoning": "On-row anchor is an all/large split the blend can consume: 62% large (Fig24) vs ~18-19% all/SME (Fig28 UK-only 18%), CIPD Feb 2026 Grade A — the anchor itself equates all with SME ('~18-19% all/SME'),"
   },
   "REW263_BEN_CICOVER": {
    "subclass": "BLEND_ELIGIBLE",
    "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays unanchored (Drewberry = context)",
-   "reasoning": "On-row anchor carries the full split: 23% all / 42% large / 12% SME (CIPD H&W 2025, Grade A). Blend: (0.12*30 + 0.42*190)/220 = 0.379 offering CI cover, 'Not applicable' 0.621 \u2014 this closes the gap th"
+   "reasoning": "On-row anchor carries the full split: 23% all / 42% large / 12% SME (CIPD H&W 2025, Grade A). Blend: (0.12*30 + 0.42*190)/220 = 0.379 offering CI cover, 'Not applicable' 0.621 — this closes the gap th"
   },
   "REW263_BEN_DENTAL": {
    "subclass": "BLEND_ELIGIBLE",
@@ -34,17 +34,17 @@
   "EXT_REW_GAP_012": {
    "subclass": "SINGLE_BASE",
    "rule": "no-blend all-UK 0.26 (review-to-ensure-fair) with purpose caveat + likely-understates-large-cohort caveat; 0.83 objectives-holders base = context, never emit",
-   "reasoning": "The 26% is a flat all-UK prevalence (CIPD Reward Feb 2026 p31, Grade A, base field 'all-UK') with no SME/large split published \u2014 nothing for the blend to consume, so SINGLE_BASE. Under the class rule "
+   "reasoning": "The 26% is a flat all-UK prevalence (CIPD Reward Feb 2026 p31, Grade A, base field 'all-UK') with no SME/large split published — nothing for the blend to consume, so SINGLE_BASE. Under the class rule "
   },
   "RED_COST_01": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value figure (statutory \u00a3751/wk cap, \u00a322,530 max, age-banded formula) \u2014 no marginal; observed average cost per employee remains unanchored",
-   "reasoning": "The anchor is a statutory reference \u2014 weekly-pay cap \u00a3751, max statutory payment \u00a322,530, the 0.5/1/1.5-weeks-per-year formula (gov.uk verified, Grade A) \u2014 a legal VALUE bound, not a prevalence of any"
+   "rule": "context: value figure (statutory £751/wk cap, £22,530 max, age-banded formula) — no marginal; observed average cost per employee remains unanchored",
+   "reasoning": "The anchor is a statutory reference — weekly-pay cap £751, max statutory payment £22,530, the 0.5/1/1.5-weeks-per-year formula (gov.uk verified, Grade A) — a legal VALUE bound, not a prevalence of any"
   },
   "RED_TERM_02": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value figure (statutory cap \u00a3751/wk from Apr 2026, 30 weeks max) \u2014 no marginal; enhanced-offer distribution unanchored; seeded bands already Check-C flagged degenerate",
-   "reasoning": "The anchor is statutory mechanics \u2014 \u00a3719/wk 2025/26 rising to \u00a3751 Apr 2026, 30-week maximum (IRIS/employment-law sources, Grade A; bucket_why 'no %-value in anchor') \u2014 a VALUE, not a prevalence. Doub"
+   "rule": "context: value figure (statutory cap £751/wk from Apr 2026, 30 weeks max) — no marginal; enhanced-offer distribution unanchored; seeded bands already Check-C flagged degenerate",
+   "reasoning": "The anchor is statutory mechanics — £719/wk 2025/26 rising to £751 Apr 2026, 30-week maximum (IRIS/employment-law sources, Grade A; bucket_why 'no %-value in anchor') — a VALUE, not a prevalence. Doub"
   },
   "REW_BEN_FAM_002": {
    "subclass": "BLEND_ELIGIBLE",
@@ -98,52 +98,52 @@
   },
   "PROP_dff9a2a5": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value figure (~3% is median award SIZE from CIPD LMO Spring 2026, not a coverage share; '<0%/freeze small tail' is directional only) \u2014 no marginal",
-   "reasoning": "Question asks a COVERAGE proportion (share of headcount receiving any increase; seeded '95%-100% 41%'). The register's only number, ~3%, is the median award VALUE \u2014 the same CIPD LMO median that alrea"
+   "rule": "context: value figure (~3% is median award SIZE from CIPD LMO Spring 2026, not a coverage share; '<0%/freeze small tail' is directional only) — no marginal",
+   "reasoning": "Question asks a COVERAGE proportion (share of headcount receiving any increase; seeded '95%-100% 41%'). The register's only number, ~3%, is the median award VALUE — the same CIPD LMO median that alrea"
   },
   "PROP_9e4ad87f": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value figure (pay-AWARD median 3%; band split 3-3.99% = 40% of employers, 5%+ = 15%) \u2014 award distribution, not budget-as-%-of-payroll; no marginal",
-   "reasoning": "Question asks the salary-increase BUDGET as % of payroll for the LAST COMPLETED review (numeric). The anchor is CIPD LMO's expected basic PAY AWARD \u2014 a value/level distribution of a different construc"
+   "rule": "context: value figure (pay-AWARD median 3%; band split 3-3.99% = 40% of employers, 5%+ = 15%) — award distribution, not budget-as-%-of-payroll; no marginal",
+   "reasoning": "Question asks the salary-increase BUDGET as % of payroll for the LAST COMPLETED review (numeric). The anchor is CIPD LMO's expected basic PAY AWARD — a value/level distribution of a different construc"
   },
   "PROP_fe1a29ec": {
-   "subclass": "SINGLE_BASE",
-   "rule": "no-blend all-UK 0.495; caveats carried: BENEFITS-side benchmarking only (anchor self-disclaims pay-survey usage), no 'at least annually' frequency cut, Drewberry broker-book n=626 indicative not nationally weighted",
+   "subclass": "RULED_DISTRIBUTION",
+   "rule": "SUPERSEDED (Diff 15 ruled 2026-07-18 ④): option set replaced (Yes/Partially/No -> formal/informal/none), the 0.495 Drewberry share-marginal died with the old construct. Emits via structured_bases ruled_distribution 60/30/10 EST; FTE-gradient round 3.",
    "reasoning": "Genuine employer-prevalence (49.5% benchmark benefits vs 46.8% not) on a flat single base that is all-UK-shaped, so it meets the SINGLE_BASE emit-with-caveat test. But three caveats must travel with t"
   },
   "REW_BEN_058": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: forward-looking benefits-SPEND direction split (plan increase 8% / same 73% / decrease 6%), not a retrospective enhanced-in-last-12m prevalence \u2014 no marginal",
+   "rule": "context: forward-looking benefits-SPEND direction split (plan increase 8% / same 73% / decrease 6%), not a retrospective enhanced-in-last-12m prevalence — no marginal",
    "reasoning": "Question is retrospective and causal (enhanced benefits in the LAST 12 months, in response to cost-of-living/labour-market pressure). The anchor is a three-way direction-of-travel split of planned ben"
   },
   "REW_PAY_HOURLY_MIN_1c6e096f": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value figure (statutory floor \u2014 NLW 21+ \u00a312.21 Apr 2025 -> \u00a312.71 Apr 2026; NMW 18-20 \u00a310.85) \u2014 left-tail boundary constraint only, no marginal",
-   "reasoning": "Question asks the distribution of employers' actual lowest hourly rates (seeded '\u00a314-\u00a315 18%'); the anchor is the legal wage floor \u2014 a statutory constant with base 'the law', measuring no employer beh"
+   "rule": "context: value figure (statutory floor — NLW 21+ £12.21 Apr 2025 -> £12.71 Apr 2026; NMW 18-20 £10.85) — left-tail boundary constraint only, no marginal",
+   "reasoning": "Question asks the distribution of employers' actual lowest hourly rates (seeded '£14-£15 18%'); the anchor is the legal wage floor — a statutory constant with base 'the law', measuring no employer beh"
   },
   "REW_INC_131": {
    "subclass": "CONTEXT_SUBGROUP",
-   "rule": "context: subset-scope prevalence \u2014 AESP ~16% all-UK covers all-employee share plans only, and 21-24% is an among-performance-linked-employers base; neither maps to 'any LTI/equity at ANY level'; no marginal until an any-LTI prevalence figure arrives",
+   "rule": "context: subset-scope prevalence — AESP ~16% all-UK covers all-employee share plans only, and 21-24% is an among-performance-linked-employers base; neither maps to 'any LTI/equity at ANY level'; no marginal until an any-LTI prevalence figure arrives",
    "reasoning": "The base of the headline ~16% (all-UK employers, CIPD PPT 2024 n=832 weighted) is sound, but the measured population of practices is a strict SUBSET of the question's scope: all-employee share plans e"
   },
   "REW_INC_133": {
    "subclass": "CONTEXT_SUBGROUP",
-   "rule": "context: staff-category participation splits from NON-LTI schemes (team bonus MPT 37% vs other 23%; profit-share 32% vs 19%; AESP ~16%) \u2014 no LTI-eligibility-by-level quantity exists on the row; no marginal",
-   "reasoning": "Question asks which of the org's own levels are eligible for LONG-TERM incentives (matrix). Every quantified figure in the anchor is a by-staff-category (MPT vs other \u2014 an occupational classification,"
+   "rule": "context: staff-category participation splits from NON-LTI schemes (team bonus MPT 37% vs other 23%; profit-share 32% vs 19%; AESP ~16%) — no LTI-eligibility-by-level quantity exists on the row; no marginal",
+   "reasoning": "Question asks which of the org's own levels are eligible for LONG-TERM incentives (matrix). Every quantified figure in the anchor is a by-staff-category (MPT vs other — an occupational classification,"
   },
   "REW_INC_104": {
    "subclass": "CONTEXT_VALUE",
-   "rule": "context: value/band distribution on the wrong denominator \u2014 payout as % of TARGET (90-100% band = 60% i.e. 26/43; 71-90% \u2248 23%) against a question denominated in % of MAXIMUM; no marginal without an explicit target-to-max conversion; n=43, 2019-20 vintage",
+   "rule": "context: value/band distribution on the wrong denominator — payout as % of TARGET (90-100% band = 60% i.e. 26/43; 71-90% ≈ 23%) against a question denominated in % of MAXIMUM; no marginal without an explicit target-to-max conversion; n=43, 2019-20 vintage",
    "reasoning": "Subject matches (bonus payout achievement) but both the quantity-type and the base fail: the anchor is a band DISTRIBUTION of an achievement value, and its denominator is target while the question's i"
   },
   "REW_INC_103": {
    "subclass": "CONTEXT_SUBGROUP",
-   "rule": "context: employee-level receipt base \u2014 12.2% of ALL UK employees received a bonus (yr to May 2025; small firms 20.4% vs large 7.8%) \u2014 receipt is not eligibility and economy-wide employees is not a within-org base; no marginal until a within-org eligibility figure arrives",
+   "rule": "context: employee-level receipt base — 12.2% of ALL UK employees received a bonus (yr to May 2025; small firms 20.4% vs large 7.8%) — receipt is not eligibility and economy-wide employees is not a within-org base; no marginal until a within-org eligibility figure arrives",
    "reasoning": "Textbook CONTEXT_SUBGROUP: the base is employee-level (Brightmine payroll dataset, all UK employees including staff of employers with no scheme), one of the enumerated unblendable bases. Two compoundi"
   },
   "REW_INC_072": {
    "subclass": "SINGLE_BASE",
-   "rule": "no-blend large-only 0.15 (active-use rate; NEVER the ~0.45 use-or-considering composite \u2014 considering is not using); caveats carried: n=165 large UK employers, Oct 2022 labour-shortage PEAK, treat as upper bound for 2026",
+   "rule": "no-blend large-only 0.15 (active-use rate; NEVER the ~0.45 use-or-considering composite — considering is not using); caveats carried: n=165 large UK employers, Oct 2022 labour-shortage PEAK, treat as upper bound for 2026",
    "reasoning": "Subject matches exactly; single large-only base on an all-cohort question, so the SINGLE_BASE materiality test applies. On base alone, unblended emission does NOT materially overstate for THIS cohort:"
   },
   "REW263_WEL_OH": {
@@ -169,7 +169,7 @@
   "REW263_GOV_FLEXALLOW": {
    "subclass": "SINGLE_BASE",
    "rule": "no-blend flat-UK 0.39 offers-flexible-benefits (Broadstone n~200), emit only with upper-bound caveat: broad flex-benefits construct, not allowance-specific, plus benefits-engaged convenience sample; do not use Drewberry 0.252",
-   "reasoning": "Employer prevalence with one flat base: 39% offer flexible benefits (Broadstone Nov 2023, n~200, grade B), no SME/large split. The base is not weighted all-UK \u2014 it is a broker-client convenience sampl"
+   "reasoning": "Employer prevalence with one flat base: 39% offer flexible benefits (Broadstone Nov 2023, n~200, grade B), no SME/large split. The base is not weighted all-UK — it is a broker-client convenience sampl"
   },
   "REW26_WEL_BUDGET": {
    "subclass": "SINGLE_BASE",
@@ -179,21 +179,21 @@
   "REW263_WEL_MGRTRAIN": {
    "subclass": "CONTEXT_SUBGROUP",
    "rule": "context: org-level base (29% of orgs train line managers) on a manager-denominator coverage question; no marginal unless a trained-manager-proportion distribution arrives",
-   "reasoning": "Denominator mismatch that no caveat can bridge. The live question asks what PROPORTION of an org's people managers have completed mental-health training \u2014 a within-org coverage rate whose answer bands"
+   "reasoning": "Denominator mismatch that no caveat can bridge. The live question asks what PROPORTION of an org's people managers have completed mental-health training — a within-org coverage rate whose answer bands"
   },
   "REW26_GOV_EU_PTD_PREP": {
    "subclass": "CONTEXT_SUBGROUP",
    "rule": "context: 0.44 is a don't-know/opinion share (unable to predict readiness), not a preparedness-stage prevalence; second element is a date (Jun 2026 deadline); no marginal",
-   "reasoning": "Neither element of the anchor is a cohort-consumable prevalence for this question. The 44% (CIPD PPT 2024 p4, grade B) counts employers UNABLE TO PREDICT their pay-transparency readiness \u2014 an uncertai"
+   "reasoning": "Neither element of the anchor is a cohort-consumable prevalence for this question. The 44% (CIPD PPT 2024 p4, grade B) counts employers UNABLE TO PREDICT their pay-transparency readiness — an uncertai"
   },
   "REW263_GOV_MENOPLAN": {
    "subclass": "CONTEXT_RULED",
-   "rule": "context: proxy-with-caveat (policy != action plan) \u2014 ruled context-only 2026-07-16",
+   "rule": "context: proxy-with-caveat (policy != action plan) — ruled context-only 2026-07-16",
    "reasoning": "David ruling"
   },
   "REW26_BEN_PLSA_QM": {
    "subclass": "CONTEXT_BOUND",
-   "rule": "context: upper-bound proxy (<=0.29) \u2014 bound cannot set a target_share unless David rules to seed at the bound",
+   "rule": "context: upper-bound proxy (<=0.29) — bound cannot set a target_share unless David rules to seed at the bound",
    "reasoning": "upper bound, ruled 2026-07-16"
   }
  }

@@ -44,7 +44,9 @@ SETTLED = set(FROZEN)
 SETTLED_TOL = 0.001   # tier 1: hand-ruled/immovable (qa_reseed settled_tol)
 MARGINAL_FAIL = 0.05  # tier 2: register marginals fail only beyond 5pp (±4ppt reshape freedom)
 # register marginal targets + orderings (tier 2), same artifacts the reseed engine reads
-MARG = json.load(open(os.path.join(_ROOT, "generated_marginals.json")))["marginals"]
+_GEN = json.load(open(os.path.join(_ROOT, "generated_marginals.json")))
+MARG = _GEN["marginals"]
+RDIST = _GEN.get("ruled_distributions") or {}   # Diff 15: full-dist reshapes, tier-2b at the same 5pp line
 ORDS = json.load(open(os.path.join(_ROOT, "ruled_orderings.json")))["orderings"]
 # register-anchored = the 14 REW26_* firewall family (id starts 'REW26_', NOT REW262_/REW263_)
 
@@ -234,6 +236,14 @@ def check_c():
                 hard.append((drift, "FROZEN-DRIFT", qid,
                              "%.2fpp vs frozen_targets.json (tol %.1fpp — settled is immovable)"
                              % (drift * 100, SETTLED_TOL * 100)))
+        elif qid in RDIST:
+            tgt = {k: v / 100.0 for k, v in RDIST[qid]["distribution"].items()}
+            drift = max((abs(raw.get(k, 0) - t) for k, t in tgt.items()), default=0)
+            t2_max = max(t2_max, drift); t2_n += 1
+            if drift > MARGINAL_FAIL:
+                hard.append((drift, "RULED-DIST-DRIFT", qid,
+                             "%.1fpp worst option vs ruled distribution (fail >%.0fpp)"
+                             % (drift * 100, MARGINAL_FAIL * 100)))
         elif qid in MARG:
             ach, tgt = achieved_share(qid, q, vals)
             if ach is not None:

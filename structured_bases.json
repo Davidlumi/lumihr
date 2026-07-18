@@ -459,5 +459,63 @@
   "ruled": "2026-07-18: promoted off hold at 0.64; full 4-rung ordering ruled (varies=ordinal second-leanest); positive_from='Base pay is protected'."
  },
  "_polarity_guard_completion": "RULED 2026-07-18: explicit structured 'polarity' field takes precedence over the target_semantics substring heuristic. The substring read of adjacent prose was a soft form of the banned prose-inference (FAI_089 near-miss: companion-pole mention almost inverted a positive figure). Heuristic retained as legacy fallback only.",
- "_principle_scope_2026_07_18": "Unconditional-rung principle SCOPE: frequency-sourced binaries (always/sometimes/never, regular/ad-hoc) take the unconditional rung only — stops 'sometimes X' counting as 'does X'. It does NOT reach any-offer-sourced ordinals (e.g. FAM_008): case-by-case paid provision IS paid provision; such bases distribute across all offering rungs via positive_from."
+ "_principle_scope_2026_07_18": "Unconditional-rung principle SCOPE: frequency-sourced binaries (always/sometimes/never, regular/ad-hoc) take the unconditional rung only — stops 'sometimes X' counting as 'does X'. It does NOT reach any-offer-sourced ordinals (e.g. FAM_008): case-by-case paid provision IS paid provision; such bases distribute across all offering rungs via positive_from.",
+ "REW_PAY_005": {
+  "ruled_distribution": {
+   "Above Market": 3,
+   "Slightly Above": 7,
+   "On Market": 70,
+   "Slightly Below": 15,
+   "Below Market": 5
+  },
+  "grade": "EST",
+  "source": "practitioner benchmark - D. Whitfield",
+  "base_type": "ruled_full_distribution",
+  "target_semantics": "Ideal pay market position — peaked on On-Market (median-targeters dominate). Seeds over ANSWERING orgs only (N/A-Don't-know option stripped per standing rule; 28 answers n-excluded). STRATEGY-CONFIG metric (Diff 4): never pools, no verdict — reshape only, ruled 2026-07-18 ①.",
+  "polarity": "positive"
+ },
+ "EXT_REW_GAP_010": {
+  "ruled_distribution": {
+   "Anywhere in the UK": 78,
+   "Within defined UK regions": 4,
+   "Internationally with restrictions": 2,
+   "Internationally without restrictions": 1,
+   "Location is tightly restricted": 15
+  },
+  "grade": "EST",
+  "source": "practitioner benchmark - D. Whitfield",
+  "base_type": "ruled_full_distribution",
+  "target_semantics": "Remote-work location permission — Anywhere-UK dominant, international a thin tail. Don't-know stripped (4 answers n-excluded). ANCHORED BUT NON-DIRECTIONAL (ruled 2026-07-18 ②): no honest better/worse pole; renders prevalence, no verdict.",
+  "polarity": "positive"
+ },
+ "REW265_PAY_RANGEMAX": {
+  "ruled_distribution": {
+   "No formal ranges": 60,
+   "Lump-sum in lieu": 16,
+   "Frozen until range moves": 16,
+   "Continue increases": 8
+  },
+  "grade": "EST",
+  "source": "practitioner benchmark - D. Whitfield",
+  "base_type": "ruled_full_distribution",
+  "target_semantics": "Range-maximum policy, CONDITIONAL derivation: 40% have ranges; among range-havers 40/20/40 lump/continue/frozen. Cohort-average flat THIS diff; FTE-gradient flagged round 3. Non-directional (ruled ②), no verdict.",
+  "polarity": "positive"
+ },
+ "PROP_fe1a29ec": {
+  "ruled_distribution": {
+   "Yes - formal/structured (survey data, provider, market analysis)": 60,
+   "Informally only (job adverts, ad hoc, online, ChatGPT)": 30,
+   "No benchmarking at all": 10
+  },
+  "grade": "EST",
+  "source": "practitioner benchmark - D. Whitfield",
+  "base_type": "ruled_full_distribution",
+  "target_semantics": "External benchmarking after option redesign (46-set surgery ruled 2026-07-18 ④): old Yes/Partially/No replaced; 60/30/10 cohort-centre flat, FTE-gradient round 3. SUPERSEDES the Drewberry 0.495 share-marginal (old construct died with the options). KEEPS higher_is_better (ordered maturity scale). First member of the shared FTE-maturity family.",
+  "polarity": "positive"
+ },
+ "_diff15_notes": {
+  "PENSION_TYPE": "re-frozen tier-1 at DC .95/DB .0318/Hybrid .0182 (None option REMOVED — AE legal mandate; ruled ③); lives in frozen_targets.json not here",
+  "PAYCOMMS": "REW265_PAY_PAYCOMMS redesigned single_select->by-level matrix, EST verdict-suppressed; per-level Letter+conversation 90/90/90/80/70/50/20 in diff15 derivation config",
+  "PENLEAVEGAP": "REW264_PEN_PENLEAVEGAP retired (class 6) — unpaid leave has no pensionable-pay basis"
+ }
 }

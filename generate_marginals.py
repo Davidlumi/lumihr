@@ -31,6 +31,14 @@ RULED = "2026-07-16"
 reg = list(csv.DictReader(open("lumi_anchor_register_CLAUDECODE.csv", encoding="utf-8-sig")))
 rules = json.load(open("generator_rules.json"))["rules"]
 bases = json.load(open("structured_bases.json"))          # metric_id -> structured fields
+# Diff 15 (ruled 2026-07-18 ⑥): full-distribution reshapes. A structured_bases entry
+# carrying "ruled_distribution" emits into the ruled_distributions section (exact
+# per-option shares, freeze-gated at the 5pp register line by qa_plausibility) and
+# NEVER derives a share-marginal — the construct is the whole distribution.
+ruled_dists = {q: {"distribution": b["ruled_distribution"], "grade": b.get("grade", "EST"),
+                   "source": b.get("source", ""), "semantics": b.get("target_semantics", "")}
+               for q, b in bases.items()
+               if isinstance(b, dict) and b.get("ruled_distribution")}
 RULED_ORD = json.load(open("ruled_orderings.json"))["orderings"]   # THE standing orderings artifact
 # Ruled context (2026-07-16): one-pole-of-multi-pole = context (PAY_097/PAY_017, as principle);
 # GAP_009 set-not-pole (question shape, figure-independent); WEL_BUDGET numeric (G8: no
@@ -111,7 +119,12 @@ for r in reg:
                 row["flags"] = "large-only (ruled emit-with-caveat)"
     elif b:
         bt = b["base_type"]
-        if bt == "not_prevalence":
+        if b.get("ruled_distribution"):
+            # Diff 15: full-distribution base — emits via ruled_dists (built at load),
+            # never a share-marginal. Route recorded for the review table.
+            row.update(route="RULED_DISTRIBUTION (full-dist)", base_type=bt,
+                       inputs=json.dumps(b["ruled_distribution"])[:60])
+        elif bt == "not_prevalence":
             row["route"] = "context (verified not-prevalence)"; context[q] = {"why": b.get("flags") or "not a prevalence"}
         elif bt == "sme_large":
             for v, lbl in ((b.get("sme_pct"), "sme"), (b.get("large_pct"), "large")):
@@ -187,6 +200,10 @@ for q in marginals:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
+assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "PROP_fe1a29ec"}, sorted(ruled_dists)
+assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-marginals (Diff 15 redesign)"
+for _q, _e in ruled_dists.items():
+    assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
 # default-holds assert: every other marginal has NO positive_from -> legacy second-rung semantics
 assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 8
 for q in SETTLED_REFREEZE:
@@ -203,6 +220,7 @@ for q, m in marginals.items():
     assert m.get("grade"), "marginal without grade: %s" % q
 
 out = {"_generated": RULED, "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
+       "ruled_distributions": ruled_dists,
        "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
        "marginals": marginals, "floors": floors, "context": context,
        "pending_ruling": pending, "ruled_orderings": ruled_orderings,

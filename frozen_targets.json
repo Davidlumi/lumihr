@@ -5,7 +5,7 @@
    "Yes": 0.7273
   },
   "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
  },
  "REW26_WEL_MH_SUPPORT": {
   "dist": {
@@ -48,7 +48,7 @@
    "Yes": 0.6409
   },
   "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
  },
  "REW26_WEL_STRATEGY": {
   "dist": {
@@ -58,16 +58,16 @@
    "No strategy": 0.4318
   },
   "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
  },
  "REW26_BEN_PENSION_TYPE": {
   "dist": {
-   "DC": 0.8455,
-   "DB": 0.0727,
-   "Hybrid": 0.0636,
-   "None": 0.0182
+   "DC": 0.95,
+   "DB": 0.0318,
+   "Hybrid": 0.0182
   },
-  "n": 220
+  "n": 220,
+  "_refrozen": "2026-07-18 Diff 15 ruled ③: DC sharpened 0.8455->0.95 (private mid-market EST, D. Whitfield); 'None' option REMOVED (auto-enrolment legal mandate — non-compliant state, not a data point); was {\"DC\": 0.8455, \"DB\": 0.0727, \"Hybrid\": 0.0636, \"None\": 0.0182}"
  },
  "REW26_BEN_PENSION_MATCH": {
   "dist": {
@@ -78,7 +78,7 @@
    "Up to 8%": 0.1091
   },
   "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
  },
  "REW26_BEN_SALSAC": {
   "dist": {

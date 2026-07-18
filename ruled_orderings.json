@@ -425,11 +425,12 @@
   },
   "PROP_fe1a29ec": {
    "option_order": [
-    "No",
-    "Partially",
-    "Yes"
+    "No benchmarking at all",
+    "Informally only (job adverts, ad hoc, online, ChatGPT)",
+    "Yes - formal/structured (survey data, provider, market analysis)"
    ],
-   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+   "ruled": "2026-07-18 (Diff 15 option redesign ④)",
+   "note": "maturity scale none<informal<formal; supersedes No<Partially<Yes (construct replaced)."
   },
   "PROP_10d1211d": {
    "option_order": [

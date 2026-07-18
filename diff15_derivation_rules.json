@@ -1,0 +1,133 @@
+{
+ "_meta": {
+  "diff": "15",
+  "ruled": "2026-07-18, six rulings + delete confirm",
+  "inputs": [
+   "underpeaking_baselines.json",
+   "option_redesign_and_gating.json"
+  ]
+ },
+ "option_edits": {
+  "REW_PAY_005": {
+   "remove_codes": [
+    "NOT_APPLICABLE_DON_T_KNOW"
+   ],
+   "remove_na_codes": [
+    "NOT_APPLICABLE_DON_T_KNOW"
+   ]
+  },
+  "EXT_REW_GAP_010": {
+   "remove_codes": [
+    "DON_T_KNOW"
+   ],
+   "remove_na_codes": [
+    "DON_T_KNOW"
+   ]
+  },
+  "REW26_BEN_PENSION_TYPE": {
+   "remove_codes": [
+    "NONE"
+   ],
+   "note": "AE legal mandate - None is a non-compliant state, not a data point (ruled 3)"
+  },
+  "PROP_fe1a29ec": {
+   "replace_options": [
+    {
+     "code": "FORMAL_STRUCTURED",
+     "label": "Yes - formal/structured (survey data, provider, market analysis)",
+     "order": 1,
+     "is_na": false
+    },
+    {
+     "code": "INFORMALLY_ONLY",
+     "label": "Informally only (job adverts, ad hoc, online, ChatGPT)",
+     "order": 2,
+     "is_na": false
+    },
+    {
+     "code": "NO_BENCHMARKING",
+     "label": "No benchmarking at all",
+     "order": 3,
+     "is_na": false
+    }
+   ],
+   "option_scores": {
+    "FORMAL_STRUCTURED": 0.0,
+    "INFORMALLY_ONLY": 50.0,
+    "NO_BENCHMARKING": 100.0
+   },
+   "note": "same ladder shape as old Yes/Partially/No (0/50/100)",
+   "version_bump": "v3.0"
+  }
+ },
+ "paycomms_redesign": {
+  "qid": "REW265_PAY_PAYCOMMS",
+  "new_type": "matrix",
+  "version_bump": "v2.0",
+  "options": [
+   {
+    "code": "LETTER_CONVERSATION",
+    "label": "Letter + manager conversation",
+    "order": 1,
+    "is_na": false
+   },
+   {
+    "code": "LETTER_ONLY",
+    "label": "Letter only",
+    "order": 2,
+    "is_na": false
+   }
+  ],
+  "matrix_rows": [
+   "Board / Executive",
+   "Director",
+   "Head of",
+   "Senior Manager",
+   "Manager",
+   "Supervisor / Team Leader",
+   "Frontline / Individual Contributor"
+  ],
+  "row_slugs": [
+   "board_executive",
+   "director",
+   "head_of",
+   "senior_manager",
+   "manager",
+   "supervisor_team_leader",
+   "frontline_individual_contributor"
+  ],
+  "pct_letter_conversation": [
+   90,
+   90,
+   90,
+   80,
+   70,
+   50,
+   20
+  ],
+  "assignment": "nested by latent desc - conversation depth extends down the hierarchy"
+ },
+ "dk_answer_deletes": {
+  "REW_PAY_005": [
+   "Not applicable / Don't know"
+  ],
+  "EXT_REW_GAP_010": [
+   "Don't know"
+  ]
+ },
+ "reshapes_from": "generated_marginals.json ruled_distributions + frozen_targets.json REW26_BEN_PENSION_TYPE",
+ "retire": {
+  "REW264_PEN_PENLEAVEGAP": "class 6 - unpaid leave has no pensionable-pay basis; second 2026.4 rails-bypass instance"
+ },
+ "standing_rules": [
+  "no Don't-know options - unsure leaves blank, n-excluded (D. Whitfield methodological ruling)",
+  "reward maturity scales with FTE - shared linear gradient mechanism, round 3",
+  "PRE-CONDITION for all sector-gate work: audit the 220 seed profiles' sector tags first"
+ ],
+ "deferred_round3": [
+  "FTE-maturity gradient mechanism (benchmarking 15/60/90, range-max have-ranges gate, top-performer market pricing, formal ranges family)",
+  "office_attendance_cadence: PARKED - source don't estimate (CIPD/ONS research task; redesigned options approved-unapplied)",
+  "REW_PAY_006 vs PROP_fe1a29ec construct-overlap dedup candidate",
+  "public-sector pension carve-outs (DB-heavy reality) - needs the sector-tag audit pre-condition"
+ ]
+}
