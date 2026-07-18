@@ -1,5 +1,6 @@
 #!/bin/zsh
-# run_gates.sh — one-command shipped-state QA (2026-07-14).
+# run_gates.sh — one-command shipped-state QA (2026-07-14; 11 gates since Diff 12 —
+# qa_plausibility freeze gate wired, it was correct but dark).
 # Encodes the gate-run doctrine so it stops being tribal knowledge:
 #   1. throwaway DB via the SQLite BACKUP API (never cp — WAL torn-copy)
 #   2. :8060 taken over by a PROVABLY fresh server on the throwaway
@@ -94,6 +95,14 @@ start_server "$DB" srv_engine;  run_gate qa_engine_audit
 run_gate qa_overview
 run_gate qa_domain_summary
 run_gate qa_commentary
+
+# --- freeze gate (Diff 12): qa_plausibility Check C, ENFORCING. Root-dir script
+#     (not server/); honours LUMI_DB so it validates the suite's throwaway, not live.
+say "qa_plausibility"
+( cd "$ROOT" && env LUMI_DB="$DB" ANTHROPIC_API_KEY='' python3 qa_plausibility.py ) >"$WORK/qa_plausibility.out" 2>&1
+PLAUS_RC=$?
+tail -4 "$WORK/qa_plausibility.out"
+if [[ $PLAUS_RC -eq 0 ]]; then PASS+=(qa_plausibility); else FAIL+=("qa_plausibility (rc=$PLAUS_RC, see $WORK/qa_plausibility.out)"); fi
 
 # --- LAST by doctrine ---
 run_gate qa_pulse
