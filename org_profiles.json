@@ -80,14 +80,15 @@
   "FTE_Band": "1,000-4,999",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 46,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 19,
   "Workforce_Unionised_%": 16,
   "Business_Maturity": "Mature",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Improving"
+  "Direction_of_Travel": "Improving",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 46 -> 55 (floor 55, Construction)"
  },
  "82be9291-16cd-49dd-b5df-2a639f291108": {
   "org_id": "82be9291-16cd-49dd-b5df-2a639f291108",
@@ -188,14 +189,15 @@
   "FTE_Band": "50-249",
   "Ownership_Type": "VC-backed (Private)",
   "HR_Maturity": "Basic",
-  "Workforce_Frontline_%": 46,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 26,
   "Workforce_Unionised_%": 25,
   "Business_Maturity": "Growth",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Improving"
+  "Direction_of_Travel": "Improving",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 46 -> 55 (floor 55, Construction)"
  },
  "15f7852a-1a77-4af0-80f8-c9d16f7b3c63": {
   "org_id": "15f7852a-1a77-4af0-80f8-c9d16f7b3c63",
@@ -856,14 +858,15 @@
   "FTE_Band": "5,000-9,999",
   "Ownership_Type": "Subsidiary of Global Group",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 41,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 13,
   "Workforce_Unionised_%": 32,
   "Business_Maturity": "Mature",
   "Budget_Flexibility": "Tight",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 41 -> 55 (floor 55, Construction)"
  },
  "b5e21494-49a2-44bf-b7ff-000fe8583734": {
   "org_id": "b5e21494-49a2-44bf-b7ff-000fe8583734",
@@ -874,14 +877,15 @@
   "FTE_Band": "250-999",
   "Ownership_Type": "Private (UK-owned)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 51,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 29,
   "Workforce_Unionised_%": 31,
   "Business_Maturity": "Transformation / Turnaround",
   "Budget_Flexibility": "Tight",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Deteriorating"
+  "Direction_of_Travel": "Deteriorating",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 51 -> 55 (floor 55, Construction)"
  },
  "95d8d658-5a8a-43da-8c37-4596522a456f": {
   "org_id": "95d8d658-5a8a-43da-8c37-4596522a456f",
@@ -946,14 +950,15 @@
   "FTE_Band": "250-999",
   "Ownership_Type": "Founder-led (Private)",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 39,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 6,
   "Workforce_Unionised_%": 16,
   "Business_Maturity": "Early stage / Scale-up",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Improving"
+  "Direction_of_Travel": "Improving",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 39 -> 55 (floor 55, Construction)"
  },
  "694acf57-f92f-4b0d-9f70-3842d714b312": {
   "org_id": "694acf57-f92f-4b0d-9f70-3842d714b312",
@@ -982,14 +987,15 @@
   "FTE_Band": "10,000+",
   "Ownership_Type": "Subsidiary of Global Group",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 50,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 32,
   "Workforce_Unionised_%": 8,
   "Business_Maturity": "Mature",
   "Budget_Flexibility": "Tight",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 55 (floor 55, Construction)"
  },
  "749b401a-0ab0-4a31-b892-56c8ff3892f7": {
   "org_id": "749b401a-0ab0-4a31-b892-56c8ff3892f7",
@@ -1541,14 +1547,15 @@
   "FTE_Band": "250-999",
   "Ownership_Type": "Private (UK-owned)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 42,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 26,
   "Workforce_Unionised_%": 12,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Deteriorating"
+  "Direction_of_Travel": "Deteriorating",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 42 -> 55 (floor 55, Construction)"
  },
  "0bec055e-d8db-4edd-8572-235db3c552c7": {
   "org_id": "0bec055e-d8db-4edd-8572-235db3c552c7",
@@ -1613,14 +1620,15 @@
   "FTE_Band": "250-999",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 22,
+  "Workforce_Frontline_%": 20,
   "Workforce_Shift_%": 11,
   "Workforce_Unionised_%": 7,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 20 (cap 20, Media)"
  },
  "833beedb-c4c9-43aa-a6b3-3dbee9e76e99": {
   "org_id": "833beedb-c4c9-43aa-a6b3-3dbee9e76e99",
@@ -1649,14 +1657,15 @@
   "FTE_Band": "10,000+",
   "Ownership_Type": "PE-backed",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 47,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 57,
   "Workforce_Unionised_%": 17,
   "Business_Maturity": "Transformation / Turnaround",
   "Budget_Flexibility": "Tight",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Improving"
+  "Direction_of_Travel": "Improving",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 47 -> 55 (floor 55, Logistics)"
  },
  "4e35d7c9-9c90-4fbe-b5c1-b86ba51d5fc4": {
   "org_id": "4e35d7c9-9c90-4fbe-b5c1-b86ba51d5fc4",
@@ -1775,14 +1784,15 @@
   "FTE_Band": "1,000-4,999",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 50,
+  "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 22,
   "Workforce_Unionised_%": 15,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "High",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 55 (floor 55, Construction)"
  },
  "4d976151-ff84-434b-bd0a-dc9fe620495c": {
   "org_id": "4d976151-ff84-434b-bd0a-dc9fe620495c",
@@ -1793,14 +1803,15 @@
   "FTE_Band": "10,000+",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 64,
+  "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 55,
   "Workforce_Unionised_%": 0,
   "Business_Maturity": "Transformation / Turnaround",
   "Budget_Flexibility": "Flexible",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 64 -> 65 (floor 65, Retail)"
  },
  "ef3e0473-6e4a-43c2-bc01-73464a077744": {
   "org_id": "ef3e0473-6e4a-43c2-bc01-73464a077744",
@@ -2099,14 +2110,15 @@
   "FTE_Band": "5,000-9,999",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 22,
+  "Workforce_Frontline_%": 20,
   "Workforce_Shift_%": 6,
   "Workforce_Unionised_%": 0,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Deteriorating"
+  "Direction_of_Travel": "Deteriorating",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 20 (cap 20, Media)"
  },
  "713a1ee5-0cc9-4a4a-86f3-ebeda10874bd": {
   "org_id": "713a1ee5-0cc9-4a4a-86f3-ebeda10874bd",
@@ -2225,14 +2237,15 @@
   "FTE_Band": "1,000-4,999",
   "Ownership_Type": "Subsidiary of Global Group",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 59,
+  "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 57,
   "Workforce_Unionised_%": 4,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Tight",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "Medium",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 59 -> 60 (floor 60, Hospitality)"
  },
  "c27d9739-4b54-4ffc-8bc4-533560e670ca": {
   "org_id": "c27d9739-4b54-4ffc-8bc4-533560e670ca",
@@ -2765,14 +2778,15 @@
   "FTE_Band": "50-249",
   "Ownership_Type": "Private (UK-owned)",
   "HR_Maturity": "Advanced",
-  "Workforce_Frontline_%": 16,
+  "Workforce_Frontline_%": 15,
   "Workforce_Shift_%": 5,
   "Workforce_Unionised_%": 17,
   "Business_Maturity": "Established",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Stable"
+  "Direction_of_Travel": "Stable",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 16 -> 15 (cap 15, Professional Services)"
  },
  "ce1a9bf8-4729-4640-9de4-72cda8b79f3c": {
   "org_id": "ce1a9bf8-4729-4640-9de4-72cda8b79f3c",
@@ -2801,14 +2815,15 @@
   "FTE_Band": "10,000+",
   "Ownership_Type": "Public Listed (PLC)",
   "HR_Maturity": "Developing",
-  "Workforce_Frontline_%": 16,
+  "Workforce_Frontline_%": 15,
   "Workforce_Shift_%": 15,
   "Workforce_Unionised_%": 14,
   "Business_Maturity": "Transformation / Turnaround",
   "Budget_Flexibility": "Managed",
   "Regulatory_Pressure": "Medium",
   "Talent_Competition": "High",
-  "Direction_of_Travel": "Deteriorating"
+  "Direction_of_Travel": "Deteriorating",
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 16 -> 15 (cap 15, Professional Services)"
  },
  "cbb97c9f-efd2-4633-ad52-3f4a7bae6f3d": {
   "org_id": "cbb97c9f-efd2-4633-ad52-3f4a7bae6f3d",
