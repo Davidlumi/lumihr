@@ -637,6 +637,11 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
     locked = not entitled(q)
     tb = (twin_blocks_by_q or {}).get(q.id)
     blk, cut_label = pos.block_for(p, cut, tb)
+    _mp_ent = pos.market_position_config().get("metrics", {}).get(q.id) or {}
+    # Diff 14: unbenchmarked = the seeded distribution carries no ruled authority
+    # (not marginal/settled/floor). The distribution still renders, but NO peer
+    # comparison does: no verdict, no "X in 10" lead, no percentile readouts.
+    _unbench = bool(_mp_ent.get("unbenchmarked"))
     base = {
         "id": q.id,
         "title": q.display_title,
@@ -671,8 +676,8 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         # every card path carries it (one implementation). Drives the "A practice choice"
         # chip + position-pill suppression; distinct from prevalence_band, which is null
         # for suppressed pools (that's the "low peer data" render state).
-        "practice": ((pos.market_position_config().get("metrics", {}).get(q.id) or {}).get("class")
-                     in ("Practice", "Design")) and q.id not in pos.STRATEGY_CONFIG_IDS,
+        "practice": (_mp_ent.get("class") in ("Practice", "Design")) and q.id not in pos.STRATEGY_CONFIG_IDS,
+        "unbenchmarked": _unbench,
     }
     if locked:
         return base
@@ -686,7 +691,9 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         v = coerce_number(raw)
         if v is not None:
             you = {"value": v, "display": pos.fmt_value(v, q.unit_block())}
-            if not base["suppressed"]:
+            if not base["suppressed"] and not _unbench:
+                # unbenchmarked: the percentile/readout IS the numeric form of the
+                # "X in 10 peers" claim — suppressed with the verdict (Diff 14)
                 r = pos.percentile_rank(blk["_values"], v)
                 you["percentile"] = round(r, 1)
                 it = pos._item(q, None, v, r, blk, cut_label, "value")
@@ -703,6 +710,8 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
                            "labels": [t.strip() for t in raw.split(";")] if q.type == "multi_select" else [raw]}
         if q.type == "multi_select":
             base["readout"] = pos.SUPPRESSED_COPY if base["suppressed"] else None
+        elif _unbench:
+            base["readout"] = None   # Diff 14: no peer-comparison sentence on unbenchmarked
         else:
             base["readout"] = pos.readout_select(q, raw, blk, cut_label)
         sc_blk, _ = pos.score_block_for(p, cut, tb)
@@ -711,10 +720,11 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
             if s is not None:
                 base["score"] = {
                     "you": round(s, 1),
-                    "percentile": round(pos.percentile_rank(sc_blk["_scores"], s), 1),
-                    "peer_p50": sc_blk.get("p50"),
                     "polarity": score_polarity(q),
                 }
+                if not _unbench:  # score percentile vs peers = the same claim class (Diff 14)
+                    base["score"]["percentile"] = round(pos.percentile_rank(sc_blk["_scores"], s), 1)
+                    base["score"]["peer_p50"] = sc_blk.get("p50")
 
     elif q.type == "matrix":
         rows = []

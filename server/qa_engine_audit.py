@@ -57,6 +57,17 @@ REGEN_WHITELIST = {
     "REW_PAY_020": {"No": 1092, "Yes": 448},
 }
 
+# Ruled retirements (Diff 14, 2026-07-18 — DECISIONS.md pay/pensions audit round 1):
+# question status=retired and its SEED answers deleted by David's ruling
+# (fictional-practice distributions; answers_history carries the pre-retire
+# snapshot). Their response-CSV rows are historical lineage, not missing data.
+# ONLY ruled retirements may be listed — a silent retirement must still fail L1.
+RETIRED_LINEAGE = {
+    "PROP_dff9a2a5": "Diff 14: pay-increase award-rate — fictional-practice distribution, retired",
+    "REW264_PEN_CONTRIBTIER": "Diff 14: service/age pension escalation — legally-dead practice, retired "
+                              "(never in response CSVs; listed for completeness)",
+}
+
 # The surgical coherence reseed (18 June 2026, David-confirmed — DECISIONS.md) rewrote
 # per-org values across the book WITHOUT moving top-lines; rew_live_meta.json was a ruled
 # input and names its question universe. Row-level CSV lineage for those qids ended that
@@ -273,7 +284,7 @@ missing_in_db = mismatched = 0
 type_examples = {}
 for key, v in csv_rows.items():
     qid = key[0]
-    if _db_origin(qid):
+    if _db_origin(qid) or qid in RETIRED_LINEAGE:
         continue
     dbv = raw_answers.get(key)
     if dbv is None:
@@ -297,7 +308,7 @@ extra_in_db = [k for k in raw_answers
 extra_real = [k for k in extra_in_db if not (META[k[0]]["type"] == "matrix" and k[2] == "")]
 print("CSV ground-truth rows: %d | exact in store: %d | changed: %d | missing: %d | extra in DB: %d"
       % (len(csv_rows), len(csv_rows) - mismatched - missing_in_db
-         - sum(1 for k in csv_rows if k[0] in REGEN_WHITELIST),
+         - sum(1 for k in csv_rows if k[0] in REGEN_WHITELIST or k[0] in RETIRED_LINEAGE),
          mismatched, missing_in_db, len(extra_real)))
 if mismatched or missing_in_db:
     fail("L1", "%d mismatched / %d missing rows vs current raw CSVs" % (mismatched, missing_in_db))
@@ -496,31 +507,40 @@ print("recomputed per type: %s | value mismatches: %d" % (checked, mismatches))
 # is DATA (questions table) — reading it keeps the code path independent.
 # Spot metric DERIVED: first live scored multi-select in the reward-visible set that
 # the demo org has answered (the old ALLOW_01 literal died with the Diff 3 retirement).
-_spot = next(r["id"] for r in conn.execute(
+# Diff 14: unbenchmarked metrics no longer SERVE a score percentile (that is the
+# suppression under test elsewhere), so the spot must pick a benchmarked one. The
+# curated config is read as DATA — the no-production-imports rule holds.
+_unbench = {q for q, e in (json.load(open(os.path.join(ROOT, "data", "market_position_config.json")))
+                           .get("metrics") or {}).items() if e.get("unbenchmarked")}
+_spot = next((r["id"] for r in conn.execute(
     "SELECT id FROM questions WHERE status='active' AND is_scored=1 AND type='multi_select' "
     "AND scoring_config_json LIKE '%option_scores%' ORDER BY id")
-    if r["id"] in REWARD and demo_org in ref_select_counts(r["id"]))
-_cfg = json.loads(conn.execute("SELECT scoring_config_json FROM questions WHERE id=?", (_spot,)).fetchone()[0])
-_opt_code = {ref_norm(o["label"]): o["code"] for o in (REWARD[_spot].get("options") or [])}
-_scores, _na = _cfg["option_scores"], set(_cfg.get("na_codes") or [])
-_mx = float(sum(v for c, v in _scores.items() if c not in _na))
+    if r["id"] in REWARD and r["id"] not in _unbench and demo_org in ref_select_counts(r["id"])), None)
+if _spot is None:
+    warn("L2", "no benchmarked scored multi-select left for the percentile spot (all suppressed)")
+_cfg = None if _spot is None else json.loads(conn.execute("SELECT scoring_config_json FROM questions WHERE id=?", (_spot,)).fetchone()[0])
+if _spot is not None:
+    _opt_code = {ref_norm(o["label"]): o["code"] for o in (REWARD[_spot].get("options") or [])}
+    _scores, _na = _cfg["option_scores"], set(_cfg.get("na_codes") or [])
+    _mx = float(sum(v for c, v in _scores.items() if c not in _na))
 
+    def _points(ans):
+        sel = {_opt_code.get(ref_norm(t)) for t in str(ans).split(";") if t.strip()}
+        return 100.0 * sum(_scores.get(c, 0) for c in sel if c and c not in _na) / _mx
 
-def _points(ans):
-    sel = {_opt_code.get(ref_norm(t)) for t in str(ans).split(";") if t.strip()}
-    return 100.0 * sum(_scores.get(c, 0) for c in sel if c and c not in _na) / _mx
-
-
-vals = sorted(_points(v) for v in ref_select_counts(_spot).values())
-st, card = api(op, "/api/benchmark/%s?dim=all" % _spot)
-you_raw = "; ".join((card.get("you") or {}).get("labels") or [])
-mine = len((card.get("you") or {}).get("labels") or [])
-ref_p = ref_midrank(vals, _points(you_raw))
-prod_p = (card.get("score") or {}).get("percentile")
-print("polarity/verdict spot (%s): you=%d options; ref midrank=%.1f vs prod %.1f; higher_is_better -> %s"
-      % (_spot, mine, ref_p, prod_p, "Behind" if ref_p < 45 else "Ahead" if ref_p > 55 else "In line"))
-if not close(ref_p, prod_p, 0.51):
-    fail("L2", "scored percentile diverges: ref %.1f vs prod %s" % (ref_p, prod_p))
+    vals = sorted(_points(v) for v in ref_select_counts(_spot).values())
+    st, card = api(op, "/api/benchmark/%s?dim=all" % _spot)
+    you_raw = "; ".join((card.get("you") or {}).get("labels") or [])
+    mine = len((card.get("you") or {}).get("labels") or [])
+    ref_p = ref_midrank(vals, _points(you_raw))
+    prod_p = (card.get("score") or {}).get("percentile")
+    if prod_p is None:
+        fail("L2", "benchmarked spot %s serves no score percentile (suppression over-reach?)" % _spot)
+    else:
+        print("polarity/verdict spot (%s): you=%d options; ref midrank=%.1f vs prod %.1f; higher_is_better -> %s"
+              % (_spot, mine, ref_p, prod_p, "Behind" if ref_p < 45 else "Ahead" if ref_p > 55 else "In line"))
+        if not close(ref_p, prod_p, 0.51):
+            fail("L2", "scored percentile diverges: ref %.1f vs prod %s" % (ref_p, prod_p))
 
 # ===================================================== LAYER 3: SUPPRESSION
 print("\n================ LAYER 3 — SUPPRESSION / ISOLATION ================")

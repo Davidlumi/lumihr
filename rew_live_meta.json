@@ -1691,30 +1691,6 @@
    "Yes – varies by job family/level": 0.0138
   }
  },
- "PROP_dff9a2a5": {
-  "type": "single_select",
-  "sub_power": "Pay",
-  "text": "What proportion of employees received a base pay increase in the last completed pay review cycle?",
-  "n": 216,
-  "options": [
-   "95%–100%",
-   "75%–94%",
-   "50%–74%",
-   "25%–49%",
-   "1%–24%",
-   "0%",
-   "Not measured"
-  ],
-  "current_dist": {
-   "95%–100%": 0.412,
-   "75%–94%": 0.338,
-   "50%–74%": 0.1065,
-   "25%–49%": 0.0509,
-   "1%–24%": 0.0463,
-   "0%": 0.0324,
-   "Not measured": 0.0139
-  }
- },
  "PROP_e1d1e604": {
   "type": "single_select",
   "sub_power": "Governance",

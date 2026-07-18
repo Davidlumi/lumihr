@@ -624,30 +624,38 @@
     "REW263_BEN_NEURO": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_BEN_PENBASIS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_BEN_PMIEXCESS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_BEN_PMIMH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_GOV_BENOBJ": {
       "class": "Level",
@@ -659,16 +667,20 @@
     "REW263_GOV_ETHDISREADY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_GOV_FIREREHIRE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_GOV_FLEXALLOW": {
       "class": "Level",
@@ -680,16 +692,20 @@
     "REW263_GOV_MENOPLAN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_GOV_REWTEAM": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_GOV_SIGNOFF": {
       "class": "Practice",
@@ -708,9 +724,11 @@
     "REW263_GOV_UMBRELLA": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_INC_DEFERRAL": {
       "class": "Practice",
@@ -736,9 +754,11 @@
     "REW263_PAY_GUARHRSAVG": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_PAY_MERITMATRIX": {
       "class": "Practice",
@@ -750,16 +770,20 @@
     "REW263_PAY_SHIFTRIGHTS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_PAY_SSPALIGN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_REC_CURRENCY": {
       "class": "Practice",
@@ -778,23 +802,29 @@
     "REW263_REC_MGRBUDGET": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_REC_PEER": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_CARERPAID": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_DAYONELEAVE": {
       "class": "Provision",
@@ -813,37 +843,47 @@
     "REW263_TIME_HOLRECORDS": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_IVF": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_NEONATAL": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_PATPAY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_TIME_PREGLOSS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_WEL_DATA": {
       "class": "Practice",
@@ -862,9 +902,11 @@
     "REW263_WEL_MGRTRAIN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW263_WEL_OH": {
       "class": "Level",
@@ -883,23 +925,29 @@
     "ALLOW_02": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "ALLOW_03": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "ALLOW_04": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_013": {
       "class": "Practice",
@@ -925,42 +973,43 @@
     "PROP_168a6213": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_634adacd": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_8e0b6316": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_9e4ad87f": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_d16bae79": {
       "class": "Level",
       "type": "numeric",
       "direction": "neutral",
-      "lens": "attract",
-      "weight": 1
-    },
-    "PROP_dff9a2a5": {
-      "class": "Level",
-      "type": "ordinal",
-      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1
     },
@@ -981,51 +1030,65 @@
     "REW262_PAY_AISKILLSPAY": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_PAY_CANCELLEDSHIFT": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_PAY_GUARANTEEDHRS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_PAY_SHIFTNOTICE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_PAY_JOBEVAL_COVERAGE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_PAY_SKILLS_PAY": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_058": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAIR_TIPS_DIST_7d34e570": {
       "class": "Practice",
@@ -1037,23 +1100,29 @@
     "REW_FAI_128": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_CANCEL_1bbcc629": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_MIN_HOURS_8518a543": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_TRONC_GROUPS_e5639ac2": {
       "class": "Practice",
@@ -1086,9 +1155,11 @@
     "REW_PAY_011": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_016": {
       "class": "Practice",
@@ -1107,23 +1178,29 @@
     "REW_PAY_018": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_020": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_021": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_022": {
       "class": "Practice",
@@ -1170,9 +1247,11 @@
     "REW_PAY_TIPS_EXIST_7c80c508": {
       "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_TRONC_6db81475": {
       "class": "Practice",
@@ -1184,9 +1263,11 @@
     "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
       "class": "Level",
@@ -1234,9 +1315,11 @@
     "REW_INC_071": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_INC_072": {
       "class": "Provision",
@@ -1255,9 +1338,11 @@
     "REW_INC_103": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_INC_104": {
       "class": "Level",
@@ -1277,9 +1362,11 @@
     "REW_INC_131": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_INC_132": {
       "class": "Practice",
@@ -1291,16 +1378,20 @@
     "REW_INC_133": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_INC_135": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_INC_136": {
       "class": "Practice",
@@ -1328,16 +1419,20 @@
     "REW_Q528801": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_Q534581": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "3faf1f0c-f753-497f-a395-384bba38c5e3": {
       "class": "Level",
@@ -1349,16 +1444,20 @@
     "CAR_BN_02": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "CAR_COST_02": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "CAR_STATUS_01": {
       "class": "Provision",
@@ -1370,9 +1469,11 @@
     "CAR_STATUS_03": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_012": {
       "class": "Provision",
@@ -1384,44 +1485,56 @@
     "PROP_11a83d52": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_202fecc6": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_36b990f9": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_3d4fc4e7": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_7d858df2": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_c1a3da61": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_COST_01": {
       "class": "Level",
@@ -1433,79 +1546,101 @@
     "RED_NOTICE_01": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PAY_01": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PROC_01": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PROC_02": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PROC_03": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PROC_04": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_PROC_05": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_TERM_01": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_TERM_02": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "RED_TERM_03": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_BEN_PENSION_COST_SHARE": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_BEN_PENSION_MATCH": {
       "class": "Level",
@@ -1524,9 +1659,11 @@
     "REW26_BEN_PLSA_QM": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_BEN_SALSAC": {
       "class": "Provision",
@@ -1545,9 +1682,11 @@
     "REW_BEN_039": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_044": {
       "class": "Level",
@@ -1573,37 +1712,47 @@
     "REW_BEN_047": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_048": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_055": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_100": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_102": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_112": {
       "class": "Level",
@@ -1616,9 +1765,11 @@
     "REW_BEN_139": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_FLEX_ALLOW_01": {
       "class": "Level",
@@ -1654,23 +1805,29 @@
     "REW_PAY_109": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_EV_KWH_66ef252b": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_Q049530": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_Q524161": {
       "class": "Level",
@@ -1699,9 +1856,11 @@
     "OT_03_1a68c68a": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_TIME_BEREAVEMENT": {
       "class": "Level",
@@ -1721,9 +1880,11 @@
     "REW_BEN_041": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_FAM_001": {
       "class": "Level",
@@ -1744,18 +1905,22 @@
     "REW_BEN_FAM_005": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
       "weight": 1,
-      "family_metric": true
+      "family_metric": true,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_FAM_006": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
       "weight": 1,
-      "family_metric": true
+      "family_metric": true,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_FAM_007": {
       "class": "Level",
@@ -1789,17 +1954,21 @@
     "REW_BEN_FAM_011": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_FAM_012": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
       "weight": 1,
-      "family_metric": true
+      "family_metric": true,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_001": {
       "class": "Level",
@@ -1811,9 +1980,11 @@
     "REW_BEN_HOL_002": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_003": {
       "class": "Level",
@@ -1825,37 +1996,47 @@
     "REW_BEN_HOL_004": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_005": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_006": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_007": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_HOL_008": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_SICK_001": {
       "class": "Level",
@@ -1867,9 +2048,11 @@
     "REW_BEN_SICK_002": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_SICK_004": {
       "class": "Level",
@@ -1881,30 +2064,38 @@
     "REW_BEN_SICK_005": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_SICK_006": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_014": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_009": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_010": {
       "class": "Practice",
@@ -1923,9 +2114,11 @@
     "REW26_WEL_BUDGET": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_WEL_EAP": {
       "class": "Provision",
@@ -1987,23 +2180,29 @@
     "REW_BEN_REM_PAY_004": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_BEN_REM_PAY_005": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_001": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_002": {
       "class": "Level",
@@ -2015,9 +2214,11 @@
     "EXT_REW_GAP_003": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_004": {
       "class": "Provision",
@@ -2029,9 +2230,11 @@
     "EXT_REW_GAP_005": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "EXT_REW_GAP_006": {
       "class": "Practice",
@@ -2057,9 +2260,11 @@
     "PAYTR_03_db0108d6": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_10d1211d": {
       "class": "Level",
@@ -2071,23 +2276,29 @@
     "PROP_216f7323": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_34ffb6e2": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_38555969": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_674db2fc": {
       "class": "Level",
@@ -2099,9 +2310,11 @@
     "PROP_8862fcad": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_930043cc": {
       "class": "Level",
@@ -2120,51 +2333,65 @@
     "PROP_cdff5737": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_d65a16e9": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_d992b2ea": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_e1d1e604": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "PROP_ef4ff31e": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_GOV_ACTIONPLAN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_GOV_AIINPAY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_GOV_EQUALPAYAUDIT": {
       "class": "Level",
@@ -2176,9 +2403,11 @@
     "REW262_GOV_EQUALVALUE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW262_GOV_PAYINADVERTS": {
       "class": "Level",
@@ -2190,16 +2419,20 @@
     "REW262_GOV_SALHISTORY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW26_GOV_EU_PTD_PREP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_079": {
       "class": "Level",
@@ -2211,37 +2444,47 @@
     "REW_FAI_081": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_082": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_085": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_086": {
       "class": "Provision",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_087": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_FAI_088": {
       "class": "Level",
@@ -2267,37 +2510,47 @@
     "REW_FAI_092": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_001": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_002": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_003": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_006": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PAY_019": {
       "class": "Practice",
@@ -2309,16 +2562,20 @@
     "REW_PRO_030": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PRO_034": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW_PRO_035": {
       "class": "Practice",
@@ -2330,23 +2587,29 @@
     "REW_PRO_098": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_GOV_AIPAYREVIEW": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_SALSACIMPACT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_SALSACRESPONSE": {
       "class": "Practice",
@@ -2358,163 +2621,200 @@
     "REW264_PEN_NICSHARING": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
-    },
-    "REW264_PEN_CONTRIBTIER": {
-      "class": "Level",
-      "type": "ordinal",
-      "direction": "higher_is_better",
-      "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_AEDEFAULT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_AUTOESC": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_PENLEAVEGAP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_MIDLIFEMOT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_GREENDEFAULT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_CONTRIBFLEX": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_SIDECAR": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_HELPTOSAVE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_PAYROLLLOANS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PEN_PAYROLLGIVING": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_EWA": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_EWAFEES": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_EWACAP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_DEBTADVICE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_FINCOACH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_SEASONTICKET": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_COLACTION": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_RLWACCRED": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_WEL_MEALS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_INC_SHAREPLAN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_INC_EMICSOP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PAY_STARTPOLICY": {
       "class": "Practice",
@@ -2526,121 +2826,155 @@
     "REW264_HLT_VIRTUALGP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_CASHPLAN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_OPTICAL": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_CANCERPATH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_WOMENSHEALTH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_MENSHEALTH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_FERTROUTE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_GENDERAFF": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_RISKFLEXUP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_SPOUSELIFE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_GIPREHAB": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_SECONDOPINION": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_HLT_BEREAVESUPPORT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_TIME_CHILDCARE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_TIME_FOURDAY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_BEN_EVSALSAC": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_GOV_PAYEXPLAIN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW264_PAY_HOLPAYMETHOD": {
       "class": "Practice",
@@ -2652,37 +2986,47 @@
     "REW265_GOV_AIBENCH": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_AITALENT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_AIREGRADE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_AIDISCLOSE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_SAYEDISC": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_SIPELEM": {
       "class": "Practice",
@@ -2694,23 +3038,29 @@
     "REW265_INC_SHAREPART": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_EOT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_ESGINCENT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_BONUSDISC": {
       "class": "Practice",
@@ -2722,9 +3072,11 @@
     "REW265_INC_BUYOUT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_BONUSTIME": {
       "class": "Practice",
@@ -2736,23 +3088,29 @@
     "REW265_INC_PROFITSHARE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_COMMCAP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_INC_RETENTION": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_PROMOPAY": {
       "class": "Practice",
@@ -2785,23 +3143,29 @@
     "REW265_PAY_MGRTRAIN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_PAYCOMMS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_EARLYCAREER": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_ACTINGUP": {
       "class": "Practice",
@@ -2813,219 +3177,281 @@
     "REW265_TIME_BACKUPCARE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_RTWSUPPORT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_GRANDPARENT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_SURROGACY": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_DOMABUSE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_ELDERCARE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_BEREAVEDPAT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_FLEXPATTERN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_DISCONNECT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_EXTRADAYS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_LEAVEDONATE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_UNLIMITEDAL": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_TIME_WORKATION": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_BEN_EVCHARGE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_BEN_TRANSPORT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_BEN_GREENBEN": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_VOLGAPS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_SOCIOECON": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_PAYAPPEAL": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_EIA": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_AGENCYPAR": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_CONTRACTOR": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_PAY_SEASONAL": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_COMPSOFT": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_BROKER": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_REBROKE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_TAKEUP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_TRS": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_BEN_ENHANCEDVR": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_BEN_PENBRIDGE": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
     "REW265_GOV_GPGNAMING": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     }
   }
 }

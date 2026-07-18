@@ -234,6 +234,13 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         pol = score_polarity(q)
     else:
         pol = q.polarity
+    # Diff 14: unbenchmarked (no ruled distribution authority) is the VERDICT
+    # authority and it silences every item stream — including score items, whose
+    # polarity otherwise comes from scoring_config and would bypass the
+    # questions.polarity + mp-direction suppression layers (found via a 'behind'
+    # signal firing on suppressed PROP_168a6213).
+    if (market_position_config().get("metrics", {}).get(q.id) or {}).get("unbenchmarked"):
+        pol = "neutral"
     favourable = None
     if pol == "higher_is_better":
         favourable = rank > 55 and "good" or (rank < 45 and "bad" or "mid")

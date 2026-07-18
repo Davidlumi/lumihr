@@ -96,7 +96,9 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${/* practice rows carry NO position pill (Diff 4 ruling 6 — the grid fall-through
               on classification.register let a practice card render P + below/above market;
               c.practice is the server-computed class flag). */ ""}
-        ${(() => { if (c.practice) return null; const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
+        ${/* unbenchmarked cards carry NO position pill either (Diff 14): a P-number
+              against an unanchored distribution is the claim being suppressed. */ ""}
+        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
         ${/* "A practice choice" tag + prevalence bucket (Diff 4, exact ruled string): the
               bucket word only where the pool served (prevalence_band present); a practice
               card with a suppressed pool reads "low peer data". Locked vocabulary; no RAG. */ ""}
@@ -105,6 +107,8 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
           <span class="caption prac-tag-band">${c.prevalence_band === "match" ? "common"
             : c.prevalence_band === "common_alt" ? "alternative"
             : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
+        ${c.unbenchmarked && !c.practice ? html`
+          <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">Unbenchmarked</span>` : null}
         <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
         <div class="card-tools no-print">
           ${footTools && html`${footTools}<span class="tool-div" aria-hidden="true"></span>`}
@@ -252,6 +256,13 @@ window.humanSentence = humanSentence;
 function humanSentence(c) {
   if (c.suppressed) {
     return { lead: "There aren't enough organisations in this peer group to show this safely.", support: "We never show a figure based on fewer than 5 organisations." };
+  }
+  if (c.unbenchmarked) {
+    // Diff 14: no "X in 10 similar organisations" comparison on a distribution
+    // with no verified anchor — the shape shows, the peer claim doesn't.
+    const you = c.you ? `You answered “${c.you.label || c.you.display}”. ` : "";
+    return { lead: you + "The peer distribution is shown for information only.",
+             support: "Unbenchmarked — no market comparison until this metric carries a verified anchor." };
   }
   if ((c.type === "single_select" || c.type === "yes_no") && c.you && c.block && c.block.options) {
     const mine = c.block.options.find(o => o.label.toLowerCase() === (c.you.label || "").toLowerCase());
