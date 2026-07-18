@@ -1,0 +1,53 @@
+{
+ "_ruled": "2026-07-16 Diff 10 (B5). 3 applied / 13 dropped. Band maps verbatim-or-ruled; who-offers NEVER moves; two-sided within positive_from; NA-skips untouched (CICOVER).",
+ "applied": {
+  "REW_BEN_045": {
+   "side": "positive-only",
+   "positive_shares": {
+    "2×": 0.379,
+    "3×": 0.336,
+    "4× or more": 0.284,
+    "1×": 0.0
+   },
+   "ruling": "1× fed at ZERO (never from fixed/other — that would be parsing); 0.420 unmapped mass (fixed sum 0.166 + other 0.254) dropped by renorm; 5×+ merged into '4× or more'. Boundary hard-pinned to shipped 0.5607."
+  },
+  "REW_BEN_FAM_002": {
+   "side": "positive-only",
+   "positive_shares": {
+    "1-12 weeks": 0.462,
+    "13-26 weeks": 0.538,
+    "27-39 weeks": 0.0,
+    "40-52 weeks": 0.0
+   },
+   "ruling": "band 4-13 -> live 1-12 as nearest verbatim rung; partial coverage ACCEPTED — empty upper rungs are honest, not a gap. Boundary = shipped 0.544."
+  },
+  "REW_BEN_HOL_001": {
+   "side": "two-sided",
+   "positive_shares": {
+    "25-27 days": 0.5998,
+    "28-30 days": 0.2329,
+    "More than 30 days": 0.1673
+   },
+   "lean_shares": {
+    "Statutory minimum only (20 days)": 0.3127,
+    "21-24 days": 0.6873
+   },
+   "ruling": "merges 25+26-27 -> 25-27 (0.412), 28 -> 28-30 (0.16), 30+ -> More than 30 (0.115); each side renormalised separately; TWO-SIDED HARD ASSERT — bands imply 0.714 positive, marginal fixes 0.553, B5 must not move it. positive_from = 25-27 days."
+  }
+ },
+ "dropped": {
+  "REW_BEN_046": "dimension-mismatch (replacement-rate bands belong to 048) + would smuggle the unruled Drewberry 66% ahead of the queued cross-source ruling",
+  "REW_BEN_048": "ruled-context-full-reshape (Diff-2 context; bands span the whole option space)",
+  "REW_BEN_SICK_001": "dimension-mismatch (duration bands belong to SICK_002); bands imply enhance 0.91 vs shipped boundary 0.568",
+  "REW_BEN_SICK_002": "ruled-context-full-reshape (Diff-2 context; includes the who-offers pole)",
+  "REW_BEN_SICK_004": "dimension-mismatch (months-of-service bands vs waiting-days question)",
+  "REW262_TIME_SICKDAYONE": "binary-target (no within-offerer level) + SETTLED-frozen",
+  "REW_BEN_HOL_004": "binary-target; bands are the Diff-1 quantum-companion context",
+  "REW_BEN_HOL_006": "corrected-defect — the service-uplift distribution the register clean re-homed to HOL_004; applying re-introduces the killed mis-map",
+  "REW_BEN_FAM_001": "dimension-mismatch (weeks bands belong to FAM_002; live options are pay/leave TYPES)",
+  "REW_BEN_FAM_006": "binary-target; Diff-2 ruled context",
+  "EXT_REW_GAP_009": "ruled-context-full-reshape (set-not-pole prior ruling; 'Less than once a month' unfed)",
+  "REW26_BEN_PENSION_TYPE": "ruled DROP — contribution-% distribution on a scheme-TYPE question; THE nominal-incident metric",
+  "REW263_REC_CURRENCY": "kinds-not-levels; ruled context; no who-offers base; labels don't match live options"
+ }
+}

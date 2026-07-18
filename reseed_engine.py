@@ -46,6 +46,7 @@ SPIKES = _load("anchored_spikes.json")     # DEAD as an input (kept only so lega
 LEVELS = _load("level_distributions.json") # NOT applied by reseed() — open item, see DECISIONS Diff 3
 MARG   = _load("generated_marginals.json") # THE marginal set (Diff 2, David-approved final table)
 ORD    = (_load("ruled_orderings.json") or {}).get("orderings", {})  # THE standing orderings artifact
+B5     = _load("b5_levels_ruled.json")     # Diff 10: ruled within-offerer level distributions (3 applied / 13 dropped)
 
 # ---- latent maturity from firmographics + signed sector tilt -------------------
 FTE_RANK={"50-249":0.15,"250-999":0.35,"1,000-4,999":0.55,"5,000-9,999":0.78,"10,000+":0.95}
@@ -395,11 +396,30 @@ def reseed(db, profiles, meta_path, write=False, confirmed=False):
                     for o in sorted(opts_, key=lambda o: -(raw[o]-fl[o]))[: total - sum(fl.values())]:
                         fl[o] += 1
                     return fl
+                b5 = (B5.get("applied") or {}).get(q)
+                def _ruled_apportion(total, shares):
+                    # B5 (Diff 10): within-side mix set by RULED band shares, largest remainder.
+                    raw = {o: total*shares.get(o,0.0) for o in shares}
+                    fl = {o: int(raw[o]) for o in shares}
+                    for o in sorted(shares, key=lambda o: -(raw[o]-fl[o]))[: total - sum(fl.values())]:
+                        fl[o] += 1
+                    return fl
                 ms = []
-                for o,k in _apportion(lean_n, lean_side).items(): ms += [o]*k
-                for o,k in _apportion(pos_n, pos_side).items():  ms += [o]*k
+                if b5 and b5.get("side") == "two-sided":
+                    for o,k in _ruled_apportion(lean_n, b5["lean_shares"]).items(): ms += [o]*k
+                else:
+                    for o,k in _apportion(lean_n, lean_side).items(): ms += [o]*k
+                if b5:
+                    for o in b5["positive_shares"]:
+                        assert o in pos_side or b5["positive_shares"][o] == 0.0, \
+                            "B5 band %r not on the positive side of %s" % (o, q)
+                    for o,k in _ruled_apportion(pos_n, b5["positive_shares"]).items(): ms += [o]*k
+                else:
+                    for o,k in _apportion(pos_n, pos_side).items():  ms += [o]*k
                 ms = sorted(ms, key=lambda v: rank[v])
-                who = sorted((o for o,_ in ordr), key=lambda o: lat.get(o,0.5))
+                # deterministic jitter tiebreak (B5 wiring rule 5): identical-factor orgs must not tie
+                who = sorted((o for o,_ in ordr),
+                             key=lambda o: (lat.get(o,0.5), hashlib.sha256((q+"|"+o).encode()).hexdigest()))
                 newmap = dict(zip(who, ms))
                 ach = sum(1 for v in newmap.values() if v not in lean_side) / n
                 marg_hits.append({"qid": q, "grade": entry.get("grade",""), "target": tgt,
