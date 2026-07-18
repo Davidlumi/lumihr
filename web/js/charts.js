@@ -380,6 +380,23 @@ window.QuartileDots = function ({ quartiles }) {
 // DOM (fragile), we rebuild an equivalent SVG from the SAME card data — sharing
 // matrixBandOrder() with the on-screen renderer so the two can never drift.
 
+// Integer display percentages for one matrix row, largest-remainder over the
+// exact counts, so a row's cells always sum to the engine's total. Shared by
+// the HTML heatmap and the export twin — independent Math.round per cell let
+// a .5/.5 row double-round upward (Director LTI rendered 26% + 75% = 101%).
+window.matrixRowInts = function (opts) {
+  const n = (opts || []).reduce((a, o) => a + (o.count || 0), 0);
+  const raw = (opts || []).map(o => n ? (o.count || 0) * 100 / n : (o.pct || 0));
+  const total = Math.round(raw.reduce((a, p) => a + p, 0));
+  const fl = raw.map(Math.floor);
+  let rem = total - fl.reduce((a, b) => a + b, 0);
+  raw.map((p, i) => [p - fl[i], i]).sort((a, b) => b[0] - a[0])
+    .slice(0, Math.max(rem, 0)).forEach(([, i]) => { fl[i]++; });
+  const m = {};
+  (opts || []).forEach((o, i) => { m[o.label] = fl[i]; });
+  return m;
+};
+
 // Topological band order for categorical matrices — the ONE non-trivial bit
 // shared by the HTML heatmap (MatrixSelect) and this export twin.
 window.matrixBandOrder = function (live) {
@@ -433,6 +450,7 @@ function buildSelectSVG(card, tok) {
     s += `<text x="4" y="${cy}" font-size="11" fill="${tok.ink}">${esc(clipTxt(r.label, 24))}</text>`;
     if (r.suppressed || !r.block) { s += `<text x="${Lw}" y="${cy}" font-size="10" fill="${tok.inkSoft}">not enough organisations</text>`; return; }
     const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
+    const disp = matrixRowInts(r.block.options || []);
     const youLabel = r.you ? (r.you.label || r.you.display) : null, modal = r.block.modal_label;
     order.forEach((b, ci) => {
       const pct = pm[b] || 0, cx = Lw + ci * bw, ry = y + 3, ch = Rh - 6, cw = bw - 4;
@@ -440,7 +458,7 @@ function buildSelectSVG(card, tok) {
       const t = 0.14 + 0.86 * (pct / maxPct);
       s += `<rect x="${cx}" y="${ry}" width="${cw}" height="${ch}" rx="6" fill="${mixBlueRGB(t)}"`
         + (youLabel && b === youLabel ? ` stroke="${tok.blueDeep}" stroke-width="2"` : "") + `/>`;
-      const r0 = Math.round(pct);
+      const r0 = disp[b] || 0;
       s += `<text x="${cx + cw / 2}" y="${ry + ch / 2 + 4}" text-anchor="middle" font-size="11" font-weight="${b === modal ? 700 : 600}" fill="${t >= 0.52 ? "#fff" : tok.ink}">${r0 > 0 ? r0 + "%" : "&lt;1%"}</text>`;
     });
     s += r.you

@@ -568,7 +568,7 @@ window.MatrixSelect = function ({ rows }) {
     return "rgb(" + Math.round(255 + (b[0] - 255) * t) + "," + Math.round(255 + (b[1] - 255) * t)
       + "," + Math.round(255 + (b[2] - 255) * t) + ")";
   };
-  const fmtPct = p => { const r = Math.round(p); return r > 0 ? r + "%" : "<1%"; };
+  const fmtCell = d => (d > 0 ? d + "%" : "<1%");   // ints from matrixRowInts (row sums to 100)
   return html`
     <div class="matrix-heat-wrap">
       <table class="matrix-heat">
@@ -585,6 +585,7 @@ window.MatrixSelect = function ({ rows }) {
               <tr key=${r.row_id} class="mh-row"><th scope="row" class="mh-lvl"><span class="mh-lvl-txt" title=${r.label}>${r.label}</span></th>
                 <td colspan=${order.length + 1} class="mh-supp caption">not enough organisations to show safely</td></tr>`;
             const pm = {}; (r.block.options || []).forEach(o => { pm[o.label] = o.pct; });
+            const disp = matrixRowInts(r.block.options || []);
             const youLabel = r.you ? (r.you.label || r.you.display) : null;
             const modal = r.block.modal_label;
             return html`
@@ -597,7 +598,7 @@ window.MatrixSelect = function ({ rows }) {
                   const isMode = b === modal, isYou = youLabel && b === youLabel;
                   return html`<td key=${b} class=${"mh-cell" + (isMode ? " mode" : "") + (isYou ? " you" : "")}
                     style=${{ background: mix(t), color: t >= 0.52 ? "#fff" : "var(--ink)" }}
-                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of the market"}>${fmtPct(pct)}</td>`;
+                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of the market"}>${fmtCell(disp[b] || 0)}</td>`;
                 })}
                 <td class="mh-you">${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;
