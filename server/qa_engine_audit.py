@@ -36,7 +36,10 @@ import http.cookiejar
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-DB = os.path.join(ROOT, "lumi.db")
+# Honor LUMI_DB like db.py — the audit must read the SAME database the app serves.
+# (Latent bug found 2026-07-16: hardcoded live lumi.db; invisible while gate copies were
+# made from live, exposed the first time LUMI_GATES_SRC pointed the suite at a throwaway.)
+DB = os.environ.get("LUMI_DB", os.path.join(ROOT, "lumi.db"))
 BASE = "http://localhost:8060"
 FLOOR = 5  # the documented suppression rule, asserted independently
 
@@ -82,10 +85,20 @@ except Exception:
     DIFF8_MANIFEST = set()
 
 
+# Diff 3 (16 July 2026, ruled) reseeded 37 marginals from the register-generated set;
+# generated_marginals.json is the ruled lineage record (only-ruled-manifests rule). Rows in it
+# SUPERSEDE any older REGEN_WHITELIST exact-count pin (e.g. REW_INC_072's 2026-06-11 counts —
+# re-ruled to the 0.15 large-only marginal at the Diff-2 final-table approval).
+try:
+    DIFF3_MARGINALS = set(json.load(open(os.path.join(ROOT, "generated_marginals.json")))["marginals"])
+except Exception:
+    DIFF3_MARGINALS = set()
+
+
 def _db_origin(qid):
     if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST or qid in DIFF8_MANIFEST:
         return True
-    return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18
+    return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18 or qid in DIFF3_MARGINALS
 
 FAILS = []
 WARNS = []
@@ -287,8 +300,12 @@ print("\nper-type round-trip examples (raw CSV -> stored -> retrieved, byte-equa
 for t, (qid, rid, v) in sorted(type_examples.items()):
     print("  %-14s %s%s: %r" % (t, qid, ("/" + rid) if rid else "", v[:58]))
 
-# regenerated metrics: store must equal each script's documented seeded output
+# regenerated metrics: store must equal each script's documented seeded output —
+# UNLESS a NEWER ruled manifest supersedes the pin (Diff-3 generated marginals).
 for qid, expected in REGEN_WHITELIST.items():
+    if qid in DIFF3_MARGINALS:
+        print("  regen-whitelist %s: pin SUPERSEDED by the Diff-3 ruled marginal (generated_marginals.json)" % qid)
+        continue
     got = {}
     for r in conn.execute("SELECT value, COUNT(*) c FROM answers WHERE question_id=? AND snapshot_id=1 GROUP BY value", (qid,)):
         got[r["value"]] = r["c"]

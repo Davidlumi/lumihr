@@ -1,93 +1,97 @@
 {
-  "REW26_WEL_EAP": {
-    "dist": {
-      "No": 0.33,
-      "Yes": 0.67
-    },
-    "n": 220
+ "REW26_WEL_EAP": {
+  "dist": {
+   "No": 0.2727,
+   "Yes": 0.7273
   },
-  "REW26_WEL_MH_SUPPORT": {
-    "dist": {
-      "MH first aiders": 0.1591,
-      "None": 0.1136,
-      "Counselling": 0.0727,
-      "Counselling;MH first aiders;Digital app": 0.0682,
-      "Counselling;MH first aiders": 0.0682,
-      "Counselling;Digital app": 0.0545,
-      "Counselling;Manager training;MH first aiders;Digital app": 0.0455,
-      "MH first aiders;Digital app": 0.0409,
-      "Digital app": 0.0409,
-      "Manager training;MH first aiders": 0.0364,
-      "Manager training;Digital app": 0.0318,
-      "Counselling;Manager training": 0.0318,
-      "Manager training;MH first aiders;Digital app": 0.0273,
-      "Manager training": 0.0273,
-      "Counselling;Manager training;MH first aiders": 0.0227,
-      "MH first aiders;MH days": 0.0182,
-      "Counselling;Manager training;Digital app": 0.0182,
-      "Counselling;MH days": 0.0182,
-      "MH days": 0.0136,
-      "Digital app;MH days": 0.0136,
-      "Manager training;MH days": 0.0091,
-      "Manager training;Digital app;MH days": 0.0091,
-      "MH first aiders;Digital app;MH days": 0.0091,
-      "Counselling;Manager training;MH first aiders;MH days": 0.0091,
-      "Counselling;Manager training;MH first aiders;Digital app;MH days": 0.0091,
-      "Counselling;MH first aiders;MH days": 0.0091,
-      "Counselling;MH first aiders;Digital app;MH days": 0.0091,
-      "Manager training;MH first aiders;MH days": 0.0045,
-      "Counselling;Manager training;Digital app;MH days": 0.0045,
-      "Counselling;Digital app;MH days": 0.0045
-    },
-    "n": 220
+  "n": 220,
+  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+ },
+ "REW26_WEL_MH_SUPPORT": {
+  "dist": {
+   "MH first aiders": 0.1591,
+   "None": 0.1136,
+   "Counselling": 0.0727,
+   "Counselling;MH first aiders;Digital app": 0.0682,
+   "Counselling;MH first aiders": 0.0682,
+   "Counselling;Digital app": 0.0545,
+   "Counselling;Manager training;MH first aiders;Digital app": 0.0455,
+   "MH first aiders;Digital app": 0.0409,
+   "Digital app": 0.0409,
+   "Manager training;MH first aiders": 0.0364,
+   "Manager training;Digital app": 0.0318,
+   "Counselling;Manager training": 0.0318,
+   "Manager training;MH first aiders;Digital app": 0.0273,
+   "Manager training": 0.0273,
+   "Counselling;Manager training;MH first aiders": 0.0227,
+   "MH first aiders;MH days": 0.0182,
+   "Counselling;Manager training;Digital app": 0.0182,
+   "Counselling;MH days": 0.0182,
+   "MH days": 0.0136,
+   "Digital app;MH days": 0.0136,
+   "Manager training;MH days": 0.0091,
+   "Manager training;Digital app;MH days": 0.0091,
+   "MH first aiders;Digital app;MH days": 0.0091,
+   "Counselling;Manager training;MH first aiders;MH days": 0.0091,
+   "Counselling;Manager training;MH first aiders;Digital app;MH days": 0.0091,
+   "Counselling;MH first aiders;MH days": 0.0091,
+   "Counselling;MH first aiders;Digital app;MH days": 0.0091,
+   "Manager training;MH first aiders;MH days": 0.0045,
+   "Counselling;Manager training;Digital app;MH days": 0.0045,
+   "Counselling;Digital app;MH days": 0.0045
   },
-  "REW26_WEL_FINWELL": {
-    "dist": {
-      "Yes": 0.6409,
-      "No": 0.3591
-    },
-    "n": 220
+  "n": 220
+ },
+ "REW26_WEL_FINWELL": {
+  "dist": {
+   "No": 0.3591,
+   "Yes": 0.6409
   },
-  "REW26_WEL_STRATEGY": {
-    "dist": {
-      "No strategy": 0.3409,
-      "Annual": 0.2909,
-      "Ad hoc": 0.2909,
-      ">Annual": 0.0773
-    },
-    "n": 220
+  "n": 220,
+  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+ },
+ "REW26_WEL_STRATEGY": {
+  "dist": {
+   ">Annual": 0.0682,
+   "Ad hoc": 0.25,
+   "Annual": 0.25,
+   "No strategy": 0.4318
   },
-  "REW26_BEN_PENSION_TYPE": {
-    "dist": {
-      "DC": 0.8455,
-      "DB": 0.0727,
-      "Hybrid": 0.0636,
-      "None": 0.0182
-    },
-    "n": 220
+  "n": 220,
+  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+ },
+ "REW26_BEN_PENSION_TYPE": {
+  "dist": {
+   "DC": 0.8455,
+   "DB": 0.0727,
+   "Hybrid": 0.0636,
+   "None": 0.0182
   },
-  "REW26_BEN_PENSION_MATCH": {
-    "dist": {
-      "None": 0.3045,
-      "Up to 5%": 0.2727,
-      "Up to 3%": 0.2091,
-      "Up to 8%": 0.15,
-      ">8%": 0.0636
-    },
-    "n": 220
+  "n": 220
+ },
+ "REW26_BEN_PENSION_MATCH": {
+  "dist": {
+   ">8%": 0.0455,
+   "None": 0.4864,
+   "Up to 3%": 0.1545,
+   "Up to 5%": 0.2045,
+   "Up to 8%": 0.1091
   },
-  "REW26_BEN_SALSAC": {
-    "dist": {
-      "Yes": 0.5955,
-      "No": 0.4045
-    },
-    "n": 220
+  "n": 220,
+  "_refrozen": "2026-07-16 Diff 3 \u2014 G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+ },
+ "REW26_BEN_SALSAC": {
+  "dist": {
+   "Yes": 0.5955,
+   "No": 0.4045
   },
-  "REW262_TIME_SICKDAYONE": {
-    "dist": {
-      "Yes": 0.6091,
-      "No": 0.3909
-    },
-    "n": 220
-  }
+  "n": 220
+ },
+ "REW262_TIME_SICKDAYONE": {
+  "dist": {
+   "Yes": 0.6091,
+   "No": 0.3909
+  },
+  "n": 220
+ }
 }

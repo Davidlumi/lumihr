@@ -42,8 +42,10 @@ def _load(name):
 
 CFG    = _load("persona_factor_config.json")
 FMAP   = _load("metric_factor_map.json")
-SPIKES = _load("anchored_spikes.json")
-LEVELS = _load("level_distributions.json")
+SPIKES = _load("anchored_spikes.json")     # DEAD as an input (kept only so legacy tooling imports don't crash)
+LEVELS = _load("level_distributions.json") # NOT applied by reseed() — open item, see DECISIONS Diff 3
+MARG   = _load("generated_marginals.json") # THE marginal set (Diff 2, David-approved final table)
+ORD    = (_load("ruled_orderings.json") or {}).get("orderings", {})  # THE standing orderings artifact
 
 # ---- latent maturity from firmographics + signed sector tilt -------------------
 FTE_RANK={"50-249":0.15,"250-999":0.35,"1,000-4,999":0.55,"5,000-9,999":0.78,"10,000+":0.95}
@@ -61,14 +63,14 @@ def ruled_order(qid):
     'Not applicable'/'Don't know' are deliberately EXCLUDED: they are N/A skips, not levels,
     so the re-pair leaves those orgs' values untouched (it only reorders values present in
     the ordering). Precedence: ruled key > option_order() inference > NOMINAL (hard gate)."""
-    o = (SPIKES.get(qid) or {}).get("option_order")
+    o = (ORD.get(qid) or {}).get("option_order")
     return list(o) if o else None
 
 def lean_pole(qid, opts):
     """Kit rule 2 (Diff 7): the lean pole is SEMANTIC, never positional.
     Order: explicit worst_option key from the spike entry -> semantic LEAN_RE -> HARD ERROR.
     A prevalence target_share is the share NOT on this pole."""
-    wo = (SPIKES.get(qid) or {}).get("worst_option")
+    wo = (ORD.get(qid) or {}).get("worst_option")
     if wo:
         for o in opts:
             if o.strip().lower() == str(wo).strip().lower():
@@ -337,50 +339,73 @@ def reseed(db, profiles, meta_path, write=False, confirmed=False):
         fac=factor_of(q,meta)
         lat={o:(lat3.get(o) or {}).get(fac,0.5) for o,_ in rows}
         cur_map=dict(rows)
-        mode=spike_mode(q)
+        # route label derives from the GENERATED file (spike_mode/SPIKES are dead inputs)
+        if q in MARG.get("marginals", {}): mode="marginal"
+        elif q in MARG.get("floors", {}): mode="floor"
+        elif q in MARG.get("context", {}): mode="context"
+        else: mode="unspiked"
         obs=[v for _,v in rows]
         newmap=None
 
-        if mode=="prevalence" and not mr:
-            # HARD GATE (kit rule 2, one level up — added after the Diff 9 nominal-reshape
-            # incident): a prevalence target_share is "the share NOT on the lean pole". That
-            # sentence is only meaningful on a genuine binary/ordinal OFFER axis. On a NOMINAL
-            # metric (pension TYPE = DC/DB/Hybrid/None) there is no such axis, and reshaping
-            # moved 152 orgs from "has a DC pension" to "no scheme". If option_order() cannot
-            # rank the metric, a prevalence spike is a category error -> NEVER reshape.
-            opts=sorted(set(obs))
-            _order = ruled_order(q) or option_order(meta[q].get("options","") or opts, meta[q].get("text",""))
-            if not _order:
-                nominal_rejects.append(q)
-                lean=None
-            else:
-                try: lean=lean_pole(q,opts)
-                except ValueError: lean=None
-            if lean is not None:
-                spec=SPIKES[q]; tgt=spec["target_share"]; n=len(rows)
-                pos_n=round(tgt*n); pos=[o for o in opts if o!=lean]
-                curc=defaultdict(int)
-                for v in obs:
-                    if v!=lean: curc[v]+=1
-                tot=sum(curc.values()) or 1
-                ms=[lean]*(n-pos_n)
-                for o in pos: ms+=[o]*round(pos_n*curc.get(o,0)/tot)
-                while len(ms)<n: ms.append(pos[0] if pos else lean)
-                ms=ms[:n]
-                rank={lean:0}
-                for i,o in enumerate(pos,1): rank[o]=i
-                ms=sorted(ms,key=lambda v:rank[v])
-                if spec.get("direction")=="preserve":
-                    # rarity is the signal: hit the share, do NOT tie to the factor
-                    rr=random.Random(int(hashlib.sha256(q.encode()).hexdigest()[:8],16))
-                    who=[o for o,_ in rows]; rr.shuffle(who)
+        if (q in MARG.get("marginals", {})) and not mr:
+            # DIFF-3 MARGINAL BRANCH (ruled 2026-07-16): targets come from generated_marginals.json
+            # (Diff-2 David-approved final table); orderings from ruled_orderings.json (ruled) or
+            # option_order() inference. LEAN-SIDE semantics: positive_from generalises the lean
+            # pole to "all rungs below positive_from"; absent -> lean side = first rung only
+            # (legacy behaviour, asserted default for 33 of 37 rows at generation).
+            entry = MARG["marginals"][q]
+            tgt = float(entry["target_share"])
+            ordq = ruled_order(q) or option_order(meta[q].get("options","") or sorted(set(obs)), meta[q].get("text",""))
+            wo = (ORD.get(q) or {}).get("worst_option")
+            lean_side = pos_side = None
+            if ordq:
+                rank = {o:i for i,o in enumerate(ordq)}
+                ordr = [(o,v) for o,v in rows if v in rank]      # NA/DK values absent from the ordering stay untouched
+                pf = entry.get("positive_from")
+                if pf:
+                    assert pf in ordq, "positive_from %r not in ordering for %s" % (pf, q)
+                    cut = ordq.index(pf)
+                    lean_side = ordq[:cut]; pos_side = ordq[cut:]
                 else:
-                    who=sorted((o for o,_ in rows), key=lambda o: lat.get(o,0.5))
-                newmap=dict(zip(who,ms))
-                ach=sum(1 for v in newmap.values() if v!=lean)/n
-                marg_hits.append({"qid":q,"grade":spec.get("grade"),"target":tgt,
-                                  "achieved":round(ach,4),"dev":round(abs(ach-tgt),4)})
-                modes["prevalence"]+=1
+                    lean_side = ordq[:1]; pos_side = ordq[1:]
+            elif wo:
+                # multi-select marginal (worst_option pattern): lean = the terminal combo;
+                # positives = every other OBSERVED combo (per-option mix untouched).
+                vals = sorted({v for _,v in rows if v})
+                lean_lab = next((o for o in vals if o.strip().lower()==str(wo).strip().lower()), None)
+                assert lean_lab is not None, "worst_option %r not observed for %s" % (wo, q)
+                ordr = [(o,v) for o,v in rows if v]
+                lean_side = [lean_lab]; pos_side = [v for v in vals if v != lean_lab]
+                rank = {lean_lab: 0}
+                rank.update({v: 1+i for i,v in enumerate(pos_side)})
+            else:
+                raise AssertionError("ORDERINGS-REQUIRED (engine): marginal %s has no ruled ordering, "
+                                     "no worst_option, and none inferable" % q)
+            if len(ordr) >= 5:
+                n = len(ordr); pos_n = int(round(tgt*n)); lean_n = n - pos_n
+                curc = defaultdict(int)
+                for _,v in ordr: curc[v]+=1
+                def _apportion(total, opts_):
+                    base = {o: curc.get(o,0) for o in opts_}
+                    tot = sum(base.values())
+                    if tot == 0:
+                        base = {o: 1 for o in opts_}; tot = len(opts_)
+                    raw = {o: total*base[o]/tot for o in opts_}
+                    fl = {o: int(raw[o]) for o in opts_}
+                    for o in sorted(opts_, key=lambda o: -(raw[o]-fl[o]))[: total - sum(fl.values())]:
+                        fl[o] += 1
+                    return fl
+                ms = []
+                for o,k in _apportion(lean_n, lean_side).items(): ms += [o]*k
+                for o,k in _apportion(pos_n, pos_side).items():  ms += [o]*k
+                ms = sorted(ms, key=lambda v: rank[v])
+                who = sorted((o for o,_ in ordr), key=lambda o: lat.get(o,0.5))
+                newmap = dict(zip(who, ms))
+                ach = sum(1 for v in newmap.values() if v not in lean_side) / n
+                marg_hits.append({"qid": q, "grade": entry.get("grade",""), "target": tgt,
+                                  "achieved": round(ach,4), "dev": round(abs(ach-tgt),4),
+                                  "positive_from": entry.get("positive_from") or ""})
+                modes["prevalence"] += 1
 
         if newmap is None:
             # context / floor / held / unspiked -> latent-only monotone re-pair on the factor.
@@ -394,7 +419,7 @@ def reseed(db, profiles, meta_path, write=False, confirmed=False):
             ms=sorted((v for _,v in ordr), key=lambda v: rank[v])
             who=sorted((o for o,_ in ordr), key=lambda o: lat.get(o,0.5))
             newmap=dict(zip(who,ms))
-            if not mr: modes[mode or "unspiked"]+=1
+            if not mr: modes[mode]+=1
 
         changes=[(o,cur_map.get(o),nv) for o,nv in newmap.items() if cur_map.get(o)!=nv]
         if changes:
