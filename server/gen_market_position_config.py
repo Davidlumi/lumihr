@@ -231,8 +231,22 @@ def classify(q, routing, lensmap):
     return entry, class_flag, dir_flag
 
 
+RETIRED_MSG = """\
+RETIRED (ruled 2026-07-18): market_position_config.json is HAND-CURATED and is the
+sole source of truth. This generator has drifted from the curated artifact (1,716
+lines rewritten on regen) and clobbered David-refined rulings twice (Diff 9 persona
+config class of incident; Diff 13 market-position config — Governance flag,
+REW_PAY_005 Practice class, the 8-domain taxonomy). It must not regenerate the
+config. See DECISIONS.md 2026-07-18 "Config generator retired". The file is kept
+for historical/reference value only; to reconcile or revive, a deliberate David
+ruling is required."""
+
+
 def main():
     write = "--write" in sys.argv
+    if write:
+        print(RETIRED_MSG)
+        sys.exit(2)
     routing, lensmap = _routing(), _lens_map()
     qs = load_questions()
     live = [q for q in qs.values() if q.superpower == "Reward" and (q.status or "active") != "retired"]
@@ -295,14 +309,12 @@ def main():
         "metrics": metrics,
     }
 
-    if not write:
-        print("\n[dry-run] pass --write to write %s" % os.path.relpath(OUT_PATH, ROOT))
-        return
-    with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-    print("\n[written] %s — auto-pass; David refines the flagged subset via hot-reload." %
-          os.path.relpath(OUT_PATH, ROOT))
+    # RETIRED: the write path is structurally impossible — dry-run analysis only.
+    print("\n[dry-run] RETIRED generator — %s is hand-curated (sole source of truth); "
+          "this script can never write it." % os.path.relpath(OUT_PATH, ROOT))
+    # (the OUT_PATH json.dump that lived here was REMOVED with the retirement —
+    #  `out` above is built for dry-run inspection only)
+    return
 
 
 if __name__ == "__main__":
