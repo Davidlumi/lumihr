@@ -84,6 +84,14 @@ try:
 except Exception:
     DIFF8_MANIFEST = set()
 
+# Diff 13 (18 July 2026, ruled) re-seeded the by-level matrix metrics from David's
+# EST practitioner baselines (expert_baseline_by_level.json); diff13_seed_manifest.csv
+# is the ruled lineage record, whitelisted on the same only-ruled-manifests rule.
+try:
+    DIFF13_MANIFEST = {r["metric_id"] for r in __import__("csv").DictReader(open(os.path.join(ROOT, "diff13_seed_manifest.csv")))}
+except Exception:
+    DIFF13_MANIFEST = set()
+
 
 # Diff 3 (16 July 2026, ruled) reseeded 37 marginals from the register-generated set;
 # generated_marginals.json is the ruled lineage record (only-ruled-manifests rule). Rows in it
@@ -96,7 +104,8 @@ except Exception:
 
 
 def _db_origin(qid):
-    if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST or qid in DIFF8_MANIFEST:
+    if qid.startswith(("REW264_", "REW265_")) or qid in DIFF7_MANIFEST or qid in DIFF8_MANIFEST \
+            or qid in DIFF13_MANIFEST:
         return True
     return qid in REGEN_WHITELIST or qid in RESEED_2026_06_18 or qid in DIFF3_MARGINALS
 

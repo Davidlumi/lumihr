@@ -1191,9 +1191,10 @@
     "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_INC_060": {
       "class": "Practice",
@@ -1268,9 +1269,10 @@
     "REW_INC_111": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_INC_131": {
       "class": "Provision",
@@ -1310,16 +1312,18 @@
     "REW_INC_LTI_MAX_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_INC_LTI_VALUE_TYP_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_Q528801": {
       "class": "Level",
@@ -1604,9 +1608,10 @@
     "REW_BEN_112": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_BEN_139": {
       "class": "Level",
@@ -1618,23 +1623,26 @@
     "REW_BEN_FLEX_ALLOW_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_BEN_PENS_EE_MAX_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_BEN_PENS_EMP_MAX_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "REW_FAI_STUDY_TIME_93b6ef22": {
       "class": "Provision",
@@ -1667,23 +1675,26 @@
     "REW_Q524161": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
       "class": "Level",
       "type": "numeric",
-      "direction": "higher_is_better",
+      "direction": "neutral",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "OT_03_1a68c68a": {
       "class": "Provision",

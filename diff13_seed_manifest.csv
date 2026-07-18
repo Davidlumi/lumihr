@@ -1,0 +1,9 @@
+metric_id,rows_before,rows_after,action
+REW_BEN_112,1540,1540,baseline reshape (national ladder)
+REW_BEN_PENS_EMP_MAX_01,1540,1540,corollary typical+headroom
+fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf,490,313,population align + baseline reshape
+REW_INC_111,934,895,sector gate + baseline reshape
+323ffcf1-749b-43f3-bf34-1de6b8b1ca67,881,851,sector gate + max>=target lift
+REW_INC_133,1540,1540,cliff + sector/SME gate
+REW_INC_LTI_MAX_01,175,57,cliff-mask
+REW_INC_LTI_VALUE_TYP_01,172,57,cliff-mask

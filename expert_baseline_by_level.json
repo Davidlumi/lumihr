@@ -1,0 +1,247 @@
+{
+  "_meta": {
+    "purpose": "Reward-director expert baselines for by-level matrix metrics with no free UK source",
+    "source": "practitioner benchmark - D. Whitfield",
+    "grade": "EST",
+    "discipline": "expert estimate, NOT survey anchor; gradient renders, market-position verdict suppressed unless overridden",
+    "cohort": "mid-market UK employer, 250-999 FTE",
+    "levels": [
+      "Board / Executive",
+      "Director",
+      "Head of",
+      "Senior Manager",
+      "Manager",
+      "Supervisor / Team Leader",
+      "Frontline / Individual Contributor"
+    ],
+    "status": "COMPLETE - 5 metrics, all confirmed"
+  },
+  "metrics": {
+    "pension_by_level": {
+      "quantity": "employer pension contribution %",
+      "shape": "tapering ladder to statutory floor",
+      "per_level": {
+        "Board / Executive": 17,
+        "Director": 12,
+        "Head of": 10,
+        "Senior Manager": 8,
+        "Manager": 8,
+        "Supervisor / Team Leader": 3,
+        "Frontline / Individual Contributor": 3
+      },
+      "unit": "percent_employer_contribution",
+      "floor_note": "Supervisor + Frontline = 3% statutory employer minimum (auto-enrolment, qualifying earnings)",
+      "grade": "EST",
+      "source": "practitioner benchmark - D. Whitfield",
+      "render_position_verdict": false,
+      "verdict_note": "expert baseline - gradient renders, LOWER/HIGHER THAN MARKET + P1-P3 suppressed until real peer data backs it (default; David may override)"
+    },
+    "car_allowance_by_level": {
+      "quantity": "annual car allowance (GBP)",
+      "shape": "tapering ladder from top, cliffs out at Manager (senior-and-above benefit)",
+      "per_level": {
+        "Board / Executive": {
+          "value": 12000,
+          "offered": true
+        },
+        "Director": {
+          "value": 10000,
+          "offered": true
+        },
+        "Head of": {
+          "value": 7000,
+          "offered": true
+        },
+        "Senior Manager": {
+          "value": 5000,
+          "offered": true
+        },
+        "Manager": {
+          "value": 4000,
+          "offered": true,
+          "low_prevalence": true,
+          "note": "\u00a34k WHERE offered, but few employers offer at this level - render as rare, not a norm"
+        },
+        "Supervisor / Team Leader": {
+          "value": null,
+          "offered": false,
+          "note": "not offered - N/A, off the benefit, NOT \u00a30"
+        },
+        "Frontline / Individual Contributor": {
+          "value": null,
+          "offered": false,
+          "note": "not offered - N/A, off the benefit, NOT \u00a30"
+        }
+      },
+      "unit": "gbp_per_year",
+      "grade": "EST",
+      "source": "practitioner benchmark - D. Whitfield",
+      "render_position_verdict": false,
+      "verdict_note": "expert baseline - gradient renders where offered; not-offered levels excluded from benchmark entirely (N/A not \u00a30); P-position suppressed (default)"
+    },
+    "bonus_by_level": {
+      "quantity": "target bonus as % of base salary",
+      "measure": "target (on-plan) - CONFIRMED by David",
+      "shape": "steep ladder (40:1 top-to-bottom) WHERE bonuses exist, but existence is SECTOR-GATED",
+      "per_level": {
+        "Board / Executive": {
+          "value": 40,
+          "prevalence": "strong (in bonus-paying sectors)"
+        },
+        "Director": {
+          "value": 30,
+          "prevalence": "strong"
+        },
+        "Head of": {
+          "value": 20,
+          "prevalence": "strong"
+        },
+        "Senior Manager": {
+          "value": 15,
+          "prevalence": "strong"
+        },
+        "Manager": {
+          "value": 10,
+          "prevalence": "thinning - 'some minor'"
+        },
+        "Supervisor / Team Leader": {
+          "value": 3,
+          "prevalence": "variable, heavily sector-dependent"
+        },
+        "Frontline / Individual Contributor": {
+          "value": 1,
+          "prevalence": "variable, heavily sector-dependent"
+        }
+      },
+      "unit": "percent_of_base_salary",
+      "SECTOR_GATE": {
+        "critical": "Bonus EXISTENCE is sector-gated, not just level-gated. The 40:1 ladder is the value curve WHERE bonuses are paid.",
+        "no_bonus_sectors": [
+          "Charity, Non-Profit & Social Enterprise",
+          "Public Sector & Government"
+        ],
+        "no_bonus_note": "These sectors give NO bonus at ANY level - must render 'no bonus scheme', NOT the ladder. Storing the ladder flat would misrepresent every charity/public org.",
+        "wiring_required": "Engine must sector-gate this metric: charity/public -> no-bonus; bonus-paying sectors -> the ladder. If engine cannot sector-gate, metric carries heavy 'sector-dependent, many sectors nil' caveat instead of a clean ladder."
+      },
+      "grade": "EST",
+      "source": "practitioner benchmark - D. Whitfield",
+      "render_position_verdict": false,
+      "verdict_note": "expert baseline - ladder renders in bonus-paying sectors only; P-position suppressed"
+    },
+    "annual_leave_by_level": {
+      "quantity": "annual leave entitlement (days, excluding bank holidays)",
+      "shape": "FLAT across seniority levels - does NOT ladder by level",
+      "per_level": {
+        "Board / Executive": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Director": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Head of": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Senior Manager": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Manager": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Supervisor / Team Leader": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        },
+        "Frontline / Individual Contributor": {
+          "value": 25,
+          "note": "flat - same at every level (standard mid-market)"
+        }
+      },
+      "unit": "days_excluding_bank_holidays",
+      "standard": "25 days + 8 bank holidays = 33 total (mid-market standard)",
+      "SECTOR_BAND": {
+        "critical": "Value is SECTOR-driven, not level-driven. Level axis is flat; sector sets the number.",
+        "standard_sectors": "25 days + 8 BH = 33 total",
+        "statutory_floor_sectors": {
+          "value": 20,
+          "sectors": [
+            "Retail",
+            "Hospitality",
+            "and similar low-pay sectors"
+          ],
+          "note": "20 days + 8 BH = 28 total = UK statutory minimum (5.6 weeks)"
+        }
+      },
+      "TENURE_EXCEPTION": {
+        "sectors": [
+          "Public Sector & Government",
+          "legacy-public",
+          "Charity, Non-Profit & Social Enterprise"
+        ],
+        "note": "In these sectors leave rises with YEARS OF SERVICE (tenure), not seniority level. A by-LEVEL chart is the wrong axis here - needs a tenure view or 'varies by service' caveat, not the flat number."
+      },
+      "CHART_AXIS_FLAG": "This metric does NOT vary by seniority level. Render FLAT (states 'leave does not ladder' - true & useful) rather than a synthetic Board>Frontline gradient. The engine's current seniority gradient on annual leave is WRONG in shape, not just altitude.",
+      "grade": "EST",
+      "source": "practitioner benchmark - D. Whitfield",
+      "render_position_verdict": false
+    },
+    "lti_eligibility_by_level": {
+      "quantity": "% eligible for long-term incentives, by level",
+      "shape": "CLIFF at Director (exec + director tier eligible, nothing below) - NOT a smooth ladder",
+      "per_level": {
+        "Board / Executive": {
+          "value": 90,
+          "prevalence": "near-universal in LTI-running sectors (90% confirmed)"
+        },
+        "Director": {
+          "value": 70,
+          "prevalence": "70%+ (stored as floor)"
+        },
+        "Head of": {
+          "value": 0,
+          "prevalence": "not eligible - cliff below Director"
+        },
+        "Senior Manager": {
+          "value": 0,
+          "prevalence": "not eligible"
+        },
+        "Manager": {
+          "value": 0,
+          "prevalence": "not eligible"
+        },
+        "Supervisor / Team Leader": {
+          "value": 0,
+          "prevalence": "not eligible"
+        },
+        "Frontline / Individual Contributor": {
+          "value": 0,
+          "prevalence": "not eligible"
+        }
+      },
+      "unit": "percent_eligible",
+      "CHART_CORRECTION": {
+        "current_wrong": "Image 1 renders 38/26/11/4/1/1/0 - a smooth descending ladder",
+        "problem_1": "UNDERSTATES exec/director badly (38 vs ~90, 26 vs 70) - shared descending ladder lands too low at top",
+        "problem_2": "WRONG SHAPE - shows a smooth tail (Head-of 11, SM 4, Mgr 1); real LTI is a CLIFF at Director, ~0 below",
+        "fix": "replace smooth ladder with exec+director cliff; zero below Director"
+      },
+      "SECTOR_GATE": {
+        "critical": "LTI EXISTENCE is sector-gated, like bonus. The cliff is the shape WHERE LTI is run.",
+        "no_lti_sectors": [
+          "Charity, Non-Profit & Social Enterprise",
+          "Public Sector & Government",
+          "most SME-heavy sectors"
+        ],
+        "note": "These sectors run NO LTI at any level. Cliff renders only in LTI-running sectors (finance, tech, listed, large corporate)."
+      },
+      "grade": "EST",
+      "source": "practitioner benchmark - D. Whitfield",
+      "render_position_verdict": false,
+      "normalisation_bug": "SEPARATE: Image 1 Director row renders 26%/75%=101% - rounding/normalisation defect, fix in matrix code regardless of baseline"
+    }
+  }
+}

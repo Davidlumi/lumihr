@@ -103,15 +103,18 @@ RESOLUTIONS = {
     "ALLOW_01": ("categorical", None), "CAR_BN_02": ("categorical", None),
     "PROP_216f7323": ("categorical", None), "REW26_WEL_MH_SUPPORT": ("categorical", None),
     "REW26_PAY_JOBEVAL_COVERAGE": ("categorical", None), "REW262_GOV_ACTIONPLAN": ("categorical", None),
-    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": ("numeric", "higher"),
+    # Diff 13 (ruled 2026-07-18): the 11 by-level matrix numerics run on EST practitioner
+    # baselines (expert_baseline_by_level.json) — direction "neutral" = context, not a
+    # verdict. No measured-market claim on estimate-grade data; reversible at real data.
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": ("numeric", "neutral"),
     "a7ed418e-b057-4b70-ab58-31e897b7c1b6": ("numeric", "higher"),
-    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": ("numeric", "higher"),
-    "REW_BEN_112": ("numeric", "higher"), "REW_BEN_FLEX_ALLOW_01": ("numeric", "higher"),
-    "REW_BEN_PENS_EMP_MAX_01": ("numeric", "higher"), "REW_INC_111": ("numeric", "higher"),
-    "REW_INC_LTI_MAX_01": ("numeric", "higher"), "REW_INC_LTI_VALUE_TYP_01": ("numeric", "higher"),
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": ("numeric", "neutral"),
+    "REW_BEN_112": ("numeric", "neutral"), "REW_BEN_FLEX_ALLOW_01": ("numeric", "neutral"),
+    "REW_BEN_PENS_EMP_MAX_01": ("numeric", "neutral"), "REW_INC_111": ("numeric", "neutral"),
+    "REW_INC_LTI_MAX_01": ("numeric", "neutral"), "REW_INC_LTI_VALUE_TYP_01": ("numeric", "neutral"),
     "REW_PAY_MKT_POS_01": ("numeric", "higher"), "3faf1f0c-f753-497f-a395-384bba38c5e3": ("numeric", "higher"),
-    "REW_BEN_PENS_EE_MAX_01": ("numeric", "higher"),
-    "b1785613-96ed-4a64-9fd7-762d0ac65f19": ("numeric", "higher"), "REW_Q524161": ("numeric", "higher"),
+    "REW_BEN_PENS_EE_MAX_01": ("numeric", "neutral"),
+    "b1785613-96ed-4a64-9fd7-762d0ac65f19": ("numeric", "neutral"), "REW_Q524161": ("numeric", "neutral"),
     "REW_Q528801": ("numeric", "higher"), "REW_Q534581": ("numeric", "higher"),
     "REW_BEN_139": ("categorical", None), "REW_FAI_TRONC_GROUPS_e5639ac2": ("categorical", None),
     "REW_INC_133": ("categorical", None), "REW_PAY_020": ("categorical", None),
@@ -203,6 +206,9 @@ def derive_direction(q, cls, base):
         return "lower_is_better", "lower_is_better — less is the goal"
     if any(k in t for k in NEUTRAL_KW):
         return "neutral", "neutral — U-shaped / cost / count: context, not a verdict"
+    if base == "neutral":
+        # Diff 13: curated neutral (EST by-level metrics) — context, not a verdict.
+        return "neutral", "neutral — curated (EST baseline): no measured-market claim"
     if base == "lower":
         return "lower_is_better", "lower_is_better — from curated polarity"
     if base == "higher":
