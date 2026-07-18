@@ -1,0 +1,1393 @@
+{
+ "_generated": "2026-07-16",
+ "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
+ "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
+ "marginals": {
+  "EXT_REW_GAP_012": {
+   "target_share": 0.26,
+   "base_type": "single(ruled)",
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "rule": "no-blend all-UK 0.26 (review-to-ensure-fair) with purpose caveat + likely-understates-large-cohort caveat; 0.83 objectiv"
+  },
+  "REW263_BEN_CICOVER": {
+   "target_share": 0.3791,
+   "base_type": "sme_large(ruled)",
+   "sme": 12.0,
+   "large": 42.0,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays u"
+  },
+  "REW263_BEN_DENTAL": {
+   "target_share": 0.34,
+   "base_type": "sme_large(ruled)",
+   "sme": 15.0,
+   "large": 37.0,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "rule": "blend 0.15/0.37 (SME/large cash-plan rates, on-row) -> 0.340 any-dental proxy; emit no-dental mass 0.660 only, carrying "
+  },
+  "REW26_BEN_PENSION_MATCH": {
+   "target_share": 0.5141,
+   "base_type": "sme_large(ruled)",
+   "sme": 16.0,
+   "large": 56.99999999999999,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, weighted n=1,0",
+   "rule": "blend 0.16/0.57 (SME Fig25 adopted from REW_BEN_100 / large Fig24 on-row) -> 0.514 offer; anchors offer-vs-None split on"
+  },
+  "REW_BEN_044": {
+   "target_share": 0.6284,
+   "base_type": "sme_large(ruled)",
+   "sme": 17.5,
+   "large": 70.0,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "rule": "blend 0.175/0.70 (SME 17-18% / large 70%, on-row) -> 0.628 offer; emit 'Not offered' 0.372 only; eligibility-rule option"
+  },
+  "REW_BEN_045": {
+   "target_share": 0.5607,
+   "base_type": "sme_large(ruled)",
+   "sme": 18.5,
+   "large": 62.0,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "rule": "blend 0.185/0.62 (all-UK~SME 18-19% Fig28 / large 62% Fig24, on-row) -> 0.561 offer; emit 'Not offered' 0.439 only; sala"
+  },
+  "REW_BEN_046": {
+   "target_share": 0.3659,
+   "base_type": "sme_large",
+   "sme": 15,
+   "large": 40,
+   "all": 25,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "evidence": "Group income protection / long-term disability: 25% all; 40% large(250+); 15% SME (offered to all employees)"
+  },
+  "REW_FAI_STUDY_TIME_93b6ef22": {
+   "target_share": 0.7,
+   "base_type": "all_only",
+   "all": 70,
+   "grade": "B",
+   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
+   "evidence": "\"Paid study leave/time is offered by ~70% of UK employers\" | \"92% offer training/career-development, 75% pay professional subscriptions/fees\""
+  },
+  "REW262_TIME_BEREAVEMENT": {
+   "target_share": 0.27,
+   "base_type": "all_only",
+   "all": 27,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "evidence": "\"Paid bereavement leave (excl parental): 27% all; 26% SME\""
+  },
+  "REW_BEN_FAM_001": {
+   "target_share": 0.67,
+   "base_type": "all_only",
+   "all": 33,
+   "grade": "A",
+   "source": "CIPD \"Employer focus on working parents: parental leave and pay and childcare po",
+   "evidence": "\"33% of UK employers offer statutory-minimum maternity pay only; 18% offer 4-13 wks enhanced at/near full pay; 21% offer 26 wks enhanced at/near full pay then 13 wks SMP. (Private 38% statutory-only v",
+   "positive_from": "Enhanced pay (above statutory)"
+  },
+  "REW_BEN_FAM_002": {
+   "target_share": 0.5441,
+   "base_type": "sme_large(ruled)",
+   "sme": 19.0,
+   "large": 60.0,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "rule": "blend 0.19/0.60 (all-UK Fig28 as SME-side rate, large 250+ 0.60) -> enhance-any 0.544; emit None (statutory only) = 0.45"
+  },
+  "REW_BEN_FAM_007": {
+   "target_share": 0.36,
+   "base_type": "all_only",
+   "all": 36,
+   "grade": "A",
+   "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouG",
+   "evidence": "\"PAID carer's leave specifically offered by ~36% (RMS 2022) / 31-45% (flex 2025 support data)\" | \"52% of UK employers have a policy/procedure for employees to request carer's leave (75% public, 46% pr"
+  },
+  "REW_BEN_FAM_009": {
+   "target_share": 0.7,
+   "base_type": "all_only",
+   "all": 70,
+   "grade": "A",
+   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
+   "evidence": "\"70% of UK employers offer paid study leave\" | \"92% offer training/career-development, 75% pay professional subscriptions, 75% conference attendance\""
+  },
+  "REW_BEN_FAM_010": {
+   "target_share": 0.3,
+   "base_type": "all_only",
+   "all": 30,
+   "grade": "A",
+   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
+   "evidence": "30% of UK employers offer paid time off for voluntary/community work"
+  },
+  "REW_BEN_HOL_001": {
+   "target_share": 0.553,
+   "base_type": "sme_large",
+   "sme": 35,
+   "large": 58.5,
+   "all": 36,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "evidence": "25+ days annual leave (excl bank hols), FT: 36% all; 58-59% large; 35% SME",
+   "positive_from": "25-27 days"
+  },
+  "REW_BEN_SICK_001": {
+   "target_share": 0.568,
+   "base_type": "sme_large",
+   "sme": 17.5,
+   "large": 63,
+   "all": 18,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "evidence": "Occupational sick pay: 18% all (Fig13); 60-66% large; 17-18% SME",
+   "positive_from": "Enhanced occupational sick pay (above SSP)"
+  },
+  "REW_BEN_SICK_004": {
+   "target_share": 0.3,
+   "base_type": "all_only",
+   "all": 30,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "evidence": "~30% eligible from day one",
+   "positive_from": "No waiting period"
+  },
+  "OT_04_b14623a6": {
+   "target_share": 0.63,
+   "base_type": "all_only",
+   "all": 63,
+   "grade": "B",
+   "source": "lumi legacy platform (HR Data Hub intake), 2019-20",
+   "evidence": "63% of employers pay a shift premium"
+  },
+  "PROP_fe1a29ec": {
+   "target_share": 0.495,
+   "base_type": "single(ruled)",
+   "grade": "B",
+   "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown broker)",
+   "rule": "no-blend all-UK 0.495; caveats carried: BENEFITS-side benchmarking only (anchor self-disclaims pay-survey usage), no 'at"
+  },
+  "REW_INC_072": {
+   "target_share": 0.15,
+   "base_type": "single(ruled)",
+   "grade": "B",
+   "source": "HR DataHub Talent Attraction & Retention Survey, Oct 2022 (co-authored by David ",
+   "rule": "no-blend large-only 0.15 (active-use rate; NEVER the ~0.45 use-or-considering composite — considering is not using); cav"
+  },
+  "REW263_WEL_FINWELL": {
+   "target_share": 0.15,
+   "base_type": "all_only",
+   "all": 15,
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "evidence": "Financial wellbeing strategy/policy: 15% all orgs; 53% large have-or-plan"
+  },
+  "REW263_WEL_OH": {
+   "target_share": 0.7959,
+   "base_type": "sme_large(ruled)",
+   "sme": 39.0,
+   "large": 86.0,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "rule": "blend 0.39/0.86 -> (0.39*30 + 0.86*190)/220 = 0.796 cohort OH-access rate; access limb only, SLA limb stays unanchored"
+  },
+  "REW26_WEL_EAP": {
+   "target_share": 0.7268,
+   "base_type": "sme_large",
+   "sme": 39,
+   "large": 78,
+   "all": 67,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "evidence": "EAP: 67% all employees; 78% large(250+); 39% SME (offered to all). NB HW Fig16=67% all"
+  },
+  "REW26_WEL_FINWELL": {
+   "target_share": 0.64,
+   "base_type": "all_only",
+   "all": 64,
+   "grade": "A",
+   "source": "CIPD Reward Survey Feb 2026",
+   "evidence": "64% offer a financial wellbeing programme/activity"
+  },
+  "REW26_WEL_SCREENING": {
+   "target_share": 0.4373,
+   "base_type": "sme_large",
+   "sme": 23,
+   "large": 47,
+   "all": 35,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "evidence": "Health screening: 35% all; 47% large(250+); 23% SME (offered to all)"
+  },
+  "REW26_WEL_STRATEGY": {
+   "target_share": 0.57,
+   "base_type": "all_only",
+   "all": 57,
+   "grade": "A",
+   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
+   "evidence": "Stand-alone wellbeing strategy: 57% all"
+  },
+  "EXT_REW_GAP_004": {
+   "target_share": 0.76,
+   "base_type": "all_only",
+   "all": 76,
+   "grade": "B",
+   "source": "lumi legacy platform (HR Data Hub intake), 2019-20",
+   "evidence": "76% operate a long-service award scheme"
+  },
+  "PAYTR_01_42eae7ec": {
+   "target_share": 0.4,
+   "base_type": "all_only",
+   "all": 40,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "~40% always; 53% always-or-sometimes"
+  },
+  "PROP_10d1211d": {
+   "target_share": 0.2455,
+   "base_type": "sme_large",
+   "sme": 9,
+   "large": 27,
+   "all": 18,
+   "grade": "A",
+   "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ",
+   "evidence": "18% of UK employers ran disability pay gap analysis in year to Oct 2023 (27% of large 250+ employers had done so vs 9% of SMEs"
+  },
+  "PROP_674db2fc": {
+   "target_share": 0.34,
+   "base_type": "single(ruled)",
+   "grade": "A",
+   "source": "CIPD \"Pay, performance and transparency 2024\" (Feb 2024, ref 8551, supported by ",
+   "rule": "no-blend all-UK 0.34 (TRS provision); constrains provision limb only, access-rate bands unanchored; caveat: likely under"
+  },
+  "PROP_930043cc": {
+   "target_share": 0.18,
+   "base_type": "all_only",
+   "all": 18,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "18% carry out (10% share); 56% have not"
+  },
+  "REW262_GOV_PAYINADVERTS": {
+   "target_share": 0.53,
+   "base_type": "all_only",
+   "all": 53,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "~40% always; 53% always-or-sometimes publish"
+  },
+  "REW263_GOV_BENOBJ": {
+   "target_share": 0.77,
+   "base_type": "single(ruled)",
+   "grade": "A",
+   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
+   "rule": "no-blend all-UK 0.77 has-objectives / 0.22 none; constrains objectives limb only, review-against-them limb unanchored"
+  },
+  "REW263_GOV_FLEXALLOW": {
+   "target_share": 0.39,
+   "base_type": "single(ruled)",
+   "grade": "B",
+   "source": "Broadstone UK Employee Benefits Survey, Nov 2023. ~200 UK employers. Grade B - b",
+   "rule": "no-blend flat-UK 0.39 offers-flexible-benefits (Broadstone n~200), emit only with upper-bound caveat: broad flex-benefit"
+  },
+  "REW263_GOV_UKPAYTRANS": {
+   "target_share": 0.53,
+   "base_type": "all_only",
+   "all": 53,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "53% publish ranges always/sometimes; only 16% publish both ranges+specifics"
+  },
+  "REW_FAI_079": {
+   "target_share": 0.44,
+   "base_type": "all_only",
+   "all": 44,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "44% carry out (30% always+14% sometimes share); mandatory 250+; public sector 52%; 79% of <250 had NOT"
+  },
+  "REW_FAI_088": {
+   "target_share": 0.4,
+   "base_type": "single(ruled)",
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "rule": "no-blend all-UK 0.40 always / 0.32 never (internal pay-range access; remainder ~0.28 partial), conditional on source re-"
+  }
+ },
+ "floors": {
+  "REW_Q524161": {
+   "anchor": "Statutory employer-to-employee notice floor: 1 wk (1mth-2yr service), +1 wk per year thereafter, max 12 wks. Contractual"
+  },
+  "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+   "anchor": "Statutory employee-to-employer notice floor: 1 week minimum once employed 1 month+. Contractual employee notice by level"
+  },
+  "REW263_TIME_DAYONELEAVE": {
+   "anchor": "Day-one paternity leave and unpaid parental leave became statutory rights under the Employment Rights Act 2025 (in force"
+  }
+ },
+ "context": {
+  "3faf1f0c-f753-497f-a395-384bba38c5e3": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "CAR_BN_02": {
+   "why": "unanchored"
+  },
+  "CAR_COST_02": {
+   "why": "unanchored"
+  },
+  "CAR_STATUS_01": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "CAR_STATUS_03": {
+   "why": "unanchored"
+  },
+  "PROP_11a83d52": {
+   "why": "unanchored"
+  },
+  "PROP_202fecc6": {
+   "why": "unanchored"
+  },
+  "PROP_36b990f9": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "PROP_3d4fc4e7": {
+   "why": "unanchored"
+  },
+  "PROP_7d858df2": {
+   "why": "unanchored"
+  },
+  "PROP_c1a3da61": {
+   "why": "unanchored"
+  },
+  "RED_COST_01": {
+   "why": "context: value figure (statutory £751/wk cap, £22,530 max, age-banded formula) — no marginal; observed average cost per employee remains unanchored"
+  },
+  "RED_NOTICE_01": {
+   "why": "unanchored"
+  },
+  "RED_PAY_01": {
+   "why": "unanchored"
+  },
+  "RED_PROC_01": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "RED_PROC_02": {
+   "why": "unanchored"
+  },
+  "RED_PROC_03": {
+   "why": "unanchored"
+  },
+  "RED_PROC_04": {
+   "why": "unanchored"
+  },
+  "RED_PROC_05": {
+   "why": "unanchored"
+  },
+  "RED_TERM_01": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "RED_TERM_02": {
+   "why": "context: value figure (statutory cap £751/wk from Apr 2026, 30 weeks max) — no marginal; enhanced-offer distribution unanchored; seeded bands already Check-C fl"
+  },
+  "RED_TERM_03": {
+   "why": "unanchored"
+  },
+  "REW263_BEN_NEURO": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_BEN_PENBASIS": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_BEN_PMIEXCESS": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_BEN_PMIMH": {
+   "why": "unanchored"
+  },
+  "REW26_BEN_PENSION_COST_SHARE": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW26_BEN_PENSION_TYPE": {
+   "why": "unanchored"
+  },
+  "REW26_BEN_PLSA_QM": {
+   "why": "context: upper-bound proxy (<=0.29) — bound cannot set a target_share unless David rules to seed at the bound"
+  },
+  "REW26_BEN_SALSAC": {
+   "why": "do-not-emit: 0.54 is large-only AND measures offer-at-all, not default enrolment; if David rules the question means 'offered', blend 0.15/0.54 (pair on REW_BEN_"
+  },
+  "REW_BEN_038": {
+   "why": "CONTEXT not a single prevalence: this anchor is a compendium of ~15 separate benefit prevalences (each with its own all/large/SME split), i.e. a distribution across options of a multi-select question. Usable only if split into one structured row per benefit option; several entries are themselves ranges (e.g. PMI SME 17-18%) or large-only (e.g. free eye tests 52% large). Do not collapse to one number. Note internal near-duplicates with other rows (e.g. OSP 60% large here vs 60-66% in REW_BEN_SICK_001; EAP 10% all / 61-62% large here vs 67/78/39 in REW26_WEL_EAP - conflicting EAP figures across register rows, reviewer should reconcile sources)."
+  },
+  "REW_BEN_039": {
+   "why": "unanchored"
+  },
+  "REW_BEN_047": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_048": {
+   "why": "CONTEXT not a prevalence: 50-59% is a benefit LEVEL band (percent of salary), and 25.2% is the share of the conditional base (employers already offering IP) sitting in that modal band - conditional distribution, not an all-employer target share. The 34% 'offer no IP' figure is corroboration context only and conflicts in direction of expression with REW_BEN_046 (25% offer vs 34% offer none - different sources/bases, broker-book skew per base_field). Grade B, not nationally weighted."
+  },
+  "REW_BEN_055": {
+   "why": "unanchored"
+  },
+  "REW_BEN_100": {
+   "why": "unanchored"
+  },
+  "REW_BEN_102": {
+   "why": "unanchored"
+  },
+  "REW_BEN_112": {
+   "why": "CONTEXT only: 68% is the share of employers inside a 3-6% contribution RANGE — a distribution statistic for a categorical level question, likely spanning multiple answer options, so unusable as a single target share. Broker-book skew toward larger/advised employers per base_field. Grade B."
+  },
+  "REW_BEN_139": {
+   "why": "unanchored"
+  },
+  "REW_BEN_FLEX_ALLOW_01": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_PENS_EE_MAX_01": {
+   "why": "CONTEXT only: all figures are contribution-rate LEVELS (median 6%, p25 5%, p75 7%, range 3-12%), not employer-prevalence percentages — the % signs denote salary percentages, not shares of employers. Tiny base (n=59) with large-employer/FTSE skew and pre-2024 vintage per base_field. Grade B."
+  },
+  "REW_BEN_PENS_EMP_MAX_01": {
+   "why": "CONTEXT only: two OVERLAPPING cumulative thresholds (~50% at 9%+, 27% at 11%+; the 11%+ group is a subset of the 9%+ group) — these are CDF points for a banded level question, not option shares, and cannot seed a single marginal without the reviewer choosing a threshold. '~' approximate on the 50. Broker-book skew toward larger/advised employers per base_field. Grade B."
+  },
+  "REW_PAY_109": {
+   "why": "unanchored"
+  },
+  "REW_PAY_EV_KWH_66ef252b": {
+   "why": "unanchored"
+  },
+  "REW_Q049530": {
+   "why": "unanchored"
+  },
+  "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
+   "why": "unanchored"
+  },
+  "OT_03_1a68c68a": {
+   "why": "unanchored"
+  },
+  "REW262_TIME_SICKDAYONE": {
+   "why": "unanchored"
+  },
+  "REW263_TIME_CARERPAID": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_TIME_FERTLEAVE": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_TIME_HOLRECORDS": {
+   "why": "unanchored"
+  },
+  "REW263_TIME_IVF": {
+   "why": "unanchored"
+  },
+  "REW263_TIME_NEONATAL": {
+   "why": "context: statutory entitlement value (up to 12 wks from Apr 2025) - enhancement prevalence unmeasured; no marginal"
+  },
+  "REW263_TIME_PATPAY": {
+   "why": "context: self-selected benchmark-tier base - 0.67 is Bright Horizons top-tier (family-friendly benchmark participants), 0.21 broad measures a different quantity"
+  },
+  "REW263_TIME_PREGLOSS": {
+   "why": "context: legal-horizon note (statutory pregnancy-loss leave from 2027 under ERA 2025, currently discretionary; incoming right is UNPAID while the question asks "
+  },
+  "REW_BEN_041": {
+   "why": "unanchored"
+  },
+  "REW_BEN_FAM_005": {
+   "why": "unanchored"
+  },
+  "REW_BEN_FAM_006": {
+   "why": "context: statutory-floor values (SMP/SPP/ShPP GBP194.32/wk, SMP 6wks at 90% AWE, paternity 2wks, SPL 50wks, day-one rights) - legal baseline, no enhancement pre"
+  },
+  "REW_BEN_FAM_008": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_FAM_011": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_FAM_012": {
+   "why": "unanchored"
+  },
+  "REW_BEN_HOL_002": {
+   "why": "context: statutory-floor value (5.6 weeks / 28 days; employers MAY count the 8 bank holidays within it) - legal baseline, no prevalence measured; no marginal"
+  },
+  "REW_BEN_HOL_003": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_HOL_004": {
+   "why": "context: collective-agreement base (IDR Payline, 56/98 = 0.57; unionised, 84% 250+ FTE, ~51% public/voluntary) - unblendable subgroup on an all-cohort question;"
+  },
+  "REW_BEN_HOL_005": {
+   "why": "unanchored"
+  },
+  "REW_BEN_HOL_006": {
+   "why": "unanchored"
+  },
+  "REW_BEN_HOL_007": {
+   "why": "unanchored"
+  },
+  "REW_BEN_HOL_008": {
+   "why": "unanchored"
+  },
+  "REW_BEN_SICK_002": {
+   "why": "NOT a prevalence: duration distribution (~10% under 1 month, ~40% over 6 months) with conditional denominator 'orgs with OSP', approximate '~' figures, bands do not sum to 100. Question itself asks a duration ('for how long'), not a yes/no. 'Public sector most generous' is qualitative. Route to CONTEXT."
+  },
+  "REW_BEN_SICK_005": {
+   "why": "unanchored"
+  },
+  "REW_BEN_SICK_006": {
+   "why": "unanchored"
+  },
+  "REW_PAY_014": {
+   "why": "unanchored"
+  },
+  "ALLOW_01": {
+   "why": "unanchored"
+  },
+  "ALLOW_02": {
+   "why": "unanchored"
+  },
+  "ALLOW_03": {
+   "why": "unanchored"
+  },
+  "ALLOW_04": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_009": {
+   "why": "set-not-pole (prior ruling; question shape, figure-independent)"
+  },
+  "EXT_REW_GAP_010": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_011": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_013": {
+   "why": "unanchored"
+  },
+  "PAYTR_02_131bd412": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "PROP_168a6213": {
+   "why": "unanchored"
+  },
+  "PROP_634adacd": {
+   "why": "NOT a prevalence: 3% is the median EXPECTED basic pay increase (forward-looking level/value). Seeding it as an employer share would be a category error. Route to CONTEXT for the salary-increase question's answer distribution."
+  },
+  "PROP_8e0b6316": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "PROP_9e4ad87f": {
+   "why": "context: value figure (pay-AWARD median 3%; band split 3-3.99% = 40% of employers, 5%+ = 15%) — award distribution, not budget-as-%-of-payroll; no marginal"
+  },
+  "PROP_d16bae79": {
+   "why": "unanchored"
+  },
+  "PROP_dff9a2a5": {
+   "why": "context: value figure (~3% is median award SIZE from CIPD LMO Spring 2026, not a coverage share; '<0%/freeze small tail' is directional only) — no marginal"
+  },
+  "PROP_e63cf45a": {
+   "why": "unanchored"
+  },
+  "REW262_PAY_AISKILLSPAY": {
+   "why": "unanchored"
+  },
+  "REW262_PAY_CANCELLEDSHIFT": {
+   "why": "unanchored"
+  },
+  "REW262_PAY_GUARANTEEDHRS": {
+   "why": "unanchored"
+  },
+  "REW262_PAY_SHIFTNOTICE": {
+   "why": "unanchored"
+  },
+  "REW263_PAY_COMPARATIO": {
+   "why": "unanchored"
+  },
+  "REW263_PAY_GUARHRSAVG": {
+   "why": "unanchored"
+  },
+  "REW263_PAY_MERITMATRIX": {
+   "why": "unanchored"
+  },
+  "REW263_PAY_SHIFTRIGHTS": {
+   "why": "unanchored"
+  },
+  "REW263_PAY_SSPALIGN": {
+   "why": "unanchored"
+  },
+  "REW26_PAY_JOBEVAL_COVERAGE": {
+   "why": "unanchored"
+  },
+  "REW26_PAY_SKILLS_PAY": {
+   "why": "unanchored"
+  },
+  "REW_BEN_058": {
+   "why": "context: forward-looking benefits-SPEND direction split (plan increase 8% / same 73% / decrease 6%), not a retrospective enhanced-in-last-12m prevalence — no ma"
+  },
+  "REW_BEN_REM_PAY_001": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_REM_PAY_002": {
+   "why": "unanchored"
+  },
+  "REW_BEN_REM_PAY_003": {
+   "why": "unanchored"
+  },
+  "REW_BEN_REM_PAY_004": {
+   "why": "unanchored"
+  },
+  "REW_BEN_REM_PAY_005": {
+   "why": "unanchored"
+  },
+  "REW_FAIR_TIPS_DIST_7d34e570": {
+   "why": "unanchored"
+  },
+  "REW_FAI_128": {
+   "why": "unanchored"
+  },
+  "REW_FAI_CANCEL_1bbcc629": {
+   "why": "unanchored"
+  },
+  "REW_FAI_MIN_HOURS_8518a543": {
+   "why": "unanchored"
+  },
+  "REW_FAI_TRONC_GROUPS_e5639ac2": {
+   "why": "unanchored"
+  },
+  "REW_FAI_TRONC_TYPES_b5547658": {
+   "why": "unanchored"
+  },
+  "REW_PAY_005": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_PAY_007": {
+   "why": "unanchored"
+  },
+  "REW_PAY_011": {
+   "why": "unanchored"
+  },
+  "REW_PAY_016": {
+   "why": "unanchored"
+  },
+  "REW_PAY_017": {
+   "why": "one-pole-of-multi-pole (ruled principle)"
+  },
+  "REW_PAY_018": {
+   "why": "unanchored"
+  },
+  "REW_PAY_021": {
+   "why": "unanchored"
+  },
+  "REW_PAY_022": {
+   "why": "unanchored"
+  },
+  "REW_PAY_023": {
+   "why": "unanchored"
+  },
+  "REW_PAY_097": {
+   "why": "one-pole-of-multi-pole (ruled principle)"
+  },
+  "REW_PAY_126": {
+   "why": "unanchored"
+  },
+  "REW_PAY_HOURLY_MIN_1c6e096f": {
+   "why": "context: value figure (statutory floor — NLW 21+ £12.21 Apr 2025 -> £12.71 Apr 2026; NMW 18-20 £10.85) — left-tail boundary constraint only, no marginal"
+  },
+  "REW_PAY_MKT_POS_01": {
+   "why": "unanchored"
+  },
+  "REW_PAY_TIPS_EXIST_7c80c508": {
+   "why": "unanchored"
+  },
+  "REW_PAY_TRONC_6db81475": {
+   "why": "unanchored"
+  },
+  "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
+   "why": "unanchored"
+  },
+  "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
+   "why": "unanchored"
+  },
+  "REW263_INC_DEFERRAL": {
+   "why": "unanchored"
+  },
+  "REW263_INC_POOLFUND": {
+   "why": "unanchored"
+  },
+  "REW_INC_060": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_INC_061": {
+   "why": "unanchored"
+  },
+  "REW_INC_065": {
+   "why": "unanchored"
+  },
+  "REW_INC_069": {
+   "why": "unanchored"
+  },
+  "REW_INC_070": {
+   "why": "unanchored"
+  },
+  "REW_INC_071": {
+   "why": "unanchored"
+  },
+  "REW_INC_077": {
+   "why": "unanchored"
+  },
+  "REW_INC_103": {
+   "why": "context: employee-level receipt base — 12.2% of ALL UK employees received a bonus (yr to May 2025; small firms 20.4% vs large 7.8%) — receipt is not eligibility"
+  },
+  "REW_INC_104": {
+   "why": "context: value/band distribution on the wrong denominator — payout as % of TARGET (90-100% band = 60% i.e. 26/43; 71-90% ≈ 23%) against a question denominated i"
+  },
+  "REW_INC_111": {
+   "why": "unanchored"
+  },
+  "REW_INC_131": {
+   "why": "context: subset-scope prevalence — AESP ~16% all-UK covers all-employee share plans only, and 21-24% is an among-performance-linked-employers base; neither maps"
+  },
+  "REW_INC_132": {
+   "why": "unanchored"
+  },
+  "REW_INC_133": {
+   "why": "context: staff-category participation splits from NON-LTI schemes (team bonus MPT 37% vs other 23%; profit-share 32% vs 19%; AESP ~16%) — no LTI-eligibility-by-"
+  },
+  "REW_INC_135": {
+   "why": "unanchored"
+  },
+  "REW_INC_136": {
+   "why": "unanchored"
+  },
+  "REW_INC_LTI_MAX_01": {
+   "why": "unanchored"
+  },
+  "REW_INC_LTI_VALUE_TYP_01": {
+   "why": "unanchored"
+  },
+  "REW_Q528801": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_Q534581": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_WEL_DATA": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_WEL_MGRTRAIN": {
+   "why": "context: org-level base (29% of orgs train line managers) on a manager-denominator coverage question; no marginal unless a trained-manager-proportion distributi"
+  },
+  "REW26_WEL_BUDGET": {
+   "why": "numeric, no distribution anchor (G8) — 0.54 large-only exists-rate carried as documentation"
+  },
+  "REW26_WEL_MH_SUPPORT": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "EXT_REW_GAP_001": {
+   "why": "context: value band-split (<GBP50 23.5% / GBP50-200 52.9% / GBP200-500 9.4% / GBP500-1k 3.5%; ~7% no programme) with band edges misaligned to the question's ban"
+  },
+  "EXT_REW_GAP_002": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_003": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_005": {
+   "why": "unanchored"
+  },
+  "EXT_REW_GAP_006": {
+   "why": "context: non-quantitative modal claim ('most commonly Financial Award or Gift', legacy n=42, no percentages) - cannot calibrate a distribution; no marginal. Fla"
+  },
+  "EXT_REW_GAP_007": {
+   "why": "unanchored"
+  },
+  "REW263_REC_CURRENCY": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_REC_IMPACT": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW263_REC_MGRBUDGET": {
+   "why": "unanchored"
+  },
+  "REW263_REC_PEER": {
+   "why": "context: superset-scope figure - 0.66 is any-recognition-scheme prevalence (legacy platform 2019-20, n=74, large/FTSE skew), an upper bound only for peer-to-pee"
+  },
+  "PAYTR_03_db0108d6": {
+   "why": "unanchored"
+  },
+  "PROP_216f7323": {
+   "why": "unanchored"
+  },
+  "PROP_34ffb6e2": {
+   "why": "unanchored"
+  },
+  "PROP_38555969": {
+   "why": "unanchored"
+  },
+  "PROP_8862fcad": {
+   "why": "unanchored"
+  },
+  "PROP_aa4061d5": {
+   "why": "unanchored"
+  },
+  "PROP_cdff5737": {
+   "why": "unanchored"
+  },
+  "PROP_d65a16e9": {
+   "why": "unanchored"
+  },
+  "PROP_d992b2ea": {
+   "why": "unanchored"
+  },
+  "PROP_e1d1e604": {
+   "why": "unanchored"
+  },
+  "PROP_ef4ff31e": {
+   "why": "unanchored"
+  },
+  "REW262_GOV_ACTIONPLAN": {
+   "why": "unanchored"
+  },
+  "REW262_GOV_AIINPAY": {
+   "why": "unanchored"
+  },
+  "REW262_GOV_EQUALPAYAUDIT": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW262_GOV_EQUALVALUE": {
+   "why": "unanchored"
+  },
+  "REW262_GOV_SALHISTORY": {
+   "why": "unanchored"
+  },
+  "REW263_GOV_ETHDISREADY": {
+   "why": "unanchored"
+  },
+  "REW263_GOV_FIREREHIRE": {
+   "why": "unanchored"
+  },
+  "REW263_GOV_MENOPLAN": {
+   "why": "context: proxy-with-caveat (policy != action plan) — ruled context-only 2026-07-16"
+  },
+  "REW263_GOV_REWTEAM": {
+   "why": "unanchored"
+  },
+  "REW263_GOV_SIGNOFF": {
+   "why": "unanchored"
+  },
+  "REW263_GOV_UMBRELLA": {
+   "why": "unanchored"
+  },
+  "REW26_GOV_EU_PTD_PREP": {
+   "why": "context: 0.44 is a don't-know/opinion share (unable to predict readiness), not a preparedness-stage prevalence; second element is a date (Jun 2026 deadline); no"
+  },
+  "REW_FAI_081": {
+   "why": "unanchored"
+  },
+  "REW_FAI_082": {
+   "why": "unanchored"
+  },
+  "REW_FAI_085": {
+   "why": "unanchored"
+  },
+  "REW_FAI_086": {
+   "why": "unanchored"
+  },
+  "REW_FAI_087": {
+   "why": "unanchored"
+  },
+  "REW_FAI_089": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_FAI_091": {
+   "why": "unanchored"
+  },
+  "REW_FAI_092": {
+   "why": "unanchored"
+  },
+  "REW_PAY_001": {
+   "why": "unanchored"
+  },
+  "REW_PAY_002": {
+   "why": "unanchored"
+  },
+  "REW_PAY_003": {
+   "why": "unanchored"
+  },
+  "REW_PAY_006": {
+   "why": "unanchored"
+  },
+  "REW_PAY_019": {
+   "why": "unanchored"
+  },
+  "REW_PRO_030": {
+   "why": "unanchored"
+  },
+  "REW_PRO_034": {
+   "why": "unanchored"
+  },
+  "REW_PRO_035": {
+   "why": "unanchored"
+  },
+  "REW_PRO_098": {
+   "why": "unanchored"
+  }
+ },
+ "pending_ruling": {},
+ "ruled_orderings": {
+  "REW263_BEN_CICOVER": {
+   "option_order": [
+    "Not offered",
+    "Fixed lump sum",
+    "1x salary",
+    "2x+ salary"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_045": {
+   "option_order": [
+    "Not offered",
+    "1×",
+    "2×",
+    "3×",
+    "4× or more"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_046": {
+   "option_order": [
+    "No",
+    "Short-term only",
+    "Long-term only",
+    "Both"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_048": {
+   "option_order": [
+    "<50%",
+    "50–65%",
+    "66–75%",
+    "76%+"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW262_TIME_BEREAVEMENT": {
+   "option_order": [
+    "Statutory only",
+    "1-5 days enhanced",
+    "5 or more days enhanced"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_FERTLEAVE": {
+   "option_order": [
+    "No",
+    "Unpaid/flexible",
+    "Paid dedicated leave"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_IVF": {
+   "option_order": [
+    "None",
+    "1 cycle / capped",
+    "2-3 cycles",
+    "Unlimited/uncapped"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_PATPAY": {
+   "option_order": [
+    "Statutory only",
+    "1-2 weeks enhanced",
+    "3-6 weeks enhanced",
+    "6+ weeks enhanced"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_FAM_011": {
+   "option_order": [
+    "No specific provision",
+    "Yes - unpaid sabbaticals or career breaks only",
+    "Yes - paid sabbaticals are available"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_FAM_012": {
+   "option_order": [
+    "No specific provision",
+    "Support provided, but no specific paid leave",
+    "Yes - specific paid menopause leave"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_003": {
+   "option_order": [
+    "No",
+    "Yes - sell only",
+    "Yes - buy only",
+    "Yes - both buy and sell options are available"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_004": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_006": {
+   "option_order": [
+    "Up to 5 days",
+    "6-10 days",
+    "More than 10 days"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_REM_PAY_001": {
+   "option_order": [
+    "Treatment varies by role or case",
+    "Base pay is protected"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_FINWELL": {
+   "option_order": [
+    "No",
+    "Ad hoc provision",
+    "Documented strategy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_MGRTRAIN": {
+   "option_order": [
+    "None",
+    "Under 25%",
+    "25-75%",
+    "Over 75%"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_674db2fc": {
+   "option_order": [
+    "Not provided",
+    "Provided but access not tracked",
+    "Provided and <25% access",
+    "Provided and 25%–49% access",
+    "Provided and 50%–74% access",
+    "Provided and 75%+ access"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_930043cc": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_cdff5737": {
+   "option_order": [
+    "No",
+    "Planned / in development",
+    "Yes – ad hoc",
+    "Yes – every 2 years",
+    "Yes – at least annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW262_GOV_EQUALPAYAUDIT": {
+   "option_order": [
+    "No",
+    "Ad hoc",
+    "Annually",
+    "More than annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_BENOBJ": {
+   "option_order": [
+    "No objectives",
+    "Objectives not reviewed",
+    "Objectives reviewed annually",
+    "Objectives linked to productivity"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_MENOPLAN": {
+   "option_order": [
+    "No plans",
+    "Considering",
+    "Planned this year",
+    "Already published"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_UKPAYTRANS": {
+   "option_order": [
+    "No transparency",
+    "Internal ranges only",
+    "Ranges on adverts",
+    "Published transparency policy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_079": {
+   "option_order": [
+    "No",
+    "In development",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_081": {
+   "option_order": [
+    "No",
+    "Sometimes",
+    "Yes - always"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_088": {
+   "option_order": [
+    "No",
+    "Partial",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_089": {
+   "option_order": [
+    "No",
+    "Some roles",
+    "All roles"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_PRO_030": {
+   "option_order": [
+    "Never",
+    "Sometimes",
+    "Always"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_103": {
+   "option_order": [
+    "None",
+    "<10%",
+    "10–24%",
+    "25–49%",
+    "50–74%",
+    "75%+"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "EXT_REW_GAP_012": {
+   "option_order": [
+    "No",
+    "Yes – occasionally",
+    "Yes – at least annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_OH": {
+   "option_order": [
+    "No OH service",
+    "OH without SLA",
+    "OH SLA over 2 weeks",
+    "OH SLA within 2 weeks"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "EXT_REW_GAP_004": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_PAY_001": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_072": {
+   "option_order": [
+    "Not used",
+    "Used rarely in exceptional cases",
+    "Used for specific hard-to-fill roles",
+    "Used strategically as part of attraction strategy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_104": {
+   "option_order": [
+    "<50%",
+    "50–69%",
+    "70–79%",
+    "80–89%",
+    "90%–100%"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_065": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_070": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_071": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_BEN_DENTAL": {
+   "option_order": [
+    "Not offered",
+    "Voluntary (employee-funded)",
+    "Employer-paid"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_FAI_STUDY_TIME_93b6ef22": {
+   "option_order": [
+    "No – study undertaken in personal time",
+    "Yes – limited paid study time",
+    "Yes – paid study leave provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_001": {
+   "option_order": [
+    "Statutory pay only",
+    "Enhanced leave only (statutory pay)",
+    "Enhanced pay (above statutory)",
+    "Combination of enhanced leave and pay"
+   ],
+   "positive_from": "Enhanced pay (above statutory)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_002": {
+   "option_order": [
+    "None (statutory only)",
+    "1-12 weeks",
+    "13-26 weeks",
+    "27-39 weeks",
+    "40-52 weeks"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_007": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_009": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_010": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_HOL_001": {
+   "option_order": [
+    "Statutory minimum only (20 days)",
+    "21-24 days",
+    "25-27 days",
+    "28-30 days",
+    "More than 30 days"
+   ],
+   "positive_from": "25-27 days",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_SICK_001": {
+   "option_order": [
+    "No sick pay provided",
+    "Statutory sick pay only",
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
+   "positive_from": "Enhanced occupational sick pay (above SSP)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_SICK_004": {
+   "option_order": [
+    "Yes - more than 3 days",
+    "Yes - up to 3 days",
+    "No waiting period"
+   ],
+   "positive_from": "No waiting period",
+   "na_note": "'Not applicable (statutory only)' is an NA-skip via CONDITIONING (child of SICK_001: no OSP -> out of scope), not by label",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "PROP_fe1a29ec": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "PROP_10d1211d": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW263_GOV_FLEXALLOW": {
+   "option_order": [
+    "No",
+    "Limited choice",
+    "Personalised allowance"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_044": {
+   "worst_option": "Not offered",
+   "note": "multi-select: marginal reshapes offered-vs-not; per-option mix untouched (SIPELEM pattern)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  }
+ },
+ "settled_refreeze": {
+  "REW26_WEL_EAP": 0.7268,
+  "REW26_BEN_PENSION_MATCH": 0.5141,
+  "REW26_WEL_FINWELL": 0.64,
+  "REW26_WEL_STRATEGY": 0.57
+ }
+}

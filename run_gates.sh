@@ -69,7 +69,7 @@ teardown() {
 trap teardown EXIT
 
 say "throwaway copy (SQLite backup API)"
-python3 - "$ROOT/lumi.db" "$DB" <<'EOF'
+python3 - "${LUMI_GATES_SRC:-$ROOT/lumi.db}" "$DB" <<'EOF'
 import sqlite3, sys
 src = sqlite3.connect(sys.argv[1]); dst = sqlite3.connect(sys.argv[2])
 src.backup(dst); dst.close(); src.close()

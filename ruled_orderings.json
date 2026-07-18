@@ -1,0 +1,448 @@
+{
+ "_note": "THE standing orderings artifact. David-ruled only, never inferred. positive_from = lean-SIDE threshold (all rungs below it are lean); absent -> default second-rung = legacy lean-pole behaviour.",
+ "orderings": {
+  "REW263_BEN_CICOVER": {
+   "option_order": [
+    "Not offered",
+    "Fixed lump sum",
+    "1x salary",
+    "2x+ salary"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_045": {
+   "option_order": [
+    "Not offered",
+    "1×",
+    "2×",
+    "3×",
+    "4× or more"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_046": {
+   "option_order": [
+    "No",
+    "Short-term only",
+    "Long-term only",
+    "Both"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_048": {
+   "option_order": [
+    "<50%",
+    "50–65%",
+    "66–75%",
+    "76%+"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW262_TIME_BEREAVEMENT": {
+   "option_order": [
+    "Statutory only",
+    "1-5 days enhanced",
+    "5 or more days enhanced"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_FERTLEAVE": {
+   "option_order": [
+    "No",
+    "Unpaid/flexible",
+    "Paid dedicated leave"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_IVF": {
+   "option_order": [
+    "None",
+    "1 cycle / capped",
+    "2-3 cycles",
+    "Unlimited/uncapped"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_TIME_PATPAY": {
+   "option_order": [
+    "Statutory only",
+    "1-2 weeks enhanced",
+    "3-6 weeks enhanced",
+    "6+ weeks enhanced"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_FAM_011": {
+   "option_order": [
+    "No specific provision",
+    "Yes - unpaid sabbaticals or career breaks only",
+    "Yes - paid sabbaticals are available"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_FAM_012": {
+   "option_order": [
+    "No specific provision",
+    "Support provided, but no specific paid leave",
+    "Yes - specific paid menopause leave"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_003": {
+   "option_order": [
+    "No",
+    "Yes - sell only",
+    "Yes - buy only",
+    "Yes - both buy and sell options are available"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_004": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_HOL_006": {
+   "option_order": [
+    "Up to 5 days",
+    "6-10 days",
+    "More than 10 days"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_BEN_REM_PAY_001": {
+   "option_order": [
+    "Treatment varies by role or case",
+    "Base pay is protected"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_FINWELL": {
+   "option_order": [
+    "No",
+    "Ad hoc provision",
+    "Documented strategy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_MGRTRAIN": {
+   "option_order": [
+    "None",
+    "Under 25%",
+    "25-75%",
+    "Over 75%"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_674db2fc": {
+   "option_order": [
+    "Not provided",
+    "Provided but access not tracked",
+    "Provided and <25% access",
+    "Provided and 25%–49% access",
+    "Provided and 50%–74% access",
+    "Provided and 75%+ access"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_930043cc": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "PROP_cdff5737": {
+   "option_order": [
+    "No",
+    "Planned / in development",
+    "Yes – ad hoc",
+    "Yes – every 2 years",
+    "Yes – at least annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW262_GOV_EQUALPAYAUDIT": {
+   "option_order": [
+    "No",
+    "Ad hoc",
+    "Annually",
+    "More than annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_BENOBJ": {
+   "option_order": [
+    "No objectives",
+    "Objectives not reviewed",
+    "Objectives reviewed annually",
+    "Objectives linked to productivity"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_MENOPLAN": {
+   "option_order": [
+    "No plans",
+    "Considering",
+    "Planned this year",
+    "Already published"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_GOV_UKPAYTRANS": {
+   "option_order": [
+    "No transparency",
+    "Internal ranges only",
+    "Ranges on adverts",
+    "Published transparency policy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_079": {
+   "option_order": [
+    "No",
+    "In development",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_081": {
+   "option_order": [
+    "No",
+    "Sometimes",
+    "Yes - always"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_088": {
+   "option_order": [
+    "No",
+    "Partial",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_FAI_089": {
+   "option_order": [
+    "No",
+    "Some roles",
+    "All roles"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_PRO_030": {
+   "option_order": [
+    "Never",
+    "Sometimes",
+    "Always"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_103": {
+   "option_order": [
+    "None",
+    "<10%",
+    "10–24%",
+    "25–49%",
+    "50–74%",
+    "75%+"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "EXT_REW_GAP_012": {
+   "option_order": [
+    "No",
+    "Yes – occasionally",
+    "Yes – at least annually"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_WEL_OH": {
+   "option_order": [
+    "No OH service",
+    "OH without SLA",
+    "OH SLA over 2 weeks",
+    "OH SLA within 2 weeks"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "EXT_REW_GAP_004": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_PAY_001": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_072": {
+   "option_order": [
+    "Not used",
+    "Used rarely in exceptional cases",
+    "Used for specific hard-to-fill roles",
+    "Used strategically as part of attraction strategy"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_104": {
+   "option_order": [
+    "<50%",
+    "50–69%",
+    "70–79%",
+    "80–89%",
+    "90%–100%"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_065": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_070": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW_INC_071": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+  },
+  "REW263_BEN_DENTAL": {
+   "option_order": [
+    "Not offered",
+    "Voluntary (employee-funded)",
+    "Employer-paid"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_FAI_STUDY_TIME_93b6ef22": {
+   "option_order": [
+    "No – study undertaken in personal time",
+    "Yes – limited paid study time",
+    "Yes – paid study leave provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_001": {
+   "option_order": [
+    "Statutory pay only",
+    "Enhanced leave only (statutory pay)",
+    "Enhanced pay (above statutory)",
+    "Combination of enhanced leave and pay"
+   ],
+   "positive_from": "Enhanced pay (above statutory)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_002": {
+   "option_order": [
+    "None (statutory only)",
+    "1-12 weeks",
+    "13-26 weeks",
+    "27-39 weeks",
+    "40-52 weeks"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_007": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_009": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_FAM_010": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid leave only",
+    "Yes - paid leave is provided"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_HOL_001": {
+   "option_order": [
+    "Statutory minimum only (20 days)",
+    "21-24 days",
+    "25-27 days",
+    "28-30 days",
+    "More than 30 days"
+   ],
+   "positive_from": "25-27 days",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_SICK_001": {
+   "option_order": [
+    "No sick pay provided",
+    "Statutory sick pay only",
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
+   "positive_from": "Enhanced occupational sick pay (above SSP)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_SICK_004": {
+   "option_order": [
+    "Yes - more than 3 days",
+    "Yes - up to 3 days",
+    "No waiting period"
+   ],
+   "positive_from": "No waiting period",
+   "na_note": "'Not applicable (statutory only)' is an NA-skip via CONDITIONING (child of SICK_001: no OSP -> out of scope), not by label",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "PROP_fe1a29ec": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "PROP_10d1211d": {
+   "option_order": [
+    "No",
+    "Partially",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW263_GOV_FLEXALLOW": {
+   "option_order": [
+    "No",
+    "Limited choice",
+    "Personalised allowance"
+   ],
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW_BEN_044": {
+   "worst_option": "Not offered",
+   "note": "multi-select: marginal reshapes offered-vs-not; per-option mix untouched (SIPELEM pattern)",
+   "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  }
+ }
+}
