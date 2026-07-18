@@ -23,3 +23,7 @@ EXTINGUISHED (not parked): REW_BEN_100's '29% all?' fragment — mis-transcripti
 min-6%-employer-contribution figure (Fig13), self-flagged uncertain at source, contradicted by the
 home row's Grade-A anchor. Dies with the clear; the true 29% figure lives at REW26_BEN_PLSA_QM
 as the ruled upper-bound proxy.
+
+## OPEN RE-ANCHOR QUEUE (scheduled, not someday)
+
+1. REW_BEN_046 (ruled 2026-07-16): seeded on OFFERED-TO-ALL basis against an any-offer-by-kind question — conservative floor, same defect shape (milder) as the rebuild's killed class. Re-anchor to a clean ANY-OFFER source (GRiD candidate) at the next register pass. Not a re-seed now.
