@@ -339,5 +339,125 @@
   "target_semantics": "Share of UK employers that carry out gender pay gap analysis; positive pole = Yes (conducts the analysis).",
   "verbatim_evidence": "44% carry out (30% always+14% sometimes share); mandatory 250+; public sector 52%; 79% of <250 had NOT",
   "flags": "NOT sme_large despite size info: the large rate is given only as 'mandatory 250+' (de jure ~100%, no number in prose) and the sub-250 rate only negatively ('79% of <250 had NOT', implying ~21% positive — NOT stated verbatim, so cannot be output). Parenthetical 30+14 decomposes the 44 into always/sometimes SHARING of results, not separate carry-out rates. 'Public sector 52%' is a sector split, context only. Large-vs-SME behaviour differs hugely here — flag for blend logic since mandatory 250+ means the 44 all-UK rate masks a near-ceiling large rate."
- }
+ },
+ "REW_FAI_089": {
+  "metric_id": "REW_FAI_089",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 53,
+  "single_pct": null,
+  "target_semantics": "Recommended target: share of ALL UK employers publishing salary ranges on external job adverts always-or-sometimes = 53% — POSITIVE-pole figure mapping to the 'Some roles'+'All roles' side of the ruled ordering. The coexisting 47% ('never/plans') is the NEGATIVE POLE complement (maps to 'No'; 53+47=100, internally consistent). The ~40% 'always' figure is the 'All roles'-only share and is approximate as written.",
+  "verbatim_evidence": "\"Publish salary ranges in external job adverts: ~40% always; 53% always-or-sometimes; 47% never/plans\". Note '~40%' carries a tilde (approximate); 53 and 47 are exact as written.",
+  "ordering_needed": "Ruled ordering EXISTS in ruled_orderings.json: ['No','Some roles','All roles'], no positive_from → default lean = {'No'}, positive = Some roles + All roles. The 53% target matches this default split exactly, so NO new key is needed if 53 is ruled in. Using ~40% 'always' instead would require positive_from='All roles'.",
+  "flags": "MARGINAL CANDIDATE with a deliberate-pick requirement: three coexisting figures for one axis — 53 (recommended, matches default ruled split), 47 (NEGATIVE POLE — never report as positive; also bundles 'plans to' intenders into the No side), ~40 (approximate, All-roles-only, needs positive_from change). Same CIPD PPT 2024 base as EQUALPAYAUDIT: all-UK label but large-skewed composition (57% large 250+). No SME/large split figures → all_only, no pairing-trap exposure.",
+  "polarity": "positive"
+ },
+ "REW_BEN_HOL_003": {
+  "metric_id": "REW_BEN_HOL_003",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 44.1,
+  "single_pct": null,
+  "target_semantics": "NEGATIVE POLE — the 44.1% is the share of UK employers that do NOT offer holiday trading at all, i.e. the lean/'No' rung share, NOT the positive target. The polarity guard must invert: positive pole (any of 'Yes - sell only' / 'Yes - buy only' / 'Yes - both buy and sell options are available') = 100 - 44.1 = 55.9% (derived, not verbatim). Do not report 44.1 as the offer share.",
+  "verbatim_evidence": "\"44.1% of UK employers do NOT offer holiday trading at all\"; secondary: \"18.8% allow buy/sell of up to 5 days\". Distractor: \"up from 35.8% prior year\" (historical trend, do not use).",
+  "ordering_needed": "Ruled ordering EXISTS: No < Yes - sell only < Yes - buy only < Yes - both buy and sell options are available (ruled 2026-07-15/16). No positive_from → default second rung: lean = {No}, which matches the 44.1% figure exactly. No new ordering needed. Distribution across the three Yes rungs is not given by the source (the marginal can only pin the No-vs-any-Yes split).",
+  "flags": "POLARITY TRAP instance (the FAM_001-style case the prompt warns about): source figure counts the none share — flag NEGATIVE POLE. Grade B convenience sample: n=626 incl. broker's own clients, skews larger/benefits-engaged, explicitly 'Not UK-representative' — large-skew flag despite nominal all-sizes base. 18.8% is a days-cap detail (up-to-5-days) belonging to HOL_006-type semantics, not this metric's pole. 'Don't know' is is_na.",
+  "polarity": "negative"
+ },
+ "REW263_REC_IMPACT": {
+  "metric_id": "REW263_REC_IMPACT",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 56.4,
+  "single_pct": null,
+  "target_semantics": "Marginal would assert the share of UK orgs answering YES to 'Do you measure the impact of recognition on engagement or retention?' (yes_no question; positive side = Yes/measures impact). The recorded 56.4% is the 'do NOT track' share — NEGATIVE POLE, explicitly. CRITICAL: simple inversion (100−56.4=43.6) is NOT the Yes share, because the 17.7% 'want to but do not know how' group is also No-side; the true Yes share is ~2% formal + 16.2% informal = 18.2% — DERIVED, not verbatim.",
+  "verbatim_evidence": "\"only ~2% formally track ROI on gifting/recognition (clear metrics); 16.2% informal indicators; 56.4% do NOT track; 17.7% want to but do not know how\". Note ~2% is written with a tilde (approximate). Categories sum to 92.3%, leaving ~7.7% unaccounted.",
+  "ordering_needed": "Not in ruled_orderings.json but the DB question is yes_no (Yes/No) — obvious axis, lean side = 'No'. No new ordering key needed; what IS needed is a polarity/derivation ruling on the target figure.",
+  "flags": "POLARITY TRAP LIVE (FAM_001 pattern): 56.4% is the negative-pole figure — never report as the positive target. Standard polarity-guard inversion is UNSAFE here (43.6 wrongly counts the 17.7% intenders as Yes); David must rule between authorising the derived 18.2 (2+16.2, not verbatim in register) or rejecting for context. Sample quality: n=85 self-selected vendor audience, grade C, directional only. Secondary CIPD 2023 figures (89% offer some recognition; 34% evaluate reward-strategy effectiveness) are DIFFERENT constructs — do not substitute as this metric's figure.",
+  "polarity": "negative"
+ },
+ "REW263_TIME_FERTLEAVE": {
+  "metric_id": "REW263_TIME_FERTLEAVE",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 22,
+  "single_pct": null,
+  "target_semantics": "Share of ALL UK employers (n=2,023, nationally representative) providing PAID time off for fertility appointments/treatment. POSITIVE-pole figure (22% is the provide-paid side, not a negative/none share). Maps to the TOP rung 'Paid dedicated leave' only — NOT to the default positive side of the existing ordering. The middle rung 'Unpaid/flexible' has its own candidate figure (27% flexibility of working hours) and the no-support share is 28%.",
+  "verbatim_evidence": "\"22% of UK employers provide PAID time off to attend fertility appointments/manage treatment\"; supporting distribution: \"27% provide flexibility of working hours\", \"49% provide some kind of fertility support overall; 28% provide none\".",
+  "ordering_needed": "Ruled ordering EXISTS: No < Unpaid/flexible < Paid dedicated leave (ruled 2026-07-15/16). No positive_from key, so default second-rung applies: lean = {No}, positive = {Unpaid/flexible, Paid dedicated leave} (~49%-any-support semantics). Emitting a marginal at 22% ALSO needs a positive_from ruling = 'Paid dedicated leave' (top rung), otherwise the guard will read 22% against the wrong (any-support) pole. Alternatively rule the marginal at the 49% any-support level — David's call.",
+  "flags": "Grade A nationally representative — strong candidate. Basis nuance: source counts 'paid time off to attend appointments/manage treatment', question asks 'dedicated paid fertility-treatment leave (separate from sick/annual)' — the 22% may include non-dedicated paid time off, mild offered-basis mismatch. Multiple coexisting figures (22/27/27/49/28) — only 22% matches the question's top rung; 27% policy-prevalence and 34%/19% public/private splits are distractors. DB has an is_na 'Not applicable' option. Sector splits available, no size splits quoted."
+ },
+ "REW_BEN_FAM_008": {
+  "metric_id": "REW_BEN_FAM_008",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 86,
+  "single_pct": null,
+  "target_semantics": "Share of all-UK employers offering paid bereavement/compassionate leave. POSITIVE-pole figure (86% = offer it). Positive side of the option set is 'Yes - paid leave is provided' and plausibly 'Partially paid (case-by-case)'; negative side is 'Unpaid only' + 'No specific provision'. The source's 'offer it' basis likely counts ANY paid provision, so 86% may straddle the Yes-paid and Partially-paid rungs rather than being the Yes-paid rung alone.",
+  "verbatim_evidence": "\"86% of UK employers offer it\" (referent: \"Paid bereavement/compassionate leave is near-universal\"). Distractors NOT to use: \"up from 71% in 2018\" (historical), \"25+ days holiday (82%)\" (different benefit).",
+  "ordering_needed": "NO entry in ruled_orderings.json — a marginal needs a NEW ruled ordering. Obvious axis: No specific provision < Unpaid only < Partially paid (case-by-case) < Yes - paid leave is provided, but the 4-rung set differs from ruled siblings FAM_007/009/010 (3 rungs), so it cannot inherit. Also needs a positive_from ruling on whether 'Partially paid (case-by-case)' sits on the positive side (recommended, to match the source's any-paid-offer basis). Lean side = {No specific provision, Unpaid only}. 'Don't know' is is_na.",
+  "flags": "Grade A but modest base: ~280 reward professionals (item bases ~212-253), CIPD Oct 2021, private-skewed 70% — older and smaller than the n=1,059 benefits-focus survey. Rung-straddle risk: 86% is an any-paid-offer figure against a question that splits fully-paid vs case-by-case. Two distractor numbers in anchor (71% historical, 82% different benefit)."
+ },
+ "REW262_GOV_EQUALPAYAUDIT": {
+  "metric_id": "REW262_GOV_EQUALPAYAUDIT",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 35,
+  "single_pct": null,
+  "target_semantics": "Share of ALL UK employers (CIPD Pay, Performance and Transparency 2024, n=832) that ran an equal-pay audit in the last 12 months = 35%. POSITIVE-pole figure (audit-side) — no inversion needed; lean side = 'No'. Basis caution: 'in last 12m' maps to the 'Annually'+'More than annually' side of the ruled ordering, NOT to any-audit-including-'Ad hoc'.",
+  "verbatim_evidence": "\"Equal-pay audit in last 12m: 35% of employers\" — the entire anchor; single clean figure, no range.",
+  "ordering_needed": "Ruled ordering EXISTS in ruled_orderings.json: ['No','Ad hoc','Annually','More than annually'], no positive_from → default second-rung behaviour puts lean = {'No'} and positive = Ad hoc + Annually + More than annually. Emitting 35% at that default treats it as an any-audit rate, but the figure's last-12m basis matches positive_from='Annually' semantics — David should either add positive_from='Annually' or explicitly accept the mismatch.",
+  "flags": "MARGINAL CANDIDATE. Single all-base figure, no SME/large split given → all_only, no pairing-trap exposure. Sample composition large-skewed within an all-UK label (large 250+ = 57%, SME = 43% of n=832) — note for weighting. The question also asks 'how often' but the anchor supports only the ran-in-last-12m split, not the Ad hoc/Annually/More-than-annually mix."
+ },
+ "CAR_STATUS_01": {
+  "metric_id": "CAR_STATUS_01",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 35,
+  "single_pct": 35,
+  "target_semantics": "RULED 0.35 (grade-based figure, matches question wording 'status or grade-based'); 37 any-offer REJECTED. POSITIVE share.",
+  "verbatim_evidence": "\"~37% of UK employers offer it (2% to all staff, 35% dependent on grade/seniority/role)\" — 37 = any-offer headline; 35 = grade-dependent-only alternative; both verbatim in register.",
+  "ordering_needed": "Not in ruled_orderings.json. Obvious binary yes/no axis: lean side = 'No', positive = 'Yes'. No multi-rung ordering to rule, but a trivial No<Yes entry (or yes/no default) must exist for the generator if emitted.",
+  "flags": "RULING NEEDED 37-vs-35: question wording ('status or grade-based') vs anchor headline (any-offer). Base modest and dated: CIPD Oct 2021, ~280 reward professionals, transport-benefit item base n=217, private-skewed. Do NOT use the car-allowance (~47%) or car-ownership-scheme (~8%) figures — different constructs in the same anchor sentence."
+ },
+ "PAYTR_02_131bd412": {
+  "metric_id": "PAYTR_02_131bd412",
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 40,
+  "single_pct": 40,
+  "target_semantics": "RULED 0.40 = 'always' only (unconditional-rung principle); 'sometimes' 28% is lean-side. POSITIVE share.",
+  "verbatim_evidence": "\"internal ~40% always publish; 32% never\" (full anchor: \"Pay bands/ranges visible to employees: internal ~40% always publish; 32% never\"). ~40 recorded as 40 — tilde-approximate as written, not a range midpoint.",
+  "ordering_needed": "NO entry in ruled_orderings.json. Obvious yes/no axis: lean = {No}, positive = {Yes} — but generator convention gives even binaries a ruled entry (cf. REW_BEN_HOL_004, EXT_REW_GAP_004), so promoting this likely needs a new two-rung entry No < Yes, plus the Yes-mapping ruling above (always vs always-or-sometimes).",
+  "flags": "Binary-vs-trichotomy mismatch: source has always/sometimes/never structure, DB question is plain Yes/No — the ~28% residual is the ruling's main decision. Large-skew composition: sample is 57% large (250+) vs 43% SME (n=832), far above UK population share, though quoted rates are all-UK blended with no separate SME/large rates (so NOT sme_large — nothing to blend). Approximate figure (~40%). Related-but-distinct metric REW_FAI_089 (external adverts, same source) has its own figures — do not cross-wire internal vs external transparency."
+ },
+ "_holds_ruled_2026_07_16": {
+  "REW_BEN_REM_PAY_001": "PROMOTED 2026-07-18 — complete 6-rung ordering ruled (4 ordinal + NA/DK structural skips); emits at 0.64. Hold released.",
+  "REW_BEN_FAM_011": "HOLD — 26% is a middle rung, not a pole; paid rung unquantified; understates by unknown",
+  "REW263_BEN_NEURO": "HOLD — source self-disclaims UK-representativeness; disqualifying, no emit-with-caveat"
+ },
+ "_principle_unconditional_rung": "RULED 2026-07-16: for binary 'do you do X' questions sourced from always/sometimes/never or regular/ad-hoc data, positive = the UNCONDITIONAL rung only; the intermittent rung is lean-side. Seeding 'sometimes' as positive would mark orgs as doing something they do inconsistently.",
+ "REW_BEN_REM_PAY_001": {
+  "base_type": "all_only",
+  "sme_pct": null,
+  "large_pct": null,
+  "all_pct": 64,
+  "single_pct": null,
+  "polarity": "positive",
+  "grade": "A",
+  "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouGov, n=2,050 UK HR professionals, weighted/representative.",
+  "target_semantics": "Share of all-UK employers who keep base pay protected when an employee moves office->remote. Positive side = 'Base pay is protected'; lean side = the adjusted options ('Base pay may be adjusted over time', 'Base pay is adjusted immediately'). all_pct=64 is the POSITIVE share (employers who 'have not and do not intend to' reduce). The companion 4% figure is NEGATIVE POLE - it counts employers who HAVE reduced pay and/or benefits - and must never be reported as the positive target. Note the survey basis is reduction of 'pay and/or benefits' for predominantly-home-working staff (behavioural, wider than base pay), while the question asks how BASE PAY is treated as policy.",
+  "verbatim_evidence": "64 from \"64% have not and do not intend to\". Companion figures: \"only 4% of UK employers have reduced pay and/or benefits for predominantly-home-working staff\" (NEGATIVE POLE); \"11% plan to in future\"; \"13% have instead provided a contribution toward home-working costs\".",
+  "ruled": "2026-07-18: promoted off hold at 0.64; full 4-rung ordering ruled (varies=ordinal second-leanest); positive_from='Base pay is protected'."
+ },
+ "_polarity_guard_completion": "RULED 2026-07-18: explicit structured 'polarity' field takes precedence over the target_semantics substring heuristic. The substring read of adjacent prose was a soft form of the banned prose-inference (FAI_089 near-miss: companion-pole mention almost inverted a positive figure). Heuristic retained as legacy fallback only.",
+ "_principle_scope_2026_07_18": "Unconditional-rung principle SCOPE: frequency-sourced binaries (always/sometimes/never, regular/ad-hoc) take the unconditional rung only — stops 'sometimes X' counting as 'does X'. It does NOT reach any-offer-sourced ordinals (e.g. FAM_008): case-by-case paid provision IS paid provision; such bases distribute across all offering rungs via positive_from."
 }

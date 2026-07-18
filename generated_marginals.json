@@ -3,6 +3,14 @@
  "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
  "marginals": {
+  "CAR_STATUS_01": {
+   "target_share": 0.35,
+   "base_type": "all_only",
+   "all": 35,
+   "grade": "C",
+   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
+   "evidence": "\"~37% of UK employers offer it (2% to all staff, 35% dependent on grade/seniority/role)\" — 37 = any-offer headline; 35 = grade-dependent-only alternative; both verbatim in register."
+  },
   "EXT_REW_GAP_012": {
    "target_share": 0.26,
    "base_type": "single(ruled)",
@@ -81,6 +89,15 @@
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
    "evidence": "\"Paid bereavement leave (excl parental): 27% all; 26% SME\""
   },
+  "REW263_TIME_FERTLEAVE": {
+   "target_share": 0.22,
+   "base_type": "all_only",
+   "all": 22,
+   "grade": "A",
+   "source": "CIPD \"Workplace support for employees experiencing fertility challenges, investi",
+   "evidence": "\"22% of UK employers provide PAID time off to attend fertility appointments/manage treatment\"; supporting distribution: \"27% provide flexibility of working hours\", \"49% provide some kind of fertility ",
+   "positive_from": "Paid dedicated leave"
+  },
   "REW_BEN_FAM_001": {
    "target_share": 0.67,
    "base_type": "all_only",
@@ -106,6 +123,15 @@
    "grade": "A",
    "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouG",
    "evidence": "\"PAID carer's leave specifically offered by ~36% (RMS 2022) / 31-45% (flex 2025 support data)\" | \"52% of UK employers have a policy/procedure for employees to request carer's leave (75% public, 46% pr"
+  },
+  "REW_BEN_FAM_008": {
+   "target_share": 0.86,
+   "base_type": "all_only",
+   "all": 86,
+   "grade": "B",
+   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
+   "evidence": "\"86% of UK employers offer it\" (referent: \"Paid bereavement/compassionate leave is near-universal\"). Distractors NOT to use: \"up from 71% in 2018\" (historical), \"25+ days holiday (82%)\" (different ben",
+   "positive_from": "Partially paid (case-by-case)"
   },
   "REW_BEN_FAM_009": {
    "target_share": 0.7,
@@ -133,6 +159,14 @@
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
    "evidence": "25+ days annual leave (excl bank hols), FT: 36% all; 58-59% large; 35% SME",
    "positive_from": "25-27 days"
+  },
+  "REW_BEN_HOL_003": {
+   "target_share": 0.559,
+   "base_type": "all_only",
+   "all": 44.1,
+   "grade": "B",
+   "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown). Online ",
+   "evidence": "\"44.1% of UK employers do NOT offer holiday trading at all\"; secondary: \"18.8% allow buy/sell of up to 5 days\". Distractor: \"up from 35.8% prior year\" (historical trend, do not use)."
   },
   "REW_BEN_SICK_001": {
    "target_share": 0.568,
@@ -162,12 +196,29 @@
    "source": "lumi legacy platform (HR Data Hub intake), 2019-20",
    "evidence": "63% of employers pay a shift premium"
   },
+  "PAYTR_02_131bd412": {
+   "target_share": 0.4,
+   "base_type": "all_only",
+   "all": 40,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "\"internal ~40% always publish; 32% never\" (full anchor: \"Pay bands/ranges visible to employees: internal ~40% always publish; 32% never\"). ~40 recorded as 40 — tilde-approximate as written, not a rang"
+  },
   "PROP_fe1a29ec": {
    "target_share": 0.495,
    "base_type": "single(ruled)",
    "grade": "B",
    "source": "Drewberry UK Employee Benefits Benchmarking Report 2026 (Brown & Brown broker)",
    "rule": "no-blend all-UK 0.495; caveats carried: BENEFITS-side benchmarking only (anchor self-disclaims pay-survey usage), no 'at"
+  },
+  "REW_BEN_REM_PAY_001": {
+   "target_share": 0.64,
+   "base_type": "all_only",
+   "all": 64,
+   "grade": "A",
+   "source": "CIPD \"Flexible and hybrid working practices in 2025\" (July 2025, ref 8909). YouG",
+   "evidence": "64 from \"64% have not and do not intend to\". Companion figures: \"only 4% of UK employers have reduced pay and/or benefits for predominantly-home-working staff\" (NEGATIVE POLE); \"11% plan to in future\"",
+   "positive_from": "Base pay is protected"
   },
   "REW_INC_072": {
    "target_share": 0.15,
@@ -237,6 +288,14 @@
    "source": "lumi legacy platform (HR Data Hub intake), 2019-20",
    "evidence": "76% operate a long-service award scheme"
   },
+  "REW263_REC_IMPACT": {
+   "target_share": 0.436,
+   "base_type": "all_only",
+   "all": 56.4,
+   "grade": "C",
+   "source": "Huggg \"2026 UK Gifting & Recognition Benchmarks Report\" (vendor survey via Typef",
+   "evidence": "\"only ~2% formally track ROI on gifting/recognition (clear metrics); 16.2% informal indicators; 56.4% do NOT track; 17.7% want to but do not know how\". Note ~2% is written with a tilde (approximate). "
+  },
   "PAYTR_01_42eae7ec": {
    "target_share": 0.4,
    "base_type": "all_only",
@@ -269,6 +328,15 @@
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
    "evidence": "18% carry out (10% share); 56% have not"
+  },
+  "REW262_GOV_EQUALPAYAUDIT": {
+   "target_share": 0.35,
+   "base_type": "all_only",
+   "all": 35,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "\"Equal-pay audit in last 12m: 35% of employers\" — the entire anchor; single clean figure, no range.",
+   "positive_from": "Annually"
   },
   "REW262_GOV_PAYINADVERTS": {
    "target_share": 0.53,
@@ -314,6 +382,14 @@
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
    "rule": "no-blend all-UK 0.40 always / 0.32 never (internal pay-range access; remainder ~0.28 partial), conditional on source re-"
+  },
+  "REW_FAI_089": {
+   "target_share": 0.53,
+   "base_type": "all_only",
+   "all": 53,
+   "grade": "A",
+   "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
+   "evidence": "\"Publish salary ranges in external job adverts: ~40% always; 53% always-or-sometimes; 47% never/plans\". Note '~40%' carries a tilde (approximate); 53 and 47 are exact as written."
   }
  },
  "floors": {
@@ -336,9 +412,6 @@
   },
   "CAR_COST_02": {
    "why": "unanchored"
-  },
-  "CAR_STATUS_01": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "CAR_STATUS_03": {
    "why": "unanchored"
@@ -475,9 +548,6 @@
   "REW263_TIME_CARERPAID": {
    "why": "anchored-unstructured (25-row follow-on table)"
   },
-  "REW263_TIME_FERTLEAVE": {
-   "why": "anchored-unstructured (25-row follow-on table)"
-  },
   "REW263_TIME_HOLRECORDS": {
    "why": "unanchored"
   },
@@ -502,9 +572,6 @@
   "REW_BEN_FAM_006": {
    "why": "context: statutory-floor values (SMP/SPP/ShPP GBP194.32/wk, SMP 6wks at 90% AWE, paternity 2wks, SPL 50wks, day-one rights) - legal baseline, no enhancement pre"
   },
-  "REW_BEN_FAM_008": {
-   "why": "anchored-unstructured (25-row follow-on table)"
-  },
   "REW_BEN_FAM_011": {
    "why": "anchored-unstructured (25-row follow-on table)"
   },
@@ -513,9 +580,6 @@
   },
   "REW_BEN_HOL_002": {
    "why": "context: statutory-floor value (5.6 weeks / 28 days; employers MAY count the 8 bank holidays within it) - legal baseline, no prevalence measured; no marginal"
-  },
-  "REW_BEN_HOL_003": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_BEN_HOL_004": {
    "why": "context: collective-agreement base (IDR Payline, 56/98 = 0.57; unionised, 84% 250+ FTE, ~51% public/voluntary) - unblendable subgroup on an all-cohort question;"
@@ -567,9 +631,6 @@
   },
   "EXT_REW_GAP_013": {
    "why": "unanchored"
-  },
-  "PAYTR_02_131bd412": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "PROP_168a6213": {
    "why": "unanchored"
@@ -627,9 +688,6 @@
   },
   "REW_BEN_058": {
    "why": "context: forward-looking benefits-SPEND direction split (plan increase 8% / same 73% / decrease 6%), not a retrospective enhanced-in-last-12m prevalence — no ma"
-  },
-  "REW_BEN_REM_PAY_001": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_BEN_REM_PAY_002": {
    "why": "unanchored"
@@ -808,9 +866,6 @@
   "REW263_REC_CURRENCY": {
    "why": "anchored-unstructured (25-row follow-on table)"
   },
-  "REW263_REC_IMPACT": {
-   "why": "anchored-unstructured (25-row follow-on table)"
-  },
   "REW263_REC_MGRBUDGET": {
    "why": "unanchored"
   },
@@ -856,9 +911,6 @@
   "REW262_GOV_AIINPAY": {
    "why": "unanchored"
   },
-  "REW262_GOV_EQUALPAYAUDIT": {
-   "why": "anchored-unstructured (25-row follow-on table)"
-  },
   "REW262_GOV_EQUALVALUE": {
    "why": "unanchored"
   },
@@ -900,9 +952,6 @@
   },
   "REW_FAI_087": {
    "why": "unanchored"
-  },
-  "REW_FAI_089": {
-   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_FAI_091": {
    "why": "unanchored"
@@ -991,7 +1040,9 @@
     "Unpaid/flexible",
     "Paid dedicated leave"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Paid dedicated leave",
+   "note": " | positive_from ruled 2026-07-16: 22% counts PAID only; Unpaid/flexible sits lean-side"
   },
   "REW263_TIME_IVF": {
    "option_order": [
@@ -1053,10 +1104,14 @@
   },
   "REW_BEN_REM_PAY_001": {
    "option_order": [
+    "Base pay is adjusted immediately",
     "Treatment varies by role or case",
+    "Base pay may be adjusted over time",
     "Base pay is protected"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "positive_from": "Base pay is protected",
+   "ruled": "2026-07-18 (25-row base-extraction round, off-hold)",
+   "note": "RULED: 'Treatment varies by role or case' is ordinal second-leanest (guarantees nothing -> less protective than a universal glide path; conservative/under-claims), ruled over the non-ordinal-permanent-context alternative. Supersedes the partial 2/6 ordering migrated from anchored_spikes.json. 'Not applicable'/'Don't know' are structural skips (CICOVER rule). Live DB flags 'varies' is_na=true (scoring exclusion) — engine reshapes by ordering membership only, so coexists; positive_from='Base pay is protected' per the ruled extraction semantics: 64% IS the protected share ('have not and do not intend to')."
   },
   "REW263_WEL_FINWELL": {
    "option_order": [
@@ -1111,7 +1166,9 @@
     "Annually",
     "More than annually"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Annually",
+   "note": " | positive_from ruled 2026-07-16: Annually only — 'Ad hoc' excluded (ad hoc != a 12-month cycle; the 35% measures last-12-months)"
   },
   "REW263_GOV_BENOBJ": {
    "option_order": [
@@ -1382,6 +1439,39 @@
    "worst_option": "Not offered",
    "note": "multi-select: marginal reshapes offered-vs-not; per-option mix untouched (SIPELEM pattern)",
    "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW263_REC_IMPACT": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)"
+  },
+  "CAR_STATUS_01": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)"
+  },
+  "PAYTR_02_131bd412": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)",
+   "note": "RULED PRINCIPLE: binary 'do you' from always/sometimes/never data -> positive = the unconditional rung only (0.40 always); 'sometimes' (28%) is lean-side"
+  },
+  "REW_BEN_FAM_008": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid only",
+    "Partially paid (case-by-case)",
+    "Yes - paid leave is provided"
+   ],
+   "positive_from": "Partially paid (case-by-case)",
+   "ruled": "2026-07-16 (25-row base-extraction round)",
+   "note": "LIVE options are a 4-rung set (discovered at promotion; source implied a triple). positive_from at Partially-paid = ANY-PAID read matching the 86% source construct ('offer paid bereavement leave'); FLAG-FOR-CONFIRM in the delta review — strict alternative is positive_from at the top rung"
   }
  },
  "settled_refreeze": {

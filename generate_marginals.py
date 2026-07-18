@@ -142,8 +142,13 @@ for r in reg:
             t = round(v / 100.0, 4)
             # POLARITY GUARD (FAM_001 class): if the extraction's own semantics say the figure
             # is the NEGATIVE/lean-pole share, the target is 1 - figure — or hard-fail if unclear.
-            sem = (b.get("target_semantics") or "").lower()
-            if "negative pole" in sem:
+            # polarity: explicit structured field wins; substring heuristic is the
+            # fallback for legacy rows (FAI_089 proved prose mentions of the
+            # complement pole make the substring check unsafe on its own).
+            sem = (b.get("target_semantics") or "").lower().replace("-", " ")
+            pol = b.get("polarity")
+            assert pol in (None, "positive", "negative"), (q, pol)
+            if pol == "negative" or (pol is None and "negative pole" in sem):
                 t = round(1.0 - t, 4)
                 row["flags"] = ("POLARITY-INVERTED (source figure is the lean-pole share; ruled via source check); " + (row.get("flags") or "")).strip("; ")
             marginals[q] = {"target_share": t, "base_type": "all_only", "all": v,
@@ -181,9 +186,9 @@ for q in marginals:
     if not has:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
-assert pf_count == 4, "positive_from must be exactly the 4 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001), got %d" % pf_count
+assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
 # default-holds assert: every other marginal has NO positive_from -> legacy second-rung semantics
-assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 4
+assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 8
 for q in SETTLED_REFREEZE:
     if q in marginals:
         SETTLED_REFREEZE[q] = marginals[q]["target_share"]

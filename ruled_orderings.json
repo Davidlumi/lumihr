@@ -52,7 +52,9 @@
     "Unpaid/flexible",
     "Paid dedicated leave"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Paid dedicated leave",
+   "note": " | positive_from ruled 2026-07-16: 22% counts PAID only; Unpaid/flexible sits lean-side"
   },
   "REW263_TIME_IVF": {
    "option_order": [
@@ -114,10 +116,14 @@
   },
   "REW_BEN_REM_PAY_001": {
    "option_order": [
+    "Base pay is adjusted immediately",
     "Treatment varies by role or case",
+    "Base pay may be adjusted over time",
     "Base pay is protected"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "positive_from": "Base pay is protected",
+   "ruled": "2026-07-18 (25-row base-extraction round, off-hold)",
+   "note": "RULED: 'Treatment varies by role or case' is ordinal second-leanest (guarantees nothing -> less protective than a universal glide path; conservative/under-claims), ruled over the non-ordinal-permanent-context alternative. Supersedes the partial 2/6 ordering migrated from anchored_spikes.json. 'Not applicable'/'Don't know' are structural skips (CICOVER rule). Live DB flags 'varies' is_na=true (scoring exclusion) — engine reshapes by ordering membership only, so coexists; positive_from='Base pay is protected' per the ruled extraction semantics: 64% IS the protected share ('have not and do not intend to')."
   },
   "REW263_WEL_FINWELL": {
    "option_order": [
@@ -172,7 +178,9 @@
     "Annually",
     "More than annually"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Annually",
+   "note": " | positive_from ruled 2026-07-16: Annually only — 'Ad hoc' excluded (ad hoc != a 12-month cycle; the 35% measures last-12-months)"
   },
   "REW263_GOV_BENOBJ": {
    "option_order": [
@@ -443,6 +451,39 @@
    "worst_option": "Not offered",
    "note": "multi-select: marginal reshapes offered-vs-not; per-option mix untouched (SIPELEM pattern)",
    "ruled": "2026-07-16 (15-ordering round; verbatim strings; two-pile discipline)"
+  },
+  "REW263_REC_IMPACT": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)"
+  },
+  "CAR_STATUS_01": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)"
+  },
+  "PAYTR_02_131bd412": {
+   "option_order": [
+    "No",
+    "Yes"
+   ],
+   "ruled": "2026-07-16 (25-row base-extraction round)",
+   "note": "RULED PRINCIPLE: binary 'do you' from always/sometimes/never data -> positive = the unconditional rung only (0.40 always); 'sometimes' (28%) is lean-side"
+  },
+  "REW_BEN_FAM_008": {
+   "option_order": [
+    "No specific provision",
+    "Unpaid only",
+    "Partially paid (case-by-case)",
+    "Yes - paid leave is provided"
+   ],
+   "positive_from": "Partially paid (case-by-case)",
+   "ruled": "2026-07-16 (25-row base-extraction round)",
+   "note": "LIVE options are a 4-rung set (discovered at promotion; source implied a triple). positive_from at Partially-paid = ANY-PAID read matching the 86% source construct ('offer paid bereavement leave'); FLAG-FOR-CONFIRM in the delta review — strict alternative is positive_from at the top rung"
   }
  }
 }
