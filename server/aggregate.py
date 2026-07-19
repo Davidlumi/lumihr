@@ -237,8 +237,9 @@ def _mp_direction(qid):
     hot-reloaded). Used ONLY by the route-(b) score-direction fallback below. A
     standalone reader (not positions.market_position_config) to avoid the
     aggregate<->positions import cycle."""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
-                        "market_position_config.json")
+    path = os.environ.get("LUMI_MP_CONFIG") \
+        or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+                        "market_position_config.json")   # r3sw8: staged-copy override (r3sw7 doctrine)
     try:
         mt = os.path.getmtime(path)
     except OSError:

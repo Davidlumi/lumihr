@@ -48,6 +48,7 @@ _GEN = json.load(open(os.path.join(_ROOT, "generated_marginals.json")))
 MARG = _GEN["marginals"]
 RDIST = _GEN.get("ruled_distributions") or {}   # Diff 15: full-dist reshapes, tier-2b at the same 5pp line
 MGRAD = _GEN.get("maturity_gradients") or {}    # r3s2: per-band anchors, tier-2c — checked PER MATURITY BAND
+MS_INC = _GEN.get("multiselect_incidence") or {}  # r3sw8: per-option incidence over an applicable base, tier-2d
 ORDS = json.load(open(os.path.join(_ROOT, "ruled_orderings.json")))["orderings"]
 # register-anchored = the 14 REW26_* firewall family (id starts 'REW26_', NOT REW262_/REW263_)
 
@@ -283,6 +284,27 @@ def check_c():
                 hard.append((drift, "RULED-DIST-DRIFT", qid,
                              "%.1fpp worst option vs ruled distribution (fail >%.0fpp)"
                              % (drift * 100, MARGINAL_FAIL * 100)))
+        elif qid in MS_INC:
+            # tier 2d (r3sw8): INDEPENDENT per-option incidence over the applicable base.
+            # `dist` is already per-option share of answering orgs (multi_select branch above);
+            # options deliberately don't sum to 100. Per-option line = max(5pp, 1/n) — the same
+            # quantum-aware achievability bound as tier-2c (r3sw2 ruled).
+            e = MS_INC[qid]
+            tol = max(MARGINAL_FAIL, 1.0 / n)
+            worst = max((abs(dist.get(l, 0) - p / 100.0) for l, p in e["prevalences"].items()), default=0)
+            t2_max = max(t2_max, worst - (tol - MARGINAL_FAIL)); t2_n += 1
+            if worst > tol:
+                hard.append((worst, "MS-INCIDENCE-DRIFT", qid,
+                             "%.1fpp worst option vs declared incidence (fail >%.1fpp, n=%d)"
+                             % (worst * 100, tol * 100, n)))
+            term = e.get("terminal")
+            if term:
+                cooccur = sum(1 for v in vals
+                              if term in (t.strip() for t in v.split(";"))
+                              and any(t.strip() and t.strip() != term for t in v.split(";")))
+                if cooccur:
+                    hard.append((1.0, "MS-TERMINAL-COOCCUR", qid,
+                                 "%d org(s) hold '%s' alongside a substantive option" % (cooccur, term)))
         elif qid in MARG:
             ach, tgt = achieved_share(qid, q, vals)
             if ach is not None:
@@ -303,10 +325,21 @@ def check_c():
     for score, kind, qid, tag, detail in flags[:15]:
         print("  %-9s %-9s %-26s %s" % (kind, tag, short(Q[qid]["text"], 26), detail))
     # r3sw2: declared coherence pairs — child positive set must EQUAL the parent-derived set
+    # r3sw8 selectors: child_any_answer (child set = orgs with ANY non-empty answer — conditioned
+    # metrics) and parent_contains (parent set = orgs whose multi-select ticks the named option).
     for pair in (_GEN.get("coherence_pairs") or []):
-        child_yes = {o for (o,) in c.execute(
-            "SELECT org_id FROM answers WHERE question_id=? AND value=?", (pair["child"], pair["child_value"]))}
-        if pair.get("parent_value_not") is not None:
+        if pair.get("child_any_answer"):
+            child_yes = {o for (o,) in c.execute(
+                "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value!=''", (pair["child"],))}
+        else:
+            child_yes = {o for (o,) in c.execute(
+                "SELECT org_id FROM answers WHERE question_id=? AND value=?", (pair["child"], pair["child_value"]))}
+        if pair.get("parent_contains") is not None:
+            tok = pair["parent_contains"]
+            parent_yes = {o for (o, v) in c.execute(
+                "SELECT org_id, value FROM answers WHERE question_id=?", (pair["parent"],))
+                if tok in (t.strip() for t in (v or "").split(";"))}
+        elif pair.get("parent_value_not") is not None:
             parent_yes = {o for (o,) in c.execute(
                 "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value!=? AND value!=''",
                 (pair["parent"], pair["parent_value_not"]))}
@@ -314,11 +347,23 @@ def check_c():
             parent_yes = {o for (o,) in c.execute(
                 "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value=?", (pair["parent"], pair["parent_value"]))}
         rel = pair.get("relation", "equal")
-        ok = child_yes <= parent_yes if rel == "subset" else child_yes == parent_yes
+        ok = child_yes <= parent_yes if rel in ("subset", "subset_orgs") else child_yes == parent_yes
         if not ok:
-            d = len(child_yes - parent_yes) if rel == "subset" else len(child_yes ^ parent_yes)
+            d = len(child_yes - parent_yes) if rel in ("subset", "subset_orgs") else len(child_yes ^ parent_yes)
             hard.append((1.0, "PAIR-INCOHERENCE", pair["child"],
-                         "%d orgs violate %s(%s) vs %s (%s)" % (d, rel, pair["child_value"], pair["parent"], pair.get("note", "")[:60])))
+                         "%d orgs violate %s(%s) vs %s (%s)" % (d, rel, pair.get("child_value", "any-answer"),
+                                                                pair["parent"], pair.get("note", "")[:60])))
+    # r3sw8 ARMING: a declared-incidence metric that is ACTIVE must actually carry its base.
+    # Without this, losing the conditioned rows deactivates tier-2d silently (the n<20 skip)
+    # and the subset pair passes vacuously on the empty set — the gate must fail closed instead.
+    # Pre-write the question doesn't exist in Q, so live stays green until the ruled write.
+    for qid in MS_INC:
+        if qid in Q:
+            nq = c.execute("SELECT COUNT(*) FROM answers WHERE question_id=? AND snapshot_id=? AND value!=''",
+                           (qid, SNAP)).fetchone()[0]
+            if nq < 20:
+                hard.append((1.0, "MS-BASE-MISSING", qid,
+                             "declared-incidence metric active with n=%d (<20) — conditioned base lost" % nq))
     print("\n  FREEZE GATE: settled checked %d (max drift %.3fpp) | register marginals checked %d (max drift %.2fpp)"
           % (len([q for q in FROZEN if q in Q]), t1_max * 100, t2_n, t2_max * 100))
     for score, kind, qid, detail in sorted(hard, key=lambda h: -h[0]):

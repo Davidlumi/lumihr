@@ -648,15 +648,6 @@
       "unbenchmarked": true,
       "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
     },
-    "REW263_BEN_PMIMH": {
-      "class": "Level",
-      "type": "ordinal",
-      "direction": "neutral",
-      "lens": "retain",
-      "weight": 1,
-      "unbenchmarked": true,
-      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
-    },
     "REW263_GOV_BENOBJ": {
       "class": "Level",
       "type": "ordinal",
@@ -3447,6 +3438,15 @@
       "weight": 1,
       "unbenchmarked": true,
       "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
+    },
+    "REW265_BEN_PMICOMP": {
+      "class": "Practice",
+      "type": "categorical",
+      "direction": null,
+      "lens": "retain",
+      "weight": 1,
+      "unbenchmarked": true,
+      "_r3sw8": "EST incidence over PMI-havers — verdict suppressed; structure grade B (insurer product lines); per-option re-earn when by-option incidence sourced"
     }
   }
 }

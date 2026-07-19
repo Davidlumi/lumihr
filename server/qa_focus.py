@@ -50,8 +50,9 @@ check("by_superpower keys == {Reward}", list(ov["headline"]["by_superpower"].key
 # by_section carries exactly the competitive domains — DERIVED from the mp config
 # flags, never a literal list (check-77 rule: the 7-category/6-competitive world
 # ended with Diff 1/2 on 2026-07-14; all 8 B' domains are competitive as of Diff 2).
-_mpc = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "..", "data", "market_position_config.json")))
+_mpc = json.load(open(os.environ.get("LUMI_MP_CONFIG")   # r3sw8: gate servers read the staged
+                      or os.path.join(os.path.dirname(os.path.abspath(__file__)),  # copy (r3sw7 doctrine)
+                                      "..", "data", "market_position_config.json")))
 _competitive = sorted(d for d, v in _mpc.get("_domains", {}).items()
                       if not d.startswith("_") and v.get("competitiveness"))
 check("by_section carries exactly the competitive domains (derived from mp config)",

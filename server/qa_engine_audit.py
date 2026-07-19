@@ -66,6 +66,8 @@ RETIRED_LINEAGE = {
     "PROP_dff9a2a5": "Diff 14: pay-increase award-rate — fictional-practice distribution, retired",
     "REW264_PEN_CONTRIBTIER": "Diff 14: service/age pension escalation — legally-dead practice, retired "
                               "(never in response CSVs; listed for completeness)",
+    "REW263_BEN_PMIMH": "r3sw8: PMI MH/digital-GP single-select — N/A 56.8% distorted the graph; "
+                        "replaced by REW265_BEN_PMICOMP (multi-select composition over PMI-havers)",
 }
 
 # The surgical coherence reseed (18 June 2026, David-confirmed — DECISIONS.md) rewrote
@@ -559,8 +561,9 @@ print("recomputed per type: %s | value mismatches: %d" % (checked, mismatches))
 # Diff 14: unbenchmarked metrics no longer SERVE a score percentile (that is the
 # suppression under test elsewhere), so the spot must pick a benchmarked one. The
 # curated config is read as DATA — the no-production-imports rule holds.
-_unbench = {q for q, e in (json.load(open(os.path.join(ROOT, "data", "market_position_config.json")))
-                           .get("metrics") or {}).items() if e.get("unbenchmarked")}
+_unbench = {q for q, e in (json.load(open(os.environ.get("LUMI_MP_CONFIG")   # r3sw8: honour the
+                                          or os.path.join(ROOT, "data", "market_position_config.json")))
+                           .get("metrics") or {}).items() if e.get("unbenchmarked")}  # staged copy (r3sw7 doctrine)
 _spot = next((r["id"] for r in conn.execute(
     "SELECT id FROM questions WHERE status='active' AND is_scored=1 AND type='multi_select' "
     "AND scoring_config_json LIKE '%option_scores%' ORDER BY id")

@@ -1,0 +1,3 @@
+metric_id,action,before,after
+REW263_BEN_PMIMH,retired — replaced by REW265_BEN_PMICOMP (r3sw8),"{""Both"": 40, ""Digital GP only"": 15, ""Mental health only"": 19, ""No PMI / neither"": 21, ""Not applicable"": 125}",{}
+REW265_BEN_PMICOMP,seeded — exact-count per-option incidence over 130 PMI-havers (r3sw8),{},"{""Out-patient cover (consultations, diagnostics, scans)"": 101, ""Full mental health cover (in- and out-patient psychiatric care and therapy)"": 65, ""Physiotherapy / MSK / therapies"": 78, ""Health screening / assessments"": 55, ""Overseas / worldwide cover"": 29, ""Dental & optical"": 36, ""None of these \u2014 core cover only"": 4}"

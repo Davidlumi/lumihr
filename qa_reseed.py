@@ -53,7 +53,12 @@ NEG = {"no","none","n/a","not offered","statutory only",""}  # 'absent' answers 
 def load(db, profiles, meta_path):
     c = sqlite3.connect(db); cur = c.cursor()
     meta = json.load(open(meta_path))
-    rewq = set(meta)
+    # r3sw8: the meta file describes the 2026-06-18 universe; RULED retirements leave the
+    # live bank (status='retired', answers deleted), so they must leave the harness universe
+    # too — G9's all-answered intersection otherwise collapses to n_orgs=0 on any retired
+    # Benefits metric. Zero-answer by construction, so this is a no-op for every other gate.
+    retired = {q for (q,) in cur.execute("SELECT id FROM questions WHERE status='retired'")}
+    rewq = set(meta) - retired
     ans = defaultdict(dict); mans = defaultdict(lambda: defaultdict(dict))
     for org, q, mr, v in cur.execute("select org_id,question_id,matrix_row_id,value from answers"):
         if q not in rewq or not v: continue

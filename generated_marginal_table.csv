@@ -49,6 +49,7 @@ REW263_TIME_DAYONELEAVE,Time Off,A,Have you made paternity and unpaid parental l
 CONTEXT_AE_OPTOUT,,A,,,,,,context (EST/unanchored),
 REW264_HLT_VIRTUALGP,,A/B (total) / EST (split),,,,,,context (EST/unanchored),
 REW264_PEN_AEDEFAULT,,A,,,,,,context (EST/unanchored),
+REW265_BEN_PMICOMP,,B (structure) / EST (incidence),,,,,,context (EST/unanchored),
 REW265_PAY_PAYCOMMS,,EST,,,,,,context (EST/unanchored),
 REW265_PAY_RANGEMAX,,EST,,,,,,context (EST/unanchored),
 3faf1f0c-f753-497f-a395-384bba38c5e3,Benefits,"B (Single) / EST (Partner, Family)",What is the average annual private medical insurance (P,,,,,"context (anchored, no structured base — ruled follow-on)",

@@ -226,6 +226,23 @@
    "semantics": "PUBLIC-SECTOR CARVE-OUT (r3sw3 ruled, TPR grade A): public-band new joiners get CARE=DB 95 / DC 5; NO _default — commercial/charity bands are byte-untouched (surgical-band contract), staying at the frozen national 95/3/2. Tier-1 RE-FREEZE at the post-carve national aggregate (G7 baseline re-established, EAP precedent). CONSTRUCT FLAG: TPR counts schemes/members, Lumi asks org-offer — immaterial for the public band (statutory participation ~= offer). New-employee basis per the standing rule."
   }
  },
+ "multiselect_incidence": {
+  "REW265_BEN_PMICOMP": {
+   "prevalences": {
+    "Out-patient cover (consultations, diagnostics, scans)": 78,
+    "Full mental health cover (in- and out-patient psychiatric care and therapy)": 50,
+    "Physiotherapy / MSK / therapies": 60,
+    "Health screening / assessments": 42,
+    "Dental & optical": 28,
+    "Overseas / worldwide cover": 22
+   },
+   "terminal": "None of these — core cover only",
+   "base": "PMI-holding orgs = REW_BEN_038 'Private Medical Insurance (PMI)' tickers (n=130 seed)",
+   "grade": "B (structure) / EST (incidence)",
+   "source": "Insurer product structure: Bupa/AXA Health/Aviva/Vitality corporate PMI tiers + broker guides (Drewberry, myTribe, Usay) — option list and standard-vs-optional classification sourced; per-option incidence EST, structure-anchored (standard-adjacent high, add-on low)",
+   "semantics": "PMI COVERAGE-COMPOSITION REDESIGN (r3sw8): replaces REW263_BEN_PMIMH (single-select, N/A 56.8% distorting the distribution). Multi-select over the APPLICABLE BASE ONLY — conditioned on PMI-exists, no N/A option, n = PMI-havers by construction (the N/A-not-on-graph pilot). Prevalences are INDEPENDENT per-option shares of PMI-havers (won't sum to 100) — the tier-2d incidence gate holds each at max(5pp, 1/n). 4 UNIVERSALS ASSUMED STANDARD, not benchmarked (in-patient, digital GP, cancer cover, basic MH support line — ~90%+ everywhere, stated in help_text). Terminal 'None of these — core cover only' is derived-exclusive (zero-pick orgs stay in n). VERDICT-SUPPRESSED (EST incidence); per-option re-earn path when by-option incidence is sourced."
+  }
+ },
  "coherence_pairs": [
   {
    "child": "REW_INC_131",
@@ -241,6 +258,14 @@
    "parent_value_not": "None",
    "relation": "subset",
    "note": "clawback-Yes must be a SUBSET of the bonus-exists set (r3sw5 ruled) — you cannot claw back a bonus you don't pay; prevents a future INC_103 reseed silently re-breaking the conditioning"
+  },
+  {
+   "child": "REW265_BEN_PMICOMP",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI composition is CONDITIONED on PMI-exists (r3sw8 N/A-exclusion pilot): every org answering the composition multi-select must tick PMI in the benefits inventory — the applicable base IS the conditioning set; prevents a future REW_BEN_038 reseed silently widening the graph past the PMI-haver cohort"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
@@ -1220,6 +1245,9 @@
    "why": "unanchored"
   },
   "REW264_HLT_VIRTUALGP": {
+   "why": "unanchored"
+  },
+  "REW265_BEN_PMICOMP": {
    "why": "unanchored"
   }
  },

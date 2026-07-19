@@ -45,6 +45,14 @@ maturity_grads = {q: dict(b["maturity_anchors"], grade=b.get("grade", "EST"),
                           source=b.get("source", ""), semantics=b.get("target_semantics", ""))
                   for q, b in bases.items()
                   if isinstance(b, dict) and b.get("maturity_anchors")}
+# r3sw8: multi-select incidence — INDEPENDENT per-option prevalences over an applicable base
+# (conditioned metric; shares deliberately don't sum to 100). Gated per-option by qa_plausibility
+# tier-2d at max(5pp, 1/n); the base itself is held by a subset_orgs coherence pair.
+ms_incidence = {q: {"prevalences": b["option_prevalences"], "terminal": b.get("terminal"),
+                    "base": b.get("base", ""), "grade": b.get("grade", "EST"),
+                    "source": b.get("source", ""), "semantics": b.get("target_semantics", "")}
+                for q, b in bases.items()
+                if isinstance(b, dict) and b.get("option_prevalences")}
 RULED_ORD = json.load(open("ruled_orderings.json"))["orderings"]   # THE standing orderings artifact
 # Ruled context (2026-07-16): one-pole-of-multi-pole = context (PAY_097/PAY_017, as principle);
 # GAP_009 set-not-pole (question shape, figure-independent); WEL_BUDGET numeric (G8: no
@@ -83,7 +91,7 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 248  # 247 + VIRTUALGP CIPD capture (r3sw7 ruled)
+assert len(byid) == 249  # 248 + PMICOMP composition redesign (r3sw8 ruled)
 
 for r in reg:
     q = r["metric_id"].strip()
@@ -125,12 +133,14 @@ for r in reg:
                 row["flags"] = "large-only (ruled emit-with-caveat)"
     elif b:
         bt = b["base_type"]
-        if b.get("ruled_distribution") or b.get("maturity_anchors"):
+        if b.get("ruled_distribution") or b.get("maturity_anchors") or b.get("option_prevalences"):
             # Diff 15: full-distribution base — emits via ruled_dists (built at load),
-            # never a share-marginal. Route recorded for the review table.
+            # never a share-marginal. Route recorded for the review table. r3sw8 adds
+            # option_prevalences here so a future real_anchor fill can't re-route the row.
             row.update(route="RULED_DISTRIBUTION (full-dist)" if b.get("ruled_distribution")
-                             else "MATURITY_GRADIENT (r3s2)", base_type=bt,
-                       inputs=json.dumps(b.get("ruled_distribution")
+                             else ("MULTISELECT_INCIDENCE (r3sw8)" if b.get("option_prevalences")
+                                   else "MATURITY_GRADIENT (r3s2)"), base_type=bt,
+                       inputs=json.dumps(b.get("ruled_distribution") or b.get("option_prevalences")
                                          or b["maturity_anchors"].get("anchors")
                                          or sorted(b["maturity_anchors"].get("band_distributions", {})))[:60])
         elif bt == "not_prevalence":
@@ -219,6 +229,12 @@ for _q, _e in maturity_grads.items():
             assert abs(sum(_d.values()) - 100) < 1e-9, (_q, _b)
     else:
         assert set(_e["anchors"]) == {"Basic", "Developing", "Advanced"}, _q
+assert set(ms_incidence) == {"REW265_BEN_PMICOMP"}, sorted(ms_incidence)
+for _q, _e in ms_incidence.items():
+    # independent incidences — explicitly NOT a partition; no sum-100 assert BY DESIGN (r3sw8)
+    for _o, _p in _e["prevalences"].items():
+        assert 0 < _p < 100, (_q, _o, _p)
+    assert _e["terminal"] and _e["terminal"] not in _e["prevalences"], _q
 assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-marginals (Diff 15 redesign)"
 for _q, _e in ruled_dists.items():
     assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
@@ -240,6 +256,7 @@ for q, m in marginals.items():
 out = {"_generated": RULED, "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
        "ruled_distributions": ruled_dists,
        "maturity_gradients": maturity_grads,
+       "multiselect_incidence": ms_incidence,
        "coherence_pairs": bases.get("_coherence_pairs") or [],
        "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
        "marginals": marginals, "floors": floors, "context": context,

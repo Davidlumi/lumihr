@@ -71,11 +71,6 @@
       "est": false,
       "source": "CIPD Reward Survey: Focus on Employee Benefits 2026 (YouGov, n=1,059 UK reward/HR decision-makers, fieldwork 24 Oct-27 Nov 2025, weighted to be representative of the UK business population). Grade A - nationally representative all-UK base. Verified from source PDF."
     },
-    "REW263_BEN_PMIMH": {
-      "grade": "A",
-      "est": false,
-      "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, weighted n=1,101; large 250+ n=376; SME 2-249)"
-    },
     "REW26_BEN_PENSION_COST_SHARE": {
       "grade": "EST",
       "est": true,
