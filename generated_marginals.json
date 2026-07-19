@@ -222,6 +222,14 @@
    "parent": "REW_INC_133",
    "parent_value": "Yes",
    "note": "operates-LTIP=Yes must be EXACTLY the orgs with any LTI-by-level eligibility (r3sw2 ruled, range-max pattern)"
+  },
+  {
+   "child": "REW_INC_071",
+   "child_value": "Yes",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset",
+   "note": "clawback-Yes must be a SUBSET of the bonus-exists set (r3sw5 ruled) — you cannot claw back a bonus you don't pay; prevents a future INC_103 reseed silently re-breaking the conditioning"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",

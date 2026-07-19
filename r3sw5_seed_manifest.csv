@@ -1,0 +1,5 @@
+metric_id,action,detail
+orgs.industry,A: NULL populate,"{""Hospitality, Leisure & Travel"": 12, ""Retail & Consumer Goods"": 15, ""Other"": 3, ""Manufacturing & Engineering"": 8, ""Logistics, Transport & Distribution"": 12, ""Construction & Infrastructure"": 7, ""Technology, Software & Digital"": 2, ""Professional Services"": 1, ""Financial Services"": 1, ""Healthcare & Life Sciences"": 1}"
+REW_PAY_TIPS_EXIST_7c80c508,A: additive scope seed,n=27 (stray=0)
+REW_INC_071,B: bonus conditioning,"{""Yes"": 111, ""No"": 36, ""Not applicable"": 73}"
+REW_BEN_HOL_001,C: DK strip,"5 deleted, option removed"

@@ -306,12 +306,19 @@ def check_c():
     for pair in (_GEN.get("coherence_pairs") or []):
         child_yes = {o for (o,) in c.execute(
             "SELECT org_id FROM answers WHERE question_id=? AND value=?", (pair["child"], pair["child_value"]))}
-        parent_yes = {o for (o,) in c.execute(
-            "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value=?", (pair["parent"], pair["parent_value"]))}
-        if child_yes != parent_yes:
-            d = len(child_yes ^ parent_yes)
+        if pair.get("parent_value_not") is not None:
+            parent_yes = {o for (o,) in c.execute(
+                "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value!=? AND value!=''",
+                (pair["parent"], pair["parent_value_not"]))}
+        else:
+            parent_yes = {o for (o,) in c.execute(
+                "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value=?", (pair["parent"], pair["parent_value"]))}
+        rel = pair.get("relation", "equal")
+        ok = child_yes <= parent_yes if rel == "subset" else child_yes == parent_yes
+        if not ok:
+            d = len(child_yes - parent_yes) if rel == "subset" else len(child_yes ^ parent_yes)
             hard.append((1.0, "PAIR-INCOHERENCE", pair["child"],
-                         "%d orgs misaligned vs %s (%s)" % (d, pair["parent"], pair.get("note", ""))))
+                         "%d orgs violate %s(%s) vs %s (%s)" % (d, rel, pair["child_value"], pair["parent"], pair.get("note", "")[:60])))
     print("\n  FREEZE GATE: settled checked %d (max drift %.3fpp) | register marginals checked %d (max drift %.2fpp)"
           % (len([q for q in FROZEN if q in Q]), t1_max * 100, t2_n, t2_max * 100))
     for score, kind, qid, detail in sorted(hard, key=lambda h: -h[0]):
