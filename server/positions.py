@@ -901,7 +901,10 @@ def _prev_summary(pool, uncommon_pct):
             "less_common": uncommon, "pool": len(pool)}
 
 
-_MP_CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+_MP_CFG_PATH = os.environ.get("LUMI_MP_CONFIG") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
+# ^ r3sw7 gate-server doctrine (ruled): LUMI_MP_CONFIG points gate/throwaway servers
+#   at a STAGED config copy; the served file stays immutable until the approved live
+#   write. Path-isolated staging — closes the hot-reload mixed-state class.
                             "market_position_config.json")
 _mp_cache = {"mtime": None, "cfg": {}}
 

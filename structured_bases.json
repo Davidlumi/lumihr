@@ -711,5 +711,17 @@
    "sector_gate": null
   },
   "target_semantics": "PUBLIC-SECTOR CARVE-OUT (r3sw3 ruled, TPR grade A): public-band new joiners get CARE=DB 95 / DC 5; NO _default — commercial/charity bands are byte-untouched (surgical-band contract), staying at the frozen national 95/3/2. Tier-1 RE-FREEZE at the post-carve national aggregate (G7 baseline re-established, EAP precedent). CONSTRUCT FLAG: TPR counts schemes/members, Lumi asks org-offer — immaterial for the public band (statutory participation ~= offer). New-employee basis per the standing rule."
+ },
+ "REW264_HLT_VIRTUALGP": {
+  "base_type": "ruled_full_distribution",
+  "grade": "A/B (total) / EST (split)",
+  "source": "CIPD Health & Wellbeing 2025 (Mar-Apr 2025 fieldwork, YouGov n=1,101 employers), large-private 250+ band",
+  "ruled_distribution": {
+   "Yes all employees": 45,
+   "Yes some": 13,
+   "Via PMI only": 11,
+   "No": 31
+  },
+  "target_semantics": "VIRTUAL GP RE-ANCHOR (r3sw7, ruled): total provision SOURCED grade A/B — CIPD H&W 2025 large-private band: 54% all-staff / 69% any-form -> No ~31%. BASIS CORRECTION: the old 77% No was anchored all-sizes-incl-micro; the cohort is 250-999 = the large-private band. Standalone-vs-Via-PMI-only split EST (paywalled decomposition), CONSTRAINED by the sourced fact virtual GP (54%) > PMI (40%) for large-private -> Via-PMI-only is a minority (11). SIZE GRADIENT RECORDED NOT GATED (SME 23% / large 54% on register as reference; cohort uniformly one band, seeded flat cohort-centre). VERDICT RE-EARNS: first benefits metric back through the Diff-14 path — unbenchmarked lifts, provision verdict renders."
  }
 }

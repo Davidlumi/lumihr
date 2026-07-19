@@ -2822,11 +2822,10 @@
     "REW264_HLT_VIRTUALGP": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
+      "_r3sw7": "VERDICT RE-EARNED (first benefits metric via the Diff-14 path): total provision sourced CIPD H&W 2025 grade A/B; split EST-flagged on the register"
     },
     "REW264_HLT_CASHPLAN": {
       "class": "Level",

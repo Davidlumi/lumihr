@@ -45,6 +45,17 @@
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
    "semantics": "Tips/service charges WITHIN THE SECTOR SCOPE only (r3s4): sector_scopes.json hides the metric entirely outside Hospitality; the 199 out-of-scope answers (the impossible 67.5%% all-org yes) are DELETED, not NA'd. Within the 15 hospitality orgs: 80/20 operate/don't. Freeze tier-2b checks over in-scope answers (all answers are in-scope by construction post-clean)."
+  },
+  "REW264_HLT_VIRTUALGP": {
+   "distribution": {
+    "Yes all employees": 45,
+    "Yes some": 13,
+    "Via PMI only": 11,
+    "No": 31
+   },
+   "grade": "A/B (total) / EST (split)",
+   "source": "CIPD Health & Wellbeing 2025 (Mar-Apr 2025 fieldwork, YouGov n=1,101 employers), large-private 250+ band",
+   "semantics": "VIRTUAL GP RE-ANCHOR (r3sw7, ruled): total provision SOURCED grade A/B — CIPD H&W 2025 large-private band: 54% all-staff / 69% any-form -> No ~31%. BASIS CORRECTION: the old 77% No was anchored all-sizes-incl-micro; the cohort is 250-999 = the large-private band. Standalone-vs-Via-PMI-only split EST (paywalled decomposition), CONSTRAINED by the sourced fact virtual GP (54%) > PMI (40%) for large-private -> Via-PMI-only is a minority (11). SIZE GRADIENT RECORDED NOT GATED (SME 23% / large 54% on register as reference; cohort uniformly one band, seeded flat cohort-centre). VERDICT RE-EARNS: first benefits metric back through the Diff-14 path — unbenchmarked lifts, provision verdict renders."
   }
  },
  "maturity_gradients": {
@@ -1207,6 +1218,9 @@
   },
   "CONTEXT_AE_OPTOUT": {
    "why": "unanchored"
+  },
+  "REW264_HLT_VIRTUALGP": {
+   "why": "unanchored"
   }
  },
  "pending_ruling": {},
@@ -1695,6 +1709,15 @@
    "positive_from": "Partially paid (case-by-case)",
    "ruled": "2026-07-16 (25-row base-extraction round)",
    "note": "LIVE options are a 4-rung set (discovered at promotion; source implied a triple). positive_from at Partially-paid = ANY-PAID read matching the 86% source construct ('offer paid bereavement leave'); FLAG-FOR-CONFIRM in the delta review — strict alternative is positive_from at the top rung"
+  },
+  "REW264_HLT_VIRTUALGP": {
+   "option_order": [
+    "No",
+    "Via PMI only",
+    "Yes some",
+    "Yes all employees"
+   ],
+   "ruled": "2026-07-18 r3sw7 — provision ladder; standalone-any > via-PMI per the CIPD virtual-GP(54%) > PMI(40%) large-private floor argument"
   }
  },
  "settled_refreeze": {

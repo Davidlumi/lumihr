@@ -1,0 +1,2 @@
+metric_id,action,before,after
+REW264_HLT_VIRTUALGP,CIPD re-anchor + verdict re-earn (atomic config+data),"{""No"": 170, ""Yes some"": 16, ""Via PMI only"": 14, ""Yes all employees"": 20}","{""Yes all employees"": 99, ""Yes some"": 29, ""Via PMI only"": 24, ""No"": 68}"

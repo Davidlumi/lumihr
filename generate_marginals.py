@@ -83,7 +83,7 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 247  # 246 + CONTEXT_AE_OPTOUT capture row (ONS/DWP pass, ruled — no live metric)
+assert len(byid) == 248  # 247 + VIRTUALGP CIPD capture (r3sw7 ruled)
 
 for r in reg:
     q = r["metric_id"].strip()
@@ -209,7 +209,8 @@ for q in marginals:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 7, "positive_from must be exactly the 7 ruled rows (SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001 — HOL_001 left for the sector-floor gradient), got %d" % pf_count
-assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508"}, sorted(ruled_dists)
+assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508",
+                            "REW264_HLT_VIRTUALGP"}, sorted(ruled_dists)
 assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103",
                                "REW26_BEN_PENSION_TYPE", "REW_BEN_HOL_001"}, sorted(maturity_grads)
 for _q, _e in maturity_grads.items():
