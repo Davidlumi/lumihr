@@ -7,6 +7,34 @@
    ],
    "ruled": "2026-07-18 r3s4 pilot — tips exist only in hospitality; narrows the legacy hospitality+retail module for this metric",
    "seed": "80/20 yes/no within scope, EST practitioner benchmark - D. Whitfield"
+  },
+  "REW_PAY_TRONC_6db81475": {
+   "sectors": [
+    "Hospitality, Leisure & Travel"
+   ],
+   "ruled": "2026-07-18 r3sw1 — tronc family; sector-scope per the tips ruling + conditioning chain (range-max pattern)",
+   "note": "formal tronc y/n — conditioned on tips-exist=Yes"
+  },
+  "REW_FAIR_TIPS_DIST_7d34e570": {
+   "sectors": [
+    "Hospitality, Leisure & Travel"
+   ],
+   "ruled": "2026-07-18 r3sw1 — tronc family; sector-scope per the tips ruling + conditioning chain (range-max pattern)",
+   "note": "tip distribution — conditioned on tips-exist=Yes"
+  },
+  "REW_FAI_TRONC_TYPES_b5547658": {
+   "sectors": [
+    "Hospitality, Leisure & Travel"
+   ],
+   "ruled": "2026-07-18 r3sw1 — tronc family; sector-scope per the tips ruling + conditioning chain (range-max pattern)",
+   "note": "tronc tip types (multi) — conditioned on tronc=Yes (draft: deeper chain, presented for ruling)"
+  },
+  "REW_FAI_TRONC_GROUPS_e5639ac2": {
+   "sectors": [
+    "Hospitality, Leisure & Travel"
+   ],
+   "ruled": "2026-07-18 r3sw1 — tronc family; sector-scope per the tips ruling + conditioning chain (range-max pattern)",
+   "note": "tronc participation by level (matrix) — conditioned on tronc=Yes (draft: deeper chain)"
   }
  }
 }

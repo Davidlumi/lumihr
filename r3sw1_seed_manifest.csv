@@ -1,0 +1,5 @@
+metric_id,action,before_n,after
+REW_PAY_TRONC_6db81475,scope+condition (tips),215,"{""Yes"": 9, ""No"": 3}"
+REW_FAIR_TIPS_DIST_7d34e570,scope+condition (tips),209,"{""Pooled and distributed via a tronc or equivalent"": 5, ""Distributed by the employer"": 3, ""Directly to individual employees"": 3, ""Combination of approaches"": 1}"
+REW_FAI_TRONC_TYPES_b5547658,scope+condition (tronc),212,"{""Card tips"": 4, ""Service charges"": 3, ""Cash tips"": 2}"
+REW_FAI_TRONC_GROUPS_e5639ac2,scope+condition (tronc),27,"{""orgs"": 9, ""rows"": 63}"

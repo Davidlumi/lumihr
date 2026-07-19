@@ -1,0 +1,61 @@
+{
+ "_meta": {
+  "diff": "r3sw1",
+  "ruled": "2026-07-18 — hospitality scope + tips-exist conditioning; hospitality-slice evidence accepted as seed (EST, observed slices)",
+  "chain_note": "TYPES/GROUPS drafted one level deeper (tronc=Yes) than the ruled tips-exist gate — presented for David's ruling before live write"
+ },
+ "tips_parent": {
+  "qid": "REW_PAY_TIPS_EXIST_7c80c508",
+  "value": "Yes – tips/service charges are received"
+ },
+ "metrics": [
+  {
+   "qid": "REW_PAY_TRONC_6db81475",
+   "condition": "tips",
+   "ratio": {
+    "Yes": 9,
+    "No": 3
+   },
+   "evidence": "hospitality slice 9Y/3N/1NA of 13; NA collapses into the gate"
+  },
+  {
+   "qid": "REW_FAIR_TIPS_DIST_7d34e570",
+   "condition": "tips",
+   "ratio": {
+    "Pooled and distributed via a tronc or equivalent": 6,
+    "Distributed by the employer": 4,
+    "Directly to individual employees": 3,
+    "Combination of approaches": 1
+   },
+   "evidence": "hospitality slice 6/4/3/1 of 14"
+  },
+  {
+   "qid": "REW_FAI_TRONC_TYPES_b5547658",
+   "condition": "tronc",
+   "ratio": {
+    "Card tips": 3,
+    "Service charges": 3,
+    "Cash tips": 2
+   },
+   "evidence": "hospitality slice cash2/card3/service3 among tips-operating; NA collapses"
+  },
+  {
+   "qid": "REW_FAI_TRONC_GROUPS_e5639ac2",
+   "condition": "tronc",
+   "matrix_levels": {
+    "board_executive": 0,
+    "director": 0,
+    "head_of": 0,
+    "senior_manager": 0,
+    "manager": 54,
+    "supervisor_team_leader": 100,
+    "frontline_individual_contributor": 100
+   },
+   "options": [
+    "Yes",
+    "No"
+   ],
+   "evidence": "Diff-13 tronc shape (frontline/supervisor universal, manager ~54%) over the tronc-Yes set"
+  }
+ ]
+}
