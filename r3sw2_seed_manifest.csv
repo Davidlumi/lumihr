@@ -1,0 +1,6 @@
+metric_id,action,before,after
+REW_INC_103,sector-keyed gradient reseed,"{""None"": 56, ""75%+"": 74, ""<10%"": 18, ""50\u201374%"": 28, ""25\u201349%"": 18, ""10\u201324%"": 26}","{""<10%"": 5, ""None"": 41, ""75%+"": 106, ""50\u201374%"": 39, ""25\u201349%"": 18, ""10\u201324%"": 11}"
+REW_INC_131,derived := 133 eligibility-holders,"{""No"": 185, ""Yes"": 35}","{""Yes"": 65, ""No"": 155}"
+REW_INC_111,stale-trust rows deleted,14,0
+323ffcf1-749b-43f3-bf34-1de6b8b1ca67,stale-trust rows deleted,10,0
+REW_INC_133,stale trusts flipped to all-level No,14,No rows retained

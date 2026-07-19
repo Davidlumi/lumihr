@@ -103,29 +103,58 @@ def canon_industry(ind):
     return "Other"
 
 def maturity_assign(qid, entry, rows, prof, lat):
-    """r3s2 shared mechanism: per-org option assignment keyed on HR_Maturity.
-    entry = generated_marginals.maturity_gradients[qid]: positive_option, anchors
-    {Basic/Developing/Advanced: pct}, remainder_options [informal-ish, none-ish],
-    remainder_ratio per band, optional sector_gate {exclude_industries:[...]} whose
-    gated orgs are DROPPED (absence — "no scheme", never a low value).
-    Deterministic: within each band, largest-remainder counts; positive to the
-    top-latent slice (sha tiebreak); remainder split by the band ratio down the
-    rest of the band. Returns {org: option_label} over the surviving orgs."""
+    """Keyed-gradient mechanism (r3s2, GENERALISED r3sw2): per-org option assignment
+    keyed on a declared profile attribute. entry fields:
+      key: profile attribute ("HR_Maturity" default; "Industry" -> canon_industry)
+      anchors {band: positive_pct} + positive_option + remainder_options +
+        remainder_ratio {band: [a,b]}   — the positive/remainder form, OR
+      band_distributions {band-or-_default: {option: pct}} — full per-band dists
+      within_band: "hash" (default — the Step-2 maturity ruling) | "latent"
+        (sector-keyed ordered metrics: the coherence spine, r3sw1 G10 lesson)
+      sector_gate {exclude_industries:[...]}: gated orgs dropped (absence).
+    Deterministic: largest-remainder per band; within-band order per policy.
+    Backward-compatible: the three maturity entries carry no key/within_band/
+    band_distributions -> identical behaviour to the r3s2 original (asserted by
+    the r3sw2 migration's backcompat check against live state)."""
     gate = entry.get("sector_gate") or {}
     excl = set(gate.get("exclude_industries") or [])
+    key = entry.get("key", "HR_Maturity")
     def band(o):
-        return (prof.get(o) or {}).get("HR_Maturity") or "Developing"
+        v = (prof.get(o) or {}).get(key)
+        if key == "Industry":
+            return canon_industry(v or "")
+        return v or "Developing"
     def industry(o):
         return canon_industry((prof.get(o) or {}).get("Industry") or "")
     orgs = [o for o, _ in rows if not excl or industry(o) not in excl]
+    wb = entry.get("within_band", "hash")
+    def order_band(members):
+        if wb == "latent":
+            return sorted(members, key=lambda o: (-lat.get(o, 0.5),
+                          hashlib.sha256((qid + "|" + o).encode()).hexdigest()))
+        return sorted(members, key=lambda o: hashlib.sha256((qid + "|" + o).encode()).hexdigest())
     out = {}
+    if entry.get("band_distributions"):
+        bd = entry["band_distributions"]
+        by_band = {}
+        for o in orgs:
+            by_band.setdefault(band(o), []).append(o)
+        for b, members in by_band.items():
+            dist = bd.get(b) or bd.get("_default")
+            assert dist, "no band distribution for %r on %s (and no _default)" % (b, qid)
+            members = order_band(members)
+            raw = {l: p * len(members) / 100.0 for l, p in dist.items()}
+            fl = {l: int(raw[l]) for l in raw}
+            for l in sorted(raw, key=lambda l: (-(raw[l] - fl[l]), l))[: len(members) - sum(fl.values())]:
+                fl[l] += 1
+            i2 = 0
+            for l in dist:
+                for _ in range(fl[l]):
+                    out[members[i2]] = l; i2 += 1
+        return out
     pos, rem_opts = entry["positive_option"], entry["remainder_options"]
-    for b in ("Basic", "Developing", "Advanced"):
-        # ruled 2026-07-18 (r3s2 ③): within-band order is HASH-ONLY, never latent —
-        # latent-rank let size back in through the coherence spine, which is exactly
-        # what keying on maturity was meant to remove. Small-but-Advanced reads ~anchor.
-        members = sorted((o for o in orgs if band(o) == b),
-                         key=lambda o: hashlib.sha256((qid + "|" + o).encode()).hexdigest())
+    for b in entry["anchors"]:
+        members = order_band([o for o in orgs if band(o) == b])
         if not members:
             continue
         n = len(members)

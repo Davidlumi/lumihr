@@ -29,7 +29,7 @@ from collections import defaultdict
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from reseed_engine import latent, option_order
+from reseed_engine import latent, option_order, canon_industry
 
 DB = os.environ.get("LUMI_DB") or "lumi.db"   # honour the suite's target db (Diff 12)
 SNAP = 1
@@ -239,22 +239,41 @@ def check_c():
                              % (drift * 100, SETTLED_TOL * 100)))
         elif qid in MGRAD:
             e = MGRAD[qid]
-            pos = e["positive_option"]
-            by_band = {}
+            key = e.get("key", "HR_Maturity")
+            def _band(org):
+                v = (prof.get(org) or {}).get(key)
+                return canon_industry(v or "") if key == "Industry" else (v or "?")
+            rows_b = {}
             for org, v in c.execute(
                 "SELECT org_id, value FROM answers WHERE question_id=? AND snapshot_id=? AND matrix_row_id='' AND value!=''",
                 (qid, SNAP)):
-                b = (prof.get(org) or {}).get("HR_Maturity") or "?"
-                t, pn = by_band.get(b, (0, 0))
-                by_band[b] = (t + 1, pn + (1 if v == pos else 0))
+                rows_b.setdefault(_band(org), []).append(v)
+            # per-band fail line is QUANTUM-AWARE: largest-remainder can only place
+            # counts within 1/n of the declared share, so small bands (n=7-10) breach
+            # a flat 5pp by rounding alone (Charity n=8: 80% -> 6/8 = 7.5pp). Line =
+            # max(5pp, 1/n) per band — achievability, not a loosening (n>=20 stays 5pp).
             worst = 0.0
-            for b, tgt in e["anchors"].items():
-                t, pn = by_band.get(b, (0, 0))
-                if t < 5: continue                    # sub-floor band: no honest check
-                worst = max(worst, abs(pn / t - tgt / 100.0))
+            if e.get("band_distributions"):
+                bd = e["band_distributions"]
+                for b, vals in rows_b.items():
+                    dist = bd.get(b) or bd.get("_default")
+                    if not dist or len(vals) < 5: continue
+                    cnt = {}
+                    for v in vals: cnt[v] = cnt.get(v, 0) + 1
+                    bw = max(abs(cnt.get(l, 0) / len(vals) - p / 100.0) for l, p in dist.items())
+                    tol = max(MARGINAL_FAIL, 1.0 / len(vals))
+                    worst = max(worst, bw - (tol - MARGINAL_FAIL))   # normalise: breach iff bw > tol
+            else:
+                pos = e["positive_option"]
+                for b, tgt in e["anchors"].items():
+                    vals = rows_b.get(b) or []
+                    if len(vals) < 5: continue          # sub-floor band: no honest check
+                    bw = abs(sum(1 for v in vals if v == pos) / len(vals) - tgt / 100.0)
+                    tol = max(MARGINAL_FAIL, 1.0 / len(vals))
+                    worst = max(worst, bw - (tol - MARGINAL_FAIL))
             t2_max = max(t2_max, worst); t2_n += 1
             if worst > MARGINAL_FAIL:
-                hard.append((worst, "MATURITY-BAND-DRIFT", qid,
+                hard.append((worst, "KEYED-BAND-DRIFT", qid,
                              "%.1fpp worst band vs anchors (fail >%.0fpp)" % (worst * 100, MARGINAL_FAIL * 100)))
         elif qid in RDIST:
             tgt = {k: v / 100.0 for k, v in RDIST[qid]["distribution"].items()}
@@ -283,6 +302,16 @@ def check_c():
     print("  %-9s %-9s %-26s %s" % ("trigger", "tag", "metric", "detail"))
     for score, kind, qid, tag, detail in flags[:15]:
         print("  %-9s %-9s %-26s %s" % (kind, tag, short(Q[qid]["text"], 26), detail))
+    # r3sw2: declared coherence pairs — child positive set must EQUAL the parent-derived set
+    for pair in (_GEN.get("coherence_pairs") or []):
+        child_yes = {o for (o,) in c.execute(
+            "SELECT org_id FROM answers WHERE question_id=? AND value=?", (pair["child"], pair["child_value"]))}
+        parent_yes = {o for (o,) in c.execute(
+            "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value=?", (pair["parent"], pair["parent_value"]))}
+        if child_yes != parent_yes:
+            d = len(child_yes ^ parent_yes)
+            hard.append((1.0, "PAIR-INCOHERENCE", pair["child"],
+                         "%d orgs misaligned vs %s (%s)" % (d, pair["parent"], pair.get("note", ""))))
     print("\n  FREEZE GATE: settled checked %d (max drift %.3fpp) | register marginals checked %d (max drift %.2fpp)"
           % (len([q for q in FROZEN if q in Q]), t1_max * 100, t2_n, t2_max * 100))
     for score, kind, qid, detail in sorted(hard, key=lambda h: -h[0]):

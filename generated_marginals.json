@@ -137,8 +137,48 @@
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
    "semantics": "Formal pay ranges (have-ranges) on the maturity gradient (r3s3): Basic 5 / Developing 30 / Advanced 90 -> cohort ~55%% Yes (supersedes the Diff-15 flat 40%% conditioning). STRICT-Yes defines the have-ranges set for the RANGEMAX coupling (Partially does NOT count — a partially-ranged org answers 'No formal ranges' on range-max; presented for ruling). Remainder Partially:No 1:3/1:1/2:1 (partial adoption rises with maturity among non-full adopters). Stays verdict-suppressed EST."
+  },
+  "REW_INC_103": {
+   "key": "Industry",
+   "within_band": "latent",
+   "band_distributions": {
+    "_default": {
+     "75%+": 55,
+     "50–74%": 20,
+     "25–49%": 8,
+     "10–24%": 5,
+     "<10%": 2,
+     "None": 10
+    },
+    "Charity, Non-Profit & Social Enterprise": {
+     "75%+": 1,
+     "50–74%": 4,
+     "25–49%": 8,
+     "10–24%": 5,
+     "<10%": 2,
+     "None": 80
+    },
+    "Public Sector & Government": {
+     "<10%": 3,
+     "10–24%": 2,
+     "None": 95
+    }
+   },
+   "sector_gate": null,
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "Bonus-eligible %% on the SECTOR-KEYED gradient (r3sw2 ruled): bonus EXISTS Commercial 90 / Charity 20 / Public 5; breadth among havers Commercial broad (75%%+ modal) / Charity moderate (~50) / Public narrow (frontline-perf). Corrects the Diff-13 absolute charity/public exclusion — low-but-nonzero is the reality. Band splits are my derivation of David's two-stage figures, presented at the gate. within_band=latent (coherence spine; hash stays maturity-only per the Step-2 ruling scope). Self-heals re-tag drift by re-derivation."
   }
  },
+ "coherence_pairs": [
+  {
+   "child": "REW_INC_131",
+   "child_value": "Yes",
+   "parent": "REW_INC_133",
+   "parent_value": "Yes",
+   "note": "operates-LTIP=Yes must be EXACTLY the orgs with any LTI-by-level eligibility (r3sw2 ruled, range-max pattern)"
+  }
+ ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
  "marginals": {
   "CAR_STATUS_01": {

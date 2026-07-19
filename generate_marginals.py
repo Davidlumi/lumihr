@@ -208,9 +208,13 @@ for q in marginals:
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
 assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508"}, sorted(ruled_dists)
-assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001"}, sorted(maturity_grads)
+assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103"}, sorted(maturity_grads)
 for _q, _e in maturity_grads.items():
-    assert set(_e["anchors"]) == {"Basic", "Developing", "Advanced"}, _q
+    if _e.get("band_distributions"):
+        for _b, _d in _e["band_distributions"].items():
+            assert abs(sum(_d.values()) - 100) < 1e-9, (_q, _b)
+    else:
+        assert set(_e["anchors"]) == {"Basic", "Developing", "Advanced"}, _q
 assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-marginals (Diff 15 redesign)"
 for _q, _e in ruled_dists.items():
     assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
@@ -232,6 +236,7 @@ for q, m in marginals.items():
 out = {"_generated": RULED, "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
        "ruled_distributions": ruled_dists,
        "maturity_gradients": maturity_grads,
+       "coherence_pairs": bases.get("_coherence_pairs") or [],
        "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
        "marginals": marginals, "floors": floors, "context": context,
        "pending_ruling": pending, "ruled_orderings": ruled_orderings,
