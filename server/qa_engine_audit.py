@@ -416,8 +416,35 @@ def ref_select_counts(qid):
     return per_org
 
 
+# r3sw10: the reference recompute must apply the SAME declared applicable-base
+# exclusions the engine applies (answerer_only mode: N/A answers leave n and the
+# bars) — otherwise every declared metric reads as false drift. Read as DATA via
+# the same env-or-served path the engine uses (r3sw7 doctrine).
+try:
+    _AB_DECL = json.load(open(os.environ.get("LUMI_AB_CONFIG")
+                              or os.path.join(ROOT, "data", "applicable_bases.json"),
+                              encoding="utf-8")).get("metrics") or {}
+except FileNotFoundError:
+    _AB_DECL = {}
+
+
+def ab_apply(qid, qtype, per_org):
+    e = _AB_DECL.get(qid)
+    if not e or e.get("mode") != "answerer_only":
+        return per_org
+    na = {ref_norm(l) for l in (e.get("na_options") or [])}
+    if qtype == "multi_select":
+        out = {}
+        for o, v in per_org.items():
+            toks = [t for t in (x.strip() for x in str(v).split(";")) if t and ref_norm(t) not in na]
+            if toks:
+                out[o] = "; ".join(toks)
+        return out
+    return {o: v for o, v in per_org.items() if ref_norm(str(v).strip()) not in na}
+
+
 for qid, m in REWARD.items():
-    per_org = ref_select_counts(qid)
+    per_org = ab_apply(qid, m["type"], ref_select_counts(qid))
     st, card = api(op, "/api/benchmark/%s?dim=all" % qid)
     if st != 200:
         # r3s4: sector-scoped metrics 404 for the out-of-scope audit org BY DESIGN

@@ -1,20 +1,255 @@
 {
-  "_readme": {
-    "rule": "N/A-not-on-graph (r3sw8 pilot -> r3sw9 mechanism): an N/A-type option that means 'this metric does not apply to us' must leave the graph AND the denominator — the distribution renders over the applicable base only.",
-    "modes": {
-      "conditioned": "answer rows exist ONLY for the applicable base (seed-level conditioning, r3sw1/r3sw8 pattern). The declaration adds the member-facing base caption; aggregation is untouched. Enforcement of the base itself is the subset_orgs coherence pair + the tier-2d arming check.",
-      "answerer_only": "declared na_options leave the block at AGGREGATION: those answers drop from n and from the bars; the block carries excluded_na. Changing a declaration requires re-aggregation. Ruled per metric — this changes rendered distributions."
-    },
-    "fields": "mode; base_label (member-facing caption, lowercase mid-sentence); na_options (answerer_only only: exact option labels to exclude); parent {qid, contains|value} (conditioned only: documents the gate — the coherence pair is the enforcement)",
-    "governance": "every declaration is RULED (David) before it lands. qa_release validates each declaration (active qid, known mode, na_options are real option labels, parent exists). Don't-know options are NOT this mechanism (blanket-DK diff); 'Varies'-type options stay on the graph.",
-    "env": "LUMI_AB_CONFIG overrides this file's path for gate servers and staged runs — the served copy is immutable until an approved live write (r3sw7 doctrine)."
+ "_readme": {
+  "rule": "N/A-not-on-graph (r3sw8 pilot -> r3sw9 mechanism): an N/A-type option that means 'this metric does not apply to us' must leave the graph AND the denominator — the distribution renders over the applicable base only.",
+  "modes": {
+   "conditioned": "answer rows exist ONLY for the applicable base (seed-level conditioning, r3sw1/r3sw8 pattern). The declaration adds the member-facing base caption; aggregation is untouched. Enforcement of the base itself is the subset_orgs coherence pair + the tier-2d arming check.",
+   "answerer_only": "declared na_options leave the block at AGGREGATION: those answers drop from n and from the bars; the block carries excluded_na. Changing a declaration requires re-aggregation. Ruled per metric — this changes rendered distributions."
   },
-  "metrics": {
-    "REW265_BEN_PMICOMP": {
-      "mode": "conditioned",
-      "base_label": "PMI-holding organisations",
-      "parent": {"qid": "REW_BEN_038", "contains": "Private Medical Insurance (PMI)"},
-      "_r3sw9": "the r3sw8 pilot chart, first declaration at the mechanism build; help_text keeps the assumed-universals copy"
-    }
+  "fields": "mode; base_label (member-facing caption, lowercase mid-sentence); na_options (answerer_only only: exact option labels to exclude); parent {qid, contains|value} (conditioned only: documents the gate — the coherence pair is the enforcement)",
+  "governance": "every declaration is RULED (David) before it lands. qa_release validates each declaration (active qid, known mode, na_options are real option labels, parent exists). Don't-know options are NOT this mechanism (blanket-DK diff); 'Varies'-type options stay on the graph.",
+  "env": "LUMI_AB_CONFIG overrides this file's path for gate servers and staged runs — the served copy is immutable until an approved live write (r3sw7 doctrine)."
+ },
+ "metrics": {
+  "REW265_BEN_PMICOMP": {
+   "mode": "conditioned",
+   "base_label": "PMI-holding organisations",
+   "parent": {
+    "qid": "REW_BEN_038",
+    "contains": "Private Medical Insurance (PMI)"
+   },
+   "_r3sw9": "the r3sw8 pilot chart, first declaration at the mechanism build; help_text keeps the assumed-universals copy"
+  },
+  "CAR_BN_02": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering business-need cars",
+   "na_options": [
+    "Not applicable (no business need company car)"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "PROP_11a83d52": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a health plan",
+   "na_options": [
+    "Not applicable (no health plan / not permitted)"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "PROP_36b990f9": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable / not offered"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "PROP_c1a3da61": {
+   "mode": "answerer_only",
+   "base_label": "organisations recruiting relocating hires",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "PROP_d992b2ea": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "RED_NOTICE_01": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable / Don't know"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW262_PAY_CANCELLEDSHIFT": {
+   "mode": "answerer_only",
+   "base_label": "organisations using shift work",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW262_PAY_GUARANTEEDHRS": {
+   "mode": "answerer_only",
+   "base_label": "organisations with variable-hours workers",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW262_PAY_SHIFTNOTICE": {
+   "mode": "answerer_only",
+   "base_label": "organisations using shift work",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_GOV_UMBRELLA": {
+   "mode": "answerer_only",
+   "base_label": "organisations using umbrella or agency workers",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_PAY_GUARHRSAVG": {
+   "mode": "answerer_only",
+   "base_label": "organisations with variable-hours workers",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_PAY_SHIFTRIGHTS": {
+   "mode": "answerer_only",
+   "base_label": "organisations using shift work",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_REC_CURRENCY": {
+   "mode": "answerer_only",
+   "base_label": "organisations with recognition awards",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_TIME_FERTLEAVE": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW263_TIME_IVF": {
+   "mode": "answerer_only",
+   "base_label": "organisations funding IVF treatment",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW264_HLT_FERTROUTE": {
+   "mode": "answerer_only",
+   "base_label": "organisations funding fertility support",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW264_INC_SHAREPLAN": {
+   "mode": "answerer_only",
+   "base_label": "organisations with share capital",
+   "na_options": [
+    "Not applicable (no shares)"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW265_BEN_ENHANCEDVR": {
+   "mode": "answerer_only",
+   "base_label": "organisations using voluntary redundancy",
+   "na_options": [
+    "Not applicable (VR not used)"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW265_PAY_EARLYCAREER": {
+   "mode": "answerer_only",
+   "base_label": "organisations with apprentices or graduates",
+   "na_options": [
+    "Not applicable (no apprentices or graduates)"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_BEN_102": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not offered"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_BEN_HOL_002": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_BEN_REM_PAY_001": {
+   "mode": "answerer_only",
+   "base_label": "organisations with office-to-remote moves",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_FAI_STUDY_TIME_93b6ef22": {
+   "mode": "answerer_only",
+   "base_label": "organisations funding qualifications",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_PAY_011": {
+   "mode": "answerer_only",
+   "base_label": "organisations with overtime-eligible roles",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_PAY_014": {
+   "mode": "answerer_only",
+   "base_label": "organisations where bank-holiday working arises",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_PAY_018": {
+   "mode": "answerer_only",
+   "base_label": "organisations using call-outs",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_PAY_EV_KWH_66ef252b": {
+   "mode": "answerer_only",
+   "base_label": "organisations reimbursing EV charging",
+   "na_options": [
+    "Not offered / Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_PRO_030": {
+   "mode": "answerer_only",
+   "base_label": "organisations where this applies",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW_Q049530": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering business-need cars",
+   "na_options": [
+    "Not Applicable"
+   ],
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
   }
+ }
 }
