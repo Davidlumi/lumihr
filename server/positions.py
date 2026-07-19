@@ -144,7 +144,10 @@ def position_items(org_id, cut, questions, payloads, org_answers,
             r = percentile_rank(blk["_values"], v)
             items.append(_item(q, None, v, r, blk, cut_label, "value"))
         elif q.type == "matrix":
+            _ubr = unbenchmarked_rows(qid)
             for row in p.get("matrix_rows", []):
+                if row["row_id"] in _ubr:
+                    continue          # EST tier: no rank, no item (r3sw6 split verdict)
                 v = matrix_value(org_answers.get((qid, row["row_id"])))
                 if v is None:
                     continue
@@ -226,6 +229,14 @@ def practice_position_items(org_id, cut, questions, payloads, org_answers,
         it["org_answer_label"] = raw
         items.append(it)
     return items
+
+
+def unbenchmarked_rows(qid):
+    """r3sw6 split verdict: matrix rows listed here are EST — they render values
+    but contribute NO percentile, NO position item, NO £-opportunity row. The
+    per-row sibling of the Diff-14 metric-level unbenchmarked flag."""
+    ent = market_position_config().get("metrics", {}).get(qid) or {}
+    return set(ent.get("unbenchmarked_rows") or [])
 
 
 def _item(q, row, value, rank, blk, cut_label, kind):
@@ -510,7 +521,10 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
             continue
         rows_out, tot50, tot75 = [], 0.0, 0.0
         any_data = False
+        _ubr2 = unbenchmarked_rows(q.id)
         for row in p.get("matrix_rows", []):
+            if row["row_id"] in _ubr2:
+                continue              # EST tier never drives a £-gap (r3sw6)
             v = coerce_number(org_answers.get((q.id, row["row_id"])))
             blk, cut_label = matrix_row_block_for(row, cut, (twin_blocks_by_q or {}).get(q.id))
             if v is None or is_suppressed(blk):

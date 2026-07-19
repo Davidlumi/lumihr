@@ -1437,9 +1437,14 @@
     "3faf1f0c-f753-497f-a395-384bba38c5e3": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked_rows": [
+        "partner",
+        "family"
+      ],
+      "_r3sw6": "split verdict (ruled): Single grade-B group-scheme anchor renders; Partner/Family EST (paywalled by-tier) row-suppressed until sourced"
     },
     "CAR_BN_02": {
       "class": "Level",

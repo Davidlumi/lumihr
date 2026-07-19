@@ -774,7 +774,10 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
                 r_out["you"] = you
             elif v is not None:
                 r_out["you"] = {"value": v, "display": pos.fmt_value(v, q.unit_block())}
-                if not pos.is_suppressed(rblk) and "_values" in rblk:
+                _row_est = row["row_id"] in pos.unbenchmarked_rows(q.id)
+                if _row_est:
+                    r_out["unbenchmarked"] = True   # r3sw6 split verdict: EST tier
+                if not pos.is_suppressed(rblk) and "_values" in rblk and not _row_est:
                     r_out["you"]["percentile"] = round(pos.percentile_rank(rblk["_values"], v), 1)
             rows.append(r_out)
         base["matrix_rows"] = rows

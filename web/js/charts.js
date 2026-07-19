@@ -351,6 +351,7 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
           ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">${fmtValue(p50, unit)}</text>`}
           ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill=${youColour(fav)}/>`}
           ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill=${youColour(fav)}>${fmtValue(you, unit)} · You</text>`}
+          ${r.unbenchmarked && html`<text x=${labelW} y=${y - 2} font-size="8" fill="var(--ink-faint)">EST — market comparison suppressed for this tier</text>`}
         </g>`;
       })}
       <g>
