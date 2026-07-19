@@ -36,6 +36,15 @@
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
    "semantics": "Range-max policy RECOMPUTED (r3s3 coupling): conditioned on the PER-ORG have-ranges set from REW_PAY_001's maturity assignment (strict Yes). Members split lump/continue/frozen 40/20/40; non-members answer 'No formal ranges'. PER-ORG COHERENCE IS THE HARD ASSERT (zero have-ranges!=Yes with a policy answer) — the pay-structure-family guard. Durable by construction: RANGEMAX is orderless-nominal (engine skip, never re-paired) and REW_PAY_001 re-derives hash-deterministically. Aggregate here is the freeze-gate tier-2b cover (~45/22/22/11)."
+  },
+  "REW_PAY_TIPS_EXIST_7c80c508": {
+   "distribution": {
+    "Yes – tips/service charges are received": 80,
+    "No – tips/service charges not received": 20
+   },
+   "grade": "EST",
+   "source": "practitioner benchmark - D. Whitfield",
+   "semantics": "Tips/service charges WITHIN THE SECTOR SCOPE only (r3s4): sector_scopes.json hides the metric entirely outside Hospitality; the 199 out-of-scope answers (the impossible 67.5%% all-org yes) are DELETED, not NA'd. Within the 15 hospitality orgs: 80/20 operate/don't. Freeze tier-2b checks over in-scope answers (all answers are in-scope by construction post-clean)."
   }
  },
  "maturity_gradients": {

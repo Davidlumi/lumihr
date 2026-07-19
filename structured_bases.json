@@ -605,5 +605,15 @@
    "sector_gate": null
   },
   "target_semantics": "Formal pay ranges (have-ranges) on the maturity gradient (r3s3): Basic 5 / Developing 30 / Advanced 90 -> cohort ~55%% Yes (supersedes the Diff-15 flat 40%% conditioning). STRICT-Yes defines the have-ranges set for the RANGEMAX coupling (Partially does NOT count — a partially-ranged org answers 'No formal ranges' on range-max; presented for ruling). Remainder Partially:No 1:3/1:1/2:1 (partial adoption rises with maturity among non-full adopters). Stays verdict-suppressed EST."
+ },
+ "REW_PAY_TIPS_EXIST_7c80c508": {
+  "base_type": "ruled_full_distribution",
+  "grade": "EST",
+  "source": "practitioner benchmark - D. Whitfield",
+  "ruled_distribution": {
+   "Yes – tips/service charges are received": 80,
+   "No – tips/service charges not received": 20
+  },
+  "target_semantics": "Tips/service charges WITHIN THE SECTOR SCOPE only (r3s4): sector_scopes.json hides the metric entirely outside Hospitality; the 199 out-of-scope answers (the impossible 67.5%% all-org yes) are DELETED, not NA'd. Within the 15 hospitality orgs: 80/20 operate/don't. Freeze tier-2b checks over in-scope answers (all answers are in-scope by construction post-clean)."
  }
 }

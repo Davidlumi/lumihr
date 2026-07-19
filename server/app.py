@@ -307,12 +307,39 @@ def org_visible_questions(org):
     minus sector-module metrics the org isn't eligible for. 2026.1: the 5
     tronc/tips metrics are a hospitality module — shown to hospitality/retail
     organisations, hidden otherwise. Module questions are never is_required
-    (invariant, asserted by qa_release) so the unlock gate is org-independent."""
+    (invariant, asserted by qa_release) so the unlock gate is org-independent.
+
+    r3s4 (ruled 2026-07-18): SECTOR-SCOPE layer on top — data/sector_scopes.json
+    declares per-metric sector lists; outside the scope the metric is FULLY
+    hidden (entry, chart, signals, peer base). Declaration-driven, no bespoke
+    per-metric code; narrows the module where both apply (tips: hospitality
+    only, though the module also shows to retail)."""
     qs = visible_questions()
     ind = org["industry"] if org is not None else None
-    if ind in TRONC_SECTORS:
-        return qs
-    return {qid: q for qid, q in qs.items() if not q.module}
+    if ind not in TRONC_SECTORS:
+        qs = {qid: q for qid, q in qs.items() if not q.module}
+    scopes = sector_scopes().get("scopes") or {}
+    if scopes:
+        qs = {qid: q for qid, q in qs.items()
+              if qid not in scopes or ind in (scopes[qid].get("sectors") or [])}
+    return qs
+
+
+_SECTOR_SCOPES_CACHE = {"mtime": None, "data": {}}
+
+
+def sector_scopes():
+    """data/sector_scopes.json, mtime-cached (hot-reload like the lens map)."""
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "sector_scopes.json")
+    try:
+        mt = os.path.getmtime(path)
+        if _SECTOR_SCOPES_CACHE["mtime"] != mt:
+            with open(path, encoding="utf-8") as f:
+                _SECTOR_SCOPES_CACHE["data"] = json.load(f)
+            _SECTOR_SCOPES_CACHE["mtime"] = mt
+    except OSError:
+        _SECTOR_SCOPES_CACHE["data"] = {}
+    return _SECTOR_SCOPES_CACHE["data"]
 
 
 def visible_questions():

@@ -1,0 +1,12 @@
+{
+ "_readme": "SECTOR-SCOPE GATE (r3s4, ruled 2026-07-18). A metric listed here EXISTS ONLY for orgs whose industry is in its sectors list — full hide on all four surfaces: not asked at data entry, no chart, no signals, excluded from the peer base (n = in-scope answerers). Enforced at org_visible_questions (THE focus filter every member route flows through) + seed-level answer absence. General mechanism: declare a qid + sectors; no bespoke code. Pilot: tips. Future users: shift premiums, tronc (currently the legacy module flag — unify later), London weighting.",
+ "scopes": {
+  "REW_PAY_TIPS_EXIST_7c80c508": {
+   "sectors": [
+    "Hospitality, Leisure & Travel"
+   ],
+   "ruled": "2026-07-18 r3s4 pilot — tips exist only in hospitality; narrows the legacy hospitality+retail module for this metric",
+   "seed": "80/20 yes/no within scope, EST practitioner benchmark - D. Whitfield"
+  }
+ }
+}

@@ -271,11 +271,24 @@ responding = {o for (_q, o, _r) in raw_answers}
 _op0 = login("analyst@thornbridge.example", "lumi-data-2026")
 _st, _me = api(_op0, "/api/me")
 _served = ((_me.get("scope") or {}).get("question_count"))
-if _served != len(REWARD):
-    print("FATAL: app serves %s questions but the DB live core is %d — the app is running"
-          " a STALE question cache. Restart the app and re-run this gate." % (_served, len(REWARD)))
+# r3s4: sector-scoped metrics are FULLY hidden from out-of-scope orgs BY DESIGN,
+# so the demo org's served count = core minus the scoped metrics its industry
+# doesn't qualify for. sector_scopes.json is read as DATA (declaration, not
+# production code) — the same rule as the questions table.
+_demo_ind = conn.execute("SELECT industry FROM orgs WHERE normalized_name LIKE "
+                         "'thornbridgeretail%'").fetchone()["industry"]
+_scopes_path = os.path.join(ROOT, "data", "sector_scopes.json")
+_scopes = (json.load(open(_scopes_path)).get("scopes") or {}) if os.path.exists(_scopes_path) else {}
+_scope_hidden = sum(1 for q, e in _scopes.items()
+                    if q in REWARD and _demo_ind not in (e.get("sectors") or []))
+_expected = len(REWARD) - _scope_hidden
+if _served != _expected:
+    print("FATAL: app serves %s questions but the DB live core is %d (expected %d after"
+          " %d sector-scope hides) — stale question cache OR a scope leak. Restart the"
+          " app and re-run this gate." % (_served, len(REWARD), _expected, _scope_hidden))
     sys.exit(2)
-print("cache freshness: app serves %d == DB live core %d" % (_served, len(REWARD)))
+print("cache freshness: app serves %d == DB live core %d - %d sector-scoped == %d"
+      % (_served, len(REWARD), _scope_hidden, _expected))
 
 # =========================================================== LAYER 1: STORAGE
 print("\n================ LAYER 1 — STORAGE FIDELITY (out == in) ================")
@@ -383,6 +396,13 @@ for qid, m in REWARD.items():
     per_org = ref_select_counts(qid)
     st, card = api(op, "/api/benchmark/%s?dim=all" % qid)
     if st != 200:
+        # r3s4: sector-scoped metrics 404 for the out-of-scope audit org BY DESIGN
+        # (the hide under test). Their stored payload is still verified below via
+        # the benchmark_snapshots comparison on the next audit surface; here we
+        # assert the 404 is the SCOPE speaking, not a serving fault.
+        if qid in _scopes and _demo_ind not in (_scopes[qid].get("sectors") or []):
+            print("  scope-hidden (by design): %s -> API %s for the %s audit org" % (qid, st, _demo_ind))
+            continue
         fail("L2", "%s: API %s" % (qid, st))
         continue
     blk = card.get("block") or {}

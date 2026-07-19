@@ -207,7 +207,7 @@ for q in marginals:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
-assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX"}, sorted(ruled_dists)
+assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508"}, sorted(ruled_dists)
 assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001"}, sorted(maturity_grads)
 for _q, _e in maturity_grads.items():
     assert set(_e["anchors"]) == {"Basic", "Developing", "Advanced"}, _q

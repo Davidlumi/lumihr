@@ -1,0 +1,2 @@
+metric_id,action,before,after
+REW_PAY_TIPS_EXIST_7c80c508,sector-scope clean + reseed (hospitality only),"{""Yes \u2013 tips/service charges are received"": 143, ""Not applicable"": 30, ""No \u2013 tips/service charges not received"": 39}","{""Yes \u2013 tips/service charges are received"": 12, ""No \u2013 tips/service charges not received"": 3}"
