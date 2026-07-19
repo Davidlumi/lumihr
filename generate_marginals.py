@@ -83,7 +83,7 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 246  # 245 + AEDEFAULT statutory-floor capture (r3sw3 ruled)
+assert len(byid) == 247  # 246 + CONTEXT_AE_OPTOUT capture row (ONS/DWP pass, ruled — no live metric)
 
 for r in reg:
     q = r["metric_id"].strip()

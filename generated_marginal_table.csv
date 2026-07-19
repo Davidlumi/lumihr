@@ -47,6 +47,7 @@ REW26_WEL_STRATEGY,Wellbeing,A,"Is there a documented wellbeing strategy, and ho
 REW_Q524161,Benefits,A,What is the employer notice period by level?,,,,,"floor (statutory, latent-only)",
 b1785613-96ed-4a64-9fd7-762d0ac65f19,Benefits,A,What is the employee notice period by level?,,,,,"floor (statutory, latent-only)",
 REW263_TIME_DAYONELEAVE,Time Off,A,Have you made paternity and unpaid parental leave avail,,,,,"floor (statutory, latent-only)",
+CONTEXT_AE_OPTOUT,,A,,,,,,context (EST/unanchored),
 REW264_PEN_AEDEFAULT,,A,,,,,,context (EST/unanchored),
 REW265_PAY_PAYCOMMS,,EST,,,,,,context (EST/unanchored),
 REW265_PAY_RANGEMAX,,EST,,,,,,context (EST/unanchored),

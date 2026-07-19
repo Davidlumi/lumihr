@@ -27,3 +27,11 @@ as the ruled upper-bound proxy.
 ## OPEN RE-ANCHOR QUEUE (scheduled, not someday)
 
 1. REW_BEN_046 (ruled 2026-07-16): seeded on OFFERED-TO-ALL basis against an any-offer-by-kind question — conservative floor, same defect shape (milder) as the rebuild's killed class. Re-anchor to a clean ANY-OFFER source (GRiD candidate) at the next register pass. Not a re-seed now.
+
+## ONS/DWP pass captures (2026-07-18, ruled — corroborate-not-replace)
+- ONS ASHE Table P10 (banded employer contributions, industry x pension type): AVAILABLE as a full
+  sourced distribution for PENSION_MATCH if ever needed. Employee-weighted; needs ruled org-level
+  adjustment. Not pulled — frozen dist plausible + ASHE-corroborated.
+- AE opt-out 8-14% (DWP 2009-2024; ~10% historical; 89% eligible participation 2024): captured as
+  CONTEXT_AE_OPTOUT register row. NO LIVE METRIC — library backlog: add an opt-out metric. NOT
+  AUTOESC (different construct).
