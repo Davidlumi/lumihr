@@ -32,7 +32,8 @@
     "Statutory minimum only (20 days)": 0.3127,
     "21-24 days": 0.6873
    },
-   "ruling": "merges 25+26-27 -> 25-27 (0.412), 28 -> 28-30 (0.16), 30+ -> More than 30 (0.115); each side renormalised separately; TWO-SIDED HARD ASSERT — bands imply 0.714 positive, marginal fixes 0.553, B5 must not move it. positive_from = 25-27 days."
+   "ruling": "merges 25+26-27 -> 25-27 (0.412), 28 -> 28-30 (0.16), 30+ -> More than 30 (0.115); each side renormalised separately; TWO-SIDED HARD ASSERT — bands imply 0.714 positive, marginal fixes 0.553, B5 must not move it. positive_from = 25-27 days.",
+   "_sector_floor_note": "2026-07-18 ruled: floor bands (Retail/Hospitality/Logistics) are governed by the sector-keyed band distribution (modal Statutory-20, 45/32/18/4/1) — the B5 two-sided shares below now document the STANDARD-sector structure only (never re-reshaped; standard side byte-frozen by the surgical-band contract)."
   }
  },
  "dropped": {

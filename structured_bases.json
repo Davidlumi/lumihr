@@ -39,9 +39,37 @@
   "large_pct": 58.5,
   "all_pct": 36,
   "single_pct": null,
-  "target_semantics": "Share of employers giving full-time staff 25+ days annual leave excluding bank holidays; positive pole = 25+ days (above the ~20-day floor).",
+  "target_semantics": "ANNUAL-LEAVE SECTOR FLOOR (ruled): Retail/Hospitality/Logistics modal = Statutory 20 days (20+8BH = 28 = UK minimum), floor-band dist 45/32/18/4/1 (Claude derivation of the modal-20 ruling, presented at gate; floor-band DKs get real values — band-internal DK strip, flagged). SURGICAL-BAND: standard sectors byte-untouched. SUPERSEDES the global sme_large 0.553 CIPD marginal — the cohort over-weights floor sectors (84/220 = 38%) vs CIPD's economy-wide mix, so a sector-honest seed reads global 25+ ~47% (composition argument, presented for ruling). NEW-EMPLOYEE basis. TENURE explicitly NOT handled (public/charity stay 25-standard, known-approximate pending the tenure-banding mechanism — queued like location-capture).",
   "verbatim_evidence": "25+ days annual leave (excl bank hols), FT: 36% all; 58-59% large; 35% SME",
-  "flags": "RANGE MIDPOINT: prose says '58-59%' for large; large_pct=58.5 is the midpoint and does NOT appear verbatim - validator will not string-match it, reviewer must accept the derivation. Pairing check: SME=35, large=58.5; 36 is ALL-UK, not SME."
+  "flags": "RANGE MIDPOINT: prose says '58-59%' for large; large_pct=58.5 is the midpoint and does NOT appear verbatim - validator will not string-match it, reviewer must accept the derivation. Pairing check: SME=35, large=58.5; 36 is ALL-UK, not SME.",
+  "maturity_anchors": {
+   "key": "Industry",
+   "within_band": "latent",
+   "band_distributions": {
+    "Retail": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    },
+    "Hospitality": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    },
+    "Logistics": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    }
+   },
+   "sector_gate": null
+  }
  },
  "REW_BEN_SICK_001": {
   "metric_id": "REW_BEN_SICK_001",

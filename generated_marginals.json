@@ -48,6 +48,37 @@
   }
  },
  "maturity_gradients": {
+  "REW_BEN_HOL_001": {
+   "key": "Industry",
+   "within_band": "latent",
+   "band_distributions": {
+    "Retail": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    },
+    "Hospitality": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    },
+    "Logistics": {
+     "Statutory minimum only (20 days)": 45,
+     "21-24 days": 32,
+     "25-27 days": 18,
+     "28-30 days": 4,
+     "More than 30 days": 1
+    }
+   },
+   "sector_gate": null,
+   "grade": "EST",
+   "source": "",
+   "semantics": "ANNUAL-LEAVE SECTOR FLOOR (ruled): Retail/Hospitality/Logistics modal = Statutory 20 days (20+8BH = 28 = UK minimum), floor-band dist 45/32/18/4/1 (Claude derivation of the modal-20 ruling, presented at gate; floor-band DKs get real values — band-internal DK strip, flagged). SURGICAL-BAND: standard sectors byte-untouched. SUPERSEDES the global sme_large 0.553 CIPD marginal — the cohort over-weights floor sectors (84/220 = 38%) vs CIPD's economy-wide mix, so a sector-honest seed reads global 25+ ~47% (composition argument, presented for ruling). NEW-EMPLOYEE basis. TENURE explicitly NOT handled (public/charity stay 25-standard, known-approximate pending the tenure-banding mechanism — queued like location-capture)."
+  },
   "PROP_fe1a29ec": {
    "positive_option": "Yes - formal/structured (survey data, provider, market analysis)",
    "anchors": {
@@ -340,17 +371,6 @@
    "grade": "A",
    "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
    "evidence": "30% of UK employers offer paid time off for voluntary/community work"
-  },
-  "REW_BEN_HOL_001": {
-   "target_share": 0.553,
-   "base_type": "sme_large",
-   "sme": 35,
-   "large": 58.5,
-   "all": 36,
-   "grade": "A",
-   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "evidence": "25+ days annual leave (excl bank hols), FT: 36% all; 58-59% large; 35% SME",
-   "positive_from": "25-27 days"
   },
   "REW_BEN_HOL_003": {
    "target_share": 0.559,

@@ -130,7 +130,9 @@ for r in reg:
             # never a share-marginal. Route recorded for the review table.
             row.update(route="RULED_DISTRIBUTION (full-dist)" if b.get("ruled_distribution")
                              else "MATURITY_GRADIENT (r3s2)", base_type=bt,
-                       inputs=json.dumps(b.get("ruled_distribution") or b["maturity_anchors"]["anchors"])[:60])
+                       inputs=json.dumps(b.get("ruled_distribution")
+                                         or b["maturity_anchors"].get("anchors")
+                                         or sorted(b["maturity_anchors"].get("band_distributions", {})))[:60])
         elif bt == "not_prevalence":
             row["route"] = "context (verified not-prevalence)"; context[q] = {"why": b.get("flags") or "not a prevalence"}
         elif bt == "sme_large":
@@ -206,10 +208,10 @@ for q in marginals:
     if not has:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
-assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
+assert pf_count == 7, "positive_from must be exactly the 7 ruled rows (SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001 — HOL_001 left for the sector-floor gradient), got %d" % pf_count
 assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508"}, sorted(ruled_dists)
 assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103",
-                               "REW26_BEN_PENSION_TYPE"}, sorted(maturity_grads)
+                               "REW26_BEN_PENSION_TYPE", "REW_BEN_HOL_001"}, sorted(maturity_grads)
 for _q, _e in maturity_grads.items():
     if _e.get("band_distributions"):
         for _b, _d in _e["band_distributions"].items():
@@ -220,7 +222,7 @@ assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-mar
 for _q, _e in ruled_dists.items():
     assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
 # default-holds assert: every other marginal has NO positive_from -> legacy second-rung semantics
-assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 8
+assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 7
 for q in SETTLED_REFREEZE:
     if q in marginals:
         SETTLED_REFREEZE[q] = marginals[q]["target_share"]
