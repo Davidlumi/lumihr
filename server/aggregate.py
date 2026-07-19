@@ -148,9 +148,14 @@ def matrix_select_block(option_order, raw_answers):
 def select_block(q, raw_answers):
     """raw_answers: list of option-label strings (one per org)."""
     by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
+    na_ex = _ab_na_labels(q.id)          # r3sw9: declared answerer_only exclusions
+    excluded_na = 0
     counts = defaultdict(int)
     unmatched = 0
     for a in raw_answers:
+        if na_ex and _norm_label(a) in na_ex:
+            excluded_na += 1
+            continue
         o = by_label.get(_norm_label(a))
         if o is None:
             unmatched += 1
@@ -160,13 +165,20 @@ def select_block(q, raw_answers):
     if n < SUPPRESSION_FLOOR:
         b = suppressed(n)
         b["unmatched"] = unmatched
+        if na_ex is not None:
+            b["excluded_na"] = excluded_na
         return b
     opts = []
     for o in sorted(q.options or [], key=lambda o: o.get("order", 0)):
+        if na_ex and _norm_label(o["label"]) in na_ex:
+            continue                     # a declared N/A option never renders, even at 0
         c = counts.get(o["code"], 0)
         opts.append({"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na")),
                      "count": c, "pct": round(100.0 * c / n, 1)})
-    return {"n": n, "options": opts, "unmatched": unmatched}
+    b = {"n": n, "options": opts, "unmatched": unmatched}
+    if na_ex is not None:
+        b["excluded_na"] = excluded_na
+    return b
 
 
 def multi_block(q, raw_answers):
@@ -176,14 +188,20 @@ def multi_block(q, raw_answers):
     every option's pct. Mirrors select_block's matched-only convention and is
     None-safe (the answers.value column is nullable)."""
     by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
+    na_ex = _ab_na_labels(q.id)          # r3sw9: declared answerer_only exclusions
+    excluded_na = 0
     counts = defaultdict(int)
     unmatched_tokens = 0
     n = 0
     for a in raw_answers:
         seen = set()
+        had_na = False
         for tok in (a or "").split(";"):
             tok = tok.strip()
             if not tok:
+                continue
+            if na_ex and _norm_label(tok) in na_ex:
+                had_na = True            # dropped token: doesn't count, doesn't keep the org in n
                 continue
             o = by_label.get(_norm_label(tok))
             if o is None:
@@ -193,16 +211,25 @@ def multi_block(q, raw_answers):
                 counts[o["code"]] += 1
         if seen:
             n += 1                       # this org contributed a recognized selection
+        elif had_na:
+            excluded_na += 1             # org held ONLY declared-N/A tokens: leaves the base
     if n < SUPPRESSION_FLOOR:
         b = suppressed(n)
         b["unmatched_tokens"] = unmatched_tokens
+        if na_ex is not None:
+            b["excluded_na"] = excluded_na
         return b
     opts = []
     for o in sorted(q.options or [], key=lambda o: o.get("order", 0)):
+        if na_ex and _norm_label(o["label"]) in na_ex:
+            continue                     # a declared N/A option never renders, even at 0
         c = counts.get(o["code"], 0)
         opts.append({"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na")),
                      "count": c, "pct": round(100.0 * c / n, 1)})
-    return {"n": n, "options": opts, "unmatched_tokens": unmatched_tokens}
+    b = {"n": n, "options": opts, "unmatched_tokens": unmatched_tokens}
+    if na_ex is not None:
+        b["excluded_na"] = excluded_na
+    return b
 
 
 # ----------------------------------------------------------------- scoring ---
@@ -254,6 +281,31 @@ def _mp_direction(qid):
         except (ValueError, OSError):
             pass
     return _mp_dir_cache["dir"].get(qid)
+
+
+_ab_cache = {"mtime": None, "data": {}}
+
+
+def _ab_na_labels(qid):
+    """r3sw9 N/A-not-on-graph: declared answerer_only N/A labels for a metric — those
+    answers leave the block entirely at aggregation (graph AND n render over the
+    applicable base). Standalone reader like _mp_direction (no positions import);
+    LUMI_AB_CONFIG path override (r3sw7 doctrine). A malformed config RAISES —
+    silently disabling exclusions is the failure class the house bans."""
+    path = os.environ.get("LUMI_AB_CONFIG") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "data", "applicable_bases.json")
+    try:
+        mt = os.path.getmtime(path)
+    except OSError:
+        return None
+    if _ab_cache["mtime"] != mt:
+        with open(path, encoding="utf-8") as f:
+            _ab_cache["data"] = json.load(f).get("metrics") or {}
+        _ab_cache["mtime"] = mt
+    e = _ab_cache["data"].get(qid)
+    if not e or e.get("mode") != "answerer_only":
+        return None
+    return {_norm_label(l) for l in (e.get("na_options") or [])}
 
 
 def score_direction(q):

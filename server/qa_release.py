@@ -76,6 +76,33 @@ print("== module invariant (2026.1) ==")
 bad_mod = conn.execute("SELECT COUNT(*) FROM questions WHERE module IS NOT NULL AND is_required=1").fetchone()[0]
 check("sector-module questions are never required (gate stays org-independent)", bad_mod == 0, bad_mod)
 
+print("== applicable-base declarations well-formed (r3sw9) ==")
+# A broken declaration must fail loudly here, never silently no-op at render time.
+_ab_path = os.environ.get("LUMI_AB_CONFIG") or os.path.join(HERE, "..", "data", "applicable_bases.json")
+try:
+    _ab = _json.load(open(_ab_path, encoding="utf-8")).get("metrics") or {}
+except FileNotFoundError:
+    _ab = {}
+_ab_bad = []
+for _qid, _e in _ab.items():
+    _q = conn.execute("SELECT options_json, status FROM questions WHERE id=?", (_qid,)).fetchone()
+    if _q is None or _q["status"] == "retired":
+        _ab_bad.append("%s: not an active question" % _qid); continue
+    if _e.get("mode") not in ("conditioned", "answerer_only"):
+        _ab_bad.append("%s: unknown mode %r" % (_qid, _e.get("mode"))); continue
+    if _e.get("mode") == "answerer_only":
+        _labels = {o["label"] for o in _json.loads(_q["options_json"] or "[]")}
+        _nas = _e.get("na_options") or []
+        if not _nas or not set(_nas) <= _labels:
+            _ab_bad.append("%s: na_options empty or not real option labels: %s" % (_qid, sorted(set(_nas) - _labels)))
+    else:
+        _p = (_e.get("parent") or {}).get("qid")
+        _pq = _p and conn.execute("SELECT status FROM questions WHERE id=?", (_p,)).fetchone()
+        if not _pq or _pq["status"] == "retired":
+            _ab_bad.append("%s: conditioned parent %r not an active question" % (_qid, _p))
+check("every applicable-base declaration names an active metric, known mode, real options/parent",
+      not _ab_bad, _ab_bad)
+
 print("== fixture release: add required + retire + break ==")
 prev_current = rel.current_release(conn)["release_id"]
 flip = [r[0] for r in conn.execute("SELECT id FROM questions WHERE superpower='Reward' AND is_required=0 "

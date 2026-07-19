@@ -342,6 +342,26 @@ def sector_scopes():
     return _SECTOR_SCOPES_CACHE["data"]
 
 
+_AB_CACHE = {"mtime": None, "data": {}}
+
+
+def applicable_bases():
+    """data/applicable_bases.json metrics map, mtime-cached (r3sw9 N/A-not-on-graph
+    mechanism). LUMI_AB_CONFIG overrides the path so gate servers and staged runs
+    never read the served copy (r3sw7 doctrine)."""
+    path = os.environ.get("LUMI_AB_CONFIG") or os.path.join(
+        os.path.dirname(__file__), "..", "data", "applicable_bases.json")
+    try:
+        mt = os.path.getmtime(path)
+        if _AB_CACHE["mtime"] != mt:
+            with open(path, encoding="utf-8") as f:
+                _AB_CACHE["data"] = json.load(f).get("metrics") or {}
+            _AB_CACHE["mtime"] = mt
+    except OSError:
+        _AB_CACHE["data"] = {}
+    return _AB_CACHE["data"]
+
+
 def visible_questions():
     """The question set every user-facing route serves. THE focus filter.
     Retired questions (versioning, 2026-06-12) leave the live member
@@ -669,9 +689,15 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
     # (not marginal/settled/floor). The distribution still renders, but NO peer
     # comparison does: no verdict, no "X in 10" lead, no percentile readouts.
     _unbench = bool(_mp_ent.get("unbenchmarked"))
+    _ab = applicable_bases().get(q.id)
     base = {
         "id": q.id,
         "title": q.display_title,
+        # r3sw9: declared applicable base — the chart + n cover only orgs where the
+        # metric applies (data/applicable_bases.json; None for undeclared metrics)
+        "base": ({"label": _ab.get("base_label") or "organisations where this applies",
+                  "mode": _ab.get("mode"),
+                  "excluded": (blk or {}).get("excluded_na", 0)} if _ab else None),
         "question_text": q.text,
         "help_text": q.help_text,
         "definition": q.definition,

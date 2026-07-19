@@ -1529,7 +1529,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     <div class="metric-page">
       ${/* print-only masthead for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-head" aria-hidden="true">
-        <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · n=${c.n}${period ? " · " + period : ""}</div>
+        <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · n=${c.n}${c.base ? " · of " + c.base.label : ""}${period ? " · " + period : ""}</div>
       <button class="btn quiet no-print" onClick=${goBack}>← Back</button>
       <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s2)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
@@ -1588,7 +1588,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
                   ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
                 </optgroup>`}
             </select>
-            <div class="hint">${c.cut.label} · n=${c.n}</div>
+            <div class="hint">${c.cut.label} · n=${c.n}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</div>
           </div>
           ${alts.length > 1 && html`
             <div class="chart-switch" role="group" aria-label="Chart type">

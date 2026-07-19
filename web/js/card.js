@@ -110,6 +110,8 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${c.unbenchmarked && !c.practice ? html`
           <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">Unbenchmarked</span>` : null}
         <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
+        ${c.base ? html`
+          <span class="caption base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies.">of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : null}
         <div class="card-tools no-print">
           ${footTools && html`${footTools}<span class="tool-div" aria-hidden="true"></span>`}
           <button class="iconbtn" title="Open full view" aria-label="Open full view" onClick=${() => openMetric(c.id)}><${Icon} name="maximize" size=${15} /></button>

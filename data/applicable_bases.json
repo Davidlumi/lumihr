@@ -1,0 +1,20 @@
+{
+  "_readme": {
+    "rule": "N/A-not-on-graph (r3sw8 pilot -> r3sw9 mechanism): an N/A-type option that means 'this metric does not apply to us' must leave the graph AND the denominator — the distribution renders over the applicable base only.",
+    "modes": {
+      "conditioned": "answer rows exist ONLY for the applicable base (seed-level conditioning, r3sw1/r3sw8 pattern). The declaration adds the member-facing base caption; aggregation is untouched. Enforcement of the base itself is the subset_orgs coherence pair + the tier-2d arming check.",
+      "answerer_only": "declared na_options leave the block at AGGREGATION: those answers drop from n and from the bars; the block carries excluded_na. Changing a declaration requires re-aggregation. Ruled per metric — this changes rendered distributions."
+    },
+    "fields": "mode; base_label (member-facing caption, lowercase mid-sentence); na_options (answerer_only only: exact option labels to exclude); parent {qid, contains|value} (conditioned only: documents the gate — the coherence pair is the enforcement)",
+    "governance": "every declaration is RULED (David) before it lands. qa_release validates each declaration (active qid, known mode, na_options are real option labels, parent exists). Don't-know options are NOT this mechanism (blanket-DK diff); 'Varies'-type options stay on the graph.",
+    "env": "LUMI_AB_CONFIG overrides this file's path for gate servers and staged runs — the served copy is immutable until an approved live write (r3sw7 doctrine)."
+  },
+  "metrics": {
+    "REW265_BEN_PMICOMP": {
+      "mode": "conditioned",
+      "base_label": "PMI-holding organisations",
+      "parent": {"qid": "REW_BEN_038", "contains": "Private Medical Insurance (PMI)"},
+      "_r3sw9": "the r3sw8 pilot chart, first declaration at the mechanism build; help_text keeps the assumed-universals copy"
+    }
+  }
+}
