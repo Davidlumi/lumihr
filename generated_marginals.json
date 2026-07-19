@@ -36,16 +36,38 @@
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
    "semantics": "Range-maximum policy, CONDITIONAL derivation: 40% have ranges; among range-havers 40/20/40 lump/continue/frozen. Cohort-average flat THIS diff; FTE-gradient flagged round 3. Non-directional (ruled ②), no verdict."
-  },
+  }
+ },
+ "maturity_gradients": {
   "PROP_fe1a29ec": {
-   "distribution": {
-    "Yes - formal/structured (survey data, provider, market analysis)": 60,
-    "Informally only (job adverts, ad hoc, online, ChatGPT)": 30,
-    "No benchmarking at all": 10
+   "positive_option": "Yes - formal/structured (survey data, provider, market analysis)",
+   "anchors": {
+    "Basic": 15,
+    "Developing": 60,
+    "Advanced": 90
    },
+   "remainder_options": [
+    "Informally only (job adverts, ad hoc, online, ChatGPT)",
+    "No benchmarking at all"
+   ],
+   "remainder_ratio": {
+    "Basic": [
+     2,
+     1
+    ],
+    "Developing": [
+     3,
+     1
+    ],
+    "Advanced": [
+     4,
+     1
+    ]
+   },
+   "sector_gate": null,
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
-   "semantics": "External benchmarking after option redesign (46-set surgery ruled 2026-07-18 ④): old Yes/Partially/No replaced; 60/30/10 cohort-centre flat, FTE-gradient round 3. SUPERSEDES the Drewberry 0.495 share-marginal (old construct died with the options). KEEPS higher_is_better (ordered maturity scale). First member of the shared FTE-maturity family."
+   "semantics": "External benchmarking on the MATURITY GRADIENT (r3s2 pilot, ruled): formal% keyed per-org on HR_Maturity - Basic 15 / Developing 60 / Advanced 90 (EST, D. Whitfield). Replaces the Diff-15 flat 60/30/10 cohort-centre placeholder. Remainder informal:none shifts by band (2:1/3:1/4:1 - informal higher at lower maturity, derivation presented for ruling). Maturity-not-size keying per David's principle; a small-but-Advanced org correctly reads high."
   }
  },
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
@@ -1021,6 +1043,12 @@
    "why": "unanchored"
   },
   "REW_PRO_098": {
+   "why": "unanchored"
+  },
+  "REW265_PAY_RANGEMAX": {
+   "why": "unanchored"
+  },
+  "REW265_PAY_PAYCOMMS": {
    "why": "unanchored"
   }
  },

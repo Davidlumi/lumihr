@@ -47,6 +47,7 @@ MARGINAL_FAIL = 0.05  # tier 2: register marginals fail only beyond 5pp (±4ppt 
 _GEN = json.load(open(os.path.join(_ROOT, "generated_marginals.json")))
 MARG = _GEN["marginals"]
 RDIST = _GEN.get("ruled_distributions") or {}   # Diff 15: full-dist reshapes, tier-2b at the same 5pp line
+MGRAD = _GEN.get("maturity_gradients") or {}    # r3s2: per-band anchors, tier-2c — checked PER MATURITY BAND
 ORDS = json.load(open(os.path.join(_ROOT, "ruled_orderings.json")))["orderings"]
 # register-anchored = the 14 REW26_* firewall family (id starts 'REW26_', NOT REW262_/REW263_)
 
@@ -236,6 +237,25 @@ def check_c():
                 hard.append((drift, "FROZEN-DRIFT", qid,
                              "%.2fpp vs frozen_targets.json (tol %.1fpp — settled is immovable)"
                              % (drift * 100, SETTLED_TOL * 100)))
+        elif qid in MGRAD:
+            e = MGRAD[qid]
+            pos = e["positive_option"]
+            by_band = {}
+            for org, v in c.execute(
+                "SELECT org_id, value FROM answers WHERE question_id=? AND snapshot_id=? AND matrix_row_id='' AND value!=''",
+                (qid, SNAP)):
+                b = (prof.get(org) or {}).get("HR_Maturity") or "?"
+                t, pn = by_band.get(b, (0, 0))
+                by_band[b] = (t + 1, pn + (1 if v == pos else 0))
+            worst = 0.0
+            for b, tgt in e["anchors"].items():
+                t, pn = by_band.get(b, (0, 0))
+                if t < 5: continue                    # sub-floor band: no honest check
+                worst = max(worst, abs(pn / t - tgt / 100.0))
+            t2_max = max(t2_max, worst); t2_n += 1
+            if worst > MARGINAL_FAIL:
+                hard.append((worst, "MATURITY-BAND-DRIFT", qid,
+                             "%.1fpp worst band vs anchors (fail >%.0fpp)" % (worst * 100, MARGINAL_FAIL * 100)))
         elif qid in RDIST:
             tgt = {k: v / 100.0 for k, v in RDIST[qid]["distribution"].items()}
             drift = max((abs(raw.get(k, 0) - t) for k, t in tgt.items()), default=0)

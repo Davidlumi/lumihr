@@ -39,6 +39,12 @@ ruled_dists = {q: {"distribution": b["ruled_distribution"], "grade": b.get("grad
                    "source": b.get("source", ""), "semantics": b.get("target_semantics", "")}
                for q, b in bases.items()
                if isinstance(b, dict) and b.get("ruled_distribution")}
+# r3s2: maturity-gradient metrics — per-org prevalence keyed on HR_Maturity, one shared
+# mechanism (engine maturity_assign), per-metric three-level anchors from structured_bases.
+maturity_grads = {q: dict(b["maturity_anchors"], grade=b.get("grade", "EST"),
+                          source=b.get("source", ""), semantics=b.get("target_semantics", ""))
+                  for q, b in bases.items()
+                  if isinstance(b, dict) and b.get("maturity_anchors")}
 RULED_ORD = json.load(open("ruled_orderings.json"))["orderings"]   # THE standing orderings artifact
 # Ruled context (2026-07-16): one-pole-of-multi-pole = context (PAY_097/PAY_017, as principle);
 # GAP_009 set-not-pole (question shape, figure-independent); WEL_BUDGET numeric (G8: no
@@ -77,7 +83,7 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 243
+assert len(byid) == 245  # 243 + RANGEMAX/PAYCOMMS EST captures (Diff 15 ruled additions)
 
 for r in reg:
     q = r["metric_id"].strip()
@@ -119,11 +125,12 @@ for r in reg:
                 row["flags"] = "large-only (ruled emit-with-caveat)"
     elif b:
         bt = b["base_type"]
-        if b.get("ruled_distribution"):
+        if b.get("ruled_distribution") or b.get("maturity_anchors"):
             # Diff 15: full-distribution base — emits via ruled_dists (built at load),
             # never a share-marginal. Route recorded for the review table.
-            row.update(route="RULED_DISTRIBUTION (full-dist)", base_type=bt,
-                       inputs=json.dumps(b["ruled_distribution"])[:60])
+            row.update(route="RULED_DISTRIBUTION (full-dist)" if b.get("ruled_distribution")
+                             else "MATURITY_GRADIENT (r3s2)", base_type=bt,
+                       inputs=json.dumps(b.get("ruled_distribution") or b["maturity_anchors"]["anchors"])[:60])
         elif bt == "not_prevalence":
             row["route"] = "context (verified not-prevalence)"; context[q] = {"why": b.get("flags") or "not a prevalence"}
         elif bt == "sme_large":
@@ -200,7 +207,10 @@ for q in marginals:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
-assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "PROP_fe1a29ec"}, sorted(ruled_dists)
+assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX"}, sorted(ruled_dists)
+assert set(maturity_grads) == {"PROP_fe1a29ec"}, sorted(maturity_grads)
+for _q, _e in maturity_grads.items():
+    assert set(_e["anchors"]) == {"Basic", "Developing", "Advanced"}, _q
 assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-marginals (Diff 15 redesign)"
 for _q, _e in ruled_dists.items():
     assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
@@ -221,6 +231,7 @@ for q, m in marginals.items():
 
 out = {"_generated": RULED, "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
        "ruled_distributions": ruled_dists,
+       "maturity_gradients": maturity_grads,
        "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
        "marginals": marginals, "floors": floors, "context": context,
        "pending_ruling": pending, "ruled_orderings": ruled_orderings,

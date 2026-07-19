@@ -9,7 +9,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 62,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 45 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 45 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "d38e0809-856e-4903-8c6b-c596021f8749": {
   "org_id": "d38e0809-856e-4903-8c6b-c596021f8749",
@@ -20,7 +22,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 69,
   "Workforce_Shift_%": 48,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "236b436e-f3d3-4630-ac1b-ce7421653010": {
   "org_id": "236b436e-f3d3-4630-ac1b-ce7421653010",
@@ -32,7 +36,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 2,
   "Workforce_Unionised_%": 32,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 58 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 58 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "2dcf0cac-54de-4872-9edb-27b8e5bc88be": {
   "org_id": "2dcf0cac-54de-4872-9edb-27b8e5bc88be",
@@ -44,7 +50,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 16,
   "Workforce_Unionised_%": 23,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "fc5f629e-d92d-4a22-9173-1ebc5bfa5c69": {
   "org_id": "fc5f629e-d92d-4a22-9173-1ebc5bfa5c69",
@@ -55,7 +63,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 74,
   "Workforce_Shift_%": 0,
-  "Workforce_Unionised_%": 23
+  "Workforce_Unionised_%": 23,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "358687e8-dc56-4308-9508-cbd41c80d4a8": {
   "org_id": "358687e8-dc56-4308-9508-cbd41c80d4a8",
@@ -66,7 +76,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 63,
   "Workforce_Shift_%": 55,
-  "Workforce_Unionised_%": 26
+  "Workforce_Unionised_%": 26,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "b82f7d6d-f77f-40f0-9399-fd399b29b483": {
   "org_id": "b82f7d6d-f77f-40f0-9399-fd399b29b483",
@@ -78,7 +90,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 2,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 44 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 44 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "60020378-af0b-4a1c-ac0b-8f49061a2565": {
   "org_id": "60020378-af0b-4a1c-ac0b-8f49061a2565",
@@ -90,7 +104,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 5,
   "Workforce_Unionised_%": 46,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 39 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 39 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "abdba75c-1253-4d2e-9c2c-0143436c11f0": {
   "org_id": "abdba75c-1253-4d2e-9c2c-0143436c11f0",
@@ -102,7 +118,9 @@
   "Workforce_Frontline_%": 45,
   "Workforce_Shift_%": 26,
   "Workforce_Unionised_%": 28,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 45 (floor 45)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 45 (floor 45)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "100d4cd3-bba1-427b-accb-1eee70ce5e30": {
   "org_id": "100d4cd3-bba1-427b-accb-1eee70ce5e30",
@@ -114,7 +132,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 55,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 55 (floor 55)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "d50e4b29-73b1-4e39-b262-a1e5339799c9": {
   "org_id": "d50e4b29-73b1-4e39-b262-a1e5339799c9",
@@ -125,7 +145,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 67,
   "Workforce_Shift_%": 64,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "50bdb749-0f69-47d3-a6cf-cd46d0cd329d": {
   "org_id": "50bdb749-0f69-47d3-a6cf-cd46d0cd329d",
@@ -137,7 +159,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 5,
   "Workforce_Unionised_%": 7,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "df9cc9dc-9361-4e05-a825-542ba2426c44": {
   "org_id": "df9cc9dc-9361-4e05-a825-542ba2426c44",
@@ -148,7 +172,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 64,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "efeaca8f-e7e5-4d81-a09b-68d140ae1325": {
   "org_id": "efeaca8f-e7e5-4d81-a09b-68d140ae1325",
@@ -160,7 +186,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 42,
   "Workforce_Unionised_%": 24,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 65 (floor 65)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "5876df18-74a4-4e3d-9997-6715affd9727": {
   "org_id": "5876df18-74a4-4e3d-9997-6715affd9727",
@@ -172,7 +200,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 19,
   "Workforce_Unionised_%": 16,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "3cf8893b-c1dc-44f7-9d43-7ee2385687ff": {
   "org_id": "3cf8893b-c1dc-44f7-9d43-7ee2385687ff",
@@ -183,7 +213,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 70,
   "Workforce_Shift_%": 29,
-  "Workforce_Unionised_%": 17
+  "Workforce_Unionised_%": 17,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "456ed463-b294-445e-9cd5-7b4c08b9b45d": {
   "org_id": "456ed463-b294-445e-9cd5-7b4c08b9b45d",
@@ -195,7 +227,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 55,
   "Workforce_Unionised_%": 3,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 15 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 15 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "fd1bc086-833f-46b5-b813-7832c17094d9": {
   "org_id": "fd1bc086-833f-46b5-b813-7832c17094d9",
@@ -206,7 +240,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 3,
-  "Workforce_Unionised_%": 2
+  "Workforce_Unionised_%": 2,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "74419871-84aa-48d5-9490-5c1423044fa3": {
   "org_id": "74419871-84aa-48d5-9490-5c1423044fa3",
@@ -217,7 +253,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 69,
   "Workforce_Shift_%": 0,
-  "Workforce_Unionised_%": 3
+  "Workforce_Unionised_%": 3,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "68297956-da3c-420d-afb5-58d763d46777": {
   "org_id": "68297956-da3c-420d-afb5-58d763d46777",
@@ -228,7 +266,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 61,
   "Workforce_Shift_%": 5,
-  "Workforce_Unionised_%": 32
+  "Workforce_Unionised_%": 32,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "586a2cee-0efb-401c-a719-5e5dc82ff821": {
   "org_id": "586a2cee-0efb-401c-a719-5e5dc82ff821",
@@ -240,7 +280,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 19,
   "Workforce_Unionised_%": 50,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 42 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 42 -> 55 (floor 55)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "30ad8727-fed5-4bf7-98d3-f4f62dd3cd30": {
   "org_id": "30ad8727-fed5-4bf7-98d3-f4f62dd3cd30",
@@ -252,7 +294,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 28,
   "Workforce_Unionised_%": 15,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 55 (floor 55)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "0d0945bd-04a0-4c69-8051-7dd749e05328": {
   "org_id": "0d0945bd-04a0-4c69-8051-7dd749e05328",
@@ -263,7 +307,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 75,
   "Workforce_Shift_%": 27,
-  "Workforce_Unionised_%": 39
+  "Workforce_Unionised_%": 39,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "7b66f1db-5ae5-4248-acea-1a24f4408461": {
   "org_id": "7b66f1db-5ae5-4248-acea-1a24f4408461",
@@ -275,7 +321,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 0,
   "Workforce_Unionised_%": 2,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "d839bc1a-bf33-4dbd-b8da-ed732d43df39": {
   "org_id": "d839bc1a-bf33-4dbd-b8da-ed732d43df39",
@@ -287,7 +335,9 @@
   "Workforce_Frontline_%": 15,
   "Workforce_Shift_%": 16,
   "Workforce_Unionised_%": 17,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 15 (cap 15)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 15 (cap 15)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "b5d541de-0004-4cf6-ba1e-ee3f36619097": {
   "org_id": "b5d541de-0004-4cf6-ba1e-ee3f36619097",
@@ -298,7 +348,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 61,
-  "Workforce_Unionised_%": 13
+  "Workforce_Unionised_%": 13,
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "2713b207-598a-43f8-a0dc-503cfc6fa630": {
   "org_id": "2713b207-598a-43f8-a0dc-503cfc6fa630",
@@ -309,7 +361,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 6,
   "Workforce_Shift_%": 3,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "5758b2d3-4f6e-47fb-b0f1-49cc273cab91": {
   "org_id": "5758b2d3-4f6e-47fb-b0f1-49cc273cab91",
@@ -321,7 +375,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 13,
   "Workforce_Unionised_%": 11,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "0634c172-3c75-4ece-ba1e-155a7c9a49ba": {
   "org_id": "0634c172-3c75-4ece-ba1e-155a7c9a49ba",
@@ -332,7 +388,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 18,
-  "Workforce_Unionised_%": 42
+  "Workforce_Unionised_%": 42,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "eb5f3cf4-221e-4a3c-9a90-70a65ea65a4c": {
   "org_id": "eb5f3cf4-221e-4a3c-9a90-70a65ea65a4c",
@@ -344,7 +402,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 27,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 5 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 5 -> 55 (floor 55)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "35e91197-c1ad-4d7b-8215-9bc7f653e850": {
   "org_id": "35e91197-c1ad-4d7b-8215-9bc7f653e850",
@@ -355,7 +415,9 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 2,
   "Workforce_Shift_%": 15,
-  "Workforce_Unionised_%": 39
+  "Workforce_Unionised_%": 39,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "d78a8728-73e6-408c-9d1a-9c7b4c2ca87c": {
   "org_id": "d78a8728-73e6-408c-9d1a-9c7b4c2ca87c",
@@ -367,7 +429,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 70,
   "Workforce_Unionised_%": 44,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "a7fcd45c-737b-4c8a-8384-f68a202f8cff": {
   "org_id": "a7fcd45c-737b-4c8a-8384-f68a202f8cff",
@@ -379,7 +443,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 52,
   "Workforce_Unionised_%": 18,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "cae3e067-2fb3-4e6b-9a22-a7338d126ed2": {
   "org_id": "cae3e067-2fb3-4e6b-9a22-a7338d126ed2",
@@ -390,7 +456,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 5,
   "Workforce_Shift_%": 6,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "155418c3-3bc1-453b-a08d-09f129be9447": {
   "org_id": "155418c3-3bc1-453b-a08d-09f129be9447",
@@ -402,7 +470,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 0,
   "Workforce_Unionised_%": 3,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 19 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 19 -> 60 (floor 60)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "08c2693c-6b26-4a5e-bc46-d02a47c48d11": {
   "org_id": "08c2693c-6b26-4a5e-bc46-d02a47c48d11",
@@ -414,7 +484,9 @@
   "Workforce_Frontline_%": 45,
   "Workforce_Shift_%": 11,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 41 -> 45 (floor 45)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 41 -> 45 (floor 45)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "160572ec-9bbd-46ad-a344-f50fc4d05b4c": {
   "org_id": "160572ec-9bbd-46ad-a344-f50fc4d05b4c",
@@ -426,7 +498,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 16,
   "Workforce_Unionised_%": 15,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "c0601b5f-b380-433f-8bef-6e29616a2dcb": {
   "org_id": "c0601b5f-b380-433f-8bef-6e29616a2dcb",
@@ -437,7 +511,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 71,
   "Workforce_Shift_%": 70,
-  "Workforce_Unionised_%": 37
+  "Workforce_Unionised_%": 37,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "6e9d295c-9687-4a2f-bfee-65eae747ac5b": {
   "org_id": "6e9d295c-9687-4a2f-bfee-65eae747ac5b",
@@ -449,7 +525,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 0,
   "Workforce_Unionised_%": 18,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 13 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 13 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "c0f343f6-699f-4dfc-b679-4ea8f9b6872b": {
   "org_id": "c0f343f6-699f-4dfc-b679-4ea8f9b6872b",
@@ -461,7 +539,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 71,
   "Workforce_Unionised_%": 32,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 46 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 46 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "cdffedf3-52e1-4354-8688-346c1e3db47b": {
   "org_id": "cdffedf3-52e1-4354-8688-346c1e3db47b",
@@ -473,7 +553,9 @@
   "Workforce_Frontline_%": 45,
   "Workforce_Shift_%": 0,
   "Workforce_Unionised_%": 28,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 45 (floor 45)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 45 (floor 45)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "7336a849-366e-4b49-ac58-bd7bc4f8db61": {
   "org_id": "7336a849-366e-4b49-ac58-bd7bc4f8db61",
@@ -485,7 +567,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 29,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 60 (floor 60)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "6add6006-f634-462b-823c-595ba7a38b4b": {
   "org_id": "6add6006-f634-462b-823c-595ba7a38b4b",
@@ -497,7 +581,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 5,
   "Workforce_Unionised_%": 10,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 39 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 39 -> 60 (floor 60)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "8323fa4d-ec60-4e61-a309-26f51057d209": {
   "org_id": "8323fa4d-ec60-4e61-a309-26f51057d209",
@@ -509,7 +595,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 53,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 38 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 38 -> 65 (floor 65)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "a26b230a-5969-4e46-9126-1be5b8d8a9bb": {
   "org_id": "a26b230a-5969-4e46-9126-1be5b8d8a9bb",
@@ -521,7 +609,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 66,
   "Workforce_Unionised_%": 20,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 35 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 35 -> 65 (floor 65)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "a412a4a8-e504-40bd-995d-ce6cce647a60": {
   "org_id": "a412a4a8-e504-40bd-995d-ce6cce647a60",
@@ -532,7 +622,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 75,
   "Workforce_Shift_%": 18,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "0732669c-52bc-43de-829f-f199a9b7dbdb": {
   "org_id": "0732669c-52bc-43de-829f-f199a9b7dbdb",
@@ -544,7 +636,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 5,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 28 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 28 -> 65 (floor 65)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "0acf4402-b5eb-4cff-9ecb-3c2d31bfd1d3": {
   "org_id": "0acf4402-b5eb-4cff-9ecb-3c2d31bfd1d3",
@@ -556,7 +650,9 @@
   "Workforce_Frontline_%": 45,
   "Workforce_Shift_%": 26,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 45 (floor 45)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 45 (floor 45)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "421236bf-d1db-4cd7-a4a2-7721722e7a3d": {
   "org_id": "421236bf-d1db-4cd7-a4a2-7721722e7a3d",
@@ -568,7 +664,9 @@
   "Workforce_Frontline_%": 45,
   "Workforce_Shift_%": 28,
   "Workforce_Unionised_%": 1,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 45 (floor 45)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 45 (floor 45)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "7d3b1778-c6d3-4e36-bd05-52f55a015217": {
   "org_id": "7d3b1778-c6d3-4e36-bd05-52f55a015217",
@@ -579,7 +677,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 75,
   "Workforce_Shift_%": 60,
-  "Workforce_Unionised_%": 46
+  "Workforce_Unionised_%": 46,
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "9ace1bb9-51c2-4b05-9ecb-01a165a0b7ff": {
   "org_id": "9ace1bb9-51c2-4b05-9ecb-01a165a0b7ff",
@@ -590,7 +690,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 71,
   "Workforce_Shift_%": 6,
-  "Workforce_Unionised_%": 13
+  "Workforce_Unionised_%": 13,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "1067ec0d-ae89-4ac3-9936-290776bdc2fe": {
   "org_id": "1067ec0d-ae89-4ac3-9936-290776bdc2fe",
@@ -602,7 +704,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 3,
   "Workforce_Unionised_%": 22,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 65 (floor 65)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "983c7c2e-a67f-49c0-9c63-9e8d8cec3d9b": {
   "org_id": "983c7c2e-a67f-49c0-9c63-9e8d8cec3d9b",
@@ -613,7 +717,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 74,
   "Workforce_Shift_%": 0,
-  "Workforce_Unionised_%": 37
+  "Workforce_Unionised_%": 37,
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "1a1f3230-b069-43b6-9ebf-4f6664faa1b5": {
   "org_id": "1a1f3230-b069-43b6-9ebf-4f6664faa1b5",
@@ -625,7 +731,9 @@
   "Workforce_Frontline_%": 60,
   "Workforce_Shift_%": 62,
   "Workforce_Unionised_%": 0,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 60 (floor 60)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 50 -> 60 (floor 60)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "1b25d223-a71f-40e8-b2e1-0b1bbdcc1416": {
   "org_id": "1b25d223-a71f-40e8-b2e1-0b1bbdcc1416",
@@ -636,7 +744,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 46,
   "Workforce_Shift_%": 8,
-  "Workforce_Unionised_%": 21
+  "Workforce_Unionised_%": 21,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "82d55d79-68e2-4f42-8a91-393019cde0ec": {
   "org_id": "82d55d79-68e2-4f42-8a91-393019cde0ec",
@@ -647,7 +757,9 @@
   "FTE_Band": "250-999",
   "Workforce_Frontline_%": 46,
   "Workforce_Shift_%": 19,
-  "Workforce_Unionised_%": 0
+  "Workforce_Unionised_%": 0,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "e5a61cdd-9d45-4029-a32f-6e982c930ec4": {
   "org_id": "e5a61cdd-9d45-4029-a32f-6e982c930ec4",
@@ -659,7 +771,9 @@
   "Workforce_Frontline_%": 15,
   "Workforce_Shift_%": 2,
   "Workforce_Unionised_%": 43,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 66 -> 15 (cap 15)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 66 -> 15 (cap 15)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "a80092aa-cd16-4a50-bf86-071f683e058c": {
   "org_id": "a80092aa-cd16-4a50-bf86-071f683e058c",
@@ -671,7 +785,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 11,
   "Workforce_Unionised_%": 64,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 2 -> 55 (floor 55)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "99606401-6ca0-4220-9dae-d4b4218ad524": {
   "org_id": "99606401-6ca0-4220-9dae-d4b4218ad524",
@@ -683,7 +799,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 67,
   "Workforce_Unionised_%": 44,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 22 -> 55 (floor 55)",
+  "HR_Maturity": "Basic",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "f7f33cc7-d4f3-42bb-b821-227a6ac000e6": {
   "org_id": "f7f33cc7-d4f3-42bb-b821-227a6ac000e6",
@@ -695,7 +813,9 @@
   "Workforce_Frontline_%": 55,
   "Workforce_Shift_%": 0,
   "Workforce_Unionised_%": 37,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 14 -> 55 (floor 55)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 14 -> 55 (floor 55)",
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "ee7b2986-0ed8-4212-9e9f-ec339ed18722": {
   "org_id": "ee7b2986-0ed8-4212-9e9f-ec339ed18722",
@@ -707,7 +827,9 @@
   "Workforce_Frontline_%": 65,
   "Workforce_Shift_%": 9,
   "Workforce_Unionised_%": 23,
-  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 65 (floor 65)"
+  "_r3s1_frontline_imputed": "ruled floor/cap 2026-07-18: 10 -> 65 (floor 65)",
+  "HR_Maturity": "Developing",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "d1c072e6-6b1b-4288-8ad1-149eb6744e74": {
   "org_id": "d1c072e6-6b1b-4288-8ad1-149eb6744e74",
@@ -718,7 +840,10 @@
   "FTE_Band": "5,000-9,999",
   "Workforce_Frontline_%": 62,
   "Workforce_Shift_%": 0,
-  "Workforce_Unionised_%": 53
+  "Workforce_Unionised_%": 53,
+  "HR_Maturity": "Advanced",
+  "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
- "_r3s1_recovery": "2026-07-18: Workforce_Frontline/Shift/Unionised_% copied VERBATIM from seed_personas_220.json (fields never carried over at Diff-9 profile build — Diff-9 field-loss class, lossless). 21 sector-implausible AUTHORED values flagged to David separately, NOT altered here."
+ "_r3s1_recovery": "2026-07-18: Workforce_Frontline/Shift/Unionised_% copied VERBATIM from seed_personas_220.json (fields never carried over at Diff-9 profile build — Diff-9 field-loss class, lossless). 21 sector-implausible AUTHORED values flagged to David separately, NOT altered here.",
+ "_r3s2_note": "HR_Maturity recovered 62/62 verbatim from seed_personas_220.json. org_profiles are the gating authority; any future rebuild must preserve recovered fields (clobber-class)."
 }

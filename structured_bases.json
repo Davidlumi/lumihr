@@ -502,16 +502,38 @@
   "polarity": "positive"
  },
  "PROP_fe1a29ec": {
-  "ruled_distribution": {
-   "Yes - formal/structured (survey data, provider, market analysis)": 60,
-   "Informally only (job adverts, ad hoc, online, ChatGPT)": 30,
-   "No benchmarking at all": 10
-  },
   "grade": "EST",
   "source": "practitioner benchmark - D. Whitfield",
-  "base_type": "ruled_full_distribution",
-  "target_semantics": "External benchmarking after option redesign (46-set surgery ruled 2026-07-18 ④): old Yes/Partially/No replaced; 60/30/10 cohort-centre flat, FTE-gradient round 3. SUPERSEDES the Drewberry 0.495 share-marginal (old construct died with the options). KEEPS higher_is_better (ordered maturity scale). First member of the shared FTE-maturity family.",
-  "polarity": "positive"
+  "base_type": "maturity_gradient",
+  "target_semantics": "External benchmarking on the MATURITY GRADIENT (r3s2 pilot, ruled): formal% keyed per-org on HR_Maturity - Basic 15 / Developing 60 / Advanced 90 (EST, D. Whitfield). Replaces the Diff-15 flat 60/30/10 cohort-centre placeholder. Remainder informal:none shifts by band (2:1/3:1/4:1 - informal higher at lower maturity, derivation presented for ruling). Maturity-not-size keying per David's principle; a small-but-Advanced org correctly reads high.",
+  "polarity": "positive",
+  "maturity_anchors": {
+   "positive_option": "Yes - formal/structured (survey data, provider, market analysis)",
+   "anchors": {
+    "Basic": 15,
+    "Developing": 60,
+    "Advanced": 90
+   },
+   "remainder_options": [
+    "Informally only (job adverts, ad hoc, online, ChatGPT)",
+    "No benchmarking at all"
+   ],
+   "remainder_ratio": {
+    "Basic": [
+     2,
+     1
+    ],
+    "Developing": [
+     3,
+     1
+    ],
+    "Advanced": [
+     4,
+     1
+    ]
+   },
+   "sector_gate": null
+  }
  },
  "_diff15_notes": {
   "PENSION_TYPE": "re-frozen tier-1 at DC .95/DB .0318/Hybrid .0182 (None option REMOVED — AE legal mandate; ruled ③); lives in frozen_targets.json not here",

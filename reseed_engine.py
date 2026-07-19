@@ -102,6 +102,42 @@ def canon_industry(ind):
         return ind
     return "Other"
 
+def maturity_assign(qid, entry, rows, prof, lat):
+    """r3s2 shared mechanism: per-org option assignment keyed on HR_Maturity.
+    entry = generated_marginals.maturity_gradients[qid]: positive_option, anchors
+    {Basic/Developing/Advanced: pct}, remainder_options [informal-ish, none-ish],
+    remainder_ratio per band, optional sector_gate {exclude_industries:[...]} whose
+    gated orgs are DROPPED (absence — "no scheme", never a low value).
+    Deterministic: within each band, largest-remainder counts; positive to the
+    top-latent slice (sha tiebreak); remainder split by the band ratio down the
+    rest of the band. Returns {org: option_label} over the surviving orgs."""
+    gate = entry.get("sector_gate") or {}
+    excl = set(gate.get("exclude_industries") or [])
+    def band(o):
+        return (prof.get(o) or {}).get("HR_Maturity") or "Developing"
+    def industry(o):
+        return canon_industry((prof.get(o) or {}).get("Industry") or "")
+    orgs = [o for o, _ in rows if not excl or industry(o) not in excl]
+    out = {}
+    pos, rem_opts = entry["positive_option"], entry["remainder_options"]
+    for b in ("Basic", "Developing", "Advanced"):
+        # ruled 2026-07-18 (r3s2 ③): within-band order is HASH-ONLY, never latent —
+        # latent-rank let size back in through the coherence spine, which is exactly
+        # what keying on maturity was meant to remove. Small-but-Advanced reads ~anchor.
+        members = sorted((o for o in orgs if band(o) == b),
+                         key=lambda o: hashlib.sha256((qid + "|" + o).encode()).hexdigest())
+        if not members:
+            continue
+        n = len(members)
+        k = int(round(entry["anchors"][b] / 100.0 * n))
+        ra, rb = entry["remainder_ratio"][b]
+        rem = n - k
+        ka = int(round(rem * ra / float(ra + rb)))
+        for i, o in enumerate(members):
+            out[o] = pos if i < k else (rem_opts[0] if i < k + ka else rem_opts[1])
+    return out
+
+
 def load_profiles(paths):
     """B-ruling (1): accept a LIST artifact and key on org_id or source_org_id_live.
     seed_personas_220.json is a provenance-flagged list; only the 158 real rows carry
@@ -348,7 +384,13 @@ def reseed(db, profiles, meta_path, write=False, confirmed=False):
         obs=[v for _,v in rows]
         newmap=None
 
-        if (q in MARG.get("marginals", {})) and not mr:
+        if (q in MARG.get("maturity_gradients", {})) and not mr:
+            # r3s2: maturity-gradient reshape — survives future reseeds by re-derivation
+            # (band-conditional structure would drift under plain context re-pairing).
+            newmap = maturity_assign(q, MARG["maturity_gradients"][q], rows, prof, lat)
+            modes["maturity_gradient"] += 1
+
+        elif (q in MARG.get("marginals", {})) and not mr:
             # DIFF-3 MARGINAL BRANCH (ruled 2026-07-16): targets come from generated_marginals.json
             # (Diff-2 David-approved final table); orderings from ruled_orderings.json (ruled) or
             # option_order() inference. LEAN-SIDE semantics: positive_from generalises the lean

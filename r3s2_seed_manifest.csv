@@ -1,0 +1,2 @@
+metric_id,action,before,after,per_band
+PROP_fe1a29ec,maturity-gradient pilot,"{""No benchmarking at all"": 21, ""Yes - formal/structured (survey data, provider, market analysis)"": 129, ""Informally only (job adverts, ad hoc, online, ChatGPT)"": 65}","{""Yes - formal/structured (survey data, provider, market analysis)"": 151, ""Informally only (job adverts, ad hoc, online, ChatGPT)"": 47, ""No benchmarking at all"": 17}","{""Basic"": {""n"": 17, ""formal"": 3}, ""Developing"": {""n"": 100, ""formal"": 60}, ""Advanced"": {""n"": 98, ""formal"": 88}}"
