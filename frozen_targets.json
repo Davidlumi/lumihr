@@ -62,12 +62,12 @@
  },
  "REW26_BEN_PENSION_TYPE": {
   "dist": {
-   "DC": 0.95,
-   "DB": 0.0318,
+   "DC": 0.8864,
+   "DB": 0.0955,
    "Hybrid": 0.0182
   },
   "n": 220,
-  "_refrozen": "2026-07-18 Diff 15 ruled ③: DC sharpened 0.8455->0.95 (private mid-market EST, D. Whitfield); 'None' option REMOVED (auto-enrolment legal mandate — non-compliant state, not a data point); was {\"DC\": 0.8455, \"DB\": 0.0727, \"Hybrid\": 0.0636, \"None\": 0.0182}"
+  "_refrozen": "2026-07-18 r3sw3 ruled: PUBLIC-SECTOR CARVE-OUT (TPR grade A, DB landscape 2025) — public band DB 95/DC 5 (CARE=DB), commercial/charity byte-untouched at national 95/3/2; national aggregate moves DC .95->.8864, DB .0318->.0955 (public 15 orgs: 14 DB/1 DC). G7 baseline re-established (EAP precedent). Was {\"DC\": 0.95, \"DB\": 0.0318, \"Hybrid\": 0.0182}"
  },
  "REW26_BEN_PENSION_MATCH": {
   "dist": {

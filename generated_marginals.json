@@ -168,6 +168,20 @@
    "grade": "EST",
    "source": "practitioner benchmark - D. Whitfield",
    "semantics": "Bonus-eligible %% on the SECTOR-KEYED gradient (r3sw2 ruled): bonus EXISTS Commercial 90 / Charity 20 / Public 5; breadth among havers Commercial broad (75%%+ modal) / Charity moderate (~50) / Public narrow (frontline-perf). Corrects the Diff-13 absolute charity/public exclusion — low-but-nonzero is the reality. Band splits are my derivation of David's two-stage figures, presented at the gate. within_band=latent (coherence spine; hash stays maturity-only per the Step-2 ruling scope). Self-heals re-tag drift by re-derivation."
+  },
+  "REW26_BEN_PENSION_TYPE": {
+   "key": "Industry",
+   "within_band": "latent",
+   "band_distributions": {
+    "Public Sector & Government": {
+     "DB": 95,
+     "DC": 5
+    }
+   },
+   "sector_gate": null,
+   "grade": "A",
+   "source": "TPR Occupational DB landscape 2025 (data 31 Mar 2025) — 200 public-service schemes, 19.78m members, open to new members by statute; CARE = standard DB (no separate TPR class)",
+   "semantics": "PUBLIC-SECTOR CARVE-OUT (r3sw3 ruled, TPR grade A): public-band new joiners get CARE=DB 95 / DC 5; NO _default — commercial/charity bands are byte-untouched (surgical-band contract), staying at the frozen national 95/3/2. Tier-1 RE-FREEZE at the post-carve national aggregate (G7 baseline re-established, EAP precedent). CONSTRUCT FLAG: TPR counts schemes/members, Lumi asks org-offer — immaterial for the public band (statutory participation ~= offer). New-employee basis per the standing rule."
   }
  },
  "coherence_pairs": [
@@ -1158,6 +1172,9 @@
    "why": "unanchored"
   },
   "REW265_PAY_PAYCOMMS": {
+   "why": "unanchored"
+  },
+  "REW264_PEN_AEDEFAULT": {
    "why": "unanchored"
   }
  },

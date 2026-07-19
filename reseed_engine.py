@@ -141,7 +141,11 @@ def maturity_assign(qid, entry, rows, prof, lat):
             by_band.setdefault(band(o), []).append(o)
         for b, members in by_band.items():
             dist = bd.get(b) or bd.get("_default")
-            assert dist, "no band distribution for %r on %s (and no _default)" % (b, qid)
+            if not dist:
+                # no _default declared -> DECLARED-BANDS-ONLY (carve-out semantics,
+                # r3sw3): undeclared bands are left OUT of the newmap and therefore
+                # untouched by the engine apply — the surgical-band contract.
+                continue
             members = order_band(members)
             raw = {l: p * len(members) / 100.0 for l, p in dist.items()}
             fl = {l: int(raw[l]) for l in raw}

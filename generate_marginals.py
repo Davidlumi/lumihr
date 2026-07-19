@@ -83,7 +83,7 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 245  # 243 + RANGEMAX/PAYCOMMS EST captures (Diff 15 ruled additions)
+assert len(byid) == 246  # 245 + AEDEFAULT statutory-floor capture (r3sw3 ruled)
 
 for r in reg:
     q = r["metric_id"].strip()
@@ -208,7 +208,8 @@ for q in marginals:
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
 assert pf_count == 8, "positive_from must be exactly the 8 ruled rows (HOL_001/SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001), got %d" % pf_count
 assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508"}, sorted(ruled_dists)
-assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103"}, sorted(maturity_grads)
+assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103",
+                               "REW26_BEN_PENSION_TYPE"}, sorted(maturity_grads)
 for _q, _e in maturity_grads.items():
     if _e.get("band_distributions"):
         for _b, _d in _e["band_distributions"].items():

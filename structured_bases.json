@@ -658,5 +658,22 @@
    "parent_value": "Yes",
    "note": "operates-LTIP=Yes must be EXACTLY the orgs with any LTI-by-level eligibility (r3sw2 ruled, range-max pattern)"
   }
- ]
+ ],
+ "REW26_BEN_PENSION_TYPE": {
+  "base_type": "maturity_gradient",
+  "grade": "A",
+  "source": "TPR Occupational DB landscape 2025 (data 31 Mar 2025) — 200 public-service schemes, 19.78m members, open to new members by statute; CARE = standard DB (no separate TPR class)",
+  "maturity_anchors": {
+   "key": "Industry",
+   "within_band": "latent",
+   "band_distributions": {
+    "Public Sector & Government": {
+     "DB": 95,
+     "DC": 5
+    }
+   },
+   "sector_gate": null
+  },
+  "target_semantics": "PUBLIC-SECTOR CARVE-OUT (r3sw3 ruled, TPR grade A): public-band new joiners get CARE=DB 95 / DC 5; NO _default — commercial/charity bands are byte-untouched (surgical-band contract), staying at the frozen national 95/3/2. Tier-1 RE-FREEZE at the post-carve national aggregate (G7 baseline re-established, EAP precedent). CONSTRUCT FLAG: TPR counts schemes/members, Lumi asks org-offer — immaterial for the public band (statutory participation ~= offer). New-employee basis per the standing rule."
+ }
 }
