@@ -250,6 +250,38 @@
     "Not Applicable"
    ],
    "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+  },
+  "REW265_INC_SHAREPART": {
+   "mode": "answerer_only",
+   "base_label": "organisations operating a share plan",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw11": "(a) share-plan family: conditioned on any-plan (43); pair-guarded"
+  },
+  "REW265_INC_SAYEDISC": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering SAYE",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw11": "(a) share-plan family: conditioned on the SAYE side (31); 12 SIP-only artifacts repaired"
+  },
+  "REW265_INC_SIPELEM": {
+   "mode": "answerer_only",
+   "base_label": "organisations operating a SIP",
+   "na_options": [
+    "No SIP operated"
+   ],
+   "_r3sw11": "(a) share-plan family: conditioned on the SIP side (18 — accepted thin base); two-sided repair"
+  },
+  "REW264_INC_EMICSOP": {
+   "mode": "answerer_only",
+   "base_label": "organisations with share capital",
+   "na_options": [
+    "Not applicable (no share capital)"
+   ],
+   "_r3sw11": "(a) share-plan family: conditioned on share-capital (181); parent N/A is THE authority"
   }
  }
 }

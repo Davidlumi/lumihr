@@ -701,6 +701,38 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI composition is CONDITIONED on PMI-exists (r3sw8 N/A-exclusion pilot): every org answering the composition multi-select must tick PMI in the benefits inventory — the applicable base IS the conditioning set; prevents a future REW_BEN_038 reseed silently widening the graph past the PMI-haver cohort"
+  },
+  {
+   "child": "REW265_INC_SHAREPART",
+   "child_value_not": "Not applicable",
+   "parent": "REW264_INC_SHAREPLAN",
+   "parent_value_in": ["SAYE", "SIP", "Both"],
+   "relation": "subset_orgs",
+   "note": "share-plan participation is answered only by plan operators (r3sw11 ruled): substantive answers ⊆ the any-plan set"
+  },
+  {
+   "child": "REW265_INC_SAYEDISC",
+   "child_value_not": "Not applicable",
+   "parent": "REW264_INC_SHAREPLAN",
+   "parent_value_in": ["SAYE", "Both"],
+   "relation": "subset_orgs",
+   "note": "SAYE discount exists only where SAYE does (r3sw11 ruled — the 12 SIP-only 20%-max artifacts repaired): substantive ⊆ the SAYE side"
+  },
+  {
+   "child": "REW265_INC_SIPELEM",
+   "child_value_not": "No SIP operated",
+   "parent": "REW264_INC_SHAREPLAN",
+   "parent_value_in": ["SIP", "Both"],
+   "relation": "subset_orgs",
+   "note": "SIP elements exist only where a SIP does (r3sw11 ruled — 16 SAYE-only fabrications + 6 operator no-SIP contradictions repaired): substantive ⊆ the SIP side"
+  },
+  {
+   "child": "REW264_INC_EMICSOP",
+   "child_value_not": "Not applicable (no share capital)",
+   "parent": "REW264_INC_SHAREPLAN",
+   "parent_value_not": "Not applicable (no shares)",
+   "relation": "subset_orgs",
+   "note": "share-capital has ONE authority — the parent's no-shares option (r3sw11 ruled, one-authority principle): EMICSOP substantive ⊆ parent share-capital set; the child's own N/A must never diverge again"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

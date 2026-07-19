@@ -327,14 +327,27 @@ def check_c():
     # r3sw2: declared coherence pairs — child positive set must EQUAL the parent-derived set
     # r3sw8 selectors: child_any_answer (child set = orgs with ANY non-empty answer — conditioned
     # metrics) and parent_contains (parent set = orgs whose multi-select ticks the named option).
+    # r3sw11 selectors: child_value_not (child substantive set = answers other than the metric's
+    # own N/A label — token-aware so a multi-select terminal counts as N/A) and parent_value_in
+    # (type sub-bases, e.g. SAYE-side = parent in {SAYE, Both}).
     for pair in (_GEN.get("coherence_pairs") or []):
         if pair.get("child_any_answer"):
             child_yes = {o for (o,) in c.execute(
                 "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value!=''", (pair["child"],))}
+        elif pair.get("child_value_not") is not None:
+            nl = pair["child_value_not"]
+            child_yes = {o for (o, v) in c.execute(
+                "SELECT org_id, value FROM answers WHERE question_id=? AND value!=''", (pair["child"],))
+                if nl not in (t.strip() for t in v.split(";"))}
         else:
             child_yes = {o for (o,) in c.execute(
                 "SELECT org_id FROM answers WHERE question_id=? AND value=?", (pair["child"], pair["child_value"]))}
-        if pair.get("parent_contains") is not None:
+        if pair.get("parent_value_in") is not None:
+            vals_in = pair["parent_value_in"]
+            parent_yes = {o for (o,) in c.execute(
+                "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value IN (%s)"
+                % ",".join("?" * len(vals_in)), [pair["parent"]] + list(vals_in))}
+        elif pair.get("parent_contains") is not None:
             tok = pair["parent_contains"]
             parent_yes = {o for (o, v) in c.execute(
                 "SELECT org_id, value FROM answers WHERE question_id=?", (pair["parent"],))
