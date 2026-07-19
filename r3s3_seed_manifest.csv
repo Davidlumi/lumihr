@@ -1,0 +1,4 @@
+metric_id,action,before,after
+REW_FAI_128,maturity-family r3s3,"{""Yes"": 130, ""No"": 80, ""Planned"": 10}","{""Yes"": 96, ""No"": 106, ""Planned"": 18}"
+REW_PAY_001,maturity-family r3s3,"{""No"": 73, ""Yes"": 96, ""Partially"": 51}","{""Yes"": 121, ""Partially"": 47, ""No"": 52}"
+REW265_PAY_RANGEMAX,maturity-family r3s3,"{""No formal ranges"": 132, ""Lump-sum in lieu"": 35, ""Frozen until range moves"": 35, ""Continue increases"": 18}","{""Lump-sum in lieu"": 49, ""Continue increases"": 24, ""Frozen until range moves"": 48, ""No formal ranges"": 99}"
