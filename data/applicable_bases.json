@@ -282,6 +282,22 @@
     "Not applicable (no share capital)"
    ],
    "_r3sw11": "(a) share-plan family: conditioned on share-capital (181); parent N/A is THE authority"
+  },
+  "REW264_WEL_EWAFEES": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering or piloting earned wage access",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw12": "(a) EWA family, OFFER-OR-PILOT grain ruled (77): purely declarative — zero repair; pair-guarded"
+  },
+  "REW264_WEL_EWACAP": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering or piloting earned wage access",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw12": "(a) EWA family, OFFER-OR-PILOT grain ruled (77): purely declarative — zero repair; pair-guarded"
   }
  }
 }

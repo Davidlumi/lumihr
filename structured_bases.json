@@ -733,6 +733,22 @@
    "parent_value_not": "Not applicable (no shares)",
    "relation": "subset_orgs",
    "note": "share-capital has ONE authority — the parent's no-shares option (r3sw11 ruled, one-authority principle): EMICSOP substantive ⊆ parent share-capital set; the child's own N/A must never diverge again"
+  },
+  {
+   "child": "REW264_WEL_EWAFEES",
+   "child_value_not": "Not applicable",
+   "parent": "REW264_WEL_EWA",
+   "parent_value_in": ["Yes all eligible", "Yes hourly/frontline only", "Piloting"],
+   "relation": "subset_orgs",
+   "note": "EWA fee model exists only where EWA runs (r3sw12 ruled: OFFER-OR-PILOT grain — pilots are live schemes with real fee models): substantive ⊆ the 77-org offer-or-pilot set"
+  },
+  {
+   "child": "REW264_WEL_EWACAP",
+   "child_value_not": "Not applicable",
+   "parent": "REW264_WEL_EWA",
+   "parent_value_in": ["Yes all eligible", "Yes hourly/frontline only", "Piloting"],
+   "relation": "subset_orgs",
+   "note": "EWA withdrawal caps exist only where EWA runs (r3sw12 ruled: OFFER-OR-PILOT grain): substantive ⊆ the 77-org offer-or-pilot set"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {
