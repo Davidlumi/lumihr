@@ -17,7 +17,8 @@
     "qid": "REW_BEN_038",
     "contains": "Private Medical Insurance (PMI)"
    },
-   "_r3sw9": "the r3sw8 pilot chart, first declaration at the mechanism build; help_text keeps the assumed-universals copy"
+   "_r3sw9": "the r3sw8 pilot chart, first declaration at the mechanism build; help_text keeps the assumed-universals copy",
+   "_r3sw15": "base re-gated to 153 PMI-havers (sector-gated parent)"
   },
   "CAR_BN_02": {
    "mode": "answerer_only",
@@ -307,7 +308,8 @@
     "qid": "REW_BEN_038",
     "contains": "Private Medical Insurance (PMI)"
    },
-   "_r3sw14": "by-level eligibility conditioned on PMI-havers (n=130) + ruled EST cliff 95/90/80/70/20/2/0; verdict stays suppressed (Diff-14 flag untouched)"
+   "_r3sw14": "by-level eligibility conditioned on PMI-havers (n=130) + ruled EST cliff 95/90/80/70/20/2/0; verdict stays suppressed (Diff-14 flag untouched)",
+   "_r3sw15": "base re-gated to 153 PMI-havers (sector-gated parent)"
   }
  }
 }
