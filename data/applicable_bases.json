@@ -63,9 +63,10 @@
    "mode": "answerer_only",
    "base_label": "organisations where this applies",
    "na_options": [
-    "Not applicable / Don't know"
+    "Not applicable"
    ],
-   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged"
+   "_r3sw10": "(b) simple re-percentage, ruled roster r3sw9; verdict status unchanged",
+   "_r3sw13": "merged option relabelled to plain 'Not applicable' (DK half retired platform-wide); declaration relabelled atomically"
   },
   "REW262_PAY_CANCELLEDSHIFT": {
    "mode": "answerer_only",

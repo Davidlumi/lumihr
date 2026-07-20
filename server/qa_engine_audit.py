@@ -133,6 +133,17 @@ for _mf in ("r3sw5_seed_manifest.csv", "r3sw6_seed_manifest.csv"):
     except Exception:
         pass
 
+# r3sw13 (20 July 2026, ruled) — blanket-DK strip. The ruled scope file names every stripped
+# (metric, option-label); a REGEN_WHITELIST pin drops such a label from its expectation ONLY
+# once it is actually gone from the store — so the pin stays exact pre-write AND post-strip,
+# and only the RULED deletion is legitimized (an unruled deletion of anything else still fails).
+try:
+    _r3sw13 = json.load(open(os.path.join(ROOT, "r3sw13_ruled_scope.json")))
+    R3SW13_STRIPPED = ({(q, e["label"]) for q, es in _r3sw13["strip"].items() for e in es}
+                       | {(q, s["old"]) for q, s in _r3sw13["specials"].items()})
+except FileNotFoundError:
+    R3SW13_STRIPPED = set()
+
 
 # Diff 3 (16 July 2026, ruled) reseeded 37 marginals from the register-generated set;
 # generated_marginals.json is the ruled lineage record (only-ruled-manifests rule). Rows in it
@@ -373,6 +384,10 @@ for qid, expected in REGEN_WHITELIST.items():
     got = {}
     for r in conn.execute("SELECT value, COUNT(*) c FROM answers WHERE question_id=? AND snapshot_id=1 GROUP BY value", (qid,)):
         got[r["value"]] = r["c"]
+    adj = {k for k in expected if (qid, k) in R3SW13_STRIPPED and k not in got}
+    if adj:
+        expected = {k: v for k, v in expected.items() if k not in adj}
+        print("  regen-whitelist %s: pin adjusted for the r3sw13 ruled DK strip (%s)" % (qid, sorted(adj)))
     if got != expected:
         fail("L1", "regenerated %s store != documented seeded output: %s vs %s" % (qid, got, expected))
     else:

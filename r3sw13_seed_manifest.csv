@@ -1,0 +1,66 @@
+metric_id,action,option_label,deleted_n
+ALLOW_02,strip,Don't know,9
+ALLOW_03,strip,Don't know,3
+ALLOW_04,strip,Don't know,16
+EXT_REW_GAP_001,strip,Don't know,8
+EXT_REW_GAP_002,strip,Don't know,15
+EXT_REW_GAP_003,strip,Don't know,16
+EXT_REW_GAP_004,strip,Don't know,14
+EXT_REW_GAP_005,strip,Don't know,0
+EXT_REW_GAP_007,strip,Don't know,17
+EXT_REW_GAP_009,strip,Don't know,11
+EXT_REW_GAP_011,strip,Don't know,0
+EXT_REW_GAP_012,strip,Don't know,7
+EXT_REW_GAP_013,strip,Don't know,2
+PROP_11a83d52,strip,Don't know,8
+PROP_168a6213,strip,Don't know,13
+PROP_202fecc6,strip,Don't know,20
+PROP_34ffb6e2,strip,Don't know,9
+PROP_36b990f9,strip,Don't know,0
+PROP_8862fcad,strip,Don't know,11
+PROP_8e0b6316,strip,Don't know,2
+PROP_c1a3da61,strip,Don't know,4
+PROP_cdff5737,strip,Don't know,6
+PROP_d65a16e9,strip,Don't know,7
+PROP_d992b2ea,strip,Don't know,6
+PROP_e1d1e604,strip,Don't know,5
+PROP_ef4ff31e,strip,Don't know,9
+RED_PROC_01,strip,Don't know,8
+RED_PROC_02,strip,Don't know,10
+RED_PROC_03,strip,Don't know,23
+RED_PROC_04,strip,Don't know,8
+RED_PROC_05,strip,Don't know,18
+RED_TERM_02,strip,Don't know,19
+RED_TERM_03,strip,Don't know,15
+REW264_PAY_HOLPAYMETHOD,strip,Unsure,11
+REW264_PEN_GREENDEFAULT,strip,Unsure,14
+REW_BEN_FAM_001,strip,Don't know,10
+REW_BEN_FAM_002,strip,Don't know,2
+REW_BEN_FAM_005,strip,Don't know,10
+REW_BEN_FAM_006,strip,Don't know,6
+REW_BEN_FAM_007,strip,Don't know,14
+REW_BEN_FAM_008,strip,Don't know,18
+REW_BEN_FAM_009,strip,Don't know,8
+REW_BEN_FAM_010,strip,Don't know,17
+REW_BEN_FAM_011,strip,Don't know,4
+REW_BEN_FAM_012,strip,Don't know,3
+REW_BEN_HOL_002,strip,Don't know,15
+REW_BEN_HOL_003,strip,Don't know,10
+REW_BEN_HOL_004,strip,Don't know,9
+REW_BEN_HOL_005,strip,Don't know,11
+REW_BEN_HOL_006,strip,Don't know,4
+REW_BEN_HOL_007,strip,Don't know,3
+REW_BEN_HOL_008,strip,Don't know,12
+REW_BEN_REM_PAY_001,strip,Don't know,14
+REW_BEN_REM_PAY_002,strip,Don't know,3
+REW_BEN_REM_PAY_003,strip,Don't know,14
+REW_BEN_REM_PAY_004,strip,Don't know,6
+REW_BEN_REM_PAY_005,strip,Don't know,10
+REW_BEN_SICK_001,strip,Don't know,9
+REW_BEN_SICK_002,strip,Don't know,9
+REW_BEN_SICK_004,strip,Don't know,9
+REW_BEN_SICK_006,strip,Don't know,13
+REW_PAY_EV_KWH_66ef252b,strip,Don't know,8
+RED_NOTICE_01,replace->Not applicable,Not applicable / Don't know,15
+RED_PAY_01,replace->Other,Other / Don't know,17
+RED_TERM_01,replace->Not applicable,Not applicable / Don't know,2

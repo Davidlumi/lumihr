@@ -1,0 +1,411 @@
+{
+ "strip": {
+  "RED_PROC_03": [
+   {
+    "label": "Don't know",
+    "expected_n": 23
+   }
+  ],
+  "RED_TERM_02": [
+   {
+    "label": "Don't know",
+    "expected_n": 19
+   }
+  ],
+  "RED_PROC_05": [
+   {
+    "label": "Don't know",
+    "expected_n": 18
+   }
+  ],
+  "REW_BEN_FAM_008": [
+   {
+    "label": "Don't know",
+    "expected_n": 18
+   }
+  ],
+  "EXT_REW_GAP_007": [
+   {
+    "label": "Don't know",
+    "expected_n": 17
+   }
+  ],
+  "REW_BEN_FAM_010": [
+   {
+    "label": "Don't know",
+    "expected_n": 17
+   }
+  ],
+  "EXT_REW_GAP_003": [
+   {
+    "label": "Don't know",
+    "expected_n": 16
+   }
+  ],
+  "ALLOW_04": [
+   {
+    "label": "Don't know",
+    "expected_n": 16
+   }
+  ],
+  "REW_BEN_HOL_002": [
+   {
+    "label": "Don't know",
+    "expected_n": 15
+   }
+  ],
+  "RED_TERM_03": [
+   {
+    "label": "Don't know",
+    "expected_n": 15
+   }
+  ],
+  "EXT_REW_GAP_002": [
+   {
+    "label": "Don't know",
+    "expected_n": 15
+   }
+  ],
+  "REW264_PEN_GREENDEFAULT": [
+   {
+    "label": "Unsure",
+    "expected_n": 14
+   }
+  ],
+  "REW_BEN_FAM_007": [
+   {
+    "label": "Don't know",
+    "expected_n": 14
+   }
+  ],
+  "REW_BEN_REM_PAY_003": [
+   {
+    "label": "Don't know",
+    "expected_n": 14
+   }
+  ],
+  "EXT_REW_GAP_004": [
+   {
+    "label": "Don't know",
+    "expected_n": 14
+   }
+  ],
+  "REW_BEN_REM_PAY_001": [
+   {
+    "label": "Don't know",
+    "expected_n": 14
+   }
+  ],
+  "REW_BEN_SICK_006": [
+   {
+    "label": "Don't know",
+    "expected_n": 13
+   }
+  ],
+  "PROP_168a6213": [
+   {
+    "label": "Don't know",
+    "expected_n": 13
+   }
+  ],
+  "REW_BEN_HOL_008": [
+   {
+    "label": "Don't know",
+    "expected_n": 12
+   }
+  ],
+  "PROP_8862fcad": [
+   {
+    "label": "Don't know",
+    "expected_n": 11
+   }
+  ],
+  "EXT_REW_GAP_009": [
+   {
+    "label": "Don't know",
+    "expected_n": 11
+   }
+  ],
+  "REW264_PAY_HOLPAYMETHOD": [
+   {
+    "label": "Unsure",
+    "expected_n": 11
+   }
+  ],
+  "REW_BEN_HOL_005": [
+   {
+    "label": "Don't know",
+    "expected_n": 11
+   }
+  ],
+  "REW_BEN_FAM_001": [
+   {
+    "label": "Don't know",
+    "expected_n": 10
+   }
+  ],
+  "RED_PROC_02": [
+   {
+    "label": "Don't know",
+    "expected_n": 10
+   }
+  ],
+  "REW_BEN_HOL_003": [
+   {
+    "label": "Don't know",
+    "expected_n": 10
+   }
+  ],
+  "REW_BEN_REM_PAY_005": [
+   {
+    "label": "Don't know",
+    "expected_n": 10
+   }
+  ],
+  "REW_BEN_FAM_005": [
+   {
+    "label": "Don't know",
+    "expected_n": 10
+   }
+  ],
+  "ALLOW_02": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "REW_BEN_SICK_004": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "PROP_34ffb6e2": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "PROP_ef4ff31e": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "REW_BEN_HOL_004": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "REW_BEN_SICK_001": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "REW_BEN_SICK_002": [
+   {
+    "label": "Don't know",
+    "expected_n": 9
+   }
+  ],
+  "RED_PROC_01": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "REW_BEN_FAM_009": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "EXT_REW_GAP_001": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "PROP_11a83d52": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "REW_PAY_EV_KWH_66ef252b": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "RED_PROC_04": [
+   {
+    "label": "Don't know",
+    "expected_n": 8
+   }
+  ],
+  "PROP_d65a16e9": [
+   {
+    "label": "Don't know",
+    "expected_n": 7
+   }
+  ],
+  "EXT_REW_GAP_012": [
+   {
+    "label": "Don't know",
+    "expected_n": 7
+   }
+  ],
+  "PROP_d992b2ea": [
+   {
+    "label": "Don't know",
+    "expected_n": 6
+   }
+  ],
+  "REW_BEN_REM_PAY_004": [
+   {
+    "label": "Don't know",
+    "expected_n": 6
+   }
+  ],
+  "PROP_cdff5737": [
+   {
+    "label": "Don't know",
+    "expected_n": 6
+   }
+  ],
+  "REW_BEN_FAM_006": [
+   {
+    "label": "Don't know",
+    "expected_n": 6
+   }
+  ],
+  "PROP_e1d1e604": [
+   {
+    "label": "Don't know",
+    "expected_n": 5
+   }
+  ],
+  "REW_BEN_HOL_006": [
+   {
+    "label": "Don't know",
+    "expected_n": 4
+   }
+  ],
+  "PROP_c1a3da61": [
+   {
+    "label": "Don't know",
+    "expected_n": 4
+   }
+  ],
+  "REW_BEN_FAM_011": [
+   {
+    "label": "Don't know",
+    "expected_n": 4
+   }
+  ],
+  "REW_BEN_FAM_012": [
+   {
+    "label": "Don't know",
+    "expected_n": 3
+   }
+  ],
+  "ALLOW_03": [
+   {
+    "label": "Don't know",
+    "expected_n": 3
+   }
+  ],
+  "REW_BEN_HOL_007": [
+   {
+    "label": "Don't know",
+    "expected_n": 3
+   }
+  ],
+  "REW_BEN_REM_PAY_002": [
+   {
+    "label": "Don't know",
+    "expected_n": 3
+   }
+  ],
+  "EXT_REW_GAP_013": [
+   {
+    "label": "Don't know",
+    "expected_n": 2
+   }
+  ],
+  "PROP_8e0b6316": [
+   {
+    "label": "Don't know",
+    "expected_n": 2
+   }
+  ],
+  "REW_BEN_FAM_002": [
+   {
+    "label": "Don't know",
+    "expected_n": 2
+   }
+  ],
+  "EXT_REW_GAP_011": [
+   {
+    "label": "Don't know",
+    "expected_n": 0
+   }
+  ],
+  "EXT_REW_GAP_005": [
+   {
+    "label": "Don't know",
+    "expected_n": 0
+   }
+  ],
+  "PROP_36b990f9": [
+   {
+    "label": "Don't know",
+    "expected_n": 0
+   }
+  ],
+  "PROP_202fecc6": [
+   {
+    "label": "Don't know",
+    "expected_n": 20
+   }
+  ]
+ },
+ "specials": {
+  "RED_PAY_01": {
+   "old": "Other / Don't know",
+   "new": "Other",
+   "new_is_na": false,
+   "expected_n": 17
+  },
+  "RED_TERM_01": {
+   "old": "Not applicable / Don't know",
+   "new": "Not applicable",
+   "new_is_na": true,
+   "expected_n": 2
+  },
+  "RED_NOTICE_01": {
+   "old": "Not applicable / Don't know",
+   "new": "Not applicable",
+   "new_is_na": true,
+   "expected_n": 15,
+   "ab_relabel": true
+  }
+ },
+ "routed_untouched": [
+  "REW_BEN_SICK_005"
+ ],
+ "_totals": {
+  "strip_options": 62,
+  "deletions": 629,
+  "answers_after": 231861
+ },
+ "keep_options": {
+  "PROP_674db2fc": "Provided but access not tracked",
+  "PROP_e1d1e604": "Not measured / not tracked",
+  "PROP_3d4fc4e7": "Not measured",
+  "PROP_634adacd": "Not measured / varies widely"
+ }
+}
