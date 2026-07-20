@@ -299,6 +299,15 @@
     "Not applicable"
    ],
    "_r3sw12": "(a) EWA family, OFFER-OR-PILOT grain ruled (77): purely declarative — zero repair; pair-guarded"
+  },
+  "REW_BEN_139": {
+   "mode": "conditioned",
+   "base_label": "PMI-holding organisations",
+   "parent": {
+    "qid": "REW_BEN_038",
+    "contains": "Private Medical Insurance (PMI)"
+   },
+   "_r3sw14": "by-level eligibility conditioned on PMI-havers (n=130) + ruled EST cliff 95/90/80/70/20/2/0; verdict stays suppressed (Diff-14 flag untouched)"
   }
  }
 }

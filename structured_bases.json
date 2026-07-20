@@ -749,6 +749,14 @@
    "parent_value_in": ["Yes all eligible", "Yes hourly/frontline only", "Piloting"],
    "relation": "subset_orgs",
    "note": "EWA withdrawal caps exist only where EWA runs (r3sw12 ruled: OFFER-OR-PILOT grain): substantive ⊆ the 77-org offer-or-pilot set"
+  },
+  {
+   "child": "REW_BEN_139",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI by-level eligibility is CONDITIONED on PMI-exists (r3sw14): only PMI-havers hold matrix rows — same parent as premium/composition; prevents a reseed re-widening the base past the haver cohort"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {
