@@ -805,6 +805,14 @@
    "parent_value_in": ["Enhanced occupational sick pay (above SSP)", "Combination of enhanced sick pay and SSP"],
    "relation": "subset_orgs",
    "note": "OSP eligibility-rules governance is CONDITIONED on OSP-exists (r3sw17, r3sw13-routed): child ⊆ OSP-havers (SICK_001 enhanced/combination) — SEPARATE parent from IP; subset not equality (a governance question — not every OSP-haver documents)"
+  },
+  {
+   "child": "REW_BEN_044",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI eligibility-rules is CONDITIONED on PMI-exists (r3sw19): child answerers ⊆ the 153 PMI-haver set — same PMI-family authority as composition/by-level/premium; the redesigned 3-option single-select ('Not offered' dropped via conditioning)"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

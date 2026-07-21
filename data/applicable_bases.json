@@ -362,6 +362,15 @@
     ]
    },
    "_r3sw17": "conditioned on OSP-exists (separate parent); DK stripped (r3sw13-routed)"
+  },
+  "REW_BEN_044": {
+   "mode": "conditioned",
+   "base_label": "PMI-holding organisations",
+   "parent": {
+    "qid": "REW_BEN_038",
+    "contains": "Private Medical Insurance (PMI)"
+   },
+   "_r3sw19": "6-opt multi_select redesigned to 3-opt single_select conditioned on the 153 PMI-havers; grade-dominant EST"
   }
  }
 }

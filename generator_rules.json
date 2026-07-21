@@ -11,11 +11,6 @@
    "rule": "do-not-emit: 0.54 is large-only AND measures offer-at-all, not default enrolment; if David rules the question means 'offered', blend 0.15/0.54 (pair on REW_BEN_102) -> 0.487",
    "reasoning": "On-row figure is a single base: 54% large-only (CIPD Dec 2025; base field itself concedes 'mixed lower'). The task's SINGLE_BASE test — would emitting it unblended on an all-cohort question materially"
   },
-  "REW_BEN_044": {
-   "subclass": "BLEND_ELIGIBLE",
-   "rule": "blend 0.175/0.70 (SME 17-18% / large 70%, on-row) -> 0.628 offer; emit 'Not offered' 0.372 only; eligibility-rule options stay unanchored (Fig14 among-offerers split = context)",
-   "reasoning": "On-row anchor carries the full split from one survey: 18% all / 70% large / 17-18% SME (CIPD Feb 2026, Grade A), so the blend is directly consumable: (0.175*30 + 0.70*190)/220 = 0.628 offering PMI, i."
-  },
   "REW_BEN_045": {
    "subclass": "BLEND_ELIGIBLE",
    "rule": "blend 0.185/0.62 (all-UK~SME 18-19% Fig28 / large 62% Fig24, on-row) -> 0.561 offer; emit 'Not offered' 0.439 only; salary-multiple bands stay unanchored",
@@ -195,6 +190,16 @@
    "subclass": "CONTEXT_BOUND",
    "rule": "context: upper-bound proxy (<=0.29) — bound cannot set a target_share unless David rules to seed at the bound",
    "reasoning": "upper bound, ruled 2026-07-16"
+  }
+ },
+ "_retired_marginals": {
+  "REW_BEN_044": {
+   "was": {
+    "subclass": "BLEND_ELIGIBLE",
+    "rule": "blend 0.175/0.70 (SME 17-18% / large 70%, on-row) -> 0.628 offer; emit 'Not offered' 0.372 only; eligibility-rule options stay unanchored (Fig14 among-offerers split = context)",
+    "reasoning": "On-row anchor carries the full split from one survey: 18% all / 70% large / 17-18% SME (CIPD Feb 2026, Grade A), so the blend is directly consumable: (0.175*30 + 0.70*190)/220 = 0.628 offering PMI, i."
+   },
+   "why": "r3sw19: PMI eligibility-rules redesigned to a conditioned EST 3-option child (153 PMI-havers); the standalone 62.8% offer marginal is SUPERSEDED by the sector-gated PMI-haver base"
   }
  }
 }

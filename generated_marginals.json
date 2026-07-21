@@ -395,6 +395,14 @@
    ],
    "relation": "subset_orgs",
    "note": "OSP eligibility-rules governance is CONDITIONED on OSP-exists (r3sw17, r3sw13-routed): child ⊆ OSP-havers (SICK_001 enhanced/combination) — SEPARATE parent from IP; subset not equality (a governance question — not every OSP-haver documents)"
+  },
+  {
+   "child": "REW_BEN_044",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI eligibility-rules is CONDITIONED on PMI-exists (r3sw19): child answerers ⊆ the 153 PMI-haver set — same PMI-family authority as composition/by-level/premium; the redesigned 3-option single-select ('Not offered' dropped via conditioning)"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
@@ -440,15 +448,6 @@
    "grade": "A",
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, weighted n=1,0",
    "rule": "blend 0.16/0.57 (SME Fig25 adopted from REW_BEN_100 / large Fig24 on-row) -> 0.514 offer; anchors offer-vs-None split on"
-  },
-  "REW_BEN_044": {
-   "target_share": 0.6284,
-   "base_type": "sme_large(ruled)",
-   "sme": 17.5,
-   "large": 70.0,
-   "grade": "A",
-   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "rule": "blend 0.175/0.70 (SME 17-18% / large 70%, on-row) -> 0.628 offer; emit 'Not offered' 0.372 only; eligibility-rule option"
   },
   "REW_BEN_045": {
    "target_share": 0.5607,
@@ -874,6 +873,9 @@
   },
   "REW_BEN_039": {
    "why": "unanchored"
+  },
+  "REW_BEN_044": {
+   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_BEN_047": {
    "why": "anchored-unstructured (25-row follow-on table)"

@@ -1689,7 +1689,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_r3sw19": "verdict SUPPRESSED — grade-dominant EST weighting, no market position"
     },
     "REW_BEN_045": {
       "class": "Level",
