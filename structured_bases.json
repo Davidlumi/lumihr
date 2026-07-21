@@ -813,6 +813,14 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI eligibility-rules is CONDITIONED on PMI-exists (r3sw19): child answerers ⊆ the 153 PMI-haver set — same PMI-family authority as composition/by-level/premium; the redesigned 3-option single-select ('Not offered' dropped via conditioning)"
+  },
+  {
+   "child": "3faf1f0c-f753-497f-a395-384bba38c5e3",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI premium is CONDITIONED on PMI-exists (r3sw20): child answerers ⊆ the PMI-haver set — now guardable because Thornbridge (the demo org with genuine premiums) is a real haver, closing the last unguarded family child (the r3sw6/15 documented-exception is gone)"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

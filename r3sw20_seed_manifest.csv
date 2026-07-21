@@ -1,0 +1,6 @@
+metric,thornbridge_value,note
+REW_BEN_038,+PMI tick,153 -> 154 havers
+REW_BEN_044,Grade/level restricted,seeded (equality-conditioned)
+REW_BEN_139,depth-4 (grade-restricted),seeded (equality-conditioned)
+REW265_BEN_PMICOMP,"Out-patient cover (consultations, diagnostics, scans); Physiotherapy / MSK / therapies",seeded (equality-conditioned)
+3faf1f0c-f753-497f-a395-384bba38c5e3,680/1200/1600,"GENUINE — kept; exception retired, now a real haver"
