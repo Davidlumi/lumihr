@@ -457,15 +457,6 @@
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, weighted n=1,0",
    "rule": "blend 0.16/0.57 (SME Fig25 adopted from REW_BEN_100 / large Fig24 on-row) -> 0.514 offer; anchors offer-vs-None split on"
   },
-  "REW_BEN_045": {
-   "target_share": 0.5607,
-   "base_type": "sme_large(ruled)",
-   "sme": 18.5,
-   "large": 62.0,
-   "grade": "A",
-   "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "rule": "blend 0.185/0.62 (all-UK~SME 18-19% Fig28 / large 62% Fig24, on-row) -> 0.561 offer; emit 'Not offered' 0.439 only; sala"
-  },
   "REW_BEN_046": {
    "target_share": 0.3659,
    "base_type": "sme_large",
@@ -883,6 +874,9 @@
    "why": "unanchored"
   },
   "REW_BEN_044": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW_BEN_045": {
    "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW_BEN_047": {

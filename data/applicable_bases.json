@@ -371,6 +371,14 @@
     "contains": "Private Medical Insurance (PMI)"
    },
    "_r3sw19": "6-opt multi_select redesigned to 3-opt single_select conditioned on the 153 PMI-havers; grade-dominant EST"
+  },
+  "REW_BEN_045": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering life assurance",
+   "na_options": [
+    "Not offered"
+   ],
+   "_r3sw21": "multiples render over offerers (~62%% cohort-matched); 'Not offered' = offer-rate context; EST grade-C"
   }
  }
 }

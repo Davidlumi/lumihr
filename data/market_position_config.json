@@ -1698,7 +1698,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_r3sw21": "verdict SUPPRESSED — EST grade-C multiple weighting (no free 1x/2x/3x/4x split)"
     },
     "REW_BEN_046": {
       "class": "Provision",
