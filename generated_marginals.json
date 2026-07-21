@@ -360,6 +360,41 @@
    "parent_value_not": "None",
    "relation": "subset_orgs",
    "note": "a deferrer must have a bonus to defer (r3sw16): parent-Yes set ⊆ bonus-havers (grandparent != None) — level 2 of the chain; forces the 36 no-bonus-but-defer absurdities to stay fixed"
+  },
+  {
+   "child": "REW_BEN_047",
+   "child_any_answer": true,
+   "parent": "REW_BEN_046",
+   "parent_value_not": "No",
+   "relation": "subset_orgs",
+   "note": "IP waiting-period is CONDITIONED on IP-exists (r3sw17): child answerers ⊆ the 046 IP-haver set (046 is the ruled IP authority, not the 038 inventory tick)"
+  },
+  {
+   "child": "REW_BEN_048",
+   "child_any_answer": true,
+   "parent": "REW_BEN_046",
+   "parent_value_not": "No",
+   "relation": "subset_orgs",
+   "note": "IP salary-replacement is CONDITIONED on IP-exists (r3sw17): child ⊆ 046 IP-haver set — the badly over-seeded child (145 substantive) repaired to the 80"
+  },
+  {
+   "child": "REW264_HLT_GIPREHAB",
+   "child_any_answer": true,
+   "parent": "REW_BEN_046",
+   "parent_value_not": "No",
+   "relation": "subset_orgs",
+   "note": "group-IP rehab usage is CONDITIONED on IP-exists (r3sw17): child ⊆ 046 IP-haver set"
+  },
+  {
+   "child": "REW_BEN_SICK_005",
+   "child_any_answer": true,
+   "parent": "REW_BEN_SICK_001",
+   "parent_value_in": [
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
+   "relation": "subset_orgs",
+   "note": "OSP eligibility-rules governance is CONDITIONED on OSP-exists (r3sw17, r3sw13-routed): child ⊆ OSP-havers (SICK_001 enhanced/combination) — SEPARATE parent from IP; subset not equality (a governance question — not every OSP-haver documents)"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",

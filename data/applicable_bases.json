@@ -323,6 +323,45 @@
     ]
    },
    "_r3sw16": "conditioned on the listing/FS-gated deferrer set (~50); child ⊆ parent-Yes ⊆ has-bonus"
+  },
+  "REW_BEN_047": {
+   "mode": "conditioned",
+   "base_label": "organisations that offer income protection",
+   "parent": {
+    "qid": "REW_BEN_046",
+    "value_not": "No"
+   },
+   "_r3sw17": "conditioned on the ruled IP authority (046, 80 havers); child ⊆ IP-haver"
+  },
+  "REW_BEN_048": {
+   "mode": "conditioned",
+   "base_label": "organisations that offer income protection",
+   "parent": {
+    "qid": "REW_BEN_046",
+    "value_not": "No"
+   },
+   "_r3sw17": "conditioned on the ruled IP authority (046, 80 havers); child ⊆ IP-haver"
+  },
+  "REW264_HLT_GIPREHAB": {
+   "mode": "conditioned",
+   "base_label": "organisations that offer income protection",
+   "parent": {
+    "qid": "REW_BEN_046",
+    "value_not": "No"
+   },
+   "_r3sw17": "conditioned on the ruled IP authority (046, 80 havers); child ⊆ IP-haver"
+  },
+  "REW_BEN_SICK_005": {
+   "mode": "conditioned",
+   "base_label": "organisations with occupational sick pay",
+   "parent": {
+    "qid": "REW_BEN_SICK_001",
+    "value_in": [
+     "Enhanced occupational sick pay (above SSP)",
+     "Combination of enhanced sick pay and SSP"
+    ]
+   },
+   "_r3sw17": "conditioned on OSP-exists (separate parent); DK stripped (r3sw13-routed)"
   }
  }
 }
