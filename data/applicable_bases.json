@@ -310,6 +310,19 @@
    },
    "_r3sw14": "by-level eligibility conditioned on PMI-havers (n=130) + ruled EST cliff 95/90/80/70/20/2/0; verdict stays suppressed (Diff-14 flag untouched)",
    "_r3sw15": "base re-gated to 153 PMI-havers (sector-gated parent)"
+  },
+  "REW263_INC_DEFERRAL": {
+   "mode": "conditioned",
+   "base_label": "organisations that defer bonuses",
+   "parent": {
+    "qid": "REW_INC_069",
+    "value_in": [
+     "Exec only",
+     "Senior leadership only",
+     "Wider population"
+    ]
+   },
+   "_r3sw16": "conditioned on the listing/FS-gated deferrer set (~50); child ⊆ parent-Yes ⊆ has-bonus"
   }
  }
 }

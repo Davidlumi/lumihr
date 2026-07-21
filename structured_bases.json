@@ -757,6 +757,22 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI by-level eligibility is CONDITIONED on PMI-exists (r3sw14): only PMI-havers hold matrix rows — same parent as premium/composition; prevents a reseed re-widening the base past the haver cohort"
+  },
+  {
+   "child": "REW263_INC_DEFERRAL",
+   "child_any_answer": true,
+   "parent": "REW_INC_069",
+   "parent_value_in": ["Exec only", "Senior leadership only", "Wider population"],
+   "relation": "subset_orgs",
+   "note": "deferral period/vehicle is CONDITIONED on the org deferring (r3sw16): child answerers ⊆ the parent's deferrer set (listing/FS re-anchor) — level 1 of the two-level chain"
+  },
+  {
+   "child": "REW_INC_069",
+   "child_value_not": "No deferral",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "a deferrer must have a bonus to defer (r3sw16): parent-Yes set ⊆ bonus-havers (grandparent != None) — level 2 of the chain; forces the 36 no-bonus-but-defer absurdities to stay fixed"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {
