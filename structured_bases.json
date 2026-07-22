@@ -862,6 +862,22 @@
    "parent_contains": "Dental cover",
    "relation": "subset_orgs",
    "note": "dental funding split is CONDITIONED on dental-exists (r3sw23): funding-answerers ⊆ the sector-gated REW_BEN_038 'Dental cover' tick set (~11, perk-concentrated). 038 Dental-tick is the parent (like PMI); both mis-seeded signals aligned. EST grade-C, verdict-suppressed"
+  },
+  {
+   "child": "REW263_BEN_CICOVER",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Critical illness cover",
+   "relation": "subset_orgs",
+   "note": "CI cover-level is CONDITIONED on CI-exists (r3sw24): level-answerers ⊆ the aligned 52 CI-havers (038 CI-tick, dedicated-signal-wins) — level 1 of the group-risk chain"
+  },
+  {
+   "child": "REW_BEN_038",
+   "child_contains": "Critical illness cover",
+   "parent": "REW_BEN_046",
+   "parent_value_not": "No",
+   "relation": "subset_orgs",
+   "note": "CI rides inside the group-risk bundle (r3sw24): every CI-haver is an IP-haver (52 ⊆ 80) — level 2; locks the bundle so a reseed can't create a CI-haver who isn't an IP-haver"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

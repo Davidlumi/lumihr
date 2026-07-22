@@ -427,6 +427,22 @@
    "parent_contains": "Dental cover",
    "relation": "subset_orgs",
    "note": "dental funding split is CONDITIONED on dental-exists (r3sw23): funding-answerers ⊆ the sector-gated REW_BEN_038 'Dental cover' tick set (~11, perk-concentrated). 038 Dental-tick is the parent (like PMI); both mis-seeded signals aligned. EST grade-C, verdict-suppressed"
+  },
+  {
+   "child": "REW263_BEN_CICOVER",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Critical illness cover",
+   "relation": "subset_orgs",
+   "note": "CI cover-level is CONDITIONED on CI-exists (r3sw24): level-answerers ⊆ the aligned 52 CI-havers (038 CI-tick, dedicated-signal-wins) — level 1 of the group-risk chain"
+  },
+  {
+   "child": "REW_BEN_038",
+   "child_contains": "Critical illness cover",
+   "parent": "REW_BEN_046",
+   "parent_value_not": "No",
+   "relation": "subset_orgs",
+   "note": "CI rides inside the group-risk bundle (r3sw24): every CI-haver is an IP-haver (52 ⊆ 80) — level 2; locks the bundle so a reseed can't create a CI-haver who isn't an IP-haver"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
@@ -445,15 +461,6 @@
    "grade": "A",
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
    "rule": "no-blend all-UK 0.26 (review-to-ensure-fair) with purpose caveat + likely-understates-large-cohort caveat; 0.83 objectiv"
-  },
-  "REW263_BEN_CICOVER": {
-   "target_share": 0.3791,
-   "base_type": "sme_large(ruled)",
-   "sme": 12.0,
-   "large": 42.0,
-   "grade": "A",
-   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
-   "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays u"
   },
   "REW26_BEN_PENSION_MATCH": {
    "target_share": 0.5141,
@@ -849,6 +856,9 @@
   },
   "RED_TERM_03": {
    "why": "unanchored"
+  },
+  "REW263_BEN_CICOVER": {
+   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW263_BEN_DENTAL": {
    "why": "anchored-unstructured (25-row follow-on table)"

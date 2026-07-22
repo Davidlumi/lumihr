@@ -331,7 +331,15 @@ def check_c():
     # own N/A label — token-aware so a multi-select terminal counts as N/A) and parent_value_in
     # (type sub-bases, e.g. SAYE-side = parent in {SAYE, Both}).
     for pair in (_GEN.get("coherence_pairs") or []):
-        if pair.get("child_any_answer"):
+        if pair.get("child_contains") is not None:
+            # r3sw24: child set = orgs whose multi-select CHILD ticks the named option (mirrors
+            # parent_contains) — lets a multi-select tick be the CHILD of a subset chain, e.g.
+            # 038 Critical-illness-tick ⊆ IP-havers (the group-risk bundle lock).
+            ctok = pair["child_contains"]
+            child_yes = {o for (o, v) in c.execute(
+                "SELECT org_id, value FROM answers WHERE question_id=?", (pair["child"],))
+                if ctok in (t.strip() for t in (v or "").split(";"))}
+        elif pair.get("child_any_answer"):
             child_yes = {o for (o,) in c.execute(
                 "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value!=''", (pair["child"],))}
         elif pair.get("child_value_not") is not None:

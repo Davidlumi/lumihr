@@ -396,6 +396,15 @@
     "contains": "Dental cover"
    },
    "_r3sw23": "sector-gated (038 Dental-tick 42->11 perk-concentrated) + funding conditioned; EST grade-C (cash-plan-vs-cover product finding); verdict suppressed; thin base 11"
+  },
+  "REW263_BEN_CICOVER": {
+   "mode": "conditioned",
+   "base_label": "organisations offering critical illness cover",
+   "parent": {
+    "qid": "REW_BEN_038",
+    "contains": "Critical illness cover"
+   },
+   "_r3sw24": "038 CI-tick aligned up to the dedicated 52 (IP pattern); flat condition (bundle benefit, no sector-gate); level split unchanged; CI⊆IP chain; verdict suppressed"
   }
  }
 }

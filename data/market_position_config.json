@@ -612,7 +612,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_r3sw24": "verdict SUPPRESSED — EST level split (no market position); group-risk bundle metric"
     },
     "REW263_BEN_DENTAL": {
       "class": "Provision",

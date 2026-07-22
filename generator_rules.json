@@ -11,11 +11,6 @@
    "rule": "do-not-emit: 0.54 is large-only AND measures offer-at-all, not default enrolment; if David rules the question means 'offered', blend 0.15/0.54 (pair on REW_BEN_102) -> 0.487",
    "reasoning": "On-row figure is a single base: 54% large-only (CIPD Dec 2025; base field itself concedes 'mixed lower'). The task's SINGLE_BASE test — would emitting it unblended on an all-cohort question materially"
   },
-  "REW263_BEN_CICOVER": {
-   "subclass": "BLEND_ELIGIBLE",
-   "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays unanchored (Drewberry = context)",
-   "reasoning": "On-row anchor carries the full split: 23% all / 42% large / 12% SME (CIPD H&W 2025, Grade A). Blend: (0.12*30 + 0.42*190)/220 = 0.379 offering CI cover, 'Not applicable' 0.621 — this closes the gap th"
-  },
   "EXT_REW_GAP_012": {
    "subclass": "SINGLE_BASE",
    "rule": "no-blend all-UK 0.26 (review-to-ensure-fair) with purpose caveat + likely-understates-large-cohort caveat; 0.83 objectives-holders base = context, never emit",
@@ -206,6 +201,14 @@
     "reasoning": "On-row anchor carries the full split: 24% all / 37% large / 15% SME (CIPD H&W 2025, Grade A). Blend: (0.15*30 + 0.37*190)/220 = 0.340, so the no-dental mass is 0.660 vs seeded 75% (58% N/A + 17% not-o"
    },
    "why": "r3sw23: dental re-gated to conditioned EST (sector-gate the 038 Dental-tick parent to ~11 perk-concentrated; funding conditioned) — flat offer marginal superseded by the sector-gate"
+  },
+  "REW263_BEN_CICOVER": {
+   "was": {
+    "subclass": "BLEND_ELIGIBLE",
+    "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays unanchored (Drewberry = context)",
+    "reasoning": "On-row anchor carries the full split: 23% all / 42% large / 12% SME (CIPD H&W 2025, Grade A). Blend: (0.12*30 + 0.42*190)/220 = 0.379 offering CI cover, 'Not applicable' 0.621 — this closes the gap th"
+   },
+   "why": "r3sw24: CI level conditioned on the aligned 52 CI-havers (038 CI-tick as parent, dedicated-signal-wins); flat offer marginal superseded"
   }
  }
 }
