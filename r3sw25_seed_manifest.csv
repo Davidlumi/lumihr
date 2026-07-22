@@ -1,0 +1,2 @@
+metric,action,detail
+PROP_8e0b6316,"declare answerer_only (A batch-safe); render-only, 0 DB rows","{""drop"": ""Not applicable (no pay review)"", ""base"": ""212->203"", ""excluded_na"": 9}"

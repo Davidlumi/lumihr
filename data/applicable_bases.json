@@ -405,6 +405,14 @@
     "contains": "Critical illness cover"
    },
    "_r3sw24": "038 CI-tick aligned up to the dedicated 52 (IP pattern); flat condition (bundle benefit, no sector-gate); level split unchanged; CI⊆IP chain; verdict suppressed"
+  },
+  "PROP_8e0b6316": {
+   "mode": "answerer_only",
+   "base_label": "organisations that run a pay review",
+   "na_options": [
+    "Not applicable (no pay review)"
+   ],
+   "_r3sw25": "master N/A sweep v2 — sole batch-safe (A) of 27 (the clean no-parent class was exhausted by r3sw10); no parent-exists metric, no 038/second signal; N/A = absence of the measured frequency. Render-only re-percentage (answers byte-identical); verdict already suppressed (mp unbenchmarked)."
   }
  }
 }
