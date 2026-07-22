@@ -16,11 +16,6 @@
    "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays unanchored (Drewberry = context)",
    "reasoning": "On-row anchor carries the full split: 23% all / 42% large / 12% SME (CIPD H&W 2025, Grade A). Blend: (0.12*30 + 0.42*190)/220 = 0.379 offering CI cover, 'Not applicable' 0.621 — this closes the gap th"
   },
-  "REW263_BEN_DENTAL": {
-   "subclass": "BLEND_ELIGIBLE",
-   "rule": "blend 0.15/0.37 (SME/large cash-plan rates, on-row) -> 0.340 any-dental proxy; emit no-dental mass 0.660 only, carrying cash-plan-proxy caveat; employer-paid vs voluntary split stays unanchored",
-   "reasoning": "On-row anchor carries the full split: 24% all / 37% large / 15% SME (CIPD H&W 2025, Grade A). Blend: (0.15*30 + 0.37*190)/220 = 0.340, so the no-dental mass is 0.660 vs seeded 75% (58% N/A + 17% not-o"
-  },
   "EXT_REW_GAP_012": {
    "subclass": "SINGLE_BASE",
    "rule": "no-blend all-UK 0.26 (review-to-ensure-fair) with purpose caveat + likely-understates-large-cohort caveat; 0.83 objectives-holders base = context, never emit",
@@ -203,6 +198,14 @@
     "reasoning": "On-row anchor is an all/large split the blend can consume: 62% large (Fig24) vs ~18-19% all/SME (Fig28 UK-only 18%), CIPD Feb 2026 Grade A — the anchor itself equates all with SME ('~18-19% all/SME'),"
    },
    "why": "r3sw21: life-assurance multiple redesigned to answerer_only EST (offer nudged cohort-matched ~62%, multiples 10/30/30/30 over offerers); the flat offer marginal SUPERSEDED by the cohort-matched seed"
+  },
+  "REW263_BEN_DENTAL": {
+   "was": {
+    "subclass": "BLEND_ELIGIBLE",
+    "rule": "blend 0.15/0.37 (SME/large cash-plan rates, on-row) -> 0.340 any-dental proxy; emit no-dental mass 0.660 only, carrying cash-plan-proxy caveat; employer-paid vs voluntary split stays unanchored",
+    "reasoning": "On-row anchor carries the full split: 24% all / 37% large / 15% SME (CIPD H&W 2025, Grade A). Blend: (0.15*30 + 0.37*190)/220 = 0.340, so the no-dental mass is 0.660 vs seeded 75% (58% N/A + 17% not-o"
+   },
+   "why": "r3sw23: dental re-gated to conditioned EST (sector-gate the 038 Dental-tick parent to ~11 perk-concentrated; funding conditioned) — flat offer marginal superseded by the sector-gate"
   }
  }
 }

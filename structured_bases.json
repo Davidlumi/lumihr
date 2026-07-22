@@ -706,7 +706,11 @@
    "child": "REW265_INC_SHAREPART",
    "child_value_not": "Not applicable",
    "parent": "REW264_INC_SHAREPLAN",
-   "parent_value_in": ["SAYE", "SIP", "Both"],
+   "parent_value_in": [
+    "SAYE",
+    "SIP",
+    "Both"
+   ],
    "relation": "subset_orgs",
    "note": "share-plan participation is answered only by plan operators (r3sw11 ruled): substantive answers ⊆ the any-plan set"
   },
@@ -714,7 +718,10 @@
    "child": "REW265_INC_SAYEDISC",
    "child_value_not": "Not applicable",
    "parent": "REW264_INC_SHAREPLAN",
-   "parent_value_in": ["SAYE", "Both"],
+   "parent_value_in": [
+    "SAYE",
+    "Both"
+   ],
    "relation": "subset_orgs",
    "note": "SAYE discount exists only where SAYE does (r3sw11 ruled — the 12 SIP-only 20%-max artifacts repaired): substantive ⊆ the SAYE side"
   },
@@ -722,7 +729,10 @@
    "child": "REW265_INC_SIPELEM",
    "child_value_not": "No SIP operated",
    "parent": "REW264_INC_SHAREPLAN",
-   "parent_value_in": ["SIP", "Both"],
+   "parent_value_in": [
+    "SIP",
+    "Both"
+   ],
    "relation": "subset_orgs",
    "note": "SIP elements exist only where a SIP does (r3sw11 ruled — 16 SAYE-only fabrications + 6 operator no-SIP contradictions repaired): substantive ⊆ the SIP side"
   },
@@ -738,7 +748,11 @@
    "child": "REW264_WEL_EWAFEES",
    "child_value_not": "Not applicable",
    "parent": "REW264_WEL_EWA",
-   "parent_value_in": ["Yes all eligible", "Yes hourly/frontline only", "Piloting"],
+   "parent_value_in": [
+    "Yes all eligible",
+    "Yes hourly/frontline only",
+    "Piloting"
+   ],
    "relation": "subset_orgs",
    "note": "EWA fee model exists only where EWA runs (r3sw12 ruled: OFFER-OR-PILOT grain — pilots are live schemes with real fee models): substantive ⊆ the 77-org offer-or-pilot set"
   },
@@ -746,7 +760,11 @@
    "child": "REW264_WEL_EWACAP",
    "child_value_not": "Not applicable",
    "parent": "REW264_WEL_EWA",
-   "parent_value_in": ["Yes all eligible", "Yes hourly/frontline only", "Piloting"],
+   "parent_value_in": [
+    "Yes all eligible",
+    "Yes hourly/frontline only",
+    "Piloting"
+   ],
    "relation": "subset_orgs",
    "note": "EWA withdrawal caps exist only where EWA runs (r3sw12 ruled: OFFER-OR-PILOT grain): substantive ⊆ the 77-org offer-or-pilot set"
   },
@@ -762,7 +780,11 @@
    "child": "REW263_INC_DEFERRAL",
    "child_any_answer": true,
    "parent": "REW_INC_069",
-   "parent_value_in": ["Exec only", "Senior leadership only", "Wider population"],
+   "parent_value_in": [
+    "Exec only",
+    "Senior leadership only",
+    "Wider population"
+   ],
    "relation": "subset_orgs",
    "note": "deferral period/vehicle is CONDITIONED on the org deferring (r3sw16): child answerers ⊆ the parent's deferrer set (listing/FS re-anchor) — level 1 of the two-level chain"
   },
@@ -802,7 +824,10 @@
    "child": "REW_BEN_SICK_005",
    "child_any_answer": true,
    "parent": "REW_BEN_SICK_001",
-   "parent_value_in": ["Enhanced occupational sick pay (above SSP)", "Combination of enhanced sick pay and SSP"],
+   "parent_value_in": [
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
    "relation": "subset_orgs",
    "note": "OSP eligibility-rules governance is CONDITIONED on OSP-exists (r3sw17, r3sw13-routed): child ⊆ OSP-havers (SICK_001 enhanced/combination) — SEPARATE parent from IP; subset not equality (a governance question — not every OSP-haver documents)"
   },
@@ -829,6 +854,14 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI cost-share/excess is CONDITIONED on PMI-exists (r3sw22, 6th PMI-family child): every org reporting an excess ⊆ the 154 PMI-havers. SUBSET not equality (ruled) — 84 havers answered N/A (no excess detail), rendered over the 70 excess-specifiers; the 26 non-haver excesses cleared. answerer_only excludes 'Not applicable'"
+  },
+  {
+   "child": "REW263_BEN_DENTAL",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Dental cover",
+   "relation": "subset_orgs",
+   "note": "dental funding split is CONDITIONED on dental-exists (r3sw23): funding-answerers ⊆ the sector-gated REW_BEN_038 'Dental cover' tick set (~11, perk-concentrated). 038 Dental-tick is the parent (like PMI); both mis-seeded signals aligned. EST grade-C, verdict-suppressed"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

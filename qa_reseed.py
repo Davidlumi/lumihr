@@ -242,7 +242,19 @@ def g9_bundles(ans, meta, rewq, results):
     except ImportError:
         results["G9_bundles"]={"pass":False,"error":"numpy required"}; return
     NEG={"no","none","n/a","not offered","statutory only",""}
-    ben=[q for q in rewq if meta[q]["sub_power"]=="Benefits" and meta[q]["type"] in ("boolean","single_select","yes_no")]
+    # r3sw23: CONDITIONED metrics (applicable_bases mode=conditioned) have answer rows only for
+    # their applicable base — non-havers hold no row. Including one in the all-answered generosity
+    # intersection collapses `keep` to ~0 (the same class the retired-subtract fixed in load(),
+    # but conditioned metrics keep partial rows so they can't be dropped from rewq globally).
+    import os as _os
+    try:
+        _cond={q for q,e in json.load(open(_os.environ.get("LUMI_AB_CONFIG")
+               or _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),"data","applicable_bases.json"),
+               encoding="utf-8")).get("metrics",{}).items() if e.get("mode")=="conditioned"}
+    except FileNotFoundError:
+        _cond=set()
+    ben=[q for q in rewq if meta[q]["sub_power"]=="Benefits" and meta[q]["type"] in ("boolean","single_select","yes_no")
+         and q not in _cond]
     # generosity = offers(1)/absent(0) per org per benefit
     cols={q:[] for q in ben}; keep=[]
     for o,a in ans.items():

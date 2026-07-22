@@ -419,6 +419,14 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI cost-share/excess is CONDITIONED on PMI-exists (r3sw22, 6th PMI-family child): every org reporting an excess ⊆ the 154 PMI-havers. SUBSET not equality (ruled) — 84 havers answered N/A (no excess detail), rendered over the 70 excess-specifiers; the 26 non-haver excesses cleared. answerer_only excludes 'Not applicable'"
+  },
+  {
+   "child": "REW263_BEN_DENTAL",
+   "child_any_answer": true,
+   "parent": "REW_BEN_038",
+   "parent_contains": "Dental cover",
+   "relation": "subset_orgs",
+   "note": "dental funding split is CONDITIONED on dental-exists (r3sw23): funding-answerers ⊆ the sector-gated REW_BEN_038 'Dental cover' tick set (~11, perk-concentrated). 038 Dental-tick is the parent (like PMI); both mis-seeded signals aligned. EST grade-C, verdict-suppressed"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
@@ -446,15 +454,6 @@
    "grade": "A",
    "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
    "rule": "blend 0.12/0.42 (SME/large, on-row) -> 0.379 offer; emit 'Not applicable' 0.621 only; lump-sum-vs-multiple split stays u"
-  },
-  "REW263_BEN_DENTAL": {
-   "target_share": 0.34,
-   "base_type": "sme_large(ruled)",
-   "sme": 15.0,
-   "large": 37.0,
-   "grade": "A",
-   "source": "CIPD Health & Wellbeing at Work 2025 (Sept 2025, YouGov, n=1,101; large 250+ n=3",
-   "rule": "blend 0.15/0.37 (SME/large cash-plan rates, on-row) -> 0.340 any-dental proxy; emit no-dental mass 0.660 only, carrying "
   },
   "REW26_BEN_PENSION_MATCH": {
    "target_share": 0.5141,
@@ -850,6 +849,9 @@
   },
   "RED_TERM_03": {
    "why": "unanchored"
+  },
+  "REW263_BEN_DENTAL": {
+   "why": "anchored-unstructured (25-row follow-on table)"
   },
   "REW263_BEN_NEURO": {
    "why": "anchored-unstructured (25-row follow-on table)"

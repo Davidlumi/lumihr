@@ -619,7 +619,9 @@
       "type": "binary",
       "direction": "higher_is_better",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_r3sw23": "verdict SUPPRESSED — EST grade-C dental (no free insurance-product sector data) + thin base"
     },
     "REW263_BEN_NEURO": {
       "class": "Level",

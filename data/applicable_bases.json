@@ -387,6 +387,15 @@
     "Not applicable"
    ],
    "_r3sw22": "6th PMI-family child; SUBSET (70 excess-specifiers ⊆ 154 havers); 84 havers-with-N/A left, 26 non-haver excesses cleared; no re-weight; verdict already suppressed"
+  },
+  "REW263_BEN_DENTAL": {
+   "mode": "conditioned",
+   "base_label": "organisations with dental cover",
+   "parent": {
+    "qid": "REW_BEN_038",
+    "contains": "Dental cover"
+   },
+   "_r3sw23": "sector-gated (038 Dental-tick 42->11 perk-concentrated) + funding conditioned; EST grade-C (cash-plan-vs-cover product finding); verdict suppressed; thin base 11"
   }
  }
 }
