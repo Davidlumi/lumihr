@@ -483,6 +483,22 @@
    "parent_value_not": "None",
    "relation": "subset_orgs",
    "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW264_PEN_AEDEFAULT",
+   "child_value_not": "Not applicable (no DC scheme)",
+   "parent": "REW26_BEN_PENSION_TYPE",
+   "parent_value_not": "DB",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ DC-havers (REW26_BEN_PENSION_TYPE != DB) — r3sw27 clear-direction; a DB/CARE scheme has no DC default fund / AE default rate, so DC-detail answers must be N/A; parent is r3sw3 tier-1 frozen and untouched"
+  },
+  {
+   "child": "REW264_PEN_GREENDEFAULT",
+   "child_value_not": "Not applicable (no DC default fund)",
+   "parent": "REW26_BEN_PENSION_TYPE",
+   "parent_value_not": "DB",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ DC-havers (REW26_BEN_PENSION_TYPE != DB) — r3sw27 clear-direction; a DB/CARE scheme has no DC default fund / AE default rate, so DC-detail answers must be N/A; parent is r3sw3 tier-1 frozen and untouched"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",

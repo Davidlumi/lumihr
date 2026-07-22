@@ -461,6 +461,22 @@
     "Not applicable"
    ],
    "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW264_PEN_AEDEFAULT": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a DC pension scheme",
+   "na_options": [
+    "Not applicable (no DC scheme)"
+   ],
+   "_r3sw27": "pension-DC clear-direction (r3sw3-consistent): DB over-answers cleared, conditioned on 199 DC-havers; parent frozen/untouched"
+  },
+  "REW264_PEN_GREENDEFAULT": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a DC pension scheme",
+   "na_options": [
+    "Not applicable (no DC default fund)"
+   ],
+   "_r3sw27": "pension-DC clear-direction (r3sw3-consistent): DB over-answers cleared, conditioned on 199 DC-havers; parent frozen/untouched"
   }
  }
 }

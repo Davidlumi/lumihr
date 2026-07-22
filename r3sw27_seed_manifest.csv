@@ -1,0 +1,5 @@
+metric,action,detail
+REW264_PEN_AEDEFAULT,clear DB over-answers -> N/A + DEFERRAL -> statutory-min,clear 20 + reanchor 17
+REW264_PEN_GREENDEFAULT,clear DB over-answers -> N/A (DEFERRAL leave-base),clear 18
+REW264_PEN_AEDEFAULT,declare answerer_only + subset pair,base 199
+REW264_PEN_GREENDEFAULT,declare answerer_only + subset pair,base 170
