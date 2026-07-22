@@ -477,6 +477,22 @@
     "Not applicable (no DC default fund)"
    ],
    "_r3sw27": "pension-DC clear-direction (r3sw3-consistent): DB over-answers cleared, conditioned on 199 DC-havers; parent frozen/untouched"
+  },
+  "REW264_PEN_SALSACIMPACT": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering pension salary sacrifice",
+   "na_options": [
+    "Not applicable (no sal-sac)"
+   ],
+   "_r3sw28": "Diff-7-consistent render tidy: drop self-declared NA -> base 197; 8-org drift realigned to the any-salsac union; parent frozen; NO subset pair (self-conditioning)"
+  },
+  "REW264_PEN_SALSACRESPONSE": {
+   "mode": "answerer_only",
+   "base_label": "organisations offering pension salary sacrifice",
+   "na_options": [
+    "Not applicable (no sal-sac)"
+   ],
+   "_r3sw28": "Diff-7-consistent render tidy: drop self-declared NA -> base 197; 8-org drift realigned to the any-salsac union; parent frozen; NO subset pair (self-conditioning)"
   }
  }
 }
