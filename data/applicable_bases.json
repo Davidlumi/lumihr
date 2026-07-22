@@ -379,6 +379,14 @@
     "Not offered"
    ],
    "_r3sw21": "multiples render over offerers (~62%% cohort-matched); 'Not offered' = offer-rate context; EST grade-C"
+  },
+  "REW263_BEN_PMIEXCESS": {
+   "mode": "answerer_only",
+   "base_label": "PMI-holding organisations reporting a cost-share",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw22": "6th PMI-family child; SUBSET (70 excess-specifiers ⊆ 154 havers); 84 havers-with-N/A left, 26 non-haver excesses cleared; no re-weight; verdict already suppressed"
   }
  }
 }

@@ -411,6 +411,14 @@
    "parent_contains": "Private Medical Insurance (PMI)",
    "relation": "subset_orgs",
    "note": "PMI premium is CONDITIONED on PMI-exists (r3sw20): child answerers ⊆ the PMI-haver set — now guardable because Thornbridge (the demo org with genuine premiums) is a real haver, closing the last unguarded family child (the r3sw6/15 documented-exception is gone)"
+  },
+  {
+   "child": "REW263_BEN_PMIEXCESS",
+   "child_value_not": "Not applicable",
+   "parent": "REW_BEN_038",
+   "parent_contains": "Private Medical Insurance (PMI)",
+   "relation": "subset_orgs",
+   "note": "PMI cost-share/excess is CONDITIONED on PMI-exists (r3sw22, 6th PMI-family child): every org reporting an excess ⊆ the 154 PMI-havers. SUBSET not equality (ruled) — 84 havers answered N/A (no excess detail), rendered over the 70 excess-specifiers; the 26 non-haver excesses cleared. answerer_only excludes 'Not applicable'"
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
