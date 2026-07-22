@@ -687,14 +687,6 @@
    "note": "operates-LTIP=Yes must be EXACTLY the orgs with any LTI-by-level eligibility (r3sw2 ruled, range-max pattern)"
   },
   {
-   "child": "REW_INC_071",
-   "child_value": "Yes",
-   "parent": "REW_INC_103",
-   "parent_value_not": "None",
-   "relation": "subset",
-   "note": "clawback-Yes must be a SUBSET of the bonus-exists set (r3sw5 ruled) — you cannot claw back a bonus you don't pay; prevents a future INC_103 reseed silently re-breaking the conditioning"
-  },
-  {
    "child": "REW265_BEN_PMICOMP",
    "child_any_answer": true,
    "parent": "REW_BEN_038",
@@ -878,6 +870,54 @@
    "parent_value_not": "No",
    "relation": "subset_orgs",
    "note": "CI rides inside the group-risk bundle (r3sw24): every CI-haver is an IP-haver (52 ⊆ 80) — level 2; locks the bundle so a reseed can't create a CI-haver who isn't an IP-haver"
+  },
+  {
+   "child": "REW_INC_071",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW263_INC_POOLFUND",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW_INC_065",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW_INC_104",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW_INC_070",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
+  },
+  {
+   "child": "REW_INC_060",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_103",
+   "parent_value_not": "None",
+   "relation": "subset_orgs",
+   "note": "child-substantive ⊆ bonus-exists (REW_INC_103 != None) — r3sw26 extends the r3sw5 071-guard to the whole bonus-detail family; a non-bonus org cannot answer bonus detail, and a future INC_103 reseed that re-breaks the conditioning fails the freeze gate"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

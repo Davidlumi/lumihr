@@ -413,6 +413,54 @@
     "Not applicable (no pay review)"
    ],
    "_r3sw25": "master N/A sweep v2 — sole batch-safe (A) of 27 (the clean no-parent class was exhausted by r3sw10); no parent-exists metric, no 038/second signal; N/A = absence of the measured frequency. Render-only re-percentage (answers byte-identical); verdict already suppressed (mp unbenchmarked)."
+  },
+  "REW_INC_071": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: render-only, data already correct r3sw5 (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW263_INC_POOLFUND": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW_INC_065": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW_INC_104": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW_INC_070": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
+  },
+  "REW_INC_060": {
+   "mode": "answerer_only",
+   "base_label": "organisations with a bonus scheme",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw26": "bonus-exists family: impossible cleared + conditioned (r3sw5 PART-B extension; conditioned on REW_INC_103 havers)"
   }
  }
 }

@@ -1,0 +1,14 @@
+metric,action,detail
+REW263_INC_POOLFUND,clear None-org substantive -> N/A,26 cleared
+REW_INC_065,clear None-org substantive -> N/A,29 cleared
+REW_INC_104,clear None-org substantive -> N/A,40 cleared
+REW_INC_070,clear None-org substantive -> N/A,39 cleared
+REW_INC_060,clear None-org substantive -> N/A,26 cleared
+REW_INC_065,governance haver-N/A -> No,28 remapped
+REW_INC_070,governance haver-N/A -> No,3 remapped
+REW_INC_071,declare answerer_only + subset pair,base 147
+REW263_INC_POOLFUND,declare answerer_only + subset pair,base 132
+REW_INC_065,declare answerer_only + subset pair,base 179
+REW_INC_104,declare answerer_only + subset pair,base 165
+REW_INC_070,declare answerer_only + subset pair,base 179
+REW_INC_060,declare answerer_only + subset pair,base 136
