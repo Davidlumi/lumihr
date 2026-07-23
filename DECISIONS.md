@@ -9414,3 +9414,64 @@ filter — deletion MASKS it, does not fix the ranking bug); DK submission guard
 and must keep rendering). Existing queue unchanged: GAP_004 seed-realism, INC_131 form-realism, on-call REW_PAY_016,
 PAY_097 regeneration, 7 COMMCAP, provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C —
 HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## Non-Reward HARD-DELETE — 600 questions + 141,038 answers removed (nonrew-2, ruled + applied 23 July 2026, IRREVERSIBLE)
+THE STRATEGIC RULING (on its own terms, ruled KNOWINGLY): Reward-only IS the product. All 600 questions with
+superpower != 'Reward' (404 active + 196 proposed) and their attached rows were HARD-DELETED — not retired. This
+was chosen deliberately, having seen it CONTRADICTS releases.py:11 "Retire, never delete" (leaving questions get
+status=retired + release_retired, stay in the bank + every release snapshot so historical benchmarks resolve) and
+app.py:172's flag-revivable architecture ("the other nine areas stay fully built ... hidden ... by THIS flag alone.
+Set LUMI_ACTIVE_SUPERPOWERS=all to re-show them — nothing else needs touching"). After this delete, re-showing any
+of the nine non-Reward areas requires a FULL RESEED, not a flag flip. A future reader must see this was CHOSEN, not
+overlooked. (Mitigant: release_questions held 0 non-Reward ids — baseline releases were Reward-only — so historical
+release RECONSTRUCTION is not harmed; the contradiction is with the invariant + the flag-revivable design.)
+THE FK FORK (recorded as a STANDING HAZARD for any future destructive work): db.py:24 get_conn() sets PRAGMA
+foreign_keys=ON, but EVERY r3sw migration uses plain sqlite3.connect() (FK OFF). The FKs to questions(id) are
+ON DELETE NO ACTION. The SAME `DELETE FROM questions` either ABORTS SAFELY (FK-ON) or SILENTLY ORPHANS 141,038
+answers with no error (FK-OFF) — the outcome depends ONLY on the connection. This diff ran FK-ON DELIBERATELY (a
+new dedicated runner, server/migrate_nonrew2_delete.py — NOT the r3sw template, whose default is the dangerous
+side). One atomic transaction, children before parents: pulse_responses(26) -> benchmark_snapshots(600) ->
+answers(141,038) -> questions(600), plus filtering pulse-90a56a58's question_ids_json/question_snapshot_json from
+5 qids to its 3 Reward qids (dropping PULSE_PTD_DISCLOSURES + PULSE_PTD_EQUITY_AUDIT; its 110 Reward pulse_responses
+kept). Dual-guarded (--write --confirmed-by-david); dry-run default; proven on a throwaway copy first.
+THE RECOVERY POSITION: (1) 600 question definitions (full row, all columns) committed to the repo as
+nonrew2_deleted_questions.json — the reconstruction record. (2) 141,038 answers + 600 benchmark_snapshots + 26
+pulse_responses + the pulse JSON archived LOCALLY + UNCOMMITTED at nonrew2_local_archive/ (gitignored). (3) WAL-safe
+backup lumi.db.bak_pre_nonrew2_delete_20260723 (backup API, the real full record). NOTE explicitly: the local archive
++ the .bak SHARE A MACHINE with lumi.db, so the committed question definitions are the ONLY geographically-
+independent artefact.
+GATE WORK — THE DIAGNOSTIC UNDER-COUNTED; a deterministic sweep of every gate file for deletion-set qids found MORE
+than the workflow reported, including ONE in the LIVE suite: qa_focus:38+:92 (myview-degrade fixture, run_gates!) =
+deleted PROP_9e3b1d18 -> retired-Reward REW264_PEN_CONTRIBTIER; qa_engine_audit:342 LAYER 1 -> skip `qid not in META`
+(DB-derived, self-scopes, no-op pre-deletion); qa_phase1:82/:127 (PROP_9620d380/MET_cd8efe96 -> PROP_d16bae79/
+REW_BEN_112) + §1.3 hardcoded ("Wellbeing","Reward") -> ("Reward",) since the Wellbeing SUPERPOWER is deleted;
+qa_phase2 PROP_9620d380 -> PROP_e63cf45a (collision-tested clean). Re-sweep: ZERO deletion-set qids remain in any
+gate. LIVE 11-gate suite GREEN on the deleted DB (freeze gate PASS); qa_phase2 25/0. qa_phase1 §1.1 stays red but
+PRE-EXISTING and NOT deletion-caused: its raw-seed-CSV-vs-DB premise went obsolete when the r3sw corrections moved
+answers away from the CSVs (original fixtures already failed; one fails only on a 2dp percentile-rounding edge) —
+superseded by qa_engine_audit LAYER 1; full modernization is a separate item.
+SURPRISES HANDLED: (a) 8 pre-existing signal_actions "orphans" = composite keys "<reward_matrix_qid>::rowkey" on
+SURVIVING Reward matrices (0 reference a deleted qid) — the runner's first (over-broad) orphan check tripped and
+correctly ROLLED BACK; refined to deletion-scoped + composite-aware. (b) COLLATERAL LIVE MUTATION, corrected:
+qa_phase2 hardcoded ../lumi.db + `DELETE FROM drafts`, so verification runs wiped 2 live draft rows (REW_BEN_047/048,
+org 5e67fa8c, autosaved 2026-07-23 07:43). RESTORED exactly from the Step-1 backup (drafts=2; answers-book unchanged)
+AND fixed qa_phase2 to honor LUMI_DB so its DELETE can never hit live again.
+ONE BEHAVIOURAL CHANGE (recorded): retrieval.py:129 scores the FULL bank and truncates to top-12 BEFORE app.py:3088's
+Reward filter, so "Ask lumi" was crowded by non-Reward rows. Deletion DE-CROWDS that window -> the analyst may now
+surface a Reward metric it previously refused on. An IMPROVEMENT — but it MASKS rather than fixes the filter-after-
+truncate ranking bug, which stays QUEUED.
+POST-DELETION COUNTS: questions 344 (333 served active + 11 retired) / answers 89,321 (= 230,359 - 141,038). Frame
+per surface unchanged from nonrew-1 (README floor "300+", app.js no literal, qa_phase3 0-sentinel) so the four-frame
+disagreement does not re-emerge.
+VERIFIED: throwaway --write first (all asserts pass: FK=1, 344/89,321, 0 orphans, frozen-8 byte-identical, whole book
+== pre-captured survivor hash b0ff15cb, pulse 5->3), 11-gate suite GREEN on the deleted copy, browser Benchmark
+renders "All reward · 218 benchmarks" with 0 console errors (byte-identical to nonrew-1), both exports row-count
+verified. LIVE (--write --confirmed-by-david, server stopped for a clean write + fresh cache): post-write EXACT match
+to throwaway — questions 344, answers 89,321, 0 non-Reward remaining, 0 orphans, frozen-8 64e5dac7 byte-identical,
+whole answers-book == survivor hash b0ff15cb (surviving Reward answers byte-identical), pulse -> its 3 Reward qids,
+restored drafts intact; run_gates 11/11 GREEN (freeze PASS); live Benchmark 218 cards / ["Reward"] / 0 console errors.
+QUEUE (unchanged, NOT actioned): retrieval filter-after-truncate bug; DK submission guard (match the "Don't know"
+label specifically, never is_na — 41 legitimate Reward options depend on is_na rendering); qa_phase1 CSV-premise
+modernization / retirement; GAP_004 seed-realism, INC_131 form-realism, on-call REW_PAY_016, PAY_097 regeneration,
+7 COMMCAP, provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
+COMMCAP+INC_136, SICK_004.

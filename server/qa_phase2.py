@@ -66,7 +66,7 @@ for fn in sorted(glob.glob(os.path.join(DATA, "*.csv"))):
     if rows and rows[0]["org_name"] != "Thornbridge Retail Group plc":
         foreign_org_id, foreign_name = rows[0]["org_id"], rows[0]["org_name"]
         for r in rows:
-            if r["question_id"] == "PROP_9620d380" and r["your_answer"].strip():
+            if r["question_id"] == "PROP_e63cf45a" and r["your_answer"].strip():
                 foreign_numeric = r["your_answer"].strip()
         break
 
@@ -75,7 +75,7 @@ print("== 2.1 Cross-tenant isolation (as Org A, attack Org B = %s) ==" % foreign
 # accept ANY identifier, substituting foreign/forged values.
 st, body = admin.req("/api/boardpack/%s" % foreign_org_id)            # forged pack id
 check("GET /api/boardpack/{foreign-uuid} -> 404", st == 404, st)
-st, body = admin.req("/api/benchmark/PROP_9620d380?cut=industry&cut_value=%s&org_id=%s"
+st, body = admin.req("/api/benchmark/PROP_e63cf45a?cut=industry&cut_value=%s&org_id=%s"
                      % (urllib.parse.quote("Retail & Consumer Goods"), foreign_org_id))
 leak = foreign_numeric and foreign_numeric in json.dumps(body)
 check("GET /api/benchmark?...&org_id={foreign} ignored (session wins, no foreign value)", st == 200 and not leak)
@@ -88,11 +88,11 @@ check("GET /api/gap-register?org_id={foreign} ignored", st == 200 and foreign_na
 st, body = admin.req("/api/share/%s/data" % foreign_org_id)           # forged share token
 check("GET /api/share/{forged-token}/data -> 404", st == 404, st)
 st, body = admin.req("/api/submission/draft", "PUT",
-                     {"question_id": "PROP_9620d380", "value": "999", "org_id": foreign_org_id})
+                     {"question_id": "PROP_e63cf45a", "value": "999", "org_id": foreign_org_id})
 check("PUT draft with injected org_id writes to own org only (session-scoped)", st in (200, 403))
 # confirm the draft did NOT land on the foreign org
 import sqlite3 as s3
-db = s3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))
+db = s3.connect(os.environ.get("LUMI_DB") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))  # nonrew-2: honor LUMI_DB so the DELETE FROM drafts hits the throwaway, never live
 row = db.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (foreign_org_id,)).fetchone()
 check("DB: no draft row created for foreign org", row[0] == 0, row[0])
 db.execute("DELETE FROM drafts"); db.commit()
@@ -118,7 +118,7 @@ if foreign_numeric and len(foreign_numeric) >= 4:
 print("\n== 2.3 Role enforcement (Viewer by direct URL) ==")
 viewer = Client()
 st, _ = viewer.req("/api/auth/login", "POST", {"email": "ceo@thornbridge.example", "password": "lumi-view-2026"})
-for path, method, body in [("/api/submission/draft", "PUT", {"question_id": "PROP_9620d380", "value": "5"}),
+for path, method, body in [("/api/submission/draft", "PUT", {"question_id": "PROP_e63cf45a", "value": "5"}),
                            ("/api/submission/submit", "POST", {}),
                            ("/api/shares", "GET", None),
                            ("/api/shares", "POST", {"kind": "dashboard", "config": {}}),

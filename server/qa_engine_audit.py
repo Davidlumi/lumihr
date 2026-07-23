@@ -339,8 +339,8 @@ missing_in_db = mismatched = 0
 type_examples = {}
 for key, v in csv_rows.items():
     qid = key[0]
-    if _db_origin(qid) or qid in RETIRED_LINEAGE:
-        continue
+    if _db_origin(qid) or qid in RETIRED_LINEAGE or qid not in META:
+        continue  # nonrew-2: skip CSV rows whose question no longer exists in the (Reward-only) bank — META is DB-derived so this self-scopes and is a no-op pre-deletion
     dbv = raw_answers.get(key)
     if dbv is None:
         missing_in_db += 1

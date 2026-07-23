@@ -15,6 +15,9 @@ lumi.db.bak*
 *.bak_pre_*
 *.bak
 
+# --- nonrew-2 local deletion archive (uncommitted; the committed nonrew2_deleted_questions.json is the repo record) ---
+nonrew2_local_archive/
+
 # --- one-off / scratch scripts (root-level, not part of the app) ---
 /apply_*.py
 /audit_*.py

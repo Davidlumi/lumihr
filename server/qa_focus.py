@@ -35,7 +35,7 @@ st, qi = api("/api/questions")
 check("/api/questions count agrees with scope, all Reward, no leak", len(qi["questions"]) == me["scope"]["question_count"] and not leak(qi))
 st, _ = api("/api/benchmarks/Processes")
 check("hidden area page -> 404", st == 404, st)
-st, _ = api("/api/benchmark/PROP_9e3b1d18")   # early attrition = Attract
+st, _ = api("/api/benchmark/REW264_PEN_CONTRIBTIER")   # nonrew-2: retired Reward (non-visible, present); PROP_9e3b1d18 (Attract) was deleted
 check("hidden metric -> 404", st == 404, st)
 st, rw = api("/api/benchmarks/Reward")
 check("/api/benchmarks/Reward serves a card per visible Reward question",
@@ -89,7 +89,7 @@ check("Wellbeing is a real category since 2026.1 -> 200", st == 200, st)
 st, mv = api("/api/myview")
 bad = [s for s in mv["layout"] if s["question_id"] not in vis_ids]
 check("my-view starter layout ⊆ reward", not bad, bad)
-api("/api/myview", "PUT", {"layout": [{"question_id": "PROP_9e3b1d18", "size": 1},
+api("/api/myview", "PUT", {"layout": [{"question_id": "REW264_PEN_CONTRIBTIER", "size": 1},
                                       {"question_id": "REW_BEN_HOL_001", "size": 1}]})
 st, mv2 = api("/api/myview")
 check("saved layout with hidden card degrades to reward-only",

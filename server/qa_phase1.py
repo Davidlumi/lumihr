@@ -79,7 +79,7 @@ print("== 1.1 Six hand-derived aggregates vs API " + "=" * 48)
 print("%-34s %-14s %12s %12s %5s" % ("question", "stat", "hand", "api", "ok"))
 
 # two numerics
-for qid, label in [("PROP_9e4ad87f", "salary budget %"), ("PROP_9620d380", "HR cost per emp")]:
+for qid, label in [("PROP_9e4ad87f", "salary budget %"), ("PROP_d16bae79", "workforce cost/FTE")]:  # nonrew-2: PROP_9620d380 (Processes) deleted
     vs = numbers(qid)
     card = api("/api/benchmark/%s" % qid)
     ok_all = True
@@ -106,7 +106,7 @@ for qid in ["PROP_8e0b6316", "REW_BEN_SICK_004"]:
     check("select %s option %% match (n=%d)" % (qid, n), ok_all)
 
 # one multi_select
-qid = "ALLOW_01"
+qid = "REW_BEN_038"
 vals = [v for (o, rid), v in RAW[qid].items() if rid == ""]
 n = len(vals)
 sel = Counter()
@@ -120,11 +120,11 @@ for o in card["block"]["options"]:
     ok = abs(hand - o["pct"]) < 0.05
     ok_all &= ok
     if sel.get(o["label"], 0) > 0:
-        print("%-34s %-14s %11.1f%% %11.1f%% %5s" % ("ALLOW_01", o["label"][:14], hand, o["pct"], "OK" if ok else "XX"))
-check("multi ALLOW_01 prevalence match (n=%d)" % n, ok_all)
+        print("%-34s %-14s %11.1f%% %11.1f%% %5s" % ("REW_BEN_038", o["label"][:14], hand, o["pct"], "OK" if ok else "XX"))
+check("multi REW_BEN_038 prevalence match (n=%d)" % n, ok_all)
 
 # one matrix (per-row median)
-qid = "MET_cd8efe96"  # time to hire by level
+qid = "REW_BEN_112"  # nonrew-2: typical employer pension % by level (Reward); MET_cd8efe96 (Attract) deleted
 card = api("/api/benchmark/%s" % qid)
 ok_all = True
 for rowd in card["matrix_rows"][:3]:
@@ -135,8 +135,8 @@ for rowd in card["matrix_rows"][:3]:
     apiv = rowd["block"]["p50"]
     ok = abs(hand - apiv) < 1e-9 and len(vs) == rowd["block"]["n"]
     ok_all &= ok
-    print("%-34s %-14s %12.4f %12.4f %5s" % ("time-to-hire " + rowd["row_id"][:18], "P50 (n=%d)" % len(vs), hand, apiv, "OK" if ok else "XX"))
-check("matrix MET_cd8efe96 row medians match", ok_all)
+    print("%-34s %-14s %12.4f %12.4f %5s" % ("pension/level " + rowd["row_id"][:18], "P50 (n=%d)" % len(vs), hand, apiv, "OK" if ok else "XX"))
+check("matrix REW_BEN_112 row medians match", ok_all)
 
 # -------------------------------------------- 1.2 status-mapping audit ------
 print("\n== 1.2 Status-mapping audit (15 rich-option practice/policy questions) " + "=" * 20)
@@ -179,7 +179,7 @@ for fn in ("positions.py", "app.py", "aggregate.py"):
 check("no hardcoded 'Yes' status checks in analytics layer", not suspect, suspect)
 
 # ---------------------------------------------- 1.3 maturity recompute ------
-print("\n== 1.3 Maturity recompute (Wellbeing + Reward) " + "=" * 42)
+print("\n== 1.3 Maturity recompute (Reward) " + "=" * 42)
 import positions as pos
 from db import get_conn
 conn = get_conn()
@@ -187,7 +187,7 @@ org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbri
 answers = pos.get_org_answers(conn, org["org_id"])
 payloads = pos.load_payloads(conn)
 reg_api = api("/api/gap-register")
-for sp in ("Wellbeing", "Reward"):
+for sp in ("Reward",):  # nonrew-2: Wellbeing superpower deleted; maturity register is Reward-only
     ours, peers = [], []
     for qid, q in qs.items():
         if q.superpower != sp or q.category not in ("practice", "policy"):
