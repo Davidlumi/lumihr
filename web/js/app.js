@@ -235,7 +235,7 @@ function App() {
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
   if (me === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
-  const scope = me && me.scope ? me.scope : { superpowers: window.SUPERPOWERS || [], focused: false, question_count: 778 };
+  const scope = me && me.scope ? me.scope : { superpowers: window.SUPERPOWERS || [], focused: false };
   window.SCOPE = scope;
   // the engine's market band (LUMI_MARKET_BAND) — cardPosition colours cards on
   // the SAME line as the tiles + signals, so they can never drift.

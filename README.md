@@ -1,7 +1,7 @@
 # lumi — People Analytics Benchmarking Platform
 
 A multi-tenant benchmarking platform for the lumi HR co-operative: 220 seeded UK member
-organisations, 778 benchmark questions across 10 superpowers, with server-side aggregation,
+organisations, 300+ reward benchmark questions across eight reward domains, with server-side aggregation,
 n≥5 suppression, AI board packs, gap-to-£ modelling, a conversational analyst, Peer Twin
 bespoke peer groups, a metadata-driven questionnaire, and tokenised sharing.
 

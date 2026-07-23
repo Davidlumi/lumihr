@@ -34,38 +34,6 @@
       "soft_max": 30000,
       "why": "GBP per year; covers London weighting / on-call at the generous end"
     },
-    "ATT_HIR_AGENCY_RATE_01": {
-      "label": "Agency usage rate by level",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "ATT_HIR_CPH_01": {
-      "label": "Average cost per hire % of base pay by level",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "ATT_HIR_REPLACE_COST_01": {
-      "label": "Estimated replacement cost by level (as % of salary)",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "ATT_OBO_REGRET_ATTR_01": {
-      "label": "Regretted attrition rate by level",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
     "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
       "label": "Employee notice period by level",
       "unit": "",
@@ -78,38 +46,6 @@
       "soft_min": null,
       "soft_max": 30000,
       "why": "GBP per year; generous high end for executive schemes"
-    },
-    "GRO_CAR_042": {
-      "label": "Roles were filled internally by level proportion",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "GRO_LEA_LD_SPEND_01": {
-      "label": "Average annual L&D spend per employee by level % of base pay",
-      "unit": "£",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "INC_Q308527": {
-      "label": "Representation (%)",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "MET_cd8efe96": {
-      "label": "Average time to hire in the last completed 12-month period",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
     },
     "REW_BEN_112": {
       "label": "Typical employer pension contribution by level",
@@ -188,62 +124,6 @@
       "unit": "",
       "monotonic": "seniority"
     },
-    "PROP_db35137e": {
-      "label": "Candidate experience score",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_8153af15": {
-      "label": "Application-to-first-response time",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_b799860a": {
-      "label": "Offer acceptance rate (Priority roles)",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "PROP_e91c054c": {
-      "label": "Referral hire share",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "PROP_94199ca7": {
-      "label": "Contingent workforce proportion",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "PROP_3cb02f77": {
-      "label": "Revenue per FTE (Annual)",
-      "unit": "£",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_d4b98d24": {
-      "label": "Operating profit per FTE (Annual)",
-      "unit": "£",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
     "PROP_e63cf45a": {
       "label": "Workforce cost as % of revenue",
       "unit": "%",
@@ -259,62 +139,6 @@
       "soft_min": null,
       "soft_max": 250000,
       "why": "GBP per year; generous for professional-services books"
-    },
-    "PROP_9620d380": {
-      "label": "HR cost per employee (Annual)",
-      "unit": "£",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 250000,
-      "why": "GBP per year; generous for professional-services books"
-    },
-    "PROP_8d9d9ac5": {
-      "label": "HR cost as % of workforce cost",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_acdc8dd9": {
-      "label": "HR technology spend per employee (Annual)",
-      "unit": "£",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_3315e16b": {
-      "label": "Learning hours per employee (Annual)",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": null,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_9e3b1d18": {
-      "label": "Early attrition rate (New hires, 12 months)",
-      "unit": "%",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "a percentage share; >100 is almost surely a typo — but still only a warn"
-    },
-    "PROP_02c9eb9e": {
-      "label": "Employee engagement score",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "seeded from library hard_max (now a warn, never a block)"
-    },
-    "PROP_30ae24e7": {
-      "label": "Employee Net Promoter Score (eNPS)",
-      "unit": "",
-      "hard_min": 0,
-      "soft_min": null,
-      "soft_max": 100,
-      "why": "seeded from library hard_max (now a warn, never a block)"
     },
     "PROP_9e4ad87f": {
       "label": "Salary increase budget as % of payroll",

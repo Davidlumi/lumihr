@@ -9350,3 +9350,67 @@ platform-wide, enforcement was Reward-scoped. Either restate the rule as Reward-
 too. Flagged open; NOT conflated with GAP_005. Existing queue unchanged: 7 COMMCAP (commission-authority),
 provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
 COMMCAP+INC_136, SICK_004.
+
+## Non-Reward hard-delete — config/doc cleanup ahead of the row deletion (nonrew-1, ruled + applied 23 July 2026)
+THE STRATEGIC RULING (recorded on its own terms, ruled KNOWINGLY): Reward-only IS the product. All 600 non-Reward-
+superpower questions and their 141,038 answers are to be HARD-DELETED — not retired, not hidden. David ruled this
+deliberately, having seen that it CONTRADICTS two encoded design decisions: (1) releases.py:11 "Retire, never
+delete" (leaving questions get status=retired + release_retired, stay in the bank and in every release snapshot so
+historical benchmarks resolve); (2) app.py:172 "the other nine areas stay fully built (data, aggregation, scoring
+untouched) and are hidden ... by THIS flag alone. Set LUMI_ACTIVE_SUPERPOWERS=all to re-show them — nothing else
+needs touching." After this delete, re-showing any of the nine non-Reward areas requires a FULL RESEED, not a flag
+flip. A future reader must see this was CHOSEN, not overlooked. (Mitigant on record: release_questions carries 0
+non-Reward ids — the baseline releases were Reward-only — so historical release RECONSTRUCTION is not harmed; the
+contradiction is with the invariant + the flag-revivable architecture, not with any existing release snapshot.)
+THIS DIFF'S SCOPE — CONFIG/DOC ONLY, ZERO ROWS TOUCHED, SEQUENCED FIRST: everything here fixes something ALREADY
+WRONG TODAY, independent of the deletion, so the irreversible row-delete (nonrew-2) lands against a stable baseline
+with nothing else in flight to confuse its verification. Five edits: (1) README.md:4 "778 benchmark questions across
+10 superpowers" -> "300+ reward benchmark questions across eight reward domains"; (2) web/js/app.js:238 removed the
+stale fallback question_count:778 (server me.scope is sole authority; the literal fed only scopeN at app.js:926,
+itself an UNUSED variable — zero render impact); (3) web/js/pages.js:5 SUPERPOWERS ["Reward"+9] -> ["Reward"]
+(consumer commercial.js:13 gapGroups filters against data.maturity whose keys qa_focus.py:67 ASSERTS ==["Reward"],
+so output is ["Reward"] before and after — non-breaking); (4) web/js/icons.js:94 SP_ICON 10-entry -> {Reward:"award"}
+(consumer SpIcon has ||"target" fallback and is only ever passed sp="Reward"; the "Wellbeing" name-collision with the
+Reward SUB-POWER does not reach SpIcon); (5) validation_thresholds.json regenerated Reward-only via seed_validation_
+config.py — added `if q.superpower != "Reward": continue` to the loop (the sanctioned generator, now Reward-only
+forward), 41 keys -> 19, dropping the 22 non-Reward keys; the 19 Reward entries + _readme are BYTE-IDENTICAL (0 hand-
+edits: current file already equalled a fresh regen), and NO dropped key is load-bearing for a Reward metric (the only
+cross-key ref is max_of; no Reward entry's max_of points at any dropped key). FOLDED IN (David's ruling, same class):
+qa_phase3.py stale 778 — docstring "all 778 questions" -> "all in-scope", SUPER fallback 10-list -> ["Reward"],
+EXPECT default 778 -> 0 sentinel (self-heals from live scope; a legacy gate, not in run_gates.sh). Deferred to
+nonrew-2 because they are DELETION-CAUSED (break only when the rows/answers go): qa_engine_audit.py:331 LAYER 1 (must
+be Reward-scoped, not re-literalled) and qa_phase1.py:127 fixture MET_cd8efe96 — keeping the stale-literal class here
+leaves nonrew-2 containing only deletion-caused gate work.
+COUNT-AUTHORITY FINDING (four frames already disagree, BEFORE any deletion): 344 all-Reward rows / 333 served
+(active) / 249 marginals book / 243 anchor register — and the widely-quoted "336" matches NONE (it is the release-
+2026.5 active count that r3sw retirements already dropped to 333; already stale independent of the delete). RULED
+FRAME PER SURFACE — deliberately not uniform: README cites a FLOOR ("300+"), not a precise figure, because four
+stale count literals were already found this thread (README 778, app.js 778, qa_phase3 778, verify_2026_5 336) — all
+correct when written — and a floor never re-stales, matches pricing.html's "240+", and the precise live figure lives
+in the server's dynamic me.scope where it belongs. app.js carries NO literal (server is authority). qa_phase3 uses a
+0 sentinel. Frame A (344) was rejected for README: it includes 11 retired rows invisible to users, overstating the
+live product. ALREADY-WRONG-TODAY register (all fixed here, all stale independent of the delete): README 778 + "10
+superpowers", app.js fallback 778, SUPERPOWERS/SP_ICON 10-entry enumerations, 22 dangling validation_thresholds keys,
+qa_phase3 778 + 10-list. verify_2026_5.py:28 (336) NOT touched — it already FAILS today (live vis=333) and is not in
+the live suite; left for a later pass.
+VERIFIED: throwaway backup via SQLite backup API (scratchpad/nonrew1/lumi_throwaway.db, q=944/ans=230,359); Reward-
+only validation regen matched the throwaway preview byte-for-byte (19 keys, non-Reward=NONE, _readme preserved).
+GUARD PROOF (config/doc diff — nothing in the DB may move): questions 944 + answers 230,359 UNCHANGED; frozen-8
+answers hash 0a17a094… and whole answers-book hash 08112c2e… BYTE-IDENTICAL before and after (regeneration reads the
+DB read-only). NO served number changes — platform already Reward-only; browser smoke-check on :8060 confirmed the
+Benchmark page renders ("All reward · 218 benchmarks", award SpIcon glyph, peer selector) with ZERO console errors
+after the SUPERPOWERS/SP_ICON reduction. run_gates 11/11 GREEN (freeze gate PASS) both pre- and post-write; py_compile
+clean on the two edited Python files.
+QUEUE (recorded, NOT actioned): nonrew-2 = THE ROW DELETION — 600 questions + 141,038 answers + 600 benchmark_
+snapshots + 26 pulse_responses + the single pulse's question_ids_json/question_snapshot_json. MUST run FK-ON,
+children-before-parents, ONE atomic transaction (pulse_responses -> benchmark_snapshots -> answers -> questions);
+do NOT use the r3sw migration template — every r3sw script uses plain sqlite3.connect() (FK OFF), which would
+SILENTLY ORPHAN 141k rows with no error. Requires a WAL-safe backup PLUS a repo-kept export of every deleted row
+(the only inspectable record post-delete). Gate work belongs there: qa_engine_audit.py:331 LAYER 1 Reward-scoped (not
+re-literalled); qa_phase1.py:127 fixture replaced or the legacy gate retired. ALSO QUEUED (own items): retrieval
+filter-after-truncate bug (retrieval.py:129 scores the full bank, truncated to top-12 BEFORE app.py:3088's Reward
+filter — deletion MASKS it, does not fix the ranking bug); DK submission guard (no is_na/DK filter at submission.js:450
+— any guard must match the "Don't know" LABEL specifically, never is_na, since 41 legitimate Reward options are is_na
+and must keep rendering). Existing queue unchanged: GAP_004 seed-realism, INC_131 form-realism, on-call REW_PAY_016,
+PAY_097 regeneration, 7 COMMCAP, provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C —
+HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.

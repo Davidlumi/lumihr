@@ -91,6 +91,8 @@ def numeric_kind(q):
 
 entries = {}
 for qid, q in load_questions().items():
+    if q.superpower != "Reward":
+        continue  # nonrew-1: Reward-only product; non-Reward superpowers are out of scope
     is_num = numeric_kind(q)
     if not is_num and qid not in MONOTONIC_SENIORITY:
         continue

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""QA Phase 3 — render completeness: all 778 questions accounted for, no
+"""QA Phase 3 — render completeness: all in-scope questions accounted for, no
 silent drops, no contradictory labels, matrices complete and ordered."""
 import json, os, sys, re, urllib.request, http.cookiejar
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,8 +22,8 @@ qs = load_questions()
 
 me = api("/api/me")
 SCOPE = me.get("scope", {})
-SUPER = SCOPE.get("superpowers") or ["Reward","Processes","Wellbeing","Growth","Capability","Inclusivity","Attract","Leadership","Purpose","Change"]
-EXPECT = SCOPE.get("question_count", 778)
+SUPER = SCOPE.get("superpowers") or ["Reward"]
+EXPECT = SCOPE.get("question_count", 0)  # authoritative from live scope; 0 sentinel never re-stales (fails loudly if scope absent)
 print("== 3.1 Walk all %d in-scope questions (%s) ==" % (EXPECT, ", ".join(SUPER)))
 tally = {"rendered": 0, "suppressed": 0, "locked": 0, "errored": []}
 seen = set()

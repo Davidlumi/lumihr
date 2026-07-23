@@ -91,11 +91,7 @@ window.Icon = function ({ name, size = 16, strokeWidth = 1.75, style }) {
 };
 
 /* one icon per superpower — same family, same weight */
-window.SP_ICON = {
-  Reward: "award", Processes: "sliders", Wellbeing: "heart", Growth: "trending-up",
-  Capability: "zap", Inclusivity: "users", Attract: "user-plus", Leadership: "flag",
-  Purpose: "target", Change: "refresh",
-};
+window.SP_ICON = { Reward: "award" };  // nonrew-1: Reward-only; SpIcon falls back to "target" for any other
 
 /* skeleton card matching the real card skeleton — no layout shift */
 window.SkeletonCard = function () {

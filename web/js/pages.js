@@ -2,8 +2,7 @@
 /* global html, useState, useEffect, useMemo, api, fmtValue, pLabel, Chip, NBadge, Term, Spinner,
    BenchmarkCard, QuartileDots, fmtGBPCompact, EmptyState, nav */
 
-const SUPERPOWERS = ["Reward", "Processes", "Wellbeing", "Growth", "Capability",
-  "Inclusivity", "Attract", "Leadership", "Purpose", "Change"];
+const SUPERPOWERS = ["Reward"];  // nonrew-1: Reward-only product; the nine non-Reward areas are out of scope
 window.SUPERPOWERS = SUPERPOWERS;
 /* SpIcon: the one consistent superpower glyph (line-icon family from icons.js) */
 window.SpIcon = ({ sp, size = 15 }) => html`<${Icon} name=${SP_ICON[sp] || "target"} size=${size} />`;
