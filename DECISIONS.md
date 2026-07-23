@@ -9303,3 +9303,50 @@ CIPD/ADP PPT 2024, n=832); the strongly-vs-moderately split has NO anchor and wo
 seed-realism (REW_PAY_016) and INC_131 form-realism. Existing queue unchanged: 7 COMMCAP (commission-authority),
 provenance gate (paired with seed/member provenance), RED_TERM_03, CARE-option; B — GAP_005, AIDISCLOSE,
 COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## GAP_005 (long-service milestones) — render fix only (r3sw33, ruled + applied 23 July 2026)
+WHAT THIS DIFF IS AND ISN'T: a STANDING-RULE RENDER FIX — declare EXT_REW_GAP_005 answerer_only so "Not
+applicable" leaves the graph and the denominator (base 119 -> 114; the 5 N/A-only orgs excluded). It does NOT
+condition GAP_005, does NOT resolve the 30 GAP_004 contradictions, adds NO subset pair, and does NOT claim the
+metric is correct. DECLARATION-ONLY: applicable_bases.json only, ZERO answer rows changed (entire answers book
+byte-identical to backup, 230,359 unchanged). Milestone option counts identical (5y 49 / 10y 74 / 15y 36 / 20y
+59 / 25y+ 53 / Other 8); only the denominator moves.
+STALE-SOURCE CORRECTION (record so exports aren't treated as live): the diagnostic prompt's premise came from the
+seeded-org EXPORT snapshot, which is STALE on BOTH (i) GAP_004's distribution (export Yes 118/No 84/DK 10 vs LIVE
+Yes 150/No 48/no-row 23) and (ii) its option set (export carries a "Don't know" option; LIVE does NOT — stripped
+by r3sw13). LIVE is authoritative.
+THE DECOUPLING MECHANISM (a NEW failure shape, worth naming): GAP_004 carries 264 answers_history rows, GAP_005
+just 1. The PARENT was heavily RESEEDED while the CHILD stayed original seed -> they diverged. This is NOT the
+unconditioned-generation shape of INC_132/on-call; it is PARENT-RESEEDED-AWAY-FROM-A-STATIC-CHILD. It predicts
+where else to look: any metric whose parent was reseeded without the child.
+UNION CHECK FIVE-FOR-FIVE: EXT_REW_GAP_007 (award value, 160 substantive) is a THIRD scheme signal; 18 of the 30
+contradictions name a GAP_007 value -> they demonstrably HAVE a scheme (GAP_004=No is the error, milestones
+honest). True child-impossible pool = 12, not 30. Clearing all 30 would have destroyed 18 honest answers — the
+Option-2 trap for the THIRD time (after PAY_097's 6, and the standing-rule protections generally).
+VERDICT IMPACT ZERO, PROVEN: GAP_005 is polarity=neutral + unbenchmarked=True (Diff-14 verdict-suppressed: "no
+ruled authority") -> fails "polarised" at positions.py:778 AND separately suppressed; empirically the payload
+carries NO position/verdict/gap field. THIRD CONSECUTIVE triage "scored -> verdict-feeding" premise moderated
+(after INC_132, PAY_097). is_scored=1 is not evidence of propagation.
+WHAT REMAINS OPEN ON THIS METRIC (explicitly deferred): the 30 contradictions (18 parent-error, 12 child-
+impossible) and the union-base question (GAP_004=Yes ∪ GAP_007 = 195, multi-signal parent -> the engine change
+declined twice) are DEFERRED pending GAP_004's own seed-realism diagnostic — so the metric isn't touched twice.
+VERIFIED: throwaway (scratchpad/r3sw33_work) — only GAP_005 payload moves (1/944), base 119->114 excluded_na 5,
+N/A bar off graph + out of denominator, milestone counts identical, entire answers book byte-identical (0 edits),
+30 contra intact, 8 frozen byte-identical, n>=5 suppression intact, qa_reseed 9/9, run_gates 11/11 (freeze gate
+PASS). LIVE (backup lumi.db.bak_pre_r3sw33_gap005render_20260723): post-write EXACT (live payloads==throwaway
+0/944), answers book byte-identical, render n=114 excluded_na=5 no N/A bar, verdict fields NONE, 30 contra intact,
+frozen-8 byte-identical, qa_plausibility rc=0. server/migrate_r3sw33_gap005render.py is the dual-guarded config
+applier (0 DB writes asserted).
+QUEUE (NOT in this diff): (a) GAP_004 SEED-REALISM — new item, own diagnostic. Live long-service prevalence 76%
+overall vs real-UK ~40-50%, with Tech / Media / Finance / Professional Services / Energy / Education all at 100%
+share-of-base (awards concentrate in public sector / manufacturing / long-tenure industries — this shape is
+wrong); parent heavily reseeded (264 history). Precondition for conditioning GAP_005 and for the 18 parent-error
+contradictions. Alongside INC_131 form-realism, on-call REW_PAY_016, PAY_097 regeneration. (b) PLATFORM-WIDE
+"DON'T KNOW" SCOPE QUESTION — David's ruling, not actioned: 203 metrics carry a DK option, 186 with live answers
+(2,118 total), ALL on the signals/engagement path (Capability 28, Processes 60, Growth 36, Wellbeing 29, Attract
+15, ...); ZERO REW-prefixed metrics carry DK — the Reward path is CLEAN. r3sw13 enforced the no-DK rule REWARD-
+ONLY (69 metrics, 62 stripped, 3 keeps). So NOT a violated rule but a SCOPE BOUNDARY: the standing rule reads
+platform-wide, enforcement was Reward-scoped. Either restate the rule as Reward-scoped, or strip the signals path
+too. Flagged open; NOT conflated with GAP_005. Existing queue unchanged: 7 COMMCAP (commission-authority),
+provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
+COMMCAP+INC_136, SICK_004.

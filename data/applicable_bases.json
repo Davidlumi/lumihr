@@ -517,6 +517,14 @@
     "Not applicable"
    ],
    "_r3sw31": "LTI-types conditioned on INC_131=Yes (65, ruled); 148 seed over-answers cleared (131 no-signal + 17 secondary-equity-only); neutral practice, no verdict move"
+  },
+  "EXT_REW_GAP_005": {
+   "mode": "answerer_only",
+   "base_label": "organisations that recognise length-of-service milestones",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw33": "render fix only: N/A off graph + out of denominator; NOT a conditioning — 30 GAP_004 contradictions (18 parent-error, 12 child-impossible) + union base deferred to GAP_004 seed-realism"
   }
  }
 }
