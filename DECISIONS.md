@@ -9534,3 +9534,54 @@ unproven). gate-safety-2 (whole-DB table-count-and-hash standing assertion). Exi
 :8060 deletes + :8060 hardcoding across 11 gates; run_gates trap gap; retrieval filter-after-truncate; DK submission
 guard; qa_phase1 CSV-premise; GAP_004/INC_131/on-call REW_PAY_016/PAY_097 seed-realism; 7 COMMCAP; provenance gate;
 RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## gate-safety-2 — whole-DB standing assertion (ruled + applied 23 July 2026)
+THE COVERAGE GAP + EVIDENCE: our standing assertions covered `answers` (whole-book sha256) + `questions` (COUNT only)
++ the 8 frozen targets — 40 of 42 tables had NO standing assertion. That is why qa_phase2's `DELETE FROM drafts`
+went unnoticed during nonrew-2 (found by ACCIDENT, not any check), and why all three gate-safety-1 leaks (probe orgs,
+users, org_strategy, terms_acceptances, a draft) were caught only by MANUALLY comparing all 42 table counts.
+WHY STRUCTURAL BEATS PROCEDURAL (the justification, recorded plainly as a lesson beyond this diff): gate-safety-1
+produced an operating rule — "point :8060 at a throwaway before bare-running gates." That rule was then FORGOTTEN
+TWICE WITHIN THE SAME SESSION, by the person who wrote it, re-leaking the same fixtures both times. Procedural
+controls decay; the get_conn guard (structural) did not. This diff makes DETECTION structural too.
+THE DESIGN (server/dbsnapshot.py): fingerprint EVERY table derived from sqlite_master at RUNTIME (never a hardcoded
+list — a table added later is covered automatically) as (row_count, content_hash). CONTENT hash, NOT count-only:
+the qa_release case (`UPDATE questions SET is_required/version`) changes NO row count and would pass a count-only
+check — demonstrated caught as "content changed, same count 344". Determinism: rows ordered by the table's PRIMARY
+KEY (PRAGMA table_info), else by all columns — stable across runs / VACUUM. TIERING NOT NEEDED: full content hash of
+41 tables / 218,304 rows in 0.26s (answers 0.11s, answers_history 0.09s); sqlite_sequence excluded (internal
+counter, not data). EXPECTED-vs-UNEXPECTED: compare(before,after,expected=…) treats every undeclared table as
+must-not-change — a migration declares the tables it writes; a gate/run_gates cycle declares nothing. A small,
+justified VOLATILE allowlist (sessions, notification_events/reads, analyst_log, share_audit — server-log tables that
+churn on normal use) is opt-in via --allow-volatile so it doesn't cry wolf on an ambient login. NAMES WHAT MOVED
+("drafts count -2 (2->0)", not "state changed").
+WHAT IT COVERS / DOESN'T (the load-bearing honesty): COVERED automatically — the whole run_gates cycle (wired: run_
+gates.sh fingerprints live before the suite and asserts "live DB untouched by the suite ✓" at teardown; the suite
+runs on the throwaway) and any migration that adopts the module. NOT COVERED automatically — a BARE, UNWRAPPED manual
+gate run, which is exactly where every real leak came from. The standalone CLI (`dbsnapshot.py save/check`) makes that
+a two-command wrap, but nothing FORCES it (procedural). The leaks are HTTP-MEDIATED (the gate writes via the :8060
+API, not get_conn), so NO DB-side tool can auto-catch an unwrapped run — the structural fix for those is the :8060
+hardening (queued). gate-safety-2 gives fast structural detection everywhere an operation is already wrapped, and a
+cheap manual wrap elsewhere; it does not, and cannot, auto-cover the unwrapped bare run.
+PLACEMENT — all three surfaces, each a different failure mode: (1) standalone CLI (bare-run wrap + manual audit — the
+manual 42-table comparison done by hand ×3 this session, now one command); (2) run_gates.sh self-check (wired this
+diff — defensive, proves the suite never leaks live); (3) reusable module (migrations `import dbsnapshot` — available
+now; retrofit into the N existing runners DEFERRED as a mechanical follow-up, since migrations are already the best-
+covered surface via answers + frozen-8 hashing — David ruled).
+COMPLETION OF THE GATE-SAFETY SEQUENCE: the sweep (inventory of the hazard) -> gate-safety-1 (structural PREVENTION on
+the DB path: get_conn refuses live-by-default for gate processes) -> gate-safety-2 (structural DETECTION: whole-DB
+assertion). STILL OPEN (queued): HTTP-mediated writes via :8060 (11 gates hardcode the URL — same fix shape as gate-
+safety-1 and the REAL remedy for the procedural rule); qa_plausibility/qa_reseed bypass get_conn (direct connect);
+the run_gates.sh trap gap (kill -9 / sleep skips teardown, leaving :8060 on the throwaway).
+VERIFIED: 0.26s full snapshot; catches the drafts wipe (count -2), the probe-org multi-table leak (orgs+2/users+1/
+org_strategy+1/drafts+1, each named), and the qa_release content-only case; expected-delta suppresses declared changes
+and fires on undeclared; false-positive check — a full run_gates cycle leaves live BYTE-IDENTICAL even in STRICT mode;
+wired self-check prints "live DB untouched by the suite ✓"; run_gates 11/11 GREEN (freeze PASS); answers-book b0ff15cb
++ all 42 table counts byte-identical; frozen-8 byte-identical. Files: server/dbsnapshot.py (new) + run_gates.sh (self-
+check wiring); ZERO data change.
+QUEUE (added): retrofit dbsnapshot.compare into the migration runners (mechanical pass across N runners — generalise
+their answers+frozen-8 hashing to all 42 tables with declared expected deltas). Existing queue unchanged: :8060 HTTP-
+write hardening across 11 gates; route qa_plausibility/qa_reseed through get_conn or prove they can't write; run_gates
+trap gap; retrieval filter-after-truncate; DK submission guard; qa_phase1 CSV-premise; GAP_004/INC_131/on-call
+REW_PAY_016/PAY_097 seed-realism; 7 COMMCAP; provenance gate + seed/member provenance; RED_TERM_03; CARE-option;
+B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.

@@ -66,6 +66,15 @@ teardown() {
   ( cd "$SRV" && nohup python3 -m uvicorn app:app --port $PORT >"$WORK/devserver_restored.log" 2>&1 & print $! ) | read DEVPID
   for i in {1..40}; do curl -s -o /dev/null "http://localhost:$PORT/api/legal" && break; sleep 0.5; done
   print "dev server restored pid=$DEVPID (real lumi.db)"
+  # gate-safety-2: assert the suite left the REAL db untouched (volatile server-log tables allowed).
+  if [[ -f "$WORK/live_pre.json" ]]; then
+    if python3 "$SRV/dbsnapshot.py" check "$WORK/live_pre.json" --db "$ROOT/lumi.db" --allow-volatile >/dev/null 2>&1; then
+      print "gate-safety-2: live DB untouched by the suite ✓"
+    else
+      print "⚠️  gate-safety-2: the SUITE CHANGED THE LIVE DB —"
+      python3 "$SRV/dbsnapshot.py" check "$WORK/live_pre.json" --db "$ROOT/lumi.db" --allow-volatile
+    fi
+  fi
 }
 trap teardown EXIT
 
@@ -77,6 +86,12 @@ src.backup(dst); dst.close(); src.close()
 print("backup complete ->", sys.argv[2])
 EOF
 [[ -s "$DB" ]] || { print "FATAL: backup produced no file"; exit 2; }
+
+# gate-safety-2: fingerprint the REAL lumi.db (all 41 tables, count+content) so teardown can prove
+# the suite — which runs entirely on the throwaway $DB — left live byte-identical.
+python3 "$SRV/dbsnapshot.py" save "$WORK/live_pre.json" --db "$ROOT/lumi.db" >/dev/null 2>&1 \
+  && print "gate-safety-2: live fingerprint captured (41 tables)" \
+  || print "gate-safety-2: fingerprint skipped (dbsnapshot unavailable)"
 
 # Re-aggregate the throwaway so stored payloads match its answers table exactly —
 # answers submitted after the last live aggregate run (e.g. the Tester signup org
