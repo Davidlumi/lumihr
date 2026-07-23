@@ -6591,6 +6591,26 @@ semantics + practice chip routing) reported for approval, NOT written. Each fix 
   excluded. OPEN: the denominator gap — 12 Pay metrics neither positioned nor alignment-rated (12 + 35 =
   47 of 59) — is a SEPARATE finding, not resolved here; next.
 
+## 2026-06-30 — Prevalence-gate routing fix: blast-radius diagnosis (NO fix applied)
+Read-only diagnosis of the proposed change to the prevalence-eligibility gate at positions.py:664
+(route by mp_config CLASS — Practice/Design -> alignment, Level/Provision -> position — instead of
+legacy score_direction). Full finding: PREVALENCE_GATE_BLAST_RADIUS.md. Result: the change touches
+67 single_select/yes_no metrics across ALL 8 domains (43 intended re-homes neither->alignment,
+19 intended de-dups both->position-only, and 5 COLLATERAL regressions). The 5 collateral
+(RED_COST_01, REW_PAY_HOURLY_MIN_1c6e096f, PROP_634adacd, EXT_REW_GAP_002, EXT_REW_GAP_007 — all
+single_select / class=Level / direction=neutral / score_direction=0) are currently alignment-rated
+and would silently fall into NEITHER pool. Reader map: the fix changes only HOW positions.py:664
+uses score_direction; score_direction itself is untouched, so SCORING (aggregate.py) and SIGNALS
+(signals.py builds its own adoption pool, reads score_direction nowhere) are unaffected — surgical
+to the prevalence donut / AI-summary / per-card-band surface. Authority: NO written ruling exists
+that mp_config class supersedes score_direction for POOL routing; mp_config class is the curated
+authority for the POSITION gauge only, and the prevalence gate's score_direction check predates the
+mp_config wiring — so this is an unsettled product decision (David's call), not a mechanical fix.
+STANDING DECISION: The prevalence-gate fix is NOT clean — 5 collateral regressions. Do NOT apply the
+global gate change. Options for a future pass: (a) David rules on each of the 5 collaterals
+individually, or (b) a narrower fix that re-homes the 7 Pay Practice metrics WITHOUT a global gate
+change. Engine-logic change — highest risk class. Diagnosis only; no fix applied.
+
 ## 2026-06-30 — Pay denominator: interim honest-header (Option B, copy/display only, pure-frontend)
 The category header (web/js/pages.js, SectionPage) now reads "{N} benchmarks · {R} rated · {X} not
 yet rated" instead of just "{N} benchmarks". Arithmetic closes (R + X = N; Pay = 59 = 41 + 18). The
@@ -6801,3 +6821,2384 @@ Content + design identity pass, verified via the headless print pipeline against
 
 ## 2026-07-03 — Board pack: Strategy alignment page (David's ruling)
 New conditional page 04 "Strategy alignment": the declared reward strategy summarised, then the engine's own read of how today's position tracks against it. PAYLOAD: strategy_alignment {objective (OBJECTIVE_LABELS, provenance-skipped respected), overall_aim, overall_alignment, domains[{name, aim, aim_is_override, position, alignment}]} — computed via the SAME hero path the dashboard uses (hero_signals with the org's strategy applied; prevalence_items + sec_order replicated from the overview handler), stances translated server-side (lag/match/lead NEVER renders — verified by regex over payload+narrative: zero leaks; the standing 6a/6b vocabulary rule). Only present when a strategy exists AND is completed. NARRATIVE: strategy_commentary added to all four layers in lockstep (schema, prompt, validator [may be empty], deterministic — declared aim + objective in plain words, overall read, by-area grouping on/ahead/behind, closing with the mirror line 'a reading against your own declared aim — not a judgement of the strategy itself'); validator unit-proven (empty allowed, missing rejected). RENDER: conditional page (old packs + strategy-less orgs skip it — hasStrat guard) with DYNAMIC page numbering (money/watch/evidence/appendix shift 4-7 → 5-8 when present; TOC computed; SecHead numbers follow; bp-c8 colour added). The page: declared-strategy intro (objective + overall aim, area-override note), Area|Your aim|Your position|Read table (green on-aim / red behind-aim chips, area-level aims annotated '· area aim'), the commentary, the caveat. Print-verified via the pipeline: 9 sheets (Cover+1-8), TOC carries the row, footers renumber correctly; the demo org's data shows the page working hard — Time Off's area-level 'below market' aim reads on_target while five areas read behind the global on-market aim (the exact nuance a board needs). Gates qa_hero 57/57, qa_overview 0, qa_focus 29/29; live lumi.db byte-identical; cache v307→v308. Regenerate to see it — stored packs pre-date the field.
+## 2026-07-14 — Domain taxonomy: Option B′, 8 domains (RATIFIED)
+**Ruling (David).** Live taxonomy moves 7 → 8: Pay · Pensions & Savings · Health & Protection ·
+Benefits & Lifestyle · Time Off & Family · Incentives & Recognition · Wellbeing · Governance &
+Transparency. Pensions & Savings and Health & Protection extracted from Benefits; Recognition
+merged into Incentives & Recognition (11 live + 0 pipeline fails the ~20-market-metric
+meaningful bar alone); exit/redundancy/notice metrics sit in Benefits & Lifestyle.
+**Mechanics.** Metadata-only remap per `domain_remap_mapping.csv` (243 rows, row-level authority —
+supersedes any keyword rule). Answers untouched. `domain_min_polarised = 3` unchanged; every
+domain clears it with margin. Seeded org CSVs and `market_position_config` re-derive from mapping.
+**Rejected.** Option A (minimal, Pay stays overloaded); Option C (5 domains — destroys panel
+diagnostics at ~340 metrics).
+
+## 2026-07-14 — Market vs practice classification rule + reclassification (RATIFIED)
+**Rule (David).** If an individual can relate the metric to comparing against market, classify
+MARKET; if in doubt, MARKET. Operationalised: orderable by generosity/magnitude with a defensible
+richer/leaner reading from the employee-offer side → market; genuinely unordered choices (method,
+philosophy, timing, inventory, mechanism) → practice.
+**Applied.** 65 of 96 non-polarised live metrics flip to market (+18 audit corrections incl.
+REW_BEN_139 / REW_INC_133 eligibility matrices per David challenge). Final: 293 market /
+41 practice / 1 strategy-config (REW_PAY_005 recategorised — strategy parameter, not a metric).
+**Scope.** BENCHMARK/POSITION path only. Signals-path rulings of 2026-06-13 (prevalence reroutes)
+untouched. Market TAGS ≠ gauge membership: "Where you stand" remains ↑-Substance only; cost-lens
+(PMI premium) and context (payout % of target) metrics carry market tags but are gauge-excluded.
+**Ratified exception (David).** REW_PAY_097 pay-differentiation-by-performance = PRACTICE,
+overriding the tiebreak: egalitarian-vs-differentiated is a philosophy fork, not richer/leaner.
+REW263_PAY_MERITMATRIX practice for consistency.
+**Ratified directions** on five contested new metrics: EWA cap ↑=cap in place · 4-day week
+↑=operates · commission ↑=uncapped · green pension ↑=net-zero aligned · remote-abroad ↑=higher cap.
+
+## 2026-07-14 — Metric register finalisation (RATIFIED)
+**Final register:** 335 metrics (`lumi_master_metric_register_FINAL_APPROVED.csv`) = 236 live-active + 99 approved additions (2026_4 ships 45; remainder queued 2026_5).
+**Retirements (never delete — status flips, history preserved):**
+- retire_boundary: REW_PAY_HOURLY_MIN_1c6e096f (pay level; replaced by NEW real Living Wage
+  accreditation metric), REW_PAY_MKT_POS_01 (pay positioning = level).
+- deactivate: REW_PAY_022 (ambiguous, overlaps 023), REW_PAY_126 (unanswerable), EXT_REW_GAP_006
+  (long-service over-instrumentation), REW_FAI_091 (forward intent, no peer-mirror value),
+  ALLOW_01 (consolidated into REW_PAY_016).
+**Rewords/extensions:** REW_PAY_023 → "Which factors inform your annual pay budget?" (multi_select);
+REW_PAY_016 options +Homeworking allowance, +Mobile/phone allowance, +None.
+**Gate carried forward:** all 38 REW263 classifications re-derived from full questions-CSV text in
+the Diff-2 pre-approval report before polarity writes (register texts are truncated; truncation
+caused the audit misses).
+
+## 2026-07-14 — Domain competitiveness flags for the B′ taxonomy (Diff 1 scope)
+market_position_config.json _domains flags for the 8 domains: Pay TRUE, Pensions &
+Savings TRUE, Health & Protection TRUE (both inherit from Benefits TRUE — no gauge
+membership change), Benefits & Lifestyle TRUE, Time Off & Family TRUE, Incentives &
+Recognition TRUE (both parents TRUE), Wellbeing TRUE, Governance & Transparency FALSE
+(carried over). Rationale: Diff 1 is metadata-only and must be verdict-neutral.
+The G&T flip to TRUE is a live open ruling — its premise (governance ≈ practice-heavy)
+was retired by the 2026-07-14 reclassification (61 market metrics) — but it is
+verdict-changing and is therefore ruled separately at Diff 2, not inside the remap.
+
+## 2026-07-14 — Diff 1 pre-approval conflict rulings
+1. REW_PAY_020 (allowances pensionable by level): ACTIVE, domain Pensions & Savings,
+   classification market ↑. Root cause: FINAL register was built from a stale
+   anchor-register snapshot predating the June regen. Register/mapping corrected;
+   register is now 336 = 237 live-active + 99 new.
+2. REW_PAY_MKT_POS_01: already retired in DB — acknowledged. Mapping row retained;
+   Diff 3 action for this id = VERIFY retired, not flip.
+3. REW_Q534581 / REW_Q528801: destination PAY. DB placement correct; premium-pay
+   multipliers are pay structure, not incentive design. Mapping old/new corrected.
+4. Standing gate: every future register/release diff opens with a row-level
+   reconciliation against visible_questions() before any write.
+
+## 2026-07-14 — G&T competitiveness flag: TRUE (Diff 2, ruled Option 1)
+Governance & Transparency flips competitiveness TRUE in market_position_config.json.
+Premise for FALSE (governance ≈ practice-heavy) retired by the 2026-07-14
+reclassification (61 market metrics). Verdict-changing by design: G&T's ↑-Substance
+market rows join the overall gauge. Metric-level Substance filter unchanged — the
+flag admits the domain, not cost/context rows. Headline movement is expected and
+reported, not a defect.
+
+## 2026-07-14 — Diff 2 scope
+Classification (market_eligible) and polarity writes per the reclassification file,
+plus the REW263 full-text re-derivation gate below. Signals path untouched
+(2026-06-13 rulings): ordered_scale_routing.json, signal_lenses.json out of scope.
+
+## 2026-07-14 — Diff 2 veto-gate rulings
+Root cause: the reclassification CSV shipped as the pre-ratification working draft;
+review flags were never cleared post-ratification. Rulings:
+- REW_PAY_097: PRACTICE stands per the ratified exception. Row removed (no-op).
+- REW_PAY_MKT_POS_01: row removed — retired id, outside a changes-only live file.
+- EXT_REW_GAP_013 (pay frequency): VETOED to practice — frequency is timing, named
+  practice in the ratified rule. Current=neutral, so no-op; row removed.
+- REW_INC_069 (deferral): VETOED to practice — governance mechanism, not employee
+  generosity. Current=neutral, no-op; row removed.
+- CLEARED as proposed (7): 3faf1f0c… PMI premium (market, cost/save lens,
+  gauge-excluded by Substance filter); REW26_BEN_PENSION_TYPE (market ↑ DB>hybrid>DC);
+  PROP_634adacd and PROP_9e4ad87f (market ↑ offer lens — subject to full-text
+  confirming the offer-lens reading; bounce as divergence if text contradicts);
+  REW_BEN_REM_PAY_001 (↑ maintain>reduce); REW_BEN_REM_PAY_005
+  (↑ discount<none<premium); REW_INC_104 (market, context ↑, gauge-excluded).
+  Distinction from PAY_097 for the record: remote-pay poles are orderable for the
+  affected employee; egalitarian-vs-differentiated has no such ordering.
+- Standing gate added: every authority CSV is linted at ship (veto column empty,
+  ids reconciled against visible_questions()) before any diff prompt cites it.
+
+## 2026-07-14 — Diff 2 headline rulings
+1. 63-id divergence: REGISTER IS THE TARGET (option a). Root cause owned: the
+   changes-CSV 'current' ledger was authored from polarity while the engine routes
+   by config class (Q1=C ruling, 2026-06-30) — 63 polarity-market/class-practice
+   strays were invisible to a changes-only file. The ratified book presumes the flip.
+2. Register v3 (re-uploaded) is current authority: it absorbs today's veto rulings
+   (GAP_013, INC_069 → practice) and the ratified 38-row gate outcome. Recomputed
+   divergence set expected at 61; if it differs, enumerate before anything else.
+3. Addendum mechanics: YOU generate the addendum rows from register v3 — for each
+   divergent id: current = engine class, proposed = market, direction = register
+   direction mapped through your extracted shape rule (Provision=binary presence,
+   Level=ordinal/numeric; cost/context rows take the established Level+neutral
+   market-tagged gauge-excluded shape). Any direction you cannot map mechanically
+   is a DIVERGENCE for David — never a guess.
+4. 38-row gate: RATIFIED as proposed, 31 market / 7 practice. All seven judgment
+   flags cleared: PMIEXCESS market on the offer lens (lower excess = richer);
+   ETHDISREADY + MENOPLAN are current-state maturity, not FAI_091-class intent;
+   REWTEAM doubt→market; COMPARATIO practice on the REW_PAY_005 precedent;
+   REC_IMPACT + HOLRECORDS market per the 61-flip pattern. INC_DEFERRAL practice
+   citing the INC_069 veto is precedent applied correctly.
+5. REW_PAY_020 verify outcome acknowledged: live neutral/Design, CSV row performs
+   the real flip. Proceed.
+6. Book correction: final register book is 291 market / 44 practice /
+   1 strategy-config on 336 (live-237: 203/33/1). Supersedes the 293/41/1 figures
+   in the finalisation entry — delta fully explained by GAP_013 + INC_069 vetoes
+   and COMPARATIO. Diff 4's practice bucket sizes to 44 (33 live + 11 new).
+
+## 2026-07-14 — Diff 2 apply-gate rulings
+1. REW_FAI_079: ruled (a) — market, class Level, direction ↑ (conducted/annually),
+   LIVE POLARITY FLIPS lower_is_better → higher_is_better. History: reword-without-
+   repolarise stray (GPG magnitude ↓ reworded to analysis-conducted with polarity
+   left standing); the live polarity agreeing with the register was two copies of
+   one slip. Precedent chain: REC_IMPACT / HOLRECORDS / ETHDISREADY. Join it to the
+   addendum write-set — the addendum table as posted is now exact (61 rows,
+   G&T after 44/6, totals 203/40).
+2. Register v4 re-uploaded: FAI_079 direction corrected. A full ↓-row scan found
+   no other reword strays (PMIEXCESS, BEN_047 IP waiting, and the two workforce-
+   cost PROPs are correct by design).
+3. REW_INC_070 (malus): pre-ruled PRACTICE per the INC_069 precedent — governance
+   mechanism, not employee generosity; market-↓ would read strong governance as
+   below market. NOT in Diff 2's write-set (already engine-market): executes in
+   Diff 3's hygiene batch. Logged now so Diff 3's spec inherits it.
+4. Commit diff2_addendum_generated.csv in the same commit — it is executed
+   authority and belongs in the audit trail.
+
+## 2026-07-14 — Diff 3 scope (register hygiene)
+Retirements per the finalisation entry, enumerated from the mapping:
+retire_boundary: REW_PAY_HOURLY_MIN_1c6e096f · REW_PAY_MKT_POS_01 (VERIFY only —
+already retired, per the Diff 1 ruling). deactivate: ALLOW_01 (consolidated into
+REW_PAY_016) · REW_PAY_022 · REW_PAY_126 · EXT_REW_GAP_006 · REW_FAI_091.
+Plus three ruled corrections: REW_INC_070 → practice (INC_069 precedent, ruled at
+the Diff 2 apply gate); REW_PAY_023 reword ("Which factors inform your annual pay
+budget?", multi_select); REW_PAY_016 option extension (+Homeworking, +Mobile/phone,
++None). Post-diff the engine's live set converges exactly to register v5 (237).
+
+## 2026-07-14 — Diff 3 rulings
+1. Status mechanics: option (a) ruled. `retired` is the engine's sole terminal
+   state; retirement FLAVOUR (deactivate vs retire_boundary) is documentary and
+   lives in release_retired as flavour:reason. Stamp format: date-based
+   (2026-07-14-hygiene:<flavour>) unless release_retired carries an established
+   release-number convention — follow the house format if so, and say which.
+   The register/mapping remain flavour authority. No new engine states.
+2. ALLOW_01 consolidation: LEAVE history under the deactivated id. No answer
+   transformation — 215/220 overlap would double-represent, and the location/COL
+   mapping is genuinely ambiguous; five orgs of n is below any floor that matters.
+3. REW_PAY_023: IN-PLACE text edit to the ratified wording. No version bump;
+   historical_comparability stands at high. Comparability breaks are for meaning
+   changes (FAI_079-class), not phrasing.
+4. REW_INC_070: sibling mirror means CLASS + DIRECTION, not type. Write
+   class=Practice, direction=None, polarity=neutral; KEEP type=binary (069 is
+   ordinal because 069 is ordinal; 070 is a binary question and stays one).
+
+## 2026-07-14 — Diff 4 scope + split ruling
+Practice surfaces per the ratified single-bucket design: home-dashboard bucket
+card (crop-aware), "A practice choice" chips on domain metric lists, Practice
+Alignment donut removed, G&T special-case card copy deleted, board-pack practice
+section (bucket headline + rare stances, descriptive only). RULED: the
+in-line/off-norm split computes over single-choice practices only; multi_select
+inventories count in the bucket total and render in the lens but are excluded
+from the split, disclosed in the basis line. Modal-match computation reuses the
+existing practice-lens machinery — one implementation, never a second. No RAG
+colour on any practice surface (POSITION_RING brief stays open, unpre-empted).
+Vocabulary locked: in line / off the norm · common / alternative / rare ·
+"A practice choice" (exact string) · below/on/above market never on practice.
+
+## 2026-07-14 — Diff 4 pre-approval rulings
+1. REW_PAY_005 lens leak: CONFIRMED, land the exclusion here — it is a
+   correctness precondition for the surface this diff builds, not a deferrable.
+   Named constant STRATEGY_CONFIG_IDS in prevalence_items, comment citing the
+   DECISIONS strategy-config ruling. QA asserts (a) the ripple — every practice
+   pool count −1 exactly where Pay pools counted it, lens shows 34 — and
+   (b) every id in the constant exists live and is class Practice. Diff 5's
+   import gate inherits a check: no new strategy-config row without extending
+   the constant.
+2. Toggle: CONFIRMED — the home Market|Practice toggle retires; the practice
+   lens is reached via the bucket card click-through only. Explicit boundary:
+   the Counts|Position toggle on Position-by-domain is a DIFFERENT control and
+   is untouched.
+3. Briefing practice read-line (word + minibar): RETIRE. Domain pages exclude
+   practice from analysis; a read-line is analysis. Rows + chips remain.
+4. Domain narrative "practices" sentence slot: RETIRE, same reason. The bucket
+   and lens carry the practice story; domain pages stay clean.
+5. Methodology paragraph: YES, update in this diff. Replacement copy, verbatim:
+   "Governance and transparency metrics that can be ordered by generosity or
+   maturity count toward your market position like any other domain. Practice
+   choices — where organisations differ by design rather than by generosity —
+   never carry a market verdict: they're shown as in line or off the norm,
+   with how common each choice is among your peers."
+6. §5 chip strip: ACCEPTED as specified — suppress the position pill on any
+   card carrying prevalence_band, then add the chip. Logged as pre-existing
+   since Diff 2 (grid fall-through on classification.register), caught here.
+7. Spec correction noted for the record: the domain-page donut died in the
+   briefing rebuild (6f6b311); this diff's removal target is the home
+   PracticeArc. §4 live numbers verified against register v5 — by-domain
+   practice split matches exactly (Pay 17 · I&R 11 · G&T 4 · B&L 1 · Well 1).
+
+## 2026-07-14 — Diff 5 scope + seeding
+Release 2026_4: 45 metrics imported unscored (required=FALSE, scored=FALSE),
+polarity per CSV (42 higher_is_better · 3 neutral), config shape per the Diff-2
+rule (Provision = binary presence, Level = ordinal/numeric; neutral rows =
+class Practice). SEEDING: David's standing recommendation is seed-at-import for
+the 66 demo orgs — anchor-informed targets where the anchor register grades A/B,
+conservative for estimate-flagged rows, sector-tilt machinery where the anchor
+notes it (MEALS), all recorded in a per-metric seed manifest (target vs anchor vs
+seeded prevalence). The Phase 0 seed plan is the ruling instrument: David's
+"apply" ratifies it; "apply, no seed" launches the wave unanswered.
+
+## 2026-07-14 — Diff 5 pre-approval rulings
+D1 — Register v6 re-uploaded with REAL ids: the 45 REW264_* ids are minted in the
+   register (text-join, 45/45; 54 NEW_ placeholders remain for the 2026_5 queue).
+   Re-run the id-level reconciliation against v6 — expect exact. The import
+   manifest still records the NEW_xxx ↔ REW264_* mapping as audit trail.
+D2 — The 13-row conditional table is RATIFIED as classified (the spec's "nine"
+   was a stale pre-QA count — defect owned, David-side). Seven WIRED with the
+   parents you named — apply-order must tolerate the intra-wave EWA parent —
+   and six SELF-DECLARED where the NA option is the mechanism. EVSALSAC
+   self-declared is correct: an option inside a live multi-select is not a
+   resolvable parent.
+D3 — RATIFIED as recommended: help_text ← the member CSV; help_why imports to
+   NO member-visible column (lives in the committed authority CSV + changelog).
+   The 2026_3 defect (38 live rows showing internal rationale as member help)
+   is REAL and OUT OF SCOPE here: queued as its own post-sequence micro-diff;
+   David-side authors the 38 member texts. Log it, don't touch it.
+D4 — Seed cohort: 220 non-Tester orgs, matching the established pipeline. The
+   "66" in the scope entry was a phantom — corrected in this ruling. Rationale:
+   new-wave pools must be comparable with every live pool; a 66-org wave inside
+   220-org peer sets would make 2026_4 prevalence structurally incomparable.
+D5 — The four market multi_selects take their config shape by MIRRORING a live
+   market-multi sibling (seven exist; REW26_WEL_MH_SUPPORT is a clean donor) —
+   derive, don't invent. Dryrun must render ONE new market multi's distribution
+   + percentile as evidence the path works before apply.
+
+## 2026-07-14 — Diff 6: release 2026.5 imported + seeded (54 metrics, REW265)
+Approved with three riders; applied same day. Live book 282 -> 336 (Pay 67 · G&T 65 ·
+ToF&F 51 · I&R 44 · B&L 41 · P&S 25 · H&P 24 · Wellbeing 19); practice bucket 37 -> 45.
+CONDITIONALS (7 offer_na): wired SAYEDISC/SHAREPART -> REW264_INC_SHAREPLAN
+(parent-negative = Neither / Not applicable (no shares)); SIPELEM wired to the same
+parent via its "No SIP operated" terminal (na_handling=none by design — SAYE-only orgs
+are real; rider 2 seeds an explicit 0.40 No-SIP share among parent-positive, manifest-
+visible: 15 No-SIP / 28 with elements). Self-declared: AIDISCLOSE, COMMCAP (sector-
+driven: substantive in sales-heavy industries only), EARLYCAREER, ENHANCEDVR,
+GPGNAMING (rider 1: scope-out DERIVED from each org's FTE band — 50-249 only, no
+global rate; verify asserts zero in-scope orgs holding it — held at 0).
+TWO-TIER SEED (anchor register status is the tier authority): 27 verify-queued ->
+conservative-haircut (x0.75, hard ceiling at the named figure); 27 estimate-flag ->
+unanchored-conservative (modal No/None/Statutory-only). Near-floor by design:
+GRANDPARENT, UNLIMITEDAL, LEAVEDONATE, EOT (positive pools at/under 5 — live
+suppression demonstrable). Sector tilts: EVCHARGE office/industrial, SEASONAL
+retail/hospitality/logistics, COMMCAP sales-heavy, EIA + ACTINGUP public-sector,
+PENBRIDGE DB-heritage.
+FIRST-VERIFY CATCHES (the assert design working): (1) best-first option ordering
+inverted the taper for 12 no-"No"-label rows — taper now anchors at the lean pole;
+(2) the profile sector key is Industry, not Sector — all sector rules had silently
+no-opped; (3) SHAREPART/PROMOPAY carry VALUE anchors (a participation band, a median
+increase size), not org-prevalence figures — a prevalence ceiling is a category
+error there; value-anchor rows detected mechanically, seeded on the 0.30 conservative
+default, marked in the manifest. Final verify CLEAN: max target deviation 0.013,
+zero wired incoherence, zero terminal co-mingles, rider-1 zero, convergence 336/336
+by id vs register v8. RIDER 3 exact: headline pool 240 -> 279 readings = 42 market
+singles minus Thornbridge's 3 NAs (2 wired + 1 FTE-derived scope-out); depth P30.1
+-> P33.0; verdict below. The 4 market multis produce no headline reading (known
+design observation). Gates: qa_overview 0 · qa_hero 59/59 · qa_release 0 on the
+336 basis.
+
+## 2026-07-14 — Close-out: register v9 canonical + seed-kit hardening (post-Diff-6)
+1. SHAREPART and PROMOPAY conservative defaults RATIFIED — the value-anchor category
+   error was correctly caught: those anchors are value distributions (a participation
+   band, a median increase size), not prevalence figures; a prevalence ceiling does
+   not apply. Both rows stand on the 0.30 conservative default, manifest-marked.
+2. Taper/best-first interaction: spec-side ownership recorded — the 2026_5 CSV's
+   best-first option convention met the kit's worst-last assumption. The kit fix
+   (lean-pole fallback = last option; taper anchored at the lean pole) stands.
+3. STANDING KIT RULES (all future waves): (a) tilt-application assert — every sector
+   rule must prove non-zero application or fail loudly; a silent no-op is a prohibited
+   failure shape (the Industry-vs-Sector key slip would have been caught at apply,
+   not verify). (b) Mechanical value-anchor detection stays in the kit — value
+   distributions are never prevalence ceilings.
+4. Register v9 CANONICAL and now committed (the first register in git — the /*.csv
+   ignore had kept every upload untracked; force-added per the ruling-4 precedent).
+   336 live (290 market / 45 practice / 1 strategy-config), zero queued — the
+   question bank programme is COMPLETE.
+
+
+## Domain-summary validator: grounded metric-name exemption (14 July 2026, ruled — trust-gate change)
+Word-list scanning applies to the residual prose after removing exact grounded metric-name phrases
+present in the payload — whole-phrase removal only, never single-word or substring exemption. Banned
+words surviving in the model's own prose still fail. All ten hostile-rejection checks retained as the
+regression floor. Rationale: B′ remap made banned words legitimate metric names ("Critical illness
+cover", "…reviewed regularly"); deterministic floor was failing its own gate and blanking drivers on
+Pay, Wellbeing, H&P (shipped "—" for notable — found by the 2026-07-14 deep-QA pass once the crashed
+gate was revived). Implementation: claude_api.validate_domain_summary text_scan (word boundaries guard
+alphanumeric phrase edges); DOMAIN_SUMMARY_GEN_VERSION bumped to 2026-07-14.domain-v4-groundednames so
+cached blanked outputs self-invalidate. Verified: qa_domain_summary 143/143 incl. all hostile rejections.
+
+## QA infrastructure: four stale gates re-derived + run_gates.sh canonical (14 July 2026)
+All four re-derived per check-77 (derive-don't-hardcode): qa_focus (competitive domains + methodology
+scope from mp config; probe metric from live cards — ALLOW_01 literal died with Diff 3), qa_domain_summary
+(Governance fixture name from the live taxonomy; the "non-competitive domain" hostile check re-derived
+onto a synthetic has_position-stripped payload — Diff 2 removed the live premise), qa_commentary
+(unanswered-metric fixture derived at run time — third hardcoded pick to die to a seed wave),
+qa_engine_audit (ALLOW_01 spot metric derived). Failure pattern noted: the gates had been crashing since
+Diff 3 and masking one another — a crashed gate hides everything behind the crash line.
+qa_engine_audit lineage: rew_live_meta.json (18 June ruled surgical coherence reseed) PROMOTED to lineage
+alongside REGEN_WHITELIST — only whitelisted, ruled manifests ever count as lineage; ref pools now mirror
+the engine's completeness firewall (submission_complete=1 — Tester-org post-aggregation answers excluded
+from ref counts); percentile comparison tolerates 2dp storage rounding (tol 5.01e-3).
+run_gates.sh is the canonical gate entry point — doctrine encoded: SQLite-backup throwaway → re-aggregate
+→ provably-fresh servers (lsof first, log to file, assert zero address-in-use, kill by PID) → ten gates
+keyless → qa_pulse/qa_release LAST → always restore the dev server on the real DB. README points to it.
+
+## Seed realism reseed — legal-form + coherence + anchor shapes (Diff 7, ruled 14 July 2026)
+Surgical reseed of the 99 wave metrics (REW264_*/REW265_*) per the seed-realism review (SEED_REALISM_REVIEW.md) and David's rulings R1–R4 + ①②③. Old book (all non-wave answers) is ground truth and NEVER written — hash-asserted byte-identical pre/post. Append-only discipline: DELETE the changed answers row, snapshot the prior value into answers_history, INSERT the corrected value into answers + answers_history. Deterministic per-org RNG sha256(qid|SEED_DATE|org_id). Authority: lumi_seed_realism_fix_targets.csv (12 rows).
+
+RULINGS (on the record):
+- R1 (SHAREPART): approve modal shift to 10–25% (adjacent-below the 25–40% anchor band; conservative without absurdity).
+- R2 (EOT): KEEP AS SEEDED, byte-identical (No 207 / Under consideration 9 / EOT-owned 4) — above the anchor-implied <1% base rate BY RULING, near-floor suppression demo value retained.
+- ① (EVSALSAC): CAR_COST_02 is the governing EV-orientation signal, NOT the kWh field (216/220 substantive = seed noise that defeats the condition). Missing CAR_COST_02 = "not EV-oriented" -> flip. 54 flips to the negative family, assigned by mirroring the current Fuel-neutral-family marginal via per-org RNG (not a flat assign).
+- ② (COMMCAP): TWO-WAY. 27 (REW_INC_135="No" + substantive) -> NA; 97 (135=Yes + NA) -> substantive. No COMMCAP row exists in the 12-row file (David's "row in the file" reference was a handoff miss); resolved by applying ruling ③'s mirror principle to COMMCAP — reshape the 97 by mirroring the 135=Yes substantive marginal Hard cap 50 : Soft cap 35 : Uncapped 15 across the FULL 123-org conditioned base, the 26 already-substantive counting toward satisfaction (double-count rider). The 26 are kept untouched; the 97 fill to hit 62/43/18.
+- ③ (SALSAC): mirror the current substantive marginal (IMPACT and RESPONSE independently) via per-org RNG; no target row overrides. 132 writes (66 each) — the 89-org NA set is identical across both metrics; 66 carry sal-sac evidence (REW26_BEN_SALSAC "Yes" ∪ benefits-multi sal-sac items; union 197), 23 keep NA legitimately; 0 substantive-without-evidence.
+
+FIVE FIX CLASSES:
+- F1 legal-form (116 flips -> "Neither"): share-capital forms (plc/Ltd, from ownership_type + name-suffix fallback) holding the share-capital NA on EMICSOP (59) / SHAREPLAN (57) flip to the substantive lean. Non-share forms keep NA; 10 unknown-form orgs reported-not-flipped. Wired children unchanged (0 writes) — old and new parent both parent-negative.
+- F2 cross-book contradiction map (cohort-wide): EVSALSAC 54, COMMCAP 27+97, SALSAC 132. New conditions on old; old never moves. Logged out of scope: the two pre-existing old-book contradictions (REW_INC_135 vs _136; WEL_BMAP vs REW26_BEN_SALSAC).
+- F3 anchor shapes (SAYEDISC, SIPELEM, SHAREPART, BONUSTIME) + F4 pole corrections (WORKATION, BONUSDISC, GREENDEFAULT, HOLPAYMETHOD, CHILDCARE, BROKER, REBROKE, EOT-keep): target_distribution applied on each stated basis within 0.03 TOL, except the CHILDCARE floor override below.
+- F5 shape jitter: 63 conservative-tier single-select wave rows (excl. the 12 target rows, near-floor trio, EOT, 6 F1/F2 rows, 8 anchored-tier rows) get deterministic per-metric ±5–8pp lean-pole jitter to kill the repeated (70,20,10)/(75,17,8)/(65,20,10,5) house shapes; ceilings hard-asserted post-jitter; the 7 non-target multis out of scope.
+
+CHILDCARE FLOOR OVERRIDE (binding, on the record): the 20 current "Workplace nursery scheme" holders with old-book on-site-childcare evidence (WEL_SUP_FAC_002) are preserved as a floor -> achieved nursery incidence ~9% (20/220), above the file's 4% target on that one option. The binding preservation note intentionally overrides the 0.03 TOL for that cell (forcing them down would manufacture a new cross-book contradiction to hit a marginal); the target miss is documented in the manifest. Thornbridge is one of the 20 -> realism flag 5 preserved.
+
+THREE KIT RULES PROMOTED (permanent, not patches):
+1. Value-anchor regex extended to detect "the N% maximum"-style phrasings (the SAYEDISC value anchor the mechanical detector missed at Diff 6).
+2. Lean-pole is SEMANTIC, never positional: any no-natural-"No" row requires an explicit worst-option key; hard error if absent.
+3. Coherence conditioning: the seed kit accepts a conditioning map of existing-answer dependencies (the F2 mechanism, generalised for future waves).
+
+HEADLINE LEDGER: Thornbridge Retail Group plc 279 -> 280 (net +1: EMICSOP +1, SALSACIMPACT +1, COMMCAP −1; SHAREPLAN/EVSALSAC 0; SALSACRESPONSE Practice -> practice bucket +1). Cohort-wide false-NA correction: F1 +116, COMMCAP net +70, SALSAC-IMPACT +66 = ~+252 market readings entering the pool (labelled line in the manifest, new absolute headline re-asserted against the live DB).
+
+SECONDARY OBSERVATIONS (logged, not actioned): SAYEDISC/SIPELEM applicable-base imprecision (43/28 vs true SAYE-ops 31 / SIP-ops 18 — pre-existing child-NA wiring, later pass); the two old-book contradictions stay as ruled.
+
+MANIFEST LINEAGE: diff7_seed_manifest.csv whitelisted into qa_engine_audit lineage per the ratified only-ruled-manifests rule (alongside rew_live_meta.json + REGEN_WHITELIST).
+
+## Anchor-verified reseed — FLEXPATTERN / COUNTEROFFER / VOLGAPS (Diff 8, 15 July 2026)
+Surgical reseed of 3 wave distributions to verified CIPD primary-source figures, superseding the
+Diff-6 seed (and, on COUNTEROFFER, the Diff-7 F5 jitter — an anchored primary figure beats a shape
+jitter; correct precedence). Same pipeline as Diff 7: DELETE + re-INSERT + answers_history snapshot,
+deterministic per-org RNG sha256(qid|2026-07-15|org_id), is_na-aware base exclusion (the NICSHARING
+primitive), exact-count multi assignment (NOT Bernoulli — the small-base TOL lesson from Diff 7).
+Everything outside the 3 metrics hash-asserted byte-identical. Authority: lumi_diff8_targets.csv.
+
+THE 3 CORRECTIONS (all CIPD primary, all supersede seed):
+- REW265_TIME_FLEXPATTERN (multi, Level) — CIPD Flexible & Hybrid Working 2023, employer survey
+  n=2,005, Fig 1. Per-option employer-offer incidence: Flexitime with accrual 51, Core hours 40,
+  Compressed hours 34, Annualised hours 22; None derived residual -> 14% (30 orgs). Flexitime/
+  compressed/annualised are direct employer-offer rates; "Core hours" is not separately surveyed by
+  CIPD and is held at a conservative 40 (between flexitime and compressed, plausible). Exact counts
+  112/88/75/48. Prior seed had None at 66% — the market read as far more rigid than CIPD shows.
+- REW265_PAY_COUNTEROFFER (single, Practice) — CIPD Labour Market Outlook Summer 2023, n=2,003.
+  40% counter in the last 12 months but only 22% hold a FORMAL policy. Mapping: Never counter 35 /
+  Case-by-case with approval 40 (absorbs the informal-but-happens bulk) / Routinely counter 13 /
+  No policy 12. Exact counts 77/88/29/26. Prior seed overstated formality.
+- REW265_GOV_VOLGAPS (multi, Level) — CIPD Pay, Performance & Transparency 2024, n=832 (large-
+  employer base; the lumi cohort skews large, so applicable). The question asks PUBLISH, not analyse:
+  Ethnicity 40% analyse but only 18% share with employees -> 18; Disability 27% conduct, publishing
+  lower -> 12; CEO pay ratio voluntary ~8 (not in PPT, conservative). None derived residual -> 65%.
+  Exact counts 40/26/18.
+Achieved max per-option deviation 0.0018 (integer rounding only — exact-count hits target by
+construction). Exclusive-terminal rule holds by construction: None is assigned only to orgs with zero
+substantive picks, never alongside one. 481 cell changes (186/186/109).
+
+HEADLINE: distribution-only reshapes. All 3 metrics carry ZERO is_na options, so every org holds a
+substantive answer before and after ("None" is substantive, not NA) — NA sets unchanged, comparable
+counts unchanged. Headline asserted pre == post == 280 (Thornbridge Retail Group plc).
+
+VERIFICATION PASS — 3-state outcome on 15 rows, recorded in a NEW `verification_state` column on both
+anchor registers. WHY A NEW COLUMN, NOT A STATUS OVERWRITE (ruled 15 July 2026): the instruction to
+"stamp unverifiable-free in the anchor register" would have overwritten `status`, which
+seed_release_2026_5.py documents as THE TIER AUTHORITY and build_dist() branches on
+(`elif tier == "verify-queued": pos = min(pct*0.75, pct)`). Stamping those rows would have silently
+dropped them to the else-branch 0.25 unanchored haircut on any reseed, and failed dryrun_2026_5.py's
+"two tiers 27/27" gate — and NONE of it would turn run_gates.sh red, because those scripts are not in
+the suite. Worst failure shape: silent, load-bearing, invisible to the gates. `status` therefore stays
+exactly as-is on every row; `verification_state` carries the new fact alongside it.
+  anchored-reseed (3):     REW265_TIME_FLEXPATTERN, REW265_PAY_COUNTEROFFER, REW265_GOV_VOLGAPS
+  verified-direction (3):  REW265_INC_SAYEDISC, REW265_INC_SIPELEM, REW265_INC_EOT — HMRC ESS
+                           confirmed the ceiling / structure / base rate; Diff-7 shapes stand.
+  directional (3):         REW265_PAY_PAYCOMMS, REW265_BEN_EVCHARGE, REW265_INC_ESGINCENT — data
+                           found, no clean marginal; seed held.
+  unverifiable-free (6):   REW265_INC_SHAREPART (ProShare), REW265_PAY_PROMOPAY / _GEOPAY / _RANGEMAX
+                           / _ACTINGUP (Brightmine), REW264_HLT_CASHPLAN (LaingBuisson) — primary
+                           source behind subscription. A legitimate PERMANENT state, not a queue:
+                           chased to the paywall and stopped there, not overlooked.
+
+MANIFEST LINEAGE: diff8_seed_manifest.csv whitelisted into qa_engine_audit lineage per the ratified
+only-ruled-manifests rule (alongside diff7_seed_manifest.csv, rew_live_meta.json, REGEN_WHITELIST).
+
+## Anchor seed + multi-factor latent reseed (Diff 9, ruled + applied 16 July 2026)
+Reward-only seed reshape. reseed_engine.py rewritten: factor-vector latent, anchored-spike loader,
+ruled orderings, hard gates. Applied at rho=0.40 with `--profiles seed_personas_220.json --write
+--confirmed-by-david`. 18,160 cells re-paired; answers count unchanged 233,288 (append-only:
+history snapshot -> DELETE -> INSERT, 36,320 history rows); non-reward book hash-identical.
+FINAL QA: qa_reseed 9/9 (G4 0.427, G3 0.131, G2 4) on a fresh throwaway AND on the live result,
+identical; run_gates.sh 10/10 green.
+
+TWO-FACTOR MODEL (G + S), ruled after three-factor failed on COVERAGE not tuning:
+- Three factors {G,M,C} failed G4 at 0.029-0.253. Diagnosis: G4 measures cross-AREA coherence, and
+  the re-pair can only move metrics that have an ordering. Incentives had 2 of 16 richness metrics
+  movable (12%), so a separate C factor could not express itself; its pairs collapsed. rho was
+  irrelevant — the sweep was FLAT at 0.09-0.12 across rho 0.30->0.70. Not a knob.
+- M and C merged into S (structure/competitiveness); G kept. S = rho*core + (1-rho)*0.5*(M_terms +
+  C_terms) so both structure-side signals survive at scale. Final loading: Governance+Incentives -> S,
+  Benefits+Wellbeing+TimeOff -> G.
+- COVERAGE FIX (the actual cure): ruled orderings for 6 Incentives metrics took its movable share
+  12% -> 50%, and Incentives' load on S went 0.268 -> 0.917. Benefits x Incentives 0.138 -> 0.538.
+  Governance x Incentives — the pair qa_reseed.py:25 documents as permanently weak (~0.31) and which
+  had collapsed to 0.031 — is now the STRONGEST pair at 0.83.
+
+RETIRED HYPOTHESIS (recorded so it is not mistaken for a finding): "Incentives is structurally
+categorical / genuinely low cross-area coherence" was WRONG. Coverage was 50% by metric COUNT but
+~90% by VARIANCE — the 8 orderable Incentives metrics carry nearly all the spread; the 8 categorical
+ones (LTIP types, commission structures, pool funding, incentive intent) are near-constant and
+contribute almost none. Claude Code's own forecast (load ~0.4-0.6, Benefits x Incentives 0.2-0.35,
+"straddling the floor") was wrong in the conservative direction; actual 0.917 / 0.538. The
+documented-exception branch was prepared and is NOT needed — no G4 exception exists.
+
+RHO = 0.40 (ruled on the measured number). Feasible band {0.40, 0.50}; 0.60 breaches the 0.70
+cross-factor ceiling (corr(G,S)=0.779) AND at high rho both factors share an identical rho*core term,
+so the headline G4 is partly factors correlating with themselves — the discriminant GAPS (Incentives
++0.21 toward S; Time Off +0.16 toward G) are the load-bearing evidence, not absolute magnitudes.
+0.40 chosen for the cleanest REAL separation: corr(G,S)=0.566 (+0.134 ceiling headroom) with G4 at
+0.427 (+0.127). Factor independence IS the point of the enrichment; 0.50 buys unneeded G4 margin by
+spending separation.
+- CORRECTION ON THE RECORD: an earlier ruling picked rho=0.40 (three-factor) on the reasoning that
+  "G4 binds, G3 has headroom". Half right — G4 does bind, but it binds from BELOW (pulls rho UP),
+  which was asserted rather than measured. Measuring on the real reseed reversed the choice to 0.45,
+  then coverage work superseded the whole question. Measure the gate; do not reason about it.
+
+THE NOMINAL-RESHAPE BUG (the incident this diff exists to not repeat): the prevalence branch applied
+a target_share to any metric with a lean pole, including NOMINAL ones. REW26_BEN_PENSION_TYPE
+(DC/DB/Hybrid/None) was reshaped, moving 152 orgs from "has a DC pension" to "no scheme" — a seed
+asserting 71% of UK employers run no pension, which is false and illegal under auto-enrolment. 46 of
+59 prevalence spikes were hitting nominal metrics. Only G2's pension rule made it visible; the other
+45 would have shipped SILENTLY.
+- HARD GATE (kit rule 2, one level up): a prevalence target_share is "the share NOT on the lean pole".
+  That sentence is only meaningful on a genuine binary/ordinal OFFER axis. If no ordering can rank the
+  metric -> HARD ERROR, never reshape. Wired into reseed_engine; 0 rejects at final state.
+
+RULED ORDERINGS (38 total: 32 general + 6 Incentives). option_order() ranks only pure yes/no, numeric,
+and 4 hard-coded ladders — far weaker than the data, which is why 46 rejected. Each ordering is an
+explicit `option_order` key in the spike entry, authored verbatim against LIVE option strings and
+ruled by David — NEVER inferred by heuristic (a lean-pole heuristic readmits PENSION_TYPE, and
+keyword/shape heuristics misled this build six times).
+- CICOVER PRINCIPLE (standing): "Not applicable"/"Don't know" are N/A SKIPS excluded from the
+  ordering — not poles. The engine only re-pairs values present in the ordering, so excluded orgs keep
+  their answer. This IS the conditioning mask: it makes parent/child coherence structural (e.g. orgs
+  without income protection hold "Not applicable / not offered" on the replacement-level child and are
+  never re-paired). Only CAR_STATUS_01 -> CAR_COST_02 needed explicit wiring.
+- POLARITY (ruled): malus/clawback/gatekeeper are GOVERNANCE STRENGTH, not employee generosity —
+  "more" is stricter. Coherent on S; would be WRONG on G.
+
+9 CONFIRMED ANCHOR MIS-MAPS -> context + register re-source flag (figures are valid, but against a
+DIFFERENT metric — find the true home, do not delete): REW_BEN_039 (anchor=flexible WORKING, question=
+flexible BENEFITS PLATFORM), REW_BEN_100 (pension matching vs PMI eligibility), REW_BEN_SICK_005 (full
+pay vs whether rules are DOCUMENTED), REW_PRO_034 (COLA at range max vs promotion guidelines),
+REW_INC_132 (all-employee share plans vs LTIP types — also kinds), REW_BEN_102 (offering vs
+participation), REW_INC_103 (linking pay to performance vs bonus eligibility), REW_BEN_REM_PAY_005
+(kinds — premiums and discounts are OPPOSITE directions), REW_INC_069 (deferral is a RESTRICTION;
+polarity ambiguous). PENSION_TYPE is the same class (contribution level vs scheme type). NO GATE
+CATCHES THIS CLASS — 4 of the 9 are grade A/B. A keyword validator scored 2/9 recall: the defect is
+semantic and needs a read of anchor-note against question-intent, one at a time.
+
+PERSONAS — Option 5 (author the 62): live cohort is 220; the design had 210 personas of which only 158
+bridged; the 52 unused are DIFFERENT companies from the 62 inferred orgs. 62 authored by
+firmographic-conditional sampling, flagged generated:true + source_org_id_live, reversible.
+- Fix applied: all 158 REAL personas were missing Audit_Scrutiny / Risk_Appetite / Recent_Shock (the
+  62 authored had them) — assembled from org_profiles.json which lacks those fields. Recovered
+  losslessly from data/seeded_orgs.json by Org_ID. Without it the SYNTHETIC orgs would have carried
+  richer M/C inputs than the REAL ones.
+- Loader: reseed() accepts a LIST artifact keyed on org_id or source_org_id_live (only the 158 real
+  rows carry org_id). The approved command crashed before this fix.
+- industry_canon guard: the 62 authored carry SHORT canonical names ("Retail"), the 158 real carry
+  LONG ("Retail & Consumer Goods"). Keying on the map alone dropped 60 of 62 to "Other". canon_industry
+  now accepts both. Related: the B1 tilts must be keyed SHORT (what canon_industry returns and the
+  legacy SECTOR_TILT uses); keying them by the source table's LONG labels made every lookup miss —
+  all 220 orgs would have silently read tilt 0.5, the entire sector signal inert with no error.
+
+B1 SECTOR TILTS: the signed 6x15 grid (lumi_sector_tilt_table (2).xlsx -> Sector_tilt_v3, signed off
+by David 2026-07-15) un-averaged into sector_well_tilt/gov_tilt/pay_tilt in persona_factor_config.json
+(NOT market_position_config.json — that is the gauge/classification config, unrelated to seeding; the
+original spec was wrong). Raw grid -2..+2 normalised (raw+2)/4 to the 0..1 the formulas require;
+per-cell provenance retained. Energy/Utilities mean 1.333 vs legacy SECTOR_TILT 1.17 is moot — latent3
+retires the averaged tilt. sector_well_tilt is WEB-directional in 8/15 sectors (approved as a weighted
+factor input under direction-not-marginal).
+- NOTE: a source regeneration of persona_factor_config.json clobbered this once. File is now
+  engine-owned; David's inputs go to separate files.
+
+TRONC BASELINE RESTATED 30 -> 42: the 30 was computed with the canon bug (short-named authored
+personas fell to "Other" so their tronc gate never fired). Fixed lookup gates 12 genuine
+Retail/Hospitality frontline>40 orgs ON. LTIP/Shift/Car unaffected (ownership/workforce-keyed or
+identity-mapped sectors). gate_baselines_ACTUAL_220 = LTIP 100 / Shift 119 / Tronc 42 / Car 41,
+all reproduced exactly at final state.
+
+SPIKE ROUTING (160 entries): 45 prevalence applied / context / floor. 15 hold_from_marginal (wrong-base
+subgroup rates) route latent-only via mode_effective. The clean marginal set hit target at max_dev
+0.0022 — integer rounding only.
+
+INSTRUMENT DISCIPLINE (the lesson of this diff): qa_reseed is the ONLY authoritative instrument for
+G1-G10. A parallel harness built to measure G3/G4 reported +0.357 then +0.330 while qa_reseed said
+0.253 — it measured a subset and had to be corrected twice. Its NEG set was also wrong (12 items vs
+qa_reseed.py:51's 6, which includes "n/a" and ""). The harness's G2/G3/G4 reporting is retired.
+- OPEN (follow-up diff, not a blocker): qa_reseed scores G2/G3 against org_profiles.json +
+  org_profiles_inferred.json, NOT seed_personas_220.json — its loader only accepts dicts and cannot
+  read the 220-persona list. G3 uses only FTE_Band (present in both) so it is sound; G2's HR_Maturity
+  check is weakened for the 62 authored orgs. The gates are not reading the same personas the reseed
+  used.
+
+## Register clean — 20 mis-maps re-homed/cleared, generator rules ruled (Diff 1 of the reseed rebuild, 16 July 2026)
+AUTHORITY (ruled): the register (lumi_anchor_register_CLAUDECODE.csv) is authoritative over the derived
+spike file (anchored_spikes.json: demonstrated ~19-37% defect, base-collapse, one fabricated figure).
+Where they disagree (44 rows, 5 of them applied marginals incl. EAP/CIC/life-assurance grade-A
+contradictions), the register's sourced/based figure wins; the spike file is superseded and is REPLACED
+at Diff 2 by a file GENERATED from the register by rule — no hand-transcription anywhere (every defect
+this session traced to hand-derivation).
+METHOD PEDIGREE: keyword validator 2/9 recall -> semantic pass 7/7 on testable reds (register) -> fully
+blind pass 9/10 (spike file). Mis-map = true figure on the wrong question; only reading intent finds it.
+DISPOSITIONS (adversarially verified, David-ruled): 10 DROP_DUPLICATE block-approved (figure already at
+home; row clears to EST). 3 MOVE: PENSION_TYPE's contribution figure -> PLSA_QM as UPPER-BOUND PROXY
+(>=6% employer necessary-not-sufficient for PQM; <=29% bound; grade A->B; generator bound-only/context;
+resolves the PLSA fabrication into a sourced bound); MERITMATRIX merit-pay figure -> REW_PAY_097;
+PAY_018 call-out figure -> REW_PAY_017 (shape caveat). 2 CONFLICT ruled: HOL_006's Payline quantum
+APPENDED at HOL_004 as companion; FAM_012's CIPD policy figure -> MENOPLAN as Grade-C proxy, GENERATOR
+CONTEXT-ONLY (policy != ERA-2025 action plan), incumbent Aon figure parks. 4 PARK -> parked_anchors.md
+(figures held, never deleted; on-subject candidates captured: FAM_005 provision-extract action,
+SSPALIGN's Brightmine candidate). 2 REVISED: PROP_8862fcad clears (both components already at true
+homes; FW = FINANCIAL wellbeing, audit self-corrected); REW26_WEL_FINWELL mis-map OVERTURNED by the
+register's own standing reconciliation — relabel only. Real mis-map count 20, not 21.
+Extinguished (not parked): REW_BEN_100's '29% all?' fragment — mis-transcription, dies with the clear.
+EXECUTED: register_clean_diff1.py — 25 rows changed (19 clears, 6 receives), 218 asserted byte-identical,
+full ledger printed; backup .bak_pre_diff1_regclean_20260716. Anchored rows 121 -> 104.
+GENERATOR RULES (ruled with this approval, generator_rules.json, 39 rows): BLEND_ELIGIBLE 7 (cohort blend
+(SME*30+large*190)/220 — the cohort is 86% 250+, so all-UK bases understate and large-only overstate);
+SINGLE_BASE 9 (no-blend, stated-base caveat; SALSAC's own rule is DO-NOT-EMIT — the founding-error guard,
+hard-asserted at Diff 1 and to be hard-consumed by the generator); CONTEXT_VALUE 13; CONTEXT_SUBGROUP 8;
++ ruled context directives for MENOPLAN (proxy) and PLSA_QM (bound-only).
+PREVIEW (shape of the regenerated marginal set, indicative): 46 firm candidates (15 blended + 31
+single-base) + 2 new-anchor judgments + 25 anchored-but-unparseable rows needing STRUCTURED base fields
+at Diff 2; 4 statutory floors; 166 context/EST. NOT the expected shrink below 45: the clean register
+supports roughly as many marginals as the spike file applied, but the composition changes completely —
+the 21 defective spike marginals die, replaced by properly-based blends. Preview parse is regex-grade
+(it mis-paired all/large vs SME/large on ~5 rows, e.g. EAP 0.765 vs correct 0.727) — deliberate evidence
+that Diff 2 must read structured base fields, never parse anchor prose.
+NEXT GATES: Diff 2 (generate spike file from clean register; ruled orderings move to their own key —
+phantom hygiene by construction) STOPS for David after the generated file + final marginal table.
+Diff 3 (re-seed + full G1-G10 + run_gates) approved separately on the regenerated file. Live DB
+untouched throughout Diff 1 (233,288 answers; current seed provisional — pipeline/UX demo only).
+
+## Anchor-corrected reseed from the generated marginal set (Diff 3 of the rebuild, 16 July 2026)
+Applied live: reseed from generated_marginals.json (Diff-2 David-approved final table) via the
+rewired reseed_engine (inputs: generated_marginals.json + ruled_orderings.json; anchored_spikes.json
+dead — kept on disk only so legacy imports don't crash). 37 marginals applied at max_dev 0.0041;
+20,677 cells re-paired live (append-only history discipline); answers count unchanged 233,288;
+non-reward book hash-identical. THROWAWAY GATE FIRST (ruled): qa_reseed 9/9 (G2 4, G3 0.177,
+G4 0.515) + run_gates 10/10 on the reseeded throwaway BEFORE the live write; post-write live
+matched the throwaway exactly (same G-scores, same cell counts) and run_gates 10/10 again.
+The corrected seed is MORE coherent than Diff 9's (G4 0.427 -> 0.515, G3 0.131 -> 0.177).
+
+THE FULL CORRECTION ARC (Diffs 1-3): register clean (20 mis-maps re-homed/cleared, PLSA fabrication
+resolved into a sourced upper bound, 2 supersessions, 4 parks) -> generator (structured-fields-only,
+verbatim fabrication guard, POLARITY guard, orderings-required guard, cohort blend (SME*30+large*190)
+/220) -> reseed. FIVE PREVENTED SILENT DEFECTS beyond the original 21: the 4 no-lean-pole hard errors
+at Diff 9, and FAM_001's polarity inversion (source figure 0.33 was the LEAN share; ships at 0.67 with
+positive_from — caught only by the ruled source check; the polarity guard now inverts-or-fails on any
+negative-pole extraction). COMPOSITION CHANGE (the point of the rebuild): EAP 0.309 -> 0.727,
+CIC 0.629 -> 0.379, life assurance 0.807 -> 0.561, PMI-offer 0.628, pension-match 0.514; the 21
+defective spike marginals are dead; 37 register-sourced marginals stand (31 A / 6 B).
+
+LEAN-SIDE SEMANTICS (positive_from, ruled): the prevalence reshape's lean POLE generalised to a lean
+SIDE (all rungs below positive_from). Exactly 4 ruled rows carry it (HOL_001 '25-27 days',
+SICK_001 'Enhanced OSP', SICK_004 'No waiting period', FAM_001 'Enhanced pay'); default (absent) =
+first-rung lean = legacy behaviour, asserted for the other 33 so nothing regressed. Without this,
+three marginals would have seeded the wrong quantity (share-above-threshold != share-not-worst).
+
+SETTLED RE-FREEZE (ruled): frozen_targets.json re-frozen AT APPLY for EAP/PENSION_MATCH/FINWELL/
+STRATEGY at the corrected distributions, with backup. The G7 baseline was RE-ESTABLISHED
+POST-CORRECTION: the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded
+0.309 — and NOTE, discovered in execution: qa_reseed's G7 settled check is RECORD-ONLY and its
+anchored branch defaults --targets None, so G7 never actually enforced the freeze; the earlier
+"G7 fails by design without re-rule" reasoning was wrong about the mechanism. The re-freeze is the
+ruled RECORD; enforcement is a queued gate improvement). A future instance must NOT read the
+re-freeze as a freeze violation — it is the ruled re-ratification against corrected figures.
+
+GATE FIXES SHIPPED IN THIS DIFF: qa_engine_audit honored a hardcoded ROOT/lumi.db instead of
+LUMI_DB (latent — invisible while gate copies were made FROM live; exposed by LUMI_GATES_SRC
+pointing the suite at a reseeded throwaway; the audit was comparing pre-reseed answers to
+post-reseed payloads) -> now honors LUMI_DB. REGEN_WHITELIST exact-count pins are SUPERSEDED by
+newer ruled manifests (REW_INC_072's 2026-06-11 pin vs its Diff-3 ruled 0.15 marginal);
+generated_marginals.json whitelisted as Diff-3 lineage per the only-ruled-manifests rule.
+run_gates.sh gains LUMI_GATES_SRC (default unchanged: live).
+
+QUEUED (not blockers): the two cross-source conflicts (EAP CIPD-H&W row vs REW_BEN_038 compendium
+'10% all / 61-62% large'; income protection BEN_046 25% vs Drewberry-implied 66%) -> source-of-record
+ruling at the register's next pass. The 25-row base-extraction table (anchored-but-unstructured rows,
+currently context). G7 enforcement (targets file + settled comparison). level_distributions.json
+remains UNAPPLIED by reseed() (B5 was never in the write path — Diff 9 shipped without it; open item,
+not a regression). Current headline moves with the corrected marginals by design — the seed now says
+what the register says.
+
+## B5 level-distribution wiring — 3 applied / 13 dropped (Diff 10, ruled + applied 16 July 2026)
+B5 (within-offerer level distributions) was specced at Diff 9 but never in the write path. Wired now
+against the CORRECTED live seed (cda0322), FILTERED not blanket: level_distributions.json was built
+against the OLD register and mostly died with it — a blind 3-agent verification pass (not shown prior
+classifications) ruled 3 HOLD -> applied / 13 DROP. David: "my '10 clean' was the old-register artefact
+showing through."
+APPLIED (ruled band maps, verbatim-or-ruled, b5_levels_ruled.json):
+- REW_BEN_045 (life multiple): positive side 2x 0.379 / 3x 0.336 / 4x+ 0.284 (5x+ merged into 4x+);
+  1x fed at ZERO (never from fixed/other — that would be parsing); 0.420 unmapped conditional mass
+  (fixed sum + other) dropped by renorm; boundary hard-pinned to shipped 0.5607.
+- REW_BEN_FAM_002 (maternity weeks): 1-12 0.462 / 13-26 0.538 among the shipped 0.544 offerers; band
+  4-13 -> live 1-12 as nearest verbatim rung; upper rungs (27-39/40-52) EMPTY BY RULING — honest, not
+  a gap; do not hold for a source that may not exist.
+- REW_BEN_HOL_001 (leave days): TWO-SIDED — bands imply 0.714 positive vs the shipped 0.553 marginal,
+  so B5 distributes WITHIN each side of positive_from (25-27 days) separately, never across. Positive
+  0.600/0.233/0.167; lean 0.313/0.687 (merges 25+26-27 -> 25-27; 28 -> 28-30; 30+ -> More than 30).
+DROPPED 13 (QA asserts ABSENCE, not just non-application): dimension-mismatch — SICK_001 (duration
+bands belong to SICK_002), SICK_004 (months-of-service vs waiting-days), FAM_001 (weeks belong to
+FAM_002), 046 (replacement-rate belongs to 048), PENSION_TYPE (ruled; THE nominal-incident metric);
+ruled-context-full-reshape — SICK_002, 048, GAP_009 (set-not-pole), REC_CURRENCY (kinds);
+binary-no-level — SICKDAYONE (also SETTLED-frozen), HOL_004, FAM_006; corrected-defect — HOL_006
+(the service-uplift distribution the register clean re-homed to HOL_004).
+THE TWO SMUGGLING CATCHES (why B5 is filtered-not-blanket): 046's dist source carries the Drewberry
+"66% offer" — applying it would have injected the unruled side of the QUEUED cross-source conflict
+ahead of its ruling; HOL_006 would have re-introduced the exact mis-map the register clean killed.
+Both caught by the blind pass, both would have shipped as "realism".
+ENGINE: ruled within-side apportion (largest remainder over ruled shares) overrides the
+proportional-to-current split ONLY where a b5_levels_ruled entry exists; deterministic jitter
+tiebreak sha256(qid|org) so identical-factor orgs never tie; who-offers boundary structurally
+untouched (pos_n/lean_n from the marginal target as before).
+VERIFIED: throwaway — B5 invariants ALL PASS (boundaries pinned to 4dp: 0.5591/0.5425/0.5539
+pre==post; ruled bands hit within 0.005; absence holds 13/13); qa_reseed 9/9 (G4 0.515, G3 0.177,
+G2 4 — level variance did not move coherence); run_gates 10/10. LIVE — 119 cells written (the
+surgical within-side footprint), answers 233,288 unchanged (append-only), non-reward book
+hash-identical, live-vs-throwaway distributions EXACT on all 16 B5 metrics, qa_reseed 9/9 identical,
+run_gates 10/10 (qa_engine_audit: hard failures 0, warnings 0). Backup
+lumi.db.bak_pre_diff10_b5_20260716.
+
+## Cross-source rulings — EAP + income protection (16 July 2026)
+Both queued conflicts dissolved on CONSTRUCT, not a source coin-flip. ① EAP: CIPD H&W 2025 (67/78/39,
+size-banded, grade A) RATIFIED canonical; seed 0.7268 / live 0.7273 / frozen match — no register edit
+(the clean already removed Drewberry's 31%, which survives only in the dead spike file). Residual is
+CIPD-vs-CIPD: 038's compendium 'EAP 10% all' is the Reward Survey's standalone-paid-BENEFIT construct
+vs H&W's wellbeing-PROVISION measure — annotated construct-divergent on 038, never reconciled.
+② Income protection: CIPD 25/40/15 (offered-to-all, size-banded, grade A) RATIFIED canonical per the
+size-banded-beats-all-size principle (cohort 86% large); GRiD ~42% large independently corroborates
+CIPD's 40 — triangulation, not side-picking. Drewberry's 66% is ANY-OFFER on a broker-skewed base:
+different quantity, corroborating context at 048 (whose own text already says so). AMENDMENT (David):
+the shipped 0.366 uses offered-to-all rates on an any-offer question — a conservative floor and a
+milder instance of the rebuild's defect class — tracked as an EXPLICIT OPEN ITEM (parked_anchors.md
+OPEN RE-ANCHOR QUEUE + 046 notes): re-anchor to a clean any-offer source (GRiD) next register pass;
+scheduled, not someday; not a re-seed now.
+
+## RED_TERM_01 NA-flag correction (18 July 2026)
+The 'Enhanced redundancy pay (varies by grade/tenure)' option carried is_na=true while its
+substantive siblings were false — a mis-set skip flag on a real answer (found in the Diff-10-era
+base25 extraction, RED_TERM_01 flags column; register: live/market/↑, enhanced options = positive
+pole). Flipped to false via double-guarded server/migrate_red_term_01_na_flag.py
+(--write --confirmed-by-david), echoed into data/lumi_questions.csv; answers append-only
+(content-hash identical), backup lumi.db.bak_pre_redterm01_naflag_20260718. Aggregate NUMBERS
+unmoved (select_block counts all matched options either way) — the flip restores the 5 affected
+orgs to every is_na-honouring base: client real-option views, reseed-engine NA-skip exclusions,
+qa_plausibility spine labels. DELIBERATELY KEPT: scoring_config_json.na_codes still excludes the
+option from scoring — its rung on the 0/50/100 ladder (vs 'Discretionary') is the ordering the
+register marks as needing DAVID'S RULING; removing it unruled would mis-score those orgs at 0.
+OPEN ITEM for the next register pass: rule the ladder placement, then score the option.
+Re-aggregated snapshot 1; qa_overview 0 failures; qa_release 0 failures; 8060 restarted fresh
+(clean bind, flags verified on the served benchmark card).
+
+## 25-row base-extraction fold — 9 promotions, 46 marginals (Diff 11, ruled + applied 18 July 2026)
+The follow-on David queued at Diff 1: the 25 register rows whose bases were unparseable by rule,
+extracted to a ruling table, ruled row-by-row (8 promotions + REM_PAY_001 held-then-promoted, 2 holds,
+14 context). Folded into structured_bases.json + ruled_orderings.json; regenerated; delta approved;
+commit 1aabdde.
+THE 9 (all all_only): FAI_089 0.53 (A); HOL_003 0.559 (B, inverted from 44.1% no-offer);
+REC_IMPACT 0.436 (C, inverted from 56.4% don't-track); FERTLEAVE 0.22 (A, pf 'Paid dedicated
+leave'); FAM_008 0.86 (B, 4-rung discovery, pf 'Partially paid (case-by-case)' — any-paid read
+RULED); EQUALPAYAUDIT 0.35 (A, pf 'Annually', Ad hoc excluded); CAR_STATUS_01 0.35 (C, grade-based
+figure matches wording); PAYTR_02 0.40 (A, 'always' only); REM_PAY_001 0.64 (A, off hold).
+REM_PAY_001 ORDERING RULED: 'Treatment varies by role or case' is ORDINAL SECOND-LEANEST
+(guarantees nothing -> less protective than a universal glide path; conservative, under-claims
+protection), ruled over the non-ordinal-permanent-context alternative — placement judgment on
+record. Supersedes the partial 2/6 migrated ordering. NA/DK structural skips; live is_na=true on
+'varies' coexists (engine reshapes by ordering membership only). pf 'Base pay is protected' per the
+ruled extraction semantics (64% IS the protected share, "have not and do not intend to").
+Live landed 60 protected / 34 varies / 61 NA / 14 DK — 0.638 achieved on n=94 in-scope.
+POLARITY GUARD COMPLETED (ruled): explicit structured `polarity` field per base row takes
+precedence over the target_semantics substring heuristic; substring reading of adjacent prose was
+a soft form of the banned prose-inference. Caught live: first regeneration inverted FAI_089
+0.53->0.47 off "NEGATIVE POLE complement" prose describing its COMPANION figure; explicit field
+fixed it; heuristic retained as legacy fallback only. Guard also hyphen-normalises ('negative-pole').
+PRINCIPLE SCOPED (ruled): unconditional-rung applies to FREQUENCY-SOURCED BINARIES only
+(always/sometimes/never, regular/ad-hoc -> positive = the unconditional rung; stops 'sometimes X'
+counting as 'does X'). It does NOT reach any-offer-sourced ordinals: case-by-case paid provision IS
+paid provision (FAM_008 distributes across both offering rungs).
+REGISTER (ledger-asserted, grade+notes only): FAM_008 A->B (dated ~280 private-skew base);
+CAR_STATUS_01 ->C + ruled-0.35 caveat (2021, n~217). HOLDS STAND: FAM_011 (middle-rung figure),
+NEURO (source self-disclaims UK-representativeness — disqualifying).
+VERIFIED: regenerated set 46 marginals / 3 floors / 194 context, prior 37 HEAD marginals
+byte-identical, all guards pass. THROWAWAY FIRST: qa_reseed 9/9 (G4 0.462, G3 0.15, G2 4);
+run_gates 10/10. LIVE (LUMI_RHO=0.40, --profiles seed_personas_220.json --write
+--confirmed-by-david): 4,909 cells re-paired across 201 questions (46 prevalence / 39 context /
+1 floor), marginals max_dev 0.0041, answers 233,288 unchanged (append-only), non-reward book
+hash-identical, live-vs-throwaway distributions EXACT on every cell of the book, qa_reseed 9/9
+identical scores (JSON diff = list-ordering artifacts only), re-aggregated 943 payloads, 8060
+restarted fresh, run_gates 10/10 (qa_engine_audit: hard failures 0, warnings 0). Backup
+lumi.db.bak_pre_diff11_base25_20260718. NOTE: G4 worst-pair moved 0.515->0.462 with the 9 new
+marginals in the pool — still 1.5x the 0.30 floor; expected direction (more anchored marginals =
+less latent freedom), not a regression signal.
+
+## Freeze gate wired — Check C enforcing, suite 10->11 (Diff 12, ruled + applied 18 July 2026)
+FINDING (corrects the "G7 is record-only" framing): the freeze-enforcement logic EXISTED and was
+CORRECT — qa_plausibility.py Check C, drift vs frozen_targets.json — but was NEVER WIRED into the
+write-time suite. qa_reseed G7 records settled marginals BY DESIGN and defers to Check C; Check C
+was in neither run_gates.sh nor qa_reseed. So the real freeze gate never ran during a write: every
+write this session passed 10/10 with the freeze unchecked. It never bit because writes set frozen
+values correctly on purpose — but an accidental drift would not have been caught. THE GUARD WAS
+DARK. Proven live in the negative test: on a breached throwaway the OTHER TEN GATES ALL PASS —
+nothing else in the suite sees a freeze drift.
+FIX (wiring, not build — commit 95e43ba): qa_plausibility runs as GATE 11 in run_gates.sh
+(root-dir block, direct-DB, nonzero rc = FAIL). FAILURE SEMANTICS RULED TIERED: settled-frozen
+(= frozen_targets.json keys, 8) hard-fail on ANY per-option drift >0.001 — hand-ruled, immovable;
+register marginals (generated_marginals.json, 46; the 4 frozen-overlap rows take tier-1 precedence
+-> 42 checked) fail only >5pp — they keep legitimate ±4ppt reshape freedom. Tier-2 achieved-share
+mirrors the engine's marginal branch exactly (scope = ordering membership, lean = rungs below
+positive_from, first-rung default, worst_option combos, <5 in-scope skip).
+SINGLE SOURCE: frozen_targets.json keys ARE the settled set; qa_reseed.py and qa_plausibility.py
+both derive SETTLED from it — the three drift-prone copies are now one. Missing file is FATAL in
+the gate (a silent {} fallback would put it back in the dark). LUMI_DB honoured (the qa_engine_audit
+hardcoded-db bug class, spec #4): the gate validates the suite's throwaway pre-write and live
+post-write, never implicitly live — proven by one script giving three verdicts on three env-selected
+DBs. qa_plausibility.py + qa_reseed.py enter the repo (previously untracked while load-bearing).
+NEGATIVE TEST (mandatory, evidence in freeze_gate_negative_test.md): perturbed throwaway (EAP
+5 rows -> 2.27pp; REC_IMPACT 15 rows -> 6.9pp) fails BOTH tiers, suite FAIL(1) exit 1 (zsh EXIT
+trap verified to preserve failure status through teardown); 2.31pp register perturb still PASSES
+(freedom preserved, tolerance proven two-sided); clean throwaway 11/11 incl. qa_plausibility;
+live gate run PASS (settled max drift 0.005pp, marginals max 0.41pp). All perturbations on scratch
+copies only; live asserted untouched (233,288; EAP 160; REC_IMPACT 96). qa_reseed 9/9 unchanged
+after the single-source change. GATE-WIRING ONLY: no reseed, seed unchanged at the 1aabdde state.
+
+## #4 closed — audit env-driven confirmed + instrument track sweep (18 July 2026)
+① qa_engine_audit LUMI_DB: fix confirmed in place (server/qa_engine_audit.py:42, env-driven,
+comment-dated 2026-07-16) — same pattern the freeze gate now uses. ② Standalone re-run against
+live at 95e43ba (LUMI_DB=absolute live path, keyless): hard failures 0 | warnings 0; app-vs-DB
+cache freshness 336==336. MASKING ANALYSIS: nothing was hidden by the pre-fix hardcode. Proof the
+fix was live for this session's arcs: the recorded gates_d3pre FAILURE — the audit failed on a
+pre-write throwaway precisely because it read the throwaway's reshaped metrics (a live-hardcoded
+instrument could not have produced that result). For any run predating the fix, every write in the
+discipline verified live==throwaway EXACT at apply time, so at each gated moment the audit's
+verdict held for both databases regardless of which it read. The 0/0 standalone run closes the
+present tense. ③ TRACK SWEEP (the "instrument untracked" class, third occurrence): enumerated the
+full load-bearing set — gate harness, 10 gate suites + aggregate/db, 4 seed instruments, 13 seed
+inputs. Only org_profiles.json + org_profiles_inferred.json were untracked (qa_reseed's DEFAULT
+G2/G3 profile inputs; qa_plausibility's latent source) — committed. Every gate and seed instrument,
+and every input they read, is now version-controlled. QUEUE EMPTY: #3 shipped-and-proven (95e43ba),
+#4 closed clean. The seed stands at the 46-marginal 1aabdde state — correct, realistic, and gated
+by instruments that are themselves in git and proven-enforcing.
+
+## By-level matrix correction — EST baselines, sector gates, verdict suppression (Diff 13, ruled + applied 18 July 2026)
+ORIGIN: David's live-UI expert review. The by-level matrix charts ("X by seniority level") ran on ONE
+hardcoded multiplier ladder (regen_priors MATRIX_DRIVERS) applied to every metric identically — a
+category the entire anchor/register/generator correctness pass never examined. Maximally coherent,
+therefore invisible to every coherence gate, and WRONG three ways: shape (LTI is a cliff, leave is
+flat), altitude (LTI exec ~2x under; pension ~2ppt low at top, 4pp over at the statutory floor),
+and sector existence (the intended charity/public gating had LEAKED: 7 gated orgs answered bonus,
+6 held LTI Yes rows). STEP 0 enumerated 25 by-level matrices fresh from the questions table
+(17 reward + 8 dormant Attract/Growth), confirmed NO leave-by-level matrix exists (baseline #4
+vacuous — parked), and found a live 58-org incoherence: 98 car-matrix answerers vs only 40
+overlapping CAR_STATUS_01's 74 Yes.
+RULINGS (all David, 2026-07-18): ① pension national ladder all 220 (public-sector DB realism
+deferred); ② car population = CAR_STATUS_01 Yes-set 74; ③ LTI population 74 (charity/public + the
+3 SMEs gated); ④ companion corollaries as drafted (PENS_EMP_MAX = typical + 1-4pp headroom;
+bonus-max gate-only + max>=target, 21 lifts; LTI values cliff-masked, medians move 125->150/95
+because survivors skew senior — flagged); ⑤ leave parked (no target metric; retail/hospitality
+20-day band = future gated HOL_001 diff). CONSCIOUSLY ACCEPTED: all-org LTI Board reads 30.5% not
+37.7% (honest after gating; in-population rate 90%); FULL verdict suppression on all 11 by-level
+numerics (no soft "vs practitioner baseline" channel).
+APPLIED (commit 70a7092; migrate_diff13_bylevel_baselines.py --write --confirmed-by-david):
+pension 17/12/10/8/8/3/3 exact (offset ladder, AE floor pinned, monotone asserted); employer max
+20/15/12/10/10/5/5 exact; car 12k/10k/7k/5k/4k on the 74 (Manager rare n17, Sup/Front ABSENT never
+0); bonus 40/30/20/15/10/3/1 on 157 (thinning preserved, bottom rows 1-8/1-3 median-pinned);
+LTI cliff 67 Board / 52 Director / zero below, latent-ranked nested assignment (G10 coherence
+held). Values from expert_baseline_by_level.json (EST, "practitioner benchmark - D. Whitfield") +
+diff13_derivation_rules.json — no numbers in code. Seed orgs ONLY: the Tester signup org surfaced
+in dry-run n=221 -> selective delete + real-org rows asserted byte-identical.
+VERDICT SUPPRESSION (the integrity rule): EST-grade data renders NO measured-market claim.
+Two coordinated layers, both reversible at real member data: curated market_position_config.json
+11 entries direction->neutral (SURGICAL edit, _diff13 breadcrumbs) + questions.polarity->neutral
+(kills the cardPosition legacy-polarity fallback on tiles). 55 directional metrics remain.
+LANDMINE (open decision, David rules reconcile-vs-retire separately): gen_market_position_config.py
+has DRIFTED from the curated config — my --write regen rewrote 1,716 lines, clobbering David-refined
+rulings (Governance non-competitive flag, REW_PAY_005 Practice, the 8-domain taxonomy). Caught by
+qa_hero/qa_focus/qa_overview going red on the throwaway; restored from git; flips re-applied
+surgically. Curated file is HAND-OWNED; the generator is QUARANTINED — never --write it. Same class
+as the Diff-9 persona-config clobber. (Generator's RESOLUTIONS + neutral handling were still
+corrected for internal consistency.)
+VERIFIED: throwaway first — qa_reseed 9/9 (G2 4, G3 0.15, G4 0.462, all unchanged from Diff 11),
+run_gates 11/11 incl. freeze gate + engine audit (diff13_seed_manifest.csv whitelisted,
+only-ruled-manifests rule). LIVE: backup lumi.db.bak_pre_diff13_bylevel_20260718; answers
+233,288 -> 232,809 (delta -479 exactly as approved: car net -177, bonus-family gate deletions,
+LTI tails); 7,272 history rows; non-touched book hash-identical; polarity flips 11/11; post-write
+live-vs-throwaway EXACT on every distribution cell; manifest byte-identical to committed;
+re-aggregated 943 payloads; 8060 fresh; post-write run_gates 11/11 green.
+DEFERRED (logged in diff13_derivation_rules.json): public-sector pension realism; HOL_001 sector
+band; expert max figures for the three derived companions; Car-41 persona discrepancy; the
+generator-drift ruling.
+
+## Config generator retired — archive-and-neuter (ruled + applied 18 July 2026)
+RULING: gen_market_position_config.py is RETIRED. The curated data/market_position_config.json is
+the SOLE SOURCE OF TRUTH, hand-owned, refined via hot-reload. Rationale: the generator drifted
+1,716 lines from the curated artifact and the clobber class hit twice (Diff 9 persona config,
+Diff 13 market-position config — Governance non-competitive flag, REW_PAY_005 Practice, 8-domain
+taxonomy all reverted by one --write). Gates caught both; the standing risk is now closed
+structurally, not left as a quarantine note.
+MECHANISM (archive-and-neuter, not delete — deliberate): the file stays in the repo for
+historical/reference value (it documents how the config was originally derived); --write
+hard-exits 2 printing the retirement message + pointer to this entry; the OUT_PATH json.dump is
+REMOVED from the code entirely (write path structurally impossible, not just gated); dry-run
+analysis mode still runs (exit 0). Reviving or reconciling requires a deliberate David ruling.
+CALLER SWEEP: nothing invokes the write path — run_gates.sh and all scripts clean; references are
+documentation-only. VERIFIED: --write exits 2 and writes nothing; dry-run exits 0; config
+byte-identical after both (cmp + clean git diff); seed untouched at 232,809. Code-quarantine diff
+only (commit alongside this entry). FOR FUTURE INSTANCES: do not re-derive market_position_config
+from any generator — hand-edit the curated file surgically, per ruling.
+
+## Verdict authority — peer claims suppressed on 222 unanchored metrics, 2 retired (Diff 14, ruled + applied 18 July 2026)
+WS1 + WS6 of David's pay/pensions audit. SCOPE RE-TARGETED with David's confirmation: the audit
+prompt named the "No signal" pill, but that pill is the signals-system CLEAR state (org-relative,
+runtime — "nothing flags here"), not an anchor flag. The honest scope is DISTRIBUTION AUTHORITY:
+273 active reward metrics rendered directional peer verdicts; only 51 have ruled distribution
+authority (42 active register marginals + 8 settled-frozen + 1 floor). The other 222 (89 never in
+any register incl. the whole REW264/REW265 wave; 96 register-unanchored; 31 register-anchored
+CONTEXT — a paper headline is not distribution authority; 6 EST-class) made measured-market claims
+on engine-prior distributions. 81% of platform verdicts were unanchored. RULED: suppress all 222,
+keep 51; verdicts get EARNED BACK by anchoring (round-2 corrections + member data), never
+re-rendered. CONSCIOUSLY ACCEPTED: verdicts 273->51; Pay reads 4-thin, Pensions 3, Benefits 3;
+no domain falls below domain_min_polarised=3; thin-but-true beats rich-but-fabricated.
+THREE SUPPRESSION LAYERS (+1 seam found in test): ① curated market_position_config.json —
+220 entries direction->neutral + unbenchmarked:true + _diff14 breadcrumbs (surgical, hand-owned
+file; keepers byte-equal, verified key-by-key vs HEAD). ② questions.polarity->neutral (219
+flipped, 1 already neutral) + data/lumi_questions.csv echo (112 rows; 108 flips absent from the
+CSV = the documented REW263/264/265 DB-origin-lineage families). ③ NEW unbenchmarked channel:
+assemble_card passes the flag; unbenchmarked cards render the distribution but NO position pill,
+NO "X in 10 similar organisations" lead ("peer distribution shown for information only" +
+Unbenchmarked chip), NO numeric readout/percentile and NO score percentile/peer_p50 — the numeric
+and score forms of the same measured-market claim, suppressed as the same class. ④ SEAM: score
+items take polarity from scoring_config, bypassing layers ①② — caught live when a 'behind' signal
+fired on suppressed PROP_168a6213 (qa_hero red); closed at the single choke point positions._item,
+which now consults the unbenchmarked authority for EVERY item kind. Signals, briefings, pools,
+gap register and board pack all inherit through _item.
+RETIRED (status=retired, release_retired='2026.4', SEED answers deleted after answers_history
+snapshots, payload rows removed; all 436 rows asserted seed-org-only): ① PROP_dff9a2a5
+pay-increase award rate — fictional-practice distribution (a run review ~always covers everyone;
+the middle bands measure nothing) that carried a LOWER-THAN-MARKET verdict. C-FACTOR NOTE (ruled,
+expected-not-surprise): PROP_dff9a2a5 was a C-term in metric_factor_map.json and is REMOVED — the
+next reseed's S-factor composition shifts accordingly. Register row annotated RETIRED (anchor kept
+for the record); ordered_scale_routing + rew_live_meta + signal_lenses signal_labels entry (David
+say-so, _diff14_note breadcrumb; lenses/thresholds untouched) unwired. ② REW264_PEN_CONTRIBTIER
+service/age-linked pension escalation — age-linked = Equality Act 2010 age-discrimination risk;
+service-linked escalation extinct post-DC/AE. RAILS-BYPASS HYGIENE FINDING: it was in NO
+release_questions row — the 2026.4 seeding bypassed the release rails; recorded here for the next
+rails pass. RED_TERM_01's pending CSV echo was committed FIRST as its own micro-commit (695591c),
+keeping this diff's history clean.
+qa_engine_audit hardened with the diff: RETIRED_LINEAGE documented skip (ONLY ruled retirements —
+a silent retirement still fails L1) + the L2 percentile spot excludes unbenchmarked metrics and
+FAILS explicitly if a benchmarked metric stops serving its percentile (suppression over-reach
+guard, both directions held).
+VERIFIED: throwaway first — qa_reseed 9/9; run_gates 11/11 after the ripple fixes (qa_hero signal
+leak + audit lineage/spot — the anticipated consumer ripple, no data surprises; throwaway DB
+unchanged across the three suite runs). LIVE (backup lumi.db.bak_pre_diff14_verdictauthority_
+20260718): answers 232,809 -> 232,373 (-436 exactly as diagnosed); non-target book hash-identical;
+keepers' polarity untouched; post-write live-vs-throwaway EXACT (every distribution cell + every
+questions-table row); suppress set 220/220 neutral on live; both retirees status=retired/2026.4
+with 0 answers; re-aggregated 943 payloads; 8060 fresh; post-write run_gates 11/11. Commit 3960efd
+(+ 695591c micro-commit). Cache v419.
+ROUND 2 QUEUED (David's expert numbers pending): value corrections — under-peaking, option
+redesign, gating. Verdict re-earn path: anchor -> marginal -> the unbenchmarked flag comes off.
+
+## Under-peaking + option redesign + 1 retire (Diff 15, six rulings + applied 18 July 2026)
+Pay/pensions audit round 2. PREMISE CORRECTED at diagnostic (David confirmed): NONE of the four
+Part-A metrics was in Diff 14's 222 — REW_PAY_005 is strategy-config (Diff 4: never pools),
+EXT_REW_GAP_010 + REW265_PAY_RANGEMAX were never directional, PENSION_TYPE is settled-frozen and
+never lost its verdict. ANCHORED ≠ DIRECTIONAL, ruled and kept: GAP_010/RANGEMAX get correct ruled
+distributions and render as PREVALENCE, no verdict — "where staff work" and "range-max policy"
+have no honest better/worse pole.
+NEW MECHANISM (ruling ⑥): ruled_distributions — full-distribution reshapes. Generator emits the
+section from structured_bases ruled_distribution entries; the ENGINE needs no change (non-marginal
+metrics context-route COUNT-PRESERVINGLY, so ruled dists survive future reseeds by construction);
+freeze gate tier-2b checks per-option drift at the 5pp register line. Four members: REW_PAY_005
+3/7/70/15/5 (ruling ①, reshape only, stays config; N/A-Don't-know stripped, 28 answers n-excluded
+220->192); EXT_REW_GAP_010 78/4/2/1/15 (ruling ②; Don't-know stripped, 4 n-excluded 165->161);
+REW265_PAY_RANGEMAX 60/16/16/8 (ruling ②; conditional derivation 40% have-ranges x 40/20/40;
+FTE-gate round 3); PROP_fe1a29ec 60/30/10 (ruling ④).
+PENSION_TYPE RE-FROZEN (ruling ③, EAP retarget precedent — G7 BASELINE RE-ESTABLISHED): DC
+0.8455 -> 0.95, DB 0.0318, Hybrid 0.0182 (achieved 209/7/4 over 220); 'None' option REMOVED from
+the bank — auto-enrolment makes a no-scheme employer a NON-COMPLIANT STATE, not a data point.
+National-for-all; public-sector DB carve-out stays queued behind the sector-tag pre-condition.
+PROP_fe1a29ec 46-SET OPTION SURGERY (ruling ④): Yes/Partially/No -> formal/structured / informally
+only / no benchmarking; the Drewberry 0.495 share-marginal SUPERSEDED (the construct died with the
+options) — marginals 46->45, prior 45 byte-identical; scoring ladder re-mapped mechanically onto
+the same 0/50/100 shape; register grade B->EST; keeps higher_is_better (ordered maturity scale).
+REW_PAY_006 logged as a construct-overlap dedup candidate. FTE-gradient (15@50 -> 60@500 ->
+90@5000) is round 3; seeded cohort-centre 60/30/10 flat, flagged.
+REW265_PAY_PAYCOMMS REDESIGNED (ruling ⑤): single_select -> by-level matrix (Letter + manager
+conversation vs Letter only), per-level conversation 90/90/90/80/70/50/20 nested-by-latent
+(nesting asserted), 220 -> 1,540 answers, v2.0, STAYS verdict-suppressed EST (Diff-13 discipline —
+modelled gradient, no measured-market claim). Old options dumped 66% into 'Varies' — replaced.
+RETIRED: REW264_PEN_PENLEAVEGAP (class 6) — pension is a % of pensionable pay; during UNPAID leave
+there is no basis to contribute from; the one meaningful version (full-salary contributions during
+PAID statutory leave) is excluded by the question's own scope. David declined the reframe. SECOND
+2026.4 rails-bypass instance (no release_questions row) — strengthens the rails-pass case.
+STANDING RULES RECORDED (all future work): ① NO Don'T-KNOW OPTIONS — unsure respondents leave
+blank (n-excluded); a Don't-know option inflates itself and dresses non-answers as answers;
+stripped here from REW_PAY_005 + GAP_010, never added again. ② REWARD MATURITY SCALES WITH FTE —
+sophisticated-practice prevalence is FTE-linear (benchmarking, market pricing, formal ranges, TRS,
+equal-pay audits family); one SHARED gradient mechanism, round 3. ③ SECTOR-TAG AUDIT IS A HARD
+PRE-CONDITION for every sector-gate diff (public-sector DB, tips, bonus/LTI refinements): verify
+the 220 seed profiles' sector tags BEFORE gating on them. Also parked per ruling: office
+attendance = SOURCE, DON'T ESTIMATE (CIPD/ONS research task; redesigned options approved,
+unapplied — register discipline: don't estimate what you can source).
+VERIFIED: throwaway first — dists exact + nesting asserted (1,480 history rows), qa_reseed 9/9,
+freeze gate PASS (re-frozen PENSION_TYPE tier-1 at 0.005pp; 4 ruled dists tier-2b), run_gates
+11/11. LIVE (backup lumi.db.bak_pre_diff15_underpeaking_20260718): answers 232,373 -> 233,441
+(-32 DK, -220 retire, +1,320 matrix rebuild); non-target book hash-identical; post-write
+live-vs-throwaway EXACT (every distribution cell + every questions-table row incl. options/
+scoring/type edits); manifest byte-identical; re-aggregated 943 payloads; 8060 fresh; post-write
+run_gates 11/11. Commit e2227ab. ROUND 3 QUEUE: sector-tag audit (pre-condition) -> FTE-maturity
+gradient mechanism -> gating workstream (tips, FTE-gradient family, allowances) -> office-
+attendance sourcing -> GRiD/046 re-anchor -> REW_PAY_006 dedup -> public-sector carve-outs.
+
+## Sector-tag audit — round 3 step 1, the sector-gate pre-condition (ruled + applied 18 July 2026)
+Two-directional correctness audit of the 220 seed profiles (every future sector-gate fires on
+these tags; a mis-tag makes the gate correct the wrong orgs). RULED RE-TAGS APPLIED (3): Alderstead
+/ Severnbourne / Brightstone Trust — subsector "Public Health Provider" = NHS-Trust-style public
+body; Healthcare & Life Sciences -> Public Sector & Government, applied consistently in
+org_profiles.json + data/seeded_orgs.json + orgs.industry. Sector cuts now Healthcare 6 (holds the
+n>=5 floor) / Public Sector 15. KEEPS verified correct: Hawvale (Mfg), Marshbrook (Mfg), Norpoint
+(Fintech), Langwick (Biotech) — commercial companies named "Trust". NOTE: David's keep-list named
+"Kingswood (Prof Services)" — NO such org exists in any profile (phantom from the earlier hand
+scan; nothing to act on). FULL SWEEPS CLEAN: reverse check (public/charity-tagged with commercial
+substance) surfaced only the 2 social enterprises below; public-pattern scan
+(council/authority/NHS/academy names in commercial sectors) found ZERO beyond the ruled 3;
+hospitality both directions structurally sound (tips-gate population correct); FTE_Band and
+Industry 0 missing across 220.
+FIELD RECOVERY (Diff-9 field-loss class, lossless): all 62 authored personas were missing
+Workforce_Frontline_%/Shift_%/Unionised_% in org_profiles_inferred.json — the values exist 62/62
+in seed_personas_220.json and were copied VERBATIM (186 values). No invention.
+AWAITING DAVID (presented, not applied): ① 21 authored personas carry sector-IMPLAUSIBLE
+Frontline% AS AUTHORED (source = seed_personas_220 itself, not field loss): hospitality/retail/
+logistics/manufacturing orgs at 2-28% frontline (e.g. Dunbrook Hospitality Group 2%, Glenbrook
+Restaurants 19%, Northgate Transport 2%), one Technology at 66%. These feed the tips/shift/
+office-cadence gates — re-author or rule a sector-floor imputation before the gating round uses
+Frontline%. ② Ravenside Trust Ltd + Thornmere Social Enterprise Ltd: commercial-form social
+enterprises under the charity tag — recommend KEEP (social-enterprise substance), but
+bonus-existence for social enterprises is David's call at the bonus/LTI gate refinement.
+VERIFIED: answers hash-identical before/after on throwaway AND live (profile re-tags only — no
+seed change, asserted); throwaway run_gates 11/11; live applied (backup
+lumi.db.bak_pre_r3s1_sectortags_20260718), re-aggregated 943 payloads, 8060 fresh, post-write
+run_gates 11/11. THE GATING WORKSTREAM IS UNBLOCKED subject to ① for Frontline%-dependent gates;
+sector-membership gates (bonus/LTI charity+public, DB carve-out, tips-hospitality) can proceed on
+the corrected tags now.
+
+## Frontline floors/caps + social-enterprise keeps — sector-tag pre-condition CLOSED (18 July 2026)
+RULING ①: Frontline% is a GATING INPUT, not a member-facing value — sector-floor imputation
+suffices. Applied: floors Hospitality 60 / Retail 65 / Logistics-Transport 55 / Manufacturing 45 /
+Healthcare 55 / Construction 55; caps Technology 15 / Financial Services 15 / Professional
+Services 15 / Media 20; unlisted sectors keep authored values; in-range orgs untouched. 54 ORGS
+ADJUSTED (39 authored personas + 15 real-org profiles, the real-org 15 mirrored into
+data/seeded_orgs.json): full per-org list in commit; headline corrections Dunbrook Hospitality
+2->60, Glenbrook Restaurants 19->60, Eldenland Retail 2->65, Northgate Transport 2->55, Glenwick
+Digital 66->15 (the one over-cap office org). Originals preserved per-org in
+_r3s1_frontline_imputed markers. seed_personas_220.json deliberately NOT edited — it remains the
+authored artifact; org_profiles.json/org_profiles_inferred.json are the CORRECTED GATING AUTHORITY
+for Workforce fields (a future profile rebuild from personas must re-apply the ruled floors/caps —
+noted to prevent the clobber class). NOTE: the ruled floors were TIGHTER than the audit's flag
+thresholds, so 54 adjusted vs 21 flagged — e.g. Construction (not in the flag scan) gained 14
+raises, borderline cases like Valefield 59->60 and Moorwood 64->65 snapped to floor. Expected, per
+the ruling's "raise ANY org below the floor".
+RULING ②: Ravenside Trust Ltd + Thornmere Social Enterprise Ltd KEEP charity/non-profit —
+commercial-form social enterprise is non-profit in substance; excluded from the bonus/LTI gate
+like other non-profits. No change; on the record for the gate build.
+INTEGRITY: no DB writes (Frontline% lives in JSON only) — answers 233,441, book sha256
+ccae76d1b97de7bd unchanged, asserted. Frontline% FEEDS THE LATENT SPINE (reseed_engine:146 front
+term; :170-171 shift flag + tronc eligibility Frontline%>40 for Hospitality/Retail) — future
+reseeds will see the corrected values (tronc-eligible pool grows with the hospitality floor
+raises: expected, correct direction); full run_gates 11/11 re-run with the imputed profiles;
+qa_reseed 9/9 on live.
+SECTOR-TAG PRE-CONDITION CLOSED. The gating workstream is fully unblocked on verified profile
+data: sector membership verified (3 trusts re-tagged, zero hidden public bodies, hospitality
+sound both ways, social enterprises ruled), Frontline%/Shift% populated 220/220 and
+sector-plausible, FTE_Band complete. Round-3 queue proceeds: FTE-maturity gradient mechanism ->
+gating workstream (tips/bonus-LTI refinement/allowances) -> office-attendance sourcing ->
+GRiD/046 re-anchor -> REW_PAY_006 dedup -> public-sector DB carve-out.
+
+## Maturity-gradient mechanism + benchmarking pilot (r3s2, three rulings + applied 18 July 2026)
+PRINCIPLE MECHANISED: sophisticated reward practices scale with HR_MATURITY (the profiles' rating),
+not raw FTE — David trusts the profiles and accepts a non-clean size gradient (a small-but-Advanced
+org correctly reads high). PRE-CONDITION: HR_Maturity recovered 62/62 VERBATIM from
+seed_personas_220.json (same field-loss class as the workforce recovery; 220/220 populated, zero
+invention; org_profiles are the gating authority — rebuilds must preserve recovered fields).
+Cohort mix: Basic 19 / Developing 102 / Advanced 99.
+THE MECHANISM (general, family-reusable): per-metric three-level anchor maps declared in
+structured_bases (maturity_anchors: positive_option, anchors, remainder_options, per-band
+remainder_ratio, optional sector_gate) -> generator emits a maturity_gradients section ->
+reseed_engine.maturity_assign() is the SINGLE implementation, called by both the engine's new
+routing branch (future reseeds re-derive band structure — plain context re-pairing would drift it)
+and the pilot migration. Sector-gate COMPOSES BY CONSTRUCTION: gated orgs are dropped from
+assignment and absence is never re-created (engine apply only touches newmap members). Freeze gate
+tier-2c: per-MATURITY-BAND drift vs anchors at the 5pp line (sub-floor bands skipped honestly).
+Top-performer pricing and formal ranges plug in later with their own anchors — no bespoke code.
+RULINGS: ① cohort formal 70.2% ACCEPTED — deliberate anchors (15/60/90) x the real 45%-Advanced
+mix; a self-selected benchmarking co-op genuinely skews reward-mature. ② remainder informal:none
+2:1 / 3:1 / 4:1 down the bands. ③ WITHIN-BAND ORDER IS HASH-ONLY, NEVER LATENT — the coherence
+note on the record: latent-rank within band let SIZE back in through the coherence spine (the 12
+small-Advanced orgs read 58% formal vs the 90% anchor because latent correlates with size and they
+sank to the band's non-formal tail); hash-within-band honours maturity fully (small-Advanced
+10/12 = 83% ~ anchor). COHERENCE VERIFIED UNDER HASH before the write, as ruled: qa_reseed 9/9
+(G2 4, G3 0.15, G4 0.462 — unmoved), B-CHECK off-spine count 4 IDENTICAL to baseline, median corr
++0.527, freeze gate PASS (worst tier-2 drift 2.65pp = the 17-org Basic band's largest-remainder
+granularity), run_gates 11/11. No regression — the decoupling is one metric's within-band
+assignment; the spine holds.
+PILOT (PROP_fe1a29ec): replaces the Diff-15 flat 60/30/10 cohort-centre placeholder. Bands land
+Basic 3/17 (17.6% vs 15), Developing 60/100 (60.0%), Advanced 88/98 (89.8% vs 90) — largest-
+remainder exact; cohort formal 151/215 = 70.2%; informal 47 / none 17. Cairnbank Council
+(50-249 FTE, Advanced) reads FORMAL — maturity-not-size proven.
+VERIFIED: throwaway (fresh from live post-ruling-③) — per-band exact asserted, non-target book
+hash-identical, 215 history rows; run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3s2_maturity_
+20260718; suite-gated write — the migration only fired on a green 11/11): answers 233,441
+unchanged in count; post-write live-vs-throwaway EXACT including PER-ORG IDENTITY on the pilot
+metric (cross-DB hash determinism proven); re-aggregated 943 payloads; 8060 fresh; post-write
+run_gates 11/11. Commit alongside this entry. ROUND-3 QUEUE NEXT: gating workstream on the
+verified tags + this mechanism (tips->hospitality, bonus/LTI charity+public refinement,
+allowances), then top-performer pricing + formal ranges onto the gradient, office-attendance
+sourcing, GRiD/046, REW_PAY_006 dedup, public-sector DB carve-out.
+
+## Maturity family expansion + coupled range-max recompute (r3s3, ruled + applied 18 July 2026)
+FAMILY PROOF: the Step-2 mechanism took both new members as PURE DECLARATIONS (maturity_anchors in
+structured_bases; generator emits; engine + freeze gate pick them up) — zero new engine code, the
+design promise held. ① REW_FAI_128 top-performer market pricing, anchors 5/25/70: bands land
+5.3/25.5/69.7, cohort 43.6% Yes (was 59.1% engine-flat); no sector gate (any sector can be
+maturity-mature). ② REW_PAY_001 formal pay ranges, anchors 5/30/90: bands 5.3/30.4/89.9, cohort
+have-ranges 55.0% — supersedes the Diff-15 flat 40% conditioning. RULED DERIVATIONS: top-performer
+remainder No:Planned 8:1/8:1/3:1 and formal-ranges remainder Partially:No 1:3/1:1/2:1 — consistent
+family logic: non-doers further up the maturity ladder are nearer to doing it.
+③ COUPLED RANGE-MAX RECOMPUTE (the coherence-critical piece): REW265_PAY_RANGEMAX re-derived
+PER-ORG from REW_PAY_001's assignment under the RULED STRICT-YES conditioning (Partially does NOT
+count — a partial-ranges org needn't have a firm at-max policy and answers 'No formal ranges').
+The 121 have-ranges orgs split lump/continue/frozen 40/20/40 (49/24/48 largest-remainder,
+hash-ranked); the other 99 answer 'No formal ranges' (99/220 = 45.0%, was 60%). THE
+PAY-STRUCTURE-FAMILY COHERENCE GUARD: zero orgs with have-ranges != Yes holding a policy answer —
+enforced FOUR ways: in-plan assert, hard write-abort in the migration (a conflict FAILS the write),
+post-write re-check from the DB, and re-asserted on live after the write. DURABILITY BY
+CONSTRUCTION, not convention: RANGEMAX is orderless-nominal (no ruled ordering, option_order()
+infers none -> the engine nominal-skips it on every future reseed) and REW_PAY_001 re-derives
+hash-deterministically from profiles — the per-org pair cannot drift.
+Both metrics STAY VERDICT-SUPPRESSED EST (unbenchmarked flags untouched) per the standing
+EST-no-measured-market doctrine. VERIFIED: throwaway — on-anchor per band, coherence 0 conflicts,
+qa_reseed 9/9, freeze gate PASS (now 47 covered: 41 marginals + 3 ruled dists + 3 maturity
+gradients, worst 2.65pp), run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3s3_family_20260718):
+answers 233,441 unchanged; post-write live-vs-throwaway EXACT including PER-ORG IDENTITY on all
+three metrics; LIVE COHERENCE RE-ASSERT = 0 conflicts; re-aggregated 943 payloads; 8060 fresh;
+post-write run_gates 11/11. Commit alongside this entry. FAMILY QUEUE (declare-only now): TRS,
+equal-pay-audit cadence beyond the ruled marginal, structured progression, pay-gap analytics
+beyond mandatory — each just needs David's three-level anchors.
+
+## Sector-scope gate (full hide) — tips pilot (r3s4, ruled + applied 18 July 2026)
+THE FINDING: tips rendered 67.5% yes across n=212 — impossible (tips exist only in hospitality).
+THE FIX IS A FULL HIDE, not a soft NA: outside a metric's declared sector scope the metric does
+not exist — not asked at entry, no chart, no signals, not in the peer base.
+MECHANISM (general, declaration-driven — the maturity-gradient discipline): data/sector_scopes.json
+declares per-metric sector lists; enforcement is ONE filter added to org_visible_questions (THE
+focus filter every member-facing route already flows through — entry, metric view, and the item
+streams signals/briefings build from) plus seed-level answer ABSENCE for the peer base
+(hot-reloaded, mtime-cached like the lens map). This GENERALISES the 2026.1 hospitality module
+(tips carried module=hospitality, shown to hospitality AND retail — which is why it still rendered
+for the demo org); the scope layer narrows on top of the module; module->scope unification is the
+noted future cleanup. ZERO bespoke tips code; shift premiums / tronc / London weighting are one
+JSON entry each.
+APPLIED: 199 out-of-scope tips answers DELETED (the pollution, history-snapshotted — absence,
+never NA); the 15 hospitality orgs (orgs.industry, Step-1-verified tags) reseeded 80/20 =
+12 yes / 3 no (EST, D. Whitfield), hash-deterministic largest-remainder. Answers 233,441 ->
+233,244; n 212 -> 15. PEER-BASE BOUNDARY (ruled, accepted): tips follows orgs.industry — the same
+sector authority every peer cut uses; the ~9 authored personas whose hospitality tag lives only in
+their profile (orgs-table industry NULL) are excluded from tips exactly as they are from every cut
+today. The NULL-industry backfill is a QUEUED DATA-INTEGRITY FIX, deliberately NOT pulled into
+this diff.
+FOUR-SURFACE HIDE VERIFIED ON THROWAWAY AND ON LIVE, tested as Thornbridge (Retail —
+module-eligible, scope-excluded, the sharpest case): ① entry — served question set excludes tips;
+② chart — /api/benchmark 404; ③ signals — zero tips references in the overview payload; ④ peer
+base — stored payload n=15 (12/3, NA at 0). In-scope verified three ways in-process: hospitality
+sees it, retail does not, null-industry does not.
+AUDIT TAUGHT THE SCOPE SEMANTICS (two ripple fixes, both scope-honest, ruled): the cache-freshness
+check now expects core MINUS declared-scope hides for the audit org and distinguishes stale-cache
+from scope-leak; the L2 per-metric API loop accepts a 404 ONLY when a declared scope excludes the
+audit org — any other 404 still fails (the hide stays under test, never blanket-excused).
+DISCLOSURE ON THE RECORD: the first freshness patch swallowed a NameError in a try/except and
+silently computed zero hides — caught on the next suite run; rewritten with NO silent fallback
+(the rule the incident proves).
+Tips stays verdict-suppressed EST; freeze gate tier-2b covers the 80/20 (all answers in-scope by
+construction); durability by construction (context routing is count-preserving over the 15;
+absence never re-created). VERIFIED: qa_reseed 9/9; run_gates 11/11 pre + post; post-write
+live-vs-throwaway EXACT incl. per-org identity; zero stray out-of-scope answers asserted on live;
+re-aggregated 943 payloads; 8060 fresh. Backup lumi.db.bak_pre_r3s4_tipsscope_20260718. Commit
+alongside this entry. QUEUED: NULL-industry orgs-table backfill for the 62 authored personas
+(data-integrity, own diff); module->scope unification; next scope declarations (shift premiums,
+tronc, London weighting) as David rules them.
+
+## Tronc family — hospitality scope + tips->tronc conditioning (r3sw1, ruled + applied 18 July 2026)
+Sweep-1 build. The four tronc/tips-distribution metrics carried module=hospitality (chart hidden)
+but were SEED-POLLUTED across every sector — tips' exact sibling defect (Public Sector orgs holding
+"pooled via tronc" answers; 74-89% NA padding). RULED: sector-scope Hospitality-only (per the tips
+ruling — the module's retail inclusion narrowed for these too) + the conditioning chain, applied
+through STANDING mechanisms only: 4 sector_scopes.json entries + one data-driven config
+(r3sw1_derivation_rules.json) through a generic migration — zero per-metric code.
+DEEPER CHAIN (drafted, then CONFIRMED by ruling): TYPES and GROUPS condition on TRONC=Yes (9), not
+just tips-exist (12) — they ask about the tronc arrangement itself; a tips-but-no-tronc org must
+not answer "which tips are in your tronc". The complete chain: hospitality scope -> tips-exist=Yes
+(12) -> TRONC 9Y/3N -> TYPES/GROUPS over the 9. Coherence asserted FOUR ways (in-plan, hard
+write-abort, post-write from the DB, live re-assert): ZERO conflicts at both chain levels.
+SEED (ruled: hospitality-slice evidence accepted as-is, EST observed slices, verdict-suppressed):
+TRONC 9Y/3N over 12; TIPS_DIST pooled5/employer3/direct3/combo1 over 12; TYPES card4/service3/
+cash2 over 9; GROUPS by-level frontline9/supervisor9/manager5/zero-above, LATENT-nested.
+G10 CATCH + HASH-RULING SCOPE CLARIFICATION (on the record): the first throwaway failed qa_reseed
+G10 (TRONC_GROUPS depth x latent -0.101 vs 0.30) because the matrix was hash-nested. THE STEP-2
+HASH RULING IS MATURITY-GRADIENT-SCOPED ONLY (within-band order); by-level matrices nest by LATENT
+per the Diff-13 pattern — cascade depth must track the spine. Fixed config-driven; G10 passes.
+The pre-write gate did its job.
+COVERAGE (ruled): the coherence chain + r3sw1 manifest lineage (audit-wired, only-ruled-manifests)
+guard these four INSTEAD of a 5pp freeze tier — at n=12 a single org is an 8.3pp quantum; a 5pp
+line would be dishonest at that granularity. Thin-n noted: 12/12/9/9, above the n>=5 floor, cards
+read honestly small.
+VERIFIED: throwaway — coherence 0 conflicts, qa_reseed 9/9 (G10 pass post-fix), run_gates 11/11.
+LIVE (backup lumi.db.bak_pre_r3sw1_troncscope_20260718): ~530 polluted rows deleted (history-
+snapshotted), answers 233,244 -> 232,521; post-write live-vs-throwaway EXACT incl. per-org identity
+on all four; LIVE full-chain coherence 0 conflicts; FOUR-SURFACE HIDE verified on live per metric
+as Thornbridge/Retail (entry absent / chart 404 / zero signal refs / n=12/12/9/9); re-aggregated
+943 payloads; 8060 fresh; post-write run_gates 11/11. Commit alongside this entry.
+SWEEP-1 REMAINDER (ruled non-scope, logged): OT_04 shift premiums = ruled marginal + attribute-
+keyed (Workforce_Shift_%) -> sweep 2; on-call pair = cross-sector concept, prevalence realism ->
+sweep 2; meals = genuinely cross-sector; mileage REW_Q049530 = CONDITION-scoped on the car family
+(n=175 vs car-population 74 — flagged for the conditioning pass); London weighting = NO metric +
+NO location field (blocked on location capture); uniform = library gap. Scope count now 5.
+
+## One gradient, two keys — sector-keyed generalisation + INC_103/131 (r3sw2, ruled + applied 18 July 2026)
+GENERALISATION (ruled, 3 edits, NOT a new build): maturity_assign keys on any declared profile
+attribute — `key` (HR_Maturity default; Industry via canon_industry), anchors-iteration replaces
+the Basic/Developing/Advanced literal, `band_distributions` (full per-band dists incl. `_default`
+fallback) joins the positive/remainder form, and `within_band: hash|latent` is EXPLICIT per entry
+(hash reserved to the maturity family per the Step-2 ruling; latent for sector-keyed — the r3sw1
+G10 lesson). BACKWARD-COMPAT PROVEN FOUR TIMES: the generalised code reproduces all three live
+maturity metrics BYTE-IDENTICALLY (hard-abort assert at dry-run, throwaway apply, live apply, and
+standalone against live post-write). "One gradient, two keys."
+SELF-HEALING REGRESSION FIX (the structural point): sector-keyed declarations RE-DERIVE from
+current tags on every application — the re-tag class (Step-1 re-tags landing after Diff-13's
+one-shot gates left Brightstone + Severnbourne holding bonus/LTI ladders as Public bodies) cannot
+recur for declared metrics. The two stale trusts were cleaned one-time here (24 bonus-matrix rows
+deleted, 133 eligibility flipped to all-level No); the Diff-13 MATRICES stay one-shot and are
+noted for a future matrix-to-declaration migration.
+① REW_INC_103 bonus-eligible % (sector-keyed, ruled): exists Commercial 90 / Charity 20 / Public 5;
+breadth broad/moderate/narrow expressed as per-band distributions (Claude's derivation of David's
+two-stage figures, approved). Corrects Diff-13's absolute charity/public exclusion — low-but-
+nonzero is the reality; kills the 8-public-orgs-at-"75%+" defect. ② REW_INC_131 operates-LTIP:
+DERIVED per-org — Yes := EXACTLY the REW_INC_133 eligibility-holders = 65. NOT the count-framed
+~74: the per-org coherence enforcement FOUND THE TRUE NUMBER — 7 Diff-13 construction phantoms
+(Board-No/zero-eligibility "LTI-runners") + 2 stale trusts excluded. Live pre-state was worse than
+the sweep showed: Yes=35 with only 32 coherent and 35 eligibility-holders saying No. STANDING
+GUARD: `coherence_pairs` in generated_marginals (generator-emitted from structured_bases) checked
+by the freeze gate — ANY future reseed that drifts the 131<->133 pair fails the suite.
+QUANTUM-AWARE GATE LINE (ruled): tier-2c per-band fail line = max(5pp, 1/n). The gate caught its
+OWN line being unachievable at sector granularity (first throwaway: Charity n=8 cannot round 80%
+closer than 75% -> 7.5pp "drift" that is pure largest-remainder arithmetic; the earlier <=3.3pp
+margin claim was wrong below n=10). An ACHIEVABILITY bound, not a loosening — bands >=20 keep the
+flat 5pp. Post-fix worst: 2.55pp (Construction, genuine rounding). BACKLOG: 3 orgs canon to
+"Other" (unmapped profile industries) — sub-floor, seeded on _default, flagged for the canon map.
+Both new metrics VERDICT-SUPPRESSED EST. VERIFIED: throwaway — backcompat byte-identical, pair
+exact, qa_reseed 9/9, run_gates 11/11 (after the quantum fix). LIVE (backup lumi.db.bak_pre_
+r3sw2_sectorgrad_20260718): answers 232,521 -> 232,497 (-24 trust rows); post-write EXACT incl.
+per-org identity on all 5 touched metrics; LIVE pair coherence 65==65 SET-IDENTICAL; LIVE
+backcompat byte-identical; re-aggregated 943 payloads; 8060 fresh; post-write run_gates 11/11.
+Commit alongside this entry. SWEEP-2 REMAINDER (ruled paths, queued): HOL_001 sector band =
+marginal+B5 re-ruling; PENSION_TYPE public DB carve-out = tier-1 re-freeze (blocked on nothing —
+sector tags verified); clawback/sign-on -> bonus-family conditioning chain; office cadence parked
+for CIPD.
+
+## Pension carve-out — public-sector DB from TPR, tier-1 re-freeze (r3sw3, ruled + applied 18 July 2026)
+THE SPLIT COMES FROM SOURCE (David's ruling honoured): TPR Occupational DB landscape 2025 (data
+31 Mar 2025, grade A, free/official) — 200 public-service schemes / 19.78m members, open to new
+members BY STATUTE; CARE receives NO separate TPR classification = standard DB -> the public-sector
+new-joiner answer lands in Lumi's "DB", not "Hybrid". New-employee basis throughout (standing
+rule). The FOI route (db-and-hybrid-schemes-open-to-new-members) is a DOCUMENTED DEAD END — s.44
+FOIA / s.82 Pensions Act 2004 restricted information; the landscape publications carry the
+aggregate and are better anchors anyway.
+APPLIED via the sector-keyed gradient: Public Sector & Government band DB 95 / DC 5 -> 14 DB /
+1 DC over the 15 verified public orgs (post-Step-1 tags, incl. the 3 re-tagged trusts).
+SURGICAL-BAND CONTRACT (ruled a PERMANENT mechanism capability): band_distributions WITHOUT
+_default = declared-bands-only assignment — undeclared bands stay out of the newmap and untouched.
+This is what makes carve-outs expressible without churning frozen data; every future sector/band
+override uses it. Backward-compatible: all prior entries carry _default or full anchors; the four
+prior gradient metrics re-proven BYTE-IDENTICAL on live post-write. Commercial/charity PENSION_TYPE
+answers asserted per-org byte-identical at write AND re-verified on live (194 DC / 7 DB / 4 Hybrid
+non-public — unchanged).
+TIER-1 RE-FREEZE (EAP precedent — G7 BASELINE RE-ESTABLISHED): frozen_targets REW26_BEN_
+PENSION_TYPE DC .95 -> .8864 / DB .0318 -> .0955 / Hybrid .0182 (national 209/7/4 -> 195/21/4,
+n=220); the freeze gate enforced the new target on throwaway and live (settled max drift 0.005pp).
+REGISTER (ruled ②③④): PENSION_TYPE grade->A with the TPR carve-out citation + construct flag
+(TPR counts schemes/members vs Lumi org-offer — immaterial for public: statutory participation ~=
+offer); COMMERCIAL 95/3/2 TPR-CORROBORATED as ANNOTATION ONLY (A-derived: ~340/5,060 open DB =
+6.7%, 13% of members, hybrid 410/1.7m — a derived delta confirming the frozen value is not worth a
+re-freeze); AE NONE-REMOVAL upgraded legal-principle -> SOURCED (TPR AE declaration of compliance,
+May 2026: 2,734,305 employers declared, 11.45m auto-enrolled); REW264_PEN_AEDEFAULT statutory-floor
+row ADDED (8% total / 5% employee on qualifying earnings, Pensions Act 2008, grade A — distribution
+stays EST pending the ONS pass). Register 246 rows.
+VERIFIED: throwaway — dry-run national aggregate == frozen target asserted, qa_reseed 9/9, freeze
+gate PASS, run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3sw3_pensioncarveout_20260718): answers
+232,497 unchanged in count; post-write EXACT incl. PENSION_TYPE per-org identity; live public band
+{DB 14, DC 1}; live non-public byte-identical; live prior-gradient backcompat 4/4; re-aggregated
+943 payloads; 8060 fresh; post-write run_gates 11/11. Commit alongside this entry.
+QUEUED (Prompt 2, parallel research, NO write): ONS ASHE workplace-pension pass (contribution
+distributions for PENSION_MATCH/AEDEFAULT) + DWP AE evaluation pass (opt-out) — TPR cannot carry
+those; both free/official grade-A calibre.
+
+## ONS/DWP pass — corroborate and defend, register-only (ruled + applied 18 July 2026)
+OUTCOME: the adjacent-source pass CORROBORATED the pension figures rather than replacing them —
+ASHE confirms the altitudes, so this is annotations + one context row, NO SEED WRITE (seed sha256
+fcc967399d81c207 asserted byte-identical before/after; answers 232,497 untouched; qa_reseed 9/9 +
+freeze gate PASS on live post-change).
+① PENSION_MATCH: frozen distribution GRADE-A-CORROBORATED — ONS ASHE 2024 private-sector median
+employer contribution 5-6% on qualifying earnings ('Employee workplace pensions in the UK: 2024
+provisional and 2021 to 2023 final results', released 10 Mar 2026). Employee-weighted; corroborates
+ALTITUDE, not a distribution replacement; frozen dist not churned. ② AEDEFAULT: ASHE median added
+as context — two grade-A sources now bracket the modal answer (statutory 8%/5% floor + ASHE 5-6%
+actual median). ③ CONTEXT_AE_OPTOUT (new register context row, grade A): AE opt-out 8-14% across
+the programme, ~10% historical, 89% eligible-employee participation 2024 (DWP Workplace pension
+participation and savings trends 2009-2024). NO LIVE METRIC — deliberately NOT mapped onto AUTOESC
+(auto-escalation is a DIFFERENT CONSTRUCT; mis-mapping would be the audit's error class); library
+backlog: add an opt-out metric. ④ THE DEFENSIVE ANNOTATION (the important one): ASHE's DB 34% /
+DC 40% / GPP 25% membership split recorded on the PENSION_TYPE row as LEGACY-STOCK,
+EMPLOYEE-WEIGHTED, NOT NEW-JOINER BASIS — it does NOT supersede the TPR new-joiner anchor (DB
+landscape 2025). This annotation exists specifically to stop a future instance seeing "DB 34%" and
+correcting the frozen carve-out against legacy data — it PROTECTS r3sw3. ⑤ ASHE Table P10 PARKED
+with a backlog note (banded employer contributions by industry x pension type — available as a
+full sourced distribution for PENSION_MATCH if ever needed; employee-weighted, needs ruled
+org-level adjustment; not pulled because the frozen dist is plausible + corroborated).
+Register 247 rows; parked_anchors.md echoes the P10 + opt-out backlog items. Commit alongside
+this entry.
+
+## Annual-leave sector floor — HOL_001 carve-out + a standing principle (r3sw4, ruled + applied 18 July 2026)
+RULED: Retail / Hospitality / Logistics sit at the STATUTORY FLOOR for new joiners — modal
+"Statutory minimum only (20 days)" (20+8BH = 28 = UK minimum); floor-band distribution 45/32/18/4/1
+(Claude derivation of the modal-20 ruling, approved); all other sectors byte-untouched
+(surgical-band contract). Applied via the sector-keyed gradient on the Step-1-verified tags;
+per-band modal-20 enforced as a HARD WRITE-ABORT and re-verified on live (3/3 bands).
+NEW STANDING PRINCIPLE (ruled ①, consciously): A SECTOR-HONEST SEED SUPERSEDES AN ALL-UK SOURCED
+MARGINAL when the cohort's sector mix differs from the national economy — composition, not
+contradiction; the source stays on the register as the all-UK reference. Applied here: HOL_001
+LEAVES the grade-A marginal set (44 marginals remain, pf-count 7 — the PROP_fe1a29ec precedent;
+a sector-blind global marginal would destroy the carve-out at the next reseed); the CIPD 0.553
+all-UK 25+-share is retained as reference, no longer the seed driver; the cohort-honest global 25+
+reads ~47% (cohort 38% floor-sectors vs CIPD economy-wide — 84/220).
+B5 SECTOR-SPLIT (ruled ④): the floor bands' within-spread IS the declared band distribution
+(centred on 20); the ruled two-sided shares (.5998/.2329/.1673 // .3127/.6873) now document the
+STANDARD-sector structure only, never re-reshaped (sector-split note on b5_levels_ruled).
+DK ASYMMETRY (ruled ③, accepted): the floor bands' 7 Don't-knows became real values under
+re-derivation (no-DK rule); the standard side's 5 DKs are HELD by the byte-identical guarantee —
+QUEUED MICRO-DIFF to strip them without breaking a surgical write. TENURE DEFERRED (ruled):
+public/charity leave rises with service, not level — those orgs stay at the 25-day standard,
+KNOWN-APPROXIMATE, pending the tenure-service field + tenure-banding mechanism (queued alongside
+location-capture).
+BUILD CATCHES (guards working, disclosed): the inherited backcompat check needed PARTIAL-COVERAGE
+awareness — a surgical-band entry's newmap covers only its declared bands, so backcompat compares
+over the newmap's own domain (the false alarm was the check, not the mechanism; standalone
+re-verify 0-mismatch throughout); one cursor-shadowing slip caught immediately by crash. Also
+noted: URI-mode sqlite paths break on the repo's space — plain connections in verify scripts.
+VERIFIED: throwaway — floor modal-20 asserted, qa_reseed 9/9, freeze gate PASS (HOL_001 under
+tier-2c floor-band checks), run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3sw4_leavefloor_
+20260718): answers 232,497 unchanged in count; post-write EXACT incl. HOL_001 per-org identity;
+floor bands modal-20 3/3 on live; STANDARD SECTORS 0 CHANGED vs the pre-write backup (proven
+against the backup itself); prior gradient metrics 5/5 byte-identical; re-aggregated 943 payloads;
+8060 fresh; post-write run_gates 11/11. Commit alongside this entry.
+
+## Pre-audit bundle — NULL-industry fix + clawback conditioning + HOL DK strip (r3sw5, ruled + applied 18 July 2026)
+Three independent fixes, separately asserted, closing pay/pensions to a clean base before the
+other-domain audit. TWO PREMISE CORRECTIONS on the record: ① the NULL-industry set was 62 SEED
+ORGS, not ~9 — every authored persona lacked orgs.industry, so 28% OF THE COHORT was silently
+missing from every sector cut in every domain (the ~9 was just the hospitality subset); the 63rd
+NULL is the staff org, correctly excluded. ② REW_INC_071 clawback is CONTEXT, not a ruled marginal
+— the sweep-2 report misclassified it; the fix is conditioning-only, the 44-set untouched.
+PART A (highest value, ruled): orgs.industry (+subsector where empty) populated for all 62 from
+the Step-1-VERIFIED profile sectors (long labels via the canon inverse; the 3 authored-as-'Other'
+trading companies populated honestly as 'Other'). CASCADE, additive-only: the 12 newly-tagged
+hospitality orgs enter the tips scope — tips n 15 -> 27 (new 12 seeded 80/20 = 10Y/2N; aggregate
+22Y/5N = 81.5%, inside the gate), tronc chain extends down the ruled r3sw1 ratios (TRONC +10,
+TIPS_DIST +10, TYPES +7, GROUPS +49 latent-nested rows); the existing 15 hospitality orgs'
+answers BYTE-PRESERVED; zero out-of-scope strays asserted. Every sector cut platform-wide now
+sees the full cohort.
+PART B (ruled UNIFORM/33): all bonus-less orgs (INC_103='None') read 'Not applicable' on clawback
+— the 17 incoherent Yes (grown from 14 after the r3sw2 reshape) AND the 16 vacuous No ("No"
+falsely implies a bonus that doesn't exist). Yes 128->111 / No 52->36 / NA 40->73. Sign-on
+untouched (ruled legitimate — NHS golden-hellos). STANDING GUARD: 071-Yes ⊆ bonus-exists added to
+coherence_pairs with the SUBSET-RELATION extension to the freeze-gate pair check (previously
+equality-only) — live in the suite from this diff; a future INC_103 reseed that re-breaks the
+conditioning fails run_gates.
+PART C (ruled): HOL_001's 5 standard-side Don't-knows DELETED (n-excluded, never redistributed)
+and the DK option removed from the bank — the leave-floor DK asymmetry resolved. THE BLANKET DK
+DIFF IS QUEUED (definite next-round item): the sweep found ~60 pay/pensions-and-beyond metrics
+carrying DK options with 2-23 answers each — hundreds of n-exclusions deserve their own
+before/after and gate.
+VERIFIED: throwaway — all three asserts pass independently (A: 0 NULL seed orgs, tips n=27, 0
+strays; B: 0 clawback-Yes-without-bonus; C: 0 HOL DKs), qa_reseed 9/9, freeze gate PASS (subset
+pair live), run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3sw5_preaudit_20260718): answers
+232,497 -> 232,580 (+88 additive scope seeds, -5 DK); post-write EXACT incl. ORGS.INDUSTRY
+IDENTITY live==throwaway; all three asserts re-ran on live (0/0/0); re-aggregated 943 payloads;
+8060 fresh; post-write run_gates 11/11. Commit alongside this entry.
+QUEUE AFTER THIS DIFF: blanket-DK diff (ruled, next round); sweep-3 anchors (David's numbers);
+office-attendance CIPD sourcing; tenure-banding + location-capture mechanisms; REW_PAY_006 dedup;
+canon-map 'Other' trio.
+
+## PMI premium re-base — group-scheme basis + the first per-tier split verdict (r3sw6, ruled + applied 18 July 2026)
+BASIS CORRECTION (ruled): the PMI premium matrix (Single/Partner/Family) was built on
+INDIVIDUAL-POLICY figures — the wrong product for a company-funded group-scheme metric. Re-based:
+Single £800 GRADE B (employer/group free multi-source: ~£480-840 mid-tier, up to £1,500 rich;
+David set £800 for the larger-employer cohort) / Partner £1,600 = 2.0x EST / Family £2,000 = 2.5x
+EST (group by-tier split is PAYWALLED — LaingBuisson/Mercer). Middle-50% bands ±25% BY
+CONSTRUCTION: per-org multiplier uniform over [0.5,1.5] latent-ranked desc, the SAME m per org
+across tiers (coherent ladder), £10-rounded — P25/P75 land exactly at 0.75/1.25x. DATA NOTE
+(recorded): myTribe INDIVIDUAL by-tier was £990/£1,901/£2,168 (family only 2.2x); the ruled group
+Family 2.5x reflects a richer company-scheme definition — defensible.
+FIRST PER-TIER SPLIT VERDICT ON THE PLATFORM: Single (grade B) RENDERS a market position;
+Partner/Family (EST) are ROW-SUPPRESSED — `unbenchmarked_rows` in the curated mp entry, enforced
+at ONE choke point (positions.unbenchmarked_rows(): no rank, no position item, no £-opportunity
+from EST tiers) + per-row card flag + a per-row EST caption in the chart. The card P-pill is the
+median of ROW percentiles, so gated rows drop out naturally — the renderer carried the split with
+three small changes, no rework. Verdict re-earn per tier: source the paywalled by-tier data ->
+remove the row from unbenchmarked_rows.
+DEMO ORG: Thornbridge's 680/1200/1600 are GENUINE UI ENTRIES (David's own, made this session —
+NOT seed values; the earlier seed read 1350/2460/3480) — preserved through the re-base. LIVE
+RENDER VERIFIED: Single £680 -> P35 vs group P50 £800 (below market, inside the middle 50%);
+Partner £1,200 and Family £1,600 show values + P50 reference with NO position claim.
+VERIFICATION CATCHES (guards + doctrine working, disclosed): ① TWO THORNBRIDGE ORGS exist
+(Advisory plc + Retail Group plc) — the demo lookup's LIKE-prefix selector silently hit ADVISORY,
+and the direct-check used the same selector = a FALSE CONFIRMATION; caught only by the end-to-end
+render proof; fixed by resolving via the director account (never a name prefix — on the record).
+② A stale-server false reading preceded it — the manual verify server wasn't provably fresh and
+the migration doesn't re-aggregate; the GATE-RUN DOCTRINE (lsof/pid-asserted fresh server,
+re-aggregate first) applies to MANUAL proofs too. ③ The demo values shifted mid-session
+(1350->680) because David entered them through the UI while work was in flight — single-
+environment reality. ④ Median one-rank quantum: re-ranking one org shifts a 131-org median by
+<=1 rank (~£8-20); assert set at the quantum, documented.
+TOPOLOGY (clarified for the record): ONE environment — lumi.db + the :8060 dev server from this
+checkout IS what David sees; `--write --confirmed-by-david` writes THERE; git push archives code,
+deploys nothing; go-live is a future deliberate step. All session diffs are live in that one
+environment. STANDING PROCESS (ruled): config/code edits are STAGED and applied ATOMICALLY with
+each data write from now on — no mixed-state window between render and data (the window David
+observed was the approval gate holding data back while hot-reloaded config had already landed).
+VERIFIED: throwaway — medians exact, bands exact, qa_reseed 9/9, run_gates 11/11 (on the APPLIED
+state; one earlier suite ran against an unapplied throwaway after a guard abort and was discarded
+as evidence). LIVE (backup lumi.db.bak_pre_r3sw6_pmirebase_20260718): answers 232,580 unchanged;
+post-write EXACT incl. per-org identity (393 cells) + demo entries preserved; live split render
+verified on a provably-fresh server; re-aggregated 943 payloads; post-write run_gates 11/11.
+Commit alongside this entry. Benefits-domain queue continues per David.
+
+## Virtual GP re-anchor — the first whole-metric verdict re-earn + gate-server config isolation (r3sw7, ruled + applied 19 July 2026)
+BASIS CORRECTION (ruled): REW264_HLT_VIRTUALGP's seed read No 77.3% — an all-employer/all-size
+prior for a cohort that is larger-private-sector weighted. Re-anchored to CIPD Health & Wellbeing
+at Work 2025 (large private band): Yes-all 45 / Yes-some 13 / Via-PMI-only 11 / No 31. GRADE
+SPLIT ON THE REGISTER: A/B on the TOTAL provision (69% offer in some form — direct CIPD read);
+EST on the 3-way split (floored by vGP 54% > PMI 40% among large privates; the Yes-all/Yes-some/
+via-PMI partition is estimated). SIZE GRADIENT (SME 23 / large 54) RECORDED AS REFERENCE, not
+gated — no size-keyed mechanism yet; noted for a future size-key. Reshape: 220 answers via
+largest-remainder to 99/29/24/68, latent-ranked descending with ORDER REVERSED (generous pole to
+top-latent orgs); ruled ordering No < Via-PMI-only < Yes-some < Yes-all.
+FIRST WHOLE-METRIC DIFF-14 RE-EARN: the metric was one of the 222 suppressed on distribution
+authority. Anchor sourced -> flag lifted ATOMICALLY with the data write (--write applies data +
+mp-config direction=higher_is_better + unbenchmarked popped + questions.polarity=higher_is_better
+in one transaction; _r3sw7 breadcrumb replaces _diff14). The re-earn path is now PROVEN in both
+grains: per-tier (PMI Single, r3sw6) and whole-metric (this). Positionable-with-authority 51 -> 52
+(directional, unsuppressed, no row-split, live question).
+LUMI_MP_CONFIG — STANDING GATE-SERVER DOCTRINE (ruled, folded into this diff): positions.py now
+resolves the mp config from $LUMI_MP_CONFIG before falling back to data/market_position_config.json.
+Gate servers and throwaway suites point at a STAGED COPY; the served file is IMMUTABLE until the
+approved live write — staging is PATH-ISOLATED, not just edit-staged. Closes the mixed-state class
+David observed at r3sw6 (throwaway apply hot-reloaded a lifted config onto the live view for ~4
+min this diff — working tree reverted via git checkout, exposure disclosed; the override makes the
+class structurally impossible).
+HYGIENE NOTE (found at count reconciliation): REW_PAY_MKT_POS_01 carries a directional mp entry
+with no live question (retired lineage) — never renders, cleanup queued, not churned into this diff.
+VERIFIED: throwaway scratchpad/t26/lumi_r3sw7.db — dist exact 99/29/24/68, non-target book
+hash-identical, qa_reseed 9/9, run_gates 11/11 on the lifted state; override verified both ways
+(default resolves, /tmp path honoured). LIVE (backup lumi.db.bak_pre_r3sw7_virtualgp_20260718):
+answers 232,580 unchanged; post-write EXACT (0 differing cells, per-org identity, polarity
+higher_is_better, served config == staged lift, VIRTUALGP the ONLY entry changed vs HEAD);
+re-aggregated 943 payloads; provably-fresh :8060 (pid==listener); LIVE RE-EARN VERIFIED via the
+director account: dist served 45.0/13.2/10.9/30.9, unbenchmarked=False, readout present,
+Thornbridge 'No' positions below a 69%-offer market; post-write run_gates 11/11. Commit alongside
+this entry.
+
+## PMI coverage-composition redesign — multi-select replace + the N/A-exclusion pilot (r3sw8, ruled + applied 19 July 2026)
+STRUCTURAL REPLACE (ruled, all five points): REW263_BEN_PMIMH (single-select MH/DGP) RETIRED —
+its N/A bar (56.8%) distorted the distribution, and it was provably incoherent: 73 of the 131
+premium-matrix answerers simultaneously called it N/A because its NA routing followed the stale
+WEL_BMAP presence map while r3sw6 re-based PMI-existence on REW_BEN_038. Diff-14 retire pattern
++ FIRST USE of replaced_by. REW265_BEN_PMICOMP created: multi-select "beyond standard cover",
+6 benchmarked options + derived-exclusive terminal 'None of these — core cover only' (zero-pick
+orgs stay in n). 4 UNIVERSALS ASSUMED STANDARD, stated in help_text, NOT options (in-patient,
+digital GP, cancer cover, basic MH support line — ~90%+ everywhere; benchmarking them is noise).
+Structure grade B (Bupa/AXA/Aviva/Vitality product tiers + broker guides); incidence EST,
+structure-anchored; VERDICT-SUPPRESSED (unbenchmarked:true); per-option re-earn when sourced.
+SEEDED over the APPLICABLE BASE ONLY: the 130 REW_BEN_038 PMI-tickers (the r3sw6 conditioning
+set), exact-count per-option incidence (diff8 pattern): out-patient 101 (77.7%) / physio 78
+(60.0%) / full-MH 65 (50.0%) / screening 55 (42.3%) / dental&optical 36 (27.7%) / overseas 29
+(22.3%) / terminal 4 (3.1%). Spread 0x4/1x13/2x33/3x45/4x25/5x10, no org holds all six.
+Answers 232,580 -> 232,490 (-220 +130); payloads 943 -> 944.
+N/A-NOT-ON-GRAPH PILOT (first application, the template's DATA half): conditioned seeding means
+no N/A option exists and graph+n = PMI-havers by construction — zero renderer change needed.
+The 'base = PMI-havers' caption rides help_text (ruled: renderer stays untouched; the declared
+applicable_bases.json + card base field is the FIRST BUILD ITEM of the queued N/A-inventory
+sweep, built when the sweep needs it, not for one chart).
+NEW MECHANISM (tier-2d + pair vocabulary, negative-proven): generated_marginals gains
+multiselect_incidence (independent per-option prevalences — EXPLICITLY exempt from sum-to-100;
+from structured_bases option_prevalences); qa_plausibility gates each option at max(5pp, 1/n)
++ terminal-exclusivity + an ARMING check (an active declared-incidence metric with n<20 hard-
+fails MS-BASE-MISSING — losing the conditioned base can never pass silently). Coherence pairs
+gain child_any_answer/parent_contains selectors, relation subset_orgs: composition answerers
+⊆ REW_BEN_038 PMI-tickers, vacuous-pass pre-write. NEGATIVE TESTS ALL FAIL CLOSED: base
+deleted -> MS-BASE-MISSING rc=1; 20-org drift -> MS-INCIDENCE-DRIFT 15.7pp rc=1; one non-PMI
+answerer -> PAIR-INCOHERENCE rc=1.
+ADVERSARIAL REVIEW (13-agent, pre-throwaway; all 10 confirmed findings resolved, disclosed):
+① the --write path had an UNCONDITIONAL CRASH (a %-format landmine in a changelog string —
+invisible to dry-run); ② --config-out DEFAULTED to the served config, inverting the r3sw7
+doctrine — now a throwaway --write REFUSES to run without an explicit staged path and refuses
+the served path outright; ③ commit ordering made 'atomic' false — now ALL DB post-asserts run
+pre-commit (any failure = full rollback), config written temp+os.replace after; ④ a proven
+green-side hole (deleting the conditioned base kept the suite green) — closed by the arming
+check. DOCTRINE COMPLETIONS (ruled ⑤): qa_focus/qa_engine_audit/aggregate now honour
+LUMI_MP_CONFIG (three direct readers bypassed the r3sw7 isolation); qa_reseed subtracts DB-
+retired questions from the meta universe (G9's all-answered intersection collapsed to n=0 on
+any retired Benefits metric — Diff 14 survived only by luck of family; no-op on live, proven).
+ACCEPTED LIMITATION (ruled ③): the entry UI cannot answer-condition — no-PMI orgs still see
+the question; a stray member answer trips the pair gate (caught, not corrupting; identical
+exposure to clawback/LTIP). QUEUED: depends_on UI layer / seed-only pair scope as the general
+fix. THORNBRIDGE LEFT OUT (ruled ④): not a REW_BEN_038 PMI-ticker — its exclusion correctly
+surfaces its own incoherence (premium entries without the PMI tick); demo-data cleanup queued
+(tick PMI deliberately, then answer composition — that order, or the pair fires). CLEANUP
+(ruled ⑤): inert grade-A anchor_provenance entry for the retiree STRIPPED (register row stays
+as lineage). SPUN-OUT METRICS (queued, not built): excess/underwriting type (moratorium vs
+MHD); family/children cover (maps to tier work); EAP-via-PMI (belongs in an EAP metric);
+out-patient limit/tier (depth sub-question). Also queued: config<->question-bank coherence gate.
+VERIFIED: throwaway scratchpad/t27 — qa_reseed 9/9, run_gates 11/11 with the staged config via
+LUMI_MP_CONFIG (served file untouched, 0-line diff — the r3sw7 doctrine held by construction),
+render proof n=130/answered:false/7 bars on-share/old 404. LIVE (backup
+lumi.db.bak_pre_r3sw8_pmicomp_20260719): answers 232,490; post-write match EXACT (0 differing
+cells vs throwaway, history 220, changelog 2, served config == staged copy byte-equal);
+re-aggregated 944 payloads; provably-fresh :8060; live render re-verify PASS; post-write
+run_gates 11/11 + qa_reseed 9/9; full suite re-run after the provenance strip. NOTE (process,
+disclosed): the first post-write match block died at the provenance-strip assert (entry nested
+under 'provenance', not top-level) BEFORE any match check ran — the match was then run
+genuinely, not assumed from the earlier green render. Commit alongside this entry.
+
+## Applicable-base mechanism — the durable N/A-not-on-graph template (r3sw9 mechanism build, applied 19 July 2026)
+THE MECHANISM (deferred from r3sw8 ②, built at the sweep as ruled): data/applicable_bases.json —
+a metric DECLARES its applicable base; the graph, n and every payload consumer render over it.
+Two modes: 'conditioned' (rows exist only for the base — r3sw1/r3sw8 seed pattern; the
+declaration adds the member-facing caption, aggregation untouched, enforcement = the subset_orgs
+pair + tier-2d arming) and 'answerer_only' (declared na_options leave the block AT AGGREGATION:
+out of n, out of the bars, block carries excluded_na; declarations are RULED per metric because
+they change rendered distributions; re-aggregate after declaring). Surfaces: card footer
+(card.js base-note), metric-detail header + one-pager masthead (app.js), all reading a new
+card 'base' field from assemble_card. LUMI_AB_CONFIG path override baked in from day one
+(r3sw7 doctrine — gate servers/staged runs never read the served copy). qa_release VALIDATOR:
+every declaration must name an active metric, a known mode, real option labels
+(answerer_only) or an active parent (conditioned) — a typo'd declaration fails the gate
+loudly instead of silently no-opping at render (the banned failure class). FIRST DECLARATION:
+REW265_BEN_PMICOMP (conditioned, 'PMI-holding organisations') — the r3sw8 pilot chart now
+carries the caption from config; help_text keeps the assumed-universals copy.
+VERIFIED: answerer_only proven end-to-end on a SCRATCH db + staged config (REW263_BEN_DENTAL
+test declaration: n 220 -> 93, excluded_na 127, no N/A bar, remaining bars re-percentage to
+100) — scratch only, NOT shipped; shipped config declares only the conditioned pilot.
+BYTE-NEUTRALITY proven: undeclared + conditioned metrics' payloads identical to the live
+store. run_gates 11/11 on the mechanism code (validator live). Browser-verified on :8060
+v422: 'All peers · n=130 · of PMI-holding organisations'. The N/A-INVENTORY (80 true-N/A
+metrics enumerated; DK options are the separate blanket-DK diff; 'Varies'-type options stay
+on-graph) is presented for per-metric rulings — every ruled metric becomes a declaration;
+NO seed or declaration writes beyond the pilot until ruled. Commit alongside this entry.
+
+## N/A sweep step 1 — the (b) batch: 29 simple re-percentages live (r3sw10, ruled + applied 19 July 2026)
+ONE RENDER DIFF, NO SEED CHANGE (asserted): the 29 ruled (b)-class metrics from the r3sw9
+inventory declared answerer_only in data/applicable_bases.json — each metric's N/A-type option
+leaves the bars AND the denominator at aggregation, remaining options re-percentage over the
+applicable base, excluded_na carried, base caption on all three n-surfaces. ANSWERS TABLE
+BYTE-IDENTICAL through the entire live chain (sha256 pinned before the config write, re-verified
+after suite — render-layer only, exactly as ruled). VERDICT STATUS UNCHANGED: no polarity/
+mp-config/unbenchmarked flags touched — suppressed metrics stay suppressed, now on honest bases.
+HEADLINERS: FERTROUTE 220 -> n=22 (198 excluded — ACCEPTED honest thin base, the only n<30);
+GOV_UMBRELLA -> 137; ENHANCEDVR -> 142; REM_PAY_001 -> 108; EARLYCAREER -> 164; shift cluster
+-> 183 (x3); guaranteed-hours pair -> 190 (x2); SHAREPLAN -> 181; REC_CURRENCY -> 175. Bespoke
+captions where the base is nameable, generic 'organisations where this applies' elsewhere.
+CAR_BN_02 (the roster's one multi-select) keeps independent per-option shares by design.
+RULED ③: REW263_TIME_IVF ships in-batch and the exclusion REVEALS a near-dead signal ('None'
+99.5%, n=210) — QUEUED for deliberate retirement-review, NOT auto-delete (fertility is
+sensitive/growing; 99.5% None may be worth showing precisely to highlight rarity).
+VERIFICATION-LAYER FIXES (ruled ②, ride the diff): ① qa_engine_audit L2's independent
+recompute now applies declared exclusions (ab_apply, env-or-served config path) before
+comparing — without it every declared metric read as FALSE DRIFT (caught on the first
+throwaway suite: EARLYCAREER/ENHANCEDVR ref-220-vs-prod mismatches); provably no-ops when no
+answerer_only declarations are served. ② The before/after checker wrongly asserted sum-to-100
+on the multi-select — checker corrected, mechanism was right (per-option pct = count/n
+verified for all 29).
+VERIFIED: throwaway — all 29 before/afters EXACT (n drops by excluded, N/A bars gone,
+selects sum to 100), answers byte-identical, qa_reseed 9/9, run_gates 11/11 with the staged
+config via LUMI_AB_CONFIG (served file untouched until this approved write), declaration
+validator 30/30. LIVE: served config == staged byte-equal; re-aggregated 944 payloads;
+provably-fresh :8060; render re-verify PASS on a 6-metric sample incl. FERTROUTE
+n=22/198-excluded and the untouched conditioned pilot; post-write run_gates 11/11.
+QUEUED BEHIND: (a) families as per-family gated diffs (share-plan first; DEFERRAL/CICOVER/
+RED_TERM_03 seed repairs are prerequisites); IP-family diagnosis-first (BEN_038-vs-BEN_046
+authority conflict); TIME_IVF retirement-review; presence-gate minting for business-need-car
++ recognition families ((a)-upgrades). Commit alongside this entry.
+
+## Share-plan family — coherence repair + first (a)-family conditioning (r3sw11, ruled + applied 19 July 2026)
+THE COHERENCE GATE WORKED (diagnostic-first, as ruled): the sweep's 'cleanest family' was NOT
+clean — SHAREPART was (0/0 vs any-plan 43), but SAYEDISC held 12 SIP-only orgs all on '20%
+(maximum)' (engine-modal artifact), SIPELEM contradicted BOTH directions (16 SAYE-only orgs
+with fabricated SIP elements + 6 real SIP operators saying 'No SIP operated'), and EMICSOP
+carried a dual-authority conflict: its own 'no share capital' (28) vs the parent's 'no shares'
+(39), incl. 6 orgs claiming EMI/CSOP with no share capital and 3 plan operators claiming no
+capital — impossible both ways.
+REPAIR (ruled ①③, 77 rows ALL UPDATEs, answers pinned 232,490, seed-only, per-cell manifest):
+SAYEDISC 12 -> N/A (base -> SAYE-side 31); SIPELEM 16 -> 'No SIP operated' + the 6 operators
+seeded INCIDENCE-MATCHED to the 12 legit operators' element mix (diff8 pattern, no flat spike;
+per-element counts assert-matched); EMICSOP per ruling ② PARENT AUTHORITY WINS (one-authority
+principle + low blast radius): 27 -> N/A, 16 -> 'Neither'; post EMI 24/CSOP 11/Both 6/Neither
+140/N/A 39 — the two no-share-capital encodings ALIGN EXACTLY at 39. ALL FOUR CONTRADICTION
+CLASSES ZERO post-repair, asserted pre-commit and RE-VERIFIED ON LIVE post-write.
+CONDITIONING (ruled ⑤): 4 answerer_only declarations — SHAREPART 'of organisations operating
+a share plan' (43), SAYEDISC 'offering SAYE' (31), SIPELEM 'operating a SIP' (18 — ACCEPTED
+thin base, ruled ④: honest 18 beats the distorted 28 that included 16 fabrications; FERTROUTE
+precedent), EMICSOP 'with share capital' (181). TWO NEW PAIR SELECTORS (r3sw5/r3sw8 shape):
+child_value_not (substantive set = non-N/A answers, token-aware for multi-select terminals)
++ parent_value_in (type sub-bases: SAYE-side = parent in {SAYE, Both}, SIP-side {SIP, Both}).
+4 subset pairs live in the freeze gate; NEGATIVE-PROVEN: SIP-only-with-discount,
+SAYE-only-with-elements, no-shares-with-EMI each hard-fail PAIR-INCOHERENCE rc=1.
+DISCLOSED WINDOW: the pairs were hot in the working tree against unrepaired live data during
+the build (a live gate run pre-write would have honestly redded) — r3sw5-pattern single-session
+window, closed by this write.
+VERIFIED: throwaway scratchpad/t30 — repair exact, conditioned before/afters exact
+(43/31/18/181), qa_reseed 9/9, run_gates 11/11, three negative tests fail closed. LIVE (backup
+lumi.db.bak_pre_r3sw11_shareplan_20260719): post-write match EXACT (0 differing cells vs
+throwaway; answers 232,490; served applicable_bases == staged, 34 declarations); re-aggregated
+944; provably-fresh :8060; 4 bases + captions render correct, no N/A bars; ZERO-CONTRADICTION
+RE-VERIFY ON LIVE (all four classes, both directions); post-write run_gates 11/11. NOTE
+(process, disclosed): the first post-write config assert used the wrong expected count (38 vs
+the true 34 — reporter arithmetic, not a write defect); the comparison was re-run genuinely:
+served == staged byte-equal at 34. Commit alongside this entry. NEXT (a)-families per the
+queue: EWA pair (parent REW264_WEL_EWA), insured-benefits cluster behind the IP-authority
+diagnosis; DEFERRAL repair is the largest outstanding (141 contradictions).
+
+## EWA family — first purely-declarative (a) conditioning, OFFER-OR-PILOT grain (r3sw12, ruled + applied 20 July 2026)
+GRAIN RULED: Piloting COUNTS as offering — a piloting org has a live scheme with a real fee
+model and real caps; pilots are the leading edge a benchmark should include for a growing
+benefit. Base = 77 (Yes-all 44 + Yes-hourly/frontline 22 + Piloting 11), captions 'of
+organisations offering or piloting earned wage access'. COHERENCE GATE (diagnostic-first):
+CLEAN at the ruled grain — 0/0 both directions on BOTH children (EWAFEES, EWACAP); the 11
+contradictions at the offer-only grain were exactly the piloting orgs, resolved by the grain
+ruling rather than a repair. is_na flags clean (no RED_TERM-class mis-flags). Parent
+REW264_WEL_EWA is a SINGLE clean authority: the two broader options elsewhere (WEL_SUP
+'Salary advance OR EWA' 118 — a bundled either/or, structurally unusable; WEL_BMAP 'Salary
+Advance Scheme' 40 — a distinct looser product) are different concepts, NOT an EMICSOP-class
+conflict. ZERO REPAIR — the first (a) family to condition purely declaratively: 2
+answerer_only declarations + 2 subset pairs reusing the r3sw11 selectors verbatim
+(child_value_not 'Not applicable' + parent_value_in [Yes-all, Yes-hourly, Piloting]); no new
+vocabulary. ACCEPTED AS-IS (noted, not repaired): the 11 piloting orgs' uniform 'Subscription
+model' on EWAFEES — uniform-because-true (pilots cluster on provider subscriptions), unlike
+the share-plan cross-contamination. QUEUED: the WEL_SUP 32-org EWA under-tick (the wellbeing
+inventory predates the 2026.4 EWA question) -> cross-book coherence queue.
+BEFORE/AFTERS: EWAFEES n 220 -> 77 (excl 143): employer-funded 61.0 / employee-pays 24.7 /
+subscription 14.3. EWACAP n 220 -> 77 (excl 143): no-cap 74.0 / <=50% 14.3 / other-cap 11.7.
+VERIFIED: throwaway scratchpad/t31 — before/afters exact, ANSWERS BYTE-IDENTICAL (declarative-
+only asserted by sha256), qa_reseed 9/9, run_gates 11/11 (pairs live, declaration validator
+36/36), negative test fails closed (a non-offerer with a fee answer -> PAIR-INCOHERENCE rc=1).
+LIVE: served applicable_bases == staged byte-equal (36 declarations); answers hash pinned
+BEFORE the config write and re-verified AFTER the full chain — byte-identical, n=232,490;
+re-aggregated 944; provably-fresh :8060; both cards serve n=77/excl=143 with the ruled
+caption, no N/A bars; ZERO-CONTRADICTION RE-VERIFY ON LIVE (both children 0/0);
+post-write run_gates 11/11. Commit alongside this entry. REMAINING QUEUE: insured-benefits
+cluster (behind the IP-authority diagnosis), DEFERRAL repair (141), presence-gate minting
+(recognition, business-need car), blanket-DK diff, TIME_IVF retirement-review.
+
+## Blanket-DK strip — the no-DK rule enforced platform-wide (r3sw13, ruled + applied 20 July 2026)
+CLASSIFY-DON'T-BLANKET-STRIP (69 metrics, 70 DK-type options, all ruled): 62 STRIPPED (61 (a)
++ PROP_202fecc6 moved from keep — its explicit 'No' already carries not-tracking); 3 KEEPS as
+ruled exceptions (PROP_674db2fc 'Provided but access not tracked', PROP_e1d1e604 'Not measured
+/ not tracked', PROP_3d4fc4e7 'Not measured' — substantive practice statements; not-measuring
+IS the finding) + PROP_634adacd 'Not measured / varies widely' (neither half DK, optional
+relabel later); 1 ROUTED (REW_BEN_SICK_005 -> the N/A programme, OSP-exists conditioning,
+joins the sick/insured family behind the IP diagnosis); 3 SPECIALS redesigned (RED_PAY_01
+merged option -> plain 'Other'; RED_TERM_01 + RED_NOTICE_01 -> plain 'Not applicable' is_na,
+RED_NOTICE_01's r3sw10 answerer_only declaration RELABELLED ATOMICALLY — na_options
+['Not applicable'], asserted against post-edit labels, validator green).
+THE STRIP: 629 answers N-EXCLUDED (never redistributed), history-snapshotted; 62 options
+removed/replaced in the BANK (design change — future respondents can't pick DK), scoring
+na_codes/option_scores pruned, question_version bumped; the matcher catches label variants
+('Unsure', 'Not sure', 'not tracked'), not just the literal. Answers 232,490 -> 231,861.
+Shape PROVABLY INVARIANT (pure n-exclusion scales all remaining shares uniformly — no modal
+or ordering change anywhere); GATE-NEUTRAL BY CONSTRUCTION (no ordering in the register
+contains a DK label — verified globally; zero tier-1 frozen overlap); zero positionability
+flags. PLATFORM-WIDE ASSERT: no active Reward question carries a DK-type label outside the
+ruled exceptions — enforced in the migration AND re-asserted on live post-write.
+TWO GUARD CATCHES (disclosed, both the guards working): ① the keep ruling protects the
+OPTION, not the metric — PROP_e1d1e604 holds a ruled keep AND a ruled strip; the first
+throwaway apply correctly ABORTED on a too-coarse metric-level assert; fixed to option-level
+(keep_options in the scope file), fresh throwaway, keep verified byte-unchanged (still on
+graph at 14). ② the strip tripped qa_engine_audit's REGEN_WHITELIST lineage pins
+(EXT_REW_GAP_013, ALLOW_03 — documented seeded outputs include DK); extended the Diff-3
+supersession pattern CONDITIONALLY: a pin drops a stripped label from its expectation ONLY
+when that label is actually gone from the store, keyed off the committed ruled-scope file —
+throwaway logs exactly the two ruled adjustments, live pre-write audit exits 0 with ZERO
+adjustments (no red window), and any UNRULED deletion still fails.
+VERIFIED: throwaway scratchpad/t33 — apply exact, qa_reseed 9/9, run_gates 11/11,
+declaration validator green on staged. LIVE (backup lumi.db.bak_pre_r3sw13_dkstrip_20260720):
+post-write match EXACT (0 answer cells AND 0 question-bank rows differing vs throwaway;
+231,861); served applicable_bases == staged; LIVE BANK-SWEEP DK-FREE re-assert green; render
+spot-check PASS (no DK bars, keeps on-graph, RED_PAY_01 n=154 with plain 'Other');
+re-aggregated 944; provably-fresh :8060; post-write run_gates 11/11 (2 ruled pin adjustments
+logged). Commit alongside this entry. QUEUE: sick/insured family (SICK_005 route + IP
+diagnosis), DEFERRAL repair (141), presence-gate minting, TIME_IVF retirement-review,
+PROP_634adacd optional relabel.
+
+## PMI eligibility-by-level — haver conditioning + ruled re-steepen (r3sw14, ruled + applied 20 July 2026)
+COHERENCE GATE FIRST (standing (a)-family discipline): NOT clean — 48 CICOVER-class (any-Yes
+orgs NOT REW_BEN_038 PMI-havers) + 48 DEFERRAL-class (havers all-No), SYMMETRIC: the old
+seed's any-Yes set matched the haver COUNT (130) but not the SET — the pre-r3sw6 presence-map
+defect class that broke the retired PMIMH metric. THE RULED HAVER RE-SEED IS THE REPAIR (both
+classes vanish by construction); the 48/48 counts pinned as a pre-apply assert.
+RE-SEED (ruled cliff, both fixes one diff): Board 95 / Director 90 / Head-of 80 / SrMgr 70 /
+Manager 20 / Supervisor 2 / Frontline 0 over the 130 havers -> served 95.4/90.0/80.0/70.0/
+20.0/2.3/0.0. Implemented as TOP-DOWN PREFIX DEPTHS latent-ranked descending (depth hist
+0:6/1:7/2:13/3:13/4:65/5:23/6:3) — G10 monotonicity 1.0 + depth-latent hold by construction.
+The SrMgr->Manager cliff (70->20) is the by-level shape correction (Diff-13 class). Frontline
+0% is a REAL '0% eligible' row on the graph, not an exclusion. ACCEPTED CONSEQUENCE (ruled):
+the Board-95% line leaves 6 havers all-No ('offers PMI, no standard level eligibility') —
+discretionary/grandfathered bucket, honest at n=130.
+CONDITIONING: conditioned-mode declaration (rows exist ONLY for havers; non-havers' 630 rows
+deleted — answers 231,861 -> 231,231), caption 'of PMI-holding organisations', subset pair
+child_any_answer ⊆ REW_BEN_038 PMI tick (r3sw8 composition vocabulary verbatim). FAMILY-SET
+ASSERT: composition base == havers EXACTLY (130=130) — the PMI family (composition, by-level,
+premium-modulo-Thornbridge) now conditions on ONE authority. Verdict stays suppressed (Diff-14
+unbenchmarked flag asserted-untouched; EST shape renders, no market position). NEGATIVE-PROVEN:
+a non-haver matrix row -> PAIR-INCOHERENCE rc=1. DEMO: Thornbridge's all-No rows were BULK-SEED
+(2026-06-11, not genuine entries) — deleted; not a ticker -> outside the base, sees peer chart
+n=130/answered:false; consistent with r3sw8 ④ (demo cleanup queued: tick PMI first, then answer).
+DISCLOSED WINDOW: pair hot in the working tree against the pre-repair live 48/48 during the
+build (r3sw11-pattern single-session window, closed by this write).
+VERIFIED: throwaway scratchpad/t34 — apply exact, qa_reseed 9/9 (G10 explicitly green),
+run_gates 11/11, negative test fails closed, demo recompute proven. LIVE (backup
+lumi.db.bak_pre_r3sw14_pmilevels_20260720): post-write match EXACT (0 cells vs throwaway,
+231,231; served applicable_bases == staged, 37 declarations); ZERO-CONTRADICTION RE-VERIFY ON
+LIVE: 48/48 -> 0/0 (answerers==havers exactly, zero non-haver rows; residual = the ruled 6
+all-No havers); re-aggregated 944; provably-fresh :8060; live cliff serves exactly
+95.4/90.0/80.0/70.0/20.0/2.3/0.0 with the base caption; post-write run_gates 11/11. Commit
+alongside this entry. QUEUE: sick/insured family (SICK_005 + IP diagnosis), DEFERRAL repair
+(141), presence-gate minting, TIME_IVF retirement-review, demo-data cleanup (Thornbridge PMI
+tick), PROP_634adacd relabel.
+
+## PMI sector-gate — parent re-gate + atomic family re-condition (r3sw15, ruled + applied 20 July 2026)
+THE FLAT ~59% PMI-HAVER SEED WAS WRONG BOTH WAYS — over-included the charity/public tails AND
+under-included the large-skewed commercial cohort. Sourced (r3sw15 research, CIPD H&W 2025
+Table 2, grade B, adversarially verified from CIPD's primary PDF, corroborated by CIPD 2022 +
+gov.uk frameworks) and RULED: sector-gate REW_BEN_038 (PMI-exists) to Commercial 77% (CIPD
+large-private 250+, COHORT-MATCHED — not all-private 61%, same principle as HOL_001/virtual GP),
+Charity 24%, Public 17%, Education 40% (EST — mixed state/private, no clean CIPD split).
+HAVER MOVEMENT 130 -> 153 (the honest arithmetic of flat-77% commercial = 144/187, NOT the ~139
+blend headline): +27 commercial gated-in (highest-latent non-havers), -3 charity + -1 public
+trimmed (lowest-latent havers), 126 retained. Post-gate rates on target: commercial 144/187=77,
+charity 2/8=25, public 3/15=20, education 4/10=40.
+ATOMIC FAMILY RE-CONDITION (all three PMI children condition on REW_BEN_038 — parent move +
+children move together, NO parent-first-then-children lag): composition (r3sw8) additive —
+retain 126 unchanged, delete 4, add 27 incidence-matched to the ruled prevalences (diff8, no
+spike; served 77.8/49.7/60.8/41.8/26.8/22.9 vs ruled, <0.5pp). by-level (r3sw14) additive —
+retain 126 depths, delete 4, add 27 on the ruled cliff via depth-histogram scaled to 27
+(served 95.4/90.2/80.4/69.9/20.9/2.6/0, <1pp, G10 monotonicity 1.0). premium (r3sw6)
+RE-DERIVED over the 153 havers.
+PREMIUM RE-DERIVE PRINCIPLE (ruled ②, recorded as standing): premium's additive first pass
+drifted the medians +£35-85 (~4%) because retained stayed on the old 130-rank multiplier while
+new used the 153-rank; since SINGLE RENDERS A VERDICT vs the ruled £800 anchor, premium
+full-re-derives the r3sw6 multiplier ladder over the 153 havers (uniform [0.5,1.5] latent-ranked
+desc, £10-rounded) — restoring medians 800/1600/2000 and P25/P75 at 1.25/0.75x EXACTLY by
+construction. Retained-haver premium churn ACCEPTED (all seed); Thornbridge's GENUINE
+£680/£1,200/£1,600 untouched. STANDING PRINCIPLE: re-derive only where an anchor must be held,
+leave the rest additive. Served median incl. Thornbridge 795/1590/1990 (the £5-10 one-org pull,
+inside the r3sw6 one-rank quantum).
+COHERENCE GATE — ZERO MISMATCH, ALL THREE (asserted pre-commit AND re-verified on live):
+composition answerers == 153 havers EXACTLY; by-level == 153 EXACTLY; premium == 153 havers ∪
+{Thornbridge} (the documented non-haver with genuine entries, demo cleanup still queued). The
+count-matched-but-set-mismatched defect (just fixed on by-level at r3sw14) CANNOT recur — the two
+family subset pairs read the moved REW_BEN_038 live and FAIL CLOSED (a non-haver given a
+composition or by-level row -> PAIR-INCOHERENCE rc=1, negative-proven). Verdict statuses
+UNTOUCHED (composition/by-level unbenchmarked EST; premium split-verdict partner/family
+suppressed). Disclosed pre-write window (pairs hot vs the pre-regate parent until the write).
+VERIFIED: throwaway scratchpad/t35 — coherence exact, before/afters on ruled targets, premium
+haver-median exact, negative tests fail closed, qa_reseed 9/9, run_gates 11/11. LIVE (backup
+lumi.db.bak_pre_r3sw15_pmisectorgate_20260720): answers 231,231 -> 231,484 (+253: parent 31
+edits value-only, +27 orgs x(1 comp +7 bylev +3 prem)=+297, -4 orgs x11=-44); post-write match
+EXACT (0 cells vs throwaway; served config == staged); re-aggregated 944; provably-fresh :8060;
+LIVE ZERO-MISMATCH COHERENCE RE-VERIFY across all three children (composition 153, by-level 153,
+premium 154); post-write run_gates 11/11. Commit alongside this entry. QUEUE: sick/insured family
+(SICK_005 + IP-authority diagnosis), DEFERRAL repair (141), presence-gate minting, TIME_IVF
+retirement-review, Thornbridge demo cleanup (PMI tick), PROP_634adacd relabel.
+
+## DEFERRAL parent re-anchor — listing/FS gate + child re-condition (r3sw16, ruled + applied 21 July 2026)
+THE PARENT WAS THE MIS-SEEDED AUTHORITY (not the child — unlike share-plan). REW_INC_069 claimed
+82% defer (182 orgs), provably FLAT across sector and size, with 36 orgs "deferring" that have no
+bonus scheme. Sourced (r3sw16 research: PRA/FCA SYSC 19D grade-A regulatory anchor + Deloitte FTSE
+grade-C + CIPD/IA) and RULED: deferral is a LISTED-COMPANY / REGULATED-FS phenomenon —
+re-anchored on a LISTING+FS GATE, NEVER size. FS industry 70% / Listed PLC 90% / PE-backed 35% /
+general (private/subsidiary/public/charity/mutual) 12% (EST). HAVER-Yes 182 -> 53 DEFERRERS (24%,
+central scenario), concentrated FS 6 / listed 27 / PE 4 / general 16. SIZE PROVABLY OUT OF THE
+MECHANISM: the gate reads ownership_type + industry only (asserted); cross-check by ownership
+(PLC 82% deferring / Private 18% / Subsidiary 23%) confirms ownership drives it; the emergent
+91%-large skew is because listed cos ARE large, not a size gate. Within each segment: PREFER orgs
+with real child vehicle detail (retain the coherent), then latent-ranked.
+SUB-CASES RESOLVED BY THE GATE: all 41 no-bonus orgs -> No-deferral (the 36 parent-Yes-no-bonus
+absurdities gone); Varies (15) -> 6 Yes / 9 No; 3 reverse (parent-No, child-substantive) -> all Yes.
+Parent Yes-flavour narrow/exec-concentrated (Exec 24 / Senior 21 / Wider 8).
+CHILD RE-CONDITION (REW263_INC_DEFERRAL now CONDITIONED on the deferrer set): all old rows
+deleted, one per deferrer — 25 retained keep their real vehicle, 28 new incidence-matched to the
+retained vehicle spread and SECTOR-PLACED (shares/multi-year to FS/listed) — FIXES the child's FS
+BLIND-SPOT (FS deferrers 1 -> 6). Served vehicle dist 1yr 15 / multi-year 17 / shares 21.
+TWO-LEVEL CHAIN COHERENCE (asserted pre-commit + re-verified on live): parent-Yes set == child
+answerers == 53 EXACTLY; zero parent-Yes with no-bonus; zero Varies; child ⊆ parent-Yes ⊆
+has-bonus (both levels). Two new subset pairs (child_any_answer ⊆ parent_value_in Yes-set;
+child_value_not 'No deferral' ⊆ grandparent parent_value_not 'None') — NEGATIVE-PROVEN both ways.
+Verdict status unchanged (both Practice — prevalence, no market verdict).
+PROCESS CATCH (disclosed, the gated flow working): the FIRST live write passed all its own asserts
+(53 deferrers, distribution exact, chain locked, suite 11/11) but the post-write throwaway match
+found 4 differing cells — a NET-ZERO flavour swap (2 orgs Exec<->Wider x2, distribution identical)
+caused by the flavour-retention step ITERATING OVER A SET (non-deterministic order across
+processes). The live state was coherent and correct but NOT REPRODUCIBLE. Per discipline the
+non-reproducible write was NOT accepted: the migration was fixed (sort the iteration —
+deterministic, verified by two independent runs byte-identical), live RESTORED from
+lumi.db.bak_pre_r3sw16_deferral_20260721, and the FIXED migration re-applied. Standing lesson:
+NEVER iterate a set where the output depends on order — sort with a hash tiebreak.
+VERIFIED: throwaway — coherence exact, qa_reseed 9/9, run_gates 11/11, negative tests fail closed.
+LIVE (re-run, deterministic): post-write match EXACT (0 cells vs throwaway; served config ==
+staged, child conditioned); answers 231,484 -> 231,317 (child 220 rows -> 53); re-aggregated 944;
+provably-fresh :8060; LIVE TWO-LEVEL CHAIN RE-VERIFY (parent-Yes==child==53, zero no-bonus-defer,
+chain both levels); post-write run_gates 11/11. Commit alongside this entry. QUEUE: sick/insured
+family (SICK_005 + IP-authority diagnosis), presence-gate minting (recognition, business-need car),
+TIME_IVF retirement-review, Thornbridge demo cleanup, PROP_634adacd relabel.
+
+## IP-authority resolution + sick/insured cluster conditioning (r3sw17, ruled + applied 21 July 2026)
+IP AUTHORITY RULED: REW_BEN_046 (dedicated structured "Does your org offer income protection?"
+No/Short/Long/Both, 80 havers, CIPD H&W 2025) is THE income-protection authority; REW_BEN_038's
+generic checklist "Income protection" tick (62) is the UNDER-REPORT DEFECT (same class as the
+WEL_SUP EWA under-tick — a 20-item inventory systematically under-counts vs a dedicated question).
+The disagreement was 92 orgs GROSS (not the 18 net): 55 under-ticked (046-haver, 038-not) + 37
+over (038-tick, 046=No). The IP-detail children leaned ~2x to 046 (047/GIPREHAB 54 vs 29; 048
+80 vs 43) — the tiebreaker.
+PART 1 — 038 ALIGNED to 046: +55 IP tokens / -37 IP tokens -> 038 IP-haver 62 -> 80 == 046,
+disagreement to ZERO. PMI-SAFEGUARD (038 is the r3sw15 PMI parent — HARD ABORT on any PMI move):
+the IP-token edit touches only the IP position in each 038 multi-value, NEVER the PMI token —
+PROVEN: PMI-haver set BYTE-IDENTICAL pre/post (153==153), both PMI family subset pairs
+(composition, by-level) re-verify ⊆ PMI-haver clean. The r3sw15 sector-gate is UNDISTURBED.
+IP tick proven ORTHOGONAL to PMI tick.
+PART 2 — CLUSTER CONDITIONED on 046 (repair-then-condition; the children were over-seeded):
+REW_BEN_047 (waiting period) 38 CICOVER cleared + 26 incidence-matched -> 80; REW_BEN_048
+(salary replacement) 65 CICOVER cleared (was 145 substantive, badly over-seeded) -> 80;
+REW264_HLT_GIPREHAB 38 cleared + 26 seeded -> 80. Each == the 80 046-havers exactly.
+SICK_005 (OSP eligibility-rules governance) conditions on OSP-EXISTS (SICK_001 enhanced/
+combination, 119 base) — a SEPARATE parent, NOT IP. SUBSET not equality (ruled): answerers
+110 ⊆ 119 — documentation-maturity is a real governance filter; forcing equality would fabricate
+answers. The 4 OSP-haver DKs stripped + the DK option removed from the bank (folds the
+r3sw13-routed SICK_005 DK; the 8 non-OSP DKs were the N/A-in-disguise, resolved by conditioning).
+Four new subset pairs (3 IP children ⊆ 046 parent_value_not 'No'; SICK_005 ⊆ SICK_001
+parent_value_in enhanced/combination) — NEGATIVE-PROVEN. Verdicts unchanged (children Level,
+EST-suppressed).
+VERIFIED: throwaway scratchpad/t37 — PMI-untouched proof 153==153, coherence exact, qa_reseed
+9/9, run_gates 11/11, negative tests fail closed both pairs. LIVE (backup
+lumi.db.bak_pre_r3sw17_ipcluster_20260721): post-write match EXACT (0 cells vs throwaway; served
+config == staged); PMI-UNTOUCHED RE-VERIFY ON LIVE (PMI-set pre==post 153==153, both family
+pairs ⊆ PMI-haver — the safeguard on shipped work); cluster coherence 038-IP==046==80, each IP
+child==80, SICK_005 110⊆119, DK gone; re-aggregated 944; provably-fresh :8060; post-write
+run_gates 11/11. Commit alongside this entry. QUEUE: presence-gate minting (recognition,
+business-need car), TIME_IVF retirement-review, Thornbridge demo cleanup, PROP_634adacd relabel.
+
+## PROP_634adacd option relabel — not-measured harmonisation (r3sw18, ruled + applied 21 July 2026)
+RELABEL: PROP_634adacd's kept option "Not measured / varies widely" -> "Not measured", harmonising
+to the canonical label on the other kept not-measured options (PROP_e1d1e604 "Not measured / not
+tracked", PROP_3d4fc4e7 "Not measured"). Option CODE (NOT_MEASURED_VARIES_WIDELY) + is_na + order
+unchanged; question_version v2.0 -> v2.1.
+STORAGE FINDING (surfaced before write, ruled): the bank stores answers by LABEL, not code (verified
+— the 7 stored values are all option-label strings). So "relabel the option" and "answers
+byte-identical" are MUTUALLY EXCLUSIVE for this metric: leaving the 2 answers byte-identical would
+orphan them (value 'Not measured / varies widely' matches no option label -> dropped from the
+distribution). David ruled RELABEL + RETAG the 2 answer values to keep them mapped — distribution
+unchanged, mapping preserved, but NOT answers-byte-identical (2 cells change to track the label).
+DISTRIBUTION BYTE-IDENTICAL BY CODE (the meaningful invariant): {0:8, 0.1-1.9:25, 2.0-2.9:42,
+3.0-3.9:50, 4.0-4.9:23, 5.0+:16, NOT_MEASURED_VARIES_WIDELY:2} pre==post; the 2 answerers still map
+to the option (now rendered "Not measured"). No re-seed, no verdict change. L1-safe (PROP_634adacd
+is RESEED-whitelisted / DB-origin, so the 2-cell retag doesn't trip the CSV-diff).
+VERIFIED: throwaway — distribution byte-identical by code, non-target book identical, option reads
+"Not measured", 2 answers mapped, run_gates 11/11. LIVE (backup
+lumi.db.bak_pre_r3sw18_relabel_20260721): post-write match EXACT (0 cells vs throwaway);
+NON-TARGET BOOK byte-identical vs pre-write (only PROP_634adacd's 2 answers + its option label
+changed); rendered label "Not measured", version v2.1; re-aggregated 944; post-write run_gates 11/11.
+Commit alongside this entry. The not-measured family is now label-consistent. QUEUE: presence-gate
+minting (recognition, business-need car), TIME_IVF retirement-review, Thornbridge demo cleanup.
+
+## PMI eligibility-rules redesign — 6-opt sprawl -> 3-opt conditioned EST (r3sw19, ruled + applied 21 July 2026)
+REW_BEN_044 "What are the PMI eligibility rules?" was a 6-option MULTI_SELECT (effectively single —
+0 orgs picked >1) over all 220 orgs, "Not offered" (37.3%) the biggest bar, grade/level under-
+weighted (25%); it ALSO rendered a verdict (direction=higher_is_better) AND was the standalone
+62.8% PMI-offer MARGINAL — with broken coherence (31 non-havers carried a rule, 46 PMI-havers said
+"Not offered"). REDESIGN (ruled ①): type multi_select -> single_select; options 6 -> 3 (All
+employees / Grade/level restricted / Service length requirement); post-probation FOLDS to Service,
+contract-type dropped as noise, "Not offered" is NOT an option (non-havers leave via conditioning);
+CONDITIONED on the 153 PMI-havers (r3sw15 sector-gated set — the PMI-family authority); grade-
+dominant EST re-weight Grade/level 138 (90%) / All 12 (8%) / Service 3 (2%) — consistent with the
+by-level cliff (PMI is seniority-gated). VERDICT FLIP (ruled ②): higher_is_better -> unbenchmarked
+EST (fixes the hidden inconsistency — it showed "No signal" yet rendered a verdict). MARGINAL
+RETIREMENT (ruled ③): the flat 62.8% offer marginal RETIRED (generator_rules._retired_marginals)
+— SUPERSEDED by the sector-gated 153-haver base. STANDING PRINCIPLE reaffirmed: a sector-honest
+seed supersedes a flat all-UK marginal; the PMI family now has ONE offer authority, not two.
+L1-safe (RESEED-whitelisted), generator pins unaffected (register 249, pf_count 7). Dual-config
+atomic (r3sw7 path-isolation): applicable_bases (conditioned) + market_position_config
+(unbenchmarked). Subset pair REW_BEN_044 ⊆ PMI-haver added.
+PMI-FAMILY UNTOUCHED BY CONSTRUCTION: the migration touches ONLY REW_BEN_044 — never the parent
+REW_BEN_038 — so the 153-haver set + composition/by-level/premium bases are inherently unmoved;
+asserted pre-commit AND re-verified on live (PMI-haver 153==153, composition 153, by-level 153,
+premium 154 all pre==post vs the backup).
+VERIFIED: throwaway scratchpad/t39 — type single_select, answerers==153, dist 138/12/3, verdict
+suppressed, PMI-family unmoved, qa_reseed 9/9, run_gates 11/11. LIVE (backup
+lumi.db.bak_pre_r3sw19_pmieligrules_20260721): post-write match EXACT (0 cells vs throwaway;
+answers 230,794 -> 230,727); PMI-FAMILY-UNTOUCHED RE-VERIFY ON LIVE (153==153 + all children
+bases pre==post); coherence single_select / answerers==153 / 138-12-3 / suppressed; re-aggregated
+944; post-write run_gates 11/11. Commit alongside this entry. QUEUE: presence-gate minting
+(recognition, business-need car), TIME_IVF retirement-review, Thornbridge demo cleanup.
+
+## Thornbridge PMI-tick cleanup — demo org into the haver set, family 153->154 (r3sw20, ruled + applied 21 July 2026)
+THE INCOHERENCE (carried since r3sw6): Thornbridge (director@thornbridge.example, Retail/PLC/
+50-249) held GENUINE PMI premium entries (£680/£1,200/£1,600, David's own UI entries) but never
+ticked "offers PMI" in REW_BEN_038 — premiums without the scheme, the "documented exception".
+FIX (parent-move, NOT orthogonal): tick Thornbridge (REW_BEN_038, its 6 other benefit ticks
+preserved) -> PMI-haver 153 -> 154, commercial 144 -> 145. Sector-gate-SAFE: REW_BEN_038's
+PMI-share is not count-gated (no marginal/frozen), and there is no ongoing 'commercial==144'
+gate — the +1 is coherent.
+RE-CONDITION +1 (all three children are EQUALITY-conditioned answerers==havers, so Thornbridge
+MUST answer — none could be blank): premium £680/£1,200/£1,600 GENUINE, kept (the documented-
+exception RETIRED — a real haver now); elig-rules seeded 'Grade/level restricted' (the 90%
+modal); by-level seeded DEPTH-4 (board/director/head-of/senior-manager eligible, monotone
+prefix); composition seeded out-patient + physiotherapy (the two most common elements). The
+three seeds are INTERNALLY CONSISTENT (grade-restricted -> top-4 by-level -> out-patient/physio)
+and plausible for a Retail/PLC/50-249 org. Answers 230,727 -> 230,736 (+9: parent value-only,
++1 comp, +7 by-level, +1 elig; premium untouched). Brief said 250-999; the org is actually
+50-249 (corrected).
+COHERENCE-GATE AGAINST 154: all four family bases == 154 (composition, by-level, elig-rules,
+premium); the three existing pairs re-verify ⊆ 154; NEW PREMIUM PAIR ADDED (premium
+child_any_answer ⊆ REW_BEN_038 PMI) — now guardable because Thornbridge is a genuine haver,
+CLOSING THE LAST UNGUARDED FAMILY CHILD (all 4 now pair-guarded). Negative-proven: a non-haver
+given a premium row -> PAIR-INCOHERENCE rc=1. Verdicts unchanged.
+VERIFIED: throwaway scratchpad/t40 — all 4 bases == 154, premium pair fails closed, demo
+recompute shows Thornbridge answers all four (was answered:false on every one), qa_reseed 9/9,
+run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3sw20_thornbridge_20260721): post-write match
+EXACT (0 cells vs throwaway); FAMILY COHERENCE RE-VERIFY against 154 (PMI-havers 154, all 4
+bases == 154 ⊆ havers, Thornbridge a member, genuine premium preserved); re-aggregated 944;
+provably-fresh :8060; LIVE DEMO RECOMPUTE — Thornbridge answers all four PMI charts; post-write
+run_gates 11/11. Commit alongside this entry. The PMI family is now fully coherent and fully
+pair-guarded. QUEUE: presence-gate minting (recognition, business-need car), TIME_IVF
+retirement-review.
+
+## Life-assurance multiple redesign — offer nudge + 1×-fix + answerer_only (r3sw21, ruled + applied 21 July 2026)
+PREMISE CORRECTION (recorded — the load-bearing research finding): the "death-in-service is offered
+by ~85-90%" intuition is LIVES-COVERED (~85% of EMPLOYEES have it, because the large employers who
+offer it hold most headcount), NOT the EMPLOYER offer rate (~62%, CIPD Reward Feb 2026 large, grade
+B). For an org-per-row benchmark the correction is a MINOR nudge, not a rescue. Lives-vs-employers
+is the single biggest trap in this topic.
+REW_BEN_045 "life assurance multiple, main population" showed "Not offered" 44% distorting the
+multiples + 1×=0 (a defect). THREE FIXES (ruled): ① OFFER NUDGE — the 9 highest-latent "Not
+offered" orgs (all large 1000+/5000+/10000+) -> offering; offerers 123 -> 132, "Not offered" 97 ->
+88. Landed 60%/40%, NOT the 62% large-headline — the old marginal was already an SME-18.5/large-62
+blend, and the SME-50-249 orgs pull the cohort blend below 62% (the honest cohort-matched number).
+② 1×=0 FIXED — all 132 offerers re-seeded EST 10/30/30/30 (1× 13, 2× 40, 3× 40, 4×+ 39; rendered
+9.8/30.3/30.3/29.5) — 1× carries its small-but-real share, flat core, no false modal (the
+1×/2×/3×/4× split is paywalled/unsourced — grade C). ③ CONDITION + SUPPRESS — answerer_only
+excludes "Not offered" (multiples render over the 132 offerers, "Not offered" bar gone, caption
+"of organisations offering life assurance"); verdict EST-SUPPRESSED (was higher_is_better); the
+flat offer marginal RETIRED (generator_rules, superseded by the cohort-matched seed — the r3sw19
+pattern). NO EXTERNAL SUBSET PAIR (correct): REW_BEN_045 is single-select, so "Not offered" XOR a
+multiple is STRUCTURALLY guaranteed — the r3sw10 (b)-batch pattern, unlike PMI's separate-parent.
+4-ORG DISCREPANCY (note-don't-fix, ruled): REW_BEN_038 'Life assurance' tick (119) vs REW_BEN_045
+offer (132 post-nudge) — a small residual; Thornbridge is one of the discrepant orgs (ticks Life
+assurance in the inventory, "Not offered" on the multiple) — shows as a non-offerer viewing the
+offerer chart (conditioning working). Alignment QUEUED for a future coherence/demo pass.
+DUAL-CONFIG atomic (r3sw7). Answers UNCHANGED at 230,736 (all UPDATEs). VERIFIED: throwaway
+scratchpad/t41 — offer 132, 1× fixed, 'Not offered' excluded (rendered n=132), verdict suppressed,
+qa_reseed 9/9, run_gates 11/11. LIVE (backup lumi.db.bak_pre_r3sw21_lifeassurance_20260721):
+post-write match EXACT (0 cells vs throwaway); non-target book hash-identical; served configs ==
+staged; coherence offerers 132, multiple-answerers==offerers, 1×=13; re-aggregated 944;
+LIVE RENDER RE-VERIFY (n=132 over offerers, 'Not offered' excluded, verdict suppressed);
+post-write run_gates 11/11. PROCESS NOTE (disclosed): the first live render-check assert fired
+BEFORE the re-aggregate and read the stale payload (n=220) — sequencing bug, not a data fault
+(the re-aggregate + gates were green); re-verified genuinely post-aggregate. The "re-aggregate
+before serving-checks" doctrine (r3sw6) applies to inline live-write verify blocks too. Commit
+alongside this entry. QUEUE: presence-gate minting (recognition, business-need car), TIME_IVF
+retirement-review, the 4-org life 038-vs-045 alignment.
+
+## PMI excess/cost-share conditioning — 6th PMI-family child, subset (r3sw22, ruled + applied 22 July 2026)
+REW263_BEN_PMIEXCESS "what employee cost-share or excess applies to PMI" showed "Not applicable"
+56.4% distorting the cost-share distribution. THE EQUALITY-VS-SUBSET CHECK CAME BACK MESSY (the
+count-matched-set-mismatched pattern): of 154 PMI-havers only 70 reported a real excess, 84
+answered N/A, and 26 NON-havers held a real excess (CICOVER). RULED (David, subset-no-retag): the
+84 haver-unknowns are LEFT OUT of the excess-type distribution — NOT retagged to "No excess",
+because that would FABRICATE rare zero-excess generosity ("No excess" is a real minority stance,
+not a default). SEMANTIC CORRECTION recorded: a haver's "Not applicable" here is a genuine
+no-detail, and No-excess is rare-not-default — so the honest render is over the 70 who reported a
+cost-share (SUBSET), not an equality that would invent 84 "No excess" answers.
+DATA: 26 CICOVER non-haver excesses cleared -> "Not applicable" (a non-haver cannot have a PMI
+excess); the 70's distribution UNCHANGED (No excess 34/48.6% modal, per-claim 16/22.9%, per-year
+12/17.1%, co-pays 8/11.4% — no re-weight). CONFIG: answerer_only na_options=["Not applicable"],
+caption "of PMI-holding organisations reporting a cost-share" (honest to the 70-base, NOT implying
+154). Verdict already suppressed (unchanged). SUBSET PAIR: child_value_not "Not applicable" ⊆
+REW_BEN_038 PMI — the 6th PMI-family child now pair-guarded (negative-proven: a non-haver given an
+excess -> PAIR-INCOHERENCE rc=1). PMI-FAMILY-UNTOUCHED (this ADDS a child, does NOT move the
+parent): parent 154 + the 5 existing children (composition/by-level/eligibility-rules/premium)
+all unmoved — asserted pre-commit AND re-verified on live vs the backup.
+VERIFIED: throwaway scratchpad/t42 — subset 70 ⊆ 154, N/A excluded (render n=70), family unmoved,
+qa_reseed 9/9, run_gates 11/11, negative test fails closed. LIVE (backup
+lumi.db.bak_pre_r3sw22_pmiexcess_20260722): post-write match EXACT (0 cells vs throwaway; answers
+unchanged 230,736); PMI-FAMILY-UNTOUCHED RE-VERIFY ON LIVE (parent 154 + all 5 children bases
+pre==post); excess coherence 70 ⊆ 154, N/A excluded, No-excess 48.6%; re-aggregated 944 BEFORE the
+render-check (r3sw21 sequencing lesson applied); post-write run_gates 11/11. Demo: Thornbridge is a
+haver-with-N/A -> correctly subset-excluded (sees the excess chart as context). Commit alongside
+this entry. The PMI family is now SIX children, all conditioned on the 154-set and pair-guarded.
+QUEUE: presence-gate minting (recognition, business-need car), TIME_IVF retirement-review, the
+4-org life-assurance 038-vs-045 alignment.
+
+## Dental cover sector-gate + funding conditioning — Design B, 038 Dental-tick as parent (r3sw23, ruled + applied 21 July 2026)
+TWO-SIGNAL DISCOVERY: dental had TWO mis-seeded signals disagreeing — REW_BEN_038 "Dental cover"
+tick (42, cost-heavy) and the REW263_BEN_DENTAL funding metric (32, cost-heavy), 9 overlap. Dental
+is a RARE, sector-specific perk. RULED (David, Design B): the 038 Dental-tick is the PARENT (the
+PMI pattern) — sector-gate it, condition the funding metric on it, ALIGNING both signals (the
+42-vs-32 disagreement resolved, not relocated — the IP/PMI-eligibility/EMICSOP lineage).
+SECTOR-GATE: 038 Dental-tick 42 -> 11, re-concentrated perk 8 / cost 2 / media 1 (from the
+cost-heavy scatter); token removed from 31, prefer-coherent-then-latent. RATE-vs-COUNT (ruled a):
+David's explicit ~5% (~11) WINS over the illustrative 22/4/12 band (which summed to 16) —
+cost-constrained lands ~1% (2 orgs), the honest realization of "rare AND very sector-specific".
+COLLAPSE: "Not offered" + "Not applicable" both vanish — the funding metric is CONDITIONED
+(non-tickers' 209 rows deleted), n=11. FUNDING: Voluntary 7 / Employer-paid 4 -> served 63.6/36.4
+(~65/35 voluntary-dominant EST). Answers 230,736 -> 230,527.
+EST/GRADE-C (verdict SUPPRESSED, unbenchmarked=True): direction sourced (CIPD private-2.5x-public
++ LaingBuisson small insured base) but the CIPD 24% is DENTAL CASH PLANS — the WRONG product; no
+free dental-INSURANCE sector data exists, so the rates are estimated. Thin base 11 accepted (rare
+benefit, above the n<5 floor, suppressed anyway). Flat offer marginal RETIRED (superseded).
+PMI-SAFEGUARD (038 is the PMI parent — HARD ABORT on any PMI move): the Dental-token edit touches
+only the Dental position, never the PMI token — PROVEN pre-commit AND re-verified on live: PMI-tick
+set 154 BYTE-IDENTICAL, all 5 existing PMI children bases (composition/by-level/elig-rules/premium
+154, excess 220) unmoved. Dental token orthogonal to PMI. SUBSET PAIR (funding ⊆ 038 Dental-tick)
+— 6th subset pair, negative-proven (a non-ticker given funding -> PAIR-INCOHERENCE rc=1).
+G9 FIX (disclosed, r3sw13 class extended): conditioning dental (deleting 209 rows) collapsed
+qa_reseed's G9 bundle gate to n_orgs=1 — the all-answered benefit-generosity intersection breaks on
+a CONDITIONED metric (partial base by design; the meta snapshot tags dental "Benefits", the DB says
+"Health & Protection"). Fixed surgically: G9's `ben` now EXCLUDES conditioned metrics (can't drop
+from rewq globally — conditioned metrics keep partial rows, unlike retired ones). Proven both ways:
+throwaway 9/9 with the fix, LIVE 9/9 (no-op — no Benefits metric is conditioned on live yet).
+VERIFIED: throwaway scratchpad/t43 — 11-tick == funding, no-dental bars gone, PMI 154 + 5 children
+byte-identical, qa_reseed 9/9, run_gates 11/11, negative test fails closed. LIVE (backup
+lumi.db.bak_pre_r3sw23_dental_20260721): post-write match EXACT (0 cells vs throwaway); PMI-SAFEGUARD
+RE-VERIFY ON LIVE (PMI-tick 154==154 + all 5 children bases pre==post); dental 038-tick 11 == funding,
+render n=11 (63.6/36.4), no-dental bars gone; re-aggregated 944 BEFORE the render-check; post-write
+run_gates 11/11 + qa_reseed 9/9. Demo: Thornbridge isn't a dental-ticker -> correctly outside the base.
+Commit alongside this entry. QUEUE: presence-gate minting (recognition, business-need car), TIME_IVF
+retirement-review, the 4-org life-assurance 038-vs-045 alignment.
+
+## Critical-illness cover-level — signal alignment + collapse + flat condition + CI⊆IP chain (r3sw24, ruled + applied 21 July 2026)
+CI IS A BUNDLED GROUP-RISK BENEFIT, NOT A RARE PERK (the decisive diagnostic finding): all 52
+CI-havers are also IP-havers (CI rides inside the IP+life+CI package) — so FLAT condition (like
+life assurance), NOT a sector-gate (like dental). Two mis-seeded signals disagreed: REW_BEN_038
+"Critical illness cover" tick (42, cost-heavy) vs the dedicated REW263_BEN_CICOVER level metric
+(52, better-distributed), overlap 11.
+FIX 1 — ALIGN 038 CI-TICK UP to the dedicated 52 (IP pattern, DEDICATED-SIGNAL-WINS — the reverse
+of dental, where both signals were bad and the 038-tick was re-gated): ADD the token to the 41
+level-only orgs, REMOVE from the 31 tick-only -> 038 CI-tick == 52 == level-havers. Two-signal
+disagreement RESOLVED (not relocated), same as IP's 038->046. FIX 2 — COLLAPSE + FLAT-CONDITION:
+"Not offered" (86) + "Not applicable" (82) both collapse (168 non-haver rows deleted, conditioned);
+the level split renders over the 52, UNCHANGED (Fixed 40.4 / 1x 36.5 / 2x+ 23.1 — NO re-weight, NO
+sector-gate). FIX 3 — CI⊆IP BUNDLE CHAIN (two-level, DEFERRAL discipline): level-answerers (52) ⊆
+CI-havers (038 tick, 52) ⊆ IP-havers (046, 80). NEW child_contains PAIR SELECTOR added (child =
+the 038 CI-tickers, mirrors parent_contains) so the CI-tick⊆IP bundle lock is expressible; both
+pairs NEGATIVE-PROVEN (a non-ticker given a level, and a CI-tick added to a non-IP org, both ->
+PAIR-INCOHERENCE rc=1). A future reseed cannot create a CI-haver who isn't an IP-haver.
+PMI-SAFEGUARD (038 is the PMI parent — HARD ABORT): CI-token-only edit -> PMI-tick 154
+BYTE-IDENTICAL + all 6 PMI children (composition/by-level/elig-rules/premium/excess/dental) unmoved,
+asserted pre-commit AND re-verified on live. Verdict EST-SUPPRESSED, flat offer marginal RETIRED.
+Answers 230,527 -> 230,359.
+VERIFIED: throwaway scratchpad/t44 — chain level==CI-tick==52 ⊆ IP 80, render n=52 no-CI bars gone,
+PMI 154 + 6 children byte-identical, qa_reseed 9/9, run_gates 11/11, both pair negative tests fail
+closed. LIVE (backup lumi.db.bak_pre_r3sw24_cicover_20260721): post-write match EXACT (0 cells);
+PMI-SAFEGUARD RE-VERIFY ON LIVE (PMI-tick 154==154 + 6 children pre==post); CI⊆IP CHAIN re-verify
+(CI-tick 52 == level, CI⊆IP, level⊆IP); render n=52 no-CI bars gone; re-aggregated 944 BEFORE the
+render-check; post-write run_gates 11/11 + qa_reseed 9/9. Demo: Thornbridge not a CI-ticker ->
+outside the base. Commit alongside this entry. QUEUE: presence-gate minting (recognition,
+business-need car), TIME_IVF retirement-review, the 4-org life-assurance 038-vs-045 alignment.
+
+## Master N/A sweep v2 — classify every remaining N/A-bar metric; fix only the batch-safe class (r3sw25, ruled + applied 22 July 2026)
+THE HEADLINE FINDING: of the 27 remaining metrics carrying a "Not applicable"-type bar (excluding
+the already-declared and the Don't-know class), EXACTLY ONE is cleanly batch-safe (A). The r3sw10
+(b)-batch already exhausted the clean no-parent re-percentage set; what remained is precisely the
+casework the per-chart discipline exists for — this is the discipline VINDICATED, not a shortfall.
+Enumeration in scratchpad/t45_nasweep.json; classification VERIFIED against the live DB by a 4-agent
+parallel workflow (wqwrd2k01) that measured each candidate's parent existence + overlap rather than
+trusting the r3sw9 prior. Result: A=1, B=19 (has a verified parent), C=4 (a disagreeing second
+signal / Design-B), D=3 (genuine substantive N/A). RULING (David): build only (A); flag B/C/D as an
+individual-ruling queue; do NOT blanket-condition B/C — "the per-chart diagnosis is what caught the
+excess/dental/CI errors."
+(A) THE ONE — PROP_8e0b6316 "How often is the main pay review cycle conducted?" (Pay, single_select):
+"Not applicable (no pay review)" is the ABSENCE of the measured frequency, not a point on the
+frequency scale (contrast the RED_TERM statutory-only floor, which IS a point on its scale -> D).
+No parent-exists metric (the cadence question is top-level; the pay-review-process siblings all
+presume a review exists, none gates existence); no REW_BEN_038 tick / second signal (all three 038
+word-matches spurious). DECLARED answerer_only: the 9 N/A answers leave the block at aggregation
+(graph AND n), re-percentaging over the 203 answerers. base 212->203, Annually 81.1->84.7%, N/A bar
+removed (excluded_na=9). RENDER-ONLY: zero `answers` rows touched; verdict already suppressed (mp
+unbenchmarked=True, untouched). Config-only, no migration of data — same class as the 29 r3sw10 (b)
+declarations. base_label "organisations that run a pay review".
+(B) NEEDS RULING — 19, each with a VERIFIED parent + measured contradiction count (the dental-42-vs-32
+shape); queued, NOT auto-conditioned. Grouped by shared parent for family-rulings: BONUS-EXISTS
+(parent REW_INC_103 != 'None', 179 havers) x6 — REW_INC_071 clawback (0 contra, cleanest), _065
+gatekeeper (29), _060 measures (26), _070 malus (39), _104 avg-payout% (40, child 205 > parent 179),
+REW263_INC_POOLFUND (26); PENSION-DC (parent REW26_BEN_PENSION_TYPE incl-DC, 199) x2 — REW264_PEN_
+AEDEFAULT (20), _GREENDEFAULT (18); PENSION-SALSAC (parent WEL_BMAP pension-SS tick, 120) x2 —
+REW264_PEN_SALSACIMPACT (73), _SALSACRESPONSE (77); ALLOWANCES (parent REW_PAY_016) x2 — REW_PAY_019
+consolidation (clean nest but 67 payers self-N/A), _017 on-call method (severe over-answer 203 vs 71
+ticked); STANDALONE x5 — REW263_PAY_COMPARATIO (parent REW_PAY_001 ranges, 29 contra + muddy 'No
+formal target' option), REW265_GOV_AIDISCLOSE (parent REW262_GOV_AIINPAY, 96 contra: 'No' chosen
+where N/A belongs), REW_PAY_097 pay-perf (parent PERF_03, 26), EXT_REW_GAP_005 long-service (parent
+EXT_REW_GAP_004, 30), REW_INC_136 commission-structures (parent REW_INC_135, 165 — tie to COMMCAP).
+(C) NEEDS RULING — 4 two-signal/Design-B: REW_BEN_041 buy-leave-max (near-DUPLICATE of REW_BEN_HOL_006
+[itself a B]; the two disagree 103-vs-16 — dedup them together); REW264_BEN_EVSALSAC EV-salsac (REAL
+038 tick "Salary sacrifice car scheme" 27 vs 96 metric-havers, overlap 12); REW265_INC_COMMCAP
+commission-cap (two commission signals IRRECONCILABLE: REW_INC_135 Yes=36 vs REW_INC_136 has-structure
+=199 — pick the authority first, rule with _136); REW_BEN_SICK_004 sick-pay waiting-period (OVERRIDES
+the initial D-hint: dedicated 2nd metric REW_BEN_SICK_001 occ-sick-pay-existence disagrees 48+40).
+(D) GENUINE — 3, stay on graph: RED_TERM_02 redundancy-enhancement + RED_TERM_03 redundancy-weeks
+("statutory only" is a real floor, RED_TERM precedent); REW263_GOV_ETHDISREADY (N/A is 100%
+concentrated in the 50-249 FTE band — a real Equality-Bill-250+ out-of-scope fact).
+SEED-REALISM FLAGS RAISED (separate from conditioning — for future seed work, NOT this diff): REW_INC_132
+LTI-type has a 148/211 parent-contradiction (answered near-unconditionally though REW_INC_131 says only
+65 operate LTI — likely a seed-conditioning defect); RED_TERM_03 is a DEGENERATE seed (0 respondents in
+any real weeks-band; both remaining options flagged is_na; RED_TERM_01/03 incoherent on 65 orgs).
+VERIFIED: throwaway proof (scratchpad/r3sw25_work) — TWO separate throwaway copies aggregated with the
+served vs the staged config, all 944 payloads diffed: EXACTLY 1 moved (PROP_8e0b6316), 943 byte-identical;
+the moved block 212->203 with N/A gone + excluded_na=9 + Annually 84.7/Twice 6.9/Quarterly 3.0/No-regular
+5.4. qa_reseed 9/9 (answers untouched), run_gates 11/11 (staged config, freeze gate PASS, qa_release 0
+fail). LIVE (backup lumi.db.bak_pre_r3sw25_payreviewna_20260722): answers content-hash BYTE-IDENTICAL to
+backup (230,359 rows, a0abe28c — render-only proven); post-write match EXACT (0 of 944 cells vs throwaway);
+render re-verify (DB payload n=203, N/A bar gone, excluded_na=9); dev server restarted (in-proc _payload_
+cache is snapshot-keyed, goes stale on re-aggregate) + SIGNED-IN HTTP GET /api/benchmark/PROP_8e0b6316
+confirms what David sees: n=203, base "organisations that run a pay review", N/A bar absent, unbenchmarked
+=true. Config-only (no DB mutation); server/migrate_r3sw25_payreviewna.py is the dual-guarded config
+applier (dry-run default, --confirmed-by-david for the served config, atomic tempfile+os.replace).
+QUEUE now carries the 26-metric B/C/D individual-ruling work-list (family-rulings available: bonus x6,
+HOL_006+BEN_041 dedup, COMMCAP+INC_136 commission-authority) + the two seed-realism flags, ahead of the
+prior queue (presence-gate minting, TIME_IVF retirement-review, 4-org life-assurance 038-vs-045).
+
+## Bonus-exists family ×6 — clear the impossible + condition on REW_INC_103 (r3sw26, ruled + applied 22 July 2026)
+The first bonus-family ruling from the r3sw25-B work-list. Parent REW_INC_103 != 'None' (179 bonus-havers)
+is the SOLE clean bonus authority — no 038 tick, no competing existence signal (diagnostic verified: every
+other bonus metric is a detail child that presupposes a scheme). The 41 None-orgs SYSTEMATICALLY over-
+answered the bonus-detail children with realistic values (all 41 over-answer >=1 child; 9 over-answer all
+five) — the "over-population" seed defect. r3sw5 PART-B fixed this for clawback (_071) ONLY (ruled UNIFORM/33,
+None-orgs -> 'Not applicable', with a standing 071-Yes⊆bonus-exists guard); this diff EXTENDS that precedent
+to the other five and conditions all six. REPAIR-THEN-CONDITION (the share-plan pattern).
+FIX 1 — CLEAR THE IMPOSSIBLE (160 answers): for the 5 detail children, every None-org's substantive answer
+-> 'Not applicable' (a non-bonus org cannot have a pool-funding method / gatekeeper / payout% / malus /
+bonus measure). CLEAR not align — parent is the sole authority and content can't tell impossible-from-real
+(the impossible answers MIRROR the clean-haver distributions, e.g. POOLFUND 38/35/27 vs clean 44/54/34 —
+realistic seed values, not uniform garbage). Counts: POOLFUND 26, _065 29, _104 40, _070 39, _060 26. (The
+_104 "impossible" set is 40, NOT the naive 205-179=26 — only 165 of 179 havers answered substantively, so
+the non-haver substantive set is 205-165=40; a definitive seed defect, cleared.)
+FIX 2 — THE REMAP-VS-LEAVE PRINCIPLE (by metric type): governance haver-N/A -> 'No' for the 2 Yes/No metrics
+(_065 gatekeeper 28, _070 malus 3) — a bonus-haver's 'Not applicable' means "No, we don't use that feature",
+a legitimate Yes/No reading, so base holds at 179 (honest prevalence; leaving out would inflate the Yes-rate).
+NOT applied to the 3 descriptive children (POOLFUND/_104/_060 have no 'No' option — haver-N/A is a genuine
+"didn't specify" gap; remapping would fabricate, so leave-base): POOLFUND 132, _104 165, _060 136. _071
+render-only (data already correct r3sw5), base 147.
+FIX 3+4 — CONDITION + COHERENCE: all six declared answerer_only (drop 'Not applicable' from graph+n); six
+subset pairs child-substantive ⊆ bonus-exists (REW_INC_103 != None) added to the freeze-gate coherence_pairs
+(structured_bases.json + generated_marginals.json), the _071 guard UPGRADED Yes->substantive (a 'No' clawback
+also implies a bonus). A future INC_103 reseed that re-breaks any child's conditioning fails run_gates.
+SHIFTS (all honest haver-prevalence corrections, N/A-dilution removed): clawback Yes 50.5->75.5% (largest, pure
+r3sw5-data dilution removal — David confirmed realistic); gatekeeper Yes 53.2->58.7% / No 28.6->41.3%; malus
+Yes 36.8->40.8%; POOLFUND methods scale onto 132; _060 incidences rise onto 136. No register marginal / frozen
+target moved (none of the 6 carry one — _104 is a CONTEXT_VALUE with no marginal by design), so NO marginal
+retirement. Demo: Thornbridge Retail is itself a None-org that over-answered all five -> now 'Not applicable'
+on all (coherent, no bonus); Thornbridge Advisory (haver 75%+) unchanged.
+Data = UPDATE-only, 191 edits (160 clear + 31 remap), row-count 230,359 UNCHANGED, non-target book (incl. _071)
+hash-identical to backup. VERIFIED: throwaway (scratchpad/r3sw26_work) — 6-of-944 payloads move (938 byte-
+identical), zero None-org substantive on all 5, all 6 subset pairs hold, governance base=179, NEGATIVE TEST
+(inject one None-org _065=Yes -> qa_plausibility rc=1 PAIR-INCOHERENCE, fails closed), qa_reseed 9/9, run_gates
+11/11 (freeze gate with the 6 new pairs). Served files kept PRISTINE during the throwaway via swap-test-restore
+(generated_marginals.json restored byte-identical). LIVE (backup lumi.db.bak_pre_r3sw26_bonusfamily_20260722):
+post-write match EXACT (0 of 944 cells vs throwaway); non-target book + _071 answers byte-identical to backup;
+coherence re-verify (zero None-org substantive, pairs hold, gov base=179); render re-verify (all 6 N/A bars gone,
+bases 147/132/179/165/179/136); qa_plausibility on live rc=0 (FREEZE GATE PASS, register marginals within 5pp);
+dev server restarted + signed-in HTTP (REW_INC_065 n=179, base "organisations with a bonus scheme", no N/A bar).
+server/migrate_r3sw26_bonusfamily.py is the dual-guarded applier (data UPDATE + 3-file atomic config; staged
+outs for throwaway per r3sw7). QUEUE: the remaining r3sw25-B work-list (pension-DC x2, pension-salsac x2,
+allowances x2, COMPARATIO, AIDISCLOSE, PAY_097, GAP_005, INC_132) + C (HOL_006+BEN_041, EVSALSAC, COMMCAP+_136,
+SICK_004) + the LTI-type/RED_TERM_03 seed-realism flags.
+
+## Pension-DC ×2 — clear over-answered DC-detail, condition on 199 DC-havers, parent FROZEN (r3sw27, ruled + applied 22 July 2026)
+A CORRECTION IS ON THE RECORD. The first r3sw27 direction (reclassify 21 DB->Hybrid/DC on a "new-joiner
+basis") was WRONG and was NOT built: it missed r3sw3, which had ALREADY ruled this exact question from a
+graded source — TPR Occupational DB landscape 2025 (grade A), NEW-JOINER basis, CARE receives no separate
+TPR class = standard DB, so public-sector "DB" is correct — and TIER-1 FROZE REW26_BEN_PENSION_TYPE
+(DC .8864 / DB .0955 / Hybrid .0182). The diagnostic that led to the reclassify did not check the pension-
+type ruling history; David caught nothing because the diagnostic itself was the flaw. THE LESSON (standing):
+before recommending a re-anchor/reclassify DIRECTION on any metric, check whether it is settled-frozen and
+read its ruling history — a frozen target is a prior evidence-backed decision, and a "fix" that would move it
+is a re-open, not an N/A tidy. Reclassifying here would have silently reversed a TPR-grade-A carve-out AND
+moved a tier-1 immovable target.
+THE CORRECT DIRECTION (r3sw3-consistent) is the bonus over-answer pattern: the 21 DB orgs are genuinely
+DB/CARE (parent correct + frozen), but over-answered DC-detail that a DB/CARE scheme cannot have (no member
+DC default fund, no AE default contribution rate). CLEAR the DC-detail; DO NOT touch the parent.
+FIX 1 — cleared 38 DB over-answers -> N/A: AE-rate 20 (DB-org substantive -> "Not applicable (no DC scheme)"),
+green-fund 18 (-> "Not applicable (no DC default fund)"). FIX 2 — re-anchored the 17 AE DEFERRAL (DC-havers who
+answered "no DC scheme" -> "Statutory minimum only"; genuine DC-havers who auto-enrol, statutory floor is the
+honest answer not exclusion); green DEFERRAL -> leave-base (3-level descriptive net-zero/ESG/standard, no clean
+floor to remap). FIX 3 — both children declared answerer_only, conditioned on the 199 DC-havers (DC 195 +
+Hybrid 4): AE base 199, green base 170. Two subset pairs child-substantive ⊆ DC-havers (parent != DB) added to
+the freeze-gate coherence_pairs. Shifts: AE Statutory-min 71.4->80.4% (17 DEFERRAL + 20 DB cleared); green
+ESG-tilted 29.6->33.5%, Standard 44.2->49.4%. remap-vs-leave principle: AE-rate has a clean floor (statutory-min)
+-> floor-remap the DEFERRAL; green-fund has no floor -> leave-base. (Neither child is Yes/No, so no governance
+remap; but AE's statutory-min IS a legitimate floor for a DC-haver, unlike a rate with no floor.)
+PARENT HARD CONSTRAINT HELD (the safeguard the wrong direction would have broken): REW26_BEN_PENSION_TYPE
+answers BYTE-IDENTICAL before/after, dist DC 195/DB 21/Hybrid 4 unmoved, frozen-target drift 0.0045pp (tol
+0.1pp), parent payload byte-identical. Children are unanchored (no marginal) so no re-freeze. Demo: both
+Thornbridge orgs are DC-havers -> untouched by the DB-only clear. Data = UPDATE-only, 55 edits, row-count
+230,359 unchanged, non-target book (incl. parent) hash-identical to backup.
+VERIFIED: throwaway (scratchpad/r3sw27_work) — 2-of-944 payloads move (parent byte-identical), zero DB-org
+DC-detail, both subset pairs hold, AE substantive == 199 DC-havers, negative test (DB-org given AE=3pp+ ->
+qa_plausibility rc=1 PAIR-INCOHERENCE), qa_reseed 9/9, run_gates 11/11 (freeze gate PASS with pension-type
+unmoved). Served files kept pristine via swap-test-restore (generated_marginals restored byte-identical). LIVE
+(backup lumi.db.bak_pre_r3sw27_pensiondc_20260722): post-write match EXACT (0 of 944 vs throwaway); frozen-
+target re-verify (parent answers byte-identical to backup, dist unmoved, drift 0.0045pp, non-target book hash-
+identical); render re-verify (both N/A bars gone, AE 199 / green 170); qa_plausibility on live rc=0 (freeze gate
+PASS); dev server restarted + signed-in HTTP (AE n=199, base "organisations with a DC pension scheme", no N/A
+bar). server/migrate_r3sw27_pensiondc.py is the dual-guarded applier (parent read-only + byte-identical assert).
+QUEUE unchanged minus pension-DC: pension-salsac x2, allowances x2, COMPARATIO, AIDISCLOSE, PAY_097, GAP_005,
+INC_132 (B); HOL_006+BEN_041, EVSALSAC, COMMCAP+_136, SICK_004 (C); LTI-type/RED_TERM_03 seed-realism.
+
+## Pension salary-sacrifice NIC-cap ×2 — render tidy, NOT a defect (r3sw28, ruled + applied 22 July 2026)
+THE FROZEN-RULING CHECK (now standing, r3sw27 lesson) caught it up front and reframed the whole diff:
+REW26_BEN_SALSAC (the SS-exists parent) is TIER-1 FROZEN (Yes .5955/No .4045), AND both children
+(REW264_PEN_SALSACIMPACT/RESPONSE — the 2029 £2,000 pension-salary-sacrifice NIC-cap questions) were
+ALREADY conditioned by Diff 7 (14 July, ruled ③): false-NA correction on the any-salsac union
+(REW26_BEN_SALSAC="Yes" ∪ WEL_BMAP sal-sac benefit ticks = 197), "0 substantive-without-evidence", 23
+legitimate NA. Diff 7 F2 ALSO logged the WEL-pension-tick(120)-vs-SALSAC fork as a known out-of-scope
+old-book contradiction. So the master-sweep "73/77" is a RE-MEASUREMENT ARTIFACT — the logged fork gap
+(197 substantive − 120 WEL-pension-tick), NOT a fresh defect. This is a pure render tidy respecting all
+three prior rulings; NOT a clear (they have sal-sac) and NOT a reclassify (parent frozen + correct).
+FIX 1 — RENDER-ONLY N/A-DROP: both children declared answerer_only, dropping the 23 self-declared "Not
+applicable (no sal-sac)" from graph+n -> base 197. The metric SELF-CONDITIONS via its own NA (Diff 7's
+NICSHARING primitive). NO EXTERNAL SUBSET PAIR — no single metric equals the 197 any-salsac-union base
+(SALSAC=Yes 131 / WEL-pension 120 / WEL-any 170), so nothing single-metric to nest in; self-conditioning
+is the mechanism (the life-assurance self-contained precedent). Confirmed no pair added (structured_bases
++ generated_marginals git-clean).
+FIX 2 — 8-ORG COHERENCE TIDY: since Diff 7, 8 orgs drifted each way. 8 substantive-without-evidence -> N/A;
+8 NA-with-evidence -> substantive (RNG-mirrored to the current marginal, Diff-7 sha256 primitive). ALL 8
+of the NA->substantive orgs carry SALSAC=Yes (the FROZEN authority says they DO have pension SS, so their
+"no sal-sac" self-declaration was a contradiction — well-justified fill); all 8 substantive->N/A orgs have
+NO any-salsac evidence (parent=No + WEL None). Net base unchanged (197). Restores Diff-7's invariant on
+BOTH sides: substantive==union AND NA∩union=0. Both children leave-base (descriptive/ordinal — IMPACT "Not
+yet" floor, RESPONSE "Undecided" floor; neither Yes/No, no remap). Shifts: IMPACT Not-yet 43.6->47.7%,
+Yes-modelled 30.9->34.5%; RESPONSE Maintain 62.7->69.0%.
+PARENT FROZEN HELD: REW26_BEN_SALSAC answers BYTE-IDENTICAL (md5/sha256 by 3 independent verifiers), dist
+Yes 131/No 89 unmoved, frozen drift 0.0045pp. NOT re-conditioned on the 131 pension-SS base — that is the
+deliberate Diff-7 RE-OPEN (Option 2), QUEUED as a separate pension-specific base-revisit, explicitly NOT
+this diff. Children are unanchored (no marginal), so no re-freeze. Seed-realism: the £2,000 NIC cap on
+pension salary sacrifice (April 2029) aligns with the Autumn 2025 Budget — a real forward policy, non-
+degenerate distribution; NOT a TIME_IVF reframe/defer candidate. Data = UPDATE-only, 32 edits, row-count
+230,359 unchanged, non-target book (incl. frozen SALSAC) hash-identical to backup.
+VERIFIED: throwaway (scratchpad/r3sw28_work) — 2-of-944 payloads move (parent byte-identical), both children
+substantive==any-salsac-union(197) as SETS + NA∩union=0, qa_reseed 9/9, run_gates 11/11 (freeze gate PASS,
+SALSAC unmoved); 3/3 ADVERSARIAL SKEPTICS ALL_CONFIRMED (union=197 cross-checked two ways, all 8 fills
+SALSAC=Yes, all 8 clears no-evidence, config purely additive, UPDATE-only). Config = applicable_bases ONLY
+(no coherence_pairs change), so no gm swap. LIVE (backup lumi.db.bak_pre_r3sw28_salsacnic_20260722): post-
+write match EXACT (0 of 944 vs throwaway); frozen-target re-verify (SALSAC byte-identical, dist unmoved,
+drift 0.0045pp); coherence re-verify (substantive==union both children); render re-verify (both N/A bars
+gone, base 197); qa_plausibility on live rc=0 (freeze gate PASS); dev server restarted + signed-in HTTP
+(RESPONSE n=197, base "organisations offering pension salary sacrifice", no N/A bar).
+server/migrate_r3sw28_salsacnic.py is the dual-guarded applier (frozen-parent byte-identical assert; RNG
+fill = Diff-7 primitive). QUEUE: Option-2 pension-specific SALSAC base-revisit (tighten to 131, a Diff-7
+re-open) + allowances x2, COMPARATIO, AIDISCLOSE, PAY_097, GAP_005, INC_132 (B); HOL_006+BEN_041, EVSALSAC,
+COMMCAP+_136, SICK_004 (C); LTI-type/RED_TERM_03 seed-realism.
+
+## On-call pay-method — clear the over-answer, condition on the on-call family (r3sw29a, ruled + applied 23 July 2026)
+Shipped as a SEPARATE, independently-revertible diff from consolidation (r3sw29b) — different fix classes on
+different metrics, never bundled. CLEAR is the CHILD-IMPOSSIBLE class: REW_PAY_017 "how is on-call paid" is
+not answerable by an org with no on-call inventory. Ruling A (David, family-122 line): condition on the on-call
+FAMILY = REW_PAY_016 tick of On-call ∪ Standby ∪ Call-out allowance (N=122). 203 orgs answered a pay-method
+(92% of the cohort — implausible); CLEAR the 92 NON-family method-answerers -> "Not offered / not applicable".
+Base 220 -> 111 (all 111 ⊆ the 122 family). The 65 shift-only orgs among the 92 are cleared DELIBERATELY:
+a shift/night/weekend premium is not an on-call arrangement. NOT reclassify (would break the ALLOW_01 ~32%
+on-call anchor) and NOT sector-gate (see below). CORRECTED DENOMINATOR (on the record): on-call family = 122,
+narrow On-call-allowance-only tick = 71 — the earlier r3sw25-B "~71 havers" framing UNDERSTATED the family;
+the true conditioning base is the 122-family, 111 of whom answered a method. The 11-org DEFERRAL (family-havers
+who answered "Not offered / not applicable") is RECORDED, NOT ACTIONED under ruling A (small, left as-is).
+SECTOR READING = SCATTERED-FLAT (settled by a complete-source reconciliation; artifact named so no future reseed
+re-derives "concentrated"): my earlier r3sw25-B "operational-concentrated" read was an artifact of counting RAW
+HAVER COUNTS in UNEQUAL BASES (Logistics 17 / Retail 16 / Hospitality 16 look large only because those sector
+bases are 23-30). On SHARE-OF-BASE (DB orgs.industry, complete, 0 unmatched), on-call-family appears in all 14
+industries at 10-90%: Technology is the SINGLE HIGHEST at 9/10 = 90%, and the office mean ~45% is comparable to
+the operational mean ~57% (Tech 90 / Finance 50 / Media 30 / ProfServices 10). Office sectors are NOT near-
+absent -> fails the "concentrated" test -> scattered-flat -> no coherent sector to gate on, hence CLEAR on the
+inventory evidence not a sector-gate. (The separate org_profiles.json join drops 27 of 122 as unmatched — a
+coverage artifact of a 158-org subset; the DB source with 0 unmatched is authoritative.)
+BUILD SHAPE (b) SELF-CONDITION via own NA (SALSAC precedent), AND ITS KNOWN GAP: after the clear, the child
+self-conditions via answerer_only on its own NA. NO engine change; blast radius = applicable_bases.json + this
+one metric. Path (a) — extending the freeze-gate pair engine's parent_contains to a multi-token OR set (the
+on-call family is OC∪SB∪CO) — was DECLINED because it touches shared qa_plausibility.py for an N/A tidy. CONSEQUENCE
+(carried as a known gap, NOT as covered): there is NO forward coherence-pair guard against a future reseed
+re-introducing non-family over-answers. That guard belongs in the REW_PAY_016 reseed diff (queued below), where
+the on-call family becomes a first-class parent. Data = UPDATE-only, config = applicable_bases only.
+VERIFIED: throwaway (scratchpad/r3sw29_work, tw_A) — 92 cleared (all non-family), base 111 ⊆ family, only
+REW_PAY_017 moves, 8 frozen targets byte-identical, qa_reseed 9/9, run_gates 11/11; 3/3 adversarial skeptics
+ALL_CONFIRMED. LIVE (backup lumi.db.bak_pre_r3sw29_allowances_20260723): post-write EXACT (live==tw_A on 017,
+92 rows, UPDATE-only, row count 230,359 unchanged), non-target book + frozen-8 byte-identical, coherence
+(111 ⊆ 122), render n=111 excluded_na=109 no N/A bar; live gate suite green. server/migrate_r3sw29a_oncall.py
+is the dual-guarded applier (frozen-8 byte-identical assert).
+
+## Allowance consolidation — clear 5 no-inventory + remap 67 governance-N/A to Never (r3sw29b, ruled + applied 23 July 2026)
+The consolidation diff (separate + independently revertible from r3sw29a). TWO distinguishable operations landing
+together. (i) CLEAR the 5 no-inventory CICOVER: orgs that answered a consolidation frequency but pay NO allowances
+(no REW_PAY_016 row) -> "Not applicable" — a non-allowance org has nothing to consolidate. (ii) REMAP the 67
+allowance-paying "Not applicable" -> "Never": governance N/A reads "Never" where the org DEMONSTRABLY pays
+allowances; N/A is a mislabel (they simply never consolidate). "Never" is the governance floor, so the remap is
+legitimate interpretation, not fabrication. Then self-condition (answerer_only, own NA) -> base 215 (= the
+allowances-payers). BEFORE Always 82 / Sometimes 68 / Never 3 / N/A 67 -> AFTER Always 80 / Sometimes 65 /
+Never 70, base 220 -> 215. RECORDED OUTCOME IS 80 / 65 / 70 (ratified by David). The ruling text's "82/68/70" was
+an arithmetic slip — the remap was applied to the pre-clear distribution without subtracting the 5-org clear; the
+report surfaced it and it is corrected here. Delta is self-explaining: the 5 cleared CICOVER were 2×Always +
+3×Sometimes, so Always 82->80 and Sometimes 68->65. This ALSO fixes the implausible Never=3 (an allowance cohort
+where almost nobody "never consolidates" is not credible; 70 is realistic). Build shape (b) as r3sw29a: self-
+condition via own NA, no external pair (any-allowance is a multi-select parent, and REW_PAY_016 is a queued
+reseed), no engine change.
+VERIFIED: throwaway (tw_B) — 5 cleared (all non-allowance) + 67 remapped (all allowance-payers) = 72 edits,
+after 80/65/70/5, substantive(215)==any-allowance, only REW_PAY_019 moves, 8 frozen byte-identical, qa_reseed
+9/9, run_gates 11/11; 3/3 adversarial skeptics ALL_CONFIRMED. LIVE: post-write EXACT (live==tw_B on 019, 72 rows,
+UPDATE-only, 230,359 unchanged), live payloads EXACT-match the both-applied throwaway (0 of 944 cells), non-target
+book + frozen-8 byte-identical, coherence (substantive==any-allowance 215), render n=215 excluded_na=5 no N/A bar;
+live gate suite green (qa_reseed 9/9, run_gates 11/11, freeze gate PASS — no drift from throwaway).
+server/migrate_r3sw29b_consolidation.py is the dual-guarded applier.
+QUEUE (separate, NOT in these diffs): ON-CALL SEED-REALISM — REW_PAY_016 yields a near-flat ~55% on-call rate
+across all 14 industries with Tech at 90%, implausible vs UK reality (on-call concentrates in healthcare,
+utilities, IT-ops, emergency/field-service). A REW_PAY_016 RESEED question; the r3sw29a build-shape-(b)
+forward-guard gap (no coherence pair against reseed over-answers) ATTACHES to this item. Alongside LTI-type
+148/211 and RED_TERM_03 seed-realism. Prior queue carries: Option-2 SALSAC 131-base re-open; COMPARATIO,
+AIDISCLOSE, PAY_097, GAP_005, INC_132 (B); HOL_006+BEN_041, EVSALSAC, COMMCAP+_136, SICK_004 (C).
+
+## Option-2 SALSAC base re-open — REJECTED; revert 17 Diff-7 fabrications (r3sw30, ruled + applied 23 July 2026)
+The deliberate re-open r3sw28 queued: should the NIC-cap children (REW264_PEN_SALSACIMPACT/RESPONSE) condition
+on pension-SS (131) instead of Diff 7's any-salsac union (197)? RULED: OPTION 2 REJECTED, BASE STAYS 197.
+THE MISREAD (the reason): REW26_BEN_SALSAC='Yes' means "pension offered via salary sacrifice BY DEFAULT",
+NOT "has pension SS". So 131 is the DEFAULT-pension-SS cohort, not the pension-SS cohort — Option 2's premise
+was a misread of the frozen parent. Of the 66 SALSAC=No substantive answerers, 43 carry the WEL pension-SS tick
+(OPT-IN pension SS): they ARE genuinely subject to the £2,000 pension-SS NIC cap and their answers are REAL.
+Clearing 66 would have DESTROYED 43 legitimate opt-in answers + 6 genuine no-signal floor answers — a standing-
+rule violation (never clear a substantive answer). Options B (clear->131), C (remap-to-floor) and D2 (also clear
+the 6 genuine) all rejected. The tightened renders (131 and 174 bases) moved <2pp vs 197 — the base question was
+near-cosmetic on output, part of why it does not justify re-opening a ruled decision. Diff 7's 197 any-salsac
+base STANDS; re-open CLOSED. CORRECTED COHORT SEMANTICS (for future readers): SALSAC=Yes = 131 default-pension-SS;
+WEL "Salary Sacrifice for Pension Contributions" tick = 120 available-incl-opt-in; broad pension-SS union
+(SALSAC=Yes ∪ WEL tick) = 174; any-salsac substantive = 197.
+THE ONE THING DONE — A STANDING-RULE RESTORATION, NOT A BASE TIGHTENING: reverted 17 Diff-7 FABRICATIONS. These
+17 orgs (a) held a genuine "Not applicable (no sal-sac)" before 14 July, (b) were RNG-overwritten to substantive
+by Diff 7's false-NA correction, (c) have NO pension-SS signal at all (neither SALSAC=Yes nor the WEL tick) — for
+them the fill corrected nothing, it MANUFACTURED an answer for an org that had answered honestly (9 of the 17
+were fabricated to IMPACT "Yes modelled" — a no-pension-SS org "modelling" a cap it isn't subject to). Reverted
+both children to the exact pre-Diff-7 NA label (read from answers_history, derive-don't-hardcode; N==17 hard-
+asserted, HARD-ABORT if the cohort had moved). Base 197 -> 180 is a CONSEQUENCE, not a goal. DELIBERATELY
+PRESERVED (D2 declined): the 6 genuine no-signal floor answers (IMPACT Not-yet 4 / Yes-modelled 2; RESPONSE
+Maintain 5 / Restructure 1 — real, floor-honest "no impact") and the 43 opt-in orgs — asserted UNTOUCHED as the
+standing-rule guard. Data-only (34 edits, 17/child); NO config change (the existing answerer_only decl drops the
+NA); no pair, no engine change.
+METHOD FLAG (NARROW, on the record): Diff 7's false-NA correction manufactured substantive answers for 17 orgs
+that had honestly answered "Not applicable" with no supporting evidence — the fabricated-data-wearing-a-
+legitimate-label failure mode. The WIDER question (did Diff-7-era RNG fills overwrite honest N/As on OTHER
+metrics?) is QUEUED, NOT answered here — scope/priority David's, later; do NOT bundle.
+VERIFIED: throwaway (scratchpad/r3sw30_work) — 17 derived from provenance (==17), 2-of-944 payloads move, base
+197->180 excluded_na 23->40, N/A bars stay gone, 43-opt-in + 6-genuine UNTOUCHED (guard), n>=5 suppression
+intact, 8 frozen byte-identical, non-target book hash-identical, UPDATE-only (230,359), qa_reseed 9/9, run_gates
+11/11 (freeze gate PASS). LIVE (backup lumi.db.bak_pre_r3sw30_revertfills_20260723): post-write EXACT (live==
+throwaway, 17 rows/child; live payloads==throwaway 0/944), non-target book + frozen-8 byte-identical, standing-
+rule guard re-verified (0 of 43 opt-in moved), render n=180 excluded_na=40 no N/A bar. server/migrate_r3sw30_
+revertfills.py is the dual-guarded applier (provenance-derived, guard-asserted).
+QUEUE (separate, NOT this diff): AUDIT whether Diff-7-era RNG fills overwrote honest N/As on other metrics
+(scope/priority David's, later). Alongside: on-call seed-realism (REW_PAY_016 reseed + r3sw29 forward-guard gap),
+LTI-type 148/211, RED_TERM_03, seed/member provenance diagnostic, CARE-option flag; the B/C work-list
+(COMPARATIO, AIDISCLOSE, PAY_097, GAP_005, INC_132; HOL_006+BEN_041, EVSALSAC, COMMCAP+_136, SICK_004).
+
+## Diff-7 fill audit — NOT systemic; 24 unevidenced fills total across 3 metrics (audit, read-only, 23 July 2026)
+Triggered by the r3sw30 method-flag (Diff 7's false-NA correction fabricated 17 answers under a legitimate label).
+READ-ONLY AUDIT: no DB write, no config change, no gate change, no migration ran; 8 frozen targets present +
+untouched; answers row-count 230,359 unchanged. David ruled: log the finding, DEFER the 7 COMMCAP fabrications
+into the queued commission-authority ruling (do NOT revert standalone), queue the provenance gate (do NOT build).
+VERDICT — NOT SYSTEMIC (stated plainly): Diff-7 fills are confined to its 5 DOCUMENTED false-NA-correction
+metrics. Platform-wide unevidenced fills = 24 TOTAL: 17 reverted (r3sw30) + 7 remaining (COMMCAP), across 3
+metrics. The scary hypothesis (Diff-7 RNG fills spread across many metrics) is FALSE.
+THE TIMESTAMP-SIGNATURE METHOD (the reusable part — record so a future thread does NOT re-run the 1,153-row
+scare): the naïve r3sw30 pattern (earliest answers_history value = an is_na option AND current answer
+substantive) fires 1,153 times across 27 metrics, which CONFLATES three genuinely different populations.
+The EXACT recorded_at stamp separates them:
+  · 570 (8 metrics) = SEED-CONSTRUCTION — N/A and value written at BYTE-IDENTICAL stamps (TIME_IVF, HOL_006,
+    FERTLEAVE all '2026-07-15 16:30:00' -> '2026-07-15 16:30:00'): a placeholder overwritten within one seed
+    batch, never a committed answer. NOT fabrications.
+  · 272 = r3sw RULED CORRECTIONS — this programme's own David-ruled, evidence-gated work (tagged 'r3sw*'
+    stamps). Out of scope.
+  · 311 (5 metrics) = TRUE Diff-7 fills — committed seed N/A at one stamp, overwritten by Diff 7 at a SEPARATE
+    stamp (seed '…17:30:00'/'…18:40:00' -> Diff-7 '2026-07-14 22:30:00'). THE audit target.
+  Classifier: a fill is a Diff-7 fabrication candidate iff earliest-history is is_na, first-substantive stamp
+  differs (exact) from the N/A stamp, and that stamp is a bare numeric 'YYYY-MM-DD HH:MM:SS' (untagged).
+PER-METRIC EVIDENCE SPLIT (evidenced / fabricated): EMICSOP 59 / 0 ; SHAREPLAN 57 / 0 ; COMMCAP 90 / 7 ;
+SALSAC-IMPACT and SALSAC-RESPONSE 49 fills each, 17 fabricated (ALREADY reverted r3sw30). Diff-7's F1 share-
+capital fills were SOUND — all 116 (EMICSOP 59 + SHAREPLAN 57) land on companies with share capital; the method
+was not wrong in principle. Evidence signals used: EMICSOP/SHAREPLAN = share-capital form (orgs.ownership_type
+not in {Charity/Non-profit, Mutual/Co-operative, Partnership/LLP, Public Sector Body}, name ltd/plc fallback for
+null); COMMCAP = commission exists (REW_INC_135='Yes' ∪ REW_INC_136 structure).
+THE FAILURE MODE, NAMED: Diff 7 asserted a BLANKET claim about its fill cohort ("all had salary sacrifice",
+"all 97 had commission") that held for MOST and failed AT THE EDGE — wrong by 17, then wrong by 7, SAME SHAPE
+both times. This is the fabricated-data-under-a-legitimate-label class (the EAP failure mode) — a MARGIN failure,
+not a wholesale one.
+SEVERITY of the 7 COMMCAP fabrications (recorded honestly, DEFERRED not reverted): all POSITIVE-ACTION, none
+floor — COMMCAP has NO floor option, so each asserts a specific cap policy (Uncapped 1 / Soft-cap 3 / Hard-cap 3)
+on an org with no commission plan on either signal. Ownership: 2 Charity/Non-profit, 2 Public Sector Body, 1
+PE-backed, 1 Subsidiary, 1 PLC. So the book currently records e.g. a CHARITY operating a hard cap on sales-
+commission earnings — small, unscored, but FALSE. INTERIM EXPOSURE ACCEPTED (ruled): single unscored card
+(is_scored=0), NO domain-rollup or market-position propagation, headline shift <0.5pp, n=220->213 if reverted.
+Rationale for defer: the 7 are unevidenced BECAUSE the commission signal itself is contested (INC_135 Yes=36 vs
+INC_136 structure=199); reverting now would pre-empt the very question the commission-authority ruling exists to
+settle. They resolve there, not as a standalone diff.
+DURABLE GENERAL CLASS (standing principle): a metric with NO evidence-signal parent cannot have its fills
+falsified — every fill in such a metric is unevidenced BY CONSTRUCTION. This tells future work where the class
+hides without re-running an audit.
+THE GATE GAP (recorded OPEN, NOT built): no existing gate (run_gates, qa_reseed, qa_plausibility, qa_integrity,
+freeze gate) checks PROVENANCE — they verify coherence-pairs, suppression, base integrity, marginal drift and
+frozen targets, none of which asks "was this answer N/A before we touched it, and does evidence support the
+fill?". The conditioned metrics (r3sw26-29) are guarded only INCIDENTALLY: the coherence-pair mechanism happens
+to fail closed on unevidenced fills. COMMCAP sits unguarded precisely because it has no pair yet. Candidate
+assertion, for the record: "no substantive answer may exist where the earliest history value was N/A and no
+supporting-evidence signal is present." NOT built — queued, pairs with the seed/member provenance diagnostic
+(a launch prerequisite), same class of question, scope together on David's ruling.
+DETECTION PROVENANCE (the argument for the gate): the 17 were found INCIDENTALLY — the Option-2 base re-open
+forced a provenance look at that cohort — NOT by any routine check. Nothing in the suite would have surfaced
+either the 17 or the 7.
+QUEUE: (a) 7 COMMCAP fabrications -> resolve WITHIN the commission-authority ruling (INC_135-vs-136), C-item; (b)
+provenance gate -> pair with the seed/member provenance diagnostic (launch prerequisite), scope together, David's
+ruling. Existing queue unchanged: on-call seed-realism (REW_PAY_016 reseed + r3sw29 forward-guard gap), LTI-type
+148/211, RED_TERM_03, CARE-option flag; B — COMPARATIO, AIDISCLOSE, PAY_097, GAP_005, INC_132; C — HOL_006+
+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
