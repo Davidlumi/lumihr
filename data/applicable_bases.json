@@ -509,6 +509,14 @@
     "Not applicable"
    ],
    "_r3sw29b": "consolidation conditioned on allowances-exist (215); 5 no-inventory CICOVER cleared; 67 governance-N/A remapped to Never (org pays allowances, never consolidates); self-conditioning via own NA (no pair)"
+  },
+  "REW_INC_132": {
+   "mode": "answerer_only",
+   "base_label": "organisations that operate long-term incentive plans",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw31": "LTI-types conditioned on INC_131=Yes (65, ruled); 148 seed over-answers cleared (131 no-signal + 17 secondary-equity-only); neutral practice, no verdict move"
   }
  }
 }

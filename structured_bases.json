@@ -934,6 +934,14 @@
    "parent_value_not": "DB",
    "relation": "subset_orgs",
    "note": "child-substantive ⊆ DC-havers (REW26_BEN_PENSION_TYPE != DB) — r3sw27 clear-direction; a DB/CARE scheme has no DC default fund / AE default rate, so DC-detail answers must be N/A; parent is r3sw3 tier-1 frozen and untouched"
+  },
+  {
+   "child": "REW_INC_132",
+   "child_value_not": "Not applicable",
+   "parent": "REW_INC_131",
+   "parent_value": "Yes",
+   "relation": "subset_orgs",
+   "note": "INC_132-substantive ⊆ INC_131=Yes (r3sw31): LTI-types answerable only by ruled LTI-operators (65, r3sw2 exec-LTI eligibility, 131<->133 pair-locked); a future reseed that re-over-answers INC_132 fails"
   }
  ],
  "REW26_BEN_PENSION_TYPE": {
