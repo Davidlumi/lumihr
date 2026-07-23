@@ -1,0 +1,4 @@
+metric,action,detail
+REW_PAY_019,clear 5 no-inventory CICOVER -> NA,distinguishable op (i)
+REW_PAY_019,remap 67 allowance N/A -> Never,distinguishable op (ii)
+REW_PAY_019,answerer_only self-condition,base 215

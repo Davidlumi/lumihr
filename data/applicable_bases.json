@@ -501,6 +501,14 @@
     "Not offered / not applicable"
    ],
    "_r3sw29a": "on-call pay-method conditioned on the on-call family (OC∪SB∪CO=122); 92 non-family over-answers cleared; self-conditioning via own NA (no pair); scattered-flat, no sector-gate"
+  },
+  "REW_PAY_019": {
+   "mode": "answerer_only",
+   "base_label": "organisations that pay allowances",
+   "na_options": [
+    "Not applicable"
+   ],
+   "_r3sw29b": "consolidation conditioned on allowances-exist (215); 5 no-inventory CICOVER cleared; 67 governance-N/A remapped to Never (org pays allowances, never consolidates); self-conditioning via own NA (no pair)"
   }
  }
 }
