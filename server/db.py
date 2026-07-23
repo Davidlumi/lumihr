@@ -7,10 +7,43 @@ All JSON-shaped values are stored as TEXT and (de)serialised at the edges.
 """
 import json
 import os
+import re
 import sqlite3
+import sys
 import threading
 
-DB_PATH = os.environ.get("LUMI_DB", os.path.join(os.path.dirname(__file__), "..", "lumi.db"))
+_LIVE_DB = os.path.join(os.path.dirname(__file__), "..", "lumi.db")
+# gate-safety-1: the accidental-live-access hazard is gate/verification scripts (qa_*.py,
+# verify_*.py) run with no LUMI_DB. The server (uvicorn) and deliberate data tools
+# (seed_/apply_/regen/aggregate/migrate/mp_) are NOT gates and keep defaulting to live.
+_GATE_ARGV_RE = re.compile(r"^(qa_|verify_).*\.py$")
+
+
+def _resolve_db_path():
+    """Where get_conn() connects, in order of precedence:
+      1. LUMI_DB set          -> use it (explicit target: a throwaway or named DB; run_gates.sh sets it).
+      2. LUMI_ALLOW_LIVE == 1  -> the LIVE db (explicit opt-in for a script that deliberately means live).
+      3. a gate/test process   -> REFUSE (raise) rather than silently touch live  [the gate-safety-1 fix].
+      4. anything else         -> the LIVE db (the server + normal app usage; works with no env var set).
+    """
+    env = os.environ.get("LUMI_DB")
+    if env:
+        return env
+    if os.environ.get("LUMI_ALLOW_LIVE") == "1":
+        return _LIVE_DB
+    argv0 = os.path.basename(sys.argv[0] or "")
+    if _GATE_ARGV_RE.match(argv0):
+        raise RuntimeError(
+            "db.get_conn(): REFUSING to open the LIVE database from gate/test process %r.\n"
+            "  Set LUMI_DB=<throwaway.db> to run against a copy (what run_gates.sh does),\n"
+            "  or LUMI_ALLOW_LIVE=1 to deliberately target live.\n"
+            "  (gate-safety-1: db.py no longer silently defaults gates to the live DB.)" % argv0)
+    return _LIVE_DB
+
+
+# Back-compat: a migration script reads db.DB_PATH directly. Keep it as the plain resolved
+# value for non-gate processes; get_conn() (below) is the guarded connection path.
+DB_PATH = os.environ.get("LUMI_DB") or _LIVE_DB
 
 _local = threading.local()
 
@@ -18,7 +51,7 @@ _local = threading.local()
 def get_conn():
     conn = getattr(_local, "conn", None)
     if conn is None:
-        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn = sqlite3.connect(_resolve_db_path(), timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")

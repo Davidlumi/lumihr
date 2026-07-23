@@ -91,8 +91,8 @@ st, body = admin.req("/api/submission/draft", "PUT",
                      {"question_id": "PROP_e63cf45a", "value": "999", "org_id": foreign_org_id})
 check("PUT draft with injected org_id writes to own org only (session-scoped)", st in (200, 403))
 # confirm the draft did NOT land on the foreign org
-import sqlite3 as s3
-db = s3.connect(os.environ.get("LUMI_DB") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))  # nonrew-2: honor LUMI_DB so the DELETE FROM drafts hits the throwaway, never live
+from db import get_conn as _gs1_get_conn
+db = _gs1_get_conn()  # gate-safety-1: route through the hardened helper — a bare run REFUSES instead of silently hitting live
 row = db.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (foreign_org_id,)).fetchone()
 check("DB: no draft row created for foreign org", row[0] == 0, row[0])
 db.execute("DELETE FROM drafts"); db.commit()

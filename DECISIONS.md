@@ -9475,3 +9475,62 @@ label specifically, never is_na — 41 legitimate Reward options depend on is_na
 modernization / retirement; GAP_004 seed-realism, INC_131 form-realism, on-call REW_PAY_016, PAY_097 regeneration,
 7 COMMCAP, provenance gate, RED_TERM_03, CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
 COMMCAP+INC_136, SICK_004.
+
+## gate-safety-1 — harden get_conn() against silent live fallback (ruled + applied 23 July 2026)
+ROOT CAUSE (stated plainly): server/db.py:13 was `DB_PATH = os.environ.get("LUMI_DB", <live>)` — get_conn() SILENTLY
+DEFAULTED TO THE LIVE DB whenever LUMI_DB was unset. run_gates.sh always sets LUMI_DB (the live suite was safe), but
+a bare `python qa_X.py` pointed at production. qa_phase2's hardcoded `../lumi.db` was a WORSE variant of the same
+defect; the nonrew-2 fix (honor LUMI_DB) moved it INTO this class rather than out of danger.
+THE INCIDENT THAT SURFACED IT: during nonrew-2 verification, qa_phase2's `DELETE FROM drafts` wiped 2 live draft rows
+(REW_BEN_047/048, org 5e67fa8c), restored from backup. Found by ACCIDENT — nothing in the standing flow would have
+caught it; drafts is not covered by any byte-identical assertion.
+FIVE GATES were destructive-on-live if run bare — qa_release, qa_pulse, qa_strategy, qa_signals_system, qa_phase2.
+qa_release the MOST DANGEROUS: `retire_question()` + `UPDATE questions SET is_required/version` change NO row count,
+so they pass every standing assertion (only the 8 frozen targets are content-checked).
+MECHANISM CHOSEN — process-name heuristic on argv0 (db.py._resolve_db_path). Precedence: (1) LUMI_DB set -> use it;
+(2) LUMI_ALLOW_LIVE==1 -> live (explicit opt-in); (3) argv0 matches ^(qa_|verify_).*\.py$ -> RAISE with a message
+naming the fix; (4) else -> live. WHY this and not the alternatives: the server has 150+ get_conn() call sites and
+must work with NO env var (rules out an explicit allow_live= param); qa_release AND qa_pulse `import app`, so an
+"app sets an opt-in flag at import" scheme would opt those two gates into live (rules it out); migration runners use
+DIRECT sqlite3.connect() (not get_conn) so are unaffected. Process identity (uvicorn vs qa_X.py) is the only signal
+left. Legit-live is distinguished from accidental by: the SERVER (argv0=uvicorn, not a gate) and DATA TOOLS
+(aggregate/seed_/apply_/regen/mp_/notification_sweep — not gates) keep defaulting to live; MIGRATION RUNNERS keep
+their own --confirmed-by-david guard; only qa_/verify_ processes must now name their DB. qa_phase2 (a direct connect)
+was routed through get_conn so the guard reaches it too.
+DATA TOOLS LEFT DEFAULTING TO LIVE (David ruled): deliberate-use, same class as migration runners with their own
+guards. Forcing LUMI_ALLOW_LIVE into every rebuild would TRAIN THE BYPASS (operators would set it reflexively,
+defeating the point).
+THREE LIMITATIONS RECORDED (David's call to state plainly):
+  (a) The mechanism is a NAME-CONVENTION HEURISTIC on argv0 — a gate named OUTSIDE qa_/verify_ (or invoked so argv0
+      doesn't end in that) is NOT caught and would default to live. New gates must follow the naming convention or
+      pass LUMI_DB.
+  (b) OPERATING RULE: a bare-gate run must have :8060 pointed at a THROWAWAY first — get_conn cannot defend
+      HTTP-mediated writes. Several gates (qa_strategy, qa_phase2, qa_focus:143, qa_engine_audit:716) mutate live via
+      the API BEFORE any get_conn call; the DB guard fires too late for those.
+  (c) The hardening makes bare HTTP-path runs LEAVE ORPHANS where they previously SELF-CLEANED: e.g. qa_strategy
+      registers probe orgs via the API then DELETEs them via get_conn — post-hardening the get_conn cleanup REFUSES,
+      so the API-created probe orgs are left orphaned. A VISIBLE failure (loud refuse) but a MESSIER end state than
+      the silent self-clean it replaces. Demonstrated live during this diff's own proof: bare-running qa_strategy/
+      qa_phase2 against the live :8060 created 2 "QA Strategy Probe" orgs + a Thornbridge draft that the refused
+      cleanup left behind; restored exactly from lumi.db.bak_pre_nonrew2_delete_20260723 (all data tables == baseline;
+      the only residual is a few ephemeral session tokens — auth, not data).
+WHAT THIS DIFF DOES NOT FIX: the COVERAGE GAP (40 of 42 tables have no standing byte-identical assertion — why the
+drafts wipe went unnoticed; the mechanism exists, this sweep computed all 42 counts — that is gate-safety-2). Also
+NOT addressed: the API-mediated deletes that hit whatever is on :8060 (qa_focus:143 shares, qa_engine_audit:716
+peer-groups, qa_phase2:140/147); 11 gates hardcode that URL. And the run_gates.sh trap gap (kill -9 / machine sleep
+skips teardown, leaving :8060 on the throwaway DB with no "am I on the real DB?" check).
+PAST OCCURRENCE UNDETERMINABLE (honest): no positive residue found (no 'REWORDED FIXTURE TEXT' on live, no leftover
+fixture orgs before this diff), but the affected tables (drafts/shares/signal_actions/org_strategy/sessions/users/
+orgs) mostly lack autoincrement keys, so a past mutation would leave no trace. NOT an all-clear.
+VERIFIED: resolver unit test (4 branches: server->live, bare gates->REFUSE, LUMI_DB->throwaway, ALLOW_LIVE->live,
+data tools->live); bare run of all 5 destructive gates REFUSES; run_gates 11/11 GREEN (freeze PASS) unchanged; bare
+uvicorn serves /api/legal 200 + authenticated Benchmark renders "All reward · 218 cards / [Reward] / 0 console
+errors"; migration double-guard intact (migrate_nonrew2 --write without --confirmed -> REFUSED) and migrations
+connect fine (direct connect, unaffected); frozen-8 byte-identical; answers-book b0ff15cb + 41/42 tables exact
+(sessions carries ephemeral login tokens only). db.py + qa_phase2.py the only files changed; ZERO data change.
+QUEUE (added): route qa_plausibility.py and qa_reseed.py through get_conn or PROVE they can't write (both currently
+use a direct connect / LUMI_DB read and bypass the guard; qa_plausibility is the freeze gate — read-only in intent,
+unproven). gate-safety-2 (whole-DB table-count-and-hash standing assertion). Existing queue unchanged: API-mediated
+:8060 deletes + :8060 hardcoding across 11 gates; run_gates trap gap; retrieval filter-after-truncate; DK submission
+guard; qa_phase1 CSV-premise; GAP_004/INC_131/on-call REW_PAY_016/PAY_097 seed-realism; 7 COMMCAP; provenance gate;
+RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
