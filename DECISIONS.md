@@ -9202,3 +9202,104 @@ provenance gate -> pair with the seed/member provenance diagnostic (launch prere
 ruling. Existing queue unchanged: on-call seed-realism (REW_PAY_016 reseed + r3sw29 forward-guard gap), LTI-type
 148/211, RED_TERM_03, CARE-option flag; B — COMPARATIO, AIDISCLOSE, PAY_097, GAP_005, INC_132; C — HOL_006+
 BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## LTI-types (REW_INC_132) — condition on the ruled parent, clear the seed over-answer (r3sw31, ruled + applied 23 July 2026)
+Resolves the CONDITIONING half of the queued "LTI-type 148/211 seed-realism" item (the form-realism half stays
+open — see queue). REW_INC_132 "which LTI types offered" was SEEDED UNCONDITIONED on its parent: 211 substantive
+vs REW_INC_131=Yes=65 (the r3sw2-ruled exec-LTI operators = EXACTLY the INC_133 eligibility-holders, 131<->133
+pair-locked in the freeze gate). Ruled (David): CONDITION on INC_131=Yes (65); CLEAR all 148 over-answers to the
+existing "Not applicable" is_na option; base 211 -> 63.
+THE PREMISE CORRECTION (record so the wrong framing does not resurface): the metric was queued as verdict-feeding
+("more types = richer"). THE CONFIG DISPROVES IT — class=Practice, categorical, direction=None, polarity=NEUTRAL;
+option_scores are CATEGORY CODES (RSUs 0 / Share options 25 / Performance shares 50 / Cash LTIP 75 / Other 100),
+NOT a poor->rich scale; score_direction resolves to 0 and score_answer returns None (unscorable). PROVEN not
+asserted (imported aggregate.score_direction/score_polarity/score_answer). NO directional verdict moves; only
+INC_132's own payload changed (1 of 944) — zero propagation.
+THE REAL HARM (correctly stated): peer prevalence "offers an LTI type" was inflated ~3x (211/220 = 96% vs true
+65/220 = 30%) and 131 orgs each DISPLAYED A FABRICATED LTI PRACTICE on their own card (e.g. Thornbridge Retail,
+INC_131=No, was shown offering an LTI type — now correctly N/A; Advisory, INC_131=Yes, keeps Share options). This
+is data-correctness AT SCALE, not verdict miscategorisation.
+THE 148 (derive-don't-hardcode, hard-asserted ==148, HARD-ABORT if moved) = 131 NO-SIGNAL (no LTI/equity evidence
+at all) + 17 SECONDARY-EQUITY-ONLY (EMICSOP/SHAREPLAN operators — all-employee SAYE/SIP or discretionary EMI/CSOP,
+which INC_131 deliberately excludes). The 17 CLEARED alongside the 131 (ruled): INC_131's ruled value is
+specifically exec-LTI-by-level eligibility; holding the 17 would straddle two definitions. THE INC_131-vs-EMICSOP/
+SHAREPLAN COHERENCE GAP IS REAL (union 82 vs ruled 65) and is LOGGED AS A KNOWN OUT-OF-SCOPE FORK — the same
+treatment Diff 7 gave WEL_BMAP-vs-SALSAC — NOT resolved here.
+PROVENANCE: REW_INC_132 has ZERO answers_history — pure original seed, seeded unconditioned on INC_131. An
+ORIGINAL-SEED generation defect, NOT a Diff-7-style fabrication; the timestamp-signature method has nothing to
+bite on. WIDER POINT (boundary on the queued provenance gate): metrics with no history CANNOT be provenance-
+audited at all — the gate can only assert against current evidence, not "was this N/A before we touched it".
+SECONDARY-SIGNAL CHECK AS STANDING METHOD: the naïve contradiction 146 became 131 real once EMICSOP/SHAREPLAN
+were checked (union 82 vs ruled 65) — the THIRD time the union check has changed the count (after SALSAC's WEL
+tick and pension-DC's opt-in); the union check is now standing method for any "child over-answers parent" finding.
+NO reclassify (parent r3sw2-ruled + 131<->133 pair-locked; widening breaks the pair, out of scope), NO remap, NO
+floor-add (no "None" option; N/A is the honest no-LTI answer; remapping the cleared to "Other" (score 100) would
+FABRICATE — standing rule: never assign the rare/generous option to an unknown, exclude don't fabricate).
+CONDITIONING: answerer_only + subset pair INC_132-substantive ⊆ INC_131=Yes (SINGLE-VALUE parent_value selector,
+NO engine change — unlike r3sw29's multi-token on-call). Data = UPDATE-only, 148 edits.
+VERIFIED: throwaway (scratchpad/r3sw31_work) — clear==148 (131+17), base 211->63, only INC_132 payload moves,
+substantive(63) ⊆ INC_131=Yes(65), PARENT INC_131 + INC_133 byte-identical (131<->133 inputs untouched),
+frozen-8 byte-identical, n>=5 suppression intact, NEGATIVE TEST (non-LTI org given INC_132=RSUs -> qa_plausibility
+rc=1 PAIR-INCOHERENCE), qa_reseed 9/9, run_gates 11/11 (freeze gate PASS incl 131<->133). Served files pristine
+via swap-test-restore (generated_marginals byte-identical). LIVE (backup lumi.db.bak_pre_r3sw31_ltitypes_20260723):
+post-write EXACT (live==throwaway, 148 rows; live payloads==throwaway 0/944), coherence + parent/pair-inputs +
+frozen-8 re-verified byte-identical, render n=63 excluded_na=157 no N/A bar, qa_plausibility on live rc=0 (freeze
+gate PASS, 131<->133 holds), live gate suite 11/11 + 9/9. server/migrate_r3sw31_ltitypes.py is the dual-guarded
+applier (parent + frozen-8 byte-identical asserts).
+QUEUE: INC_131 LEGAL-FORM REALISM (the form-realism half, NOT this diff) — the parent's distribution is the wrong
+shape on share-of-base (VC-backed 0% implausible for option-running startups; Mutual 55% and LLP 100% implausible
+with no equity to grant; PLC 53% low; small bases on VC 5 / Mutual 11 / LLP 2 warrant caution). Sits on the
+r3sw2-ruled, 131<->133-pair-locked INC_131=65 -> a RE-OPEN requiring David's authorisation, its OWN diagnostic
+before any build. Recorded OPEN, not actioned. Existing queue unchanged: 7 COMMCAP (commission-authority ruling),
+provenance gate (paired with seed/member provenance diagnostic), on-call seed-realism (REW_PAY_016 + r3sw29
+forward-guard gap), RED_TERM_03, CARE-option flag; B — PAY_097 (prior "PRACTICE" ruling constrains), GAP_005,
+AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## PAY_097 (pay differentiated by performance) — clear the 16 impossible, preserve the honest, log the gap (r3sw32, ruled + applied 23 July 2026)
+Narrow honest fix on a two-directional seed defect. PRIOR RULING RESPECTED (quoted): the 14-July "Market vs
+practice classification rule (RATIFIED)" — "Ratified exception (David): REW_PAY_097 pay-differentiation-by-
+performance = PRACTICE, overriding the tiebreak: egalitarian-vs-differentiated is a philosophy fork, not
+richer/leaner" (DECISIONS 6847-6848; "PRACTICE stands", 6905). That ruling constrains CLASSIFICATION (PRACTICE,
+not MARKET) and DIRECTION (no richer/leaner ordering) ONLY. This diff clears impossible answers and touches no
+classification, scoring, or option semantics — it constrains nothing the ruling governs.
+VERDICT IMPACT = ZERO, PROVEN (not asserted): PAY_097 is class=Practice + polarity=neutral -> DOUBLE-EXCLUDED at
+positions.py:778 `if cls not in ("Practice","Design") and polarised and q.is_scored and score_direction(q)!=0`
+(fails clause 1 AND "polarised"); empirically its payload carries NO position/verdict/gap field. score_direction=-1
+is a RED HERRING (label heuristic) — the MEMBERSHIP GATE is the authority; score_polarity=neutral (config) and the
+Practice class keep it out of the gauge. SECOND CONSECUTIVE triage "scored -> verdict-feeding" premise disproved
+(after INC_132). No org's below/on/above-market verdict moves; PAY_097 is a Practice adoption/prevalence surface.
+THE UNION CHECK CHANGED THE COUNT A 4TH TIME (now standing method, four-for-four after SALSAC WEL / pension-DC opt-
+in / INC_132 EMICSOP-SHAREPLAN): REW263_PAY_MERITMATRIX (132 users) is a REAL second mechanism — you can
+differentiate pay via a merit matrix (rating x position) WITHOUT formal ratings. True applicable base = PERF_03-
+uses-ratings ∪ MERITMATRIX = 195, not 170. The over-answer contradiction shrank 26 -> 22.
+THE TWO-DIRECTIONAL DEFECT (the over-answer framing missed the larger half): PAY_097 was seeded LOOSELY COUPLED to
+its mechanism in BOTH directions — 22 over-answers (substantive with no mechanism) AND 42 reverse-N/A (applicable
+orgs who self-declared N/A). Zero answers_history confirms ORIGINAL-SEED generation, not a Diff-7-style fabrication.
+FIX (ruled): CLEAR the 16 IMPOSSIBLE (Yes-strongly 10 + Yes-moderately 6, NO rating AND NO merit matrix) -> "Not
+applicable" — they claim differentiation-BY-RATING with no mechanism to differentiate by (child-impossible).
+PRESERVE the 6 "No-flat" no-mechanism answers BY DELIBERATE RULING (not arithmetic): a no-mechanism org answering
+"we don't differentiate" is HONEST and substantive; the floor option carries the meaning; clearing all 22 would
+have DESTROYED these 6 — the Option-2 trap avoided (standing rule: never clear a real answer into N/A). LEAVE the
+42 reverse-N/A UNTOUCHED as a KNOWN, QUANTIFIED, OPEN GAP: filling FABRICATES (no independent evidence to falsify a
+fill — the unfalsifiable-by-construction class from the Diff-7 audit); conditioning on the 195 union needs a MULTI-
+SIGNAL parent engine change (declined on r3sw29 and again here). THE METRIC STILL UNDER-REPORTS BY 42 AFTER THIS
+DIFF — DELIBERATE, recorded so it is not mistaken for completeness. NO condition on the union, NO coherence pair,
+NO applicable_bases change — DATA-ONLY; the N/A bar STILL RENDERS (45 -> 61; this diff does not claim to clear it).
+SOFT SEED-REALISM FLAG (log, do NOT act): 63% differentiated vs the ~48% private CIPD/ADP anchor (Pay/Performance/
+Transparency 2024, n=832) — mild over-differentiation, WITHIN grade-C tolerance, explicitly NOT a hard defect like
+INC_132's form distribution. There is NO anchored target for the strongly-vs-moderately split; none was invented.
+Data = UPDATE-only, 16 edits. VERIFIED: throwaway (scratchpad/r3sw32_work) — clear==16 (10+6), only PAY_097 payload
+moves, 6 No-flat + 42 reverse-N/A UNTOUCHED (guards), N/A bar still renders, verdict fields NONE, n>=5 suppression
+intact, 8 frozen byte-identical, non-target book hash-identical, qa_reseed 9/9, run_gates 11/11 (freeze gate PASS).
+LIVE (backup lumi.db.bak_pre_r3sw32_pay097_20260723): post-write EXACT (live==throwaway, 16 rows all Yes->NA; live
+payloads==throwaway 0/944), guards re-verified (0 No-flat / 0 reverse-N/A moved), frozen-8 byte-identical, verdict
+fields NONE on live, qa_plausibility rc=0. server/migrate_r3sw32_pay097.py is the dual-guarded applier (standing-
+rule guard asserted).
+QUEUE: PAY_097 REGENERATION (seed-realism, per ruling) — the metric was generated UNCOUPLED from the mechanism in
+both directions; a proper regeneration conditions on PERF_03 ∪ MERITMATRIX and RESOLVES the 42. MUST carry an
+honest anchored-vs-invented statement: the flat-vs-differentiated pole has a grade-C context anchor (~48% private,
+CIPD/ADP PPT 2024, n=832); the strongly-vs-moderately split has NO anchor and would be INVENTED. Its own diagnostic
++ David's explicit sign-off — NOT folded into an N/A tidy (how Diff 7's fills got in unruled). Alongside on-call
+seed-realism (REW_PAY_016) and INC_131 form-realism. Existing queue unchanged: 7 COMMCAP (commission-authority),
+provenance gate (paired with seed/member provenance), RED_TERM_03, CARE-option; B — GAP_005, AIDISCLOSE,
+COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
