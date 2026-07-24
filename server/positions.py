@@ -144,6 +144,25 @@ def position_items(org_id, cut, questions, payloads, org_answers,
             r = percentile_rank(blk["_values"], v)
             items.append(_item(q, None, v, r, blk, cut_label, "value"))
         elif q.type == "matrix":
+            # Diff 20: metric-level matrix scoring (count_yes / ordinal_select) — ONE score item for
+            # the whole matrix, ranked against the payload's matrix score distribution (the SAME score
+            # path scored selects use). Generic — driven by scoring_config.scoring_method, no metric-id
+            # special-casing. Runs before the per-row numeric path (which stays for numeric matrices).
+            from aggregate import matrix_metric_score, MATRIX_SCORE_METHODS, _row_na_label
+            if q.is_scored and (q.scoring_config or {}).get("scoring_method") in MATRIX_SCORE_METHODS:
+                cells = [org_answers.get((qid, row["row_id"])) for row in p.get("matrix_rows", [])]
+                cells = [v for v in cells if v not in (None, "") and str(v).strip() != "" and not _row_na_label(v)]
+                s = matrix_metric_score(q, cells)
+                if s is None:
+                    continue
+                blk, cut_label = score_block_for(p, cut, tb)
+                if is_suppressed(blk) or "_scores" not in blk:
+                    continue
+                r = percentile_rank(blk["_scores"], s)
+                it = _item(q, None, s, r, blk, cut_label, "score")
+                it["org_answer_label"] = "; ".join(str(v) for v in cells)[:80]
+                items.append(it)
+                continue
             _ubr = unbenchmarked_rows(qid)
             for row in p.get("matrix_rows", []):
                 if row["row_id"] in _ubr:

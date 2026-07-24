@@ -395,7 +395,60 @@ def score_answer(q, value):
         got = sum(float(option_scores.get(c, 0)) for c in sel if c in scoreable)
         mx = sum(float(option_scores[c]) for c in scoreable)
         return 100.0 * got / mx if mx > 0 else None
+
+    # max_of_ticked (Diff 20): the ticked option's OWN ladder value, no renormalisation. For a
+    # mutually-exclusive multi_select (verified 0 multi-tick) it returns the exact authored ladder
+    # value; if several are ticked, the highest. Generic — the option->value map is config-driven.
+    if method == "max_of_ticked" and q.type in ("multi_select", "single_select", "yes_no"):
+        toks = value.split(";") if q.type == "multi_select" else [value]
+        vals = []
+        for tok in toks:
+            code = by_label.get(_norm_label(tok.strip()))
+            if code is not None and code not in na_codes and code in option_scores:
+                vals.append(float(option_scores[code]))
+        return max(vals) if vals else None
     return None
+
+
+def matrix_metric_score(q, cells):
+    """Diff 20: ONE org's matrix-level score from its answered cells (N/A already excluded by the
+    caller). Generic + config-driven — the mechanism is `scoring_config.scoring_method`, never a
+    metric-id special case. Returns None when the org has no scoreable cell.
+      matrix_count_yes / mode=breadth   -> 100 * (Yes levels) / (answered levels)
+      matrix_count_yes / mode=range_max -> 100 if ANY level Yes else 0
+      ordinal_select                    -> 100 * mean(authored ordinal of each cell) / max ordinal
+                                           (band->ordinal map is authored in config, NOT derived from
+                                            option order; percentile verdicts consume rank only, and
+                                            ordinals are rank-preserving, so this is not creative parsing)."""
+    cfg = q.scoring_config or {}
+    method = cfg.get("scoring_method")
+    if not cells:
+        return None
+    if method == "matrix_count_yes":
+        yes = sum(1 for v in cells if str(v).strip().lower() == "yes")
+        mode = cfg.get("mode", "breadth")
+        if mode == "range_max":
+            return 100.0 if yes > 0 else 0.0
+        return 100.0 * yes / len(cells)
+    if method == "ordinal_select":
+        omap = cfg.get("ordinal_map") or {}
+        if not omap:
+            return None
+        mx = max(omap.values())
+        ords = [omap[str(v).strip()] for v in cells if str(v).strip() in omap]
+        if not ords or not mx:
+            return None
+        return 100.0 * (sum(ords) / len(ords)) / mx
+    return None
+
+
+MATRIX_SCORE_METHODS = ("matrix_count_yes", "ordinal_select")
+
+
+def _row_na_label(v):
+    """Module-level N/A test for a matrix cell (no col-option context — used by the read-time
+    matrix score path in positions.py). Yes/No and ordinal-band options never match _NA_LABEL."""
+    return bool(_NA_LABEL.match(str(v).strip()))
 
 
 # ------------------------------------------------- in-place status (presence)
@@ -573,7 +626,20 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
                 blk["excluded_na"] = na
             mr.append({"row_id": rid, "label": label, "block": blk})
         top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
-        return top, mr, None, None
+        # Diff 20: metric-level matrix score (count_yes / ordinal_select) — one score per org from its
+        # answered cells, so the matrix positions as a single verdict via the SAME score path scored
+        # selects use (payload["scores"]). N/A cells excluded (never in the denominator).
+        score_blk = None
+        if q.is_scored and (q.scoring_config or {}).get("scoring_method") in MATRIX_SCORE_METHODS:
+            org_scores = []
+            for oid in answering:
+                cells = [observed[rid].get(oid) for rid, _ in rows]
+                cells = [v for v in cells if v not in (None, "") and str(v).strip() != "" and not _row_na(v)]
+                s = matrix_metric_score(q, cells)
+                if s is not None:
+                    org_scores.append(s)
+            score_blk = score_block(org_scores, with_adoption=q.category in ("practice", "policy", "benefit")) if org_scores else None
+        return top, mr, score_blk, None
 
     # Non-matrix answers live at matrix_row_id='' by schema. Row-keyed answers
     # under a non-matrix question are a schema violation (seed-import artefact,
