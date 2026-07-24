@@ -9903,3 +9903,69 @@ QUEUE update: ADD the engine-gate/scoring follow-up (disclose N/A gauge-eligible
 silent; score the 8 unscored multi/matrix) — scope = the 30 `neither` above; clears all `neither`. ADD
 ordered_scale_routing.json cleanup (4 stale entries). Note: the register grade-vs-tranche audit, commission anchor
 hunt, and prior queue items are unchanged.
+
+## Diff 16 — N/A-disclosure engine gate (full-homing programme, ruled + applied 24 July 2026, commit f6b474c)
+FULL-HOMING RULING (David, 2026-07-24, verbatim): "Every metric lands in market (positioned —
+including absent-with-disclosure for a given org) or practice. No third pool."
+
+Diff 15 restored the positioned pool but left a `neither` bucket where gauge-eligible metrics that
+are legitimately NOT APPLICABLE to an org silently vanished (the engine dropped them with no
+disclosure). Diff 16 gives them a home: `positioned_absent_disclosed` — still a member of the
+positioned pool, rendered as a disclosed absence, NEVER counted in any verdict.
+
+SCOPE — engine only (positions.py + app.py) + one UI line. No config, no DB write, no scoring
+change, no re-aggregate (payloads unchanged — stated explicitly for the procedure record). The
+"two-layer" question does not arise; this is a read-time accounting addition.
+
+DERIVATION — STRUCTURAL ONLY, label-matching REFUSED. `positions.disclosed_absent()` admits a
+metric only via (a) na_handling — the org's answer code is in the metric's `na_codes`; (b) a
+declared answerer_only N/A label; or (c) a coherence-pair child whose parent condition fails.
+It NEVER string-matches "Not applicable" on the label. "None"/no-provision is SUBSTANTIVE (scores
+per none_scores_zero, positions below-market) and is deliberately excluded — none_scores_zero
+TRIPWIRE: of 7 metrics with a None-scores-0 option, Diff 16 reroutes 0 to absence.
+
+INVARIANTS (verified in rehearsal AND post-write live, EXACT match): donut 34/11/3=48 era → this
+diff leaves the Diff-15 donut 121/94/25 = 240 BYTE-IDENTICAL; `absent_disclosed` is the ONLY new
+summary key (0→10 for Thornbridge); by_section / by_superpower byte-identical for all 220 orgs (no
+seed org has zero N/As, so the universal identity is the no-op proof). Ladder sums 333: positioned
+228 / positioned_absent_disclosed 10 / approach 47 / neutral_beside 17 / unanswered 9 / neither 22.
+
+THE 10 (Thornbridge, structurally derived): na_handling ×6 (RED_TERM_02, RED_TERM_03, REW_BEN_041,
+REW_BEN_HOL_006, REW_BEN_REM_PAY_001, REW_INC_071); condition ×4 (REW264_WEL_EWACAP,
+REW264_WEL_EWAFEES, REW265_INC_SAYEDISC, REW265_INC_SHAREPART).
+
+DERIVED-NOT-EXPECTED (reported, never forced): the pre-build estimate was ≈20 move / ≈9 stay. The
+structural mandate moves 10, and `neither` stays 22 — so invariant 2's "neither = ONLY the unscored
+set" is NOT achievable engine-only. The gap is 7 metrics semantically N/A but structurally
+UNDECLARED — listed, not guessed. This is correct behaviour: Diff 16 homes what is declared and
+refuses to invent na_handling.
+
+UI (David ruling #2, amended wording): one muted count line on Overview reading
+`data.headline.absent_disclosed` (engine value, no display arithmetic), no interaction, no
+per-metric list: "N metrics don't apply to your organisation — not counted in your position". The
+second clause carries the honest disclosure (not "not applicable" as a bare label). index.html +
+share.html cache bump v423 (the mandatory companion to a JS edit, house convention — not a feature
+ride-along).
+
+GATES (throwaway, re-aggregated): qa_scores 3/0; full 11-gate suite via run_gates.sh ALL GREEN
+(hard failures 0, warnings 0 — incl. qa_hero, qa_release); gate-safety-2 confirms the suite left
+live byte-identical.
+
+THREE QUEUED SCOPES (David ruling #1, Option (a) — the remaining `neither` = 22, routed by kind):
+  1. DIFF 17 — the 15 unscored multi/matrix (REW26_WEL_MH_SUPPORT, REW265_PAY_PAYCOMMS, REW_INC_133,
+     REW_PAY_020[matrix], REW_PAY_109, + 10 multi_selects). Score maps come to David for per-metric
+     sign-off BEFORE any build.
+  2. DECLARATION DATA DIFF — the 7 "other", routed by kind, NOT one bulk declaration:
+     - COMMCAP, NICSHARING, ETHDISREADY, GPGNAMING → propose per-question `na_codes` declarations,
+       each cited to the live option list; David signs off per metric.
+     - PMIEXCESS → NOT a declaration fix. Its parent PMI IS satisfied but the child answer asserts a
+       no-PMI context — a conditioning-coherence DATA INCONSISTENCY. Routed to the four-way coherence
+       work; fix the seed, do NOT declare na_codes over it.
+     - FERTROUTE, PAY_020 → individual determination (answerer_only declaration vs matrix handling),
+       separate proposals, flagged as judgment calls.
+  3. DIFF 18 — the neutral-17 apply, pending David's ruling on RULING_SHEET_neutral17_2026-07-24.md
+     (5 PRACTICE / 12 OUTLIER_SCALE / 0 LOWER_IS_BETTER proposed; Diff 18 does not exist until ruled).
+
+Backup: lumi.db.bak_pre_diff16_disclosure_20260724_170610 (belt-and-braces; no DB write occurred —
+answers book d101bdbb… unchanged). HELD/awaiting David (unchanged): neutral-17 sheet; TIPS_EXIST;
+ordered_scale_routing.json stale entries (separate cleanup, unscheduled).
