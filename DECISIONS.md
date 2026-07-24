@@ -10080,3 +10080,49 @@ THE 6 HOLDs — one queued route (a single engine-mechanism diff, rehearsal-gate
     `max_of_ticked` multi-select mode.
   neutral_beside(1): REW_Q524161 (employer notice, banded "N weeks" -> no _values) — fixed by numeric
     normalisation of the cells; bundled into the same engine-mechanism diff as a cleanup.
+
+## Diff 20 — engine mechanisms close the full-homing programme (ruled + applied 24 July 2026, commits ef4ae25 + 5295964)
+The final 6 HOLDs homed by three GENERIC, config-driven scoring mechanisms (no metric-id special-casing
+in engine code). Two commits, two fix classes: engine mechanism (ef4ae25) then Q524161 classification
+(5295964). Backup: lumi.db.bak_pre_diff20_20260724_210405. Post-write EXACT-matched the rehearsal.
+
+MECHANISMS (aggregate.py + positions.py; matrix score path parallel to scored selects, via
+payload["scores"]):
+  - `matrix_count_yes` mode=breadth   -> 100 * (Yes levels) / (answered levels): REW_BEN_139,
+    REW_PAY_109, REW_PAY_020.
+  - `matrix_count_yes` mode=range_max  -> 100 if ANY level Yes else 0: REW_INC_133. Re-verified against
+    the ruled INC_131<-INC_133 coherence pair in rehearsal: INC_131=Yes ⊆ INC_133 any-Yes, 65 = 65 EXACT.
+  - `max_of_ticked`                    -> the ticked option's OWN ladder value, NO renormalisation:
+    REW26_PAY_JOBEVAL_COVERAGE (All=100/Some=66/Senior=33/None=0; None=0 positions below-market, never
+    absence — tripwire held; mutual exclusivity verified 0 multi-tick, max_of_ticked is the rule if that
+    ever changes).
+  - `ordinal_select`                   -> 100 * mean(authored ordinal) / max ordinal: REW_Q524161.
+
+Q524161 RATIFIED ordinal_map (David 2026-07-24, verbatim — authored in the metric's scoring_config, the
+band order NEVER derived at runtime): {"1 week":1, "2 weeks":2, "3 weeks":3, "4 weeks":4, "6 weeks":5,
+"8 weeks":6, "12 weeks":7, "16 weeks":8, "More than 16 weeks":9}. Direction: longer employer notice =
+above market. WHY ORDINAL IS NOT CREATIVE PARSING: percentile verdicts consume RANK only, and an ordinal
+map is rank-preserving — "More than 16 weeks"=9 is its declared top position, not an invented numeric
+value; the 53 orgs on the open band are kept (a parse route would have excluded them, distorting
+flatteringly). This was chosen over the two ruled Q524161 routes (parse/normalise), both of which hit the
+"More than 16 weeks" open-band wall — recorded at the STOP, David approved ordinal_select as a third
+generic mechanism. Q524161's held Diff-18 OUTLIER ruling (direction=higher_is_better) is now CLOSED
+(config direction + DB polarity flipped, second commit).
+
+PARSER-FLIP ENUMERATION (invariant): matrix_value and numeric_mode were UNTOUCHED (ordinal_select uses
+the score path, not the numeric _values path), so NO metric's _values status can flip. Confirmed by the
+bucket/verdict enumeration: only the 6 moved (each neither/neutral_beside -> positioned); every by_section
+change sits in one of the 6's five domains with `available` rising by exactly the count of the 6 there;
+no non-6 metric moved bucket or verdict. Frozen-8: none of the 6 is frozen-8 (asserted). Gates: qa_scores
+3/0 (no new backwards ladders from any mechanism), full 11-suite + qa_hero + qa_release ALL GREEN.
+
+OUTCOME: ladder positioned 251 / positioned_absent_disclosed 15 / approach 55 / neutral_beside 0 /
+unanswered 12 / neither 0 (sum 333); Thornbridge donut 147/102/30=279 -> 150/105/30=285.
+
+PROGRAMME CLOSURE (David's 2026-07-24 full-homing ruling — "Every metric lands in market, including
+absent-with-disclosure, or practice; no third pool"): **FULL-HOMING COMPLETE — 333 = market ∪ practice.**
+neither = 0, neutral_beside = 0. Every live Reward metric now lands in positioned / positioned_absent_
+disclosed / unanswered / suppressed (market, disclosed where absent) or approach (practice). The
+programme that began with the Diff-14 collapse diagnosis (93->48) and ran through Diff 15 (two-layer
+reversal), Diff 16 (N/A-disclosure gate), Diff 18 (neutral-17), Diff 17/19 (score maps + declarations +
+PMIEXCESS coherence) and Diff 20 (engine mechanisms) is closed.
