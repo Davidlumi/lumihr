@@ -10230,3 +10230,51 @@ HEADLINE STREAM DOMAIN 3: next-smallest TBD set is a THREE-WAY TIE at 6 (Incenti
 Health & Protection, Pensions & Savings). PROPOSED: Pensions & Savings — family adjacency to batch-2's
 SALSAC work (NICSHARING na_codes fresh, the residual-26 contradiction family lives there, PLSA_QM bound
 precedent set). David picks/confirms.
+
+## Round-2 batch-3 — GAP_012 + BEN_112 shape + NIC-26 closure (ruled + applied 24 July 2026, commit 0cb9e23)
+P&S RULINGS (David 2026-07-24, verbatim — "confirm all, b via batch-3, A-then-B"): BEN_112 AMEND (Round-2
+target as a SHAPE reshape, new class); PENS_EMP_MAX CONFIRM NOT COMPARABLE (definitional — the by-level
+grid cannot reproduce Aon's single-org scheme-max: candidate bases land at 100% vs 1.4% against ~50%);
+PROP_36b990f9 CONFIRM aligned-soft; PENSION_TYPE CONFIRM superseded-by-frozen-target (+ empty-anchor cell
+to the maintenance queue); PENSION_MATCH CONFIRM aligned (+2.2 vs weighted 49.2; Feb-2026 source text
+corroborates the 57%-large anchor verbatim); AEDEFAULT CONFIRM bound-anchor. RESIDUAL-26: route (b) —
+NIC-side repair, vehicle batch-3 coherence side-scope. Rationale: freeze-safe, deterministic single-rule
+class; the absent->substantive movement of 26 NIC answers is TRUTHFUL (SALSAC=Yes already asserts the
+scheme exists). PASS-3 prioritisation: A-then-B; the 52 NO-SOURCE rows stay estimate-flagged until member
+data (EAP principle).
+
+APPLIED (seed-data 0cb9e23; fixtures byte-held; non-batch book hash-identical; n unchanged; backup
+lumi.db.bak_pre_batch3_20260724_225324; post-write EXACT-matched the rehearsal):
+  GAP_012: annually 21->40 of 173 (12.1%->23.1%) vs the 26% grade-A anchor — under-peak ~89%. +19 from the
+    "Yes – occasionally" pool ONLY, holding any-Yes at exactly 26.0% (the gm marginal + modal untouched —
+    the FINWELL263/Ad-hoc-first mechanism, third application).
+  BEN_112 SHAPE — THE DESIGN NOTE, NOW DOCTRINE FOR SHAPE RESHAPES: when a matrix metric's shape (not its
+    headline) diverges, single-cell promotion is generally IMPOSSIBLE without inversions (here the
+    inversion-safe pool was 0 — every in-band org held a non-frontline level below the target). The
+    coherent mechanism is a WHOLE-GRID UNIFORM UPLIFT: delta = target_frontline - old_frontline applied to
+    EVERY level cell, preserving the org's internal differentials exactly, making inversions structurally
+    impossible (asserted 0). Band-by-band reporting is MANDATORY for this class (a headline number alone
+    is insufficient): frontline 3-6 band 213 (96.8%) -> 176 (80.0%) vs Aon 68% (grade-B short-landing);
+    7-9 band 7->44; <3 stays 0 (the AE statutory floor forbids fattening the low tail); implausibility cap
+    25 (0 orgs excluded); level means shifted +0.63 transparently. PENS_EMP_MAX + PENSION_MATCH headlines
+    asserted byte-unchanged on the redrawn orgs.
+  NIC-26 REPAIR — RESIDUAL-26 CLOSED: class asserted pre-apply as exactly 26 (22 unclassified + 4 SME + 0
+    large; zero fixtures) -> NICSHARING 'No sal-sac scheme' -> 'No'. SALSACxNIC contradictions 26 -> 0
+    (the family opened at 31 pre-batch-2; now fully coherent). NIC dist: no-scheme 89->63, No 100->126;
+    substantive n 131->157; %sharing among substantive 23.7->19.7 (dilution reported). SALSAC un-grazed —
+    the fresh {Yes 0.5227} freeze green (settled 8 checked, max drift 0.005pp).
+VERDICT MOVEMENT: metric-level zero; item-level exactly TWO, both REW_BEN_112 rows (Thornbridge frontline
++ supervisor, at->below) — the held fixture re-ranking against the truer uplifted cohort, the
+fixture-exclusion doctrine working as designed. Donut 150/105/30 -> 152/103/30 = 285. Gates: freeze PASS,
+qa_scores 3/0 (no ratchet held-outs), full 11-suite ALL GREEN, gate-safety-2 live byte-identical through
+rehearsal.
+
+PASS-3 TRANCHE-1 SIGN-OFFS (David 2026-07-24; PASS3_tranche1_verified_2026-07-24.md; register untouched):
+RATIFIED register-ready — CASHPLAN (23% all / 27% all-or-some, RM2022 + size splits), OPTICAL (63/72 +
+splits), EWA (CORRECTED 10%->11% all / 14% all-or-some — source-verified), SEASONTICKET (25+5=30, drafted
+2018 recall REPLACED by verified 2022 figures), FLEXPATTERN (partial, via the NEWER July-2025 edition;
+Figure-1 column mapping + annualised HELD OUT for David's visual check; "core hours" is not a surveyed
+arm — partial mapping flagged). HOLPAYMETHOD ratified pending the SI-citation confirm at register write.
+PROFITSHARE stays UNVERIFIED — neither held CIPD edition carries the scheme-type table; "CIPD RM: Focus
+on pay edition" added to the DOCUMENT WANTS-LIST (David sources it, or the row re-grades B/EST at
+maintenance). All feed the queued register-maintenance pass.
