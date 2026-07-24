@@ -9969,3 +9969,65 @@ THREE QUEUED SCOPES (David ruling #1, Option (a) — the remaining `neither` = 2
 Backup: lumi.db.bak_pre_diff16_disclosure_20260724_170610 (belt-and-braces; no DB write occurred —
 answers book d101bdbb… unchanged). HELD/awaiting David (unchanged): neutral-17 sheet; TIPS_EXIST;
 ordered_scale_routing.json stale entries (separate cleanup, unscheduled).
+
+## Diff 18 — apply the neutral-17 rulings + TIPS_EXIST closure (full-homing programme, ruled + applied 24 July 2026, commit 058356c)
+Homes the 17 `neutral_beside` residue per David's 2026-07-24 ruling (David transmitting the prompt IS
+the ruling; the tally was reviewed in-session — Claude flagged one direction error + one sequencing
+trap, both folded in). Classification apply, ONE fix class: the 17 + TIPS_EXIST only.
+
+THE RULING (verbatim tally):
+  6 -> PRACTICE: PROP_e63cf45a (workforce cost % revenue — CFO-landmine + brushes the no-base-salary
+    boundary), PROP_d16bae79 (workforce cost per FTE — same), RED_COST_01 (redundancy cost — dual-signed),
+    REW_INC_104 (bonus payout % of target — realisation ratio, not generosity), REW_BEN_PENS_EE_MAX_01
+    (max EMPLOYEE contribution — caps the employee's own money, not generosity), b1785613 (EMPLOYEE notice
+    period — DIRECTION ERROR CAUGHT IN REVIEW: longer notice RESTRICTS the employee; "longer = above
+    market" would fire backwards, the life-assurance bug shape; any future positioning needs its own
+    contested-direction ruling).
+  11 -> OUTLIER_SCALE (market, positioned on the authored scale, ratified as written in
+    RULING_SHEET_neutral17_2026-07-24.md): EXT_REW_GAP_002, EXT_REW_GAP_007 (£-band ladders,
+    Non-financial-only=0, higher=above); 323ffcf1 (max bonus %), REW_INC_111 (target bonus %),
+    REW_INC_LTI_MAX_01, REW_INC_LTI_VALUE_TYP_01 (LTI %), REW_BEN_112, REW_BEN_PENS_EMP_MAX_01 (employer
+    pension %), fa0f46f6 (car allowance £), REW_BEN_FLEX_ALLOW_01 (flex allowance %), REW_Q524161 (EMPLOYER
+    notice period — protective, longer genuinely better; kept, unlike its sibling). All: higher = above
+    market, per-level percentile for matrices via _metric_bands; scales are the sheet's authored
+    definitions, NEVER inferred from option order.
+  TIPS_EXIST (REW_PAY_TIPS_EXIST_7c80c508): ruled OUT permanently — Practice-class, pre-Diff-14 DB
+    polarity agreed neutral. Confirmed Practice; the Diff-15 held-out item is CLOSED.
+
+THE SEQUENCING GATE (hard) — RESOLVED with one hold-out. Diff 16 showed unscored metrics can produce no
+rankable item. PROVEN in throwaway: NUMERIC matrices rank via the raw-value path REGARDLESS of is_scored
+(the three answered is_scored=0 matrices positioned; is_scored was never the blocker — a `_values`
+numeric distribution is). BUT one OUTLIER failed differently: **REW_Q524161 (employer notice) HELD OUT** —
+its cells are banded "N weeks", which aggregate stores categorically, so it carries NO `_values`
+distribution and cannot rank for ANY org. Per the rule ("do not flip direction on a metric that cannot
+rank"), it was held out; it stays `neutral_beside`, NOT `neither` (zero metrics moved into neither). Two
+fix routes named for it: (1) NUMERIC NORMALISATION of the "N weeks" cells to a plain number so a `_values`
+distribution forms; or (2) a Diff-17-style SCORE-MAP. Sequenced behind whichever David rules.
+
+CHANGES APPLIED (16): 6 PRACTICE config class=Practice/direction=null (+ DB polarity neutralised on the 3
+directional: PROP pair lower_is_better, RED_COST_01 higher_is_better); 10 OUTLIER config direction=
+higher_is_better + DB polarity=higher_is_better + authored scale in the `_diff18_ruled` note; TIPS_EXIST
+tagged (class already Practice). All touched entries tagged `_diff18_ruled`. Re-aggregated live (payloads
+shift — the OUTLIER metrics join the gauge).
+
+OUTCOME (post-write live EXACT-matched the rehearsal): Thornbridge positioned 228->235, approach 47->53,
+neutral_beside 17->1 (the held-out REW_Q524161), neither 22 (UNCHANGED — invariant held), unanswered 9->12,
+donut 121/94/25=240 -> 146/98/25=269 (the OUTLIER metrics now feed the gauge; the ones Thornbridge hasn't
+answered show as disclosed-absence, ranking for orgs that answer them), sum 333. GATES: qa_scores 3/0 (no
+NEW backwards ladders from the OUTLIER flips, zero ratchet held-outs); full 11-suite ALL GREEN; migration
+asserts answers-book + non-ruled polarity + frozen-8 untouched. Backup:
+lumi.db.bak_pre_diff18_neutral17_20260724_180158.
+
+GO-ORDERS DRAFTED (read-only, nothing applied — for David's per-metric sign-off):
+  A. DIFF17_scoremap_review_2026-07-24.md — score-maps for the 15 unscored (11 multi_select_count + 4
+     Yes/No-by-level matrices); 6 clean equal-weight, 9 judgment-flagged (frozen MH_SUPPORT; unequal-depth
+     CHILDCARE; ordinal JOBEVAL_COVERAGE/PAYCOMMS; coherence-coupled INC_133; contested-direction).
+  B. DECLARATION_diff_review_2026-07-24.md — 4 na_codes (GPGNAMING judgment) + FERTROUTE (na_codes,
+     judgment); REW_PAY_020 RE-ROUTED to Go-Order A (a Yes/No-by-level matrix, needs a score-map not a
+     declaration); PMIEXCESS is NOT a declaration — parent PMI is satisfied while the child asserts no-PMI,
+     a conditioning-coherence SEED inconsistency routed to the four-way coherence fix class.
+
+QUEUE: the neutral-17 is now HOMED except REW_Q524161 (held, cell-format/score-map). REMAINING `neither`
+= 22 = 15 unscored (Diff 17, go-order A drafted) + 7 "other" (declaration diff, go-order B drafted, minus
+REW_PAY_020 which joins Diff 17 and PMIEXCESS which joins coherence). Held/unchanged: ordered_scale_routing
+stale entries; commission anchor hunt; register grade-vs-tranche audit.
