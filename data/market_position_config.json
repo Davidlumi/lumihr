@@ -644,13 +644,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW263_BEN_PMIEXCESS": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "retain",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_diff19b": "ruled PRACTICE — excess ladder runs no-excess->high-excess so higher_is_better fires BACKWARDS; supersedes the Diff-15 higher_is_better restore (mini-reversal)"
     },
     "REW263_GOV_BENOBJ": {
       "class": "Level",
