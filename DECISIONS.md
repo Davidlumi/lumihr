@@ -9840,3 +9840,66 @@ dbsnapshot.compare migration retrofit; qa_plausibility/qa_reseed get_conn bypass
 filter-after-truncate; DK submission guard; provenance gate + seed/member provenance; Phase 0 privacy diagnostic;
 Postgres portability audit; RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
 SICK_004.
+
+## Diff 15 — two-layer reversal of Diff 14's direction suppression (ruled + applied 24 July 2026, commit 09ee58a)
+REVERSES Diff 14 (3960efd, 2026-07-18, "suppress peer claims on 222 unanchored metrics") — logged as its own
+entry per the reversal-logging rule. Diff 14 collapsed the positioned pool (Thornbridge 93->48) as a SIDE EFFECT
+of a deliberate anti-overclaiming ruling; the Phase-0 diagnostic (DIAG_position_pool_2026-07-24) traced it and
+David ruled the reversal.
+
+THE RULING — OPTION B (David, 2026-07-24, verbatim): "Reverse Diff 14's direction->neutral suppression. Every
+metric that can carry a below/on/above verdict gets one. David explicitly accepts, with the trade-off restated to
+him, that verdicts will render on distributions whose anchoring is incomplete pre-launch; anchor quality continues
+to be trued up via the anchor programme and, post-launch, co-op member data — as data quality work, not by
+suppressing direction. The `unbenchmarked` flag and all register statuses are RETAINED as disclosure/tracking; they
+must not gate positioning (confirmed: they don't)." unbenchmarked flags + register: UNTOUCHED by this diff.
+
+SCOPE EXPANSION — OPTION A (David, 2026-07-24): the initial scope was config-only (direction field). The rehearsal
+proved Diff 14 was TWO-LAYER — layer a = market_position_config.json direction->neutral, layer b = a DB migration
+(migrate_diff14_verdict_authority.py:71, `UPDATE questions SET polarity='neutral'` on 220). A config-only restore
+positions only the scored subset and strands the rest in `neither`. David expanded scope to a FAITHFUL TWO-LAYER
+reversal: layer a (config direction) + layer b (DB questions.polarity), restored to the donor-intended
+higher_is_better. "This is one logical change — undoing Diff 14 across its original footprint — not bundled fix
+classes."
+
+THREE-STEP PROCEDURE (recorded per David): the "two-layer" reversal is OPERATIONALLY THREE STEPS — config +
+DB polarity + RE-AGGREGATE — because score routing (aggregate.score_direction route (b)) reads `_mp_direction`
+from the config into the STORED payload `_scores`. Without the re-aggregate, ~6 metrics render on stale payloads
+(positioned 222 vs the correct 228). Diff 14 itself skipped re-aggregation (relied on the nightly); Diff 15 does
+it inline so live is immediately correct. Re-aggregate is deterministic/derived (recomputes payloads from the
+unchanged answers book), not a source-data change.
+
+RESTORE SET = 216. Derived (no ids hardcoded, diff15_scope.json): _diff14-tagged in live ∩ donor(695591c) config
+direction directional ∩ live direction==neutral ∩ (pre-Diff-14 DB polarity == donor direction). All 216 -> Yes,
+donor+pre-Diff-14 both higher_is_better. CROSS-VERIFY (condition 3) against the pre-Diff-14 DB snapshot
+(bak_pre_diff14_verdictauthority_20260718) caught ONE disagreement -> HELD OUT, never guessed:
+  - REW_PAY_TIPS_EXIST_7c80c508 — donor config direction=higher_is_better but pre-Diff-14 DB polarity=neutral
+    (class=Practice, would not position anyway). Listed for David; left untouched in both layers.
+
+RELAXED CONDITION 2 (David, Option A): the rehearsal's "zero new neither" could not be met by config+DB+re-aggregate
+alone — 28 new `neither` surfaced (30 total). These are NOT restore errors; they are the PRE-EXISTING engine-gate/
+scoring defect, re-exposed by re-enabling the metrics: ~20 are N/A-for-Thornbridge (correct position-pool metrics
+the org legitimately doesn't hold — they render for orgs that do), ~8 are unscored multi_select/matrix that
+`practice_position_items` cannot rank for ANY org (need scoring). David accepted these 30 `neither` as the EXPLICIT
+SCOPE OF THE FOLLOW-UP diff (engine-gate + scoring: disclose N/A as an absence never silently, and score the
+multi/matrix), which will clear all `neither` (the original 2 + these). That fix is a SEPARATE diff (out of scope
+here).
+
+OUTCOME (post-write live EXACT-matched the rehearsal prediction; mismatch would have stopped the write):
+  Thornbridge (5e67fa8c, All peers): positioned 48 -> 228; donut below/on/above 34/11/3 -> 121/94/25 = 240;
+  gauge-eligible pool 269 (in the ~235-270 band). Ladder over 333: positioned 228 / approach 47 / neutral_beside
+  17 / suppressed 2 / unanswered 9 / neither 30 (sum 333). Config diff = exactly 432 lines (216 direction + 216
+  tag _diff14->_diff15_restored), nothing else; answers-book d101bdbb… unchanged; non-restore polarity unchanged;
+  frozen-8 untouched. Backup: lumi.db.bak_pre_diff15_reversal_20260724_160934.
+
+GATES (throwaway, re-aggregated): qa_hero 59/59 PASS; qa_scores 3/0 PASS (no NEW backwards ladders — the 216
+polarity flips reorder no option scores; allow-list not stale; ZERO metrics held out for the ratchet); qa_release
+0-fail PASS. qa_ordered_routing shows 4 failures that are PRE-EXISTING (byte-identical on the clean baseline: stale
+ordered_scale_routing.json entries — DK options on GAP_003/009/012/PAY_005, retired/wrong-type ALLOW_01/BEN_044/
+GAP_006) — NOT caused by Diff 15 (zero new failures) and not in the standard 11-gate suite; logged as separate
+routing-config debt.
+
+QUEUE update: ADD the engine-gate/scoring follow-up (disclose N/A gauge-eligible metrics as an absence, never
+silent; score the 8 unscored multi/matrix) — scope = the 30 `neither` above; clears all `neither`. ADD
+ordered_scale_routing.json cleanup (4 stale entries). Note: the register grade-vs-tranche audit, commission anchor
+hunt, and prior queue items are unchanged.
