@@ -10174,3 +10174,59 @@ every gap against the SIZE/SECTOR-WEIGHTED anchor (flat figures shown for transp
 SCREENING's within-band skew (large realised 53% vs 47%; SME 17% vs 23%) is overall-neutral; David
 ruled no nudge. Batch-1 closes with ZERO writes — the shakedown validated the gate, which is the point
 of a shakedown.
+
+## Round-2 batch-2 — Wellbeing reshape + SALSAC unfreeze/re-freeze cycle (ruled + applied 24 July 2026, commits 053901d + 9960663)
+WELLBEING RULINGS (David 2026-07-24, verbatim — "A, target, unfreeze"):
+  1. FINWELL263 -> definition A (% with a DOCUMENTED financial-wellbeing strategy — the quantity the CIPD
+     anchor asserts). PRINCIPLE RECORDED (now doctrine): the headline definition follows what the anchor
+     measures, never the definition that makes the seed look aligned. Consequence: -10pp genuine
+     under-provision gap -> Round-2 target.
+  2. WEL_BUDGET -> Round-2 target (-10.2pp on its grade-B large-only base; SME side NOT COMPARABLE stays
+     flagged, no forced comparison).
+  3. SALSAC -> UNFREEZE for reshape, then RE-FREEZE at the reshaped value. An explicit one-metric REVERSAL
+     of the master-recheck frozen-8 ratification. Rationale: fixture exclusion now protects the demo
+     narrative at org level, so the freeze was protecting a headline known to be +15.5pp over-stated on its
+     true large-only base — a distortion telling members salary sacrifice is more universal than it is.
+     Truer target > stale freeze. Re-freeze MANDATORY in the same close-out; frozen-8 remains 8 members.
+  4. All aligned rows (STRATEGY, OH, MGRTRAIN, EAP, SCREENING, FINWELL26, PLSA_QM-as-bound) ruled ALIGNED —
+     no action, recorded so they don't re-surface as flat-anchor artifacts. (MH_SUPPORT + the 4 drift-
+     artifact withdrawals: unannotated -> HOLD, per mechanism.)
+
+APPLIED (seed-data 053901d; deterministic stable-hash draws; fixtures 5e67fa8c + 833beedb byte-held;
+non-batch book hash-identical; n unchanged; backup lumi.db.bak_pre_batch2_wellbeing_20260724_221811):
+  FINWELL263: Documented 11->30 of 220 (5.0%->13.6%) vs 15% grade-A anchor — under-peaked ~91%. +19
+    promotions from the Ad-hoc pool ONLY (all FINWELL26=Yes -> no family contradiction possible; beyond-No
+    share held at 15.0% so the gm marginal and modal are untouched).
+  WEL_BUDGET: large-org positives 56->66 of 128 (43.8%->51.6%) vs 54% grade-B large-only anchor —
+    under-peaked ~95% (grade-B caution). Values sampled deterministically from the 56 observed large
+    positives (shape-preserving). ZERO SME/unclassified redraws (asserted).
+  SALSAC: large Yes 89->73 of 128 (69.5%->57.0%) vs the 54% large "offer" anchor — approached from above,
+    stopped short. NOTE: live measures BY-DEFAULT ⊆ offer, so the true over-statement was >=+15.5pp.
+    All-cohort 59.5%->52.3%. Flips drawn FIRST from the pre-existing SALSAC=Yes ∧ NICSHARING='No sal-sac
+    scheme' contradiction class: contradictions 31->26 (repair side effect — SALSAC=No is compatible with
+    every NIC value, so flips can never create one). THE RESIDUAL 26 (SME/unclassified orgs) are a
+    PRE-EXISTING seed incoherence QUEUED alongside commission-173 (same class: detail asserted while the
+    scheme-existence answer denies it; reconciliation needs its own ruling).
+VERDICT MOVEMENT: ZERO — no org-facing band crossed anywhere (donut 150/105/30 = 285 byte-identical;
+Thornbridge BUDGET P79.4->P78.5 within-band). The reshapes moved distributions, not verdicts — reported,
+attributable trivially. Gates: freeze gate PASS with SALSAC suspended (other 7 within 0.1pp), qa_scores
+3/0, full 11-suite ALL GREEN, gate-safety-2 live byte-identical through rehearsal.
+
+UNFREEZE/RE-FREEZE CYCLE (frozen_targets 9960663): suspended pre-rehearsal under a `_batch2_unfreeze`
+marker (migration REFUSES to run while SALSAC is frozen — order asserted); re-frozen post-write at
+{Yes 0.5227, No 0.4773}, n 220. Gate re-arm ASSERTED both ways: POSITIVE — live PASS, settled checked 8,
+max drift 0.005pp; NEGATIVE — a doctored copy (+5 Yes) fires FROZEN-DRIFT.
+
+BENEFITS & LIFESTYLE RULINGS (David 2026-07-24, verbatim; HEADLINES_benefits_review annotated):
+  EXT_REW_GAP_012: AMEND — definition A (at-least-annually, per the FINWELL263 doctrine) -> Round-2 target
+    at -13.9. Queued as BATCH-3's first member. (The seed's exact 26.0% on any-Yes = the same
+    pattern: anchor says "regularly", seed spread it across any-Yes.)
+  RED_TERM_02: CONFIRM — NOT COMPARABLE (statutory-cap anchor) + the 100%-na-class data-quality flag
+    QUEUED (no substantive data exists to reshape; stays disclosed-absent until real answers arrive).
+  REW_FAI_STUDY_TIME: CONFIRM — aligned (+0.2 under the anchor-faithful conditioned base); no action.
+  REW_Q524161: CONFIRM — NOT COMPARABLE (statutory-floor bound anchor, PLSA_QM class); no action.
+
+HEADLINE STREAM DOMAIN 3: next-smallest TBD set is a THREE-WAY TIE at 6 (Incentives & Recognition,
+Health & Protection, Pensions & Savings). PROPOSED: Pensions & Savings — family adjacency to batch-2's
+SALSAC work (NICSHARING na_codes fresh, the residual-26 contradiction family lives there, PLSA_QM bound
+precedent set). David picks/confirms.
