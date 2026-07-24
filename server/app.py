@@ -1819,8 +1819,18 @@ async def overview(request: Request):
     # EXISTS (strategy_complete stays true) — it's simply not applied this request.
     apply_strategy = request.query_params.get("strategy") != "off"
     _strategy = _strategy_full if apply_strategy else None   # None → legacy hero + legacy signal order
+    # Diff 16 (N/A-disclosure): gauge-eligible metrics legitimately not applicable to this org
+    # stay in the positioned pool as a DISCLOSED absence, never a silent drop. Derived structurally
+    # (positions.disclosed_absent) and passed as a separate list — it enters no verdict denominator.
+    _positioned_qids = set(pos.pool_market_bands(items, prac_items, mp_cfg,
+                                                 MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN).keys())
+    _absent = pos.disclosed_absent(org["org_id"], cut, org_visible_questions(org), payloads(),
+                                   org_answers_for(org), make_entitled(user, org), mp_cfg,
+                                   _positioned_qids, tb)
     summary = pos.overview_summary(items, mp_config=mp_cfg, practice_items=prac_items,
-                                   band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
+                                   band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH,
+                                   absent_items=_absent)
+    summary["absent_disclosed_metrics"] = _absent
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
                             DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
                             practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,

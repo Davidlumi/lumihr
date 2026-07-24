@@ -428,7 +428,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
         </div>` : html`
       <div class="ov-top">
-        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} />
+        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
           activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
@@ -785,7 +785,7 @@ function leanCaption(market) {
     : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
   return strength + " " + (v === "below" ? "below" : "above") + " the market";
 }
-function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
+function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed }) {
   // Hooks run BEFORE the early return so the order is stable when market is null
   // vs present. 2.1 — the needle settles ONCE per org, on the first populated
   // render (localStorage gate); every later visit snaps. Reduced motion + no
@@ -902,6 +902,11 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff }) {
           <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> above</span>
         </div>
       </div>
+      ${/* Diff 16 (N/A-disclosure): gauge-eligible metrics that don't apply to this org — a
+            disclosed absence, NEVER counted in below/on/above. Muted count line, engine value
+            (data.headline.absent_disclosed), no per-metric list (a later UI pass). */ ""}
+      ${absentDisclosed > 0 ? html`
+        <div class="caption arc-absent-note">${absentDisclosed} ${absentDisclosed === 1 ? "metric doesn't" : "metrics don't"} apply to your organisation — not counted in your position</div>` : null}
       ${(() => {
         const band = window.MARKET_BAND || [35, 65];
         const depth = market.depth_pctl;

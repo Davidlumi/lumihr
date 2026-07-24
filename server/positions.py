@@ -373,7 +373,7 @@ def _lower_first(s):
 # ----------------------------------------------------------------- overview
 
 def overview_summary(items, mp_config=None, practice_items=None,
-                     band_low=None, band_high=None):
+                     band_low=None, band_high=None, absent_items=None):
     """The "above the market median on X of Y comparable metrics" headline
     (board pack + share). When `mp_config` is supplied it counts the SAME
     Substance pool the gauge uses (Level + Provision, higher_is_better,
@@ -438,6 +438,11 @@ def overview_summary(items, mp_config=None, practice_items=None,
         "below_median": below,
         "broadly_in_line": inline,
         "neutral_tracked": len(items) - comparable,
+        # Diff 16 (N/A-disclosure): gauge-eligible metrics legitimately not applicable to this org
+        # (na_handling / failed conditioning). PURELY ADDITIVE — never enters comparable / above /
+        # below / inline / any denominator (invariant 1). Absent when no absent_items passed (0),
+        # so existing callers are byte-identical.
+        "absent_disclosed": len(absent_items or []),
         "by_superpower": dict(by_sp),
         "by_section": dict(by_sec),
     }
@@ -1008,6 +1013,116 @@ def substance_pool(items, practice_items, cfg):
             continue
         m = metrics.get(i["question_id"])
         out.append(_mp_normalised(i, m["direction"]) if m else i)
+    return out
+
+
+_ab_cache = {"mtime": None, "data": {}}
+_AB_PATH = os.environ.get("LUMI_AB_CONFIG") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "data", "applicable_bases.json")
+_sb_cache = {"mtime": None, "data": {}}
+_SB_PATH = os.environ.get("LUMI_SB_CONFIG") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "structured_bases.json")
+
+
+def _applicable_bases():
+    try:
+        mt = os.path.getmtime(_AB_PATH)
+    except OSError:
+        return _ab_cache["data"]
+    if _ab_cache["mtime"] != mt:
+        try:
+            _ab_cache["data"] = json.load(open(_AB_PATH)).get("metrics", {})
+            _ab_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _ab_cache["data"]
+
+
+def _coherence_children():
+    try:
+        mt = os.path.getmtime(_SB_PATH)
+    except OSError:
+        return _sb_cache["data"]
+    if _sb_cache["mtime"] != mt:
+        try:
+            _sb_cache["data"] = {p["child"]: p for p in json.load(open(_SB_PATH)).get("_coherence_pairs", [])}
+            _sb_cache["mtime"] = mt
+        except (ValueError, OSError):
+            pass
+    return _sb_cache["data"]
+
+
+def _parent_satisfied(pair, org_answers):
+    """Does the coherence-pair PARENT hold for this org? Matrix parent = any 'Yes' cell
+    (range-max). Used only to decide a child's CONDITIONING — never a verdict."""
+    parent = pair["parent"]
+    cells = [(rk, v) for (qid, rk), v in org_answers.items() if qid == parent and v not in (None, "")]
+    if not cells:
+        return False
+    if any(rk for rk, _ in cells):                       # matrix parent
+        return any(v == "Yes" for _, v in cells)
+    v = cells[0][1]
+    if "parent_value" in pair:
+        return v == pair["parent_value"]
+    if "parent_value_in" in pair:
+        return v in pair["parent_value_in"]
+    if "parent_value_not" in pair:
+        return v != pair["parent_value_not"]
+    if "parent_contains" in pair:
+        return pair["parent_contains"] in (v or "")
+    return False
+
+
+def disclosed_absent(org_id, cut, questions, payloads, org_answers, entitled, cfg,
+                     positioned_qids, twin_blocks_by_q=None):
+    """Diff 16 (N/A-disclosure): gauge-eligible metrics legitimately NOT APPLICABLE to this org —
+    a DISCLOSED absence, not a silent drop and NOT a below-market datapoint. Membership is derived
+    STRUCTURALLY — na_handling (answer code in na_codes), a declared answerer_only N/A label, or a
+    failed coherence-parent condition — NEVER by string-matching answer labels. 'None'/no-provision
+    is substantive (scores per none_scores_zero) and is deliberately NOT routed here. Returns a
+    SEPARATE list (never mixed into the positioned items pool), so it can enter no verdict
+    denominator (invariant 1). single_select/yes_no only — unscored multi/matrix stay `neither`
+    (Diff 17); a select whose score_answer is None for any OTHER reason also stays out (reported,
+    never folded into absence)."""
+    from aggregate import _norm_label, _ab_na_labels
+    metrics = cfg.get("metrics", {})
+    ab = _applicable_bases()
+    pairs = _coherence_children()
+    twin_blocks_by_q = twin_blocks_by_q or {}
+    out = []
+    for qid, q in questions.items():
+        if not entitled(q):
+            continue
+        m = metrics.get(qid)
+        if not m or m.get("class") not in ("Level", "Provision"):
+            continue
+        if m.get("direction") != "higher_is_better" or not _mp_competitive(cfg, q.sub_power):
+            continue                                     # not gauge-eligible
+        if qid in positioned_qids:
+            continue                                     # it positions — not absent
+        if q.type not in ("single_select", "yes_no"):
+            continue                                     # unscored multi/matrix -> Diff 17
+        raw = org_answers.get((qid, ""))
+        if raw in (None, ""):
+            continue                                     # unanswered is its own disclosed state
+        p = payloads.get(qid)
+        if p is None:
+            continue
+        blk, _cl = block_for(p, cut, twin_blocks_by_q.get(qid))
+        if is_suppressed(blk):
+            continue                                     # suppression is its own disclosed absence
+        reason = None
+        na_codes = set((q.scoring_config or {}).get("na_codes") or [])
+        code = {_norm_label(o["label"]): o["code"] for o in (q.options or [])}.get(_norm_label(raw))
+        if code is not None and code in na_codes:
+            reason, state = "na_handling", "absent_na"
+        elif (ab.get(qid) or {}).get("mode") == "answerer_only" and raw in _ab_na_labels(qid):
+            reason, state = "condition", "absent_condition"
+        elif qid in pairs and not _parent_satisfied(pairs[qid], org_answers):
+            reason, state = "condition", "absent_condition"
+        else:
+            continue                                     # score_answer None for another reason -> stays neither, reported
+        out.append({"question_id": qid, "subpower": q.sub_power, "reason": reason, "state": state})
     return out
 
 
