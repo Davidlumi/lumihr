@@ -1850,10 +1850,11 @@
     "REW_Q524161": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff20": "OUTLIER direction applied (held from Diff 18) — longer employer notice = above market; ordinal_select scored (Diff 20)"
     },
     "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
       "class": "Practice",
