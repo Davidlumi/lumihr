@@ -9644,3 +9644,65 @@ Existing queue unchanged: :8060 HTTP-write hardening; migration retrofit of dbsn
 qa_reseed get_conn bypass; run_gates trap gap; retrieval filter-after-truncate; DK submission guard; 7 COMMCAP;
 provenance gate; RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136,
 SICK_004.
+
+## seed-realism CLOSE — three closures + one finding (ruled, DECISIONS-only, 24 July 2026)
+Following the PAY_097 pole diagnostic, David ruled the remaining seed-realism items closed as documented DECISIONS
+rather than open queue work. NET POSITION: all four seed-realism items are now RESOLVED — GAP_004 fixed (seedreal-1,
+0d621ea); PAY_097 + PAY_016 unfixable pending sources; INC_131 deliberately locked. The queue shrank by documented
+honesty, not by shipping. This entry is DECISIONS-only: no code, no DB, no config, no reseed.
+
+(1) PAY_097 — CLOSED, NOT DEFERRED: the pole is not safely fixable.
+  ANCHOR DOES NOT MAP ONTO THE POLE — three different quantities. CIPD/ADP PPT 2024 (n=832) measures MERIT-PAY
+  PREVALENCE PER EMPLOYEE GROUP (MPT 41% / other 29%; private 48%/33%). REW_PAY_097 asks ORG-LEVEL, ANY GROUP — an org
+  differentiating for MPT-only answers Yes, so org-level prevalence is STRUCTURALLY HIGHER than any group figure. And
+  the register anchors Yes-STRONGLY at 34%, not the pole at all. The working figure "63% differentiated vs ~48%" was
+  COMPARING UNLIKE THINGS: the live pole is 76.7% on the substantive base (Yes-strongly 64 + Yes-moderately 58 of 159)
+  and has NO anchored target.
+  DEFECT IS BOTH LEVEL AND SHAPE: Healthcare 100%, Financial 100%, Public Sector 90%, Charity 80%, Education 75% —
+  implausibly high in exactly the spine-point/pay-scale sectors; flat 70-86% across FTE bands where larger employers
+  should differentiate more. NEITHER has an anchored target, so a regeneration would INVENT BOTH.
+  IT WOULD OVERWRITE r3sw32's deliberate work — the 16-clear, the 6 preserved honest "No-flat", and the ONLY record of
+  the reverse-N/A cohort (the r3sw33 supersession pattern, but here DESTROYING EVIDENCE rather than superseding
+  analysis).
+  REOPEN CONDITION (explicit): a source that anchors ORG-LEVEL pay differentiation, OR David ruling the CIPD group
+  figures onto the org level as a recorded judgement (the way GAP_004's sector shape was ruled). Absent either, leave
+  as-is. PAY_097 is class=Practice, neutral, VERDICT-SUPPRESSED (re-proven at positions.py:778 — fails 'not Practice'
+  AND fails 'polarised', direction=null), in NO coherence pair, and carries NO generated_marginals.json entry — so a
+  reseed would be neither freeze-gate-blocked nor freeze-gate-validated.
+
+(2) PAY_016 (on-call) — CLOSED PENDING RESEARCH, not queued as buildable work.
+  NO UK on-call-by-sector anchor exists; the register records "needs research". Only a coarse overall ~32% on-call
+  reference (ALLOW_01, r3sw29a). Any sector tilt would be INVENTED — the EAP failure mode. This is a RESEARCH task, not
+  a build task; the metric stays unfixable until a source exists. The known-wrong hand-coded +0.22 Technology bump at
+  regenerate.py:490 is BACKWARDS from real on-call concentration (healthcare, utilities, IT-ops, emergency/field
+  service) and is a candidate for correction via the SECTOR_TILT table ONCE AN ANCHOR EXISTS — not before.
+
+(3) INC_131 — CLOSED as DELIBERATELY LOCKED.
+  Changing it re-opens r3sw2, breaks the live 131<->133 freeze-gate coherence pair, and moves INC_132's conditioning
+  base (fixed r3sw31). The anchor is OVERALL-ONLY ("Yes 54%", grade 3) and CANNOT validate the cell-level implausibility
+  that motivates the change. Three of the four implausible cells are TINY — VC n=5, Mutual n=11, LLP n=2 — so the
+  apparent wrongness is partly small-sample noise. Recorded as a DELIBERATE decision to leave locked (stops it
+  resurfacing as open). Reopen ONLY on David's explicit authorisation.
+
+(4) TWO CORRECTIONS TO PRIOR FINDINGS (affect future work):
+  (a) The seed-realism triage's "Group A" grouping was WRONG about PAY_097. PAY_097 is SKIPPED by the generator
+      (scoring_config.polarity=neutral fails the 'laddered' test), so template_weights NEVER touches it — its
+      distribution is ORIGINAL SEED, not a generator artefact. The triage placed it in the shared sector-blind-latent
+      group; incorrect. PAY_016 must be RE-VERIFIED against the same question (laddered vs skipped) rather than
+      inheriting the triage's classification.
+  (b) nonrew-2 DEGRADED PAY_097's evidence base. PERF_03 ("Does your organisation use performance ratings?",
+      superpower=Growth) was deleted. Consequences: the reverse-N/A count fell 42 -> 32 NOT because data changed but
+      because IDENTIFIABILITY was lost (10 orgs were reverse-N/A only via PERF_03); and the twice-declined 195-union
+      multi-signal parent has COLLAPSED to a single signal (MERITMATRIX alone) — the engine change that resolution
+      depended on has lost one of its inputs.
+  GENERAL LESSON (open question, NOT resolved): nonrew-2's pre-deletion diagnostic proved no Reward COMPUTED value read
+  a non-Reward metric — which was TRUE. But PERF_03 was serving as EVIDENCE FOR ANALYSIS, not as a computed input — a
+  DIFFERENT CLASS OF DEPENDENCY the diagnostic wasn't looking for. There may be other cases. Recorded as an open
+  question. (Queued: audit whether other deleted non-Reward metrics served as analytical evidence — the PERF_03 class.)
+QUEUE after this (recorded, not actioned): GAP_004/GAP_005 union-base re-application (r3sw33 successor — contradictions
+now 53/42 post-reseed); regenerate.py repair (dead against live: DK-stripped SELECT_PRIORS, deleted MULTI_PRIORS
+questions — now a dependency for any future tilt work); OT_04_b14623a6 marginal-provenance check; audit deleted
+non-Reward metrics for analytical-evidence use (the PERF_03 class); :8060 hardening across 11 gates; migration retrofit
+of dbsnapshot.compare; qa_plausibility/qa_reseed get_conn bypass; run_gates trap gap; retrieval filter-after-truncate;
+DK submission guard; 7 COMMCAP; provenance gate + seed/member provenance; RED_TERM_03; CARE-option; B — AIDISCLOSE,
+COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
