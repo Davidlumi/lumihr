@@ -1002,18 +1002,20 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "PROP_d16bae79": {
-      "class": "Level",
+      "class": "Practice",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "PROP_e63cf45a": {
-      "class": "Level",
+      "class": "Practice",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "PROP_fe1a29ec": {
       "class": "Level",
@@ -1246,7 +1248,8 @@
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored"
+      "_diff14": "verdict suppressed: distribution has no ruled authority (Diff 14, 2026-07-18); reversible when anchored",
+      "_diff18_ruled": "ruled OUT permanently (Diff 18) — Practice-class, pre-Diff-14 polarity neutral; Diff-15 held-out closed"
     },
     "REW_PAY_TRONC_6db81475": {
       "class": "Practice",
@@ -1267,10 +1270,11 @@
     "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (max bonus opportunity), higher = above market, per-level percentile"
     },
     "REW_INC_060": {
       "class": "Practice",
@@ -1340,19 +1344,21 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_INC_104": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "REW_INC_111": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (target bonus opportunity), higher = above market, per-level percentile"
     },
     "REW_INC_131": {
       "class": "Provision",
@@ -1398,18 +1404,20 @@
     "REW_INC_LTI_MAX_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (max annual LTI), higher = above market, per-level percentile"
     },
     "REW_INC_LTI_VALUE_TYP_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (target annual LTI), higher = above market, per-level percentile"
     },
     "REW_Q528801": {
       "class": "Level",
@@ -1537,11 +1545,12 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "RED_COST_01": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "RED_NOTICE_01": {
       "class": "Level",
@@ -1761,10 +1770,11 @@
     "REW_BEN_112": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (typical employer pension contribution), higher = above market, per-level percentile"
     },
     "REW_BEN_139": {
       "class": "Level",
@@ -1778,26 +1788,29 @@
     "REW_BEN_FLEX_ALLOW_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (flexible-benefits allowance), higher = above market, per-level percentile"
     },
     "REW_BEN_PENS_EE_MAX_01": {
-      "class": "Level",
+      "class": "Practice",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "REW_BEN_PENS_EMP_MAX_01": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "retain",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (max employer pension contribution), higher = above market, per-level percentile"
     },
     "REW_FAI_STUDY_TIME_93b6ef22": {
       "class": "Provision",
@@ -1842,20 +1855,22 @@
       "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
     },
     "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
-      "class": "Level",
+      "class": "Practice",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled PRACTICE (Diff 18, David 2026-07-24)"
     },
     "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
       "class": "Level",
       "type": "numeric",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data"
+      "_diff13": "EST practitioner baseline (expert_baseline_by_level.json) — context, not a verdict; ruled 2026-07-18; reversible at real member data",
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — £ magnitude (car allowance amount), higher = above market, per-level percentile"
     },
     "OT_03_1a68c68a": {
       "class": "Provision",
@@ -2211,9 +2226,10 @@
     "EXT_REW_GAP_002": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — £-band ladder: Non-financial only(0) < Up to £25 < £26-£50 < £51-£100 < More than £100; higher = above market"
     },
     "EXT_REW_GAP_003": {
       "class": "Level",
@@ -2250,9 +2266,10 @@
     "EXT_REW_GAP_007": {
       "class": "Level",
       "type": "ordinal",
-      "direction": "neutral",
+      "direction": "higher_is_better",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — £-band ladder: Non-financial only(0) < Up to £50 < £51-£100 < £101-£250 < More than £250; higher = above market"
     },
     "PAYTR_01_42eae7ec": {
       "class": "Provision",

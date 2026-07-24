@@ -1,0 +1,22 @@
+{
+  "_readme": "Diff 18 scope — apply the neutral-17 rulings (David 2026-07-24) + TIPS_EXIST closure. PRACTICE: config class=Practice, direction=null; neutralise DB polarity where directional. OUTLIER: config class stays Level, direction=higher_is_better, DB polarity=higher_is_better, scale note as authored (RULING_SHEET_neutral17_2026-07-24.md). Scales NEVER inferred from option order. b1785613 was OUTLIER on the sheet -> ruled PRACTICE (direction error: longer employee notice RESTRICTS the employee). TIPS_EXIST already Practice (confirm + record closure).",
+  "practice": [
+    "PROP_e63cf45a", "PROP_d16bae79", "RED_COST_01", "REW_INC_104",
+    "REW_BEN_PENS_EE_MAX_01", "b1785613-96ed-4a64-9fd7-762d0ac65f19"
+  ],
+  "neutralise_db_polarity": ["PROP_e63cf45a", "PROP_d16bae79", "RED_COST_01"],
+  "outlier": {
+    "EXT_REW_GAP_002": "£-band ladder: Non-financial only(0) < Up to £25 < £26-£50 < £51-£100 < More than £100; higher = above market",
+    "EXT_REW_GAP_007": "£-band ladder: Non-financial only(0) < Up to £50 < £51-£100 < £101-£250 < More than £250; higher = above market",
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": "numeric % magnitude (max bonus opportunity), higher = above market, per-level percentile",
+    "REW_INC_111": "numeric % magnitude (target bonus opportunity), higher = above market, per-level percentile",
+    "REW_INC_LTI_MAX_01": "numeric % magnitude (max annual LTI), higher = above market, per-level percentile",
+    "REW_INC_LTI_VALUE_TYP_01": "numeric % magnitude (target annual LTI), higher = above market, per-level percentile",
+    "REW_BEN_112": "numeric % magnitude (typical employer pension contribution), higher = above market, per-level percentile",
+    "REW_BEN_PENS_EMP_MAX_01": "numeric % magnitude (max employer pension contribution), higher = above market, per-level percentile",
+    "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": "£ magnitude (car allowance amount), higher = above market, per-level percentile",
+    "REW_BEN_FLEX_ALLOW_01": "numeric % magnitude (flexible-benefits allowance), higher = above market, per-level percentile",
+    "REW_Q524161": "weeks magnitude (EMPLOYER notice period — protective, longer genuinely better), higher = above market, per-level percentile"
+  },
+  "tips_exist_confirm_practice": "REW_PAY_TIPS_EXIST_7c80c508"
+}
