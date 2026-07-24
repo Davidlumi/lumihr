@@ -9706,3 +9706,63 @@ non-Reward metrics for analytical-evidence use (the PERF_03 class); :8060 harden
 of dbsnapshot.compare; qa_plausibility/qa_reseed get_conn bypass; run_gates trap gap; retrieval filter-after-truncate;
 DK submission guard; 7 COMMCAP; provenance gate + seed/member provenance; RED_TERM_03; CARE-option; B — AIDISCLOSE,
 COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## gap004-correct — anchor mis-grade + open parent-child state (ruled LEAVE AS-IS, DECISIONS-only, 24 July 2026)
+The gap004-reconcile diagnostic established that seedreal-1 (0d621ea) rested on a MIS-READ anchor, and that neither
+available figure is strong enough to justify further change. David ruled: LEAVE THE DATA AS-IS, correct the record.
+This is DECISIONS-only — no code, no DB, no config, no reseed. The log currently asserts something FALSE; that is the
+fix.
+
+(1) THE ANCHOR WAS MIS-GRADED — correcting seedreal-1's record. seedreal-1's entry states GAP_004's overall 56% is
+"ANCHORED (grade 2, register 'Yes 56%') — the only sourced number." THIS IS WRONG. The register's `grade` column reads
+**B**; "2 - leave/policy" is the `tranche` column (a batch label), NOT a grade. seedreal-1 misread the tranche as the
+grade. The 56% comes from the SAME grade-B legacy source (lumi HR Data Hub intake, 2019-20; large-employer/FTSE skew;
+pre-2024 vintage) as the 0.76 marginal it replaced — one grade-B legacy figure swapped for another from the same
+source, recorded as a grade-2 upgrade. The register row is INTERNALLY INCONSISTENT: `seeded_headline = Yes 56%`
+(n=212) but `real_anchor = 76% operate a long-service award scheme`; seedreal-1 reseeded to 56% while the row's own
+anchor field says 76%. NOTE it does measure the RIGHT THING — both are org-level "operate a long service award scheme"
+(unlike PAY_097 there is NO unit mismatch); it is the right thing, WEAKLY measured.
+
+(2) THE 96% CHILD-EVIDENCE FLOOR IS GENEROUS UNVALIDATED SEED, not verification. GAP_005 ∪ GAP_007 ∪ GAP_004=Yes =
+191/198 = 96%. Both children are PURE ORIGINAL SEED — answers_history: GAP_005 = 1 row, GAP_007 = 18 (seed + the
+r3sw13 DK strip); never reseeded, never fill-audited. Both UNANCHORED in the register (GAP_005 "needs research";
+GAP_007 "needs research", its only reference an HMRC TAX figure explicitly "factual, not prevalence"). 96% is
+implausible against published UK prevalence for FORMAL long-service schemes (~40-60%) — the same generous generator
+that produced GAP_004's pre-reseed 76%. RECORD EXPLICITLY: volume was mistaken for verification in the earlier
+reading — 191 orgs' answers from an unvalidated generator is NOT stronger evidence than a weak anchor.
+
+(3) OPTION D (re-open toward the children) — CONSIDERED and REJECTED on evidence. It would move GAP_004 to ~96.5% —
+AWAY from the 40-60% band published UK reality supports. It would KILL the ruled sector tilt: pinning 191/198 to Yes
+leaves 7 orgs across 5 sectors to express a 15-sector shape — David's ruled directions would survive in name only. It
+would require a new ~0.96 marginal — LESS defensible than 56% and unanchorable. Record that this was Claude's
+recommendation BEFORE the diagnostic and was REVERSED by it.
+
+(4) THE RULING: LEAVE AS-IS. GAP_004 landed in roughly the right place for the wrong reason. 57.1% sits INSIDE the
+defensible 40-60% band — the CLOSEST of the three candidate figures (56% weak-anchored / 76% same weak source / 96%
+unvalidated seed) to published reality. DO NOT re-open seedreal-1 — the mechanism (SECTOR_TILT table + hook), the
+quota-over-Bernoulli choice, and the ruled sector directions all STAND. DO NOT condition the children down (the fifth
+option): no anchor exists for GAP_005 or GAP_007, and clearing ~78 orgs' milestone/award answers on the strength of a
+grade-B figure would propagate an error we cannot validate — the Option-2 trap applied to data whose correctness is
+unknown in BOTH directions.
+
+(5) THE OPEN STATE (recorded honestly so it is not mistaken for resolved). 78 PARENT-ERRORS: orgs with GAP_004=No
+whose own GAP_005 milestones or GAP_007 award value evidence a scheme; 59 were CREATED by seedreal-1's reseed — the
+sector quota assigned No without conditioning on existing child evidence. GAP_004 FEEDS A MEMBER-FACING VERDICT
+(class=Provision, higher_is_better, not suppressed — proven positions.py:778), so a verdict-feeding metric currently
+CONTRADICTS its own children for 78 orgs; GAP_005 is suppressed, GAP_007 is neutral and does not feed. The
+"CHILD-IMPOSSIBLE" cohort DISSOLVED — all 11 candidates list real milestones (itself scheme evidence), so they are
+parent-errors too; there is NO answerable clear-to-N/A cohort, and r3sw33's parked conditioning question is therefore
+CLOSED AS UNANSWERABLE in its original form, not merely deferred. The resolution path is RESEARCH, not a build: real
+UK prevalence for long-service schemes, and any anchor for milestone patterns (GAP_005) or award values (GAP_007);
+absent those, no option improves on leaving it.
+
+STANDING LESSON (the durable output of this thread): a reseed that reshapes a PARENT without conditioning on existing
+CHILD evidence will MANUFACTURE contradictions. seedreal-1 created 59. Any future application of the SECTOR_TILT
+mechanism MUST check for child metrics whose answers constrain the parent, BEFORE reseeding.
+QUEUE update: GAP_004/GAP_005 union-base re-application — CLOSED as unanswerable, superseded by this entry. ADD:
+anchor-register GRADE AUDIT — the `grade` vs `tranche` column confusion that produced this error may affect other
+entries; check whether any other metric's recorded grade was read from the tranche column. Existing queue otherwise
+unchanged (regenerate.py repair; OT_04_b14623a6 marginal check; audit deleted non-Reward metrics for analytical-
+evidence use — the PERF_03 class; :8060 hardening; dbsnapshot.compare migration retrofit; qa_plausibility/qa_reseed
+get_conn bypass; run_gates trap gap; retrieval filter-after-truncate; DK submission guard; 7 COMMCAP; provenance gate;
+RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004).
