@@ -26,7 +26,7 @@ from db import get_conn, uj
 from aggregate import score_direction
 from library import load_questions
 from regen_priors import (SELECT_PRIORS, MULTI_PRIORS, MATRIX_DRIVERS,
-                          NUMERIC_DRIVERS, LEVELS)
+                          NUMERIC_DRIVERS, LEVELS, SECTOR_TILT)
 
 DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 
@@ -118,6 +118,24 @@ class Profile(object):
         else:
             self.change = clamp(rng.betavariate(2.4, 2.4), 0.05, 0.95)
         self.pmc = TRI.get(g("People_Manager_Capability"), 0.5)
+
+
+def sector_tilt_offset(qid, sector_counts):
+    """seedreal-1: centring offset = overall_anchor - org-weighted mean of the ruled targets,
+    computed ONCE per run. Applying it holds the anchored overall while the targets set shape."""
+    cfg = SECTOR_TILT[qid]
+    tot = sum(sector_counts.values()) or 1
+    dflt = cfg.get("default", cfg["overall_anchor"])
+    wmean = sum(n * cfg["targets"].get(s, dflt) for s, n in sector_counts.items()) / tot
+    return cfg["overall_anchor"] - wmean
+
+
+def sector_tilt_prob(qid, industry, offset):
+    """seedreal-1: per-org Yes-probability for a SECTOR_TILT metric. DETERMINISTIC (no rng —
+    preserves the per-org rng stream so untilted metrics stay byte-identical)."""
+    cfg = SECTOR_TILT[qid]
+    t = cfg["targets"].get(industry, cfg.get("default", cfg["overall_anchor"]))
+    return clamp(t + offset, 0.02, 0.98)
 
 
 def clamp(v, lo, hi):
@@ -1013,6 +1031,15 @@ def run():
     registry = json.load(open(os.path.join(DATA, "seeded_orgs.json")))
     reg_by_norm = {norm_name(r["Company_Name"]): r for r in registry}
 
+    # seedreal-1: centring offsets for SECTOR_TILT metrics — computed once from the org sector
+    # mix so each tilt holds its anchored overall while the targets set the shape.
+    tilt_offsets = {}
+    for _tqid in SECTOR_TILT:
+        _sc = defaultdict(int)
+        for _r in registry:
+            _sc[_r.get("Industry") or ""] += 1
+        tilt_offsets[_tqid] = sector_tilt_offset(_tqid, _sc)
+
     resp_dir = os.path.join(DATA, "responses")
     orig_dir = os.path.join(DATA, "responses_orig")
     if not os.path.isdir(orig_dir):
@@ -1079,7 +1106,11 @@ def run():
             if q is None:
                 return
             if qid == (ls_q.id if ls_q else None):
-                spec = {"w": {"^Yes": 0.40 + 0.35 * prof.R, "^No": 0.57 - 0.35 * prof.R, "Don't know": 0.03}}
+                if qid in SECTOR_TILT:                        # seedreal-1: sector-tilted (governed table)
+                    _yp = sector_tilt_prob(qid, prof.industry, tilt_offsets.get(qid, 0.0))
+                    spec = {"w": {"^Yes": _yp, "^No": 1.0 - _yp}}
+                else:
+                    spec = {"w": {"^Yes": 0.40 + 0.35 * prof.R, "^No": 0.57 - 0.35 * prof.R, "Don't know": 0.03}}
             else:
                 spec = SELECT_PRIORS[qid]
             w = resolve_weights(q, spec) if "w" in spec else {}

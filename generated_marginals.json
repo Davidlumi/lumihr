@@ -735,12 +735,12 @@
    "evidence": "Stand-alone wellbeing strategy: 57% all"
   },
   "EXT_REW_GAP_004": {
-   "target_share": 0.76,
+   "target_share": 0.56,
    "base_type": "all_only",
-   "all": 76,
-   "grade": "B",
-   "source": "lumi legacy platform (HR Data Hub intake), 2019-20",
-   "evidence": "76% operate a long-service award scheme"
+   "all": 56,
+   "grade": "2",
+   "source": "grade-2 register 'Yes 56%' (seedreal-1 ruling, David 2026-07-24); supersedes grade-B legacy 76%",
+   "evidence": "56% operate a long-service award scheme (grade-2 anchor); sector shape is JUDGEMENT"
   },
   "REW263_REC_IMPACT": {
    "target_share": 0.436,

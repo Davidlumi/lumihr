@@ -578,3 +578,60 @@ NUMERIC_DRIVERS = {
     "PROP_30ae24e7": "eNPS 0–55 (floor 0 per library), advocacy-tilted.",
     "PROP_9e4ad87f": "Salary increase budget 2.5–5.5%, Budget_Flexibility-tilted.",
 }
+
+# =============================================================== sector tilt ==
+# seedreal-1 (2026-07-24): structured per-metric SECTOR TILT (Option D — Option B WITH
+# governance). A metric with NO entry here generates EXACTLY as today (per-metric opt-in);
+# only entries listed here are sector-tilted. Each entry is an explicit, reviewable,
+# David-ruled record — targets + rationale + anchor status carried as DATA, not a hand-coded
+# inline magic number. This is deliberately the SAME pattern that produced on-call's wrong
+# +0.22 Technology bump (regenerate.py L490); the GOVERNANCE (an entry David rules on, with
+# its shape_status marked JUDGEMENT vs the sourced overall_anchor) is the difference, not the
+# mechanism itself.
+#
+#   overall_anchor : the ONLY sourced number (grade-2 register). The tilt is CENTRED to hold
+#                    this overall — it redistributes shape and MUST NOT move the total.
+#   targets        : ruled Yes-prevalence by industry — JUDGEMENT (no published UK by-sector
+#                    figure exists). shape_status records this so a future reader can tell
+#                    which half is sourced.
+SECTOR_TILT = {
+    "EXT_REW_GAP_004": {
+        "question": "Do you operate a long service award scheme?",
+        "overall_anchor": 0.56,
+        "anchor_status": "ANCHORED grade 2 (register 'Yes 56%')",
+        "shape_status": "JUDGEMENT — David 2026-07-24; NO published UK long-service-by-sector source",
+        "default": 0.56,   # 'Other' / unmapped industry -> the anchor
+        "targets": {
+            "Public Sector & Government": 0.775,
+            "Education (Public & Private)": 0.775,
+            "Manufacturing & Engineering": 0.675,
+            "Construction & Infrastructure": 0.675,
+            "Energy, Utilities & Environmental Services": 0.675,
+            "Healthcare & Life Sciences": 0.60,
+            "Charity, Non-Profit & Social Enterprise": 0.60,
+            "Financial Services": 0.50,
+            "Professional Services": 0.50,
+            "Logistics, Transport & Distribution": 0.40,
+            "Retail & Consumer Goods": 0.40,
+            "Media, Communications & Creative Industries": 0.30,
+            "Technology, Software & Digital": 0.30,
+            "Hospitality, Leisure & Travel": 0.275,
+        },
+        "rationale": {
+            "Public Sector & Government": "long tenure, formal recognition frameworks, union influence",
+            "Education (Public & Private)": "long tenure, formal recognition frameworks",
+            "Manufacturing & Engineering": "long-tenure workforces, established service-recognition custom",
+            "Construction & Infrastructure": "long-tenure workforces, service-recognition custom",
+            "Energy, Utilities & Environmental Services": "long-tenure workforces, service-recognition custom",
+            "Healthcare & Life Sciences": "long tenure, lower budget",
+            "Charity, Non-Profit & Social Enterprise": "long tenure, lower budget",
+            "Financial Services": "moderate tenure, recognition often cash/bonus instead",
+            "Professional Services": "moderate tenure, recognition often cash/bonus instead",
+            "Logistics, Transport & Distribution": "high churn, but large employers formalise",
+            "Retail & Consumer Goods": "high churn, but large employers formalise",
+            "Media, Communications & Creative Industries": "young firms, short tenure, equity-oriented recognition",
+            "Technology, Software & Digital": "young firms, short tenure, equity-oriented recognition",
+            "Hospitality, Leisure & Travel": "highest churn, service thresholds rarely reached",
+        },
+    },
+}

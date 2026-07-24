@@ -9585,3 +9585,62 @@ write hardening across 11 gates; route qa_plausibility/qa_reseed through get_con
 trap gap; retrieval filter-after-truncate; DK submission guard; qa_phase1 CSV-premise; GAP_004/INC_131/on-call
 REW_PAY_016/PAY_097 seed-realism; 7 COMMCAP; provenance gate + seed/member provenance; RED_TERM_03; CARE-option;
 B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004.
+
+## seedreal-1 — sector-tilt mechanism + GAP_004 regeneration (ruled + applied 24 July 2026)
+OPTION A REJECTED, and why: adding an Industry term to regenerate.py's CORE latent (Profile.F/R) is the WRONG SHAPE.
+The generator diagnostic proved the firmographic latent is CORRECT for maturity-driven practices (pay transparency,
+formal-policy adoption, benefit richness track size/maturity, not sector) and wrong ONLY for genuinely sector-
+concentrated ones — a SELECTIVE defect. Quantified blast radius that made the case: 88 of 333 active Reward metrics
+generate sector-blind, of which 22 FEED MEMBER-FACING VERDICTS (positions.py:778, proven) and 5 sit in live
+coherence pairs (one the REW_INC_103 controller); ~10 more carry hand-coded sector branches a core term would
+DOUBLE-TILT; 214 are skipped (untouched). A core term would fix a handful by moving ~80 others away from correctness.
+OPTION D CHOSEN — a structured per-metric SECTOR_TILT table in regen_priors.py, consumed by the generator via a pure
+`if qid in SECTOR_TILT` hook (regenerate.py). HONEST CAVEAT: this is the SAME pattern that produced on-call's wrong
++0.22 Technology bump (L490). The GOVERNANCE is the difference, not the mechanism: each entry is an explicit,
+David-ruled record carrying targets + rationale + anchor_status/shape_status as DATA. Double-tilt is not
+auto-prevented — the guard is that David rules each entry against the documented hand-coded list.
+ANCHOR POSITION (a future reader must tell which half is sourced): GAP_004's OVERALL 56% is ANCHORED (grade 2,
+register 'Yes 56%') — the only sourced number. The SECTOR SHAPE is DAVID'S DOMAIN JUDGEMENT (2026-07-24), NO
+published UK long-service-by-sector figure exists. Full ruled direction table (Yes-prevalence): Public/Education
+77.5%; Manufacturing/Construction/Energy 67.5%; Healthcare/Charity 60%; Financial/Professional 50%; Logistics/Retail
+40%; Media/Tech 30%; Hospitality 27.5% (rationales in SECTOR_TILT). The tilt is CENTRED so the org-weighted mean holds
+the 56% anchor (the ruled targets average 50.6%, so realised ≈ ruled +5.4pp) — it redistributes shape, holds the total.
+DETERMINISTIC QUOTA over Bernoulli (ruled): each sector gets round(centred_target·n) Yes; within a sector, orgs ranked
+by a stable hash take the top-k. This DELIBERATELY TRADES within-sector variance for FAITHFUL SHAPE. At n≈8-10 the
+Bernoulli draw buried the judgement — Tech landed 60% against a 30% target, INVERTING the ruled intent, and Education
+reproduced the indefensible 100%. The quota expresses the shape: Tech 40% (below median), Education 88%, every sector
+directionally correct. SMALL-CELL CAVEAT: six previously-100% sectors are n≈8-10, so cells remain rounded around a
+defensible centre (Education 88%, Energy 75%) — deterministic, not pinned-at-100%.
+RESULT (live): GAP_004 overall 75.8% -> 57.1% (holds 56% anchor); 89 orgs changed (63 Yes->No, 26 No->Yes). BLAST
+RADIUS = 1: non-GAP_004 answers-book, frozen-8 (0a17a094, unchanged since programme start), and the 5 coherence-pair
+metrics all BYTE-IDENTICAL; row count 89,321 unchanged. VERDICT-FEEDING (GAP_004 = class=Provision, higher_is_better,
+scored, not suppressed): 63 orgs' GAP_004 card worsens, 26 improve; gauge recomputes green.
+MARGINAL-PROVENANCE FINDING (David flagged): the freeze gate initially FAILED because generated_marginals.json pinned
+GAP_004 at 0.76 — the GRADE-B LEGACY figure (lumi HR Data Hub 2019-20, n=42), NOT the grade-2 anchor. That is the
+internal register tension. This diff updates the marginal 0.76 -> 0.56 (grade B -> grade 2) atomically with the reseed
+(dual-config). SCAN: of 40 register marginals (31 grade-A / 7 grade-B / 2 grade-C), exactly ONE OTHER shares GAP_004's
+'lumi legacy / HR Data Hub 2019-20' provenance — OT_04_b14623a6 (target 0.63) — flagged to check its anchor vs the
+legacy figure.
+r3sw33 SUPERSESSION (ruled): regeneration redraws every org, so the parked 30 contradictions are OVERWRITTEN, not
+resolved; post-reseed count is 53 GAP_005-milestone-listers now GAP_004=No, 42 carrying a GAP_007 value (was 30/18).
+The union-base logic is re-applied as a SEPARATE second diff against this new distribution.
+NO FROZEN COLLISION: all 8 frozen targets are "skipped" (never regenerated) — none in the sector-blind set.
+DEAD-CODE CAVEAT: regenerate.py is NO LONGER RUNNABLE against the live DB (SELECT_PRIORS reference DK options r3sw13
+stripped; MULTI_PRIORS reference questions nonrew-2 deleted — it crashes in the OLD code before reaching GAP_004). So
+the full-regen byte-identical proof CANNOT execute; the SECTOR_TILT hook is exercised ONLY via the targeted reseed
+today (migrate_seedreal1_gap004.py, the r3sw pattern). Repairing the generator for full regens is queued.
+VERIFIED: throwaway --write first (overall 57.1%, blast-radius=1, gates 11/11, freeze PASS with the staged marginal,
+browser card renders); LIVE (--write --confirmed-by-david + re-aggregate + restart): post-write EXACT match to
+throwaway (live GAP_004 == throwaway, non-GAP_004 book == throwaway = unchanged, marginal 0.56, served payload
+57.1%/42.9%), frozen-8 0a17a094 byte-identical, run_gates 11/11 GREEN (freeze PASS, gate-safety-2 "live untouched by
+suite ✓"), live Benchmark card Yes 57.1%/No 42.9% n=198 with 0 console errors. Files: regen_priors.py (SECTOR_TILT),
+regenerate.py (hook+helpers), migrate_seedreal1_gap004.py (reseed), generated_marginals.json (GAP_004 0.76->0.56).
+QUEUE (added): re-apply GAP_004/GAP_005 union-base logic against the new distribution (the r3sw33 successor — 53/42
+contradictions); repair regenerate.py so the sector-tilt mechanism isn't dead code (align SELECT_PRIORS/MULTI_PRIORS
+with the post-r3sw13/nonrew-2 live schema); check OT_04_b14623a6's grade-B-legacy 0.63 marginal against its anchor;
+PAY_016 on-call anchor hunt (still unfixable without a by-sector source); PAY_097 pole-only regeneration; INC_131
+ownership-locked (leave unless r3sw2 re-opened); on-call +0.22 Tech bump (correct via the tilt table once anchored).
+Existing queue unchanged: :8060 HTTP-write hardening; migration retrofit of dbsnapshot.compare; qa_plausibility/
+qa_reseed get_conn bypass; run_gates trap gap; retrieval filter-after-truncate; DK submission guard; 7 COMMCAP;
+provenance gate; RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136,
+SICK_004.
