@@ -10126,3 +10126,51 @@ disclosed / unanswered / suppressed (market, disclosed where absent) or approach
 programme that began with the Diff-14 collapse diagnosis (93->48) and ran through Diff 15 (two-layer
 reversal), Diff 16 (N/A-disclosure gate), Diff 18 (neutral-17), Diff 17/19 (score maps + declarations +
 PMIEXCESS coherence) and Diff 20 (engine mechanisms) is closed.
+
+## Anchor programme — Phase R rulings + Round-2 batch-1 shakedown (ruled 24 July 2026, DECISIONS-only)
+Phase R (DIAG_phaseR_reconciliation_2026-07-24.md + phaseR.json, read-only) reconciled the anchor
+register to the live post-full-homing platform. FINDINGS: register source = the Jul-19 CSV (249 rows;
+the Jun-21 JSON at 121 rows is STALE; the prompt-cited "243 / A86-B42-C61-EST54" matches neither —
+flagged, CSV governs). Match census: 239 exact / 94 platform-only / 10 register-only. Unbenchmarked
+audit-split cross-check: 222 = 84/101/31/6 vs the June audit's 89/96/31/6 — the 31 and 6 EXACT; the ±5
+is the register gaining 5 rows between the June audit and the Jul-19 CSV (explained, not overridden).
+VERDICT EXPOSURE (the core finding): of the 278 verdict-rendering metrics, 76 (27%) carry an A/B
+register anchor — 202 (73%) render on weak / no / estimate anchors (110 register-unanchored, 8 EST, 84
+with no register row = the research backlog). This is the accepted Option-B trade the anchor programme
+exists to true up; member data at launch remains the permanent authority.
+
+DAVID'S RULINGS (2026-07-24, verbatim: "confirm all, incremental, check AE_OPTOUT first"):
+  1. RENAME: REW263_BEN_PMIMH -> REW265_BEN_PMICOMP CONFIRMED (r3sw8 evidence). PMIMH's register row
+     reconciles against PMICOMP.
+  2. RETIREMENTS: all 8 register-only echo rows CONFIRMED retired (ALLOW_01, PROP_dff9a2a5, REW_PAY_022,
+     REW_PAY_126, REW_PAY_HOURLY_MIN_1c6e096f, REW_PAY_MKT_POS_01, EXT_REW_GAP_006, REW_FAI_091). The
+     register FILE is NOT edited — the ruling is recorded here; the register update rides the next
+     register-maintenance pass.
+  3. ROUND-2 SCOPING: INCREMENTAL. Batch-1 = REW26_WEL_SCREENING alone (pipeline shakedown). Headline
+     definitions proceed as a read-only domain-by-domain proposal stream unlocking later batches — no
+     71-metric blocking pass.
+  4. DEMO-FIXTURE EXCLUSION CONFIRMED + enumerated: Thornbridge Retail Group plc (5e67fa8c…) AND
+     Thornbridge Advisory plc (833beedb…) are excluded from reshape answer-redraws; their answers hold
+     and re-rank against the reshaped cohort. (HR Datahub / Tester are signups, Lumi HR is staff —
+     outside the 220-seed reshape cohort.)
+
+TASK-0 RULING — CONTEXT_AE_OPTOUT: RETIRED. Evidence: no live question row, 0 answers, no consumer in
+seed/reseed/priors or any code; sole trace a passive {"why":"unanchored"} note in generated_marginals
+(no target_share, not consumed by the freeze gate). A CONTEXT-CAPTURE intent never wired to the
+platform. The TPR AE opt-out-rate anchor (grade A) is RECORDED as a FUTURE CONTEXT-INPUT CANDIDATE —
+the anchor is good even though the row retires.
+
+BATCH-1 SHAKEDOWN FINDING — SCREENING: NO RESHAPE, NO NUDGE (ruled). The pipeline's sector-honesty gate
+caught a FALSE TARGET before any write: SCREENING's anchor is a SIZE-SPLIT (large 250+ = 47% / SME =
+23% / all-UK 35%; CIPD H&W 2025, grade A; generated_marginals base_type=sme_large, target 0.4373). The
+seed cohort is heavily large-skewed (known sizes: 128 large / 30 SME = 81% large; 62 unclassified), so
+the size-weighted expected Yes ≈ 42.5% — the live 43.6% is ON its size-honest target, not +8.6pp over.
+THE FLAT-ANCHOR ARTIFACT (recorded so it cannot round-trip): Phase R's gap column compared live
+headlines to FLAT all-UK anchor figures; for size/sector-split anchors on a skewed cohort this
+MANUFACTURES phantom drift. Per standing doctrine, size/sector-honest seeds supersede all-UK marginals.
+CONSEQUENCE — PHASE R'S GAP COLUMN IS FORMALLY SUPERSEDED: the headline-definition stream computes
+every gap against the SIZE/SECTOR-WEIGHTED anchor (flat figures shown for transparency only), and the
+5 Phase-R "computable" yes_no rows are re-derived weighted in the same review file. Residual note:
+SCREENING's within-band skew (large realised 53% vs 47%; SME 17% vs 23%) is overall-neutral; David
+ruled no nudge. Batch-1 closes with ZERO writes — the shakedown validated the gate, which is the point
+of a shakedown.
