@@ -3161,13 +3161,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW265_PAY_PAYCOMMS": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_diff17_paycomms": "ruled PRACTICE (contested direction; neutral-17 precedent) — Diff 17 reclass"
     },
     "REW265_PAY_EARLYCAREER": {
       "class": "Level",
