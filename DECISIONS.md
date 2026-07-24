@@ -10278,3 +10278,49 @@ arm — partial mapping flagged). HOLPAYMETHOD ratified pending the SI-citation 
 PROFITSHARE stays UNVERIFIED — neither held CIPD edition carries the scheme-type table; "CIPD RM: Focus
 on pay edition" added to the DOCUMENT WANTS-LIST (David sources it, or the row re-grades B/EST at
 maintenance). All feed the queued register-maintenance pass.
+
+## Register-maintenance pass — v2026-07-24 SHIPPED (ruled + applied 24 July 2026, commit 298756a)
+VERSION RECORD (the C9 mechanism, David-ratified): **canonical register = the highest-dated
+`lumi_anchor_register_vYYYY-MM-DD.csv` in the repo; every version is recorded here with its census.**
+  - v2026-07-24 (CURRENT, commit 298756a): 255 rows; grades A 70 / B 27 / C 8 / EST 9 / 3 legacy
+    mixed-grade / 138 blank.
+  - Prior: lumi_anchor_register_CLAUDECODE.csv (Jul 19, 249 rows) — preserved UNEDITED on disk and in
+    git; superseded. The Jun-21 JSON (121 rows) remains STALE — never use.
+  - Note: /*.csv is gitignored; the versioned register is force-added by explicit ruling (matching the
+    tracked CLAUDECODE.csv precedent).
+
+APPLIED (M2, exactly the approved M1 inventory — MAINT_inventory_2026-07-24.md, committed alongside):
+8 Phase-R retirements + CONTEXT_AE_OPTOUT retired via the existing free-text status column, rows RETAINED
+(research preserved; AE_OPTOUT carries "TPR AE opt-out rate remains a candidate engine context-input");
+PMIMH -> RETIRED-SUPERSEDED -> REW265_BEN_PMICOMP (NOT an id rename — PMICOMP already held its own
+ANCHORED row citing the r3sw8 supersession); PENSION_TYPE's empty anchor cell filled as a SUPERSESSION
+RECORD (operative anchor = frozen_targets.json, DC 88.6/DB 9.5/Hybrid 1.8); 195 active rows' question
+cells replaced with FULL live text (the 54-55-char truncation-artifact class is dead; the 10
+retired/absent rows keep stored text; the held Wellbeing C-section drift-withdrawal confirms are moot);
++6 tranche-1 rows entered VERBATIM from the ratified verification file — CASHPLAN, OPTICAL, EWA (11/14,
+the corrected figures), SEASONTICKET, FLEXPATTERN (**prose-verified quantities ONLY — the Figure-1
+per-arm columns + annualised are NOT in the register, held for David's visual check**), HOLPAYMETHOD
+(**SI citation CONFIRMED LIVE against legislation.gov.uk: SI 2023/1426 Part 2 inserting WTR 1998 reg
+16A, rolled-up holiday pay 12.07% for irregular-hours/part-year workers** — entered as a bound/context
+row). **PROFITSHARE NOT ENTERED** — stays on the DOCUMENT WANTS-LIST ("CIPD RM: Focus on pay edition");
+no re-grade this pass; re-grades B/EST at the NEXT maintenance pass if the document hasn't materialised.
+
+RECONCILIATION (asserted cell-level): 249 -> 255 rows; 205 modified + 6 added; **exactly 216 cells
+changed, every one mapped to an approved inventory row — zero unauthorised changes**; prior CSV
+sha-unchanged. The register is DATA: no DB/config/engine change, no re-aggregate, no freeze interaction.
+
+QUEUED FOLLOW-UPS (reported, NOT fixed here — fix classes named):
+  1. CODE class: generate_marginals.py + register_clean_diff1.py still reference the CLAUDECODE filename
+     (offline tools; path update to the versioned-canonical rule).
+  2. CONFIG class: the 6 tranche-1 metrics' live platform tags are now STALE (all classified
+     never-in-register; 5 carry unbenchmarked=true, HOLPAYMETHOD untagged) — they now HAVE register rows;
+     re-tagging is its own diff.
+
+EXCEPTIONS TABLE (carried forward verbatim — queued-but-unruled, NOT applied):
+  | item | why excluded |
+  | seeded_headline column refresh (June snapshot, stale for every reshaped metric) | never queued/ruled;
+    superseded in practice by live recompute doctrine — future maintenance candidate |
+  | PMICOMP's own empty real_anchor cell (grade "B (structure)/EST (incidence)") | not queued; its anchor
+    work is r3sw8-era, untouched |
+  | The 2 remaining mixed-grade legacy rows + 138 blank-grade rows | grade normalisation never ruled |
+  | Wellbeing C-section drift-withdrawal per-row confirms (HOLD) | mooted by the full-text replacement |
