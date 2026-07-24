@@ -10031,3 +10031,52 @@ QUEUE: the neutral-17 is now HOMED except REW_Q524161 (held, cell-format/score-m
 = 22 = 15 unscored (Diff 17, go-order A drafted) + 7 "other" (declaration diff, go-order B drafted, minus
 REW_PAY_020 which joins Diff 17 and PMIEXCESS which joins coherence). Held/unchanged: ordered_scale_routing
 stale entries; commission anchor hunt; register grade-vs-tranche audit.
+
+## Diff 17 + PAYCOMMS + Diff 19a + Diff 19b — ruled Go-Order A/B applies (full-homing programme, ruled + applied 24 July 2026)
+Four fix classes, four separate commits in order (76e3dfb / 729daac / e6cbad0 / 568941a). David's
+per-row ratification (transmission = ruling) written into the two review files; parsed, echoed, tally
+asserted (no ambiguity, no mismatch). One backup covers the sequence:
+lumi.db.bak_pre_diff17_19_20260724_184443. Full-state post-write EXACT-matched the combined rehearsal.
+
+ECHOED RULING TABLE (verbatim):
+  Go-Order A (DIFF17_scoremap_review): MH_SUPPORT AMEND(equal-weight); CHILDCARE AMEND(equal-weight);
+  FLEXPATTERN/EXTRADAYS/ACTIONPLAN/VOLGAPS/BEREAVESUPPORT/SIDECAR/COLACTION/GREENBEN CONFIRM;
+  JOBEVAL_COVERAGE AMEND(ladder + max-of-ticked check); INC_133 AMEND(range-max + coherence check);
+  BEN_139/PAY_109 CONFIRM(breadth); PAYCOMMS AMEND(reclass PRACTICE); PAY_020 AMEND(add to A2, breadth).
+  Go-Order B (DECLARATION_review): COMMCAP/NICSHARING/ETHDISREADY/GPGNAMING/FERTROUTE CONFIRM(na_codes);
+  PAY_020 AMEND(re-routed to A, B-row closed); PMIEXCESS CONFIRM(seed-fix 19b + direction verification).
+
+APPLIED (fix classes never bundled):
+  DIFF 17 (scoring only, 76e3dfb): is_scored 0->1 + equal-weight multi_select_count option_scores
+    {substantive:1, None:0} on the 10 CONFIRM/AMEND-equal multi-selects. None=0 = substantive below-market
+    (positions, never na). Answers-book unchanged. All 10 -> positioned. MH_SUPPORT FROZEN-8 PASS: its
+    frozen answer-distribution (30 entries) verified byte-unshifted by scoring (scoring touches rank, not
+    answers) — applied, not held.
+  PAYCOMMS reclass (classification, 729daac): REW265_PAY_PAYCOMMS class Level->Practice, direction=null
+    (neutral-17 precedent: contested pay-comms direction goes to practice, not an invented scale) -> approach.
+  DIFF 19a (question-bank data, e6cbad0): na_codes on 5, each cited verbatim to the live option list.
+    ETHDISREADY note (David): safe ONLY because "Not started" exists as the substantive bottom rung (so the
+    na_code removes non-applicability, not a real position). GPGNAMING "Not in scope (under 250 employees)"
+    = regulatory non-applicability = absence. All 5 -> positioned_absent_disclosed.
+  DIFF 19b (seed + classification, 568941a): PMIEXCESS class=Practice, direction=null, DB polarity
+    higher_is_better->neutral. MINI-REVERSAL of PMIEXCESS's Diff-15 higher_is_better restore — the excess
+    ladder runs no-excess->high-excess, so higher_is_better fires BACKWARDS (higher excess is worse for
+    employees); ruled to practice, not an inverted gauge (do not rely on the ratchet post-hoc). SEED
+    reconcile: 84 orgs with PMI (parent REW_BEN_038 satisfied) but PMIEXCESS='Not applicable' -> substantive
+    excess by deterministic quota from the observed PMI-haver distribution. BEFORE: 150 'Not applicable' (84
+    contradicting a PMI parent); AFTER: 0 contradictions (four-way coherence), Thornbridge 'Not applicable'
+    -> 'Excess per claim'. Pre-values snapshotted to answers_history. PMIEXCESS -> approach.
+
+OUTCOME: ladder positioned 245 / positioned_absent_disclosed 15 / approach 55 / neutral_beside 1 /
+unanswered 12 / neither 5 (sum 333); Thornbridge donut 147/102/30 = 279. 327 of 333 now land in
+market ∪ practice. Gates: qa_scores 3/0 (no new backwards ladders, zero ratchet held-outs); full 11-suite
+ALL GREEN; gate-safety-2 live byte-identical.
+
+THE 6 HOLDs — one queued route (a single engine-mechanism diff, rehearsal-gated, spec after this ships):
+  neither(5): JOBEVAL_COVERAGE (needs multi_select max_of_ticked — its ordinal ladder can't ride
+    multi_select_count's sum+renormalise), INC_133 (range-max), REW_BEN_139 / REW_PAY_109 / REW_PAY_020
+    (Yes/No-by-level breadth — the engine has NO scoring path for Yes/No matrices: matrix_value('Yes')=None,
+    so no _values distribution forms). Mechanism to build: a `count_yes` Yes/No-matrix path + a
+    `max_of_ticked` multi-select mode.
+  neutral_beside(1): REW_Q524161 (employer notice, banded "N weeks" -> no _values) — fixed by numeric
+    normalisation of the cells; bundled into the same engine-mechanism diff as a cleanup.
