@@ -9766,3 +9766,77 @@ unchanged (regenerate.py repair; OT_04_b14623a6 marginal check; audit deleted no
 evidence use — the PERF_03 class; :8060 hardening; dbsnapshot.compare migration retrofit; qa_plausibility/qa_reseed
 get_conn bypass; run_gates trap gap; retrieval filter-after-truncate; DK submission guard; 7 COMMCAP; provenance gate;
 RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC, COMMCAP+INC_136, SICK_004).
+
+## coherence-sweep — bank-wide internal-contradiction scan (coherence-record, ruled RECORD-ONLY, DECISIONS-only, 24 July 2026)
+The sweep measured every logical constraint relationship across the 333 active Reward metrics: the 30 guarded
+coherence pairs (structured_bases.json `_coherence_pairs`), the named DECISIONS families (GAP long-service, LTI,
+commission, allowances, PAY_097/MERITMATRIX), and a completeness scan of the 19 yes_no existence parents — all
+measured against LIVE data, not stale CSVs. David ruled: RECORD the findings, OPEN NO RECONCILE. This entry is the
+record; no code, DB, config, or reseed changed (all 41 snapshot tables byte-identical; DECISIONS.md the only file in
+the diff).
+
+(1) THE REASSURING HEADLINE — RESEED DISCIPLINE HELD. Across all 333 metrics, only 59 contradictions were
+RESEED-CREATED: every one from seedreal-1, every one on GAP_004, every one ALREADY recorded and ruled in
+gap004-correct. No other reseed — across r3sw24–33 and seedreal-1 — scattered a single contradiction anywhere else in
+the bank. This is a POSITIVE finding, recorded as such and not as an absence: given how many reseeds this programme has
+run, the "reshape-a-parent-without-conditioning-on-its-children" defect is CONTAINED to the one known escape, not
+systemic. The standing lesson from gap004-correct is the whole of the exposure.
+
+(2) ALL 30 GUARDED COHERENCE PAIRS HOLD — ZERO live violations. MEASUREMENT CAVEAT worth recording so the trap is not
+re-sprung: the first pass reported 65 apparent violations on REW_INC_131 ← REW_INC_133. That was a SELECTOR BUG, NOT a
+finding. REW_INC_133 is a 7-level matrix (LTI eligibility by level); the pair's range-max semantics — "parent-Yes =
+ANY level cell = Yes" — were mis-read by a collapse-to-one-value string comparison that grabbed an arbitrary matrix
+row. Corrected by reading the pair consumer's actual semantics (qa_plausibility.py / generate_marginals.py) and
+scoring matrix parents by any-Yes-cell; re-measured to 0. THE LESSON: an impossible result against a
+freeze-gate-GUARDED pair is a MEASUREMENT BUG, not a discovery — the same matrix trap awaits any future matrix-aware
+coherence measurement, and the same class of bug also produced a spurious 149 on the allowance family (see clean
+findings). Worth recording precisely because the wrong number was superficially alarming.
+
+(3) THE NEW FINDING — THE COMMISSION FAMILY, 173 CONTRADICTIONS. REW_INC_136 (which commission structures are used)
+and REW265_INC_COMMCAP (are earnings capped) answered SUBSTANTIVELY while REW_INC_135 ("does your organisation operate
+sales commission?") = No. SCALE OF THE INCOHERENCE: INC_135 says only 36/220 operate commission (184 No); yet 199 orgs
+NAME a structure in INC_136 and 123 answer a cap in COMMCAP; and the two detail metrics disagree with EACH OTHER on 96
+orgs. CAUSE: INC_135 was bulk-written in a SINGLE pass (2026-07-15, 190 rows carrying one identical timestamp stamp)
+and NEVER conditioned on the detail metrics — original-seed incoherence, PROVENANCE 0 RESEED, predating the reseed
+programme entirely. BLAST RADIUS: ZERO member-facing verdict impact, PROVEN at positions.py:778 — INC_135 is neutral +
+unbenchmarked, INC_136 is Practice-class (excluded by the verdict-membership gate), COMMCAP is neutral + unbenchmarked.
+This is an Ask-lumi / analytics coherence issue, NOT a scored-verdict error.
+
+(4) WHY NO RECONCILE IS OPENED — THE RULING. (a) Zero blast radius means NO URGENCY. (b) The reconcile CANNOT PROCEED
+ON EVIDENCE: the detail metrics carry more apparent support (199 name a structure vs 36 operate one), but they
+contradict EACH OTHER on 96 orgs, so "the details win" does not yield a coherent answer either; choosing between 36 and
+199 would be ARBITRARY, and the detail pair's own internal disagreement would have to be resolved first with no basis
+for doing so. (c) This is the SAME WALL the last four seed-realism items hit (GAP_004, PAY_097, PAY_016, INC_131): the
+contradiction is real and detectable, but which side is wrong depends on a PREVALENCE FIGURE THAT DOES NOT EXIST
+INTERNALLY. (d) REOPEN CONDITION: a UK anchor for commission prevalence. Note EXPLICITLY that this may be MORE
+ANCHORABLE than long-service or on-call — sales commission is a common enough pay practice that CIPD or ONS may cover
+it — so an ANCHOR HUNT is worth attempting BEFORE any authority ruling, since it would convert an arbitrary choice into
+an evidenced one.
+
+(5) THREE ITEMS NOW RULED TOGETHER. Two existing queue items sit INSIDE this same family: the 7 COMMCAP fabrications
+from the Diff-7 audit (unevidenced fills, previously deferred pending a commission-authority ruling) and the C-item
+COMMCAP+INC_136. Both now attach to the 173-contradiction cluster. All three — the 173, the 7 fills, and the C-item —
+WAIT ON THE SAME DECISION (a commission prevalence anchor, then an authority ruling) and are RULED TOGETHER, not
+separately. They come off the standalone queue and fold into the commission-family reopen condition below.
+
+WHAT THE SWEEP FOUND CLEAN. (a) ALLOWANCES (REW_PAY_017 on-call method / REW_PAY_019 consolidation → REW_PAY_016
+allowance inventory): 0 contradictions — r3sw29a/29b already reconciled these; an earlier pass's apparent 149 was the
+SAME matrix/token selector bug as item (2), corrected. (b) REW263_PAY_MERITMATRIX vs REW_PAY_097: 18, classified SOFT
+and NOT COUNTED — a merit matrix is a TOOL; an org can operate one and still compress increases to near-flat pay, so
+this is CORRELATION, not logical contradiction. Recorded because it BOUNDS what "contradiction" means in this sweep:
+only HARD logical presuppositions (child-substantive ⟹ parent-must-be-Yes) count. (c) COMPLETENESS SCAN: no other
+large unguarded family exists. The 19 yes_no parents are mostly STANDALONE practice questions (EAP, financial
+wellbeing, screening, redundancy process) with no detail-children; the major detail families (benefits →
+PMI/dental/CI/life, bonus, pension, share-plans) are ALL inside the guarded 30. The 149 single_selects with no
+N/A-escape option are OVERWHELMINGLY legitimately-universal questions (gender-pay-gap analysis, pay-transparency,
+fairness reviews) — GAP_007 (award value, no N/A) is the unusual one in that class, and its trap is already inside the
+recorded GAP family.
+
+QUEUE update: ADD commission-family ANCHOR HUNT (UK commission prevalence — CIPD/ONS; would unblock the 173, the 7
+COMMCAP fabrications, and the C-item COMMCAP+INC_136 TOGETHER). The 7 COMMCAP and the C-item COMMCAP+INC_136 come OFF
+the standalone queue and fold into this hunt. Existing queue otherwise unchanged: anchor-register grade-vs-tranche
+audit; PERF_03-class evidence audit; regenerate.py repair; OT_04_b14623a6 marginal check; :8060 hardening;
+dbsnapshot.compare migration retrofit; qa_plausibility/qa_reseed get_conn bypass; run_gates trap gap; retrieval
+filter-after-truncate; DK submission guard; provenance gate + seed/member provenance; Phase 0 privacy diagnostic;
+Postgres portability audit; RED_TERM_03; CARE-option; B — AIDISCLOSE, COMPARATIO; C — HOL_006+BEN_041, EVSALSAC,
+SICK_004.
