@@ -33,11 +33,16 @@ KNOWN_BACKWARDS = {
     "REW_BEN_SICK_001": "non-monotonic option order: 'Statutory sick pay only' scores above "
                         "'Enhanced'/'Combination'. Held from position_lenses (Phase 1). "
                         "FIX: reorder options worst->best (none < statutory < enhanced < combination).",
-    "REW_FAI_079": "polarity=lower_is_better is wrong — conducting gender pay gap ANALYSIS is good. "
-                   "'Yes' scores 0. Prevalence signal is unaffected (practice_status is label-based), "
-                   "but the card percentile/maturity read backwards. FIX: polarity -> higher_is_better.",
-    "REW_INC_070": "polarity=lower_is_better is wrong — malus provisions are a governance control. "
-                   "'Yes' scores 0. Same blast radius as REW_FAI_079. FIX: polarity -> higher_is_better.",
+    "REW_FAI_079": "polarity is higher_is_better and the authored map is YES:100/NO:50/IN_DEV:0 "
+                   "(the old 'polarity=lower_is_better' note was stale — corrected 2026-07-25), but the "
+                   "_AFF direction heuristic sees 'Yes' first-in-order and INVERTS: effective Yes 0 / "
+                   "No 50 / In development 100 — the ladder still reads backwards. Prevalence signal "
+                   "unaffected (practice_status is label-based); card percentile/maturity read backwards. "
+                   "FIX pending David's queued _AFF-ladder audit: reconcile authored map with the heuristic.",
+    "REW_INC_070": "polarity is NEUTRAL (already neutral pre-Diff-18; the old 'polarity=lower_is_better' "
+                   "note was stale — corrected 2026-07-25), authored map YES:100/NO:0, but the _AFF "
+                   "heuristic sees 'Yes' first and INVERTS: effective Yes 0 / No 100. Same _AFF pattern "
+                   "as REW_FAI_079; FIX pending the same queued audit.",
 }
 # Verified best->worst orderings (good option at index 0) — must resolve via the
 # direction heuristic, NOT trip the guard. Asserted explicitly per the brief.

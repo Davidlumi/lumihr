@@ -10444,3 +10444,21 @@ the DB never moved): lumi.db.bak_pre_regfollowups_20260725_093642.
 register-maintenance pass has now shipped or been verified-no-change. Still held by David (not queued
 diffs): FLEXPATTERN Figure-1 visual check; the PROFITSHARE document want; the commission prevalence
 anchor; tranche-2 research; headline-stream Domains 6-8 (Pay 9 / G&T 13 / Time Off 20).
+
+## Gate reconciliation Part 1 — qa_hero assert-zero-by-ruling + qa_scores stale-text correction (25 July 2026, David-ruled: "a, ratify with waiver, A, ship both, convention ruled")
+Commit ①: qa_hero's ">=1 lower_is_better" check — structurally unsatisfiable since the Diff-18
+neutral-17 ruling — superseded by the ruled ASSERT-ZERO-BY-RULING guard: every ↓ Reward metric in
+the live book must be ruling-accounted in RULED_LOWS (EMPTY by the Diff-18 ruling); an un-ruled ↓
+metric FIRES. Verified both ways, raw tallies quoted (ruling 5 applies to this close first):
+positive, plain live copy — "RESULTS: 59 checks, 59 passed, 0 failed", rc=0 (qa_hero_POSITIVE.out);
+negative, doctored copy REW_BEN_047->lower_is_better — "RESULTS: 59 checks, 58 passed, 1 failed",
+rc=1, detail ['REW_BEN_047'] (qa_hero_NEGATIVE.out). Commit ②: qa_scores KNOWN-list stale texts
+corrected to CURRENT state — FAI_079 polarity higher_is_better + _AFF-heuristic inversion (effective
+Yes 0); INC_070 polarity NEUTRAL + same _AFF inversion. Discrepancy reported, not forced: the ruled
+parenthetical "(both flipped ↑ by Diff 15)" is inexact for INC_070 — already neutral in the
+pre-Diff-18 backup; current-state text written per the ruling's own match-current-state principle.
+Behaviour unchanged: "== SCORE-LADDER GATE: 3 passed, 0 failed ==" identical before/after
+(qa_scores_BEFORE.out == qa_scores_AFTER.out on all tally+check lines; only the two documentation
+strings differ). THE FULL CORRECTIVE ENTRY (the eight false ALL-GREEN close-outs — David's ruled
+seven plus Diff 18 itself, added by evidence — the batch-5 waiver, the permanent quoted-tally
+convention) follows in Part 2, deferred so it can cite these commit hashes.
