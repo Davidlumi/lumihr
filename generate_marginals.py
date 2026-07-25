@@ -28,7 +28,9 @@ import csv, json, re, sys
 SME_N, LG_N, COHORT = 30, 190, 220
 RULED = "2026-07-16"
 
-reg = list(csv.DictReader(open("lumi_anchor_register_CLAUDECODE.csv", encoding="utf-8-sig")))
+from register_resolve import resolve_canonical_register   # C9 rule: highest-dated versioned CSV
+_REG_PATH = resolve_canonical_register()
+reg = list(csv.DictReader(open(_REG_PATH, encoding="utf-8-sig")))
 rules = json.load(open("generator_rules.json"))["rules"]
 bases = json.load(open("structured_bases.json"))          # metric_id -> structured fields
 # Diff 15 (ruled 2026-07-18 ⑥): full-distribution reshapes. A structured_bases entry
@@ -253,7 +255,7 @@ assert not (set(marginals) & set(context)), "row in both marginals and context"
 for q, m in marginals.items():
     assert m.get("grade"), "marginal without grade: %s" % q
 
-out = {"_generated": RULED, "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
+out = {"_generated": RULED, "_source": "%s + generator_rules.json + structured_bases.json" % __import__("os").path.basename(_REG_PATH),
        "ruled_distributions": ruled_dists,
        "maturity_gradients": maturity_grads,
        "multiselect_incidence": ms_incidence,

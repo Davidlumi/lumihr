@@ -13,7 +13,9 @@ Run: python3 register_clean_diff1.py            (DRY: prints the ledger)
 """
 import csv, io, shutil, sys
 
-REG = "lumi_anchor_register_CLAUDECODE.csv"
+from register_resolve import resolve_canonical_register   # C9 rule (follow-up 1, 2026-07-25)
+REG = resolve_canonical_register()   # NOTE: this script is a COMPLETED one-shot (Diff 1, 2026-07-16);
+                                     # the repoint keeps its dry-run readable against the canonical file
 WRITE = "--write" in sys.argv and "--confirmed-by-david" in sys.argv
 RULED = "ruled 2026-07-16"
 
