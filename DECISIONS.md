@@ -10366,3 +10366,42 @@ bank-wide contradiction baseline (coherence-sweep, 2026-07-24) counted 251 hard 
 families: GAP-78 (ruled leave-as-is, gap004-correct) and commission-173 (now 0, this diff). Every other
 family was already clean or repaired en route (SALSAC×NIC 31->0 across batches 2-3). Remaining documented
 residue: the 2-org exceptions pair above + the GAP family's ruled state — both recorded, neither silent.
+
+## Round-2 batch-5 — H&P, the first DOWNWARD headline batch (ruled + applied 25 July 2026, commit 4708b79)
+DOMAIN-5 RULINGS (David 2026-07-25, verbatim — "confirm all, i, target three / Batch-5 ships"):
+  1. CASHPLAN -> definition (i), any-provision — the CIPD on-offer convention is what the anchor
+     measures; definition (ii) landing the seed aligned is the seed-flattering trap REFUSED (the
+     FINWELL263 doctrine applied SYMMETRICALLY: this time it would hide an OVER-statement). +10.0 over ->
+     Round-2 target, reshapes DOWN. Stale platform tag noted (config follow-up).
+  2. OPTICAL -> Round-2 target — bound logic conservative: true over-statement >= +9.3. Reshapes DOWN.
+  3. BEN_048 -> Round-2 target, SHAPE class (BEN_112 doctrine + the IP-pool hard constraint).
+  4. CICOVER / DENTAL / BEN_044 / BEN_045 superseded (r3sw24/23/19/21 operative) · BEN_046 aligned
+     (+1.1 vs weighted 35.3). DOMAIN 5 CLOSED. (Set derived fresh: 8 = the historical 6 + the two
+     tranche-1 H&P rows; frozen-8 ∩ set = ∅ checked first; H&P family coherence GREEN, no regression.)
+
+THE DOWNWARD DOCTRINE (recorded): same under-peaking doctrine, opposite sign — approach the anchor FROM
+ABOVE, STOP SHORT (land above the anchor, not on it), grade caution setting the stop distance.
+
+APPLIED (seed-data 4708b79; live write authorised CONDITIONALLY on the 11-suite landing ALL GREEN —
+condition met: hard failures 0, warnings 0; backup lumi.db.bak_pre_batch5_hp_20260725_074546; post-write
+EXACT-matched the rehearsal):
+  CASHPLAN: any-provision 84->68 of 220 (38.2%->30.9%) vs 28.2% weighted (grade A; ~1.10x stop-short).
+    Flips PROPORTIONAL across the three provision arms (7/5/4 — the funding mix has no anchor, so no
+    mix-shift was invented); pool CONSTRAINED to PMI-holding orgs so PROP_11a83d52's "has a health plan"
+    base stays true for every flipped org (verified: all 16). Definition (ii) transparency: employer-paid-
+    any 29.5% -> 24.1% (a legitimate movement, reported).
+  OPTICAL: Yes 168->155 (76.4%->70.5%) vs 67.1% weighted (grade A; ~1.05x stop-short). BOUND-HONESTY
+    NOTE (recorded per ruling): the anchor counts provision-any — an UPPER BOUND for the live
+    beyond-DSE-statutory construct — so even the landed 70.5% may still overstate; a beyond-statutory-
+    specific source or member data trues it further.
+  BEN_048 SHAPE (BEN_112 doctrine): bands 50-65/66-75/76+ 16/44/20 -> 32/32/16 — a CO-MODAL TIE as the
+    grade-B short-landing toward the anchor's "50-59% most common" claim (full-fit would have made the
+    anchor band dominant; the tie moves the mass without asserting dominance). Moves: 16x 66-75 -> 50-65,
+    4x 76+ -> 66-75, VALUES ONLY. THE IP-POOL HARD CONSTRAINT HELD: BEN_046 byte-identical; the 80=80
+    pool identity asserted unchanged — the Domain-5 coherence green was not grazed.
+FIXTURES byte-held, skips STATED (both sat inside draw pools: Advisory in CASHPLAN-voluntary +
+BEN_048-66-75; Retail in OPTICAL-Yes). Zero Thornbridge bucket/verdict movement; donut 152/103/30 = 285
+byte-identical; absent 15 unchanged. Direction sign-checks passed on all three (down, toward anchor,
+from above). n unchanged x3; non-batch book hash-identical; frozen-8 re-asserted ∅. GATES: freeze PASS,
+qa_scores 3/0, full 11-suite ALL GREEN (hard failures 0, warnings 0), gate-safety-2 live byte-identical
+through rehearsal.
