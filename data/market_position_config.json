@@ -2737,8 +2737,8 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_regfollowup2": "anchored at register v2026-07-24 (grade A, CIPD RM 2022: 11% all / 14% all-or-some, source-corrected) — unbenchmarked lifted (follow-up 2)"
     },
     "REW264_WEL_EWAFEES": {
       "class": "Level",
@@ -2782,8 +2782,8 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_regfollowup2": "anchored at register v2026-07-24 (grade A, CIPD RM 2022: 25+5=30% + size splits) — unbenchmarked lifted (follow-up 2)"
     },
     "REW264_WEL_COLACTION": {
       "class": "Level",
@@ -2851,8 +2851,8 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_regfollowup2": "anchored at register v2026-07-24 (grade A, CIPD RM 2022: 23% all / 27% all-or-some + size splits) — unbenchmarked lifted (follow-up 2)"
     },
     "REW264_HLT_OPTICAL": {
       "class": "Level",
@@ -2860,8 +2860,8 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_regfollowup2": "anchored at register v2026-07-24 (grade A, CIPD RM 2022: 63/72 + size splits) — unbenchmarked lifted (follow-up 2)"
     },
     "REW264_HLT_CANCERPATH": {
       "class": "Level",
@@ -3257,8 +3257,8 @@
       "direction": "higher_is_better",
       "lens": "attract",
       "weight": 1,
-      "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_regfollowup2": "PARTIALLY anchored at register v2026-07-24 (grade A, CIPD Flexible & hybrid 2025, PROSE-VERIFIED quantities only — Figure-1 per-arm + annualised remain David's hold) — unbenchmarked lifted (follow-up 2)"
     },
     "REW265_TIME_DISCONNECT": {
       "class": "Level",
