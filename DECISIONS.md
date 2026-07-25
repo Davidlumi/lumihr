@@ -10324,3 +10324,45 @@ EXCEPTIONS TABLE (carried forward verbatim — queued-but-unruled, NOT applied):
     work is r3sw8-era, untouched |
   | The 2 remaining mixed-grade legacy rows + 138 blank-grade rows | grade normalisation never ruled |
   | Wellbeing C-section drift-withdrawal per-row confirms (HOLD) | mooted by the full-text replacement |
+
+## Commission-family coherence diff — the last open family -> 0 (ruled + applied 25 July 2026, commit a31607e)
+RULINGS (David 2026-07-25, verbatim — "confirm six, a, own diff, fix fixtures, hold prevalence"):
+  1. The I&R six: CONFIRM all as proposed (GAP_004 superseded — register-row refresh joins the maintenance
+     queue; REC_PEER, INC_103, INC_131 NOT COMPARABLE; INC_072 aligned; INC_133 direction-verified).
+     DOMAIN 4 YIELDS ZERO ROUND-2 TARGETS — recorded as the honest outcome.
+  2. Commission authority: (a) — existence (INC_135) governs. THE PROVENANCE OVERRIDE, recorded explicitly:
+     provenance mechanically favours (b) (details were the original draw; INC_135 a later bulk rewrite,
+     2026-07-15, 190 rows, unconditioned) and is noted and OVERRIDDEN because the elder side is
+     disqualified on its own terms — 96 mutual intra-detail contradictions (no coherent repair target
+     exists) and an implied 95% commission prevalence, implausible for a mixed UK cohort. "Provenance says
+     which side came first, not which is true."
+  3. Vehicle: its own seed-coherence diff (too large/heterogeneous for a side-scope).
+  4. Fixtures: FIXED, not held — ruled corrections per the Diff-19b precedent (fixture-exclusion protects
+     the demo from statistical redraws, not from ruled coherence fixes; a demo org carrying a visible
+     contradiction is worse than a logged correction). NAMED per-org approval given for all three cells:
+     Thornbridge Retail REW_INC_136 'Units sold'->'Not applicable'; Thornbridge Advisory REW_INC_136
+     'Mixed'->'Not applicable'; Thornbridge Advisory REW265_INC_COMMCAP 'Hard cap'->'Not applicable (no
+     commission plans)'. The migration REFUSES a fixture-touching write without --fixtures-approved.
+  5. Prevalence: HELD — 16.4% recorded as COHERENT-BUT-UNENDORSED; no prevalence reshape until an anchor
+     (the CIPD/ONS hunt or member data). The 8551 profit-sharing adjacency (conditioned base) noted for
+     the next maintenance pass.
+
+APPLIED (Phase 1, 252 cells; backup lumi.db.bak_pre_commcoherence_20260725_062447; post-write
+EXACT-matched the rehearsal): R1 — INC_136 -> 'Not applicable' on 165 orgs; R2 — COMMCAP -> 'Not
+applicable (no commission plans)' on 87 orgs (landing in the fresh Diff-19a na_code -> disclosed
+absence, never a silent drop). R3a dissolved via Phase 1 (0 on the Yes side). PHASE COUNTS: logged class
+173 -> 0; R3a -> 0; R3b = 2 = THE EXCEPTIONS PAIR, ruled ACCEPT AS-IS (Tamarvale Health Partners plc,
+Riverbourne Freight Services Ltd: 135=Yes, COMMCAP='Hard cap', 136='Not applicable' —
+commission-exists-structure-undisclosed is a plausible, honest state; the family's DOCUMENTED RESIDUE,
+not a defect; no 136 value invented). INC_135 asserted BYTE-IDENTICAL (36/220 = 16.4%). Post-repair the
+family is exactly coherent: COMMCAP-substantive 36 == INC_135-Yes 36; 136-substantive 34 (36 minus the
+residue pair). Thornbridge: ZERO bucket/verdict movement; donut 152/103/30 = 285 byte-identical; INC_136's
+practice-pool mode flips to 'Not applicable' (186) — attributed prevalence movement, the repair itself.
+n unchanged x3; non-family book hash-identical; frozen-8 ∩ family = ∅. Gates: freeze PASS, qa_scores 3/0,
+full 11-suite ALL GREEN, gate-safety-2 live byte-identical through rehearsal.
+
+CLOSURE: **the platform's last open coherence family is closed — the coherence ledger is clean.** The
+bank-wide contradiction baseline (coherence-sweep, 2026-07-24) counted 251 hard contradictions in two
+families: GAP-78 (ruled leave-as-is, gap004-correct) and commission-173 (now 0, this diff). Every other
+family was already clean or repaired en route (SALSAC×NIC 31->0 across batches 2-3). Remaining documented
+residue: the 2-org exceptions pair above + the GAP family's ruled state — both recorded, neither silent.
