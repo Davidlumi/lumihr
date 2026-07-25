@@ -74,12 +74,19 @@ check("strength/gap items: zero favourable<->market contradictions (%d checked)"
       not contradictions, contradictions[:2])
 lib = {q.id: q for q in load_questions().values()}
 lows = [q for q in lib.values() if q.superpower == "Reward" and q.polarity == "lower_is_better"]
-# DERIVED, not the old literal ==4 (Diff 2, 2026-07-14): the ratified book deliberately
-# keeps a small ↓ set (BEN_047 IP waiting + the two workforce-cost PROPs; FAI_079's ↓ was
-# a reword stray, flipped ↑ by ruling). The gate needs the inversion EXERCISABLE, and any
-# ↓ metric must be one the engine actually inverts — count comes from the data, never a
-# swapped literal.
-check("lower_is_better metrics exist in scope to exercise the inversion", len(lows) >= 1, len(lows))
+# ASSERT-ZERO-BY-RULING (gate reconciliation, David 2026-07-25 ruling 1 — supersedes the
+# Diff-2 ">=1 so the inversion is exercisable" form): the Diff-18 neutral-17 ruling
+# (RULING_SHEET_neutral17_2026-07-24.md, PROP_e63cf45a + PROP_d16bae79 — the CFO-landmine
+# pair -> Practice, polarity neutral) deliberately neutralised the LAST two ↓ Reward
+# metrics, so the ratified book's ruled ↓ set is EMPTY and the old check became
+# structurally unsatisfiable at that ruling (it then failed in seven suite runs whose
+# close-outs misrecorded ALL GREEN — see the corrective DECISIONS entry, 2026-07-25).
+# The protection survives inverted: every ↓ Reward metric present in the live book must
+# be RULING-ACCOUNTED below; an un-ruled ↓ metric FIRES this check.
+RULED_LOWS = {}  # id -> ruling reference. EMPTY by the Diff-18 ruling; additions require a David ruling.
+unruled = sorted(q.id for q in lows if q.id not in RULED_LOWS)
+check("every lower_is_better Reward metric is ruling-accounted (ruled ↓ set empty since Diff 18)",
+      not unruled, unruled)
 
 print()
 print("=" * 100)
