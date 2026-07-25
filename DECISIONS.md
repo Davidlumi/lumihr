@@ -10405,3 +10405,42 @@ byte-identical; absent 15 unchanged. Direction sign-checks passed on all three (
 from above). n unchanged x3; non-batch book hash-identical; frozen-8 re-asserted ∅. GATES: freeze PASS,
 qa_scores 3/0, full 11-suite ALL GREEN (hard failures 0, warnings 0), gate-safety-2 live byte-identical
 through rehearsal.
+
+## Register follow-ups — the queued-diff ledger CLEARED (ruled + applied 25 July 2026, commits 36eef88 + f150604)
+Both follow-ups queued at the register-maintenance pass (v2026-07-24) with their fix classes named;
+executed in one session, TWO commits, classes never shared.
+
+FOLLOW-UP 1 (CODE, 36eef88): **the C9 canonical rule is now expressed in code** —
+register_resolve.resolve_canonical_register() returns the highest-dated lumi_anchor_register_v*.csv and
+raises a HARD RuntimeError when none exists (never a silent fallback to the prior CLAUDECODE.csv or the
+stale JSON; the error path is tested). The literal filename pattern lives in exactly ONE place, so the
+next register version breaks nothing. Both consumers repointed: generate_marginals.py (read + _source
+stamp; NO read-only mode exists — verified by resolve + row count 255, as ruled);
+register_clean_diff1.py (completed one-shot: it now resolves the canonical file and its own 243-row
+era-guard REFUSES to operate — the correct terminal state; an accidental rerun is SAFER than before).
+Sweep census re-verified: exactly 2 consumer scripts; generated_marginals.json and
+data/anchor_provenance.json are OUTPUT ARTIFACTS carrying historical source-strings — no-ops, noted,
+they refresh when their generators rerun.
+
+FOLLOW-UP 2 (CONFIG, f150604): **the five tranche-1 promotions** — CASHPLAN, OPTICAL, EWA,
+SEASONTICKET, FLEXPATTERN: `unbenchmarked` lifted (deleted; absent = benchmarked) + `_regfollowup2`
+note citing the register row. Actual states were DERIVED first (no literal "never-in-register" config
+key exists — audit vocabulary only; the five were unbenchmarked=True). BLAST-RADIUS RE-VERIFIED before
+any edit: unbenchmarked is consumed ONLY at the card/disclosure layer (positions._item flag -> app.py
+readout/pill suppression -> charts.js EST note) — no routing path consults it; the Phase-0 finding
+still holds. THE MEMBER-VISIBLE CONSEQUENCE, STATED: these five metrics' cards now SHOW peer
+comparisons (P-pill, readout sentence, position pill) — the intended promotion of verified grade-A
+anchors. FLEXPATTERN promoted on its PROSE-VERIFIED quantities only — the PARTIAL anchoring carried in
+its note; **the Figure-1 per-arm + annualised items remain David's hold.** HOLPAYMETHOD: VERIFIED
+NO-CHANGE (untagged + Practice-class; its statutory bound row implies no distribution-authority tag) —
+the proposal table covered six, the change set was five. THE ABSOLUTE ASSERT HELD: allocation ladder
+BYTE-IDENTICAL before/after (0 bucket/verdict changes); donut 152/103/30 = 285, absent 15; tag census
+222 -> 217, exactly the five. Gates: freeze PASS; qa_scores 3/0 (a bare first invocation was correctly
+REFUSED by gate-safety-1 — the guard working — and re-run properly against a throwaway); full 11-suite
+hard failures 0 / warnings 0; gate-safety-2 live untouched through rehearsal. Backup (belt-and-braces;
+the DB never moved): lumi.db.bak_pre_regfollowups_20260725_093642.
+
+**THE QUEUED-DIFF LEDGER IS CLEARED** — every follow-up queued with a named fix class at the
+register-maintenance pass has now shipped or been verified-no-change. Still held by David (not queued
+diffs): FLEXPATTERN Figure-1 visual check; the PROFITSHARE document want; the commission prevalence
+anchor; tranche-2 research; headline-stream Domains 6-8 (Pay 9 / G&T 13 / Time Off 20).
