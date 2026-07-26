@@ -10516,3 +10516,69 @@ _AFF-scored ladder for the same pattern (REW_FAI_079 and REW_INC_070 are two fur
 instances, per the corrected qa_scores texts); (b) the 36 pre-existing budget-vs-award-band
 incoherences on PROP_9e4ad87f x PROP_634adacd (all pre-date batch-6; none involve redrawn orgs);
 (c) PROP_9e4ad87f's 5+ band at 3.0% vs the anchor's 15% (outside the ruled batch-6 scope).
+
+## Round-2 batch-6 — PAY: GAP_009 headline ↓ + the FIRST NUMERIC shape reshape, native tenths (ruled + applied 25-26 July 2026, commit 360dabd; Domain 6 CLOSED)
+Rulings (David 2026-07-25, "confirm five, target two, hold OT pair" + the re-run ratification
+"a, ratify with waiver, A, ship both, convention ruled"; both transmitted-prompt ratifications,
+RULE: markers written into HEADLINES_pay_review_2026-07-25.md):
+- THE FIVE CONFIRMED: PAYTR_02, PROP_634adacd, REM_PAY_001 aligned; BEN_058 NOT COMPARABLE (its
+  mislabelled register cell joins the maintenance queue); OT_04 aligned WITH THE CIRCULARITY
+  CAVEAT verbatim: "alignment to a self-derived anchor is not evidence of correctness; the
+  seedreal-1 provenance item remains the real resolution, queued."
+- THE OT PAIR HELD, verbatim: "thin-but-true: grade-B legacy anchors of dubious authority (the
+  family's third member already circularity-flagged); reshaping toward fog is not truth-up.
+  Q528801's plausibility smell (modal 1x day-band overtime) is RECORDED as an open question about
+  the seed, awaiting a real anchor (tranche-2 / member data) — held, not lost."
+- 6.1 GAP_009 headline ↓ (grade-A CIPD Flex 2025, weekly-minimum definition): 10 deterministic
+  adjacent-notch moves '1–2 days/week' -> '<monthly' (sha-ordered pool of 78, both fixtures in the
+  draw arm — skipped). Weekly 150/206=72.8% -> 140/206=68.0% vs the 65% anchor (stop-short x1.046).
+  Any-minimum reading INVARIANT 158/206 before==after (asserted). Intra-weekly mix 80/70 -> 70/70,
+  toward the anchor's ~40/60 day-split. Four-way vs GAP_010/GAP_011/REM_PAY_001: relatives
+  byte-identical, no structural rule binds (applicable_bases verified), no contradiction.
+- 6.2 PROP_9e4ad87f NUMERIC shape ↓ (grade-A LMO: median 3%, band-3 40%) — the first
+  CONTINUOUS-VALUE reshape, REDESIGNED ON NATIVE TENTHS after the quarter-grid rehearsal was
+  adversarially REFUTED for machine fingerprints. DOCTRINE (ruling 3 verbatim): "answer-texture is
+  a property of the book, DERIVED from it, never legislated into a design note; the quarter-grid
+  rule manufactured the very fingerprint the same rule forbade (authorship error owned in the
+  record — the ruled text was Claude's)." Design as shipped: donors DIFFUSE across 3.5–3.9 by
+  capped largest-remainder {3.5:5, 3.6:7, 3.7:5, 3.8:5, 3.9:10} (caps = floor-rule-eligible pools
+  8/10/6/5/11; retentions .545/.500/.545/.667/.524 vs region avg .556; 3.4 shoulder untouched);
+  destinations on tenths 2.1–2.9 mirroring the live rising-to-band-top texture (additions
+  1/1/2/2/3/4/5/6/8; post 2-band max adjacent ratio 2.0 vs the book's own 3.0 precedent);
+  rank-preserving map, per-org drop 1.0–1.4pp; consistency floor-rule violations NONE. Landings:
+  median 3.70 -> 3.40 EXACT; band-3 120 -> 88 = 44.0% (stop-short x1.10). MEDIAN 3.40 NOT 3.30,
+  the joint-constraint proof: 3.30 needs >=42 movers from >=3.4 -> band 39% breaches the 40%
+  anchor floor — the BAND FLOOR binds, not the consistency rule; 3.40 is the ruled stop-short's
+  arithmetic limit. THE FOUR FINGERPRINT GROUNDS ARE PERMANENT IN-SCRIPT ASSERTS (no unique
+  value-string class / no precision outlier / no unprecedented heaping / no donor crater) — all
+  four PASSED at rehearsal and at the live apply.
+- THE TWO ADVERSARIAL CAVEATS, on the record per David's approval (accepted as stated, below the
+  refutation bar): (1) answers_history recovers the full transition map by one SELECT — BY DESIGN,
+  the house audit convention (54 identical migration labels already live; the fingerprint bar
+  governs the answers book's distribution, not the deliberate provenance trail); (2) the two
+  eyeball-able textures — the post 2-band's zero-dip smoothness (in-book precedent exists) and the
+  global mode moving 3.9:21 -> 2.9:15 — recorded honestly.
+- ADVERSARIAL VERDICTS QUOTED: selection-math CONFIRMED (fresh recomputation, 42-row diff exact,
+  quotas + rank map zero mismatches); fingerprint re-check CONFIRMED (whole-book string-class
+  census byte-identical between DBs; zero strings unique to either; worst crater cases clear at
+  3.5:6 vs half-thresholds 5.5/3.5).
+GATES (fresh throwaway b6r_tw.db under the FIXED gate; RAW TALLIES PER RULING 5, preserved in
+scratchpad/b6r_gates + b6r_qa_scores.out): "PASS (11): qa_hero, qa_focus, qa_signals_system,
+qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_plausibility,
+qa_pulse, qa_release" / qa_hero.out "RESULTS: 59 checks, 59 passed, 0 failed" / qa_plausibility.out
+"FREEZE GATE: PASS — settled within 0.1pp of frozen_targets.json; register marginals within 5pp of
+target." / qa_engine_audit.out "hard failures: 0 | warnings: 0" / "== SCORE-LADDER GATE: 3 passed,
+0 failed ==". Frozen-8 ∩ batch = ∅ re-asserted.
+LIVE (26 July 2026): checkpoint (0,0,0) + backup lumi.db.bak_pre_batch6_pay_20260726_061424
+(backup API) -> double-guarded apply -> re-aggregate (344 payloads) -> POST-WRITE EXACT-MATCH:
+live answers book == rehearsal byte-for-byte (4b1e0b3a73325d2c, 0 differing rows of 89,321);
+42 history stamps; fixtures byte-held (Retail GAP '1–2 days'/PROP 3.1; Advisory '1–2 days'/4.1);
+dev server restarted on live. VERDICT ATTRIBUTION (post-write dumps == rehearsal dumps EXACT):
+both Thornbridge orgs GAP_009 'above' -> 'at' (the _AFF-inverted engine scale, threshold-marginal
+65.87 -> 62.87 across the 65 line — the inversion-semantics ruling + book-wide _AFF audit remain
+QUEUED per the corrective record); donuts Retail 152/103/30 -> 152/104/29, Advisory 17/81/184 ->
+17/82/183, absent 15/9 unchanged.
+DOMAIN 6 (PAY) CLOSED: 9 rows — 5 confirmed no-action, 2 targets shipped in this batch, 2 held
+(the OT pair). Headline stream remaining: G&T (13) · Time Off & Family (20). Register-maintenance
+flags accumulated: BEN_058 anchor cell mislabelled; PROP 5+ band 3.0% vs anchor 15% queued
+(outside ruled scope); 36 pre-existing budget-vs-award incoherences queued.
