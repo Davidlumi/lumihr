@@ -10582,3 +10582,80 @@ DOMAIN 6 (PAY) CLOSED: 9 rows — 5 confirmed no-action, 2 targets shipped in th
 (the OT pair). Headline stream remaining: G&T (13) · Time Off & Family (20). Register-maintenance
 flags accumulated: BEN_058 anchor cell mislabelled; PROP 5+ band 3.0% vs anchor 15% queued
 (outside ruled scope); 36 pre-existing budget-vs-award incoherences queued.
+
+## AFF TIER-1 MAP DIFF — the 18+1 member-harm ladders corrected (ruled + applied 26-27 July 2026, commits 222e8d1 + 25464df; the allow-list emptied)
+RULINGS VERBATIM (David 2026-07-26, "invert 9, amend 9, confirm 3+4, paste tier 2"; transmission =
+ratification): (1) "Tier 1A: INVERT all 9 ... corrected FIRST, before any engine work (backwards
+member-visible verdicts outrank architecture). FAI_079's stale scoring_config.polarity is
+superseded in the same row (the adversarial catch); its qa_scores allow-list entry RETIRES."
+(2) "Tier 1B: AMEND all 9 as swept — partial/planned provision scores above outright 'No', never
+below." (3) "Tiers 3+4: CONFIRM wholesale ... INC_070's allow-list entry RETIRES on its ruling.
+The confirms are NOT built in this diff — they queue for the later pins diff ... recorded as
+ruled-awaiting-pin." (4) "Tier 2: all 20 rows HOLD — David's joint per-row pass pending ... No
+Tier-2 metric is touched, scored, re-mapped or re-routed by this diff." Tally 9+9+20-HOLD+9+61 =
+108. SEQUENCING RESOLUTION (reported, not forced): the ruled rehearsal tally required "BOTH
+retirements (FAI_079, INC_070)" — a retired entry on a still-backwards ladder trips qa_scores'
+unexpected-guard, so INC_070's Tier-3-ruled map amend (authored-pinned Yes:100/No:0) rode WITH its
+retirement: scope 18+1. ALLOW_04's contested END travels to the Tier-2 pass; only its ruled middle
+shipped.
+
+THE MECHANISM (every fix proven effective under the CURRENT resolution order; none blocked, no
+engine change needed): 16 metrics keep label-branch d=-1 and take PRE-COMPENSATED maps (authored =
+100 - ruled effective; deliberately engine-coordinate — the pins/engine diff rewrites them natural);
+PROP_3d4fc4e7's ruled 'Not measured'->na shifts it to numband->DB-polarity(hib) d=+1 with a natural
+ascending map; REW_PAY_014's ruled 'Other'->na leaves NEG-first d=+1, band values unchanged.
+STALE-FIELD SWEEP: exactly two scoring_config.polarity='lower_is_better' hits (FAI_079, INC_070) —
+both keys deleted; the remaining 17 (neutral x8 / hib x9) don't fight, untouched.
+
+THE FLIP RECORD (the point of the diff — 2,435 org-metric verdict flips, all attributed; per-metric
+before b/at/ab -> after, flips): INC_103 41/106/73 -> 75/39/106, 179 (ALL 106 '75%+' orgs 20->100
+at->above; the 5 '<10%' above->below — canonical check EXACT) · FAI_079 88/0/132 -> 123/9/88, 220 ·
+INC_070 73/0/106 -> 106/0/73, 179 · SICK_001 130 · BEN_100 145 · BEN_102 122 · PROP_3d4fc4e7 133 ·
+PRO_098 152 · Q049530 113 · ALLOW_02 167 · ALLOW_04 165 · RED_PROC_02 169 · RED_PROC_03 162 ·
+RED_PROC_05 164 (the No-tie middles collapse: each metric's No-answerers — 138/136/138/137/133 —
+at->below, partials rise) · BEN_039 139 (two-way: 71 below->at + 68 at->below) · FAI_128 18 ·
+PROP_202fecc6 28 · RED_PROC_04 15 · PAY_014 35 (all 'Other' answerers above->UNSCORED; scored base
+205->170 — ruled na behaviour, measurement absence is not a provision level). FIXTURES (answers
+byte-held, verdicts flipped by design): Retail donut 152/104/29 -> 161/99/25 (11 deltas; its
+SICK_001 'No sick pay provided' fell above->below — verified the HONEST verdict vs 119
+enhanced-provision peers); Advisory 17/82/183 -> 17/81/183, absent 9->10 (its PAY_014 'Other' now a
+DISCLOSED STRUCTURAL ABSENCE — the Diff-16 mechanism working as designed). ALLOW_02's engine pool
+is 211 not 212: org 'Tester' (submission_complete=0, ONE answer book-wide) is excluded by the
+aggregate.py:762-770 cohort filter — replica artifact chased to ground, engine correct.
+
+GATES (throwaway aff_tw.db under the fixed gate; RAW TALLIES PER RULING 5, preserved in
+scratchpad/aff_gates + aff_qa_scores.out): "PASS (11): qa_hero, qa_focus, qa_signals_system,
+qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_plausibility,
+qa_pulse, qa_release" / qa_hero.out "RESULTS: 59 checks, 59 passed, 0 failed" / qa_plausibility.out
+"FREEZE GATE: PASS" / qa_engine_audit.out "hard failures: 0 | warnings: 0" / "== SCORE-LADDER GATE:
+3 passed, 0 failed ==" + "KNOWN backwards ladders: NONE — allow-list emptied 2026-07-26". THE
+MILESTONE: zero tolerated backwards ladders, book-wide, for the first time (all three retirements
+landed; texts preserved in _RETIRED_2026_07_26; live pre-write still showed exactly the three,
+proving the diff removed them). Frozen-8 ∩ 19 = ∅.
+
+ADVERSARIAL VERIFICATION (three reviewers, verdicts quoted): mechanism-effect CONFIRMED (whole-DB
+sweep — only questions x19 scoring_config_json + the 19 benchmark payloads differ; answers
+byte-identical; ALL 20 Tier-2 rows byte-identical incl. payloads). flips REFUTED — against the
+verification prompt's own summary phrase, not the rehearsal: the independent recompute matched the
+rehearsal table on EVERY number; the refuted item was Claude's "137-138 at->below each" gloss for
+the six No-tie rows (actual 138/138/137/136/133/68; BEN_039's collapse is two-way) — the
+misstatement was Claude's summary sentence, recorded as such. book-sweep CONFIRMED (zero
+violations across all 137 scored selects; all 118 untouched scored selects byte-identical
+effective maps; market_position_config direction and ordered_scale_routing scales now AGREE with
+the corrected maps — pre-diff they contradicted them).
+
+LIVE (27 July 2026): checkpoint (0,0,0) + backup lumi.db.bak_pre_afftier1_20260727_215533 (backup
+API) -> double-guarded apply (all 19 proofs re-passed on live) -> re-aggregate (344 payloads) ->
+POST-WRITE EXACT-MATCH: answers book 4b1e0b3a73325d2c unchanged (config-only diff); all 344
+question configs live==rehearsal; the 19 benchmark payloads byte-equal (flip counts identical by
+construction); fixture dumps EXACT (Retail 161/99/25 absent 15; Advisory 17/81/183 absent 10);
+dev server restarted on live.
+
+QUEUED: (a) THE ENGINE+GATE DIFF (David's next ruling — appendix as specced at the STOP):
+scoring_config gains an authored direction key consulted FIRST; the label heuristic demotes to a
+flagged last-resort fallback; new gate asserts zero metrics scored by heuristic; (b) THE PINS DIFF:
+natural direction-pinned maps for the 16 engine-coordinate rewrites + the 70 ruled-awaiting-pin
+confirms; (c) TIER-2's 20 rows HOLD for David's joint per-row pass; (d) the three reviewer
+follow-ups attached to the pins queue: signal_lenses' _held_pending_data_fix.REW_BEN_SICK_001
+re-add (its hold condition is now satisfied), qa_hero's stale ANCHOR_RISK comment on Q049530
+(exclusion remains safe), qa_scores' stale docstring lines 16-18 (behaviour correct).
