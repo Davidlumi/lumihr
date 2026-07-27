@@ -10659,3 +10659,84 @@ confirms; (c) TIER-2's 20 rows HOLD for David's joint per-row pass; (d) the thre
 follow-ups attached to the pins queue: signal_lenses' _held_pending_data_fix.REW_BEN_SICK_001
 re-add (its hold condition is now satisfied), qa_hero's stale ANCHOR_RISK comment on Q049530
 (exclusion remains safe), qa_scores' stale docstring lines 16-18 (behaviour correct).
+
+## AFF ENGINE + GATE DIFF — authored direction becomes law (ruled + applied 27 July 2026, commits d4d8374 + 3a0d440)
+THE RULING, VERBATIM (David 2026-07-27; transmission = ratification): "The Task-4 fix-shape is
+RATIFIED as specced in the Tier-1 appendix: _score_direction gains an authored key consulted FIRST
+(scoring_config.direction: ±1); the label-regex branch demotes to a last-resort fallback that
+computes-for-continuity but EMITS A FLAG; a new gate asserts zero metrics scored by heuristic. The
+scales-never-inferred doctrine, applied to the engine itself." Approval addendum: "The
+last-authority realisation of 'label branch LAST' is ratified as stated (the literal reorder would
+have violated the byte-identical invariant — right call, right disclosure)."
+
+RESOLUTION ORDER, OLD -> NEW (aggregate.py): OLD — label regex first (:331-334) -> numband->DB
+polarity -> cfg-polarity-lib -> route-b -> 0. NEW — **authored scoring_config.direction ±1 FIRST**
+(:333-335) -> multi_select -> <2-scoreable -> label regex, source-stamped 'label_heuristic'
+(:345-348) -> numband->DB polarity (:349-355) -> route-b (:356-364) -> 0. ONE DELETION: the
+cfg-polarity-lib step — proven UNREACHABLE book-wide (its only two carriers, PROP_e63cf45a/
+PROP_d16bae79, are numeric-method rows that exit at <2-scoreable; zero option-scored carriers in
+either DB). THE FLAG lives in aggregate._direction_sources (public: direction_source(q));
+run_snapshot prints the census every aggregation; payloads deliberately NOT stamped — the
+byte-identical invariant forbids it.
+
+THE CONTINUITY PATH TAKEN: Part A alone does NOT double-invert the 17 engine-coordinate maps (the
+label branch computes-for-continuity; empirical: old-vs-new over live configs = 0 differing
+resolutions of 344) — but the gate's zero-assert binds A+B (an intermediate census 107 != 20), so
+ONE rehearsal, ONE atomic apply, two commits per class. "Label branch LAST" realised as
+last-AUTHORITY, chain position kept: a literal reorder would flip Tier-2's unruled rows.
+
+THE EXCEPTION-LIST MECHANISM: qa_scores check 4 (home: the score-authority gate; the mechanism
+mirrors its allow-list pattern) asserts heuristic-census == RULED_HEURISTIC_HOLD — exactly the
+_AFF-audit Tier-2 20, HOLD pending David's joint pass; every Tier-2 ruling that pins/re-routes its
+metric must also remove it here; the check fires on divergence in EITHER direction, so the list
+only shrinks. VERIFIED BOTH WAYS, raw: positive (pins throwaway) "PASS heuristic-scored census ==
+the ruled exception list (20 Tier-2 HOLD rows)" / "== SCORE-LADDER GATE: 4 passed, 0 failed =="
+rc=0 (pins_qa_scores_POSITIVE.out); negative (ALLOW_02's pin removed) "FAIL ... unruled_flagged:
+['ALLOW_02']" / "2 passed, 2 failed" rc=1 — WITH check-1 double-firing (an un-pinned natural map
+re-inverts under the regex): authority-police and outcome-police each catch what the other misses.
+
+THE PINS (88 = the audit's 108 label rows − Tier-2's 20; PROP_3d4fc4e7 pinned from the numband
+route it moved to post-Tier-1): 17 natural rewrites (option_scores := 100−old bit-exact, dir +1) ·
+2 na-route pins (3d4fc4e7 +1, PAY_014 +1) · 69 confirm pins (dir := the regex's current d, maps
+byte-untouched — pins move authority, never output). NO PINS NEEDED, derived not assumed: the 7
+numband rows (curated DB polarity over numeric scales), 11 route-b rows (the David-authored
+mp-config direction), 11 unresolved rows (unscored -> prevalence). CENSUS: live before
+label 107 / numband 8 / route-b 11 / unresolved 11 / authored 0 -> after authored 88 /
+label_heuristic 20 (== Tier-2 exactly) / numband 7 / route-b 11 / unresolved 11.
+
+THE INVARIANT HELD: 0/344 benchmark payloads byte-differing (fresh computed_at proves a genuine
+re-aggregation); answers book 4b1e0b3a73325d2c unchanged; effective per-option scores
+exact-float-equal for all 137 scored selects; fixture dumps identical (Retail 161/99/25 absent 15;
+Advisory 17/81/183 absent 10). GATES, raw tallies (scratchpad/pins_gates): "PASS (11): qa_hero,
+qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary,
+qa_commentary, qa_plausibility, qa_pulse, qa_release" / qa_hero "RESULTS: 59 checks, 59 passed,
+0 failed" / qa_signals_system "14 passed, 0 failed" / freeze "PASS" / engine audit "hard failures:
+0 | warnings: 0". ADVERSARIAL: three reviewers ALL CONFIRMED (byte-invariant recomputed
+independently incl. the 17 maps bit-exact; the engine diff reconstructed from HEAD branch-by-branch
+— throwaway divergence = exactly the 17 authored pins; no direct _score_direction caller repo-wide;
+gate+lens coherence incl. an in-memory reverse-divergence proof).
+
+THE FOLLOW-UPS SHIPPED: SICK_001 lens re-add (position_lenses 'retain' — derived from sibling
+SICK_002; NO prior value existed, held since Signals Phase 1 — + signal_label 'Occupational sick
+pay vs SSP'; held-block emptied with release note; qa_signals HELD releases it). RENDER VERIFIED on
+the member surface: behind · retain · P1 · "0/100 vs the peer median" · "you provide none, the
+market provides it" — in the full pool; the capped 3-signal briefing unchanged. Under the OLD
+backwards ladder this org read AHEAD on sick pay. + qa_hero's Q049530 ANCHOR_RISK comment
+(comment-only, set byte-identical) + the qa_scores docstring.
+
+CORRECTIONS RECORDED VERBATIM PER APPROVAL: (1) the Tier-1 record's "16 pre-compensated maps"
+UNDERCOUNTED — the true count is 17 (the migration PLAN was always correct; the prose slipped —
+the record-writer's summary-count error class, again). (2) LENS-LIVE SEQUENCING DISCLOSED: live
+:8060 was already running the new engine code + hot-reloaded lens config from run_gates' teardown
+restarts before approval — output byte-identical by proof, the SICK_001 pool signal live-visible
+early; disclosed at the STOP, accepted in the approval. (3) RIDE-ALONG: commit 3a0d440 sweeps in
+David's own pre-existing uncommitted signal_lenses edit (2026-07-18 PROP_dff9a2a5 label removal +
+_diff14_note) — value-verified, noted in the commit message as ruled.
+
+QUEUED: (a) THE TEARDOWN-FROM-WORKING-TREE GAP — run_gates' teardown relaunches the dev server from
+the working tree, so uncommitted engine code goes live-effective at any suite run; fine when
+rehearsals are output-identical, a foot-gun otherwise; its own hardening ruling. (b) the untracked
+signal_lenses_PROPOSED.json lacks the SICK_001 lens — a silent-drop trap if ever adopted wholesale.
+(c) three stale .claude/worktrees checkouts carrying pre-diff gate code. (d) TIER-2's 20 rows HOLD
+for David's joint pass — each ruling shrinks RULED_HEURISTIC_HOLD; at zero, the label regex decides
+nothing in the live book and can be retired to a pure gate.
