@@ -30,6 +30,12 @@ from aggregate import score_answer, _AFF, _NEG
 # lens map only after the fix. The gate asserts each still actually violates, so
 # fixing the data forces the entry to be removed (no silent rot).
 KNOWN_BACKWARDS = {
+    # EMPTY since the AFF Tier-1 map diff (David-ruled 2026-07-26): all three long-standing
+    # entries RETIRED with their fixes — REW_BEN_SICK_001 + REW_FAI_079 corrected in Tier 1A,
+    # REW_INC_070 corrected as the Tier-3 rider. The ratchet's purpose is temporary tolerance,
+    # not permanent exception; any NEW backwards ladder fails check 1 (unexpected), as designed.
+}
+_RETIRED_2026_07_26 = {
     "REW_BEN_SICK_001": "non-monotonic option order: 'Statutory sick pay only' scores above "
                         "'Enhanced'/'Combination'. Held from position_lenses (Phase 1). "
                         "FIX: reorder options worst->best (none < statutory < enhanced < combination).",
@@ -103,9 +109,12 @@ def main():
     check("verified best->worst metrics resolve correctly (PROP_cdff5737/d65a16e9/34ffb6e2/8e0b6316)",
           not tripped, tripped)
 
-    print("\n  KNOWN backwards ladders (pending David's data fix):")
-    for qid, why in KNOWN_BACKWARDS.items():
-        print("    - %s: %s" % (qid, why))
+    if KNOWN_BACKWARDS:
+        print("\n  KNOWN backwards ladders (pending David's data fix):")
+        for qid, why in KNOWN_BACKWARDS.items():
+            print("    - %s: %s" % (qid, why))
+    else:
+        print("\n  KNOWN backwards ladders: NONE — allow-list emptied 2026-07-26 (all three retired with their fixes)")
 
     print("\n== SCORE-LADDER GATE: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
     sys.exit(1 if FAIL else 0)
