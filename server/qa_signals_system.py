@@ -22,7 +22,9 @@ BASE = "http://localhost:8060"
 # the ONE declared cross-class overlap: pension carries a £ gap AND a position;
 # money fires, behind is deduped by seen_q (Phase 1 decision).
 ALLOWED_OVERLAP = {frozenset(("money", "behind")): {"REW_BEN_PENS_EMP_MAX_01"}}
-HELD = {"REW_BEN_SICK_001", "REW_BEN_REM_PAY_001"}   # held; must never fire
+HELD = {"REW_BEN_REM_PAY_001"}   # held; must never fire. SICK_001 RELEASED 2026-07-27:
+# its hold-text condition ("re-add once score ladder is corrected") was satisfied by the
+# AFF Tier-1 map diff; the lens re-add rode the pins diff per David's ruling.
 VERDICT = ("behind", "ahead", "better", "worse", "lagging", "leading", "you should",
            "underperform", "strong ", "weak ", "must ")
 

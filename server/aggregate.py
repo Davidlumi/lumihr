@@ -255,6 +255,7 @@ _NEG = re.compile(
 _NUMBAND = re.compile(r"^(<|under|less than|up to|within)?\s*[\d£%]", re.I)
 
 _direction_cache = {}
+_direction_sources = {}   # qid -> authority behind its direction (see direction_source)
 
 _mp_dir_cache = {"mtime": None, "dir": {}}
 
@@ -312,35 +313,61 @@ def score_direction(q):
     """+1 raw scores already run worst->best; -1 inverted (best first); 0 unknown."""
     if q.id in _direction_cache:
         return _direction_cache[q.id]
-    d = _score_direction(q)
+    d, source = _score_direction(q)
     _direction_cache[q.id] = d
+    _direction_sources[q.id] = source
     return d
 
 
+def direction_source(q):
+    """AUTHORITY behind q's direction (engine+gate diff, David-ruled 2026-07-27):
+    'authored' (scoring_config.direction — the law) | 'multi_select' | 'numband_db_polarity'
+    | 'route_b_mp_config' | 'label_heuristic' (the demoted regex fallback — computes for
+    byte-identical continuity; qa_scores' heuristic-census check asserts ONLY the ruled
+    Tier-2 exception list carries it) | 'unresolved' (d=0 -> prevalence routing).
+    run_snapshot logs the full census at every aggregation."""
+    if q.id not in _direction_sources:
+        score_direction(q)
+    return _direction_sources[q.id]
+
+
 def _score_direction(q):
+    """Returns (direction, source). AUTHORED DIRECTION IS LAW (engine+gate diff,
+    David-ruled 2026-07-27, ratifying the _AFF-audit Task-4 fix-shape): an explicit
+    scoring_config.direction (+1/-1) is consulted FIRST and ends the question.
+    The label-regex branch keeps its CHAIN POSITION (literally reordering numband/
+    route-b above it would flip the unruled Tier-2 rows — the byte-identical
+    invariant forbids it) but is now last-AUTHORITY: every ruled metric is pinned
+    at step 0, qa_scores' heuristic-census check asserts only the ruled Tier-2
+    exception list still reaches the regex, and run_snapshot logs the census.
+    The old 'scoring_config.polarity == lower_is_better -> -1' step is REMOVED:
+    zero live metrics resolved through it (verified book-wide 2026-07-27) and it
+    is the exact stale-field trap that scrambled FAI_079 — direction now has one
+    authored home."""
     cfg = q.scoring_config or {}
+    d0 = cfg.get("direction")
+    if d0 in (1, -1):
+        return d0, "authored"
     if q.type == "multi_select":
-        return 1  # count-based: more selected = more in place
+        return 1, "multi_select"  # count-based: more selected = more in place
     sc = cfg.get("option_scores") or {}
     na = set(cfg.get("na_codes") or [])
     opts = [o for o in sorted(q.options or [], key=lambda o: o.get("order", 0))
             if o["code"] in sc and o["code"] not in na]
     if len(opts) < 2:
-        return 0
+        return 0, "unresolved"
     first, last = opts[0]["label"], opts[-1]["label"]
     if _AFF.search(first) or _NEG.search(last):
-        return -1
+        return -1, "label_heuristic"
     if _NEG.search(first) or _AFF.search(last):
-        return 1
+        return 1, "label_heuristic"
     if _NUMBAND.search(first) and _NUMBAND.search(last):
         # ascending numeric bands: the question's own polarity gives direction
         if q.polarity == "higher_is_better":
-            return 1
+            return 1, "numband_db_polarity"
         if q.polarity == "lower_is_better":
-            return -1
+            return -1, "numband_db_polarity"
         # neutral band: no DB-polarity signal — fall through to route (b) below
-    elif cfg.get("polarity") == "lower_is_better":
-        return -1
     # ---- route (b) (2026-06-18): config-direction trusts an ASCENDING map ----
     # The label heuristic above couldn't read a direction (we'd return 0). If the
     # market-position config marks this metric higher_is_better AND it carries an
@@ -350,8 +377,8 @@ def _score_direction(q):
     if _mp_direction(q.id) == "higher_is_better":
         seq = [float(sc[o["code"]]) for o in opts]
         if len(set(seq)) >= 2 and all(seq[i] <= seq[i + 1] for i in range(len(seq) - 1)):
-            return 1
-    return 0
+            return 1, "route_b_mp_config"
+    return 0, "unresolved"
 
 
 def score_polarity(q):
@@ -798,7 +825,20 @@ def run_snapshot(snapshot_id=1, verbose=True):
         "fte_bands": {k: len(v) for k, v in sorted(cuts["by_fte_band"].items())},
     }, conn)
     conn.commit()
+    # direction-source census (engine+gate diff, 2026-07-27): the flag's log surface.
+    # Lives in aggregate._direction_sources (query via direction_source()); consumed by
+    # qa_scores' heuristic-census check; printed here so every aggregation shows it.
+    # Deliberately NOT stamped into payloads — the byte-identical invariant forbids it.
+    src = {}
+    for q in questions.values():
+        if getattr(q, "status", "active") == "active" and q.is_scored \
+                and (q.scoring_config or {}).get("scoring_method") == "option_scores" \
+                and q.type in ("single_select", "yes_no"):
+            src.setdefault(direction_source(q), []).append(q.id)
     if verbose:
+        heur = sorted(src.get("label_heuristic", []))
+        print("direction sources: " + " / ".join("%s %d" % (k, len(v)) for k, v in sorted(src.items()))
+              + (" | label-heuristic: %s" % ",".join(heur) if heur else " | label-heuristic: none"))
         print("Stored %d benchmark payloads for snapshot %d" % (count, snapshot_id))
     return count
 

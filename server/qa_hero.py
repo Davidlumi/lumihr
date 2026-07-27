@@ -324,9 +324,12 @@ check("no signal contradicts its metric (no 'behind' on neutral; all kinds from 
       not bad_dir, bad_dir)
 # backwards-firing guard (Signals Phase 1): the three ordered metrics whose
 # option array runs opposite to the rest (car mileage, the two review-frequency
-# questions) fire backwards if rank is inferred from position — they stay OUT of
-# position_lenses until an explicit direction anchor is set (see
-# ordered_scale_verification.md).
+# questions) — they stay OUT of position_lenses pending an explicit lens ruling.
+# 2026-07-27 status: REW_Q049530's map was CORRECTED by the AFF Tier-1 diff and its
+# direction pinned by the pins diff (the old "fires backwards" rationale is dead for
+# it); REW_PAY_003 and PROP_8e0b6316 are _AFF-audit Tier-2 HOLD rows. The roster is
+# unchanged by ruling — lens re-adds are their own decisions (SICK_001's precedent),
+# not a side effect of a map fix. (See ordered_scale_verification.md.)
 ANCHOR_RISK = {"REW_Q049530", "REW_PAY_003", "PROP_8e0b6316"}
 check("anchor-risk ordered metrics excluded from position_lenses (can't fire backwards)",
       not (ANCHOR_RISK & set(cfg["position_lenses"])), sorted(ANCHOR_RISK & set(cfg["position_lenses"])))
