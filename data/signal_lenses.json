@@ -73,6 +73,7 @@
     "REW_BEN_HOL_001": "engage",
     "REW_BEN_HOL_006": "engage",
     "REW_BEN_SICK_002": "retain",
+    "REW_BEN_SICK_001": "retain",
     "REW_FAI_CANCEL_1bbcc629": "retain",
     "REW_FAI_MIN_HOURS_8518a543": "retain",
     "REW_PAY_EV_KWH_66ef252b": "save",
@@ -160,15 +161,37 @@
   },
   "money_lenses": {},
   "_risk_metrics_readme": "RISK/POSITION split (Option 1, 2026-06-24) — DAVID-CURATED, never a heuristic. A risk-framed signal is an ABSENCE/exposure no pay strategy excuses (statutory-adjacent / duty-of-care floor), distinct from a position-framed DISTANCE a deliberate strategy explains. Listed qids get signal.risk_framed=true; the client gives them a coral accent, and per-domain suppression (step 3) will EXEMPT them so a deliberate-lag domain can never hide a genuine floor (the maternity-zero guard). Add a qid only when its absence is a floor, not a position.",
-  "risk_metrics": ["REW_BEN_FAM_002", "REW262_TIME_SICKDAYONE", "REW26_WEL_EAP"],
+  "risk_metrics": [
+    "REW_BEN_FAM_002",
+    "REW262_TIME_SICKDAYONE",
+    "REW26_WEL_EAP"
+  ],
   "_variable_pay_metrics_readme": "VARIABLE_PAY tag (step-3 tagging pass, 2026-06-25) — DAVID-CURATED, never a heuristic. Upgrades the pay_for_performance re-rank from COARSE domain==Incentives keying to PRECISE per-metric: only these qids get the P4P multiplier (strong 1.4 / egal 0.7). Variable pay = pay contingent on performance/outcome — a bonus/LTI/commission AMOUNT or OPPORTUNITY, or the EXISTENCE of such a vehicle. NOT: incentive governance (malus/clawback/deferral/gatekeeper), scheme design (which measures, LTI/commission types), eligibility-policy, sign-on (not performance-contingent), or overtime/shift premiums. Empty/absent → P4P off everywhere (degrade). If this set were every Incentives metric, output = the old coarse behaviour byte-for-byte.",
-  "variable_pay_metrics": ["323ffcf1-749b-43f3-bf34-1de6b8b1ca67", "REW_INC_111", "REW_INC_104", "REW_INC_LTI_MAX_01", "REW_INC_LTI_VALUE_TYP_01", "REW_INC_131", "REW_INC_135"],
+  "variable_pay_metrics": [
+    "323ffcf1-749b-43f3-bf34-1de6b8b1ca67",
+    "REW_INC_111",
+    "REW_INC_104",
+    "REW_INC_LTI_MAX_01",
+    "REW_INC_LTI_VALUE_TYP_01",
+    "REW_INC_131",
+    "REW_INC_135"
+  ],
   "_transparency_metrics_readme": "TRANSPARENCY tag (step-3 tagging pass unit 2, 2026-06-25) — DAVID-CURATED, never a heuristic. Wires the transparency strategy field (closed/ranges/open) to a per-metric re-rank: when an org RECONFIRMS transparency=open in the now-live field, these qids' signals surface higher (the 'open' commitment — gaps to full openness become actions). tag = OPENNESS/PUBLICATION (ranges visible to staff, pay in adverts, published approach/plan, external-transparency readiness), NOT internal equity-work (gender/ethnicity/disability gap ANALYSES + the readiness self-assessment are ruled OUT). STALE-VALUE GATE: a stored value only drives surfacing once field_provenance.transparency == 'live' (reconfirmed in the visible field) — a pre-wiring value reads as unset. open -> 1.4; ranges/closed/unset/unreconfirmed -> 1.0; folds into the same capped product (<=2.0).",
-  "transparency_metrics": ["PAYTR_02_131bd412", "PAYTR_01_42eae7ec", "REW262_GOV_PAYINADVERTS", "REW263_GOV_UKPAYTRANS", "REW26_GOV_EU_PTD_PREP", "REW_FAI_088", "REW_FAI_089", "REW_FAI_087", "REW263_GOV_ETHDISREADY", "REW262_GOV_ACTIONPLAN"],
+  "transparency_metrics": [
+    "PAYTR_02_131bd412",
+    "PAYTR_01_42eae7ec",
+    "REW262_GOV_PAYINADVERTS",
+    "REW263_GOV_UKPAYTRANS",
+    "REW26_GOV_EU_PTD_PREP",
+    "REW_FAI_088",
+    "REW_FAI_089",
+    "REW_FAI_087",
+    "REW263_GOV_ETHDISREADY",
+    "REW262_GOV_ACTIONPLAN"
+  ],
   "max_per_lens": 2,
-  "_held_pending_data_fix": {
-    "REW_BEN_SICK_001": "BACKWARDS: option_scores rank \"Statutory sick pay only\"=100 above \"Enhanced\"/\"Combination\" — an org with generous sick pay reads as behind. Root cause is the question option order/scoring (firewall data fix), not the lens. Re-add once score ladder is corrected."
-  },
+  "_held_pending_data_fix": {},
+  "_held_release_note": "REW_BEN_SICK_001 RELEASED 2026-07-27 (AFF pins diff, David-ruled): its hold condition — 're-add once score ladder is corrected' — was satisfied by the AFF Tier-1 map diff (None<SSP<Combination<Enhanced, direction authored). Re-added to position_lenses as 'retain' (derived from family sibling REW_BEN_SICK_002; no prior value existed — held since Signals Phase 1).",
   "signal_labels": {
     "_readme": "Clean short display labels for signal rows (topic-first noun phrase, no boilerplate). Falls back to a derived label when a qid is absent. David-owned.",
     "REW_BEN_FLEX_ALLOW_01": "Flexible benefits allowance",
@@ -195,7 +218,6 @@
     "REW_INC_133": "LTI eligibility",
     "REW_INC_065": "Gatekeeper metric",
     "PROP_8e0b6316": "Pay review frequency",
-    "PROP_dff9a2a5": "Pay increase award rate",
     "REW_FAI_128": "Top performers paid above market",
     "OT_04_b14623a6": "Shift premiums for unsocial hours",
     "REW_BEN_058": "Cost-of-living pay response",
@@ -294,6 +316,7 @@
     "REW_BEN_HOL_004": "Service-based extra leave",
     "REW_BEN_HOL_006": "Maximum extra annual leave",
     "REW_BEN_SICK_002": "Enhanced occupational sick pay",
+    "REW_BEN_SICK_001": "Occupational sick pay vs SSP",
     "REW_BEN_SICK_005": "Sick pay eligibility rules",
     "REW_BEN_SICK_006": "Extended sick pay",
     "REW_FAI_079": "Gender pay-gap analysis",
@@ -339,5 +362,6 @@
     "a7ed418e-b057-4b70-ab58-31e897b7c1b6": "Total allowance payment",
     "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": "Annual car allowance by level",
     "REW_Q534581": "Hourly shift pay multipliers"
-  }
+  },
+  "_diff14_note": "2026-07-18: signal_labels entry for PROP_dff9a2a5 ('Pay increase award rate') removed — metric retired (fictional-practice distribution; Diff 14, David say-so). No lens/threshold entries touched."
 }
