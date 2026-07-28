@@ -10889,3 +10889,34 @@ unbenchmarked gap (PAYCOMMS safe only contingently) · the board-pack None!='neu
 scored select must carry cfg polarity 'neutral' (the structural gate that makes the whole
 INC_070/CAR_STATUS_01/MERITMATRIX class impossible) · carried: the routing-hygiene diff (③), the
 teardown-from-working-tree gap, stale-config-entry cleanup for the retired five.
+
+## THE PRACTICE SHIELD — check 5 (gate class, ruled + shipped 28 July 2026, commit pending-hash)
+THE RULING VERBATIM (David 2026-07-28): "Build the practice-shield gate as proposed: a new check
+asserting cfg-polarity-neutral (and favourability-dead surfaces) on every Practice/Design scored
+select in the live book — the structural invariant the retro sweep just verified as a snapshot,
+made permanent." Requirements honoured: home = qa_scores check 5 (the authority-gate home, same
+engine imports, tally quoted at every close); derivation LIVE each run from the mp-config class
+map — future re-routes covered the moment they land; NO EXCEPTION MECHANISM — "a Practice metric
+with live directionality is always a defect. If a future ruling ever needs one, that ruling amends
+the gate explicitly."
+
+THE INVARIANT, STATED: **no Practice or Design metric may carry live directionality, ever,
+gate-enforced — the class that produced CAR_STATUS_01, INC_070 and MERITMATRIX is now structurally
+impossible.** Both streams asserted, mirroring positions._item exactly: score stream
+(score_polarity + the unbenchmarked-flag rule — fires on the INC_070 ABSENT-key case and the
+CAR_STATUS_01 case) and practice/value stream (questions.polarity, multi_select excluded per
+qa_hero's own invariant — fires on the MERITMATRIX case). LIVE residue fires with the field named;
+DORMANT residue (flag-shielded / is_scored=0 / multi) prints every run, never silently tolerated —
+it fires the moment any config change makes it live (the near-miss inventory made permanently
+visible: RED_COST_01's cfg field, MERITMATRIX's dormant cfg key, WEL_DATA, PAYCOMMS et al.).
+
+VERIFIED BOTH WAYS x3 NEGATIVES (each historical leak recreated on a doctored copy; raw): positive,
+live copy — "PASS PRACTICE SHIELD: no Practice/Design metric carries live directionality (no
+exceptions)" / "== SCORE-LADDER GATE: 5 passed, 0 failed ==" rc=0 (c5_tw.out). N1 CAR_STATUS_01
+cfg->hib: "FAIL ... CAR_STATUS_01: score-stream LIVE directionality (score_polarity=
+higher_is_better ...)" rc=1. N2 INC_070 cfg key DELETED (the absent case): FAIL, score-stream,
+rc=1. N3 MERITMATRIX db->hib: "FAIL ... practice/value-stream LIVE directionality
+(questions.polarity=higher_is_better)" rc=1. THE BOOK MOVED NOTHING: gate-class commit only, zero
+DB/config writes, answers book 4b1e0b3a73325d2c unchanged. SUITE (c5_gates; raw): "PASS (11):
+qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary,
+qa_commentary, qa_plausibility, qa_pulse, qa_release".
