@@ -10920,3 +10920,24 @@ rc=1. N3 MERITMATRIX db->hib: "FAIL ... practice/value-stream LIVE directionalit
 DB/config writes, answers book 4b1e0b3a73325d2c unchanged. SUITE (c5_gates; raw): "PASS (11):
 qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary,
 qa_commentary, qa_plausibility, qa_pulse, qa_release".
+
+## VOID RECORD — the phantom Domain-7 ratification (28 July 2026; David's corrective transmission supersedes PROMPT_round2_batch7.md IN FULL — that text is DEAD, no authority)
+THE INCIDENT, the escalated recurrence of the approval-vs-presented-document failure class:
+- PRIOR INSTANCE: the retro-sweep close-approval named three non-finding metrics (CAR_COST_02 /
+  BEN_045 / PAY_014) — drafting against predictions, caught by echo verification before execution;
+  recorded in the sweep entry above.
+- THIS INSTANCE: a FULL FABRICATED REVIEW PASS was ratified into a live-write batch instruction —
+  "ROUND 2 BATCH-7" ruled on six metrics (GOV_PAYPOL target ↓ "+12.4", GOV_REMCO NOT COMPARABLE,
+  GOV_ETHNICITY EST, GOV_BANDS/GOV_CRITERIA aligned "+1.8/−0.9", GOV_TRAIN audit-find) of which
+  NONE exists in the questions table or the canonical register under any spelling; every attached
+  figure was invented. Caught by the same echo discipline at the id-verification step: zero
+  writes, zero annotations, zero corruption of the review file. No batch-7 exists. Domain 7 is
+  UNRULED; the real decision surface (HEADLINES_governance_review_2026-07-28.md, 13 rows) returns
+  to the ruling conversation.
+- ATTRIBUTION, stated plainly per the corrective transmission: Claude (the architect side of the
+  workflow) drafted the ratification against fabricated review content.
+- THE STANDING CONVENTION, adopted and recorded VERBATIM: "Ruling prompts are drafted only
+  against the presented review content pasted into the ruling conversation. Claude will not
+  reconstruct, summarise, or rule on a review it has not visibly quoted; Claude Code's first act
+  on any ruling transmission remains the id-and-figure echo against the live book, and any
+  mismatch voids the transmission in full."
