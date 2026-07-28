@@ -967,13 +967,14 @@
       "weight": 1
     },
     "PROP_168a6213": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "save",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "PROP_634adacd": {
       "class": "Level",
@@ -1322,11 +1323,12 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_INC_072": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_INC_077": {
       "class": "Practice",
@@ -1362,13 +1364,14 @@
       "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — numeric % magnitude (target bonus opportunity), higher = above market, per-level percentile"
     },
     "REW_INC_131": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "save",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_INC_132": {
       "class": "Practice",
@@ -1387,13 +1390,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_INC_135": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "save",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_INC_136": {
       "class": "Practice",
@@ -1460,20 +1464,22 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "CAR_COST_02": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "save",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "CAR_STATUS_01": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "save",
-      "weight": 1
+      "weight": 1,
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "CAR_STATUS_03": {
       "class": "Provision",
@@ -2042,13 +2048,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_BEN_HOL_007": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_BEN_HOL_008": {
       "class": "Provision",
@@ -2092,13 +2099,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_BEN_SICK_006": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_PAY_014": {
       "class": "Level",
@@ -2110,13 +2118,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "EXT_REW_GAP_009": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "EXT_REW_GAP_010": {
       "class": "Practice",
@@ -2208,13 +2217,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_BEN_REM_PAY_005": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "EXT_REW_GAP_001": {
       "class": "Level",
@@ -2234,13 +2244,14 @@
       "_diff18_ruled": "ruled OUTLIER_SCALE (Diff 18, David 2026-07-24) — £-band ladder: Non-financial only(0) < Up to £25 < £26-£50 < £51-£100 < More than £100; higher = above market"
     },
     "EXT_REW_GAP_003": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "EXT_REW_GAP_004": {
       "class": "Provision",
@@ -2372,13 +2383,14 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "PROP_d992b2ea": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "retain",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "PROP_e1d1e604": {
       "class": "Level",
@@ -2583,13 +2595,14 @@
       "weight": 1
     },
     "REW_PRO_030": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
       "unbenchmarked": true,
-      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
+      "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
+      "_tier2_ruled": "PRACTICE per the Tier-2 joint pass (David 2026-07-27): contested direction — the PAYCOMMS/PMIEXCESS precedent; no verdict renders, prevalence/alignment carries it"
     },
     "REW_PRO_034": {
       "class": "Level",
