@@ -22,6 +22,22 @@ BASE = "http://localhost:8060"
 # the ONE declared cross-class overlap: pension carries a £ gap AND a position;
 # money fires, behind is deduped by seen_q (Phase 1 decision).
 ALLOWED_OVERLAP = {frozenset(("money", "behind")): {"REW_BEN_PENS_EMP_MAX_01"}}
+# PROPOSED-LENS DROP GUARD (retro sweep housekeeping, 2026-07-28): signal_lenses_PROPOSED.json
+# is an untracked draft consumed by nothing — but if ever adopted wholesale it would silently
+# drop live lens entries (it lacked SICK_001 at its writing). Loud WARNING, never a failure.
+import os as _os, json as _json
+_prop = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "signal_lenses_PROPOSED.json")
+if _os.path.exists(_prop):
+    try:
+        _pl = set((_json.load(open(_prop)).get("position_lenses") or {}))
+        _live_pl = set((_json.load(open(_os.path.join(_os.path.dirname(_prop), "data", "signal_lenses.json"))).get("position_lenses") or {}))
+        _dropped = sorted(_live_pl - _pl)
+        if _dropped:
+            print("  WARNING (non-failing): signal_lenses_PROPOSED.json would DROP %d live position_lenses "
+                  "entries if adopted wholesale: %s" % (len(_dropped), ", ".join(_dropped)))
+    except (ValueError, OSError):
+        print("  WARNING (non-failing): signal_lenses_PROPOSED.json exists but is unreadable")
+
 HELD = {"REW_BEN_REM_PAY_001"}   # held; must never fire. SICK_001 RELEASED 2026-07-27:
 # its hold-text condition ("re-add once score ladder is corrected") was satisfied by the
 # AFF Tier-1 map diff; the lens re-add rode the pins diff per David's ruling.
