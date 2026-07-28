@@ -10740,3 +10740,89 @@ signal_lenses_PROPOSED.json lacks the SICK_001 lens — a silent-drop trap if ev
 (c) three stale .claude/worktrees checkouts carrying pre-diff gate code. (d) TIER-2's 20 rows HOLD
 for David's joint pass — each ruling shrinks RULED_HEURISTIC_HOLD; at zero, the label regex decides
 nothing in the live book and can be retired to a pure gate.
+
+## AFF TIER-2 APPLY — the last 20 rulings; THE HEURISTIC RETIRES; the programme closes (ruled + applied 27-28 July 2026, commits 7ae6a44 + 814c8e7 + 13b1367)
+RULINGS VERBATIM (David 2026-07-27, the joint pass; transmission = ratification): PRACTICE —
+GAP_009 ("the poster row — batch-6's reshape stays correct: its anchor was direction-free
+attendance prevalence; Practice framing carries it honestly") · GAP_003 · REM_PAY_005 ("joins its
+Practice siblings") · INC_135 ("closes the commission family's last verdict exposure; the family
+pattern completed: existence -> Practice, details market with disclosed absence") · HOL_007 ·
+PROP_d992b2ea · PRO_030 · PROP_168a6213 ("the time-in-grade + performance trio, ruled together for
+internal consistency with PAY_097") · CAR_STATUS_01 ("the STATUS_03 contradiction settles it") ·
+CAR_COST_02 · INC_072 · INC_131 ("ownership-structural; consistent with INC_133's Diff-20
+positioning — reproduces the commission pattern") · SICK_006 ("no external orthodoxy makes
+gatekeeping 'better'; errors lean out"). CONFIRM — GAP_001 ("consistency with GAP_002/007") ·
+PAY_018 · "the frequency pair REW_PAY_003 + PROP_8e0b6316 (different constructs — range-refresh
+cadence vs cycle regularity; pair-coherence note recorded; 8e0b6316 already gate-verified
+MUST_PASS)" · INC_071 "CONFIRM Yes-best (the malus/clawback pair ruled together with INC_070's
+Tier-3 map: the Investment Association Principles — a named platform source — treat malus/clawback
+as governance expectation, so 'above market' reads as governance-maturity, consistent with the
+confirmed governance-ladder bulk; the external-authority grounds recorded)". AMEND — RED_TERM_01
+"tie-at-top: Enhanced formula = 100, Discretionary/negotiated = 100, statutory-only = 0 ... The
+verdict asserts the uncontested axis (beyond-statutory > statutory) and stays silent on the
+contested top-end order. Direction authored +1." Recorded — PAY_097 (already-Practice) + the
+MUST_PASS-four evidence row (pins verified: 3 in the 88, 8e0b6316 with this diff).
+
+BOTH COUNT CORRECTIONS, per the approval: (1) the ruling's "PRACTICE — 12" header names THIRTEEN
+metrics — the name-list partitions the 20-roster exactly once (13+5+1+1), names govern; David's
+approval attributes the header as "Claude's summary slip, recorded as such". (2) The Tier-1-era
+"16 pre-compensated maps" was likewise 17 (recorded at the engine+gate close).
+
+THE LEAK CATCH-AND-FIX, told straight (credited per the approval): the adversarial reviewer
+REFUTED the rehearsal's rendering-inert claim — CAR_STATUS_01, the only re-route with
+scoring_config.polarity=higher_is_better AND no unbenchmarked flag, still RANKED on member
+surfaces post-re-route (starter-layout top-gaps/strengths for 33/223 orgs; board-pack gap rows 11
++ strength rows 19 of 223; via score_polarity -> _item favourability; the other 12 were shielded
+only by ACCIDENT — cfg-neutral or legacy unbenchmarked flags — and the board-pack filter's
+None!='neutral' quirk let class-Practice rows through). THE FIX: scoring_config.polarity
+neutralised on every directional re-route (6 flipped: CAR_COST_02, CAR_STATUS_01, PROP_168a6213,
+PROP_d992b2ea, HOL_007, SICK_006; 7 already neutral) — the shield is now structural, class-wide.
+Re-verified independently: all 2,587 re-route items across 223 orgs read polarity=neutral/
+favourable=None; ZERO hits on starter-layout, board-pack, gauge, signals, callouts; the fix also
+closes the metric-card pill verdict (cardPosition nulls on neutral).
+
+THE RE-ROUTE CONSEQUENCE RECORD: 2,587 org-metric verdicts left the donut for the practice tally
+(per metric: GAP_009 167 · GAP_003 157 · REM_PAY_005 173 · INC_135 220 · HOL_007 213 · d992b2ea
+206 · PRO_030 184 · 168a6213 202 · CAR_STATUS_01 212 · CAR_COST_02 213 · INC_072 220 · INC_131 220
+· SICK_006 200). Fixtures (answers byte-held): Retail donut 161/99/25 -> 155/93/24 (13 deltas, all
+positioned->approach); Advisory 17/81/183 -> 17/75/177, absent 10->9 (12 positioned->approach +
+PRO_030 from positioned_absent_disclosed — re-routed metrics also leave the disclosed-absence
+register, by class filter). RED_TERM_01: exactly 42 flips, all above->at, exactly the 42
+Discretionary answerers (engine-cross-checked both sides); the 5 CONFIRM pins payload-BYTE-identical
+to live (computed_at only). Commission family (INC_136, COMMCAP) + LTI family (INC_132/133)
+byte-identical across all fixture dumps — disclosed absence reads ANSWERS, never class.
+
+THE RETIREMENT LINE: the live census now reads "direction sources [verdict scope]: authored 85 /
+numband_db_polarity 7 / route_b_mp_config 11 | label-heuristic: none" — THE LABEL HEURISTIC SCORES
+NO VERDICT-RELEVANT METRIC, ANYWHERE, AGAIN. qa_scores check 4 asserts it unconditionally (scope =
+where authority renders, class not Practice/Design, per the ruling's "Practice metrics leave the
+scored-select census"); the practice-scope residue (the 13 + PAY_097, rendering-inert) is printed
+every aggregation and by the gate, never invisible. Verified both ways, raw: positive "PASS THE
+RETIREMENT HOLDS: zero verdict-scope metrics heuristic-scored (ruled list EMPTY)" / "== SCORE-LADDER
+GATE: 4 passed, 0 failed ==" rc=0; negative (REW_PAY_018's pin removed on a doctored copy) "FAIL
+... unruled_flagged: ['REW_PAY_018']" rc=1.
+
+GATES (fixed rehearsal, t2f_gates; raw): "PASS (11): qa_hero, qa_focus, qa_signals_system,
+qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_plausibility,
+qa_pulse, qa_release" / qa_hero "59 passed, 0 failed" / signals "14 passed, 0 failed" / freeze
+"PASS" / engine audit "0 | 0". ADVERSARIAL: reroutes-and-ladder CONFIRMED (2,587 recomputed to the
+metric; dump authenticity re-derived 12/12) · retirement-and-census REFUTED -> FIX -> leak-fix
+CONFIRMED (payload census: exactly 14 differ — the 13 in the informational polarity field only,
+RED_TERM_01 in scores by design) · rulings-fidelity CONFIRMED. LIVE (28 July): checkpoint (0,0,0)
++ lumi.db.bak_pre_afft2_20260728_063049 + config .bak -> single atomic apply -> re-aggregate ->
+POST-WRITE EXACT: 0 question-row diffs, 0 payload diffs vs rehearsal; mp config == staged byte;
+answers book 4b1e0b3a73325d2c unchanged; fixture donuts exact (155/93/24 / 17/75/177 absent 9);
+live gate 4/0.
+
+THE CLOSURE STATEMENT, ruled: **THE _AFF PROGRAMME IS COMPLETE — every direction in the book is
+authored, ruled, and gated.** (Census: 137 scored selects = 85 verdict-authored + 9
+practice-authored + 14 practice-inert + 7 numband + 11 route-b + 11 unresolved-prevalence; the
+label regex decides nothing that renders.)
+
+QUEUED: (a) THE RETROACTIVE CFG-POLARITY SWEEP across all pre-Tier-2 Practice re-routes (added by
+David at this approval — the Diff-18 six + Tier-3 rows may carry the same stale directional cfg
+fields the CAR_STATUS_01 catch exposed); (b) the board-pack None!='neutral' filter quirk (latent);
+(c) position-lens dead entries x4 (d992b2ea, 168a6213 + the Diff-18 pair) — lens housekeeping;
+(d) the four PRE-EXISTING qa_ordered_routing FAILs (byte-identical on a live baseline; predate
+Tier-2); (e) the stray 4KB server/lumi.db; (f) prior queue carried: teardown-from-working-tree gap,
+signal_lenses_PROPOSED.json silent-drop trap, stale worktrees.
