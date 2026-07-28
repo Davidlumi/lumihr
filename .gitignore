@@ -37,3 +37,4 @@ server/.env.local
 
 # --- machine-local tooling config (not product; keeps a per-machine permission allowlist) ---
 .claude/settings.local.json
+server/lumi.db
