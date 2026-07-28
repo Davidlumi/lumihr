@@ -28,7 +28,7 @@ affirmative/negative language and are governed by polarity, not this check.
 """
 import sys
 from library import load_questions
-from aggregate import score_answer, direction_source, _mp_class, _AFF, _NEG
+from aggregate import score_answer, score_polarity, direction_source, _mp_class, _AFF, _NEG
 
 # THE RULED HEURISTIC EXCEPTION LIST — EMPTY since the Tier-2 apply (David-ruled
 # 2026-07-27, the joint pass: 13 PRACTICE re-routes + 5 CONFIRM pins + 1 AMEND +
@@ -140,6 +140,50 @@ def main():
                    and direction_source(q) == "label_heuristic")
     if inert:
         print("    (practice-scope, rendering-inert, label-resolved: %d — %s)" % (len(inert), ", ".join(inert)))
+
+    # 5) THE PRACTICE SHIELD (David-ruled 2026-07-28, the retro-sweep invariant made permanent):
+    # no Practice/Design-class metric may carry LIVE directionality, ever — the class that
+    # produced CAR_STATUS_01, INC_070 and MERITMATRIX is structurally impossible. NO EXCEPTION
+    # MECHANISM: a Practice metric with live directionality is always a defect; any future
+    # ruling that needs one amends this gate explicitly. Derivation is LIVE each run (the
+    # retro-census logic, never a hardcoded list), mirroring positions._item exactly:
+    #   score stream    — pol = score_polarity(q), unbenchmarked flag -> neutral
+    #                     (fires on the INC_070 absent-key case and the CAR_STATUS_01 case);
+    #   practice/value  — pol = questions.polarity, flag -> neutral, multi_select excluded
+    #                     (qa_hero: multi_select never produces a practice position)
+    #                     (fires on the MERITMATRIX case).
+    # Dormant directional residue (flag-shielded / is_scored=0 / multi) is PRINTED every run,
+    # never silently tolerated — it fires the moment any config change makes it live.
+    import os as _o, json as _j
+    _mp_path = _o.environ.get("LUMI_MP_CONFIG") or _o.path.join(
+        _o.path.dirname(_o.path.dirname(_o.path.abspath(__file__))), "data", "market_position_config.json")
+    _mpm = _j.load(open(_mp_path)).get("metrics", {})
+    shield_violations, dormant = [], []
+    for q in qs.values():
+        if q.status != "active" or _mp_class(q.id) not in ("Practice", "Design"):
+            continue
+        unbench = bool((_mpm.get(q.id) or {}).get("unbenchmarked"))
+        sp = score_polarity(q) if q.is_scored else "neutral"
+        if q.is_scored and sp != "neutral":
+            (dormant if unbench else shield_violations).append(
+                "%s: score-stream LIVE directionality (score_polarity=%s; scoring_config polarity=%r, direction=%r)%s"
+                % (q.id, sp, (q.scoring_config or {}).get("polarity"), (q.scoring_config or {}).get("direction"),
+                   " [flag-shielded]" if unbench else ""))
+        if q.polarity in ("higher_is_better", "lower_is_better") and q.type != "multi_select":
+            (dormant if unbench else shield_violations).append(
+                "%s: practice/value-stream LIVE directionality (questions.polarity=%s)%s"
+                % (q.id, q.polarity, " [flag-shielded]" if unbench else ""))
+        elif q.polarity in ("higher_is_better", "lower_is_better") or \
+                (q.is_scored and sp == "neutral" and (q.scoring_config or {}).get("polarity")
+                 not in (None, "neutral")) or \
+                (not q.is_scored and (q.scoring_config or {}).get("polarity") not in (None, "neutral")):
+            dormant.append("%s: dormant directional field (db=%s cfg=%r type=%s is_scored=%s)"
+                           % (q.id, q.polarity, (q.scoring_config or {}).get("polarity"), q.type, q.is_scored))
+    check("PRACTICE SHIELD: no Practice/Design metric carries live directionality (no exceptions)",
+          not shield_violations, shield_violations)
+    if dormant:
+        print("    (dormant directional residue, non-failing — fires the moment it goes live: %s)"
+              % "; ".join(sorted(dormant)))
 
     if KNOWN_BACKWARDS:
         print("\n  KNOWN backwards ladders (pending David's data fix):")
