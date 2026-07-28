@@ -10826,3 +10826,66 @@ fields the CAR_STATUS_01 catch exposed); (b) the board-pack None!='neutral' filt
 (d) the four PRE-EXISTING qa_ordered_routing FAILs (byte-identical on a live baseline; predate
 Tier-2); (e) the stray 4KB server/lumi.db; (f) prior queue carried: teardown-from-working-tree gap,
 signal_lenses_PROPOSED.json silent-drop trap, stale worktrees.
+
+## RETRO CFG-POLARITY SWEEP + HOUSEKEEPING (ruled + applied 28 July 2026, commits ffb108c + e691cad + cbf19e5)
+THE CENSUS VERDICT, VERBATIM PER THE APPROVAL: **every Practice ruling in the book's history is now
+VERIFIED shielded** — 73 Practice/Design-class metrics enumerated (72/1, every era: the original
+classification, PAYCOMMS, PMIEXCESS, TIPS_EXIST, the Diff-18 six, the Tier-2 thirteen, the Tier-3
+rows): 66 STRUCTURAL · 5 retired-question config residue (0 engine items, confirmed) · 1 ACCIDENTAL
+· 1 LEAKY — both closed below. The census's own STRUCTURAL verdict on MERITMATRIX was FALSIFIED by
+the adversarial second-leak hunt (the engine builds practice-kind favourability the replica did not
+model) — the falsification is the sweep working, folded in before the STOP.
+
+THE TWO STALE-FIELD FINDS, WITH THE FAI_079 LINEAGE: (1) REW_INC_070 — THE RENDERED LEAK, the
+CAR_STATUS_01 class found again, and the FAI_079 lineage completed: FAI_079's fault was a stale
+cfg-polarity FIELD silently deciding; Tier-1 superseded INC_070's stale field by DELETING the key;
+score_polarity treats ABSENT != 'neutral', so with the authored pin favourability came back alive
+— 179 orgs of live good/bad favourability feeding top-gaps/callouts/domain-dots, missed by every
+prior attack set (they covered the 13 + PAY_097, never INC_070). Fix: cfg polarity SET to
+'neutral' — 179 -> 0. THE LESSON, permanent: supersede a stale polarity by SETTING neutral, never
+by deleting the key. (2) REW263_PAY_MERITMATRIX — THE ACCIDENTAL SHIELD: directional
+questions.polarity built live practice-item favourability for 220/223 orgs, render-dead only by
+two contingent conditions (gauge class-block + a domain-dot fallback engaging 0/223). Fix: db
+polarity -> neutral — 220 -> 0; exactly ONE payload field moved (['REW263_PAY_MERITMATRIX'] /
+['polarity']), attributed and approved. DEFENCE-IN-DEPTH (the genuine pair): the Diff-18 PROP
+pair's stale cfg 'lower_is_better' keys -> 'neutral' — dead code since the engine diff removed the
+cfglib step; the exact trap class the rulings ban; byte-identical, asserted.
+
+THE APPROVAL-MISMATCH CORRECTION, RULED ATTRIBUTION: the first close-approval named CAR_COST_02 /
+BEN_045 / PAY_014 as the fix set — none a sweep finding; two proven no-ops; BEN_045 a live
+verdict-rendering Tier-4 CONFIRM that MUST NOT be touched. Recorded per David's corrected
+approval: "Claude's drafting error (approval written against predictions, not the presented
+STOP), caught by Claude Code's echo verification." Nothing was applied under the mismatched text;
+the corrected approval (option a) ruled the actual set.
+
+LIVE (28 July): checkpoint (0,0,0) + lumi.db.bak_pre_retrosweep_20260728_071741 -> double-guarded
+apply -> re-aggregate (the one payload field, as attributed; census line unchanged: verdict scope
+authored 85 / numband 7 / route_b 11 / label none) -> POST-WRITE EXACT-MATCH vs the rehearsal:
+0 question-row diffs, 0 payload diffs, answers book 4b1e0b3a73325d2c unchanged; LIVE leak
+closures re-measured: INC_070 179 -> 0, MERITMATRIX 220 -> 0; live gate "PASS THE RETIREMENT
+HOLDS" / "== SCORE-LADDER GATE: 4 passed, 0 failed ==". GATES (rehearsal, retrof_gates; raw):
+"PASS (11): qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview,
+qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_release" / qa_hero "59 passed,
+0 failed" / signals "14 passed, 0 failed" / freeze "PASS" / engine audit "0 | 0".
+
+HOUSEKEEPING RECORD: ① the 4 dead position-lens entries REMOVED (build_signals recomputed for all
+223 orgs, old vs new config, both DBs: signal sets byte-identical) + THE SILENT-DROP GUARD shipped
+in qa_signals_system (non-failing warning; already earning: signal_lenses_PROPOSED.json would drop
+30 live entries if adopted wholesale). ② stray server/lumi.db DELETED (zero tables; untracked;
+unreachable — db.py:15 resolves ../lumi.db only) + gitignored. ③ THE FOUR qa_ordered_routing FAILs
+CHARACTERISED, NOT FIXED (all pre-existing, byte-identical on a live baseline; fix class
+config/data, queued as one routing-hygiene diff): stale "Don't know" scale labels predating the
+Diff-15 DK-strip (GAP_003/009/012 + PAY_005) · PROP_634adacd 'Not measured' unplaced · ALLOW_01 +
+REW_BEN_044 lingering in multi_prevalence post-retirement · EXT_REW_GAP_006 mis-listed in rarity
+(active multi-select). ④ the three stale worktrees PRUNED (vigorous-shaw, wizardly-morse clean;
+quirky-cerf force-removed discarding its single abandoned edit, server/qa_metric_data.py — listed).
+
+QUEUED (the near-miss inventory, by name): REW263_WEL_DATA (directional cfg+db polarity, dormant
+via is_scored=0) · RED_COST_01 + b1785613 (cfg polarity hib, one direction-pin from the INC_070
+shape) · the retired-five residue (answers/payloads retained; ALLOW_01 + GAP_006 still in
+signal_labels; draft-save accepts retired qids — write-path only) · the assemble_card matrix-row
+unbenchmarked gap (PAYCOMMS safe only contingently) · the board-pack None!='neutral' filter quirk
+(carried) · PROPOSED FOR DAVID'S NEXT RULING: qa_scores check 5 — every Practice/Design-class
+scored select must carry cfg polarity 'neutral' (the structural gate that makes the whole
+INC_070/CAR_STATUS_01/MERITMATRIX class impossible) · carried: the routing-hygiene diff (③), the
+teardown-from-working-tree gap, stale-config-entry cleanup for the retired five.
