@@ -10890,7 +10890,7 @@ scored select must carry cfg polarity 'neutral' (the structural gate that makes 
 INC_070/CAR_STATUS_01/MERITMATRIX class impossible) · carried: the routing-hygiene diff (③), the
 teardown-from-working-tree gap, stale-config-entry cleanup for the retired five.
 
-## THE PRACTICE SHIELD — check 5 (gate class, ruled + shipped 28 July 2026, commit pending-hash)
+## THE PRACTICE SHIELD — check 5 (gate class, ruled + shipped 28 July 2026, commit ceb3cf9)
 THE RULING VERBATIM (David 2026-07-28): "Build the practice-shield gate as proposed: a new check
 asserting cfg-polarity-neutral (and favourability-dead surfaces) on every Practice/Design scored
 select in the live book — the structural invariant the retro sweep just verified as a snapshot,
