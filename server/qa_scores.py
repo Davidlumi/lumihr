@@ -28,20 +28,17 @@ affirmative/negative language and are governed by polarity, not this check.
 """
 import sys
 from library import load_questions
-from aggregate import score_answer, direction_source, _AFF, _NEG
+from aggregate import score_answer, direction_source, _mp_class, _AFF, _NEG
 
-# THE RULED HEURISTIC EXCEPTION LIST (engine+gate diff, David-ruled 2026-07-27; the
-# assert-zero-by-ruling shape): exactly the _AFF-audit Tier-2 rows, ALL HOLD pending
-# David's joint per-row pass. Each Tier-2 ruling that pins or re-routes its metric
-# MUST also remove it here — the census check fires on divergence in EITHER direction,
-# so this list can only shrink to zero, never silently grow.
-RULED_HEURISTIC_HOLD = {
-    "EXT_REW_GAP_009", "EXT_REW_GAP_003", "RED_TERM_01", "REW_BEN_REM_PAY_005",
-    "REW_INC_135", "EXT_REW_GAP_001", "REW_PAY_018", "REW_PAY_003", "PROP_8e0b6316",
-    "REW_PAY_097", "REW_BEN_HOL_007", "REW_INC_071", "PROP_d992b2ea", "REW_PRO_030",
-    "PROP_168a6213", "REW_BEN_SICK_006", "CAR_STATUS_01", "CAR_COST_02", "REW_INC_072",
-    "REW_INC_131",
-}
+# THE RULED HEURISTIC EXCEPTION LIST — EMPTY since the Tier-2 apply (David-ruled
+# 2026-07-27, the joint pass: 13 PRACTICE re-routes + 5 CONFIRM pins + 1 AMEND +
+# PAY_097 recorded): THE LABEL HEURISTIC IS RETIRED. No verdict-relevant metric may
+# have its direction decided by the regex, ever; the census check below asserts zero
+# unconditionally. Scope = where authority RENDERS (mp class not in Practice/Design,
+# mirroring positions.py market routing — David's ruling: "Practice metrics leave the
+# scored-select census"); Practice-scope selects that still resolve via the regex are
+# rendering-inert and printed informationally, never tolerated silently.
+RULED_HEURISTIC_HOLD = set()
 
 # Known backwards ladders — each is a DATA fix David owns. Re-add to the relevant
 # lens map only after the fix. The gate asserts each still actually violates, so
@@ -126,15 +123,23 @@ def main():
     check("verified best->worst metrics resolve correctly (PROP_cdff5737/d65a16e9/34ffb6e2/8e0b6316)",
           not tripped, tripped)
 
-    # 4) HEURISTIC CENSUS (engine+gate diff, 2026-07-27): the label regex may decide
-    # direction for EXACTLY the ruled Tier-2 exception list — nothing else. Fires on
-    # divergence in either direction (an unruled metric reaching the regex, OR a listed
-    # metric that no longer does and must be removed from the list).
-    flagged = sorted(q.id for q in metrics if direction_source(q) == "label_heuristic")
-    check("heuristic-scored census == the ruled exception list (%d Tier-2 HOLD rows)" % len(RULED_HEURISTIC_HOLD),
+    # 4) HEURISTIC CENSUS (engine+gate diff 2026-07-27; RETIRED at the Tier-2 apply):
+    # in the VERDICT scope (mp class not Practice/Design — where direction renders),
+    # ZERO metrics may have their direction decided by the label regex. The exception
+    # list is empty and stays empty; any flagged metric is a defect. Practice-scope
+    # label-resolved selects are rendering-inert — printed, never gated.
+    flagged = sorted(q.id for q in metrics
+                     if _mp_class(q.id) not in ("Practice", "Design")
+                     and direction_source(q) == "label_heuristic")
+    check("THE RETIREMENT HOLDS: zero verdict-scope metrics heuristic-scored (ruled list EMPTY)",
           set(flagged) == RULED_HEURISTIC_HOLD,
           {"unruled_flagged": sorted(set(flagged) - RULED_HEURISTIC_HOLD),
            "ruled_but_not_flagged": sorted(RULED_HEURISTIC_HOLD - set(flagged))})
+    inert = sorted(q.id for q in metrics
+                   if _mp_class(q.id) in ("Practice", "Design")
+                   and direction_source(q) == "label_heuristic")
+    if inert:
+        print("    (practice-scope, rendering-inert, label-resolved: %d — %s)" % (len(inert), ", ".join(inert)))
 
     if KNOWN_BACKWARDS:
         print("\n  KNOWN backwards ladders (pending David's data fix):")

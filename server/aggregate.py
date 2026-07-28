@@ -278,10 +278,20 @@ def _mp_direction(qid):
                 cfg = json.load(f)
             _mp_dir_cache["dir"] = {k: (v or {}).get("direction")
                                     for k, v in (cfg.get("metrics") or {}).items()}
+            _mp_dir_cache["cls"] = {k: (v or {}).get("class")
+                                    for k, v in (cfg.get("metrics") or {}).items()}
             _mp_dir_cache["mtime"] = mt
         except (ValueError, OSError):
             pass
     return _mp_dir_cache["dir"].get(qid)
+
+
+def _mp_class(qid):
+    """Per-metric mp-config class (same cached read as _mp_direction). Used by the
+    direction-source census: AUTHORITY is policed where it RENDERS — class not in
+    (Practice, Design) is the verdict scope (mirrors positions.py market routing)."""
+    _mp_direction(qid)   # refresh the shared cache
+    return (_mp_dir_cache.get("cls") or {}).get(qid)
 
 
 _ab_cache = {"mtime": None, "data": {}}
@@ -836,9 +846,23 @@ def run_snapshot(snapshot_id=1, verbose=True):
                 and q.type in ("single_select", "yes_no"):
             src.setdefault(direction_source(q), []).append(q.id)
     if verbose:
-        heur = sorted(src.get("label_heuristic", []))
-        print("direction sources: " + " / ".join("%s %d" % (k, len(v)) for k, v in sorted(src.items()))
+        # Two scopes (Tier-2 apply, 2026-07-27): AUTHORITY is policed where it RENDERS.
+        # Verdict scope (class not Practice/Design) must read label-heuristic 0 — the
+        # retirement. Practice-scope selects may still resolve via the regex; their scores
+        # are rendering-inert (practice surfaces are adoption/label-based) and printed here
+        # so the residue is never invisible.
+        vsrc, psrc = {}, {}
+        for k, ids in src.items():
+            for qid in ids:
+                (psrc if _mp_class(qid) in ("Practice", "Design") else vsrc).setdefault(k, []).append(qid)
+        heur = sorted(vsrc.get("label_heuristic", []))
+        print("direction sources [verdict scope]: "
+              + " / ".join("%s %d" % (k, len(v)) for k, v in sorted(vsrc.items()))
               + (" | label-heuristic: %s" % ",".join(heur) if heur else " | label-heuristic: none"))
+        pheur = sorted(psrc.get("label_heuristic", []))
+        print("direction sources [practice scope, rendering-inert]: "
+              + (" / ".join("%s %d" % (k, len(v)) for k, v in sorted(psrc.items())) or "none")
+              + (" | label-resolved: %s" % ",".join(pheur) if pheur else ""))
         print("Stored %d benchmark payloads for snapshot %d" % (count, snapshot_id))
     return count
 
