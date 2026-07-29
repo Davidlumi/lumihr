@@ -776,12 +776,12 @@
    "rule": "no-blend all-UK 0.34 (TRS provision); constrains provision limb only, access-rate bands unanchored; caveat: likely under"
   },
   "PROP_930043cc": {
-   "target_share": 0.18,
+   "target_share": 0.28,
    "base_type": "all_only",
-   "all": 18,
+   "all": 28,
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
-   "evidence": "18% carry out (10% share); 56% have not"
+   "evidence": "28% ran ethnicity PGA (40% large/13% SME); the cell's '18% carry out' = the shared-findings figure — transcription slip corrected per Domain-7 ruling 4 (2026-07-28); register-corroborated by two independent cells"
   },
   "REW262_GOV_EQUALPAYAUDIT": {
    "target_share": 0.35,
@@ -835,7 +835,8 @@
    "base_type": "single(ruled)",
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
-   "rule": "no-blend all-UK 0.40 always / 0.32 never (internal pay-range access; remainder ~0.28 partial), conditional on source re-"
+   "rule": "no-blend all-UK 0.40 always / 0.32 never (internal pay-range access; remainder ~0.28 partial), conditional on source re- || STRICT construct per Domain-7 ruling 6a (2026-07-28): positive_from='Yes' — 'always'<->Yes on the never-end-divergence evidence; the inclusive composite is no longer the headline",
+   "positive_from": "Yes"
   },
   "REW_FAI_089": {
    "target_share": 0.53,
