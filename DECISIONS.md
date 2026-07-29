@@ -11449,3 +11449,62 @@ VERIFIED: scratch runs only (the generator writes by relative path). `generated_
 qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary,
 qa_pulse, qa_release" / "FAIL (1): qa_plausibility (rc=1)" — 10/11, the ruled red gate, which now correctly
 names v2026-07-30 as the canonical register; "gate-safety-2: live DB untouched by the suite".
+
+## THE REGENERATION — the tool fired, the red gate resolved by fact, 11/11 (ruled + applied 30 July 2026)
+**The first authorised write to `generated_marginals.json` since Diff 1**, and the first close in this arc to
+end ALL GREEN. It was authorised only because the preservation class had closed: every ruled decision now lives
+in an input the generator consumes, proven by the six-of-six survival and by the coupling test (the same inputs
+against the old register raise `VERBATIM FAIL` — an input edit cannot outrun its cell).
+
+THE 14 FIELDS, RULED INDIVIDUALLY BEFORE ANYTHING RAN (David 2026-07-30) — because "regenerate and accept 14
+field changes" is precisely how a ruled decision gets lost, the failure this whole arc existed to prevent.
+Re-derived live at 14, every one classified, **ZERO reversions**:
+  - **1 RESOLUTION** — `_source`: `CLAUDECODE.csv (clean, Diff 1)` -> `v2026-07-30`. **It resolves as a
+    consequence of the operation, never by hand-edit.**
+  - **7 VERSION-DRIVEN** — six context rows gained (REW264_HLT_CASHPLAN, REW264_HLT_OPTICAL,
+    REW264_PAY_HOLPAYMETHOD, REW264_WEL_EWA, REW264_WEL_SEASONTICKET, REW265_TIME_FLEXPATTERN), each verified
+    ABSENT from the Diff-1 register on disk and anchored now; plus `context.REW26_BEN_PENSION_TYPE.why` removed
+    because its `real_anchor` is now non-empty, so it routes to `maturity_gradients` and correctly leaves the
+    unanchored-context bucket (**field 8's tier re-route confirmed by David as correct propagation**).
+  - **6 CORRECTIONS LANDING** — GAP_004 `grade` '2'->'B' (the tranche-misread stamp finally landing), its
+    `source` and `evidence`, PROP_930043cc's `evidence` (register cluster); FAM_009 + FAM_010 `grade` A->B
+    (gm catching up to the B7 register correction David had already ruled — not a new decision).
+**ZERO TARGETS MOVED**: marginals 40 -> 40, no `target_share` changed; `ruled_distributions`,
+`maturity_gradients`, `multiselect_incidence`, `floors`, `coherence_pairs` and `settled_refreeze` all IDENTICAL.
+
+PRE-FLIGHT PREDICTION, THEN THE WRITE. The exact post-write state was predicted from a scratch run first —
+**sha256 9f12e9f14fcfb2e2, 59,585 bytes** — and the live write EXACT-MATCHED it. "Looks right" was not the
+standard; any deviation would have restored from `generated_marginals.json.bak_pre_regen_20260729_171749`
+(523f8d7553556141). `--allow-drift` was a SINGLE NAMED EXCEPTION for this ruled operation; **the guard's
+default-refuse is unchanged and was re-asserted afterwards** — a doctored scratch input still yields
+`marginals.REW_FAI_088.positive_from existing=Yes -> regenerated=<absent>` / `REFUSING TO WRITE` / rc=3.
+
+THE RED GATE RESOLVED BY FACT. `GM-SOURCE-STALE` no longer fires because the staleness it named is genuinely
+gone — the stamp is true, the file really is generated from v2026-07-30. **Nothing was masked**: the predicted
+gate diff against the pre-write output was exactly two substantive lines (the removed GM-SOURCE failure and
+FAIL -> PASS), everything else byte-identical. SUITE: **"PASS (11): qa_hero, qa_focus, qa_signals_system,
+qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse,
+qa_release" / "ALL GATES GREEN"** — 11/11 for the first time since the `_source` check shipped.
+Re-run and UNCHANGED: coverage advisory (REW_BEN_HOL_001 still 83/211 = **39.3%** — regeneration does not
+declare bands, and that exposure is untouched); frozen tier "settled checked 8 (max drift **0.005pp**)";
+tier-2 "register marginals checked 47 (max drift **4.09pp**)"; practice shield "PASS PRACTICE SHIELD: no
+Practice/Design metric carries live directionality (no exceptions)", "SCORE-LADDER GATE: 5 passed, 0 failed".
+
+**WHAT THE FREEZE GATE MEANS NOW — the standing question answered, and this CORRECTS the Phase-1 governing
+finding rather than repealing it.** It still measures **seed-to-target FIDELITY**: `reseed_engine` reshapes the
+seed to these very targets, so 37-of-40-within-half-a-point is the reseed working, not independent
+corroboration. What has changed is the target set beneath it: **its inputs now reproduce every ruling ever made
+about them.** Therefore a GREEN GATE ESTABLISHES: (a) the reseed worked, and (b) **no ruled decision was lost in
+generation** — which it could not establish before, because six of them lived only in the output. A GREEN GATE
+STILL ESTABLISHES NOTHING about whether the anchors are TRUE. Nine of the twelve tier-2 targets outside
+`marginals` remain authored practitioner estimates; REW_BEN_HOL_001 is still measured on 39.3% of its base;
+EQUALPAYAUDIT's 35-vs-32 is recorded and unresolved. **Fidelity plus provenance-integrity — never truth.**
+VERIFIED: answers book 4e3add49657e6cd7 UNCHANGED (89,321 rows) — a generation writes no answers. Six ruled
+decisions confirmed present in the live regenerated file (FAI_088 `positive_from='Yes'`; GAP_004 0.56 with
+grade 'B'; PROP_930043cc 0.28; PENSION_TYPE 'A (national) / EST (public interior)'; both A4 notes);
+`ruled_orderings` block absent; `_shadowed_by` on all four frozen-shadowed entries.
+QUEUE (unchanged by this operation): REW_BEN_HOL_001's 12 undeclared bands (a data ruling) · EQUALPAYAUDIT's
+source read (CIPD ref 8551, p39 vs Fig22) · VIRTUALGP's 54% leg (CIPD H&W 2025, paywalled) · GAP_004's
+tranche-2 re-anchor to retire both weak figures · the `Other` canon-map backlog · Phase-2's seed queue
+(M1 sick chain, M7 FINWELL measured-before-designed, FAM_009's target retirement, BEN_046 reopened,
+REM_PAY_001's degenerate ladder, the per-row point/range enumeration, reseed_engine range support).
