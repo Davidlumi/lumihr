@@ -297,10 +297,11 @@
   "sme_pct": null,
   "large_pct": null,
   "all_pct": null,
-  "single_pct": 76,
+  "single_pct": 56,
   "target_semantics": "Share of employers operating a long-service award scheme; positive pole = Yes (operates a scheme).",
-  "verbatim_evidence": "76% operate a long-service award scheme",
-  "flags": "Base_field warns of large-employer/FTSE skew and answered-only n, so this single rate likely overstates SME prevalence — treated as all-UK only because no size split exists in prose; pre-2024 vintage; grade B."
+  "verbatim_evidence": "the grade-B legacy source yields BOTH 56% and 76% operate one; 56% is OPERATIVE BY RULING (seedreal-1, David 2026-07-24; scope extended 2026-07-30 to record it in the register cell). Neither figure is strong; queued for tranche-2 re-anchoring.",
+  "flags": "Base_field warns of large-employer/FTSE skew and answered-only n, so this single rate likely overstates SME prevalence — treated as all-UK only because no size split exists in prose; pre-2024 vintage; grade B.",
+  "_ruled_target": "target 0.56 held HERE, in the generator's input, so regeneration reproduces it. The figure is present in this row's register real_anchor (v2026-07-30), which is what the verbatim validator requires."
  },
  "PAYTR_01_42eae7ec": {
   "metric_id": "PAYTR_01_42eae7ec",
@@ -330,10 +331,11 @@
   "sme_pct": null,
   "large_pct": null,
   "all_pct": null,
-  "single_pct": 18,
+  "single_pct": 28,
   "target_semantics": "Share of UK employers that carry out ethnicity pay gap analysis; positive pole = Yes (carries out the analysis).",
-  "verbatim_evidence": "18% carry out (10% share); 56% have not",
-  "flags": "The '(10% share)' is the subset who SHARE/disclose results, not the carry-out prevalence — do not use as target. 18 carry-out + 56 have-not = 74, so ~26% unaccounted (presumably don't know/planning). 'Main barrier company size' is qualitative context; base is size-skewed in behaviour but no numeric size split given."
+  "verbatim_evidence": "28% ran an ethnicity pay gap analysis in the year to Oct 2023 (40% of large 250+; 13% of SMEs). The prior 18% was the SHARED-FINDINGS figure mis-read as the ran-rate — transcription slip corrected per Domain-7 ruling 4 (David 2026-07-28); 28-as-ran corroborated by two independent register cells.",
+  "flags": "The '(10% share)' is the subset who SHARE/disclose results, not the carry-out prevalence — do not use as target. 18 carry-out + 56 have-not = 74, so ~26% unaccounted (presumably don't know/planning). 'Main barrier company size' is qualitative context; base is size-skewed in behaviour but no numeric size split given.",
+  "_ruled_target": "target 0.28 held HERE, in the generator's input, so regeneration reproduces it. The figure is present in this row's register real_anchor (v2026-07-30), which is what the verbatim validator requires."
  },
  "REW262_GOV_PAYINADVERTS": {
   "metric_id": "REW262_GOV_PAYINADVERTS",
