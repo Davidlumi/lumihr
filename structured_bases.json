@@ -198,10 +198,11 @@
   "sme_pct": null,
   "large_pct": null,
   "all_pct": null,
-  "single_pct": 70,
+  "single_pct": null,
   "target_semantics": "Share of UK employers offering paid study leave; positive pole = 'yes, we provide paid study or exam leave'.",
   "verbatim_evidence": "\"70% of UK employers offer paid study leave\" | \"92% offer training/career-development, 75% pay professional subscriptions, 75% conference attendance\"",
-  "flags": "Often grade/role-dependent rather than universal — prevalence of offering to ANYONE, not universal entitlement. The 92% (training/career-dev), 75% (professional subscriptions) and 75% (conference attendance) figures are OTHER L&D benefits — do not pair with the target. Private-skewed (70%) modest sample per base_field (~280 reward professionals, item bases ~212-253, CIPD Oct 2021). DUPLICATE ANCHOR: same underlying CIPD Oct 2021 70% figure as REW_FAI_STUDY_TIME_93b6ef22 — reviewer should note two metrics anchor on one source number."
+  "flags": "Often grade/role-dependent rather than universal — prevalence of offering to ANYONE, not universal entitlement. The 92% (training/career-dev), 75% (professional subscriptions) and 75% (conference attendance) figures are OTHER L&D benefits — do not pair with the target. Private-skewed (70%) modest sample per base_field (~280 reward professionals, item bases ~212-253, CIPD Oct 2021). DUPLICATE ANCHOR: same underlying CIPD Oct 2021 70% figure as REW_FAI_STUDY_TIME_93b6ef22 — reviewer should note two metrics anchor on one source number.",
+  "_retired": "target RETIRED (David 2026-07-30, the FAM_009 corrected transmission). single_pct is null DELIBERATELY — FAIL-CLOSED: with the RULED_CONTEXT entry present this entry never routes; if that entry were ever removed, the null crashes generation (all_only, generate_marginals.py:190-192) rather than silently restoring the 0.70. The drift guard is the independent second backstop. target_semantics and flags are KEPT — they carry the DUPLICATE ANCHOR documentation (the sibling REW_FAI_STUDY_TIME_93b6ef22 owns the CIPD Oct-2021 70% figure)."
  },
  "REW_BEN_FAM_010": {
   "metric_id": "REW_BEN_FAM_010",
