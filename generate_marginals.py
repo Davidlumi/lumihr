@@ -61,11 +61,18 @@ RULED_ORD = json.load(open("ruled_orderings.json"))["orderings"]   # THE standin
 # Ruled context (2026-07-16): one-pole-of-multi-pole = context (PAY_097/PAY_017, as principle);
 # GAP_009 set-not-pole (question shape, figure-independent); WEL_BUDGET numeric (G8: no
 # distribution anchor -> reshaping would invent data; 0.54 large-only exists-rate carried as doc).
+# ALSO THE RULED-RETIREMENT ROUTE (FAM_009, David 2026-07-30): a ruled target retirement is an entry
+# here — the dict VALUE is the recorded why, emitted verbatim into context[q].why. This route fires
+# BEFORE generator_rules and structured_bases, so a retired metric's bases entry stays as
+# documentation (neutralised fail-closed) without being consumed.
 RULED_CONTEXT = {
     "REW_PAY_097": "one-pole-of-multi-pole (ruled principle)",
     "REW_PAY_017": "one-pole-of-multi-pole (ruled principle)",
     "EXT_REW_GAP_009": "set-not-pole (prior ruling; question shape, figure-independent)",
     "REW26_WEL_BUDGET": "numeric, no distribution anchor (G8) — 0.54 large-only exists-rate carried as documentation",
+    "REW_BEN_FAM_009": "target RETIRED (David 2026-07-30): duplicate anchor — REW_FAI_STUDY_TIME_93b6ef22 owns the "
+                       "CIPD Oct-2021 70% figure (Domain-8 B4, DECISIONS 10226); the strict construct reads 12.1% vs "
+                       "the borrowed 70. Retirement, not correction: positive_from ruled untouched.",
 }
 # SETTLED re-freeze (ruled 2026-07-16): G7 baseline re-established post-correction — the old
 # frozen values included the defective seed (EAP 0.309 WAS the bug). frozen_targets.json is

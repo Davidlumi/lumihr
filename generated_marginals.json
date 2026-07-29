@@ -641,14 +641,6 @@
    "evidence": "\"86% of UK employers offer it\" (referent: \"Paid bereavement/compassionate leave is near-universal\"). Distractors NOT to use: \"up from 71% in 2018\" (historical), \"25+ days holiday (82%)\" (different ben",
    "positive_from": "Partially paid (case-by-case)"
   },
-  "REW_BEN_FAM_009": {
-   "target_share": 0.7,
-   "base_type": "all_only",
-   "all": 70,
-   "grade": "B",
-   "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
-   "evidence": "\"70% of UK employers offer paid study leave\" | \"92% offer training/career-development, 75% pay professional subscriptions, 75% conference attendance\""
-  },
   "REW_BEN_FAM_010": {
    "target_share": 0.3,
    "base_type": "all_only",
@@ -1075,6 +1067,9 @@
   },
   "REW_BEN_FAM_006": {
    "why": "context: statutory-floor values (SMP/SPP/ShPP GBP194.32/wk, SMP 6wks at 90% AWE, paternity 2wks, SPL 50wks, day-one rights) - legal baseline, no enhancement pre"
+  },
+  "REW_BEN_FAM_009": {
+   "why": "target RETIRED (David 2026-07-30): duplicate anchor — REW_FAI_STUDY_TIME_93b6ef22 owns the CIPD Oct-2021 70% figure (Domain-8 B4, DECISIONS 10226); the strict construct reads 12.1% vs the borrowed 70. Retirement, not correction: positive_from ruled untouched."
   },
   "REW_BEN_FAM_011": {
    "why": "anchored-unstructured (25-row follow-on table)"
