@@ -10969,3 +10969,91 @@ lumi.db.bak_pre_gtclass6_20260729_084955 + market_position_config.json.bak_pre_g
 double-guarded apply -> re-aggregate -> POST-WRITE EXACT vs the fresh rehearsal (0 question-row
 diffs, 0 payload diffs, mp config byte-equal); answers book 4e3add49657e6cd7 UNCHANGED
 (config-only diff); live consequence re-measured: pins 0 verdict changes, total 660.
+
+## Domain 8 (Time Off & Family) — B1–B8 rulings, the ③+④ close, and the gm blockers (29 July 2026, commits c89e74d + 8cf162e)
+THE STREAM'S LAST DOMAIN. The review (HEADLINES_timeoff_review_2026-07-29.md) is a **v2 rewrite**:
+three adversarial reviewers REFUTED v1 — arithmetic was exact on all 22 rows, but v1 carried a wrong
+guard-3 count, a false "HOL_001 is legally mislabelled" claim (its question says "excluding bank
+holidays"; 20+8BH = the 28-day floor — the queued "fix" would have broken a ruled label), THREE
+omitted superseding rulings (r3sw4 on HOL_001, Diff-10/B5 on FAM_002, the OPEN r3sw25 item on
+SICK_004), FERTLEAVE computed against a ruled applicable base it denied, a false value-path claim,
+the `unbenchmarked` flag on 8 of 22 rows unmentioned, both contradiction counts wrong, and an
+unverified ERA-2025 citation under its sharpest claim. Two dispositions REVERSED on correction
+(SICK_004 "aligned +0.3" -> +24.5 MAJOR OVER on the true OSP-holder base; FAM_009 "strongest
+candidate" -> duplicate-anchor HOLD). All folded into v2 and attributed there.
+
+RULINGS (David 2026-07-29, drafted against the pasted v2 table per the standing convention; echo
+passed on every id, figure and target):
+- **B1 CONFIRMED (12 rows)**: T1 · T3 · T6 (superseded, r3sw4) · T12 (circularity caveat: the live
+  26.8% is the June-2026 reseed echoing its own anchor — the OT_04 precedent) · T13 · T14 · T15 ·
+  T18 · T19 · T20 · T21 · T22.
+- **B2 T7 SICK_001**: fork ruled **(a) ANY-OSP** (56.9% vs weighted 44.1 = +12.8 minor over) but
+  **HELD** behind the sick-chain fix — "reshaping OSP provision downward while 93 orgs carry
+  contradictory sick-pay answers would reshape into incoherence."
+- **B3 T2 DAYONELEAVE**: **(i) NOT COMPARABLE / bound — APPLIED.** "Compliance with a day-one
+  statutory right is not a market position" (gov.uk verified 2026-07-29: "You're eligible for
+  Paternity Leave from the first day of employment"). 220 verdicts suppressed, the 86 "below-market"
+  compliance verdicts among them.
+- **B4 duplicate constructs — routings APPLIED, contradictions NOT repaired**: CARERPAID owns
+  paid-carer's-leave (FAM_007 -> Practice, 204 verdicts left; **the 77 contradictions do not repair
+  by routing** — routing changes authority, not answers); SICK_004 owns day-one OSP (SICKDAYONE ->
+  Practice, 220 left; **THE FREEZE IS UNTOUCHED** — live {Yes 0.6091, No 0.3909} n 220 equals the
+  frozen target exactly, asserted pre- and post-write, no unfreeze cycle); the DAYONELEAVE×SICKDAYONE
+  byte-identical answer vector (220/220) **ACCEPTED AND RECORDED**, not de-cloned; FAM_009 stays
+  MARKET but loses the duplicated CIPD-70% anchor to its ruled sibling (DECISIONS 10226) ->
+  unanchored/EST-held pending its own source. **TOTAL 644 org-verdicts left the market pool.**
+- **B7 register grades APPLIED**: FAM_010 + FAM_009 A->B in `lumi_anchor_register_v2026-07-29.csv`
+  (C9 mechanism, 2 rows / 2 columns, prior version preserved unedited, resolver now returns it),
+  consistent with the ruled FAM_008 A->B on the identical ~280 private-skewed base (DECISIONS 7541).
+- **B8 batch-8**: CONDITIONAL, single member (T17 FAM_010, 5.5% vs 30), its own transmission, B-grade
+  stop-short, batch-6 fingerprint asserts in full; **an honest HOLD is pre-accepted.**
+
+THE BLOCKING FINDING — **the incoherence was holding the marginals up.** Measured on throwaways:
+(1) **The maternity pair is arithmetically pinned**: FAM_001's 0.670 requires ~139 of 207 and
+FAM_002's 0.5441 requires ~115 of 212; if weeks require pay (the conditioning B6 rules) then
+**139-115 = 24 orgs MUST hold enhanced pay with zero enhanced weeks** — 25 observed. The
+"contradictions" ARE the gap between two ruled targets; parent-side repair breaks FAM_001 (-11.9pp),
+child-side breaks FAM_002 (+11.6pp). **B6 SUSPENDED**: no repair, no target edit, no conditioning
+declaration until a source read resolves which anchor governs. **The source read is now CRITICAL
+PATH** — required: both register cells (FAM_001 CIPD working-parents 2022 n=2,000; FAM_002 CIPD
+Reward Survey Feb 2026 "60% large / ~19% all UK-only"), their bases, and their editions.
+(2) **Sick chain**: the distribution-preserving draw lands day-one at 51.8% vs target 30 (+21.8pp
+FAIL) — the current 30.3% match exists only because 48 no-OSP orgs sit in the base. **Ruled draw:
+CONSERVATIVE** (repaired "not applicable" OSP-holders receive a waiting period, never day-one;
+grounds: such an org is not claiming day-one eligibility — gate agreement at +2.5pp is corroboration,
+not the reason).
+(3) **FAM_007**: its gm entry has **no `positive_from`**, so the gate scores "positive" as ANY
+provision — 0.358 vs 0.360, pinned by 64% claiming no carer's provision at all, which the verified
+Carer's Leave Act 2023 (one week statutory UNPAID for all employees) makes implausible. Ruled fix:
+`positive_from` -> the PAID arm, target = the register's **31-45 RANGE**, not the flat 36.
+**SCHEMA FINDING (reported, not papered over): the gm schema cannot express a range** —
+qa_plausibility:174 reads `float(entry["target_share"])` and gates on `abs(achieved-target) > 0.05`.
+**Proposed shape (Part-3 item, not built): `target_range: [lo, hi]` with the gate testing membership
+plus the 5pp margin OUTSIDE the range, falling back to `target_share` when absent.**
+- **SICK_004's 0.30**: RE-DERIVE on the true OSP-holder base (it was set against a mixed base
+  including 48 no-OSP orgs) — a re-derivation, not a ruling, sequenced AFTER the OSP-conditioned
+  base declaration lands.
+
+**THE DERIVED PRINCIPLE (David, recorded): where a ranged source has been forced into a point
+target, the seed has been reshaped toward a precision the source never claimed.** Carried into the
+reconciliation as a per-target question: **point source or range source?**
+
+NEXT WORKSTREAM — **THE GM RECONCILIATION, now CRITICAL PATH** (scoped here, NOT built): the
+Diff-1-era staleness of `generated_marginals.json` (40 targets; `_source` still
+"lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1)") has moved from queued debt to blocker — three
+of its targets just stopped real coherence work. Shape: a READ-ONLY reconciliation of every target
+against the canonical register (now v2026-07-29) and every subsequent ruling; per target — current
+value · its source-of-truth today · whether they agree · **whether the seed reaches it honestly or
+via masked incoherence (the pattern found here)** · **point source or range source** · fix class if
+they differ. Output: a ruling sheet for David; then corrections ship in scoped diffs. Effort: ~40
+targets, register + DECISIONS cross-reads, expect several masked-incoherence finds; a session's work
+with an adversarial verification pass, resumable cold from this entry.
+
+CLOSE (29 July): checkpoint (0,0,0) + backups lumi.db.bak_pre_tof3_20260729_111126 + config .bak ->
+double-guarded apply -> re-aggregate -> POST-WRITE EXACT vs rehearsal (0 question-row diffs, 0
+payload diffs, config byte-equal, answers book 4e3add49657e6cd7 UNCHANGED — zero answer writes);
+live consequence re-measured 644; freeze proof post-write {Yes 0.6091, No 0.3909} n 220. GATES:
+qa_hero "59 checks, 59 passed, 0 failed" · "FREEZE GATE: PASS" · signals "14 passed, 0 failed" ·
+qa_scores "== SCORE-LADDER GATE: 5 passed, 0 failed ==" with the PRACTICE SHIELD passing · all 12
+gate outputs zero failures. Domain-8 review annotated B1-B8; **B5/B6 markers deliberately unwritten**
+— their work is blocked and markers would misstate applied state.
