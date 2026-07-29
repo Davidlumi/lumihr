@@ -11581,3 +11581,37 @@ and SICK_002 asserted byte-identical; answer COUNT unchanged — this diff re-va
 drops). SUITE: "PASS (11): ... ALL GATES GREEN". Practice shield "SCORE-LADDER GATE: 5 passed,
 0 failed". Freeze gate "settled checked 8 (max drift 0.005pp) | register marginals checked 47 (max
 drift 4.09pp)" / PASS. Backups: lumi.db.bak_pre_m1_20260729_183328 + *.bak_pre_m1_20260729_183328.
+
+## RECORD CORRECTION — 588cd84 carries four fix classes, not one (DECISIONS-only, 30 July 2026)
+**The commit message on 588cd84 says "Freeze gate: parent_answered_only … (gate class, own commit)".
+That is TRUE of its title and FALSE of its contents.** The commit carries the WHOLE M1 diff — all four
+fix classes David scoped as separate commits:
+  - **gate**      — `qa_plausibility.py`: the `parent_answered_only` selector
+  - **seed-data** — `server/migrate_m1_sickchain.py`: the conservative draw (88 answer writes) + the
+                    re-aggregation
+  - **config**    — `data/applicable_bases.json` (SICK_004 conditioned), `structured_bases.json` (the
+                    SICK_004 coherence pair), `generated_marginals.json` (the regeneration carrying it)
+  - **record**    — `DECISIONS.md` (the M1 entry itself)
+Full stat: DECISIONS.md 73+ · data/applicable_bases.json 12+ · generated_marginals.json 12+ ·
+qa_plausibility.py 16+ · server/migrate_m1_sickchain.py 158+ · structured_bases.json 12+ = 283
+insertions across 6 files.
+
+THE CAUSE, stated plainly: Claude opened the close with a CATCH-ALL `git add` naming every file at once
+— a defensive attempt to include `lumi.db`, which is gitignored. That staged everything. The first
+`git commit` therefore swept all six files in under the gate-class message, and the three commits that
+followed found nothing left to stage and were no-ops. The working tree and the pushed content are
+CORRECT; only the packaging is wrong.
+
+RULED (David 2026-07-30): **record-correcting entry, NO REWRITE, no force-push.** The history stands;
+this entry is the fix, so a future reader is not misled by the commit title into thinking the gate
+change shipped alone.
+
+**THE LESSON, recorded: DEFENSIVE OVER-STAGING DEFEATS COMMIT-BY-CLASS DISCIPLINE. Stage per class —
+`git add <only this class's files>` immediately before each commit. A gitignored file that genuinely
+needs inclusion gets EXPLICIT handling (`git add -f`, named, ruled), never a catch-all add that sweeps
+the next three commits' contents into the first.** The commit-by-class rule exists so each fix class
+can be read, reviewed and reverted on its own; a single sweeping commit silently removes that, and it
+does so without any gate or assert noticing — the packaging layer has no guard, only discipline.
+NOTHING ELSE CHANGES: the M1 content, its verification (suite 11/11 ALL GATES GREEN, answers book
+4e3add49657e6cd7 -> 9a2e72bfbb5fed4d, 88 writes, target 0.30 unmoved, +2.46pp) and its rulings stand
+exactly as recorded in the M1 entry above.
