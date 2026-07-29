@@ -93,7 +93,13 @@ def num_in_text(num, text):
 
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
-assert len(byid) == 249  # 248 + PMICOMP composition redesign (r3sw8 ruled)
+# The register is versioned and resolved by rule (C9), so a hardcoded row count fires on every
+# legitimate register bump — it fired here at v2026-07-29 (255 rows vs a pinned 249). The invariant
+# it was really standing in for is UNIQUENESS: metric_id is the key this whole file indexes by, and a
+# duplicate would silently drop a row. That IS derivable, so it replaces the count.
+assert len(byid) == len(reg), ("duplicate metric_id in %s: %d rows -> %d unique"
+                               % (__import__("os").path.basename(_REG_PATH), len(reg), len(byid)))
+print("register: %s | %d rows" % (__import__("os").path.basename(_REG_PATH), len(reg)))
 
 for r in reg:
     q = r["metric_id"].strip()
@@ -220,7 +226,15 @@ for q in marginals:
     if not has:
         no_order.append(q)
 assert not no_order, "ORDERINGS-REQUIRED GUARD: emitted marginals without any ordering: %s" % no_order
-assert pf_count == 7, "positive_from must be exactly the 7 ruled rows (SICK_001/SICK_004/FAM_001 + FERTLEAVE/FAM_008/EQUALPAYAUDIT + REM_PAY_001 — HOL_001 left for the sector-floor gradient), got %d" % pf_count
+# THE INVARIANT, stated: a marginal carries `positive_from` IF AND ONLY IF its ruled_orderings entry
+# declares one. ruled_orderings.json is the sole source (:214-216) and, since the Phase-1 ruling, the
+# canonical home. Derived from the inputs, so the next legitimate ruled addition cannot break
+# regeneration — the old `pf_count == 7` hardcode fired the moment REW_FAI_088 gained one.
+_pf_from_ords = {q for q in marginals if (RULED_ORD.get(q) or {}).get("positive_from")}
+_pf_emitted   = {q for q in marginals if "positive_from" in marginals[q]}
+assert _pf_emitted == _pf_from_ords, ("positive_from must come from ruled_orderings.json and nothing "
+                                      "else; emitted-only=%s ords-only=%s"
+                                      % (sorted(_pf_emitted - _pf_from_ords), sorted(_pf_from_ords - _pf_emitted)))
 assert set(ruled_dists) == {"REW_PAY_005", "EXT_REW_GAP_010", "REW265_PAY_RANGEMAX", "REW_PAY_TIPS_EXIST_7c80c508",
                             "REW264_HLT_VIRTUALGP"}, sorted(ruled_dists)
 assert set(maturity_grads) == {"PROP_fe1a29ec", "REW_FAI_128", "REW_PAY_001", "REW_INC_103",
@@ -240,11 +254,24 @@ for _q, _e in ms_incidence.items():
 assert "PROP_fe1a29ec" not in marginals, "PROP_fe1a29ec must leave the share-marginals (Diff 15 redesign)"
 for _q, _e in ruled_dists.items():
     assert abs(sum(_e["distribution"].values()) - 100) < 1e-9, (_q, sum(_e["distribution"].values()))
-# default-holds assert: every other marginal has NO positive_from -> legacy second-rung semantics
-assert sum(1 for q in marginals if "positive_from" not in marginals[q]) == len(marginals) - 7
+# default-holds: every other marginal has NO positive_from -> legacy second-rung semantics. This is now
+# the complement of the derived set above (it was a second hardcoded count of the same fact, and it
+# failed for the same reason: live 32 against a pinned 33).
+assert _pf_emitted | {q for q in marginals if "positive_from" not in marginals[q]} == set(marginals)
 for q in SETTLED_REFREEZE:
     if q in marginals:
         SETTLED_REFREEZE[q] = marginals[q]["target_share"]
+# Phase-1 ruling (2026-07-29): a gm target for a frozen metric is DEAD CODE in the freeze gate —
+# qa_plausibility's tier chain is `if qid in FROZEN: ... elif qid in MGRAD/RDIST/MS_INC/MARG`, so the
+# FROZEN branch catches it first and the target_share is never evaluated. MARKED INERT, NOT REMOVED:
+# reseed_engine.py:426-433 consumes target_share in the marginal branch with NO FROZEN precedence, so
+# deleting the entry would change the re-seed. Stamped here so a regeneration cannot drop the mark.
+_FROZEN_KEYS = set(json.load(open("frozen_targets.json")))
+for q in sorted(set(marginals) & _FROZEN_KEYS):
+    marginals[q]["_shadowed_by"] = (
+        "frozen_targets.json — NEVER evaluated by the freeze gate (the FROZEN branch catches it "
+        "first). RETAINED, not removed: reseed_engine.py:426-433 consumes target_share in the "
+        "marginal branch, so deleting the entry would change the re-seed.")
 
 # ---- HARD GUARDS ----
 assert "REW26_BEN_SALSAC" not in marginals, "FOUNDING-ERROR GUARD: SALSAC emitted"
@@ -262,7 +289,11 @@ out = {"_generated": RULED, "_source": "%s + generator_rules.json + structured_b
        "coherence_pairs": bases.get("_coherence_pairs") or [],
        "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
        "marginals": marginals, "floors": floors, "context": context,
-       "pending_ruling": pending, "ruled_orderings": ruled_orderings,
+       # Phase-1 ruling (2026-07-29): ruled_orderings.json is CANONICAL. The generator no longer
+       # emits a second, byte-identical copy into this file — a copy nothing reads is a silent fork
+       # waiting. Verified: every reader takes the standalone file (reseed_engine:48,
+       # generate_marginals:58, qa_plausibility:52, migrate_r3sw7_virtualgp:19).
+       "pending_ruling": pending,
        "settled_refreeze": {k: v for k, v in SETTLED_REFREEZE.items() if v is not None}}
 json.dump(out, open("generated_marginals.json", "w"), indent=1, ensure_ascii=False)
 with open("generated_marginal_table.csv", "w", newline="", encoding="utf-8") as f:

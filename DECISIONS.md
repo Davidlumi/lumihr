@@ -11244,3 +11244,79 @@ decomposition; the 54% all-staff leg is reproduced by nothing live (Yes-all 45.0
 r3sw7, so it joins the member-data-at-launch tier honestly. **HOL_001's 12 undeclared bands (a DATA ruling, not
 this gate's job)** · the `Other` canon-map backlog (3 orgs, open since r3sw2) · Phase-2's full queue · the `- 7`
 assert repair with its INSEPARABLE generator changes · the `_source` stamp resolution.
+
+## Generator repair — the tool made runnable, its firing held separately (ruled + applied 29 July 2026)
+THE RULING THAT SHAPES THIS DIFF: **repairing the tool and firing it are two different decisions.** This diff
+repairs `generate_marginals.py` and PROVES regeneration runnable; it does NOT regenerate. Regeneration re-derives
+all 40 targets from v2026-07-29 — a target-moving operation Phase 1 forbade — and becomes its own ruled operation
+with its own rehearsal, target-by-target. **NOTHING THIS DIFF SHIPS MOVES A TARGET; `generated_marginals.json` is
+NOT written by it** (523f8d7553556141 before and after, verified across the capability proof).
+
+THREE STALE ASSERTS, NOT ONE — derived by running the unrepaired generator, which failed at **:96**, not at the
+`- 7` line: `assert len(byid) == 249` against a canonical register that now has **255 rows**.
+**CITATION CORRECTION: the `- 7` assert is at :244, not :253** (:253 is the MENOPLAN context guard). The ":253"
+in the Phase-1 record was Claude's error and was carried into the ruling prompt; corrected here.
+THE INVARIANTS, STATED:
+- **:96 -> UNIQUENESS, derived.** The row count was a tripwire that fires on every legitimate register bump. What
+  it really stood for is that `metric_id` is the key the whole file indexes by and a duplicate would silently drop
+  a row: `assert len(byid) == len(reg)`, plus a printed register name + row count so a version change is VISIBLE,
+  not fatal.
+- **:223 + :244 -> ONE derived set-equality.** The honest invariant from the code's own logic (:214-216): **a
+  marginal carries `positive_from` IF AND ONLY IF its ruled_orderings entry declares one** — ruled_orderings.json
+  is the sole source and, since the Phase-1 ruling, the canonical home. Both former asserts were hardcoded counts
+  of the same fact and broke for the same reason (7 vs 8; 33 vs 32). No hardcode is needed, and the failure
+  message now NAMES the metric instead of a number.
+**These asserts were not wrong.** They correctly described what the generator produces. They failed only because
+the live file has been HAND-EDITED BEYOND WHAT ITS INPUTS CAN REPRODUCE — which is the real finding.
+
+DURABILITY CLOSURE (Part 2, ruled inseparable and landed together): the `ruled_orderings` emission is REMOVED
+(ruled_orderings.json is canonical; re-derived, not assumed — every reader takes the standalone file:
+reseed_engine:48, generate_marginals:58, qa_plausibility:52, migrate_r3sw7_virtualgp:19) and `_shadowed_by` is now
+STAMPED BY THE GENERATOR on the four frozen-shadowed entries from frozen_targets.json. Proven in the regenerated
+output: ruled_orderings block ABSENT; `_shadowed_by` present on EAP / FINWELL / STRATEGY / PENSION_MATCH. **Phase
+1's config diff is now durable across a regeneration.**
+
+CAPABILITY PROOF (scratch only): "register: lumi_anchor_register_v2026-07-29.csv | 255 rows" / "GENERATED: 40
+marginals | 3 floors | 208 context | 0 pending-ruling | 57 ruled orderings" / "verbatim validator passed on all
+emitted numbers" / **rc=0**.
+
+THE SIX-REVERSION CENSUS — the artifact for the future regeneration ruling. Regeneration TODAY would silently
+undo six ruled decisions:
+  1. **EXT_REW_GAP_004 0.56 -> 0.76 (+20.00pp)**, grade 2 -> B, source back to "lumi legacy platform (HR Data Hub
+     intake), 2019-20" — reverting the seedreal-1 ruling (David 2026-07-24).
+  2. **PROP_930043cc 0.28 -> 0.18 (-10.00pp)** — reverting Domain-7 ruling 4.
+  3. **REW_FAI_088 loses positive_from='Yes'** and its STRICT-construct rule text — reverting Domain-7 ruling 6a.
+  4. **REW26_BEN_PENSION_TYPE grade** "A (national) / EST (public interior)" -> "A" — reverting Appendix-B A2.
+  5. **REW_PAY_TIPS_EXIST_7c80c508 loses `_target_preceded_data`** — reverting Appendix-B A4.
+  6. **REW265_BEN_PMICOMP loses `_target_preceded_data`** — reverting Appendix-B A4.
+Forward corrections it would ALSO make: FAM_009 + FAM_010 grade A -> B (gm lags the register's B7 correction);
+`_source` -> v2026-07-29 (which resolves the red gate); context 203 -> 208.
+**EXHAUSTIVE BY CONSTRUCTION, not by search:** git records exactly FOUR commits that ever hand-edited the file
+(00c05d8, 6dde2fa, 15cf209, 0d621ea) and the diff accounts for all four.
+
+THE pf_count INVERSION (the finding that matters most): `assert pf_count == 7` would have **PASSED** on the
+regenerated output — because FAI_088's positive_from simply would not be emitted. **The assert was not a guard
+against the reversion; it was the thing enforcing it.**
+THE GAP_004 TRAP: regeneration would restore **the exact grade-B legacy figure DECISIONS 9619-9621 named as the
+trap**. And GAP_004 was the SINGLE target not derivable from its own register cell (Appendix B: 39 of 40) — so
+regeneration would reach **"40 of 40 derivable" only by discarding the ruling that deliberately overrode the
+cell. That is a regression wearing an improvement's clothes**, and full cell-derivability is not the goal when
+rulings supersede cells.
+
+THE RULED MECHANISM FOR THE FUTURE REGENERATION OPERATION: every reversion has ONE cause — ruled corrections were
+applied to the OUTPUT and never to the INPUTS. The generator is deterministic from ruled_orderings.json,
+structured_bases.json and the register, so anything living only in generated_marginals.json is BY CONSTRUCTION
+temporary. **RULED: rulings are pushed back into the INPUTS** (FAI_088's positive_from into ruled_orderings.json;
+GAP_004's 56 and PROP_930043cc's 28 into structured_bases/the register; A2's grade and A4's notes into
+structured_bases) so regeneration REPRODUCES them; **NO third "ruled overrides" artifact** — a second source of
+truth is the ORDS lesson repeating; **PLUS a generation-time drift report that REFUSES TO WRITE over an existing
+field** it would change.
+
+VERIFIED: rehearsed in scratch with its own input copies (the generator writes by RELATIVE path, so a repo-root
+run would have overwritten the live output — it was never run from the repo). Live-file re-proof rc=0 with the
+repo output byte-unchanged. SUITE: "PASS (10): qa_hero, qa_focus, qa_signals_system, qa_strategy,
+qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_pulse, qa_release" / "FAIL (1):
+qa_plausibility (rc=1)" — **10/11, the ruled red `_source` gate, EXPECTED AND UNTOUCHED** (its resolution belongs
+to the regeneration ruling, not this one); "gate-safety-2: live DB untouched by the suite". Answers book
+4e3add49657e6cd7 UNCHANGED; generated_marginals.json / ruled_orderings.json / structured_bases.json all
+byte-unchanged — this diff touches ONE file.
