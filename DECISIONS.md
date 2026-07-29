@@ -11386,3 +11386,66 @@ generated_marginals.json byte-unchanged. SUITE: "PASS (10): qa_hero, qa_focus, q
 qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_pulse, qa_release" / "FAIL (1):
 qa_plausibility (rc=1)" — **10/11, the ruled red `_source` gate, EXPECTED AND UNTOUCHED**; "gate-safety-2: live
 DB untouched by the suite".
+
+## Register cluster — five cell corrections; the preservation class CLOSES (ruled + applied 30 July 2026)
+CANONICAL REGISTER IS NOW **lumi_anchor_register_v2026-07-30.csv** (255 rows). Prior version preserved unedited
+(v2026-07-29, sha 4a4ddfa5ef774364). Resolver returns the new file by the C9 rule; force-added per the
+established mechanism. ASSERTED: **exactly 5 rows differ, in exactly the intended columns; the other 250 rows
+are field-identical** (a csv round-trip of v2026-07-29 was proven byte-identical first, so untouched rows carry
+no reformatting).
+
+THE GAP_004 RULING (David 2026-07-30) — **this SUPERSEDES part of gap004-correct (24 July 2026)** and is logged
+as such. That ruling's "no config" scope **covered moving the seed, not recording the operative figure in the
+register cell**. `real_anchor` now states what DECISIONS already established: the grade-B legacy source (HR Data
+Hub intake 2019-20, large-employer/FTSE skew, pre-2024) **yields BOTH 56% and 76%; 56% is operative by ruling;
+neither is strong**; the row stays queued for tranche-2 re-anchoring to retire both. The false provenance stamp
+is corrected in the same cell — seedreal-1 recorded "grade 2"; the `grade` column reads **B** and
+"2 - leave/policy" is the `tranche` column, a batch label.
+GROUNDS RECORDED: option (a) — provenance stamp only — would have left a ruled seed **permanently
+unreproducible** AND **armed a -18.93pp gate failure in the inputs** (live achieved 0.5707 vs a regenerated
+target 0.76, against a seed the 24 July ruling ordered left at 56). **That is worse than an unpreserved ruling.**
+
+THE HONESTY CONSTRAINT, HELD. No number entered a cell to satisfy the validator:
+  - **PROP_930043cc**: the corrected `real_anchor` promotes the figure from **this cell's own SOURCE-CONFIRM
+    notes** — "28% ran … in the year to Oct 2023 (40% large 250+; 13% SMEs); 18% shared findings". The prior
+    anchor had mislabelled the 18% shared-findings figure as the ran-rate (Domain-7 ruling 4). Both figures now
+    appear in their correct roles; nothing was invented.
+  - **GAP_004**: DECISIONS itself establishes 56's provenance ("the 56% comes from the SAME grade-B legacy
+    source as the 0.76 marginal it replaced"), so recording it is a RE-READING, not a fabrication — and the cell
+    states plainly that the source yields both and that neither is strong.
+  - **REW262_GOV_EQUALPAYAUDIT**: the three-way is **RECORDED, NOT RESOLVED** — own cell 35% (PPT p39) vs 32% in
+    REW_FAI_079's and PROP_10d1211d's notes (PPT Fig22 family), all CIPD PPT 2024. Both locations are cited in
+    the cell and the SOURCE READ IS NAMED (CIPD ref 8551, p39 and Fig22). Not resolved by picking one: p39 and
+    Fig22 may measure different constructs. No target consequence (35 stays present).
+  - **REW26_BEN_PENSION_MATCH**: borrowed-leg provenance recorded — the 57 LARGE leg is on-row (Fig24); the
+    16 SME leg is imported from REW_BEN_100's notes ("Fig25 SME=16%"). Derivable, but from TWO cells.
+  - **REW_INC_103**: the Domain-4 NOT-COMPARABLE ruling (L10329) stamped into the cell — eligible != received,
+    orgs != employees — so the mismatch is visible where the anchor is read, not only in DECISIONS.
+
+PART 2 (data): with the cells corrected, `structured_bases.json` `single_pct` moves **EXT_REW_GAP_004 76 -> 56**
+and **PROP_930043cc 18 -> 28**, each with its grounds and a `_ruled_target` note. **THE VERBATIM VALIDATOR NOW
+PASSES**: "verbatim validator passed on all emitted numbers" — where the same edit against the OLD register
+raises `AssertionError: VERBATIM FAIL EXT_REW_GAP_004 56`. **The input edit is COUPLED to the cell, which is
+exactly right: the figure is legal only because the register now states it.**
+
+PART 3 — SIX OF SIX SURVIVE a scratch regeneration: FAI_088 `positive_from` + its `rule` (byte-identical),
+**GAP_004 target 0.56**, **PROP_930043cc target 0.28**, PENSION_TYPE's split grade, and both
+`_target_preceded_data` notes. ORDS block absent; `_shadowed_by` on all four.
+DRIFT NOW 18 -> **14 fields, and NOT ONE is a ruled decision being lost**: `_source` (the deferred stamp),
+7 context rows (register-version-driven), FAM_009/FAM_010 grade A->B (the B7 register correction landing), and
+GAP_004's grade '2'->'B' + source/evidence and PROP_930043cc's evidence — **which are the CORRECTIONS landing,
+not reversions**. The guard still refuses without `--allow-drift`, correctly: a human confirms a real change.
+ISOLATION TEST (the verifier's technique, both directions): new inputs + OLD register -> `VERBATIM FAIL` (the
+coupling proof); OLD inputs + OLD register -> the original 18 fields reproduced exactly (confirming the two
+targets' reversion was cell-driven and the other 8 version-driven).
+
+**THE FAITHFULNESS STATEMENT, UPDATED: regeneration is now FAITHFUL in the preservation sense — no ruled
+decision would be lost. The class is CLOSED.** What remains is not an exposure but a deferred decision: the
+`_source` stamp, and with it the red gate going green, is now **a single ruled operation rather than a
+target-moving one** — every target the regeneration would produce is either unchanged or a ruled correction.
+That ruling comes next, on its own. **The red `_source` gate STAYS RED here and was not touched.**
+VERIFIED: scratch runs only (the generator writes by relative path). `generated_marginals.json` NOT written —
+523f8d7553556141 before and after. Answers book 4e3add49657e6cd7 UNCHANGED. SUITE: "PASS (10): qa_hero,
+qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary,
+qa_pulse, qa_release" / "FAIL (1): qa_plausibility (rc=1)" — 10/11, the ruled red gate, which now correctly
+names v2026-07-30 as the canonical register; "gate-safety-2: live DB untouched by the suite".
