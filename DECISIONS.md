@@ -11615,3 +11615,67 @@ does so without any gate or assert noticing — the packaging layer has no guard
 NOTHING ELSE CHANGES: the M1 content, its verification (suite 11/11 ALL GATES GREEN, answers book
 4e3add49657e6cd7 -> 9a2e72bfbb5fed4d, 88 writes, target 0.30 unmoved, +2.46pp) and its rulings stand
 exactly as recorded in the M1 entry above.
+
+## Phase 2 · T7 + T8 — the sick chain closed (ruled + applied 30 July 2026)
+M1 closed 88 of the 177 r3sw25 flags; the remaining **89 were all SICK_002** — 48 no-OSP orgs stating
+an enhanced-pay DURATION, 41 OSP-holders stating 'None (statutory only)'. Its coherence pair was
+deliberately unwritten until the repair, per the M1 ruling: added earlier it would have failed on 48
+violations. **All 89 are now closed; the chain is at zero.**
+
+THE FORK, RULED — and the live record was sharper than the question. "None" on an OSP-holder is either
+a contradiction to repair or evidence the PARENT is wrong. **READING (ii) IS REFUTED on the seed's own
+routing: REW_BEN_SICK_005 (eligibility rules, conditioned on OSP-holders, never touched by M1) is
+answered by 36/41 = 88% of the contradictors and 67/71 = 94% of coherent OSP-holders, but by 0 OF 90
+no-OSP orgs.** Were SICK_001 wrong these orgs would pattern with the no-OSP group; they do not. The 3
+orgs M1 never touched corroborate independently (two answer SICK_005 'Partly'; all three claim
+Enhanced/Combination). Ruled: repair the 41 to a duration, completing M1's direction.
+**THE CAVEAT, RECORDED VERBATIM AS RULED: two metrics have now moved on 38 orgs on the strength of ONE
+parent answer corroborated only by SICK_005; all evidence is INTERNAL TO THE SEED. This is a seed
+self-consistency repair, not an external-truth repair.** Pre-M1 those 38 were split 2-2 (SICK_001 +
+SICK_005 said OSP; SICK_002 + SICK_004 said not) and M1 broke the tie toward SICK_001; this completes
+that direction rather than opening a fresh one.
+
+STEP 1 — THE DRAW (seed-data). A: 48 no-OSP stating a duration -> 'None (statutory only)'. C: 41
+OSP-holders on 'None' -> a duration drawn from the book. **Donor = the 71 COHERENT verified
+OSP-holders: 13-26wk 28 (39.4%) / 5-12wk 22 (31.0%) / Up to 4wk 16 (22.5%) / >26wk 5 (7.0%);
+largest-remainder over 41 -> 16/13/9/3.** Assignment deterministic (sha256(org_id) order, fixed ladder
+order). 89 answer writes; book 9a2e72bfbb5fed4d -> 11f574a0735e1b61, EXACT-matching the rehearsal.
+**HEALTHY-DONOR CONTRAST WITH M1, recorded: this shape has no degenerate rung, so there is NO
+implausibility to record. M1's '>3 days = 1 org' finding STAYS ON THE ANCHOR QUEUE — if >3-day waiting
+periods are real in the UK market the register should say so and the seed should follow (a source read,
+not a draw).**
+**NEW GUARD, recorded: the DONOR-SHAPE ASSERT.** The migration asserts the donor distribution
+(28/22/16/5 over 71) in-script, so a future drift breaks the run rather than silently re-shaping a
+book-derived draw. It is the batch-6 fingerprint discipline extended from the target to the DONOR.
+FIXTURE, before/after per the Diff-19b/M1 precedent (fixture-exclusion protects the demo from
+statistical redraws, not from ruled coherence corrections):
+  **5e67fa8c Thornbridge Retail — SICK_001='No sick pay provided'; SICK_002 'Up to 4 weeks' ->
+  'None (statutory only)'** (it was claiming an enhanced-sick-pay duration while holding no sick pay).
+
+STEP 2 — THE DECLARATION + THE PAIR (config). `applicable_bases` SICK_002 `mode: conditioned` on the
+OSP parent (copying the SICK_005/SICK_004 precedent) and its guarded pair in `structured_bases.json`
+with `parent_answered_only`. Regeneration drift was **exactly one field, coherence_pairs 31 -> 32**;
+`--allow-drift` used as the single authorised exception and the **guard's default-refuse re-asserted
+after (rc=0, nothing left to drift)**. POST-REPAIR: **SICK_002 pair violations = 0, and M1's SICK_004
+pair still 0**, with both unknown-parent advisories printing (8 and 7 orgs scoped out, not failed).
+
+STEP 3 — RE-AGGREGATE, THEN THE CHECK (data). Re-aggregated per doctrine — **the four-step sequence
+(draw -> declaration -> RE-AGGREGATE -> target check) held; qa_engine_audit is clean (0 hard failures),
+so M1's stale-payload failure did not recur.** As ruled, the "target check" reduces to the pair and the
+rendering base: **SICK_002 has NO gm target and no 5pp line**, and the declaration moves the RENDERING
+denominator only (205 answerers -> 112 OSP-holders). Nothing entered the register or a target.
+
+THE TWO DISPOSITIONS.
+**T7 REW_BEN_SICK_001 — ALIGNED, NO ACTION.** Untouched throughout as ruled: achieved 0.5694 (n=209)
+vs target 0.5680 = **+0.14pp**; the any-OSP reading is 119/209 = 56.9%, identical to pre-repair.
+**QUEUED as a data gap: 12 orgs hold NO SICK_001 answer, and ruling them would move this figure.**
+**T8 REW_BEN_SICK_002 — CONFIRMED UNANCHORED AND NOT COMPARABLE (base).** Its absence from `marginals`
+is consistent with the Domain-8 disposition. Its conditioned distribution is now internally coherent
+(n=112: 13-26wk 44 / 5-12wk 35 / Up to 4wk 25 / >26wk 8) and renders honestly over OSP-holders; what it
+lacks is a SOURCE. **Anchoring it is routed to the anchor queue as a source-read question — not
+something this diff could honestly produce.**
+VERIFIED: SUITE **"PASS (11): qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit,
+qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_release" / "ALL GATES
+GREEN"** — the 11/11 baseline held, no regression. "gate-safety-2: live DB untouched by the suite".
+Post-write asserts held: SICK_001 byte-identical, SICK_004 row count 204 (M1 untouched), zero
+OSP-holders on 'None', zero no-OSP orgs on a duration. Backup lumi.db.bak_pre_t8_20260729_194513.
