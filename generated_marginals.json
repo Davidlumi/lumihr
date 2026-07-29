@@ -533,6 +533,15 @@
    "relation": "subset_orgs",
    "parent_answered_only": true,
    "note": "T8 (David 2026-07-30): an org stating an enhanced-pay DURATION must hold OSP. Ships WITH its repair, per the M1 ruling — added before the repair it would have failed on 48 violations. parent_answered_only per the M1 grounds: coherence guards must not fail on absence."
+  },
+  {
+   "child": "REW263_WEL_FINWELL",
+   "child_value_not": "No",
+   "parent": "REW26_WEL_FINWELL",
+   "parent_value": "Yes",
+   "relation": "subset_orgs",
+   "parent_answered_only": true,
+   "note": "M7 (David 2026-07-30): an org with a documented strategy or ad hoc provision must also offer a programme. SUBSET, never EQUALITY: the two metrics are DIFFERENT CONSTRUCTS from the same CIPD Reward Survey Feb 2026 — 15% documented strategy vs 64% any programme — and the 108 orgs between them are the source's own 49-point gap, not a contradiction. An equality relation would assert programme = strategy, the conflation ruled against on 2026-07-16. Reads 0 violations today; it exists to lock the correct relation against a future inversion or re-conflation."
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
