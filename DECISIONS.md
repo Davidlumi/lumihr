@@ -11679,3 +11679,73 @@ qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_rel
 GREEN"** — the 11/11 baseline held, no regression. "gate-safety-2: live DB untouched by the suite".
 Post-write asserts held: SICK_001 byte-identical, SICK_004 row count 204 (M1 untouched), zero
 OSP-holders on 'None', zero no-OSP orgs on a duration. Backup lumi.db.bak_pre_t8_20260729_194513.
+
+## Phase 2 · M7 FINWELL — WITHDRAWN: there was never a contradiction (ruled + applied 30 July 2026)
+M7 was ruled "repair in principle, MEASURE FIRST" at the GM reconciliation, on the grounds that 108 orgs
+moving rungs against an exact-on-0.150 target was **the maternity shape**. The measurement
+(FINWELL_MEASUREMENT_2026-07-30.md, READ-ONLY) says otherwise. **M7 IS WITHDRAWN — recorded against the
+GM reconciliation as M5's circularity charge was.**
+
+THE GROUNDS, VERBATIM AS RULED: **the 108 orgs are the CIPD-measured 49-point gap between
+programme-offering and documented-strategy; both anchors reproduce to within 0.09pp and the gap exactly;
+M7 re-made the conflation ruled against on 16 July.**
+  ladder  REW263_WEL_FINWELL  "documented STRATEGY beyond ad hoc"   33/220 = 0.1500  vs anchor 15%
+  sibling REW26_WEL_FINWELL   "offer a PROGRAMME"   [FROZEN]       141/220 = 0.6409  vs anchor 64%
+  the 108                                                          108/220 = 0.4909  = the source's 64-15
+Both grade A, **both CIPD Reward Survey Feb 2026**. The register had already caught this once: the
+ladder's notes read *"NB earlier 'finwell 64%' was the DIFFERENT metric … This is the strategy-exists
+prevalence = 15%"*, and the sibling's anchor records *"RELABELLED ruled 2026-07-16: previously
+mislabelled 'have financial wellbeing policy/strategy' … audit mis-map OVERTURNED."*
+**MATERNITY-PIN VERDICT: NO, and not the sick-chain shape either.** Maternity was two targets
+arithmetically irreconcilable with coherence; here **both targets are satisfied simultaneously today**.
+Nothing is pinned. It is a third shape: DEFINITIONAL.
+
+THE THREE REJECTIONS, with their arithmetic — recorded so no future pass re-opens them:
+ (a) **Repair the ladder**: all 108 -> +49.1pp · only the 62 -> +28.2pp · only the 46 -> +20.9pp, all FAIL
+     the 5pp line. Donor shape **Documented 30 / Ad hoc 3 = 91/9, DEGENERATE** (worse than M1's); drawing
+     108 on it asserts **131 of 220 employers (60%) hold a documented strategy** against a grade-A source
+     saying 15%. **That is inventing data.**
+ (b) **Repair the frozen sibling**: all 108 -> **49.09pp** drift · only the 62 -> **28.18pp**, against an
+     ABSOLUTE 0.1pp tier-1 line. Requires the full ruled **unfreeze -> reshape -> re-freeze** cycle
+     (batch-2 SALSAC), gate re-armed and asserted at each step — to move a metric the register records as
+     *"seeded 64% Yes — EXACT MATCH to CIPD 64%. Confirmed correct."*
+ (c) **Equality pair**: 108 violations. **Subset pair: 0.** The cross-tab is perfectly nested (33 inside
+     141, ZERO counter-flow); the "108 violations" figure exists only under an equality relation, which
+     asserts programme = strategy — the overturned conflation.
+ (d) THE FINDING: the constructs differ by design. Coaching/debt-advice provision (which the ladder
+     EXCLUDES — *"Debt advice and coaching are asked separately"* — and the sibling INCLUDES) runs
+     **88% (ladder-provision) -> 43% (the 108) -> 11% (sibling-No)**, monotone. **46 of the 108 are
+     definitionally correct**; the other 62 offer education/tools without a strategy, which is exactly
+     the population the 49-point gap describes.
+
+SHIPPED — two changes, neither of them a repair:
+ **DATA: `positive_from = 'Documented strategy'`** on REW263_WEL_FINWELL. Its own target_semantics read
+ *"positive pole = has documented strategy"*, but with positive_from unset the rung-1 cut counted "Ad hoc
+ provision" as positive too — **the M6/FAM_009 pattern, invisible only because that rung holds 3 orgs**.
+ Corrected: **achieved 0.1364 vs target 0.150 -> -1.36pp, PASS**. The figure moved because the
+ MEASUREMENT was wrong, not the seed. Held in ruled_orderings.json per the preservation ruling.
+ **CONFIG: the `subset_orgs` pair** (child_value_not 'No' -> parent 'Yes', parent_answered_only).
+ **0 violations today — it ships not to fix anything but to LOCK THE CORRECT RELATION against a future
+ inversion or re-conflation.**
+Each class regenerated separately so its gm carried exactly one field (positive_from; then
+coherence_pairs 32 -> 33); `--allow-drift` per operation, **guard default-refuse re-asserted (rc=0)**.
+
+ANCHOR QUEUE GAINS: **the "Ad hoc provision" rung holds 3 against an implied ~49% ad-hoc population**
+(64% offer a programme, 15% have a strategy). A source read of the CIPD Reward Survey Feb 2026 (n=1,059)
+is needed for whether it splits ad-hoc from none. **SEQUENCED AFTER the cut correction** — repopulating
+that rung before `positive_from` was set would have swung the gate from 15% to 64% against a 15% target.
+
+**DOCTRINE, on its second occurrence (the 404-probe was the first): A NULL RESULT IS ONLY EVIDENCE IF
+THE INSTRUMENT WAS WORKING.** M7's first definitional test returned 0% across all three groups INCLUDING
+BOTH CONTROLS — not a refutation but a broken predicate (`value == 'Yes'` against metrics whose options
+are 'Yes funded advice', 'Signposted (e.g. MaPS)', 'Workshops only'). **The controls reading 0% is what
+exposed it.** Recorded as doctrine: when a test returns nothing, prove the instrument discriminates
+before reading the result — carry controls that MUST differ.
+EVIDENCE DISCIPLINE, recorded: the definitional argument is **EXTERNAL** (question wording, two grade-A
+cells citing the same survey, a ruled 2026-07-16 relabelling) — unlike T8's SICK_005 reasoning, which
+was seed-internal. The coaching gradient is seed-internal and corroborates only.
+VERIFIED: SUITE **"PASS (11): qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit,
+qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_release" / "ALL GATES
+GREEN"** — the 11/11 baseline held. "settled checked 8 (max drift 0.005pp) | register marginals checked
+47 (max drift 4.09pp)"; the FINWELL pair adds no violation and no unknown-parent line (all 220 orgs
+answer both). Answers book 11f574a0735e1b61 UNCHANGED — **no seed data was written by this diff.**
