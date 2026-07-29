@@ -11057,3 +11057,85 @@ qa_hero "59 checks, 59 passed, 0 failed" · "FREEZE GATE: PASS" · signals "14 p
 qa_scores "== SCORE-LADDER GATE: 5 passed, 0 failed ==" with the PRACTICE SHIELD passing · all 12
 gate outputs zero failures. Domain-8 review annotated B1-B8; **B5/B6 markers deliberately unwritten**
 — their work is blocked and markers would misstate applied state.
+
+## GM Phase 1 — the structural fixes, a withdrawn defect class, and a deliberately red gate (ruled + applied 29 July 2026)
+THE GOVERNING RECORD (the reconciliation's own words, ruled into the record): *"reseed_engine reshapes
+the seed to these targets. The freeze gate therefore measures seed-to-target FIDELITY; it has never
+measured target-to-source TRUTH. A green gate says 'the reseed worked', not 'the anchor is right'."*
+WHAT THIS DOES AND DOES NOT INVALIDATE: no reshape is invalidated — **every target but EXT_REW_GAP_004
+is derivable from its own register cell; GAP_004's is derivable from a ruling (seedreal-1);
+PENSION_MATCH's only across two cells.** What IS corrected is the EVIDENTIARY WEIGHT every prior
+verification block placed on "FREEZE GATE: PASS". (The earlier "8 non-derivable / 32 derivable" pair
+was the `positive_from` split — 8 of 40 entries carry one, 32 do not — wearing a derivability label;
+recorded so the error cannot regenerate.)
+
+THE WITHDRAWN DEFECT CLASS. "Stale `ruled_orderings` scopes dragging N/A answers into the gate's base"
+was NEVER a defect. Both instances are STANDING RULINGS: **REM_PAY_001** (Diff 11, 18 Jul, commit
+1aabdde — *"live is_na=true on 'varies' coexists (engine reshapes by ordering membership only)"*; the
+0.64 target was extracted ON that n=94 in-scope base; DECISIONS:7532 records the landing 60/34/61/14
+and today's live state is byte-identical bar the 14 DK stripped by r3sw13) and **PROP_674db2fc**
+(r3sw13, 20 Jul — a ruled KEEP, *"substantive practice statements; not-measuring IS the finding"*).
+The "correction" would have changed a RULED DENOMINATOR, which is why it detonated to 60/60 = +36.00pp
+— "the fix reveals the failure" was exactly backwards. Claude's inference, never checked against
+DECISIONS, propagated through the reconciliation sheet, the ruling table and TWO ruling prompts before
+the artifact's own note caught it. THE DISCIPLINE, RULED: **a claimed defect must be checked against
+the ruling history before it is called a defect — the frozen-check-first rule, applied to orderings.**
+The count was also wrong: **34 orgs, not 95** (95 was the metric's total is_na headcount; the 61
+`Not applicable` were never in scope, and 95 could not sit inside a 94-org base).
+TRIAGE CORROBORATION (b): REM_PAY_001's degenerate ladder was ALREADY surfaced by the gate's own
+zero-opt review — *"2 option(s) at 0%: Base pay may be adjusted o…"*. **The instrument was sound; the
+ordering story was invented on top of it.** The one real survivor, unrelated to orderings: its other
+two substantive rungs hold ZERO orgs. Phase-2 seed question.
+
+SHIPPED — ① `target_range` (gate): `target_range: [lo, hi]`; membership first, then the 5pp margin
+measured OUTSIDE the range; `target_share` the fallback when absent. A range entry MUST keep its point
+anchor (reseed_engine.py:433 reads `target_share` unconditionally) — enforced by the validator. NO
+range values populated. BOTH WAYS, raw: inside [0.30,0.40] no failure · below-5pp [0.40,0.45] no
+failure · outside [0.50,0.60] "** MARGINAL-DRIFT REW_BEN_046 achieved 0.364 vs target range [0.500,
+0.600] (13.6pp; fail >5pp)" · malformed [0.40,0.20] "** TARGET-SCHEMA … 0 <= lo <= hi <= 1" ·
+range-without-point "** TARGET-SCHEMA … reseed_engine needs the point anchor". Positive control: old
+gate vs new gate on the same book = 11 diff lines, every one a new advisory or ③'s failure; tier-2
+"register marginals checked 47 (max drift 4.09pp)" IDENTICAL — no existing row's verdict moved.
+② SPLIT — crash guard `cut = o.index(pf) if pf in o else 1` + loud ORDS-PF-MISSING (aligning the gate
+with reseed_engine.py:442, which already asserts membership); canonical home ruled — the duplicate
+57-entry `ruled_orderings` block DROPPED from generated_marginals.json (proven unread: every reader
+takes the standalone file — reseed_engine:48, generate_marginals:58, qa_plausibility:52,
+migrate_r3sw7_virtualgp:19). **The is_na check ships ADVISORY, never enforcing**, printing both live
+instances with the explicit note that each is a standing ruling. BOTH ORDS CORRECTIONS WITHDRAWN;
+ruled_orderings.json UNCHANGED (sha 6c4e6302bc6611f6 before and after). QUEUED QUESTION, not a fix:
+should a ruled ordering carry an is_na option? — a re-opening of Diff 11 and r3sw13 if ever wanted.
+③ `_source` stamp — ENFORCING, option (c) ruled. **THE GATE IS DELIBERATELY RED AND STAYS RED until
+Phase 2 resolves the stamp. run_gates is 10/11 until then — 10 `run_gate` invocations plus
+qa_plausibility inline at :116-120, both feeding the same PASS/FAIL arrays. THIS IS EXPECTED, NOT A
+REGRESSION; no future session may "fix" it by masking.** Grounds: (a) regeneration is unavailable —
+generate_marginals.py's `- 7` default-holds assert fails today (live 32 vs expected 33) AND a regen
+would re-derive all 40 targets, a target-moving operation Phase 1 forbids; (b) hand-editing the stamp
+would claim a provenance the file does not have; (d) an exception field would outlive its reason.
+**A known-red gate carrying a named reason beats a green one carrying a lie.**
+④ The four frozen-shadowed entries (EAP, FINWELL, STRATEGY, PENSION_MATCH) MARKED INERT, NOT REMOVED
+— they are live reseed inputs (reseed_engine.py:426-433 has no FROZEN precedence), so `_shadowed_by`
+states both the deadness and the retention reason. `settled_refreeze` WIRED: it must EQUAL
+FROZEN ∩ marginals, so an unfreeze or a new frozen-metric target now fails the gate. Verified silent.
+
+GENERATOR-DURABILITY DEPENDENCY (a) — ②'s block-drop and ④'s `_shadowed_by` marks are **NOT durable
+across regeneration**: generate_marginals.py:265 re-emits the ORDS block and :245-247 rebuilds
+settled_refreeze without the marks. They are safe only while regeneration is broken. **The generator's
+ORDS-emission removal and `_shadowed_by` stamping RIDE the Part-3 `- 7` assert repair; THE TWO MUST NOT
+BE SEPARATED** — repairing the assert without them silently reverts this diff.
+VERIFIED: rehearsed on a throwaway (SQLite backup API); live run reproduces the rehearsal BYTE-FOR-BYTE;
+gm diff is exactly one top-level key removed and `_shadowed_by` added to exactly 4 entries with **every
+target_share unchanged** and ruled_distributions/maturity_gradients/multiselect_incidence/coherence_pairs/
+floors/context/settled_refreeze/_source/_generated all byte-equal; answers book 4e3add49657e6cd7
+UNCHANGED (zero answer writes). SUITE: "PASS (10): qa_hero, qa_focus, qa_signals_system, qa_strategy,
+qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_pulse, qa_release" / "FAIL (1):
+qa_plausibility (rc=1)" — the ruled red gate; "gate-safety-2: live DB untouched by the suite".
+THE SHEET CORRECTED IN PLACE (own commit): C1 the "8 non-derivable" with the positive_from-split origin,
+C2 95→34, C3 the withdrawn defect class itself; marked at both sites plus a CORRECTIONS section.
+PHASE 2 / QUEUE: the `- 7` assert repair (with the generator changes above) · M1 sick chain on its ruled
+sequence · M7 FINWELL measured before designed · FAM_009's target retired · the register cluster
+(PROP_930043cc self-contradiction, GAP_004 false provenance stamp, EQUALPAYAUDIT three-way 35-vs-32-vs-32,
+PENSION_MATCH borrowed leg) · prevalence-only flags · BEN_046 reopened (strict 0.2955 vs 0.3659 = -7.04pp
+against Domain-5's aligned +1.1) · the per-row point/range enumeration · reseed_engine range support ·
+REM_PAY_001's degenerate ladder · the `_source` stamp resolution. **Appendix B remains the NEXT
+reconciliation — its two dual-authority rows (REW_INC_103 2.55pp, REW_BEN_HOL_001 2.45pp) carry the
+gate's 2nd and 3rd largest drifts and have never been examined.**
