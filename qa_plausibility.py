@@ -52,6 +52,43 @@ MS_INC = _GEN.get("multiselect_incidence") or {}  # r3sw8: per-option incidence 
 ORDS = json.load(open(os.path.join(_ROOT, "ruled_orderings.json")))["orderings"]
 # register-anchored = the 14 REW26_* firewall family (id starts 'REW26_', NOT REW262_/REW263_)
 
+# ---- tier-2 TARGET SCHEMA (David 2026-07-29, GM Phase 1 ①) ------------------------
+# A marginal declares EITHER a point `target_share` or a ruled `target_range: [lo, hi]`.
+# Where a range is declared it IS the test: the gate checks MEMBERSHIP first, and measures
+# the 5pp fail line from the nearest bound — i.e. the margin lives OUTSIDE the range, never
+# inside it. `target_share` is the fallback when no range is declared.
+# Why a range entry must ALSO keep `target_share`: reseed_engine.py:433 reads it
+# unconditionally as the reshape anchor, so a range-only entry would break the re-seed.
+# Extending the engine to reshape toward a range is a named Phase-2 follow-up; until then
+# the point stays as the reshape target and the range governs the gate.
+SCHEMA_ERRORS = []
+for _q, _e in MARG.items():
+    _r = _e.get("target_range")
+    if _r is None:
+        if _e.get("target_share") is None:
+            SCHEMA_ERRORS.append((_q, "declares neither target_share nor target_range"))
+        continue
+    if not (isinstance(_r, (list, tuple)) and len(_r) == 2):
+        SCHEMA_ERRORS.append((_q, "target_range must be [lo, hi]; got %r" % (_r,))); continue
+    try:
+        _lo, _hi = float(_r[0]), float(_r[1])
+    except (TypeError, ValueError):
+        SCHEMA_ERRORS.append((_q, "target_range bounds must be numeric; got %r" % (_r,))); continue
+    if not (0.0 <= _lo <= _hi <= 1.0):
+        SCHEMA_ERRORS.append((_q, "target_range must satisfy 0 <= lo <= hi <= 1; got [%s, %s]" % (_lo, _hi)))
+    if _e.get("target_share") is None:
+        SCHEMA_ERRORS.append((_q, "target_range without target_share — reseed_engine needs the point anchor"))
+
+# ---- gm PROVENANCE + SHADOW DECLARATION (GM Phase 1 ③ + ④) ------------------------
+# ③ a target set is only as current as the register it was generated from.
+# ④ settled_refreeze stops being decoration: it must EQUAL the set of gm targets the
+#    FROZEN branch shadows, so an unfreeze or a new frozen-metric target is caught here.
+from register_resolve import resolve_canonical_register
+CANON_REG = os.path.basename(resolve_canonical_register())
+GM_SOURCE = _GEN.get("_source") or ""
+SHADOWED = set(FROZEN) & set(MARG)
+DECLARED_SHADOW = set(_GEN.get("settled_refreeze") or {})
+
 c = sqlite3.connect(DB); c.row_factory = sqlite3.Row
 prof = {}
 for p in ("org_profiles.json", "org_profiles_inferred.json"):
@@ -165,32 +202,44 @@ def check_b():
     return sum(1 for r in unanchored if r[0] < 0)
 
 # ====================================================== CHECK C — marginals ==
+def target_of(entry):
+    """Tier-2 target descriptor -> (point, rng). rng is (lo, hi) when a range is ruled."""
+    r = entry.get("target_range")
+    rng = (float(r[0]), float(r[1])) if r is not None else None
+    pt = entry.get("target_share")
+    return (None if pt is None else float(pt)), rng
+
+
 def achieved_share(qid, q, vals):
     """Achieved positive share for a register marginal, mirroring reseed_engine's
     marginal branch exactly: scope = values in the ordering (NA/DK untouched);
     lean side = rungs below positive_from (absent -> first rung only, the legacy
     default); worst_option multi-selects: lean = that exact combo, scope = non-empty."""
     entry = MARG[qid]
-    tgt = float(entry["target_share"])
+    tgt, rng = target_of(entry)
     o = (ORDS.get(qid) or {}).get("option_order")
     wo = (ORDS.get(qid) or {}).get("worst_option")
     if not o and not wo:
         o = option_order(opt_labels(q), q["text"])
     if o:
         pf = entry.get("positive_from")
-        cut = o.index(pf) if pf else 1
+        # CRASH GUARD (David 2026-07-29, GM Phase 1 ②): membership-checked. A positive_from
+        # absent from the ordering used to raise ValueError here — an ORDS edit could turn a
+        # gate FAILURE into a crash. It now falls back to the legacy first-rung cut and is
+        # reported loudly as ORDS-PF-MISSING (reseed_engine.py:442 already asserts membership).
+        cut = o.index(pf) if pf in o else 1
         lean = set(o[:cut]); scope = set(o)
         inscope = [v for v in vals if v in scope]
         if len(inscope) < 5:               # engine skips reshape below 5 in-scope
-            return None, tgt
-        return sum(1 for v in inscope if v not in lean) / len(inscope), tgt
+            return None, tgt, rng
+        return sum(1 for v in inscope if v not in lean) / len(inscope), tgt, rng
     if wo:
         inscope = [v for v in vals if v]
         if len(inscope) < 5:
-            return None, tgt
+            return None, tgt, rng
         lean_lab = str(wo).strip().lower()
-        return sum(1 for v in inscope if v.strip().lower() != lean_lab) / len(inscope), tgt
-    return None, tgt
+        return sum(1 for v in inscope if v.strip().lower() != lean_lab) / len(inscope), tgt, rng
+    return None, tgt, rng
 
 def check_c():
     flags = []
@@ -306,13 +355,19 @@ def check_c():
                     hard.append((1.0, "MS-TERMINAL-COOCCUR", qid,
                                  "%d org(s) hold '%s' alongside a substantive option" % (cooccur, term)))
         elif qid in MARG:
-            ach, tgt = achieved_share(qid, q, vals)
+            ach, tgt, rng = achieved_share(qid, q, vals)
             if ach is not None:
-                d = abs(ach - tgt); t2_max = max(t2_max, d); t2_n += 1
+                if rng:                     # ① ruled RANGE: membership, then margin OUTSIDE it
+                    lo, hi = rng
+                    d = 0.0 if lo <= ach <= hi else (lo - ach if ach < lo else ach - hi)
+                    what = "achieved %.3f vs target range [%.3f, %.3f]" % (ach, lo, hi)
+                else:                       # point target (the fallback)
+                    d = abs(ach - tgt)
+                    what = "achieved %.3f vs target %.3f" % (ach, tgt)
+                t2_max = max(t2_max, d); t2_n += 1
                 if d > MARGINAL_FAIL:
                     hard.append((d, "MARGINAL-DRIFT", qid,
-                                 "achieved %.3f vs target %.3f (%.1fpp; fail >%.0fpp)"
-                                 % (ach, tgt, d * 100, MARGINAL_FAIL * 100)))
+                                 "%s (%.1fpp; fail >%.0fpp)" % (what, d * 100, MARGINAL_FAIL * 100)))
     # order: dominant first, then others, by severity (soft triage only)
     sev = {"dominant": 1, "zero-opt": 2, "uniform": 3}
     flags.sort(key=lambda f: (sev.get(f[1], 9), -f[0]))
@@ -385,6 +440,63 @@ def check_c():
             if nq < 20:
                 hard.append((1.0, "MS-BASE-MISSING", qid,
                              "declared-incidence metric active with n=%d (<20) — conditioned base lost" % nq))
+    # ---- ① target-range schema violations (structural; a malformed target must be loud) ----
+    for _q, _why in SCHEMA_ERRORS:
+        hard.append((1.0, "TARGET-SCHEMA", _q, _why))
+
+    # ---- ② ORDS HYGIENE — ADVISORY, NOT ENFORCING (see the Phase-1 blocker) -----------
+    # The ordering IS the gate's base (scope = set(option_order)), so an is_na label inside it
+    # puts N/A-flagged answers in the measured denominator. That is worth SURFACING, but it is
+    # NOT automatically a defect: both live instances are standing David rulings —
+    #   REW_BEN_REM_PAY_001  Diff 11, 18 Jul 2026 — "'Treatment varies by role or case' is
+    #     ORDINAL SECOND-LEANEST ... live is_na=true on 'varies' coexists (engine reshapes by
+    #     ordering membership only)"; the 0.64 target was extracted ON that n=94 base.
+    #   PROP_674db2fc        r3sw13, 20 Jul 2026 — 'Provided but access not tracked' is a ruled
+    #     KEEP, "substantive practice statements; not-measuring IS the finding".
+    # An enforcing check here would criminalise both with no exception mechanism. Advisory until
+    # David rules the merits.
+    na_by_q = {}
+    for _r in c.execute("SELECT id, options_json FROM questions"):
+        try:
+            _o = json.loads(_r["options_json"] or "[]")
+        except (TypeError, ValueError):
+            _o = []
+        na_by_q[_r["id"]] = {x.get("label") for x in _o if x.get("is_na")}
+    ords_na = []
+    for _qid, _e in sorted(ORDS.items()):
+        _bad = [l for l in (_e.get("option_order") or []) if l in na_by_q.get(_qid, set())]
+        if _bad:
+            _n = c.execute("SELECT COUNT(*) FROM answers WHERE question_id=? AND snapshot_id=? "
+                           "AND matrix_row_id='' AND value IN (%s)" % ",".join("?" * len(_bad)),
+                           [_qid, SNAP] + _bad).fetchone()[0]
+            ords_na.append((_qid, _bad, _n))
+    # ---- ② crash guard, reported: positive_from must exist in the ordering the gate uses ----
+    for _qid, _e in sorted(MARG.items()):
+        _pf = _e.get("positive_from")
+        if not _pf or _qid not in Q:
+            continue
+        _o = (ORDS.get(_qid) or {}).get("option_order") or option_order(opt_labels(Q[_qid]), Q[_qid]["text"])
+        if _o and _pf not in _o:
+            hard.append((1.0, "ORDS-PF-MISSING", _qid,
+                         "positive_from %r absent from the ordering — cut fell back to rung 1" % _pf))
+
+    # ---- ③ gm PROVENANCE: the stamp must name the resolver's canonical register --------
+    if CANON_REG not in GM_SOURCE:
+        hard.append((1.0, "GM-SOURCE-STALE", "generated_marginals.json",
+                     "_source names %r but the canonical register is %s — a target set is only as "
+                     "current as the register it was generated from" % (GM_SOURCE[:64], CANON_REG)))
+
+    # ---- ④ SHADOW DECLARATION: settled_refreeze must equal FROZEN ∩ marginals ----------
+    if DECLARED_SHADOW != SHADOWED:
+        hard.append((1.0, "SHADOW-DECLARATION", "generated_marginals.json",
+                     "settled_refreeze %s != FROZEN ∩ marginals %s"
+                     % (sorted(DECLARED_SHADOW), sorted(SHADOWED))))
+
+    if ords_na:
+        print("\n  ORDS N/A-IN-SCOPE (advisory — both live instances are standing rulings, not staleness):")
+        for _qid, _bad, _n in ords_na:
+            print("     %-28s %s -> %d answer(s) inside the gate's base" % (_qid, _bad, _n))
+
     print("\n  FREEZE GATE: settled checked %d (max drift %.3fpp) | register marginals checked %d (max drift %.2fpp)"
           % (len([q for q in FROZEN if q in Q]), t1_max * 100, t2_n, t2_max * 100))
     for score, kind, qid, detail in sorted(hard, key=lambda h: -h[0]):
