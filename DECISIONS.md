@@ -11508,3 +11508,76 @@ source read (CIPD ref 8551, p39 vs Fig22) · VIRTUALGP's 54% leg (CIPD H&W 2025,
 tranche-2 re-anchor to retire both weak figures · the `Other` canon-map backlog · Phase-2's seed queue
 (M1 sick chain, M7 FINWELL measured-before-designed, FAM_009's target retirement, BEN_046 reopened,
 REM_PAY_001's degenerate ladder, the per-row point/range enumeration, reseed_engine range support).
+
+## Phase 2 · M1 — the sick-pay chain: base repaired, target held (ruled + applied 30 July 2026)
+THE RULED SEQUENCE IS OPERATIONALLY **FOUR** STEPS, not three: **draw -> base declaration ->
+RE-AGGREGATE -> target re-derivation.** The rehearsal found the missing one: qa_engine_audit failed
+with 2 hard failures — `FAIL [L2] REW_BEN_SICK_004 option 'Yes - up to 3 days': ref 76 (37.3%) vs prod
+(62, 30.4)` and `FAIL [DET] re-aggregating identical data changed output` — both one cause: the answers
+moved but the STORED benchmark payloads did not. A re-aggregation cleared both (0 failures).
+**RECORDED AS DOCTRINE — THIRD OCCURRENCE:** Diff 14 skipped it and relied on the nightly; Diff 15
+recorded the reversal as "operationally three steps ... because score routing reads into the STORED
+payload"; M1 is the third. **ANY SEED CHANGE RE-AGGREGATES IN THE SAME CLOSE.** It is deterministic and
+derived (payloads recomputed from the unchanged answers book), not a source-data change.
+
+STEP 1 — THE CONSERVATIVE DRAW (seed-data). 88 of the 177 open flags (r3sw25, DECISIONS 8885):
+**B 48 no-OSP orgs stating a waiting rule -> 'Not applicable (statutory only)'** (leave scope);
+**D 40 OSP-holders stating 'Not applicable' -> 'Yes - up to 3 days'** (enter scope).
+RULED: a repaired 'not applicable' OSP-holder receives a WAITING PERIOD, never day-one — an org
+answering "not applicable" is not claiming day-one eligibility, and the distribution-preserving
+alternative would manufacture generous answers to protect a target the incoherence was propping up.
+**Gate agreement is corroboration, never the reason.**
+THE DESTINATION IS BOOK-DERIVED (batch-6 native-texture doctrine): among the 66 VERIFIED OSP-holders
+the mix is 30 'up to 3 days' / **0** 'more than 3 days' / 36 day-one — genuine OSP-holders in this book
+never state a >3-day wait, and all 23 orgs on that rung are no-OSP (22) or unknown (1), i.e. they ARE
+the incoherence. So all 40 go to 'up to 3 days'. **NAMED ANCHOR-QUEUE FINDING (ruled, not a data fix):
+that leaves '>3 days' at exactly ONE org.** A prediction of mine was WRONG and is corrected in the
+script: the gate's zero-opt triage does NOT fire (its threshold is 0, not 1) — the finding stands on
+its merits, not on a gate flag. **If >3-day waiting periods are real in the UK market the REGISTER
+should say so and the seed should follow — a source read, not a draw.**
+NOT REPAIRED: categories A (48) and C (41) are SICK_002 flags. **T8 STAYS HELD**; SICK_002's coherence
+pair ships with its own repair, never this one — adding it today would have failed on 48 violations.
+SICK_001 untouched (asserted post-write); T7's any-OSP fork re-derives after, never during.
+
+THE FIXTURE RULING (David 2026-07-30), per the **Diff-19b precedent**: **REPAIR Thornbridge Retail.**
+Fixture-exclusion protects the demo from STATISTICAL REDRAWS, not from RULED COHERENCE CORRECTIONS; a
+demo org displaying a logical impossibility is worse for the demo than a logged correction. The
+rehearsal proved the alternative untenable: byte-held, `5e67fa8c` (no sick pay + a >3-day OSP waiting
+period) violates the new pair and the gate FAILS — `** PAIR-INCOHERENCE REW_BEN_SICK_004  1 orgs
+violate subset_orgs`, rc=1. Its row, before -> after: SICK_001 'No sick pay provided' (unchanged);
+SICK_004 **'Yes - more than 3 days' -> 'Not applicable (statutory only)'**.
+
+STEP 2 — THE BASE DECLARATION (config). `applicable_bases` gains REW_BEN_SICK_004 as **conditioned**
+on REW_BEN_SICK_001 in {Enhanced, Combination}, copying the REW_BEN_SICK_005 precedent exactly. The
+register cell has ALWAYS declared `base: orgs with OSP` and structured_bases stated it imperatively
+("generator must condition on the OSP parent") — no declaration existed, so the engine counted the
+full base. ASSERTED: this moves the ENGINE'S RENDERING DENOMINATOR (204 answerers -> **106**
+OSP-holders) and NOT the gate's base — `qa_plausibility` never reads applicable_bases; its base is the
+ORDS scope, which moved only because the REPAIR moved answers in and out of it. The 8 unknowns sit
+INSIDE the gate base (114) and OUTSIDE the conditioned render (106): an org that has not said whether
+it has OSP cannot be placed on an OSP-conditioned distribution.
+THE ADMIT FORK, ruled: the 8 orgs with no SICK_001 answer are ADMITTED (achieved 0.3246, +2.46pp —
+which is the "+2.5pp" the GM reconciliation ruled; excluding them gives +3.96pp AND creates 7 new
+SICK_002 flags, since 7 of the 8 state an enhanced-pay duration).
+**THE parent_answered_only SELECTOR (gate class, own commit) — GROUNDS: a subset_orgs pair otherwise
+conflates UNKNOWN with CONTRADICTS. COHERENCE GUARDS MUST NOT FAIL ON ABSENCE.** A missing parent
+answer is a SEED-COMPLETENESS question, reported not failed: `PAIR-UNKNOWN-PARENT REW_BEN_SICK_004
+8 org(s) answer the child with no REW_BEN_SICK_001 answer (scoped out ..., not a violation)`.
+The pair reaches the gate only via gm (`coherence_pairs` is read from the generated file), so a
+regeneration was ruled: drift **exactly one field, coherence_pairs 30 -> 31**; `--allow-drift` a single
+named exception; **guard default-refuse re-asserted after (rc=0, nothing left to drift)**.
+
+STEP 3 — THE TARGET DID NOT MOVE, and that IS the finding. The register cell (v2026-07-30, grade A,
+CIPD H&W 2025 Fig23) reads `real_anchor: "OSP waiting period: ~30% eligible from day one"`, `base:
+orgs with OSP`. **THE ANCHOR WAS RIGHT; THE BASE WAS WRONG.** So nothing was re-derived: target stays
+**0.30** and the base moved to meet it. Post-repair **37/114 = 0.3246, +2.46pp** — honest — against a
+pre-repair +0.3pp propped up by 56 of 122 orgs that were not verified OSP-holders. No number entered a
+cell or a target to make a gate pass.
+T7/T8/T9 FOR THE NEXT TRANSMISSION: T7 SICK_001 untouched, achieved 0.5694 vs 0.5680 (+0.14pp),
+any-OSP 119/209 = 56.9%; T8 SICK_002 unchanged, 41 of 112 OSP-holders still state 'None (statutory
+only)' and 48 no-OSP still state a duration; T9 SICK_004 as above.
+VERIFIED: book 4e3add49657e6cd7 -> **9a2e72bfbb5fed4d** (88 answer writes, all on SICK_004; SICK_001
+and SICK_002 asserted byte-identical; answer COUNT unchanged — this diff re-values, never adds or
+drops). SUITE: "PASS (11): ... ALL GATES GREEN". Practice shield "SCORE-LADDER GATE: 5 passed,
+0 failed". Freeze gate "settled checked 8 (max drift 0.005pp) | register marginals checked 47 (max
+drift 4.09pp)" / PASS. Backups: lumi.db.bak_pre_m1_20260729_183328 + *.bak_pre_m1_20260729_183328.

@@ -945,6 +945,18 @@
    "parent_value": "Yes",
    "relation": "subset_orgs",
    "note": "INC_132-substantive ⊆ INC_131=Yes (r3sw31): LTI-types answerable only by ruled LTI-operators (65, r3sw2 exec-LTI eligibility, 131<->133 pair-locked); a future reseed that re-over-answers INC_132 fails"
+  },
+  {
+   "child": "REW_BEN_SICK_004",
+   "child_value_not": "Not applicable (statutory only)",
+   "parent": "REW_BEN_SICK_001",
+   "parent_value_in": [
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
+   "relation": "subset_orgs",
+   "parent_answered_only": true,
+   "note": "M1 (David 2026-07-30): an org stating a waiting rule must hold OSP. parent_answered_only is RULED — a subset_orgs pair otherwise conflates UNKNOWN with CONTRADICTS, and would fail on the 8 orgs that have no SICK_001 answer at all. Coherence guards must not fail on absence."
   }
  ],
  "REW26_BEN_PENSION_TYPE": {

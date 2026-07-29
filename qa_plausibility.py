@@ -422,8 +422,24 @@ def check_c():
         else:
             parent_yes = {o for (o,) in c.execute(
                 "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND value=?", (pair["parent"], pair["parent_value"]))}
+        # PARENT_ANSWERED_ONLY (David 2026-07-30, M1): a subset_orgs pair otherwise conflates UNKNOWN
+        # with CONTRADICTS — an org with NO parent answer is not in parent_yes and so reads as a
+        # violation. Coherence guards must not fail on absence. When set, the assertion is scoped to
+        # orgs that actually answered the parent; a missing parent answer is a SEED-COMPLETENESS
+        # question, not an incoherence, and is counted and reported rather than failed.
+        unknown_parent = set()
+        if pair.get("parent_answered_only"):
+            answered = {o for (o,) in c.execute(
+                "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND COALESCE(value,'')!=''",
+                (pair["parent"],))}
+            unknown_parent = child_yes - answered
+            child_yes = child_yes & answered
         rel = pair.get("relation", "equal")
         ok = child_yes <= parent_yes if rel in ("subset", "subset_orgs") else child_yes == parent_yes
+        if unknown_parent:
+            print("  PAIR-UNKNOWN-PARENT %-26s %d org(s) answer the child with no %s answer "
+                  "(scoped out by parent_answered_only, not a violation)"
+                  % (pair["child"], len(unknown_parent), pair["parent"]))
         if not ok:
             d = len(child_yes - parent_yes) if rel in ("subset", "subset_orgs") else len(child_yes ^ parent_yes)
             hard.append((1.0, "PAIR-INCOHERENCE", pair["child"],

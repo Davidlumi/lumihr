@@ -525,6 +525,18 @@
     "Not applicable"
    ],
    "_r3sw33": "render fix only: N/A off graph + out of denominator; NOT a conditioning — 30 GAP_004 contradictions (18 parent-error, 12 child-impossible) + union base deferred to GAP_004 seed-realism"
+  },
+  "REW_BEN_SICK_004": {
+   "mode": "conditioned",
+   "base_label": "organisations with occupational sick pay",
+   "parent": {
+    "qid": "REW_BEN_SICK_001",
+    "value_in": [
+     "Enhanced occupational sick pay (above SSP)",
+     "Combination of enhanced sick pay and SSP"
+    ]
+   },
+   "_m1": "M1 (David 2026-07-30): the register cell has always declared base='orgs with OSP' and structured_bases stated it imperatively ('generator must condition on the OSP parent'), but no declaration existed, so the engine counted the full base. Copies the REW_BEN_SICK_005 precedent. Renders over OSP-holders only; the 8 orgs with NO SICK_001 answer fall outside the conditioned base — an org that has not said whether it has OSP cannot be placed on an OSP-conditioned distribution."
   }
  }
 }
