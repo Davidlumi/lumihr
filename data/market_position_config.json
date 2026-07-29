@@ -825,11 +825,12 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW263_TIME_DAYONELEAVE": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "_tof3_ruled": "PRACTICE / verdict-suppressed per the Domain-8 ruling (David 2026-07-29): compliance with a day-one statutory right (gov.uk paternity-leave eligibility, verified 2026-07-29) is not a market position; 86 'below-market' verdicts suppressed. Its answer vector is byte-identical to SICKDAYONE's (seed-cloning artifact, ACCEPTED AND RECORDED, not fixed)."
     },
     "REW263_TIME_FERTLEAVE": {
       "class": "Level",
@@ -1900,11 +1901,12 @@
       "family_metric": true
     },
     "REW262_TIME_SICKDAYONE": {
-      "class": "Provision",
+      "class": "Practice",
       "type": "binary",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "_tof3_ruled": "PRACTICE per the Domain-8 duplicate-construct ruling (David 2026-07-29): REW_BEN_SICK_004 owns day-one OSP. Class change only — the frozen distribution is untouched and no unfreeze cycle occurs."
     },
     "REW_BEN_041": {
       "class": "Level",
@@ -1952,12 +1954,13 @@
       "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) — reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction"
     },
     "REW_BEN_FAM_007": {
-      "class": "Level",
+      "class": "Practice",
       "type": "ordinal",
-      "direction": "higher_is_better",
+      "direction": null,
       "lens": "attract",
       "weight": 1,
-      "family_metric": true
+      "family_metric": true,
+      "_tof3_ruled": "PRACTICE per the Domain-8 duplicate-construct ruling (David 2026-07-29): REW263_TIME_CARERPAID owns the paid-carer's-leave construct; this row's 6.4% is the outlier against every published figure. The 77 answer-level contradictions are NOT repaired by this routing — queued to the seed work."
     },
     "REW_BEN_FAM_008": {
       "class": "Level",
