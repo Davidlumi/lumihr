@@ -10941,3 +10941,31 @@ THE INCIDENT, the escalated recurrence of the approval-vs-presented-document fai
   reconstruct, summarise, or rule on a review it has not visibly quoted; Claude Code's first act
   on any ruling transmission remains the id-and-figure echo against the live book, and any
   mismatch voids the transmission in full."
+
+## AFF/G&T unresolved-six — the held classification diff, RULED AND APPLIED (29 July 2026, commit cdfeb02)
+THE RULING (David 2026-07-29, "confirm your version"; re-issued formally because the original was
+made in the ruling conversation and never transmitted — **Claude Code's treating it as unruled was
+correct and is endorsed**): "Domain-7 classification: APPLY AS REHEARSED, both halves, with the
+corrected consequences on the record."
+- **The 3 MARKET pins are AUTHORITY-ONLY**: PAYINADVERTS / EQUALPAYAUDIT / FLEXALLOW take authored
+  score maps + direction +1 + is_scored=1, and **0 of 220 org-verdicts change on any of them** —
+  they already rendered verdicts via the practice-position path. This CORRECTS Claude Code's
+  earlier proposal-text belief that they "BEGIN rendering market verdicts"; the correction was
+  found by the rehearsal, disclosed at the STOP, and is recorded here.
+- **The 3 PRACTICE re-routes move 660 org-verdicts out of the market pool**: UKPAYTRANS
+  (117 above/103 below), EU_PTD_PREP (147/73), BENOBJ (169 at/51 below) -> none. Fixture donuts
+  Retail 155/93/24 -> 153/93/23; Advisory 17/75/177 -> 17/74/175, absent unchanged. Ruled framing:
+  "the Tier-2 doctrine collecting its due, not a side-effect: three contested constructs stop
+  ranking members."
+- **GUARD-3 FRAMING CORRECTION, recorded against HEADLINES_governance_review_2026-07-28.md**:
+  "prevalence-routed metrics DO render member-visible verdicts via the practice-position path;
+  'no verdict renders' was inaccurate." (The same correction governs the Domain-8 review's guard 4.)
+VERIFIED (fresh rehearsal, not the aged artifacts — per the ruling's own instruction): suite
+"ALL GATES GREEN"; qa_hero "59 checks, 59 passed, 0 failed"; freeze gate PASS; engine audit
+"hard failures: 0 | warnings: 0"; qa_scores "== SCORE-LADDER GATE: 5 passed, 0 failed ==" with
+THE RETIREMENT HOLDS + PRACTICE SHIELD both passing (the three re-routed rows are shield-compliant:
+db polarity and cfg polarity neutralised). LIVE: checkpoint (0,0,0) + backups
+lumi.db.bak_pre_gtclass6_20260729_084955 + market_position_config.json.bak_pre_gtclass6_...;
+double-guarded apply -> re-aggregate -> POST-WRITE EXACT vs the fresh rehearsal (0 question-row
+diffs, 0 payload diffs, mp config byte-equal); answers book 4e3add49657e6cd7 UNCHANGED
+(config-only diff); live consequence re-measured: pins 0 verdict changes, total 660.
