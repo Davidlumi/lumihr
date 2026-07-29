@@ -521,6 +521,18 @@
    "relation": "subset_orgs",
    "parent_answered_only": true,
    "note": "M1 (David 2026-07-30): an org stating a waiting rule must hold OSP. parent_answered_only is RULED — a subset_orgs pair otherwise conflates UNKNOWN with CONTRADICTS, and would fail on the 8 orgs that have no SICK_001 answer at all. Coherence guards must not fail on absence."
+  },
+  {
+   "child": "REW_BEN_SICK_002",
+   "child_value_not": "None (statutory only)",
+   "parent": "REW_BEN_SICK_001",
+   "parent_value_in": [
+    "Enhanced occupational sick pay (above SSP)",
+    "Combination of enhanced sick pay and SSP"
+   ],
+   "relation": "subset_orgs",
+   "parent_answered_only": true,
+   "note": "T8 (David 2026-07-30): an org stating an enhanced-pay DURATION must hold OSP. Ships WITH its repair, per the M1 ruling — added before the repair it would have failed on 48 violations. parent_answered_only per the M1 grounds: coherence guards must not fail on absence."
   }
  ],
  "_discipline": "structured fields only; verbatim-validated; marginal only where earned; SALSAC/MENOPLAN/PLSA_QM guards asserted",
