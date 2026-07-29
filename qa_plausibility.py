@@ -368,6 +368,15 @@ def check_c():
                 if d > MARGINAL_FAIL:
                     hard.append((d, "MARGINAL-DRIFT", qid,
                                  "%s (%.1fpp; fail >%.0fpp)" % (what, d * 100, MARGINAL_FAIL * 100)))
+    # RULED FINDINGS (David 2026-07-30, the REM_PAY_001 close): a triage flag that has been MEASURED
+    # and RULED a world fact gets a permanent annotation so it stops reading as an open defect. The
+    # annotation changes NO behaviour — the flag is still computed, still counted, still printed;
+    # only its printed line carries the ruling. Additions here are David-ruled only.
+    RULED_FINDINGS = {
+        "REW_BEN_REM_PAY_001": "RULED world-fact degeneracy 2026-07-30 — the anchor's own 4% rarity, "
+                               "under-rounded to 0; not a defect to fix (REMPAY001_MEASUREMENT; no "
+                               "texture draw before a ladder-direction ruling)",
+    }
     # order: dominant first, then others, by severity (soft triage only)
     sev = {"dominant": 1, "zero-opt": 2, "uniform": 3}
     flags.sort(key=lambda f: (sev.get(f[1], 9), -f[0]))
@@ -378,7 +387,9 @@ def check_c():
     print("=" * 92)
     print("  %-9s %-9s %-26s %s" % ("trigger", "tag", "metric", "detail"))
     for score, kind, qid, tag, detail in flags[:15]:
-        print("  %-9s %-9s %-26s %s" % (kind, tag, short(Q[qid]["text"], 26), detail))
+        note = RULED_FINDINGS.get(qid)
+        print("  %-9s %-9s %-26s %s%s" % (kind, tag, short(Q[qid]["text"], 26), detail,
+                                          ("  [%s]" % note) if note else ""))
     # r3sw2: declared coherence pairs — child positive set must EQUAL the parent-derived set
     # r3sw8 selectors: child_any_answer (child set = orgs with ANY non-empty answer — conditioned
     # metrics) and parent_contains (parent set = orgs whose multi-select ticks the named option).
