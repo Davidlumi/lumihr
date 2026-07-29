@@ -1,6 +1,6 @@
 {
  "_generated": "2026-07-16",
- "_source": "lumi_anchor_register_CLAUDECODE.csv (clean, Diff 1) + generator_rules.json + structured_bases.json",
+ "_source": "lumi_anchor_register_v2026-07-30.csv + generator_rules.json + structured_bases.json",
  "ruled_distributions": {
   "REW_PAY_005": {
    "distribution": {
@@ -612,7 +612,7 @@
    "target_share": 0.7,
    "base_type": "all_only",
    "all": 70,
-   "grade": "A",
+   "grade": "B",
    "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
    "evidence": "\"70% of UK employers offer paid study leave\" | \"92% offer training/career-development, 75% pay professional subscriptions, 75% conference attendance\""
   },
@@ -620,7 +620,7 @@
    "target_share": 0.3,
    "base_type": "all_only",
    "all": 30,
-   "grade": "A",
+   "grade": "B",
    "source": "CIPD \"Reward Management Survey 2022: Focus on employee benefits\" (April 2022, re",
    "evidence": "30% of UK employers offer paid time off for voluntary/community work"
   },
@@ -744,9 +744,9 @@
    "target_share": 0.56,
    "base_type": "all_only",
    "all": 56,
-   "grade": "2",
-   "source": "grade-2 register 'Yes 56%' (seedreal-1 ruling, David 2026-07-24); supersedes grade-B legacy 76%",
-   "evidence": "56% operate a long-service award scheme (grade-2 anchor); sector shape is JUDGEMENT"
+   "grade": "B",
+   "source": "lumi legacy platform (HR Data Hub intake), 2019-20 — the SAME source yields both",
+   "evidence": "the grade-B legacy source yields BOTH 56% and 76% operate one; 56% is OPERATIVE BY RULING (seedreal-1, David 2026-07-24; scope extended 2026-07-30 to record it in the register cell). Neither figure is"
   },
   "REW263_REC_IMPACT": {
    "target_share": 0.436,
@@ -787,7 +787,7 @@
    "all": 28,
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
-   "evidence": "28% ran ethnicity PGA (40% large/13% SME); the cell's '18% carry out' = the shared-findings figure — transcription slip corrected per Domain-7 ruling 4 (2026-07-28); register-corroborated by two independent cells"
+   "evidence": "28% ran an ethnicity pay gap analysis in the year to Oct 2023 (40% of large 250+; 13% of SMEs). The prior 18% was the SHARED-FINDINGS figure mis-read as the ran-rate — transcription slip corrected per"
   },
   "REW262_GOV_EQUALPAYAUDIT": {
    "target_share": 0.35,
@@ -948,9 +948,6 @@
   },
   "REW26_BEN_PENSION_COST_SHARE": {
    "why": "anchored-unstructured (25-row follow-on table)"
-  },
-  "REW26_BEN_PENSION_TYPE": {
-   "why": "unanchored"
   },
   "REW26_BEN_PLSA_QM": {
    "why": "context: upper-bound proxy (<=0.29) — bound cannot set a target_share unless David rules to seed at the bound"
@@ -1473,6 +1470,24 @@
   },
   "REW265_BEN_PMICOMP": {
    "why": "unanchored"
+  },
+  "REW264_HLT_CASHPLAN": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW264_HLT_OPTICAL": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW264_WEL_EWA": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW264_WEL_SEASONTICKET": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW265_TIME_FLEXPATTERN": {
+   "why": "anchored-unstructured (25-row follow-on table)"
+  },
+  "REW264_PAY_HOLPAYMETHOD": {
+   "why": "anchored-unstructured (25-row follow-on table)"
   }
  },
  "pending_ruling": {},
