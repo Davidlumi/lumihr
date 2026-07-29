@@ -231,7 +231,9 @@
     "Partial",
     "Yes"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Yes",
+   "ruled_strict": "STRICT construct per Domain-7 ruling 6a (David 2026-07-28): positive_from='Yes' — 'always' <-> Yes on the never-end-divergence evidence; the inclusive composite (Yes+Partial) is no longer the headline. Held HERE, not only in generated_marginals.json, so regeneration reproduces it (generate_marginals.py:214-216 reads positive_from from this file)."
   },
   "REW_FAI_089": {
    "option_order": [

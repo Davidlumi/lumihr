@@ -144,7 +144,8 @@
   "REW_FAI_088": {
    "subclass": "SINGLE_BASE",
    "rule": "no-blend all-UK 0.40 always / 0.32 never (internal pay-range access; remainder ~0.28 partial), conditional on source re-check of PPT Fig18 provenance (possible external-advert figure re-use)",
-   "reasoning": "Structurally the cleanest single-base row: employer prevalence (~40% always publish pay ranges internally / 32% never), register base 'all-UK' (CIPD PPT 2024, n=832, grade A), no SME/large split, subj"
+   "reasoning": "Structurally the cleanest single-base row: employer prevalence (~40% always publish pay ranges internally / 32% never), register base 'all-UK' (CIPD PPT 2024, n=832, grade A), no SME/large split, subj",
+   "ruled_note": "STRICT construct per Domain-7 ruling 6a (2026-07-28): positive_from='Yes' — 'always'<->Yes on the never-end-divergence evidence; the inclusive composite is no longer the headline"
   },
   "REW263_GOV_FLEXALLOW": {
    "subclass": "SINGLE_BASE",

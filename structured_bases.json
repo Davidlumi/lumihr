@@ -642,7 +642,8 @@
    "Yes – tips/service charges are received": 80,
    "No – tips/service charges not received": 20
   },
-  "target_semantics": "Tips/service charges WITHIN THE SECTOR SCOPE only (r3s4): sector_scopes.json hides the metric entirely outside Hospitality; the 199 out-of-scope answers (the impossible 67.5%% all-org yes) are DELETED, not NA'd. Within the 15 hospitality orgs: 80/20 operate/don't. Freeze tier-2b checks over in-scope answers (all answers are in-scope by construction post-clean)."
+  "target_semantics": "Tips/service charges WITHIN THE SECTOR SCOPE only (r3s4): sector_scopes.json hides the metric entirely outside Hospitality; the 199 out-of-scope answers (the impossible 67.5%% all-org yes) are DELETED, not NA'd. Within the 15 hospitality orgs: 80/20 operate/don't. Freeze tier-2b checks over in-scope answers (all answers are in-scope by construction post-clean).",
+  "_target_preceded_data": "DISCLOSED EST, STRUCTURALLY UNFALSIFIABLE (Appendix B A4, David 2026-07-29): this distribution was not measured and then declared — the seed was written TO it. r3s4 seeded the 15 in-scope hospitality orgs 12 Yes / 3 No = 80/20 exactly; r3sw5 grew the base 15->27 seeding the 12 new orgs 80/20. The register cell is empty (status 'unanchored - needs research'). The target therefore CANNOT FAIL A GATE IT DEFINED. Recorded, not fixed: no synthetic target, no change to the distribution."
  },
  "REW_INC_103": {
   "base_type": "maturity_gradient",
@@ -946,7 +947,7 @@
  ],
  "REW26_BEN_PENSION_TYPE": {
   "base_type": "maturity_gradient",
-  "grade": "A",
+  "grade": "A (national) / EST (public interior)",
   "source": "TPR Occupational DB landscape 2025 (data 31 Mar 2025) — 200 public-service schemes, 19.78m members, open to new members by statute; CARE = standard DB (no separate TPR class)",
   "maturity_anchors": {
    "key": "Industry",
@@ -987,6 +988,7 @@
   },
   "terminal": "None of these — core cover only",
   "base": "PMI-holding orgs = REW_BEN_038 'Private Medical Insurance (PMI)' tickers (n=130 seed)",
-  "target_semantics": "PMI COVERAGE-COMPOSITION REDESIGN (r3sw8): replaces REW263_BEN_PMIMH (single-select, N/A 56.8% distorting the distribution). Multi-select over the APPLICABLE BASE ONLY — conditioned on PMI-exists, no N/A option, n = PMI-havers by construction (the N/A-not-on-graph pilot). Prevalences are INDEPENDENT per-option shares of PMI-havers (won't sum to 100) — the tier-2d incidence gate holds each at max(5pp, 1/n). 4 UNIVERSALS ASSUMED STANDARD, not benchmarked (in-patient, digital GP, cancer cover, basic MH support line — ~90%+ everywhere, stated in help_text). Terminal 'None of these — core cover only' is derived-exclusive (zero-pick orgs stay in n). VERDICT-SUPPRESSED (EST incidence); per-option re-earn path when by-option incidence is sourced."
+  "target_semantics": "PMI COVERAGE-COMPOSITION REDESIGN (r3sw8): replaces REW263_BEN_PMIMH (single-select, N/A 56.8% distorting the distribution). Multi-select over the APPLICABLE BASE ONLY — conditioned on PMI-exists, no N/A option, n = PMI-havers by construction (the N/A-not-on-graph pilot). Prevalences are INDEPENDENT per-option shares of PMI-havers (won't sum to 100) — the tier-2d incidence gate holds each at max(5pp, 1/n). 4 UNIVERSALS ASSUMED STANDARD, not benchmarked (in-patient, digital GP, cancer cover, basic MH support line — ~90%+ everywhere, stated in help_text). Terminal 'None of these — core cover only' is derived-exclusive (zero-pick orgs stay in n). VERDICT-SUPPRESSED (EST incidence); per-option re-earn path when by-option incidence is sourced.",
+  "_target_preceded_data": "DISCLOSED EST, STRUCTURALLY UNFALSIFIABLE (Appendix B A4, David 2026-07-29): r3sw8 seeded the 130 PMI-havers TO the declared per-option counts (out-patient 101 / physio 78 / full-MH 65 / screening 55 / dental 36 / overseas 29). The option list and standard-vs-optional classification ARE sourced (grade B); the per-option incidence is EST, as the entry's own source string states. The incidence targets therefore CANNOT FAIL A GATE THEY DEFINED. Recorded, not fixed: no synthetic target, no change to the distribution."
  }
 }
