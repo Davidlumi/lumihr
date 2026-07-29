@@ -131,7 +131,9 @@
     "Ad hoc provision",
     "Documented strategy"
    ],
-   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)"
+   "ruled": "2026-07-15/16 (migrated from anchored_spikes.json)",
+   "positive_from": "Documented strategy",
+   "ruled_construct": "M7 (David 2026-07-30): the entry's own target_semantics read 'positive pole = has documented strategy', but with positive_from unset the rung-1 cut counted 'Ad hoc provision' as positive too — the M6/FAM_009 pattern, invisible only because that rung holds 3 orgs. Held HERE so regeneration reproduces it (generate_marginals.py:214-216)."
   },
   "REW263_WEL_MGRTRAIN": {
    "option_order": [

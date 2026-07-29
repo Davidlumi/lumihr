@@ -714,7 +714,8 @@
    "all": 15,
    "grade": "A",
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "evidence": "Financial wellbeing strategy/policy: 15% all orgs; 53% large have-or-plan"
+   "evidence": "Financial wellbeing strategy/policy: 15% all orgs; 53% large have-or-plan",
+   "positive_from": "Documented strategy"
   },
   "REW263_WEL_OH": {
    "target_share": 0.7959,
