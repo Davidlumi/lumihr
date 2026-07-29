@@ -1027,7 +1027,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "retain",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_apxb_flag": "unbenchmarked per Appendix B Rank 3 (David 2026-07-29): authored practitioner-EST distribution, matching the three family siblings (REW_FAI_128, REW_PAY_001, REW_INC_103) built by the same declaration mechanism from the same source. A member has no way to know they are comparing against practitioner judgment rather than survey data. Peer READOUT suppressed; positioning unchanged."
     },
     "REW262_PAY_AISKILLSPAY": {
       "class": "Provision",
@@ -2007,7 +2009,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "engage",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_apxb_flag": "unbenchmarked per Appendix B Rank 3 (David 2026-07-29): authored practitioner-EST distribution, matching the three family siblings (REW_FAI_128, REW_PAY_001, REW_INC_103) built by the same declaration mechanism from the same source. A member has no way to know they are comparing against practitioner judgment rather than survey data. Peer READOUT suppressed; positioning unchanged."
     },
     "REW_BEN_HOL_002": {
       "class": "Level",
