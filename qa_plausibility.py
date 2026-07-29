@@ -497,6 +497,50 @@ def check_c():
         for _qid, _bad, _n in ords_na:
             print("     %-28s %s -> %d answer(s) inside the gate's base" % (_qid, _bad, _n))
 
+    # ---- TIER-2C BAND COVERAGE (David 2026-07-29, Appendix B Part 1) — ADVISORY ----
+    # A tier-2c entry only evaluates the bands it DECLARES. A band with no declared
+    # distribution (and no `_default`) is skipped silently, so the reported per-band drift
+    # can describe a minority of the metric: REW_BEN_HOL_001 declares 3 of 15 industry bands
+    # with no `_default`, leaving 60.7% of its base — the standard sectors the anchor is
+    # about — never evaluated. Silent non-evaluation is the freeze-gate fidelity illusion in
+    # another form: an instrument implying more than it measures.
+    # ADVISORY ONLY. No threshold is enforced (David has ruled none) and NO band is declared,
+    # invented or defaulted here — this makes the gap visible, nothing more.
+    cov = []
+    for _qid, _e in sorted(MGRAD.items()):
+        _key = _e.get("key", "HR_Maturity")
+        _bands = {}
+        for _org, _v in c.execute("SELECT org_id, value FROM answers WHERE question_id=? AND snapshot_id=? "
+                                  "AND matrix_row_id='' AND value!=''", (_qid, SNAP)):
+            _b = (prof.get(_org) or {}).get(_key)
+            _b = canon_industry(_b or "") if _key == "Industry" else (_b or "?")
+            _bands.setdefault(_b, 0)
+            _bands[_b] += 1
+        if not _bands:
+            continue
+        _bd = _e.get("band_distributions")
+        _declared = sorted(k for k in (_bd or {}) if k != "_default") if _bd else sorted(_e.get("anchors") or {})
+        _hasdef = bool(_bd) and "_default" in _bd
+        _live_n = sum(_bands.values())
+        _skipped = []
+        _covered = 0
+        for _b, _bn in sorted(_bands.items(), key=lambda kv: -kv[1]):
+            _resolves = (_b in _declared) or _hasdef
+            if _resolves and _bn >= 5:
+                _covered += _bn
+            else:
+                _skipped.append((_b, _bn, "no declared distribution" if not _resolves else "n<%d floor" % 5))
+        cov.append((_qid, len(_declared), len(_bands), _hasdef, _covered, _live_n, _skipped, _qid in FROZEN))
+    if cov:
+        print("\n  TIER-2C BAND COVERAGE (advisory — how much of each metric the per-band check actually evaluates):")
+        for _qid, _nd, _nb, _hd, _cv, _ln, _sk, _fz in cov:
+            _pct = (_cv / _ln * 100) if _ln else 0.0
+            print("     %-26s bands declared %2d/%2d%s | orgs evaluated %3d/%3d (%.1f%%)%s"
+                  % (_qid, _nd, _nb, " +_default" if _hd else "", _cv, _ln, _pct,
+                     "   [FROZEN-SHADOWED: this 2c entry never runs; tier 1 checks all %d at the 0.1pp line]" % _ln if _fz else ""))
+            for _b, _bn, _why in _sk:
+                print("        uncovered: %-42s n=%-4d (%s)" % (_b, _bn, _why))
+
     print("\n  FREEZE GATE: settled checked %d (max drift %.3fpp) | register marginals checked %d (max drift %.2fpp)"
           % (len([q for q in FROZEN if q in Q]), t1_max * 100, t2_n, t2_max * 100))
     for score, kind, qid, detail in sorted(hard, key=lambda h: -h[0]):
