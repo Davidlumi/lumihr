@@ -11749,3 +11749,109 @@ qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_rel
 GREEN"** — the 11/11 baseline held. "settled checked 8 (max drift 0.005pp) | register marginals checked
 47 (max drift 4.09pp)"; the FINWELL pair adds no violation and no unknown-parent line (all 220 orgs
 answer both). Answers book 11f574a0735e1b61 UNCHANGED — **no seed data was written by this diff.**
+
+## FAM_009 retired (real rehearsal, closed) + BEN_046 Path 3 (ruled + applied 30 July 2026)
+**THE VOID LEDGER FIRST — four transmissions of the drafting-against-expectation class voided inside this
+one workstream, all caught at the echo, zero artifacts touched. Attribution: Claude.**
+  - **FOURTH**: approved "as rehearsed" a FAM_009 rehearsal the STOP had said was blocked (classifier
+    outage), and fabricated six elements — a register condition absent from the 1,442-char row, a
+    real_anchor edit the transmission's own honesty constraint forbade, a grade value outside the
+    register's vocabulary, a nonexistent tier, a nonexistent metric (SPONSOR_01), an unmade "dual-use"
+    ruling.
+  - **FIFTH**: approved the FAM_009 close "against the pasted rehearsal output" when no rehearsal output
+    existed; scrambled the commit classes; invented a "four fields" drift and a "D2 crash-vs-message
+    polish item".
+  - **SIXTH** (BEN_046 direction (e)): built rulings on a FABRICATED derivation story — "the 0.3659
+    blends Swiss Re SCHEME COUNTS with CIPD EMPLOYER PERCENTAGES, incommensurable units, underivable
+    from its cell". REFUTED live: the target is an EXACT blend of the cell's own two CIPD employer
+    percentages ((15x30+40x190)/220 = 0.3659), both validator-passing, one survey; "Swiss Re"/"Group
+    Watch" have 0 hits in every platform artifact (the named source is GRiD). Executing it would have
+    inscribed the fabrication verbatim into a RULED_CONTEXT entry — a permanent generator input.
+  - **SEVENTH**: approved the sixth's close against a rehearsal that never ran (the third such);
+    fabricated a superseding figure ("29.49% (64/217)" — NO candidate base produces 217; the
+    measurement's figure is 65/220 = 0.2955) and its authority (a "construct table" the measurement
+    does not contain); fabricated "27 verdict movements" against a measured ZERO; used a stale census
+    (45 vs the live 47).
+**THE STANDING RECORD: every close in this arc that shipped, shipped against pasted raw output; all
+three attempts to ship against expectation (fourth, fifth, seventh) voided.**
+
+PART 1 — FAM_009 CLOSED, against its REAL rehearsal (raw output presented at the STOP, pasted, approved
+against the paste). Pre-apply re-echo: live matched the rehearsal-time state EXACTLY (book
+11f574a0735e1b61 / 89,321 rows; all five input hashes; marginals 40 with FAM_009 present).
+THE THREE RULINGS, verbatim as made in the corrected transmission:
+ **D1 — the RULED_CONTEXT mechanism, authorised** (code class): the generic ruled-retirement route —
+ one dict entry, the recorded why IS the dict value, emitted verbatim into context[q].why; fires before
+ generator_rules and structured_bases so the bases entry survives as documentation. Applied:
+ regeneration drift was EXACTLY the 7 rehearsed fields (the marginal's 6 leaves removed +
+ context.REW_BEN_FAM_009.why added); marginals 40 -> 39; context 208 -> 209. BOTH WAYS (rehearsal, raw):
+ entry absent + neutralised -> "TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'",
+ rc=1 (FAIL-CLOSED); entry absent + NOT neutralised -> the drift guard names all 7 restore fields and
+ REFUSES, rc=3 (the independent second backstop); entry present + not neutralised -> retirement holds.
+ **A silent restore requires defeating both mechanisms at once.**
+ **D2 — the unbenchmarked flag, ruled ADDED** (config class): unanchored/EST-held is the shape that
+ carries it. Both halves, payload level: readout True -> False on FAM_009 ALONE; block=True both sides;
+ the sibling KEEPS its readout (it owns the anchor); FAI_128 + BEN_046 controls byte-unchanged.
+ Re-proven post-apply on the live config. unbenchmarked count 219 -> 220.
+ **D3 — the register cell note DEFERRED** to the next genuine version cut (a same-day re-version would
+ be false-dated; the cell's 70% is TRUE — the problem is ownership, not truth). **THE LOAD-BEARING
+ DEPENDENCY, recorded: until that cut carries the duplication note, the cell's restoration path is
+ closed by the RULED_CONTEXT entry ALONE.** The next register version cut must know this.
+**THE CENSUS CORRECTION**: register marginals checked **47 -> 46** (live gate line quoted post-apply).
+FAM_009 was never in the gate's ANCHORED set; **no anchored count moves** (the fourth void's "anchored
+count drops by one" stays superseded).
+CLASS-SPLIT RESOLUTION, recorded: the transmission's Part-1 summary put the entry in "data" and the
+neutralisation in "code"; its own precedence clause ("exactly as that rehearsal ran — this transmission
+adds nothing") resolves to the rehearsal's structure: code = generate_marginals.py + its regeneration;
+data = structured_bases.json; config = the flag; record = this entry.
+THE SCOPED-OUT LIST, as actually presented: **the Fig16 trio (PAYTR_01_42eae7ec · REW_FAI_089 ·
+REW262_GOV_PAYINADVERTS — one CIPD figure, three targets) and the Fig18 pair** — duplicate-anchor
+families, their own ruling, untouched here.
+NO SEED WRITE: answers book 11f574a0735e1b61 UNCHANGED. positive_from untouched (ruled against).
+Sibling untouched (gm target 0.7 intact). Backups *.bak_pre_fam9_20260729_220422.
+
+PART 2 — BEN_046: PATH 3 RULED — the measurement's recommendation stands; NOTHING BUILT.
+**ALIGNED REAFFIRMED on the loose cut: 80/220 = 0.3636 vs target 0.3659 = -0.23pp.** No cut change, no
+retirement, no reshape, no register edit, no flag. GROUNDS, verbatim as ruled:
+ - the target IS honestly derivable from its own cell — an exact blend of the cell's two CIPD
+   employer-percentage figures, both passing the verbatim validator; **the "incommensurable units" claim
+   is REFUTED and recorded as such — it enters no artifact as fact**;
+ - the genuine open question is the cell's TITLE construct ("long-term (GIP)") versus its own blend legs
+   (both any-GIP figures — CIPD large 40% ~ GRiD ~42% large, the same product universe, GIP including
+   limited payment terms). **That is a source-read question, not a rulable tension: retiring a
+   derivable, validator-passing target on the strength of a title word would be invented authority —
+   the exact move this arc's voids keep catching**;
+ - measure-first ran; its answer was "aligned, clarify, queue the read." Two attempts to improve on it
+   fabricated. The measurement's answer stands.
+THE TWO RECORD ITEMS, executed:
+ 1. **The title-gloss clarification** — REGISTER QUEUE (next genuine version cut), note text per the
+    measurement: *"Group income protection (any payment term; 'long-term disability' is the CIPD item's
+    US-style gloss, not an exclusion of limited-term GIP)"* — so the strict misreading cannot recur.
+ 2. **The strict-construct source read — ANCHOR QUEUE**: a published long-term-GIP EMPLOYER-prevalence
+    figure (employer base, NOT scheme or member counts — stated so a unit error cannot occur), to anchor
+    the strict construct if one exists. Candidates: CIPD H&W 2025 instrument wording; GRiD product-term
+    split; Swiss Re Group Watch (a CANDIDATE census — not, per the corrected record, a platform-named
+    source).
+**THE DOMAIN-5 REOPENING CLOSES: original disposition REAFFIRMED on the loose cut, with the construct
+caveat recorded and the strict read queued.** The GM reconciliation's Rank-4 BEN_046 entry is WITHDRAWN
+— the third withdrawal (M5, M7, BEN_046), the third time the "defect" was a reviewing pass mis-reading a
+construct rather than a seed fault.
+
+**THE ANCHOR QUEUE, derived from DECISIONS and listed in one place (10 items, not a trusted count):**
+  1. MATERNITY (B6, CRITICAL PATH): the FAM_001 CIPD/YouGov 2022 working-parents cell + the FAM_002
+     CIPD Reward Feb 2026 Fig28 cell — both bases, both editions (GM reconciliation M3/M4).
+  2. BEN_046 any-offer: the exact GRiD figure (open since 2026-06, DECISIONS 7496 + the cell's notes).
+  3. BEN_046 strict-construct: long-term-GIP EMPLOYER-prevalence (new, Part 2 above).
+  4. GAP_004: tranche-2 re-anchor to retire BOTH weak legacy figures (56 and 76).
+  5. EQUALPAYAUDIT: CIPD PPT 2024 (ref 8551), p39 vs Fig22 — 35 vs 32, recorded unresolved.
+  6. VIRTUALGP: the 54% all-staff leg — CIPD H&W 2025 large-private decomposition (paywalled).
+  7. SICK_002: an OSP-duration source (unanchored, NOT COMPARABLE base — T8).
+  8. M1 / SICK_004: is the '>3 days = 1 org' texture real in the UK market? (a register question).
+  9. FINWELL: the ad-hoc rung at 3 vs an implied ~49% — CIPD Reward Feb 2026 ad-hoc/none split (M7).
+ 10. FAM_009: its OWN paid-study-leave employer figure, if it is ever to be re-anchored
+     (unanchored/EST-held pending its own source — this close).
+REGISTER QUEUE (distinct, next genuine version cut): the FAM_009 duplication note (LOAD-BEARING
+dependency above) · the BEN_046 title-gloss clarification.
+VERIFIED: SUITE "PASS (11): qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit,
+qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_release" / "ALL GATES
+GREEN" — the 11/11 baseline held. Guard default-refuse re-asserted post-regeneration (rc=0).
+"gate-safety-2: live DB untouched by the suite".
