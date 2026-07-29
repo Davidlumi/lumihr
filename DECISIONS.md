@@ -11320,3 +11320,69 @@ qa_plausibility (rc=1)" — **10/11, the ruled red `_source` gate, EXPECTED AND 
 to the regeneration ruling, not this one); "gate-safety-2: live DB untouched by the suite". Answers book
 4e3add49657e6cd7 UNCHANGED; generated_marginals.json / ruled_orderings.json / structured_bases.json all
 byte-unchanged — this diff touches ONE file.
+
+## Preservation diff — the ruled decisions pushed into the generator's inputs (ruled + applied 29 July 2026)
+THE RULING: the generator is deterministic from `ruled_orderings.json`, `structured_bases.json` and the register.
+Six ruled decisions lived ONLY in `generated_marginals.json` — by construction temporary, silently reverted the
+moment regeneration runs. **Each ruling is pushed back into the input that OWNS it. No third "ruled overrides"
+artifact — a second source of truth is the ORDS lesson repeating.** `generated_marginals.json` is NOT rewritten
+by this diff (523f8d7553556141 before and after); the proof is that a scratch regeneration now reproduces the
+rulings from the inputs alone.
+
+THE FIVE CONSUMPTION PROOFS (an edit to an input the generator does not read is WORSE than no edit — it looks
+preserved while being inert, so each field is proven consumed at file:line):
+  1. `ruled_orderings.json` REW_FAI_088 gains `positive_from: "Yes"` + a `ruled_strict` note — consumed at
+     generate_marginals.py:214-216. (Phase 1 ruled this file canonical.)
+  2. `generator_rules.json` REW_FAI_088 gains `ruled_note` — consumed by the new `_rule_text()` helper at both
+     emission sites. NEEDED ITS OWN MECHANISM: the emitted `rule` is `rule["rule"][:120]`, and the Domain-7
+     annotation had been hand-appended PAST that truncation in the output, so no edit to the existing field
+     could have survived. Live and regenerated `rule` are now byte-identical at 302 chars.
+  3. `structured_bases.json` REW26_BEN_PENSION_TYPE `grade` -> "A (national) / EST (public interior)" — consumed
+     at :39-43 (`maturity_grads`). Note this DELIBERATELY diverges from the register row's flat "A": it is an
+     input-held override, which is why it reproduces.
+  4/5. `structured_bases.json` REW_PAY_TIPS_EXIST_7c80c508 + REW265_BEN_PMICOMP gain `_target_preceded_data` —
+     required a three-line generator propagation (:33-37 and :52-59), because the section builders copy a FIXED
+     shape and an unread field would have been inert.
+
+THE VERBATIM-GUARD BLOCKER — 2 of the 6 CANNOT be preserved by an input edit, and the guard is RIGHT.
+`num_in_text(v, anchor)` validates ONLY against the register row's `real_anchor` (generate_marginals.py:116;
+asserted at :168/:179/:191). Attempted in scratch, the exact failures are
+`AssertionError: VERBATIM FAIL EXT_REW_GAP_004 56` and `AssertionError: VERBATIM FAIL PROP_930043cc 28`.
+Both metrics take the `all_only` branch, where **the achievable targets are BOUNDED BY THE NUMBERS IN THEIR OWN
+real_anchor**: GAP_004's anchor contains only 76 -> {0.76, 0.24}; PROP_930043cc's contains 18/10/56 ->
+{0.18, 0.10, 0.56, 0.82, 0.90, 0.44}. **0.56 and 0.28 are unreachable from structured_bases.**
+**THE CORRECT READING, RULED: the REGISTER CELL owns these two targets, and the guard was RIGHT to refuse them**
+— it is the founding-error guard ("a number that cannot be found is a fabrication -> hard fail") doing its job.
+Weakening it was never considered. **ROUTED: both ride the register-cluster maintenance workstream — one cell
+correction each, fixing the cell defect and preserving the ruled target together.** No versioned register was
+touched in this close.
+
+PART 2 — THE DRIFT GUARD (the guard that makes the class unrepeatable). Before writing, the generator compares
+the would-be output against the existing file field-by-field and REFUSES TO WRITE (exit 3, naming every field)
+unless `--allow-drift` is passed. BOTH WAYS, raw: (i) default run exits **3** and writes nothing; (ii) the named
+set is the 18 fields — the two blocked metrics plus the legitimate forward corrections; (iii) `--allow-drift`
+exits 0 and writes; (iv) reverting one input edit names exactly that field:
+`marginals.REW_FAI_088.positive_from  existing=Yes -> regenerated=<absent>`.
+**THE GUARD CAUGHT CLAUDE'S OWN ERROR ON ITS FIRST RUN:** the first pass wrote PARAPHRASED A4 notes into
+structured_bases; the guard flagged them as drift (existing != regenerated) and they were re-lifted byte-for-byte
+from the live file. The guard's first catch was its author's.
+
+PART 3 — THE 18 RESIDUAL FIELDS, CLASSIFIED, with an isolation test. 4 of 6 reversions GONE (FAI_088
+positive_from + rule, PENSION_TYPE grade, both A4 notes — all byte-identical live vs regenerated; ORDS block
+absent; `_shadowed_by` on all four). 8 fields still revert (the two blocked metrics). The remaining 10 are
+legitimate forward corrections — and this is now PROVEN, not asserted: regenerating against the OLD 249-row
+register yields only **9** drift fields (the two blocked metrics plus `_source`), so FAM_009/FAM_010 grade A->B,
+the six new context rows and PENSION_TYPE leaving context are **register-version-driven**, not preservation gaps.
+NO COLLATERAL: adding `positive_from` to ORDS does NOT change what the gate measures — qa_plausibility reads it
+from `MARG` (the gm entry), never from ORDS, and reseed_engine likewise (:432/:440); the gate's reading is
+byte-identical before and after ("register marginals checked 47 (max drift 4.09pp)").
+
+THE FAITHFULNESS STATEMENT, verbatim as ruled: **regeneration is not yet faithful; the class is contained, not
+closed; it closes when the two register cells are corrected.** What has changed is that the reversion can no
+longer be SILENT — the drift guard refuses to write and names every field.
+VERIFIED: rehearsed and independently re-verified in scratch directories only (the generator writes by RELATIVE
+path). Four files changed, no others. Answers book 4e3add49657e6cd7 UNCHANGED (89,321 rows);
+generated_marginals.json byte-unchanged. SUITE: "PASS (10): qa_hero, qa_focus, qa_signals_system, qa_strategy,
+qa_engine_audit, qa_overview, qa_domain_summary, qa_commentary, qa_pulse, qa_release" / "FAIL (1):
+qa_plausibility (rc=1)" — **10/11, the ruled red `_source` gate, EXPECTED AND UNTOUCHED**; "gate-safety-2: live
+DB untouched by the suite".
