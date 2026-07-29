@@ -11139,3 +11139,108 @@ against Domain-5's aligned +1.1) · the per-row point/range enumeration · resee
 REM_PAY_001's degenerate ladder · the `_source` stamp resolution. **Appendix B remains the NEXT
 reconciliation — its two dual-authority rows (REW_INC_103 2.55pp, REW_BEN_HOL_001 2.45pp) carry the
 gate's 2nd and 3rd largest drifts and have never been examined.**
+
+## Appendix B — the 12 tier-2 targets outside `marginals` (ruled + applied 29 July 2026)
+THE GOVERNING FINDING: **every one of the 12 PASSES and none is near the 5pp line** (worst INC_103 2.55pp,
+HOL_001 2.45pp, then 1.76/1.48/1.38, rest <=0.49pp). The findings are NOT about drift — they are about **what
+the drift is measured ON**: partial band coverage, authored-estimate provenance, and targets that preceded
+their own data. PROVENANCE INVERSION, derived: `marginals` is 29 A / 9 B / 2 C (**95% A-or-B**); of these 12,
+**NINE ARE AUTHORED ESTIMATES** — eight carry the exact string grade "EST" / source "practitioner benchmark -
+D. Whitfield", and REW_BEN_HOL_001 is grade EST with an **EMPTY source string**, the only unattributed EST of
+the twelve. Only VIRTUALGP (CIPD H&W 2025), PMICOMP (insurer product structure) and PENSION_TYPE (TPR) name an
+external body; four carry an EMPTY register grade, status "unanchored - needs research". **M5 circularity test:
+0 of 12 circular** (published-in-part 1 / documented-derivation 2 / authored-estimate 9). Two derivations
+reproduce EXACTLY: RANGEMAX 45/22/22/11 (PAY_001 strict-Yes 121/220 -> No-formal-ranges 99 = 45.0%; 121 x
+40/20/40 -> largest remainder 49/24/48) and VIRTUALGP (No = 100-69 EXACT; 45+13+11 = 69 EXACT). **Authored is
+not circular** — an EST entry never CLAIMED a published figure, so it cannot echo one; it also cannot be
+corroborated, which is Phase 1's fidelity finding raised one power.
+
+THE WITHDRAWN ALARM, recorded because it nearly shipped. Mid-pass I found `unbenchmarked: true` gating at three
+live Diff-14 sites (app.py:748 numeric percentile/readout/favourable, :767 select readout, positions.py:272-273
+pol="neutral"), against Diff 15's ruling that the flag *"must not gate positioning (confirmed: they don't)"* —
+and was ready to report a book-wide contradiction across 217 flagged metrics. **DIFF 15 IS RIGHT AND I WAS
+WRONG: it measured the pool at "positioned 222 vs the correct 228" on a book where 217 carry the flag —
+arithmetically impossible if the flag gated the pool.** The flag suppresses the PEER-COMPARISON READOUT, not
+positioning, exactly as app.py:688-690 states. **The alarm was withdrawn before it reached David** — the
+check-the-ruling-history discipline working in the direction it was written for.
+
+PART 1 — TIER-2C BAND COVERAGE (gate class, ADVISORY). A 2c entry only evaluates bands it DECLARES; an
+undeclared band with no `_default` is skipped SILENTLY. Live: **REW_BEN_HOL_001 declares 3 of 15 industry bands
+with no `_default` — 83 of 211 orgs evaluated (39.3%), 128 (60.7%) NEVER EVALUATED**, and the 12 uncovered
+bands carry the standard sectors the anchor is about. **Its 2.45pp is measured on 39.3% of its own base.**
+Silent non-evaluation is the freeze-gate fidelity illusion in another form: an instrument implying more than it
+measures. Full report: fe1a29ec 215/215 · PENSION_TYPE 15/220 (FROZEN-SHADOWED, tier 1 checks all 220 at the
+0.1pp line — not an exposure) · HOL_001 83/211 · FAI_128 220/220 · INC_103 217/220 (`Other` n=3, the r3sw2
+canon-map backlog) · PAY_001 220/220.
+**ADVISORY, NOT ENFORCING — the reasoning ruled and recorded verbatim: "the remedy is a data ruling David
+hasn't made; an enforcing gate would route it through the gate instead of through him — the ORDS lesson
+inverted."** Threshold consequence stated for the record: at *fail below 80%, FROZEN-shadowed exempt* — and at
+ANY line between ~40% and 98% — exactly ONE metric fails (HOL_001) and the other five pass. The threshold
+becomes a real guard the moment the band ruling lands; until then it is a forcing function wearing a guard's
+clothes. BOTH WAYS: positive = the report above; negative A = removing HOL_001's Retail band reads
+"2/15 | 54/211 (25.6%)" with Retail listed uncovered n=29; negative B = adding a `_default` reads
+"3/15 +_default | 208/211 (98.6%)". Control: 35 lines ADDED, 0 removed — purely additive.
+**NO BAND WAS DECLARED, INVENTED OR DEFAULTED.**
+
+PART 2 — PROVENANCE + FLAGS (config class).
+A2 PENSION_TYPE grade "A" -> **"A (national) / EST (public interior)"**, per VIRTUALGP's honest precedent
+("A/B (total) / EST (split)"): no published TPR figure yields the declared DB 95 / DC 5 interior (seeded 14 DB /
+1 DC over 15 public orgs = 93.3/6.7, the nearest achievable at n=15). **NO distribution and NO answer touched,
+therefore NO unfreeze cycle** — proven post-change: live dist {DC .8864, DB .0955, Hybrid .0182} n=220 EQUALS
+frozen_targets exactly, tier-1 drift **0.0000pp** against the 0.1pp line; gate reports "settled checked 8 (max
+drift 0.005pp)" unchanged.
+A4 `_target_preceded_data` stamped on TIPS_EXIST (r3s4 seeded 15 orgs 12Y/3N = 80/20 EXACTLY; r3sw5 grew the
+base 15->27 seeding 80/20) and PMICOMP (r3sw8 seeded 130 PMI-havers TO the declared counts 101/78/65/55/36/29).
+Each **cannot fail a gate it defined** — disclosed EST, structurally unfalsifiable, RECORDED NOT FIXED. No
+synthetic target; both distributions byte-unchanged.
+RANK-3 FLAG CONSISTENCY: `unbenchmarked: true` added to **PROP_fe1a29ec and REW_BEN_HOL_001**, matching the
+three family siblings (FAI_128, PAY_001, INC_103) built by the same declaration mechanism from the same
+authored source. Grounds: fe1a29ec rendered a member-visible peer readout off an authored gradient sitting
+**20.7pp above the only published figure in its own cell** (implied cohort 70.1%, live 70.23% vs Drewberry
+49.5%) — a RULED rejection (Diff-15 ④, "the construct died with the options", grade B->EST), but **a member has
+no way to know they are comparing against practitioner judgment rather than survey data.**
+PROOF, payload level, before -> after: fe1a29ec unbench False->True, **readout True->False, block True->True**;
+HOL_001 identical shape; controls HOLD — FAI_128 (already flagged) and BEN_046 (unrelated) byte-unchanged both
+sides. **Readout suppressed on exactly two; pool membership and the rendered distribution unchanged.**
+SCALE ON THE RECORD: **426 org-metric cards lose their peer readout** (fe1a29ec 215 + HOL_001 211).
+Gates staged-vs-live on a throwaway: qa_scores IDENTICAL (5 passed, 0 failed) · qa_hero IDENTICAL (59 checks,
+59 passed) · qa_focus IDENTICAL (26 passed) · qa_engine_audit one line's POSITION only, 0 failures 0 warnings.
+
+THE 404-PROBE CORRECTION (method, recorded). My first payload probe reported NO difference under either config
+— including for FAI_128, which is flagged live. It proved nothing: `/api/login` is a 404 and every call
+returned {"detail":"Not signed in"}. Re-run against the real route (`/api/auth/login`), the difference was
+immediate and clean. **THE LESSON: a null result is only evidence if the instrument was working.** An
+unexamined "no difference" would have read as proof that the change was inert.
+
+B1/B2 — NO ACTION ON TARGETS, with citations. **REW_INC_103** has THREE authorities, none in conflict: r3sw2 ①
+(L7989/L8004) governs the band distribution; AFF Tier-1A (L10586, 222e8d1+25464df) governs the score ladder and
+is orthogonal ("answers byte-identical", 179 flips); and the register grade-B Brightmine cell was **RULED NOT
+COMPARABLE** at Domain 4 (L10329, 25 Jul) — eligible != received, orgs != employees. **David's premise that its
+drift "has never been examined" is CORRECTED: r3sw2 named it verbatim on the day it was applied — L8018,
+"Post-fix worst: 2.55pp (Construction, genuine rounding)".** Quantified anyway: org-mean eligible 57.14% vs the
+cell's 12.2% receipt = 44.9pp; vs the size-matched 1,000+ 7.8% = 49.3pp — those gaps ARE the NOT-COMPARABLE
+ruling being correct. **REW_BEN_HOL_001**: r3sw4 (L8092) governs in its own terms — *"A SECTOR-HONEST SEED
+SUPERSEDES AN ALL-UK SOURCED MARGINAL when the cohort's sector mix differs from the national economy —
+composition, not contradiction; the source stays on the register as the all-UK reference."* Live cohort 25+ =
+101/211 = 47.87% vs its own ~47% claim (+0.87pp, CONFIRMED); its superseded 0.553 = (35x30 + 58.5x190)/220
+EXACT where **58.5 is the midpoint of the published "58-59%" — the THIRD documented midpoint blend, corroborating
+the generator's convention rather than exposing it.** **David's premise IS confirmed for HOL_001: 2.45pp appears
+nowhere in DECISIONS before the Phase-1 entry — it genuinely had never been examined, and Part 1 shows why that
+matters.**
+
+VERIFIED: rehearsed on a throwaway (SQLite backup API) with a staged LUMI_MP_CONFIG (r3sw7 gate-server
+doctrine, live config untouched during rehearsal); live run reproduces the rehearsal EXACTLY; gm diff is the
+grade string + two `_target_preceded_data` notes with **every target_share unchanged** and PENSION_TYPE's
+band_distributions / TIPS's distribution / PMICOMP's prevalences all byte-equal; mp diff is exactly 2 entries,
+unbenchmarked count 217 -> 219; answers book 4e3add49657e6cd7 UNCHANGED (zero answer writes).
+SUITE: "PASS (10): qa_hero, qa_focus, qa_signals_system, qa_strategy, qa_engine_audit, qa_overview,
+qa_domain_summary, qa_commentary, qa_pulse, qa_release" / "FAIL (1): qa_plausibility (rc=1)" — **10/11, the
+ruled red `_source` gate, EXPECTED AND UNTOUCHED**; "gate-safety-2: live DB untouched by the suite".
+QUEUE: **INC_103's NOT-COMPARABLE register stamp joins the register-cluster maintenance workstream as its FIFTH
+item** (with PROP_930043cc, GAP_004, EQUALPAYAUDIT, PENSION_MATCH) — not executed here; a register edit is a
+different fix class against a versioned artifact. Also carried: **VIRTUALGP source read (A3)** — CIPD Health &
+Wellbeing at Work 2025 (Mar-Apr 2025, YouGov n=1,101), large-private 250+ band, for the standalone-vs-via-PMI
+decomposition; the 54% all-staff leg is reproduced by nothing live (Yes-all 45.00%, +Via-PMI 56%); paywalled at
+r3sw7, so it joins the member-data-at-launch tier honestly. **HOL_001's 12 undeclared bands (a DATA ruling, not
+this gate's job)** · the `Other` canon-map backlog (3 orgs, open since r3sw2) · Phase-2's full queue · the `- 7`
+assert repair with its INSEPARABLE generator changes · the `_source` stamp resolution.
