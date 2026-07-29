@@ -11855,3 +11855,74 @@ VERIFIED: SUITE "PASS (11): qa_hero, qa_focus, qa_signals_system, qa_strategy, q
 qa_overview, qa_domain_summary, qa_commentary, qa_plausibility, qa_pulse, qa_release" / "ALL GATES
 GREEN" — the 11/11 baseline held. Guard default-refuse re-asserted post-regeneration (rc=0).
 "gate-safety-2: live DB untouched by the suite".
+
+## REM_PAY_001 — the degenerate ladder: ACCEPT AND RECORD, direction (b) (ruled + applied 30 July 2026)
+**THE EIGHTH VOID FIRST** (its own line, per the ledger discipline): the first close approval for this
+ruling fabricated its grounds — a register "EST note ('modal answer is No')" with 0 hits anywhere (the
+cell is grade A and the ladder has no 'No' rung), "61 na_answers on the sibling" (they are on REM_PAY_001
+itself; no sibling exists), "0.5% adjusted" (live is 0%), an inverted "honest direction" argument, the
+wrong GM item (R2-d is PENSION_MATCH; REM_PAY_001 was R2-c, already withdrawn), "un-weighted
+single-source" against a cell that reads "YouGov, n=2,050 … weighted/representative", and "zero data
+changes across the three" against M7's own data-class commit 615764b. Caught at the echo; voided in
+full; zero artifacts touched. Attribution: Claude. **The shipped close below carries the measurement's
+ACTUAL grounds.** Two paraphrase slips in the shipping approval resolved TO THE PASTED OUTPUT per its own
+"drafted against the pasted STOP output" clause (the FAM_009 class-split precedent): the milestone ships
+as ZERO SEED WRITES (not "zero data changes"), and the anchor-queue count is DERIVED (eleven, not ten —
+this close adds an item).
+
+THE RULING, direction (b): **accept the degeneracy and record it — the empty rungs are the world's shape
+as best evidenced, not a seed artifact.** THE GROUNDS, from the measurement:
+ - **The evidence, with provenance per the discipline:** (i) EXTERNAL — the anchor's own figures: "only
+   4% of UK employers have reduced pay … 64% have not and do not intend to" (grade A, CIPD Flex 2025,
+   YouGov n=2,050, WEIGHTED, verified from source PDF); (ii) PLATFORM-INTERNAL — the Diff-11 ruling-time
+   landing record (DECISIONS 7532: "60 protected / 34 varies / 61 NA / 14 DK — 0.638 on n=94"): the shape
+   was visible and accepted when the ordering was ruled; (iii) SEED-INTERNAL — zero occupants and NO
+   sibling metric records the behaviour, so the book has no texture to give.
+ - **THE TWO RECORDS RECONCILED** — Domain 6's "aligned (0% vs 4%)" is the ADJUST-RUNG cut against the
+   cell's 4%; the gm 0.64 is the PROTECTED cut against the cell's 64%. Same cell, two figures, two cuts,
+   both honest. They stop being confusable as of this entry.
+ - **Q2: the target CAN fail** — the lean side holds 34 ('varies', deliberately in the ruled scope per
+   Diff 11); FAIL outside [0.59, 0.69]; five orgs shifting protected->varies lands 55/94 = 0.5851 FAIL.
+   NOT the TIPS/PMICOMP unfalsifiable class. **No retirement.**
+ - **Q3: honest on every member surface** — probed live: readout "The most common answer among similar
+   organisations (64%) is 'Base pay is protected' (n=94)", favourable None. **CONDITIONAL ON the Diff-11
+   is_na ruling and the r3sw10 answerer_only declaration — that ordering ruling is LOAD-BEARING for the
+   member surface, not only the gate. Recorded.**
+ - **(a) CLOSED with its reason:** the coherent donor pool is empty and no sibling metric exists — the
+   book cannot texture this draw and invention is forbidden. Nobody re-opens it as "just populate the
+   rungs". (The rung-GROUP total is anchored at ~4%, so a future RULED texture decision remains possible
+   — but only through the precondition below, and with the within-group split honestly EST.)
+ - **NO FLAG:** the readout renders against a live, anchor-backed, falsifiable target; the
+   FAM_009/BEN_046-strict unanchored shape does not apply.
+
+**THE NAMED PRECONDITION — the measurement's central discovery: a DORMANT INVERTED SCORE LADDER.**
+option_scores run PROTECTED 0 / OVER_TIME 50 / IMMEDIATELY 100 under mp direction=higher_is_better —
+the score axis is "adjustedness" while the Diff-11 ruling ranks protected as the most protective rung.
+It is harmless today behind three shields (cfg polarity neutral; zero variance — all 60 scoreable orgs
+at 0.0; empty rungs), and it has 0 hits in the AFF audit precisely because zero variance rendered no
+verdicts to catch. **THE ARMING CONDITION: populating the adjust rungs makes pay-cutters read
+above-market. NO TEXTURE DRAW BEFORE A LADDER-DIRECTION RULING** — the M7/FINWELL sequencing lesson,
+third occurrence, now printed on the gate's own triage line.
+
+**THE ANNOTATION (gate class, shipped):** RULED_FINDINGS — a David-ruled-only note map the triage printer
+consults. Behaviour unchanged, asserted: rc, triage counts and gate verdict byte-identical; only the
+REM_PAY_001 zero-opt line gains the ruling suffix. **The GM Phase-1 "degenerate ladder" residue closes as
+measured-and-accepted** (R2-c stays withdrawn — it was the ordering claim, a different thing).
+
+**THE ANCHOR QUEUE, re-derived — ELEVEN items in one place** (ten from the FAM_009 close + this close's
+addition): 1. MATERNITY B6 (critical path) · 2. BEN_046 any-offer (GRiD exact figure) · 3. BEN_046
+strict-construct (long-term-GIP EMPLOYER-prevalence) · 4. GAP_004 tranche-2 re-anchor · 5. EQUALPAYAUDIT
+p39-vs-Fig22 · 6. VIRTUALGP 54% leg · 7. SICK_002 OSP-duration source · 8. M1/SICK_004 '>3 days' texture ·
+9. FINWELL ad-hoc rung · 10. FAM_009 own source · **11. REM_PAY_001 adjust-rung texture — M1's twin: a
+UK-cohort-weighted adjusted-pay prevalence on an EMPLOYER base (the national 4% is WEIGHTED but
+nationally-mixed; the cohort's sector/size composition may honestly differ — the r3sw4 composition
+principle), within-group split (immediately vs over time) unpublished/EST, and GATED BEHIND the
+ladder-direction ruling above.**
+
+**THE PHASE-2 MILESTONE, stated plainly: the final three open seed questions — M7 FINWELL, BEN_046,
+REM_PAY_001 — all closed by measurement finding NO SEED DEFECT existed. ZERO SEED WRITES across the
+three** (M7 shipped a measurement correction — positive_from, data class — and a locking pair, config;
+BEN_046 and REM_PAY_001 shipped record-only). Measure-first, three for three: the "defects" were a
+definitional conflation, a construct mis-reading, and a world fact wearing a triage flag.
+VERIFIED: answers book 11f574a0735e1b61 UNCHANGED. Ordering, target, flag state, register all untouched.
+SUITE below at the 11/11 baseline.
