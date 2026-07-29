@@ -23,7 +23,7 @@ HARD DESIGN RULES (all ruled):
 Output: generated_marginals.json + generated_marginal_table.csv (the David review gate).
 No DB writes. The re-seed (Diff 3) is a separate approval on the generated file.
 """
-import csv, json, re, sys
+import csv, json, os, re, sys
 
 SME_N, LG_N, COHORT = 30, 190, 220
 RULED = "2026-07-16"
@@ -38,7 +38,8 @@ bases = json.load(open("structured_bases.json"))          # metric_id -> structu
 # per-option shares, freeze-gated at the 5pp register line by qa_plausibility) and
 # NEVER derives a share-marginal — the construct is the whole distribution.
 ruled_dists = {q: {"distribution": b["ruled_distribution"], "grade": b.get("grade", "EST"),
-                   "source": b.get("source", ""), "semantics": b.get("target_semantics", "")}
+                   "source": b.get("source", ""), "semantics": b.get("target_semantics", ""),
+                   **({"_target_preceded_data": b["_target_preceded_data"]} if b.get("_target_preceded_data") else {})}
                for q, b in bases.items()
                if isinstance(b, dict) and b.get("ruled_distribution")}
 # r3s2: maturity-gradient metrics — per-org prevalence keyed on HR_Maturity, one shared
@@ -52,7 +53,8 @@ maturity_grads = {q: dict(b["maturity_anchors"], grade=b.get("grade", "EST"),
 # tier-2d at max(5pp, 1/n); the base itself is held by a subset_orgs coherence pair.
 ms_incidence = {q: {"prevalences": b["option_prevalences"], "terminal": b.get("terminal"),
                     "base": b.get("base", ""), "grade": b.get("grade", "EST"),
-                    "source": b.get("source", ""), "semantics": b.get("target_semantics", "")}
+                    "source": b.get("source", ""), "semantics": b.get("target_semantics", ""),
+                    **({"_target_preceded_data": b["_target_preceded_data"]} if b.get("_target_preceded_data") else {})}
                 for q, b in bases.items()
                 if isinstance(b, dict) and b.get("option_prevalences")}
 RULED_ORD = json.load(open("ruled_orderings.json"))["orderings"]   # THE standing orderings artifact
@@ -91,6 +93,14 @@ def num_in_text(num, text):
             return True
     return False
 
+def _rule_text(rule):
+    """Emitted `rule` string = the derivation, plus any ruled annotation held in
+    generator_rules.json. The annotation used to be appended to the OUTPUT by hand and was
+    therefore lost on regeneration (FAI_088, Domain-7 ruling 6a) — it lives in the INPUT now."""
+    t = rule["rule"][:120]
+    return t + (" || " + rule["ruled_note"] if rule.get("ruled_note") else "")
+
+
 marginals, context, floors, pending, table = {}, {}, {}, {}, []
 byid = {r["metric_id"].strip(): r for r in reg}
 # The register is versioned and resolved by rule (C9), so a hardcoded row count fires on every
@@ -126,7 +136,7 @@ for r in reg:
             t = blend(sme, lg)
             marginals[q] = {"target_share": t, "base_type": "sme_large(ruled)", "sme": sme, "large": lg,
                             "grade": r.get("grade") or "", "source": (r.get("source") or "")[:80],
-                            "rule": rule["rule"][:120]}
+                            "rule": _rule_text(rule)}
             row.update(route="MARGINAL (ruled blend)", target=t, base_type="sme_large",
                        inputs="%g/%g" % (sme, lg), evidence=rule["rule"][:90])
         else:
@@ -134,7 +144,7 @@ for r in reg:
             assert m2, "SINGLE_BASE rule unreadable for %s: %s" % (q, rule["rule"])
             t = round(float(m2.group(1)), 4)
             marginals[q] = {"target_share": t, "base_type": "single(ruled)", "grade": r.get("grade") or "",
-                            "source": (r.get("source") or "")[:80], "rule": rule["rule"][:120]}
+                            "source": (r.get("source") or "")[:80], "rule": _rule_text(rule)}
             row.update(route="MARGINAL (ruled single)", target=t, base_type="single",
                        inputs="%g" % t, evidence=rule["rule"][:90])
             if "large-only" in rule["rule"]:
@@ -295,6 +305,38 @@ out = {"_generated": RULED, "_source": "%s + generator_rules.json + structured_b
        # generate_marginals:58, qa_plausibility:52, migrate_r3sw7_virtualgp:19).
        "pending_ruling": pending,
        "settled_refreeze": {k: v for k, v in SETTLED_REFREEZE.items() if v is not None}}
+# ---- DRIFT GUARD (David 2026-07-29, the preservation ruling) --------------------------------
+# A ruled correction applied to THIS OUTPUT and not to the inputs is, by construction, temporary:
+# the next regeneration silently reverts it. That happened six times (see DECISIONS, Appendix B /
+# generator repair). The generator now REFUSES TO WRITE over any field the existing file carries
+# that the inputs do not reproduce, naming every one. Pass --allow-drift to proceed once the diff
+# has been ruled — the guard is a stop, not a wall.
+def _leaves(d, path=()):
+    if isinstance(d, dict):
+        for k, v in d.items():
+            for x in _leaves(v, path + (str(k),)): yield x
+    else:
+        yield path, d
+_prior_path = "generated_marginals.json"
+if os.path.exists(_prior_path):
+    _prior = json.load(open(_prior_path))
+    _new = {p: v for p, v in _leaves(out)}
+    _old = {p: v for p, v in _leaves(_prior)}
+    _drift = []
+    for _p in sorted(set(_old) | set(_new)):
+        if _old.get(_p, "\x00ABSENT") != _new.get(_p, "\x00ABSENT"):
+            _drift.append((".".join(_p), _old.get(_p, "<absent>"), _new.get(_p, "<absent>")))
+    if _drift:
+        print("\nDRIFT GUARD: regeneration would change %d field(s) the existing file carries." % len(_drift))
+        for _f, _a, _b in _drift[:80]:
+            print("  %-64s existing=%s -> regenerated=%s" % (_f, str(_a)[:44], str(_b)[:44]))
+        if len(_drift) > 80: print("  ... and %d more" % (len(_drift) - 80))
+        if "--allow-drift" not in sys.argv:
+            print("\nREFUSING TO WRITE. Every field above is either a ruled correction that lives only in the\n"
+                  "output (push it into the inputs) or a legitimate forward correction (re-run with\n"
+                  "--allow-drift once ruled). generated_marginals.json is UNCHANGED.")
+            sys.exit(3)
+        print("\n--allow-drift given: writing over the fields above.")
 json.dump(out, open("generated_marginals.json", "w"), indent=1, ensure_ascii=False)
 with open("generated_marginal_table.csv", "w", newline="", encoding="utf-8") as f:
     w = csv.DictWriter(f, fieldnames=list(table[0].keys()))
