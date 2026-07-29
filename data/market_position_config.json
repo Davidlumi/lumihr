@@ -1976,7 +1976,9 @@
       "type": "ordinal",
       "direction": "higher_is_better",
       "lens": "attract",
-      "weight": 1
+      "weight": 1,
+      "unbenchmarked": true,
+      "_fam009_retired": "unbenchmarked per the FAM_009 retirement (David 2026-07-30): the target is retired — the sibling REW_FAI_STUDY_TIME_93b6ef22 owns the CIPD Oct-2021 70% figure — so this distribution carries no ruled authority (unanchored/EST-held pending its own source). A peer readout rendering against a retired borrowed anchor is what the flag exists to suppress. Peer READOUT suppressed; positioning unchanged."
     },
     "REW_BEN_FAM_010": {
       "class": "Level",
