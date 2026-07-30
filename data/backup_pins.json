@@ -1,0 +1,14 @@
+{
+  "pins": [
+    {
+      "file": "lumi.db.bak_pre_presplit_20260730_221335",
+      "class": "DB",
+      "pinned": true,
+      "ground": "D10 (DECISIONS c3df1d3); backup_policy.md \"Named exception: the pre-split backup pin\"",
+      "release_trigger": "close of the post-soak DROP diff",
+      "deletion_scheduled_at_creation": true,
+      "sha256_16": "b6092ace30d64946",
+      "created": "20260730_221335"
+    }
+  ]
+}
