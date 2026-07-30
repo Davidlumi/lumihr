@@ -11926,3 +11926,76 @@ BEN_046 and REM_PAY_001 shipped record-only). Measure-first, three for three: th
 definitional conflation, a construct mis-reading, and a world fact wearing a triage flag.
 VERIFIED: answers book 11f574a0735e1b61 UNCHANGED. Ordering, target, flag state, register all untouched.
 SUITE below at the 11/11 baseline.
+
+## PRIVACY PHASE 0 — the diagnostic, the five rulings, and the ruled deletion (ruled + applied 30 July 2026)
+THE DIAGNOSTIC (PRIVACY_PHASE0_DIAGNOSTIC_2026-07-30.md, READ-ONLY, solicitor-shareable — no PII values
+quoted anywhere): 41 tables censused column-by-column; the coupling map, the Postgres portability audit
+(0A) and the lifecycle inventory run as four independent read-only sweeps, cross-reconciled. HEADLINES:
+the engine and every persisted aggregate are ALREADY identity-free (benchmark_snapshots 0/344,
+notification_events 0/10,804, all three CSV exports clean, and the commentary AI payload is
+gate-guarded at qa_commentary.py:192 — the Phase-1 boundary in miniature); the live exposure statement is
+NOT "none found" — (L1) token-bearing email bodies print to stdout while SMTP is unset (app.py:5056; gate
+logs sample 3 email-pattern lines each), (L2) plaintext demo credentials print at startup
+(app.py:6038-6041), (L3) REAL PII exists — 3 real-domain accounts of 8 users, 2 signup + 1 staff orgs of
+223 — and (L4) was frozen into every unmanaged full-DB copy. 0A: the recorded "connection-string swap"
+claim is TRUE for schema/dialect (json1/ATTACH/SQL-arithmetic verified ABSENT), FALSE for the operational
+tooling — the two design-work items are the THROWAWAY-REHEARSAL PATTERN and the DBSNAPSHOT/BOOK-HASH
+FINGERPRINT CONTRACT; items 1-9 of the cost table are Phase-2 prerequisites, 10-14 the mechanical sweep.
+
+**THE NINTH VOID** (its own line): the first D1 deletion approval — the highest-stakes class, an
+irreversible destruction — carried three fabricated counts ("55 named files" vs the pasted 87+72=159;
+"11 retained" vs the pasted 6; "the 66-not-44 correction" vs the actual 90-and-74) and did not ratify the
+STOP's central finding. VOIDED with zero deletions. Attribution: Claude. The corrected approval carried
+the true counts in three lines and executed below.
+
+THE FIVE RULINGS:
+**D1 — BACKUP RETENTION, ruled and EXECUTED.** THE ASSERTION THE RULING ORDERED, TESTED PER FILE: the
+synthetic-era premise is FALSE — **all 87 deletion-set backups contain real-pattern rows** (census
+signatures: 81 files at 3 signup/staff orgs + 3 real-domain users; 5 early files at 1+1; 1 at 2+2; the
+mode=ro/immutable=1 read method recorded). **THE GROUND SHIFT, RATIFIED: the deletion proceeded as
+EXPOSURE-REDUCTION, not synthetic-era cleanup** — the justification STRENGTHENED under the corrected
+finding (87 unmanaged copies of real PII destroyed beats 87 synthetic copies tidied); the live DB retains
+every real-pattern row; nothing unique was lost. **ROUTED TO PHASE 1: real-pattern rows exist in the live
+seed and therefore in every backup of it — the identity-split's clock is ALREADY RUNNING, not waiting for
+launch.** EXECUTED against the pasted named lists: **159 files deleted (87 DB copies + 72 sidecars,
+7.56 GB), os.remove per explicit name, no globs**; count gates asserted 87/72/6 before any removal.
+RETAINED, verified intact by hash pre and post: lumi.db.bak_pre_tof3_20260729_111126 (e49b239aa3ec5394) ·
+lumi.db.bak_pre_m1_20260729_183328 (65e0b66755763a2c, + -shm fd4c9fda9cd3f9ae / -wal e3b0c44298fc1c14) ·
+lumi.db.bak_pre_t8_20260729_194513 (12a1f54897f1c3bd) ·
+lumi_anchor_register_CLAUDECODE.csv.bak_pre_diff1_regclean_20260716 (c2126f33ef672b9a). The deletion set,
+by name, is the 87 mains + 72 sidecars enumerated at the ruling STOP (the ledger: every lumi.db.bak* not
+in the retained six; remaining on disk post-delete: exactly the five lumi.db.bak* names + the register
+bak). NOTE recorded: historical scripts' restore-instruction strings (reseed_engine.py:553,
+verify_diff7.py:17, diff8) now name deleted files — the retained set is the only restore surface.
+**THE DOCTRINE (data/backup_policy.md, its own commit), verbatim: backups are managed PII artifacts from
+creation; no unversioned, unscheduled full-DB copy is ever created. The member-era distinction is
+WITHDRAWN along with the synthetic-era premise.** Retention rule: last 3 pre-diff DB backups + the
+register class. Config/code .baks (37) and scratchpad copies (62) are outside this ruling's scope —
+scratch joins the Phase 3-4 deletion-on-exit design.
+**D2 — THE SPLIT BOUNDARY: ruled (b), the orgs-table split.** Identity columns leave orgs for a separate
+identity store; org_id the only join key. Grounds per the coupling map (the "9 of 11 join paths" phrasing
+resolves to the map's actual enumeration: 7 ranked consumers, display-dominant; ONLY peer-twin's
+registry_json/similarity inputs are aggregation LOGIC — the registry_json tease-apart is the hard cut).
+Phase 1's spec transmission must carry: the column list from the census, the consumers with per-path
+change shape, the two non-display joins' treatment, the fixture handling, and gate/backup/snapshot
+implications — PLUS the D1 finding above (the clock is running) and the 130 mixed board-pack rows ruling.
+**D3 — POSTGRES: GO, at Phase 2 as planned.** The 0A cost table stands AS THE AUDIT PRODUCED IT (the
+transmission's "json1 and dbsnapshot" phrasing resolves to the audit: json1 usage is NONE/zero-cost; the
+design items are the throwaway pattern and the fingerprint contract). Headline figures recorded for the
+Phase-2 spec: 9 prerequisite items (driver/get_conn, guard re-target, throwaway pattern 2-5d, .bak ritual,
+fingerprint re-spec 2-5d, FK-flip inventory, startup-DDL, typed data copy, port-vs-freeze ~90 scripts) +
+5 mechanical sweeps (qmark ~183+ sites, OR-REPLACE x7 files, IDENTITY x9 + lastrowid x6 + rowid x1,
+datetime('now') x72, PRAGMA cleanup).
+**D4 — THE FORK: AWS eu-west-2. CLOSED.** Azure UK South retired. The audit's contribution: no
+cloud-coupled code exists in either direction; the fork was procurement/DPA-shaped, and the sub-processor
+surface is AWS-shaped already. Anthropic remains the constant sub-processor when AI features are on
+(consent ledger: ai_insights 8 accepted / 5 withdrawn).
+**D5 — GIT HISTORY: accepted as-is, sweep recorded clean-for-purpose.** Zero DBs ever committed; registers
+public-by-design; the committed seed class (seeded_orgs, org_profiles, personas) is org-level and
+synthetic-by-design. Residuals stay findings, not questions: org_profiles provenance is unverifiable
+without a privileged read, and meta.registry_only_orgs (52 strings) needs one privileged read to classify.
+DERIVATION CORRECTIONS RECORDED: the close transmission's "44" and the first approval's "66" both resolve
+to the derived **90 full copies + 74 sidecars**; the counts governed by derivation throughout.
+VERIFIED: live book 11f574a0735e1b61 UNCHANGED by the deletion; SUITE "PASS (11) … ALL GATES GREEN" — no
+movement, as expected for untracked files; "gate-safety-2: live DB untouched by the suite".
+NEXT NAMED TRANSMISSION: the Phase-1 identity/reward split spec, with the required contents listed above.
