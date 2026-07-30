@@ -11999,3 +11999,131 @@ to the derived **90 full copies + 74 sidecars**; the counts governed by derivati
 VERIFIED: live book 11f574a0735e1b61 UNCHANGED by the deletion; SUITE "PASS (11) … ALL GATES GREEN" — no
 movement, as expected for untracked files; "gate-safety-2: live DB untouched by the suite".
 NEXT NAMED TRANSMISSION: the Phase-1 identity/reward split spec, with the required contents listed above.
+
+## 2026-07-30 — Phase 1 retrieval findings (MEASUREMENTS, NOT RULINGS)
+
+Recorded so three rounds of live-verified measurement survive outside a
+chat transcript. **No S7 row of PRIVACY_PHASE1_SPLIT_SPEC_2026-07-30.md is
+ruled by this entry. D1–D14 remain open.**
+
+Pinned state at time of measurement: answers book `11f574a0735e1b61`
+(89,321 rows); spec file content-hash `6c8fd2f409176fbd` (578 lines, S7 at
+508–573). All figures below re-derived live, read-only, echo-gated.
+
+### F1 — The 130 board packs are all seed-source, one org
+130/130 belong to seeded orgs; 0 member sign-ups; 0 staff; 0 orphaned.
+All 130 belong to a single seeded org. Live discriminator is `orgs.source`,
+reliable: seed 220 / signup 2 / staff 1 = 223, no NULLs, no other values.
+Write sites: `seed_import.py:213-218` ('seed'), `app.py:882-883` ('signup'),
+`seed_staff_admin.py:56-57` ('staff'). Gate-fixture INSERT sites
+(`qa_release.py:138`, `qa_pulse.py:187`, hermetic `qa_notifications.py:46`)
+contribute no live rows.
+Consequence for S7·D4 (stated, not ruled): every name in the stored packs
+is fictional. No real employer is named in any pack today.
+
+### F2 — File-side profile artifacts carry zero member entries
+Live paths are repo-root, not `data/` (`org_profiles.json`,
+`org_profiles_inferred.json`; loader default `reseed_engine.py:561`; no
+other copies exist).
+`org_profiles.json`: 158 entries — 158 seed, 0 member.
+`org_profiles_inferred.json`: 64 entries — 62 seed, 0 member, **2 matching
+nothing** in the live book and absent from the 52-name
+`meta.registry_only_orgs` list. The 62 is corroborated by commit `6cca30e`.
+Both files tracked; entered history at `6e4e1b1` (2026-07-18), i.e. present
+when D5 (git history clean) closed at `0cc7861` (2026-07-30) — consistent
+with D5's recorded seed-class basis.
+**Open item:** the two orphan entries are unexplained. Not a privacy
+finding (no member data); a provenance one. Unresolved.
+
+### F3 — The suppression-floor discrepancy is dormant; no exposure
+Confirmed three independent ways: (a) `gen_market_position_config.py` is
+retired with the write path structurally removed (`:312-317`), so the `:43`
+literal `3` lives only inside a never-written dict; (b) the live
+`data/market_position_config.json` contains no `suppression_floor` key
+(zero-hit grep); (c) exhaustive symbol grep across `.py/.js/.json/.html`
+returns exactly three hits — the dead literal, `app.py:2301` serving
+`SUPPRESSION_FLOOR` (=5, `aggregate.py:29`), and `web/js/pages.js:3375`
+rendering it into member-facing copy.
+**The only floor value any surface has ever read or shown is 5.** No cut
+has been emitted below floor 5 via this value. S7·D13(a)'s "confirm
+dormant" is answered. The misleading `:43` comment stands uncorrected —
+its own diff if wanted.
+
+### F4 — S3's 11 design paths against S7: 6 covered, 3 partial, 2 uncovered
+Uncovered: path 3 (`app.py:3120`, /api/analyst) and path 4
+(`app.py:3242`, `_guide_response`). Partial: path 6 (pack narrative — D4
+rules the stored narrative, not the outbound prompt), path 20
+(`SessionMiddleware` — D6 forces the seam, no row rules the redesign),
+path 25 (`seed_import` — D3 rules the writer strip, not the wider import
+split). Note: path 26 maps to D13(d), which is record-only by its own
+header — coverage by a deferred row is not a ruling.
+The named gap — outbound AI identity — became D14.
+
+### F5 — analyst_log retention: 180 days, governing
+`app.py:3031`: `LUMI_ANALYST_LOG_RETENTION_DAYS`, env-overridable,
+hardcoded default 180. Nothing in the repo sets it; the live `:8060`
+process (PID 1252) has zero `LUMI_*` variables set. **Live governing value
+is 180 days.** `.claude/launch.json` was not read; the no-read rule stands.
+
+### F6 — Outbound AI identity: triple-locked, never fired
+Both endpoints gated: `/api/analyst` at `app.py:3056` (`require_ai` → 403
+while the master switch is off); `_guide_response` has exactly one caller
+(`app.py:3075`) inside that same handler, plus its own condition at
+`:3243`. Master switch `AI_INSIGHTS_ENABLED` (`app.py:156`) defaults off
+and is **off live**. Independent outbound gate `claude_api.py:35-38`
+returns None unless `LUMI_AI_LIVE == "on"` **and** a key is present — both
+absent on `:8060`. Three independent locks, all locked.
+**`analyst_log` holds 0 rows.** `_analyst_log` fires on all six handler
+branches (`:3076, :3085, :3094, :3115, :3169, :3171`), including
+deterministic ones — so the route has never returned an answer of any kind.
+The 180-day prune cannot explain it: earliest org row 2026-06-11, 49 days
+of history, entirely inside the window.
+Board packs: 31 AI-generated / 99 deterministic, **all 130 seed-source**
+(discriminator: presence of AI-only narrative keys `evidence_commentary`,
+`key_findings`, `position_commentary`). The 31 evidence past outbound calls
+in which a **fictional** name crossed. No real member identity has ever
+crossed.
+No other stored outbound record exists: `peer_twin_cache` is an engine
+cache; `domain_summary` is 14 rows all `source='deterministic'`; no request
+log, no completions cache, no `.log` files; `claude_api.py` contains zero
+`print(`/`logging`/`open(` calls.
+
+### F7 — What would cross when the locks open (field names only)
+`orgs.name` crosses on all three paths: `app.py:3119` → `claude_api.py:606`;
+`app.py:3242` → `claude_api.py:703`; `app.py:3462-3463` → `claude_api.py:210-211`.
+`registry_json.Company_Name` crosses **nowhere** — every path builds from
+org-row columns only. **No** user email or `users` field crosses on any path.
+Firmographics (industry, fte_band, region; v2 packs add strategy stances)
+do cross. `strip_internal` keeps raw peer value lists off the wire.
+
+### F8 — Correction to the spec's own citation (S3 path 6)
+`claude_api.py:357-359` and `:433-435` are inside `_deterministic_pack` —
+they interpolate the org name into **locally generated text stored in
+`narrative_json`, never sent**. The outbound crossing for packs is
+`:210-211`. The spec's S3 citation conflates the two; the transmission that
+became D14 repeated the conflation. Both lines are real; they are different
+things. Recorded so the error is not inherited by the build.
+
+### F9 — AI_ANALYST defaults ON (pre-flip hazard, unfixed)
+`app.py:133`: the per-surface flag `LUMI_AI_ANALYST` defaults **on**.
+Flipping the master switch therefore brings the analyst surface live in the
+same motion, with `orgs.name` crossing per F7, unless the per-surface flag
+is explicitly set off first. The comment at `app.py:152` describing the
+flip as a single deploy-env action is incomplete on this point.
+**Action lands on the AI Insights pre-flip checklist, not the Phase 1
+build.** Nothing changed here.
+
+### F10 — Second server process on :8068 (observation)
+A second uvicorn (PID 95641) runs against a non-live `LUMI_DB` with one
+`ANTHROPIC` key variable in its environment. Its AI switch variables are
+unset and `claude_api.py:35` returns None before any key is consulted, so
+outbound is impossible from it — the scenario the positive live-switch was
+built for (`claude_api.py:27-34`). Not an exposure. Key hygiene and whether
+the process should still be running are open housekeeping.
+
+### Schema note
+`meta` stores values in `value_json`, not `value`.
+
+### Status
+All Phase 1 retrievals are answered; nothing is blocked pending further
+measurement. The S7 decision sheet awaits David's rulings.
