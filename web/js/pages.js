@@ -246,7 +246,7 @@ function ExportBoardPack({ me, cut }) {
    dashboard view, scoped to the active peer filter. Admin-only (mirrors the
    board-pack share gate + /api/shares require_admin). The button sits beside
    Export board pack on the Overview header and on My dashboards. Posts
-   kind=dashboard, config {cut, cut_value, name}, 30-day expiry; on success the
+   kind=dashboard, config {cut, cut_value}, 30-day expiry; on success the
    dialog shows the public link with a copy button. */
 function ShareButton({ me, cut, name, layout }) {
   const [open, setOpen] = useState(false);
@@ -272,7 +272,7 @@ function ShareDialog({ cut, name, layout, onClose }) {
       const r = await api("/api/shares", { method: "POST", body: {
         kind: "dashboard",
         config: {
-          cut: (cut && cut.dim) || "all", cut_value: (cut && cut.value) || null, name: name || null,
+          cut: (cut && cut.dim) || "all", cut_value: (cut && cut.value) || null,
           layout: hasLayout ? layout.map(s => ({ question_id: s.question_id, row_id: s.row_id, size: s.size })) : undefined,
         },
         expiry_days: 30 } });
