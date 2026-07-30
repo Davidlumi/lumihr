@@ -16,6 +16,7 @@ SRV="$ROOT/server"
 WORK="${1:-$(mktemp -d /tmp/lumi_gates.XXXXXX)}"
 mkdir -p "$WORK"
 DB="$WORK/lumi_qa.db"
+IDB="$WORK/identity_qa.db"
 PORT=8060
 PASS=(); FAIL=()
 
@@ -38,7 +39,7 @@ SERVER_PID=""
 start_server() {  # $1 = db path ("" = real DB), $2 = log name
   kill_port
   local log="$WORK/$2.log"
-  ( cd "$SRV" && LUMI_DB="${1}" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
+  ( cd "$SRV" && LUMI_DB="${1}" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
       nohup python3 -m uvicorn app:app --port $PORT >"$log" 2>&1 & print $! ) | read SERVER_PID
   for i in {1..40}; do
     curl -s -o /dev/null "http://localhost:$PORT/api/legal" && break
@@ -53,7 +54,7 @@ start_server() {  # $1 = db path ("" = real DB), $2 = log name
 run_gate() {  # $1 = script name (in server/), rest = extra env assignments
   local g="$1"
   say "$g"
-  ( cd "$SRV" && env LUMI_DB="$DB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
+  ( cd "$SRV" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
       python3 "$g.py" ) >"$WORK/$g.out" 2>&1
   local rc=$?
   tail -4 "$WORK/$g.out"
@@ -75,17 +76,29 @@ teardown() {
       python3 "$SRV/dbsnapshot.py" check "$WORK/live_pre.json" --db "$ROOT/lumi.db" --allow-volatile
     fi
   fi
+  # D8/backup-policy creation-time doctrine: the identity throwaway is pure PII —
+  # delete it at teardown, success or failure. Logs stay (verbatim-tally convention).
+  rm -f "$IDB" "$IDB-shm" "$IDB-wal" 2>/dev/null
+  if [[ -e "$IDB" ]]; then print "⚠️  identity throwaway NOT deleted: $IDB"
+  else print "identity throwaway deleted (logs kept in $WORK)"; fi
 }
 trap teardown EXIT
+trap 'exit 130' INT TERM
 
-say "throwaway copy (SQLite backup API)"
-python3 - "${LUMI_GATES_SRC:-$ROOT/lumi.db}" "$DB" <<'EOF'
+say "stopping :$PORT so the two-store copy is one instant (D8)"
+kill_port
+say "throwaway copies (SQLite backup API, both stores, one instant)"
+python3 - "${LUMI_GATES_SRC:-$ROOT/lumi.db}" "$DB" "${LUMI_GATES_IDENTITY_SRC:-$ROOT/identity.db}" "$IDB" <<'EOF'
 import sqlite3, sys
-src = sqlite3.connect(sys.argv[1]); dst = sqlite3.connect(sys.argv[2])
-src.backup(dst); dst.close(); src.close()
-print("backup complete ->", sys.argv[2])
+for src_p, dst_p in ((sys.argv[1], sys.argv[2]), (sys.argv[3], sys.argv[4])):
+    src = sqlite3.connect(src_p)
+    src.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # D8: checkpoint each store before copy (no-op on non-WAL)
+    dst = sqlite3.connect(dst_p)
+    src.backup(dst); dst.close(); src.close()
+    print("backup complete ->", dst_p)
 EOF
 [[ -s "$DB" ]] || { print "FATAL: backup produced no file"; exit 2; }
+[[ -s "$IDB" ]] || { print "FATAL: identity backup produced no file"; exit 2; }
 
 # gate-safety-2: fingerprint the REAL lumi.db (all 41 tables, count+content) so teardown can prove
 # the suite — which runs entirely on the throwaway $DB — left live byte-identical.
@@ -97,7 +110,7 @@ python3 "$SRV/dbsnapshot.py" save "$WORK/live_pre.json" --db "$ROOT/lumi.db" >/d
 # answers submitted after the last live aggregate run (e.g. the Tester signup org
 # testing the questionnaire) otherwise read as false engine drift in qa_engine_audit.
 say "re-aggregate throwaway (answers -> payloads, staleness alignment)"
-( cd "$SRV" && LUMI_DB="$DB" ANTHROPIC_API_KEY='' python3 aggregate.py ) >"$WORK/aggregate.out" 2>&1 \
+( cd "$SRV" && LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' python3 aggregate.py ) >"$WORK/aggregate.out" 2>&1 \
   || { print "FATAL: aggregate failed — see $WORK/aggregate.out"; exit 2; }
 tail -2 "$WORK/aggregate.out"
 
@@ -114,7 +127,7 @@ run_gate qa_commentary
 # --- freeze gate (Diff 12): qa_plausibility Check C, ENFORCING. Root-dir script
 #     (not server/); honours LUMI_DB so it validates the suite's throwaway, not live.
 say "qa_plausibility"
-( cd "$ROOT" && env LUMI_DB="$DB" ANTHROPIC_API_KEY='' python3 qa_plausibility.py ) >"$WORK/qa_plausibility.out" 2>&1
+( cd "$ROOT" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' python3 qa_plausibility.py ) >"$WORK/qa_plausibility.out" 2>&1
 PLAUS_RC=$?
 tail -4 "$WORK/qa_plausibility.out"
 if [[ $PLAUS_RC -eq 0 ]]; then PASS+=(qa_plausibility); else FAIL+=("qa_plausibility (rc=$PLAUS_RC, see $WORK/qa_plausibility.out)"); fi
