@@ -12127,3 +12127,228 @@ the process should still be running are open housekeeping.
 ### Status
 All Phase 1 retrievals are answered; nothing is blocked pending further
 measurement. The S7 decision sheet awaits David's rulings.
+
+## PHASE 1 SPLIT — THE S7 RULINGS (ruled 30 July 2026, D0-D14)
+
+Ruled against PRIVACY_PHASE1_SPLIT_SPEC_2026-07-30.md, content-hash
+`6c8fd2f409176fbd`, S7 at lines 508-573. Measurements grounding these
+rulings are the findings record at commit `4b1c8e6` (F1-F10). Book at
+ruling: `11f574a0735e1b61`, 89,321 rows. David ruled all rows as
+recommended; D1b ruled STAY on the roadmap ground stated below.
+
+**This entry authorises no build.** The Phase-1 build ships as its own
+rehearsal-gated transmissions, one fix class per commit.
+
+### D0 — DECLARATORY: Phase 1 delivers pseudonymisation, not anonymisation
+After the split the reward store still holds `org_id`, eleven
+quasi-identifier columns, free-text `analyst_log`, and (per D4) 130
+existing packs. It remains **personal data under UK GDPR**. Phase 1's
+achievement is exposure reduction and deletion enablement. No downstream
+document, DPIA, RoPA, or member-facing claim may describe the reward store
+as anonymous on the strength of this split.
+
+### D1a — The ten quasi-identifiers STAY reward-side
+industry, fte_band, hq_region, ownership_type, unionised_level,
+hr_maturity, business_maturity, operating_model, similarity_vector_json,
+default_cut. Ground: they are the aggregation logic itself; every emission
+path is floor-gated at 5 (`aggregate.py:29`); moving them puts the engine's
+cut dimensions behind a cross-store call for zero identity gain.
+Two riders: (i) S1.3's residual-risk column becomes a **k-anonymity
+register** for a named later hardening pass — deferred, not dismissed;
+(ii) `similarity_vector_json` carries a **no-raw-export rule** binding on
+the spec of any future export surface, since the column is a dense
+firmographic fingerprint even without names.
+
+### D1b — `subsector` STAYS reward-side
+Ruled separately because the D1a ground does not reach it: subsector has
+**no cross-org engine path** (own-org display only, `app.py:971,3705`) and
+is the nearest to free text of the eleven, so it was the one column where
+moving was cheap and the risk highest.
+**Ruled STAY on the roadmap ground:** sub-industry benchmarking is intended,
+and subsector is expected to become a cut dimension. Moving it now would
+buy a small present gain and pay it back with a cross-store call on a
+future engine path. The risk is recorded on the k-anonymity register with
+D1a's items.
+
+### D2 — `analyst_log` STAYS reward-side; retention ruled at 180 days
+Placement ground: splitting does not sanitise free text — moving the table
+would relocate the risk without reducing it. Retention and per-org purge
+are the real controls and both exist (`app.py:3034-3046`; `app.py:534`),
+with the purge to be wired into the Phase-4 deletion hook.
+**Retention is ruled at 180 days as the figure**, not merely inherited as
+the default at `app.py:3031`. `LUMI_ANALYST_LOG_RETENTION_DAYS` remains
+env-overridable, but **any override is itself a decision requiring a
+DECISIONS entry** — the variable must not silently move retention.
+
+### D3 — `registry_json`: strip the 2 identity keys, form (i)
+Strip `Company_Name` and `Org_ID` from all 158 blobs; the 42 firmographic
+keys stay. Ground: no DB-blob consumer reads either key, verified against
+all eight parsers; `app.py:4104-4111` preserves-without-reading so it
+cannot reintroduce them.
+Storage form: **(i) reward-side attribute blob now**; (ii) typed attribute
+table remains a Phase-2 option, not ruled out.
+**The `seed_import.py:226` writer strip ships in the same diff** — without
+it any re-import re-embeds and the fix un-sticks.
+Noted, not settled: `registry_json` presence (158 non-null / 65 null) is
+today's de facto seed/member proxy. The strip does not change that, but
+neither does it settle the queued provenance question — surfacing real
+contributor n distinctly from total n still needs a real marker.
+
+### D4 — Board packs: FORWARD-ONLY. No retroactive substitution.
+Ground, from F1: all 130 packs belong to seeded orgs, all to a single seed
+org. Every embedded name is **fictional**. There is no personal data in the
+stored packs, so there is nothing to remediate.
+Ruled: (a) payload **late-binds** at the one endpoint
+(`app.py:3601-3670`); the stored `organisation` block is dropped going
+forward; (b) future narratives generate against a **placeholder token**
+resolved at serve; (c) the existing 130 are **left as they are** — no
+substitution, no mutation. They regenerate on any reseed.
+**Carried into the build as an acceptance condition:** the spec's proposed
+"contains-name test 130→0" is a full-string test and would miss short
+forms, possessives, and abbreviations. Harmless for fictional names; **not
+harmless once a real member name is at stake**. The placeholder mechanism
+must be verified against name **variants** — full string, name minus legal
+suffix, leading token — not the exact `orgs.name` string.
+Rejected and recorded: moving `narrative_json` alone identity-side. It
+splits one row across two stores, which is precisely what D6's
+no-cross-file-joins architecture exists to prevent.
+
+### D5 — `shares.config_json`: strip the redundant name key
+Strip the `name` key from the 5 rows carrying it and stop the client
+sending it (`web/js/pages.js:275`). Own-name only, 0 cross-org, and already
+redundant — the share endpoint joins orgs for `org_name` (`app.py:5794`).
+
+### D6 — Store shape B, plus the atomicity ruling
+**Shape B:** separate `identity.db` + `server/identity.py` lookup module +
+`LUMI_IDENTITY_DB` guard twin carrying the same `_GATE_ARGV_RE` refusal
+(`server/db.py:19-41`). Ground: 1:1 port to a separate Postgres
+database/role at Phase 2 (the Phase-0 D3 GO shape), a separately-retained backup
+family, and separation enforced architecturally. ATTACH is **banned**; the
+0A audit verified zero existing usage, so there is no habit to unlearn.
+**The atomicity ruling — new, and required before any build.** Two files
+with ATTACH banned means no cross-store transaction. Registration, invite
+acceptance, share creation, and org deletion all span both stores, and a
+failed second write leaves an orphan. Ruled: **`org_id` is minted
+reward-side; the identity row is an attachment to it.** Consequences: an
+orphan identity row is inert and deletable; an orphan reward row is a
+nameless org that renders as unnamed. Both are degradations; neither is
+corruption. **An orphan-reconciliation assertion joins the gate suite.**
+Postgres will have the same property across databases at Phase 2, so this
+shape ports.
+
+### D7 — Share tokens: indirection, `share_id` minted reward-side
+`share_tokens(token -> share_id)` identity-side; `shares` stays reward-side
+keyed `share_id`; `share_audit.share_token` becomes a `share_id` FK.
+Ground: the Phase-0 D1 backup finding named live-at-copy tokens as PII
+payload, while `config_json` is reward config the render path needs.
+Per D6's atomicity ruling, **`share_id` is minted reward-side first**. The
+failure direction is already safe: a `shares` row whose identity-side token
+never landed is simply unreachable, which is the correct way for that to
+break.
+
+### D8 — Gate throwaway: two-file
+Both stores copied; the identity copy writable. Ground: the gates then test
+the shape production actually has; the five identity-writing gates
+(`qa_pulse`, `qa_release`, `qa_strategy`, `verify.py`, `qa_phase2`) get
+their writable base tables; and `qa_engine_audit.py:728-733` keeps the
+gate-side identity access its cross-tenant leak probe depends on — a
+name-stripped throwaway would blind the one check that proves the API
+withholds a foreign org's name. The re-joined single-file form tests a dead
+shape and recreates the full-PII scratch class.
+Two build conditions: **`qa_integrity.py:26`'s hardcoded `../lumi.db` is
+rewired in the same diff** (the one unconfigurable gate); and both copies
+are taken at **one instant with `wal_checkpoint(TRUNCATE)` on each** — the
+cp-lag lesson doubles with two files, and a skewed pair would hand the
+gates a reward store from t2 against an identity store from t1.
+Scratch copies enter Phase 3-4 deletion-on-exit scope.
+
+### D9 — Identity backup family: retain-1, CONDITIONAL
+Retain 1, scheduled at creation. Ground: the family is pure PII
+concentrate with no analytical value in its history.
+**The condition is binding.** Reward data without the identity mapping is
+anonymised rubble and is **not reconstructible from the other store** — if
+the single identity copy is bad, membership is re-identified by asking
+members. Retain-1 therefore ships **only with an integrity check plus a
+row-count assertion against live at creation time, recorded**. Absent that
+assertion, the ruling is **retain-2**.
+
+### D10 — The pre-split backup pin
+The backup taken before S6 step 2 is a **named exception** to the last-3
+retention rule (`data/backup_policy.md:11-13`), held until the post-soak
+DROP diff closes. Without it, three subsequent pre-diff backups age it out
+and rollback dies three diffs after the split.
+**Its deletion is scheduled at pin-creation, conditional on that DROP
+close** — per the creation-time doctrine. A pin with a release condition
+but no scheduled release becomes a permanent PII concentrate nobody
+remembers to destroy.
+
+### D11 — `meta.registry_only_orgs`: split count from list
+The **count** stays reward-side (the only thing the API serves,
+`app.py:2298`); the **52 name strings** move identity-side. Seed provenance
+worth keeping, but not in the reward store.
+
+### D12 — Email-stamp columns: two different fixes, CONDITIONAL
+Not one fix. Ruled separately:
+(a) `metric_suggestions.user_email`, `metric_suggestions.reviewed_by`,
+`metric_commentary.edited_by` have live read paths (`admin.js:120,132`) —
+**convert to `user_id` refs** resolved through the lookup module.
+(b) `validation_overrides.user_email` is insert-only with **no read path**
+(`app.py:4581-4583`) — the correct fix is **stop writing it**, not convert it.
+**Condition:** both ship only if the re-verified row counts are **zero**.
+An email stamp from a since-deleted user has no `user_id` to point at, so a
+non-zero count is a backfill with unresolvable rows. **Non-zero returns for
+a ruling on what happens to them** — it does not proceed on assumption.
+
+### D13 — The record items, as ruled
+(a) **Closed.** The mp-config floor-3 is dormant three independent ways
+(F3); the only value any surface has read or shown is 5; no cut has been
+emitted below floor 5. The misleading comment at
+`gen_market_position_config.py:43` is corrected in whatever diff next
+touches that file — not raised alone.
+(b) `users.preview_as_core` and `orgs.created_at`: housekeeping diff, its
+own commit, unscheduled.
+(c) The composition endpoint cell-of-1 (`app.py:2283-2295`) joins the
+k-anonymity register **as the existing differential-attack flag already
+standing in this log** — it is not a second, new finding.
+(d) **Closed on privacy grounds.** Both profile artifacts carry zero member
+entries (F2); the artifact split is low priority. **Open:** the two orphan
+entries in `org_profiles_inferred.json` remain unexplained — a provenance
+question, not a privacy one.
+(e) The L1/L2 live exposures (`app.py:5056` token-bearing stdout;
+`app.py:6038-6041` startup demo creds) predate Phase 1. **They require a
+named phase; "queued" without one is how items stop moving.** Assignment
+outstanding.
+(f) `verify_diff7.py:17` names a deleted backup — **folded into the diff
+that touches verify_diff7 for the split**, not carried as a record.
+
+### D14 — Outbound AI identity: re-scoped to the pre-flip checklist
+Not a Phase-1 remediation row. F6 established the paths are triple-locked
+(master switch off, `LUMI_AI_LIVE` off, key absent) and that `analyst_log`
+holds **0 rows** — the route has never returned an answer of any kind. The
+31 AI-generated packs are all one seed org: only **fictional** names have
+ever crossed to the sub-processor.
+The decision is real but pre-flip: when the locks open, `orgs.name` crosses
+on all three paths (F7) — **pseudonymise, or accept it as a documented
+processor transfer?** It must be decided **before the DPIA and RoPA are
+finalised**, since those must describe it accurately either way.
+Recorded scope limits, from F7: `registry_json.Company_Name` crosses
+**nowhere**; **no** user email or `users` field crosses on any path.
+**Added to the AI Insights pre-flip checklist alongside the DPA, region
+verification, dpo@ mailbox, and solicitor sign-off:** F9's finding that
+`AI_ANALYST` defaults **on** (`app.py:133`), so flipping the master switch
+brings the analyst surface live in the same motion unless the per-surface
+flag is set off first. The comment at `app.py:152` describing the flip as a
+single deploy-env action is incomplete on this point. Documentary fix;
+changing the default would be a diff and is not ruled here.
+
+### Corrections carried
+Per F8: `claude_api.py:357-359` and `:433-435` are `_deterministic_pack`
+interpolating into **stored** narrative text, never sent; the outbound pack
+crossing is `:210-211`. The spec's S3 citation conflates them. The build
+must not inherit the error.
+
+### Status
+S7 is ruled in full, D0-D14. The Phase-1 build follows as its own
+transmissions. Outstanding non-build items: D13(e)'s phase assignment,
+D13(d)'s orphan pair, D14's pre-flip decision, and the F10 `:8068` process
+housekeeping.
