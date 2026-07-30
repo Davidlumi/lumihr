@@ -38,3 +38,9 @@ server/.env.local
 # --- machine-local tooling config (not product; keeps a per-machine permission allowlist) ---
 .claude/settings.local.json
 server/lumi.db
+
+# --- identity store (Phase 1 split): pure PII, never versioned ---
+identity.db
+identity.db-wal
+identity.db-shm
+identity.db.bak*
