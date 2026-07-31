@@ -286,16 +286,55 @@ def remove_user_identity(user_id, reassign_created_by_to):
     shadow() AFTER the reward-side commit). One transaction, explicit FK order
     (E8: bare REFERENCES, no ON DELETE): reassign invites.created_by first, then
     delete password_resets, then the users row last. org_register untouched —
-    user-level, not org-level. sessions untouched (empty until the seam by the
-    step-2 skip ruling); a future identity-side session row would FK-block the
-    users delete, roll this transaction back whole, and surface via shadow()'s
-    log and the recon — visible, never silent."""
+    user-level, not org-level. Sessions are deleted here too (Seam-B): once the
+    session lifecycle moved identity-side, sessions.user_id's FK would block the
+    users delete — the commit that created that hazard closes it, in FK order."""
     conn = get_conn()
     try:
         conn.execute("UPDATE invites SET created_by=? WHERE created_by=?",
                      (reassign_created_by_to, user_id))
         conn.execute("DELETE FROM password_resets WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM users WHERE user_id=?", (user_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def create_session(token, user_id, expires_at):
+    """Store a session identity-side (Seam-B). auth.py mints the token and expiry —
+    policy stays there, identity.py stores what it is given, exactly as register_user
+    takes a computed pw_hash."""
+    conn = get_conn()
+    try:
+        conn.execute("INSERT INTO sessions(token, user_id, expires_at) VALUES (?,?,?)",
+                     (token, user_id, expires_at))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def session_user_identity(token):
+    """Validate one session token and return the IDENTITY half of the user record,
+    or None if the token is unknown or expired. One identity-side query — the same
+    sessions-join-users shape and the SAME expiry rule as the pre-split read; the
+    reward-side account state is composed on top by auth.get_session_user."""
+    conn = get_conn()
+    try:
+        r = conn.execute(
+            "SELECT u.user_id, u.org_id, u.email, u.pw_hash, u.display_name, s.expires_at "
+            "FROM sessions s JOIN users u ON u.user_id=s.user_id "
+            "WHERE s.token=? AND s.expires_at > datetime('now')", (token,)).fetchone()
+        return dict(r) if r else None
+    finally:
+        conn.close()
+
+
+def delete_session(token):
+    """Logout — single token, idempotent."""
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM sessions WHERE token=?", (token,))
         conn.commit()
     finally:
         conn.close()

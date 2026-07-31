@@ -9,7 +9,8 @@ present both sides whose column tuples differ). Drift is FATAL (nonzero exit) pe
 the 1a sequencing ruling, whose condition — the 1b mutation mirror and 1c delete
 mirror both landed — was met at b8aa490: every column in the compared sets now has
 a live mirror, so any drift is a real dual-write defect, not an expected gap.
-Sessions excluded by ruling (step 2 skip; clean cutover at the seam).
+Sessions are excluded: since Seam-B they live ONLY identity-side, so comparing
+the two stores for them compares a live table against an inert one.
 
 Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions AND
 drift are 0 for every table.
@@ -51,7 +52,7 @@ for label, rsql, isql, k in PAIRS:
           % (label, len(rrows), len(irows), only_reward, only_identity, drift))
     ok &= (only_reward == 0 and only_identity == 0 and drift == 0)
 
-print("sessions: EXCLUDED by ruling (step-2 skip; clean cutover at the seam)")
+print("sessions: EXCLUDED — identity-only by design since Seam-B (the reward-side rows are\n          inert until step 5, so a two-store comparison would be meaningless here)")
 print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift"
                               if ok else "FAIL — orphans or drift present"))
 sys.exit(0 if ok else 2)

@@ -54,29 +54,37 @@ def rate_limited(key):
 # -------------------------------------------------------------- sessions ---
 
 def create_session(user_id):
-    conn = get_conn()
+    """Seam-B: sessions live in identity.db. Token and TTL are minted here (policy);
+    identity.py stores them. Hard cutover — nothing is written reward-side."""
     token = secrets.token_urlsafe(32)
     expires = (datetime.utcnow() + timedelta(days=SESSION_TTL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
-    conn.execute("INSERT INTO sessions(token, user_id, expires_at) VALUES (?,?,?)",
-                 (token, user_id, expires))
-    conn.commit()
+    identity.create_session(token, user_id, expires)
     return token
 
 
 def get_session_user(token):
+    """Seam-B: a cross-store composition. The token is validated identity-side (same
+    join, same expiry rule); reward-side account state is layered on top. The result
+    carries the SAME keys the pre-split "SELECT u.* + expires_at" did, so every caller
+    and request.state.user are unchanged in shape."""
     if not token:
         return None
-    conn = get_conn()
-    row = conn.execute(
-        """SELECT u.*, s.expires_at FROM sessions s JOIN users u ON u.user_id=s.user_id
-           WHERE s.token=? AND s.expires_at > datetime('now')""", (token,)).fetchone()
-    return row
+    ident = identity.session_user_identity(token)
+    if ident is None:
+        return None
+    acct = get_conn().execute(
+        "SELECT role, chart_prefs_json, preview_as_core, created_at, notify_prefs_json, "
+        "platform_admin, active_dashboard_id FROM users WHERE user_id=?",
+        (ident["user_id"],)).fetchone()
+    if acct is None:
+        return None          # no reward-side account row: the same 401 the old join gave
+    out = dict(acct)
+    out.update(ident)
+    return out
 
 
 def destroy_session(token):
-    conn = get_conn()
-    conn.execute("DELETE FROM sessions WHERE token=?", (token,))
-    conn.commit()
+    identity.delete_session(token)
 
 
 # ----------------------------------------------------------------- users ---
