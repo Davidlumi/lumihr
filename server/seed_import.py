@@ -29,6 +29,11 @@ SIM_CATEGORICAL = [
 SIM_NUMERIC = ["Workforce_Frontline_%", "Workforce_Shift_%", "Workforce_Unionised_%"]
 
 
+# D3 (ruled 2026-07-30): the two IDENTITY keys never enter the reward-side blob —
+# they live in identity.db's org_register (company_name / external_registry_id).
+REGISTRY_IDENTITY_KEYS = ("Company_Name", "Org_ID")
+
+
 def norm_name(s):
     return re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
@@ -222,7 +227,9 @@ def run(data_dir, fresh=False):
                 reg.get("FTE_Band") if reg else None,
                 reg.get("HQ_Region") if reg else None,
                 reg.get("Ownership_Type") if reg else None,
-                j(reg) if reg else None,
+                # strips a COPY: `reg` keeps Company_Name for the sim_vectors lookup below
+                j({k: v for k, v in reg.items() if k not in REGISTRY_IDENTITY_KEYS})
+                if reg else None,
                 j(sim_vectors.get(reg["Company_Name"])) if reg else None,
             ),
         )
