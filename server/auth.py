@@ -103,8 +103,13 @@ def create_user(org_id, email, password, role, display_name=None):
 
 
 def find_user(email):
-    conn = get_conn()
-    return conn.execute("SELECT * FROM users WHERE email=?", (email.lower().strip(),)).fetchone()
+    """The row for one email — identity store only (P1; D6: identity through
+    identity.py). Returns identity.users' five columns as a dict, or None on a
+    miss, exactly as the reward-side SELECT returned a row or None.
+    A straight swap, not a Seam-B composition: a repo-wide census of all six
+    callers found none reads a reward-side column (role, platform_admin, prefs)
+    off this result — only pw_hash, user_id, and truthiness."""
+    return identity.lookup_user_by_email(email.lower().strip())
 
 
 # ----------------------------------------------------- invites & resets ---

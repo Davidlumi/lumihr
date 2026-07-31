@@ -887,7 +887,7 @@ async def register(request: Request):
         raise HTTPException(400, "Please accept the Platform Terms of Use to create your account.")
     conn = get_conn()
     nn = re.sub(r"[^a-z0-9]", "", body["org_name"].lower())
-    if conn.execute("SELECT 1 FROM orgs WHERE normalized_name=?", (nn,)).fetchone():
+    if identity.org_lookup_by_normalized(nn):
         raise HTTPException(400, "An organisation with that name already exists — ask your admin for an invite.")
     if auth_lib.find_user(body["email"]):
         raise HTTPException(400, "That email already has an account.")
@@ -1075,8 +1075,12 @@ async def change_role(request: Request):
     if role not in ("admin", "contributor", "viewer"):
         raise HTTPException(400, "Role must be admin, contributor or viewer.")
     conn = get_conn()
-    target = conn.execute("SELECT * FROM users WHERE org_id=? AND lower(email)=?",
-                          (org["org_id"], email)).fetchone()
+    # P1: email resolves identity-side; org scoping stays REWARD-side, where
+    # org_id is authoritative and survives step 5. Identity is used for the
+    # email -> user_id resolution only, never for the org membership test.
+    ident = identity.lookup_user_by_email(email)
+    target = conn.execute("SELECT * FROM users WHERE user_id=? AND org_id=?",
+                          (ident["user_id"], org["org_id"])).fetchone() if ident else None
     if target is None:
         raise HTTPException(404, "No member with that email in your organisation.")
     if target["role"] == "admin" and role != "admin":
@@ -1087,7 +1091,7 @@ async def change_role(request: Request):
                                      "your organisation must always have at least one Admin.")
     conn.execute("UPDATE users SET role=? WHERE user_id=?", (role, target["user_id"]))
     conn.commit()
-    return {"ok": True, "email": target["email"], "role": role}
+    return {"ok": True, "email": ident["email"], "role": role}
 
 
 @app.delete("/api/team/member")
@@ -1096,8 +1100,12 @@ async def remove_member(request: Request):
     body = await _json(request)
     email = (body.get("email") or "").strip().lower()
     conn = get_conn()
-    target = conn.execute("SELECT * FROM users WHERE org_id=? AND lower(email)=?",
-                          (org["org_id"], email)).fetchone()
+    # P1: email resolves identity-side; org scoping stays REWARD-side, where
+    # org_id is authoritative and survives step 5. Identity is used for the
+    # email -> user_id resolution only, never for the org membership test.
+    ident = identity.lookup_user_by_email(email)
+    target = conn.execute("SELECT * FROM users WHERE user_id=? AND org_id=?",
+                          (ident["user_id"], org["org_id"])).fetchone() if ident else None
     if target is None:
         raise HTTPException(404, "No member with that email in your organisation.")
     if target["role"] == "admin":
@@ -1126,7 +1134,7 @@ async def remove_member(request: Request):
         conn.rollback()
         raise
     identity.shadow(identity.remove_user_identity, target["user_id"], user["user_id"])
-    return {"ok": True, "removed": target["email"]}
+    return {"ok": True, "removed": ident["email"]}
 
 
 @app.delete("/api/team/invite/{token}")
