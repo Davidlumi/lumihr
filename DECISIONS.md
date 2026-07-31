@@ -12402,3 +12402,22 @@ to the cascade's existing reassign/delete split. The dangling-reference
 class (`dashboards`, `share_audit`, `peer_groups`, `analyst_log` — no FK,
 survive with dead user_id refs) and the D12 email-stamp survival (1 live
 `metric_suggestions.user_email` row) stand as named findings, unfixed here.
+
+## STEP 7 PRE-RECORD — gate-safety-2 volatile allowlist extension (recorded 30 July 2026)
+
+Two live-usage halts during S6 step 3's build (the 1b echo drift on `chart_prefs_json`; a
+second halt on the same column during the user-identity-display commit) both traced to
+ordinary product use of account-state columns the S4.2 split correctly keeps reward-side —
+not to any defect in the build. Both resolved by tracing content movement to a column
+outside the identity domain and re-baselining; neither indicated an actual problem.
+
+**Recorded for step 7's dbsnapshot design, not built now:** `chart_prefs_json`,
+`notify_prefs_json`, and `active_dashboard_id` join `sessions` on gate-safety-2's volatile
+allowlist — declared churn, not exception-by-omission. Ground: these columns change during
+ordinary live use of the platform while this build proceeds, exactly the property `sessions`
+already has a declared status for; without a declared allowlist entry, every future
+live-usage write to these columns re-triggers the same halt-and-diagnose cycle rather than
+being recognised as expected.
+
+This is a build-time finding entering the record ahead of step 7's actual work, per the
+standing convention that decisions are logged before anything is built on them.
