@@ -3141,7 +3141,8 @@ async def analyst(request: Request):
     answers = org_answers_for(org)
     entitled = make_entitled(user, org)
     questions = vis
-    data = {"organisation": {"name": org["name"], "industry": org["industry"],
+    data = {"organisation": {"name": (identity.org_display(org["org_id"]) or {}).get("name"),
+                             "industry": org["industry"],
                              "fte_band": org["fte_band"]},
             "metrics": []}
     for qid in qids:
@@ -3263,7 +3264,7 @@ async def _guide_response(question, intent, extra, org, vis):
     ctx = {"intent": intent, "question": question, "glossary": guide.GLOSSARY,
            "features": [{"answer": f["answer"], "route": f["route"], "cta": f["cta"]} for f in guide.FEATURES],
            "metrics": metas, "term": extra if intent == "term" else None,
-           "organisation": {"name": org["name"]}}
+           "organisation": {"name": (identity.org_display(org["org_id"]) or {}).get("name")}}
     res = (await to_thread.run_sync(claude_api.guide_answer, ctx)) if AI_ANALYST else {"ok": False}
     if res.get("ok"):
         answer = res["answer"]
