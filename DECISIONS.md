@@ -12485,3 +12485,45 @@ fix class.
 
 **Not built by this entry.** The pre-flight commit these findings imply is its own
 transmission, sequenced before step 5 and after step 4.
+
+## STEP 5 PRE-FLIGHT — AMENDMENT: three further blockers (recorded 31 July 2026)
+
+Amends the step-5 pre-flight record at `7d322d4`, which listed five blockers. The seam
+commits surfaced three more. The original entry stands as committed; this adds to it.
+
+**Ranked by consequence. The first outranks every item on the original list** — those break a
+gate; this one loses data.
+
+6. **`identity.db` has never been backed up.** No `identity.db.bak*` exists;
+   `data/backup_pins.json` records only the reward-side pin
+   (`lumi.db.bak_pre_presplit_20260730_221335`). This is tolerable *only* while `identity.db`
+   remains fully re-derivable from `lumi.db` — which it is today, because D3's strip and step
+   5's NULL are both unrun. **Step 5 ends that.** After the NULL, `identity.db` is the sole copy
+   of every member name and email, with no backup and D9's retain-1 family existing only on
+   paper. The first identity backup — carrying D9's ruled integrity check and row-count
+   assertion, without which the ruling is retain-2 — must exist **before** the NULL, not after.
+
+7. **No session expiry cleanup exists anywhere.** Verified live: every `DELETE FROM sessions` in
+   the codebase is either a logout (`identity.py:337`), a member removal
+   (`identity.py:297`, `app.py:1118`), or a gate fixture — **none is keyed on `expires_at`**. The
+   only pruning is the read-time filter at `identity.py:327`. Post-Seam-B this matters more than
+   it did: `identity.db` now accumulates dead credentials permanently, in the one store whose
+   entire design goal is holding as little PII as possible, whose backup family is ruled
+   retain-1 *on the ground that it is a pure PII concentrate*, and which Phase 4 must be able to
+   empty on request. A cleanup job is not step 5's work, but its absence is a Phase-4 design
+   input and belongs on the record before step 5 rather than after.
+
+8. **The gate-side session deletes break themselves post-cutover.** `qa_strategy.py:125` and
+   `verify.py:407` delete sessions from `lumi.db` via a `users` subselect. Post-Seam-B the
+   sessions they create live identity-side, so those deletes clean the wrong store — and for
+   `qa_strategy`, the surviving identity-side sessions then FK-block its own `DELETE FROM users`.
+   A gate that breaks itself, not merely one that leaves residue. Same class as the fourteen
+   demo-org query sites already recorded.
+
+**Dating note.** Four earlier entries in this build (the S4.2 amendment, the org-deletion gap,
+the step-7 pre-record, and the step-5 pre-flight) carry "30 July 2026" in their headings but were
+written on the 31st — the transmissions' own `Date:` line was carried into the entry text instead
+of the machine date. Their commit timestamps are correct; the headings are not. Corrected
+forward, not rewritten. **Standing practice from here: a transmission's `Date:` line is advisory
+only; every record-class entry heading takes the machine date at the moment of the write, quoted
+in rehearsal.**
