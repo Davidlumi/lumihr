@@ -78,14 +78,7 @@ DDL = [
     org_id TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     pw_hash TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'viewer',
-    display_name TEXT,
-    chart_prefs_json TEXT NOT NULL DEFAULT '{}',
-    preview_as_core INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    notify_prefs_json TEXT NOT NULL DEFAULT '{}',
-    platform_admin INTEGER NOT NULL DEFAULT 0,
-    active_dashboard_id TEXT
+    display_name TEXT
 )""",
     """CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
@@ -212,18 +205,31 @@ def register_org_identity(org_id, name, normalized_name):
         conn.close()
 
 
-def register_user(user_id, org_id, email, pw_hash, role, display_name):
+def register_user(user_id, org_id, email, pw_hash, display_name):
     """Shadow of auth.create_user — byte-identical values (the caller passes the same
-    normalised email and computed hash). Idempotent upsert on user_id; a DIFFERENT
-    user_id reusing an email hits users.email UNIQUE and raises (shadow() logs it)."""
+    normalised email and computed hash). Five identity columns only (S4.2 amendment:
+    users SPLITS — role and account state stay reward-side). Idempotent upsert on
+    user_id; a DIFFERENT user_id reusing an email hits users.email UNIQUE and raises
+    (shadow() logs it)."""
     conn = get_conn()
     try:
         conn.execute(
-            "INSERT INTO users(user_id, org_id, email, pw_hash, role, display_name) "
-            "VALUES (?,?,?,?,?,?) "
+            "INSERT INTO users(user_id, org_id, email, pw_hash, display_name) "
+            "VALUES (?,?,?,?,?) "
             "ON CONFLICT(user_id) DO UPDATE SET email=excluded.email, "
-            "pw_hash=excluded.pw_hash, role=excluded.role, display_name=excluded.display_name",
-            (user_id, org_id, email, pw_hash, role, display_name))
+            "pw_hash=excluded.pw_hash, display_name=excluded.display_name",
+            (user_id, org_id, email, pw_hash, display_name))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_pw_hash(user_id, pw_hash):
+    """Mirror of the reward-side password change — the ONE users mutation that
+    survives the split (S4.2 amendment). Single-key, idempotent."""
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE users SET pw_hash=? WHERE user_id=?", (pw_hash, user_id))
         conn.commit()
     finally:
         conn.close()

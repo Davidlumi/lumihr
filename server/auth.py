@@ -90,7 +90,7 @@ def create_user(org_id, email, password, role, display_name=None):
         "INSERT INTO users(user_id, org_id, email, pw_hash, role, display_name) VALUES (?,?,?,?,?,?)",
         (uid, org_id, em, ph, role, display_name))
     conn.commit()
-    identity.shadow(identity.register_user, uid, org_id, em, ph, role, display_name)
+    identity.shadow(identity.register_user, uid, org_id, em, ph, display_name)
     return uid
 
 

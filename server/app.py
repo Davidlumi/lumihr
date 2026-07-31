@@ -931,10 +931,12 @@ async def do_reset(request: Request):
     if len(body.get("password") or "") < 8:
         raise HTTPException(400, "Password must be at least 8 characters.")
     conn = get_conn()
+    ph = auth_lib.hash_password(body["password"])
     conn.execute("UPDATE users SET pw_hash=? WHERE user_id=?",
-                 (auth_lib.hash_password(body["password"]), row["user_id"]))
+                 (ph, row["user_id"]))
     conn.execute("UPDATE password_resets SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
+    identity.shadow(identity.update_pw_hash, row["user_id"], ph)
     identity.shadow(identity.consume_password_reset, row["token"])
     return {"ok": True}
 
