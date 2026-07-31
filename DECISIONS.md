@@ -12384,3 +12384,21 @@ The seven reward-side mutation sites (`role :1061`, `active_dashboard_id
 :2428/:2507/:2553`, `notify_prefs :2767/:2781`, `chart_prefs :2821`) touch
 columns that never move and need nothing, now or ever. The cutover equality
 assert (commit 9) narrows to the five-column tuple.
+
+## ORG-DELETION GAP — named, routed to Phase 4 (recorded 30 July 2026, rides 1c-pre)
+
+The 1c shape investigation established there is NO runtime org-deletion code
+path: zero `DELETE FROM orgs` outside gates and one-shot tooling. The only
+live deletion route is user-level (`DELETE /api/team/member`, `app.py:1071`).
+"This member organisation asked to be gone" cannot currently be executed.
+ROUTED: building the org-deletion path is Phase 4 (deletion-on-exit) scope,
+where D6's atomicity rules for a cascade spanning both stores already govern
+its design. Until then the gap stands named, not assumed covered.
+
+Also recorded from the same investigation: the remove_member cascade was
+FK-blocked by two unhandled referencing tables (`notification_reads`,
+`metric_suggestions.user_id`) — fixed reward-side in 1c-pre, pattern-matched
+to the cascade's existing reassign/delete split. The dangling-reference
+class (`dashboards`, `share_audit`, `peer_groups`, `analyst_log` — no FK,
+survive with dead user_id refs) and the D12 email-stamp survival (1 live
+`metric_suggestions.user_email` row) stand as named findings, unfixed here.
