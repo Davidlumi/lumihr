@@ -4,14 +4,15 @@ joins the gate suite properly at step 7 — deliberately NOT qa_-prefixed until 
 so the gate-roster derivation is unchanged).
 
 Reads both stores read-only. For each dual-written table: rows present reward-side
-with no identity counterpart, and the reverse. Also reports a content-drift count
-(rows present both sides whose column tuples differ) — drift is REPORTED, not fatal:
-during dual-write, reward-side mutations not yet mirrored (users.pw_hash/role/prefs)
-diverge the shadow; the seam cutover must re-sync or those mirrors ship first.
+with no identity counterpart, and the reverse, plus a content-drift count (rows
+present both sides whose column tuples differ). Drift is FATAL (nonzero exit) per
+the 1a sequencing ruling, whose condition — the 1b mutation mirror and 1c delete
+mirror both landed — was met at b8aa490: every column in the compared sets now has
+a live mirror, so any drift is a real dual-write defect, not an expected gap.
 Sessions excluded by ruling (step 2 skip; clean cutover at the seam).
 
-Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions are 0
-for every table.
+Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions AND
+drift are 0 for every table.
 """
 import hashlib, os, sqlite3, sys
 
@@ -48,8 +49,9 @@ for label, rsql, isql, k in PAIRS:
     print("%s: reward=%d identity=%d | reward-only (identity orphan missing)=%d | "
           "identity-only (reverse orphan)=%d | content-drift=%d"
           % (label, len(rrows), len(irows), only_reward, only_identity, drift))
-    ok &= (only_reward == 0 and only_identity == 0)
+    ok &= (only_reward == 0 and only_identity == 0 and drift == 0)
 
 print("sessions: EXCLUDED by ruling (step-2 skip; clean cutover at the seam)")
-print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions" if ok else "FAIL — orphans present"))
+print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift"
+                              if ok else "FAIL — orphans or drift present"))
 sys.exit(0 if ok else 2)
