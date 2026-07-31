@@ -1091,8 +1091,11 @@ async def remove_member(request: Request):
         for table in ("invites", "shares", "board_packs"):
             conn.execute("UPDATE %s SET created_by=? WHERE created_by=?" % table,
                          (user["user_id"], target["user_id"]))
+        conn.execute("UPDATE metric_suggestions SET user_id=? WHERE user_id=?",
+                     (user["user_id"], target["user_id"]))
         conn.execute("DELETE FROM sessions WHERE user_id=?", (target["user_id"],))
         conn.execute("DELETE FROM password_resets WHERE user_id=?", (target["user_id"],))
+        conn.execute("DELETE FROM notification_reads WHERE user_id=?", (target["user_id"],))
         conn.execute("DELETE FROM pinned_views WHERE org_id=? AND user_id=?",
                      (org["org_id"], target["user_id"]))
         conn.execute("DELETE FROM users WHERE user_id=?", (target["user_id"],))
