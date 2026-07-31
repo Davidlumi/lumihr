@@ -1042,12 +1042,13 @@ async def invite(request: Request):
     token = auth_lib.create_invite(org["org_id"], email, role, user["user_id"])
     link = "%s/app#/invite/%s" % (BASE_URL, token)
     inviter = user["display_name"] or user["email"]
+    org_name = (identity.org_display(org["org_id"]) or {}).get("name")
     send_notification(
-        "%s has invited you to lumi" % org["name"],
+        "%s has invited you to lumi" % org_name,
         "Hello,\n\n%s has invited you to join %s on lumi — the UK reward benchmarking "
         "co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\nThe link expires in "
         "%d days. If you weren't expecting this, you can ignore this email.\n\n"
-        "— lumi · UK reward benchmarking" % (inviter, org["name"], ROLE_LABELS.get(role, role),
+        "— lumi · UK reward benchmarking" % (inviter, org_name, ROLE_LABELS.get(role, role),
                                              link, auth_lib.INVITE_TTL_DAYS),
         to=email)
     return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
@@ -3484,7 +3485,8 @@ def assemble_pack_payload(request, user, org, cut):
         # the pool; decision paper 2026-07-13) — a visible, dated methodology change, so
         # stored v1 packs stay honestly labelled with the maths they were built under.
         "methodology_version": 2 if pos.MS_PREVALENCE else 1,
-        "organisation": {"name": org["name"], "industry": org["industry"],
+        "organisation": {"name": (identity.org_display(org["org_id"]) or {}).get("name"),
+                         "industry": org["industry"],
                          "fte_band": org["fte_band"], "region": org["hq_region"]},
         "cut_label": cut_label,
         "generated_date": datetime.utcnow().strftime("%d %B %Y"),
@@ -5146,7 +5148,7 @@ async def create_suggestion(request: Request):
         "id": cur.lastrowid, "metric_name": name, "what_it_measures": measures,
         "why_it_matters": matters, "suggested_category": category,
         "user_name": user["display_name"] or user["email"], "user_email": user["email"],
-        "org_name": org["name"]})
+        "org_name": (identity.org_display(org["org_id"]) or {}).get("name")})
     return {"status": "ok", "id": cur.lastrowid}
 
 
