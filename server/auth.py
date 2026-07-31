@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import bcrypt
 
 from db import get_conn
+import identity
 
 SESSION_TTL_DAYS = 14
 INVITE_TTL_DAYS = 7
@@ -83,10 +84,13 @@ def destroy_session(token):
 def create_user(org_id, email, password, role, display_name=None):
     conn = get_conn()
     uid = str(uuid.uuid4())
+    em = email.lower().strip()
+    ph = hash_password(password)
     conn.execute(
         "INSERT INTO users(user_id, org_id, email, pw_hash, role, display_name) VALUES (?,?,?,?,?,?)",
-        (uid, org_id, email.lower().strip(), hash_password(password), role, display_name))
+        (uid, org_id, em, ph, role, display_name))
     conn.commit()
+    identity.shadow(identity.register_user, uid, org_id, em, ph, role, display_name)
     return uid
 
 
@@ -101,10 +105,12 @@ def create_invite(org_id, email, role, created_by):
     conn = get_conn()
     token = secrets.token_urlsafe(24)
     expires = (datetime.utcnow() + timedelta(days=INVITE_TTL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    em = email.lower().strip()
     conn.execute(
         "INSERT INTO invites(token, org_id, email, role, created_by, expires_at) VALUES (?,?,?,?,?,?)",
-        (token, org_id, email.lower().strip(), role, created_by, expires))
+        (token, org_id, em, role, created_by, expires))
     conn.commit()
+    identity.shadow(identity.record_invite, token, org_id, em, role, created_by, expires)
     return token
 
 
@@ -122,6 +128,7 @@ def create_reset(user_id):
     conn.execute("INSERT INTO password_resets(token, user_id, expires_at) VALUES (?,?,?)",
                  (token, user_id, expires))
     conn.commit()
+    identity.shadow(identity.record_password_reset, token, user_id, expires)
     return token
 
 

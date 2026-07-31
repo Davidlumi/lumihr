@@ -57,6 +57,7 @@ import auth as auth_lib
 import hashlib
 
 import claude_api
+import identity
 import strategy_diag
 import pulses as pulses_mod
 import payments as payments_mod
@@ -882,6 +883,7 @@ async def register(request: Request):
         "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified) "
         "VALUES (?,?,?,'signup','full',0)", (org_id, body["org_name"].strip(), nn))
     conn.commit()
+    identity.shadow(identity.register_org_identity, org_id, body["org_name"].strip(), nn)
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
                                body.get("display_name"))
     record_acceptance(conn, org_id, uid, "platform", PLATFORM_TERMS_VERSION)
@@ -933,6 +935,7 @@ async def do_reset(request: Request):
                  (auth_lib.hash_password(body["password"]), row["user_id"]))
     conn.execute("UPDATE password_resets SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
+    identity.shadow(identity.consume_password_reset, row["token"])
     return {"ok": True}
 
 
@@ -1105,6 +1108,7 @@ async def revoke_invite(token: str, request: Request):
     conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
                  (token, org["org_id"]))
     conn.commit()
+    identity.shadow(identity.mark_invite_used, token)
     return {"ok": True}
 
 
@@ -1571,6 +1575,7 @@ async def accept_invite(request: Request):
         record_ai_consent(conn, row["org_id"], uid)
     conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
+    identity.shadow(identity.mark_invite_used, row["token"])
     token = auth_lib.create_session(uid)
     resp = JSONResponse({"ok": True})
     resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",

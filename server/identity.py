@@ -181,6 +181,103 @@ def lookup_user_by_email(email):
         conn.close()
 
 
+# --- dual-write shadow (S6 step 3 commit 1; DECISIONS c3df1d3, D6) ----------------
+# During dual-write the reward store is authoritative for every read; these writers
+# keep the identity store in step. A failed shadow write must never fail the user's
+# request — it logs loudly and leaves an orphan the reconciliation check surfaces
+# (server/identity_recon.py; joins the gate suite at step 7).
+
+def shadow(write_fn, *args):
+    """Run one identity shadow-write; never raise. No values are logged — function
+    name and DB error text only (constraint messages name columns, not data)."""
+    try:
+        write_fn(*args)
+    except Exception as e:
+        print("[identity-shadow] WRITE FAILED (%s): %s — reward store authoritative; "
+              "orphan stands until reconciled" % (getattr(write_fn, "__name__", "?"), e))
+
+
+def register_org_identity(org_id, name, normalized_name):
+    """Identity attachment for a reward-minted org (D6: org_id minted reward-side
+    first). Idempotent upsert on org_id — a retry rewrites the same attachment."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO org_register(org_id, name, normalized_name) VALUES (?,?,?) "
+            "ON CONFLICT(org_id) DO UPDATE SET name=excluded.name, "
+            "normalized_name=excluded.normalized_name",
+            (org_id, name, normalized_name))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def register_user(user_id, org_id, email, pw_hash, role, display_name):
+    """Shadow of auth.create_user — byte-identical values (the caller passes the same
+    normalised email and computed hash). Idempotent upsert on user_id; a DIFFERENT
+    user_id reusing an email hits users.email UNIQUE and raises (shadow() logs it)."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO users(user_id, org_id, email, pw_hash, role, display_name) "
+            "VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET email=excluded.email, "
+            "pw_hash=excluded.pw_hash, role=excluded.role, display_name=excluded.display_name",
+            (user_id, org_id, email, pw_hash, role, display_name))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def record_invite(token, org_id, email, role, created_by, expires_at):
+    """Shadow of auth.create_invite. ON CONFLICT(token) DO NOTHING — a replay of the
+    same token is a no-op; a retry mints a fresh token and lands as its own row."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO invites(token, org_id, email, role, created_by, expires_at) "
+            "VALUES (?,?,?,?,?,?) ON CONFLICT(token) DO NOTHING",
+            (token, org_id, email, role, created_by, expires_at))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def record_password_reset(token, user_id, expires_at):
+    """Shadow of auth.create_reset. ON CONFLICT(token) DO NOTHING."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO password_resets(token, user_id, expires_at) VALUES (?,?,?) "
+            "ON CONFLICT(token) DO NOTHING",
+            (token, user_id, expires_at))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def mark_invite_used(token):
+    """Shadow of the two reward-side invites.used_at writers (accept + revoke-as-used)."""
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE invites SET used_at=datetime('now') "
+                     "WHERE token=? AND used_at IS NULL", (token,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def consume_password_reset(token):
+    """Shadow of the reward-side password_resets consume."""
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE password_resets SET used_at=datetime('now') "
+                     "WHERE token=? AND used_at IS NULL", (token,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     init_identity_db()
     conn = get_conn()
