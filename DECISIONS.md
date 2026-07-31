@@ -12527,3 +12527,46 @@ of the machine date. Their commit timestamps are correct; the headings are not. 
 forward, not rewritten. **Standing practice from here: a transmission's `Date:` line is advisory
 only; every record-class entry heading takes the machine date at the moment of the write, quoted
 in rehearsal.**
+
+## D11 OVERTURNED ON MEASUREMENT — registry_only_orgs deleted, not moved (ruled 31 July 2026)
+
+D11 (S7, ruled at `c3df1d3`) directed the 52-name `meta.registry_only_orgs` list to move
+identity-side, keeping the count reward-side, on the ground that the names were "seed
+provenance worth keeping, but not in the reward store." Two measurements taken since have
+falsified both halves of that premise.
+
+**Measurement 1 — the key is write-only.** The step-4 shape investigation found the count the
+API serves does not come from this key: `seed_import` writes it into `meta.reconciliation`
+(`"registry_only_orgs": len(registry_only)`), `app.py` reads it from there, and
+`web/js/pages.js` renders it. A live enumeration of every mention across `.py`, `.js`, `.json`,
+`.sh` and `.html` found four: two reading the reconciliation field, one writing that field, and
+one writing the standalone key. **Nothing reads the standalone key.** D11's "split the count
+from the list" was therefore already satisfied, and what remained was relocating dead data.
+
+**Measurement 2 — the 52 names are synthetic.** Step 4a's echo established every one appears in
+`data/seeded_orgs.json` (210 registry entries = 158 matched + 52 unmatched), that all 158
+matched orgs are `source='seed'`, and that **zero** of the 52 match any live organisation —
+member or staff. They are entries in the fictional seed registry that never received a platform
+org row.
+
+**So the list is neither identity data nor read by anything.** Moving it identity-side would
+have put non-PII into the store whose retain-1 backup rule (D9) is justified precisely on that
+store being a pure PII concentrate, and would have given Phase 4's deletion design another
+table to account for.
+
+**Ruled instead:** delete the reward-side key; create no identity-side table; strip the writer
+in the same diff, per the D3/D5 rule that a fix which the next reseed undoes is not a fix.
+
+**Nothing is lost, and this was demonstrated rather than asserted.** The count survives in
+`meta.reconciliation` (still 52 after the delete, endpoint payloads byte-identical). The 52
+names survive in `data/seeded_orgs.json`, which is tracked in git — and were reconstructed
+from it during rehearsal, producing a set identical to the deleted list. A full `--fresh`
+reseed on a throwaway then confirmed the stripped writer creates no such key, while
+`meta.reconciliation` is written normally; the same run also re-proved step 4a's writer strip,
+producing zero identity keys across all 158 `registry_json` blobs.
+
+**Recorded as a standing note: this overturn was made on measurement, not preference.** D11 was
+ruled on a reasonable reading of the Phase-0 census; the census had not established what read
+the key or whether the names were real. Both questions were answerable, and answering them
+reversed the ruling. A ruling that survives only because nobody measured its premise is not
+settled — it is merely unexamined.
