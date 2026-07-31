@@ -286,18 +286,26 @@ def maybe_send_clock_reminder(conn, org, state):
     sent.append(due)
     conn.execute("UPDATE orgs SET reminders_json=? WHERE org_id=?", (j(sent), org["org_id"]))
     conn.commit()
-    admins = [r["email"] for r in conn.execute(
-        "SELECT email FROM users WHERE org_id=? AND role='admin'", (org["org_id"],))]
+    admins = [r["user_id"] for r in conn.execute(
+        "SELECT user_id FROM users WHERE org_id=? AND role='admin'", (org["org_id"],))]
+    org_name = (identity.org_display(org["org_id"]) or {}).get("name")
     # addressed to each Admin (defaulting to the ops inbox meant members never
     # actually received the 7-day/1-day warnings once SMTP went live)
-    for a in admins:
+    for uid in admins:
+        addr = identity.user_email(uid)
+        if not addr:
+            print("[identity-routing] ANOMALY: no identity-side email for an existing admin "
+                  "(present reward-side) — clock reminder SKIPPED for that recipient; run "
+                  "identity_recon: dual-write integrity is in question.")
+            continue
         send_notification(
             "lumi: %s left to unlock your insights" % ("7 days" if due == "7d" else "1 day"),
             "Hello %s,\n\nYour reward benchmark is waiting — you're %s%% of the way to unlocking "
             "your insights (£ opportunities, board pack and biggest gaps). Complete your reward "
             "questions in the next %s to unlock them.\n\n— lumi · UK reward benchmarking"
-            % (org["name"], state["core_pct"], "7 days" if due == "7d" else "day"),
-            to=a)
+            % (org_name if org_name else "(org name unavailable — identity record missing)",
+               state["core_pct"], "7 days" if due == "7d" else "day"),
+            to=addr)
 
 
 TRONC_SECTORS = {"Hospitality, Leisure & Travel", "Retail & Consumer Goods"}

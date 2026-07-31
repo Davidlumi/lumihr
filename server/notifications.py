@@ -22,6 +22,7 @@ import re
 from datetime import datetime
 
 from signals import lens_config, signal_key
+import identity
 
 # kinds that carry a numeric we can bucket for "moved" events. Everything else
 # (ahead / outlier / depth / rare) only ever fires appeared / cleared.
@@ -406,11 +407,17 @@ def run_email_digest(conn, base_url="", frequencies=("daily", "weekly")):
         live = [e for e in pending if _live_at_send(conn, e) and not event_is_confirm(e)]
         if not live:
             continue
-        org = conn.execute("SELECT name FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
+        addr = identity.user_email(uid)
+        if not addr:
+            print("[identity-routing] ANOMALY: no identity-side email for an existing user "
+                  "(present reward-side) — digest SKIPPED for this recipient; run "
+                  "identity_recon: dual-write integrity is in question.")
+            continue
+        org_name = (identity.org_display(user["org_id"]) or {}).get("name")
         subj = _digest_subject(len(live), prefs["email_frequency"])
-        body = _digest_body(org["name"] if org else "there", live,
+        body = _digest_body(org_name if org_name else "there", live,
                             base_url + "/#/settings", base_url + "/#/overview")
-        send_notification(subj, body, to=user["email"])
+        send_notification(subj, body, to=addr)
         ids = [e["id"] for e in live]
         conn.executemany("UPDATE notification_reads SET emailed_at=datetime('now') WHERE user_id=? AND event_id=?",
                          [(uid, i) for i in ids])
