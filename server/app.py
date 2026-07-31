@@ -497,8 +497,7 @@ def record_acceptance(conn, org_id, user_id, kind, version):
 def org_data_terms(conn, org_id):
     """The org-level Data Contribution agreement (latest acceptance), or None."""
     return conn.execute(
-        "SELECT t.*, u.email AS user_email, u.display_name AS user_name "
-        "FROM terms_acceptances t LEFT JOIN users u ON u.user_id = t.user_id "
+        "SELECT t.* FROM terms_acceptances t "
         "WHERE t.org_id=? AND t.kind='data_contribution' ORDER BY t.accepted_at DESC, t.id DESC LIMIT 1",
         (org_id,)).fetchone()
 
@@ -971,9 +970,12 @@ async def me(request: Request):
         "scope": {"superpowers": ACTIVE_SUPERPOWERS or sorted({q.superpower for q in vis.values()}),
                   "focused": bool(ACTIVE_SUPERPOWERS),
                   "question_count": len(vis)},
-        "user": {"email": user["email"], "role": user["role"], "display_name": user["display_name"],
-                 "platform_admin": bool(user.get("platform_admin"))},
-        "org": {"name": org["name"], "industry": org["industry"], "subsector": org["subsector"],
+        "user": (lambda d: {"email": d.get("email"), "role": user["role"],
+                            "display_name": d.get("display_name"),
+                            "platform_admin": bool(user.get("platform_admin"))})(
+                    identity.user_display(user["user_id"]) or {}),
+        "org": {"name": (identity.org_display(org["org_id"]) or {}).get("name"),
+                "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
                 # the org's DEFAULT peer group for the signal-email sweep (2026-07-10) — the
                 # PeerSetBar marks it + editors set it; NULL = all-peers.
@@ -984,7 +986,8 @@ async def me(request: Request):
                 "submission_complete": bool(org["submission_complete"]),
                 "data_terms": (lambda t: {
                     "accepted": t is not None,
-                    "accepted_by": t and (t["user_name"] or t["user_email"] or "a former Admin"),
+                    "accepted_by": t and (lambda d: (d or {}).get("display_name") or (d or {}).get("email")
+                                          or "a former Admin")(identity.user_display(t["user_id"])),
                     "accepted_at": t and t["accepted_at"],
                     "version": t and t["version"],
                 })(org_data_terms(conn, org["org_id"]))},
@@ -3683,17 +3686,18 @@ async def boardpacks_list(request: Request):
     user, org = require_user(request)
     conn = get_conn()
     rows = conn.execute(
-        "SELECT b.pack_id, b.created_at, b.payload_json, b.narrative_json, u.display_name "
-        "FROM board_packs b LEFT JOIN users u ON u.user_id = b.created_by "
-        "WHERE b.org_id=? ORDER BY b.created_at DESC LIMIT 50",
+        "SELECT b.pack_id, b.created_at, b.payload_json, b.narrative_json, b.created_by "
+        "FROM board_packs b WHERE b.org_id=? ORDER BY b.created_at DESC LIMIT 50",
         (org["org_id"],)).fetchall()
+    creators = identity.user_display_batch([r["created_by"] for r in rows])
     packs = []
     for r in rows:
         p = uj(r["payload_json"], {})
         n = uj(r["narrative_json"], {})
         packs.append({"pack_id": r["pack_id"], "created_at": r["created_at"],
                       "cut_label": p.get("cut_label"), "collection_window": p.get("collection_window"),
-                      "ai": not n.get("_fallback"), "created_by": r["display_name"]})
+                      "ai": not n.get("_fallback"),
+                      "created_by": (creators.get(r["created_by"]) or {}).get("display_name")})
     return {"packs": packs}
 
 
@@ -5084,11 +5088,13 @@ async def create_metric_request(request: Request):
         "INSERT INTO metric_requests(org_id, user_id, requested_text, notes, source) VALUES (?,?,?,?,?)",
         (org["org_id"], user["user_id"], text, notes, source))
     conn.commit()
+    requester = identity.user_display(user["user_id"]) or {}
+    org_name = (identity.org_display(org["org_id"]) or {}).get("name")
     status = send_notification(
         "lumi metric request: %s" % text[:80],
         "Requested metric: %s\nNotes: %s\nFrom: %s (%s, %s)\nSource: %s\nWhen: %s\nRequest id: %d"
-        % (text, notes or "—", user["display_name"] or user["email"], user["email"],
-           org["name"], source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid))
+        % (text, notes or "—", requester.get("display_name") or requester.get("email"), requester.get("email"),
+           org_name, source, datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), cur.lastrowid))
     return {"ok": True, "id": cur.lastrowid, "notification": status}
 
 
@@ -5712,10 +5718,15 @@ async def list_shares(request: Request):
     user, org = require_admin(request)
     conn = get_conn()
     shares = []
-    for r in conn.execute("SELECT * FROM shares WHERE org_id=? ORDER BY created_at DESC", (org["org_id"],)):
-        audit = [dict(a) for a in conn.execute(
-            "SELECT sa.action, sa.at, u.email FROM share_audit sa LEFT JOIN users u ON u.user_id=sa.user_id "
-            "WHERE sa.share_token=? ORDER BY sa.at", (r["token"],))]
+    share_rows = conn.execute("SELECT * FROM shares WHERE org_id=? ORDER BY created_at DESC",
+                              (org["org_id"],)).fetchall()
+    audit_rows = {r["token"]: conn.execute(
+        "SELECT sa.action, sa.at, sa.user_id FROM share_audit sa "
+        "WHERE sa.share_token=? ORDER BY sa.at", (r["token"],)).fetchall() for r in share_rows}
+    actors = identity.user_display_batch([a["user_id"] for rows_ in audit_rows.values() for a in rows_])
+    for r in share_rows:
+        audit = [{"action": a["action"], "at": a["at"],
+                  "email": (actors.get(a["user_id"]) or {}).get("email")} for a in audit_rows[r["token"]]]
         shares.append({
             "token": r["token"], "kind": r["kind"], "config": uj(r["config_json"], {}),
             "created_at": r["created_at"], "expires_at": r["expires_at"],

@@ -194,6 +194,32 @@ def user_display(user_id):
         conn.close()
 
 
+USER_BATCH_CAP = 200   # org-scoped surfaces only (pack creators, share-audit actors):
+                       # covers a 200-member org with slack; the platform-total shape
+                       # stays impossible by construction (caller-supplied ids + cap).
+
+
+def user_display_batch(user_ids):
+    """Bounded batch of user display identities — the user-side twin of
+    org_display_batch, same contract: explicit caller-supplied ids from the
+    caller's own reward-side query, no zero-argument form, misses OMITTED.
+    Returns {user_id: {'email', 'display_name'}}, matching user_display's shape."""
+    ids = list(dict.fromkeys(user_ids))
+    if len(ids) > USER_BATCH_CAP:
+        raise ValueError("user_display_batch: %d ids exceeds the no-bulk cap %d"
+                         % (len(ids), USER_BATCH_CAP))
+    out = {}
+    conn = get_conn()
+    try:
+        for r in conn.execute(
+                "SELECT user_id, email, display_name FROM users WHERE user_id IN (%s)"
+                % ",".join("?" * len(ids)), ids) if ids else []:
+            out[r["user_id"]] = {"email": r["email"], "display_name": r["display_name"]}
+        return out
+    finally:
+        conn.close()
+
+
 def lookup_user_by_email(email):
     """The login-path row for one email (UNIQUE), or None. pw_hash stays here —
     hashing/verification remains auth.py's job."""
