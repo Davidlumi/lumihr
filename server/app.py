@@ -6004,6 +6004,9 @@ with you, ask them to check it — shared links can be revoked or time out.</p>
 
 # ================================================================== STARTUP ==
 
+# the demo org, by its exact normalized_name (identity-side key). One visible line to
+# change if a reseed renames it — a miss no longer silently falls back (ruled 2026-07-30).
+DEMO_ORG_NORMALIZED = "thornbridgeretailgroupplc"
 DEMO_ADMIN = ("director@thornbridge.example", "lumi-demo-2026")
 DEMO_VIEWER = ("ceo@thornbridge.example", "lumi-view-2026")
 DEMO_CONTRIBUTOR = ("analyst@thornbridge.example", "lumi-data-2026")
@@ -6064,18 +6067,30 @@ def startup():
     global INDUSTRIES
     pool = get_meta("peer_pool", {})
     INDUSTRIES = sorted(pool.get("industries", {}).keys())
-    # demo accounts attached to a registry-matched seed org
-    demo_org = conn.execute(
-        "SELECT * FROM orgs WHERE classified=1 AND normalized_name LIKE 'thornbridgeretail%'").fetchone()
+    # demo accounts attached to a registry-matched seed org. normalized_name is an
+    # identity column post-split, so the org is resolved through identity.py; the
+    # classified check stays reward-side. NO arbitrary-org fallback: the demo
+    # credentials below are printed at startup, so provisioning them into an
+    # unintended org is security-adjacent — a miss provisions nothing and says so.
+    demo_ident = identity.org_lookup_by_normalized(DEMO_ORG_NORMALIZED)
+    demo_org = None
+    if demo_ident is not None:
+        demo_org = conn.execute("SELECT * FROM orgs WHERE org_id=? AND classified=1",
+                                (demo_ident["org_id"],)).fetchone()
     if demo_org is None:
-        demo_org = conn.execute("SELECT * FROM orgs WHERE classified=1 LIMIT 1").fetchone()
-    if demo_org is not None:
+        # states the fact only: on a fresh database with no orgs this is expected, not a fault.
+        print("[lumi] demo org %r did not resolve (%s) — demo accounts not provisioned; "
+              "no fallback org used."
+              % (DEMO_ORG_NORMALIZED,
+                 "no identity record" if demo_ident is None
+                 else "identity record found, but the org is not classified"))
+    else:
         for (email, pw), role in ((DEMO_ADMIN, "admin"), (DEMO_VIEWER, "viewer"),
                                   (DEMO_CONTRIBUTOR, "contributor")):
             if not auth_lib.find_user(email):
                 auth_lib.create_user(demo_org["org_id"], email, pw, role,
                                      "Demo %s" % role.title())
-        print("\n[lumi] Demo accounts on org '%s':" % demo_org["name"])
+        print("\n[lumi] Demo accounts on org '%s':" % demo_ident["name"])
         print("       Admin      : %s / %s" % DEMO_ADMIN)
         print("       Contributor: %s / %s" % DEMO_CONTRIBUTOR)
         print("       Viewer     : %s / %s\n" % DEMO_VIEWER)
