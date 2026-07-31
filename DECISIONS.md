@@ -12421,3 +12421,67 @@ being recognised as expected.
 
 This is a build-time finding entering the record ahead of step 7's actual work, per the
 standing convention that decisions are logged before anything is built on them.
+
+## STEP 5 PRE-FLIGHT — the blockers that must clear before the NULL (recorded 30 July 2026)
+
+S6 step 5 NULLs `orgs.name`, `orgs.normalized_name`, and the identity-bearing columns in
+`lumi.db`. Five findings, surfaced across six S6-step-3 commits, must be resolved **before**
+that NULL runs — not after, as S6's own ordering (step 5 before step 7's harness work) would
+have it.
+
+**The sequencing ground.** Fourteen call sites read the columns step 5 removes — nine of them
+gate-side, and **four of those inside the 11-gate suite itself**. Run step 5 first and those
+gates break *because of* step 5 — after which step 5's own correctness must be judged through
+a suite it has just damaged, with no way to separate "step 5 broke something real" from "step
+5 broke a stale query." This is the commit-0 shape: D8's two-file throwaway was pulled ahead
+of the first consumer switch because the isolation hole would open the moment that switch
+landed. Same resolution here — the relevant step-7 work comes forward, ahead of step 5.
+
+**The five:**
+
+1. **The demo-org resolution, gate-side — 9 instances.** Each carries its own copy of
+   `SELECT ... FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'`, reward-side.
+   INSIDE the 11-gate suite: `qa_engine_audit.py:415`, `qa_commentary.py:45`,
+   `qa_domain_summary.py:49`, `qa_pulse.py:51`. Outside it: `qa_integrity.py:72`,
+   `qa_status_audit.py:127`, `qa_phase1.py:186`, `qa_prevalence_rename.py:60`,
+   `verify.py:411`. All pass today only because `orgs.normalized_name` is still populated;
+   all break at step 5. Most subscript the result directly (`.fetchone()["org_id"]`,
+   `dict(...fetchone())`), so they fail loudly rather than silently — the one mercy in the set.
+2. **The same query in one-shot tooling — 5 instances.** `apply_seed_2026_1_additions.py:186`,
+   `apply_seed_2026_2.py:145`, `regen_pay_frequency.py:73`, `regen_rew_inc_072.py:59`,
+   `regen_allowances_pensionable.py:85`. Not run by the suite and not run in the normal loop,
+   so these break only when someone next reseeds or regenerates — which is exactly the
+   circumstance in which the breakage is least expected and least welcome.
+3. **`qa_integrity.py:26`** — hardcodes `DB = <dir>/../lumi.db` and honours no env var (zero
+   `LUMI_DB` mentions in the file); the one gate whose DB location is not configurable. Named
+   in the Phase-1 spec's S5.1 gate census and carried since; it blocks any physical store
+   change, not only step 5.
+4. **`app.py:5178`** — `/api/admin/orgs` orders by `o.name`, the reward-side column step 5
+   nulls. Flagged at the staff/bulk commit as a recorded step-5 dependency. **The owed
+   decision:** does the ordering move to a Python sort on the identity-resolved name (the
+   handler already holds the batch result), or does the endpoint accept a different order?
+   Answer owed before step 5 ships.
+5. **`qa_notifications`** — hermetic by construction (`:memory:` at `:32`, its own synthetic
+   users DDL at `:36`), so its fixture users have no identity-side twin. Since the
+   routing/email commit it fails 1 of 22, re-confirmed at this recording: the digest's
+   loud-skip fires on a genuine identity miss. The fix is the gate's — a temp-file identity
+   store carrying its synthetic users, since `:memory:` cannot work with `identity.py`'s
+   per-call connections. A gate left red indefinitely is worse than no gate: it teaches
+   everyone to ignore a signal that would otherwise catch a real regression.
+
+**Correction to this list's own first draft.** It was drafted naming two instances of the
+demo-org query (`qa_engine_audit`, `qa_integrity`), those being the two the C7 close happened
+to surface. The live census at recording time found **fourteen**. The sequencing argument
+survives the correction and is strengthened by it: the exposure is four suite gates, not two
+out-of-suite ones.
+
+**The hazard this list generalises from.** The C7 close demonstrated (c7e/c7f) that the
+pre-existing startup demo-org resolution silently provisioned startup-printed demo credentials
+onto an *arbitrary* classified org the moment `orgs.normalized_name` stopped resolving — which
+is precisely what step 5 does. That defect was scheduled to fire during this build. It was
+fixed in `app.py` at that commit by removing the arbitrary-org fallback entirely; items 1 and 2
+above are the same defect's fourteen remaining instances, unfixed because they are a different
+fix class.
+
+**Not built by this entry.** The pre-flight commit these findings imply is its own
+transmission, sequenced before step 5 and after step 4.
