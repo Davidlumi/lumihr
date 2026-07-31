@@ -12352,3 +12352,35 @@ S7 is ruled in full, D0-D14. The Phase-1 build follows as its own
 transmissions. Outstanding non-build items: D13(e)'s phase assignment,
 D13(d)'s orphan pair, D14's pre-flip decision, and the F10 `:8068` process
 housekeeping.
+
+## S4.2 AMENDED — users SPLITS, not moves whole (ruled 30 July 2026, rides 1b)
+
+Amends PRIVACY_PHASE1_SPLIT_SPEC_2026-07-30.md S4.2's "tables whole" line for
+`users` only. Identity-side `users` carries the five identity columns —
+`user_id`, `org_id`, `email`, `pw_hash`, `display_name` — and the reward-side
+`users` table survives step 5's nulling as the account-state row (`role`,
+`platform_admin`, `chart_prefs_json`, `notify_prefs_json`, `preview_as_core`,
+`active_dashboard_id`, `created_at`, plus the nulled identity columns).
+`sessions`, `password_resets`, `invites` still move whole, unchanged.
+
+Grounds: S1.2's own column classification already called the seven account
+columns STAY-class; and under move-whole every prefs tweak becomes
+identity-store write traffic while diluting the pure-PII concentrate that D9's
+retain-1 backup ruling was priced against.
+
+`org_id` is a deliberate duplicate identity-side — an attachment key, not a
+moved column — covered by the reconciliation drift check.
+
+`created_at` stays reward-side only. Three grounds: (i) both live consumers
+are reward-side (`app.py:1003` team-list ordering; `app.py:5989` oldest-admin
+pick); (ii) mirroring it would take two independent datetime('now') stamps per
+registration, which can straddle a second boundary and poison the recon with a
+permanent false positive on a healthy row; (iii) the org_register precedent —
+no identity-side consumer, and the reward row keyed by the same user_id keeps
+the real provenance.
+
+Resulting 1b scope: ONE mutation mirror (`pw_hash`, `app.py:932`), not eight.
+The seven reward-side mutation sites (`role :1061`, `active_dashboard_id
+:2428/:2507/:2553`, `notify_prefs :2767/:2781`, `chart_prefs :2821`) touch
+columns that never move and need nothing, now or ever. The cutover equality
+assert (commit 9) narrows to the five-column tuple.
