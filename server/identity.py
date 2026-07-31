@@ -131,6 +131,37 @@ def org_display(org_id):
         conn.close()
 
 
+ORG_BATCH_CAP = 1000   # defence-in-depth over the caller-supplied-ids contract: clears
+                       # today's real maximum (223, /api/admin/orgs) with ~4x membership
+                       # growth; raising it is a deliberate, reviewed act.
+
+
+def org_display_batch(org_ids):
+    """Bounded batch of org display names for staff/cross-tenant surfaces — the
+    no-bulk-export contract (S4.3) made concrete. The caller supplies the explicit
+    org_id list it derived from its own reward-side query; there is no zero-argument
+    or give-me-everything form. Returns {org_id: name}; misses are OMITTED, so
+    .get(org_id) yields the ruled unnamed render. Independent of org_display —
+    additive capability, not a refactor of the shipped single-key path."""
+    ids = list(dict.fromkeys(org_ids))
+    if len(ids) > ORG_BATCH_CAP:
+        raise ValueError("org_display_batch: %d ids exceeds the no-bulk cap %d"
+                         % (len(ids), ORG_BATCH_CAP))
+    out = {}
+    conn = get_conn()
+    try:
+        CHUNK = 500   # stays under SQLite's 999-parameter bound
+        for i in range(0, len(ids), CHUNK):
+            chunk = ids[i:i + CHUNK]
+            for r in conn.execute(
+                    "SELECT org_id, name FROM org_register WHERE org_id IN (%s)"
+                    % ",".join("?" * len(chunk)), chunk):
+                out[r["org_id"]] = r["name"]
+        return out
+    finally:
+        conn.close()
+
+
 def org_lookup_by_normalized(normalized_name):
     """{'org_id','name'} for one normalized name, or None (demo-org resolution path)."""
     conn = get_conn()

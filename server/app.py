@@ -5160,11 +5160,12 @@ async def admin_orgs(request: Request):
     rows = conn.execute(
         "SELECT o.*, (SELECT COUNT(*) FROM users u WHERE u.org_id=o.org_id) AS n_users "
         "FROM orgs o ORDER BY o.name").fetchall()
+    names = identity.org_display_batch([r["org_id"] for r in rows])
     out = []
     for r in rows:
         o = dict(r)
         out.append({
-            "org_id": o["org_id"], "name": o["name"], "industry": o["industry"],
+            "org_id": o["org_id"], "name": names.get(o["org_id"]), "industry": o["industry"],
             "fte_band": o["fte_band"], "classified": bool(o["classified"]),
             "source": o["source"], "submission_complete": bool(o["submission_complete"]),
             "n_users": o["n_users"],
@@ -5181,9 +5182,15 @@ async def admin_suggestions(request: Request):
     require_platform_admin(request)
     conn = get_conn()
     rows = conn.execute(
-        "SELECT s.*, o.name AS org_name FROM metric_suggestions s "
-        "LEFT JOIN orgs o ON o.org_id = s.org_id ORDER BY s.created_at DESC, s.id DESC").fetchall()
-    return {"suggestions": [dict(r) for r in rows], "statuses": list(SUGGESTION_STATUSES)}
+        "SELECT s.* FROM metric_suggestions s "
+        "ORDER BY s.created_at DESC, s.id DESC").fetchall()
+    names = identity.org_display_batch([r["org_id"] for r in rows])
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["org_name"] = names.get(r["org_id"])
+        out.append(d)
+    return {"suggestions": out, "statuses": list(SUGGESTION_STATUSES)}
 
 
 @app.put("/api/admin/suggestions/{sid}")

@@ -33,6 +33,7 @@ import uuid
 from datetime import datetime
 
 from db import get_conn, j, uj
+import identity
 from library import load_questions, _row_to_question
 from aggregate import aggregate_question_for_orgs, SUPPRESSION_FLOOR
 
@@ -407,11 +408,11 @@ def review_queue(conn=None):
     rows = conn.execute(
         "SELECT * FROM pulses WHERE owner_org_id IS NOT NULL "
         "ORDER BY (launch_status='in_review') DESC, created_at DESC").fetchall()
+    names = identity.org_display_batch([p["owner_org_id"] for p in rows])
     out = []
     for p in rows:
         s = _pulse_summary(p, conn)
-        owner = conn.execute("SELECT name FROM orgs WHERE org_id=?", (p["owner_org_id"],)).fetchone()
-        s["owner_name"] = owner["name"] if owner else p["owner_org_id"]
+        s["owner_name"] = names.get(p["owner_org_id"])
         # the actual questions, so staff can review wording for quality / no-PII
         s["questions"] = [{"id": qid, "text": q.text, "type": q.type}
                           for qid, q in pulse_questions(p).items()]
