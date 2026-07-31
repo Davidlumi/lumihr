@@ -2162,7 +2162,9 @@ def run_signal_sweep(conn=None, verbose=True):
     events), checked here. Returns (orgs_swept, events_written)."""
     conn = conn or get_conn()
     swept, total_events = 0, 0
-    for row in conn.execute("SELECT * FROM orgs"):
+    for row in conn.execute(
+            "SELECT org_id, industry, fte_band, insights_unlocked_at, "
+            "submission_complete, default_cut FROM orgs"):
         org = dict(row)
         try:
             if not org_unlocked(conn, org):
