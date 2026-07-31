@@ -1928,7 +1928,7 @@ async def overview(request: Request):
     pool = get_meta("peer_pool", {})
     snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id=?", (CURRENT_SNAPSHOT,)).fetchone()
     return {
-        "org": {"name": org["name"], "industry": org["industry"], "fte_band": org["fte_band"],
+        "org": {"name": (identity.org_display(org["org_id"]) or {}).get("name"), "industry": org["industry"], "fte_band": org["fte_band"],
                 "hq_region": org["hq_region"], "classified": bool(org["classified"])},
         "cut": cut,
         "peer_pool": pool,
@@ -5794,6 +5794,7 @@ async def share_data(token: str, request: Request):
         raise HTTPException(404, "This share link is no longer available.")
     conn = get_conn()
     org = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (share["org_id"],)).fetchone())
+    org_name = (identity.org_display(org["org_id"]) or {}).get("name")
     config = uj(share["config_json"], {})
     pseudo_user = {"role": "viewer"}
     entitled = make_entitled(pseudo_user, org)
@@ -5802,7 +5803,7 @@ async def share_data(token: str, request: Request):
                            (config.get("pack_id"), org["org_id"])).fetchone()
         if not row:
             raise HTTPException(404, "Board pack not found")
-        return {"kind": "boardpack", "org_name": org["name"],
+        return {"kind": "boardpack", "org_name": org_name,
                 "payload": uj(row["payload_json"]), "narrative": uj(row["narrative_json"]),
                 "created_at": row["created_at"]}
     # dashboard share: overview + the org's pinned/starter cards under a fixed cut.
@@ -5844,7 +5845,7 @@ async def share_data(token: str, request: Request):
         if q is None or p is None or not entitled(q):
             continue
         cards.append(assemble_card(q, p, org, answers, cut, None, entitled))
-    return {"kind": "dashboard", "org_name": org["name"], "cut": cut,
+    return {"kind": "dashboard", "org_name": org_name, "cut": cut,
             "headline": summary,
             "callouts": {"strengths": [c["text"] for c in co["strengths"]],
                          "gaps": [c["text"] for c in co["gaps"]]},
