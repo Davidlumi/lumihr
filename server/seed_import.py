@@ -259,7 +259,10 @@ def run(data_dir, fresh=False):
 
     set_meta("sim_feature_names", feature_names, conn)
     set_meta("sim_feature_space", build_similarity_vectors.feature_space, conn)
-    set_meta("registry_only_orgs", registry_only, conn)
+    # D11 OVERTURNED on measurement (step 4b): the standalone registry_only_orgs key was
+    # write-only — the count the API serves comes from meta.reconciliation below, and the 52
+    # names are synthetic registry entries that live in data/seeded_orgs.json (tracked). The
+    # key is no longer written; the reconciliation count is unchanged.
     recon = {
         "files": len(files),
         "library_questions": nq,
