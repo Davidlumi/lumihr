@@ -224,6 +224,26 @@ def register_user(user_id, org_id, email, pw_hash, display_name):
         conn.close()
 
 
+def remove_user_identity(user_id, reassign_created_by_to):
+    """Mirror of remove_member's identity-side removal (1c; D6 order — invoked via
+    shadow() AFTER the reward-side commit). One transaction, explicit FK order
+    (E8: bare REFERENCES, no ON DELETE): reassign invites.created_by first, then
+    delete password_resets, then the users row last. org_register untouched —
+    user-level, not org-level. sessions untouched (empty until the seam by the
+    step-2 skip ruling); a future identity-side session row would FK-block the
+    users delete, roll this transaction back whole, and surface via shadow()'s
+    log and the recon — visible, never silent."""
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE invites SET created_by=? WHERE created_by=?",
+                     (reassign_created_by_to, user_id))
+        conn.execute("DELETE FROM password_resets WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM users WHERE user_id=?", (user_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def update_pw_hash(user_id, pw_hash):
     """Mirror of the reward-side password change — the ONE users mutation that
     survives the split (S4.2 amendment). Single-key, idempotent."""

@@ -1103,6 +1103,7 @@ async def remove_member(request: Request):
     except Exception:
         conn.rollback()
         raise
+    identity.shadow(identity.remove_user_identity, target["user_id"], user["user_id"])
     return {"ok": True, "removed": target["email"]}
 
 
