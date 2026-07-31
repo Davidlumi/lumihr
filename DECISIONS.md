@@ -12570,3 +12570,92 @@ ruled on a reasonable reading of the Phase-0 census; the census had not establis
 the key or whether the names were real. Both questions were answerable, and answering them
 reversed the ruling. A ruling that survives only because nobody measured its premise is not
 settled — it is merely unexamined.
+
+## STEP 5 PRE-FLIGHT — SECOND AMENDMENT: the sweep, and why the first list was incomplete (recorded 31 July 2026)
+
+The pre-flight record at `7d322d4` (amended `d45f024`) listed eight blockers. The first
+systematic SQL sweep for columns step 5 nulls found **six further classes**, three of them in
+live application code, and raised the demo-org site count from fourteen to **seventeen**.
+
+**The most severe was never on the record.**
+
+### Why the first list was incomplete
+It was assembled from findings that surfaced **incidentally** across six commits. It was never
+a census: no sweep was commissioned, and the question that would have caught this — *what else
+reads a column step 5 nulls?* — was not asked until the pre-flight shape investigation.
+
+**Standing consequence:** a blocker list assembled from incidental findings is a starting
+point, not a census. **Any list gating an irreversible step must be produced by a systematic
+sweep before it is treated as complete.**
+
+### The new findings
+
+9. **STEP 5 WOULD HAVE BROKEN LOGIN PERMANENTLY.** `auth.py:105-107` (`find_user`) resolves the
+   login by `users.email` reward-side, and `app.py:854` checks `user["pw_hash"]` — also
+   reward-side. Step 5 nulls both. No login, no password reset (`app.py:926` uses the same
+   lookup), no recovery path. `identity.lookup_user_by_email` (`identity.py:223`) was built at
+   step 1 for exactly this and has never been wired to anything.
+10. **Signup's duplicate-org check** (`app.py:890`) reads `normalized_name` reward-side. Post-null
+    it matches nothing, so duplicate organisation names become creatable.
+11. **`remove_member` and `change_role`** (`app.py:1078` and `app.py:1099`) resolve their target
+    by `lower(email)` reward-side. Both break.
+12. **`identity_recon.py` breaks itself.** The safety net compares `orgs.name`,
+    `normalized_name`, and the `users` identity columns across both stores (`identity_recon.py:30-34`).
+    Post-null the reward side reads NULL, producing drift on all 223 orgs and 8 users — and drift
+    became **fatal** at `bbbb98b`. The recon must narrow to columns surviving on both sides
+    **before** step 5, or it fails by construction and reports a catastrophe that is its own
+    instrument.
+13. **Three demo-org sites the original fourteen missed** — `qa_overview.py:35` (parameterised
+    `LIKE ?`, so the literal-pattern grep skipped it), `qa_metric_data.py:70` (exact `name =`
+    rather than normalized), and a second lookup in `qa_engine_audit.py:313` (line-split).
+    True count: **seventeen**.
+14. **Probe- and fixture-lookup-by-name, plus tooling** — `qa_strategy.py:121` finds its probe
+    orgs by `orgs.name LIKE`, `verify.py:402` the same (its cleanup would silently no-op,
+    stranding probe orgs); `mp_baseline.py:29`, `mp_diff.py:69`, `seed_staff_admin.py:40` and
+    `migrate_r3sw6_pmi_rebase.py:49` resolve orgs by name or email; `qa_phase2.py:150` asserts
+    on a reward-side `pw_hash`.
+
+### What the seventeen demo-org sites actually need — three shapes, not one
+- **Six need the demo org specifically** (their assertions cite that org's own data —
+  `qa_commentary`, `qa_engine_audit`, `qa_integrity`, `qa_phase1`, `qa_status_audit`,
+  `verify.py`): resolve via `identity.org_lookup_by_normalized` + a reward-side `classified`
+  confirm — the shape `app.py` took at the C7 commit.
+- **Three need only any classified org with data** (`qa_domain_summary`, `qa_prevalence_rename`,
+  `qa_pulse`): the demo org is incidental.
+- **Five are observability only** (the five seed/regen scripts, where the demo is a `(demo)`
+  label in printed output and nothing asserts on it): **drop the distinction** rather than
+  re-plumbing identity into five one-shot scripts.
+
+### Removed from the list
+**Item 7 (no session-expiry cleanup) is NOT a step-5 blocker** and comes off. Nothing breaks at
+the NULL; it is a Phase-4 design input and remains recorded as such. A padded blocker list is
+less useful, not more.
+
+### The methodological finding underneath
+S3's fourth category — *"Identity-only paths (no reward join — they move with the identity
+store, no split decision)"* — is a trap. It meant *no reward join*; it reads as *nothing to do*.
+Seam-A already found one member of that list (the invite email) breaking at the seam; the signup
+duplicate check is another. **The category describes where data goes, not whether the code
+reading it was switched.** Every path in it needs re-examining.
+
+### Ruled sequencing — six commits, in order
+**P1** live app paths (findings 9–11) · **P2** the recon narrowing (12) · **P3** demo-org
+resolution, seventeen sites in three shapes (13) · **P4** gate harness: `qa_integrity`'s
+hardcoded path, the two session deletes, probe-lookup-by-name, `qa_phase2`'s `pw_hash`
+assertion (14) · **P5** `qa_notifications`' identity fixture · **P6** the first identity backup
+with D9's two assertions.
+
+**P1 is not really pre-flight work** — it is step-3 consumer switching that S3's map missed,
+same class as Seam-A.
+
+**The backup is last, on a stronger ground than first stated:** P1–P5 change no data, so a
+backup taken before them captures a state about to be invalidated. Taken after, it is the first
+artifact that could restore a working post-pre-flight system.
+
+**D9's row-count assertion excludes `sessions`** — assert on `org_register`, `users`,
+`password_resets`, `invites` only. Sessions change on every login; asserting equality on them
+would fail spuriously, the same class as the whole-file sha and the session-count echo, both
+already ruled. Integrity = `PRAGMA integrity_check` **plus** a per-table content hash, so a
+silently truncated copy is caught and not merely a corrupt one. The backup script is
+`server/backup_identity.py`, separate from the reward-side ritual, per the policy's per-store
+creation-time doctrine.
