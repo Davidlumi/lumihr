@@ -399,7 +399,17 @@ class SessionMiddleware(BaseHTTPMiddleware):
             user = auth_lib.get_session_user(token)
             if user:
                 conn = get_conn()
-                org = conn.execute("SELECT * FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
+                # SEAM (S3 path 20): the request context carries REWARD columns only —
+                # name/normalized_name never enter it. similarity_vector_json, created_at
+                # and unlocked_release are dropped too: unread from this row (peer_twin
+                # queries its own; created_at reads are other tables'; unlocked_release is
+                # write-only). Identity for display is fetched via identity.py per path.
+                org = conn.execute(
+                    "SELECT org_id, source, tier_entitlement, classified, industry, subsector, "
+                    "fte_band, hq_region, ownership_type, registry_json, submission_complete, "
+                    "clock_start, insights_unlocked_at, reminders_json, unionised_level, "
+                    "hr_maturity, business_maturity, operating_model, default_cut "
+                    "FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
                 request.state.user = dict(user)
                 request.state.org = dict(org) if org else None
         return await call_next(request)
