@@ -1584,9 +1584,11 @@ async def invite_info(token: str):
     row = auth_lib.get_valid_invite(token)
     if not row:
         raise HTTPException(404, "This invite link has expired or already been used.")
-    conn = get_conn()
-    org = conn.execute("SELECT name FROM orgs WHERE org_id=?", (row["org_id"],)).fetchone()
-    return {"email": row["email"], "role": row["role"], "org_name": org["name"]}
+    # P1b: the org name comes from the identity store (D6). Display-shaped and
+    # no-fallback, like every other read switch — a miss renders unnamed rather
+    # than reaching back into the reward store, which would mask a broken split.
+    return {"email": row["email"], "role": row["role"],
+            "org_name": (identity.org_display(row["org_id"]) or {}).get("name")}
 
 
 @app.post("/api/auth/accept-invite")
