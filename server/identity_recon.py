@@ -7,15 +7,45 @@ Reads both stores read-only. For each dual-written table: rows present reward-si
 with no identity counterpart, and the reverse, plus a content-drift count (rows
 present both sides whose column tuples differ). Drift is FATAL (nonzero exit) per
 the 1a sequencing ruling, whose condition — the 1b mutation mirror and 1c delete
-mirror both landed — was met at b8aa490: every column in the compared sets now has
-a live mirror, so any drift is a real dual-write defect, not an expected gap.
-Sessions are excluded: since Seam-B they live ONLY identity-side, so comparing
-the two stores for them compares a live table against an inert one.
+mirror both landed — was met at b8aa490.
+
+P2, THE NARROWING. Step 5 removes the identity-bearing columns from the reward
+store, so a fixed comparison set that included them would, post-step-5, compare
+real values against nothing and report drift on every row — a safety net failing
+by construction and reporting a catastrophe that is entirely its own instrument.
+This is the fourth equality check this build aimed at something designed to change
+(the whole-file sha, the session-count echo, D9's row-count assertion, now this).
+The pattern: AN EQUALITY CHECK MUST NEVER BE AIMED AT A VALUE THE PLAN INTENDS TO
+CHANGE — assert on what is invariant, and make the intended change itself the thing
+that is detected.
+
+So the comparison set is resolved AT RUN TIME, per column, from the reward store's
+actual state. Correct in all three worlds, without a flag to remember:
+
+  ABSENT     column gone reward-side (step 5 dropped it) -> out of the drift set
+  EMPTY      present, every row NULL (step 5 nulled it)  -> out of the drift set
+  POPULATED  present, no row NULL (pre-step-5)           -> IN the drift set, as today
+  PARTIAL    present, some rows NULL and some not        -> FATAL
+
+PARTIAL is the load-bearing addition: it catches a half-run step 5 and a writer
+re-populating a column that should stay empty. It is strictly more than the old
+fixed set could detect.
+
+WHAT THIS CANNOT DETECT, stated plainly: a COMPLETE restore of lumi.db from a
+pre-step-5 backup looks identical to the pre-step-5 world — every row populated,
+consistently. Data alone cannot separate the two. Catching that needs a marker
+held OUTSIDE the reward store (identity.db or a tracked file), which is step 5's
+own commit to design, once step 5's mechanism is ruled. Recorded, not papered over.
+
+Sessions are excluded: since Seam-B they are written ONLY identity-side. The
+reward-side sessions table is a vestige of the pre-cutover world, still holding
+its old rows and receiving no new ones, so comparing the two stores for sessions
+compares a live table against a dead one — before step 5 and after it alike.
 
 Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions AND
-drift are 0 for every table.
+drift are 0 for every table, and no column is PARTIAL.
 """
-import hashlib, os, sqlite3, sys
+import os, sqlite3, sys
 
 REWARD = os.environ.get("LUMI_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -24,35 +54,80 @@ import identity
 r = sqlite3.connect("file:%s?mode=ro" % REWARD, uri=True)
 i = sqlite3.connect("file:%s?mode=ro" % identity._resolve_identity_db_path(), uri=True)
 
+# Columns step 5 removes from the REWARD store. This constant is the operative
+# definition of that list: the spec says "the moved columns" (S6 step 5) and the
+# record says "the identity-bearing columns" (DECISIONS, step-5 pre-flight), and
+# neither enumerates them. Recorded at P2 as a finding — step 5 must pin its own
+# list before it runs, and this constant is what the safety net assumes until it does.
+STEP5_REMOVED = {
+    "orgs":            ("name", "normalized_name"),
+    "users":           ("email", "pw_hash", "display_name"),
+    "invites":         ("email",),
+    "password_resets": (),
+}
+
 PAIRS = [
-    # (label, reward SQL, identity SQL, key index)
-    ("orgs<->org_register",
-     "SELECT org_id, name, normalized_name FROM orgs ORDER BY org_id",
-     "SELECT org_id, name, normalized_name FROM org_register ORDER BY org_id", 0),
-    ("users (5-col shared set; S4.2 split)",
-     "SELECT user_id, org_id, email, pw_hash, display_name FROM users ORDER BY user_id",
-     "SELECT user_id, org_id, email, pw_hash, display_name FROM users ORDER BY user_id", 0),
-    ("invites",
-     "SELECT token, org_id, email, role, created_by, expires_at, used_at FROM invites ORDER BY token",
-     "SELECT token, org_id, email, role, created_by, expires_at, used_at FROM invites ORDER BY token", 0),
-    ("password_resets",
-     "SELECT token, user_id, expires_at, used_at FROM password_resets ORDER BY token",
-     "SELECT token, user_id, expires_at, used_at FROM password_resets ORDER BY token", 0),
+    # (label, reward table, identity table, key column, invariant compared columns)
+    ("orgs<->org_register", "orgs", "org_register", "org_id",
+     ("org_id",)),
+    ("users (5-col shared set; S4.2 split)", "users", "users", "user_id",
+     ("user_id", "org_id")),
+    ("invites", "invites", "invites", "token",
+     ("token", "org_id", "role", "created_by", "expires_at", "used_at")),
+    ("password_resets", "password_resets", "password_resets", "token",
+     ("token", "user_id", "expires_at", "used_at")),
 ]
 
+
+def classify(table, col):
+    """Reward-side state of a column step 5 removes."""
+    cols = [x[1] for x in r.execute("PRAGMA table_info(%s)" % table)]
+    if col not in cols:
+        return "ABSENT"
+    n = r.execute("SELECT COUNT(*) FROM %s" % table).fetchone()[0]
+    if n == 0:
+        return "NO ROWS"
+    nulls = r.execute("SELECT COUNT(*) FROM %s WHERE %s IS NULL" % (table, col)).fetchone()[0]
+    if nulls == 0:
+        return "POPULATED"
+    if nulls == n:
+        return "EMPTY"
+    return "PARTIAL"
+
+
 ok = True
-for label, rsql, isql, k in PAIRS:
-    rrows = {row[k]: row for row in r.execute(rsql)}
-    irows = {row[k]: row for row in i.execute(isql)}
+for label, rt, it, key, invariant in PAIRS:
+    states = {c: classify(rt, c) for c in STEP5_REMOVED[rt]}
+    partial = [c for c, s in states.items() if s == "PARTIAL"]
+    compared = list(invariant) + [c for c, s in states.items() if s == "POPULATED"]
+
+    ki = compared.index(key)
+    rrows = {row[ki]: row for row in r.execute(
+        "SELECT %s FROM %s ORDER BY %s" % (", ".join(compared), rt, key))}
+    irows = {row[ki]: row for row in i.execute(
+        "SELECT %s FROM %s ORDER BY %s" % (", ".join(compared), it, key))}
     only_reward = len(set(rrows) - set(irows))
     only_identity = len(set(irows) - set(rrows))
-    drift = sum(1 for key in set(rrows) & set(irows) if rrows[key] != irows[key])
+    drift = sum(1 for k in set(rrows) & set(irows) if rrows[k] != irows[k])
+
     print("%s: reward=%d identity=%d | reward-only (identity orphan missing)=%d | "
           "identity-only (reverse orphan)=%d | content-drift=%d"
           % (label, len(rrows), len(irows), only_reward, only_identity, drift))
-    ok &= (only_reward == 0 and only_identity == 0 and drift == 0)
+    print("    compared: %s" % ", ".join(compared))
+    if states:
+        print("    step-5 columns: %s" % "; ".join("%s=%s" % (c, s) for c, s in states.items()))
+        if not [c for c, s in states.items() if s == "POPULATED"]:
+            print("    NOTE: no step-5 column is still populated reward-side, so for this table "
+                  "the drift check\n          covers only the invariant columns above; "
+                  "membership is what it still proves.")
+    if partial:
+        print("    *** PARTIAL: %s — some rows NULL, some not. A half-run step 5, or a writer "
+              "re-populating\n        a column that should stay empty. FATAL." % ", ".join(partial))
+    ok &= (only_reward == 0 and only_identity == 0 and drift == 0 and not partial)
 
-print("sessions: EXCLUDED — identity-only by design since Seam-B (the reward-side rows are\n          inert until step 5, so a two-store comparison would be meaningless here)")
-print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift"
-                              if ok else "FAIL — orphans or drift present"))
+print("sessions: EXCLUDED — written identity-side only since Seam-B; the reward-side table is a\n"
+      "          pre-cutover vestige receiving no new rows, so the comparison would put a live\n"
+      "          table against a dead one, before step 5 and after it alike")
+print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift, no partial columns"
+                              if ok else "FAIL — orphans, drift, or a partial step-5 column"))
 sys.exit(0 if ok else 2)
