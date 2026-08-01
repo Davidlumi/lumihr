@@ -35,6 +35,7 @@ import practice_axis as px
 import claude_api as ca
 import app as appmod
 from db import get_conn
+from demo_org import any_classified_row   # P3
 
 WITH_MODEL = os.environ.get("LUMI_QA_WITH_MODEL", "").lower() in ("1", "on", "true")
 if not WITH_MODEL:                       # app loads .env.local on import; clear the key AFTER import
@@ -57,7 +58,8 @@ LIVE_FORBIDDEN = ["match the market majority", "established alternative", "pract
 NEW_WORDS = ("common", "alternative", "rare")
 
 conn = get_conn()
-org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone())
+# P3 Shape B: any classified org with data (see qa_domain_summary).
+org = dict(any_classified_row(conn))
 user = {"role": "admin"}
 DOMAINS = []
 for q in appmod.org_visible_questions(org).values():

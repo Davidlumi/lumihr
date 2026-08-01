@@ -142,11 +142,12 @@ def main():
     from aggregate import run_snapshot
     run_snapshot(1, verbose=False)
     print("re-aggregated")
-    demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()[0]
-    demo_vals = {q: v for q, o, v in rows if o == demo}
+    # P3 Shape C: see apply_seed_2026_1_additions.
+    _sample = sorted({o for _q, o, _v in rows})[0]
+    demo_vals = {q: v for q, o, v in rows if o == _sample}
     print("\nINTEGRITY STATEMENT: no existing metric touched (only REW262_* rows inserted, "
           "guarded by the zero-pre-existing assertion); no value hand-tuned (whole-metric seeded "
-          "draw, calibrated to David's signed baselines as targets); the demo org is one of the "
+          "draw, calibrated to David's signed baselines as targets); a sample org is one of the "
           "220 and was drawn by the SAME blind rule as every other org — its drawn answers, for "
           "the record: %s" % demo_vals)
 

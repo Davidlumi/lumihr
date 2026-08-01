@@ -70,8 +70,9 @@ conn.row_factory = sqlite3.Row
 answered = [r["org_id"] for r in conn.execute(
     "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND snapshot_id=1 ORDER BY org_id", (QID,))]
 orgs = {r["org_id"]: r for r in conn.execute("SELECT * FROM orgs")}
-demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
-watch = ([demo] if demo in answered else []) + [o for o in answered if o != demo][:2]
+# P3 Shape C: observability only — the demo org was a label in printed output and
+# nothing asserts on it. First three answering orgs by org_id (answered is ORDER BY).
+watch = answered[:3]
 
 print("BEFORE (watch orgs by fixed rule; neutral-polarity metric — no favourable side exists):")
 before = {}

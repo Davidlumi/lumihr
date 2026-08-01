@@ -32,6 +32,9 @@ import urllib.request
 import urllib.error
 import http.cookiejar
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from demo_org import demo_id   # P3
+
 BASE = "http://localhost:8060"
 PASS, FAIL = [], []
 
@@ -408,9 +411,9 @@ def _cleanup():
         conn.execute("DELETE FROM users WHERE org_id=?", (oid,))
         conn.execute("DELETE FROM orgs WHERE org_id=?", (oid,))
     # drop drafts created on the demo org during validation checks
-    demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()
-    if demo:
-        conn.execute("DELETE FROM drafts WHERE org_id=?", (demo["org_id"],))
+    # P3: loud, not silent. The recorded defect was that an unresolvable demo org
+    # turned this cleanup into a no-op, stranding drafts with no signal at all.
+    conn.execute("DELETE FROM drafts WHERE org_id=?", (demo_id(conn),))
     conn.commit()
     run_snapshot(1, verbose=False)
     print("\n[cleanup] removed %d probe org(s), cleared demo drafts, re-aggregated snapshot" % len(probes))

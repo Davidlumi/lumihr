@@ -123,8 +123,9 @@ for sec, m in sorted(reg["maturity_sections"].items(), key=lambda kv: kv[1]["ord
 own, peers = [], []
 import positions as pos
 from db import get_conn
+from demo_org import demo_row   # P3
 conn = get_conn()
-org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone())
+org = dict(demo_row(conn))
 answers = pos.get_org_answers(conn, org["org_id"])
 payloads = pos.load_payloads(conn)
 from aggregate import STATUS_POINTS

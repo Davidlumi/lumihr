@@ -183,12 +183,14 @@ def main():
     from aggregate import run_snapshot
     run_snapshot(1, verbose=False)
     print("re-aggregated")
-    demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()[0]
-    demo_vals = {ID_MAP[q]: v for q, o, v in rows if o == demo}
+    # P3 Shape C: the integrity claim is that the blind rule applied to EVERY org, so a
+    # sample org demonstrates it as well as the demo org did — and needs no name lookup.
+    _sample = sorted({o for _q, o, _v in rows})[0]
+    demo_vals = {ID_MAP[q]: v for q, o, v in rows if o == _sample}
     print("\nINTEGRITY STATEMENT: firmographic-only conditioning; seeded "
           "f'{qid}|2026-06-12|{org_id}'; org-blind whole-metric draw; no hand-tuning "
           "(calibration targets are David's signed baselines); ONLY these 14 questions' "
-          "data added (zero-pre-existing assertion); the demo org drawn by the same "
+          "data added (zero-pre-existing assertion); a sample org drawn by the same "
           "blind rule — its answers for the record: %s" % demo_vals)
 
 

@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import claude_api as ca
 import app as appmod
 from db import get_conn
+from demo_org import demo_row   # P3
 
 RESULTS = []
 
@@ -42,7 +43,7 @@ def gen(payload):
 
 
 conn = get_conn()
-org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone())
+org = dict(demo_row(conn))
 user = {"role": "admin"}
 
 print("=" * 100)

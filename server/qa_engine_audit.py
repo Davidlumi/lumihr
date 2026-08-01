@@ -40,6 +40,8 @@ ROOT = os.path.join(HERE, "..")
 # (Latent bug found 2026-07-16: hardcoded live lumi.db; invisible while gate copies were
 # made from live, exposed the first time LUMI_GATES_SRC pointed the suite at a throwaway.)
 DB = os.environ.get("LUMI_DB", os.path.join(ROOT, "lumi.db"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from demo_org import demo_row, demo_id   # P3: demo org resolved identity-side
 BASE = "http://localhost:8060"
 FLOOR = 5  # the documented suppression rule, asserted independently
 
@@ -310,8 +312,7 @@ _served = ((_me.get("scope") or {}).get("question_count"))
 # so the demo org's served count = core minus the scoped metrics its industry
 # doesn't qualify for. sector_scopes.json is read as DATA (declaration, not
 # production code) — the same rule as the questions table.
-_demo_ind = conn.execute("SELECT industry FROM orgs WHERE normalized_name LIKE "
-                         "'thornbridgeretail%'").fetchone()["industry"]
+_demo_ind = demo_row(conn)["industry"]
 _scopes_path = os.path.join(ROOT, "data", "sector_scopes.json")
 _scopes = (json.load(open(_scopes_path)).get("scopes") or {}) if os.path.exists(_scopes_path) else {}
 _scope_hidden = sum(1 for q, e in _scopes.items()
@@ -412,7 +413,7 @@ print("  suffix/banded values stored verbatim: %s" % [r["value"] for r in fancy]
 # ====================================================== LAYER 2: CALCULATION
 print("\n================ LAYER 2 — CALCULATION (independent recompute) ================")
 op = login("analyst@thornbridge.example", "lumi-data-2026")
-demo_org = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
+demo_org = demo_id(conn)
 
 # The reference pool mirrors the engine's documented completeness FIREWALL
 # (aggregate.run_snapshot): only submission-complete orgs contribute to the

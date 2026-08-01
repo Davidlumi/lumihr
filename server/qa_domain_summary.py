@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import claude_api as ca
 import app as appmod
 from db import get_conn
+from demo_org import any_classified_row   # P3
 
 # The gate proves the VALIDATOR + the deterministic FLOOR (both key-independent and
 # reproducible). By default we force the no-key path so the run is fast, free and
@@ -46,7 +47,9 @@ def check(section, name, ok, detail=""):
 
 
 conn = get_conn()
-org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone())
+# P3 Shape B: this gate needs any classified org with data — the demo org was
+# incidental; nothing here asserts on its particular values.
+org = dict(any_classified_row(conn))
 user = {"role": "admin"}
 
 # the reward domains, in question order

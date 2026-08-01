@@ -6029,7 +6029,7 @@ with you, ask them to check it — shared links can be revoked or time out.</p>
 
 # the demo org, by its exact normalized_name (identity-side key). One visible line to
 # change if a reseed renames it — a miss no longer silently falls back (ruled 2026-07-30).
-DEMO_ORG_NORMALIZED = "thornbridgeretailgroupplc"
+DEMO_ORG_NORMALIZED = identity.DEMO_ORG_NORMALIZED   # P3: single definition, identity-side
 DEMO_ADMIN = ("director@thornbridge.example", "lumi-demo-2026")
 DEMO_VIEWER = ("ceo@thornbridge.example", "lumi-view-2026")
 DEMO_CONTRIBUTOR = ("analyst@thornbridge.example", "lumi-data-2026")

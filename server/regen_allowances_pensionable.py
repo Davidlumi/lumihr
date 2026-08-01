@@ -82,9 +82,9 @@ ans_sel = [r["org_id"] for r in conn.execute(
 ans_mat = [r["org_id"] for r in conn.execute(
     "SELECT DISTINCT org_id FROM answers WHERE question_id=? AND snapshot_id=1 ORDER BY org_id", (QID_MATRIX,))]
 orgs = {r["org_id"]: r for r in conn.execute("SELECT * FROM orgs")}
-demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
 all_ans = sorted(set(ans_sel) | set(ans_mat))
-watch = ([demo] if demo in all_ans else []) + [o for o in all_ans if o != demo][:2]
+# P3 Shape C: observability only (see regen_pay_frequency).
+watch = all_ans[:3]
 
 print("answering orgs: %s %d | %s %d" % (QID_SELECT, len(ans_sel), QID_MATRIX, len(ans_mat)))
 print("\nBEFORE (watch orgs by fixed rule):")

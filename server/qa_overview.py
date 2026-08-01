@@ -16,6 +16,7 @@ import statistics
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import app as A
+import identity   # P3
 import positions as pos
 import signals as signals_mod
 from aggregate import SUPPRESSION_FLOOR
@@ -31,10 +32,17 @@ def check(name, ok, detail=""):
 
 # ---- rebuild the Overview hero + signals engine-side (the /api/overview path) ----
 conn = A.get_conn()
-ORG = os.environ.get("QA_ORG", "thornbridgeretail")
-org = conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE ?", (ORG + "%",)).fetchone()
+# P3: exact match, identity-side. The default was the TRUNCATED "thornbridgeretail"
+# used as a LIKE prefix; it is now the full normalized name. No prefix lookup is added
+# to identity.py — a prefix search is the shape the no-bulk-export contract exists to
+# exclude. An operator passing the old truncated value now gets a loud miss.
+ORG = os.environ.get("QA_ORG", identity.DEMO_ORG_NORMALIZED)
+_ident = identity.org_lookup_by_normalized(ORG)
+org = conn.execute("SELECT * FROM orgs WHERE org_id=? AND classified=1",
+                   (_ident["org_id"],)).fetchone() if _ident else None
 if org is None:
-    print("no org matching %r — set QA_ORG" % ORG); sys.exit(2)
+    print("no classified org with normalized_name %r — QA_ORG must be a FULL normalized "
+          "name (exact match), not a prefix" % ORG); sys.exit(2)
 
 cut = {"dim": "all", "value": None}
 ent = lambda q: True

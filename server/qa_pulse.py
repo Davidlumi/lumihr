@@ -22,6 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from db import get_conn, uj
+from demo_org import any_classified_row   # P3
 import pulses
 import app as appmod
 
@@ -48,7 +49,9 @@ core_before = json.loads(conn.execute(
     "SELECT payload_json FROM benchmark_snapshots WHERE snapshot_id=1 AND question_id=?", (QID,)).fetchone()[0])
 orgs = [r["org_id"] for r in conn.execute(
     "SELECT org_id FROM orgs WHERE source='seed' AND classified=1 ORDER BY org_id DESC LIMIT 6")]
-demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
+# P3 Shape B: proven by running — this gate passes identically against a non-demo
+# classified org (0 failures, output identical modulo the org id).
+demo = any_classified_row(conn)["org_id"]
 unlock_before = conn.execute("SELECT insights_unlocked_at FROM orgs WHERE org_id=?", (demo,)).fetchone()[0]
 basis_before = len(appmod.completion_basis_questions())   # core-unlock denominator BEFORE any pulse activity
 

@@ -56,8 +56,8 @@ labels = [o["label"] for o in q.options]
 assert labels == OPTIONS, "option set changed: %r" % labels
 
 orgs = conn.execute("SELECT * FROM orgs WHERE submission_complete=1 ORDER BY org_id").fetchall()
-demo = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
-watch = [demo] + [o["org_id"] for o in orgs if o["org_id"] != demo][:2]
+# P3 Shape C: observability only (see regen_pay_frequency). orgs is ORDER BY org_id.
+watch = [o["org_id"] for o in orgs][:3]
 
 
 def share(value):

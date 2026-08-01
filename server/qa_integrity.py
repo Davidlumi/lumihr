@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from library import load_questions          # metadata only (ids, types, options)
 import app as appmod                        # production payloads — the thing under test
 import db                                   # P4a: DB location + gate-safety-1 refusal live here
+from demo_org import demo_id                # P3: demo org resolved identity-side
 
 # ---------------------------------------------------------------- reference --
 NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
@@ -70,7 +71,7 @@ for r in conn.execute("SELECT org_id, question_id, matrix_row_id, value FROM ans
     if r["org_id"] in contrib_orgs:
         raw[(r["question_id"], r["matrix_row_id"])][r["org_id"]] = r["value"]
 
-demo_org = conn.execute("SELECT org_id FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone()["org_id"]
+demo_org = demo_id(conn)
 qs = appmod.visible_questions()
 payloads = appmod.payloads()
 print("scope: %d live reward questions | contributing orgs: %d" % (len(qs), len(contrib_orgs)))

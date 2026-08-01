@@ -23,10 +23,10 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db                      # P4a: DB location + gate-safety-1 refusal live here
+from demo_org import demo_id as resolve_demo_id, DemoOrgUnresolved   # P3
 
 SNAP = 1
 FLOOR = 5                      # suppression floor (positions.SUPPRESSED_COPY "fewer than 5")
-DEMO_ORG_NAME = "Thornbridge Retail Group plc"   # exact — "Thornbridge Advisory plc" is a different seed org
 
 findings = []                  # (severity, qid, name, code, detail)
 def add(sev, qid, name, code, detail):
@@ -67,8 +67,16 @@ def main():
             raw_base[qid].add(oid)
             raw_vals[qid].append(v)
 
-    demo = conn.execute("SELECT org_id FROM orgs WHERE name = ?", (DEMO_ORG_NAME,)).fetchone()
-    demo_id = demo["org_id"] if demo else None
+    # P3: resolved identity-side. This file is a REPORT ("Exit 0 always"), so an
+    # unresolved demo org cannot fail the run — it becomes a CRITICAL finding, and the
+    # positive case is recorded too. Previously "check passed" and "check never ran"
+    # were indistinguishable to a reader, which was the actual defect.
+    try:
+        demo_id = resolve_demo_id(conn)
+    except DemoOrgUnresolved as _e:
+        demo_id = None
+        findings.append(("CRIT", "-", "demo org", "DEMO_ORG_UNRESOLVED",
+                         "required-question coverage check DID NOT RUN: %s" % _e))
     demo_answered = set()
     if demo_id:
         for r in conn.execute("SELECT DISTINCT question_id FROM answers WHERE snapshot_id=? AND org_id=? AND value IS NOT NULL AND value!=''", (SNAP, demo_id)):

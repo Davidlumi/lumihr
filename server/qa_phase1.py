@@ -182,8 +182,9 @@ check("no hardcoded 'Yes' status checks in analytics layer", not suspect, suspec
 print("\n== 1.3 Maturity recompute (Reward) " + "=" * 42)
 import positions as pos
 from db import get_conn
+from demo_org import demo_row   # P3
 conn = get_conn()
-org = dict(conn.execute("SELECT * FROM orgs WHERE normalized_name LIKE 'thornbridgeretail%'").fetchone())
+org = dict(demo_row(conn))
 answers = pos.get_org_answers(conn, org["org_id"])
 payloads = pos.load_payloads(conn)
 reg_api = api("/api/gap-register")

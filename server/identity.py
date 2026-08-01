@@ -28,6 +28,12 @@ _LIVE_IDENTITY_DB = os.path.join(os.path.dirname(__file__), "..", "identity.db")
 # never silently open the live identity store.
 _GATE_ARGV_RE = re.compile(r"^(qa_|verify_).*\.py$")
 
+# The demo org's identity-side key. Lives here (P3) because every consumer already
+# imports identity to resolve it, gates importing app for a constant would drag
+# FastAPI into one-shot tooling, and duplicating it across eighteen sites is how
+# seed_import's writer drifted from its readers at step 4.
+DEMO_ORG_NORMALIZED = "thornbridgeretailgroupplc"
+
 
 def _resolve_identity_db_path():
     """Mirror of db.py._resolve_db_path (gate-safety-1), twinned for identity:
