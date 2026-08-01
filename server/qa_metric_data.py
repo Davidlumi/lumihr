@@ -22,9 +22,8 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import sqlite3
+import db                      # P4a: DB location + gate-safety-1 refusal live here
 
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db")
 SNAP = 1
 FLOOR = 5                      # suppression floor (positions.SUPPRESSED_COPY "fewer than 5")
 DEMO_ORG_NAME = "Thornbridge Retail Group plc"   # exact — "Thornbridge Advisory plc" is a different seed org
@@ -43,8 +42,9 @@ def uj(s, default=None):
 
 def main():
     show_all = "--all" in sys.argv
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    # P4a: was sqlite3.connect(<hardcoded ../lumi.db>) — LUMI_DB ignored, live opened
+    # silently from a qa_ process. Same row_factory; now guarded and configurable.
+    conn = db.get_conn()
 
     qs = conn.execute("SELECT * FROM questions WHERE status='active'").fetchall()
     qs = [q for q in qs if show_all or q["superpower"] == "Reward"]

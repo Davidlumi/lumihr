@@ -13,7 +13,6 @@ import json
 import os
 import re
 import sys
-import sqlite3
 import urllib.request
 import urllib.parse
 import http.cookiejar
@@ -22,8 +21,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from library import load_questions          # metadata only (ids, types, options)
 import app as appmod                        # production payloads — the thing under test
-
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db")
+import db                                   # P4a: DB location + gate-safety-1 refusal live here
 
 # ---------------------------------------------------------------- reference --
 NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
@@ -61,8 +59,11 @@ def ref_midrank(sorted_vals, x):
     return min(99.0, max(1.0, r))
 
 
-conn = sqlite3.connect(DB)
-conn.row_factory = sqlite3.Row
+# P4a: was sqlite3.connect(<hardcoded ../lumi.db>), which ignored LUMI_DB while the app
+# payloads this gate compares against honoured it — one run could read raw answers from
+# live and payloads from a throwaway. db.get_conn() sets the same row_factory, honours
+# LUMI_DB, and refuses a bare qa_* run against live.
+conn = db.get_conn()
 contrib_orgs = {r["org_id"] for r in conn.execute("SELECT org_id FROM orgs WHERE submission_complete=1")}
 raw = defaultdict(dict)   # (qid,row) -> {org: value}
 for r in conn.execute("SELECT org_id, question_id, matrix_row_id, value FROM answers WHERE snapshot_id=1"):
