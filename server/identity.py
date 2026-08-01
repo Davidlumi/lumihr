@@ -226,6 +226,40 @@ def user_display_batch(user_ids):
         conn.close()
 
 
+INVITE_BATCH_CAP = 200   # org-scoped: one org's pending-invite list. Same ground as
+                         # USER_BATCH_CAP — a platform-total shape stays impossible by
+                         # construction (caller-supplied tokens + cap).
+
+
+def invite_email(token):
+    """The invited address for one token, or None. Single-key (S4.3)."""
+    conn = get_conn()
+    try:
+        r = conn.execute("SELECT email FROM invites WHERE token=?", (token,)).fetchone()
+        return r["email"] if r else None
+    finally:
+        conn.close()
+
+
+def invite_email_batch(tokens):
+    """Bounded batch — the invite twin of user_display_batch, same contract: explicit
+    caller-supplied tokens from the caller's own reward-side query, no zero-argument
+    form, misses OMITTED so .get() yields the unnamed render. Returns {token: email}."""
+    ids = list(dict.fromkeys(tokens))
+    if len(ids) > INVITE_BATCH_CAP:
+        raise ValueError("invite_email_batch: %d tokens exceeds the no-bulk cap %d"
+                         % (len(ids), INVITE_BATCH_CAP))
+    out = {}
+    conn = get_conn()
+    try:
+        for r in conn.execute("SELECT token, email FROM invites WHERE token IN (%s)"
+                              % ",".join("?" * len(ids)), ids) if ids else []:
+            out[r["token"]] = r["email"]
+        return out
+    finally:
+        conn.close()
+
+
 def lookup_user_by_email(email):
     """The login-path row for one email (UNIQUE), or None. pw_hash stays here —
     hashing/verification remains auth.py's job."""

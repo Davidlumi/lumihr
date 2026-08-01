@@ -1024,14 +1024,22 @@ async def me(request: Request):
 async def team(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    users = [{"email": r["email"], "role": r["role"], "display_name": r["display_name"],
+    # P5-live: email and display_name come from the identity store (D6). The SELECT * stays
+    # as it is — narrowing it is C6's separate fix class. Misses render unnamed, no fallback.
+    _urows = list(conn.execute("SELECT * FROM users WHERE org_id=? ORDER BY created_at",
+                               (org["org_id"],)))
+    _uid = identity.user_display_batch([r["user_id"] for r in _urows])
+    users = [{"email": (_uid.get(r["user_id"]) or {}).get("email"), "role": r["role"],
+              "display_name": (_uid.get(r["user_id"]) or {}).get("display_name"),
               "created_at": r["created_at"]}
-             for r in conn.execute("SELECT * FROM users WHERE org_id=? ORDER BY created_at", (org["org_id"],))]
-    invites = [{"email": r["email"], "role": r["role"], "expires_at": r["expires_at"],
+             for r in _urows]
+    _irows = list(conn.execute(
+        "SELECT * FROM invites WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now')",
+        (org["org_id"],)))
+    _iem = identity.invite_email_batch([r["token"] for r in _irows])
+    invites = [{"email": _iem.get(r["token"]), "role": r["role"], "expires_at": r["expires_at"],
                 "token": r["token"], "used": r["used_at"] is not None}
-               for r in conn.execute(
-                   "SELECT * FROM invites WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now')",
-                   (org["org_id"],))]
+               for r in _irows]
     return {"users": users, "invites": invites if user["role"] == "admin" else []}
 
 
@@ -1587,7 +1595,7 @@ async def invite_info(token: str):
     # P1b: the org name comes from the identity store (D6). Display-shaped and
     # no-fallback, like every other read switch — a miss renders unnamed rather
     # than reaching back into the reward store, which would mask a broken split.
-    return {"email": row["email"], "role": row["role"],
+    return {"email": identity.invite_email(token), "role": row["role"],
             "org_name": (identity.org_display(row["org_id"]) or {}).get("name")}
 
 
@@ -1602,7 +1610,14 @@ async def accept_invite(request: Request):
     if body.get("accept_platform_terms") is not True:
         raise HTTPException(400, "Please accept the Platform Terms of Use to join.")
     conn = get_conn()
-    uid = auth_lib.create_user(row["org_id"], row["email"], body["password"], row["role"],
+    # P5-live: the invited address lives identity-side. NOT display-shaped — resolve it
+    # BEFORE any write and fail legibly, rather than letting a None reach create_user where
+    # `email.lower()` raises AttributeError before the INSERT is ever attempted.
+    _email = identity.invite_email(row["token"])
+    if not _email:
+        raise HTTPException(500, "This invite can't be completed — its record is incomplete. "
+                                 "Please ask your Admin to send a new one.")
+    uid = auth_lib.create_user(row["org_id"], _email, body["password"], row["role"],
                                body.get("display_name"))
     # Joiners accept the Platform Terms only — the org's Data Contribution
     # agreement was made once by the Admin and is inherited, never re-accepted.
