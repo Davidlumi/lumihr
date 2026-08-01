@@ -93,13 +93,56 @@ def sql_strings(node):
     return out
 
 
+NESTED = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+
+
+def walk_scope(node):
+    """ast.walk, but STOPPING at nested function/class boundaries.
+
+    The precision fix. The first version used ast.walk, which descends into every nested
+    def — so in a 6,000-line module every `row = <execute>` anywhere became a module-level
+    binding and every `row["name"]` anywhere matched it. Eight app.py hits traced back to
+    peer_groups and dashboards rows that way."""
+    stack = list(ast.iter_child_nodes(node))
+    while stack:
+        n = stack.pop()
+        yield n
+        if not isinstance(n, NESTED):
+            stack.extend(ast.iter_child_nodes(n))
+
+
+def bound_names(node):
+    """EVERY name this scope binds, by any means, whatever the source. A name bound here
+    from a non-target source SHADOWS an enclosing target binding — which is what makes
+    `def _dash_meta(row, vis): ... row["name"]` a non-hit."""
+    out = set()
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+        a = node.args
+        for grp in (a.posonlyargs, a.args, a.kwonlyargs):
+            out.update(x.arg for x in grp)
+        for x in (a.vararg, a.kwarg):
+            if x: out.add(x.arg)
+    for n in walk_scope(node):
+        if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store):
+            out.add(n.id)
+        elif isinstance(n, (ast.withitem,)) and n.optional_vars is not None:
+            for m in ast.walk(n.optional_vars):
+                if isinstance(m, ast.Name): out.add(m.id)
+        elif isinstance(n, ast.ExceptHandler) and n.name:
+            out.add(n.name)
+    return out
+
+
 class Scope:
-    """One module body or one function body. Bindings are collected per scope; reads are
-    matched within the same scope. INTRA-SCOPE ONLY — see the limits in the docstring."""
+    """One module body or one function body. Bindings come from this scope's OWN body;
+    reads resolve innermost-outward through enclosing scopes (so a module-level row read
+    inside a function — verify_diff7:36 — is still found), stopping at the first scope
+    that binds the name at all (so a shadowing rebind is not followed outward)."""
     def __init__(self, node, tables):
         self.node, self.tables = node, tables
         self.rows = {}        # name -> the SQL that produced it
         self.containers = {}  # name -> the SQL that produced it
+        self.shadows = bound_names(node)
 
     def _touches_target(self, expr):
         for s in sql_strings(expr):
@@ -122,8 +165,7 @@ class Scope:
         return None
 
     def collect(self):
-        body = self.node.body if hasattr(self.node, "body") else []
-        for n in ast.walk(self.node):
+        for n in walk_scope(self.node):
             # X = <rowsrc>  /  X = {..for r in <rowsrc>}  /  X = [..]
             if isinstance(n, ast.Assign):
                 sql = self._rowsrc(n.value)
@@ -219,13 +261,25 @@ def scan_file(path, cols):
             break
 
     # ---- Class 2: SELECT * (or any row) bound, then subscripted by an identity column
-    scopes = [tree] + [n for n in ast.walk(tree)
-                       if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    # scope tree: each node mapped to its chain of enclosing scopes, outermost last
+    scopes, chain = [tree], {id(tree): []}
+    stack = [(tree, [])]
+    while stack:
+        node, anc = stack.pop()
+        for ch in ast.walk(node) if node is tree else [node]:
+            pass
+        for n in walk_scope(node):
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                scopes.append(n); chain[id(n)] = [node] + anc
+                stack.append((n, [node] + anc))
+    built = {}
+    for sc in scopes:
+        built[id(sc)] = Scope(sc, tables).collect()
     c2 = {}
     for sc in scopes:
-        S = Scope(sc, tables).collect()
-        known = dict(S.rows)
-        for n in ast.walk(sc):
+        S = built[id(sc)]
+        lex = [S] + [built[id(a)] for a in chain.get(id(sc), []) if id(a) in built]
+        for n in walk_scope(sc):
             key = col = None
             if isinstance(n, ast.Subscript):
                 k = n.slice
@@ -240,20 +294,90 @@ def scan_file(path, cols):
             b = base_name(key)
             if b is None:
                 continue
-            sql = known.get(b) or S.containers.get(b)
+            sql = None
+            for sc_i, s_i in enumerate(lex):
+                if b in s_i.rows:      sql = s_i.rows[b]; break
+                if b in s_i.containers: sql = s_i.containers[b]; break
+                if b in s_i.shadows:   break        # shadowed here — do not look outward
             if sql is None:
                 continue
             c2[n.lineno] = (col, b, sql, "COMPARED" if in_compare(n, parents) else "CONSUMED")
     return c1, c2, None
 
 
+
+# --------------------------------------------------------------- self-test --
+# BOTH DIRECTIONS. The first version tested recall only — it checked that known sites
+# were found and never that non-sites were excluded, and passed 21/21 while over-reporting
+# Class 2 by roughly 2.5x. A test that cannot fail in one direction is not testing it.
+POSITIVE = [
+  ("module binding read inside a function (the verify_diff7:36 closure shape)", """
+orgs = {r["org_id"]: dict(r) for r in c.execute("SELECT * FROM orgs")}
+def form(o):
+    return orgs[o]["name"] or ""
+"""),
+  ("direct row, compared", """
+row = c.execute("SELECT * FROM orgs WHERE org_id=?", (x,)).fetchone()
+if row["name"] == "Acme": pass
+"""),
+  ("loop variable over users", """
+for r in c.execute("SELECT * FROM users WHERE org_id=?", (o,)):
+    print(r["email"])
+"""),
+]
+NEGATIVE = [
+  ("row from peer_groups, not a target table", """
+row = c.execute("SELECT * FROM peer_groups WHERE group_id=?", (g,)).fetchone()
+label = row["name"]
+"""),
+  ("row from dashboards, not a target table", """
+row = c.execute("SELECT * FROM dashboards WHERE dashboard_id=?", (d,)).fetchone()
+label = row["name"]
+"""),
+  ("function parameter shadows an outer binding (_dash_meta)", """
+row = c.execute("SELECT * FROM orgs WHERE org_id=?", (x,)).fetchone()
+def _dash_meta(row, vis):
+    return {"name": row["name"]}
+"""),
+  ("nested rebind from a non-target source shadows the outer orgs row", """
+row = c.execute("SELECT * FROM orgs WHERE org_id=?", (x,)).fetchone()
+def inner():
+    row = c.execute("SELECT * FROM peer_groups WHERE group_id=?", (g,)).fetchone()
+    return row["name"]
+"""),
+]
+
+
+def _self_test(cols):
+    import tempfile
+    ok = True
+    print("SELF-TEST — both directions\n")
+    for label, src, want in ([(l, s, True) for l, s in POSITIVE] +
+                             [(l, s, False) for l, s in NEGATIVE]):
+        with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
+            f.write(src); p = f.name
+        _, c2, err = scan_file(p, cols)
+        os.unlink(p)
+        got = bool(c2)
+        good = (got == want)
+        ok &= good
+        print("  %-4s %-8s %s" % ("PASS" if good else "FAIL",
+                                  "expect+" if want else "expect-", label))
+        if not good:
+            print("       got %d Class 2 hit(s): %s" % (len(c2), list(c2.values())[:2]))
+    print("\n  SELF-TEST: %s" % ("all cases pass" if ok else "*** FAILURES ***"))
+    return 0 if ok else 1
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
     ap.add_argument("--columns", default=",".join(DEFAULT_COLUMNS))
     ap.add_argument("--all", action="store_true", help="also show Class 1 writes (normally filtered)")
+    ap.add_argument("--self-test", action="store_true", help="run positive AND negative controls")
     a = ap.parse_args()
     cols = tuple(c.strip() for c in a.columns.split(",") if c.strip())
+    if a.self_test:
+        return _self_test(cols)
     root = os.path.abspath(a.root)
 
     files, errs = [], []
@@ -314,10 +438,21 @@ def main():
     print("  * getattr / **kwargs / dict() round-trips")
     print("  * SQL assembled at runtime from non-literal fragments")
     print("  * values crossing a serialisation boundary (JSON -> parse -> subscript)")
-    print("  * a row passed into a helper and subscripted there — Class 2 tracking is")
-    print("    INTRA-SCOPE ONLY (module body, or one function body); no cross-call,")
-    print("    no cross-module, no cross-file")
+    print("  * a row RETURNED BY ANOTHER FUNCTION and subscripted at the call site.")
+    print("    Class 2 tracking is INTRA-SCOPE ONLY: no cross-call, no cross-module.")
+    print("    THIS IS NOT HYPOTHETICAL. Live example: auth.get_valid_invite() returns")
+    print("      conn.execute(\"SELECT * FROM invites WHERE token=? ...\").fetchone()")
+    print("    and app.py:1590/:1605 subscript that row for invites.email. Both are real")
+    print("    step-5 defects — :1605 breaks invite acceptance outright — and NEITHER")
+    print("    appears below. An earlier, buggier version of this tool surfaced them only")
+    print("    by accident, through the scope leak this fix removed. Recovering them needs")
+    print("    one-level return analysis, which this tool does not yet do.")
     print("  * .js entirely — web/js reads RENDERED names off API payloads, never a column")
+    print("PRECISION: Class 2 resolves names lexically (own scope, then enclosing scopes,")
+    print("  stopping at the first scope that rebinds the name). Validated against negative")
+    print("  controls — peer_groups/dashboards rows, and function parameters that shadow an")
+    print("  outer binding, are NOT reported. Where a rebind is conditional or a chain crosses")
+    print("  two scopes it still errs toward reporting: a noisy hit beats a missed one.")
     print("This tool claims completeness for NOTHING beyond the two classes above, at that depth.")
     print("-" * 100)
     print("TOTAL: %d Class 1 read(s) + %d Class 2 = %d site(s)" % (len(reads), len(C2), len(reads) + len(C2)))
