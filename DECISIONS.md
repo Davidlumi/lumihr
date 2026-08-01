@@ -12965,3 +12965,74 @@ marker work in commit 3 than after.
 
 **The registry fix sits ahead of everything in F.1 for one reason: gating an irreversible step
 on an instrument with a known hole is not defensible when the fix is cheap.**
+
+## THE SHARE FAMILY — parents and children, one incoherence at two depths (recorded 1 August 2026)
+
+The twin-cut diagnostic's coherence spot-check found orgs with no share capital holding
+share-scheme answers. Two repairs closed the family: the parents at `a8cd52e`, the children
+at `d53d349`. 79 instances in total, one cause at each level, and a gate that did exactly
+its job in between.
+
+### The parents (`a8cd52e`)
+**52 question-instances across 14 orgs, 9 holding both — 32% of the 44-org non-share
+population** (16 public sector, 15 charity, 11 mutual, 2 LLP) held substantive answers to
+`REW264_INC_SHAREPLAN` / `REW264_INC_EMICSOP`.
+
+**Cause: a missing scan direction, not a missing condition.** F1 in `diff7_reseed.py`
+conditions on ownership correctly — but scans only the NA→substantive direction
+(`if A.get((qid, o)) != na: continue`), so an org that drew SAYE in the original
+unconditioned seed was never examined. The repair added the reverse scan, keyed on
+`ownership_type` directly rather than `form()` — whose name-regex fallback is the routed
+name-as-evidence item, and new logic must not build on a dependency flagged for removal.
+
+**Ruled structural NA for all 52, the three charity/SIP-CSOP arguables included.** Ground:
+F1's own `keep` branch had already ruled NA correct for nonshare orgs; this extends an
+existing ruling into the direction it never scanned. The charity carve-out was considered
+and **flattened deliberately**: a charity's trading subsidiary could in principle operate
+SIP/SAYE/CSOP, and EMI fails the independence test even then — but the seed answers for the
+charity, not a hypothetical subsidiary, and three visible oddities cost more than the legal
+precision buys.
+
+**Scope moved 23 → 52 during rehearsal.** The investigation counted substantive-positive
+only; the writer scan also catches "Neither" — which asserts share capital exists. Same
+error, quieter. Widening was ruled so writer and data describe the same world, which is the
+ships-together rule's purpose.
+
+Aggregates: **n 181 → 155 on both questions.**
+
+### The children (`d53d349`)
+The parent repair unmasked the same defect one level down: `qa_plausibility` red on three
+r3sw11 pair rules — `SHAREPART` 12, `SAYEDISC` 8, `SIPELEM` 7 — **27 child instances in the
+same orgs**. Repaired to the children's own NA forms (`Not applicable`, `No SIP operated`),
+manifest derived from the gate's own pair dicts at execution time.
+
+**DATA-ONLY, verified rather than assumed.** `apply_2026_5.py:113-115` already conditions
+each child on the live parent answer — the children were drawn coherently against then-wrong
+parents and lagged when the parents moved. A reseed redraws all 27 to NA (proven, 27/27
+`is_na`). Keying on the parent rather than ownership composes: parent correct → children
+follow. **The writer's omission is a ruling, not an oversight**, and the commit body says so.
+
+Aggregates: `SHAREPART` n 43→31, `SAYEDISC` 31→23, `SIPELEM` 18→11.
+
+### Recorded consequences
+- **`Dividend shares` went to 0.0** — its only holder was a violator. A served option
+  reaching zero as a direct result of a repair should be findable without re-derivation;
+  this is where it is found.
+- **`SIPELEM` n=11 sits close to the suppression floor.** A note for the next realism pass.
+
+### Findings
+- **D.2's "23 rows, not a class" is FALSIFIED.** It was a family, terminating at depth 2
+  (grandchildren: zero). The sweep looked for questions resembling the parents; the children
+  carry their own NA forms and were invisible to it. The predicate encoded the shape its
+  author had already seen — the same mechanism as the six hiding shapes in the census work.
+- **The parent-child dependency exists in exactly TWO places** — the r3sw11 pair rules in
+  `generated_marginals.json` and the writer's `WIRED` set in `seed_release_2026_5.py` —
+  maintained separately. There is no `depends_on` machinery; the questions schema has no
+  such column. Same divergence-risk shape as the duplicated `form()`.
+- **`na_handling_json.na_codes` is EMPTY on both parent questions**: presentation machinery
+  naming nothing. Secondary, unfixed, recorded.
+- **THE UNMASKING PATTERN.** Repairing coherence at one level exposes the same defect one
+  level down. The gate that caught it was accurate; the sweep that declared the parents
+  closed was not. The suite was red for exactly one commit, for a known and recorded reason.
+  **Expect this on any future family repair, and sweep by dependency rather than by option
+  shape.**
