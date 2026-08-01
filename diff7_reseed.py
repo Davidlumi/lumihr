@@ -133,21 +133,32 @@ def form(o):
 
 F1 = {"REW264_INC_EMICSOP": "Not applicable (no share capital)",
       "REW264_INC_SHAREPLAN": "Not applicable (no shares)"}
+# sharefix (PH1-SEED-SHAREFIX): ownership_type DIRECTLY, not form() — form()'s
+# name-regex fallback is the routed name-as-evidence item (verify_diff7:39 /
+# diff7_reseed:127) and new logic must not build on a dependency flagged for removal.
+NONSHARE_TYPES = ("Public Sector Body", "Charity / Non-profit",
+                  "Mutual / Co-operative", "Partnership / LLP")
 f1_led = {}
 for qid, na in F1.items():
-    flip = keep = unk = 0
+    flip = keep = unk = rev = 0
     for o in resp:
-        if A.get((qid, o)) != na:
-            continue
-        f = form(o)
-        if f == "share":
-            set_change(qid, o, "Neither"); flip += 1
-        elif f == "nonshare":
-            keep += 1
-        else:
-            unk += 1
-    f1_led[qid] = {"na_total": flip + keep + unk, "flip": flip, "keep": keep, "unknown": unk}
-    ledger[qid]["writes"] = flip
+        v = A.get((qid, o))
+        if v == na:
+            f = form(o)
+            if f == "share":
+                set_change(qid, o, "Neither"); flip += 1
+            elif f == "nonshare":
+                keep += 1
+            else:
+                unk += 1
+        # sharefix REVERSE SCAN: the direction the original F1 never looked at.
+        # A no-share org holding ANY substantive answer (positive or "Neither" —
+        # both assert share capital exists) -> the structural NA.
+        elif v and (orgs[o].get("ownership_type") or "").strip() in NONSHARE_TYPES:
+            set_change(qid, o, na); rev += 1
+    f1_led[qid] = {"na_total": flip + keep + unk, "flip": flip, "keep": keep,
+                   "unknown": unk, "reverse_to_na": rev}
+    ledger[qid]["writes"] = flip + rev
 
 # ===================== F2 — cross-book conditioning =====================
 # (1) EVSALSAC: positive with no CAR_COST_02 'Yes' -> negative-substantive family
