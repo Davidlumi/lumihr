@@ -12659,3 +12659,107 @@ already ruled. Integrity = `PRAGMA integrity_check` **plus** a per-table content
 silently truncated copy is caught and not merely a corrupt one. The backup script is
 `server/backup_identity.py`, separate from the reward-side ritual, per the policy's per-store
 creation-time doctrine.
+
+## P4 SHAPE INVESTIGATION — six findings, and what P4 actually is (recorded 1 August 2026)
+
+P4's routing bucket was assembled from items noticed in passing across nine commits. Two
+sections of its shape investigation have run. Both moved the inventory, and between them
+they found a twelve-file defect class, a second name-as-evidence site, and a step-5
+problem that no census could have surfaced because it is not a read at all.
+
+### 1. The writers refill what step 5 empties
+`auth.create_user` (`auth.py:98`) still inserts `email` and `display_name` reward-side;
+`create_invite` does the same for `invites.email`. **After step 5 runs, every signup and
+every accepted invite re-introduces PII into the reward store, one row at a time.**
+
+Demonstrated during P5-live's rehearsal rather than reasoned about: `identity_recon` on
+the after-step-5 pair reported `email=PARTIAL; display_name=PARTIAL — 9 NULL of 10`, the
+tenth row being the user an invite-acceptance round trip had just created. P2's `PARTIAL`
+check caught it exactly as designed — it was written for "a writer re-populating a column
+that should stay empty", and this is that case arriving.
+
+**Catching is not preventing. A NULL with live writers behind it is a pause, not a
+migration.** The D3/D5 pattern applies: the writer strip ships with the data change, because
+a fix the next write undoes is not a fix. **Whether the strip belongs inside step 5 or as a
+pre-flight item ahead of it is OPEN.**
+
+### 2. Census depth is a moving target, not a design constant
+`census_step5.py` resolves Class 2 to **one** call level. P1 moved `find_user`'s row source
+one level down into `identity.lookup_user_by_email` — so `find_user` was visible to the
+instrument **before** P1 and is not now. The split keeps pushing reads deeper than the
+census follows, and the tool goes quiet without going wrong.
+
+Depth is a parameter with a stated value. **Step 5's go/no-go must state the depth its
+census ran at and justify it against the tree as it then stands**, rather than inheriting
+"complete" from a run made against a shallower tree.
+
+### 3. verify.py's cleanup has not run since the file went red
+`_cleanup()` is the **last statement of `main()`** (`verify.py:382`), not a `finally`, and
+`main()` crashes at `:95` with `KeyError: 'block'`. So `:405`'s probe-org lookup and
+`:410`'s session delete are never reached. **Probe orgs from prior runs may already be
+stranded in the reward store.** Present-tense, not a step-5 projection.
+
+All five of `verify.py`'s P4 sites (`:106`, `:253`, `:269`, `:405`, `:410`) fall after the
+crash. They land the same side — but only measurement shows it, and a before/after run of
+this file proves nothing about any of them.
+
+### 4. Hardcoded base URL is a twelve-file class, and NOT a step-5 blocker
+Twelve `.py` files hardcode `http://localhost:8060` with **no override of any kind** —
+checked per file for `LUMI_BASE`, `QA_BASE`, `PORT` and any `environ`/`getenv` against a
+BASE-like name; all twelve returned zero. **All twelve make HTTP calls and all twelve log
+in.**
+
+- **Five are in the 11-gate roster** (`qa_engine_audit:45`, `qa_focus:4`, `qa_hero:55`,
+  `qa_signals_system:21`, `qa_strategy:19`) and are **accidentally correct**: `run_gates.sh`
+  kills `:8060` and starts its own server there, so the hardcode points at the right server
+  because the harness moves the server to the hardcode. They work by coincidence of port,
+  not by configuration.
+- **Seven are out of the roster** (`qa_integrity:253`, `qa_phase1:21`, `qa_phase2:18`,
+  `qa_phase3:8`, `qa_phase4:10`, `qa_status_audit:83`, `verify.py:38`). Running one by hand
+  sends its SQL half to `LUMI_DB` and its HTTP half to whatever is on `:8060` — normally the
+  live server on the live database. **The same split-brain P4a fixed at the DB layer, still
+  open at the HTTP layer.** Each mints a live session with demo credentials when run against
+  live.
+
+`qa_phase3` and `qa_phase4` are **new to the record entirely** — they appear in no prior
+census or inventory in this build. `app.py:5087` and `:5375` already carry the correct shape
+(`os.environ.get("LUMI_BASE_URL", "http://localhost:8060")`) and are the template.
+
+**NOT a step-5 blocker: nothing here breaks because of step 5 — it is already wrong.** A
+hardcoded BASE decides which server a gate talks to; step 5 decides which columns hold
+values, and they do not interact. Recorded as a standing gate-safety defect with its own
+urgency, **deliberately not folded into the pre-flight list** — the same discipline that
+removed item 7 from the original record. `qa_integrity:253` and `qa_phase1:21` reached P4
+only by proximity to step-5 work and come off it.
+
+### 5. Name-as-evidence has two sites, not one
+`verify_diff7.py:39` and `diff7_reseed.py:127` carry the **same `form()` heuristic** — a
+regex on `orgs.name` for `plc|ltd|limited` to infer share-capital form when
+`ownership_type` is absent. **63 of 223 orgs route through it in both**, measured. Post-null
+all 63 become `"unknown"` in both files, and check F1 silently stops covering them.
+
+The category — **an identity column consumed as EVIDENCE**, rather than displayed, compared,
+or used as a lookup key — had no census until the dataflow instrument, and it **degrades
+silently rather than failing**. `:39` was found by reading a file; `:127` only by sweeping
+for its siblings.
+
+**The duplication is itself a finding:** the same inference logic maintained in two files is
+how `seed_import`'s writer drifted from its readers at step 4. **A ruling is owed on what F1
+should cover, and it applies to both sites identically.** No fix proposed.
+
+### 6. P4a was a partial close
+P4a fixed `qa_integrity` and `qa_metric_data` at the DB layer, recorded on the ground that a
+change opening a hole is preceded by the fix closing it. **That ground stands and the commit
+did what it said** — but the same split-brain remained open at the **HTTP** layer in seven
+files throughout, unnoticed until this sweep. Recorded so P4a does not read as having settled
+that class.
+
+### Status — P4's shape investigation is INCOMPLETE
+**Done:** §2.3 (per-site crash-point scoping) and §2.8 (the name-as-evidence sibling sweep).
+**Outstanding:** §2.1 fix-class grouping, §2.2 ordering and dependencies, §2.4 the
+`verify_diff7:39` options, §2.6 untracked targets, §2.7 blocker-versus-stale separation,
+§2.9 the recommended sequence. **Struck as moot:** §2.5, per finding 4.
+
+**The inventory moved twice during the two sections that ran** and now stands at **eleven
+sites**. §2.1's grouping must be built on the corrected list, not the one the investigation
+opened with.
