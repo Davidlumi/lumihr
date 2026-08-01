@@ -133,6 +133,56 @@ def bound_names(node):
     return out
 
 
+# Functions whose return is a row source on a target table. Populated by build_registry()
+# before scanning. ONE LEVEL ONLY: a function returning ANOTHER row-returning function's
+# result does not qualify — auth.find_user returns identity.lookup_user_by_email(...), so
+# its row source is one level further down and its callers stay invisible.
+QUALIFIED = {}
+
+
+def build_registry(files, tables):
+    """Pass A. Registered by BARE NAME, so `auth_lib.get_valid_invite` resolves without
+    tracking `import auth as auth_lib`. Two same-named functions in different modules
+    collapse together — deliberate over-reporting, per the standing rule."""
+    import re as _re
+    def table_of(expr):
+        for n in ast.walk(expr):
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) \
+               and n.func.attr == "execute" and n.args:
+                sql = fold(n.args[0])
+                if sql and "SELECT" in sql.upper():
+                    for t in tables:
+                        if _re.search(r"\b%s\b" % t, sql, _re.I):
+                            return " ".join(sql.split())[:120]
+        return None
+    for p in files:
+        try:
+            tree = ast.parse(open(p, encoding="utf-8").read())
+        except Exception:
+            continue
+        for fn in [n for n in ast.walk(tree)
+                   if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+            local = {}
+            for n in walk_scope(fn):
+                if isinstance(n, ast.Assign):
+                    sql = table_of(n.value)
+                    if sql:
+                        for tg in n.targets:
+                            for nm in ast.walk(tg):
+                                if isinstance(nm, ast.Name):
+                                    local[nm.id] = sql
+            for n in walk_scope(fn):
+                # conditional returns qualify: the FIRST qualifying return is enough
+                if isinstance(n, ast.Return) and n.value is not None:
+                    sql = table_of(n.value)
+                    if sql is None and isinstance(n.value, ast.Name):
+                        sql = local.get(n.value.id)
+                    if sql:
+                        QUALIFIED[fn.name] = "%s() -> %s" % (fn.name, sql[:70])
+                        break
+    return QUALIFIED
+
+
 class Scope:
     """One module body or one function body. Bindings come from this scope's OWN body;
     reads resolve innermost-outward through enclosing scopes (so a module-level row read
@@ -155,13 +205,20 @@ class Scope:
         return None
 
     def _rowsrc(self, expr):
-        """Does this expression contain a .execute(<sql over a target table>)?"""
+        """A .execute(<sql over a target table>) -- OR a call to a row-returning function
+        (Pass B of the one-level return analysis)."""
         for n in ast.walk(expr):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) \
                and n.func.attr == "execute" and n.args:
                 sql = self._touches_target(n.args[0])
                 if sql:
                     return sql
+        for n in ast.walk(expr):
+            if isinstance(n, ast.Call):
+                nm = n.func.attr if isinstance(n.func, ast.Attribute) else (
+                     n.func.id if isinstance(n.func, ast.Name) else None)
+                if nm and nm in QUALIFIED:
+                    return "via %s" % QUALIFIED[nm]
         return None
 
     def collect(self):
@@ -348,14 +405,48 @@ def inner():
 ]
 
 
+RET_POSITIVE = [
+  ("same-module row-returning function, called and subscripted", """
+def get_row(t):
+    return c.execute("SELECT * FROM invites WHERE token=?", (t,)).fetchone()
+row = get_row(tok)
+print(row["email"])
+"""),
+  ("cross-module call by bare name (the get_valid_invite shape)", """
+row = auth_lib.get_valid_invite(tok)
+uid = create_user(row["org_id"], row["email"])
+"""),
+]
+RET_NEGATIVE = [
+  ("function returning a non-row (dict literal), subscripted with a target column", """
+def get_row(t):
+    return {"name": "x", "email": "y"}
+row = get_row(tok)
+print(row["email"])
+"""),
+  ("function returning a row on a NON-target table, subscripted with [\"name\"]", """
+def get_group(g):
+    return c.execute("SELECT * FROM peer_groups WHERE group_id=?", (g,)).fetchone()
+row = get_group(gid)
+label = row["name"]
+"""),
+]
+
+
 def _self_test(cols):
     import tempfile
     ok = True
     print("SELF-TEST — both directions\n")
+    tables = sorted({c.split(".")[0] for c in cols})
     for label, src, want in ([(l, s, True) for l, s in POSITIVE] +
-                             [(l, s, False) for l, s in NEGATIVE]):
+                             [(l, s, False) for l, s in NEGATIVE] +
+                             [(l, s, True) for l, s in RET_POSITIVE] +
+                             [(l, s, False) for l, s in RET_NEGATIVE]):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
             f.write(src); p = f.name
+        QUALIFIED.clear()
+        QUALIFIED["get_valid_invite"] = "get_valid_invite() -> SELECT * FROM invites WHERE token=?"
+        build_registry([p], tables)
         _, c2, err = scan_file(p, cols)
         os.unlink(p)
         got = bool(c2)
@@ -393,6 +484,9 @@ def main():
     print("          (default mirrors identity_recon.STEP5_REMOVED — the operative definition")
     print("           until step 5 pins its own list; the spec never enumerates it)")
     print("files   : %d .py scanned   |   .js NOT scanned (rendered names are a different class)" % len(files))
+    build_registry(files, sorted({c.split(".")[0] for c in cols}))
+    print("returns : %d row-returning function(s) registered (one-level): %s"
+          % (len(QUALIFIED), ", ".join(sorted(QUALIFIED)) or "none"))
     print()
 
     C1, C2 = [], []
@@ -438,15 +532,15 @@ def main():
     print("  * getattr / **kwargs / dict() round-trips")
     print("  * SQL assembled at runtime from non-literal fragments")
     print("  * values crossing a serialisation boundary (JSON -> parse -> subscript)")
-    print("  * a row RETURNED BY ANOTHER FUNCTION and subscripted at the call site.")
-    print("    Class 2 tracking is INTRA-SCOPE ONLY: no cross-call, no cross-module.")
-    print("    THIS IS NOT HYPOTHETICAL. Live example: auth.get_valid_invite() returns")
-    print("      conn.execute(\"SELECT * FROM invites WHERE token=? ...\").fetchone()")
-    print("    and app.py:1590/:1605 subscript that row for invites.email. Both are real")
-    print("    step-5 defects — :1605 breaks invite acceptance outright — and NEITHER")
-    print("    appears below. An earlier, buggier version of this tool surfaced them only")
-    print("    by accident, through the scope leak this fix removed. Recovering them needs")
-    print("    one-level return analysis, which this tool does not yet do.")
+    print("  * a row returned through MORE THAN ONE call. Return analysis is ONE LEVEL:")
+    print("    a call to a function whose own return is a .execute() row IS followed, so")
+    print("    auth.get_valid_invite() -> app.py:1590/:1605 now appears below. A function")
+    print("    returning ANOTHER row-returning function's result is NOT followed — live")
+    print("    example: auth.find_user() returns identity.lookup_user_by_email(...), whose")
+    print("    row source is one level further down, so find_user's callers stay invisible.")
+    print("    Cross-module calls resolve by BARE NAME (auth_lib.get_valid_invite matches")
+    print("    auth.get_valid_invite without alias tracking); same-named functions in")
+    print("    different modules collapse together, which over-reports by design.")
     print("  * .js entirely — web/js reads RENDERED names off API payloads, never a column")
     print("PRECISION: Class 2 resolves names lexically (own scope, then enclosing scopes,")
     print("  stopping at the first scope that rebinds the name). Validated against negative")
