@@ -13,6 +13,9 @@ import sqlite3
 import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "server"))
+from demo_org import demo_id   # P3b: demo org resolved identity-side, by org_id
+
 DB = os.environ.get("LUMI_DB", "lumi.db")
 BAK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumi.db.bak_pre_diff7_20260714")
 TOL = 0.03
@@ -142,7 +145,15 @@ if dupes > 8:
     fails.append("F5-still-clustered(%d)" % dupes)
 
 # 6. Thornbridge flags
-T = next(o for o in resp if orgs[o]["name"] == "Thornbridge Retail Group plc")
+# P3b: resolved by org_id through the identity store — orgs.name is gone after step 5.
+# The old next(...) had no default, so a miss raised a bare StopIteration with no message;
+# demo_id raises DemoOrgUnresolved naming the store and key, and the "resolved but has no
+# answers" case is now reported separately instead of collapsing into the same failure.
+_demo = demo_id(c)
+if _demo not in resp:
+    raise SystemExit("verify_diff7: demo org %s resolved but has no snapshot-1 answers — "
+                     "cannot check Thornbridge flags" % _demo)
+T = _demo
 print("\n-- Thornbridge flags --")
 f1 = A.get(("REW264_INC_EMICSOP", T)); print("  flag1 EMICSOP:", f1, "(expect Neither)")
 f2 = A.get(("REW264_BEN_EVSALSAC", T)); print("  flag2 EVSALSAC:", f2, "(expect Fuel-neutral)")
