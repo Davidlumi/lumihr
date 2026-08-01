@@ -12763,3 +12763,205 @@ that class.
 **The inventory moved twice during the two sections that ran** and now stands at **eleven
 sites**. §2.1's grouping must be built on the corrected list, not the one the investigation
 opened with.
+
+## THE STEP-5 SHAPE INVESTIGATION — complete, Parts A–F (recorded 1 August 2026)
+
+Three sessions, read-only throughout. **Step 5 now has a shape that can be ruled; it did not
+before.** What follows is what the step actually is, as against what S6 described.
+
+### A — the column list is six, and it survives the check unchanged
+`identity_recon.STEP5_REMOVED` holds: `orgs.name`, `orgs.normalized_name`, `users.email`,
+`users.pw_hash`, `users.display_name`, `invites.email`. Each verified against an identity-side
+source at equal counts (223/223, 8/8, 1/1). Nothing is missing; nothing comes off.
+
+**`password_resets` has NO identity column.** Its five columns are `token, user_id, created_at,
+expires_at, used_at`. Nulling it is a no-op, and the question the spec framed for it —
+null or delete — was the wrong question. What is actually present reward-side in
+`password_resets`, `invites` and `sessions` is **credential residue**: 1,091 dead session
+tokens plus reset and invite tokens with no reader since P1. That is a separate ruling, not
+step 5's.
+
+### B — neither mechanism works alone; a rebuild is required either way
+`UPDATE ... SET NULL` succeeds on **1 of 6** (`users.display_name` only). `ALTER TABLE DROP
+COLUMN` succeeds on **4 of 6** — blocked on `orgs.normalized_name` by index `idx_orgs_norm`,
+and on `users.email` by its UNIQUE constraint.
+
+So the rebuild S6 deferred to "a later cleanup diff after soak" is required by step 5 itself.
+Measured: **no triggers, no views** anywhere in the database — which removes the largest
+silent-loss risk. `orgs` is referenced by **21 foreign keys**, `users` by **6**.
+**`idx_orgs_norm` is the one object a rebuild would silently lose.** SQLite DDL is
+transactional, so a crash leaves the old table or the new one, never a half-state: the
+residual risk is **omission, not atomicity**.
+
+### C — eight writers, not two, and the execution order is FORCED
+`app.py:900` (signup org INSERT), `app.py:952` (`UPDATE users SET pw_hash` on reset),
+`auth.py:98` (`create_user`), `auth.py:123` (`create_invite`), `seed_import.py:218`,
+`seed_staff_admin.py:56`, plus two gate fixtures (`qa_pulse.py:190`, `qa_release.py:138`).
+**Four were new to the record** — it held only `create_user` and `create_invite`, both noticed
+in passing during P5-live's rehearsal. The same incidental-finding pattern that made four
+earlier censuses wrong.
+
+**"Strip the writers, then null" is impossible.** A writer of a `NOT NULL` column cannot be
+stripped — the INSERT fails — and five of the six are `NOT NULL`. The only available order is
+**rebuild → strip → null**.
+
+And the window between strip and null is not free: new rows carry NULL while old rows keep
+values, which is **exactly the PARTIAL state P2 made fatal**. `identity_recon` cannot
+distinguish "stripped writer mid-migration" from "writer re-populating a column that should
+stay empty" — the case it was written for. It exits 2 for the duration.
+
+### D — reconstructible in the data; irreversible only in the schema
+All six columns restore from `identity.db` by single-key join: `orgs.*` on `org_id`, `users.*`
+on `user_id`, `invites.email` on `token`. **No column makes step 5 irreversible in the data.**
+Irreversibility is schema-only, and only under DROP.
+
+`orgs.normalized_name` has two independent paths: it is **stored** identity-side, and it is
+derivable — `re.sub(r"[^a-z0-9]", "", name.lower())` reproduced the stored values **223/223**.
+So a corruption of the stored column alone is still recoverable from the name.
+
+### D.2 — the restore marker, designed
+A `meta` table in `identity.db` (which has none today) carrying `step5_state`
+(`in_progress` | `complete`), a timestamp, the column list, and the mechanism. **Two-phase:**
+written before the reward store is touched, completed after the reward change commits.
+Checked by `identity_recon` as an extension of P2's classifier.
+
+Identity-side, and **not** mirrored to a git-tracked file: the repository and the database
+restore independently, so a file marker is rolled back by a `git checkout` that has nothing to
+do with the data. One authority — a marker that can contradict itself is worse than one that
+cannot.
+
+**Its load-bearing property, and the reason it is not merely a restore guard:** `in_progress`
+IS the distinction P2's classifier cannot make between a stripped writer mid-migration and a
+writer re-populating. **The marker is what makes the migration window legible.** Hence its
+position — before the first reward-side change, not alongside the null.
+
+**Its self-introduced gap, unclosed:** a *missing* marker with EMPTY reward columns reads as
+normal, because P2 treats EMPTY as post-step-5 and excludes it from drift. Under a missing
+marker, EMPTY must itself become suspicious. Whoever builds the recon change closes this in
+the same commit rather than inheriting it.
+
+### D.3 — the pre-split pin is NOT step 5's rollback
+Restoring `lumi.db.bak_pre_presplit_20260730_221335` would produce an **incoherent** system,
+not an older one: pre-step-4a `registry_json` with the identity keys still embedded, against
+code at HEAD that expects them stripped. It remains the floor for **abandoning the split
+entirely**, and its release trigger is unchanged.
+
+Step 5's practical rollback is, cheapest first: **re-copy from `identity.db`** (complete for
+all six per D), then **its own pre-diff backup** of `lumi.db`, then the pin as the nuclear
+option.
+
+### D.4 — the first identity backup is a PRECONDITION, not an item
+The record's ground was that after step 5 `identity.db` becomes the sole copy of every name
+and email. D makes it stronger: every one of the six columns is reconstructible from
+`identity.db` **and from nothing else**, so `identity.db` is **the sole rollback path for step
+5 itself**.
+
+`ls identity.db.bak*` returns nothing. There has never been an identity backup. **Step 5 must
+not run while its own stated rollback is a single unbacked-up file** — "reversible by re-copy"
+is otherwise a claim with no redundancy behind it. D9's requirements are already ruled, so
+this is a build, not a decision.
+
+### E — THE SIXTH HIDING SHAPE
+`census_step5.py`'s depth-1 registry does not recognise `return dict(r) if r else None` — an
+**IfExp wrapper**, which is `identity.py`'s house style and appears **seven times**. Five of
+its readers are invisible to the registry, `lookup_user_by_email` among them, so
+`auth.find_user` — the known depth-2 case, created by P1's own fix — **never registers as
+depth-2 at all.**
+
+The depth-2 sweep therefore returned "one depth-2 function (`demo_id` → `demo_row`), zero
+exposed callers" from an **incomplete base**. That result cannot be read as "depth 2 is
+clear"; it means the part of depth 2 reachable from a registry with a known hole is clear.
+
+### E.3 / E.4 — what the census can actually claim
+**It can claim:** every read where a target column is named in SQL text (Class 1); every read
+where a row is bound and subscripted within a lexical scope (Class 2); and every read one call
+level deep **through returns the registry recognises**. Validated at 21/21 recall across five
+shapes, seven negative controls, and by independently finding P1's login break on a pre-fix
+tree.
+
+**It cannot claim completeness** — five enumerated shapes, one call level, and a known
+registry hole.
+
+Three ways to make it enough: **(1)** a depth-2 extension, which inherits the hole and would
+give false confidence; **(2)** fix the registry to recognise wrapper returns, then re-run;
+**(3)** accept the residual with its bound written down — *reads reaching a target column
+through two or more calls where an intermediate return is a wrapper expression* — which is
+enumerable by hand today because `identity.py` is the only module with that idiom.
+**Ruled approach: (2) then (3).** Fix the hole, re-run, write the bound down.
+
+**And the honest position on closure.** No evidence of a sixth shape is not a closed class.
+The sixth was found **by asking why a known case was missing**, not by the instrument
+surfacing it — the same way the fourth and fifth were found, after the commit meant to close
+their class had shipped. Every closure claim in this build has been falsified by the next
+look.
+
+**What has improved is DETECTION LATENCY, not closure.** The first three shapes took commits
+to surface. This one took one question. That is the real measure of the instrument's worth,
+and it is a different claim from "the class is closed".
+
+### F.1 — seven commits
+Spine: C's forced `rebuild → strip → null`. Two positions fixed by D — the marker before the
+first reward-side change, the identity backup before the rebuild.
+
+1. **Fix the census registry** (wrapper returns) and re-run. Recon PASS. Rollback: code revert.
+2. **First identity backup** — D9's integrity check plus row-count assertion excluding
+   `sessions`. Recon PASS. Additive; no rollback needed.
+3. **The marker** — `identity.meta` plus the recon extension, closing D.2's missing-marker gap
+   in the same commit. Recon PASS. Rollback: code revert plus drop the table.
+4. **Writer strips, non-`NOT NULL` only** — `users.display_name`'s writers. Recon reports
+   `in_progress`. Rollback: code revert.
+5. **The rebuild** — relax `NOT NULL` or drop columns per the mechanism ruling; recreate
+   `idx_orgs_norm`; FK-safe. Proof: `integrity_check ok`, `foreign_key_check` clean, index
+   present, row counts equal. Recon `in_progress`. Rollback: pre-diff backup.
+6. **Remaining writer strips, then the null.** Recon `in_progress`. Rollback: re-copy from
+   `identity.db`.
+7. **Close** — marker to `complete`, full verification. Recon PASS under `complete`.
+
+**Why 4 and 6 split:** `users.display_name` is the only column nullable without a rebuild, so
+its writer can be stripped before commit 5 while the rest cannot.
+
+**Why 5 and 6 land in one working session:** C's PARTIAL window sits between them. The marker
+makes it legible, but an overnight gap means a live signup writes into a half-migrated store.
+
+### F.2 — open for ruling
+**The mechanism (NULL-after-rebuild vs DROP-after-rebuild)** — genuinely David's, see F.3.
+**Credential residue's position** — recommended before the rebuild, see F.4. **Whether
+commits 5 and 6 must be one session** — recommended yes. **Whether the marker is
+identity-side only or mirrored** — recommended identity-side only, on the
+one-authority ground in D.2.
+
+### F.3 — the mechanism question, reframed
+It is not "null or drop". **It is: keep the soak, or take loud failure.**
+
+A rebuild is required either way, so S6's "no hard point of no return" is already spent. What
+remains is what happens to code that still reads a moved column: **NULL returns `None` and
+degrades silently; DROP raises `no such column` and fails loudly.** Every ruling since S6 has
+favoured loud — the no-silent-skip rule, P2's PARTIAL fatal, `qa_metric_data`'s CRIT,
+`:1605`'s resolve-before-write. Against DROP: it forecloses the soak, because DROP-after-rebuild
+IS the cleanup diff S6 deferred.
+
+So the question is **how much confidence the census warrants** — a soak is insurance against
+reads the census did not find. **E.4 is the answer to that question**, and E.4 says the class
+is not closed. That does not decide the ruling; it names what the ruling is actually about.
+
+### F.4 — credential residue goes BEFORE the rebuild
+By content it is not step 5's business — those are credentials, not identity. But commit 5
+rebuilds the tables that carry them, and **a rebuild carrying 1,091 dead session tokens
+re-blesses residue into a new schema.** Deleting first makes the rebuild smaller and avoids
+carrying credentials across a schema change. It also needs the same "identity-only, excluded"
+treatment in `identity_recon` that Seam-B gave `sessions`, which is cleaner to do before the
+marker work in commit 3 than after.
+
+### F.5 — what "step 5 is done" means
+1. **Columns** — all six absent (DROP) or zero non-null across every row (NULL), asserted.
+2. **Marker** — `step5_state = 'complete'`, with timestamp, column list and mechanism.
+3. **Recon** — PASS under `complete`, columns classified EMPTY/ABSENT with the marker agreeing.
+4. **Suite** — 11/11 green, plus the out-of-suite gates run directly and compared.
+5. **Writers** — a signup, an invite acceptance and a password reset performed against the
+   migrated store, and the columns still empty afterwards. **This is the criterion the original
+   framing lacked, and it is the difference between a pause and a migration.**
+6. **Census** — re-run post-migration with the registry fix in, reporting zero reads of a
+   nulled column outside `identity.py`, with its depth and residual bound quoted in the close.
+
+**The registry fix sits ahead of everything in F.1 for one reason: gating an irreversible step
+on an instrument with a known hole is not defensible when the fix is cheap.**
