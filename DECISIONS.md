@@ -13072,3 +13072,92 @@ identity backup → 2b credential-residue ruling sheet → 3 marker + recon exte
 the missing-marker/EMPTY gap in the same commit) → 4 `display_name` writer strips → 5
 rebuild → 6 remaining strips + NULL (same session as 5) → 7 close: marker `complete`, full
 verification against F.5's six criteria.
+
+## STEP 5's PRE-WRITE STATE — rulings recorded before the migration runs (2 August 2026)
+
+This entry precedes the irreversible write deliberately. It records the state ruled *going
+in*, not the state found coming out. Everything below was established by the commit 5+6
+rehearsal on throwaway pairs; the live store is untouched at the time of writing
+(`orgs.name` 223, `normalized_name` 223, `users.email` 8, `pw_hash` 8, `display_name` 8,
+`invites.email` 1 — the migration has not run).
+
+**1. The ordering site — `app.py:5215`, `/api/admin/orgs`.** The statement spans 5214–5216:
+`FROM orgs o ORDER BY o.name`, with the `ORDER BY` token on the continuation line. The
+*displayed* name already comes from `identity.org_display_batch` at `:5217` — the read
+switch is done — but the sort still runs on the reward-side column, which post-NULL is
+uniformly NULL. Proven at SQL level against pre- and post-migration stores: same 223
+`org_id`s, same set, different order. The staff org list silently stops being alphabetical;
+nothing fails, nothing raises, no count moves.
+
+This is a **fourth use category — ordering** — alongside lookup, display and evidence. No
+sweep had covered it; it was found by the post-migration census re-run, not by any
+predicate written in advance. The sibling sweep found no others: `dbsnapshot.py:42` is
+`sqlite_master.name` and `qa_hero.py:192` is domain names (Pay, Benefits…), neither a
+step-5 column.
+
+RULED: **no fix — not P4's line, not inside 5+6.** Grounds: nothing fails; the consequence
+is a staff-only list losing alphabetical order; and changing a live request handler inside
+the session that carries the irreversible migration is the wrong trade. It is a *named
+consequence* carried into the soak, rulable afterwards if it proves to matter. Naming it
+here is what separates an accepted cost from an unnoticed one.
+
+**2. The suite at 10/11, accepted deliberately.** `qa_engine_audit.py:732` fails at the
+migration exactly as the P4 inventory predicted: `TypeError: 'in <string>' requires string
+as left operand, not NoneType`, where `foreign_name` is the now-NULL `orgs.name` and the
+probe evaluates `foreign_name in json.dumps(body)`. The cross-tenant leak probe **crashes
+rather than weakening** — the gate D8's two-file throwaway ruling was built around.
+Measured per-gate on migrated and unmigrated pairs: **11/11 before, 10/11 after**, with
+every other gate identical either side and the engine figures unmoved (150/92/23 of 265,
+differ 31, signals 58).
+
+RULED: **accept.** The fix is P4's, on P4's line. Sequencing it first would put a second
+fix class ahead of the migration for a gate failing in a predicted, understood way. The
+suite sits at 10/11 from the live write until P4 lands.
+
+The share-family precedent governs: red for a known and recorded reason is acceptable; a
+red gate nobody has explained is not. This entry is what makes 10/11 a *choice* rather than
+a discovery.
+
+**3. Commit 4 folded in.** F.1 ruled seven commits with `display_name`'s writer strip as
+commit 4, on the ground that it is the one column of the six nullable without a rebuild.
+It is folded into 5+6. Stripping it early opens a PARTIAL window on `users.display_name`
+with no marker written, and the classifier at `5b5e027` calls absent-marker + PARTIAL
+**FATAL**. Commit 4 would therefore have red-gated the reconciliation from the moment it
+shipped until commit 5 began, for no benefit beyond arriving sooner. All eight writers are
+stripped inside the 5+6 session: `app.py:900` and `:952`, `auth.py:98` and `:123`,
+`seed_import.py:218`, `seed_staff_admin.py:56`, `qa_pulse.py:190`, `qa_release.py:138`.
+
+**4. F.5's sixth criterion, corrected.** As written: *"the census re-run, reporting zero
+reads of a nulled column outside `identity.py`."* That is **not literally met, and is not to
+be reported as met.** The live tree carries 51 sites: 12 in `identity.py` (the store's own
+module, where the data now lives), 8 census self-test fixtures, 6 spent one-off migrations,
+2 in `app.py` whose value is sourced *from* identity, 2 docstring mentions, and 21 in the
+P4/tooling bucket.
+
+The defensible claim, and what criterion 6 asserts from here: **zero reads of a nulled
+column in the live request path outside `identity.py`, plus the ordering site at
+`app.py:5215`.** A criterion that cannot be met as written is not evidence of a bad
+migration; it is evidence of a criterion written before the census could say what it would
+find. Corrected in place rather than quietly satisfied.
+
+**5. The rehearsal's own correction — the transferable lesson.** The 2.7 rollback rehearsal
+restored all six columns *in the same throwaway then serving as the "migrated" store*. An
+entire round of AFTER gate results was therefore measured against an effectively
+unmigrated store, and every one of them came back green for the wrong reason. It was caught
+only because `qa_overview` printed a real org name post-"migration" where it should have
+printed `org=None`; the fixture's column counts (223/8/1) then confirmed it. A fresh
+migrated pair was built and every AFTER measurement reran against it.
+
+**A fixture can be invalidated by its own HISTORY, not only its state.** This is the
+hardest class of vacuous proof to see: nothing about the store's state at the moment of
+measurement was wrong — it was internally consistent, integrity-clean, and correctly
+reported by every tool that read it. Only its provenance was wrong.
+
+Corollary recorded alongside it: a scratch tree missing the repo root's `data/` and JSON
+configs produces red gates that *mimic the change under test* — two gates went red for
+missing config, not for the migration. Isolate by 2×2 (tree × data) before attributing any
+failure. Both times it ran here, the 2×2 showed the harness was the cause, not the change.
+
+**What this entry does not settle.** The write itself. Commit 7's close, the post-write
+verification, and criterion 6 as reworded above are all measured *after* the migration
+runs, against the live store, and are recorded separately.
