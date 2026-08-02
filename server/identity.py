@@ -155,6 +155,27 @@ def step5_marker():
         conn.close()
 
 
+def set_step5_marker(state, columns, mechanism="NULL"):
+    """Two-phase step-5 marker WRITE (commits 5/6; deferred from commit 3 per the
+    step-1 precedent — a writer nothing calls drifts from its call site). 'in_progress'
+    is written BEFORE the reward store is touched; 'complete' AFTER the reward change
+    commits, with the timestamp. One row, id=1, upserted."""
+    import datetime, json as _json
+    ts = datetime.datetime.now().isoformat(timespec="seconds") if state == "complete" else None
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO meta(id, step5_state, step5_completed_at, step5_columns, step5_mechanism) "
+            "VALUES (1,?,?,?,?) ON CONFLICT(id) DO UPDATE SET step5_state=excluded.step5_state, "
+            "step5_completed_at=excluded.step5_completed_at, step5_columns=excluded.step5_columns, "
+            "step5_mechanism=excluded.step5_mechanism",
+            (state, ts, _json.dumps(list(columns)), mechanism))
+        conn.commit()
+        return ts
+    finally:
+        conn.close()
+
+
 def org_display(org_id):
     """{'name': ...} for one org, or None. The render-path lookup (S4.3)."""
     conn = get_conn()
