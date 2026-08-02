@@ -53,8 +53,8 @@ def main():
     if org is None:
         org_id = str(uuid.uuid4())
         conn.execute(
-            "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified) "
-            "VALUES (?,?,?,'staff','core',0)", (org_id, STAFF_ORG_NAME, nn))
+            "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
+            "VALUES (?,'staff','core',0)", (org_id,))   # step 5: name identity-side only
         conn.commit()
         print("[applied] staff org created (%s)." % org_id)
     else:

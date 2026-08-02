@@ -94,9 +94,9 @@ def create_user(org_id, email, password, role, display_name=None):
     uid = str(uuid.uuid4())
     em = email.lower().strip()
     ph = hash_password(password)
-    conn.execute(
-        "INSERT INTO users(user_id, org_id, email, pw_hash, role, display_name) VALUES (?,?,?,?,?,?)",
-        (uid, org_id, em, ph, role, display_name))
+    conn.execute(                       # step 5: email/pw_hash/display_name identity-side only
+        "INSERT INTO users(user_id, org_id, role) VALUES (?,?,?)",
+        (uid, org_id, role))
     conn.commit()
     identity.shadow(identity.register_user, uid, org_id, em, ph, display_name)
     return uid
@@ -119,9 +119,9 @@ def create_invite(org_id, email, role, created_by):
     token = secrets.token_urlsafe(24)
     expires = (datetime.utcnow() + timedelta(days=INVITE_TTL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
     em = email.lower().strip()
-    conn.execute(
-        "INSERT INTO invites(token, org_id, email, role, created_by, expires_at) VALUES (?,?,?,?,?,?)",
-        (token, org_id, em, role, created_by, expires))
+    conn.execute(                       # step 5: invites.email identity-side only
+        "INSERT INTO invites(token, org_id, role, created_by, expires_at) VALUES (?,?,?,?,?)",
+        (token, org_id, role, created_by, expires))
     conn.commit()
     identity.shadow(identity.record_invite, token, org_id, em, role, created_by, expires)
     return token

@@ -215,12 +215,12 @@ def run(data_dir, fresh=False):
             matched_norms.add(nn)
 
         conn.execute(
-            """INSERT OR REPLACE INTO orgs(org_id,name,normalized_name,source,
+            """INSERT OR REPLACE INTO orgs(org_id,source,
                tier_entitlement,classified,industry,subsector,fte_band,hq_region,
                ownership_type,registry_json,similarity_vector_json)
-               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES(?,?,?,?,?,?,?,?,?,?,?)""",   # step 5: name/normalized_name identity-side
             (
-                org_id, org_name, nn, "seed", "full",
+                org_id, "seed", "full",
                 1 if reg else 0,
                 reg.get("Industry") if reg else None,
                 reg.get("Subsector") if reg else None,

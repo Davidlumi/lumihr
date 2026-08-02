@@ -897,8 +897,8 @@ async def register(request: Request):
     # clock_start stays NULL until the Admin accepts the Data Contribution
     # Terms — setup time must not eat into the 30 days.
     conn.execute(
-        "INSERT INTO orgs(org_id, name, normalized_name, source, tier_entitlement, classified) "
-        "VALUES (?,?,?,'signup','full',0)", (org_id, body["org_name"].strip(), nn))
+        "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
+        "VALUES (?,'signup','full',0)", (org_id,))   # step 5: name/normalized_name identity-side only
     conn.commit()
     identity.shadow(identity.register_org_identity, org_id, body["org_name"].strip(), nn)
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
@@ -949,8 +949,7 @@ async def do_reset(request: Request):
         raise HTTPException(400, "Password must be at least 8 characters.")
     conn = get_conn()
     ph = auth_lib.hash_password(body["password"])
-    conn.execute("UPDATE users SET pw_hash=? WHERE user_id=?",
-                 (ph, row["user_id"]))
+    # step 5: pw_hash is identity-side only; identity.update_pw_hash below is the write.
     conn.execute("UPDATE password_resets SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
     identity.shadow(identity.update_pw_hash, row["user_id"], ph)

@@ -187,8 +187,10 @@ basis = len(appmod.completion_basis_questions())
 # restructures instead of freezing a literal (was 82; the live core is 81).
 check("core unlock denominator unmoved by pulse activity", basis == basis_before, (basis, basis_before))
 # a core-locked org can still participate (no core gate on the pulse path)
-conn.execute("INSERT OR REPLACE INTO orgs(org_id, name, normalized_name, source, classified, submission_complete, tier_entitlement) "
-             "VALUES ('qa-pulse-locked','QA Locked','qapulselocked','signup',0,0,'full')")
+# step 5: the fixture is addressed by org_id throughout (incl. its own cleanup DELETE), so
+# name/normalized_name are not written — nothing reads them back.
+conn.execute("INSERT OR REPLACE INTO orgs(org_id, source, classified, submission_complete, tier_entitlement) "
+             "VALUES ('qa-pulse-locked','signup',0,0,'full')")
 conn.commit()
 try:
     pulses.join_pulse(pid, "qa-pulse-locked", conn)

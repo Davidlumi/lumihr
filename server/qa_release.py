@@ -135,9 +135,9 @@ new_req = len(appmod.completion_basis_questions())
 check("required set = pre %d - 1 retired + 3 added" % pre_req, new_req == pre_req - 1 + 3, new_req)
 
 print("== sticky unlock across the required-adding release ==")
-conn.execute("""INSERT OR REPLACE INTO orgs(org_id, name, normalized_name, source, classified,
+conn.execute("""INSERT OR REPLACE INTO orgs(org_id, source, classified,
                 submission_complete, insights_unlocked_at, unlocked_release, tier_entitlement)
-                VALUES ('qa-sticky-org','QA Sticky','qasticky','signup',0,0,datetime('now'),?, 'full')""",
+                VALUES ('qa-sticky-org','signup',0,0,datetime('now'),?, 'full')""",   # step 5
              (prev_current,))
 conn.commit()
 fx = conn.execute("SELECT * FROM orgs WHERE org_id='qa-sticky-org'").fetchone()
