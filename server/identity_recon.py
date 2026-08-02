@@ -45,7 +45,7 @@ compares a live table against a dead one — before step 5 and after it alike.
 Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions AND
 drift are 0 for every table, and no column is PARTIAL.
 """
-import os, sqlite3, sys
+import json, os, sqlite3, sys
 
 REWARD = os.environ.get("LUMI_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -95,6 +95,13 @@ def classify(table, col):
     return "PARTIAL"
 
 
+MARKER = identity.step5_marker()
+if MARKER is None:
+    print("step-5 marker: ABSENT (identity.meta has no row) — pre-step-5 expected state")
+else:
+    print("step-5 marker: %s (mechanism %s, completed_at %s)"
+          % (MARKER["step5_state"], MARKER["step5_mechanism"], MARKER["step5_completed_at"]))
+
 ok = True
 for label, rt, it, key, invariant in PAIRS:
     states = {c: classify(rt, c) for c in STEP5_REMOVED[rt]}
@@ -120,14 +127,46 @@ for label, rt, it, key, invariant in PAIRS:
             print("    NOTE: no step-5 column is still populated reward-side, so for this table "
                   "the drift check\n          covers only the invariant columns above; "
                   "membership is what it still proves.")
+    # --- the marker/column classifier (D.2's table) ------------------------------
+    state = MARKER["step5_state"] if MARKER else None
+    empty = [c for c, v in states.items() if v in ("EMPTY", "ABSENT")]
+    populated = [c for c, v in states.items() if v == "POPULATED"]
+    fatal = False
     if partial:
-        print("    *** PARTIAL: %s — some rows NULL, some not. A half-run step 5, or a writer "
-              "re-populating\n        a column that should stay empty. FATAL." % ", ".join(partial))
-    ok &= (only_reward == 0 and only_identity == 0 and drift == 0 and not partial)
+        if state == "in_progress":
+            print("    PARTIAL (%s) TOLERATED: the marker says step 5 is in_progress, so a mix of\n"
+                  "        NULL and populated rows is the expected migration window, not a defect."
+                  % ", ".join(partial))
+        else:
+            print("    *** PARTIAL: %s — some rows NULL, some not. A half-run step 5, or a writer "
+                  "re-populating\n        a column that should stay empty. FATAL." % ", ".join(partial))
+            fatal = True
+    if state == "complete" and populated:
+        print("    *** CONTRADICTION: identity.meta says step 5 COMPLETED at %s (mechanism %s,\n"
+              "        %s columns); reward-side %s still holds values. Either lumi.db was restored\n"
+              "        from a pre-step-5 backup, or a writer was missed. This is NOT drift."
+              % (MARKER["step5_completed_at"], MARKER["step5_mechanism"],
+                 len(json.loads(MARKER["step5_columns"])), ", ".join(populated)))
+        fatal = True
+    if state is None and empty:
+        # D.2's self-introduced gap, closed here. Before step 5 this combination is
+        # impossible (the columns are populated); after step 5 with a healthy marker it is
+        # also impossible. It fires only when the marker has been LOST — an identity.db
+        # restored to a pre-marker state against a migrated reward store, which is the
+        # restore direction the marker exists to catch. FATAL, on the bbbb98b ground: a
+        # safety net that reports the one state it cannot explain is worth more than one
+        # that stays silent through it.
+        print("    *** NO MARKER but reward-side %s is empty/absent. identity.meta carries no\n"
+              "        step-5 row, yet the reward store looks migrated. Either identity.db was\n"
+              "        restored to a pre-marker state, or step 5 ran without writing its marker.\n"
+              "        FATAL — this combination is impossible in a healthy store."
+              % ", ".join(empty))
+        fatal = True
+    ok &= (only_reward == 0 and only_identity == 0 and drift == 0 and not fatal)
 
 print("sessions: EXCLUDED — written identity-side only since Seam-B; the reward-side table is a\n"
       "          pre-cutover vestige receiving no new rows, so the comparison would put a live\n"
       "          table against a dead one, before step 5 and after it alike")
-print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift, no partial columns"
-                              if ok else "FAIL — orphans, drift, or a partial step-5 column"))
+print("RECONCILIATION: %s" % ("PASS — 0 orphans in both directions, 0 drift, marker consistent"
+                              if ok else "FAIL — orphans, drift, or a marker/column contradiction"))
 sys.exit(0 if ok else 2)

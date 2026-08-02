@@ -109,6 +109,18 @@ DDL = [
     expires_at TEXT NOT NULL,
     used_at TEXT
 )""",
+    # step 5's restore marker (commit 3; D.2). Typed columns, not key/value: the reward
+    # store's meta is a general key/value bag, but this store is the PII concentrate and
+    # a bag invites arbitrary future keys into it. One row, one purpose, and a schema that
+    # says what it holds. The CHECK makes an unknown state a write error rather than a
+    # silently-unclassifiable marker.
+    """CREATE TABLE IF NOT EXISTS meta (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    step5_state TEXT NOT NULL CHECK (step5_state IN ('in_progress', 'complete')),
+    step5_completed_at TEXT,
+    step5_columns TEXT NOT NULL,
+    step5_mechanism TEXT NOT NULL
+)""",
 ]
 
 TABLES = ("org_register", "users", "sessions", "password_resets", "invites")
@@ -126,6 +138,22 @@ def init_identity_db(conn=None):
 
 
 # --- single-key reads (the step-3 wiring surface; no bulk export) -----------------
+
+def step5_marker():
+    """The step-5 restore marker, or None if absent. Read-only; the two-phase WRITER
+    belongs to step 5's own migration script (commits 5/6) and is deliberately NOT
+    built here — the step-1 precedent: writers nothing calls drift from their call
+    sites. identity_recon reads the marker through this function (D6)."""
+    conn = get_conn()
+    try:
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").fetchone():
+            return None
+        r = conn.execute("SELECT step5_state, step5_completed_at, step5_columns, "
+                         "step5_mechanism FROM meta WHERE id=1").fetchone()
+        return dict(r) if r else None
+    finally:
+        conn.close()
+
 
 def org_display(org_id):
     """{'name': ...} for one org, or None. The render-path lookup (S4.3)."""
