@@ -177,6 +177,31 @@ def build_registry(files, tables):
                     sql = table_of(n.value)
                     if sql is None and isinstance(n.value, ast.Name):
                         sql = local.get(n.value.id)
+                    if sql is None:
+                        # WRAPPER RETURNS — the sixth hiding shape (ruled at the step-5
+                        # investigation, E.3 option 2): `return dict(r) if r else None`
+                        # is identity.py's house style and was invisible, so find_user's
+                        # depth-2 chain never registered. Only VALUE positions qualify:
+                        # the IfExp test (`if r else`) is a truth check, a Subscript
+                        # returns a column value, and a dict LITERAL is a new mapping —
+                        # none of those return the row. The first draft walked the whole
+                        # expression and registered scalar wrappers off the test position;
+                        # the negative control caught it.
+                        def _row_names(v):
+                            if isinstance(v, ast.Name):
+                                return [v.id]
+                            if isinstance(v, ast.IfExp):
+                                return _row_names(v.body) + _row_names(v.orelse)
+                            if isinstance(v, ast.BoolOp):
+                                return [x for w in v.values for x in _row_names(w)]
+                            if isinstance(v, ast.Call) and isinstance(v.func, ast.Name) \
+                               and v.func.id in ("dict", "list", "tuple") and v.args:
+                                return _row_names(v.args[0])
+                            return []
+                        for nid in _row_names(n.value):
+                            if nid in local:
+                                sql = local[nid]
+                                break
                     if sql:
                         QUALIFIED[fn.name] = "%s() -> %s" % (fn.name, sql[:70])
                         break
@@ -417,6 +442,28 @@ row = auth_lib.get_valid_invite(tok)
 uid = create_user(row["org_id"], row["email"])
 """),
 ]
+RET2_POSITIVE = [
+  ("wrapper return: dict(r) if r else None (the lookup_user_by_email idiom)", """
+def lookup(email):
+    r = c.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+    return dict(r) if r else None
+row = lookup(em)
+print(row["email"])
+"""),
+]
+RET2_EXACT = [
+  # the scalar wrapper must NOT register, so the CALLER's x["email"] must not match —
+  # but the function's own internal r["email"] beside its .execute IS a genuine Class 2
+  # hit (identity.py's shape). Exactly ONE hit proves both at once; two would mean the
+  # registry wrongly qualified the scalar wrapper.
+  ("scalar wrapper: internal read hits, caller subscript does not (exactly 1)", """
+def get_email(uid):
+    r = c.execute("SELECT email FROM users WHERE user_id=?", (uid,)).fetchone()
+    return r["email"] if r else None
+x = get_email(u)
+print(x["email"])
+""", 1),
+]
 RET_NEGATIVE = [
   ("function returning a non-row (dict literal), subscripted with a target column", """
 def get_row(t):
@@ -441,7 +488,9 @@ def _self_test(cols):
     for label, src, want in ([(l, s, True) for l, s in POSITIVE] +
                              [(l, s, False) for l, s in NEGATIVE] +
                              [(l, s, True) for l, s in RET_POSITIVE] +
-                             [(l, s, False) for l, s in RET_NEGATIVE]):
+                             [(l, s, False) for l, s in RET_NEGATIVE] +
+                             [(l, s, True) for l, s in RET2_POSITIVE] +
+                             [(l, s, n) for l, s, n in RET2_EXACT]):
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
             f.write(src); p = f.name
         QUALIFIED.clear()
@@ -449,11 +498,12 @@ def _self_test(cols):
         build_registry([p], tables)
         _, c2, err = scan_file(p, cols)
         os.unlink(p)
-        got = bool(c2)
-        good = (got == want)
+        if isinstance(want, bool):
+            good = (bool(c2) == want); tag = "expect+" if want else "expect-"
+        else:
+            good = (len(c2) == want); tag = "expect=%d" % want
         ok &= good
-        print("  %-4s %-8s %s" % ("PASS" if good else "FAIL",
-                                  "expect+" if want else "expect-", label))
+        print("  %-4s %-9s %s" % ("PASS" if good else "FAIL", tag, label))
         if not good:
             print("       got %d Class 2 hit(s): %s" % (len(c2), list(c2.values())[:2]))
     print("\n  SELF-TEST: %s" % ("all cases pass" if ok else "*** FAILURES ***"))
@@ -536,8 +586,10 @@ def main():
     print("    a call to a function whose own return is a .execute() row IS followed, so")
     print("    auth.get_valid_invite() -> app.py:1590/:1605 now appears below. A function")
     print("    returning ANOTHER row-returning function's result is NOT followed — live")
-    print("    example: auth.find_user() returns identity.lookup_user_by_email(...), whose")
-    print("    row source is one level further down, so find_user's callers stay invisible.")
+    print("    example: auth.find_user() RETURNS A CALL to identity.lookup_user_by_email();")
+    print("    wrapper returns (dict(r) if r else None) now register, so lookup_user_by_email")
+    print("    itself qualifies — but a return that is only a CALL to a qualified function")
+    print("    does not, so find_user and its callers remain the stated residual.")
     print("    Cross-module calls resolve by BARE NAME (auth_lib.get_valid_invite matches")
     print("    auth.get_valid_invite without alias tracking); same-named functions in")
     print("    different modules collapse together, which over-reports by design.")
