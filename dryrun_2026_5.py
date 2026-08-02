@@ -10,6 +10,12 @@ sys.path.insert(0, ".")
 sys.path.insert(0, "server")
 import seed_release_2026_5 as K
 
+import os
+# hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
+# __file__ (not cwd), so running from another directory cannot silently create a new DB.
+_LUMI_DB = os.environ.get("LUMI_DB") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "lumi.db")
+
 FAILS = []
 
 
@@ -21,7 +27,7 @@ def check(name, ok, detail=""):
 
 rel, hlp, anc, reg = K.load_rows()
 q54 = {i: r for i, r in reg.items() if r["status"] == "queued-2026_5"}
-c = sqlite3.connect("file:lumi.db?mode=ro", uri=True)
+c = sqlite3.connect("file:%s?mode=ro" % _LUMI_DB, uri=True)
 
 print("== gates ==")
 check("54 release rows / 54 queued register rows, ids exact (D1)",

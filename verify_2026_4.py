@@ -11,9 +11,15 @@ sys.path.insert(0, ".")
 sys.path.insert(0, "server")
 import seed_release_2026_4 as K
 
+import os
+# hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
+# __file__ (not cwd), so running from another directory cannot silently create a new DB.
+_LUMI_DB = os.environ.get("LUMI_DB") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "lumi.db")
+
 TOL = 0.06
 fails = []
-c = sqlite3.connect("file:lumi.db?mode=ro", uri=True)
+c = sqlite3.connect("file:%s?mode=ro" % _LUMI_DB, uri=True)
 c.row_factory = sqlite3.Row
 rel, hlp, anc = K.load_rows()
 

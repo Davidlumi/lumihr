@@ -7,9 +7,15 @@ import numpy as np
 sys.path.insert(0, '.')
 import reseed_engine as RE, seed_release_2026_3 as K
 
+import os
+# hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
+# __file__ (not cwd), so running from another directory cannot silently create a new DB.
+_LUMI_DB = os.environ.get("LUMI_DB") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "lumi.db")
+
 NOMINAL = {'REW263_GOV_SIGNOFF','REW263_BEN_PENBASIS','REW263_INC_POOLFUND','REW263_REC_CURRENCY'}
 TOL = 0.03
-c = sqlite3.connect('lumi.db'); c.row_factory = sqlite3.Row
+c = sqlite3.connect(_LUMI_DB); c.row_factory = sqlite3.Row
 orgs = [o for (o,) in c.execute('SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1').fetchall()]
 prof = {}
 for p in ('org_profiles.json','org_profiles_inferred.json'): prof.update(json.load(open(p)))

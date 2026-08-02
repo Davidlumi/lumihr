@@ -25,6 +25,12 @@ sys.path.insert(0, ".")
 import reseed_engine as RE
 import seed_release_2026_4 as K
 
+import os
+# hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
+# __file__ (not cwd), so running from another directory cannot silently create a new DB.
+_LUMI_DB = os.environ.get("LUMI_DB") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "lumi.db")
+
 WRITE = "--write" in sys.argv and "--confirmed-by-david" in sys.argv
 STAMP = "2026-07-14 17:30:00"
 RELEASE = "2026.4"
@@ -45,7 +51,7 @@ def existing_hash(cur):
 
 
 rel, hlp, anc = K.load_rows()
-c = sqlite3.connect("lumi.db")
+c = sqlite3.connect(_LUMI_DB)
 c.row_factory = sqlite3.Row
 cur = c.cursor()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
