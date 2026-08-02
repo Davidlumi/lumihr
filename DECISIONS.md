@@ -13036,3 +13036,39 @@ Aggregates: `SHAREPART` n 43→31, `SAYEDISC` 31→23, `SIPELEM` 18→11.
   closed was not. The suite was red for exactly one commit, for a known and recorded reason.
   **Expect this on any future family repair, and sweep by dependency rather than by option
   shape.**
+
+## STEP-5 RULINGS — the four open questions, ruled (2 August 2026)
+
+The shape investigation (recorded at `9596515`) left four questions open. All four are now
+ruled. Step 5's build sequence is executable.
+
+**1. Mechanism: NULL after rebuild. The soak is retained, and retaining it is the point.**
+F.3 reframed the choice as *keep the soak or take loud failure*; E.4 established the census's
+class of hiding shapes is not closed. Ruled NULL precisely because of E.4: the soak is
+insurance against reads the census did not find, and that insurance is worth more than
+DROP's loud-failure property. Consequences carried with the ruling: the columns remain,
+empty; step 5's rollback stays a plain re-copy from `identity.db`; the DROP remains a later
+cleanup diff after soak, as S6 originally shaped it — now with the rebuild acknowledged as
+step 5's own work. NULL's silent-degradation risk is accepted because it is *observed*
+rather than assumed: the recon's run-time classifier, the marker, and the post-migration
+census re-run all watch the empty state.
+
+**2. Credential residue: its own ruling sheet, landing BEFORE commit 3 (the marker).**
+Two grounds: the rebuild must not re-bless 1,091 dead session tokens into a new schema, and
+deleting reward-side `invites`/`password_resets` rows changes the recon shape (the same
+identity-only exclusion Seam-B gave `sessions`) — cleaner before the marker commit extends
+the classifier than after.
+
+**3. Commits 5 and 6 land in one working session.** The strip→null PARTIAL window is legible
+under the marker's `in_progress` state, but it is never left open overnight — a live signup
+mid-window writes into a half-migrated store.
+
+**4. The marker is identity-side only, not mirrored to a tracked file.** One authority. The
+repository and the database restore independently, so a file copy can contradict the store —
+and a marker that can disagree with itself is worse than none.
+
+**The sequence as now ruled** (F.1, positions fixed): 1 census registry fix → 2 first
+identity backup → 2b credential-residue ruling sheet → 3 marker + recon extension (closing
+the missing-marker/EMPTY gap in the same commit) → 4 `display_name` writer strips → 5
+rebuild → 6 remaining strips + NULL (same session as 5) → 7 close: marker `complete`, full
+verification against F.5's six criteria.
