@@ -13161,3 +13161,90 @@ failure. Both times it ran here, the 2×2 showed the harness was the cause, not 
 **What this entry does not settle.** The write itself. Commit 7's close, the post-write
 verification, and criterion 6 as reworded above are all measured *after* the migration
 runs, against the live store, and are recorded separately.
+
+## STEP 5 — CLOSED. The reward store no longer holds names, emails, or password hashes (2 August 2026)
+
+The migration ran on the live store this session. `orgs.name`, `orgs.normalized_name`,
+`users.email`, `users.pw_hash`, `users.display_name` and `invites.email` are empty
+reward-side; the values live in `identity.db`, reachable only through `identity.py` (D6).
+
+**1. What ran, in the ruled order.** `:8060` stopped first (D8 — so the two-store copy is
+one instant, and so no request can write mid-rebuild). Reward pre-diff backup
+`lumi.db.bak_pre_step5_20260802_174257` taken by the backup API after
+`wal_checkpoint(TRUNCATE)`, integrity `ok`, answers 89,321 and orgs 223 asserted against
+live; rotation applied with the pre-split pin `lumi.db.bak_pre_presplit_20260730_221335`
+**excluded from the count** and the victim named and deleted with its sidecars —
+`lumi.db.bak_pre_sharefix_20260801_221223`. Identity backup retaken as
+`identity.db.bak_pre_step5c56_20260802_174321` with D9's two assertions recorded by the
+creating script (integrity + per-table content hashes; row-counts copy==live over
+`org_register`, `users`, `invites`, `password_resets`, `sessions` excluded per F.3), the
+previous copy deleted under retain-1. Then: marker → `in_progress` **before any
+reward-side change**; `orgs`/`users`/`invites` rebuilt; the eight writers stripped; the six
+columns nulled; marker → `complete` at `2026-08-02T17:44:04`, mechanism NULL.
+
+Rows preserved: **orgs 223, users 8, invites 1.** `integrity_check` ok,
+`foreign_key_check` clean, `idx_orgs_norm` recreated, `NOT NULL` relaxed on all six. The
+answers book is untouched — `1485ada7cafa559d` / 89,321. `dbsnapshot` moved exactly three
+tables, each *content changed, same count*; the other 38 did not move. Nothing failed and
+no rollback was used.
+
+**2. F.5's six criteria.** Criteria 1, 2, 3, 4 and 6 are met — criterion 6 in its corrected
+wording from the pre-write record: *zero reads of a nulled column in the live request path
+outside `identity.py`, plus the ordering site*. The live census re-run returns 51 sites,
+unchanged from before the migration.
+
+**Criterion 5 is NOT met live, and is recorded as not met.** The three write paths —
+signup, invite acceptance, password reset — passed against a *migrated throwaway*, with
+the six columns staying at zero throughout and no `[identity-shadow] WRITE FAILED` line in
+the server log (that writer swallows exceptions by design, so the log is the only place a
+failed identity write would appear). They were **not** repeated live: doing so would inject
+fixture organisations and users into the live store, which the migration's approval did not
+cover.
+
+This is the criterion the original framing lacked, and the one that distinguishes a
+migration from a pause. It is satisfied by **real traffic during the soak** — the first
+genuine signup, invite acceptance and password reset against the migrated store — not by a
+repeat of the rehearsal. Until then it stands open, and step 5 is closed with it open.
+
+**3. The line correction.** The pre-write record at `65f8382` names the ordering site
+`app.py:5215`, span 5214–5216. The strips in commit 6 removed a net line above it. It now
+sits at **span 5213–5215, census anchor `app.py:5214`**, with the `ORDER BY o.name` token
+on line 5215. The record was accurate when written and pre-dates the strips by design;
+this corrects it forward rather than amending a pushed entry. The behaviour is unchanged —
+only the address moved.
+
+**4. The suite at 10/11, as ruled pre-write.** `qa_engine_audit.py:732` fails on
+`TypeError: 'in <string>' requires string as left operand, not NoneType` — the predicted
+failure at the predicted line, no new mode, with every other gate green and the engine
+figures unmoved. The fix is P4's, on P4's line; the suite returns to 11/11 when it lands.
+
+**5. Commit 4 folded in.** Stripping `display_name`'s writer early would have opened a
+PARTIAL window with no marker written, which the classifier at `5b5e027` calls FATAL —
+red-gating the reconciliation from the moment it shipped until commit 5 began, for no
+benefit beyond arriving sooner. All eight writers were stripped inside the 5+6 session
+instead. F.1's seven-commit sequence became six: 1 census registry fix → 2 identity backup
+→ 2b credential-residue ruling sheet → 3 marker + recon extension → 5 migration mechanism
+→ 6 writer strips → 7 this close.
+
+**6. The soak — what it is, and what ends it.** The six columns remain in the reward
+schema, empty, with `NOT NULL` relaxed. Three things watch it: the `identity.meta` marker
+(`complete`); `identity_recon`'s run-time classifier, which flags any of the six going
+non-EMPTY as PARTIAL — and PARTIAL under a `complete` marker is fatal; and the census on
+re-run.
+
+What would end the soak early: **any of the six going non-empty**, which means a writer the
+census did not find; or **the recon reporting a contradiction** — identity says `complete`
+while reward says populated, which means either a restore from a pre-migration backup or a
+missed writer. Either is a stop-and-report, not a repair-in-place.
+
+Its release is the post-soak DROP diff, which also carries **pin-release** for
+`lumi.db.bak_pre_presplit_20260730_221335` as one of its own close conditions — the pin is
+not released by anyone remembering it independently.
+
+**7. What remains of Phase 1**, named so this close is not read as the end: P4's six
+outstanding sections, including the `qa_engine_audit` fix that returns the suite to 11/11;
+D7's unbuilt `shares.token` move (122 non-null) and `share_audit.share_token` (237); the
+name-as-evidence ruling (`verify_diff7:39`, `diff7_reseed:127`); the twelve-file BASE
+class; and the three softer seed items. And step 5's own DROP, after the soak.
+
+Step 5 is closed. Phase 1 is not.
