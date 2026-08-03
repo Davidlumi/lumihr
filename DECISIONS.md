@@ -13594,3 +13594,30 @@ data/book_baseline.json, six columns 0-populated per the step-5 marker's list, r
 LUMI_QA_SEAMS absent from the live process environment. No org was provisioned against live.
 PH-PROV-1b (coercion 400), 1c (HR Datahub / Tester orgs — David's ruling pending), PH-PROV-2
 (console UI) remain open. Dead orgs.name/normalized_name columns + idx_orgs_norm: post-soak.
+
+---
+
+## 2026-08-03 — PH-PROV-1d: recon never prints a bearer again
+
+Stage 3's orphan-key printing treated invite tokens like org_ids. They are not alike: an
+org_id is an opaque identifier that grants nothing; an invite token is a BEARER CREDENTIAL —
+post-carve-out an admin-grade one — and recon output is captured to log files under the
+gate-server doctrine. Never fired, so nothing leaked; fixed before it could. Token-keyed
+pairs (invites AND password_resets — the census caught the second, same defect) now print a
+labelled non-reversible `token_sha256[:12]=…` digest plus non-sensitive locator columns
+(org_id/user_id, role, expires_at); the digest is stable across both stores so the sides
+still correlate, and the label makes it obviously not a token. id-keyed pairs unchanged.
+Membership checks still key on the real token internally. Docstring posture amended.
+
+Census of everything recon emits: marker state, counts, column NAMES and state
+classifications, diagnostics, orphan keys as above — no names, no emails, no hashes, no
+session tokens (pair excluded), no bearers. The SAME defect existed in qa_backoffice's own
+check details (provision responses carry invite_link; E1 carries a reset link) flowing into
+the suite log — details redacted to org_id/expiry.
+
+Verified in-gate on manufactured orphans, BOTH directions: real token absent from recon
+output (asserted by searching for the value), labelled digest present, printed org_id
+locates the row and its token hashes to the digest. Suite 12/12 green; qa_backoffice now
+**80 checks, 0 failed, 0 skipped**. Suite-log sweep: gate outputs clean; the only full links
+anywhere are send_notification's console-logged EMAILS in the server log — the designed
+SMTP-less delivery path (delivery work remains D2), flagged for the 1e runbook, untouched here.

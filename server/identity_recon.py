@@ -42,10 +42,14 @@ reward-side sessions table is a vestige of the pre-cutover world, still holding
 its old rows and receiving no new ones, so comparing the two stores for sessions
 compares a live table against a dead one — before step 5 and after it alike.
 
-Counts only — no names, emails, or tokens. Exit 0 iff both orphan directions AND
-drift are 0 for every table, and no column is PARTIAL.
+Output posture (amended PH-PROV-1d): counts, plus orphan KEYS when nonzero — no
+names, no emails, and NEVER a bearer value. id-keyed pairs (orgs, users) print the
+opaque org_id/user_id verbatim; token-keyed pairs (invites, password_resets) print
+a labelled non-reversible sha256[:12] digest with non-sensitive locator columns —
+the digest is deliberately NOT a token and will not work as one. Exit 0 iff both
+orphan directions AND drift are 0 for every table, and no column is PARTIAL.
 """
-import json, os, sqlite3, sys
+import hashlib, json, os, sqlite3, sys
 
 REWARD = os.environ.get("LUMI_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lumi.db"))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -121,13 +125,27 @@ for label, rt, it, key, invariant in PAIRS:
           "identity-only (reverse orphan)=%d | content-drift=%d"
           % (label, len(rrows), len(irows), only_reward, only_identity, drift))
     # Orphan KEYS (PH-PROV-1 Stage 3 §1: an operator must be able to act on a
-    # detection, so the finding names the row). Keys only — org_ids and tokens are
-    # opaque identifiers, so the counts-only privacy posture (no names, emails)
-    # is preserved. Bounded at 5 per direction.
+    # detection, so the finding names the row). org_id / user_id keys print
+    # verbatim — opaque identifiers that grant nothing. TOKEN keys are BEARER
+    # CREDENTIALS (an invite token post-carve-out mints an admin; a reset token
+    # takes an account) and are NEVER emitted (PH-PROV-1d): they print as a
+    # labelled non-reversible sha256[:12] digest — stable across both stores, so
+    # the two sides correlate — plus the row's non-sensitive locator columns.
+    # Bounded at 5 per direction.
+    def _safe_key(k, row):
+        if key != "token":
+            return k
+        locator = ", ".join("%s=%s" % (c, row[compared.index(c)])
+                            for c in ("org_id", "user_id", "role", "expires_at")
+                            if c in compared)
+        return "token_sha256[:12]=%s (%s)" % (hashlib.sha256(k.encode()).hexdigest()[:12], locator)
+
     if only_reward:
-        print("    reward-only keys (first 5): %s" % sorted(set(rrows) - set(irows))[:5])
+        print("    reward-only keys (first 5): %s"
+              % [_safe_key(k, rrows[k]) for k in sorted(set(rrows) - set(irows))[:5]])
     if only_identity:
-        print("    identity-only keys (first 5): %s" % sorted(set(irows) - set(rrows))[:5])
+        print("    identity-only keys (first 5): %s"
+              % [_safe_key(k, irows[k]) for k in sorted(set(irows) - set(rrows))[:5]])
     print("    compared: %s" % ", ".join(compared))
     if states:
         print("    step-5 columns: %s" % "; ".join("%s=%s" % (c, s) for c, s in states.items()))

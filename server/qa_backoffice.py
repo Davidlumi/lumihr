@@ -14,7 +14,7 @@ runs with the production default (LUMI_OPEN_REGISTRATION unset -> closed).
 Usage (the documented gate procedure — throwaway server ON :8060):
   LUMI_DB=... LUMI_IDENTITY_DB=... python3 qa_backoffice.py
 """
-import json, os, secrets, sqlite3, sys, urllib.request, urllib.error, http.cookiejar
+import hashlib, json, os, secrets, sqlite3, sys, urllib.request, urllib.error, http.cookiejar
 
 BASE = os.environ.get("LUMI_QA_BASE", "http://localhost:8060")
 DB = os.environ.get("LUMI_DB")
@@ -178,11 +178,14 @@ check("D5 admin_email with an existing account refused", st == 400, st)
 st, created = api(staff, "/api/admin/orgs", "POST",
                   dict(FIRMO, org_name=ORG_NAME, admin_email=FOUNDER,
                        _qa_fail_after_org=True, _qa_fail_identity=True))
+# details deliberately EXCLUDE the response body: invite_link is a bearer token
+# and this gate's stdout lands in the suite log (PH-PROV-1d — same defect class
+# as recon's key printing; a throwaway token in a log is still a token in a log).
 check("D6 seam INERT by default: provision with both injection flags completes normally",
-      st == 200 and created.get("ok"), (st, created))
+      st == 200 and created.get("ok"), (st, created.get("org_id")))
 check("D7 provision ok: org + invite link + expiry in one call",
       st == 200 and created.get("ok") and "/app#/invite/" in created.get("invite_link", "")
-      and created.get("expires_days"), created)
+      and created.get("expires_days"), (st, created.get("org_id"), created.get("expires_days")))
 if IDB and os.path.exists(IDB) and st == 200:
     _idc = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True)
     _reg = _idc.execute("SELECT COUNT(*) FROM org_register WHERE org_id=?",
@@ -297,8 +300,10 @@ try:
                     dict(FIRMO, org_name="QA Seam Orphan %s" % TAG,
                          admin_email="qa-orphan-%s@probe.example" % TAG,
                          _qa_fail_identity=True), base=BASE2)
-        check("S2a identity-failure seam: response is the silent 200", st == 200 and r.get("ok"), (st, r))
+        check("S2a identity-failure seam: response is the silent 200",
+              st == 200 and r.get("ok"), (st, r.get("org_id")))
         ORPH = r.get("org_id")
+        ORPH_TOK = r.get("invite_link", "").rsplit("/", 1)[-1]
         orow = raw.execute("SELECT COUNT(*) FROM orgs WHERE org_id=?", (ORPH,)).fetchone()[0]
         if IDB and os.path.exists(IDB):
             _idc = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True)
@@ -315,6 +320,16 @@ try:
                   and "reward-only (identity orphan missing)=1" in rec.stdout.split("orgs<->org_register")[1].split("\n")[0]
                   and "reward-only (identity orphan missing)=1" in rec.stdout.split("invites:")[1].split("\n")[0],
                   [l for l in rec.stdout.splitlines() if "reward-only" in l and "=1" in l])
+            # PH-PROV-1d: the BEARER never appears; the labelled digest does; and the
+            # printed locator (org_id) suffices to find the row — the operator query.
+            dig = hashlib.sha256(ORPH_TOK.encode()).hexdigest()[:12]
+            check("S2e recon output contains NO substring of the real invite token",
+                  bool(ORPH_TOK) and ORPH_TOK not in rec.stdout)
+            check("S2f recon output carries the labelled digest instead",
+                  ("token_sha256[:12]=%s" % dig) in rec.stdout, dig)
+            loc = raw.execute("SELECT token FROM invites WHERE org_id=?", (ORPH,)).fetchone()
+            check("S2g operator lookup: printed org_id locates the row; its token hashes to the digest",
+                  loc is not None and hashlib.sha256(loc["token"].encode()).hexdigest()[:12] == dig)
             # S3: remove the manufactured orphan; the net must read clean again
             raw.execute("DELETE FROM invites WHERE org_id=?", (ORPH,))
             raw.execute("DELETE FROM orgs WHERE org_id=?", (ORPH,))
@@ -331,6 +346,29 @@ finally:
         seam_proc.wait(timeout=10)
     except Exception:
         seam_proc.kill()
+
+# S4: the REVERSE direction (identity-only orphan) — no seam needed: a normally
+# dual-written invite has its reward row deleted, leaving the identity twin.
+if IDB and os.path.exists(IDB):
+    st, inv4 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+                   {"email": "qa-rev-%s@probe.example" % TAG, "role": "viewer"})
+    TOK4 = inv4.get("link", "").rsplit("/", 1)[-1]
+    raw.execute("DELETE FROM invites WHERE token=?", (TOK4,)); raw.commit()
+    rec3 = subprocess.run([sys.executable, "identity_recon.py"], cwd=SRV_DIR,
+                          env=dict(os.environ), capture_output=True, text=True)
+    dig4 = hashlib.sha256(TOK4.encode()).hexdigest()[:12]
+    check("S4a reverse orphan detected (identity-only=1 on invites)",
+          rec3.returncode != 0 and
+          "identity-only (reverse orphan)=1" in rec3.stdout.split("invites:")[1].split("\n")[0])
+    check("S4b reverse direction: real token absent, labelled digest present",
+          TOK4 not in rec3.stdout and ("token_sha256[:12]=%s" % dig4) in rec3.stdout, dig4)
+    idw = sqlite3.connect(IDB)
+    idw.execute("DELETE FROM invites WHERE token=?", (TOK4,)); idw.commit(); idw.close()
+    rec4 = subprocess.run([sys.executable, "identity_recon.py"], cwd=SRV_DIR,
+                          env=dict(os.environ), capture_output=True, text=True)
+    check("S4c cleanup -> recon PASS again (rc 0)", rec4.returncode == 0, rec4.returncode)
+else:
+    skip("S4 reverse-direction orphan", "LUMI_IDENTITY_DB unset")
 
 # ---- R. registration + tenant-invite guards (PH-PROV-1 §2.2/§2.3) -----------
 print("\n-- R. registration & carve-out --")
@@ -351,7 +389,7 @@ check("R2 /api/team/invite role=admin coerces to viewer (as-is; changes in PH-PR
 print("\n-- E. support --")
 st, r = api(staff, "/api/admin/users/%s/reset-link" % FUID, "POST", {})
 check("E1 staff reset link minted (2h)", st == 200 and "/app#/reset/" in r.get("link", "")
-      and r.get("expires_in_hours") == 2, r)
+      and r.get("expires_in_hours") == 2, (st, r.get("expires_in_hours")))   # link redacted: bearer
 founder = client()
 st, _ = api(founder, "/api/auth/login", "POST", {"email": FOUNDER, "password": FPW})   # login 1
 check("E2 probe member can sign in", st == 200, st)
