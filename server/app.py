@@ -5814,6 +5814,89 @@ _BOOT_TIME = datetime.utcnow()
 _PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
 
+# ----- provisioning: create an org, invite members into any org --------------
+@app.post("/api/admin/orgs")
+async def admin_org_create(request: Request):
+    """Staff-provisioned member organisation — the signup path minus the
+    self-served first user (they arrive via a staff invite instead, set their
+    own password and accept the terms themselves, so the consent trail stays
+    honest). Same duplicate rule as signup: an existing normalized name is
+    refused, never claimed."""
+    staff = require_platform_admin(request)
+    body = await _json(request)
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Give the organisation a name.")
+    nn = re.sub(r"[^a-z0-9]", "", name.lower())
+    if not nn:
+        raise HTTPException(400, "The name needs at least one letter or number.")
+    if identity.org_lookup_by_normalized(nn):
+        raise HTTPException(400, "An organisation with that name already exists.")
+    conn = get_conn()
+    org_id = str(uuid.uuid4())
+    # source='signup' + full tier: a staff-provisioned org IS a real member org
+    # (founding-member parity); a new source value would fork every cohort
+    # query that keys off orgs.source.
+    conn.execute(
+        "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
+        "VALUES (?,'signup','full',0)", (org_id,))
+    conn.commit()
+    identity.shadow(identity.register_org_identity, org_id, name, nn)
+    _audit(staff, "org.create", "org", org_id, {"name": name})
+    return {"ok": True, "org_id": org_id, "name": name}
+
+
+@app.post("/api/admin/orgs/{org_id}/invite")
+async def admin_org_invite(org_id: str, request: Request):
+    """Staff invite into ANY org — the provisioning twin of /api/team/invite.
+    ONE deliberate difference: staff may invite an ADMIN (a new org needs its
+    founding Admin; the tenant path stays promotion-only precisely so a tenant
+    admin can't silently mint one). The invitee sets their own password and
+    accepts the platform terms on join — the console never handles either."""
+    staff = require_platform_admin(request)
+    body = await _json(request)
+    email = (body.get("email") or "").strip()
+    role = body.get("role") if body.get("role") in ("admin", "contributor", "viewer") else "viewer"
+    if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(400, "Please enter a valid email address.")
+    conn = get_conn()
+    if conn.execute("SELECT 1 FROM orgs WHERE org_id=?", (org_id,)).fetchone() is None:
+        raise HTTPException(404, "Unknown organisation")
+    if auth_lib.find_user(email):
+        raise HTTPException(400, "That email already has a lumi account.")
+    token = auth_lib.create_invite(org_id, email, role, staff["user_id"])
+    link = "%s/app#/invite/%s" % (BASE_URL, token)
+    org_name = (identity.org_display(org_id) or {}).get("name") or "your organisation"
+    send_notification(
+        "You've been invited to lumi",
+        "Hello,\n\nThe lumi team has invited you to join %s on lumi — the UK reward "
+        "benchmarking co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\n"
+        "The link expires in %d days. If you weren't expecting this, you can ignore "
+        "this email.\n\n— lumi · UK reward benchmarking"
+        % (org_name, ROLE_LABELS.get(role, role), link, auth_lib.INVITE_TTL_DAYS),
+        to=email)
+    # the email itself stays out of the reward-store audit row (Phase-1 split);
+    # the invite's identity half already records it, org-scoped.
+    _audit(staff, "org.invite", "org", org_id, {"role": role})
+    return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
+
+
+@app.post("/api/admin/invites/{token}/revoke")
+async def admin_invite_revoke(token: str, request: Request):
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT org_id, used_at FROM invites WHERE token=?", (token,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown invite")
+    if row["used_at"]:
+        raise HTTPException(400, "That invite is already used or revoked.")
+    conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=?", (token,))
+    conn.commit()
+    identity.shadow(identity.mark_invite_used, token)
+    _audit(staff, "org.invite_revoke", "org", row["org_id"])
+    return {"ok": True}
+
+
 # ----- org drill-down --------------------------------------------------------
 @app.get("/api/admin/orgs/{org_id}")
 async def admin_org_detail(org_id: str, request: Request):
@@ -5846,6 +5929,14 @@ async def admin_org_detail(org_id: str, request: Request):
         d = dict(t)
         d["email"] = idents.get(t["user_id"], {}).get("email")
         terms.append(d)
+    irows = conn.execute(
+        "SELECT token, role, expires_at FROM invites "
+        "WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now') "
+        "ORDER BY expires_at", (org_id,)).fetchall()
+    iem = identity.invite_email_batch([r["token"] for r in irows][:200])
+    invites = [{"token": r["token"], "role": r["role"], "expires_at": r["expires_at"],
+                "email": iem.get(r["token"]),
+                "link": "%s/app#/invite/%s" % (BASE_URL, r["token"])} for r in irows]
     counts = {
         "answers": conn.execute("SELECT COUNT(*) FROM answers WHERE org_id=?", (org_id,)).fetchone()[0],
         "drafts": conn.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (org_id,)).fetchone()[0],
@@ -5868,6 +5959,7 @@ async def admin_org_detail(org_id: str, request: Request):
         },
         "users": users, "terms": terms, "counts": counts,
         "strategy": dict(strat) if strat else None,
+        "invites": invites,
     }
 
 
