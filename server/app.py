@@ -5863,7 +5863,10 @@ async def admin_org_create(request: Request):
         "VALUES (?,'signup','full',0)", (org_id,))
     conn.commit()
     identity.shadow(identity.register_org_identity, org_id, name, nn)
-    _audit(staff, "org.create", "org", org_id, {"name": name})
+    # deliberately NO name in the audit detail: org names are identity-side
+    # (Phase-1 split) and the audit log is a reward-store table — the org_id
+    # target resolves to its name at read time like everywhere else.
+    _audit(staff, "org.create", "org", org_id)
     return {"ok": True, "org_id": org_id, "name": name}
 
 
