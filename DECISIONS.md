@@ -13425,3 +13425,50 @@ the direction that *writes* (8 of the 13 are `nonshare -> share`, which triggers
 
 Recorded so the commit is not later mischaracterised as either pointless or load-bearing. It
 is neither: it is a correctness change taken while it is free to take.
+
+---
+
+## 2026-08-03 — Back office v2: the console grows an audit trail, user support, ops and a pinned super-admin gate
+
+**Ruling (David): the super admin is david@lumihr.co.uk only.** Enforced in depth, not just in
+data: `require_platform_admin` now requires BOTH the `platform_admin` flag AND membership of a
+pinned allowlist (`LUMI_SUPER_ADMINS`, default `david@lumihr.co.uk`). A stray flag flip on any
+other account no longer mints staff access — verified on a throwaway by flipping the flag on a
+demo contributor and receiving 403. Adding future staff is a deliberate env change, not a code
+edit.
+
+**Every staff write is now attributable.** New `admin_audit_log` (reward store; actor is a
+user_id only — emails stay identity-side per the Phase-1 split and resolve at read time).
+Instrumented: suggestion triage, pulse create/open/close/archive/extend, pulse review,
+confirm-launch (the £-consequential one — it previously recorded nothing at all when reusing a
+pending order), metric draft/publish, run-sweep, force-logout, reset-link. Append-only; the
+console has no delete for it. `_audit()` never raises (identity.shadow's precedent) and is
+called after the action's own commit so a failed action never logs as done.
+
+**New console surface** (`/api/admin/*`, all first-line gated, cross-tenant, no client org_id,
+definitions/metadata only — the answer-data firewall is untouched):
+- **Org drill-down** — firmographics, unlock/clock state, per-org members (role, live-session
+  count) and the org's terms acceptances: the DPA evidence trail, previously unreadable by staff.
+- **User support** — exact-email lookup (deliberately no browse: the identity store's
+  no-bulk-export contract stands; emails surface only org-scoped via `user_display_batch` or
+  single-key), force sign-out everywhere (identity-side session revoke, the store
+  `get_session_user` actually reads), and staff-minted password-reset links — the manual
+  sole-admin-recovery process this log flagged as deliberately unbuilt now has its tool. Reset
+  tokens ride the existing 2-hour single-use path and are never written to the audit trail.
+- **Ops** — platform health (counts, live sessions, DB/WAL sizes, latest `.bak_` files,
+  AI/payments/SMTP/sweep effective modes, current release, the localhost BASE_URL go-live
+  warning) + a curated 23-variable config inventory (secrets reported set/unset only, values
+  never serialised) + the run-sweep trigger, which existed since the notifications build but
+  had no UI.
+- **Billing** — the `pulse_launch_orders` ledger (status, card vs staff-confirmed, £ collected);
+  `failed`/`refunded` schema states finally have a surface. Stripe session ids stay server-side.
+- **Compliance** — platform-wide terms log, org-named but deliberately email-free at this scope
+  (who-accepted lives in the org drill-down, org-scoped).
+- **Audit** — the trail itself, actor emails resolved via the capped batch.
+
+New identity.py helpers keep the S4.3 contract: `sessions_for_user` (single-key, returns
+created/expires ONLY — tokens never leave identity.py), `delete_sessions_for_user`,
+`active_session_count` (a scalar, not an export). Verified end-to-end on throwaway copies
+(backup-API, :8071, logged, zero address-in-use): all endpoints, both 403 paths, force-logout
+killing a live session, and legacy-write audit rows. Zero browser console errors across all
+ten tabs. Cache v423 → v424. :8060 restarted on the new engine.
