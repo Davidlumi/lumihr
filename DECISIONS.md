@@ -13291,3 +13291,77 @@ whole life on the property that matters most in a co-operative where competitors
 data about each other. The only reliable way to tell the two apart is to make the gate fail
 on purpose — induce the defect it claims to catch, and confirm it catches it. That test
 should exist for every gate asserting a safety property, and does not.
+
+## P4 IS CLOSED — six items, and what each turned out to be (3 August 2026)
+
+**1. The hardcoded-path class.** Named as six scripts; the sweep found **seventeen**. Five
+more wrote live than the record knew. Fixed on disk across all 17 — 8 committed, 9
+excluded by `.gitignore`'s one-off/scratch block, **including five that write live**. Those
+five now carry a fix with no version history: if the working copy is lost, so is the fix,
+and nothing in the repository records that it was ever made. Recorded as a standing
+exposure, not a closed item.
+
+**2. The cross-tenant leak probe.** Not broken by step 5 — **vacuous from the day it was
+written**, asserting on a string `/api/my-data` structurally cannot emit. The obvious fix,
+listed first in its own transmission, would have passed a 389-row leak while reporting
+green. Recorded in full at `0243d6c`; noted here because it is P4's most consequential
+finding and the one least visible from the inventory.
+
+**3. `seed_staff_admin`.** A compound defect. The lookup missed, *and* step 5's commit 6
+had stripped its name write without adding the identity attachment `app.py:903` received.
+On `--write` it would have minted a duplicate staff org with no identity row — a
+reward-only orphan, and a soak-ending condition. In a script whose own docstring says it is
+"safe to re-run".
+
+**4. `mp_baseline` / `mp_diff`.** One root cause, divergent modes: one crashed, one exited 0
+writing an empty file. The second is the dangerous one, and it did not stop at its own
+output — `mp_compare.py` **laundered the emptiness** into a well-formed
+`MARKET_POSITION_WIRING_DIFF.md` that reads as "no verdict changes" rather than "nothing was
+measured". Both now refuse rather than write nothing.
+
+**5. The Tester class.** The pinned-`org_id` ruling was **overturned on evidence**.
+`orgs.source='seed'` is structural (`seed_import.py:223` hardcodes it; nothing ever
+`UPDATE`s it), reseed-proof and fresh-install-proof, and — the argument the pin could not
+answer — it **stays correct as real members join**, where "everything except Tester" breaks
+the moment the cohort grows past 220. Measured equal to the old definition at three
+independent points in time, identical as an ordered list. Nine sites collapsed into one
+shared `seed_cohort.py`.
+
+**6. `qa_strategy`'s leak.** The gate passed green while leaving probe orgs in both stores.
+Two findings beyond the lookup. Cleanup was the **last statement of `main()` rather than a
+`finally`** — `verify.py`'s exact shape, and the reason `verify.py`'s cleanup has never run.
+And a reward-only cleanup would have **traded a leak for a recon failure**, because
+`/api/auth/register` writes both stores; it required `identity.remove_org_identity`, which
+did not exist — `identity.py` had only a deliberately user-level removal.
+
+### The pattern across all six
+
+**Every one was worse than its inventory entry. Not one turned out smaller on inspection.**
+The inventory was built from what surfaced incidentally during other work; the measurements
+were built by running the code. Where those disagreed, **the code was right every time** —
+on the count (6 → 17), on the mechanism (broken → never worked), on the blast radius
+(one file → a document downstream), and on the fix itself (a pin → a structural column).
+
+### What remains
+
+Carried and unbuilt, each with a commit-body entry and no transmission of its own:
+
+- the **`form()` name-as-evidence class**, with its vocabulary finding — 68 orgs fall
+  through to the name heuristic on `ownership_type` values the sets do not recognise,
+  independently of step 5
+- **`mp_compare.py`**'s unguarded empty input — it can still render a document from nothing
+  if one reaches it another way
+- the **file-output half** of the hardcoded-path class: `LUMI_DB` redirects the database but
+  not the CSVs these scripts write to their working directory. It dirtied the repository
+  three times in one session, twice after the lesson had supposedly been learned
+- **gate-safety-1's regex** not covering scripts that connect directly, and its interaction
+  with the hardcoded `:8060`: a bare `qa_strategy` run sends its HTTP half to whatever
+  server holds that port while `get_conn()` refuses, so probes could be created in live with
+  no cleanup path available
+
+### Criterion 5 is partly exercised
+
+A real identity-side login on **3 August at 09:54:12** authenticated a user whose
+reward-side `email` and `pw_hash` are both NULL. The auth path is proven against the
+migrated store by real traffic, not by rehearsal. Signup, invite acceptance and password
+reset remain outstanding, so criterion 5 stays open.
