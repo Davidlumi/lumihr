@@ -120,6 +120,14 @@ for label, rt, it, key, invariant in PAIRS:
     print("%s: reward=%d identity=%d | reward-only (identity orphan missing)=%d | "
           "identity-only (reverse orphan)=%d | content-drift=%d"
           % (label, len(rrows), len(irows), only_reward, only_identity, drift))
+    # Orphan KEYS (PH-PROV-1 Stage 3 §1: an operator must be able to act on a
+    # detection, so the finding names the row). Keys only — org_ids and tokens are
+    # opaque identifiers, so the counts-only privacy posture (no names, emails)
+    # is preserved. Bounded at 5 per direction.
+    if only_reward:
+        print("    reward-only keys (first 5): %s" % sorted(set(rrows) - set(irows))[:5])
+    if only_identity:
+        print("    identity-only keys (first 5): %s" % sorted(set(irows) - set(rrows))[:5])
     print("    compared: %s" % ", ".join(compared))
     if states:
         print("    step-5 columns: %s" % "; ".join("%s=%s" % (c, s) for c, s in states.items()))

@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Back-office gate: the staff console's full surface — auth matrix, provisioning,
+"""Back-office gate: the staff console's full surface — auth matrix, provisioning
+(PH-PROV-1: atomic org+founding-invite, four firmographics, collision classes),
 support actions, soft-deactivate, audit coverage, and secret/PII hygiene.
 
 MUST run against a THROWAWAY: it creates orgs/users, deactivates accounts and
 flips a platform_admin flag. Refuses to start without LUMI_DB set (gate-safety),
 and aborts if the server on BASE turns out not to be reading the same DB file
-(the canary write in section D).
+(the canary check in section D). The atomicity check (D-seam) needs the server
+launched with LUMI_QA_SEAMS=on (run_gates does this for srv_backoffice); it
+degrades to a reported SKIP without it. Registration checks assume the server
+runs with the production default (LUMI_OPEN_REGISTRATION unset -> closed).
 
 Usage (the documented gate procedure — throwaway server ON :8060):
   LUMI_DB=... LUMI_IDENTITY_DB=... python3 qa_backoffice.py
@@ -14,23 +18,28 @@ import json, os, secrets, sqlite3, sys, urllib.request, urllib.error, http.cooki
 
 BASE = os.environ.get("LUMI_QA_BASE", "http://localhost:8060")
 DB = os.environ.get("LUMI_DB")
+IDB = os.environ.get("LUMI_IDENTITY_DB")
 if not DB:
     print("qa_backoffice: REFUSING to run without LUMI_DB (this gate writes orgs/users "
           "and deactivates accounts — throwaway only).")
     sys.exit(2)
 
-PASS, FAIL = [], []
+PASS, FAIL, SKIP = [], [], []
 def check(name, ok, detail=""):
     (PASS if ok else FAIL).append((name, detail))
     print("  %s %s%s" % ("PASS" if ok else "FAIL", name,
                          ("  [" + str(detail)[:110] + "]") if detail else ""))
 
+def skip(name, why):
+    SKIP.append((name, why))
+    print("  SKIP %s  [%s]" % (name, why))
+
 def client():
     jar = http.cookiejar.CookieJar()
     return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
-def api(opener, path, method="GET", body=None):
-    r = urllib.request.Request(BASE + path, method=method)
+def api(opener, path, method="GET", body=None, base=None):
+    r = urllib.request.Request((base or BASE) + path, method=method)
     data = json.dumps(body).encode() if body is not None else None
     if data:
         r.add_header("Content-Type", "application/json")
@@ -43,10 +52,33 @@ def api(opener, path, method="GET", body=None):
         except Exception:
             return e.code, {"_http_status": e.code}
 
+def book_fingerprint(db_path):
+    """The canonical recipe, inlined from server/dbsnapshot.table_fingerprint and
+    pinned by data/book_baseline.json — sha256, PK-ordered rows, first 16 hex."""
+    import hashlib
+    conn = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+    h = hashlib.sha256(); n = 0
+    for row in conn.execute(
+            "SELECT org_id, snapshot_id, question_id, matrix_row_id, value, submitted_at "
+            "FROM answers ORDER BY org_id, snapshot_id, question_id, matrix_row_id"):
+        h.update(("\x1f".join("\x00" if v is None else str(v) for v in row) + "\x1e")
+                 .encode("utf-8", "surrogatepass"))
+        n += 1
+    conn.close()
+    return n, h.hexdigest()[:16]
+
 STAFF = ("david@lumihr.co.uk", "lumi-demo-2026")
 ORG_ADMIN = ("director@thornbridge.example", "lumi-demo-2026")
 VIEWER = ("ceo@thornbridge.example", "lumi-view-2026")
 TAG = secrets.token_hex(4)
+
+BOOK_BEFORE = book_fingerprint(DB)
+try:
+    _bl = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                      "..", "data", "book_baseline.json")))
+    BASELINE = (_bl["rows"], _bl["hash16"])
+except Exception:
+    BASELINE = None
 
 staff, tenant, anon = client(), client(), client()
 st, _ = api(staff, "/api/auth/login", "POST", {"email": STAFF[0], "password": STAFF[1]})
@@ -86,8 +118,8 @@ raw.execute("UPDATE users SET platform_admin=0 WHERE user_id=?", (vid,)); raw.co
 # ---- B. staff basics + response shapes
 print("\n-- B. staff surface --")
 st, me = api(staff, "/api/me")
-check("B1 staff /api/me carries platform_admin", st == 200 and me["user"].get("platform_admin") == 1
-      or me["user"].get("platform_admin") is True, me["user"].get("platform_admin"))
+check("B1 staff /api/me carries platform_admin", st == 200 and bool(me["user"].get("platform_admin")),
+      me["user"].get("platform_admin"))
 st, h = api(staff, "/api/admin/health")
 check("B2 health: counts+storage+modes present", st == 200 and
       all(k in h for k in ("counts", "storage", "modes", "uptime_seconds")), list(h))
@@ -114,57 +146,206 @@ check("C4 lookup: found, correct org, and NO pw_hash / tokens in payload",
       lk.get("found") and "pw_hash" not in json.dumps(lk) and "token" not in json.dumps(lk.get("user", {}).get("sessions", [])),
       list(lk.get("user", {})))
 
-# ---- D. provisioning lifecycle (with the server/DB alignment canary)
+# ---- D. provisioning (PH-PROV-1: atomic org + founding-admin invite) --------
 print("\n-- D. provisioning --")
+# choices from the SAME accessor the member form uses (profile_choices via the API)
+st, prof = api(staff, "/api/org-profile")
+CH = prof["choices"]
+FIRMO = {"industry": CH["industry"][0], "fte_band": CH["fte_band"][0],
+         "hq_region": CH["hq_region"][0], "ownership_type": CH["ownership_type"][0]}
 ORG_NAME = "QA Probe Org %s" % TAG
-st, created = api(staff, "/api/admin/orgs", "POST", {"name": ORG_NAME})
-check("D1 create org", st == 200 and created.get("ok"), created)
+FOUNDER = "qa-founder-%s@probe.example" % TAG
+
+st, _ = api(staff, "/api/admin/orgs", "POST",
+            dict(FIRMO, org_name=ORG_NAME, admin_email="not-an-email"))
+check("D1 bad admin_email refused", st == 400, st)
+missing = dict(FIRMO, org_name=ORG_NAME, admin_email=FOUNDER); missing.pop("ownership_type")
+st, r = api(staff, "/api/admin/orgs", "POST", missing)
+check("D2 missing firmographic refused (all four required)", st == 400 and "ownership_type" in r.get("detail", ""), r)
+st, r = api(staff, "/api/admin/orgs", "POST",
+            dict(FIRMO, org_name=ORG_NAME, admin_email=FOUNDER, industry="Not A Real Industry"))
+check("D3 non-registry industry refused via profile_choices", st == 400, r)
+st, _ = api(staff, "/api/admin/orgs", "POST", dict(FIRMO, org_name="   ", admin_email=FOUNDER))
+check("D4 blank name refused", st == 400, st)
+st, _ = api(staff, "/api/admin/orgs", "POST",
+            dict(FIRMO, org_name=ORG_NAME, admin_email=STAFF[0]))
+check("D5 admin_email with an existing account refused", st == 400, st)
+
+# the real provision — deliberately carrying BOTH seam flags (Stage 3 §2.1): this
+# gate's main server runs the PRODUCTION posture (LUMI_QA_SEAMS unset), so the
+# injection branches must be no-ops and the call must complete fully. Behaviour
+# asserted, not the env read: a seams-on server would 500 here instead.
+st, created = api(staff, "/api/admin/orgs", "POST",
+                  dict(FIRMO, org_name=ORG_NAME, admin_email=FOUNDER,
+                       _qa_fail_after_org=True, _qa_fail_identity=True))
+check("D6 seam INERT by default: provision with both injection flags completes normally",
+      st == 200 and created.get("ok"), (st, created))
+check("D7 provision ok: org + invite link + expiry in one call",
+      st == 200 and created.get("ok") and "/app#/invite/" in created.get("invite_link", "")
+      and created.get("expires_days"), created)
+if IDB and os.path.exists(IDB) and st == 200:
+    _idc = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True)
+    _reg = _idc.execute("SELECT COUNT(*) FROM org_register WHERE org_id=?",
+                        (created["org_id"],)).fetchone()[0]
+    _inv = _idc.execute("SELECT COUNT(*) FROM invites WHERE org_id=?",
+                        (created["org_id"],)).fetchone()[0]
+    _idc.close()
+    check("D6b inert proof completes IDENTITY-side too (org_register + invite twin written)",
+          _reg == 1 and _inv == 1, (_reg, _inv))
+else:
+    skip("D6b identity-side inert proof", "LUMI_IDENTITY_DB unset")
 POID = created.get("org_id")
-row = raw.execute("SELECT source, tier_entitlement FROM orgs WHERE org_id=?", (POID,)).fetchone()
+row = raw.execute("SELECT * FROM orgs WHERE org_id=?", (POID,)).fetchone()
 if row is None:
     print("qa_backoffice: ABORT — the server on %s is NOT reading LUMI_DB=%s "
           "(canary org missing). Wrong server/DB pairing." % (BASE, DB))
     sys.exit(2)
-check("D2 canary: server writes land in LUMI_DB; source=signup, full tier",
-      row["source"] == "signup" and row["tier_entitlement"] == "full", dict(row))
-st, _ = api(staff, "/api/admin/orgs", "POST", {"name": ORG_NAME})
-check("D3 duplicate name refused", st == 400, st)
-st, _ = api(staff, "/api/admin/orgs", "POST", {"name": "   "})
-check("D4 blank name refused", st == 400, st)
-st, _ = api(staff, "/api/admin/orgs", "POST", {"name": "!!! ***"})
-check("D5 symbols-only name refused", st == 400, st)
-st, _ = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST", {"email": "not-an-email", "role": "admin"})
-check("D6 bad invite email refused", st == 400, st)
-st, _ = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST", {"email": STAFF[0], "role": "admin"})
-check("D7 invite to an existing account refused", st == 400, st)
-FOUNDER = "qa-founder-%s@probe.example" % TAG
-st, inv = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST", {"email": FOUNDER, "role": "admin"})
-check("D8 founding-admin invite minted", st == 200 and "/app#/invite/" in inv.get("link", ""), inv)
-itok = inv["link"].rsplit("/", 1)[-1]
-st, d = api(staff, "/api/admin/orgs/" + POID)
-check("D9 org detail lists the pending invite (email, role=admin, link)",
-      any(i.get("email") == FOUNDER and i["role"] == "admin" and i.get("link") for i in d.get("invites", [])),
-      d.get("invites"))
-# revoke a second invite; the first stays live for the accept test
-st, inv2 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
-               {"email": "qa-temp-%s@probe.example" % TAG, "role": "viewer"})
-tok2 = inv2["link"].rsplit("/", 1)[-1]
-st, _ = api(staff, "/api/admin/invites/%s/revoke" % tok2, "POST", {})
-check("D10 revoke ok", st == 200, st)
-st, _ = api(anon, "/api/invite/" + tok2)
-check("D11 revoked invite link dead (404)", st == 404, st)
-st, _ = api(staff, "/api/admin/invites/%s/revoke" % tok2, "POST", {})
-check("D12 double-revoke refused", st == 400, st)
+check("D8 org row: source=signup, full tier, clock NULL, submission 0",
+      row["source"] == "signup" and row["tier_entitlement"] == "full"
+      and row["clock_start"] is None and row["submission_complete"] == 0, dict(row))
+check("D9 classified=1 DERIVED from four populated PROFILE_CORE fields",
+      row["classified"] == 1 and all(row[f] == FIRMO[f] for f in FIRMO),
+      {f: row[f] for f in FIRMO})
+check("D10 re-pollution guard: orgs.name / orgs.normalized_name NOT written",
+      row["name"] is None and row["normalized_name"] is None)
+irow = raw.execute("SELECT role, created_by, used_at FROM invites WHERE org_id=?", (POID,)).fetchone()
+check("D11 invite row in the SAME transaction: role=admin, staff-created, unused",
+      irow is not None and irow["role"] == "admin" and irow["used_at"] is None, dict(irow) if irow else None)
+
+# collision classes (ruling §6: classify via org_register hit -> reward source)
+seed_name = None
+if IDB and os.path.exists(IDB):
+    idraw = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True); idraw.row_factory = sqlite3.Row
+    seed_ids = {r[0] for r in raw.execute("SELECT org_id FROM orgs WHERE source='seed'")}
+    for r in idraw.execute("SELECT org_id, name FROM org_register"):
+        if r["org_id"] in seed_ids:
+            seed_name = r["name"]; break
+    idraw.close()
+if seed_name:
+    st, r = api(staff, "/api/admin/orgs", "POST",
+                dict(FIRMO, org_name=seed_name, admin_email="qa-x-%s@probe.example" % TAG))
+    check("D12 collision vs SEED org names the class", st == 400 and "seed" in r.get("detail", ""), r)
+else:
+    skip("D12 collision vs seed", "LUMI_IDENTITY_DB unset or no seed name resolvable")
+st, r = api(staff, "/api/admin/orgs", "POST",
+            dict(FIRMO, org_name=ORG_NAME.upper() + "!!", admin_email="qa-y-%s@probe.example" % TAG))
+check("D13 collision vs MEMBER org (normalized) names the class",
+      st == 400 and "member" in r.get("detail", ""), r)
+
+# the founding admin joins through the standard accept path
+itok = created["invite_link"].rsplit("/", 1)[-1]
 FPW = "qa-probe-pass-%s" % TAG
 st, _ = api(anon, "/api/auth/accept-invite", "POST",
             {"token": itok, "password": FPW, "accept_platform_terms": True, "display_name": "QA Founder"})
-check("D13 invitee joins (own password + terms)", st == 200, st)
+check("D14 founding admin joins (own password + terms)", st == 200, st)
 st, d = api(staff, "/api/admin/orgs/" + POID)
-check("D14 member (admin) + platform-terms row now on the org",
+check("D15 member (role=admin) + platform-terms row now on the org",
       any(u["email"] == FOUNDER and u["role"] == "admin" for u in d["users"]) and
-      any(t["kind"] == "platform" and t["email"] == FOUNDER for t in d["terms"]),
-      (d["users"], d["terms"]))
+      any(t["kind"] == "platform" and t["email"] == FOUNDER for t in d["terms"]))
 FUID = next(u["user_id"] for u in d["users"] if u["email"] == FOUNDER)
+# reissue path survives alongside creation (ruling §3)
+st, inv2 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+               {"email": "qa-temp-%s@probe.example" % TAG, "role": "viewer"})
+tok2 = inv2.get("link", "").rsplit("/", 1)[-1]
+check("D16 reissue route still mints invites post-creation", st == 200 and tok2, st)
+st, _ = api(staff, "/api/admin/invites/%s/revoke" % tok2, "POST", {})
+check("D17 revoke ok", st == 200, st)
+st, _ = api(anon, "/api/invite/" + tok2)
+check("D18 revoked invite link dead (404)", st == 404, st)
+st, _ = api(staff, "/api/admin/invites/%s/revoke" % tok2, "POST", {})
+check("D19 double-revoke refused", st == 400, st)
+
+# ---- S. fault injection (Stage 3 §1, Outcome A): a SHORT-LIVED second server
+# ---- with LUMI_QA_SEAMS=on — the main server stays production-postured -------
+print("\n-- S. seams (fault injection on :8061) --")
+import subprocess, time
+SRV_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE2 = "http://localhost:8061"
+seam_env = dict(os.environ, LUMI_QA_SEAMS="on", ANTHROPIC_API_KEY="", ANTHROPIC_AUTH_TOKEN="")
+seam_proc = subprocess.Popen(
+    [sys.executable, "-m", "uvicorn", "app:app", "--port", "8061"],
+    cwd=SRV_DIR, env=seam_env,
+    stdout=open(os.path.join(os.environ.get("TMPDIR", "/tmp"), "qa_backoffice_seam_8061.log"), "w"),
+    stderr=subprocess.STDOUT)
+try:
+    up = False
+    for _ in range(60):
+        try:
+            urllib.request.urlopen(BASE2 + "/api/legal", timeout=2); up = True; break
+        except Exception:
+            time.sleep(0.5)
+    if not up:
+        check("S0 seam server (:8061) came up", False, "did not answer /api/legal in 30s")
+    else:
+        seam = client()
+        st, _ = api(seam, "/api/auth/login", "POST",
+                    {"email": STAFF[0], "password": STAFF[1]}, base=BASE2)
+        check("S0 seam server up + staff login", st == 200, st)
+        # S1: §7.7 — forced failure BETWEEN the two reward inserts rolls back whole
+        n_before = raw.execute("SELECT COUNT(*) FROM orgs").fetchone()[0]
+        st, r = api(seam, "/api/admin/orgs", "POST",
+                    dict(FIRMO, org_name="QA Seam Rollback %s" % TAG,
+                         admin_email="qa-seam-%s@probe.example" % TAG,
+                         _qa_fail_after_org=True), base=BASE2)
+        n_after = raw.execute("SELECT COUNT(*) FROM orgs").fetchone()[0]
+        check("S1 forced failure after org insert -> 500 + rollback (no orphan org)",
+              st == 500 and "nothing was created" in r.get("detail", "") and n_before == n_after,
+              (st, n_before, n_after))
+        # S2: the post-reward-commit identity failure — the SILENT orphan — and the
+        # net that must catch it, naming the org_id (Stage 3 §1 Outcome A).
+        st, r = api(seam, "/api/admin/orgs", "POST",
+                    dict(FIRMO, org_name="QA Seam Orphan %s" % TAG,
+                         admin_email="qa-orphan-%s@probe.example" % TAG,
+                         _qa_fail_identity=True), base=BASE2)
+        check("S2a identity-failure seam: response is the silent 200", st == 200 and r.get("ok"), (st, r))
+        ORPH = r.get("org_id")
+        orow = raw.execute("SELECT COUNT(*) FROM orgs WHERE org_id=?", (ORPH,)).fetchone()[0]
+        if IDB and os.path.exists(IDB):
+            _idc = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True)
+            ireg = _idc.execute("SELECT COUNT(*) FROM org_register WHERE org_id=?", (ORPH,)).fetchone()[0]
+            _idc.close()
+            check("S2b the orphan exists: reward org row present, org_register twin MISSING",
+                  orow == 1 and ireg == 0, (orow, ireg))
+            rec = subprocess.run([sys.executable, "identity_recon.py"], cwd=SRV_DIR,
+                                 env=dict(os.environ), capture_output=True, text=True)
+            check("S2c identity_recon FAILS (nonzero exit) on the orphan",
+                  rec.returncode != 0 and "FAIL" in rec.stdout, rec.returncode)
+            check("S2d recon output NAMES the orphan org_id and both orphan rows",
+                  ORPH in rec.stdout
+                  and "reward-only (identity orphan missing)=1" in rec.stdout.split("orgs<->org_register")[1].split("\n")[0]
+                  and "reward-only (identity orphan missing)=1" in rec.stdout.split("invites:")[1].split("\n")[0],
+                  [l for l in rec.stdout.splitlines() if "reward-only" in l and "=1" in l])
+            # S3: remove the manufactured orphan; the net must read clean again
+            raw.execute("DELETE FROM invites WHERE org_id=?", (ORPH,))
+            raw.execute("DELETE FROM orgs WHERE org_id=?", (ORPH,))
+            raw.commit()
+            rec2 = subprocess.run([sys.executable, "identity_recon.py"], cwd=SRV_DIR,
+                                  env=dict(os.environ), capture_output=True, text=True)
+            check("S3 orphan removed -> identity_recon PASS again (rc 0)",
+                  rec2.returncode == 0 and "PASS" in rec2.stdout, rec2.returncode)
+        else:
+            skip("S2b-S3 orphan + recon assertions", "LUMI_IDENTITY_DB unset")
+finally:
+    seam_proc.terminate()
+    try:
+        seam_proc.wait(timeout=10)
+    except Exception:
+        seam_proc.kill()
+
+# ---- R. registration + tenant-invite guards (PH-PROV-1 §2.2/§2.3) -----------
+print("\n-- R. registration & carve-out --")
+st, r = api(anon, "/api/auth/register", "POST",
+            {"org_name": "QA Reg Probe %s" % TAG, "email": "qa-reg-%s@probe.example" % TAG,
+             "password": "long-enough-pass", "accept_platform_terms": True})
+check("R1 self-serve register -> 403 with enquiry pointer (default closed)",
+      st == 403 and "hello@lumihr.co.uk" in r.get("detail", ""), r)
+# verify-as-is (ruling §5): tenant invite role=admin COERCES to viewer today (400 in PH-PROV-1b)
+st, tinv = api(tenant, "/api/team/invite", "POST",
+               {"email": "qa-coerce-%s@probe.example" % TAG, "role": "admin"})
+ttok = tinv.get("link", "").rsplit("/", 1)[-1] if st == 200 else None
+trole = raw.execute("SELECT role FROM invites WHERE token=?", (ttok,)).fetchone() if ttok else None
+check("R2 /api/team/invite role=admin coerces to viewer (as-is; changes in PH-PROV-1b)",
+      st == 200 and trole is not None and trole["role"] == "viewer", (st, dict(trole) if trole else None))
 
 # ---- E. support actions
 print("\n-- E. support --")
@@ -249,6 +430,26 @@ check("G4 garbage limit falls back cleanly", st == 200 and len(aud2["entries"]) 
 st, aud3 = api(staff, "/api/admin/audit?limit=999999")
 check("G5 limit clamped to 1000", st == 200 and len(aud3["entries"]) <= 1000, len(aud3.get("entries", [])))
 
+# ---- I. invariants: the book and the six identity columns -------------------
+print("\n-- I. invariants --")
+BOOK_AFTER = book_fingerprint(DB)
+check("I1 answer book untouched by this gate (before == after)",
+      BOOK_BEFORE == BOOK_AFTER, (BOOK_BEFORE, BOOK_AFTER))
+if BASELINE:
+    if BOOK_BEFORE != tuple(BASELINE):
+        print("  NOTE I2: gate-start book %s differs from data/book_baseline.json %s — "
+              "an earlier suite gate touched answers on THIS throwaway, or the baseline "
+              "needs a re-record against live. Informational here; the live assertion "
+              "belongs to the §7 verification." % (BOOK_BEFORE, tuple(BASELINE)))
+    else:
+        print("  NOTE I2: gate-start book matches data/book_baseline.json ✓")
+six = raw.execute(
+    "SELECT SUM(name IS NOT NULL AND name != '') + SUM(normalized_name IS NOT NULL AND normalized_name != '') FROM orgs").fetchone()[0]
+six += raw.execute(
+    "SELECT SUM(email IS NOT NULL AND email != '') + SUM(pw_hash IS NOT NULL AND pw_hash != '') + SUM(display_name IS NOT NULL AND display_name != '') FROM users").fetchone()[0]
+six += raw.execute("SELECT COALESCE(SUM(email IS NOT NULL AND email != ''), 0) FROM invites").fetchone()[0]
+check("I3 six identity columns in the reward store: 100% empty after all provisioning", six == 0, six)
+
 # ---- H. member-surface regression (the middleware/auth changes must not touch tenants)
 print("\n-- H. tenant regression --")
 st, tme = api(tenant, "/api/me")
@@ -261,7 +462,9 @@ st, _ = api(staff, "/api/admin/backlog")
 check("H4 legacy console module (backlog) intact", st == 200, st)
 
 raw.close()
-print("\n== BACK-OFFICE GATE: %d passed, %d failed ==" % (len(PASS), len(FAIL)))
+print("\n== BACK-OFFICE GATE: %d passed, %d failed, %d skipped ==" % (len(PASS), len(FAIL), len(SKIP)))
 for n, dd in FAIL:
     print("  FAILED:", n, dd)
+for n, dd in SKIP:
+    print("  SKIPPED:", n, dd)
 sys.exit(1 if FAIL else 0)

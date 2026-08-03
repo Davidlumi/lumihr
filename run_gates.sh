@@ -36,10 +36,13 @@ kill_port() {
 }
 
 SERVER_PID=""
-start_server() {  # $1 = db path ("" = real DB), $2 = log name
+start_server() {  # $1 = db path ("" = real DB), $2 = log name, $3 = extra env (optional)
   kill_port
   local log="$WORK/$2.log"
-  ( cd "$SRV" && LUMI_DB="${1}" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
+  # PH-PROV-1: self-serve registration is CLOSED by default. Gate servers whose
+  # suites self-register probe orgs (qa_strategy) pass LUMI_OPEN_REGISTRATION=on;
+  # srv_backoffice runs with the production default so the 403 is verifiable.
+  ( cd "$SRV" && env LUMI_DB="${1}" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' ${=3:-} \
       nohup python3 -m uvicorn app:app --port $PORT >"$log" 2>&1 & print $! ) | read SERVER_PID
   for i in {1..40}; do
     curl -s -o /dev/null "http://localhost:$PORT/api/legal" && break
@@ -116,7 +119,7 @@ tail -2 "$WORK/aggregate.out"
 
 # --- HTTP suites (each on a fresh server: rate-limiter + stale-state hygiene) ---
 start_server "$DB" srv_hero;    run_gate qa_hero; run_gate qa_focus
-start_server "$DB" srv_signals; run_gate qa_signals_system; run_gate qa_strategy
+start_server "$DB" srv_signals "LUMI_OPEN_REGISTRATION=on"; run_gate qa_signals_system; run_gate qa_strategy
 start_server "$DB" srv_engine;  run_gate qa_engine_audit
 
 # --- direct-DB suites (server can stay up; they read LUMI_DB directly) ---
@@ -136,6 +139,9 @@ if [[ $PLAUS_RC -eq 0 ]]; then PASS+=(qa_plausibility); else FAIL+=("qa_plausibi
 #     deactivate cycles) — own fresh server, and BEFORE the LAST-by-doctrine pair
 #     so lifecycle/release gates still see their expected world. Probe orgs carry
 #     no answers, so engine/pool gates upstream are unaffected either way.
+#     PRODUCTION posture deliberately (no LUMI_QA_SEAMS, registration closed):
+#     the gate proves the seam inert by default on THIS server, and spawns its
+#     own short-lived :8061 server WITH seams for the fault-injection checks.
 start_server "$DB" srv_backoffice; run_gate qa_backoffice
 
 # --- LAST by doctrine ---

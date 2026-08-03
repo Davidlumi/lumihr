@@ -13524,10 +13524,12 @@ all ten console tabs error-free on live. Dev server restored by teardown.
 ## 2026-08-03 — PH-PROV-1 §1: the standing book hash is re-baselined, and no hash is recorded without its recipe again
 
 The step-5 close (225e1b7) recorded the answer book as `1485ada7cafa559d` / 89,321. The
-count was right; the hash is **irreproducible**: it appears in no per-table fingerprint of
-the reward store (42 tables) nor of either 2026-08-02 backup, in no whole-db hash of any of
-the three, and `git log -S` finds no generating code — only the prose entry itself.
-`migrate_step5_null.py` computes no hash over `answers` at all.
+count was right; the hash is **irreproducible at every scope**: it appears in **no**
+per-table fingerprint across the 42 live tables and the 41 tables in each of the two
+2026-08-02 backups, and in no whole-db hash of any of the three. `git log -S` finds it
+**only** as prose in the step-5 close commit `225e1b7` — no committed code has ever
+produced it, and `migrate_step5_null.py` computes no hash over `answers` at all.
+**Therefore it was either an uncommitted ad-hoc command or was never computed at all.**
 
 **The book did not move.** Three independent files corroborate: live, `bak_pre_step5_20260802_174257`
 and `bak_pre_sessdel_20260802_111015` all fingerprint **`3c587eaa191d17a1` / 89,321** under
@@ -13537,8 +13539,12 @@ touched `answers` — pre- and post-step-5 fingerprints are identical, exactly a
 
 **New baseline: `3c587eaa191d17a1` / 89,321 rows**, recorded with its recipe in
 `data/book_baseline.json` — the single source of truth verifications now read. The `1485…`
-figure is superseded, not explained; its origin was most likely a transcription from an
-uncommitted one-off with its own recipe.
+figure is superseded, not explained.
+
+**Consequence, recorded explicitly (Stage 3 §3): the standing book hash was DECORATIVE for
+the entire soak period. It could not have caught anything** — no tool could compare against
+a figure nothing could reproduce, so any corruption of the book during the soak would have
+sailed past it. That, precisely, is why the following rule now exists.
 
 **Standing rule (David's ruling, verbatim intent): no hash is recorded anywhere without its
 recipe.** An unreproducible integrity figure cannot function as a tripwire; it generates
@@ -13547,3 +13553,44 @@ false alarms until it is ignored, which is worse than no hash at all.
 Also per §6.1: the "nine gitignored live-writing scripts" folklore figure is retired —
 `data/live_writer_census.md` now carries the dated, command-stamped census (10 files, 6 with
 SQL writes, 0 touching orgs/invites).
+
+---
+
+## 2026-08-03 — PH-PROV-1 Phase A SHIPPED: staff-provisioned membership (backend + guards)
+
+Per the ruling addendum and Stage 3 conditions, one diff, backend only. `POST /api/admin/orgs`
+reshaped in place: org_name + admin_email + ALL FOUR PROFILE_CORE firmographics (the spec's
+"region" IS hq_region, stated in the route contract), each validated through profile_choices()
+— the member form's own accessor. Org row + founding role='admin' invite in ONE reward
+transaction; identity attachments follow as shadows (house order). classified is DERIVED via
+the new _classified_from() — the one rule, now also consolidating the two prior inline sites.
+_insert_member_org() is THE org-creating INSERT for register and provisioning both, so the
+column set cannot drift; the six identity columns are structurally never written. Collision
+errors name their class (seed / member / staff) via org_register hit -> reward source.
+Self-serve registration CLOSED by default (LUMI_OPEN_REGISTRATION, 403 -> hello@lumihr.co.uk;
+route retained). The tenant /api/team/invite guard is untouched and deliberately unshared
+(two independent guards; its silent admin->viewer coercion becomes a 400 in PH-PROV-1b).
+
+**source='signup' is now a recorded misnomer (ruled §4):** it means "real member
+organisation", not "self-registered" — kept because cohort/pool logic keys off orgs.source
+positively and a fourth enum value is a silent-behaviour risk; renaming is a separate,
+higher-risk change, not authorised.
+
+**The orphan window (Stage 3 §1, Outcome A):** reward-commit-then-identity-failure leaves an
+unnameable org + unmatchable invite. identity_recon DOES detect both directions and exits 2
+loudly — but it is NOT in run_gates (manual; suite wiring remains the split's step-7 work)
+and printed counts only. It now also prints orphan KEYS (ids/tokens — the counts-only privacy
+posture holds). qa_backoffice manufactures the orphan via the LUMI_QA_SEAMS identity-failure
+branch on a self-spawned :8061 server, asserts recon exits nonzero NAMING the org_id, and
+proves cleanup restores PASS. The seam itself is proven INERT by default: the gate's main
+server runs the production posture and the real provision carries both injection flags.
+LUMI_QA_SEAMS is in the Ops config inventory: default unset = inert; MUST NEVER be set
+outside gate runs. Census: zero functional readers of reward-side invites.email anywhere
+(server/, gates, web) — every email read goes through identity.invite_email[_batch].
+
+Suite after fold-in: **12 gates green; qa_backoffice 74 checks, 0 failed, 0 skipped.**
+Live verification was NON-MUTATING (ruled §4): book 89,321/3c587eaa191d17a1 per
+data/book_baseline.json, six columns 0-populated per the step-5 marker's list, register 403,
+LUMI_QA_SEAMS absent from the live process environment. No org was provisioned against live.
+PH-PROV-1b (coercion 400), 1c (HR Datahub / Tester orgs — David's ruling pending), PH-PROV-2
+(console UI) remain open. Dead orgs.name/normalized_name columns + idx_orgs_norm: post-soak.

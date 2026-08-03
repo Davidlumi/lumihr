@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import secrets
 import sys
 import uuid
 from collections import defaultdict
@@ -899,9 +900,21 @@ async def logout(request: Request):
     return resp
 
 
+def _open_registration():
+    """PH-PROV-1 §2.3: self-serve registration is CLOSED by default — membership is
+    staff-provisioned. LUMI_OPEN_REGISTRATION=on reopens it (read per request so a
+    gate server can grant it by env without code paths diverging). The route is
+    retained, not deleted."""
+    return os.environ.get("LUMI_OPEN_REGISTRATION", "").lower() in ("on", "true", "1")
+
+
 @app.post("/api/auth/register")
 async def register(request: Request):
     """New member organisation sign-up (tier: core)."""
+    if not _open_registration():
+        raise HTTPException(403, "lumi membership is set up for you by our team at the moment, "
+                                 "rather than self-service. Email hello@lumihr.co.uk and we'll "
+                                 "get your organisation started.")
     ip = request.client.host if request.client else "?"
     # per-IP throttle — mass-signup abuse guard (login and reset already rate-limit; §4.7)
     if auth_lib.rate_limited("register-ip:%s" % ip):
@@ -925,10 +938,8 @@ async def register(request: Request):
     # clock is about data, never payment (day-one experience brief).
     # clock_start stays NULL until the Admin accepts the Data Contribution
     # Terms — setup time must not eat into the 30 days.
-    conn.execute(
-        "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
-        "VALUES (?,'signup','full',0)", (org_id,))   # step 5: name/normalized_name identity-side only
-    conn.commit()
+    _insert_member_org(conn, org_id)   # shared with staff provisioning (PH-PROV-1 §2.1);
+    conn.commit()                      # identity columns never written — org_register carries the name
     identity.shadow(identity.register_org_identity, org_id, body["org_name"].strip(), nn)
     uid = auth_lib.create_user(org_id, body["email"], body["password"], "admin",
                                body.get("display_name"))
@@ -3974,6 +3985,30 @@ UNION_BANDS = ["None (0%)", "Low (1-25%)", "Medium (26-50%)", "High (over 50%)"]
 UNION_MIDPOINTS = {"None (0%)": 0, "Low (1-25%)": 13, "Medium (26-50%)": 38, "High (over 50%)": 65}
 
 
+def _classified_from(row):
+    """THE rule for orgs.classified (PH-PROV-1 ruling §2): 1 iff every PROFILE_CORE
+    field is populated. The two profile writers and the provisioning route all
+    derive through here — derive, never hardcode."""
+    return 1 if all(row.get(f) for f in PROFILE_CORE) else 0
+
+
+def _insert_member_org(conn, org_id, firmographics=None):
+    """THE org-creating INSERT for a real member organisation — self-serve register
+    (when open) and staff provisioning both call this one helper so the column set
+    cannot drift between paths (PH-PROV-1 §2.1/§3). Reward store only; the six
+    identity columns are never written — orgs.name / orgs.normalized_name stay
+    empty (identity's org_register carries them; the step-5 split). source='signup'
+    is the ruled value: legacy name, means "real member organisation". No commit —
+    the caller owns the transaction (provisioning pairs this with the first admin
+    invite atomically)."""
+    firmo = {f: firmographics[f] for f in PROFILE_CORE if firmographics and firmographics.get(f)}
+    cols = {"org_id": org_id, "source": "signup", "tier_entitlement": "full",
+            "classified": _classified_from(firmo)}
+    cols.update(firmo)
+    conn.execute("INSERT INTO orgs(%s) VALUES (%s)" % (
+        ",".join(cols), ",".join("?" * len(cols))), list(cols.values()))
+
+
 def profile_choices():
     space = get_meta("sim_feature_space") or {"cat_values": {}}
     cv = space["cat_values"]
@@ -4023,7 +4058,7 @@ async def put_org_profile(request: Request):
     sets = ", ".join("%s=?" % f for f in vals)
     conn.execute("UPDATE orgs SET %s WHERE org_id=?" % sets, list(vals.values()) + [org["org_id"]])
     row = dict(conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone())
-    classified = 1 if all(row.get(f) for f in PROFILE_CORE) else 0
+    classified = _classified_from(row)
     conn.execute("UPDATE orgs SET classified=? WHERE org_id=?", (classified, org["org_id"]))
     if classified:
         _encode_signup_vector(conn, row)
@@ -4311,7 +4346,7 @@ async def put_firmographics(request: Request):
     sets = ", ".join("%s=?" % f for f in vals)
     conn.execute("UPDATE orgs SET %s WHERE org_id=?" % sets, list(vals.values()) + [org["org_id"]])
     row = conn.execute("SELECT * FROM orgs WHERE org_id=?", (org["org_id"],)).fetchone()
-    classified = 1 if all(row[f] for f in ("industry", "fte_band", "hq_region", "ownership_type")) else 0
+    classified = _classified_from(dict(row))
     conn.execute("UPDATE orgs SET classified=? WHERE org_id=?", (classified, org["org_id"]))
     if classified:
         _encode_signup_vector(conn, dict(row))
@@ -5835,39 +5870,100 @@ _BOOT_TIME = datetime.utcnow()
 _PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
 
-# ----- provisioning: create an org, invite members into any org --------------
+# ----- provisioning: create an org + its founding-admin invite (PH-PROV-1) ---
 @app.post("/api/admin/orgs")
 async def admin_org_create(request: Request):
-    """Staff-provisioned member organisation — the signup path minus the
-    self-served first user (they arrive via a staff invite instead, set their
-    own password and accept the terms themselves, so the consent trail stays
-    honest). Same duplicate rule as signup: an existing normalized name is
-    refused, never claimed."""
+    """Staff-provisioned membership (PH-PROV-1 §2.1 as amended by the ruling
+    addendum). Contract: org_name, admin_email, and ALL FOUR PROFILE_CORE
+    firmographics — industry, fte_band, hq_region (the spec's 'region' IS
+    hq_region; stated here so the mapping cannot drift), ownership_type — each
+    validated against profile_choices(), the same accessor the member profile
+    form uses. Creates the orgs row AND the founding-admin invite in ONE reward
+    transaction (ruling §3); role='admin' is permitted here and on the reissue
+    route only — the tenant /api/team/invite path keeps its own independent
+    guard, deliberately unshared. classified is DERIVED via _classified_from,
+    never hardcoded. No email is sent: the link is returned for staff to pass
+    on. Identity attachments (org name, invite email) follow the reward commit
+    as shadows, the house order. The six identity columns in the reward store
+    are never written."""
     staff = require_platform_admin(request)
     body = await _json(request)
-    name = (body.get("name") or "").strip()
+    name = (body.get("org_name") or "").strip()
     if not name:
-        raise HTTPException(400, "Give the organisation a name.")
+        raise HTTPException(400, "Give the organisation a name (org_name).")
     nn = re.sub(r"[^a-z0-9]", "", name.lower())
     if not nn:
         raise HTTPException(400, "The name needs at least one letter or number.")
-    if identity.org_lookup_by_normalized(nn):
-        raise HTTPException(400, "An organisation with that name already exists.")
+    email = (body.get("admin_email") or "").strip()
+    if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(400, "Please enter a valid admin email address (admin_email).")
+    if auth_lib.find_user(email):
+        raise HTTPException(400, "That email already has a lumi account.")
+    choices = profile_choices()
+    firmo = {}
+    for f in PROFILE_CORE:
+        v = (body.get(f) or "").strip() if isinstance(body.get(f), str) else body.get(f)
+        if not v:
+            raise HTTPException(400, "'%s' is required — all four profile fields are "
+                                     "provisioned so the member never meets the "
+                                     "complete-your-profile prompt." % f)
+        if choices.get(f) and v not in choices[f]:
+            raise HTTPException(400, "'%s' isn't one of the recognised options for %s."
+                                     % (v, f.replace("_", " ")))
+        firmo[f] = v
+    # collision check with CLASS in the message (ruling §6): the name namespace is
+    # identity-side (org_register); the colliding org's reward-side source names it.
+    hit = identity.org_lookup_by_normalized(nn)
+    if hit:
+        conn = get_conn()
+        src = conn.execute("SELECT source FROM orgs WHERE org_id=?",
+                           (hit["org_id"],)).fetchone()
+        cls = {"seed": "a seed benchmark organisation",
+               "signup": "an existing member organisation",
+               "staff": "the lumi staff organisation"}.get(src["source"] if src else None,
+                                                           "an existing organisation")
+        raise HTTPException(400, "That name collides with %s already on the platform." % cls)
     conn = get_conn()
     org_id = str(uuid.uuid4())
-    # source='signup' + full tier: a staff-provisioned org IS a real member org
-    # (founding-member parity); a new source value would fork every cohort
-    # query that keys off orgs.source.
-    conn.execute(
-        "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
-        "VALUES (?,'signup','full',0)", (org_id,))
-    conn.commit()
+    token = secrets.token_urlsafe(24)   # mirrors auth.create_invite's minting exactly;
+    expires = (datetime.utcnow()        # inlined so both rows share ONE transaction
+               + timedelta(days=auth_lib.INVITE_TTL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        _insert_member_org(conn, org_id, firmo)   # classified derived from the four fields
+        # QA seam (default OFF): §7.7 demands proof that a failure between the two
+        # inserts leaves no orphan org. Active only when the operator launched the
+        # server with LUMI_QA_SEAMS=on — never in normal operation.
+        if body.get("_qa_fail_after_org") and os.environ.get("LUMI_QA_SEAMS") == "on":
+            raise RuntimeError("qa seam: forced failure after org insert")
+        conn.execute(
+            "INSERT INTO invites(token, org_id, role, created_by, expires_at) "
+            "VALUES (?,?,?,?,?)", (token, org_id, "admin", staff["user_id"], expires))
+        conn.commit()
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(500, "Provisioning failed before completion — nothing was "
+                                 "created. (%s)" % e)
+    # QA seam, second branch (same LUMI_QA_SEAMS pattern, PH-PROV-1 Stage 3 §1):
+    # simulate the post-reward-commit identity failure — both shadows skipped, the
+    # response still 200, exactly the silent orphan the real failure mode produces.
+    # identity_recon is the net that must catch it; qa_backoffice asserts it does.
+    if body.get("_qa_fail_identity") and os.environ.get("LUMI_QA_SEAMS") == "on":
+        _audit(staff, "org.create", "org", org_id, {"invite_role": "admin", "classified": 1})
+        return {"ok": True, "org_id": org_id, "name": name,
+                "invite_link": "%s/app#/invite/%s" % (BASE_URL, token),
+                "expires_days": auth_lib.INVITE_TTL_DAYS}
     identity.shadow(identity.register_org_identity, org_id, name, nn)
-    # deliberately NO name in the audit detail: org names are identity-side
-    # (Phase-1 split) and the audit log is a reward-store table — the org_id
-    # target resolves to its name at read time like everywhere else.
-    _audit(staff, "org.create", "org", org_id)
-    return {"ok": True, "org_id": org_id, "name": name}
+    identity.shadow(identity.record_invite, token, org_id, email.lower(), "admin",
+                    staff["user_id"], expires)
+    # NO name and NO email in the audit detail: both are identity-side (Phase-1
+    # split); the org_id target resolves at read time like every other surface.
+    _audit(staff, "org.create", "org", org_id, {"invite_role": "admin", "classified": 1})
+    return {"ok": True, "org_id": org_id, "name": name,
+            "invite_link": "%s/app#/invite/%s" % (BASE_URL, token),
+            "expires_days": auth_lib.INVITE_TTL_DAYS}
 
 
 @app.post("/api/admin/orgs/{org_id}/invite")
@@ -6209,6 +6305,8 @@ async def admin_health(request: Request):
 _CONFIG_INVENTORY = [
     ("LUMI_BASE_URL", "value", "Public origin for emailed invite/reset/share links"),
     ("LUMI_SUPER_ADMINS", "value", "Back-office allowlist (comma-separated emails)"),
+    ("LUMI_OPEN_REGISTRATION", "value", "Self-serve signup — CLOSED unless 'on' (membership is staff-provisioned)"),
+    ("LUMI_QA_SEAMS", "value", "Gate-only fault injection in provisioning; default unset = inert. MUST NEVER be set outside gate runs"),
     ("LUMI_AI_INSIGHTS_ENABLED", "value", "AI master gate — all AI features off unless 'on'"),
     ("LUMI_AI_LIVE", "value", "Paid Claude calls — deterministic drafts unless 'on'"),
     ("ANTHROPIC_API_KEY", "secret", "Claude API key (server/.env.local)"),
