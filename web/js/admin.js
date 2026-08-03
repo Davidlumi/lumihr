@@ -7,10 +7,15 @@
 
 const ADMIN_TABS = [
   { key: "orgs", label: "Organisations", icon: "table" },
+  { key: "users", label: "Users", icon: "users" },
   { key: "suggestions", label: "Suggestions", icon: "bulb" },
   { key: "pulses", label: "Pulses", icon: "zap" },
   { key: "pulse-reviews", label: "Pulse reviews", icon: "list-checks" },
   { key: "metrics", label: "Metrics", icon: "target" },
+  { key: "billing", label: "Billing", icon: "coins" },
+  { key: "compliance", label: "Compliance", icon: "lock" },
+  { key: "ops", label: "Ops", icon: "sliders" },
+  { key: "audit", label: "Audit", icon: "clock" },
 ];
 
 const adminSpinner = html`<${PageLoading} />`;
@@ -34,22 +39,29 @@ window.AdminConsolePage = function ({ me, route }) {
       </div>
       <div class="admin-body">
         ${active === "orgs" && html`<${AdminOrgsTab} />`}
+        ${active === "users" && html`<${AdminUsersTab} />`}
         ${active === "suggestions" && html`<${AdminSuggestionsTab} />`}
         ${active === "pulses" && html`<${AdminPulsesTab} />`}
         ${active === "pulse-reviews" && html`<${AdminPulseReviewsTab} />`}
         ${active === "metrics" && html`<${AdminMetricsTab} />`}
+        ${active === "billing" && html`<${AdminBillingTab} />`}
+        ${active === "compliance" && html`<${AdminComplianceTab} />`}
+        ${active === "ops" && html`<${AdminOpsTab} />`}
+        ${active === "audit" && html`<${AdminAuditTab} />`}
       </div>
     </div>`;
 };
 
-/* ---- module 1: organisations (cross-tenant, read-only) ---- */
+/* ---- module 1: organisations (cross-tenant; click a row to drill in) ---- */
 function AdminOrgsTab() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [q, setQ] = useState("");
+  const [selected, setSelected] = useState(null);   // org_id | null
   useEffect(() => { api("/api/admin/orgs").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load organisations" body=${err} />`;
   if (!data) return adminSpinner;
+  if (selected) return html`<${AdminOrgDetail} orgId=${selected} onBack=${() => setSelected(null)} />`;
   const needle = q.trim().toLowerCase();
   const rows = data.orgs.filter(o => !needle
     || (o.name || "").toLowerCase().includes(needle)
@@ -59,7 +71,7 @@ function AdminOrgsTab() {
       <div class="admin-toolbar">
         <input class="ctl" placeholder="Filter by name or industry…" value=${q}
           onInput=${e => setQ(e.target.value)} aria-label="Filter organisations" />
-        <span class="caption">${rows.length} of ${data.total} organisations</span>
+        <span class="caption">${rows.length} of ${data.total} organisations · click a row for detail</span>
       </div>
       <table class="data admin-table">
         <thead><tr>
@@ -67,7 +79,7 @@ function AdminOrgsTab() {
           <th class="num">Users</th><th>Profile</th><th>Submitted</th><th>Insights</th>
         </tr></thead>
         <tbody>
-          ${rows.map(o => html`<tr key=${o.org_id}>
+          ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer" }} onClick=${() => setSelected(o.org_id)}>
             <td><b>${o.name}</b></td>
             <td>${o.industry || "—"}</td>
             <td>${o.fte_band || "—"}</td>
@@ -79,6 +91,101 @@ function AdminOrgsTab() {
           </tr>`)}
         </tbody>
       </table>
+    </div>`;
+}
+
+/* ---- module 1b: org drill-down (detail + users + terms) ---- */
+function AdminOrgDetail({ orgId, onBack }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const load = () => api("/api/admin/orgs/" + orgId).then(setD).catch(e => setErr(e.message));
+  useEffect(() => { load(); }, [orgId]);
+  if (err) return html`<div><button class="btn quiet" onClick=${onBack}>← All organisations</button>
+    <${EmptyState} icon="info" title="Couldn't load the organisation" body=${err} /></div>`;
+  if (!d) return adminSpinner;
+  const o = d.org;
+  const fact = (label, value) => html`<div><div class="caption">${label}</div><div><b>${value == null || value === "" ? "—" : value}</b></div></div>`;
+  return html`
+    <div>
+      <button class="btn quiet" onClick=${onBack}>← All organisations</button>
+      <h2 class="section-title" style=${{ margin: "var(--s3) 0 var(--s1)" }}>${o.name || "(unnamed org)"}</h2>
+      <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
+        <span class="admin-pill">${o.source}</span> · ${o.tier_entitlement} tier · created ${(o.created_at || "").slice(0, 10)}
+      </div>
+      <div class="card admin-card" style=${{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "var(--s3)" }}>
+        ${fact("Industry", o.industry)}
+        ${fact("Subsector", o.subsector)}
+        ${fact("Size (FTE)", o.fte_band)}
+        ${fact("HQ region", o.hq_region)}
+        ${fact("Ownership", o.ownership_type)}
+        ${fact("Profile classified", o.classified ? "Yes" : "No")}
+        ${fact("Submission complete", o.submission_complete ? "Yes" : "No")}
+        ${fact("Insights unlocked", o.insights_unlocked_at ? o.insights_unlocked_at.slice(0, 10) : "Locked")}
+        ${fact("Contribution clock", o.clock_start ? "Started " + o.clock_start.slice(0, 10) : "Not started")}
+        ${fact("Unlocked release", o.unlocked_release)}
+        ${fact("Answers stored", d.counts.answers)}
+        ${fact("Draft cells", d.counts.drafts)}
+        ${fact("Peer groups", d.counts.peer_groups)}
+        ${fact("Suggestions sent", d.counts.suggestions)}
+        ${fact("Strategy captured", d.strategy && d.strategy.completed_at ? d.strategy.completed_at.slice(0, 10) : "No")}
+      </div>
+
+      <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Members</b> <span class="caption">${d.users.length}</span></div>
+      <table class="data admin-table">
+        <thead><tr><th>Email</th><th>Name</th><th>Role</th><th class="num">Live sessions</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>${d.users.map(u => html`<tr key=${u.user_id}>
+          <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}</td>
+          <td>${u.display_name || "—"}</td>
+          <td>${u.role}</td>
+          <td class="num">${u.active_sessions}</td>
+          <td class="caption">${(u.created_at || "").slice(0, 10)}</td>
+          <td><${AdminUserActions} user=${u} onChanged=${load} /></td>
+        </tr>`)}</tbody>
+      </table>
+
+      <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Terms acceptances</b> <span class="caption">${d.terms.length} · the DPA evidence trail</span></div>
+      ${!d.terms.length ? html`<div class="caption">None recorded.</div>` :
+      html`<table class="data admin-table">
+        <thead><tr><th>Kind</th><th>Version</th><th>Accepted by</th><th>When</th></tr></thead>
+        <tbody>${d.terms.map((t, i) => html`<tr key=${i}>
+          <td><span class="admin-pill">${t.kind}</span></td>
+          <td>v${t.version}</td>
+          <td>${t.email || t.user_id}</td>
+          <td class="caption">${(t.accepted_at || "").slice(0, 16)}</td>
+        </tr>`)}</tbody>
+      </table>`}
+    </div>`;
+}
+
+/* Shared per-user support actions: force sign-out + reset link. */
+function AdminUserActions({ user, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const [link, setLink] = useState(null);
+  const forceOut = async () => {
+    if (!window.confirm("Sign " + (user.email || "this user") + " out of every device?")) return;
+    setBusy(true);
+    try {
+      const r = await api("/api/admin/users/" + user.user_id + "/logout", { method: "POST", body: {} });
+      toast(r.sessions_revoked + " session" + (r.sessions_revoked === 1 ? "" : "s") + " revoked.");
+      if (onChanged) onChanged();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  const resetLink = async () => {
+    setBusy(true);
+    try {
+      const r = await api("/api/admin/users/" + user.user_id + "/reset-link", { method: "POST", body: {} });
+      setLink(r.link);
+      toast("Reset link created — expires in " + r.expires_in_hours + " hours.");
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  const copy = () => { navigator.clipboard && navigator.clipboard.writeText(link); toast("Copied."); };
+  return html`
+    <div class="admin-actions" style=${{ flexWrap: "wrap" }}>
+      <button class="btn small" disabled=${busy} onClick=${forceOut}>Sign out everywhere</button>
+      ${link ? html`<button class="btn small primary" onClick=${copy}>Copy reset link</button>`
+             : html`<button class="btn small" disabled=${busy} onClick=${resetLink}>Reset link</button>`}
     </div>`;
 }
 
@@ -471,5 +578,230 @@ function AdminMetricEditor({ onDone, onCancel }) {
         <button class="btn primary" disabled=${busy} onClick=${save}>Save to backlog</button>
         <button class="btn" onClick=${onCancel}>Cancel</button>
       </div>
+    </div>`;
+}
+
+/* ---- module 5: user support (exact-email lookup — deliberately no browse:
+   the identity store's no-bulk contract means staff look a member up by the
+   address they already hold, or drill in via their organisation) ---- */
+function AdminUsersTab() {
+  const [email, setEmail] = useState("");
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const look = async () => {
+    if (!email.trim()) { toast("Type the member's email address.", "error"); return; }
+    setBusy(true);
+    try { setResult(await api("/api/admin/users/lookup?email=" + encodeURIComponent(email.trim()))); }
+    catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  const u = result && result.found ? result.user : null;
+  return html`
+    <div>
+      <div class="admin-toolbar">
+        <input class="ctl" style=${{ minWidth: "280px" }} placeholder="member@company.co.uk" value=${email}
+          onInput=${e => setEmail(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") look(); }}
+          aria-label="Email to look up" />
+        <button class="btn small primary" disabled=${busy} onClick=${look}>Look up</button>
+        <span class="caption">Exact email only — or drill in from the Organisations tab.</span>
+      </div>
+      ${result && !result.found && html`<${EmptyState} icon="users" title="No account with that email"
+        body="Check the spelling — the lookup is exact, not fuzzy." />`}
+      ${u && html`
+        <div class="card admin-card">
+          <div class="row spread">
+            <div><b>${u.email}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}</div>
+            <span class="admin-pill">${u.role || "—"}</span>
+          </div>
+          <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
+            ${u.display_name || "—"} · ${u.org_name || "—"} · joined ${(u.created_at || "").slice(0, 10)}
+          </div>
+          <div class="caption" style=${{ marginBottom: "var(--s2)" }}>
+            ${u.active_sessions} live session${u.active_sessions === 1 ? "" : "s"}
+            ${u.sessions.length ? " · newest " + (u.sessions[0].created_at || "").slice(0, 16) + " → expires " + (u.sessions[0].expires_at || "").slice(0, 16) : ""}
+          </div>
+          <${AdminUserActions} user=${u} onChanged=${look} />
+        </div>`}
+    </div>`;
+}
+
+/* ---- module 6: billing — the pulse-launch order ledger ---- */
+function AdminBillingTab() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => { api("/api/admin/orders").then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load orders" body=${err} />`;
+  if (!data) return adminSpinner;
+  const gbp = (p) => "£" + ((p || 0) / 100).toLocaleString("en-GB");
+  if (!data.orders.length) return html`<${EmptyState} icon="coins" title="No orders yet"
+    body="Self-service pulse launch fees will appear here once members start paying (or you confirm invoiced launches)." />`;
+  return html`
+    <div>
+      <div class="admin-toolbar">
+        <b>${gbp(data.total_paid_pence)} collected</b>
+        <span class="caption">${data.orders.length} order${data.orders.length === 1 ? "" : "s"} · Stripe ${data.payments_mode}</span>
+      </div>
+      <table class="data admin-table">
+        <thead><tr><th>Pulse</th><th>Organisation</th><th class="num">Amount</th><th>Status</th><th>Method</th><th>Created</th><th>Paid</th></tr></thead>
+        <tbody>${data.orders.map(o => html`<tr key=${o.order_id}>
+          <td><b>${o.pulse_name || o.pulse_id}</b></td>
+          <td>${o.org_name || "—"}</td>
+          <td class="num">${gbp(o.amount_pence)}</td>
+          <td><span class=${"admin-status admin-status-" + o.status}>${o.status}</span></td>
+          <td class="caption">${o.stripe_payment_intent === "staff-confirmed" ? "invoiced / manual" : (o.stripe_payment_intent ? "card" : "—")}</td>
+          <td class="caption">${(o.created_at || "").slice(0, 16)}</td>
+          <td class="caption">${(o.paid_at || "").slice(0, 16) || "—"}</td>
+        </tr>`)}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ---- module 7: compliance — terms acceptance evidence (org-named; emails
+   stay org-scoped in the org drill-down, per the identity no-bulk contract) ---- */
+function AdminComplianceTab() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => { api("/api/admin/terms").then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load acceptances" body=${err} />`;
+  if (!data) return adminSpinner;
+  return html`
+    <div>
+      <div class="admin-toolbar">
+        <b>${data.total} acceptance${data.total === 1 ? "" : "s"} on record</b>
+        <span class="caption">current versions: platform v${data.versions.platform} · data-contribution v${data.versions.data_contribution} · who accepted is in each org's drill-down</span>
+      </div>
+      <table class="data admin-table">
+        <thead><tr><th>Organisation</th><th>Kind</th><th>Version</th><th>Accepted</th></tr></thead>
+        <tbody>${data.acceptances.map((t, i) => html`<tr key=${i}>
+          <td><b>${t.org_name || t.org_id}</b></td>
+          <td><span class="admin-pill">${t.kind}</span></td>
+          <td>v${t.version}</td>
+          <td class="caption">${(t.accepted_at || "").slice(0, 16)}</td>
+        </tr>`)}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ---- module 8: ops — health, modes, config, and the sweep trigger ---- */
+function AdminOpsTab() {
+  const [h, setH] = useState(null);
+  const [cfg, setCfg] = useState(null);
+  const [err, setErr] = useState(null);
+  const [sweeping, setSweeping] = useState(false);
+  const load = () => {
+    api("/api/admin/health").then(setH).catch(e => setErr(e.message));
+    api("/api/admin/config").then(d => setCfg(d.config)).catch(() => setCfg([]));
+  };
+  useEffect(() => { load(); }, []);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load health" body=${err} />`;
+  if (!h || cfg === null) return adminSpinner;
+  const mb = (b) => b == null ? "—" : (b / (1024 * 1024)).toFixed(1) + " MB";
+  const up = (s) => s >= 86400 ? Math.floor(s / 86400) + "d " + Math.floor((s % 86400) / 3600) + "h"
+    : s >= 3600 ? Math.floor(s / 3600) + "h " + Math.floor((s % 3600) / 60) + "m" : Math.floor(s / 60) + "m";
+  const c = h.counts, m = h.modes;
+  const stat = (label, value, warn) => html`
+    <div class="card admin-card" style=${{ padding: "var(--s3)" }}>
+      <div class="caption">${label}</div>
+      <div style=${{ fontSize: "20px", fontWeight: 700, color: warn ? "var(--red, #b3261e)" : "inherit" }}>${value}</div>
+    </div>`;
+  const sweep = async (withDigest) => {
+    if (!window.confirm(withDigest
+      ? "Run the signal sweep AND send the daily+weekly email digests to every opted-in member?"
+      : "Run the cross-tenant signal sweep now? (No emails — recompute only.)")) return;
+    setSweeping(true);
+    try {
+      const r = await api("/api/notifications/run-sweep" + (withDigest ? "?digest=daily,weekly" : ""), { method: "POST", body: {} });
+      toast(r.orgs_swept + " orgs swept, " + r.events + " events" + (r.digests_sent != null ? ", " + r.digests_sent + " digests sent" : "") + ".");
+      load();
+    } catch (e) { toast(e.message, "error"); }
+    setSweeping(false);
+  };
+  return html`
+    <div>
+      <div class="admin-toolbar"><b>Platform health</b>
+        <span class="caption">up ${up(h.uptime_seconds)} · release ${h.release ? h.release.release_id : "—"}</span></div>
+      <div style=${{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "var(--s2)" }}>
+        ${stat("Organisations", c.orgs_total)}
+        ${stat("Members", c.users)}
+        ${stat("Live sessions", c.active_sessions)}
+        ${stat("Answer rows", c.answers_rows.toLocaleString("en-GB"))}
+        ${stat("Active metrics", c.questions_active)}
+        ${stat("New suggestions", (c.suggestions_by_status && c.suggestions_by_status.new) || 0)}
+        ${stat("Backlog queued", c.backlog_queued)}
+        ${stat("AI", m.ai_effective, m.ai_effective === "live")}
+        ${stat("Payments", m.payments, m.payments === "live")}
+        ${stat("Signal sweep", m.signal_sweep ? "on · " + String(m.sweep_hour_utc).padStart(2, "0") + "h UTC" : "off")}
+        ${stat("Email (SMTP)", m.smtp_configured ? "configured" : "console-logged")}
+        ${stat("lumi.db", mb(h.storage.lumi_db.db))}
+        ${stat("identity.db", mb(h.storage.identity_db.db))}
+        ${stat("Backups", h.storage.backups_total)}
+      </div>
+      ${m.base_url_is_localhost && html`<div class="caption" style=${{ marginTop: "var(--s2)", color: "var(--red, #b3261e)" }}>
+        ⚠ LUMI_BASE_URL is ${m.base_url} — emailed invite/reset/share links will break for real recipients. Set it before go-live.</div>`}
+
+      <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Signal sweep</b>
+        <span class="caption">recomputes change events for every org — the nightly job, on demand</span></div>
+      <div class="admin-actions">
+        <button class="btn small" disabled=${sweeping} onClick=${() => sweep(false)}>Run sweep now</button>
+        <button class="btn small" disabled=${sweeping} onClick=${() => sweep(true)}>Run sweep + send digests</button>
+      </div>
+
+      <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Configuration</b>
+        <span class="caption">effective environment · secrets shown as set/unset only</span></div>
+      <table class="data admin-table">
+        <thead><tr><th>Variable</th><th>Value</th><th>What it does</th></tr></thead>
+        <tbody>${cfg.map(v => html`<tr key=${v.name}>
+          <td><code class="caption">${v.name}</code></td>
+          <td>${!v.set ? html`<span class="caption">unset</span>`
+            : v.kind === "secret" ? html`<span class="admin-pill">set · hidden</span>`
+            : html`<b>${v.value}</b>`}</td>
+          <td class="caption">${v.description}</td>
+        </tr>`)}</tbody>
+      </table>
+
+      ${h.storage.backups.length ? html`
+        <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Latest backups</b></div>
+        <table class="data admin-table">
+          <thead><tr><th>File</th><th class="num">Size</th><th>Modified</th></tr></thead>
+          <tbody>${h.storage.backups.map(b => html`<tr key=${b.file}>
+            <td><code class="caption">${b.file}</code></td>
+            <td class="num">${mb(b.bytes)}</td>
+            <td class="caption">${b.modified}</td>
+          </tr>`)}</tbody>
+        </table>` : ""}
+    </div>`;
+}
+
+/* ---- module 9: the audit trail ---- */
+function AdminAuditTab() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => { api("/api/admin/audit?limit=200").then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return html`<${EmptyState} icon="info" title="Couldn't load the audit trail" body=${err} />`;
+  if (!data) return adminSpinner;
+  if (!data.entries.length) return html`<${EmptyState} icon="clock" title="No staff actions recorded yet"
+    body="Every write you make through this console lands here — who, what, when." />`;
+  const detail = (e) => {
+    try {
+      const d = JSON.parse(e.detail_json || "null");
+      if (!d) return "";
+      return Object.entries(d).filter(([, v]) => v != null)
+        .map(([k, v]) => k + ": " + v).join(" · ");
+    } catch (x) { return ""; }
+  };
+  return html`
+    <div>
+      <div class="admin-toolbar"><b>${data.total} action${data.total === 1 ? "" : "s"} on record</b>
+        <span class="caption">showing the latest ${data.entries.length} · append-only</span></div>
+      <table class="data admin-table">
+        <thead><tr><th>When (UTC)</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+        <tbody>${data.entries.map(e => html`<tr key=${e.id}>
+          <td class="caption">${(e.created_at || "").slice(0, 16)}</td>
+          <td>${e.actor_email || e.actor_user_id}</td>
+          <td><span class="admin-pill">${e.action}</span></td>
+          <td class="caption">${e.target_kind ? e.target_kind + " · " + (e.target_id || "") : "—"}</td>
+          <td class="caption">${detail(e)}</td>
+        </tr>`)}</tbody>
+      </table>
     </div>`;
 }
