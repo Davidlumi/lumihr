@@ -13518,3 +13518,32 @@ into run_gates.sh (12 gates now; own fresh server, before the LAST-by-doctrine p
 orgs carry no answers so engine/pool gates are unaffected). Full suite run: 12/12 GREEN,
 identity_recon PASS (0 orphans after all dual-store flows), gate-safety-2 live-DB-untouched ✓,
 all ten console tabs error-free on live. Dev server restored by teardown.
+
+---
+
+## 2026-08-03 — PH-PROV-1 §1: the standing book hash is re-baselined, and no hash is recorded without its recipe again
+
+The step-5 close (225e1b7) recorded the answer book as `1485ada7cafa559d` / 89,321. The
+count was right; the hash is **irreproducible**: it appears in no per-table fingerprint of
+the reward store (42 tables) nor of either 2026-08-02 backup, in no whole-db hash of any of
+the three, and `git log -S` finds no generating code — only the prose entry itself.
+`migrate_step5_null.py` computes no hash over `answers` at all.
+
+**The book did not move.** Three independent files corroborate: live, `bak_pre_step5_20260802_174257`
+and `bak_pre_sessdel_20260802_111015` all fingerprint **`3c587eaa191d17a1` / 89,321** under
+the canonical recipe (`dbsnapshot.table_fingerprint`: sha256, PK-ordered rows, first 16 hex,
+table `answers`, reward store). Step 5 nulled columns in `orgs`/`users`/`invites` and never
+touched `answers` — pre- and post-step-5 fingerprints are identical, exactly as they should be.
+
+**New baseline: `3c587eaa191d17a1` / 89,321 rows**, recorded with its recipe in
+`data/book_baseline.json` — the single source of truth verifications now read. The `1485…`
+figure is superseded, not explained; its origin was most likely a transcription from an
+uncommitted one-off with its own recipe.
+
+**Standing rule (David's ruling, verbatim intent): no hash is recorded anywhere without its
+recipe.** An unreproducible integrity figure cannot function as a tripwire; it generates
+false alarms until it is ignored, which is worse than no hash at all.
+
+Also per §6.1: the "nine gitignored live-writing scripts" folklore figure is retired —
+`data/live_writer_census.md` now carries the dated, command-stamped census (10 files, 6 with
+SQL writes, 0 touching orgs/invites).

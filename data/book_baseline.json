@@ -1,0 +1,14 @@
+{
+  "_what": "The standing answer-book integrity baseline. THE single source of truth for the book fingerprint — verifications read this file, never a prose figure. No hash is recorded anywhere in this project without its recipe (PH-PROV-1 ruling addendum §1, 2026-08-03).",
+  "store": "reward (lumi.db, project root)",
+  "table": "answers",
+  "recipe": "server/dbsnapshot.py table_fingerprint: sha256 over all columns, rows ordered by primary key (org_id, snapshot_id, question_id, matrix_row_id), fields joined with \\x1f, rows terminated with \\x1e, NULL as \\x00; first 16 hex chars",
+  "rows": 89321,
+  "hash16": "3c587eaa191d17a1",
+  "recorded": "2026-08-03",
+  "supersedes": {
+    "hash16": "1485ada7cafa559d",
+    "recorded_in": "DECISIONS.md step-5 close (commit 225e1b7, 2026-08-02)",
+    "why": "irreproducible: appears in no per-table fingerprint (42 tables) nor whole-db hash of live or either 2026-08-02 backup; no generating code exists in history. The book itself did not move: live, bak_pre_step5 and bak_pre_sessdel all fingerprint 3c587eaa191d17a1 under the canonical recipe."
+  }
+}
