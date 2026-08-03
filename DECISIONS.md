@@ -13502,3 +13502,19 @@ access exactly — verified full-matrix on a throwaway (live session 401s the in
 deactivation, relogin 403s, org-wide revoke, both guards refuse, reactivate → login 200).
 Audit: user.deactivate/reactivate, org.deactivate/reactivate. Known cosmetic: heavy repeated
 logins during testing trip the 5-per-email limiter (in-process, restart clears). Cache v426.
+
+**Addendum 3, same day — QA of the back-office build.** One defect found and fixed in the
+pass: `org.create` was writing the org NAME into its reward-store audit row — org names are
+identity-side (Phase-1 split), so the detail now carries nothing and the org_id target
+resolves at read time like every other surface. New permanent gate `server/qa_backoffice.py`
+(57 checks, HTTP, throwaway-only — refuses without LUMI_DB, and aborts if its canary write
+doesn't land in LUMI_DB, catching the wrong-server/DB pairing): full anon/tenant 401/403
+matrix incl. the flag-without-allowlist pin, secret/PII hygiene (no secret values, no
+stripe ids, no pw_hash/session tokens, no emails or org names in stored audit detail),
+provisioning lifecycle (create → invite → revoke → accept), support actions, the complete
+soft-deactivate matrix (incl. accept-refused-while-deactivated and the held invite completing
+after reactivation), audit coverage of all nine action classes, and tenant regression. Wired
+into run_gates.sh (12 gates now; own fresh server, before the LAST-by-doctrine pair — probe
+orgs carry no answers so engine/pool gates are unaffected). Full suite run: 12/12 GREEN,
+identity_recon PASS (0 orphans after all dual-store flows), gate-safety-2 live-DB-untouched ✓,
+all ten console tabs error-free on live. Dev server restored by teardown.
