@@ -13248,3 +13248,46 @@ name-as-evidence ruling (`verify_diff7:39`, `diff7_reseed:127`); the twelve-file
 class; and the three softer seed items. And step 5's own DROP, after the soak.
 
 Step 5 is closed. Phase 1 is not.
+
+## THE CROSS-TENANT LEAK PROBE WAS VACUOUS FROM THE DAY IT WAS WRITTEN (3 August 2026)
+
+`qa_engine_audit`'s L3 check asserted `foreign_name in json.dumps(body)` against
+`/api/my-data` — an endpoint that resolves the org from `require_user(request)`, never
+reads the injected `org_id`, and returns `{"rows": [...]}` with no org name in it. The
+assertion searched for a string the endpoint **structurally cannot emit**.
+
+**Step 5 did not break it. Step 5 exposed it.** The reward-side name went NULL, the
+comparison crashed on `None`, and that crash is the only reason anyone looked at the line.
+
+**The measurement that condemned the obvious fix.** Three variants were run against a
+deliberately leaky build — `/api/my-data` patched to honour the injected `org_id`, serving
+389 of a foreign org's rows:
+
+| variant | | result |
+|---|---|---|
+| A | current, reward-side name (NULL) | `TypeError` on both builds |
+| B | same assertion, name resolved identity-side | **PASSES on the leaky build** |
+| C | assert returned rows are the caller's own | **FAILS on the leaky build** |
+
+Variant B was the first option the transmission proposed, and the one a reasonable reader
+would have taken: the column moved, so resolve it from where it moved to. It would have
+turned the gate green while a 389-row cross-tenant leak walked past it. The fix shipped is
+C, with B retained as a secondary guard for a future payload that does render a name.
+
+**What 11/11 means now.** The suite returning to 11/11 is **not a restoration**. The
+cross-tenant coverage did not exist before — the suite was 11/11 before step 5 with this
+check contributing nothing. For the first time that number includes a working leak check.
+
+**The bound on what it proves.** `not_ours` compares `(question_id, value)` pairs, so a
+leak returning foreign rows whose values all coincided with the caller's own would not be
+caught. In the induced test 265 of 389 rows differed and the probe fired comfortably, but
+the discriminator is **data-dependent, not structural**. A structural fix means the
+endpoint echoing the org it resolved, so the probe can assert identity rather than infer it
+from content — an `app.py` change and a different fix class. Recorded here, not built.
+
+**The general lesson.** A gate can be green because it passes, or green because it tests
+nothing, and **the two are indistinguishable from the outside**. This one sat green for its
+whole life on the property that matters most in a co-operative where competitors contribute
+data about each other. The only reliable way to tell the two apart is to make the gate fail
+on purpose — induce the defect it claims to catch, and confirm it catches it. That test
+should exist for every gate asserting a safety property, and does not.
