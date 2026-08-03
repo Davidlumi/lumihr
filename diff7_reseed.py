@@ -25,6 +25,7 @@ sys.path.insert(0, ".")
 sys.path.insert(0, "server")
 import reseed_engine as RE  # latent()
 from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
+from org_form import form, assert_vocabulary_current   # shared; no name fallback
 
 SEED_DATE = "2026-07-14"
 STAMP = "2026-07-14 22:30:00"
@@ -72,6 +73,7 @@ c.row_factory = sqlite3.Row
 cur = c.cursor()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 orgs = {r["org_id"]: dict(r) for r in cur.execute("SELECT * FROM orgs")}
+assert_vocabulary_current(c)   # bidirectional: fires on a value added OR removed
 # step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
 # working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
 resp = seed_cohort(c)
@@ -117,21 +119,6 @@ def parse_tgt(row):
 
 
 # ===================== F1 — legal-form flips =====================
-SHARE_OWN = {"Public Listed (PLC)", "Private (UK-owned)", "Private (Founder/Family)",
-             "Founder-led (Private)", "VC-backed (Private)", "PE-backed", "Subsidiary of Global Group"}
-NONSHARE_OWN = {"Public Sector Body", "Charity / Non-profit", "Mutual / Co-operative", "Partnership / LLP"}
-def form(o):
-    ot = (orgs[o].get("ownership_type") or "").strip()
-    if ot in SHARE_OWN:
-        return "share"
-    if ot in NONSHARE_OWN:
-        return "nonshare"
-    nm = orgs[o]["name"] or ""
-    if re.search(r"(plc|ltd|limited)\.?$", nm, re.I):
-        return "share"
-    if re.search(r"(LLP|council|nhs|trust|authority|commission|foundation|university|housing association|society|partnership)\b", nm, re.I):
-        return "nonshare"
-    return "unknown"
 
 F1 = {"REW264_INC_EMICSOP": "Not applicable (no share capital)",
       "REW264_INC_SHAREPLAN": "Not applicable (no shares)"}
@@ -146,7 +133,7 @@ for qid, na in F1.items():
     for o in resp:
         v = A.get((qid, o))
         if v == na:
-            f = form(o)
+            f = form(orgs[o])
             if f == "share":
                 set_change(qid, o, "Neither"); flip += 1
             elif f == "nonshare":

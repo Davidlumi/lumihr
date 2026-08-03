@@ -16,6 +16,7 @@ from collections import Counter
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "server"))
 from demo_org import demo_id   # P3b: demo org resolved identity-side, by org_id
 from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
+from org_form import form, assert_vocabulary_current   # shared; no name fallback
 
 DB = os.environ.get("LUMI_DB", "lumi.db")
 BAK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumi.db.bak_pre_diff7_20260714")
@@ -23,6 +24,7 @@ TOL = 0.03
 fails = []
 c = sqlite3.connect("file:%s?mode=ro" % DB, uri=True); c.row_factory = sqlite3.Row
 orgs = {r["org_id"]: dict(r) for r in c.execute("SELECT * FROM orgs")}
+assert_vocabulary_current(c)   # bidirectional: fires on a value added OR removed
 # step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
 # working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
 resp = seed_cohort(c)
@@ -31,21 +33,10 @@ for r in c.execute("SELECT question_id, org_id, value FROM answers WHERE snapsho
     A[(r["question_id"], r["org_id"])] = r["value"]
 TGT = {r["metric_id"]: r for r in csv.DictReader(open("lumi_seed_realism_fix_targets.csv"))}
 
-SHARE_OWN = {"Public Listed (PLC)", "Private (UK-owned)", "Private (Founder/Family)",
-             "Founder-led (Private)", "VC-backed (Private)", "PE-backed", "Subsidiary of Global Group"}
-NONSHARE_OWN = {"Public Sector Body", "Charity / Non-profit", "Mutual / Co-operative", "Partnership / LLP"}
-def form(o):
-    ot = (orgs[o].get("ownership_type") or "").strip()
-    if ot in SHARE_OWN: return "share"
-    if ot in NONSHARE_OWN: return "nonshare"
-    nm = orgs[o]["name"] or ""
-    if re.search(r"(plc|ltd|limited)\.?$", nm, re.I): return "share"
-    if re.search(r"(LLP|council|nhs|trust|authority|commission|foundation|university|housing association|society|partnership)\b", nm, re.I): return "nonshare"
-    return "unknown"
 
 # 1. zero plc/Ltd share-capital NAs
 for qid, na in (("REW264_INC_EMICSOP", "Not applicable (no share capital)"), ("REW264_INC_SHAREPLAN", "Not applicable (no shares)")):
-    bad = [o for o in resp if A.get((qid, o)) == na and form(o) == "share"]
+    bad = [o for o in resp if A.get((qid, o)) == na and form(orgs[o]) == "share"]
     print("F1 %s: share-form orgs still on NA = %d" % (qid, len(bad)))
     if bad: fails.append("F1-residual:" + qid)
 
