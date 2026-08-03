@@ -1,6 +1,6 @@
 #!/bin/zsh
-# run_gates.sh — one-command shipped-state QA (2026-07-14; 11 gates since Diff 12 —
-# qa_plausibility freeze gate wired, it was correct but dark).
+# run_gates.sh — one-command shipped-state QA (2026-07-14; 12 gates since 2026-08-03 —
+# qa_backoffice joined for the staff console; qa_plausibility freeze gate wired 07-14).
 # Encodes the gate-run doctrine so it stops being tribal knowledge:
 #   1. throwaway DB via the SQLite BACKUP API (never cp — WAL torn-copy)
 #   2. :8060 taken over by a PROVABLY fresh server on the throwaway
@@ -131,6 +131,12 @@ say "qa_plausibility"
 PLAUS_RC=$?
 tail -4 "$WORK/qa_plausibility.out"
 if [[ $PLAUS_RC -eq 0 ]]; then PASS+=(qa_plausibility); else FAIL+=("qa_plausibility (rc=$PLAUS_RC, see $WORK/qa_plausibility.out)"); fi
+
+# --- back office (2026-08-03): mutates console state (probe org/users, soft-
+#     deactivate cycles) — own fresh server, and BEFORE the LAST-by-doctrine pair
+#     so lifecycle/release gates still see their expected world. Probe orgs carry
+#     no answers, so engine/pool gates upstream are unaffected either way.
+start_server "$DB" srv_backoffice; run_gate qa_backoffice
 
 # --- LAST by doctrine ---
 run_gate qa_pulse
