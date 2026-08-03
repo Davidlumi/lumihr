@@ -74,10 +74,12 @@ def get_session_user(token):
         return None
     acct = get_conn().execute(
         "SELECT role, chart_prefs_json, preview_as_core, created_at, notify_prefs_json, "
-        "platform_admin, active_dashboard_id FROM users WHERE user_id=?",
+        "platform_admin, active_dashboard_id, disabled_at FROM users WHERE user_id=?",
         (ident["user_id"],)).fetchone()
     if acct is None:
         return None          # no reward-side account row: the same 401 the old join gave
+    if acct["disabled_at"]:
+        return None          # soft-deactivated: every session dies here, even a live one
     out = dict(acct)
     out.update(ident)
     return out

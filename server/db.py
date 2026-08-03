@@ -685,7 +685,13 @@ def init_schema(conn=None):
                 # (e.g. "industry::Technology, Software & Digital"); NULL → all-peers, the
                 # historical frame. Per-USER landing default is a client pref (_peer_default);
                 # this org-level one drives the emails, since the sweep is per-org.
-                "ALTER TABLE orgs ADD COLUMN default_cut TEXT"):
+                "ALTER TABLE orgs ADD COLUMN default_cut TEXT",
+                # Back-office soft-deactivate (2026-08-03): ACCESS gates, not data
+                # changes — a deactivated user/org cannot sign in or hold a session,
+                # but nothing is deleted and contributed answers stay in the pool
+                # (retire-never-delete; any data removal is a separate governed act).
+                "ALTER TABLE users ADD COLUMN disabled_at TEXT",
+                "ALTER TABLE orgs ADD COLUMN deactivated_at TEXT"):
         try:
             conn.execute(ddl)
         except sqlite3.OperationalError:

@@ -408,8 +408,12 @@ class SessionMiddleware(BaseHTTPMiddleware):
                     "SELECT org_id, source, tier_entitlement, classified, industry, subsector, "
                     "fte_band, hq_region, ownership_type, registry_json, submission_complete, "
                     "clock_start, insights_unlocked_at, reminders_json, unionised_level, "
-                    "hr_maturity, business_maturity, operating_model, default_cut "
+                    "hr_maturity, business_maturity, operating_model, default_cut, deactivated_at "
                     "FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
+                # soft-deactivated org: its members carry no request context at all —
+                # every authed route sees the same 401 a signed-out user gets.
+                if org is not None and org["deactivated_at"]:
+                    return await call_next(request)
                 request.state.user = dict(user)
                 request.state.org = dict(org) if org else None
         return await call_next(request)
@@ -866,6 +870,18 @@ async def login(request: Request):
     user = auth_lib.find_user(email)
     if not user or not auth_lib.verify_password(body.get("password") or "", user["pw_hash"]):
         raise HTTPException(401, "That email and password don't match our records.")
+    # soft-deactivate gates (back office, 2026-08-03): a correct password on a
+    # deactivated account gets the honest message, not the credentials one.
+    conn = get_conn()
+    acct = conn.execute("SELECT disabled_at, org_id FROM users WHERE user_id=?",
+                        (user["user_id"],)).fetchone()
+    if acct and acct["disabled_at"]:
+        raise HTTPException(403, "This account has been deactivated. Contact hello@lumihr.co.uk "
+                                 "if you think this is a mistake.")
+    if acct and conn.execute("SELECT 1 FROM orgs WHERE org_id=? AND deactivated_at IS NOT NULL",
+                             (acct["org_id"],)).fetchone():
+        raise HTTPException(403, "Your organisation's lumi membership is deactivated. "
+                                 "Contact hello@lumihr.co.uk to reactivate it.")
     token = auth_lib.create_session(user["user_id"])
     resp = JSONResponse({"ok": True})
     resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
@@ -1617,6 +1633,10 @@ async def accept_invite(request: Request):
     row = auth_lib.get_valid_invite(body.get("token") or "")
     if not row:
         raise HTTPException(400, "This invite link has expired or already been used.")
+    if get_conn().execute("SELECT 1 FROM orgs WHERE org_id=? AND deactivated_at IS NOT NULL",
+                          (row["org_id"],)).fetchone():
+        raise HTTPException(400, "This organisation's lumi membership is deactivated — "
+                                 "the invite can't be completed.")
     if len(body.get("password") or "") < 8:
         raise HTTPException(400, "Password must be at least 8 characters.")
     if body.get("accept_platform_terms") is not True:
@@ -5259,6 +5279,7 @@ async def admin_orgs(request: Request):
             # read-only unlock state (the stored stamp) — no side-effecting stamp
             # from a staff list view, unlike org_unlocked().
             "unlocked": bool(o["insights_unlocked_at"]) or bool(o["submission_complete"]),
+            "deactivated": bool(o["deactivated_at"]),
         })
     return {"orgs": out, "total": len(out)}
 
@@ -5860,8 +5881,11 @@ async def admin_org_invite(org_id: str, request: Request):
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Please enter a valid email address.")
     conn = get_conn()
-    if conn.execute("SELECT 1 FROM orgs WHERE org_id=?", (org_id,)).fetchone() is None:
+    orow = conn.execute("SELECT deactivated_at FROM orgs WHERE org_id=?", (org_id,)).fetchone()
+    if orow is None:
         raise HTTPException(404, "Unknown organisation")
+    if orow["deactivated_at"]:
+        raise HTTPException(400, "This organisation is deactivated — reactivate it before inviting.")
     if auth_lib.find_user(email):
         raise HTTPException(400, "That email already has a lumi account.")
     token = auth_lib.create_invite(org_id, email, role, staff["user_id"])
@@ -5897,6 +5921,84 @@ async def admin_invite_revoke(token: str, request: Request):
     return {"ok": True}
 
 
+# ----- soft-deactivate (ACCESS gates only — nothing is deleted, contributed ---
+# ----- answers stay in the pool; retire-never-delete) -------------------------
+@app.post("/api/admin/users/{user_id}/deactivate")
+async def admin_user_deactivate(user_id: str, request: Request):
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT platform_admin, disabled_at FROM users WHERE user_id=?",
+                       (user_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown user")
+    if row["platform_admin"]:
+        raise HTTPException(400, "Staff accounts can't be deactivated from the console.")
+    if row["disabled_at"]:
+        raise HTTPException(400, "That account is already deactivated.")
+    conn.execute("UPDATE users SET disabled_at=datetime('now') WHERE user_id=?", (user_id,))
+    conn.commit()
+    n = identity.delete_sessions_for_user(user_id)
+    _audit(staff, "user.deactivate", "user", user_id, {"sessions_revoked": n})
+    return {"ok": True, "sessions_revoked": n}
+
+
+@app.post("/api/admin/users/{user_id}/reactivate")
+async def admin_user_reactivate(user_id: str, request: Request):
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT disabled_at FROM users WHERE user_id=?", (user_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown user")
+    if not row["disabled_at"]:
+        raise HTTPException(400, "That account isn't deactivated.")
+    conn.execute("UPDATE users SET disabled_at=NULL WHERE user_id=?", (user_id,))
+    conn.commit()
+    _audit(staff, "user.reactivate", "user", user_id)
+    return {"ok": True}
+
+
+@app.post("/api/admin/orgs/{org_id}/deactivate")
+async def admin_org_deactivate(org_id: str, request: Request):
+    """Suspend a whole membership: every member loses access (existing sessions
+    revoked, new logins refused, pending invites can't complete). The org's rows
+    — profile, answers, history — are untouched, and reactivation restores
+    access exactly as it was."""
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT source, deactivated_at FROM orgs WHERE org_id=?",
+                       (org_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown organisation")
+    if row["source"] == "staff":
+        raise HTTPException(400, "The staff org can't be deactivated — that would lock "
+                                 "the console out of itself.")
+    if row["deactivated_at"]:
+        raise HTTPException(400, "That organisation is already deactivated.")
+    conn.execute("UPDATE orgs SET deactivated_at=datetime('now') WHERE org_id=?", (org_id,))
+    conn.commit()
+    members = [r["user_id"] for r in
+               conn.execute("SELECT user_id FROM users WHERE org_id=?", (org_id,))]
+    revoked = sum(identity.delete_sessions_for_user(u) for u in members)
+    _audit(staff, "org.deactivate", "org", org_id,
+           {"members": len(members), "sessions_revoked": revoked})
+    return {"ok": True, "members": len(members), "sessions_revoked": revoked}
+
+
+@app.post("/api/admin/orgs/{org_id}/reactivate")
+async def admin_org_reactivate(org_id: str, request: Request):
+    staff = require_platform_admin(request)
+    conn = get_conn()
+    row = conn.execute("SELECT deactivated_at FROM orgs WHERE org_id=?", (org_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Unknown organisation")
+    if not row["deactivated_at"]:
+        raise HTTPException(400, "That organisation isn't deactivated.")
+    conn.execute("UPDATE orgs SET deactivated_at=NULL WHERE org_id=?", (org_id,))
+    conn.commit()
+    _audit(staff, "org.reactivate", "org", org_id)
+    return {"ok": True}
+
+
 # ----- org drill-down --------------------------------------------------------
 @app.get("/api/admin/orgs/{org_id}")
 async def admin_org_detail(org_id: str, request: Request):
@@ -5908,7 +6010,7 @@ async def admin_org_detail(org_id: str, request: Request):
     o = dict(o)
     ident = identity.org_display(org_id)
     urows = conn.execute(
-        "SELECT user_id, role, platform_admin, created_at FROM users "
+        "SELECT user_id, role, platform_admin, created_at, disabled_at FROM users "
         "WHERE org_id=? ORDER BY created_at", (org_id,)).fetchall()
     # org-scoped identity batch (capped at 200 — the contract's org-sized shape).
     uids = [r["user_id"] for r in urows][:200]
@@ -5921,6 +6023,7 @@ async def admin_org_detail(org_id: str, request: Request):
             "platform_admin": bool(r["platform_admin"]), "created_at": r["created_at"],
             "email": d.get("email"), "display_name": d.get("display_name"),
             "active_sessions": len(identity.sessions_for_user(r["user_id"])),
+            "disabled_at": r["disabled_at"],
         })
     terms = []
     for t in conn.execute(
@@ -5956,6 +6059,7 @@ async def admin_org_detail(org_id: str, request: Request):
             "created_at": o["created_at"], "clock_start": o["clock_start"],
             "insights_unlocked_at": o["insights_unlocked_at"],
             "unlocked_release": o["unlocked_release"], "default_cut": o["default_cut"],
+            "deactivated_at": o["deactivated_at"],
         },
         "users": users, "terms": terms, "counts": counts,
         "strategy": dict(strat) if strat else None,
@@ -5977,7 +6081,7 @@ async def admin_user_lookup(request: Request):
         return {"found": False}
     conn = get_conn()
     acct = conn.execute(
-        "SELECT role, platform_admin, created_at FROM users WHERE user_id=?",
+        "SELECT role, platform_admin, created_at, disabled_at FROM users WHERE user_id=?",
         (ident["user_id"],)).fetchone()
     org_ident = identity.org_display(ident["org_id"])
     sessions = identity.sessions_for_user(ident["user_id"])
@@ -5988,6 +6092,7 @@ async def admin_user_lookup(request: Request):
         "role": acct["role"] if acct else None,
         "platform_admin": bool(acct["platform_admin"]) if acct else False,
         "created_at": acct["created_at"] if acct else None,
+        "disabled_at": acct["disabled_at"] if acct else None,
         "active_sessions": len(sessions),
         "sessions": sessions,      # created/expires only — tokens never leave identity.py
     }}
