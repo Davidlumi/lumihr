@@ -16,7 +16,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import app                       # noqa: E402
 import positions as pos          # noqa: E402
-from db import get_conn          # noqa: E402
+import re
+from db import get_conn
+import identity   # noqa: E402  (step 5: org names live identity-side, D6)          # noqa: E402
 
 CFG = pos.market_position_config()
 METRICS = CFG["metrics"]
@@ -65,14 +67,25 @@ def feeds(org, cut):
     return legacy, wired, items, prac
 
 
-def org_by_name(conn, n):
-    r = conn.execute("SELECT * FROM orgs WHERE name=?", (n,)).fetchone()
+def org_by_name(conn, name):
+    """The org row, resolved by NAME. Step 5 emptied orgs.name reward-side, so the
+    name is resolved identity-side (D6) via its normalized form and the reward row is
+    then fetched by org_id. Returns None only when the org genuinely does not exist."""
+    ident = identity.org_lookup_by_normalized(re.sub(r"[^a-z0-9]", "", name.lower()))
+    if ident is None:
+        return None
+    r = conn.execute("SELECT * FROM orgs WHERE org_id=?", (ident["org_id"],)).fetchone()
     return dict(r) if r else None
 
 
 def main():
     conn = get_conn()
     th = org_by_name(conn, "Thornbridge Retail Group plc")
+    if th is None:
+        print("REFUSING: could not resolve 'Thornbridge Retail Group plc'.")
+        print("  Without it there is nothing to attribute; a None here previously")
+        print("  surfaced as a TypeError inside app.build_items.")
+        return 2
     cut = {"dim": "all", "value": None}
     legacy, wired, items, prac = feeds(th, cut)
 
@@ -133,4 +146,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

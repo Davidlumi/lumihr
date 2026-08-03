@@ -16,7 +16,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import app                       # noqa: E402  (defines the engine helpers + constants)
 import positions as pos          # noqa: E402
-from db import get_conn          # noqa: E402
+import re
+from db import get_conn
+import identity   # noqa: E402  (step 5: org names live identity-side, D6)          # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,7 +28,13 @@ MP_CONFIG = None if os.environ.get("MP_LEGACY") else pos.market_position_config(
 
 
 def org_by_name(conn, name):
-    r = conn.execute("SELECT * FROM orgs WHERE name=?", (name,)).fetchone()
+    """The org row, resolved by NAME. Step 5 emptied orgs.name reward-side, so the
+    name is resolved identity-side (D6) via its normalized form and the reward row is
+    then fetched by org_id. Returns None only when the org genuinely does not exist."""
+    ident = identity.org_lookup_by_normalized(re.sub(r"[^a-z0-9]", "", name.lower()))
+    if ident is None:
+        return None
+    r = conn.execute("SELECT * FROM orgs WHERE org_id=?", (ident["org_id"],)).fetchone()
     return dict(r) if r else None
 
 
@@ -78,10 +86,20 @@ def main():
         ("Alderstead(Health,250-999)", al, {"dim": "all", "value": None}, "All"),
         ("Alderstead(Health,250-999)", al, {"dim": "industry", "value": "Healthcare & Life Sciences"}, "Healthcare-thin"),
     ]
+    # A baseline that silently drops its cases is worse than one that fails: it exits 0,
+    # writes valid JSON, and mp_compare.py then renders a well-formed
+    # MARKET_POSITION_WIRING_DIFF.md with no cases in it, which reads as "nothing
+    # changed" rather than "nothing was measured". Refuse instead.
+    missing = sorted({label for label, org, _, _ in cases if org is None})
+    if missing:
+        print("REFUSING: %d of %d baseline case(s) could not resolve their org: %s"
+              % (sum(1 for _, o, _, _ in cases if o is None), len(cases), ", ".join(missing)))
+        print("  Nothing written — an empty snapshot would be indistinguishable from a")
+        print("  real result once mp_compare.py renders it.")
+        return 2
+
     snap = {}
     for label, org, cut, cutlabel in cases:
-        if org is None:
-            continue
         snap[label + " | " + cutlabel] = compute(org, cut)
 
     with open(os.path.join(ROOT, out_path), "w") as f:
@@ -100,4 +118,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
