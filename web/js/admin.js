@@ -108,8 +108,8 @@ function AdminOrgsTab() {
           <th class="num">Users</th><th>Profile</th><th>Submitted</th><th>Insights</th>
         </tr></thead>
         <tbody>
-          ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer" }} onClick=${() => setSelected(o.org_id)}>
-            <td><b>${o.name}</b></td>
+          ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer", opacity: o.deactivated ? 0.55 : 1 }} onClick=${() => setSelected(o.org_id)}>
+            <td><b>${o.name}</b>${o.deactivated ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</td>
             <td>${o.industry || "—"}</td>
             <td>${o.fte_band || "—"}</td>
             <td><span class="admin-pill">${o.source}</span></td>
@@ -134,10 +134,29 @@ function AdminOrgDetail({ orgId, onBack }) {
   if (!d) return adminSpinner;
   const o = d.org;
   const fact = (label, value) => html`<div><div class="caption">${label}</div><div><b>${value == null || value === "" ? "—" : value}</b></div></div>`;
+  const orgDeactivate = async () => {
+    const msg = o.deactivated_at
+      ? "Reactivate " + (o.name || "this organisation") + "? Members can sign in again immediately."
+      : "Deactivate " + (o.name || "this organisation") + "?\n\nEvery member is signed out and locked out until you reactivate. Nothing is deleted — their data and settings are untouched.";
+    if (!window.confirm(msg)) return;
+    try {
+      const verb = o.deactivated_at ? "reactivate" : "deactivate";
+      const r = await api("/api/admin/orgs/" + orgId + "/" + verb, { method: "POST", body: {} });
+      toast(o.deactivated_at ? "Reactivated." : "Deactivated — " + r.sessions_revoked + " session" + (r.sessions_revoked === 1 ? "" : "s") + " revoked.");
+      load();
+    } catch (e) { toast(e.message, "error"); }
+  };
   return html`
     <div>
       <button class="btn quiet" onClick=${onBack}>← All organisations</button>
-      <h2 class="section-title" style=${{ margin: "var(--s3) 0 var(--s1)" }}>${o.name || "(unnamed org)"}</h2>
+      <div class="row spread" style=${{ alignItems: "baseline" }}>
+        <h2 class="section-title" style=${{ margin: "var(--s3) 0 var(--s1)" }}>${o.name || "(unnamed org)"}
+          ${o.deactivated_at ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</h2>
+        ${o.source !== "staff" && html`<button class=${"btn small" + (o.deactivated_at ? " primary" : " quiet")} onClick=${orgDeactivate}>
+          ${o.deactivated_at ? "Reactivate organisation" : "Deactivate organisation"}</button>`}
+      </div>
+      ${o.deactivated_at && html`<div class="caption" style=${{ color: "var(--red, #b3261e)", marginBottom: "var(--s2)" }}>
+        Deactivated ${o.deactivated_at.slice(0, 16)} — members can't sign in and pending invites won't complete. Data is untouched.</div>`}
       <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
         <span class="admin-pill">${o.source}</span> · ${o.tier_entitlement} tier · created ${(o.created_at || "").slice(0, 10)}
       </div>
@@ -163,8 +182,8 @@ function AdminOrgDetail({ orgId, onBack }) {
       ${!d.users.length ? html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>No members yet — invite the founding Admin below.</div>` :
       html`<table class="data admin-table">
         <thead><tr><th>Email</th><th>Name</th><th>Role</th><th class="num">Live sessions</th><th>Joined</th><th>Actions</th></tr></thead>
-        <tbody>${d.users.map(u => html`<tr key=${u.user_id}>
-          <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}</td>
+        <tbody>${d.users.map(u => html`<tr key=${u.user_id} style=${{ opacity: u.disabled_at ? 0.55 : 1 }}>
+          <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</td>
           <td>${u.display_name || "—"}</td>
           <td>${u.role}</td>
           <td class="num">${u.active_sessions}</td>
@@ -270,11 +289,27 @@ function AdminUserActions({ user, onChanged }) {
     setBusy(false);
   };
   const copy = () => { navigator.clipboard && navigator.clipboard.writeText(link); toast("Copied."); };
+  const toggleActive = async () => {
+    const deactivating = !user.disabled_at;
+    if (deactivating && !window.confirm("Deactivate " + (user.email || "this account") + "?\n\nThey are signed out everywhere and can't sign in until you reactivate. Nothing is deleted.")) return;
+    setBusy(true);
+    try {
+      await api("/api/admin/users/" + user.user_id + "/" + (deactivating ? "deactivate" : "reactivate"), { method: "POST", body: {} });
+      toast(deactivating ? "Deactivated." : "Reactivated — they can sign in again.");
+      if (onChanged) onChanged();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  if (user.disabled_at) return html`
+    <div class="admin-actions" style=${{ flexWrap: "wrap" }}>
+      <button class="btn small primary" disabled=${busy} onClick=${toggleActive}>Reactivate</button>
+    </div>`;
   return html`
     <div class="admin-actions" style=${{ flexWrap: "wrap" }}>
       <button class="btn small" disabled=${busy} onClick=${forceOut}>Sign out everywhere</button>
       ${link ? html`<button class="btn small primary" onClick=${copy}>Copy reset link</button>`
              : html`<button class="btn small" disabled=${busy} onClick=${resetLink}>Reset link</button>`}
+      ${!user.platform_admin && html`<button class="btn small quiet" disabled=${busy} onClick=${toggleActive}>Deactivate</button>`}
     </div>`;
 }
 
@@ -699,7 +734,7 @@ function AdminUsersTab() {
       ${u && html`
         <div class="card admin-card">
           <div class="row spread">
-            <div><b>${u.email}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}</div>
+            <div><b>${u.email}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</div>
             <span class="admin-pill">${u.role || "—"}</span>
           </div>
           <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
