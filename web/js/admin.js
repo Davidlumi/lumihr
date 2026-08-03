@@ -58,10 +58,24 @@ function AdminOrgsTab() {
   const [err, setErr] = useState(null);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);   // org_id | null
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => { api("/api/admin/orgs").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load organisations" body=${err} />`;
   if (!data) return adminSpinner;
   if (selected) return html`<${AdminOrgDetail} orgId=${selected} onBack=${() => setSelected(null)} />`;
+  const create = async () => {
+    if (!newName.trim()) { toast("Give the organisation a name.", "error"); return; }
+    setBusy(true);
+    try {
+      const r = await api("/api/admin/orgs", { method: "POST", body: { name: newName.trim() } });
+      toast("Created — now invite its founding Admin.");
+      setCreating(false); setNewName("");
+      setSelected(r.org_id);
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
   const needle = q.trim().toLowerCase();
   const rows = data.orgs.filter(o => !needle
     || (o.name || "").toLowerCase().includes(needle)
@@ -69,10 +83,25 @@ function AdminOrgsTab() {
   return html`
     <div>
       <div class="admin-toolbar">
+        <button class="btn small primary" onClick=${() => setCreating(c => !c)}>＋ New organisation</button>
         <input class="ctl" placeholder="Filter by name or industry…" value=${q}
           onInput=${e => setQ(e.target.value)} aria-label="Filter organisations" />
         <span class="caption">${rows.length} of ${data.total} organisations · click a row for detail</span>
       </div>
+      ${creating && html`
+        <div class="card admin-card" style=${{ marginBottom: "var(--s3)" }}>
+          <label>Organisation name
+            <input class="ctl" value=${newName} onInput=${e => setNewName(e.target.value)}
+              onKeyDown=${e => { if (e.key === "Enter") create(); }}
+              placeholder="e.g. Meridian Foods Ltd" /></label>
+          <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
+            Creates a full-tier member organisation. No account or password is set here —
+            you invite the founding Admin from the org's page and they join themselves.</div>
+          <div class="admin-actions">
+            <button class="btn small primary" disabled=${busy} onClick=${create}>Create organisation</button>
+            <button class="btn small" onClick=${() => setCreating(false)}>Cancel</button>
+          </div>
+        </div>`}
       <table class="data admin-table">
         <thead><tr>
           <th>Organisation</th><th>Industry</th><th>Size</th><th>Source</th>
@@ -131,7 +160,8 @@ function AdminOrgDetail({ orgId, onBack }) {
       </div>
 
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Members</b> <span class="caption">${d.users.length}</span></div>
-      <table class="data admin-table">
+      ${!d.users.length ? html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>No members yet — invite the founding Admin below.</div>` :
+      html`<table class="data admin-table">
         <thead><tr><th>Email</th><th>Name</th><th>Role</th><th class="num">Live sessions</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody>${d.users.map(u => html`<tr key=${u.user_id}>
           <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}</td>
@@ -141,7 +171,8 @@ function AdminOrgDetail({ orgId, onBack }) {
           <td class="caption">${(u.created_at || "").slice(0, 10)}</td>
           <td><${AdminUserActions} user=${u} onChanged=${load} /></td>
         </tr>`)}</tbody>
-      </table>
+      </table>`}
+      <${AdminOrgInvitePanel} orgId=${orgId} invites=${d.invites || []} onChanged=${load} />
 
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Terms acceptances</b> <span class="caption">${d.terms.length} · the DPA evidence trail</span></div>
       ${!d.terms.length ? html`<div class="caption">None recorded.</div>` :
@@ -154,6 +185,64 @@ function AdminOrgDetail({ orgId, onBack }) {
           <td class="caption">${(t.accepted_at || "").slice(0, 16)}</td>
         </tr>`)}</tbody>
       </table>`}
+    </div>`;
+}
+
+/* Invite members into any org (staff may mint the founding Admin — the tenant
+   path stays promotion-only). The invitee sets their own password and accepts
+   the terms on join; the console only hands out the link. */
+function AdminOrgInvitePanel({ orgId, invites, onChanged }) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("admin");
+  const [busy, setBusy] = useState(false);
+  const [link, setLink] = useState(null);
+  const sendInvite = async () => {
+    if (!email.trim()) { toast("Enter the invitee's email address.", "error"); return; }
+    setBusy(true);
+    try {
+      const r = await api("/api/admin/orgs/" + orgId + "/invite", { method: "POST", body: { email: email.trim(), role } });
+      setLink(r.link);
+      toast("Invite created — expires in " + r.expires_days + " days. Emailed if SMTP is configured; copy the link to be sure.");
+      setEmail("");
+      onChanged();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  const revoke = async (token) => {
+    if (!window.confirm("Revoke this invite? The link stops working immediately.")) return;
+    try { await api("/api/admin/invites/" + token + "/revoke", { method: "POST", body: {} }); toast("Revoked."); onChanged(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+  const copy = (l) => { navigator.clipboard && navigator.clipboard.writeText(l); toast("Copied."); };
+  return html`
+    <div>
+      <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Invite a member</b></div>
+      <div class="admin-actions" style=${{ flexWrap: "wrap", alignItems: "center" }}>
+        <input class="ctl" style=${{ minWidth: "260px" }} placeholder="person@company.co.uk" value=${email}
+          onInput=${e => setEmail(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") sendInvite(); }}
+          aria-label="Invitee email" />
+        <select class="ctl" value=${role} onChange=${e => setRole(e.target.value)} aria-label="Role">
+          <option value="admin">Admin</option>
+          <option value="contributor">Contributor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <button class="btn small primary" disabled=${busy} onClick=${sendInvite}>Create invite</button>
+        ${link && html`<button class="btn small" onClick=${() => copy(link)}>Copy latest link</button>`}
+      </div>
+      ${invites.length ? html`
+        <div class="admin-toolbar" style=${{ marginTop: "var(--s3)" }}><b>Pending invites</b> <span class="caption">${invites.length}</span></div>
+        <table class="data admin-table">
+          <thead><tr><th>Email</th><th>Role</th><th>Expires</th><th>Actions</th></tr></thead>
+          <tbody>${invites.map(i => html`<tr key=${i.token}>
+            <td><b>${i.email || "—"}</b></td>
+            <td>${i.role}</td>
+            <td class="caption">${(i.expires_at || "").slice(0, 16)}</td>
+            <td><div class="admin-actions">
+              <button class="btn small" onClick=${() => copy(i.link)}>Copy link</button>
+              <button class="btn small quiet" onClick=${() => revoke(i.token)}>Revoke</button>
+            </div></td>
+          </tr>`)}</tbody>
+        </table>` : ""}
     </div>`;
 }
 
