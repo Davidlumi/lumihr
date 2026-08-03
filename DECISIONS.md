@@ -13472,3 +13472,17 @@ created/expires ONLY — tokens never leave identity.py), `delete_sessions_for_u
 (backup-API, :8071, logged, zero address-in-use): all endpoints, both 403 paths, force-logout
 killing a live session, and legacy-write audit rows. Zero browser console errors across all
 ten tabs. Cache v423 → v424. :8060 restarted on the new engine.
+
+**Addendum, same day — provisioning.** David: "there is no way to add orgs and users". True —
+orgs only existed via self-service signup, users only via tenant-admin invites. Added:
+`POST /api/admin/orgs` (staff-created org = the signup path minus the self-served first user:
+source='signup', full tier, duplicate names REFUSED never claimed, identity attachment
+shadowed); `POST /api/admin/orgs/{id}/invite` + `/api/admin/invites/{token}/revoke`; pending
+invites in the org drill-down with copy-link/revoke. ONE deliberate divergence from the tenant
+path: staff invites MAY carry role=admin — a new org needs its founding Admin, and the tenant
+promotion-only rule exists to stop a *tenant* admin minting one silently, not the platform
+operator. The console still never handles passwords: the invitee sets their own and accepts
+the platform terms on join (verified end-to-end on a throwaway: create → invite → accept →
+member + terms row appear; revoked links 404). Invitee emails stay OUT of the reward-store
+audit rows (the invite's identity half records them, org-scoped). Audit actions: org.create,
+org.invite, org.invite_revoke. Cache v425.
