@@ -13486,3 +13486,19 @@ the platform terms on join (verified end-to-end on a throwaway: create → invit
 member + terms row appear; revoked links 404). Invitee emails stay OUT of the reward-store
 audit rows (the invite's identity half records them, org-scoped). Audit actions: org.create,
 org.invite, org.invite_revoke. Cache v425.
+
+**Addendum 2, same day — soft-deactivate (David: "yes do this").** Users and orgs can now be
+deactivated from the console — ACCESS gates only, nothing deleted, nothing leaves the pool
+(retire-never-delete; removing a deactivated org's contributed answers from aggregates is a
+SEPARATE governed decision, deliberately not taken here — same reasoning as a lapsed member).
+Mechanics: `users.disabled_at` / `orgs.deactivated_at` (migration-lite). Three choke points:
+get_session_user returns None for a disabled user (live sessions die instantly, belt over the
+session revoke); SessionMiddleware carries NO request context for a deactivated org's members
+(every authed route 401s); login gives the honest 403 ("account deactivated" / "organisation
+deactivated") instead of the credentials message. invite-accept and staff invites refuse
+deactivated orgs. Guards: the staff org can't be deactivated (would lock the console out of
+itself); platform_admin accounts can't be deactivated from the console. Reactivation restores
+access exactly — verified full-matrix on a throwaway (live session 401s the instant of
+deactivation, relogin 403s, org-wide revoke, both guards refuse, reactivate → login 200).
+Audit: user.deactivate/reactivate, org.deactivate/reactivate. Known cosmetic: heavy repeated
+logins during testing trip the 5-per-email limiter (in-process, restart clears). Cache v426.
