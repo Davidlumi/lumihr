@@ -13365,3 +13365,63 @@ A real identity-side login on **3 August at 09:54:12** authenticated a user whos
 reward-side `email` and `pw_hash` are both NULL. The auth path is proven against the
 migrated store by real traffic, not by rehearsal. Signup, invite acceptance and password
 reset remain outstanding, so criterion 5 stays open.
+
+## A CORRECTION, AND THE MECHANISM THAT PRODUCED IT (3 August 2026)
+
+**1. The false figure.** `DECISIONS.md:13349` states that **68 orgs** fall through `form()`'s
+fallback on *unrecognised* `ownership_type` values, naming `Public Listed (PLC)` 34,
+`Private (UK-owned)` 33, `Private (Founder/Family)` 1.
+
+Measured live: **unrecognised values, ZERO.** All three of those names are, and always were,
+members of `SHARE_OWN` — `git log -L` shows the set was created in `f4c7cbf` with exactly its
+seven values and never changed. The real affected population is **63 orgs whose
+`ownership_type` is ABSENT**, not unrecognised — exactly the `classified=0` set, 63/63 in both
+directions. Different cause, different number, different fix. The line is wrong; this entry
+corrects it forward rather than amending pushed history, on the `app.py:5215` precedent from
+step 5's close.
+
+**2. What rested on it.** The vocabulary ruling at P4's close — *"fix the vocabulary"* — had
+nothing to act on: the vocabulary was not stale. A later fix transmission then carried a
+**194/223** disagreement figure, an importable **`META_OWNERSHIP`** constant, a **58/7**
+target, and a claim that `verify_diff7` sits behind a `:95` crash. None survived contact with
+the code:
+
+- `META_OWNERSHIP` does not exist — **0 hits repo-wide**, and `seed_release_2026_3.py:107` is
+  an industry check about `tech_sector`. There is no canonical constant to key off; that is
+  itself the finding, and it is why `org_form.py` hardcodes with a bidirectional assertion.
+- the `:95` crash belongs to **`verify.py`**, a different file. `verify_diff7`'s `form()` runs
+  at `:48`, prints at `:49`, exits 0 — the fix is live there, not dormant.
+- the measured disagreement is **13 of 137 opinions, 9%** — the inverse of the 87% claimed.
+- `58/7` was unreachable by construction: it requires the names, which are NULL under the soak.
+
+The fix that shipped at `617a22f` was built on measurement instead, and its numbers were
+**stated before the rehearsal so the run was a check rather than a discovery**. All four
+reproduced. One expectation was corrected in the process and is recorded as measured: **52
+orgs change value, 63 are affected** — the other 11 already returned `"unknown"` because the
+regex had no opinion on their names.
+
+**3. The mechanism, and this is the part worth guarding against.** The 68 came from an
+investigation that had itself been **voided at its own ECHO**. Its premises did not hold, it
+stopped, and its findings should have stopped with it. Instead they were summarised forward —
+into a ruling, then into the permanent record, then into a fix transmission whose acceptance
+criteria were **arithmetically impossible to satisfy**.
+
+**A voided investigation's figures must be quarantined, not summarised.** A wrong measurement
+is one error. A voided investigation's conclusions travelling onward is a *class* of error,
+because nothing downstream carries the void with it: the ruling did not know, the record did
+not know, and the fix transmission could not have known.
+
+The guard that caught it was refusing to build against acceptance criteria that could not be
+met — reporting the impossibility rather than producing numbers to match. That is the only
+point in the chain where the void resurfaced, and it resurfaced because the criteria were
+specific enough to be checked. Vaguer criteria would have let it through.
+
+**4. What `617a22f` actually does.** Its observable effect today is **zero**: patched and
+unpatched output are byte-identical, because the names are already NULL under the soak and the
+fallback was already returning `"unknown"` for all 63. It changes what the code **means**, not
+what it does — removing a heuristic wrong 9% of the time where it can be checked, and wrong in
+the direction that *writes* (8 of the 13 are `nonshare -> share`, which triggers
+`set_change()` in `diff7_reseed`), before anything makes it reachable again.
+
+Recorded so the commit is not later mischaracterised as either pointless or load-bearing. It
+is neither: it is a correctness change taken while it is free to take.
