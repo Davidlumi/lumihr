@@ -13621,3 +13621,44 @@ locates the row and its token hashes to the digest. Suite 12/12 green; qa_backof
 **80 checks, 0 failed, 0 skipped**. Suite-log sweep: gate outputs clean; the only full links
 anywhere are send_notification's console-logged EMAILS in the server log — the designed
 SMTP-less delivery path (delivery work remains D2), flagged for the 1e runbook, untouched here.
+
+---
+
+## 2026-08-03 — PH-LOG-1: credential-bearing server logs — contained, and recorded as an ACCEPTED, TIME-LIMITED exposure
+
+**What.** `send_notification` writes full invite and password-reset links into the server
+log (console-logged email). This is the DESIGNED delivery mechanism while SMTP is
+unconfigured — not a defect. Surfaced by the PH-PROV-1d census (4 links in
+`srv_backoffice.log`, all gate-manufactured test orgs).
+
+**Why it matters.** Any such link is a bearer credential, and provisioning invites carry
+`role='admin'` — a link in a log is an admin key to that organisation. Today every logged
+link belongs to a throwaway; the first REAL provisioning writes a live admin key to disk.
+
+**Why accepted rather than fixed.** The console log is currently the ONLY delivery path —
+removing the line removes delivery. Real email delivery is D2's work, not a bolt-on.
+
+**Survey findings (PH-LOG-1 §1).** No log file exists, is written, or has EVER been
+committed inside the git tree — history is clean at every scope (diff-filter=A empty;
+full-history link-pattern search empty). All logs live under mktemp dirs in /tmp (700) or
+the session scratchpad. Two gaps found and closed: log FILES were 644, and .gitignore had
+no log rule at all. **PROMINENT: `/Applications/Lumi Project` is Time-Machine-INCLUDED —
+the in-tree lumi.db.bak_* copies are in backup scope** (logs are not: they live in
+/private/tmp, which macOS's built-in exclusions cover — David to confirm no custom GUI
+rule pulls /tmp in). No Dropbox/iCloud/cron coverage found.
+
+**Compensating controls as of this diff.** (1) Outside-the-tree is the control:
+run_gates.sh REFUSES an in-tree workdir before touching anything; (2) umask 077 — every
+suite-written file (logs, gate .out, DB copies) lands 0600 in 0700 dirs; the seam-server
+log opens 0600 explicitly for standalone runs; (3) .gitignore *.log/*.out/nohup.out as
+defence in depth only; (4) no retention built (ruled out of this diff) — /tmp's periodic
+cleanup bounds lifetime in practice, recorded not relied upon.
+
+**CLOSE CONDITION.** This exposure is live until real email delivery (D2) lands and
+send_notification no longer writes link bodies to any log; it is reviewed at that point
+and not before.
+
+**Related.** PH-PROV-1d redacted bearer tokens from identity_recon and qa_backoffice
+output; this path was deliberately excluded from that diff as a different fix class.
+PH-PROV-1f will remove the provisioning-specific log line ahead of D2, since the API
+already returns that link directly. Register twin: docs/COMPLIANCE_FINDINGS.md CF-1.

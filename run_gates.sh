@@ -14,6 +14,18 @@ set -u
 ROOT="${0:A:h}"
 SRV="$ROOT/server"
 WORK="${1:-$(mktemp -d /tmp/lumi_gates.XXXXXX)}"
+# PH-LOG-1: server logs carry credential-bearing console emails (the SMTP-less
+# delivery path, accepted until D2) — so (a) every file this suite writes (logs,
+# gate .out, DB copies) lands 0600 via umask, and (b) a workdir inside the git
+# tree is refused outright: outside-the-tree is the control, .gitignore is only
+# defence in depth. Checked BEFORE anything is touched.
+umask 077
+case "${WORK:A}/" in
+  "${ROOT:A}"/*)
+    print "FATAL (PH-LOG-1): workdir '$WORK' resolves inside the git tree ($ROOT)."
+    print "Gate logs carry invite/reset links; they must never live in the repo."
+    exit 2;;
+esac
 mkdir -p "$WORK"
 DB="$WORK/lumi_qa.db"
 IDB="$WORK/identity_qa.db"

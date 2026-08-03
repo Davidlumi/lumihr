@@ -44,3 +44,10 @@ identity.db
 identity.db-wal
 identity.db-shm
 identity.db.bak*
+
+# PH-LOG-1 (2026-08-03): defence in depth ONLY — the control is that no log is
+# ever written inside the tree (run_gates refuses an in-tree workdir). Server
+# logs carry console-emailed invite/reset links until D2 lands real delivery.
+*.log
+*.out
+nohup.out

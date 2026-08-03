@@ -265,10 +265,13 @@ import subprocess, time
 SRV_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE2 = "http://localhost:8061"
 seam_env = dict(os.environ, LUMI_QA_SEAMS="on", ANTHROPIC_API_KEY="", ANTHROPIC_AUTH_TOKEN="")
+# PH-LOG-1: server logs carry console-emailed links — 0600 explicitly, so a
+# standalone run (no run_gates umask) is just as contained.
+_seam_log = os.path.join(os.environ.get("TMPDIR", "/tmp"), "qa_backoffice_seam_8061.log")
 seam_proc = subprocess.Popen(
     [sys.executable, "-m", "uvicorn", "app:app", "--port", "8061"],
     cwd=SRV_DIR, env=seam_env,
-    stdout=open(os.path.join(os.environ.get("TMPDIR", "/tmp"), "qa_backoffice_seam_8061.log"), "w"),
+    stdout=os.fdopen(os.open(_seam_log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"),
     stderr=subprocess.STDOUT)
 try:
     up = False
