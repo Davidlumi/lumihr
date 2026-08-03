@@ -24,6 +24,7 @@ import uuid
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import db          # noqa: E402
 import auth        # noqa: E402
+import identity    # noqa: E402  (step 5: the staff org is resolved and attached identity-side, D6)
 
 STAFF_ORG_NAME = "Lumi HR (staff)"
 STAFF_EMAIL = "david@lumihr.co.uk"
@@ -37,7 +38,27 @@ def main():
     conn = db.get_conn()
 
     nn = re.sub(r"[^a-z0-9]", "", STAFF_ORG_NAME.lower())
-    org = conn.execute("SELECT * FROM orgs WHERE normalized_name=?", (nn,)).fetchone()
+    # step 5 emptied orgs.normalized_name, so resolving the staff org by that column
+    # missed every time and flipped the plan to CREATE — arming a duplicate on --write.
+    # Resolve identity-side (D6), then fetch the reward row by org_id.
+    ident = identity.org_lookup_by_normalized(nn)
+    org = None
+    if ident:
+        org = conn.execute("SELECT * FROM orgs WHERE org_id=?", (ident["org_id"],)).fetchone()
+
+    # Anti-duplicate guard. Identity is the resolver, but if it misses while a staff org
+    # exists reward-side the two stores disagree — and minting a second org would bury
+    # that disagreement under the very duplicate this script exists to avoid.
+    stray = [r["org_id"] for r in conn.execute("SELECT org_id FROM orgs WHERE source='staff'")]
+    if org is None and stray:
+        print("REFUSING: identity has no org with normalized_name=%r, but %d reward-side "
+              "org(s) with source='staff' exist:" % (nn, len(stray)))
+        for s in stray:
+            print("    %s" % s)
+        print("  The two stores disagree. Reconcile before running this script — creating")
+        print("  another staff org here would make the disagreement permanent.")
+        return 2
+
     user = auth.find_user(STAFF_EMAIL)
 
     print("Plan:")
@@ -56,7 +77,11 @@ def main():
             "INSERT INTO orgs(org_id, source, tier_entitlement, classified) "
             "VALUES (?,'staff','core',0)", (org_id,))   # step 5: name identity-side only
         conn.commit()
-        print("[applied] staff org created (%s)." % org_id)
+        # step 5: the name lives identity-side only. app.py:903 attaches it after its
+        # own stripped INSERT; this path was stripped without gaining the attachment,
+        # so a created org would have been a reward-only orphan (recon FATAL).
+        identity.register_org_identity(org_id, STAFF_ORG_NAME, nn)
+        print("[applied] staff org created (%s) and attached identity-side." % org_id)
     else:
         org_id = org["org_id"]
 
@@ -74,4 +99,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
