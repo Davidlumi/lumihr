@@ -41,6 +41,7 @@ check("register v6 carries all 45 BY ID as new-v4 (D1)",
 check("register text equality 45/45",
       all(rel[i]["text"].strip() == reg[i]["question"].strip() for i in rel))
 import positions as pos
+from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
 check("no strategy-config rows in the wave (14b inheritance)",
       not (set(rel) & pos.STRATEGY_CONFIG_IDS))
 cfg = json.load(open("data/market_position_config.json"))
@@ -53,8 +54,9 @@ wired_parents_ok = all(
 check("all 7 wired parents resolvable (live or intra-wave)", wired_parents_ok)
 
 # ---- the manifest (target distributions; the ruling instrument's execution record) ----
-orgs = [o for (o,) in c.execute("SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1")
-        if not c.execute("SELECT 1 FROM orgs WHERE org_id=? AND name='Tester'", (o,)).fetchone()]
+# step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
+# working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
+orgs = seed_cohort(c)
 prof = {}
 for p in ("org_profiles.json", "org_profiles_inferred.json"):
     prof.update(json.load(open(p)))

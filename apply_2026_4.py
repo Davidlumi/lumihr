@@ -26,6 +26,7 @@ import reseed_engine as RE
 import seed_release_2026_4 as K
 
 import os
+from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
 # hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
 # __file__ (not cwd), so running from another directory cannot silently create a new DB.
 _LUMI_DB = os.environ.get("LUMI_DB") or os.path.join(
@@ -56,9 +57,9 @@ c.row_factory = sqlite3.Row
 cur = c.cursor()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
-tester = cur.execute("SELECT org_id FROM orgs WHERE name='Tester'").fetchone()
-tester = tester[0] if tester else None
-orgs = [o for (o,) in cur.execute("SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1").fetchall() if o != tester]
+# step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
+# working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
+orgs = seed_cohort(c)
 assert len(orgs) == 220, "cohort must be the 220 convention (D4): %d" % len(orgs)
 prof = {}
 for p in ("org_profiles.json", "org_profiles_inferred.json"):

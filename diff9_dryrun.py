@@ -10,6 +10,7 @@ from collections import defaultdict, Counter
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sqlite3
 import reseed_engine as RE
+from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
 
 # hardcoded-path class: honour LUMI_DB; default to the repo-root store resolved from
 # __file__ (not cwd), so running from another directory cannot silently create a new DB.
@@ -27,8 +28,9 @@ meta = json.load(open(META))
 prof = RE.load_profiles(PROFILES)
 c = sqlite3.connect("file:%s?mode=ro" % DB, uri=True); c.row_factory = sqlite3.Row
 orgs = {r["org_id"]: dict(r) for r in c.execute("SELECT * FROM orgs")}
-tester = next((o for o, r in orgs.items() if r["name"] == "Tester"), None)
-resp = [o for (o,) in c.execute("SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1") if o != tester]
+# step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
+# working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
+resp = seed_cohort(c)
 rewq = set(meta)
 
 # answers: {org: {qid: value}} for single-value reward cells

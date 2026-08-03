@@ -39,6 +39,7 @@ check("anchor register 54/54, two tiers 27/27",
           __import__("collections").Counter(a["status"] for a in anc.values()).values()) == [27, 27])
 check("zero live-DB collisions", not [i for i in rel if c.execute("SELECT 1 FROM questions WHERE id=?", (i,)).fetchone()])
 import positions as pos
+from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
 check("no strategy-config rows (14b)", not (set(rel) & pos.STRATEGY_CONFIG_IDS))
 cfg = json.load(open("data/market_position_config.json"))
 donor = cfg["metrics"]["REW26_WEL_MH_SUPPORT"]
@@ -54,8 +55,9 @@ check("SIPELEM na_handling=none by design, terminal option present",
 na7 = sorted(i for i, r in rel.items() if r["na_handling"] == "offer_na")
 check("exactly the ratified 7 offer_na rows", len(na7) == 7, na7)
 
-orgs = [o for (o,) in c.execute("SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1")
-        if not c.execute("SELECT 1 FROM orgs WHERE org_id=? AND name='Tester'", (o,)).fetchone()]
+# step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
+# working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
+orgs = seed_cohort(c)
 check("cohort 220 (D4)", len(orgs) == 220, len(orgs))
 
 # ---- manifest ----

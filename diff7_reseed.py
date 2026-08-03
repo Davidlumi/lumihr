@@ -24,6 +24,7 @@ from collections import Counter, defaultdict
 sys.path.insert(0, ".")
 sys.path.insert(0, "server")
 import reseed_engine as RE  # latent()
+from seed_cohort import seed_cohort   # the D4 cohort, defined by orgs.source
 
 SEED_DATE = "2026-07-14"
 STAMP = "2026-07-14 22:30:00"
@@ -71,8 +72,9 @@ c.row_factory = sqlite3.Row
 cur = c.cursor()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 orgs = {r["org_id"]: dict(r) for r in cur.execute("SELECT * FROM orgs")}
-tester = next((o for o, r in orgs.items() if r["name"] == "Tester"), None)
-resp = [o for (o,) in cur.execute("SELECT DISTINCT org_id FROM answers WHERE snapshot_id=1") if o != tester]
+# step 5 emptied orgs.name, so excluding the org NAMED 'Tester' silently stopped
+# working. The cohort is now defined positively by orgs.source — see seed_cohort.py.
+resp = seed_cohort(c)
 assert len(resp) == 220, len(resp)
 A = {}
 for r in cur.execute("SELECT question_id, org_id, value FROM answers WHERE snapshot_id=1 AND (matrix_row_id IS NULL OR matrix_row_id='')"):
