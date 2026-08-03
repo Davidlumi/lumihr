@@ -565,6 +565,22 @@ CREATE TABLE IF NOT EXISTS core_backlog (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Back-office audit trail (2026-08-03): every staff WRITE through /api/admin/*
+-- (and the cross-tenant sweep trigger) lands here — who did what to which
+-- record, when. Actor is a user_id only: emails stay identity-side (Phase-1
+-- split) and are resolved at read time through identity.user_display_batch.
+-- Append-only by convention; the console has no delete for it.
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_user_id TEXT NOT NULL,
+    action TEXT NOT NULL,              -- e.g. suggestion.update, metric.publish
+    target_kind TEXT,                  -- org | user | pulse | suggestion | metric | platform
+    target_id TEXT,
+    detail_json TEXT,                  -- small, non-PII context (statuses, fees, ids)
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_time ON admin_audit_log(created_at);
+
 -- Reward strategy capture (2026-06-16): org-level reward stance — the Plane B
 -- (philosophy) + Plane C (posture) dials that let the engines tell "below market"
 -- from "below market, on purpose". Plane A facts are NOT here — they live in the

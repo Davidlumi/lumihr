@@ -455,15 +455,28 @@ def require_editor(request):
     return user, org
 
 
+# The super-admin allowlist (2026-08-03, David's ruling: "the super admin will be
+# david@lumihr.co.uk only"). Belt-and-braces OVER the platform_admin flag: even if
+# a stray UPDATE ever flips the flag on another account, the gate still refuses it.
+# Deliberately an env override (LUMI_SUPER_ADMINS, comma-separated) rather than a
+# hard-coded literal, so adding staff later is a config decision, not a code edit.
+SUPER_ADMIN_EMAILS = frozenset(
+    e.strip().lower() for e in
+    os.environ.get("LUMI_SUPER_ADMINS", "david@lumihr.co.uk").split(",") if e.strip())
+
+
 def require_platform_admin(request):
     """lumi-staff tier (back office, D2). ABOVE the org roles: a cross-tenant
     privilege, so it deliberately returns NO org — every /api/admin/* route
     reads across tenants explicitly and must never scope to one org. The flag
     rides on request.state.user (get_session_user does SELECT u.*), so it is
-    checked on every request like any other session fact."""
+    checked on every request like any other session fact. Two conditions, both
+    required: the platform_admin flag AND membership of the pinned allowlist."""
     if request.state.user is None:
         raise HTTPException(401, "Not signed in")
     if not request.state.user.get("platform_admin"):
+        raise HTTPException(403, "Staff access only")
+    if (request.state.user.get("email") or "").lower() not in SUPER_ADMIN_EMAILS:
         raise HTTPException(403, "Staff access only")
     return request.state.user
 
@@ -2850,7 +2863,7 @@ async def trigger_sweep(request: Request):
     tenant write), so it carries no org scope. Pass ?digest=daily,weekly to ALSO
     send the email digest (real emails when LUMI_SMTP_HOST is set, else console-
     logged) — used to smoke-test the full pipeline at go-live."""
-    require_platform_admin(request)
+    user = require_platform_admin(request)
     conn = get_conn()
     swept, events = run_signal_sweep(conn, verbose=False)
     out = {"ok": True, "orgs_swept": swept, "events": events}
@@ -2861,6 +2874,8 @@ async def trigger_sweep(request: Request):
             out["digests_sent"] = notifications.run_email_digest(
                 conn, base_url=os.environ.get("LUMI_BASE_URL", ""), frequencies=freqs)
             out["digest_frequencies"] = list(freqs)
+    _audit(user, "platform.run_sweep", "platform", None,
+           {"orgs_swept": swept, "events": events, "digest": dig or None})
     return out
 
 
@@ -5205,6 +5220,25 @@ def _admin_slug_code(label):
     return s or "OPT"
 
 
+def _audit(user, action, target_kind=None, target_id=None, detail=None):
+    """Append one row to the back-office audit trail (admin_audit_log). Call it
+    AFTER the action's own commit, so a failed action never logs as done. Actor
+    is the user_id only — emails stay identity-side (Phase-1 split) and are
+    resolved at read time. Never raises: an audit failure must not fail the
+    staff action it describes (it logs loudly instead, like identity.shadow)."""
+    try:
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO admin_audit_log(actor_user_id, action, target_kind, target_id, detail_json) "
+            "VALUES (?,?,?,?,?)",
+            (user["user_id"], action, target_kind,
+             str(target_id) if target_id is not None else None,
+             j(detail) if detail else None))
+        conn.commit()
+    except Exception as e:
+        print("[admin-audit] WRITE FAILED (%s): %s" % (action, e), flush=True)
+
+
 # ----- module 1: cross-tenant orgs overview (read-only) ----------------------
 @app.get("/api/admin/orgs")
 async def admin_orgs(request: Request):
@@ -5268,6 +5302,8 @@ async def admin_suggestion_update(sid: int, request: Request):
             row["metric_name"],
             (row["what_it_measures"] or "") + " — " + (row["why_it_matters"] or ""),
             "request-a-metric", "sugg-%d" % sid)
+    _audit(user, "suggestion.update", "suggestion", sid,
+           {"status": status, "promoted_to_backlog": promoted})
     return {"ok": True, "promoted_to_backlog": promoted}
 
 
@@ -5292,7 +5328,7 @@ async def admin_pulses(request: Request):
 
 @app.post("/api/admin/pulses")
 async def admin_pulse_create(request: Request):
-    require_platform_admin(request)
+    user = require_platform_admin(request)
     body = await _json(request)
     name = (body.get("name") or "").strip()
     desc = (body.get("description") or "").strip()
@@ -5311,38 +5347,40 @@ async def admin_pulse_create(request: Request):
         pid = pulses_mod.create_pulse(name, desc, qids, new_qs, body.get("closes_at") or None)
     except (ValueError, KeyError) as e:
         raise HTTPException(400, "Couldn't create the pulse: %s" % e)
+    _audit(user, "pulse.create", "pulse", pid, {"name": name})
     return {"ok": True, "pulse_id": pid}
 
 
-def _pulse_lifecycle(fn, pid):
+def _pulse_lifecycle(fn, pid, user, verb):
     try:
         fn(pid)
     except ValueError as e:
         raise HTTPException(400, str(e))
+    _audit(user, "pulse." + verb, "pulse", pid)
     return {"ok": True}
 
 
 @app.post("/api/admin/pulses/{pid}/open")
 async def admin_pulse_open(pid: str, request: Request):
-    require_platform_admin(request)
-    return _pulse_lifecycle(pulses_mod.open_pulse, pid)
+    user = require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.open_pulse, pid, user, "open")
 
 
 @app.post("/api/admin/pulses/{pid}/close")
 async def admin_pulse_close(pid: str, request: Request):
-    require_platform_admin(request)
-    return _pulse_lifecycle(pulses_mod.close_pulse, pid)
+    user = require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.close_pulse, pid, user, "close")
 
 
 @app.post("/api/admin/pulses/{pid}/archive")
 async def admin_pulse_archive(pid: str, request: Request):
-    require_platform_admin(request)
-    return _pulse_lifecycle(pulses_mod.archive_pulse, pid)
+    user = require_platform_admin(request)
+    return _pulse_lifecycle(pulses_mod.archive_pulse, pid, user, "archive")
 
 
 @app.post("/api/admin/pulses/{pid}/extend")
 async def admin_pulse_extend(pid: str, request: Request):
-    require_platform_admin(request)
+    user = require_platform_admin(request)
     body = await _json(request)
     new_close = (body.get("closes_at") or "").strip()
     if not new_close:
@@ -5351,6 +5389,7 @@ async def admin_pulse_extend(pid: str, request: Request):
         pulses_mod.extend_close(pid, new_close)
     except ValueError as e:
         raise HTTPException(400, str(e))
+    _audit(user, "pulse.extend", "pulse", pid, {"closes_at": new_close})
     return {"ok": True}
 
 
@@ -5610,6 +5649,8 @@ async def admin_pulse_review(pid: str, request: Request):
         pulses_mod.review_pulse(pid, decision, staff["user_id"], notes=notes, fee_pence=fee, conn=get_conn())
     except ValueError as e:
         raise HTTPException(400, str(e))
+    _audit(staff, "pulse.review", "pulse", pid,
+           {"decision": decision, "fee_pence": fee if decision == "approve" else None})
     return {"ok": True}
 
 
@@ -5631,6 +5672,9 @@ async def admin_pulse_confirm_launch(pid: str, request: Request):
     oid = (o["order_id"] if (o and o["status"] != "paid")
            else pulses_mod.create_launch_order(pid, p["owner_org_id"], fee, created_by=staff["user_id"], conn=conn))
     pulses_mod.mark_order_paid(oid, payment_intent="staff-confirmed", conn=conn)
+    # the £-consequential staff action: a fee waived/invoiced outside Stripe.
+    _audit(staff, "pulse.confirm_launch", "pulse", pid,
+           {"order_id": oid, "fee_pence": fee})
     return {"ok": True, "pulse_id": pid}
 
 
@@ -5723,7 +5767,7 @@ async def admin_backlog(request: Request):
 
 @app.post("/api/admin/metrics/draft")
 async def admin_metric_draft(request: Request):
-    require_platform_admin(request)
+    user = require_platform_admin(request)
     body = await _json(request)
     metric = _validate_metric_def(body)
     conn = get_conn()
@@ -5731,12 +5775,13 @@ async def admin_metric_draft(request: Request):
         "INSERT INTO core_backlog(title, detail, source, status) VALUES (?,?,'admin_console','queued')",
         (metric["text"][:120], j(metric)))
     conn.commit()
+    _audit(user, "metric.draft", "metric", cur.lastrowid, {"title": metric["text"][:120]})
     return {"ok": True, "backlog_id": cur.lastrowid}
 
 
 @app.post("/api/admin/metrics/{backlog_id}/publish")
 async def admin_metric_publish(backlog_id: int, request: Request):
-    require_platform_admin(request)
+    user = require_platform_admin(request)
     conn = get_conn()
     row = conn.execute("SELECT * FROM core_backlog WHERE id=?", (backlog_id,)).fetchone()
     if row is None:
@@ -5755,7 +5800,315 @@ async def admin_metric_publish(backlog_id: int, request: Request):
         raise HTTPException(400, "Couldn't publish: %s" % e)
     conn.execute("UPDATE core_backlog SET status='applied' WHERE id=?", (backlog_id,))
     conn.commit()
+    _audit(user, "metric.publish", "metric", qid, {"backlog_id": backlog_id})
     return {"ok": True, "question_id": qid}
+
+
+# ===== BACK OFFICE v2 (2026-08-03): org drill-down, user support, ops, ======
+# ===== billing, compliance, audit. Same doctrine: cross-tenant, no client ====
+# ===== org_id, definitions/metadata only — NEVER answer data. Identity reads =
+# ===== honour the no-bulk-export contract: emails surface only org-scoped ====
+# ===== (user_display_batch, capped) or single-key (exact-email lookup). ======
+
+_BOOT_TIME = datetime.utcnow()
+_PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+
+
+# ----- org drill-down --------------------------------------------------------
+@app.get("/api/admin/orgs/{org_id}")
+async def admin_org_detail(org_id: str, request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    o = conn.execute("SELECT * FROM orgs WHERE org_id=?", (org_id,)).fetchone()
+    if o is None:
+        raise HTTPException(404, "Unknown organisation")
+    o = dict(o)
+    ident = identity.org_display(org_id)
+    urows = conn.execute(
+        "SELECT user_id, role, platform_admin, created_at FROM users "
+        "WHERE org_id=? ORDER BY created_at", (org_id,)).fetchall()
+    # org-scoped identity batch (capped at 200 — the contract's org-sized shape).
+    uids = [r["user_id"] for r in urows][:200]
+    idents = identity.user_display_batch(uids)
+    users = []
+    for r in urows:
+        d = idents.get(r["user_id"], {})
+        users.append({
+            "user_id": r["user_id"], "role": r["role"],
+            "platform_admin": bool(r["platform_admin"]), "created_at": r["created_at"],
+            "email": d.get("email"), "display_name": d.get("display_name"),
+            "active_sessions": len(identity.sessions_for_user(r["user_id"])),
+        })
+    terms = []
+    for t in conn.execute(
+            "SELECT user_id, kind, version, accepted_at FROM terms_acceptances "
+            "WHERE org_id=? ORDER BY accepted_at DESC", (org_id,)):
+        d = dict(t)
+        d["email"] = idents.get(t["user_id"], {}).get("email")
+        terms.append(d)
+    counts = {
+        "answers": conn.execute("SELECT COUNT(*) FROM answers WHERE org_id=?", (org_id,)).fetchone()[0],
+        "drafts": conn.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (org_id,)).fetchone()[0],
+        "peer_groups": conn.execute("SELECT COUNT(*) FROM peer_groups WHERE org_id=?", (org_id,)).fetchone()[0],
+        "suggestions": conn.execute("SELECT COUNT(*) FROM metric_suggestions WHERE org_id=?", (org_id,)).fetchone()[0],
+    }
+    strat = conn.execute("SELECT completed_at, updated_at FROM org_strategy WHERE org_id=?",
+                         (org_id,)).fetchone()
+    return {
+        "org": {
+            "org_id": org_id, "name": ident["name"] if ident else None,
+            "source": o["source"], "tier_entitlement": o["tier_entitlement"],
+            "classified": bool(o["classified"]), "industry": o["industry"],
+            "subsector": o["subsector"], "fte_band": o["fte_band"],
+            "hq_region": o["hq_region"], "ownership_type": o["ownership_type"],
+            "submission_complete": bool(o["submission_complete"]),
+            "created_at": o["created_at"], "clock_start": o["clock_start"],
+            "insights_unlocked_at": o["insights_unlocked_at"],
+            "unlocked_release": o["unlocked_release"], "default_cut": o["default_cut"],
+        },
+        "users": users, "terms": terms, "counts": counts,
+        "strategy": dict(strat) if strat else None,
+    }
+
+
+# ----- user support (exact-email lookup + session/reset actions) -------------
+@app.get("/api/admin/users/lookup")
+async def admin_user_lookup(request: Request):
+    """Single-key identity read (S4.3): staff type the EXACT email — there is
+    deliberately no wildcard or platform-wide user list."""
+    require_platform_admin(request)
+    email = (request.query_params.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(400, "Provide an email address to look up.")
+    ident = identity.lookup_user_by_email(email)
+    if ident is None:
+        return {"found": False}
+    conn = get_conn()
+    acct = conn.execute(
+        "SELECT role, platform_admin, created_at FROM users WHERE user_id=?",
+        (ident["user_id"],)).fetchone()
+    org_ident = identity.org_display(ident["org_id"])
+    sessions = identity.sessions_for_user(ident["user_id"])
+    return {"found": True, "user": {
+        "user_id": ident["user_id"], "email": ident["email"],
+        "display_name": ident["display_name"], "org_id": ident["org_id"],
+        "org_name": org_ident["name"] if org_ident else None,
+        "role": acct["role"] if acct else None,
+        "platform_admin": bool(acct["platform_admin"]) if acct else False,
+        "created_at": acct["created_at"] if acct else None,
+        "active_sessions": len(sessions),
+        "sessions": sessions,      # created/expires only — tokens never leave identity.py
+    }}
+
+
+@app.post("/api/admin/users/{user_id}/logout")
+async def admin_user_logout(user_id: str, request: Request):
+    """Force sign-out everywhere — the support action for a lost laptop or a
+    suspected compromised session. Revokes identity-side sessions (the only
+    store get_session_user reads post-Seam-B)."""
+    staff = require_platform_admin(request)
+    if identity.user_display(user_id) is None:
+        raise HTTPException(404, "Unknown user")
+    n = identity.delete_sessions_for_user(user_id)
+    _audit(staff, "user.force_logout", "user", user_id, {"sessions_revoked": n})
+    return {"ok": True, "sessions_revoked": n}
+
+
+@app.post("/api/admin/users/{user_id}/reset-link")
+async def admin_user_reset_link(user_id: str, request: Request):
+    """Mint a password-reset link for a member (the manual sole-admin-recovery
+    process DECISIONS flagged). Uses the exact same token path as the member's
+    own 'forgot password' — 2-hour expiry, single use. The link is returned to
+    the console for staff to pass on out-of-band; the token itself is never
+    written to the audit trail."""
+    staff = require_platform_admin(request)
+    if identity.user_display(user_id) is None:
+        raise HTTPException(404, "Unknown user")
+    token = auth_lib.create_reset(user_id)
+    _audit(staff, "user.reset_link", "user", user_id)
+    return {"ok": True, "link": "%s/app#/reset/%s" % (BASE_URL, token),
+            "expires_in_hours": auth_lib.RESET_TTL_HOURS}
+
+
+# ----- ops: platform health + curated config ---------------------------------
+def _db_file_stats(path):
+    out = {}
+    for suffix, key in (("", "db"), ("-wal", "wal"), ("-shm", "shm")):
+        p = path + suffix
+        if os.path.exists(p):
+            out[key] = os.path.getsize(p)
+    return out
+
+
+@app.get("/api/admin/health")
+async def admin_health(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+
+    def one(sql, *args):
+        return conn.execute(sql, args).fetchone()[0]
+
+    def by(sql):
+        return {r[0] or "—": r[1] for r in conn.execute(sql)}
+
+    backups = []
+    try:
+        for f in os.listdir(_PROJECT_ROOT):
+            if f.startswith("lumi.db.bak_") and not f.endswith(("-wal", "-shm")):
+                p = os.path.join(_PROJECT_ROOT, f)
+                backups.append({"file": f, "bytes": os.path.getsize(p),
+                                "modified": datetime.utcfromtimestamp(
+                                    os.path.getmtime(p)).strftime("%Y-%m-%d %H:%M:%S")})
+        backups.sort(key=lambda b: b["modified"], reverse=True)
+    except OSError:
+        pass
+    rel = releases.current_release(conn)
+    _key = bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    _live = os.environ.get("LUMI_AI_LIVE", "").lower() == "on"
+    return {
+        "uptime_seconds": int((datetime.utcnow() - _BOOT_TIME).total_seconds()),
+        "server_started_utc": _BOOT_TIME.strftime("%Y-%m-%d %H:%M:%S"),
+        "counts": {
+            "orgs_total": one("SELECT COUNT(*) FROM orgs"),
+            "orgs_by_source": by("SELECT source, COUNT(*) FROM orgs GROUP BY source"),
+            "users": one("SELECT COUNT(*) FROM users"),
+            "active_sessions": identity.active_session_count(),
+            "answers_rows": one("SELECT COUNT(*) FROM answers"),
+            "questions_active": one("SELECT COUNT(*) FROM questions WHERE status='active'"),
+            "pulses_by_status": by("SELECT status, COUNT(*) FROM pulses GROUP BY status"),
+            "suggestions_by_status": by("SELECT status, COUNT(*) FROM metric_suggestions GROUP BY status"),
+            "backlog_queued": one("SELECT COUNT(*) FROM core_backlog WHERE status='queued'"),
+            "orders_by_status": by("SELECT status, COUNT(*) FROM pulse_launch_orders GROUP BY status"),
+            "terms_acceptances": one("SELECT COUNT(*) FROM terms_acceptances"),
+            "audit_rows": one("SELECT COUNT(*) FROM admin_audit_log"),
+        },
+        "storage": {
+            "lumi_db": _db_file_stats(os.path.join(_PROJECT_ROOT, "lumi.db")),
+            "identity_db": _db_file_stats(os.path.join(_PROJECT_ROOT, "identity.db")),
+            "backups": backups[:5], "backups_total": len(backups),
+        },
+        "modes": {
+            "payments": payments_mod.mode(),
+            "ai_master_gate": bool(AI_INSIGHTS_ENABLED),
+            "ai_live": _live, "ai_key_present": _key,
+            "ai_effective": "live" if (AI_INSIGHTS_ENABLED and _live and _key) else "deterministic",
+            "signal_sweep": os.environ.get("LUMI_SIGNAL_SWEEP", "").lower() == "on",
+            "sweep_hour_utc": int(os.environ.get("LUMI_SWEEP_HOUR", "7")) % 24,
+            "smtp_configured": bool(os.environ.get("LUMI_SMTP_HOST")),
+            "base_url": BASE_URL,
+            "base_url_is_localhost": ("localhost" in BASE_URL or "127.0.0.1" in BASE_URL),
+        },
+        "release": {"release_id": rel["release_id"], "name": rel["name"],
+                    "released_at": rel["released_at"]} if rel else None,
+    }
+
+
+# Curated config inventory — every operational switch, described, with secrets
+# reported as set/unset only (values never leave the server). This is the
+# console twin of the boot log: what IS the environment, not what could be.
+_CONFIG_INVENTORY = [
+    ("LUMI_BASE_URL", "value", "Public origin for emailed invite/reset/share links"),
+    ("LUMI_SUPER_ADMINS", "value", "Back-office allowlist (comma-separated emails)"),
+    ("LUMI_AI_INSIGHTS_ENABLED", "value", "AI master gate — all AI features off unless 'on'"),
+    ("LUMI_AI_LIVE", "value", "Paid Claude calls — deterministic drafts unless 'on'"),
+    ("ANTHROPIC_API_KEY", "secret", "Claude API key (server/.env.local)"),
+    ("ANTHROPIC_MODEL", "value", "Model override for AI features"),
+    ("LUMI_STRIPE_SECRET_KEY", "secret", "Stripe secret key — payments 'off' without it"),
+    ("LUMI_STRIPE_PUBLISHABLE_KEY", "secret", "Stripe publishable key"),
+    ("LUMI_STRIPE_WEBHOOK_SECRET", "secret", "Stripe webhook signing secret"),
+    ("LUMI_PULSE_LAUNCH_FEE_GBP", "value", "Default self-service pulse launch fee (£)"),
+    ("LUMI_SIGNAL_SWEEP", "value", "Nightly signal sweep + email digest scheduler"),
+    ("LUMI_SWEEP_HOUR", "value", "Sweep hour (UTC, default 7)"),
+    ("LUMI_SMTP_HOST", "value", "SMTP relay — emails console-logged when unset"),
+    ("LUMI_SMTP_PORT", "value", "SMTP port"),
+    ("LUMI_SMTP_USER", "value", "SMTP username"),
+    ("LUMI_SMTP_PASS", "secret", "SMTP password"),
+    ("LUMI_SMTP_FROM", "value", "From address on outbound email"),
+    ("LUMI_COMPLETION_BASIS", "value", "Unlock-gate basis (default: required)"),
+    ("LUMI_COMPLETION_THRESHOLD", "value", "Unlock-gate threshold (default 0.90)"),
+    ("LUMI_MARKET_BAND", "value", "Hero market-position band width"),
+    ("LUMI_ANALYST_RATE_PER_HOUR", "value", "Ask-lumi questions per org-hour cap"),
+    ("LUMI_ANALYST_MAX_QUESTION_CHARS", "value", "Ask-lumi question length cap"),
+    ("LUMI_AI_TIMEOUT_SECONDS", "value", "AI call timeout"),
+]
+
+
+@app.get("/api/admin/config")
+async def admin_config(request: Request):
+    require_platform_admin(request)
+    out = []
+    for name, kind, desc in _CONFIG_INVENTORY:
+        raw = os.environ.get(name)
+        out.append({
+            "name": name, "kind": kind, "description": desc,
+            "set": raw is not None and raw != "",
+            "value": (raw if kind == "value" else None) if raw else None,
+        })
+    return {"config": out}
+
+
+# ----- billing: the pulse-launch order ledger ---------------------------------
+@app.get("/api/admin/orders")
+async def admin_orders(request: Request):
+    require_platform_admin(request)
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT o.*, p.name AS pulse_name FROM pulse_launch_orders o "
+        "LEFT JOIN pulses p ON p.pulse_id=o.pulse_id "
+        "ORDER BY o.created_at DESC").fetchall()
+    names = identity.org_display_batch([r["org_id"] for r in rows])
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["org_name"] = names.get(r["org_id"])
+        d.pop("stripe_session_id", None)      # internal handles stay server-side
+        out.append(d)
+    total_paid = sum(r["amount_pence"] for r in rows if r["status"] == "paid")
+    return {"orders": out, "total_paid_pence": total_paid,
+            "payments_mode": payments_mod.mode()}
+
+
+# ----- compliance: the terms-acceptance evidence trail ------------------------
+@app.get("/api/admin/terms")
+async def admin_terms(request: Request):
+    """The DPA/consent evidence trail, org-named. Deliberately NO emails at this
+    platform-wide scope (the no-bulk contract) — the org drill-down shows who,
+    org-scoped. Latest 500."""
+    require_platform_admin(request)
+    conn = get_conn()
+    total = conn.execute("SELECT COUNT(*) FROM terms_acceptances").fetchone()[0]
+    rows = conn.execute(
+        "SELECT org_id, user_id, kind, version, accepted_at FROM terms_acceptances "
+        "ORDER BY accepted_at DESC, id DESC LIMIT 500").fetchall()
+    names = identity.org_display_batch([r["org_id"] for r in rows])
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["org_name"] = names.get(r["org_id"])
+        out.append(d)
+    return {"acceptances": out, "total": total,
+            "versions": {"platform": PLATFORM_TERMS_VERSION, "data_contribution": DATA_TERMS_VERSION}}
+
+
+# ----- the audit trail itself -------------------------------------------------
+@app.get("/api/admin/audit")
+async def admin_audit_list(request: Request):
+    require_platform_admin(request)
+    try:
+        limit = max(1, min(int(request.query_params.get("limit", "200")), 1000))
+    except ValueError:
+        limit = 200
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM admin_audit_log ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    total = conn.execute("SELECT COUNT(*) FROM admin_audit_log").fetchone()[0]
+    actors = identity.user_display_batch(list({r["actor_user_id"] for r in rows})[:200])
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["actor_email"] = actors.get(r["actor_user_id"], {}).get("email")
+        out.append(d)
+    return {"entries": out, "total": total}
 
 
 # =================================================================== SHARES ==

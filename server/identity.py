@@ -451,6 +451,44 @@ def delete_session(token):
         conn.close()
 
 
+def sessions_for_user(user_id):
+    """Session metadata for ONE user (single-key; S4.3-compliant) — created/expiry
+    times only, TOKENS ARE NEVER RETURNED (a returned token is a minted credential).
+    Staff console support surface: 'is this account signed in anywhere?'."""
+    conn = get_conn()
+    try:
+        return [dict(r) for r in conn.execute(
+            "SELECT created_at, expires_at FROM sessions "
+            "WHERE user_id=? AND expires_at > datetime('now') "
+            "ORDER BY created_at DESC", (user_id,))]
+    finally:
+        conn.close()
+
+
+def delete_sessions_for_user(user_id):
+    """Force sign-out everywhere for ONE user (single-key write; the same shape
+    remove_user_identity already uses). Returns the number of sessions revoked."""
+    conn = get_conn()
+    try:
+        cur = conn.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def active_session_count():
+    """Platform-wide COUNT of live sessions — a scalar, so it exports no identity
+    (the no-bulk contract bans rows of emails, not aggregate numbers). Staff
+    health surface only."""
+    conn = get_conn()
+    try:
+        return conn.execute(
+            "SELECT COUNT(*) FROM sessions WHERE expires_at > datetime('now')").fetchone()[0]
+    finally:
+        conn.close()
+
+
 def update_pw_hash(user_id, pw_hash):
     """Mirror of the reward-side password change — the ONE users mutation that
     survives the split (S4.2 amendment). Single-key, idempotent."""
