@@ -42,6 +42,7 @@ ROOT = os.path.join(HERE, "..")
 DB = os.environ.get("LUMI_DB", os.path.join(ROOT, "lumi.db"))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from demo_org import demo_row, demo_id   # P3: demo org resolved identity-side
+import identity                          # cross-tenant probe: name resolved identity-side (D6)
 BASE = "http://localhost:8060"
 FLOOR = 5  # the documented suppression rule, asserted independently
 
@@ -725,14 +726,30 @@ if small_crit:
 else:
     warn("L3", "no naturally below-floor industry+size combination found to live-test (engine floor still verified via stored-payload scan)")
 
-# cross-tenant: a foreign org's raw data must be unreachable
-foreign = conn.execute("SELECT org_id FROM orgs WHERE org_id != ? LIMIT 1", (demo_org,)).fetchone()["org_id"]
+# cross-tenant: a foreign org's raw data must be unreachable.
+# The probe used to assert only that the foreign org's NAME was absent from the body.
+# Step 5 emptied orgs.name reward-side, which crashed it — but restoring the name
+# identity-side would NOT restore the property: /api/my-data renders no org name at
+# all, so the name canary passes even when the endpoint returns the foreign org's
+# rows (measured: 389 of them, against a deliberately leaky build). The property is
+# asserted directly instead — every row returned must be one of the CALLER's own
+# answers. The name check is kept as a secondary guard, resolved identity-side, so a
+# future payload that does render a name is still covered.
+foreign = conn.execute("SELECT org_id FROM orgs WHERE org_id != ? AND org_id IN "
+                       "(SELECT org_id FROM answers WHERE snapshot_id=1) LIMIT 1",
+                       (demo_org,)).fetchone()["org_id"]
 st, body = api(op, "/api/my-data?org_id=%s" % foreign)
-foreign_name = conn.execute("SELECT name FROM orgs WHERE org_id=?", (foreign,)).fetchone()["name"]
-leak_names = foreign_name in json.dumps(body)
-print("cross-tenant /api/my-data?org_id=<foreign>: HTTP %s, foreign org name present: %s" % (st, leak_names))
-if leak_names:
-    fail("L3", "foreign org data visible via org_id injection")
+own_pairs = {(r["question_id"], r["value"] or "") for r in conn.execute(
+    "SELECT question_id, value FROM answers WHERE org_id=? AND snapshot_id=1", (demo_org,))}
+returned = [(r.get("question_id"), r.get("value") or "") for r in (body.get("rows") or [])]
+not_ours = [p for p in returned if p not in own_pairs]
+foreign_name = (identity.org_display(foreign) or {}).get("name")
+leak_names = bool(foreign_name) and foreign_name in json.dumps(body)
+print("cross-tenant /api/my-data?org_id=<foreign>: HTTP %s, rows=%d, not-the-caller's=%d, "
+      "foreign org name present: %s" % (st, len(returned), len(not_ours), leak_names))
+if not_ours or leak_names:
+    fail("L3", "foreign org data visible via org_id injection (%d row(s) not the caller's%s)"
+         % (len(not_ours), "; org name leaked" if leak_names else ""))
 
 # differential residual (documented, flagged to David): two big cuts differing by one org
 print("differential-attack residual: custom groups differing by one org can in principle be")
