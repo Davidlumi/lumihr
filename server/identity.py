@@ -390,6 +390,28 @@ def remove_user_identity(user_id, reassign_created_by_to):
         conn.close()
 
 
+def remove_org_identity(org_id):
+    """Identity-side teardown for a whole org and its users — the ORG-level counterpart
+    to remove_user_identity (which is deliberately user-level and leaves org_register
+    alone). Gate cleanups create throwaway probe orgs through /api/auth/register, which
+    writes both stores; deleting reward-side alone would leave identity-only orphans,
+    and identity_recon calls those FATAL. FK order, bare REFERENCES (E8): invites ->
+    password_resets -> sessions -> users -> org_register."""
+    conn = get_conn()
+    try:
+        uids = [r["user_id"] for r in
+                conn.execute("SELECT user_id FROM users WHERE org_id=?", (org_id,))]
+        conn.execute("DELETE FROM invites WHERE org_id=?", (org_id,))
+        for u in uids:
+            conn.execute("DELETE FROM password_resets WHERE user_id=?", (u,))
+            conn.execute("DELETE FROM sessions WHERE user_id=?", (u,))
+        conn.execute("DELETE FROM users WHERE org_id=?", (org_id,))
+        conn.execute("DELETE FROM org_register WHERE org_id=?", (org_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def create_session(token, user_id, expires_at):
     """Store a session identity-side (Seam-B). auth.py mints the token and expiry —
     policy stays there, identity.py stores what it is given, exactly as register_user
