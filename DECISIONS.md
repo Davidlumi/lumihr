@@ -14352,3 +14352,15 @@ stage in left-to-right with a per-row delay (transform scaleX keyframe — the N
 stays static, honouring the never-animate-the-number rule; reduced-motion disables).
 Chevrons slide on hover; Complete chips and icon chips get hairline definition. Zero
 console errors; suite 12 gates green (backoffice 97/0/0). Cache v433.
+
+**Your data, premium pass 4 — the world-class cut (2026-08-04d).** The hero gained its
+signature: a quiet gradient crest along the card's top edge, the ring's arc now ends in
+a white-cored end-cap dot at the exact percentage (fades in after the arc settles;
+suppressed at 100 — complete needs no needle), "Review & submit" became a pill button,
+and a hairline-separated micro-stat strip grounds the figure (areas complete · questions
+remaining · days left when the clock runs). The row list: inset dividers that never
+touch the card edge, hover = soft tint + a 3px blue accent spine, and every partial bar
+ends in a needle tip (white core, hue ring, suppressed at 100%). "By area" carries a
+right-aligned orientation count. All construction, no new hues; numbers still static
+from first paint; reduced-motion honoured throughout. Zero console errors; suite 12
+gates green (backoffice 97/0/0, focus 26). Cache v434.

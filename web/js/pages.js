@@ -3122,6 +3122,11 @@ function CompletionRing({ pct, size = 72, stroke = 8 }) {
     <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${"url(#" + gid + ")"} stroke-width=${stroke} stroke-linecap="round"
       stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"}
       style=${reduce ? null : { transition: "stroke-dashoffset 850ms cubic-bezier(0.33, 1, 0.68, 1)" }} />
+    ${target > 3 && target < 100 && html`<circle
+      cx=${cx + r * Math.cos((target / 100) * 2 * Math.PI - Math.PI / 2)}
+      cy=${cx + r * Math.sin((target / 100) * 2 * Math.PI - Math.PI / 2)}
+      r=${Math.max(2.5, stroke / 2 - 1.5)} fill="#fff" stroke=${col} stroke-width="2"
+      style=${{ opacity: armed ? 1 : 0, transition: reduce ? null : "opacity 300ms ease 800ms" }} />`}
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${Math.round(target)}%</text>
   </svg>`;
 }
@@ -3183,10 +3188,20 @@ window.YourDataPage = function ({ me }) {
               <${Icon} name="shield" size=${13} />
               <span><b>Access reduced.</b> Your benchmark is in teaser mode until you reach ${target}%. Complete your data to restore full access.</span>
             </div>`}
+          ${!fresh && html`
+            <div class="dh-stats">
+              <div class="dh-stat"><b>${(data.domains || []).filter(d => d.answered >= d.total).length}</b><span>of ${(data.domains || []).length} areas complete</span></div>
+              <div class="dh-stat"><b>${data.total - data.answered}</b><span>question${data.total - data.answered === 1 ? "" : "s"} remaining</span></div>
+              ${c.days_left != null && html`<div class="dh-stat"><b>${c.days_left}</b><span>days left</span></div>`}
+            </div>`}
         </div>
       </div>
 
-      <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>By area <span class="caption">${fresh ? "tap an area to start answering its questions" : "tap an area to view or complete its questions"}</span></h2>
+      <div class="row spread" style=${{ marginTop: "var(--s5)", alignItems: "baseline" }}>
+        <h2 class="section-title" style=${{ margin: 0 }}>By area <span class="caption">${fresh ? "tap an area to start answering its questions" : "tap an area to view or complete its questions"}</span></h2>
+        ${!fresh && html`<span class="caption" style=${{ fontVariantNumeric: "tabular-nums" }}>
+          ${(data.domains || []).filter(d => d.answered >= d.total).length} of ${(data.domains || []).length} areas complete</span>`}
+      </div>
       ${/* Redesigned 2026-08-04: the 8-domain world outgrew the ring-per-card
           grid (a 7-column rule left one orphan card, and eight donuts encode
           eight numbers in a lot of ink). Rows on ONE shared 0-100 scale make

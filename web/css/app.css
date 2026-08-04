@@ -1773,6 +1773,22 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-row-count b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .data-row-count .drc-den { color: var(--ink-faint); font-weight: 500;
   font-variant-numeric: tabular-nums; font-size: var(--fs-caption); }
+.dh-stats { display: flex; gap: var(--s5); margin-top: var(--s4); padding-top: var(--s3);
+  border-top: 1px solid color-mix(in srgb, var(--blue) 8%, var(--border)); flex-wrap: wrap; }
+.dh-stat b { font-size: var(--fs-subhead); font-weight: 700; font-variant-numeric: tabular-nums;
+  margin-right: 5px; }
+.dh-stat span { font-size: var(--fs-caption); color: var(--ink-faint); }
+.data-hero { position: relative; }
+.data-hero::before {          /* the signature line — a quiet gradient crest */
+  content: ""; position: absolute; top: 0; left: var(--s5); right: var(--s5); height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent, var(--blue) 25%, var(--blue-bright) 75%, transparent); }
+.data-review-link { display: inline-flex; align-items: center; gap: var(--s1);
+  padding: 5px var(--s3); border: 1px solid color-mix(in srgb, var(--blue) 26%, var(--border));
+  border-radius: 999px; font-weight: 600; font-size: var(--fs-label);
+  transition: background var(--ease), border-color var(--ease); }
+.data-review-link:hover { background: var(--blue-tint); border-color: var(--blue);
+  text-decoration: none; }
 .data-hero { display: flex; align-items: center; gap: var(--s5); padding: var(--s5);
   background: linear-gradient(120deg, var(--blue-tint) -10%, var(--surface) 45%); }
 @media (max-width: 560px) { .data-hero { flex-direction: column; align-items: flex-start; gap: var(--s4); } }
@@ -1797,12 +1813,16 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* Your data — domain rows (2026-08-04): one shared 0-100 scale, any domain
    count. Bars follow the mark specs: thin, rounded data-end, recessive track,
    single-hue blue for magnitude; green lives only on the Complete status chip. */
-.data-rows { padding: 0; overflow: hidden; }
-.data-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4);
-  cursor: pointer; border-top: 1px solid var(--border);
-  transition: background var(--ease); }
-.data-row:first-child { border-top: 0; }
-.data-row:hover, .data-row:focus-visible { background: color-mix(in srgb, var(--blue) 4%, var(--surface)); }
+.data-rows { padding: 0; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(32, 40, 76, .04), 0 6px 24px -18px rgba(32, 40, 76, .28); }
+.data-row { display: flex; align-items: center; gap: var(--s3); padding: 14px var(--s4);
+  cursor: pointer; position: relative;
+  transition: background var(--ease), box-shadow var(--ease); }
+.data-row + .data-row::before {   /* inset divider — never touches the card edge */
+  content: ""; position: absolute; top: 0; left: var(--s4); right: var(--s4); height: 1px;
+  background: var(--border); }
+.data-row:hover, .data-row:focus-visible { background: color-mix(in srgb, var(--blue) 4%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--blue-bright); }
 .data-row:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: -2px; }
 .data-row .cat-icon { flex: 0 0 auto; }
 .data-row-name { flex: 0 0 220px; font-weight: 650; font-size: var(--fs-label); }
@@ -1836,10 +1856,13 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-row .data-row-go { transition: transform var(--ease), color var(--ease); }
 .data-row .data-q-flag.ok { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--favourable) 24%, transparent); }
 .data-row .cat-icon { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 12%, transparent); }
-.data-bar-fill::after {           /* the leading-edge glow */
-  content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 14px;
-  border-radius: 999px;
-  background: radial-gradient(closest-side at 70% 50%, rgba(255, 255, 255, .35), transparent); }
+.data-bar-fill { color: var(--blue-bright); }   /* the tip inherits its ring hue */
+.data-bar-fill.done { color: var(--favourable); }
+.data-bar-fill::after {           /* the needle tip — white core, hue ring */
+  content: ""; position: absolute; top: 50%; right: 2px; transform: translateY(-50%);
+  width: 5px; height: 5px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1.5px currentColor, 0 0 6px rgba(255, 255, 255, .6); }
+.data-bar-fill[style*="width: 100%"]::after { display: none; }  /* complete needs no needle */
 .data-bar-fill.done {
   background: linear-gradient(90deg, var(--favourable) 0%,
     color-mix(in srgb, var(--favourable) 72%, #7FC29B) 100%);
