@@ -328,7 +328,7 @@ const TYPE_LABEL = { yes_no: "Yes / No", single_select: "Pick one", multi_select
 const fmtFee = (pence) => "£" + ((pence || 0) / 100).toLocaleString("en-GB");
 const LAUNCH_STEPS = [
   { key: "building", label: "Build" }, { key: "in_review", label: "lumi review" },
-  { key: "approved", label: "Pay" }, { key: "paid", label: "Live" },
+  { key: "approved", label: "Invoice" }, { key: "paid", label: "Live" },
 ];
 function launchStepIndex(ls) {
   return { building: 0, changes_requested: 0, in_review: 1, approved: 2, paid: 3 }[ls] || 0;
@@ -371,7 +371,7 @@ window.RunPulsePage = function ({ me }) {
     const ls = p.launch_status;
     const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "";
     const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
-      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "ready to pay"
+      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "awaiting invoice"
       : ls === "rejected" ? "declined" : "draft";
     return html`<span class="chip ${tone}">${label}</span>`;
   };
@@ -434,24 +434,9 @@ window.PulseBuilderPage = function ({ me, pid }) {
   const load = () => { if (!isNew) api("/api/org/pulses/" + pid).then(setDetail).catch(e => setErr(e.message)); };
   useEffect(() => {
     load();
-    if (isNew) return;
-    const h = window.location.hash;
-    if (h.indexOf("cancelled=1") >= 0) {
-      toast("Payment cancelled — your survey is still approved, you can try again.", "error");
-      nav("/run-a-pulse/" + pid);
-    } else if (h.indexOf("paid=1") >= 0) {
-      // DON'T trust the redirect — reconcile the Stripe session server-side so a
-      // delayed/unconfigured webhook can't leave a paid-but-never-live pulse
-      nav("/run-a-pulse/" + pid);   // strip the query first
-      toast("Confirming your payment…");
-      api("/api/org/pulses/" + pid + "/confirm-payment", { method: "POST", body: {} })
-        .then(r => {
-          if (r.state === "live") toast("Payment confirmed — your pulse is live to the community.", "success");
-          else toast("Payment received — we're finalising your launch; this page will update shortly.");
-          load();
-        })
-        .catch(() => { toast("We're confirming your payment — refresh in a moment."); load(); });
-    }
+    // PH-PAY-1: the ?paid=1 / ?cancelled=1 Stripe-redirect reconcile that lived
+    // here was removed with the card path — all payments are by invoice, and
+    // the launch opens when lumi confirms it.
   }, [pid]);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load this survey" body=${err} />`;
   if (!detail) return html`<${PageLoading} />`;
@@ -686,8 +671,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
   const pay = async () => {
     try {
       const r = await api("/api/org/pulses/" + pid + "/checkout", { method: "POST", body: {} });
-      if (r.mode === "stripe" && r.checkout_url) { window.location.href = r.checkout_url; return; }
-      toast(r.message || "Launch requested — a lumi admin will confirm it shortly.", "info");
+      toast(r.message || "Launch requested — lumi will invoice you and confirm shortly.", "info");
       onChange();
     } catch (e) { toast(e.message, "error"); }
   };
@@ -709,11 +693,11 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
     <div class="card pulse-launch" style=${{ marginTop: "var(--s3)" }}>
       <div class="pulse-empty-ico"><${Icon} name="check" size=${24} /></div>
       <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
-      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Pay the one-off launch fee and your survey opens to the whole community.</p>
+      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your survey opens to the whole community on confirmation.</p>
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
-      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · a VAT invoice and receipt are issued on payment</div>
-      <button class="btn primary" onClick=${pay}>${detail.payments_enabled ? "Pay & launch →" : "Request launch"}</button>
-      ${!detail.payments_enabled ? html`<p class="caption" style=${{ marginTop: "var(--s3)" }}>A lumi admin will confirm and open your launch once it's approved.</p>` : ""}
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced — a VAT invoice is issued</div>
+      <button class="btn primary" onClick=${pay}>Request launch</button>
+      <p class="caption" style=${{ marginTop: "var(--s3)" }}>lumi confirms and opens your launch once the invoice is settled.</p>
     </div>
     ${QList()}`;
   if (ls === "paid") return html`

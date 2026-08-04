@@ -532,9 +532,10 @@ CREATE TABLE IF NOT EXISTS pulse_responses (
     PRIMARY KEY (pulse_id, org_id, question_id, matrix_row_id)
 );
 
--- Self-service pulse launches (2026-06-22): an org Admin authors a pulse, it
--- goes through lumi staff review, then a paid Stripe checkout opens it to the
--- community. Ownership + review state + the launch fee ride on `pulses`
+-- Self-service pulse launches (2026-06-22; PH-PAY-1 2026-08-04: all payments
+-- by invoice — staff Confirm-launch settles the order and opens the pulse; the
+-- stripe_* columns below are inert ledger storage from the removed card path).
+-- Ownership + review state + the launch fee ride on `pulses`
 -- (owner_org_id, created_by, launch_status, review_*, launch_fee_pence); each
 -- checkout attempt is one row HERE — the billing/audit ledger. Payment ONLY
 -- gates the draft->open transition; it never touches the give-to-get report

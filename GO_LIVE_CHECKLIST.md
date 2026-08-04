@@ -89,12 +89,17 @@ gate, solicitor-signed) is preserved in full below the gates.
   rule pulls `/tmp` into backup scope.
 - [ ] **AI Insights go-live flip** — David's steps a–d + steps 5/6 in the preserved
   section below. *Unblocked by:* David executing them in production.
-- [ ] **Stripe TEST keys** into `server/.env.local` (owed since 2026-06-22,
-  DECISIONS:4076) — until then, staff "Confirm launch (no card)" is the paid-pulse path.
+- [x] **Stripe — RETIRED, not owed (PH-PAY-1, ruled all-payments-by-invoice).** The
+  keys were never delivered; the card path (checkout routes, webhook, client redirect)
+  is removed and `payments.py` is the invoice seam. Reinstating card is a deliberate
+  build against DECISIONS 2026-08-04 PH-PAY-1. **Commit: see PH-PAY-1 §A.**
 - [ ] **Solicitor bundle** (one visit): C2 above · AI-terms draft review
   (`lumi_AI_terms_DRAFT_for_solicitor.md` — AI-drafted text is never operative) ·
-  privacy-notice retention number · paid-launch billing/refund clause (2026-06-22) ·
-  cookie policy analytics description (last draft-flagged legal doc).
+  privacy-notice retention number · paid-launch billing/refund clause (2026-06-22,
+  now INVOICE-based per PH-PAY-1) · **non-payment/suspension gap (PH-PAY-1 §B.4): the
+  Data Contribution Terms and membership terms are silent on non-payment, suspension,
+  and what happens to contributed data in either state** · cookie policy analytics
+  description (last draft-flagged legal doc).
 
 ## Deferred post-launch (deliberately; the stopping rules hold)
 

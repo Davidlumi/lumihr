@@ -5491,9 +5491,10 @@ async def admin_pulse_report(pid: str, request: Request):
 
 # ============== SELF-SERVICE PULSE BUILDER + PAID LAUNCH (2026-06-22) =========
 # An org Admin authors a pulse (its own firewall-safe questions), submits it for
-# lumi review, and once approved pays a launch fee (Stripe) that opens it to the
-# whole community. Ownership + the review/billing gate live on pulses.* ; payment
-# ONLY gates draft->open and never touches give-to-get or the core firewall.
+# lumi review, and once approved is INVOICED the launch fee (PH-PAY-1: all
+# payments by invoice); staff Confirm-launch opens it to the whole community.
+# Ownership + the review/billing gate live on pulses.* ; payment ONLY gates
+# draft->open and never touches give-to-get or the core firewall.
 
 def _base_url():
     return os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
@@ -5635,9 +5636,13 @@ async def org_pulse_submit_review(pid: str, request: Request):
 
 @app.post("/api/org/pulses/{pid}/checkout")
 async def org_pulse_checkout(pid: str, request: Request):
-    """Approved -> pay. Records a launch order; when Stripe is configured returns
-    a Checkout Session URL. When it isn't, returns the order 'unconfigured' so a
-    lumi admin can confirm the launch (invoiced / pre-keys)."""
+    """Approved -> launch requested. ALL PAYMENTS BY INVOICE (David's ruling,
+    2026-08-04, PH-PAY-1): this records the launch ORDER — the invoice ledger
+    entry — and a platform admin confirms the launch once the invoice is
+    settled (the existing Confirm-launch path). The Stripe checkout, redirect
+    reconcile, and webhook that used to live here were removed under the same
+    ruling; card payment may return later, and payments.mode() is the seam it
+    would return through. Endpoint path kept for client compatibility."""
     user, org = require_admin(request)
     conn = get_conn()
     p = _owned_pulse(conn, pid, org)
@@ -5645,72 +5650,9 @@ async def org_pulse_checkout(pid: str, request: Request):
         raise HTTPException(400, "This pulse isn't approved for launch yet.")
     fee = p["launch_fee_pence"] or PULSE_LAUNCH_FEE_PENCE
     oid = pulses_mod.create_launch_order(pid, org["org_id"], fee, created_by=user["user_id"], conn=conn)
-    if not payments_mod.is_configured():
-        return {"ok": True, "mode": "unconfigured", "order_id": oid, "amount_pence": fee,
-                "message": "Card payments aren't switched on yet — a lumi admin can confirm this launch."}
-    base = _base_url()
-    try:
-        session_id, url = payments_mod.create_checkout_session(
-            amount_pence=fee, currency="gbp",
-            product_name="lumi pulse launch — %s" % p["name"],
-            success_url=base + "/app#/run-a-pulse/%s?paid=1" % pid,
-            cancel_url=base + "/app#/run-a-pulse/%s?cancelled=1" % pid,
-            client_reference_id=oid,
-            metadata={"order_id": oid, "pulse_id": pid, "org_id": org["org_id"]})
-    except Exception as e:                       # Stripe/network error -> surface, change nothing
-        raise HTTPException(502, "Couldn't start checkout: %s" % e)
-    pulses_mod.set_order_session(oid, session_id, conn)
-    return {"ok": True, "mode": "stripe", "order_id": oid, "checkout_url": url}
-
-
-@app.post("/api/org/pulses/{pid}/confirm-payment")
-async def org_pulse_confirm_payment(pid: str, request: Request):
-    """Reconcile the Stripe Checkout Session on the ?paid=1 return — DON'T trust
-    the redirect. Verifies the session is actually paid and marks the order paid
-    (idempotent with the webhook), so a delayed/unconfigured webhook can't leave
-    a paid-but-never-live pulse. Returns the true launch_status."""
-    user, org = require_admin(request)
-    conn = get_conn()
-    p = _owned_pulse(conn, pid, org)
-    if p["launch_status"] == "paid":
-        return {"ok": True, "launch_status": "paid", "state": "live"}
-    order = pulses_mod.latest_order(pid, conn)
-    if order is None or not order["stripe_session_id"]:
-        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
-    if not payments_mod.is_configured():
-        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
-    try:
-        sess = payments_mod.get_checkout_session(order["stripe_session_id"])
-    except Exception:
-        return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
-    if sess and sess.get("payment_status") == "paid":
-        pulses_mod.mark_order_paid(order["order_id"],
-                                   payment_intent=sess.get("payment_intent"), conn=conn)
-        return {"ok": True, "launch_status": "paid", "state": "live",
-                "receipt_url": (sess.get("invoice") and None) or None}
-    return {"ok": True, "launch_status": p["launch_status"], "state": "pending"}
-
-
-@app.post("/api/stripe/webhook")
-async def stripe_webhook(request: Request):
-    """Stripe -> us (public, signature-verified). On checkout.session.completed
-    the launch order is marked paid, which opens the pulse. Idempotent."""
-    payload = await request.body()
-    sig = request.headers.get("stripe-signature", "")
-    try:
-        event = payments_mod.verify_webhook(payload, sig)
-    except ValueError as e:
-        raise HTTPException(400, "Webhook verification failed: %s" % e)
-    if event.get("type") == "checkout.session.completed":
-        sess = (event.get("data") or {}).get("object") or {}
-        oid = sess.get("client_reference_id") or (sess.get("metadata") or {}).get("order_id")
-        pi = sess.get("payment_intent")
-        if oid:
-            try:
-                pulses_mod.mark_order_paid(oid, payment_intent=pi)
-            except ValueError:
-                pass    # unknown/duplicate — acknowledge so Stripe stops retrying
-    return {"received": True}
+    return {"ok": True, "mode": "invoice", "order_id": oid, "amount_pence": fee,
+            "message": "Launch requested — lumi will invoice you, and your pulse opens "
+                       "to the community as soon as it's confirmed."}
 
 
 # ----- staff: review + confirm self-service launches -------------------------
@@ -5742,9 +5684,9 @@ async def admin_pulse_review(pid: str, request: Request):
 
 @app.post("/api/admin/pulses/{pid}/confirm-launch")
 async def admin_pulse_confirm_launch(pid: str, request: Request):
-    """Staff confirm a launch WITHOUT Stripe — an invoiced/hand-negotiated deal,
-    or local testing before keys exist. Opens the pulse exactly as a real card
-    payment would (marks the latest pending order paid, or records one)."""
+    """Staff confirm a launch once the invoice is settled — THE payment path
+    (PH-PAY-1: all payments by invoice). Marks the latest pending order paid,
+    or records one, which opens the pulse."""
     staff = require_platform_admin(request)
     conn = get_conn()
     try:
@@ -5758,7 +5700,7 @@ async def admin_pulse_confirm_launch(pid: str, request: Request):
     oid = (o["order_id"] if (o and o["status"] != "paid")
            else pulses_mod.create_launch_order(pid, p["owner_org_id"], fee, created_by=staff["user_id"], conn=conn))
     pulses_mod.mark_order_paid(oid, payment_intent="staff-confirmed", conn=conn)
-    # the £-consequential staff action: a fee waived/invoiced outside Stripe.
+    # the £-consequential staff action: confirming the invoice as settled.
     _audit(staff, "pulse.confirm_launch", "pulse", pid,
            {"order_id": oid, "fee_pence": fee})
     return {"ok": True, "pulse_id": pid}
@@ -6410,10 +6352,7 @@ _CONFIG_INVENTORY = [
     ("LUMI_AI_LIVE", "value", "Paid Claude calls — deterministic drafts unless 'on'"),
     ("ANTHROPIC_API_KEY", "secret", "Claude API key (server/.env.local)"),
     ("ANTHROPIC_MODEL", "value", "Model override for AI features"),
-    ("LUMI_STRIPE_SECRET_KEY", "secret", "Stripe secret key — payments 'off' without it"),
-    ("LUMI_STRIPE_PUBLISHABLE_KEY", "secret", "Stripe publishable key"),
-    ("LUMI_STRIPE_WEBHOOK_SECRET", "secret", "Stripe webhook signing secret"),
-    ("LUMI_PULSE_LAUNCH_FEE_GBP", "value", "Default self-service pulse launch fee (£)"),
+    ("LUMI_PULSE_LAUNCH_FEE_GBP", "value", "Default self-service pulse launch fee (£), invoiced — all payments by invoice (PH-PAY-1)"),
     ("LUMI_SIGNAL_SWEEP", "value", "Nightly signal sweep + email digest scheduler"),
     ("LUMI_SWEEP_HOUR", "value", "Sweep hour (UTC, default 7)"),
     ("LUMI_SMTP_HOST", "value", "SMTP relay — emails console-logged when unset"),

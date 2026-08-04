@@ -14175,3 +14175,36 @@ boot warning and Ops-inventory listing are visibility without enforcement — th
 Branch-A shape remains gate-the-action-not-the-boot: refuse to MINT an invite/reset link
 without a configured base, never refuse to boot (127.0.0.1 is a legitimate dry-run
 value). C4: unset in the live process, as expected.
+
+---
+
+## 2026-08-04 — PH-PAY-1 §A: the card path is removed — all payments by invoice, ruled
+
+**The census before the cut.** No Stripe key ever existed anywhere (server/.env.local
+holds only ANTHROPIC_API_KEY; DECISIONS:4076's "add TEST keys" was owed and never
+delivered). No key material was ever committed (the sole `sk_live` history hit is
+mode()'s prefix-check CODE, all refs searched). The webhook was exposed but
+FAIL-CLOSED-INERT (verify_webhook raises before any signature math without a secret).
+No SDK in any manifest. No checkout path on the marketing site. So: dead code and an
+empty key slot — removed under the ruling, no stop condition met.
+
+**What went:** payments.py's Stripe machinery (checkout create/fetch, HMAC webhook
+verify, key accessors) — the module is now the INVOICE SEAM, one mode() answer, with
+the ruling in its docstring so a future card build is a deliberate act against this
+entry, not a key drop-in; the `/api/stripe/webhook` and `/api/org/pulses/{pid}/confirm-payment`
+routes; the checkout route's card branch (the endpoint survives as the invoice-request
+path — it records the order and tells the author lumi will invoice); the client
+redirect + ?paid=1 reconcile; the three LUMI_STRIPE_* config-inventory rows; the stale
+prose that claimed a card path existed. **What deliberately stayed:**
+`pulse_launch_orders` and the pulses launch_* columns — NOT orphans, they are the
+invoice ledger the staff Confirm-launch path writes and the Billing tab reads; the
+stripe_* columns on the ledger are inert storage, commented as such in the schema.
+
+Verified: suite 12 gates green post-removal (backoffice 97/0/0, hero 59, commentary 40,
+domain_summary 143/143, focus 26, signals 14, strategy 14, engine-audit 0/0,
+plausibility PASS, overview/pulse/release clean — qa_pulse's self-service section holds
+because the launch flow always ran through the staff confirm path); no functional
+Stripe reference survives by SEARCH (residual mentions are the ledger column names,
+this entry's own history, and the gate's negative assertion that session ids never
+serialise); health reports payments='invoice'; console copy updated; live stores
+byte-identical. Cache v429.

@@ -330,12 +330,6 @@ def create_launch_order(pulse_id, org_id, amount_pence, created_by, currency="gb
     return oid
 
 
-def set_order_session(order_id, session_id, conn=None):
-    conn = conn or get_conn()
-    conn.execute("UPDATE pulse_launch_orders SET stripe_session_id=? WHERE order_id=?", (session_id, order_id))
-    conn.commit()
-
-
 def get_order(order_id, conn=None):
     conn = conn or get_conn()
     return conn.execute("SELECT * FROM pulse_launch_orders WHERE order_id=?", (order_id,)).fetchone()

@@ -750,7 +750,7 @@ function AdminPulseReviewsTab() {
   };
   return html`
     <div>
-      ${data.payments_mode === "off" ? html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>Card payments are off (no Stripe keys) — approve, then use <b>Confirm launch (no card)</b> to open a pulse.</div>` : html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>Stripe is <b>${data.payments_mode}</b> mode — authors pay by card; <b>Confirm launch</b> is for invoiced/manual deals.</div>`}
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>All payments by invoice (PH-PAY-1) — approve, invoice the author, then <b>Confirm launch</b> opens the pulse.</div>
       <div class="admin-toolbar"><b>Awaiting review</b> <span class="caption">${waiting.length}</span></div>
       ${waiting.length ? waiting.map(Card) : html`<${EmptyState} icon="list-checks" title="Nothing to review"
         body="Member-built surveys waiting for approval will appear here." />`}
@@ -921,7 +921,7 @@ function AdminBillingTab() {
     <div>
       <div class="admin-toolbar">
         <b>${gbp(data.total_paid_pence)} collected</b>
-        <span class="caption">${data.orders.length} order${data.orders.length === 1 ? "" : "s"} · Stripe ${data.payments_mode}</span>
+        <span class="caption">${data.orders.length} order${data.orders.length === 1 ? "" : "s"} · payments by invoice</span>
       </div>
       <table class="data admin-table">
         <thead><tr><th>Pulse</th><th>Organisation</th><th class="num">Amount</th><th>Status</th><th>Method</th><th>Created</th><th>Paid</th></tr></thead>
