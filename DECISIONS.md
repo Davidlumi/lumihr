@@ -13737,3 +13737,74 @@ prevented). Executed `--write --confirmed-by-david`: **1,058 deleted, post-purge
 count in scope 0 ✓**; Group A verified intact (4+1 files, byte-sizes unchanged); live
 stores untouched; full suite re-run 12/12 green with the new teardown assertion firing
 clean: "zero database copies survive in the workdir ✓" (qa_backoffice 80 checks).
+
+---
+
+## 2026-08-04 — PH-BAK-2 §A: calibration re-grounded, two standing doctrines, and the 90-day ceiling's two consistency checks
+
+**A.1 — Dated amendment to the PH-BAK-1 calibration.** The superseded wording, quoted:
+*"not a practical credential exposure and a small human footprint, which is why this is a
+policy correction now rather than an incident."* That reasoning was formed against a
+19-file census and leans on apparent scale; against the corrected figure (1,058 files /
+26.90 GB) it reads as minimisation. Replaced ground, same conclusion: **the sensitive
+population never moved — 223 copies of the same 8 users is still 8 users, 3 real-domain
+addresses, 11 bcrypt `$2b$` cost-12 hashes — and what makes this a policy correction
+rather than an incident is that there was NO THIRD-PARTY ACCESS: one device, one user
+account, 0700 directories throughout.** Scale is not the argument and never should have
+been. (Same discipline as the backup_policy correction: amended dated, prior text stands.)
+
+**A.2 — STANDING DOCTRINE: census scoping.** Three consecutive counts in one workstream,
+each an understatement corrected by the next: ~90 → 19 → 1,058. Common mechanism: each
+census scoped itself to where the previous one had looked. Same disease as the
+`1485ada7cafa559d` hash (a control that measured nothing) and the "nine gitignored
+scripts" (folklore repeated uncritically) — three instances; a pattern, not three
+mistakes. **A census that enumerates known locations measures your knowledge, not the
+estate. Scope it to the filesystem or namespace, not to the inventory.** Forward
+application, stated now because it is the next place this bites: the 243-metric anchor
+register reconciliation is the same shape — when that work starts, THE REGISTER IS NOT
+THE SCOPE; the live platform is, and the register is the thing under test against it.
+
+**A.3 — STANDING DOCTRINE: the symlink hazard.** Alongside the double-guard and
+gate-server doctrines: **scripts that delete or modify files by pattern must skip
+symlinks and resolve paths before matching.** Prior sessions' scratch mirror-trees are
+symlinks into the live tree; db-named links resolve to the live stores. The Group-A guard
+held, so the hazard is DORMANT, not resolved — any future delete-by-pattern script is one
+missing `islink()` away from unlinking through into `lumi.db`. Audit of every existing
+delete-by-pattern script (REPORT ONLY, fixes are their own class):
+- `server/purge_throwaway_copies.py` — pattern-based (glob+walk): **GUARDED** (islink skip
+  + realpath Group-A FATAL).
+- `server/backup_identity.py:43,66` — pattern-based (`glob identity.db.bak_pre_*`,
+  rotation delete): **NO symlink guard, no realpath resolution.** LACKING.
+- `server/seed_import.py:165` — named path (LUMI_DB / ../lumi.db) under `--fresh`, not
+  pattern-matched; deliberate whole-DB replacement. No islink check on the named path.
+  Named-path class, noted not lacking.
+- `server/census_step5.py:500` — deletes its own NamedTemporaryFile by held name;
+  self-created, not pattern-matched. Out of class.
+- `run_gates.sh:96,106` — `rm -f` on named variables only; the `*.db(N)` glob counts,
+  never deletes. Out of class.
+
+**A.4 C1 — internal consistency of the 90-day ceiling.** Current Group A ages: presplit
+4d, kidsfix 2d, sessdel 1d, step5 1d, identity bak 1d. Longest any copy has historically
+sat: ~47 days (the 2026-06-13 copy deleted by the Phase-0 ruling on 07-30). **The rules
+CAN conflict, reported not resolved: backups are created per-migration, not on a
+schedule — if migrations pause for 90+ days, all three rotation members breach the
+ceiling while the rotation rule says keep them.** Which rule yields is David's call when
+it first bites. The presplit pin's exemption is written explicitly in both places
+(backup_policy: "pinned — excluded from the rotation count — and held until released...
+Release trigger, named explicitly: the close of the post-soak DROP diff"; PH-BAK-1 entry:
+"the named pre-split pin, bounded by its release trigger") — confirmed, not merely implied.
+
+**A.4 C2 — external consistency.** Every retention/deletion timeline in member-facing
+text, verbatim: DPA §5.2: *"on written request, the Member's contributed data is deleted
+from live systems within 30 days and excluded from subsequent benchmark snapshots.
+Aggregates already distributed (which do not identify the Member) are not recalled."*
+Privacy notice Retention: *"Account data is kept while your account is active and for a
+limited period afterwards."* Data-contribution terms: *"You can ask lumi to delete your
+organisation's data; it is removed from future benchmark snapshots after deletion."*
+AI-terms draft: solicitor placeholders only ("set a retention period for cached summaries
+and confirm it aligns with the wider retention/deletion policy"). **No stated number
+contradicts 90 days — the DPA's "within 30 days" is expressly scoped to LIVE SYSTEMS —
+but nothing member-facing discloses that copies persist beyond live deletion. FLAGGED FOR
+SOLICITOR REVIEW alongside the AI terms: the combined position (live ≤30 days, copies
+extinct ≤90 days) needs blessing as the §5.2 reading, and the privacy notice's "limited
+period" wants the number. Not reconciled here — AI-drafted legal text is never operative.**
