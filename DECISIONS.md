@@ -13829,3 +13829,45 @@ both live stores byte-identical across a full run; suite unaffected — 12/12 gr
 qa_backoffice 80/0/0; measured startup delta ~0.05s. Accumulation is now bounded by gate
 cadence rather than by anyone's memory; session-scratchpad hygiene remains doctrine, with
 this sweep as its recurring net.
+
+---
+
+## 2026-08-04 — PH-BAK-3: backup_identity.py rotation hardened — and what §1 actually found was not what the audit named
+
+**What §1 found, severity as assessed (not as A.3 framed it).** The A.3 audit flagged this
+script for a missing `islink()` guard. **The symlink framing was NOT the operative risk,
+recorded explicitly:** `os.remove()` on a link removes the link, never the target, and no
+link matched the pattern. Nor was the headline hazard real: the glob is anchored by the
+`.bak_pre_` infix — **`identity.db` itself cannot match, so no latent path to destroying
+the live store existed, and no CF-3 is raised** (a register padded with non-findings is
+worth less than a short one). The double guard the audit failed to credit was already
+present. The operative defects, found only by reading rather than checklisting: (1) **no
+fail-closed abort** — the rotation deleted candidates sequentially, so a surprise match
+(directory, permission error, future pinned copy) would half-delete the rotation or remove
+something unexpected rather than stopping; (2) **no positive assertions** — the glob was
+the only filter, meaning one careless future pattern edit (`identity.db*`) stood between
+safety and the live store. Severity: LOW today, latent. The doctrine was right to surface
+the file; a doctrine applied as a checklist finds what it names and misses what it doesn't
+— that distinction is this entry's reason to exist, so the symlink rule is not later
+over-applied as though it were the whole question.
+
+**The fix (one class: delete-safety on the identity store).** Convention-anchored regex
+(`identity.db.bak_pre_<tag>_<YYYYMMDD_HHMMSS>`, full-string); positive assertions before
+any unlink — basename convention, not-a-symlink (doctrine depth), regular file, realpath
+≠ either live store; **fail-closed: one bad candidate aborts the ENTIRE rotation, nothing
+deleted, exit 3, offending path named** — the new verified copy stands and the class sits
+above retain-1 until resolved by hand. Ordering derives from the FILENAME timestamp,
+never mtime (mutable by any copy operation). Retain count is THE single constant
+(RETAIN=1, sourced from backup_policy.md's identity class). Dry-run now also reports what
+rotation would do (§3.7). Guard unchanged.
+
+**Verified:** fixture matrix — live-named file and near-miss (`identity.db.backup_*`)
+never candidates; convention-named SYMLINK aimed at the real store → rotation aborted with
+the directory byte-for-byte unchanged (the good candidate survived too — fail-closed means
+ALL-or-nothing), link never resolved through, real store intact; write=False deletes
+nothing; fixture removed and proven gone. Real-directory dry run matches policy exactly
+(1 copy on disk = retain-1; reports it rotates at its successor's creation — the policy's
+own schedule; no divergence). Group A + both live stores byte-identical across the whole
+exercise. Full suite green — 12 gates, per-gate: hero 59, focus 26, signals 14, strategy
+14, engine-audit 0 hard/0 warn, overview 0 fail, domain_summary 143/143, commentary 40,
+plausibility freeze PASS, backoffice 80/0/0, pulse 0 fail, release 0 fail.

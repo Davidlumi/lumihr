@@ -15,13 +15,74 @@ side's. sessions is EXCLUDED from the row-count assertion (F.3): it changes on
 every login, and asserting equality on it would fail spuriously — the same
 class as the whole-file sha and the session-count echo, both already ruled.
 """
-import glob, hashlib, os, sqlite3, sys, time
+import glob, hashlib, os, re, sqlite3, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import identity
 
 ASSERTED = ("org_register", "users", "invites", "password_resets")
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+
+# --- rotation delete-safety (PH-BAK-3) ---------------------------------------
+# THE naming convention, anchored: tag + _YYYYMMDD_HHMMSS, full-string match.
+# No live store path can satisfy it, and anything glob-caught that this regex
+# rejects (a -wal straggler, a renamed copy, a directory) ABORTS the rotation.
+BAK_RE = re.compile(r"^identity\.db\.bak_pre_[A-Za-z0-9]+_(\d{8}_\d{6})$")
+# data/backup_policy.md, identity class: "retain the last 1" — THE retain
+# constant; total copies kept INCLUDING the one just created. No other literal.
+RETAIN = 1
+LIVE_STORES = ("identity.db", "lumi.db")
+
+
+def rotation_candidates(root):
+    return sorted(glob.glob(os.path.join(root, "identity.db.bak_pre_*")))
+
+
+def deletion_violation(p, root):
+    """Positive assertions before any unlink (PH-BAK-3 §2) — returns the reason
+    this path must NOT be deleted, or None if every assertion passes. ALL of:
+    convention-anchored basename; not a symlink (doctrine depth — an unlink on
+    a link is benign to the target, but a link is not a backup); a regular
+    file; realpath is neither live store."""
+    name = os.path.basename(p)
+    if not BAK_RE.match(name):
+        return "basename does not match the backup naming convention"
+    if os.path.islink(p):
+        return "is a symlink — not a backup, never unlinked"
+    if not os.path.isfile(p):
+        return "not a regular file"
+    rp = os.path.realpath(p)
+    for live in LIVE_STORES:
+        if rp == os.path.realpath(os.path.join(root, live)):
+            return "resolves to the LIVE store %s" % live
+    return None
+
+
+def rotate_previous(root, prev, write):
+    """FAIL-CLOSED rotation: every candidate is validated before ANY is
+    deleted; one failure aborts the whole rotation with nothing removed and
+    the offending path named — a rotation that meets something it does not
+    understand stops, it does not proceed carefully. Ordering is derived from
+    the FILENAME timestamp, never mtime (mtime is mutated by any copy
+    operation); the convention regex guarantees the timestamp parses, so a
+    candidate that reaches ordering cannot fail it. Returns True iff the
+    rotation completed (or had nothing to do)."""
+    bad = [(p, v) for p in prev for v in [deletion_violation(p, root)] if v]
+    if bad:
+        for p, v in bad:
+            print("[idbak] ROTATION ABORTED — %s: %s" % (p, v))
+        print("[idbak] fail-closed: NOTHING deleted (the just-created copy stands; "
+              "the class sits above retain-%d until this is resolved by hand)." % RETAIN)
+        return False
+    keep_prev = max(0, RETAIN - 1)   # the new copy is survivor #1
+    by_ts = sorted(prev, key=lambda p: BAK_RE.match(os.path.basename(p)).group(1))
+    doomed = by_ts[:len(by_ts) - keep_prev] if keep_prev else by_ts
+    for p in doomed:
+        if write:
+            os.remove(p)
+        print("[idbak] rotation: previous copy %s %s (retain-%d, creation-time doctrine)"
+              % (os.path.basename(p), "deleted" if write else "WOULD be deleted", RETAIN))
+    return True
 
 def table_hash(conn, t):
     h = hashlib.sha256()
@@ -40,10 +101,11 @@ def main():
     print("[idbak] live census: %s | sessions=%d (EXCLUDED from the assertion — changes on"
           % ({t: c for t,(c,_) in live.items()}, sess))
     print("        every login; equality on it fails spuriously. F.3, ruled.)")
-    prev = sorted(glob.glob(os.path.join(ROOT, "identity.db.bak_pre_*")))
+    prev = rotation_candidates(ROOT)
     if not write:
         print("[idbak] DRY RUN — would create identity.db.bak_pre_%s_<ts>; previous copies: %d"
               % (tag, len(prev)))
+        rotate_previous(ROOT, prev, write=False)   # §3.7: report what rotation WOULD do
         return 0
     ts = time.strftime("%Y%m%d_%H%M%S")
     dstp = os.path.join(ROOT, "identity.db.bak_pre_%s_%s" % (tag, ts))
@@ -63,9 +125,10 @@ def main():
         print("[idbak] FAILED — copy deleted (unvouchable PII is exposure without value); "
               "predecessor retained; class at retain-2 until a passing copy exists.")
         return 2
-    for p in prev:
-        os.remove(p)
-        print("[idbak] rotation: previous copy %s deleted (retain-1, creation-time doctrine)" % os.path.basename(p))
+    if not rotate_previous(ROOT, prev, write=True):
+        print("[idbak] PASS %s — but rotation ABORTED; resolve the named path, then "
+              "rotate by hand or re-run." % os.path.basename(dstp))
+        return 3
     if not prev:
         print("[idbak] first backup — no previous copy to rotate")
     print("[idbak] PASS %s (%d bytes, sha16 %s)" % (os.path.basename(dstp),
