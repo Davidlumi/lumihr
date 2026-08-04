@@ -14082,3 +14082,48 @@ directions; audit digests present, bearer absent. Suite 12 gates green (hero 59,
 commentary 40, domain_summary 143/143, focus 26, signals 14, strategy 14, engine-audit
 0/0, plausibility PASS, overview/pulse/release clean); live stores byte-identical;
 nothing provisioned against live.
+
+---
+
+## 2026-08-04 — PH-PROV-2b (build): the lifecycle column and invite actions
+
+**Lifecycle is DERIVED, never stored — one helper, one place.** `_org_lifecycle()` in
+app.py, reward store only (every signal reward-side, per 2a's P6): complete
+(submission_complete) > contributing (clock_start) > activated (a users row exists —
+holds because provisioning mints only org+invite; the user row is created at accept) >
+provisioned, with the §1.3 sub-state carried as invite_live (a live admin invite) vs the
+ATTENTION state, provisioned with NO live invite — the org that goes unnoticed. The
+client renders what the API says and never re-derives (the JS chip is presentation only).
+
+**Seed orgs are not in the lifecycle (§1.2).** 220 of ~226 rows would otherwise all read
+"provisioned" — false at near-total volume, and believed. source != 'signup' returns
+None and renders as a dash; provenance stays the Source pill. RECORDED: this is the
+FIRST UI surface requiring a seed/member distinction — the queued provenance work
+(is_seed, blend-and-taper, real-contributor n) now inherits a caller rather than
+discovering one. **Deactivation is an overlay (§1.4)**: the flag rides beside the
+lifecycle, never replaces it (gate-proven: deactivated + still 'complete').
+
+**Invite actions (§2).** Reissue (same address), reissue to a different address, revoke —
+all through existing endpoints, 1g semantics. Every action confirms by NAMING the org and
+stating what happens to the existing invite ("the previous link STOPS WORKING
+immediately"). Expiry renders in human terms ("expires in 3 days" / "EXPIRED 2 days
+ago"); expired-unused invites stay VISIBLE in the org detail (they are the attention
+state and what reissue exists for); used/revoked stay hidden. **1g's refusal renders as
+the entry point to sole-admin recovery (§2.3)** — the ruled message pointing at
+deactivate-then-reissue and docs/SOLE_ADMIN_RECOVERY.md — never as a raw error.
+
+**Verified** (honest split, as 2a): gate-covered — qa_backoffice now **97 checks, 0
+failed, 0 skipped**, incl. the full L-block fixturing EVERY state (provisioned-live,
+provisioned-expired incl. detail visibility, activated, contributing, complete + its
+precedence, seed-never-labelled, staff-never-labelled, deactivation-as-overlay); one
+fixture lesson kept honest in the gate itself: aging an invite reward-side only IS the
+dual-write drift recon exists to catch — it caught it; the fixture now ages both stores.
+Browser-exercised on a throwaway (no DOM harness exists): the column renders (seed dash,
+member chips, human expiry), all three actions with their naming confirmations, the
+recovery panel, and the FULL recovery flow — deactivate the active Admin, founding invite
+then issues successfully. Zero console errors; live stores byte-identical; suite 12
+gates green (hero 59, commentary 40, domain_summary 143/143, focus 26, signals 14,
+strategy 14, engine-audit 0/0, plausibility PASS, overview/pulse/release clean). One
+browser-exercise discovery worth a line: accept-invite signs the ACCEPTOR in (sets the
+session cookie) — correct member behaviour, and why operator dry-runs should accept
+invites in a private window (noted in the dry-run doc). Cache v428.

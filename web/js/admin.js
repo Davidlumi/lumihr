@@ -80,12 +80,13 @@ function AdminOrgsTab() {
         onOpenOrg=${(oid) => { setCreating(false); setSelected(oid); }} />`}
       <table class="data admin-table">
         <thead><tr>
-          <th>Organisation</th><th>Industry</th><th>Size</th><th>Source</th>
+          <th>Organisation</th><th>Lifecycle</th><th>Industry</th><th>Size</th><th>Source</th>
           <th class="num">Users</th><th>Profile</th><th>Submitted</th><th>Insights</th>
         </tr></thead>
         <tbody>
           ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer", opacity: o.deactivated ? 0.55 : 1 }} onClick=${() => setSelected(o.org_id)}>
             <td><b>${o.name}</b>${o.deactivated ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</td>
+            <td><${LifecycleChip} lc=${o.lifecycle} /></td>
             <td>${o.industry || "—"}</td>
             <td>${o.fte_band || "—"}</td>
             <td><span class="admin-pill">${o.source}</span></td>
@@ -97,6 +98,29 @@ function AdminOrgsTab() {
         </tbody>
       </table>
     </div>`;
+}
+
+/* ---- lifecycle rendering (PH-PROV-2b §1) ----
+   PRESENTATION ONLY: the derivation rule lives server-side in _org_lifecycle —
+   one helper, one place; this file renders what the API says and never re-derives.
+   Seed/staff orgs arrive as lifecycle=null and render as a dash (provenance is
+   the Source pill). Deactivation is an OVERLAY on the row, not a state here. */
+function humanExpiry(ts) {
+  const d = Math.ceil((new Date(ts.replace(" ", "T") + "Z") - Date.now()) / 86400000);
+  if (d < 0) return "EXPIRED " + Math.abs(d) + " day" + (Math.abs(d) === 1 ? "" : "s") + " ago";
+  if (d === 0) return "expires today";
+  return "expires in " + d + " day" + (d === 1 ? "" : "s");
+}
+
+function LifecycleChip({ lc }) {
+  if (!lc) return html`<span class="caption">—</span>`;
+  if (lc.state === "complete") return html`<span class="admin-yes">complete</span>`;
+  if (lc.state === "contributing") return html`<span class="admin-pill">contributing</span>`;
+  if (lc.state === "activated") return html`<span class="admin-pill">activated</span>`;
+  // provisioned: the invite's liveness is the operator signal (§1.3)
+  return lc.invite_live
+    ? html`<span class="admin-pill">provisioned · ${humanExpiry(lc.invite_expires_at)}</span>`
+    : html`<span class="admin-status admin-status-rejected">provisioned · NO LIVE INVITE</span>`;
 }
 
 /* ---- module 1a: provisioning form (PH-PROV-2a) ----
@@ -244,8 +268,10 @@ function AdminOrgDetail({ orgId, onBack }) {
       </div>
       ${o.deactivated_at && html`<div class="caption" style=${{ color: "var(--red, #b3261e)", marginBottom: "var(--s2)" }}>
         Deactivated ${o.deactivated_at.slice(0, 16)} — members can't sign in and pending invites won't complete. Data is untouched.</div>`}
-      <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-        <span class="admin-pill">${o.source}</span> · ${o.tier_entitlement} tier · created ${(o.created_at || "").slice(0, 10)}
+      <div class="caption" style=${{ marginBottom: "var(--s3)", display: "flex", gap: "var(--s2)", alignItems: "center", flexWrap: "wrap" }}>
+        <span class="admin-pill">${o.source}</span>
+        <${LifecycleChip} lc=${o.lifecycle} />
+        <span>· ${o.tier_entitlement} tier · created ${(o.created_at || "").slice(0, 10)}</span>
       </div>
       <div class="card admin-card" style=${{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "var(--s3)" }}>
         ${fact("Industry", o.industry)}
@@ -278,7 +304,7 @@ function AdminOrgDetail({ orgId, onBack }) {
           <td><${AdminUserActions} user=${u} onChanged=${load} /></td>
         </tr>`)}</tbody>
       </table>`}
-      <${AdminOrgInvitePanel} orgId=${orgId} invites=${d.invites || []} onChanged=${load} />
+      <${AdminOrgInvitePanel} orgId=${orgId} orgName=${o.name} invites=${d.invites || []} onChanged=${load} />
 
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Terms acceptances</b> <span class="caption">${d.terms.length} · the DPA evidence trail</span></div>
       ${!d.terms.length ? html`<div class="caption">None recorded.</div>` :
@@ -296,27 +322,58 @@ function AdminOrgDetail({ orgId, onBack }) {
 
 /* Invite members into any org (staff may mint the founding Admin — the tenant
    path stays promotion-only). The invitee sets their own password and accepts
-   the terms on join; the console only hands out the link. */
-function AdminOrgInvitePanel({ orgId, invites, onChanged }) {
+   the terms on join; the console only hands out the link.
+   PH-PROV-2b: three credential actions per admin invite — reissue same address,
+   reissue to a different address, revoke — each behind a confirmation that
+   names the organisation and says plainly what happens to the existing invite.
+   1g's active-Admin refusal renders as the ENTRY POINT to sole-admin recovery
+   (docs/SOLE_ADMIN_RECOVERY.md), never as a raw error. */
+function AdminOrgInvitePanel({ orgId, orgName, invites, onChanged }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("admin");
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState(null);
-  const sendInvite = async () => {
-    if (!email.trim()) { toast("Enter the invitee's email address.", "error"); return; }
-    setBusy(true);
+  const [recovery, setRecovery] = useState(false);   // 1g refusal → guidance, not error
+  const who = orgName || "this organisation";
+  const issue = async (addr, confirmText) => {
+    if (confirmText && !window.confirm(confirmText)) return;
+    setBusy(true); setRecovery(false);
     try {
-      const r = await api("/api/admin/orgs/" + orgId + "/invite", { method: "POST", body: { email: email.trim(), role } });
+      const r = await api("/api/admin/orgs/" + orgId + "/invite",
+                          { method: "POST", body: { email: addr, role } });
       setLink(r.link);
-      toast("Invite created — expires in " + r.expires_days + " days. Emailed if SMTP is configured; copy the link to be sure.");
+      toast("Invite created — expires in " + r.expires_days + " days. Copy the link to deliver it.");
       setEmail("");
       onChanged();
-    } catch (e) { toast(e.message, "error"); }
+    } catch (e) {
+      if ((e.message || "").includes("active Admin")) setRecovery(true);
+      else toast(e.message, "error");
+    }
     setBusy(false);
   };
-  const revoke = async (token) => {
-    if (!window.confirm("Revoke this invite? The link stops working immediately.")) return;
-    try { await api("/api/admin/invites/" + token + "/revoke", { method: "POST", body: {} }); toast("Revoked."); onChanged(); }
+  const sendInvite = () => {
+    if (!email.trim()) { toast("Enter the invitee's email address.", "error"); return; }
+    const liveAdmin = invites.some(i => i.role === "admin" && !i.expired);
+    issue(email.trim(), role === "admin" && liveAdmin
+      ? "Issue a founding-Admin invite for \"" + who + "\" to " + email.trim() + "?\n\n"
+        + "The existing admin invite link STOPS WORKING immediately — if you already sent it, you must send this new one."
+      : null);
+  };
+  const reissueSame = (i) => issue(i.email,
+    "Reissue the founding-Admin invite for \"" + who + "\" to the SAME address (" + i.email + ")?\n\n"
+    + "The previous link stops working immediately — send the new one.");
+  const reissueOther = (i) => {
+    const addr = email.trim();
+    if (!addr) { toast("Type the new address in the invite field above, then click again.", "error"); return; }
+    issue(addr,
+      "Reissue the founding-Admin invite for \"" + who + "\" to a DIFFERENT address?\n\n"
+      + "OLD: " + (i.email || "—") + "\nNEW: " + addr + "\n\n"
+      + "The previous link stops working immediately.");
+  };
+  const revoke = async (i) => {
+    if (!window.confirm("Revoke the " + i.role + " invite for \"" + who + "\""
+        + (i.email ? " (" + i.email + ")" : "") + "?\n\nThe link stops working immediately and is NOT replaced.")) return;
+    try { await api("/api/admin/invites/" + i.token + "/revoke", { method: "POST", body: {} }); toast("Revoked."); onChanged(); }
     catch (e) { toast(e.message, "error"); }
   };
   const copy = (l) => { navigator.clipboard && navigator.clipboard.writeText(l); toast("Copied."); };
@@ -335,17 +392,31 @@ function AdminOrgInvitePanel({ orgId, invites, onChanged }) {
         <button class="btn small primary" disabled=${busy} onClick=${sendInvite}>Create invite</button>
         ${link && html`<button class="btn small" onClick=${() => copy(link)}>Copy latest link</button>`}
       </div>
+      ${recovery && html`
+        <div class="card" style=${{ borderLeft: "3px solid var(--blue-bright, #2E62D9)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0" }}>
+          <b>This organisation already has an active Admin.</b>
+          <div class="caption" style=${{ marginTop: "2px" }}>
+            To replace them, deactivate the current Admin first (Members table above), then
+            issue a founding invite — the sole-admin recovery procedure
+            (docs/SOLE_ADMIN_RECOVERY.md). Admins are otherwise made by promotion in the
+            member's own Team page, never by invite.</div>
+        </div>`}
       ${invites.length ? html`
-        <div class="admin-toolbar" style=${{ marginTop: "var(--s3)" }}><b>Pending invites</b> <span class="caption">${invites.length}</span></div>
+        <div class="admin-toolbar" style=${{ marginTop: "var(--s3)" }}><b>Pending invites</b> <span class="caption">${invites.length} · expired ones need a reissue</span></div>
         <table class="data admin-table">
-          <thead><tr><th>Email</th><th>Role</th><th>Expires</th><th>Actions</th></tr></thead>
-          <tbody>${invites.map(i => html`<tr key=${i.token}>
+          <thead><tr><th>Email</th><th>Role</th><th>Expiry</th><th>Actions</th></tr></thead>
+          <tbody>${invites.map(i => html`<tr key=${i.token} style=${{ opacity: i.expired ? 0.75 : 1 }}>
             <td><b>${i.email || "—"}</b></td>
             <td>${i.role}</td>
-            <td class="caption">${(i.expires_at || "").slice(0, 16)}</td>
-            <td><div class="admin-actions">
-              <button class="btn small" onClick=${() => copy(i.link)}>Copy link</button>
-              <button class="btn small quiet" onClick=${() => revoke(i.token)}>Revoke</button>
+            <td>${i.expired
+              ? html`<span class="admin-status admin-status-rejected">${humanExpiry(i.expires_at)}</span>`
+              : html`<span class="caption">${humanExpiry(i.expires_at)}</span>`}</td>
+            <td><div class="admin-actions" style=${{ flexWrap: "wrap" }}>
+              ${!i.expired && html`<button class="btn small" onClick=${() => copy(i.link)}>Copy link</button>`}
+              ${i.role === "admin" && html`
+                <button class="btn small" disabled=${busy} onClick=${() => reissueSame(i)}>Reissue</button>
+                <button class="btn small quiet" disabled=${busy} onClick=${() => reissueOther(i)}>Reissue to different address…</button>`}
+              ${!i.expired && html`<button class="btn small quiet" onClick=${() => revoke(i)}>Revoke</button>`}
             </div></td>
           </tr>`)}</tbody>
         </table>` : ""}

@@ -295,6 +295,57 @@ check("D18 revoked invite link dead (404)", st == 404, st)
 st, _ = api(staff, "/api/admin/invites/%s/revoke" % tok2, "POST", {})
 check("D19 double-revoke refused", st == 400, st)
 
+# ---- L. lifecycle derivation (PH-PROV-2b §1) — every state fixtured ----------
+print("\n-- L. lifecycle --")
+st, lr = api(staff, "/api/admin/orgs", "POST",
+             dict(FIRMO, org_name="QA Lifecycle Org %s" % TAG,
+                  admin_email="qa-lc-%s@probe.example" % TAG))
+LOID = lr["org_id"]
+
+def _lc(oid):
+    _, d0 = api(staff, "/api/admin/orgs")
+    return next(o["lifecycle"] for o in d0["orgs"] if o["org_id"] == oid)
+
+lc = _lc(LOID)
+check("L1 provisioned + live invite (expiry present)",
+      lc and lc["state"] == "provisioned" and lc["invite_live"] and lc["invite_expires_at"], lc)
+# age the invite in BOTH stores — expires_at is an invariant compared column in
+# identity_recon's invites pair; a reward-only fixture edit IS the drift the net
+# exists to catch (it did, on this gate's first run — kept honest here).
+raw.execute("UPDATE invites SET expires_at=datetime('now','-1 day') WHERE org_id=?", (LOID,))
+raw.commit()
+if IDB and os.path.exists(IDB):
+    _aged = raw.execute("SELECT token, expires_at FROM invites WHERE org_id=?", (LOID,)).fetchall()
+    _idw = sqlite3.connect(IDB)
+    for _r in _aged:
+        _idw.execute("UPDATE invites SET expires_at=? WHERE token=?", (_r["expires_at"], _r["token"]))
+    _idw.commit()
+    _idw.close()
+lc = _lc(LOID)
+check("L2 provisioned + NO LIVE INVITE — the attention state",
+      lc and lc["state"] == "provisioned" and not lc["invite_live"], lc)
+st, dd = api(staff, "/api/admin/orgs/" + LOID)
+check("L2b detail lists the expired invite distinctly (expired=true, still visible)",
+      any(i.get("expired") for i in dd.get("invites", [])), dd.get("invites"))
+check("L3 activated — a users row exists (the accept minted it)",
+      _lc(POID)["state"] == "activated", _lc(POID))
+raw.execute("UPDATE orgs SET clock_start=datetime('now') WHERE org_id=?", (LOID,)); raw.commit()
+check("L4 contributing — clock started", _lc(LOID)["state"] == "contributing")
+raw.execute("UPDATE orgs SET submission_complete=1 WHERE org_id=?", (LOID,)); raw.commit()
+check("L5 complete — and it outranks contributing", _lc(LOID)["state"] == "complete")
+_, d0 = api(staff, "/api/admin/orgs")
+check("L6 seed orgs NEVER receive a member-lifecycle label",
+      all(o["lifecycle"] is None for o in d0["orgs"] if o["source"] == "seed"))
+check("L7 the staff org carries no member lifecycle",
+      all(o["lifecycle"] is None for o in d0["orgs"] if o["source"] == "staff"))
+api(staff, "/api/admin/orgs/%s/deactivate" % LOID, "POST", {})
+_, d0 = api(staff, "/api/admin/orgs")
+row0 = next(o for o in d0["orgs"] if o["org_id"] == LOID)
+check("L8 deactivation is an OVERLAY: flag true, lifecycle still 'complete'",
+      row0["deactivated"] and row0["lifecycle"] and row0["lifecycle"]["state"] == "complete",
+      row0.get("lifecycle"))
+api(staff, "/api/admin/orgs/%s/reactivate" % LOID, "POST", {})
+
 # ---- S. fault injection (Stage 3 §1, Outcome A): a SHORT-LIVED second server
 # ---- with LUMI_QA_SEAMS=on — the main server stays production-postured -------
 print("\n-- S. seams (fault injection on :8061) --")

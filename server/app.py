@@ -5295,6 +5295,34 @@ def _audit(user, action, target_kind=None, target_id=None, detail=None):
         print("[admin-audit] WRITE FAILED (%s): %s" % (action, e), flush=True)
 
 
+def _org_lifecycle(conn, o):
+    """PH-PROV-2b §1: THE lifecycle derivation — one helper, one place, DERIVED
+    never stored, reward store only (every signal is reward-side per 2a's P6).
+    Seed and staff orgs are NOT in the member lifecycle (§1.2): they return None
+    and render as provenance, not state. Deactivation is an OVERLAY the caller
+    reads from orgs.deactivated_at — never a fifth state here (§1.4).
+    Precedence: complete > contributing > activated > provisioned; 'activated'
+    is the existence of any users row, which holds because provisioning creates
+    only the org + invite and the user row is minted at invite-accept."""
+    if o["source"] != "signup":
+        return None
+    if o["submission_complete"]:
+        return {"state": "complete"}
+    if o["clock_start"]:
+        return {"state": "contributing"}
+    if conn.execute("SELECT 1 FROM users WHERE org_id=? LIMIT 1",
+                    (o["org_id"],)).fetchone():
+        return {"state": "activated"}
+    inv = conn.execute(
+        "SELECT expires_at FROM invites WHERE org_id=? AND role='admin' "
+        "AND used_at IS NULL AND expires_at > datetime('now') "
+        "ORDER BY expires_at DESC LIMIT 1", (o["org_id"],)).fetchone()
+    # §1.3: the sub-state that needs action — no live invite is the org that
+    # goes unnoticed (provisioned weeks ago, never activated).
+    return {"state": "provisioned", "invite_live": bool(inv),
+            "invite_expires_at": inv["expires_at"] if inv else None}
+
+
 # ----- module 1: cross-tenant orgs overview (read-only) ----------------------
 @app.get("/api/admin/orgs")
 async def admin_orgs(request: Request):
@@ -5316,6 +5344,7 @@ async def admin_orgs(request: Request):
             # from a staff list view, unlike org_unlocked().
             "unlocked": bool(o["insights_unlocked_at"]) or bool(o["submission_complete"]),
             "deactivated": bool(o["deactivated_at"]),
+            "lifecycle": _org_lifecycle(conn, o),
         })
     return {"orgs": out, "total": len(out)}
 
@@ -6198,13 +6227,15 @@ async def admin_org_detail(org_id: str, request: Request):
         d = dict(t)
         d["email"] = idents.get(t["user_id"], {}).get("email")
         terms.append(d)
+    # PH-PROV-2b §2.4: expired-but-unused invites stay visible — they are the
+    # attention state (§1.3) and the thing reissue exists for. Used/revoked stay hidden.
     irows = conn.execute(
-        "SELECT token, role, expires_at FROM invites "
-        "WHERE org_id=? AND used_at IS NULL AND expires_at > datetime('now') "
-        "ORDER BY expires_at", (org_id,)).fetchall()
+        "SELECT token, role, expires_at, expires_at > datetime('now') AS live FROM invites "
+        "WHERE org_id=? AND used_at IS NULL "
+        "ORDER BY expires_at DESC", (org_id,)).fetchall()
     iem = identity.invite_email_batch([r["token"] for r in irows][:200])
     invites = [{"token": r["token"], "role": r["role"], "expires_at": r["expires_at"],
-                "email": iem.get(r["token"]),
+                "email": iem.get(r["token"]), "expired": not r["live"],
                 "link": "%s/app#/invite/%s" % (BASE_URL, r["token"])} for r in irows]
     counts = {
         "answers": conn.execute("SELECT COUNT(*) FROM answers WHERE org_id=?", (org_id,)).fetchone()[0],
@@ -6226,6 +6257,7 @@ async def admin_org_detail(org_id: str, request: Request):
             "insights_unlocked_at": o["insights_unlocked_at"],
             "unlocked_release": o["unlocked_release"], "default_cut": o["default_cut"],
             "deactivated_at": o["deactivated_at"],
+            "lifecycle": _org_lifecycle(conn, o),
         },
         "users": users, "terms": terms, "counts": counts,
         "strategy": dict(strat) if strat else None,
