@@ -14127,3 +14127,24 @@ strategy 14, engine-audit 0/0, plausibility PASS, overview/pulse/release clean).
 browser-exercise discovery worth a line: accept-invite signs the ACCEPTOR in (sets the
 session cookie) — correct member behaviour, and why operator dry-runs should accept
 invites in a private window (noted in the dry-run doc). Cache v428.
+
+---
+
+## 2026-08-04 — PH-PROV-2b §4 (records): sole-admin recovery is specified — the 2026-06-11 "manual process, deliberately unbuilt" flag closes
+
+1g's scope choice — "active" means disabled_at IS NULL — was recorded as a note, but its
+consequence is a capability: **deactivate-then-reissue is now a working route to minting
+a fresh founding Admin for an existing organisation.** Proven end-to-end in the 2b
+browser exercise before being documented (the §2.3 refusal panel is where an operator
+discovers the procedure exists). The procedure lives in docs/SOLE_ADMIN_RECOVERY.md:
+(1) soft-deactivate the stranded Admin — gates access, deletes nothing; (2) issue a
+founding invite to the replacement; (3) the replacement sets their own password and
+accepts the platform terms AS THEIR OWN ACT, never inherited.
+
+Stated explicitly, because it is the reason the procedure is safe: the deactivated
+user's artifacts and terms acceptances SURVIVE (soft-deactivate gates access rather than
+deleting — the organisation's consent record is the organisation's), and both
+platform-admin actions are audited (user.deactivate; org.invite with superseded tokens
+as sha256[:12] digests), so a recovery is reconstructible from the audit trail without
+database surgery. The next stranded-admin incident is a runbook execution, not an
+improvisation.
