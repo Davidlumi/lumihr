@@ -1,9 +1,124 @@
-# AI Insights — Go-Live Checklist
+# Go-live checklist — what stands between here and the first founding member
 
-**Status: solicitor sign-off RECEIVED (2026-06-28). Prep complete. ONE step remains — David's
-production env flip.** The lawful basis is **legitimate interest (opt-out)** with an LIA on file;
-the legal text is finalised, Anthropic is named as the AI sub-processor, and the terms version is
-`1.0`. The master gate `AI_INSIGHTS_ENABLED` is still **default-OFF in code** as a backstop, so
+Rewritten 2026-08-04 (PH-DOC-1): organised by the GATE that blocks each item.
+Rule for every entry: **closed items carry their resolving commit; open items carry
+their prompt ID and the specific condition that unblocks them.** The checklist points
+at `DECISIONS.md`; it never restates it. The AI-insights go-live section (its own
+gate, solicitor-signed) is preserved in full below the gates.
+
+---
+
+## Gate 1 — before the first organisation is provisioned
+
+- [ ] **PH-PROV-1f — provisioning log line → digest.** `send_notification` console-logs
+  the founding-invite link (the SMTP-less delivery path); the provisioning-specific line
+  is replaced with a sha256[:12] digest since the API already returns the link directly.
+  *Unblocked by:* building it (sequenced "lands before the first real provisioning",
+  PH-PROV-2a preamble; CF-1 governs the wider path until D2).
+- [ ] **`LUMI_BASE_URL` set in the serving environment.** Until set, every invite/reset
+  link is minted against `http://localhost:8060` and is dead for a real recipient (boot
+  warning, `app.py` startup). *Unblocked by:* David setting it where the first real
+  invite will be minted.
+
+## Gate 2 — before the first member submission
+
+- [ ] **PH-PROV-1c — the two mislabelled `source='signup'` orgs (HR Datahub, Tester).**
+  Destructive, double-guarded, awaiting David's ruling. Now MORE visible: 2b's lifecycle
+  column renders both as real members with lifecycle states; Tester's answer row is in
+  the live answer book (89,321 → the book fingerprint moves when it goes); member counts
+  read two high, including for provenance work. *Unblocked by:* David's ruling — **and
+  the ⚠ factual correction below lands first.**
+  - ⚠ **Factual correction required before 1c executes (PH-DOC-1 §3):** the drafted 1c
+    rationale states HR Datahub has "no relationship to Lumi HR Ltd" and is a test
+    artifact — but `david@hrdatahub.com` appears on the Offshore Wind Reward Forum
+    distribution as a participant, so the org record may correspond to a real external
+    contact. The disposition (DELETE) is unaffected; the wording in the permanent
+    record is what must be right. *Unblocked by:* David restating the rationale
+    factually. NOT resolved here.
+- [ ] **C2 — member-facing retention disclosure gap.** DPA §5.2 states live-system
+  deletion ≤30 days; nothing member-facing discloses that copies persist ≤90 days
+  (PH-BAK-2 §A.4 C2, quoted verbatim in DECISIONS). Solicitor-bundle material, with the
+  AI terms. *Unblocked by:* solicitor blesses the combined position (live ≤30d, copies
+  ≤90d) as the §5.2 reading and sets the privacy notice's "limited period" number.
+
+## Gate 3 — before Phase 2 (Postgres)
+
+- [ ] **`db.py` fresh-database DDL divergence.** `CREATE TABLE orgs` still declares the
+  pre-split shape (`name NOT NULL` etc.) — a fresh build is structurally impossible
+  (proven, PH-SEED-1 §5) and Phase 2 would port the pre-split shape. *Unblocked by:* the
+  DDL catching up with the step-5 world — related to the post-soak DROP diff, but the
+  FRESH-DDL half cannot wait for soak end if Phase 2 moves first.
+
+## Gate 4 — before a second environment exists (staging, pen test, off-live repro)
+
+- [ ] **`seed_import` rebuild failure — the seed world no longer rebuilds.** Fresh build
+  crashes (DDL/writer mismatch since step 5); CSVs stale (804 vs 344 live); registry 210
+  vs 220; identity store never written by the importer. The live store is the sole
+  authoritative world (PH-SEED-1 §5, README-flagged). *Unblocked by:* the seed-world
+  reconciliation ruling + importer/DDL repair — its own scoped work.
+
+## Gate 5 — before the 243-metric anchor register reconciliation starts
+
+- [ ] **Question library has two competing sources of truth** — CSVs vs DB, CSVs
+  deliberately stale by recorded convention; 138 of 344 live questions absent from the
+  CSV (PH-SEED-1 measurement). The reconciliation maps by `metric_id` and must know
+  which source is authoritative before it starts. *Unblocked by:* David ruling the
+  authoritative source. Census-scoping doctrine applies: THE REGISTER IS NOT THE SCOPE —
+  the live platform is (PH-BAK-2 §A.2).
+
+## Pending David's ruling / action
+
+- [ ] **C1 — retention ceiling vs rotation depth.** Per-migration backups can outlive
+  the 90-day ceiling if migrations pause; which rule yields is a ruling (PH-BAK-2 §A.4
+  C1 — reported, not resolved). *Unblocked by:* David ruling ceiling-binds or
+  rotation-binds.
+- [ ] **Time Machine GUI check — `/private/tmp`.** Open since PH-LOG-1; it is CF-2's
+  LAST open close-condition limb (limbs a and b are satisfied: purge scope reports 0
+  candidates; the teardown zero-survivors assertion is green on every suite run).
+  *Unblocked by:* David confirming in System Settings → Time Machine that no custom
+  rule pulls `/tmp` into backup scope.
+- [ ] **AI Insights go-live flip** — David's steps a–d + steps 5/6 in the preserved
+  section below. *Unblocked by:* David executing them in production.
+- [ ] **Stripe TEST keys** into `server/.env.local` (owed since 2026-06-22,
+  DECISIONS:4076) — until then, staff "Confirm launch (no card)" is the paid-pulse path.
+- [ ] **Solicitor bundle** (one visit): C2 above · AI-terms draft review
+  (`lumi_AI_terms_DRAFT_for_solicitor.md` — AI-drafted text is never operative) ·
+  privacy-notice retention number · paid-launch billing/refund clause (2026-06-22) ·
+  cookie policy analytics description (last draft-flagged legal doc).
+
+## Deferred post-launch (deliberately; the stopping rules hold)
+
+- [ ] **PH-PROV-1b** — `/api/team/invite` silent admin→viewer coercion becomes an
+  explicit 400. Member-facing behaviour change; verified as-is in the gates meanwhile.
+  *Unblocked by:* David scheduling it once launch settles (own diff, its prompt exists).
+- [ ] **PH-PROV-1e** — identity_recon gate wiring (the split's step-7 debt), orphan
+  remediation runbook, backup naming convention. *Unblocked by:* scheduling — no
+  dependency; the manufactured-orphan cycle already exercises recon inside qa_backoffice.
+- [ ] **D2 — real email delivery.** CF-1's close condition; console-logged links remain
+  the accepted, contained exposure until then (PH-LOG-1 record). *Unblocked by:* the
+  delivery build (SMTP already env-wired; `LUMI_SMTP_*`).
+- [ ] **Seed/member provenance feature** (`is_seed`, blend-and-taper, real-contributor
+  n) — now has its first caller (2b's lifecycle column, DECISIONS 2026-08-04).
+  *Unblocked by:* David scheduling the provenance workstream.
+- [ ] **PH-BAK-4 deferred script list** — run_gates' bounded residual and the unguarded
+  inert stragglers (`regenerate.py`, `qa_reseed.py`); closed by the stopping rule, each
+  reopens only with its own scope.
+- [ ] **Post-soak DROP diff** — drops the dead `orgs.name`/`normalized_name` columns +
+  `idx_orgs_norm`, and CARRIES PIN-RELEASE for `bak_pre_presplit` as one of its own
+  close conditions (backup_policy.md). *Unblocked by:* soak ending.
+- [ ] **Phase 4 — deletion-on-exit spec.** Now specifiable, no longer blocked: live-store
+  deletion at exit + copies extinct within ≤90 days (PH-BAK-1 dependency resolution).
+- [ ] **Wider docs pass** (README beyond the corrected lines, handover docs).
+  *Unblocked by:* scheduling; single-line corrections have landed with their diffs.
+
+---
+
+# AI Insights — go-live (its own gate; solicitor sign-off RECEIVED 2026-06-28)
+
+**Status: prep complete. ONE step remains — David's production env flip.** The lawful
+basis is **legitimate interest (opt-out)** with an LIA on file; the legal text is
+finalised, Anthropic is named as the AI sub-processor, and the terms version is `1.0`.
+The master gate `AI_INSIGHTS_ENABLED` is still **default-OFF in code** as a backstop, so
 **no real member sees any AI-generated content** until the single env flip below.
 
 ## How the gate works (unchanged)
@@ -43,7 +158,7 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 - **C4 — non-AI placeholders filled.** Privacy Notice rights contact = **dpo@lumihr.co.uk**;
   Sub-processor List hosting = **Amazon Web Services (AWS)**, email = **Amazon SES**. Both pages
   finalised (`-draft` suffix dropped, `LEGAL_INDEX` `draft:false`). Only the **Cookie Policy**
-  remains draft (pending its analytics description — not part of the AI go-live).
+  remains draft (pending its analytics description — carried in the solicitor bundle above).
 - **Article 30 / LIA attestation** produced: `compliance/ai-insights-data-minimisation-attestation.md`
   — send-ready; David emails it to the solicitor to append to the RoPA / LIA.
 
@@ -83,13 +198,24 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 
 ---
 
-## Launch blockers — platform safety (added 2026-08-04)
+## Closed platform-safety blockers (hashes resolve; detail in DECISIONS.md)
 
-- [x] **PH-SEED-1: `seed_import.py` cannot default to the live store** — `--db` mandatory
-  on every invocation, live-store target refused without the double override, dry-run
-  default, destruction preview on both paths. Sequenced alongside PROV-2; neither ships
-  without the other. **Complete: commit `a620921`.**
-  - Discovered in its rehearsal, NOT yet fixed (own scope, report-only): the seed world
-    no longer rebuilds from `data/` at all (schema/writer mismatch since the step-5
-    split; CSVs stale at 804 vs 344 live; registry 210 vs 220). The live store is the
-    sole authoritative world until the reconciliation work rules otherwise.
+- [x] **PH-SEED-1** — `seed_import.py` cannot default to the live store (`--db` mandatory
+  both paths, live-store refusal + awkward override, dry-run default, destruction
+  preview). **`a620921`** (docs `1f72817`). Its §5 finding (seed world no longer
+  rebuilds) lives under Gate 4 above.
+- [x] **PH-PROV-1 Phase A** — staff-provisioned membership, self-serve closed. **`90a8142`**
+- [x] **PH-PROV-1d** — recon/gate outputs never print a bearer. **`86c6446`**
+- [x] **PH-PROV-1g** — at most one live admin invite; the carve-out's boundary. **`257a0de`**
+- [x] **PH-PROV-2a** — console provisioning form (members admittable). **`210e075`**
+- [x] **PH-PROV-2b** — lifecycle column + invite actions + sole-admin recovery
+  specified. **`9ce4044`** + **`9977838`**
+- [x] **PH-LOG-1** — credential-bearing logs contained; CF-1 opened with its close
+  condition. **`df3b95b`**
+- [x] **PH-BAK-1** — clean-history proof, census corrective, purge mechanism + teardown
+  fix (records in DECISIONS 2026-08-03).
+- [x] **PH-BAK-2** — census-scoping + symlink doctrines, startup sweep. **`7ec5a79`** +
+  **`a899bc7`**
+- [x] **PH-BAK-3** — identity backup rotation fail-closed. **`dc68c49`**
+- [x] **PH-BAK-4** — delete-path re-triage + policy-conformance line. **`eeeb2a6`** +
+  **`7a2f78b`**
