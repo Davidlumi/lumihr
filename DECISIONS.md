@@ -13926,3 +13926,74 @@ caches bytecode under ~/Library/Caches/com.apple.python, and a same-second, same
 edit validated stale bytecode during the derivation proof — cleared and re-proven; the
 same mechanism could mask any single-constant flip test, so: when proving derivation,
 assert on the DERIVED OUTPUT, never on having edited the source.
+
+---
+
+## 2026-08-04 — PH-SEED-1: seed_import can no longer default to the live store — and the rehearsal caught something bigger
+
+**§2.0 correction, recorded as ruled.** The original prompt assumed a non-destructive bare
+path ("it is the deletion that loses its default"). False premise: line 69's unconditional
+`DELETE FROM questions` means there is no non-destructive path — and the bare invocation is
+arguably the WORSE of the two. `--fresh` announces itself as a rebuild; the bare form looks
+like a routine import and takes the question library with it — the REW26_/REW262_ DB-origin
+lineage whose CSVs are deliberately stale by recorded convention, and every in-place edit
+migrations ever made. A destructive operation disguised as an additive one earns the same
+guard as the honest one. Measured on today's live copy: **344 questions in the DB, 138 —
+40% of the library — would not survive a bare re-import.**
+
+**The fix.** `--db <path>` is MANDATORY on every invocation (ruled: no LUMI_DB fallback, no
+live default, either path — a tool that destroys defaults to nothing). Positive assertion
+on both paths: a target realpath-equal to either live store is refused outright, exit 2,
+path named; override needs BOTH `--confirmed-by-david` AND
+`--i-understand-this-destroys-the-live-store`. Dry-run default, `--write` to act (joining
+the 90-of-93 convention). Fail closed everywhere, including an unreadable target
+("refusing to proceed blind"). Destruction preview before anything dies: `--fresh` prints
+orgs/users/answers + the answer-book fingerprint (223 / 8 / 89,321 / 3c587eaa191d17a1 when
+pointed at live — the numbers that stop a hand); bare prints the library count and the
+would-not-survive count DERIVED STRUCTURALLY as the set difference between the DB's ids and
+the actual re-import CSV — the operation's own inputs, not a prefix convention. §2.2's
+check: NO structural DB marker for DB-origin exists (no source/lineage column on
+questions); prefix convention is folklore and was NOT baked into the guard — which is
+itself a finding, folded into §5 below. New-database targets print "new database — nothing
+destroyed" and proceed: the genuine fresh build stays legitimate.
+
+**§3 — the exemption, reframed as ruled.** The original framing ("a seed_ exemption") was
+wrong. db.py:19 is an ALLOWLIST INVERTED: qa_ and verify_ are denied; every other argv0
+defaults live. Write access was thereby extended to delete access across the whole estate
+by default rather than by decision. **Write permission does not imply delete permission.
+Any tool capable of deleting or replacing a store carries its own guard regardless of its
+prefix.** Checked-and-clear, recorded because it can be relied on: the other nine seed_
+tools (seed_cohort, five seed_release_2026_*, seed_pulse, seed_staff_admin,
+seed_validation_config) are WRITE-ONLY, verified by reading. The wider apply_/regen_/
+migrate_/mp_ families: PH-BAK-4's 93-script census stands, stopping rule holds.
+
+**§5 note (report-only) — and it grew during verification: THE SEED WORLD NO LONGER
+REBUILDS.** Verification 6.9 (the §1.C workflow end-to-end) FAILED for reasons that
+predate this diff, proven by running HEAD's unmodified script against a fresh path: same
+crash, `IntegrityError: NOT NULL constraint failed: orgs.name` — the Phase-1 split
+stripped seed_import's identity-column writes, but db.py's CREATE TABLE for a FRESH
+database still declares orgs.name NOT NULL, so a fresh build has been structurally
+impossible since step 5. On top: data/lumi_questions.csv holds 804 rows against the live
+344 (with format-drift warnings), seeded_orgs.json holds 210 orgs against the recorded
+220, and a post-split rebuild would need the identity store written, which seed_import
+does not do at all. **Under the OLD defaults, the README ritual against live would have
+deleted the live store and then crashed mid-rebuild — destruction with no way back. The
+guard shipped in this diff is what now stands between that command and that outcome.**
+The question library has two competing sources of truth (CSV vs DB, CSVs deliberately
+stale) and the rebuild path is dead; both bear directly on the 243-metric anchor register
+reconciliation, which maps by metric_id and must know which source is authoritative
+before it starts. Reported, not resolved — its own scope.
+
+**Verification (assert on derived output, per the bytecode footnote):** 6.1-6.8 and 6.10
+green — bare and --fresh refuse without --db (argparse, exit 2); live target refused
+without both flags, nothing touched; both flags proceed (proven via dry-run against the
+live path: OVERRIDE ENGAGED + accurate preview + zero writes); dry-run byte-identical on
+a WAL-checkpointed copy across repeated runs; previews verified against independent
+queries (344/138 on the copy; 223/8/89,321/3c587eaa on live); unreadable target →
+fail-closed exit 2, file untouched; new-database case proceeds. **6.9 blocked by the
+pre-existing rebuild breakage above — reported rather than papered over** (the guard
+portion of the workflow, --db + refusal + preview + --write, all works; the import body
+it hands off to is broken since step 5). 6.10 live stores byte-identical. 6.11 full
+suite: 12 gates green — backoffice 80/0/0, hero 59, commentary 40, domain_summary
+143/143, focus 26, signals 14, strategy 14, engine-audit 0/0, plausibility PASS,
+overview/pulse/release clean. Fixtures removed and proven gone.

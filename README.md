@@ -12,9 +12,15 @@ bespoke peer groups, a metadata-driven questionnaire, and tokenised sharing.
 python3 -m pip install --user fastapi "uvicorn[standard]" bcrypt httpx
 
 # 2. import the seed data and build the benchmark (one-off, ~30s)
+#    seed_import is DESTRUCTIVE on every path (PH-SEED-1): --db is mandatory,
+#    dry-run is the default, and it refuses the live store outright. Point it
+#    at the database you MEAN to (re)build.
 cd server
-python3 seed_import.py --fresh        # loads library + registry + 220 response files
-python3 aggregate.py                  # computes benchmark_snapshots (~2s, re-runnable)
+python3 seed_import.py --fresh --db ../lumi.db --write \
+    --confirmed-by-david --i-understand-this-destroys-the-live-store   # first-ever build only
+LUMI_DB=../lumi.db python3 aggregate.py    # computes benchmark_snapshots (~2s, re-runnable)
+# routine reseeds target a THROWAWAY copy, never live:
+#   python3 seed_import.py --fresh --db /tmp/lumi_throwaway.db --write
 
 # 3. start the platform
 python3 -m uvicorn app:app --port 8060

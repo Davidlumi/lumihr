@@ -4,7 +4,16 @@ Loads the question library, the organisation registry, and the 220 seed
 response files into the database as tenant organisations, then prints a full
 reconciliation report (matched / file-only / registry-only, fuzzy candidates).
 
-Run:  python3 seed_import.py [--data DIR] [--fresh]
+Run:  python3 seed_import.py --db <path> [--data DIR] [--fresh] --write
+
+DESTRUCTIVE ON EVERY PATH (PH-SEED-1, ruled 2026-08-03): --fresh removes the
+whole target database; the bare invocation still runs DELETE FROM questions and
+re-imports the library from CSV, killing DB-origin rows and every in-DB edit.
+Therefore: --db is MANDATORY on every invocation (no LUMI_DB fallback, no live
+default — a tool that destroys defaults to nothing); dry-run is the default and
+--write acts; targeting a LIVE store is refused outright unless BOTH
+--confirmed-by-david AND --i-understand-this-destroys-the-live-store are given;
+a destruction preview prints what dies before anything does.
 """
 import argparse
 import csv
@@ -159,14 +168,16 @@ def build_similarity_vectors(registry_records):
 
 # ----------------------------------------------------------------- import ---
 
-def run(data_dir, fresh=False):
-    db_path = os.environ.get("LUMI_DB", os.path.join(os.path.dirname(__file__), "..", "lumi.db"))
+def run(data_dir, db_path, fresh=False):
+    # PH-SEED-1: db_path arrives validated from main() — explicit --db, live-store
+    # assertion passed, preview shown, --write present. No env fallback here.
     if fresh and os.path.exists(db_path):
         os.remove(db_path)
         for ext in ("-wal", "-shm"):
             p = db_path + ext
             if os.path.exists(p):
                 os.remove(p)
+    os.environ["LUMI_DB"] = db_path      # get_conn() resolves LUMI_DB first
     conn = get_conn()
     init_schema(conn)
 
@@ -306,9 +317,109 @@ def run(data_dir, fresh=False):
     return recon
 
 
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+LIVE_STORES = ("lumi.db", "identity.db")
+
+
+def _destruction_preview(db_path, data_dir, fresh):
+    """Print what dies BEFORE anything does (PH-SEED-1 §2.1) — the control most
+    likely to actually stop a mistake. A prompt gets typed through; '223 orgs,
+    8 users, 89,321 answers' gets read. Returns False only on preview failure."""
+    if not os.path.exists(db_path):
+        print("[seed] new database — nothing destroyed (%s does not exist yet)" % db_path)
+        return True
+    import sqlite3
+    try:
+        try:
+            conn = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+            conn.execute("SELECT 1 FROM sqlite_master LIMIT 1")
+        except sqlite3.OperationalError:
+            # a WAL-mode COPY with no -shm/-wal sidecars refuses a plain
+            # read-only open (ro cannot create them). immutable=1 stays strictly
+            # read-only and is safe here: a throwaway copy is not being written
+            # under us, and the live store never reaches this branch (its
+            # sidecars exist, so plain ro works there).
+            conn = sqlite3.connect("file:%s?mode=ro&immutable=1" % db_path, uri=True)
+            conn.execute("SELECT 1 FROM sqlite_master LIMIT 1")
+    except sqlite3.Error as e:
+        print("[seed] PREVIEW FAILED — %s is not a readable database (%s). "
+              "Refusing to proceed blind; nothing touched." % (db_path, e))
+        return False
+    try:
+        if fresh:
+            counts = {t: conn.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0]
+                      for t in ("orgs", "users", "answers")}
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from dbsnapshot import table_fingerprint
+            n, h = table_fingerprint(conn, "answers")
+            print("[seed] DESTRUCTION PREVIEW (--fresh removes the WHOLE database %s):" % db_path)
+            print("[seed]   %(orgs)d orgs, %(users)d users, %(answers)d answers" % counts)
+            print("[seed]   answer-book fingerprint: %d rows / %s" % (n, h[:16]))
+        else:
+            # The bare path is destruction disguised as an addition: DELETE FROM
+            # questions + CSV re-import. The set difference against the ACTUAL
+            # re-import source is the structural measure of what dies outright —
+            # derived from the operation's own inputs, not a prefix convention.
+            nq = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+            db_ids = {r[0] for r in conn.execute("SELECT id FROM questions")}
+            lib = os.path.join(data_dir, "lumi_questions.csv")
+            csv_ids = set()
+            with open(lib, encoding="utf-8-sig") as f:
+                for r in csv.DictReader(f):
+                    if r.get("id"):
+                        csv_ids.add(r["id"])
+            dead = sorted(db_ids - csv_ids)
+            print("[seed] DESTRUCTION PREVIEW (bare import still runs DELETE FROM questions):")
+            print("[seed]   %d questions in the target DB; %d would NOT survive re-import"
+                  % (nq, len(dead)))
+            print("[seed]   (absent from %s — DB-origin/lineage rows; the CSVs are" % lib)
+            print("[seed]   deliberately stale by recorded convention). Every surviving row is")
+            print("[seed]   REPLACED by CSV content, losing in-DB edits.")
+            if dead:
+                print("[seed]   would die outright: %s%s"
+                      % (", ".join(dead[:8]), " …(+%d more)" % (len(dead) - 8) if len(dead) > 8 else ""))
+    except Exception as e:
+        print("[seed] PREVIEW FAILED (%s) — refusing to proceed blind." % e)
+        return False
+    finally:
+        conn.close()
+    return True
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default=os.path.join(os.path.dirname(__file__), "..", "data"))
     ap.add_argument("--fresh", action="store_true")
+    # PH-SEED-1 (ruled 2026-08-03): --db mandatory on EVERY invocation — both
+    # paths destroy (--fresh the whole DB; bare, the question library). A tool
+    # that destroys should never default to anything, least of all the live store.
+    ap.add_argument("--db", required=True,
+                    help="target database path — EXPLICIT, no default, no env fallback")
+    ap.add_argument("--write", action="store_true",
+                    help="actually run; without it this is a dry run (house convention)")
+    ap.add_argument("--confirmed-by-david", action="store_true", dest="confirmed")
+    ap.add_argument("--i-understand-this-destroys-the-live-store", action="store_true",
+                    dest="live_override",
+                    help="second override flag, deliberately awkward: required WITH "
+                         "--confirmed-by-david to target a live store")
     args = ap.parse_args()
-    run(args.data, fresh=args.fresh)
+
+    target = os.path.realpath(args.db)
+    # positive assertion, both paths, fail closed: a live store is refused outright.
+    for live in LIVE_STORES:
+        if target == os.path.realpath(os.path.join(ROOT, live)):
+            if not (args.confirmed and args.live_override):
+                print("[seed] REFUSED: %s resolves to the LIVE store %s.\n"
+                      "[seed] Nothing was touched. Seeding a throwaway: --db <copy-path>.\n"
+                      "[seed] Deliberately rebuilding the live store requires BOTH\n"
+                      "[seed] --confirmed-by-david AND --i-understand-this-destroys-the-live-store."
+                      % (args.db, live))
+                sys.exit(2)
+            print("[seed] LIVE-STORE OVERRIDE ENGAGED for %s (both flags present)." % live)
+
+    if not _destruction_preview(args.db, args.data, args.fresh):
+        sys.exit(2)
+    if not args.write:
+        print("[seed] DRY RUN — nothing written, nothing deleted. Add --write to proceed.")
+        sys.exit(0)
+    run(args.data, args.db, fresh=args.fresh)
