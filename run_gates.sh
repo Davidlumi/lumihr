@@ -96,6 +96,22 @@ teardown() {
   rm -f "$IDB" "$IDB-shm" "$IDB-wal" 2>/dev/null
   if [[ -e "$IDB" ]]; then print "⚠️  identity throwaway NOT deleted: $IDB"
   else print "identity throwaway deleted (logs kept in $WORK)"; fi
+  # PH-BAK-1 §3.3 (David's ruling 2026-08-03): the REWARD throwaway dies with the
+  # run too — the census found the asymmetry (identity deleted, lumi_qa.db never)
+  # was the leak source: three pre-split copies with full identity data survived
+  # in /tmp for four days. Same path, same guarantee: this teardown runs via the
+  # EXIT trap, so failure and interrupt are covered like success. The assertion
+  # counts ALL database copies in the workdir — zero must survive, not merely no
+  # file of a known name.
+  rm -f "$DB" "$DB-shm" "$DB-wal" 2>/dev/null
+  local -a _dbs
+  _dbs=($WORK/*.db(N) $WORK/*.db-wal(N) $WORK/*.db-shm(N))
+  if (( ${#_dbs[@]} )); then
+    print "⚠️  PH-BAK-1 ASSERTION FAILED: ${#_dbs[@]} database cop$( (( ${#_dbs[@]} == 1 )) && print -n y || print -n ies) SURVIVED teardown:"
+    for f in "${_dbs[@]}"; do print "    $f"; done
+  else
+    print "PH-BAK-1: zero database copies survive in the workdir ✓"
+  fi
 }
 trap teardown EXIT
 trap 'exit 130' INT TERM

@@ -51,3 +51,13 @@ identity.db.bak*
 *.log
 *.out
 nohup.out
+
+# PH-BAK-1 (2026-08-03): defence in depth ONLY — the control is that database
+# copies are MANAGED (backup_policy.md + teardown deletion), not that git is
+# told to look away. Generic patterns so a copy under an unexpected name is
+# equally unstageable; §1 proved history clean at every scope — keep it so.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3

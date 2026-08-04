@@ -13662,3 +13662,78 @@ and not before.
 output; this path was deliberately excluded from that diff as a different fix class.
 PH-PROV-1f will remove the provisioning-specific log line ahead of D2, since the API
 already returns that link directly. Register twin: docs/COMPLIANCE_FINDINGS.md CF-1.
+
+---
+
+## 2026-08-03 — PH-BAK-1: database copies — clean history recorded, the census corrective, the ruling, and the mechanism fix
+
+**§1, recorded permanently because it can never be re-established later: NO DATABASE HAS
+EVER ENTERED GIT, at any scope.** All refs + reflog + unreachable objects enumerated (2,432
+blobs); every blob ≥4KB checked for SQLite magic bytes, not just names — zero hits; no
+pattern match, no stash, no LFS, no submodule. Every >1MB blob identified and benign.
+
+**The "~90 copies" correction.** That figure described the world before the 2026-07-30
+Phase-0 ruling deleted 87; PH-LOG-1 repeated it uncritically from the Phase-0 diagnostic.
+Actual estate at census: Group A (governed, in-tree ritual) = 4 lumi baks + 1 identity bak;
+Group B = 8 gate throwaways in /tmp, of which THREE (30 Jul) were pre-split with full
+identity data; Group C = 6 session-scratchpad copies incl. 3 identity throwaways.
+
+**Ruling: `BACKUP_RETENTION = POLICY_HOLDS_PLUS_SCRATCH_PURGE`.** Group A untouched — the
+standing policy stands and is being followed (rotation of exactly 3; `bak_pre_presplit`
+pinned with its existing release trigger, the post-soak DROP diff; identity retain-1). The
+D9 pair is NOT pinned — it ages out with rotation; the D9 finding survives in this log with
+its recipe named, which the no-hash-without-recipe rule exists to make sufficient. Groups B
+and C destroyed in full, including identity-free post-split copies — a delete-the-dirty-ones
+rule invites a teardown-time judgement call that eventually goes wrong.
+
+**The mechanism fix (the actual fix; the purge only reset a counter).** run_gates deleted
+its identity throwaway but never `lumi_qa.db` — that asymmetry was the leak. Teardown now
+deletes the reward throwaway on the same EXIT-trap path (failure and interrupt covered) and
+asserts a COUNT of zero surviving database copies in the workdir. backup_policy.md carries
+the dated §3.4 correction closing the scratch carve-out. Session tooling caveat, stated
+plainly: ad-hoc session copies cannot be mechanically guaranteed to die with their session —
+the guarantee is doctrine (recorded in the session memory) plus the version-controlled sweep
+(`server/purge_throwaway_copies.py`); this is a discipline control, not an enforcement one.
+
+**Calibration, honestly, both directions.** Exposure measured: 16 distinct addresses (13
+`.example` demo/probe, 3 real-domain), 11 distinct pw_hash, all bcrypt `$2b$` cost 12 —
+not a practical credential exposure and a small human footprint, which is why this is a
+policy correction now rather than an incident. NOT softened: the same mechanism unchanged
+at 200 member organisations is a different object entirely; fixing it during soak costs
+near zero, and that is the point of the soak.
+
+**Time Machine — accepted, bounded position.** Group A is TM-included BY DESIGN; the bound
+is rotation depth (3) plus the pin's named release trigger. Accepted and recorded, not an
+open exposure. Groups B/C: whether they were EVER in backup scope turns on the /private/tmp
+built-in-exclusion question David confirms in the TM GUI (open since PH-LOG-1); the purge
+is not claimed to close backup-media exposure until he has. `rm` on APFS unlinks — it does
+not overwrite; gone-from-live-filesystem is the control this diff delivers.
+
+**Phase 4 dependency — RESOLVED into a number.** With scratch copies in scope and Group A
+bounded, deletion-on-exit is specifiable: exit deletion covers the live stores immediately;
+every unpinned retained copy is bounded by a **maximum retention window of 90 days** from
+creation (rotation ages copies out far faster in practice; 90 days is the hard ceiling, and
+a copy older than that without a named pin is out of policy and deleted on sight). The one
+exception is the named pre-split pin, bounded by its release trigger, which predates any
+member data. Phase 4 specifies against: live-store deletion at exit + copies extinct within
+≤90 days. Register twin: docs/COMPLIANCE_FINDINGS.md CF-2.
+**CF-2 close condition (byte-identical with the register):** Closed when (a) the Groups B/C
+purge has run with zero database copies surviving in scope, (b) a full suite run shows the
+teardown zero-survivors assertion green, and (c) David confirms in the Time Machine GUI
+whether /private/tmp is excluded from backups; the Group A position remains
+accepted-bounded under data/backup_policy.md and is not part of this finding.
+
+**PH-BAK-1 execution addendum (2026-08-04).** The purge script's full-scope enumeration
+CORRECTED the census before deleting anything: §2's B1 had scoped "session scratchpad" to
+the current session only — the sweep across ALL session scratchpads found the real Group C:
+**1,058 files / 26.90 GB, including 223 identity-store copies and 153 pre-split reward
+copies with full identity data**, accumulated by prior throwaway-heavy sessions. The
+19-file/1.31 GB census figure was the same class of understatement as the "~90" it was
+correcting — recorded so the pattern is visible. Second finding: prior sessions' scratch
+mirror-trees are SYMLINKS into the live tree, so db-named links point AT the live stores;
+the script's Group-A guard caught this on dry-run and now skips links explicitly (a link is
+not a copy and is never unlinked through — deleting "through" one was structurally
+prevented). Executed `--write --confirmed-by-david`: **1,058 deleted, post-purge survivor
+count in scope 0 ✓**; Group A verified intact (4+1 files, byte-sizes unchanged); live
+stores untouched; full suite re-run 12/12 green with the new teardown assertion firing
+clean: "zero database copies survive in the workdir ✓" (qa_backoffice 80 checks).

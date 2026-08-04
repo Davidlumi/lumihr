@@ -109,3 +109,32 @@ bites hardest.
 ## Enforcement
 Discipline-only until Phase 1: the backup-creating step (migration scripts, `wal_checkpoint` + copy
 ritual) gains a policy hook in the Phase-1 spec. This file is the ruled text those tools must encode.
+
+---
+
+## Dated correction — 2026-08-03 (PH-BAK-1, ruled by David)
+
+**What the scope was, and why it was wrong.** The original ruling scoped
+"Scratch/throwaway copies (session scratchpads)" as *"outside this policy today;
+in scope for the Phase 3–4 deletion-on-exit design."* That carve-out was the
+defect: the PH-BAK-1 census found every unmanaged identity-bearing copy living
+precisely there — three pre-split gate throwaways with full identity data (223
+org names, 8 emails, 8 pw_hash each) surviving four days in /tmp because
+run_gates deleted its identity throwaway at teardown but never its reward one,
+plus session-scratchpad identity copies. The governed .bak ritual, meanwhile,
+was being followed exactly. The gap was the scope line, not the discipline.
+
+**Amended scope, effective immediately:**
+
+1. **Scratch and throwaway copies are IN scope.**
+2. **No copy of the identity store persists beyond the process that created it.**
+3. **Reward-store throwaways are deleted at teardown by the tooling that creates
+   them** — run_gates.sh deletes `lumi_qa.db` (+sidecars) on the same EXIT-trap
+   path as the identity throwaway, and asserts ZERO database copies survive in
+   the workdir (a count, not a named-file check). Ad-hoc session copies are swept
+   by `server/purge_throwaway_copies.py` (dry-run default, double-guarded), which
+   is structurally unable to touch Group A or the live stores.
+
+This correction is recorded as such, dated, with the prior text left standing
+above — the gap is the finding, and a policy whose history is quietly rewritten
+stops being evidence of anything.
