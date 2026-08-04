@@ -3107,16 +3107,25 @@ function CompletionRing({ pct, size = 72, stroke = 8 }) {
   }, []);
   const r = (size - stroke) / 2, C = 2 * Math.PI * r;
   const off = C * (1 - (armed ? target : 0) / 100);
-  const col = target >= 100 ? "var(--favourable)" : "var(--blue)";
+  const done = target >= 100;
+  const col = done ? "var(--favourable)" : "var(--blue)";
+  // per-instance gradient id — multiple rings coexist on viewer pages
+  const gid = useState(() => "ringg" + (++CompletionRing._uid))[0];
   const cx = size / 2;
   return html`<svg width=${size} height=${size} viewBox=${"0 0 " + size + " " + size} class="comp-ring" aria-hidden="true">
-    <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
-    <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${col} stroke-width=${stroke} stroke-linecap="round"
+    <defs><linearGradient id=${gid} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color=${done ? "#2E7D52" : "#2048B0"} />
+      <stop offset="1" stop-color=${done ? "#4FA372" : "#2E62D9"} />
+    </linearGradient></defs>
+    <circle cx=${cx} cy=${cx} r=${r} fill="none"
+      stroke="color-mix(in srgb, #2048B0 6%, #F4F1EC)" stroke-width=${stroke} />
+    <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${"url(#" + gid + ")"} stroke-width=${stroke} stroke-linecap="round"
       stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"}
       style=${reduce ? null : { transition: "stroke-dashoffset 850ms cubic-bezier(0.33, 1, 0.68, 1)" }} />
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${Math.round(target)}%</text>
   </svg>`;
 }
+CompletionRing._uid = 0;
 window.CompletionRing = CompletionRing;
 
 window.YourDataPage = function ({ me }) {

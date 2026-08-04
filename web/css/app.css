@@ -1792,11 +1792,30 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-row:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: -2px; }
 .data-row .cat-icon { flex: 0 0 auto; }
 .data-row-name { flex: 0 0 220px; font-weight: 650; font-size: var(--fs-label); }
-.data-bar { flex: 1 1 auto; height: 8px; min-width: 80px; border-radius: 999px;
-  background: var(--surface-sunk); overflow: hidden; }
-.data-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--blue);
+/* Premium finish (2026-08-04b): a recessed, blue-tinted track (the beige sunk
+   tone read muddy against the card) and a within-hue gradient fill with a top
+   sheen + luminous leading edge — one hue doing the work, finished properly.
+   Complete keeps the same construction in the status green. */
+.data-bar { flex: 1 1 auto; height: 10px; min-width: 80px; border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 6%, var(--surface-sunk));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--blue) 14%, transparent),
+              inset 0 0 0 1px color-mix(in srgb, var(--blue) 7%, transparent);
+  overflow: hidden; }
+.data-bar-fill { display: block; height: 100%; border-radius: 999px; position: relative;
+  min-width: 10px;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-bright) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .30),
+              0 0 0 1px color-mix(in srgb, var(--blue) 22%, transparent);
   transition: width 700ms cubic-bezier(0.33, 1, 0.68, 1); }
-.data-bar-fill.done { background: var(--favourable); }
+.data-bar-fill::after {           /* the leading-edge glow */
+  content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 14px;
+  border-radius: 999px;
+  background: radial-gradient(closest-side at 70% 50%, rgba(255, 255, 255, .35), transparent); }
+.data-bar-fill.done {
+  background: linear-gradient(90deg, var(--favourable) 0%,
+    color-mix(in srgb, var(--favourable) 72%, #7FC29B) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .30),
+              0 0 0 1px color-mix(in srgb, var(--favourable) 22%, transparent); }
 .data-row-count { flex: 0 0 72px; text-align: right; font-variant-numeric: tabular-nums; }
 .data-row .data-q-flag { flex: 0 0 auto; min-width: 96px; justify-content: center; }
 .data-row-go { flex: 0 0 auto; color: var(--ink-faint); display: inline-flex; }

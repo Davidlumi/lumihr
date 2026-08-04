@@ -14331,3 +14331,15 @@ creates a separate account, with "Stay signed in" and "Sign out & open the invit
 never a silent fall-through. Verified in the real DOM on live (all three states,
 including the click-throughs; zero console errors); suite 12 gates green (backoffice
 97/0/0, focus 26). Cache v431.
+
+**Your data bars, premium pass (2026-08-04b).** David: "the bars do not look premium
+enough" — right: a beige track with a flat fill has no finish. Same colour doctrine,
+finished properly: the track is recessed and blue-tinted (inset shadow + hairline ring —
+the sunk beige read muddy on the white card); the fill is a WITHIN-HUE gradient
+(--blue → --blue-bright toward the leading edge) with a top sheen and a luminous edge
+glow; complete keeps the identical construction in the status green; 10px height;
+min-width so a low percentage still renders a round-capped pill. The hero/drill rings
+take the same within-hue gradient stroke (per-instance SVG gradient ids — multiple
+rings coexist on viewer pages). Still single-hue-for-magnitude: a gradient inside one
+hue is finish, not a second hue. Verified in the DOM (zero console errors); suite 12
+gates green (backoffice 97/0/0). Cache v432.
