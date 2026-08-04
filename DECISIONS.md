@@ -13808,3 +13808,24 @@ but nothing member-facing discloses that copies persist beyond live deletion. FL
 SOLICITOR REVIEW alongside the AI terms: the combined position (live ≤30 days, copies
 extinct ≤90 days) needs blessing as the §5.2 reading, and the privacy notice's "limited
 period" wants the number. Not reconciled here — AI-drafted legal text is never operative.**
+
+**PH-BAK-2 §B — the startup sweep, and why it is exactly this aggressive and no more.**
+run_gates now invokes purge_throwaway_copies.py in DRY-RUN at startup, before gates.
+Two design choices recorded so neither is later "tidied up" into the aggressive version
+by someone reading them as incomplete:
+1. **Report, never delete.** An automatic destructive sweep fired by a routine command is
+   a worse failure mode than accumulation — the symlink near-miss (db-named links
+   resolving to the LIVE stores) is the standing proof of what an automated deleter can
+   meet. Notification is automatic; destruction stays behind `--write
+   --confirmed-by-david`, deliberate every time.
+2. **Warn, never fail.** A suite that fails for housekeeping trains operators to ignore
+   suite failures, which costs more than the disk. The finding prints prominently (count,
+   bytes, the identity-bearing subset called out, and the exact double-guarded command to
+   act) and the gates proceed.
+Verified with a manufactured fixture (identity-store copy + pre-split reward copy +
+symlink at the live lumi.db): reported "2 file(s) … 1 identity-store copy, 1 pre-split
+reward copy"; symlink SKIPPED and intact; nothing deleted without the guard; Group A and
+both live stores byte-identical across a full run; suite unaffected — 12/12 green,
+qa_backoffice 80/0/0; measured startup delta ~0.05s. Accumulation is now bounded by gate
+cadence rather than by anyone's memory; session-scratchpad hygiene remains doctrine, with
+this sweep as its recurring net.

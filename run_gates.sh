@@ -116,6 +116,28 @@ teardown() {
 trap teardown EXIT
 trap 'exit 130' INT TERM
 
+# --- PH-BAK-2 §B: startup sweep for stale throwaway copies. REPORT ONLY — the
+#     purge script's dry-run is invoked; deletion stays behind its own
+#     --write --confirmed-by-david double guard (an automatic destructive sweep
+#     fired by a routine command is a worse failure mode than accumulation; the
+#     symlink near-miss is why). WARN, NEVER FAIL: a suite that fails for
+#     housekeeping trains operators to ignore suite failures. Every guard in the
+#     script (symlink skip, Group-A FATAL) applies unchanged.
+say "startup sweep — stale throwaway DB copies (report only)"
+SWEEP_OUT="$WORK/throwaway_sweep.out"
+( cd "$SRV" && python3 purge_throwaway_copies.py ) >"$SWEEP_OUT" 2>&1 || true
+if grep -q "^Would delete 0 file" "$SWEEP_OUT"; then
+  print "sweep: no stale throwaway copies ✓"
+else
+  _sw_line=$(grep "^Would delete" "$SWEEP_OUT" || print "sweep output unreadable — see $SWEEP_OUT")
+  _sw_ident=$(grep -c "IDENTITY store" "$SWEEP_OUT" 2>/dev/null || true)
+  _sw_presplit=$(grep -c "PRE-split" "$SWEEP_OUT" 2>/dev/null || true)
+  print "⚠️  STALE THROWAWAY COPIES: ${_sw_line}"
+  print "⚠️    identity-bearing subset: ${_sw_ident:-0} identity-store cop$( [[ ${_sw_ident:-0} == 1 ]] && print -n y || print -n ies), ${_sw_presplit:-0} pre-split reward cop$( [[ ${_sw_presplit:-0} == 1 ]] && print -n y || print -n ies)"
+  print "⚠️    to destroy (deliberate, double-guarded):  python3 server/purge_throwaway_copies.py --write --confirmed-by-david"
+  print "    (full report: $SWEEP_OUT — suite continues; this never fails gates)"
+fi
+
 say "stopping :$PORT so the two-store copy is one instant (D8)"
 kill_port
 say "throwaway copies (SQLite backup API, both stores, one instant)"
