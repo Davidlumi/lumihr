@@ -13871,3 +13871,38 @@ own schedule; no divergence). Group A + both live stores byte-identical across t
 exercise. Full suite green — 12 gates, per-gate: hero 59, focus 26, signals 14, strategy
 14, engine-audit 0 hard/0 warn, overview 0 fail, domain_summary 143/143, commentary 40,
 plausibility freeze PASS, backoffice 80/0/0, pulse 0 fail, release 0 fail.
+
+---
+
+## 2026-08-04 — PH-BAK-4 §A: the delete-path re-triage — 93 scripts, one critical finding, and A.3's errata in both directions
+
+Filesystem-derived census (every mechanism: unlink/rmtree/open-w/subprocess-rm/SQL
+DROP-DELETE/VACUUM INTO/backup-API/truncate): **93 scripts of 181 carry destructive-capable
+mechanisms — A.3 listed 5. 93 is the right number**; the fourth census-scoping instance,
+and the sharpest: a census scoped to a criterion measures the criterion, not the estate.
+
+**STOP-CONDITION FINDING (reported, NOT fixed — own diff, David scopes it):
+`server/seed_import.py --fresh` os.remove()s the LIVE reward store by default.**
+`db_path = LUMI_DB or ../lumi.db`; with no env set that IS `/Applications/Lumi Project/
+lumi.db` (tested read-only). No dry-run, no positive assertion, NO double guard (0 grep
+hits — checked). Live-defaulting is by design (gate-safety-1 exempts seed_ tools) and the
+command is habituated ritual. One forgotten env var deletes every member answer, org,
+user and audit row not present in the seed CSVs. Severity: CRITICAL-latent — the largest
+blast radius in the estate, triaged by A.3 in five words ("deliberate... noted").
+Deliberate destruction is still destruction; "by design" is not a safety property.
+
+Everything else read, one line each: run_gates residual LOW post-PH-LOG-1 (targets are
+WORK-scoped names outside the tree); census_step5 SAFE by construction (A.3's dismissal
+verified CORRECT — NamedTemporaryFile, held-name delete); dbsnapshot LOW (its "DELETE"
+hit is docstring prose; real capability = one caller-named report file);
+register_clean_diff1/migrate_red_term LOW (overwrite their own .bak artifacts); the ~70
+migrate/regen/apply one-shots: convention HELD — **90 scripts carry the double guard,
+grep-verified not inferred** — plus book-hash tripwires in the reseed pair; every
+"truncate" hit is wal_checkpoint (maintenance); qa_* deletes are fenced at the connection
+layer by gate-safety-1; app.py/identity.py/pulses.py/notifications.py are WHERE-scoped
+runtime code, out of class.
+
+**A.3 errata, both directions:** (1) under-flagged seed_import (critical, five words);
+(2) mis-reported backup_identity's guard as absent (present); (3) over-flagged the same
+file's symlink case (benign); (4) census_step5 dismissal verified correct; (5) blind to
+88 of 93 scripts by construction. The doctrine-driven census measured its criterion.
