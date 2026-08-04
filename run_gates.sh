@@ -124,6 +124,25 @@ trap 'exit 130' INT TERM
 #     housekeeping trains operators to ignore suite failures. Every guard in the
 #     script (symlink skip, Group-A FATAL) applies unchanged.
 say "startup sweep — stale throwaway DB copies (report only)"
+# --- PH-BAK-4 §B: backup-policy conformance line. REPORT ONLY, never fails,
+#     never remediates — a fail-closed rotation abort (PH-BAK-3) leaves the
+#     identity class above retain-1 and is otherwise visible only in a session
+#     that may be long over; this line re-says it on every gate run. Expected
+#     values are DERIVED (backup_identity.RETAIN; the policy doc's "last N
+#     pre-diff" text; the pin's presence on disk) — no literals here.
+_bp_ret_ident=$(python3 -c "import sys; sys.path.insert(0, '$SRV'); import backup_identity; print(backup_identity.RETAIN)" 2>/dev/null || print "?")
+_bp_ret_rot=$(grep -oE "last [0-9]+ pre-diff" "$ROOT/data/backup_policy.md" 2>/dev/null | grep -oE "[0-9]+" | head -1)
+_bp_n_ident=$(print -l "$ROOT"/identity.db.bak_pre_*(N) | grep -cvE -- "-wal$|-shm$|^$")
+_bp_n_rot=$(print -l "$ROOT"/lumi.db.bak_pre_*(N) | grep -vE -- "-wal$|-shm$|^$" | grep -cv "presplit")
+_bp_pin=$(print -l "$ROOT"/lumi.db.bak_pre_presplit_*(N) | grep -cvE -- "-wal$|-shm$|^$")
+if [[ "$_bp_n_ident" == "$_bp_ret_ident" && "$_bp_n_rot" -le "${_bp_ret_rot:-3}" && "$_bp_pin" -ge 1 ]]; then
+  print "backup policy: conformant (identity $_bp_n_ident/$_bp_ret_ident · rotation $_bp_n_rot/≤${_bp_ret_rot} · pin present)"
+else
+  print "⚠️  BACKUP POLICY NON-CONFORMANCE (report only — nothing deleted, gates continue):"
+  [[ "$_bp_n_ident" != "$_bp_ret_ident" ]] && print "⚠️    identity class: $_bp_n_ident cop$( [[ $_bp_n_ident == 1 ]] && print -n y || print -n ies) on disk vs policy retain-$_bp_ret_ident — a fail-closed rotation abort leaves this state; resolve by hand"
+  [[ "$_bp_n_rot" -gt "${_bp_ret_rot:-3}" ]] && print "⚠️    Group A rotation: $_bp_n_rot unpinned copies vs policy retain-$_bp_ret_rot"
+  [[ "$_bp_pin" -lt 1 ]] && print "⚠️    pinned bak_pre_presplit ABSENT — the only pre-split rollback copy is missing"
+fi
 SWEEP_OUT="$WORK/throwaway_sweep.out"
 ( cd "$SRV" && python3 purge_throwaway_copies.py ) >"$SWEEP_OUT" 2>&1 || true
 if grep -q "^Would delete 0 file" "$SWEEP_OUT"; then

@@ -13906,3 +13906,23 @@ runtime code, out of class.
 (2) mis-reported backup_identity's guard as absent (present); (3) over-flagged the same
 file's symlink case (benign); (4) census_step5 dismissal verified correct; (5) blind to
 88 of 93 scripts by construction. The doctrine-driven census measured its criterion.
+
+**PH-BAK-4 §B — the policy-conformance line, recorded beside its siblings so none is
+"completed" into auto-remediation.** The startup sweep now also reports backup-policy
+conformance on every gate run: identity-class count vs retain (DERIVED from
+backup_identity.RETAIN — flip the constant and the report follows, proven), Group A
+unpinned rotation vs the policy doc's own "last N pre-diff" text (parsed, not restated),
+and the presplit pin's presence. **Report, never fail** (gates failing for housekeeping
+train operators to ignore gate failures) and **report, never remediate** (a fail-closed
+rotation abort deliberately leaves the class above retain-1 for a HUMAN to resolve; a
+sweep that "fixes" it would delete the very copy the abort chose to keep). Verified: a
+manufactured second identity copy → "identity class: 2 on disk vs policy retain-1 …
+resolve by hand", nothing deleted, fixture removed and proven gone; conformant state
+prints one quiet line; suite unaffected — 12 gates green (backoffice 80/0/0, hero 59,
+commentary 40, focus 26, signals 14, strategy 14, domain_summary 143/143, engine-audit
+0/0, plausibility PASS, overview/pulse/release clean); Group A + live stores
+byte-identical; measured delta ~0.03s. One verification hiccup worth its line: macOS
+caches bytecode under ~/Library/Caches/com.apple.python, and a same-second, same-length
+edit validated stale bytecode during the derivation proof — cleared and re-proven; the
+same mechanism could mask any single-constant flip test, so: when proving derivation,
+assert on the DERIVED OUTPUT, never on having edited the source.
