@@ -1780,16 +1780,32 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   border-color: color-mix(in srgb, var(--amber-bright) 35%, var(--border)); color: var(--ink); }
 /* 7 categories: one even row when it fits, a balanced 4+3 otherwise, never a
    lone orphan donut. */
-.data-domains { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
-@media (min-width: 1480px) { .data-domains { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .data-domains { grid-template-columns: 1fr; } }
-.data-domain { display: flex; flex-direction: column; align-items: center; gap: var(--s3); padding: var(--s4) var(--s3);
-  cursor: pointer; text-align: center; transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease); }
-.data-domain:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
-  border-color: color-mix(in srgb, var(--blue) 28%, var(--border)); }
-.data-domain-head { display: flex; align-items: center; gap: var(--s2); font-weight: 650; font-size: var(--fs-label); }
-.data-domain .cat-icon { width: 24px; height: 24px; }
-.data-domain .caption { font-size: var(--fs-caption); }
+/* Your data — domain rows (2026-08-04): one shared 0-100 scale, any domain
+   count. Bars follow the mark specs: thin, rounded data-end, recessive track,
+   single-hue blue for magnitude; green lives only on the Complete status chip. */
+.data-rows { padding: 0; overflow: hidden; }
+.data-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4);
+  cursor: pointer; border-top: 1px solid var(--border);
+  transition: background var(--ease); }
+.data-row:first-child { border-top: 0; }
+.data-row:hover, .data-row:focus-visible { background: color-mix(in srgb, var(--blue) 4%, var(--surface)); }
+.data-row:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: -2px; }
+.data-row .cat-icon { flex: 0 0 auto; }
+.data-row-name { flex: 0 0 220px; font-weight: 650; font-size: var(--fs-label); }
+.data-bar { flex: 1 1 auto; height: 8px; min-width: 80px; border-radius: 999px;
+  background: var(--surface-sunk); overflow: hidden; }
+.data-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--blue);
+  transition: width 700ms cubic-bezier(0.33, 1, 0.68, 1); }
+.data-bar-fill.done { background: var(--favourable); }
+.data-row-count { flex: 0 0 72px; text-align: right; font-variant-numeric: tabular-nums; }
+.data-row .data-q-flag { flex: 0 0 auto; min-width: 96px; justify-content: center; }
+.data-row-go { flex: 0 0 auto; color: var(--ink-faint); display: inline-flex; }
+@media (max-width: 720px) {
+  .data-row { flex-wrap: wrap; row-gap: var(--s2); }
+  .data-row-name { flex: 1 1 auto; }
+  .data-bar { flex: 1 1 100%; order: 5; }
+  .data-row-count { flex: 0 0 auto; }
+}
 .data-todo { color: var(--blue); font-weight: 600; }
 .data-qlist { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden; }
@@ -1871,15 +1887,14 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-hero.fresh { background: linear-gradient(120deg, var(--blue-tint) -10%, var(--blue-tint-2) 10%, var(--surface) 55%); }
 .data-start { margin-top: var(--s3); align-self: flex-start; }
 .data-hero-fig b { line-height: 1.2; }
-/* ---- Your data: delight — calm entrances, once, reduced-motion safe ---- */
+/* ---- Your data: delight — calm entrances, once, reduced-motion safe.
+   Delay derives from the row's own --i index, so it scales to ANY domain
+   count (the old nth-child(1..7) list was a seven-domain fossil). ---- */
 .data-hero { animation: ov-rise 460ms cubic-bezier(.2,.7,.3,1) both; }
-.data-domain { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both; }
-.data-domain:nth-child(1) { animation-delay: 60ms; } .data-domain:nth-child(2) { animation-delay: 110ms; }
-.data-domain:nth-child(3) { animation-delay: 160ms; } .data-domain:nth-child(4) { animation-delay: 210ms; }
-.data-domain:nth-child(5) { animation-delay: 260ms; } .data-domain:nth-child(6) { animation-delay: 310ms; }
-.data-domain:nth-child(7) { animation-delay: 360ms; }
-.data-domain .cat-icon { transition: transform var(--ease), background var(--ease); }
-.data-domain:hover .cat-icon { transform: scale(1.12) rotate(-5deg); background: var(--blue-tint-2); }
+.data-row { animation: ov-rise 420ms cubic-bezier(.2,.7,.3,1) both;
+  animation-delay: calc(50ms + 40ms * var(--i, 0)); }
+.data-row .cat-icon { transition: transform var(--ease), background var(--ease); }
+.data-row:hover .cat-icon { transform: scale(1.12) rotate(-5deg); background: var(--blue-tint-2); }
 .data-unlock.good .du-ico { animation: du-pulse 2.6s ease-in-out 600ms 2; }
 @keyframes du-pulse { 0%,100% { transform: none; } 50% { transform: scale(1.12); box-shadow: 0 0 0 5px color-mix(in srgb, var(--favourable) 14%, transparent); } }
 .data-q { animation: ov-rise 320ms cubic-bezier(.2,.7,.3,1) both; }

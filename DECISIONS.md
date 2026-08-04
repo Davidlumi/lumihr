@@ -14268,3 +14268,41 @@ counts as a real contributor — a product question for when that work starts, n
 exactly as 2b's lifecycle column was noted as that feature's first caller. **The terms
 gap** (Data Contribution Terms silent on non-payment, suspension, and data disposition
 in either state) is already on the solicitor bundle (PH-PAY-1 §A checklist edit).
+
+---
+
+## 2026-08-04 — Your data redesigned for the 8-domain world — and the frozen-ring defect underneath the "it looks odd"
+
+**The defect that mattered was not cosmetic.** CompletionRing animated BOTH the arc and
+the NUMBER via a requestAnimationFrame loop from mount. In a hidden or background tab
+rAF is throttled to zero, so the animation froze wherever it was — permanently: an org
+at 96% showed "11%", Pay at 100% showed "12%", forever, with no recovery. Diagnosed by
+instrumentation (visibilityState=hidden, 0 rAF frames/sec). Two rules now in the
+component's own comment: **the number is never animated** (true value from first paint)
+and the arc eases via a CSS transition the compositor settles correctly regardless of
+visibility. prefers-reduced-motion renders final-state immediately.
+
+**The 7-domain fossils.** The domain grid carried `repeat(7, 1fr)` at wide widths — an
+orphan eighth card — and the entrance stagger enumerated nth-child(1..7), so an eighth
+card entered with no delay. Both replaced: the grid by rows, the stagger by an
+index-driven `calc(40ms * var(--i))` that scales to any domain count.
+
+**The redesign (dataviz method: form → colour-by-job → validated palette → marks).**
+Eight near-identical donuts encoded eight numbers in a lot of ink; per-domain completion
+is magnitude-toward-a-target and now renders as ROWS on ONE shared 0-100 scale — the
+Overview domain-ruler philosophy applied to data entry: comparable at a glance, the
+laggard obvious, full domain names unwrapped, no orphan at any count, keyboard-accessible
+rows reusing the drill-in's own status chips. **Colour: completion is not performance** —
+the old ring RAG (green >=90 / blue / amber <50 — an org mid-entry saw amber "warnings"
+everywhere) is gone. Progress is single-hue house blue; green appears only as the
+Complete status (chip with icon + label; bar turns green only at 100%). Pair validated
+with the dataviz checks (ported to Python — no Node in this env): #2048B0/#2E7D52 on
+white — lightness band, chroma floor, ΔE normal 24.3, CVD ≥22.6, contrast 8.0/5.0, all
+pass. Amber no longer appears anywhere in completion.
+
+Verified in the real DOM (desktop + mobile wrap, zero console errors; hero reads the TRUE
+percentage even in a throttled tab — the point of the fix); editors' drill-in
+(SubmissionPage) untouched; viewers' DomainDataView inherits the fixed ring. Suite 12
+gates green (backoffice 97/0/0, focus 26, hero 59, commentary 40, domain_summary 143/143,
+signals 14, strategy 14, engine-audit 0/0, plausibility PASS, overview/pulse/release
+clean). Cache v430.

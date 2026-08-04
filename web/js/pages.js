@@ -3089,29 +3089,32 @@ function slotKey(slot) { return slot.question_id + "|" + (slot.row_id || "") + "
 // a compact completion ring (pct in centre); colour cues the progress band.
 // On mount the arc draws and the number counts up — once, reduced-motion safe.
 function CompletionRing({ pct, size = 72, stroke = 8 }) {
+  /* Redesigned 2026-08-04 (Your data pass). Two rules learned the hard way:
+     1. THE NUMBER IS NEVER ANIMATED — the old rAF loop froze forever in hidden/
+        background tabs, leaving "12%" on an org at 96%. Text shows the true
+        value from the first paint; only the arc eases in, via a CSS transition
+        the compositor settles correctly even when the tab was hidden.
+     2. Completion is not performance — no RAG. Progress is the house blue
+        (single-hue magnitude); green appears only at 100%, as the complete
+        status. Amber never belonged here. */
   const target = Math.max(0, Math.min(100, pct));
-  const [shown, setShown] = useState(0);
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [armed, setArmed] = useState(reduce);
   useEffect(() => {
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) { setShown(target); return; }
-    let raf, start = null; const dur = 850;
-    const tick = (t) => {
-      if (start === null) start = t;
-      const k = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - k, 3); // easeOutCubic
-      setShown(target * e);
-      if (k < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target]);
-  const r = (size - stroke) / 2, C = 2 * Math.PI * r, off = C * (1 - shown / 100);
-  const col = target >= 90 ? "var(--favourable)" : target >= 50 ? "var(--blue)" : "var(--amber-bright)";
+    if (reduce) return;
+    const t = setTimeout(() => setArmed(true), 30);   // arm on the next paint
+    return () => clearTimeout(t);
+  }, []);
+  const r = (size - stroke) / 2, C = 2 * Math.PI * r;
+  const off = C * (1 - (armed ? target : 0) / 100);
+  const col = target >= 100 ? "var(--favourable)" : "var(--blue)";
   const cx = size / 2;
   return html`<svg width=${size} height=${size} viewBox=${"0 0 " + size + " " + size} class="comp-ring" aria-hidden="true">
     <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke="var(--surface-sunk)" stroke-width=${stroke} />
     <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${col} stroke-width=${stroke} stroke-linecap="round"
-      stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"} />
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${Math.round(shown)}%</text>
+      stroke-dasharray=${C} stroke-dashoffset=${off} transform=${"rotate(-90 " + cx + " " + cx + ")"}
+      style=${reduce ? null : { transition: "stroke-dashoffset 850ms cubic-bezier(0.33, 1, 0.68, 1)" }} />
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="comp-ring-pct" style=${{ fill: col }}>${Math.round(target)}%</text>
   </svg>`;
 }
 window.CompletionRing = CompletionRing;
@@ -3175,16 +3178,33 @@ window.YourDataPage = function ({ me }) {
       </div>
 
       <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>By area <span class="caption">${fresh ? "tap an area to start answering its questions" : "tap an area to view or complete its questions"}</span></h2>
-      <div class="data-domains">
-        ${(data.domains || []).map(d => html`
-          <div key=${d.name} class="card data-domain" role="button" tabindex="0"
+      ${/* Redesigned 2026-08-04: the 8-domain world outgrew the ring-per-card
+          grid (a 7-column rule left one orphan card, and eight donuts encode
+          eight numbers in a lot of ink). Rows on ONE shared 0-100 scale make
+          the domains comparable at a glance — the same instrument philosophy
+          as the Overview domain ruler. Bars are the house blue (magnitude,
+          single hue); green appears only as the Complete status chip. */ ""}
+      <div class="card data-rows" role="list">
+        ${(data.domains || []).map((d, di) => {
+          const done = d.answered >= d.total;
+          return html`
+          <div key=${d.name} class="data-row" role="listitem button" tabindex="0"
+            style=${{ "--i": di }}
+            aria-label=${domainLabel(d.name) + ": " + d.answered + " of " + d.total + " answered"}
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
             onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/your-data/" + encodeURIComponent(d.name)); } }}>
-            <div class="data-domain-head"><span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span> ${domainLabel(d.name)}</div>
-            <${CompletionRing} pct=${d.pct} size=${78} stroke=${8} />
-            ${d.answered >= d.total ? html`<div class="data-done"><${Icon} name="award" size=${11} /> Complete</div>`
-              : html`<div class="caption">${d.answered} of ${d.total} · <span class="data-todo">${d.total - d.answered} to do</span></div>`}
-          </div>`)}
+            <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>
+            <span class="data-row-name">${domainLabel(d.name)}</span>
+            <span class="data-bar" aria-hidden="true">
+              <span class=${"data-bar-fill" + (done ? " done" : "")} style=${{ width: d.pct + "%" }}></span>
+            </span>
+            <span class="data-row-count caption">${d.answered} of ${d.total}</span>
+            ${done
+              ? html`<span class="data-q-flag ok"><${Icon} name="award" size=${13} /> Complete</span>`
+              : html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`}
+            <span class="data-row-go"><${Icon} name="chevron-right" size=${15} /></span>
+          </div>`;
+        })}
       </div>
     </div>`;
 };
