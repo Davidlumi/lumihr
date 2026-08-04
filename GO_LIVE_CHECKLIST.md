@@ -32,6 +32,12 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Gate 2 — before the first member submission
 
+- [ ] **PH-PAY-3 — suspension-reason visibility.** `deactivated_at` is a bare timestamp;
+  the console cannot tell "unpaid" from "sole-admin recovery in progress" — opposite
+  operator responses (PH-PAY-1 §B, §3.1). Sequenced before the first provisioning by
+  the ruling. *Unblocked by:* building it — its own diff, no dependency.
+
+
 - [ ] **PH-PROV-1c — the two mislabelled `source='signup'` orgs (HR Datahub, Tester).**
   Destructive, double-guarded, awaiting David's ruling. Now MORE visible: 2b's lifecycle
   column renders both as real members with lifecycle states; Tester's answer row is in
@@ -77,6 +83,15 @@ gate, solicitor-signed) is preserved in full below the gates.
   the live platform is (PH-BAK-2 §A.2).
 
 ## Pending David's ruling / action
+
+- [ ] **PH-PAY-2 — suspension semantics: pause the clock, gate outbound mail.** Two
+  defects recorded in PH-PAY-1 §B: (1) the 30-day submission clock burns while an org
+  is suspended (named fix: pause on suspension, extend `clock_start` by the suspended
+  duration on reactivation); (2) the sweep/digest paths carry no `deactivated_at` or
+  `disabled_at` filter, so suspended members keep receiving benchmark emails.
+  *Unblocked by:* David ruling the clock-pause fix; the mail gate rides in the same
+  diff (both change what suspension DOES).
+
 
 - [ ] **C1 — retention ceiling vs rotation depth.** Per-migration backups can outlive
   the 90-day ceiling if migrations pause; which rule yields is a ruling (PH-BAK-2 §A.4

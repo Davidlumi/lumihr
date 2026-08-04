@@ -14208,3 +14208,63 @@ Stripe reference survives by SEARCH (residual mentions are the ledger column nam
 this entry's own history, and the gate's negative assertion that session ids never
 serialise); health reports payments='invoice'; console copy updated; live stores
 byte-identical. Cache v429.
+
+---
+
+## 2026-08-04 — PH-PAY-1 §B: suspension for non-payment — SUSPENDED_MEMBER_DATA = STAYS_IN_POOL (ruled), and the two defects the reading surfaced
+
+**The disposition.** Data validly contributed for a period that was paid for STAYS IN THE
+POOL while the organisation is suspended. Suspension gates ACCESS — that is what the
+member loses. Removal on suspension would cliff every cut the member participates in and
+could flip OTHER members' benchmarks through the n>=5 floor because of someone else's
+late invoice — figures moving for a reason that has nothing to do with the members
+watching them, over a state that reverses when the invoice is paid. The B.1 finding
+strengthens the ruling structurally: soft-deactivate deletes nothing, so the
+suspension-vs-exit boundary is already clean — **exit remains the ONLY state that ever
+removes data**, which is precisely the property Phase 4's deletion-on-exit promise
+depends on; the ruling preserves that rather than complicating it. The alternative,
+RETIRES_ON_TAPER, is coherent if suspension were meant to carry a contribution
+consequence and would mirror the queued seed blend-and-taper — rejected because the
+consequence would land on OTHER members, not on the suspended one.
+
+**§1.1 — suspension to exit is a DECISION, never a timer.** A suspended organisation
+does not become an exited one automatically after any period. Conversion to exit is
+David's decision, taken deliberately, at which point Phase 4's deletion applies once and
+for real. Recorded to foreclose the plausible future "helpful" addition — auto-exit
+after N days unpaid — which would turn an access gate into data destruction on a
+schedule. Suspension and exit are distinct states with distinct consequences:
+suspension = reversible access gate, data in pool, everything survives; exit =
+permanent, Phase 4's deletion, once.
+
+**§2 — THE CLOCK FINDING IS A DEFECT, not an observation.** Nothing in the deactivate
+path touches clock_start, so an organisation suspended mid-onboarding burns its 30-day
+submission window while locked out — it cannot submit, and the clock runs anyway. A
+member with a late invoice can emerge from suspension with days left on a window they
+were shut out of: the co-operative's own instrument penalising someone for something the
+co-operative did to them. **Named fix, PENDING RULING, not built: suspension pauses the
+submission clock; reactivation extends clock_start by the suspended duration**
+(checklist: PH-PAY-2). This paragraph is where the next person decides whether current
+behaviour is intentional — it is not; it is a defect awaiting its ruling.
+
+**§3.2 — SECOND DEFECT: suspension does not gate outbound mail.** Established by
+reading: run_signal_sweep iterates `SELECT ... FROM orgs` with only the unlock gate — no
+deactivated_at filter — and run_email_digest selects recipients from notification_reads
+with neither an org-deactivation nor a users.disabled_at check. A suspended
+organisation's members keep receiving benchmark digest emails — a bad look over an
+unpaid invoice, on the same digest paths PH-CFG-1 found emitting relative dead links.
+Recorded alongside the clock defect; not fixed here (PH-PAY-2's second limb — both
+change what suspension DOES).
+
+**§3.1 — visibility gap, its own diff before first provisioning.** orgs.deactivated_at
+is a bare timestamp with no reason field; audit rows carry actor and time but no cause.
+The console cannot distinguish "unpaid" from "sole-admin recovery in progress" — two
+states needing OPPOSITE operator responses (chase the invoice vs finish the recovery).
+Its own diff, PH-PAY-3, gated before the first provisioning; not built here.
+
+**§4 — dependency noted for the provenance work.** Under STAYS_IN_POOL a suspended
+member keeps contributing to the n other members see. The queued seed/member provenance
+feature (real-contributor n vs total n) must decide whether a suspended contributor
+counts as a real contributor — a product question for when that work starts, noted here
+exactly as 2b's lifecycle column was noted as that feature's first caller. **The terms
+gap** (Data Contribution Terms silent on non-payment, suspension, and data disposition
+in either state) is already on the solicitor bundle (PH-PAY-1 §A checklist edit).
