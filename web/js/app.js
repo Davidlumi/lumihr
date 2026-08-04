@@ -480,7 +480,9 @@ function App() {
         </main>
       </div>
       </div>${/* /.shell-body */""}
-      ${unsub && !barHidden && !leaveTo && !route.startsWith("/your-data/review") && html`
+      ${unsub && !barHidden && !leaveTo && !route.startsWith("/your-data/review")
+        && (me.user.role === "admin" || me.user.role === "contributor") && html`${/* viewers
+          cannot submit — the reminder is an editor's call to action (QA 2026-08-04) */ ""}
         <div class="unsub-bar no-print" role="status">
           <span class="unsub-bar-msg"><span class="unsub-dot"><${Icon} name="award" size=${13} /></span>
             Your answers are <b>saved</b> — but not submitted to the benchmark yet.</span>

@@ -3212,11 +3212,11 @@ window.YourDataPage = function ({ me }) {
           the domains comparable at a glance — the same instrument philosophy
           as the Overview domain ruler. Bars are the house blue (magnitude,
           single hue); green appears only as the Complete status chip. */ ""}
-      <div class="card data-rows" role="list">
+      <div class="card data-rows">
         ${(data.domains || []).map((d, di) => {
           const done = d.answered >= d.total;
           return html`
-          <div key=${d.name} class="data-row" role="listitem button" tabindex="0"
+          <div key=${d.name} class="data-row" role="button" tabindex="0"
             style=${{ "--i": di }}
             aria-label=${domainLabel(d.name) + ": " + d.answered + " of " + d.total + " answered"}
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
@@ -3224,7 +3224,8 @@ window.YourDataPage = function ({ me }) {
             <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>
             <span class="data-row-name">${domainLabel(d.name)}</span>
             <span class="data-bar" aria-hidden="true">
-              <span class=${"data-bar-fill" + (done ? " done" : "")} style=${{ width: d.pct + "%" }}></span>
+              ${d.answered > 0 && html`<span class=${"data-bar-fill" + (done ? " done" : "")}
+                style=${{ width: Math.max(d.pct, 3) + "%" }}></span>`}
             </span>
             <span class="data-row-count"><b>${d.answered}</b><span class="drc-den">/${d.total}</span></span>
             ${done

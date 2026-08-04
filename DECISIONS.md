@@ -14380,3 +14380,19 @@ segment each gauge into four capsules (the 2px-surface-gap mark spec applied alo
 bar), so complete rows read as four solid cells and partial fills visibly occupy their
 segment. Needle tips and end-cap dots unchanged. Zero console errors; suite 12 gates
 green (backoffice 97/0/0). Cache v435.
+
+**Your data — deep QA pass (2026-08-04f).** State matrix exercised on a throwaway:
+normal/unlocked, mid-progress (Thornbridge fixtured to 52% — needles sit correctly even
+AT a segment cut), fresh 0% via a freshly provisioned org, gated (terms not accepted —
+Enter on a row correctly lands the editor on the data-terms gate), viewer role, keyboard,
+mobile. THREE DEFECTS FOUND AND FIXED: (1) empty domains showed a phantom 10px fill nub
+with a needle dot — a 0-answered area looked slightly started; the fill element now
+renders only when answered > 0 (and partial fills floor at 3% so one answer still shows
+a capsule); (2) invalid ARIA — rows carried role="listitem button" (two tokens); now a
+plain container with role="button" rows, labels carrying the counts; (3) the app-shell
+"Review & submit" drafts banner rendered for VIEWERS, offering an action their role
+cannot perform — now gated to admin/contributor, verified both directions. Recorded
+as not-exercisable rather than silently untested: the reduced/teaser hero state cannot
+be reached by a once-unlocked org (sticky-unlock doctrine — never revoked); its markup
+is unchanged from the original build. Zero console errors; suite 12 gates green
+(backoffice 97/0/0). Cache v437.
