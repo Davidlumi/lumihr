@@ -18,6 +18,9 @@ python3 -m pip install --user fastapi "uvicorn[standard]" bcrypt httpx
 cd server
 python3 seed_import.py --fresh --db ../lumi.db --write \
     --confirmed-by-david --i-understand-this-destroys-the-live-store   # first-ever build only
+#   ⚠ KNOWN BROKEN as of 2026-08-04: a fresh rebuild from data/ fails since the
+#   Phase-1 split (see DECISIONS PH-SEED-1 §5) — the live lumi.db is the only
+#   authoritative world. Do not attempt a live rebuild until that work closes.
 LUMI_DB=../lumi.db python3 aggregate.py    # computes benchmark_snapshots (~2s, re-runnable)
 # routine reseeds target a THROWAWAY copy, never live:
 #   python3 seed_import.py --fresh --db /tmp/lumi_throwaway.db --write

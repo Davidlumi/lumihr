@@ -80,3 +80,16 @@ privacy notice, and can opt out any time). Each member's choice is recorded per-
 - `LUMI_AI_INSIGHTS_ENABLED=off` — cuts ALL AI insight SURFACES instantly (the master).
 - `LUMI_AI_<FEATURE>=off` — cuts one feature.
 - A member toggles off in Settings — withdrawal recorded, their gate closes next request.
+
+---
+
+## Launch blockers — platform safety (added 2026-08-04)
+
+- [x] **PH-SEED-1: `seed_import.py` cannot default to the live store** — `--db` mandatory
+  on every invocation, live-store target refused without the double override, dry-run
+  default, destruction preview on both paths. Sequenced alongside PROV-2; neither ships
+  without the other. **Complete: commit `a620921`.**
+  - Discovered in its rehearsal, NOT yet fixed (own scope, report-only): the seed world
+    no longer rebuilds from `data/` at all (schema/writer mismatch since the step-5
+    split; CSVs stale at 804 vs 344 live; registry 210 vs 220). The live store is the
+    sole authoritative world until the reconciliation work rules otherwise.
