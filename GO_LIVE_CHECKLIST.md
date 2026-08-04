@@ -10,15 +10,25 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Gate 1 — before the first organisation is provisioned
 
+- [ ] **DEPLOYMENT — a publicly reachable instance (PH-CFG-1 Branch B finding,
+  2026-08-04).** No deployed instance of the application exists: lumihr.co.uk serves a
+  parking-class 403 (MX is Google — mail is real, the app is not there), and the repo
+  has no deploy configuration. Every artifact that reaches a member (invite link, reset
+  link, digest email) depends on this. *Unblocked by:* David ruling the hosting
+  approach (host, TLS, domain/subdomain, where the production env lives) — a decision,
+  then its own scoped work.
+- [ ] **`LUMI_BASE_URL` + link-minting guard (PH-CFG-1 Branch A — DEPENDENT on the
+  deployment item above).** Once somewhere exists to point at: one accessor everywhere
+  (three divergent reads found and banked in DECISIONS — `_base_url()` dup; digest
+  paths with a "" fallback emitting relative dead links), refuse to MINT invite/reset
+  links when unset (gate the action, never the boot), https required for non-localhost,
+  trailing-slash normalisation, boot-log the value. *Unblocked by:* the deployment item;
+  then the Branch-A build against DECISIONS 2026-08-04 PH-CFG-1.
 - [ ] **PH-PROV-1f — provisioning log line → digest.** `send_notification` console-logs
   the founding-invite link (the SMTP-less delivery path); the provisioning-specific line
   is replaced with a sha256[:12] digest since the API already returns the link directly.
   *Unblocked by:* building it (sequenced "lands before the first real provisioning",
   PH-PROV-2a preamble; CF-1 governs the wider path until D2).
-- [ ] **`LUMI_BASE_URL` set in the serving environment.** Until set, every invite/reset
-  link is minted against `http://localhost:8060` and is dead for a real recipient (boot
-  warning, `app.py` startup). *Unblocked by:* David setting it where the first real
-  invite will be minted.
 
 ## Gate 2 — before the first member submission
 

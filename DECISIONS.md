@@ -14148,3 +14148,30 @@ platform-admin actions are audited (user.deactivate; org.invite with superseded 
 as sha256[:12] digests), so a recovery is reconstructible from the audit trail without
 database surgery. The next stranded-admin incident is a runbook execution, not an
 improvisation.
+
+---
+
+## 2026-08-04 — PH-CFG-1 (Branch B): LUMI_BASE_URL is a symptom — THERE IS NO DEPLOYED INSTANCE, and Gate 1 contains a deployment item
+
+The diagnosis that mattered was C6: **the only instance of the application is local.**
+lumihr.co.uk resolves to a parking-class host serving a generic 403 (not the app; MX is
+Google Workspace, which is why the mailboxes are real); the repo carries no deploy
+configuration of any kind; the only domain references are aspirational SEO meta tags in
+the marketing pages. No dry-run could ever have caught the dead-link failure because
+every dry-run runs on 127.0.0.1 — the one environment where the wrong base URL works.
+
+**Per the branch instruction: nothing was built.** With nowhere to send a member, no
+value of LUMI_BASE_URL produces a working link; gating link-minting on the variable
+would gate on a symptom. Gate 1 is re-scoped on the checklist to carry the deployment
+item in its own right — hosting approach, TLS, domain, and where the production env
+lives are David's decisions, not implementation choices.
+
+Findings banked for Branch A, when a deployment exists: (C3) the one-accessor rule is
+already violated three ways — `_base_url()` at app.py:5499 duplicates the expression,
+and the email-digest paths (app.py:2299/2907, notification_sweep.py:31) read the env
+directly with a DIFFERENT fallback ("" — digest emails today carry relative dead links);
+(C2) BASE_URL is read once at import, so setting the env needs a restart; (C1/C5) the
+boot warning and Ops-inventory listing are visibility without enforcement — the ruled
+Branch-A shape remains gate-the-action-not-the-boot: refuse to MINT an invite/reset link
+without a configured base, never refuse to boot (127.0.0.1 is a legitimate dry-run
+value). C4: unset in the live process, as expected.
