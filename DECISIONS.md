@@ -14364,3 +14364,19 @@ ends in a needle tip (white core, hue ring, suppressed at 100%). "By area" carri
 right-aligned orientation count. All construction, no new hues; numbers still static
 from first paint; reduced-motion honoured throughout. Zero console errors; suite 12
 gates green (backoffice 97/0/0, focus 26). Cache v434.
+
+**Your data — colour review, icon review, segmented gauges (2026-08-04e).** The colour
+review's verdict, recorded so the question stays answered: under the standing brand law
+(ONE blue primary; plum AND teal formally retired 2026-06-11; performance RAG reserved;
+prevalence neutral) domain identity may NOT introduce a hue ramp — an 8-hue categorical
+set has no palette space to live in here, and identity is carried by icon shape + name,
+with colour differentiation achieved through STRUCTURE. Flaws found and fixed: (1) two
+weak icon metaphors — Pensions & Savings was an anchor (ship?), now HOME (the nest);
+Benefits & Lifestyle was abstract layers, now STAR (perks); the rest hold (coins/shield/
+sun/trending-up/heart/list-checks). (2) Icon chips were flat single-tone — now 30px with
+a diagonal tint gradient, hairline ring and micro shadow. (3) The bars read as one long
+stripe — the quarter ticks became quarter CUTS: surface-coloured 3px gaps ABOVE the fill
+segment each gauge into four capsules (the 2px-surface-gap mark spec applied along the
+bar), so complete rows read as four solid cells and partial fills visibly occupy their
+segment. Needle tips and end-cap dots unchanged. Zero console errors; suite 12 gates
+green (backoffice 97/0/0). Cache v435.
