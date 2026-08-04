@@ -215,6 +215,37 @@ irow = raw.execute("SELECT role, created_by, used_at FROM invites WHERE org_id=?
 check("D11 invite row in the SAME transaction: role=admin, staff-created, unused",
       irow is not None and irow["role"] == "admin" and irow["used_at"] is None, dict(irow) if irow else None)
 
+# ---- PH-PROV-1g: at most one live admin invite per org -----------------------
+itok = created["invite_link"].rsplit("/", 1)[-1]
+api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+    {"email": "qa-cv-%s@probe.example" % TAG, "role": "contributor"})
+api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+    {"email": "qa-vv-%s@probe.example" % TAG, "role": "viewer"})
+st, re1 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+              {"email": FOUNDER, "role": "admin"})
+itok2 = re1.get("link", "").rsplit("/", 1)[-1]
+n_admin_live = raw.execute("SELECT COUNT(*) FROM invites WHERE org_id=? AND role='admin' "
+                           "AND used_at IS NULL", (POID,)).fetchone()[0]
+check("G1 reissue supersedes the prior: exactly ONE live admin invite",
+      st == 200 and n_admin_live == 1 and itok2 and itok2 != itok, (st, n_admin_live))
+st, _ = api(anon, "/api/invite/" + itok)
+check("G2a superseded token: invite-info 404", st == 404, st)
+st, _ = api(anon, "/api/auth/accept-invite", "POST",
+            {"token": itok, "password": "should-never-work-1", "accept_platform_terms": True})
+check("G2b superseded token REFUSED at accept — the credential is dead, not just a column",
+      st == 400, st)
+n_team = raw.execute("SELECT COUNT(*) FROM invites WHERE org_id=? AND "
+                     "role IN ('contributor','viewer') AND used_at IS NULL", (POID,)).fetchone()[0]
+check("G3 contributor + viewer invites untouched by the admin reissue", n_team == 2, n_team)
+st, aud_g = api(staff, "/api/admin/audit?limit=3")
+dig_old = hashlib.sha256(itok.encode()).hexdigest()[:12]
+check("G4 audit records the supersession by sha256[:12] digest, never the bearer",
+      any(e["action"] == "org.invite" and e.get("detail_json")
+          and dig_old in e["detail_json"] and "superseded" in e["detail_json"]
+          for e in aud_g["entries"])
+      and itok not in json.dumps(aud_g["entries"]))
+itok = itok2   # the accept below joins on the LIVE (reissued) invite
+
 # collision classes (ruling §6: classify via org_register hit -> reward source)
 seed_name = None
 if IDB and os.path.exists(IDB):
@@ -235,8 +266,8 @@ st, r = api(staff, "/api/admin/orgs", "POST",
 check("D13 collision vs MEMBER org (normalized) names the class",
       st == 400 and "member" in r.get("detail", ""), r)
 
-# the founding admin joins through the standard accept path
-itok = created["invite_link"].rsplit("/", 1)[-1]
+# the founding admin joins through the standard accept path — via the LIVE
+# (reissued) token, which the G-block above left in `itok`
 FPW = "qa-probe-pass-%s" % TAG
 st, _ = api(anon, "/api/auth/accept-invite", "POST",
             {"token": itok, "password": FPW, "accept_platform_terms": True, "display_name": "QA Founder"})
@@ -246,6 +277,12 @@ check("D15 member (role=admin) + platform-terms row now on the org",
       any(u["email"] == FOUNDER and u["role"] == "admin" for u in d["users"]) and
       any(t["kind"] == "platform" and t["email"] == FOUNDER for t in d["terms"]))
 FUID = next(u["user_id"] for u in d["users"] if u["email"] == FOUNDER)
+# PH-PROV-1g §2.2 — the boundary of the carve-out: once an Admin is ACTIVE,
+# admin invites refuse and point at promotion.
+st, r = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
+            {"email": "qa-second-admin-%s@probe.example" % TAG, "role": "admin"})
+check("G5 with an ACTIVE Admin, admin invite refused pointing at promotion",
+      st == 400 and "promotion" in r.get("detail", ""), (st, r.get("detail", "")[:70]))
 # reissue path survives alongside creation (ruling §3)
 st, inv2 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
                {"email": "qa-temp-%s@probe.example" % TAG, "role": "viewer"})
@@ -343,6 +380,33 @@ try:
                   rec2.returncode == 0 and "PASS" in rec2.stdout, rec2.returncode)
         else:
             skip("S2b-S3 orphan + recon assertions", "LUMI_IDENTITY_DB unset")
+        # S5: PH-PROV-1g §2.3 — the creation-time anomaly assertion is provably
+        # live: plant a pre-existing admin invite mid-transaction, fail closed.
+        n_orgs0 = raw.execute("SELECT COUNT(*) FROM orgs").fetchone()[0]
+        st, r = api(seam, "/api/admin/orgs", "POST",
+                    dict(FIRMO, org_name="QA Seam Anomaly %s" % TAG,
+                         admin_email="qa-anom-%s@probe.example" % TAG,
+                         _qa_inject_prior_invite=True), base=BASE2)
+        check("S5 creation meeting a pre-existing admin invite fails closed (no org row survives)",
+              st == 500 and "anomaly" in r.get("detail", "")
+              and raw.execute("SELECT COUNT(*) FROM orgs").fetchone()[0] == n_orgs0,
+              (st, r.get("detail", "")[:60]))
+        # S6: PH-PROV-1g §3.6 — reissue atomicity: a failure between invalidate
+        # and insert changes NOTHING (prior invite still live, no new row).
+        st, ry = api(seam, "/api/admin/orgs", "POST",
+                     dict(FIRMO, org_name="QA Seam Reissue %s" % TAG,
+                          admin_email="qa-ry-%s@probe.example" % TAG), base=BASE2)
+        YOID = ry.get("org_id")
+        ytok = ry.get("invite_link", "").rsplit("/", 1)[-1]
+        st, r = api(seam, "/api/admin/orgs/%s/invite" % YOID, "POST",
+                    {"email": "qa-ry2-%s@probe.example" % TAG, "role": "admin",
+                     "_qa_fail_after_invalidate": True}, base=BASE2)
+        yrow = raw.execute("SELECT used_at FROM invites WHERE token=?", (ytok,)).fetchone()
+        ycount = raw.execute("SELECT COUNT(*) FROM invites WHERE org_id=? AND role='admin'",
+                             (YOID,)).fetchone()[0]
+        check("S6 forced failure between invalidate and insert -> 500, prior invite STILL LIVE, no new row",
+              st == 500 and "nothing changed" in r.get("detail", "")
+              and yrow is not None and yrow["used_at"] is None and ycount == 1, (st, ycount))
 finally:
     seam_proc.terminate()
     try:

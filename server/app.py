@@ -10,6 +10,7 @@ suppression-checked aggregates with all internal ("_"-prefixed) keys stripped.
 Run:  python3 -m uvicorn app:app --port 8060
 """
 import csv
+import hashlib
 import io
 import json
 import os
@@ -5935,6 +5936,18 @@ async def admin_org_create(request: Request):
         # server with LUMI_QA_SEAMS=on — never in normal operation.
         if body.get("_qa_fail_after_org") and os.environ.get("LUMI_QA_SEAMS") == "on":
             raise RuntimeError("qa seam: forced failure after org insert")
+        # QA seam (LUMI_QA_SEAMS only): plants the impossible state so the
+        # anomaly assertion below is provably live, per PH-PROV-1g §2.3.
+        if body.get("_qa_inject_prior_invite") and os.environ.get("LUMI_QA_SEAMS") == "on":
+            conn.execute("INSERT INTO invites(token, org_id, role, created_by, expires_at) "
+                         "VALUES (?,?,?,?,?)",
+                         ("qa-seam-" + org_id[:8], org_id, "admin", staff["user_id"], expires))
+        # PH-PROV-1g §2.3 — assert, don't assume: this org_id was minted lines
+        # above, so a pre-existing admin invite for it is an anomaly (collision
+        # or bug), and the request fails closed rather than proceeding.
+        if conn.execute("SELECT 1 FROM invites WHERE org_id=? AND role='admin' LIMIT 1",
+                        (org_id,)).fetchone():
+            raise RuntimeError("anomaly: a pre-existing admin invite for a just-minted org_id")
         conn.execute(
             "INSERT INTO invites(token, org_id, role, created_by, expires_at) "
             "VALUES (?,?,?,?,?)", (token, org_id, "admin", staff["user_id"], expires))
@@ -5987,7 +6000,54 @@ async def admin_org_invite(org_id: str, request: Request):
         raise HTTPException(400, "This organisation is deactivated — reactivate it before inviting.")
     if auth_lib.find_user(email):
         raise HTTPException(400, "That email already has a lumi account.")
-    token = auth_lib.create_invite(org_id, email, role, staff["user_id"])
+    if role == "admin":
+        # PH-PROV-1g §2.2 — THE BOUNDARY OF THE 2026-08-03 CARVE-OUT, not a mere
+        # validation: the carve-out authorises minting an organisation's FIRST
+        # Admin only. Once an Admin exists and is active, another admin invite
+        # is lateral admin creation — exactly what "Admins are made by
+        # promotion, never by invite" (2026-06-11) exists to prevent.
+        if conn.execute("SELECT 1 FROM users WHERE org_id=? AND role='admin' "
+                        "AND disabled_at IS NULL LIMIT 1", (org_id,)).fetchone():
+            raise HTTPException(400, "This organisation already has an active Admin — "
+                                     "Admins are made by promotion (their Team page), "
+                                     "never by invite. The provisioning carve-out covers "
+                                     "only the founding Admin.")
+        # PH-PROV-1g §2.1 — at most ONE live admin invite per org: reissuing
+        # supersedes every prior live admin invite, via G1's own mechanism
+        # (used_at), in the SAME transaction as the new insert — both or
+        # neither. Contributor/viewer invites are untouched by construction.
+        prior = [r["token"] for r in conn.execute(
+            "SELECT token FROM invites WHERE org_id=? AND role='admin' AND used_at IS NULL",
+            (org_id,))]
+        token = secrets.token_urlsafe(24)
+        expires = (datetime.utcnow()
+                   + timedelta(days=auth_lib.INVITE_TTL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            if prior:
+                conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token IN (%s)"
+                             % ",".join("?" * len(prior)), prior)
+            # QA seam (LUMI_QA_SEAMS only): §3.6 — a failure between invalidate
+            # and insert must leave the PRIOR invite live and no new row.
+            if body.get("_qa_fail_after_invalidate") and os.environ.get("LUMI_QA_SEAMS") == "on":
+                raise RuntimeError("qa seam: forced failure between invalidate and insert")
+            conn.execute(
+                "INSERT INTO invites(token, org_id, role, created_by, expires_at) "
+                "VALUES (?,?,?,?,?)", (token, org_id, "admin", staff["user_id"], expires))
+            conn.commit()
+        except HTTPException:
+            conn.rollback()
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise HTTPException(500, "Reissue failed before completion — nothing changed; "
+                                     "any prior invite is still live. (%s)" % e)
+        for t in prior:
+            identity.shadow(identity.mark_invite_used, t)
+        identity.shadow(identity.record_invite, token, org_id, email.lower(), "admin",
+                        staff["user_id"], expires)
+    else:
+        token = auth_lib.create_invite(org_id, email, role, staff["user_id"])
+        prior = []
     link = "%s/app#/invite/%s" % (BASE_URL, token)
     org_name = (identity.org_display(org_id) or {}).get("name") or "your organisation"
     send_notification(
@@ -5999,8 +6059,15 @@ async def admin_org_invite(org_id: str, request: Request):
         % (org_name, ROLE_LABELS.get(role, role), link, auth_lib.INVITE_TTL_DAYS),
         to=email)
     # the email itself stays out of the reward-store audit row (Phase-1 split);
-    # the invite's identity half already records it, org-scoped.
-    _audit(staff, "org.invite", "org", org_id, {"role": role})
+    # the invite's identity half already records it, org-scoped. Superseded
+    # tokens appear as sha256[:12] digests — the PH-PROV-1d convention: the
+    # audit names what was invalidated without a bearer ever landing in a log.
+    detail = {"role": role}
+    if prior:
+        detail["superseded_token_sha256_12"] = [
+            hashlib.sha256(t.encode()).hexdigest()[:12] for t in prior]
+        detail["cause"] = "superseded by reissue"
+    _audit(staff, "org.invite", "org", org_id, detail)
     return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
 
 

@@ -14039,3 +14039,46 @@ overview/pulse/release clean. README:41 self-registration line corrected (the on
 change in this diff). **Flagged for 2b from P5: issuing an invite does not invalidate
 prior live invites — two live admin invites for one org are possible today; reissue
 semantics land there.** Cache v427.
+
+---
+
+## 2026-08-04 — PH-PROV-1g: one live admin invite per organisation, at most — and the boundary of the carve-out made explicit
+
+**The P5 finding, fixed before the first founding member.** create_invite was a bare
+INSERT: reissuing left two simultaneously-live role='admin' invites, both minting an
+Admin — and reissue happens precisely when the first attempt went astray, the worst
+moment for a stray second credential. G6 measured the blast radius on existing state:
+ZERO live admin invites in the live store (the only invites row is an expired June demo
+viewer invite), so the change lands on clean state.
+
+**§2.1 — issuing supersedes.** On an admin reissue, every prior live admin invite for the
+org is invalidated via G1's own mechanism (used_at — no second way to say "dead"),
+scoped to role='admin' only (team invites untouched, proven), in ONE transaction with the
+new insert — both or neither; the forced-failure seam proved a mid-transaction failure
+leaves the prior invite live and no new row. Identity twins follow the G2 pattern exactly
+(shadow mark_invite_used after commit; a failed shadow surfaces as recon content-drift on
+used_at, the established net). The audit row names what was superseded as sha256[:12]
+digests — the PH-PROV-1d convention; no bearer in any log — with cause "superseded by
+reissue".
+
+**§2.2 — RECORDED AS THE BOUNDARY OF THE 2026-08-03 CARVE-OUT, not a validation rule.**
+The carve-out authorises minting an organisation's FIRST Admin. The route was silently
+broader than the ruling that authorised it: G5 proved on a throwaway that with an
+activated Admin present it happily minted a second admin invite. It now refuses, pointing
+at promotion ("Admins are made by promotion, never by invite", 2026-06-11). Scope choice,
+recorded: the refusal keys on an ACTIVE admin (role='admin' AND disabled_at IS NULL) — an
+org whose only Admin is deactivated has no active Admin, and minting a founding
+replacement remains the support path, consistent with the carve-out's purpose.
+
+**§2.3 — assert, don't assume.** Creation now asserts no admin invite pre-exists for the
+just-minted org_id; an anomaly fails the whole transaction closed (proven live via the
+seam: 500, no org row survives).
+
+Verified end-to-end in qa_backoffice — now **88 checks, 0 failed, 0 skipped**: exactly-one
+live invite after reissue; the superseded token DEAD AT THE ACCEPT ENDPOINT (asserting a
+column changed is not asserting the credential died); team invites untouched; the
+promotion refusal; both seams; standalone revoke unchanged; identity_recon PASS both
+directions; audit digests present, bearer absent. Suite 12 gates green (hero 59,
+commentary 40, domain_summary 143/143, focus 26, signals 14, strategy 14, engine-audit
+0/0, plausibility PASS, overview/pulse/release clean); live stores byte-identical;
+nothing provisioned against live.
