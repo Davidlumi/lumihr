@@ -13997,3 +13997,45 @@ it hands off to is broken since step 5). 6.10 live stores byte-identical. 6.11 f
 suite: 12 gates green — backoffice 80/0/0, hero 59, commentary 40, domain_summary
 143/143, focus 26, signals 14, strategy 14, engine-audit 0/0, plausibility PASS,
 overview/pulse/release clean. Fixtures removed and proven gone.
+
+---
+
+## 2026-08-04 — PH-PROV-2a: the console provisioning form — members are admittable again
+
+The morning-built form sent the superseded {name} contract and 400'd; there was no way to
+admit a member. REBUILT, not patched (a form whose shape was wrong keeps its old
+assumptions in the handler): six required fields (org_name, admin_email, industry,
+fte_band, hq_region, ownership_type), submit disabled until complete — a partial
+submission cannot reach the route.
+
+**New console convention, recorded (§2.2):** console form choice lists come from the
+server, never from a list written into JS — the four firmographic selects render
+/api/org-profile's choices (profile_choices() over the wire, the member ProfilePage's own
+pattern, now the console's too). A second list in the client is the ownership-mismatch
+bug class recorded 2026-06-11. Verified EXACT against the API for all four lists.
+
+**Errors classify (§2.3)** — each failure the route distinguishes gets its own message
+plus an operator hint: name collision surfaces the CLASS the route names (seed benchmark
+/ existing member / staff) with a class-specific next step; email-already-has-account
+points at the Users tab; non-registry firmographic points back at the dropdowns; 401
+drops to sign-in via the app's lumi:unauth path (the correct operator action), 403 gets
+the staff-session hint. No generic "something went wrong" on any distinguished path.
+
+**Invite-link display, as ruled (§2.4):** shown with copy on success AND persistently
+available under the org's Pending invites while live — David delivers by copy-paste, and
+show-once forces reissue churn through the riskier path. Nothing in client storage; the
+link is re-derived from the server.
+
+Verified against a WAL-checkpointed throwaway stack (NEVER live, per the standing rule):
+choice lists EXACT ×4; seed-collision, member-collision, email-exists each produced their
+distinct message+hint in the real DOM; submit provably disabled until six fields; happy
+path end-to-end (provision → link card → org page shows the pending invite with Copy);
+mid-form session loss → sign-in screen; zero browser console errors; live stores
+byte-identical. P4 stated honestly: no DOM harness exists (no Node) — the repeatable
+end-to-end is the documented operator dry-run, docs/PROVISIONING_DRYRUN.md (§3.4). Suite:
+12 gates green — backoffice 80/0/0, hero 59, commentary 40, domain_summary 143/143,
+focus 26, signals 14, strategy 14, engine-audit 0/0, plausibility PASS,
+overview/pulse/release clean. README:41 self-registration line corrected (the one doc
+change in this diff). **Flagged for 2b from P5: issuing an invite does not invalidate
+prior live invites — two live admin invites for one org are possible today; reissue
+semantics land there.** Cache v427.

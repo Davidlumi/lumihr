@@ -38,8 +38,10 @@ python3 -m uvicorn app:app --port 8060
 | Contributor | `analyst@thornbridge.example`  | `lumi-data-2026` |
 | Viewer      | `ceo@thornbridge.example`      | `lumi-view-2026` |
 
-New organisations can self-register from the sign-in screen (they join at Core tier and must
-complete ≥90% of Core questions before peer comparison unlocks — the co-op rule).
+Membership is staff-provisioned (PH-PROV-1 closed self-serve signup): the platform admin
+creates the organisation and mints its founding-Admin invite from the back-office console.
+New members must complete ≥90% of the key reward questions before peer comparison unlocks —
+the co-op rule.
 
 **Optional AI narrative**: set `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`,
 default `claude-sonnet-4-20250514`) before starting the server to enable Claude-written

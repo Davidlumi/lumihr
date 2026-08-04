@@ -59,23 +59,10 @@ function AdminOrgsTab() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);   // org_id | null
   const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [busy, setBusy] = useState(false);
   useEffect(() => { api("/api/admin/orgs").then(setData).catch(e => setErr(e.message)); }, []);
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load organisations" body=${err} />`;
   if (!data) return adminSpinner;
   if (selected) return html`<${AdminOrgDetail} orgId=${selected} onBack=${() => setSelected(null)} />`;
-  const create = async () => {
-    if (!newName.trim()) { toast("Give the organisation a name.", "error"); return; }
-    setBusy(true);
-    try {
-      const r = await api("/api/admin/orgs", { method: "POST", body: { name: newName.trim() } });
-      toast("Created — now invite its founding Admin.");
-      setCreating(false); setNewName("");
-      setSelected(r.org_id);
-    } catch (e) { toast(e.message, "error"); }
-    setBusy(false);
-  };
   const needle = q.trim().toLowerCase();
   const rows = data.orgs.filter(o => !needle
     || (o.name || "").toLowerCase().includes(needle)
@@ -83,25 +70,14 @@ function AdminOrgsTab() {
   return html`
     <div>
       <div class="admin-toolbar">
-        <button class="btn small primary" onClick=${() => setCreating(c => !c)}>＋ New organisation</button>
+        <button class="btn small primary" onClick=${() => setCreating(c => !c)}>＋ Provision a member</button>
         <input class="ctl" placeholder="Filter by name or industry…" value=${q}
           onInput=${e => setQ(e.target.value)} aria-label="Filter organisations" />
         <span class="caption">${rows.length} of ${data.total} organisations · click a row for detail</span>
       </div>
-      ${creating && html`
-        <div class="card admin-card" style=${{ marginBottom: "var(--s3)" }}>
-          <label>Organisation name
-            <input class="ctl" value=${newName} onInput=${e => setNewName(e.target.value)}
-              onKeyDown=${e => { if (e.key === "Enter") create(); }}
-              placeholder="e.g. Meridian Foods Ltd" /></label>
-          <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
-            Creates a full-tier member organisation. No account or password is set here —
-            you invite the founding Admin from the org's page and they join themselves.</div>
-          <div class="admin-actions">
-            <button class="btn small primary" disabled=${busy} onClick=${create}>Create organisation</button>
-            <button class="btn small" onClick=${() => setCreating(false)}>Cancel</button>
-          </div>
-        </div>`}
+      ${creating && html`<${AdminProvisionForm}
+        onCancel=${() => setCreating(false)}
+        onOpenOrg=${(oid) => { setCreating(false); setSelected(oid); }} />`}
       <table class="data admin-table">
         <thead><tr>
           <th>Organisation</th><th>Industry</th><th>Size</th><th>Source</th>
@@ -120,6 +96,117 @@ function AdminOrgsTab() {
           </tr>`)}
         </tbody>
       </table>
+    </div>`;
+}
+
+/* ---- module 1a: provisioning form (PH-PROV-2a) ----
+   Rebuilt against the PH-PROV-1 contract (org_name + admin_email + all four
+   PROFILE_CORE firmographics). Choice lists come from /api/org-profile —
+   profile_choices() over the wire, the member form's own accessor; a second
+   list in JS is the ownership-mismatch bug class recorded 2026-06-11. The
+   invite link persists server-side and stays viewable in the org's Pending
+   invites (ruled 2.4); nothing is kept in client storage. */
+const PROVISION_FIELDS = [
+  ["industry", "Industry / sector"], ["fte_band", "Size (full-time employees)"],
+  ["hq_region", "HQ region"], ["ownership_type", "Ownership"],
+];
+
+function provisionErrorClass(e) {
+  const m = (e && e.message) || "";
+  if (e && (e.status === 401 || e.status === 403)) return {
+    cls: "auth", hint: "This needs the staff session — sign in as the super admin and retry." };
+  if (m.includes("collides with")) {
+    const hint = m.includes("seed benchmark")
+      ? "The name matches a seed benchmark organisation — if this member IS that organisation, provisioning-by-claim isn't built; flag it rather than renaming around it."
+      : m.includes("existing member")
+        ? "They're already a member — find them in the Organisations list (invite people from their page) instead of re-creating them."
+        : "That name belongs to the lumi staff organisation.";
+    return { cls: "collision", hint };
+  }
+  if (m.includes("already has a lumi account")) return {
+    cls: "email", hint: "Look the address up in the Users tab — that person already has an account; they may need an invite to an existing organisation instead." };
+  if (m.includes("recognised options") || m.includes("is required")) return {
+    cls: "firmographic", hint: "Pick from the dropdowns — the options are the live registry's own values." };
+  return { cls: "other", hint: "" };
+}
+
+function AdminProvisionForm({ onCancel, onOpenOrg }) {
+  const [choices, setChoices] = useState(null);
+  const [f, setF] = useState({ org_name: "", admin_email: "", industry: "", fte_band: "", hq_region: "", ownership_type: "" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);          // {message, hint}
+  const [done, setDone] = useState(null);        // {org_id, name, invite_link, expires_days}
+  useEffect(() => {
+    api("/api/org-profile").then(d => setChoices(d.choices)).catch(e => setErr({ message: e.message, hint: "" }));
+  }, []);
+  const set = (k, v) => { setF(s => ({ ...s, [k]: v })); setErr(null); };
+  const complete = f.org_name.trim() && /\S+@\S+\.\S+/.test(f.admin_email.trim())
+    && PROVISION_FIELDS.every(([k]) => f[k]);
+  const submit = async () => {
+    if (!complete || busy) return;               // partial submissions never reach the route
+    setBusy(true); setErr(null);
+    try {
+      const r = await api("/api/admin/orgs", { method: "POST", body: {
+        org_name: f.org_name.trim(), admin_email: f.admin_email.trim(),
+        industry: f.industry, fte_band: f.fte_band, hq_region: f.hq_region,
+        ownership_type: f.ownership_type } });
+      setDone(r);
+      toast("Provisioned — copy the founding-Admin invite link.");
+    } catch (e) {
+      setErr({ message: e.message, ...provisionErrorClass(e) });
+    }
+    setBusy(false);
+  };
+  const copy = () => { navigator.clipboard && navigator.clipboard.writeText(done.invite_link); toast("Copied."); };
+  if (done) return html`
+    <div class="card admin-card" style=${{ marginBottom: "var(--s3)" }}>
+      <h3 style=${{ margin: 0 }}>${done.name} is provisioned</h3>
+      <p class="caption" style=${{ margin: "var(--s1) 0" }}>
+        Founding-Admin invite — expires in ${done.expires_days} days. They set their own
+        password and accept the terms when they join.</p>
+      <div class="admin-actions" style=${{ alignItems: "center", flexWrap: "wrap" }}>
+        <code class="caption" style=${{ userSelect: "all", overflowWrap: "anywhere" }}>${done.invite_link}</code>
+        <button class="btn small primary" onClick=${copy}>Copy link</button>
+      </div>
+      <p class="caption" style=${{ margin: "var(--s2) 0 0" }}>
+        Mislaid it later? The link stays available under <b>Pending invites</b> on the
+        organisation's page while the invite is live.</p>
+      <div class="admin-actions" style=${{ marginTop: "var(--s2)" }}>
+        <button class="btn small" onClick=${() => onOpenOrg(done.org_id)}>Open organisation →</button>
+        <button class="btn small quiet" onClick=${onCancel}>Close</button>
+      </div>
+    </div>`;
+  return html`
+    <div class="card admin-card admin-form" style=${{ marginBottom: "var(--s3)" }}>
+      <div class="row spread">
+        <h3 style=${{ margin: 0 }}>Provision a member organisation</h3>
+        <button class="btn small quiet" onClick=${onCancel}>Cancel</button>
+      </div>
+      <p class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
+        All six fields are required — the profile arrives complete, so the founding Admin
+        never meets the complete-your-profile prompt. No password is set here.</p>
+      <label>Organisation name
+        <input class="ctl" value=${f.org_name} onInput=${e => set("org_name", e.target.value)}
+          placeholder="e.g. Meridian Foods Ltd" /></label>
+      <label>Founding Admin's email
+        <input class="ctl" value=${f.admin_email} onInput=${e => set("admin_email", e.target.value)}
+          placeholder="person@company.co.uk" /></label>
+      ${choices === null ? adminSpinner : html`<div class="admin-grid2">
+        ${PROVISION_FIELDS.map(([k, label]) => html`<label key=${k}>${label}
+          <select class="ctl" value=${f[k]} onChange=${e => set(k, e.target.value)}>
+            <option value="" disabled>Choose…</option>
+            ${(choices[k] || []).map(v => html`<option key=${v} value=${v}>${v}</option>`)}
+          </select></label>`)}
+      </div>`}
+      ${err && html`<div class="card" style=${{ background: "var(--paper-2, #faf7f2)", borderLeft: "3px solid var(--red, #b3261e)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0" }}>
+        <b>${err.message}</b>
+        ${err.hint && html`<div class="caption" style=${{ marginTop: "2px" }}>${err.hint}</div>`}
+      </div>`}
+      <div class="admin-actions" style=${{ marginTop: "var(--s3)" }}>
+        <button class="btn primary" disabled=${!complete || busy} onClick=${submit}>
+          ${busy ? "Provisioning…" : "Provision + mint founding-Admin invite"}</button>
+        ${!complete && html`<span class="caption">complete all six fields to enable</span>`}
+      </div>
     </div>`;
 }
 
