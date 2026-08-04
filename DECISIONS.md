@@ -14343,3 +14343,12 @@ take the same within-hue gradient stroke (per-instance SVG gradient ids — mult
 rings coexist on viewer pages). Still single-hue-for-magnitude: a gradient inside one
 hue is finish, not a second hue. Verified in the DOM (zero console errors); suite 12
 gates green (backoffice 97/0/0). Cache v432.
+
+**Your data, premium pass 3 (2026-08-04c).** The hero is now a stat composition:
+44px display numerals with a muted /denominator and a quiet label beneath, the ring on a
+soft radial blue wash. Row counts became strong tabular numerals (61/61 with muted
+denominator). The tracks carry hairline instrument ticks at the quarter marks; fills
+stage in left-to-right with a per-row delay (transform scaleX keyframe — the NUMBER
+stays static, honouring the never-animate-the-number rule; reduced-motion disables).
+Chevrons slide on hover; Complete chips and icon chips get hairline definition. Zero
+console errors; suite 12 gates green (backoffice 97/0/0). Cache v433.

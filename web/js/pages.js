@@ -3167,10 +3167,10 @@ window.YourDataPage = function ({ me }) {
       </div>
 
       <div class=${"card data-hero" + (fresh ? " fresh" : "")}>
-        <${CompletionRing} pct=${data.pct} size=${118} stroke=${12} />
+        <div class="data-hero-ringwrap"><${CompletionRing} pct=${data.pct} size=${118} stroke=${12} /></div>
         <div class="data-hero-body">
           <div class="data-hero-fig">${fresh ? html`<b>Let's build your reward benchmark.</b>`
-            : html`<b>${data.answered}</b> of ${data.total} answered`}</div>
+            : html`<span class="dh-num">${data.answered}</span><span class="dh-den"> / ${data.total}</span><span class="dh-lbl">questions answered</span>`}</div>
           ${c.insights_unlocked ? html`
             <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
               <div><b>Insights unlocked</b> — thank you for contributing to the benchmark.</div></div>` : html`
@@ -3207,7 +3207,7 @@ window.YourDataPage = function ({ me }) {
             <span class="data-bar" aria-hidden="true">
               <span class=${"data-bar-fill" + (done ? " done" : "")} style=${{ width: d.pct + "%" }}></span>
             </span>
-            <span class="data-row-count caption">${d.answered} of ${d.total}</span>
+            <span class="data-row-count"><b>${d.answered}</b><span class="drc-den">/${d.total}</span></span>
             ${done
               ? html`<span class="data-q-flag ok"><${Icon} name="award" size=${13} /> Complete</span>`
               : html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`}

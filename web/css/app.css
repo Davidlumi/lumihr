@@ -1759,6 +1759,20 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .comp-ring { display: block; }
 .comp-ring-pct { font: 700 var(--fs-label)/1 var(--font-head); font-variant-numeric: tabular-nums; }
 .comp-ring-arc { transition: stroke-dashoffset 700ms cubic-bezier(.3,.8,.3,1); }
+/* Premium pass 2 (2026-08-04c): the hero is a stat composition — display
+   numerals, a soft radial wash behind the ring, quiet supporting type. */
+.data-hero-ringwrap { position: relative; flex: 0 0 auto; display: grid; place-items: center;
+  padding: var(--s2); border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--blue) 9%, transparent), transparent 72%); }
+.dh-num { font-size: 44px; font-weight: 750; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.dh-den { font-size: var(--fs-section); font-weight: 500; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; }
+.dh-lbl { display: block; margin-top: 2px; font-size: var(--fs-caption); color: var(--ink-faint);
+  letter-spacing: .02em; }
+.data-row-count b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.data-row-count .drc-den { color: var(--ink-faint); font-weight: 500;
+  font-variant-numeric: tabular-nums; font-size: var(--fs-caption); }
 .data-hero { display: flex; align-items: center; gap: var(--s5); padding: var(--s5);
   background: linear-gradient(120deg, var(--blue-tint) -10%, var(--surface) 45%); }
 @media (max-width: 560px) { .data-hero { flex-direction: column; align-items: flex-start; gap: var(--s4); } }
@@ -1800,13 +1814,28 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   background: color-mix(in srgb, var(--blue) 6%, var(--surface-sunk));
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--blue) 14%, transparent),
               inset 0 0 0 1px color-mix(in srgb, var(--blue) 7%, transparent);
-  overflow: hidden; }
+  overflow: hidden; position: relative; }
+.data-bar::before {                 /* instrument ticks at the quarter marks */
+  content: ""; position: absolute; inset: 2px 0; pointer-events: none;
+  background-image:
+    linear-gradient(90deg, transparent calc(25% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(25% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(25% + .5px), transparent calc(25% + .5px)),
+    linear-gradient(90deg, transparent calc(50% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(50% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(90deg, transparent calc(75% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(75% - .5px), color-mix(in srgb, var(--blue) 16%, transparent) calc(75% + .5px), transparent calc(75% + .5px)); }
 .data-bar-fill { display: block; height: 100%; border-radius: 999px; position: relative;
   min-width: 10px;
   background: linear-gradient(90deg, var(--blue) 0%, var(--blue-bright) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .30),
               0 0 0 1px color-mix(in srgb, var(--blue) 22%, transparent);
-  transition: width 700ms cubic-bezier(0.33, 1, 0.68, 1); }
+  transition: width 700ms cubic-bezier(0.33, 1, 0.68, 1);
+  transform-origin: left center;
+  animation: data-fill-in 800ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation-delay: calc(120ms + 45ms * var(--i, 0)); }
+@keyframes data-fill-in { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .data-bar-fill { animation: none; } }
+.data-row:hover .data-row-go { transform: translateX(2px); color: var(--blue); }
+.data-row .data-row-go { transition: transform var(--ease), color var(--ease); }
+.data-row .data-q-flag.ok { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--favourable) 24%, transparent); }
+.data-row .cat-icon { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 12%, transparent); }
 .data-bar-fill::after {           /* the leading-edge glow */
   content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 14px;
   border-radius: 999px;
