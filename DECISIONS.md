@@ -14306,3 +14306,28 @@ percentage even in a throttled tab — the point of the fix); editors' drill-in
 gates green (backoffice 97/0/0, focus 26, hero 59, commentary 40, domain_summary 143/143,
 signals 14, strategy 14, engine-audit 0/0, plausibility PASS, overview/pulse/release
 clean). Cache v430.
+
+---
+
+## 2026-08-04 — "Keeps jumping to tester": the invite-link routes had no escape hatches
+
+David: signing in as thornbridge "keeps jumping to tester". Diagnosis, evidence-first:
+the server was CLEAN (director@thornbridge maps to Thornbridge, role admin, enabled;
+tester1 had ZERO live sessions, so no hijacked session existed). The mechanism was the
+CLIENT's invite-route handling meeting browser URL autocomplete: David had opened the
+"tester 1" invite link while testing provisioning, so his browser autocompletes it, and
+that route had no way out in either auth state — (a) signed OUT + a used/expired token
+rendered a bare error with NO sign-in link (a dead end); (b) signed IN + any invite link
+fell silently into the current session's Overview (app.js routed /invite/ like
+/overview), so whatever session the invite testing had left behind kept winning with no
+explanation. The 2b-recorded fact that accept-invite signs the acceptor in is what
+seeded the wrong session in the first place.
+
+Three escape hatches now exist: (1) the used/expired-invite screen explains the
+autocomplete failure mode and carries "Go to sign in"; (2) the live invite form carries
+"Not {email}? Sign in to your own account instead"; (3) an invite link opened while
+signed in renders an INTERSTITIAL naming the current session, explaining that accepting
+creates a separate account, with "Stay signed in" and "Sign out & open the invite" —
+never a silent fall-through. Verified in the real DOM on live (all three states,
+including the click-throughs; zero console errors); suite 12 gates green (backoffice
+97/0/0, focus 26). Cache v431.

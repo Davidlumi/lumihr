@@ -360,7 +360,12 @@ function App() {
   else if (route.startsWith("/admin")) page = me.user.platform_admin
     ? html`<${AdminConsolePage} me=${me} route=${route} />`
     : html`<${NotFoundPage} route=${route} />`;   // invisible to non-staff
-  else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/invite/") || route.startsWith("/reset/"))
+  else if (route.startsWith("/invite/"))
+    // An invite link while SIGNED IN used to fall silently into Overview — the
+    // current session's org kept winning and the operator never learned why
+    // ("keeps jumping to tester", 2026-08-04). Now an explicit interstitial.
+    page = html`<${InviteWhileAuthed} me=${me} token=${route.split("/")[2]} />`;
+  else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/reset/"))
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
 

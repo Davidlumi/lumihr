@@ -44,6 +44,32 @@ function TermsTick({ checked, onChange, children }) {
     </label>`;
 }
 
+/* Opening an invite link while already signed in (2026-08-04): the app used to
+   swallow the link into the current session's Overview — the mechanism behind
+   "I try to sign in as thornbridge but it keeps jumping to tester" once a test
+   invite URL lived in the browser's autocomplete. This interstitial names the
+   session, explains what an invite does, and offers both exits. */
+window.InviteWhileAuthed = function ({ me, token }) {
+  const signOutToInvite = async () => {
+    try { await api("/api/auth/logout", { method: "POST", body: {} }); } catch (e) { /* signed out anyway */ }
+    window.location.hash = "/invite/" + token;
+    window.location.reload();
+  };
+  return html`
+    <div class="card" style=${{ maxWidth: "560px", margin: "var(--s6) auto", padding: "var(--s5)" }}>
+      <h2 class="section-title" style=${{ marginTop: 0 }}>This is an invite link</h2>
+      <p>You're signed in as <b>${me.user.email}</b>${me.org && me.org.org_id ? "" : ""}.
+        Accepting an invite creates and signs in a <b>separate account</b>, so it isn't
+        opened automatically while you're signed in.</p>
+      <p class="caption">Delivering this link to someone else? Just send it — nothing has
+        been used. Testing it yourself? A private window leaves your session untouched.</p>
+      <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
+        <button class="btn primary" onClick=${() => { window.location.hash = "/overview"; }}>Stay signed in</button>
+        <button class="btn" onClick=${signOutToInvite}>Sign out & open the invite</button>
+      </div>
+    </div>`;
+};
+
 window.AuthScreen = function ({ onAuthed, route }) {
   if (route.startsWith("/reset/")) return html`<${ResetForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
   if (route.startsWith("/invite/")) return html`<${InviteForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
@@ -184,9 +210,15 @@ function InviteForm({ token, onAuthed }) {
     try { await api("/api/auth/accept-invite", { method: "POST", body: { token, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
     catch (ex) { setErr(ex.message); }
   };
+  const toSignIn = (e) => { e.preventDefault(); window.location.hash = "/"; };
   return html`
     <${Shell} sub=${info ? `Join ${info.org_name} on lumi as ${ROLE_LABEL[info.role] || info.role}` : "Team invite"}>
-      ${err && !info ? html`<div class="error-text">${err}</div>` :
+      ${err && !info ? html`
+        <div class="error-text" role="alert">${err}</div>
+        <p class="caption" style=${{ margin: "var(--s3) 0" }}>Expired or already-used invite
+          links land here — often from a browser autocompleting an old link. If you
+          already have an account, just sign in.</p>
+        <button class="btn primary block" onClick=${toSignIn}>Go to sign in</button>` :
       !info ? html`<${Spinner} />` :
       html`<form onSubmit=${go}>
         <div class="field"><label>Email</label><input value=${info.email} disabled /></div>
@@ -203,6 +235,8 @@ function InviteForm({ token, onAuthed }) {
         <button class="btn primary block" disabled=${!tick}>Join ${info.org_name}</button>
         <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your organisation's Data Contribution Terms were
           already accepted by your Admin — you don't accept those again.</div>
+        <div class="caption" style=${{ marginTop: "var(--s3)" }}>Not ${info.email}?
+          <a href="#" onClick=${toSignIn}> Sign in to your own account instead</a>.</div>
       </form>`}
       ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
     <//>`;
