@@ -14454,3 +14454,28 @@ restores pristine staleness. CLOCK-SAFE: the gate baselines pristine due-ness ra
 than asserting zero, so it will not start failing when seed answers genuinely age past
 their cadences from mid-2027. The gate neutralises the PAYCOMMS submit blocker on its
 throwaway (loud NOTE each run) — that defect remains open, ruling pending.
+
+**PAYCOMMS submit blocker: ROOT CAUSE FOUND AND FIXED (2026-08-05,
+migrate_paycomms_matrixdef.py).** The data was never drifted — the QUESTION DEFINITION
+was incomplete. Diff 15's PAYCOMMS redesign (single_select → by-level matrix, v2.0)
+wrote type/options_json/matrix_rows_json but never matrix_json, and BOTH the validator
+(_matrix_col) and the questionnaire UI key off matrix_json.columns[0]. Consequences:
+every stored answer (all 1,540 rows across 220 orgs — 1,078 "Letter + manager
+conversation" / 462 "Letter only", ALL valid labels from the ruled Diff-15 design)
+read as a numeric-validation problem, blocking EVERY submit for any org that answered
+it; and the UI rendered NUMBER boxes for a communication-method question, so a member
+could not even enter a valid answer. Census: PAYCOMMS was the ONLY matrix question in
+the bank with options but no column definition. FIX: wrote the matrix_json the ruled
+design implies (one select column, the two ruled option labels) — answers book hash
+asserted byte-identical before/after (da039531db632b23, ordered org|question|row|value
+sha256); Diff 17's classification ruling (Practice, direction=null) untouched.
+Verified: validation accepts both labels and refuses off-list values; live Thornbridge
+validate → 0 problems (was 7); rehearsed fully on a throwaway first (migration's
+backup/retention paths are scoped to the TARGET store, so rehearsals can't touch live
+backups). Backup policy applied at creation per the 2026-07-30 ruling: pre-write
+backup lumi.db.bak_pre_paycommsdef_20260805_*, retention swept to last-3 (deleted
+presplit_20260730 + kidsfix_20260801 + sidecars — the doctrine's own schedule).
+Suite 13/13 green; qa_refresh's neutralisation NOTE now reads "0 validation-blocked
+answers" (the no-op the gate was designed to reach). The systemic lesson stands
+recorded: a question-type migration MUST write every definition surface the consumers
+read — validator, UI and engine all derive from matrix_json, not from type alone.
