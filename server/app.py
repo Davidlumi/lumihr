@@ -57,6 +57,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 import auth as auth_lib
 import hashlib
+import refresh_policy
 
 import claude_api
 import identity
@@ -2340,6 +2341,10 @@ async def data_overview(request: Request):
     for (qid, row_id), value in answers.items():
         by_q.setdefault(qid, []).append((row_id, value))
     basis = {q.id for q in completion_basis_questions()}
+    # refresh-cadence flags (data/metric_refresh_register.json): an answered
+    # question is due when its oldest row predates its ruled cadence. Nudge
+    # only — never gates completion, access or aggregation.
+    rstate = refresh_policy.refresh_state(conn, org["org_id"], CURRENT_SNAPSHOT, questions)
     domains = {}
     for qid, q in questions.items():
         sec = q.sub_power or "General"
@@ -2347,9 +2352,13 @@ async def data_overview(request: Request):
         d["order"] = min(d["order"], q.sub_power_order or 999)
         ans = by_q.get(qid)
         rowdefs = dict(q.matrix_row_defs()) if q.type == "matrix" else {}
+        rs = rstate.get(qid) or {}
         item = {"question_id": qid, "title": q.display_title, "question": q.text,
                 "type": q.type, "unit": q.unit_block(), "answered": bool(ans),
-                "required": qid in basis, "value": None, "rows": None}
+                "required": qid in basis, "value": None, "rows": None,
+                "last_updated": rs.get("last"),
+                "needs_refresh": bool(ans) and bool(rs.get("due")),
+                "refresh_months": rs.get("months")}
         if ans:
             if q.type == "matrix":
                 item["rows"] = [{"row": rowdefs.get(r, r) or "—", "value": v}
@@ -2360,10 +2369,12 @@ async def data_overview(request: Request):
         d["questions"].append(item)
     out = []
     for sec, d in domains.items():
-        d["questions"].sort(key=lambda x: (not x["answered"], x["title"]))
+        # answered first (refresh-due at the top of those), then unanswered
+        d["questions"].sort(key=lambda x: (not x["answered"], not x["needs_refresh"], x["title"]))
         tot = len(d["questions"]); ansd = sum(1 for x in d["questions"] if x["answered"])
         d["total"] = tot; d["answered"] = ansd
         d["pct"] = round(100.0 * ansd / tot) if tot else 0
+        d["to_refresh"] = sum(1 for x in d["questions"] if x["needs_refresh"])
         out.append(d)
     out.sort(key=lambda d: d["order"])
     tot = sum(d["total"] for d in out); ansd = sum(d["answered"] for d in out)
@@ -2371,6 +2382,7 @@ async def data_overview(request: Request):
         "contribution": contribution_state(conn, org),
         "total": tot, "answered": ansd,
         "pct": round(100.0 * ansd / tot) if tot else 0,
+        "to_refresh": sum(d["to_refresh"] for d in out),
         "domains": out,
     }
 
@@ -4399,6 +4411,7 @@ async def submission_section(section: str, request: Request):
         raise HTTPException(404, "This section isn't available.")
     conn = get_conn()
     answers = org_answers_for(org)
+    rstate = refresh_policy.refresh_state(conn, org["org_id"], CURRENT_SNAPSHOT, questions)
     drafts = {}
     for r in conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)):
         drafts[(r["question_id"], r["matrix_row_id"] or "")] = r["value"]
@@ -4423,6 +4436,8 @@ async def submission_section(section: str, request: Request):
             "monotonic": cfg.get("monotonic"),
             "na_allowed": q.type in ("numeric", "matrix"),
             "is_required": q.is_required,
+            "needs_refresh": bool((rstate.get(qid) or {}).get("due")),
+            "last_updated": (rstate.get(qid) or {}).get("last"),
             "matrix": q.matrix if q.type == "matrix" else None,
             "matrix_rows": [{"row_id": rid, "label": lbl} for rid, lbl in q.matrix_row_defs()],
         }

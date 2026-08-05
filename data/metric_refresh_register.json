@@ -1,0 +1,2030 @@
+{
+ "class_counts": {
+  "annual": 60,
+  "benefit": 41,
+  "structural": 232
+ },
+ "classes": {
+  "annual": 12,
+  "benefit": 18,
+  "structural": 24
+ },
+ "metrics": {
+  "323ffcf1-749b-43f3-bf34-1de6b8b1ca67": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "3faf1f0c-f753-497f-a395-384bba38c5e3": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Health & Protection",
+   "months": 12
+  },
+  "ALLOW_02": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "ALLOW_03": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "ALLOW_04": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "CAR_BN_02": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "CAR_COST_02": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "CAR_STATUS_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "CAR_STATUS_03": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "EXT_REW_GAP_001": {
+   "category": "benefit",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12,
+   "override_reason": "annual recognition budget \u2014 reset every budget year"
+  },
+  "EXT_REW_GAP_002": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Incentives & Recognition",
+   "months": 18
+  },
+  "EXT_REW_GAP_003": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Incentives & Recognition",
+   "months": 18
+  },
+  "EXT_REW_GAP_004": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Incentives & Recognition",
+   "months": 18
+  },
+  "EXT_REW_GAP_005": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Incentives & Recognition",
+   "months": 18
+  },
+  "EXT_REW_GAP_007": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Incentives & Recognition",
+   "months": 18
+  },
+  "EXT_REW_GAP_009": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "EXT_REW_GAP_010": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "EXT_REW_GAP_011": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "EXT_REW_GAP_012": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Benefits & Lifestyle",
+   "months": 18
+  },
+  "EXT_REW_GAP_013": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "OT_03_1a68c68a": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "OT_04_b14623a6": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "PAYTR_01_42eae7ec": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PAYTR_02_131bd412": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "PAYTR_03_db0108d6": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_10d1211d": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_11a83d52": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "PROP_168a6213": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "PROP_202fecc6": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "PROP_216f7323": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_34ffb6e2": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_36b990f9": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12
+  },
+  "PROP_38555969": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_3d4fc4e7": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "PROP_634adacd": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "PROP_674db2fc": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_7d858df2": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "PROP_8862fcad": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_8e0b6316": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "PROP_930043cc": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_9e4ad87f": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "PROP_aa4061d5": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Governance & Transparency",
+   "months": 12
+  },
+  "PROP_c1a3da61": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Benefits & Lifestyle",
+   "months": 18
+  },
+  "PROP_cdff5737": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_d16bae79": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "PROP_d65a16e9": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Governance & Transparency",
+   "months": 12,
+   "override_reason": "'strategy last refreshed' is a date; the answer ages by itself"
+  },
+  "PROP_d992b2ea": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_e1d1e604": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Governance & Transparency",
+   "months": 12
+  },
+  "PROP_e63cf45a": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "PROP_ef4ff31e": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "PROP_fe1a29ec": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "RED_COST_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "RED_NOTICE_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "RED_PAY_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "RED_PROC_01": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "RED_PROC_02": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "RED_PROC_03": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "RED_PROC_04": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "RED_PROC_05": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "RED_TERM_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "RED_TERM_02": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "RED_TERM_03": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW262_GOV_ACTIONPLAN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_GOV_AIINPAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_GOV_EQUALPAYAUDIT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_GOV_EQUALVALUE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_GOV_PAYINADVERTS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_GOV_SALHISTORY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW262_PAY_AISKILLSPAY": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12,
+   "override_reason": "AI-skills premia are a fast-moving market"
+  },
+  "REW262_PAY_CANCELLEDSHIFT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW262_PAY_GUARANTEEDHRS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW262_PAY_SHIFTNOTICE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW262_TIME_BEREAVEMENT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW262_TIME_SICKDAYONE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_BEN_CICOVER": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW263_BEN_DENTAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW263_BEN_NEURO": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW263_BEN_PENBASIS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW263_BEN_PMIEXCESS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW263_GOV_BENOBJ": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_ETHDISREADY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_FIREREHIRE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_FLEXALLOW": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_MENOPLAN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_REWTEAM": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_SIGNOFF": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_UKPAYTRANS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_GOV_UMBRELLA": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW263_INC_DEFERRAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_INC_POOLFUND": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_PAY_COMPARATIO": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW263_PAY_GUARHRSAVG": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW263_PAY_MERITMATRIX": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW263_PAY_SHIFTRIGHTS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW263_PAY_SSPALIGN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW263_REC_CURRENCY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_REC_IMPACT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_REC_MGRBUDGET": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_REC_PEER": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW263_TIME_CARERPAID": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_DAYONELEAVE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_FERTLEAVE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_HOLRECORDS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_IVF": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_NEONATAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_PATPAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_TIME_PREGLOSS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW263_WEL_DATA": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW263_WEL_FINWELL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW263_WEL_MGRTRAIN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW263_WEL_OH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_BEN_EVSALSAC": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW264_GOV_AIPAYREVIEW": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW264_GOV_PAYEXPLAIN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW264_HLT_BEREAVESUPPORT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_CANCERPATH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_CASHPLAN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_FERTROUTE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_GENDERAFF": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_GIPREHAB": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_MENSHEALTH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_OPTICAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_RISKFLEXUP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_SECONDOPINION": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_SPOUSELIFE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_VIRTUALGP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_HLT_WOMENSHEALTH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW264_INC_EMICSOP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW264_INC_SHAREPLAN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW264_PAY_HOLPAYMETHOD": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW264_PAY_STARTPOLICY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW264_PEN_AEDEFAULT": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12,
+   "override_reason": "default AE contribution rate \u2014 statutory-adjacent"
+  },
+  "REW264_PEN_AUTOESC": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_CONTRIBFLEX": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_GREENDEFAULT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_HELPTOSAVE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_MIDLIFEMOT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_NICSHARING": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12,
+   "override_reason": "NIC-savings sharing will shift as the cap lands"
+  },
+  "REW264_PEN_PAYROLLGIVING": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_PAYROLLLOANS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_PEN_SALSACIMPACT": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12,
+   "override_reason": "2029 salary-sacrifice cap: landscape moves annually"
+  },
+  "REW264_PEN_SALSACRESPONSE": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12,
+   "override_reason": "2029 salary-sacrifice cap: intended response will firm up"
+  },
+  "REW264_PEN_SIDECAR": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW264_TIME_CHILDCARE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW264_TIME_FOURDAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW264_WEL_COLACTION": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_DEBTADVICE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_EWA": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_EWACAP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_EWAFEES": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_FINCOACH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_MEALS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_RLWACCRED": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW264_WEL_SEASONTICKET": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW265_BEN_ENHANCEDVR": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW265_BEN_EVCHARGE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW265_BEN_GREENBEN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW265_BEN_PENBRIDGE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW265_BEN_PMICOMP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW265_BEN_TRANSPORT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW265_GOV_AIBENCH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_AIDISCLOSE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_AIREGRADE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_AITALENT": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Governance & Transparency",
+   "months": 12,
+   "override_reason": "AI/digital talent arrangements are a fast-moving market"
+  },
+  "REW265_GOV_BROKER": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_COMPSOFT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_EIA": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_GPGNAMING": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_PAYAPPEAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_REBROKE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_SOCIOECON": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_TAKEUP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_TRS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_GOV_VOLGAPS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW265_INC_BONUSDISC": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_BONUSTIME": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_BUYOUT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_COMMCAP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_EOT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_ESGINCENT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_PROFITSHARE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_RETENTION": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_SAYEDISC": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_INC_SHAREPART": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12,
+   "override_reason": "participation rate is a measured figure, not a design"
+  },
+  "REW265_INC_SIPELEM": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW265_PAY_ACTINGUP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_AGENCYPAR": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_CONTRACTOR": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_COUNTEROFFER": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_EARLYCAREER": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_GEOPAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_MGRTRAIN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_PAYCOMMS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_PROMOPAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_RANGEMAX": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_PAY_SEASONAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW265_TIME_BACKUPCARE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_BEREAVEDPAT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_DISCONNECT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_DOMABUSE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_ELDERCARE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_EXTRADAYS": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_FLEXPATTERN": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_GRANDPARENT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_LEAVEDONATE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_RTWSUPPORT": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_SURROGACY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_UNLIMITEDAL": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW265_TIME_WORKATION": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW26_BEN_PENSION_COST_SHARE": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12
+  },
+  "REW26_BEN_PENSION_MATCH": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW26_BEN_PENSION_TYPE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW26_BEN_PLSA_QM": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW26_BEN_SALSAC": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW26_GOV_EU_PTD_PREP": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW26_PAY_JOBEVAL_COVERAGE": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW26_PAY_SKILLS_PAY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW26_WEL_BUDGET": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Wellbeing",
+   "months": 12
+  },
+  "REW26_WEL_EAP": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Wellbeing",
+   "months": 18
+  },
+  "REW26_WEL_FINWELL": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Wellbeing",
+   "months": 18
+  },
+  "REW26_WEL_MH_SUPPORT": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Wellbeing",
+   "months": 18
+  },
+  "REW26_WEL_SCREENING": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Wellbeing",
+   "months": 18
+  },
+  "REW26_WEL_STRATEGY": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Wellbeing",
+   "months": 24
+  },
+  "REW_BEN_038": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_BEN_039": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_BEN_041": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Time Off & Family",
+   "months": 24
+  },
+  "REW_BEN_044": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW_BEN_045": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW_BEN_046": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW_BEN_047": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW_BEN_048": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Health & Protection",
+   "months": 24
+  },
+  "REW_BEN_055": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_BEN_058": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_BEN_100": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW_BEN_102": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW_BEN_112": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12
+  },
+  "REW_BEN_139": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Health & Protection",
+   "months": 12
+  },
+  "REW_BEN_FAM_001": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_002": {
+   "category": "benefit",
+   "class": "annual",
+   "domain": "Time Off & Family",
+   "months": 12
+  },
+  "REW_BEN_FAM_005": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_006": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_007": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_008": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_009": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_010": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_011": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FAM_012": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_FLEX_ALLOW_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW_BEN_HOL_001": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_002": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_003": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_004": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_005": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_006": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_007": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_HOL_008": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_PENS_EE_MAX_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12
+  },
+  "REW_BEN_PENS_EMP_MAX_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pensions & Savings",
+   "months": 12
+  },
+  "REW_BEN_REM_PAY_001": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "REW_BEN_REM_PAY_002": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "REW_BEN_REM_PAY_003": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "REW_BEN_REM_PAY_004": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "REW_BEN_REM_PAY_005": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Pay",
+   "months": 18
+  },
+  "REW_BEN_SICK_001": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_SICK_002": {
+   "category": "benefit",
+   "class": "annual",
+   "domain": "Time Off & Family",
+   "months": 12
+  },
+  "REW_BEN_SICK_004": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_SICK_005": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_BEN_SICK_006": {
+   "category": "benefit",
+   "class": "benefit",
+   "domain": "Time Off & Family",
+   "months": 18
+  },
+  "REW_FAIR_TIPS_DIST_7d34e570": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_FAI_079": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_081": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_082": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_085": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_086": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_087": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_088": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_089": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_092": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_FAI_128": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "REW_FAI_CANCEL_1bbcc629": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_FAI_MIN_HOURS_8518a543": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_FAI_STUDY_TIME_93b6ef22": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_FAI_TRONC_GROUPS_e5639ac2": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_FAI_TRONC_TYPES_b5547658": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_INC_060": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_061": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_065": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_069": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_070": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_071": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_072": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_077": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Incentives & Recognition",
+   "months": 24
+  },
+  "REW_INC_103": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_104": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_111": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_131": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_132": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_133": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_135": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_136": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_LTI_MAX_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_INC_LTI_VALUE_TYP_01": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Incentives & Recognition",
+   "months": 12
+  },
+  "REW_PAY_001": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PAY_002": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PAY_003": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PAY_005": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_006": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PAY_007": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_011": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_014": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Time Off & Family",
+   "months": 12,
+   "override_reason": "bank-holiday premium rate moves with the annual pay cycle"
+  },
+  "REW_PAY_016": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_017": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_018": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_019": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PAY_020": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pensions & Savings",
+   "months": 24
+  },
+  "REW_PAY_021": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_023": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_097": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "REW_PAY_109": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW_PAY_EV_KWH_66ef252b": {
+   "category": "policy",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  },
+  "REW_PAY_TIPS_EXIST_7c80c508": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PAY_TRONC_6db81475": {
+   "category": "policy",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_PRO_030": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PRO_034": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PRO_035": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Governance & Transparency",
+   "months": 24
+  },
+  "REW_PRO_098": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Governance & Transparency",
+   "months": 12
+  },
+  "REW_Q049530": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_Q524161": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "REW_Q528801": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "REW_Q534581": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Pay",
+   "months": 24
+  },
+  "a7ed418e-b057-4b70-ab58-31e897b7c1b6": {
+   "category": "practice",
+   "class": "annual",
+   "domain": "Pay",
+   "months": 12
+  },
+  "b1785613-96ed-4a64-9fd7-762d0ac65f19": {
+   "category": "practice",
+   "class": "structural",
+   "domain": "Benefits & Lifestyle",
+   "months": 24
+  },
+  "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf": {
+   "category": "metric",
+   "class": "annual",
+   "domain": "Benefits & Lifestyle",
+   "months": 12
+  }
+ },
+ "policy": "Every active metric carries a refresh cadence in months. An answered question is due a refresh when its oldest answer row is older than the cadence. Refresh is a nudge only \u2014 stale answers keep counting in the benchmark, and every accepted value is preserved in answers_history.",
+ "reviewed": "2026-08-04",
+ "rules": [
+  "category='metric' OR unit_type in ('currency', 'percentage', 'weeks') -> annual (12)",
+  "category='benefit' -> benefit (18)",
+  "category in ('policy','practice') -> structural (24)",
+  "per-metric overrides below trump the class rules"
+ ]
+}
