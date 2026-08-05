@@ -1,8 +1,8 @@
 {
  "class_counts": {
-  "annual": 60,
-  "benefit": 41,
-  "structural": 232
+  "annual": 44,
+  "benefit": 44,
+  "structural": 245
  },
  "classes": {
   "annual": 12,
@@ -42,27 +42,31 @@
   },
   "CAR_BN_02": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "eligibility criteria are policy design, not a market value"
   },
   "CAR_COST_02": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "EV mandate is fleet-policy design"
   },
   "CAR_STATUS_01": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "status-car provision is benefit architecture"
   },
   "CAR_STATUS_03": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "car-vs-cash choice is benefit architecture"
   },
   "EXT_REW_GAP_001": {
    "category": "benefit",
@@ -73,9 +77,10 @@
   },
   "EXT_REW_GAP_002": {
    "category": "benefit",
-   "class": "benefit",
+   "class": "annual",
    "domain": "Incentives & Recognition",
-   "months": 18
+   "months": 12,
+   "override_reason": "\u00a3 value of a recognition award \u2014 erodes with inflation"
   },
   "EXT_REW_GAP_003": {
    "category": "benefit",
@@ -97,9 +102,10 @@
   },
   "EXT_REW_GAP_007": {
    "category": "benefit",
-   "class": "benefit",
+   "class": "annual",
    "domain": "Incentives & Recognition",
-   "months": 18
+   "months": 12,
+   "override_reason": "\u00a3 value of a long-service award \u2014 erodes with inflation"
   },
   "EXT_REW_GAP_009": {
    "category": "benefit",
@@ -181,9 +187,10 @@
   },
   "PROP_202fecc6": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "whether utilisation is tracked is a capability, not a value"
   },
   "PROP_216f7323": {
    "category": "practice",
@@ -259,9 +266,10 @@
   },
   "PROP_aa4061d5": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Governance & Transparency",
-   "months": 12
+   "months": 24,
+   "override_reason": "how effectiveness is measured is a capability, not a value"
   },
   "PROP_c1a3da61": {
    "category": "benefit",
@@ -326,15 +334,17 @@
   },
   "RED_NOTICE_01": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "how notice is handled is redundancy-policy design"
   },
   "RED_PAY_01": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "redundancy pay basis is policy design"
   },
   "RED_PROC_01": {
    "category": "policy",
@@ -368,9 +378,10 @@
   },
   "RED_TERM_01": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 24,
+   "override_reason": "redundancy terms offered is policy design"
   },
   "RED_TERM_02": {
    "category": "metric",
@@ -991,9 +1002,10 @@
   },
   "REW265_GOV_AIREGRADE": {
    "category": "practice",
-   "class": "structural",
+   "class": "annual",
    "domain": "Governance & Transparency",
-   "months": 24
+   "months": 12,
+   "override_reason": "asks about the LAST 12 MONTHS \u2014 expires by construction"
   },
   "REW265_GOV_AITALENT": {
    "category": "practice",
@@ -1413,9 +1425,10 @@
   },
   "REW_BEN_058": {
    "category": "practice",
-   "class": "structural",
+   "class": "annual",
    "domain": "Pay",
-   "months": 24
+   "months": 12,
+   "override_reason": "asks about the LAST 12 MONTHS \u2014 expires by construction"
   },
   "REW_BEN_100": {
    "category": "metric",
@@ -1437,9 +1450,10 @@
   },
   "REW_BEN_139": {
    "category": "metric",
-   "class": "annual",
+   "class": "benefit",
    "domain": "Health & Protection",
-   "months": 12
+   "months": 18,
+   "override_reason": "PMI eligibility by level \u2014 renewal-cycle design"
   },
   "REW_BEN_FAM_001": {
    "category": "benefit",
@@ -1449,9 +1463,10 @@
   },
   "REW_BEN_FAM_002": {
    "category": "benefit",
-   "class": "annual",
+   "class": "benefit",
    "domain": "Time Off & Family",
-   "months": 12
+   "months": 18,
+   "override_reason": "weeks of enhanced maternity pay \u2014 entitlement design, not a market value"
   },
   "REW_BEN_FAM_005": {
    "category": "benefit",
@@ -1605,9 +1620,10 @@
   },
   "REW_BEN_SICK_002": {
    "category": "benefit",
-   "class": "annual",
+   "class": "benefit",
    "domain": "Time Off & Family",
-   "months": 12
+   "months": 18,
+   "override_reason": "weeks of enhanced sick pay \u2014 entitlement design, not a market value"
   },
   "REW_BEN_SICK_004": {
    "category": "benefit",
@@ -1689,9 +1705,10 @@
   },
   "REW_FAI_128": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Pay",
-   "months": 12
+   "months": 24,
+   "override_reason": "whether top-performer pay is tested is governance design"
   },
   "REW_FAI_CANCEL_1bbcc629": {
    "category": "policy",
@@ -1791,33 +1808,38 @@
   },
   "REW_INC_131": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Incentives & Recognition",
-   "months": 12
+   "months": 24,
+   "override_reason": "operating LTI plans is scheme architecture"
   },
   "REW_INC_132": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Incentives & Recognition",
-   "months": 12
+   "months": 24,
+   "override_reason": "LTI plan types are scheme architecture"
   },
   "REW_INC_133": {
    "category": "metric",
-   "class": "annual",
+   "class": "benefit",
    "domain": "Incentives & Recognition",
-   "months": 12
+   "months": 18,
+   "override_reason": "LTI eligibility by level \u2014 scheme-review-cycle design"
   },
   "REW_INC_135": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Incentives & Recognition",
-   "months": 12
+   "months": 24,
+   "override_reason": "operating commission plans is scheme architecture"
   },
   "REW_INC_136": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Incentives & Recognition",
-   "months": 12
+   "months": 24,
+   "override_reason": "commission structures are scheme architecture"
   },
   "REW_INC_LTI_MAX_01": {
    "category": "metric",
@@ -1924,15 +1946,17 @@
   },
   "REW_PAY_097": {
    "category": "metric",
-   "class": "annual",
+   "class": "structural",
    "domain": "Pay",
-   "months": 12
+   "months": 24,
+   "override_reason": "performance-differentiated increases is pay-policy design"
   },
   "REW_PAY_109": {
    "category": "metric",
-   "class": "annual",
+   "class": "benefit",
    "domain": "Benefits & Lifestyle",
-   "months": 12
+   "months": 18,
+   "override_reason": "car-allowance eligibility by level \u2014 renewal-cycle design"
   },
   "REW_PAY_EV_KWH_66ef252b": {
    "category": "policy",
@@ -2020,11 +2044,11 @@
   }
  },
  "policy": "Every active metric carries a refresh cadence in months. An answered question is due a refresh when its oldest answer row is older than the cadence. Refresh is a nudge only \u2014 stale answers keep counting in the benchmark, and every accepted value is preserved in answers_history.",
- "reviewed": "2026-08-04",
+ "reviewed": "2026-08-05",
  "rules": [
-  "category='metric' OR unit_type in ('currency', 'percentage', 'weeks') -> annual (12)",
+  "category='metric' OR unit_type in ('currency', 'percentage') -> annual (12)",
   "category='benefit' -> benefit (18)",
   "category in ('policy','practice') -> structural (24)",
-  "per-metric overrides below trump the class rules"
+  "per-metric overrides trump the class rules (override_reason says why)"
  ]
 }

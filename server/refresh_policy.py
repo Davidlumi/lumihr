@@ -23,8 +23,9 @@ REGISTER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 _cache = {"mtime": None, "months": {}, "classes": {}}
 
 # fallback mirror of the register's class rules — a question added after the
-# register was generated still gets a cadence
-_QUANT_UNITS = ("currency", "percentage", "weeks")
+# register was generated still gets a cadence. MUST match gen_refresh_register's
+# QUANT_UNITS (qa_refresh B10 exercises the fallback; 'weeks' removed 2026-08-05).
+_QUANT_UNITS = ("currency", "percentage")
 _DEFAULTS = {"annual": 12, "benefit": 18, "structural": 24}
 
 
