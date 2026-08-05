@@ -213,6 +213,13 @@ if [[ $PLAUS_RC -eq 0 ]]; then PASS+=(qa_plausibility); else FAIL+=("qa_plausibi
 #     own short-lived :8061 server WITH seams for the fault-injection checks.
 start_server "$DB" srv_backoffice; run_gate qa_backoffice
 
+# --- refresh-cadence gate (2026-08-05): register <-> bank, flagging engine,
+#     Your-data payload contract. Mutates the shared throwaway mildly (deletes
+#     demo-org drafts + validation-blocked answers, backdates then RESTORES
+#     timestamps, one same-value re-submit) — after backoffice, before the
+#     LAST-by-doctrine pair, on a fresh server for rate-limiter hygiene.
+start_server "$DB" srv_refresh; run_gate qa_refresh
+
 # --- LAST by doctrine ---
 run_gate qa_pulse
 run_gate qa_release
