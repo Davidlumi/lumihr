@@ -14424,3 +14424,33 @@ Cache v439. FLAGGED, PRE-EXISTING, NOT FIXED: Thornbridge's stored REW265_PAY_PA
 answers ("Letter only" ×7 rows on a now-numeric matrix) fail validation and BLOCK EVERY
 SUBMIT for that org — seeded data drifted from a question-type change; needs its own
 ruling (regen vs clear) since any member org in this state is stuck the same way.
+
+**Refresh system deep QA (2026-08-05, second pass).** Every one of the 333 cadence
+assignments re-read, the flagging engine edge-cased, and the whole thing locked behind
+a new permanent gate. REGISTER CORRECTIONS (24 new overrides; register is now 44
+annual / 44 benefit / 245 structural, 34 overrides total, each with its reason in the
+file): (a) two £-value awards (recognition EXT_REW_GAP_002, long-service _007) moved
+18→12 — values erode with inflation; (b) two rolling-12-month-window questions
+(REW265_GOV_AIREGRADE, REW_BEN_058) moved 24→12 — their answers expire by
+construction; (c) fifteen design questions the metric CATEGORY had dragged to annual
+(car-scheme criteria/status, redundancy basis/terms-offered, LTI/commission
+architecture, capability questions) moved 12→24 — flagging design questions annually
+erodes trust in the flag; (d) three eligibility-by-level binaries + both weeks-duration
+entitlements moved to 18 (renewal-pace design), and the 'weeks' unit REMOVED from the
+quantitative rule (both weeks questions are entitlements, not market values;
+refresh_policy fallback synced). AUDIT FINDINGS, benign but now asserted: past regen
+scripts wrote provenance TAGS into answers.submitted_at ("2026-07-18 diff15", 1,739
+rows) — date-prefixed so due-ness ordering survives, and the UI already falls back to
+"a while ago" on unparseable stamps. NEW GATE server/qa_refresh.py (46 checks, wired
+into run_gates.sh after backoffice — suite is now 13): A register↔bank coverage +
+regeneration-idempotence (the JSON can never drift from the generator or be hand-
+edited unnoticed); B engine — both sides of every class cutoff, matrix MIN semantics
+(one stale row flags; aged NA row counts), provenance-tag ordering, zero-write
+property, register hot-reload + malformed-file keeps-last-good, unregistered-question
+fallback; C HTTP contract — payload sums, due-first sort per domain, viewer parity,
+section↔overview agreement, same-value re-submit clears flag + appends history +
+canonical timestamp, completion untouched by staleness (nudge-never-gates), teardown
+restores pristine staleness. CLOCK-SAFE: the gate baselines pristine due-ness rather
+than asserting zero, so it will not start failing when seed answers genuinely age past
+their cadences from mid-2027. The gate neutralises the PAYCOMMS submit blocker on its
+throwaway (loud NOTE each run) — that defect remains open, ruling pending.
