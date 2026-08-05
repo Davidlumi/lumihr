@@ -1901,6 +1901,14 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   font-weight: 650; padding: 3px var(--s2); border-radius: 999px; }
 .data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
 .data-q-flag.todo { background: var(--blue-tint); color: var(--blue); }
+/* refresh-due: attention semantics (data hygiene), the same warn register as
+   .data-access.warn on this page — NOT performance RAG. Soft amber wash,
+   ink-anchored text for contrast. */
+.data-q-flag.refresh { background: color-mix(in srgb, var(--amber-bright) 14%, transparent);
+  color: color-mix(in srgb, var(--amber-bright) 42%, var(--ink)); }
+.data-q-updated { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: var(--s1); }
+.data-q-updated a { font-weight: 600; }
+.dh-stat.refresh b { color: color-mix(in srgb, var(--amber-bright) 55%, var(--ink)); }
 .yourdata .back-link { display: inline-flex; align-items: center; gap: 3px; margin-bottom: var(--s1); }
 .data-done { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-caption);
   font-weight: 650; color: var(--favourable); }

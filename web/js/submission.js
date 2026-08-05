@@ -334,12 +334,17 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
   }
 
   // ------------------------------------------------------------- LIST mode --
+  // refresh-due (server truth: cadence register vs oldest answer row) — the
+  // flag clears on the next SUBMIT, not on drafting, mirroring answered logic
+  const nRefresh = ordered.filter(q => q.needs_refresh && answeredQ(q)).length;
   const tabs = [{ k: "all", label: "All", n: total }, { k: "answered", label: "Answered", n: done },
     { k: "unanswered", label: "To answer", n: total - done }];
+  if (nRefresh > 0) tabs.push({ k: "refresh", label: "To refresh", n: nRefresh });
   // The open row stays in the list even once it stops matching the filter, so a
   // multi-entry answer (multi-select, or a matrix with several rows) doesn't
   // vanish mid-edit the instant its first value makes it "answered".
-  const visible = ordered.filter(q => q.id === openId || filter === "all" || (filter === "answered") === answeredQ(q));
+  const visible = ordered.filter(q => q.id === openId || filter === "all"
+    || (filter === "refresh" ? (q.needs_refresh && answeredQ(q)) : (filter === "answered") === answeredQ(q)));
   return html`
     <div class="yourdata" style=${{ maxWidth: "780px" }}>
       ${header}
@@ -376,10 +381,12 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                         ? html`<div class="data-q-rows">${sum.map((r, i) => html`<span key=${i}><span class="muted">${r.row}:</span> ${r.val}</span>`)}</div>`
                         : html`<div class="data-q-val">${sum || "—"}</div>`)
                     : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add it</span></div>`)}
+                  ${!open && ans && q.needs_refresh && html`<div class="data-q-updated">
+                    Last updated ${window.fmtUpdated(q.last_updated)} — update it, or re-save to confirm it's still right.</div>`}
                 </div>
                 <div class="dq-sum-right">
-                  <span class=${"data-q-flag " + (ans ? "ok" : "todo")}>
-                    <${Icon} name=${ans ? "award" : "pencil"} size=${13} /> ${ans ? "Answered" : "To do"}</span>
+                  <span class=${"data-q-flag " + (ans && q.needs_refresh ? "refresh" : ans ? "ok" : "todo")}>
+                    <${Icon} name=${ans && q.needs_refresh ? "refresh" : ans ? "award" : "pencil"} size=${13} /> ${ans && q.needs_refresh ? "Refresh" : ans ? "Answered" : "To do"}</span>
                   <span class="dq-chev"><${Icon} name=${open ? "chevron-up" : "chevron-down"} size=${15} /></span>
                 </div>
               </div>

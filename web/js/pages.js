@@ -3196,6 +3196,7 @@ window.YourDataPage = function ({ me }) {
             <div class="dh-stats">
               <div class="dh-stat"><b>${(data.domains || []).filter(d => d.answered >= d.total).length}</b><span>of ${(data.domains || []).length} areas complete</span></div>
               <div class="dh-stat"><b>${data.total - data.answered}</b><span>question${data.total - data.answered === 1 ? "" : "s"} remaining</span></div>
+              ${data.to_refresh > 0 && html`<div class="dh-stat refresh"><b>${data.to_refresh}</b><span>due a refresh</span></div>`}
               ${c.days_left != null && html`<div class="dh-stat"><b>${c.days_left}</b><span>days left</span></div>`}
             </div>`}
         </div>
@@ -3218,7 +3219,8 @@ window.YourDataPage = function ({ me }) {
           return html`
           <div key=${d.name} class="data-row" role="button" tabindex="0"
             style=${{ "--i": di }}
-            aria-label=${domainLabel(d.name) + ": " + d.answered + " of " + d.total + " answered"}
+            aria-label=${domainLabel(d.name) + ": " + d.answered + " of " + d.total + " answered"
+              + (d.to_refresh > 0 ? ", " + d.to_refresh + " due a refresh" : "")}
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
             onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/your-data/" + encodeURIComponent(d.name)); } }}>
             <span class="cat-icon"><${Icon} name=${CAT_ICON[d.name] || "award"} size=${14} /></span>
@@ -3228,9 +3230,15 @@ window.YourDataPage = function ({ me }) {
                 style=${{ width: Math.max(d.pct, 3) + "%" }}></span>`}
             </span>
             <span class="data-row-count"><b>${d.answered}</b><span class="drc-den">/${d.total}</span></span>
-            ${done
-              ? html`<span class="data-q-flag ok"><${Icon} name="award" size=${13} /> Complete</span>`
-              : html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`}
+            ${/* one chip per row (subtractive bias): unanswered work first —
+                completion drives access — then refresh-due trumps Complete: a
+                finished area whose answers have aged needs attention, not
+                celebration. The aria-label always carries both counts. */ ""}
+            ${!done
+              ? html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`
+              : d.to_refresh > 0
+                ? html`<span class="data-q-flag refresh"><${Icon} name="refresh" size=${13} /> ${d.to_refresh} to refresh</span>`
+                : html`<span class="data-q-flag ok"><${Icon} name="award" size=${13} /> Complete</span>`}
             <span class="data-row-go"><${Icon} name="chevron-right" size=${15} /></span>
           </div>`;
         })}
@@ -3249,7 +3257,10 @@ window.DomainDataView = function ({ me, section }) {
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const tabs = [{ k: "all", label: "All", n: d.total }, { k: "answered", label: "Answered", n: d.answered },
     { k: "unanswered", label: "To do", n: d.total - d.answered }];
-  const qs = d.questions.filter(x => filter === "all" || (filter === "answered") === x.answered);
+  if (d.to_refresh > 0) tabs.push({ k: "refresh", label: "To refresh", n: d.to_refresh });
+  const qs = d.questions.filter(x => filter === "all" ? true
+    : filter === "refresh" ? x.needs_refresh
+    : (filter === "answered") === x.answered);
   return html`
     <div class="yourdata">
       <a class="caption back-link" href="#/your-data"><${Icon} name="chevron-left" size=${13} /> Your data</a>
@@ -3257,7 +3268,7 @@ window.DomainDataView = function ({ me, section }) {
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <span class="cat-glyph"><${Icon} name=${CAT_ICON[section] || "award"} size=${20} /></span>
           <div><h1 class="display-title">${domainLabel(section)}</h1>
-            <div class="caption meta">${d.answered} of ${d.total} answered</div></div>
+            <div class="caption meta">${d.answered} of ${d.total} answered${d.to_refresh > 0 ? " · " + d.to_refresh + " due a refresh" : ""}</div></div>
         </div>
         <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
           <${CompletionRing} pct=${d.pct} size=${56} stroke=${7} />
@@ -3284,13 +3295,22 @@ window.DomainDataView = function ({ me, section }) {
                 <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
                 : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
                 : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>answer now</a>` : ""}</div>`}
+              ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)} — worth checking this is still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
             </div>
-            <span class=${"data-q-flag " + (q.answered ? "ok" : "todo")}>
-              <${Icon} name=${q.answered ? "award" : "pencil"} size=${13} /> ${q.answered ? "Answered" : "To do"}</span>
+            <span class=${"data-q-flag " + (q.needs_refresh ? "refresh" : q.answered ? "ok" : "todo")}>
+              <${Icon} name=${q.needs_refresh ? "refresh" : q.answered ? "award" : "pencil"} size=${13} /> ${q.needs_refresh ? "Refresh" : q.answered ? "Answered" : "To do"}</span>
           </div>`)}
       </div>`}
     </div>`;
 };
+function fmtUpdated(s) {
+  // submitted_at is sqlite UTC "YYYY-MM-DD HH:MM:SS" — normalise for Safari
+  if (!s) return "a while ago";
+  const dt = new Date(s.replace(" ", "T") + "Z");
+  return isNaN(dt) ? "a while ago"
+    : dt.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+}
+window.fmtUpdated = fmtUpdated;   // DomainPage (submission.js) shows the same line
 function dataVal(value, q) {
   if (q && (q.type === "numeric" || q.type === "matrix")) {
     const f = parseFloat(String(value).replace(/[£,%]/g, ""));
