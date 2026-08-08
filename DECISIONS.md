@@ -15123,3 +15123,26 @@ rule, not something else. Permanent: qa_commentary 40→44 checks, keyless.
 MASTER SWITCH UNTOUCHED — P1-D proves the gate and flips nothing; the checklist
 records R8's unblocking condition as MET with David's five remaining steps.
 Suite 14/14 ALL GREEN.
+
+## 2026-08-08 — SIG-1: one voice — "of the comparison pool" across signals, pack, and footer
+
+CLASSIFICATION PASTED BEFORE SUBSTITUTING (the §1.1 distinction): signals.py
+carries ZERO cut-label uses of "peers" ("All peers" the peer-group NAME lives
+only in app.py/web — KEPT); TWELVE rendered attribution strings changed —
+"more than N in 10 peers" (:512/:513), "of peers X — you don't yet" (:618/:619
++ three shared-shape pairs at :881/:929/:970), "% of peers do/select"
+(:780/:784/:815) — all now "of the comparison pool", matching 10b1e91's pack
+substitution; seven docstring/comment occurrences unrendered, untouched. The
+notifications composer (:295) recognises BOTH prefixes so stored history rows
+still render as complete sentences. STORED ROWS, counted: 5,504 of 13,469
+signal_state rows carry the old vocabulary; 7,407 notification_events history
+rows do. WHAT THE REBASELINE CLEARS: the P1-F epoch path used record_baseline
+(INSERT OR REPLACE) — stale keys absent from the fresh set would have SURVIVED;
+fixed to notifications.rebaseline (DELETE-first, full replace), so runbook
+§6.0's one sweep now clears ALL signal_state rows including all 5,504.
+notification_events history persists by design — the immutable event log,
+archived dev history from seed orgs, never mailed, not a served surface;
+runbook §6.0 says so explicitly. SEQUENCE HONOURED: this lands ahead of the
+production rebaseline, so no production row is ever stored with the old
+wording. Suite 14/14 ALL GREEN (hero 59, signals-system 14 — no gate asserted
+the old strings).

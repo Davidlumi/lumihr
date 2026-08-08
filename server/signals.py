@@ -509,8 +509,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             "tag": "HIGHER THAN MARKET", "worth": False,
             "stand": "your spend is above %d in 10 in the market" % min(9, int(i["percentile"] / 10)),
             "value_display": "P%d" % round(i["percentile"]),
-            "label_short": "%s — above %d in 10 peers" % (_short(i["label"]), min(9, int(i["percentile"] / 10))),
-            "detail": "%s — you pay more than %d in 10 peers" % (
+            "label_short": "%s — above %d in 10 of the comparison pool" % (_short(i["label"]), min(9, int(i["percentile"] / 10))),
+            "detail": "%s — you pay more than %d in 10 of the comparison pool" % (
                 i["label"], min(9, int(i["percentile"] / 10))),
             "impact": 500000 + (i["percentile"] - save_at) * 100,
         })
@@ -615,8 +615,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 "name": _label(qid, q), "tag": "COMMON — YOU DON'T", "worth": True,
                 "stand": "%d%% of the market does this, you don't" % round(adoption),
                 "value_display": "%d%%" % round(adoption),
-                "label_short": "of peers %s" % _short(_phrase(q.display_title)),
-                "detail": "of peers %s — you don't yet" % _phrase(q.display_title),
+                "label_short": "of the comparison pool %s" % _short(_phrase(q.display_title)),
+                "detail": "of the comparison pool %s — you don't yet" % _phrase(q.display_title),
                 "impact": 10000 + adoption * 10,
             })
             seen_q.add(qid)
@@ -777,11 +777,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             continue
         _, knd, lab, a = best
         if knd == "rare":
-            detail = "you selected “%s” — only %d%% of peers do" % (lab, round(a))
+            detail = "you selected “%s” — only %d%% of the comparison pool do" % (lab, round(a))
             tag, worth = "A RARE CHOICE", False
             stand = "only %d%% of the market offers it" % round(a)
         else:
-            detail = "%d%% of peers select “%s” — you don't" % (round(a), lab)
+            detail = "%d%% of the comparison pool select “%s” — you don't" % (round(a), lab)
             tag, worth = "COMMON — YOU DON'T", True
             stand = "%d%% of the market does this, you don't" % round(a)
         # the OPTION is the label here — never the multi-select question stem
@@ -812,7 +812,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                         "name": _label(qid, q), "tag": "A RARE CHOICE", "worth": False,
                         "stand": "only %d%% of the market does this — you do" % round(a),
                         "value_display": mine, "label_short": "%s · %s" % (_short(q.display_title), mine),
-                        "detail": "you answered “%s” — only %d%% of peers do" % (mine, round(a)),
+                        "detail": "you answered “%s” — only %d%% of the comparison pool do" % (mine, round(a)),
                         "impact": 22000 + (50 - a) * 100})
             seen_q.add(qid)
 
@@ -878,8 +878,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                     s["kind"] = "prevalence"; s["tag"] = "COMMON — YOU DON'T"
                     s["stand"] = "%d%% of the market does this, you don't" % _pct
                     s["value_display"] = "%d%%" % _pct
-                    s["label_short"] = "of peers %s" % _short(_ttl)
-                    s["detail"] = "of peers %s — you don't yet" % _ttl
+                    s["label_short"] = "of the comparison pool %s" % _short(_ttl)
+                    s["detail"] = "of the comparison pool %s — you don't yet" % _ttl
                     s["impact"] = 10000 + _pct * 10
                 elif _m.get("class") in ("Practice", "Design"):
                     # a yes/no approach with no clear majority — a peer-framed approach note
@@ -926,8 +926,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 s["tag"] = "COMMON — YOU DON'T"
                 s["stand"] = "%d%% of the market does this, you don't" % _pct
                 s["value_display"] = "%d%%" % _pct
-                s["label_short"] = "of peers %s" % _short(_ttl)
-                s["detail"] = "of peers %s — you don't yet" % _ttl
+                s["label_short"] = "of the comparison pool %s" % _short(_ttl)
+                s["detail"] = "of the comparison pool %s — you don't yet" % _ttl
                 # re-baseline impact to prevalence tier (was behind/ahead tier): a
                 # recast must not keep verdict-level impact, or it jumps the
                 # cap_briefing diversity reserve meant for genuine prevalence.
@@ -967,8 +967,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
                 s["tag"] = "COMMON — YOU DON'T"
                 s["stand"] = "%d%% of the market does this, you don't" % _fpct
                 s["value_display"] = "%d%%" % _fpct
-                s["label_short"] = "of peers %s" % _short(_fttl)
-                s["detail"] = "of peers %s — you don't yet" % _fttl
+                s["label_short"] = "of the comparison pool %s" % _short(_fttl)
+                s["detail"] = "of the comparison pool %s — you don't yet" % _fttl
             elif _m.get("class") in ("Practice", "Design"):
                 s["tag"] = "AN %s CHOICE" % practice_axis.bucket_word("established").upper()
                 s["stand"] = "an %s to the peer norm" % practice_axis.bucket_word("established")

@@ -2314,7 +2314,12 @@ def run_signal_sweep(conn=None, verbose=True):
                 swept += 1
                 continue
             if ep_row is not None and ep_row["epoch"] != cur_epoch:
-                notifications.record_baseline(conn, oid, fresh)   # composition moved: no events
+                # FULL replace (rebaseline = DELETE first), not INSERT OR
+                # REPLACE: an epoch change must also clear rows whose signal
+                # keys are absent from the fresh set — otherwise stale rows
+                # (old vocabulary, dead signals) survive the rebaseline
+                # (SIG-1 stored-row finding, 2026-08-08).
+                notifications.rebaseline(conn, oid, fresh)        # composition moved: no events
                 conn.execute("INSERT OR REPLACE INTO org_signal_epoch VALUES (?,?)",
                              (oid, cur_epoch))
                 conn.commit()

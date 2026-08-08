@@ -292,7 +292,7 @@ def render_event(event):
     # you don't yet") is written to sit AFTER the value the Signals page renders
     # beside it. A notification (and the email digest) has no such neighbour, so
     # compose the value back in at read time — heals already-stored events too.
-    if (payload.get("detail") or "").startswith("of peers") and payload.get("value_display"):
+    if (payload.get("detail") or "").startswith(("of peers", "of the comparison pool")) and payload.get("value_display"):
         payload = dict(payload, detail="%s %s" % (payload["value_display"], payload["detail"]))
     if kind == "cleared":
         title = "Cleared"

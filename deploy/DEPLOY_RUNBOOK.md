@@ -118,7 +118,11 @@ delete its own off-box copies.
    backlog through its first sweep). Run once, before first provisioning:
    bump `composition_epoch` in meta (`set_meta("composition_epoch", "prod-1")`)
    and run one sweep — P1-F's epoch mechanism rebaselines every org SILENTLY,
-   zero events. Use the built idiom; do not invent a truncation.
+   zero events, FULL-REPLACE (clears all stored signal_state rows incl. the
+   5,504 carrying pre-SIG-1 vocabulary). Use the built idiom; do not invent a
+   truncation. NOTE: notification_events history (7,407 dev rows, seed orgs,
+   never mailed) is the immutable event log and persists — archived history,
+   not a served surface; it does not reach production members.
 
 1. **D2 — SES email delivery live** (A4 ruling): domain verified, DKIM, sandbox
    exit, `LUMI_SMTP_*` set, a real invite delivered to a test mailbox. Until D2,
