@@ -28,7 +28,9 @@ def main():
     ap.add_argument("--snapshot", action="store_true", help="run_snapshot before sweeping")
     ap.add_argument("--snapshot-id", type=int, default=1)
     ap.add_argument("--digest", action="store_true", help="send email digests after sweeping")
-    ap.add_argument("--base-url", default=os.environ.get("LUMI_BASE_URL", ""))
+    # PH-CFG-1 Branch A: same normalisation as app.base_url(); "" -> the digest
+    # writes words instead of links (never a relative dead URL)
+    ap.add_argument("--base-url", default=(os.environ.get("LUMI_BASE_URL") or "").strip().rstrip("/"))
     args = ap.parse_args()
 
     conn = get_conn()

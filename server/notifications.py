@@ -368,9 +368,15 @@ def _digest_body(org_name, events, settings_link, overview_link):
         lines.append("GOOD NEWS")
         lines += ["- %s" % g["body"] for g in good]
         lines.append("")
-    lines += ["See these in context: %s" % overview_link,
-              "Change how often you hear from us: %s" % settings_link,
-              "", "— lumi"]
+    # empty link == no configured base (PH-CFG-1 Branch A): say where to look
+    # in words, never print a relative dead URL
+    if overview_link:
+        lines += ["See these in context: %s" % overview_link,
+                  "Change how often you hear from us: %s" % settings_link]
+    else:
+        lines += ["See these in context on your lumi Overview page.",
+                  "You can change how often you hear from us in Settings."]
+    lines += ["", "— lumi"]
     return "\n".join(lines)
 
 
@@ -415,8 +421,11 @@ def run_email_digest(conn, base_url="", frequencies=("daily", "weekly")):
             continue
         org_name = (identity.org_display(user["org_id"]) or {}).get("name")
         subj = _digest_subject(len(live), prefs["email_frequency"])
+        # PH-CFG-1 Branch A: with no configured base there is no honest link to
+        # print — omit rather than mail a RELATIVE dead link (the C3 defect).
         body = _digest_body(org_name if org_name else "there", live,
-                            base_url + "/#/settings", base_url + "/#/overview")
+                            base_url + "/#/settings" if base_url else "",
+                            base_url + "/#/overview" if base_url else "")
         send_notification(subj, body, to=addr)
         ids = [e["id"] for e in live]
         conn.executemany("UPDATE notification_reads SET emailed_at=datetime('now') WHERE user_id=? AND event_id=?",

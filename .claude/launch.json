@@ -4,9 +4,11 @@
     {
       "name": "lumi",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "uvicorn", "app:app", "--port", "8060"],
+      "runtimeArgs": ["-m", "uvicorn", "app:app", "--port", "8068", "--reload"],
       "cwd": "server",
-      "port": 8060
+      "port": 8068,
+      "autoPort": false,
+      "env": { "LUMI_BASE_URL": "http://localhost:8068" }
     }
   ]
 }

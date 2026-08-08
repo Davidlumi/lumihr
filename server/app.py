@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import urllib.parse
 import secrets
 import sys
 import uuid
@@ -975,7 +976,7 @@ async def request_reset(request: Request):
             "Hello,\n\nSomeone asked to reset the lumi password for this address. If that was "
             "you, choose a new password here:\n\n%s/app#/reset/%s\n\nThe link expires in 2 hours. "
             "If you didn't ask for this, you can safely ignore this email — your password is "
-            "unchanged.\n\n— lumi · UK reward benchmarking" % (BASE_URL, token),
+            "unchanged.\n\n— lumi · UK reward benchmarking" % (base_url(minting=True), token),
             to=email)
     return {"ok": True, "message": "If that email has an account, we've sent a reset link to it. "
                                    "The link expires in 2 hours."}
@@ -1092,14 +1093,21 @@ async def invite(request: Request):
     user, org = require_admin(request)
     body = await _json(request)
     email = (body.get("email") or "").strip()
-    # Admins are made by promotion after joining, never by invite
+    # PH-PROV-1b (2026-08-08): "Admins are made by promotion, never by invite"
+    # is now an EXPLICIT refusal, not a silent downgrade — the inviter must
+    # learn the rule, not discover a viewer where they expected an admin.
+    # (The staff provisioning path keeps its founding-admin carve-out.)
+    if body.get("role") == "admin":
+        raise HTTPException(400, "Admins are made by promotion after joining, never by "
+                                 "invite. Invite them as a contributor, then promote "
+                                 "them from the Team page once they've joined.")
     role = body.get("role") if body.get("role") in ("contributor", "viewer") else "viewer"
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Please enter a valid email address.")
     if auth_lib.find_user(email):
         raise HTTPException(400, "That email already has a lumi account.")
     token = auth_lib.create_invite(org["org_id"], email, role, user["user_id"])
-    link = "%s/app#/invite/%s" % (BASE_URL, token)
+    link = "%s/app#/invite/%s" % (base_url(minting=True), token)
     inviter = user["display_name"] or user["email"]
     org_name = (identity.org_display(org["org_id"]) or {}).get("name")
     send_notification(
@@ -2297,7 +2305,7 @@ def _signal_scheduler():
             swept, events = run_signal_sweep(conn, verbose=False)
             freqs = ["daily"] + (["weekly"] if datetime.utcnow().weekday() == weekly_day else [])
             sent = notifications.run_email_digest(
-                conn, base_url=os.environ.get("LUMI_BASE_URL", ""), frequencies=tuple(freqs))
+                conn, base_url=base_url() or "", frequencies=tuple(freqs))
             print("[lumi] signal scheduler: swept %d orgs, %d change events, %d digests sent (%s)"
                   % (swept, events, sent, ",".join(freqs)), flush=True)
         except Exception as e:
@@ -2916,7 +2924,7 @@ async def trigger_sweep(request: Request):
         freqs = tuple(f for f in (x.strip() for x in dig.split(",")) if f in ("daily", "weekly"))
         if freqs:
             out["digests_sent"] = notifications.run_email_digest(
-                conn, base_url=os.environ.get("LUMI_BASE_URL", ""), frequencies=freqs)
+                conn, base_url=base_url() or "", frequencies=freqs)
             out["digest_frequencies"] = list(freqs)
     _audit(user, "platform.run_sweep", "platform", None,
            {"orgs_swept": swept, "events": events, "digest": dig or None})
@@ -5168,8 +5176,37 @@ async def domain_summary(request: Request):
 
 NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "hello@lumihr.co.uk")
 # Public origin for links inside outbound email (reset/invite). Localhost is the
-# dev default; production sets LUMI_BASE_URL once and every emailed link follows.
-BASE_URL = os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
+# PH-CFG-1 Branch A (2026-08-08): THE one base-URL accessor. The old module
+# global (import-time read, localhost fallback) let three divergent readers
+# drift — one with a "" fallback that mailed RELATIVE dead links in digests.
+# Rules, per the ruled Branch-A shape:
+#   * read per call (setting the env needs a restart of nothing but the env);
+#   * trailing slash normalised;
+#   * minting=True (creating an invite/reset link): UNSET refuses THE ACTION
+#     with the exact fix — never the boot; an explicit localhost value is a
+#     legitimate dry-run configuration (gates set http://localhost:8060);
+#   * non-localhost values must be https — an emailed link never downgrades a
+#     member to plain http;
+#   * minting=False (display/digest): unset returns None, callers omit links.
+def base_url(minting=False):
+    raw = (os.environ.get("LUMI_BASE_URL") or "").strip().rstrip("/")
+    if not raw:
+        if minting:
+            raise HTTPException(503, "LUMI_BASE_URL is not configured, so this link would "
+                                     "be dead on arrival — refusing to mint it. Set "
+                                     "LUMI_BASE_URL (production: https://your-domain; "
+                                     "local dry-run: http://localhost:8060) and restart.")
+        return None
+    if minting:
+        host = (urllib.parse.urlsplit(raw).hostname or "").lower()
+        local = host in ("localhost", "127.0.0.1", "::1") or host.endswith(".localhost")
+        if not raw.startswith(("http://", "https://")):
+            raise HTTPException(503, "LUMI_BASE_URL must start http:// or https:// "
+                                     "(currently %r)." % raw)
+        if not local and not raw.startswith("https://"):
+            raise HTTPException(503, "A non-localhost LUMI_BASE_URL must be https — "
+                                     "emailed links must not downgrade members to plain http.")
+    return raw
 
 
 def send_notification(subject, body, to=None, log_body=None):
@@ -5518,10 +5555,6 @@ async def admin_pulse_report(pid: str, request: Request):
 # payments by invoice); staff Confirm-launch opens it to the whole community.
 # Ownership + the review/billing gate live on pulses.* ; payment ONLY gates
 # draft->open and never touches give-to-get or the core firewall.
-
-def _base_url():
-    return os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
-
 
 def _owned_pulse(conn, pid, org):
     """Fetch a pulse and assert this org owns it — 404 (not 403) for anything
@@ -5960,7 +5993,7 @@ async def admin_org_create(request: Request):
     if body.get("_qa_fail_identity") and os.environ.get("LUMI_QA_SEAMS") == "on":
         _audit(staff, "org.create", "org", org_id, {"invite_role": "admin", "classified": 1})
         return {"ok": True, "org_id": org_id, "name": name,
-                "invite_link": "%s/app#/invite/%s" % (BASE_URL, token),
+                "invite_link": "%s/app#/invite/%s" % (base_url(minting=True), token),
                 "expires_days": auth_lib.INVITE_TTL_DAYS}
     identity.shadow(identity.register_org_identity, org_id, name, nn)
     identity.shadow(identity.record_invite, token, org_id, email.lower(), "admin",
@@ -5969,7 +6002,7 @@ async def admin_org_create(request: Request):
     # split); the org_id target resolves at read time like every other surface.
     _audit(staff, "org.create", "org", org_id, {"invite_role": "admin", "classified": 1})
     return {"ok": True, "org_id": org_id, "name": name,
-            "invite_link": "%s/app#/invite/%s" % (BASE_URL, token),
+            "invite_link": "%s/app#/invite/%s" % (base_url(minting=True), token),
             "expires_days": auth_lib.INVITE_TTL_DAYS}
 
 
@@ -6042,7 +6075,7 @@ async def admin_org_invite(org_id: str, request: Request):
     else:
         token = auth_lib.create_invite(org_id, email, role, staff["user_id"])
         prior = []
-    link = "%s/app#/invite/%s" % (BASE_URL, token)
+    link = "%s/app#/invite/%s" % (base_url(minting=True), token)
     org_name = (identity.org_display(org_id) or {}).get("name") or "your organisation"
     # PH-PROV-1f: the console/log fallback carries a DIGEST, never the link —
     # the API response below already hands the operator the link directly, so
@@ -6233,7 +6266,7 @@ async def admin_org_detail(org_id: str, request: Request):
     iem = identity.invite_email_batch([r["token"] for r in irows][:200])
     invites = [{"token": r["token"], "role": r["role"], "expires_at": r["expires_at"],
                 "email": iem.get(r["token"]), "expired": not r["live"],
-                "link": "%s/app#/invite/%s" % (BASE_URL, r["token"])} for r in irows]
+                "link": "%s/app#/invite/%s" % (base_url(minting=True), r["token"])} for r in irows]
     counts = {
         "answers": conn.execute("SELECT COUNT(*) FROM answers WHERE org_id=?", (org_id,)).fetchone()[0],
         "drafts": conn.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (org_id,)).fetchone()[0],
@@ -6320,7 +6353,7 @@ async def admin_user_reset_link(user_id: str, request: Request):
         raise HTTPException(404, "Unknown user")
     token = auth_lib.create_reset(user_id)
     _audit(staff, "user.reset_link", "user", user_id)
-    return {"ok": True, "link": "%s/app#/reset/%s" % (BASE_URL, token),
+    return {"ok": True, "link": "%s/app#/reset/%s" % (base_url(minting=True), token),
             "expires_in_hours": auth_lib.RESET_TTL_HOURS}
 
 
@@ -6389,8 +6422,8 @@ async def admin_health(request: Request):
             "signal_sweep": os.environ.get("LUMI_SIGNAL_SWEEP", "").lower() == "on",
             "sweep_hour_utc": int(os.environ.get("LUMI_SWEEP_HOUR", "7")) % 24,
             "smtp_configured": bool(os.environ.get("LUMI_SMTP_HOST")),
-            "base_url": BASE_URL,
-            "base_url_is_localhost": ("localhost" in BASE_URL or "127.0.0.1" in BASE_URL),
+            "base_url": base_url() or "(unset — link minting disabled)",
+            "base_url_is_localhost": bool(base_url() and ("localhost" in base_url() or "127.0.0.1" in base_url())),
         },
         "release": {"release_id": rel["release_id"], "name": rel["name"],
                     "released_at": rel["released_at"]} if rel else None,
@@ -6891,8 +6924,16 @@ def startup():
                  "configured" if os.environ.get("LUMI_SMTP_HOST") else "NOT set (emails console-logged)"), flush=True)
     else:
         print("[lumi] SIGNAL SCHEDULER: OFF (set LUMI_SIGNAL_SWEEP=on for proactive alerts)", flush=True)
-    # go-live guard (§4.2): emailed invite/reset links are built from BASE_URL — if it still
-    # defaults to localhost, every link a recipient clicks is dead. Warn loudly at boot.
-    if "localhost" in BASE_URL or "127.0.0.1" in BASE_URL:
-        print("[lumi] ⚠ LUMI_BASE_URL is unset — invite/reset/share links point at %s and will "
-              "break for real recipients. Set LUMI_BASE_URL before go-live." % BASE_URL, flush=True)
+    # PH-CFG-1 Branch A boot log (§4.2 successor): the VALUE is logged at every
+    # boot; the boot never refuses. Enforcement lives at the ACTION — base_url(
+    # minting=True) refuses to mint links while unset/misconfigured.
+    _b = base_url()
+    if _b is None:
+        print("[lumi] ⚠ LUMI_BASE_URL UNSET — invite/reset link MINTING IS DISABLED "
+              "(each attempt gets a 503 naming the fix). Set LUMI_BASE_URL "
+              "(production: https://your-domain; dry-run: http://localhost:8060).", flush=True)
+    elif "localhost" in _b or "127.0.0.1" in _b:
+        print("[lumi] LUMI_BASE_URL = %s (localhost dry-run value — links mint but are "
+              "dead for real recipients; fine for gates/dev, not for go-live)." % _b, flush=True)
+    else:
+        print("[lumi] LUMI_BASE_URL = %s" % _b, flush=True)
