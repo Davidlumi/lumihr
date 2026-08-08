@@ -206,7 +206,7 @@ def diff_and_record(conn, org_id, fresh_signals):
                            "question_id": prev["question_id"],
                            "payload": {"kind": prev["kind"], "name": _label(prev["question_id"]),
                                        "tag": "CLEARED",
-                                       "detail": "%s no longer flags against your peers." % _label(prev["question_id"]),
+                                       "detail": "%s no longer flags in your benchmarks." % _label(prev["question_id"]),
                                        "value_display": None, "prev_value": prev["value_display"], "worth": False}})
             conn.execute("DELETE FROM signal_state WHERE org_id=? AND signal_key=?", (org_id, k))
 
@@ -296,7 +296,7 @@ def render_event(event):
         payload = dict(payload, detail="%s %s" % (payload["value_display"], payload["detail"]))
     if kind == "cleared":
         title = "Cleared"
-        body = payload.get("detail") or ("%s no longer flags against your peers." % name)
+        body = payload.get("detail") or ("%s no longer flags in your benchmarks." % name)
     elif kind == "moved":
         title = "Worth a look" if payload.get("worth") else "Update"
         body = payload.get("detail") or ""
@@ -349,12 +349,11 @@ def _email_allowed(conn, user_id, alert):
 
 def _digest_subject(n, freq):
     word = {"daily": "today", "weekly": "this week"}.get(freq, "recently")
-    # P1-C: the framing names the comparison object. With no real members in
-    # the pool, "your peers" would be the digest making the false composition
-    # claim in the inbox subject line — the most-read string in the product.
-    from aggregate import real_org_ids
-    against = "your peers" if real_org_ids() else "the reference panel"
-    return "lumi: %d thing%s moved against %s %s" % (n, "" if n == 1 else "s", against, word)
+    # AMENDED R-P2 (2026-08-08, digests ruling): NEUTRAL phrasing, no
+    # composition keying — "your peers" is an attribution claim in compressed
+    # form (§1.1), and a subject line cannot carry a footer, so removal
+    # satisfies the clean-experience AND durable-artefact readings at once.
+    return "lumi: %d thing%s moved in your benchmarks %s" % (n, "" if n == 1 else "s", word)
 
 
 def _digest_body(org_name, events, settings_link, overview_link):
@@ -363,9 +362,7 @@ def _digest_body(org_name, events, settings_link, overview_link):
     worth = [render_event(e) for e in events if e["event_kind"] != "cleared"]
     good = [render_event(e) for e in events if e["event_kind"] == "cleared"]
     lines = ["Hello %s," % org_name, "",
-             "Since we last wrote, here's what changed in how you sit against %s." % (
-                 "your peers" if __import__("aggregate").real_org_ids() else
-                 "the reference panel (modelled from published UK survey data)"),
+             "Since we last wrote, here's what changed in your benchmarks.",
              "These are pointers, not advice — open lumi to see the full picture.", ""]
     if worth:
         lines.append("WORTH A LOOK")

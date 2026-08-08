@@ -483,13 +483,22 @@ window.CHART_LABELS = {
    only on divergence), with the ruled chip progression so no surface ever
    displays an embarrassing zero. The first use per surface carries
    COMPOSITION_DESC (tooltip/aria on chips, prose on pages). */
+/* AMENDED R-P2 (ruled 2026-08-08): SHOW_COMPOSITION_IN_PRODUCT = false.
+   A FLAG, NOT A REVERT — n_real stays computed on every block (P1-AB), this
+   renderer stays, and at ~forty members the flag flips and the chip becomes a
+   selling point. While false: the exact pre-P1-C wording (neutral count,
+   "organisations" — NO verb of attribution; disclosure lives in the sale, the
+   member agreement, and the methodology page). */
+window.SHOW_COMPOSITION_IN_PRODUCT = false;
 window.compositionLabel = function (n, nReal) {
   if (n == null) return "";
+  if (!SHOW_COMPOSITION_IN_PRODUCT) return "n=" + n;
   if (!nReal || nReal <= 0) return n + " · reference panel";
   if (nReal >= n) return n + " members";
   return n + " · " + nReal + " member" + (nReal === 1 ? "" : "s") + " + panel";
 };
 window.compositionNoun = function (nReal) {   // for prose sentences
+  if (!SHOW_COMPOSITION_IN_PRODUCT) return "organisations";
   return (!nReal || nReal <= 0) ? "reference-panel profiles" : "organisations";
 };
 window.COMPOSITION_DESC = "Reference panel: modelled from published UK survey data — not lumi member submissions.";

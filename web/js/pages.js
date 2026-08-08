@@ -2902,7 +2902,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   // "reference panel" is EXACT today (real n = 0 everywhere); Phase 1 replaces
   // it with the ruled composition chip (panel / members+panel / members).
   const peerLabel = (!cut || !cut.dim || cut.dim === "all")
-    ? "All peers · " + compositionLabel((me.peer_pool || {}).responding_orgs, (me.peer_pool || {}).real_orgs)
+    ? "All peers · " + (SHOW_COMPOSITION_IN_PRODUCT
+        ? compositionLabel((me.peer_pool || {}).responding_orgs, (me.peer_pool || {}).real_orgs)
+        : ((me.peer_pool || {}).responding_orgs || "—"))
     : (cut.value || cut.dim);
   const printDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 

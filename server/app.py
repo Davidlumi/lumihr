@@ -3071,14 +3071,14 @@ async def gap_register_csv(request: Request):
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["Benchmark", "Category", "Type", "Practice / policy", "Tier",
-                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n", "n_real"])
+                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
                     r["org_status"],
                     {"in_place": "In place", "partial": "Partially", "not_in_place": "Not in place"}.get(r.get("status"), "Not assessable"),
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
-                    r["gap"] if r["gap"] is not None else "", r["n"], r.get("n_real", 0)])
+                    r["gap"] if r["gap"] is not None else "", r["n"]])
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=lumi-gap-register.csv"})
 
@@ -3089,7 +3089,7 @@ async def gap_register_csv(request: Request):
 # export — one row per metric, numbers matching the cards exactly (same assemble_card
 # path), suppressed cells blank + suppressed=true so a small-cell distribution never leaks.
 BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value",
-                    "p10", "p25", "p50", "p75", "p90", "n", "n_real", "cut_label", "suppressed"]
+                    "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"]
 
 
 def _bench_csv_row(qid, q, card):
@@ -3113,7 +3113,7 @@ def _bench_csv_row(qid, q, card):
     else:
         stats = ["", "", "", "", ""]
     return [qid, q.display_title, q.sub_power, your_value,
-            *stats, card.get("n", 0), card.get("n_real", 0), cut_label,
+            *stats, card.get("n", 0), cut_label,
             "true" if suppressed else "false"]
 
 
@@ -3337,7 +3337,7 @@ async def analyst(request: Request):
                 lines.append("%s — %s" % (m["metric"], blk["readout"]))
             if blk.get("you_display") and blk.get("you_percentile") is not None:
                 chips.append({"label": m["metric"], "value": blk["you_display"],
-                              "sub": "P%d · All peers · %s" % (round(blk["you_percentile"]), composition_label(blk.get("n", 0), blk.get("n_real", 0))),
+                              "sub": "P%d · All peers · n=%d" % (round(blk["you_percentile"]), blk.get("n", 0)),
                               "question_id": m["question_id"]})
         if not lines:
             resp = {"answer": "The closest matches don't have enough peer data to show safely "

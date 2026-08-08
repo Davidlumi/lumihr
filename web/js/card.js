@@ -81,7 +81,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${cardSignalPill(c, signal, readOnly)}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
-        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "."}
+        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (SHOW_COMPOSITION_IN_PRODUCT && c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "."}
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
         title=${c.suppressed ? "Protected — fewer than 5 organisations behind this figure, so there's no chart to open" : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
@@ -109,7 +109,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
             : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
         ${c.unbenchmarked && !c.practice ? html`
           <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">Unbenchmarked</span>` : null}
-        <span class="bench-n" title=${"The number behind this comparison. " + COMPOSITION_DESC}>${compositionLabel(c.n, c.n_real)}</span>
+        <span class="bench-n" title=${SHOW_COMPOSITION_IN_PRODUCT ? "The number behind this comparison. " + COMPOSITION_DESC : "The number of organisations behind this comparison"}>${compositionLabel(c.n, c.n_real)}</span>
         ${c.base ? html`
           <span class="caption base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies.">of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : null}
         <div class="card-tools no-print">
@@ -347,9 +347,9 @@ function multiSelectReadout(c) {
   const top = opts.reduce((a, b) => (b.pct > (a ? a.pct : -1) ? b : a), null);
   const mine = c.you ? c.you.labels.length : null;
   if (mine != null && top) {
-    return `You selected ${mine} of the ${opts.length} options tracked; the most common among ${c.n_real > 0 ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
+    return `You selected ${mine} of the ${opts.length} options tracked; the most common among ${(!SHOW_COMPOSITION_IN_PRODUCT || c.n_real > 0) ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
   }
-  if (top) return `The most common selection among ${c.n_real > 0 ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
+  if (top) return `The most common selection among ${(!SHOW_COMPOSITION_IN_PRODUCT || c.n_real > 0) ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
   return null;
 }
 

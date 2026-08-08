@@ -15035,3 +15035,30 @@ the search's exception list has exactly this one entry. Final search state:
 Verified in the browser at v444: chips render "220 · reference panel" with the
 R-P1 description in the tooltip, console clean. Suite 14/14 ALL GREEN (run
 after the server-side threading; subsequent edits were web-only).
+
+## 2026-08-08 — AMENDED R-P2: SHOW_COMPOSITION_IN_PRODUCT = false (display halves of R-P2/R-P3 superseded; engine work untouched)
+
+THE AMENDMENT, appended over the original rulings, never edited: a member sees
+220 organisations of data, clean — no composition chips, panel wording, or
+caveats on cards, charts, tiles, overview, signals, or search. Disclosure moves
+to the SALE and the MEMBER AGREEMENT (§5 solicitor item). A FLAG, NOT A REVERT:
+n_real stays computed and stored on every block (P1-AB stands), the single
+renderer stays, and at ~forty members the flag flips — the chip becomes a
+selling point rather than a disclosure, and the code was not built twice.
+RESTORED EXACTLY (§1.1): "n=220" chips, "The number of organisations behind
+this comparison" tooltip, "Based on N organisations" aria, "similar
+organisations" sentence nouns, "All peers · 220" print header — neutral count,
+NO verb of attribution, none minted. DIGESTS (David's follow-up ruling):
+subject "N things moved in your benchmarks", body "what changed in your
+benchmarks" — "your peers" is an attribution claim in compressed form and a
+subject line cannot carry a footer, so removal satisfies the clean-experience
+AND durable-artefact readings at once; composition keying removed (nothing left
+to key). PUSH-SURFACE AUDIT, which case obtains: notification-layer framing
+(":209/:299 no longer flags against your peers") neutraled to "in your
+benchmarks"; **FINDING REPORTED, NOT REWRITTEN HERE: signals.py's core detail
+vocabulary asserts attribution throughout ("55% of peers do X", "of peers
+offer…" — six generation sites, stored verbatim in signal_state, re-rendered
+in bell + signals page + briefing + digests, gate-checked copy).** That is the
+product's whole voice, a distinct fix class needing its own ruling — the same
+"of peers" language also pre-dates P1-C, making it a §1.1 pre-existing-string
+finding by the amendment's own definition.
