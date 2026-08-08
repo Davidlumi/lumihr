@@ -3149,7 +3149,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: var(--ink-faint); opacity: .5; transform: translate(-50%, -50%); }
 .sd-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px;
   border-radius: 50%; display: inline-block; }
-.sd-mark.intent { border: 2px solid var(--navy); background: var(--surface); }
+.sd-mark.intent { width: 15px; height: 15px; border: 2px solid var(--navy); background: transparent; }
 .sd-mark.actual { width: 8px; height: 8px; background: var(--navy); }
 .sd-axis-key .sd-mark { position: static; transform: none; }
 .sd-ex-read { font-size: var(--fs-micro); font-weight: 700; text-align: right; color: var(--ink-soft); }

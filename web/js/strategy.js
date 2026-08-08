@@ -296,7 +296,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   };
   const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
   const valOf = (f) => f === "benefits_lead"
-    ? ((strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t).join(" · ") || null)
+    ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
     : (strat[f] ? labelOf(f, strat[f]) : null);
   const ctxBits = [["budget_direction", strat.budget_direction], ["acute_pressure", strat.acute_pressure], ["risk_appetite", strat.risk_appetite]]
     .filter(x => x[1]).map(x => DIAL_LABEL[x[0]] + ": " + labelOf(x[0], x[1]).toLowerCase());
