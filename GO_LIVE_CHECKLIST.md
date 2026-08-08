@@ -19,7 +19,14 @@ gate, solicitor-signed) is preserved in full below the gates.
   deploy artefacts + runbook (transmission Commit D); DAVID runs it against his AWS
   account and DNS — infrastructure is never provisioned from here. *Unblocked by:*
   Commit D landing, then David executing the runbook.
-- [ ] **OFF-BOX BACKUP (R1e) — Gate 1, not post-launch.** No off-disk copy of the
+- [ ] **OFF-BOX BACKUP (R1e) — Gate 1, not post-launch. ⚠ THE IDENTITY STORE IS
+  SINGLE-COPY TODAY:** retain-1 on-box, no S3 layer yet exercised, presplit ruled
+  DEAD. Retain-1 is right (fewer copies of personal data is the point of Phase 1) —
+  but its privacy argument assumes a colder second copy exists, and **a restore never
+  performed is not a backup; that is how the presplit copy died.** This item is not
+  done until ONE restore from S3 to a scratch instance has actually been performed
+  (runbook §6.2). Until then, "backups: done" does not cover it — say it plainly.
+- [ ] **(original R1e entry)** No off-disk copy of the
   platform exists anywhere (TM-check finding, 2026-08-08); a single volume loses the
   company. Three distinct layers per transmission §5.3: DLM EBS snapshots
   (machine restore), on-box rotation (wal_checkpoint first), and the S3 off-box copy

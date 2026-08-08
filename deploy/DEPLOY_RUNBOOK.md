@@ -93,12 +93,22 @@ echo "boot assertions: all green"
 design — its absence is asserted by the env file review in step 2, which is the
 point: it must never be set outside gate runs.)
 
-## 5. Backups — see `data/backup_policy.md` §layers (Commit F)
+## 5. Backups — see `data/backup_policy.md` §layers (Commit F + J)
 
 Three layers, three purposes, never conflated: DLM EBS snapshots (machine restore),
 on-box rotation (`backup_identity.py`, wal_checkpoint FIRST), off-box S3 copy
 (`deploy/offbox_backup.sh` — the copy you actually restore data from; R1e, Gate 1).
-Lifecycle **and** noncurrent-version expiry both = 35 days (R5).
+Lifecycle **and** noncurrent-version expiry both = 35 days (R5). The script refuses
+unless the bucket proves: eu-west-2 (asserted FROM the bucket), default encryption,
+versioning Enabled, both lifecycle rules at 35d, public access blocked.
+
+**IAM (Commit J): the uploader is PUT-ONLY.** Attach
+`deploy/iam_backup_writer_policy.json` (substitute the real bucket name for
+`LUMI_BACKUP_BUCKET`) to the instance role. Lifecycle expiry removes objects; the
+instance never can — no DeleteObject / DeleteObjectVersion /
+PutLifecycleConfiguration, with an explicit Deny statement so a broader role
+attached later cannot quietly re-grant them. A compromised box must not be able to
+delete its own off-box copies.
 
 ## 6. Hard preconditions of FIRST PROVISIONING (not of deployment)
 

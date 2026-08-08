@@ -14846,3 +14846,24 @@ the planted live invite token gone identity-side, nothing authenticable) while
 402 inert reward answer rows survived; identity_recon FAILED LOUDLY naming the
 direction mid-state; the re-run completed both stores, recon PASS, and the sweep
 re-aggregated (Commit H's enforcement on this path).
+
+## 2026-08-08 — Commit J: three more fail-closed assertions, and the put-only uploader
+
+offbox_backup.sh now refuses on THREE more conditions of the same kind as its
+lifecycle guard: (J1) bucket region ≠ eu-west-2 — asserted FROM the bucket
+(get-bucket-location), never from a variable the script itself set; (J2) no
+default encryption configuration; (J3) versioning not Enabled — noncurrent-version
+expiry is meaningless without it, so Commit F's trap closure was conditional on an
+unchecked precondition until this line. IAM: deploy/iam_backup_writer_policy.json —
+the uploader principal is PUT-ONLY (s3:PutObject on db/* plus the five read-only
+Get* the fail-closed assertions need), with an EXPLICIT DENY on DeleteObject /
+DeleteObjectVersion / PutLifecycleConfiguration / PutBucketVersioning /
+DeleteBucket so a broader role attached later cannot quietly re-grant them.
+Lifecycle expiry removes objects; the instance never can — without that, a
+compromised box deletes its own off-box copies and the third layer was decorative,
+the precise failure R1e exists to prevent. Runbook step added; David attaches it —
+nothing provisioned from here. CHECKLIST, per the ruling: the identity store is
+SINGLE-COPY today (retain-1 on-box, no S3 layer exercised, presplit dead) — the
+R1e item now states plainly that it is not done until one restore from S3 has
+actually been performed; a restore never performed is not a backup, which is how
+the presplit copy died.

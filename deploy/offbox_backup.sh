@@ -20,6 +20,24 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 umask 077
 
+# --- Commit J assertions: all the same fail-closed kind ------------------------
+# J1: region asserted FROM THE BUCKET, never from a variable this script set —
+# a bucket that quietly landed in us-east-1 breaks the UK-only posture with no
+# error anywhere.
+REGION="$(aws s3api get-bucket-location --bucket "$BUCKET" --query 'LocationConstraint' --output text 2>/dev/null || true)"
+[[ "$REGION" == "eu-west-2" ]] \
+  || { echo "FATAL: bucket region is '$REGION', not eu-west-2 — refusing (UK-only posture)." >&2; exit 2; }
+# J2: SSE actually enabled on the bucket (the per-object --sse flag below is
+# belt-and-braces, not the control).
+aws s3api get-bucket-encryption --bucket "$BUCKET" >/dev/null 2>&1 \
+  || { echo "FATAL: bucket has no default encryption configuration — refusing." >&2; exit 2; }
+# J3: versioning enabled — noncurrent-version expiry is MEANINGLESS without it,
+# so the lifecycle trap-closure below is otherwise conditional on an unchecked
+# precondition.
+VSTATUS="$(aws s3api get-bucket-versioning --bucket "$BUCKET" --query 'Status' --output text 2>/dev/null || true)"
+[[ "$VSTATUS" == "Enabled" ]] \
+  || { echo "FATAL: bucket versioning is '$VSTATUS', not Enabled — refusing." >&2; exit 2; }
+
 # --- trap guard: both lifecycle rules present and equal to the ceiling ---------
 LC="$(aws s3api get-bucket-lifecycle-configuration --bucket "$BUCKET" 2>/dev/null || true)"
 if [[ -z "$LC" ]]; then

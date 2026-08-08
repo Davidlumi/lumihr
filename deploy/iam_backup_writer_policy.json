@@ -1,0 +1,36 @@
+{
+  "_comment": "Commit J (2026-08-08): the uploader's IAM principal is PUT-ONLY. Lifecycle expiry removes objects; the instance never can. Without this, a compromised box deletes its own off-box copies and the third backup layer was decorative — the precise failure R1e exists to prevent. No DeleteObject, no DeleteObjectVersion, no PutLifecycleConfiguration, no PutBucketVersioning. The read-only Get* on bucket config exist solely so offbox_backup.sh's fail-closed assertions (region/SSE/versioning/lifecycle/public-access) can run. Attach per DEPLOY_RUNBOOK step 5; David provisions, never this repo.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PutBackupObjectsOnly",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::LUMI_BACKUP_BUCKET/db/*"
+    },
+    {
+      "Sid": "ReadBucketPostureForFailClosedAssertions",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketLocation",
+        "s3:GetEncryptionConfiguration",
+        "s3:GetBucketVersioning",
+        "s3:GetLifecycleConfiguration",
+        "s3:GetBucketPublicAccessBlock"
+      ],
+      "Resource": "arn:aws:s3:::LUMI_BACKUP_BUCKET"
+    },
+    {
+      "Sid": "ExplicitlyDenyTheFailureR1eExistsToPrevent",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "s3:PutLifecycleConfiguration",
+        "s3:PutBucketVersioning",
+        "s3:DeleteBucket"
+      ],
+      "Resource": ["arn:aws:s3:::LUMI_BACKUP_BUCKET", "arn:aws:s3:::LUMI_BACKUP_BUCKET/*"]
+    }
+  ]
+}
