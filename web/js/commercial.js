@@ -270,7 +270,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         <dl class="bp-method">
           <dt>Data effective</dt>
           <dd>${p.collection_window} collection window; figures are read from the live benchmark at generation (${p.generated_date}).
-            No aging or annualisation is applied — none is needed: the benchmark is live, not an annual survey.</dd>
+            No ageing or annualisation is applied — the benchmark is live, not an annual survey.</dd>
           <dt>Peer group</dt>
           <dd>${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total}, drawn from a pool of ${p.peer_pool.total} UK organisations (${p.peer_pool.classified} fully classified).${
             p.cut_criteria && Object.keys(p.cut_criteria).length
@@ -286,9 +286,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           <dd>Comparisons use lumi's registry of defined metrics: every organisation answers the same defined question, so figures compare
             like with like. There is no job-title matching to go wrong.</dd>
         </dl>
-        <p class="caption">Benchmarks are a steer, not a verdict. Where a comparison rests on a thin cut it is marked
-          <b> indicative</b> — interpret those with caution, and treat any single figure as the start of a conversation
-          rather than the end of one.</p>
+        <p class="caption">Benchmarks are a steer, not a verdict. Where a comparison rests on a small peer group it is marked <b>indicative</b> — interpret with caution.</p>
         <${Footer} page="1" />
       </div>
 
@@ -312,7 +310,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           ${(() => { const cs = confScore(p.cut_n != null ? p.cut_n : p.peer_pool.total);
             return cs ? html`<div class="bp-stat">
               <div class="metric-value num">${cs.score}/10</div>
-              <div class="caption">confidence — ${(p.cut_n != null ? p.cut_n : p.peer_pool.total)} peers behind this cut (${cs.tier} tier)</div>
+              <div class="caption">confidence — ${(p.cut_n != null ? p.cut_n : p.peer_pool.total)} peers behind this comparison (${cs.tier} tier)</div>
             </div>` : null; })()}
         </div>
         ${n.key_findings && n.key_findings.length ? html`
@@ -403,7 +401,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 excluded${b.ms_excluded ? ` · split excludes ${b.ms_excluded} multi-select inventor${b.ms_excluded === 1 ? "y" : "ies"}` : ""}.
                 A different way of doing things is not a gap to close.</p>
               ${(b.rare_stances || []).map(r => html`
-                <p key=${r.label} class="caption pack-prac-rare">— ${r.label}: one of ${r.orgs} orgs (${r.share_pct}%)
+                <p key=${r.label} class="caption pack-prac-rare">— ${r.label}: one of ${r.orgs} organisations (${r.share_pct}%)
                   — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</p>`)}
             </div>`;
         })() : p.practice_prevalence && p.practice_prevalence.pool ? (() => {
@@ -484,7 +482,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       <div class="pack-page">
         <${PackSecHead} num=${PN.watch} title="What to watch" />
         ${p.signals && p.signals.length ? html`
-          <p class="caption" style=${{ marginTop: "-4px" }}>The benchmark's top flagged items — the same balanced briefing the lumi dashboard shows, in the absolute view.</p>
+          <p class="caption">The benchmark's top flagged items — the same briefing the dashboard shows.</p>
           <div class="bp-signals">
             ${p.signals.map((s, i) =>
               // context metrics (2026-07-09 ship review, Pack-3 §2): the engine refuses to
@@ -500,8 +498,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         ${p.strategy && p.strategy.objective ? html`
           <p class="caption">Declared reward strategy: <b>${p.strategy.objective}</b> — the dashboard orders these signals for that stance.</p>` : null}
         <h2 class="section-title" style=${{ marginTop: p.signals && p.signals.length ? "var(--s5)" : "0" }}>Options to consider</h2>
-        <p class="caption" style=${{ marginTop: "-4px", marginBottom: "var(--s2)" }}>A starting point for your own judgement — not advice.
-          lumi is a mirror, not a scoreboard: it tells you where you stand, never what you must do.</p>
+        <p class="caption" style=${{ marginBottom: "var(--s2)" }}>A starting point for your own judgement — not advice.</p>
         <ol style=${{ fontSize: "var(--fs-label)", paddingLeft: "var(--s5)" }}>
           ${(n.recommended_actions || []).map((a, i) => html`<li key=${i} style=${{ marginBottom: "var(--s2)" }}>${a}</li>`)}
         </ol>
@@ -579,7 +576,7 @@ function PackTable({ rows, good, max }) {
 window.PackTable = PackTable;
 
 // ------------------------------------------------------------- Ask lumi ----
-const ANALYST_GREETING = { role: "bot", text: "Hi — I'm lumi. I can help you find a metric, explain a term, or show you how to use the platform. And ask how you compare on anything — I'll answer from the benchmark with the percentile, peer group and sample size cited." };
+const ANALYST_GREETING = { role: "bot", text: "I can find a metric, explain a term, or show you how lumi works. Ask how you compare on anything — I'll answer from the benchmark, citing percentile, peer group and sample size." };
 
 window.AnalystPane = function ({ onClose }) {
   const paneRef = useRef(null);
@@ -684,7 +681,7 @@ window.AnalystPane = function ({ onClose }) {
         ${busy && html`<div class="msg bot"><span class="tdots" aria-hidden="true"><span></span><span></span><span></span></span> Looking that up…</div>`}
         ${showIdeas && starters.length > 0 && html`
           <div>
-            <div class="caption" style=${{ marginBottom: "var(--s2)" }}>Try one of these — compare, find a metric, learn a term, or get help:</div>
+            <div class="caption" style=${{ marginBottom: "var(--s2)" }}>Try one of these:</div>
             ${starters.map((s, i) => html`
               <button key=${i} class="btn small" style=${{ margin: "0 var(--s2) var(--s2) 0", whiteSpace: "normal", textAlign: "left" }}
                 onClick=${() => ask(s)}>${s}</button>`)}
@@ -769,7 +766,7 @@ window.SharesPage = function ({ embedded }) {
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <h1 class="display-title">Manage shares</h1>
-          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Read-only links for people outside your lumi team. A link shows exactly what your team can see — your data plus safe peer aggregates — and nothing more.</div>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Read-only links for people outside your team — they show what your team sees, nothing more.</div>
         </div>
         <div class="row">
           <button class="btn" disabled=${making} onClick=${() => createDash(7)}>Share dashboard (7 days)</button>
@@ -876,8 +873,7 @@ window.TeamPage = function ({ me }) {
   return html`
     <div style=${{ maxWidth: "800px" }}>
       <h1 class="display-title">Team</h1>
-      <p class="caption">Everyone here works on the same organisation — one dataset, one benchmark, one
-        contribution clock. Roles decide who can edit.</p>
+      <p class="caption">One organisation, one dataset, one benchmark. Roles decide who can edit.</p>
       <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s4) 0" }}>
         <table class="data">
           <thead><tr><th>Member</th><th>Role</th><th>Joined</th>${isAdmin && html`<th><span class="sr-only">Actions</span></th>`}</tr></thead>
@@ -906,9 +902,6 @@ window.TeamPage = function ({ me }) {
         </div>`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginTop: "var(--s2)" }}>${err}</div>`}
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>
-          <b>Admin</b> — ${ROLE_DESC.admin}<br/>
-          <b>Contributor</b> — ${ROLE_DESC.contributor}<br/>
-          <b>Viewer</b> — ${ROLE_DESC.viewer}<br/>
           Your organisation always keeps at least one Admin — promote a colleague before stepping back.
         </div>
       </div>
@@ -919,14 +912,12 @@ window.TeamPage = function ({ me }) {
             <input class="ctl" style=${{ flex: 1 }} placeholder="colleague@yourorg.co.uk" aria-label="Colleague's email address"
               value=${email} onInput=${e => setEmail(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") invite(); }} />
             <select class="ctl" value=${role} onChange=${e => setRole(e.target.value)}>
-              <option value="contributor">Contributor — fills the questionnaire</option>
-              <option value="viewer">Viewer — dashboards & board packs</option>
+              <option value="contributor">Contributor — submits and edits data</option>
+              <option value="viewer">Viewer — read-only</option>
             </select>
             <button class="btn primary" disabled=${inviting} onClick=${invite}>${inviting ? html`<${Spinner} />` : "Send invite"}</button>
           </div>
-          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Invites expire after 7 days. Need another Admin?
-            Invite them as Contributor, then promote them above. Joiners accept the Platform Terms only —
-            your Data Contribution agreement covers the whole organisation.</div>
+          <div class="caption" style=${{ marginTop: "var(--s2)" }}>Invites expire after 7 days. For another Admin, invite as Contributor and promote above. Joiners accept the Platform Terms only — your Data Contribution agreement covers the whole organisation.</div>
           ${data.invites.length > 0 && html`
             <h3 style=${{ fontSize: "var(--fs-label)", margin: "var(--s4) 0 var(--s2)" }}>Outstanding invites</h3>
             ${data.invites.map(i => html`
@@ -976,7 +967,7 @@ function NotificationsSettings() {
               aria-checked=${p.email_frequency === f} onClick=${() => save({ ...p, email_frequency: f })}>
               ${f.charAt(0).toUpperCase() + f.slice(1)}</button>`)}
         </div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Switch to Daily or Off any time — and every email tells you how to unsubscribe.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Every email includes an unsubscribe link.</div>
       </div>
       <div class="field">
         <label>What to hear about</label>
@@ -1039,7 +1030,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     } catch (e) { toast(e.message || "Couldn't save your assumptions — nothing was changed.", "error"); }
   };
   if (err) return html`<${EmptyState} title="Couldn't load settings"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${loadA}>Retry</button>`} />`;
   if (!a) return html`<${PageLoading} />`;
   return html`
@@ -1061,14 +1052,12 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
       </div>
       <div class="card" id="notifications" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Notifications</h2>
-        <p class="caption">When your position against the market changes — a flag appears, clears, or shifts —
-          we record it to your bell and (if you opt in) an email digest. These are personal to you.</p>
+        <p class="caption">When a flag appears, clears or shifts, it reaches your bell and — if you opt in — an email digest. Personal to you.</p>
         <${NotificationsSettings} />
       </div>
       <div class="card" id="defaults" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">Default peer groups</h2>
-        <p class="caption">Two separate defaults: where <b>your</b> dashboard opens, and which peers the
-          organisation's signal emails watch. Narrowing on a page never changes either — set them here.</p>
+        <p class="caption">Narrowing on a page never changes these defaults — set them here.</p>
         ${(() => {
           // Settings home for the two defaults (2026-07-13) — replaces the removed ★/🔔
           // capsule icons. Landing = per-user pref (any peer group, mirrors the PeerSetBar
@@ -1125,9 +1114,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
       </div>
       <div class="card" id="ai-insights" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <h2 class="section-title">AI Insights</h2>
-        <p class="caption">Short, written interpretations of <b>your own benchmark figures</b>, generated by AI —
-          a description of your data, not advice. AI Insights are on by default; you can turn them off here at any
-          time, and this setting is personal to you.</p>
+        <p class="caption">AI-written interpretations of <b>your own benchmark figures</b> — a description of your data, not advice. On by default; personal to you.</p>
         <div class="row spread" style=${{ alignItems: "center", marginTop: "var(--s3)" }}>
           <div>
             <b>${ai.consented ? "On for you" : "Off"}</b>${ai.consented && ai.consented_at ? html`
@@ -1162,9 +1149,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
         <div class="row" style=${{ gap: "var(--s3)" }}>
           <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
         </div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for members whose legal or
-          data-protection teams want the fuller instrument. These are the current
-          ${" "}<span class="chip">published versions</span></div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>
       </div>
       ${me.user.role === "admin" && html`<div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
         <${SharesPage} embedded=${true} />

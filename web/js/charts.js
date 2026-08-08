@@ -356,7 +356,7 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
       })}
       <g>
         <rect x=${labelW} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--chart-band-mid)"/>
-        <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">Peer P50</text>
+        <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">Market P50</text>
         <rect x=${labelW + 70} y=${usedH - 10} width="8" height="8" rx="2" fill=${youColour(fav)}/>
         <text x=${labelW + 82} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">You</text>
       </g>
@@ -495,7 +495,7 @@ function buildNumSVG(card, tok) {
   };
   let s = `<text x="4" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">LEVEL</text>`
     + `<text x="${Lw + Mw - 6}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">MEDIAN</text>`
-    + `<text x="${Sx + 4}" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">WHERE PEERS SIT · YOU</text>`
+    + `<text x="${Sx + 4}" y="${Hh - 8}" font-size="10" font-weight="700" fill="${tok.inkSoft}">MARKET RANGE · YOU</text>`
     + `<text x="${Sx + Sw + Yw - 6}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">YOU</text>`
     + `<text x="${W - 4}" y="${Hh - 8}" text-anchor="end" font-size="10" font-weight="700" fill="${tok.inkSoft}">POS</text>`;
   rows.forEach((r, ri) => {

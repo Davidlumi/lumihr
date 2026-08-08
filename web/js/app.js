@@ -531,9 +531,7 @@ function LeaveSubmitModal({ onReview, onLeave, onClose }) {
   return html`
     <${Modal} onClose=${onClose} width="460px" role="alertdialog" label="Unsubmitted changes">
       <h2 class="section-title" style=${{ marginTop: 0 }}>You haven't submitted yet</h2>
-      <p>Your answers are <b>saved</b> — they'll be here when you come back. But they're${" "}
-      <b>not submitted to the benchmark yet</b>, so your position, signals and £ opportunity
-      won't update until you do.</p>
+      <p>Your answers are <b>saved</b> — but <b>not submitted</b>, so your position, signals and £ opportunity won't update until you submit.</p>
       <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "flex-end" }}>
         <button class="btn" onClick=${onLeave}>Leave for now</button>
         <button class="btn primary" onClick=${onReview}>Review & submit</button>
@@ -672,9 +670,8 @@ window.ProfilePage = function ({ me, refreshMe }) {
       <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${firstRun ? "Tell us about your organisation" : "Company profile"}</h1>
       <p>${firstRun
         ? "So we can compare you to the right peers — sector, size and a few company facts. About two minutes."
-        : "The company facts behind your peer groups. Firmographics change — update them here any time."}</p>
-      <p class="caption">These are organisation-level facts only — never personal data — and they're shown to no
-      other member. They decide which peer groups you can compare against.</p>
+        : "The company facts behind your peer groups — update them any time."}</p>
+      <p class="caption">Organisation-level facts only — never personal data, never shown to another member. They decide your peer groups.</p>
       <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
         <h2 class="section-title">The essentials</h2>
         ${CORE.map(f => Field(f, true))}
@@ -749,9 +746,9 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
             <h2 class="section-title" style=${{ marginBottom: 0 }}>Your peer groups</h2>
             <button class="btn primary small" onClick=${startNew}>+ Create peer group</button>
           </div>
-          <p class="caption">Build a comparison group from company facts — sector, size, region and more.
+          <p class="caption">Build a peer group from company facts — sector, size, region and more.
           Private to your organisation. You'll only ever see <b>how many</b> organisations match, never which —
-          and nothing shows unless at least ${options.min_orgs} match. That's what keeps it a benchmark.</p>
+          and nothing shows unless at least ${options.min_orgs} match.</p>
           ${groups.length === 0 && html`<${EmptyState} title="No peer groups yet"
             body="Create one — e.g. “UK mid-size manufacturers” — and it appears in the peer-group selector." />`}
           ${groups.map(g => html`
@@ -782,8 +779,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
             <input value=${name} autoFocus placeholder=${"e.g. UK mid-size manufacturers"}
               onInput=${e => setName(e.target.value)} />
           </div>
-          <p class="caption" style=${{ margin: "0 0 var(--s2)" }}>Pick the facts a peer must match — choosing
-          several options within one row means “any of these”. You'll never see which organisations match, only how many.</p>
+          <p class="caption" style=${{ margin: "0 0 var(--s2)" }}>Pick the facts a peer must match — several options in one row means “any of these”.</p>
           <div class="group-fields">
             ${options.fields.map(f => html`
               <div key=${f.key} class="group-field">
@@ -801,7 +797,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
             ${Object.keys(criteria).length === 0 ? "Choose at least one criterion."
               : count === null ? html`<${Spinner} />`
               : count.too_small
-                ? `Only ${count.match_count} organisation${count.match_count === 1 ? "" : "s"} currently match — at least ${count.min_orgs} are needed before any benchmark shows. You can still save it; it stays suppressed until enough organisations match.`
+                ? `Only ${count.match_count} organisation${count.match_count === 1 ? "" : "s"} currently match — at least ${count.min_orgs} are needed before any benchmark shows. You can still save it.`
                 : `${count.match_count} organisations currently match — comfortably above the minimum of ${count.min_orgs}.`}
           </div>
           ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
@@ -865,9 +861,7 @@ window.IdleGuard = function ({ onSignOut }) {
     <${Modal} onClose=${stay} width="420px" role="alertdialog" label="Session timeout warning">
       <div style=${{ textAlign: "center" }}>
         <h2 class="section-title">Still there?</h2>
-        <p>You've been inactive for a while. For your organisation's data safety we'll sign you
-        out in <span class="idle-count">${left}</span> seconds. Your saved answers are safe —
-        the questionnaire autosaves as you go.</p>
+        <p>You'll be signed out in <span class="idle-count">${left}</span> seconds. Your answers are autosaved.</p>
         <div class="row" style=${{ justifyContent: "center" }}>
           <button class="btn primary" autoFocus onClick=${stay}>Stay signed in</button>
           <button class="btn" onClick=${onSignOut}>Sign out now</button>
@@ -1094,7 +1088,7 @@ function ProfileMenu({ me, onSignOut }) {
             <div class="profile-id-org">${me.org.name}</div>
           </div>
           <div class="profile-sep"></div>
-          <button class="profile-item" onClick=${() => go("/profile")}>Your profile</button>
+          <button class="profile-item" onClick=${() => go("/profile")}>Company profile</button>
           ${me.user.role === "admin" ? html`<button class="profile-item" onClick=${() => go("/strategy")}>Reward strategy</button>` : null}
           <button class="profile-item" onClick=${() => go("/how-lumi-works")}>How lumi works</button>
           <div class="profile-sep"></div>
@@ -1463,7 +1457,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     return () => { dead = true; };
   }, [qid, sel.dim, sel.value]);
   if (err) return html`<${EmptyState} title="Couldn't load this metric"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!card) return html`
     <div>
@@ -1670,7 +1664,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
               <p class="caption">${mpReadCopy(c.classification)}</p>
             </div>`}
           <div class="row" style=${{ marginTop: "var(--s3)" }}>
-            <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Request a related metric</button>
+            <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Suggest a related metric</button>
           </div>
         </div>
       </details>

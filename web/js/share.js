@@ -93,7 +93,7 @@ function ShareApp() {
         <div>
           <div class="logo" style=${{ padding: 0 }}>lumi<span>.benchmark</span></div>
           <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${data.org_name}</h1>
-          <div class="caption">Shared read-only benchmark view · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
+          <div class="caption">Shared benchmark · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
           ${(data.peer_pool || {}).responding_orgs ? html`<div class="caption" style=${{ marginTop: "2px" }}>Comparison pool: ${data.peer_pool.responding_orgs} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>` : ""}
         </div>
         <${Chip} kind="accent">Read-only<//>
@@ -101,7 +101,7 @@ function ShareApp() {
       <div class="card banner" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <div class="section-title" style=${{ marginBottom: "2px" }}>Above the market median on ${h.above_median} of ${h.comparable_metrics} comparable metrics</div>
-          <div class="caption">${h.below_median} below · ${h.broadly_in_line} broadly in line · figures resting on fewer than 5 organisations are never shown</div>
+          <div class="caption">${h.below_median} below · ${h.broadly_in_line} broadly in line</div>
         </div>
       </div>
       <div class="grid2" style=${{ marginBottom: "var(--s4)" }}>

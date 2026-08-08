@@ -92,7 +92,7 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
     return () => { live = false; };
   }, [cutKeyOf(cut), applyStrat, retryKey]);
   if (err) return html`<${EmptyState} title="Couldn't load the overview"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => setRetryKey(k => k + 1)}>Retry</button>`} />`;
   if (!data) return html`
     <div>
@@ -155,13 +155,13 @@ window.UnlockMoment = function ({ onDismiss }) {
       <button class="iconbtn unlock-x" aria-label="Dismiss" onClick=${onDismiss}><${Icon} name="close" size=${14} /></button>
       <div class="unlock-spark"><${Icon} name="sparkle" size=${22} /></div>
       <div style=${{ flex: 1, minWidth: "240px" }}>
-        <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>Your insights are live</b>
+        <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>Your insights are live</b>
         <p style=${{ margin: "0 0 var(--s3)" }}>Your organisation's reward data is in:</p>
         <div class="unlock-links">
           <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="flag" size=${13} /> Your signals</button>
           ${/* the £ opportunity lives INSIDE signals (money flags) since the 80/20 hero —
                 this used to say "(below)" and point at a tile that no longer renders */ ""}
-          <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="coins" size=${13} /> £ opportunity — in your signals</button>
+          
           <button class="btn small" onClick=${() => { nav("/overview"); onDismiss && onDismiss(); }}><${Icon} name="file-text" size=${13} /> Export a board pack — on your Overview</button>
         </div>
       </div>
@@ -289,7 +289,7 @@ function ShareDialog({ cut, name, layout, onClose }) {
       <div style=${{ padding: "var(--s4)" }}>
         <h2 style=${{ margin: "0 0 var(--s2)", fontSize: "var(--fs-subhead)" }}>Share this view</h2>
         <p class="caption" style=${{ marginTop: 0 }}>
-          Create a read-only public link to your organisation's benchmark summary — headline position, leads and gaps, and ${hasLayout ? "the cards on this dashboard" : "your team's pinned cards"}. Anyone with the link can view it for 30 days; no sign-in needed.</p>
+          A read-only public link — headline position, leads and gaps, and ${hasLayout ? "the cards on this dashboard" : "your team's pinned cards"}. Anyone with the link can view it for 30 days; no sign-in needed.</p>
         ${err && html`<div class="error-text" style=${{ margin: "var(--s2) 0" }}>${err}</div>`}
         ${!link ? html`
           <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
@@ -418,7 +418,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             toggle used to be the exit). */ ""}
       ${view === "practice" ? html`
         <div class="ov-lensbar">
-          <b>Practice choices</b><span class="caption"> · how common each of your choices is among peers — in line or off the norm, never a market verdict</span>
+          <b>Practice choices</b><span class="caption"> · how common each choice is among peers — never a market verdict</span>
           <button type="button" class="btn small" onClick=${() => setView && setView("market")}>
             <${Icon} name="chevron-left" size=${13} /> Back to market view</button>
         </div>
@@ -487,9 +487,7 @@ function StrategyCheck({ onGoToDomain, signalDomains }) {
         ${st.phase === "done" && html`<span class="strat-badge">AI · review before use</span>`}
       </div>
       ${st.phase === "idle" && html`
-        <p class="strat-intro">See where your market position is <b>delivering the reward strategy you set</b> —
-          and where it's pulling against it. Read only from your own figures and your declared aims;
-          each call signposts the signals behind it.</p>
+        <p class="strat-intro">Where your position <b>delivers the strategy you set</b> — and where it pulls against it. Read from your figures and declared aims; each finding signposts its signals.</p>
         <button class="btn primary" onClick=${run}>Run the check</button>`}
       ${st.phase === "loading" && html`
         <div class="strat-loading"><${Spinner} /> Reading your strategy against your data…
@@ -970,7 +968,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
           ${b.rare_stances.map(r => html`
             <div key=${r.label} class="prac-rare-row">
               <span class="prac-rare-lab">${r.label}</span>
-              <span class="caption">One of ${r.orgs} orgs (${r.share_pct}%) — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</span>
+              <span class="caption">One of ${r.orgs} organisations (${r.share_pct}%) — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</span>
             </div>`)}
         </div>` : null}
       <div class="caption prac-bucket-foot" title="Rarity is the signal — whether it's deliberate is your call.">Open the practice lens →</div>
@@ -1019,7 +1017,7 @@ function PracticeArc({ prevalence, pending }) {
           <span><i class="arc-leg-dot di-fill-rare" aria-hidden="true"></i><span class="arc-leg-fig">${rare}</span> rare</span>
         </div>
       </div>
-      <div class="appr-note caption">A different way of doing things, not a gap to close — the ones worth acting on appear in your signals.</div>
+      
     </div>`;
 }
 
@@ -1240,7 +1238,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       return html`<span key=${k} class=${"di-fill " + cls} style=${{ flexGrow: v, minWidth: mw }}><span class="di-fillnum">${v}</span></span>`;
                     })}
                   </span>`
-                  : html`<span class="di-norate">no practices tracked in this peer set yet</span>`)
+                  : html`<span class="di-norate">no practices tracked in this peer group yet</span>`)
                 : pos && pos.pool ? html`
                   ${/* STACKED RAG BAR (David, 2026-07-09): each row is one bar split below=amber /
                         on=green / above=red, segments sized to the METRIC COUNT in each band with the
@@ -1294,7 +1292,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                         title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of this domain's per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
                     </span>`;
                   })()}`
-                : html`<span class="di-norate">no comparable position yet</span>`}
+                : html`<span class="di-norate">no position yet</span>`}
               </span>
               <span class="di-cell di-evid num">
                 ${/* both stacked bars print their counts inside (2026-07-09); this column carries
@@ -1729,7 +1727,7 @@ const brfVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.a
 // Folders simplification — the ledger bands and family roll-ups died with the two-tier split.)
 
 // Snooze options — the same snooze_days API; the menu shows the actual return date.
-const SIG_SNOOZE = [["1 week", 7], ["2 weeks", 14], ["Next cycle", 42]];
+const SIG_SNOOZE = [["2 weeks", 14], ["6 weeks", 42], ["3 months", 90]];
 const sigRetDate = days => new Date(Date.now() + days * 86400000)
   .toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 // shared dropdown chrome: close on outside click / Escape (focus back on the trigger)
@@ -2322,7 +2320,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     }
   }, [data, focusQ]);
   if (err) return html`<${EmptyState} title="Couldn't load this section"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
     <div>
@@ -2384,7 +2382,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         <div class="controls" style=${{ alignItems: "flex-start" }}>
           <div class="ctlgroup">
             <select class="ctl" aria-label="Filter by question type" value=${cat} onChange=${e => setCat(e.target.value)}>
-              <option value="">All question types</option>
+              <option value="">All types</option>
               <option value="metric">Metrics</option><option value="practice">Practices</option>
               <option value="policy">Policies</option><option value="benefit">Benefits</option>
             </select>
@@ -2548,7 +2546,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
     </div>`;
 
   if (err) return html`<${EmptyState} title="Couldn't load this category"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => setCatRetry(k => k + 1)}>Retry</button>`} />`;
   if (!ov || !bench) return html`<div>${Head("Loading…")}<${SkeletonGrid} count=${4} /></div>`;
 
@@ -2730,7 +2728,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="cat-brief-ruler">${pos && pos.depth_pctl != null ? html`
               <${PercentileRuler} pctl=${pos.depth_pctl} band=${window.MARKET_BAND || [35, 65]} compact=${true} />` : null}</div>
             <span class="cat-brief-counts num"><b>${posM.below}</b> below · <b>${posM.at}</b> on market · <b>${posM.above}</b> above${indicative ? html` <span class="caption">· indicative</span>` : ""}${hero.target ? html` <${AlignmentChip} target=${hero.target} />` : ""}</span>` :
-            html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this category is assessed on practice.</span>`}
+            html`<span class="caption cat-brief-span">Not enough positioned metrics for a market stance yet — this area is assessed on practice.</span>`}
           ${/* practice read-line RETIRED (Diff 4 ruling 3, 2026-07-14): domain pages exclude
                 practice from analysis — the home bucket and the practice lens carry the
                 story; practice ROWS stay in the metric list below, tagged. */ ""}
@@ -2901,7 +2899,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   }, [dlOpen]);
 
   if (err) return html`<${EmptyState} title="Couldn't load your dashboards"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => { setList(null); reload(); }}>Retry</button>`} />`;
   if (!list || !layout) return html`
     <div>
@@ -3093,7 +3091,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
         </div>`}
 
       ${layout.length === 0 && html`<${EmptyState} icon="star" title="This dashboard is empty"
-        body="Use the pin icon on any benchmark card — across Overview, Benchmark or Signals — and it lands here."
+        body="Use the pin icon on any benchmark card — it lands here."
         action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
 
       <div id="dash-reorder-live" class="sr-only" aria-live="polite"></div>
@@ -3338,7 +3336,7 @@ window.DomainDataView = function ({ me, section }) {
                 <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
                 : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
                 : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>answer now</a>` : ""}</div>`}
-              ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)} — worth checking this is still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
+              ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)} — check it's still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
             </div>
             <span class=${"data-q-flag " + (q.needs_refresh ? "refresh" : q.answered ? "ok" : "todo")}>
               <${Icon} name=${q.needs_refresh ? "refresh" : q.answered ? "award" : "pencil"} size=${13} /> ${q.needs_refresh ? "Refresh" : q.answered ? "Answered" : "To do"}</span>
@@ -3399,7 +3397,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
     return () => clearTimeout(t);
   }, [m, anchor]);
   if (err) return html`<${EmptyState} title="Couldn't load how lumi works"
-    body=${err + " — nothing is lost; it usually works on a retry."}
+    body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${load}>Retry</button>`} />`;
   if (!m) return html`<${PageLoading} />`;
   const industries = Object.keys(m.composition);
@@ -3414,7 +3412,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
       </aside>
       <div class="how-body" style=${{ maxWidth: "820px" }}>
         <h1 class="display-title">How lumi works</h1>
-        <p class="caption">What's in your benchmark, how the numbers are built, how the co-operative runs, and where the legal documents live.</p>
+        
 
         ${/* ---------- §4.1 Calculations ---------- */ ""}
         <h2 class="how-section-head" id="calculations">How the numbers are calculated</h2>
@@ -3496,7 +3494,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           see "not enough organisations to show this safely" instead. This floor is the single suppression rule, applied
           to <b>every</b> peer group — including bespoke groups such as Peer Twin and your own custom groups — and it is
           enforced in one place in the calculation engine, so no view can route around it.</p>
-          <p>Above the floor, every peer cut carries a confidence label so you can weigh the sample: <b>20 or more</b>
+          <p>Above the floor, every peer group carries a confidence label so you can weigh the sample: <b>20 or more</b>
           organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.</p>
           <p class="caption">No peer figure is ever derived from a single organisation, and member identities are never
           shown in any group.</p>
@@ -3541,7 +3539,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
                 /pricing ships £5,000 contributing vs £10,000 non-contributing. The unverifiable "free"
                 claims are gone for good — no founding-year-free clause — and pricing defers to the one
                 authoritative surface (the pricing page) rather than hardcoding rates in two places. */ ""}
-          <p>lumi is a benchmarking co-operative: the data you see comes from members like you, so the value depends on
+          <p>lumi is a benchmarking co-operative: its value depends on
           everyone contributing. <b>Contributing members pay less</b> — you give your reward data and, in return, you
           get the full peer picture at a lower membership rate than organisations that want the benchmark without
           contributing. Current rates are on <a href="/pricing" target="_blank" rel="noopener">the pricing page</a>.</p>

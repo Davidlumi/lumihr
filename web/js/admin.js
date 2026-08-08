@@ -28,7 +28,7 @@ window.AdminConsolePage = function ({ me, route }) {
       <div class="admin-head">
         <div class="eyebrow">lumi staff · back office</div>
         <h1 class="display-title" style=${{ margin: "2px 0 0" }}>Console</h1>
-        <p class="caption" style=${{ margin: "var(--s1) 0 0" }}>Cross-tenant staff tools. Signed in as ${me.user.email}.</p>
+        <p class="caption" style=${{ margin: "var(--s1) 0 0" }}>Signed in as ${me.user.email}.</p>
       </div>
       <div class="admin-tabs">
         ${ADMIN_TABS.map(t => html`
@@ -70,10 +70,10 @@ function AdminOrgsTab() {
   return html`
     <div>
       <div class="admin-toolbar">
-        <button class="btn small primary" onClick=${() => setCreating(c => !c)}>＋ Provision a member</button>
+        <button class="btn small primary" onClick=${() => setCreating(c => !c)}>＋ Provision an organisation</button>
         <input class="ctl" placeholder="Filter by name or industry…" value=${q}
           onInput=${e => setQ(e.target.value)} aria-label="Filter organisations" />
-        <span class="caption">${rows.length} of ${data.total} organisations · click a row for detail</span>
+        <span class="caption">${rows.length} of ${data.total} organisations</span>
       </div>
       ${creating && html`<${AdminProvisionForm}
         onCancel=${() => setCreating(false)}
@@ -193,8 +193,7 @@ function AdminProvisionForm({ onCancel, onOpenOrg }) {
         <button class="btn small primary" onClick=${copy}>Copy link</button>
       </div>
       <p class="caption" style=${{ margin: "var(--s2) 0 0" }}>
-        Mislaid it later? The link stays available under <b>Pending invites</b> on the
-        organisation's page while the invite is live.</p>
+        The link stays under <b>Pending invites</b> on the organisation's page while the invite is live.</p>
       <div class="admin-actions" style=${{ marginTop: "var(--s2)" }}>
         <button class="btn small" onClick=${() => onOpenOrg(done.org_id)}>Open organisation →</button>
         <button class="btn small quiet" onClick=${onCancel}>Close</button>
@@ -207,8 +206,7 @@ function AdminProvisionForm({ onCancel, onOpenOrg }) {
         <button class="btn small quiet" onClick=${onCancel}>Cancel</button>
       </div>
       <p class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
-        All six fields are required — the profile arrives complete, so the founding Admin
-        never meets the complete-your-profile prompt. No password is set here.</p>
+        All six fields are required — the profile arrives complete. No password is set here.</p>
       <label>Organisation name
         <input class="ctl" value=${f.org_name} onInput=${e => set("org_name", e.target.value)}
           placeholder="e.g. Meridian Foods Ltd" /></label>
@@ -573,7 +571,7 @@ function AdminPulsesTab() {
         <span class="caption">${data.pulses.length} pulse${data.pulses.length === 1 ? "" : "s"}</span>
       </div>
       ${!data.pulses.length ? html`<${EmptyState} icon="zap" title="No pulses yet"
-        body="Create a timely topical survey — reuse library questions or author bespoke ones." />` :
+        body="Create a topical pulse — reuse library questions or author bespoke ones." />` :
       html`<table class="data admin-table">
         <thead><tr>
           <th>Pulse</th><th>Status</th><th class="num">Qs</th><th class="num">Joined</th>
@@ -782,10 +780,10 @@ function AdminPulseReviewsTab() {
   };
   return html`
     <div>
-      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>All payments by invoice (PH-PAY-1) — approve, invoice the author, then <b>Confirm launch</b> opens the pulse.</div>
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>All payments by invoice — approve, invoice the author, then <b>Confirm launch</b> opens the pulse.</div>
       <div class="admin-toolbar"><b>Awaiting review</b> <span class="caption">${waiting.length}</span></div>
       ${waiting.length ? waiting.map(Card) : html`<${EmptyState} icon="list-checks" title="Nothing to review"
-        body="Member-built surveys waiting for approval will appear here." />`}
+        body="Member-built pulses awaiting approval appear here." />`}
       ${rest.length ? html`<div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Approved, live & past</b> <span class="caption">${rest.length}</span></div>` : ""}
       ${rest.map(Card)}
     </div>`;
@@ -861,7 +859,7 @@ function AdminMetricEditor({ onDone, onCancel }) {
     <div class="card admin-card admin-form" style=${{ maxWidth: "640px" }}>
       <button class="btn quiet" onClick=${onCancel}>← Backlog</button>
       <h3 style=${{ margin: "var(--s2) 0 0" }}>New core metric</h3>
-      <p class="caption">Always added unscored + optional — it never re-locks the unlock gate or needs back-filled answers. Saving drafts it to the backlog; you publish it live from the list.</p>
+      <p class="caption">Added unscored + optional — never re-locks the unlock gate, no back-fill needed. Saves to the backlog; publish from the list.</p>
       <label>Question text<textarea class="ctl" rows=${2} value=${f.text} onInput=${e => set({ text: e.target.value })}></textarea></label>
       <label>Short title<input class="ctl" value=${f.short_description} onInput=${e => set({ short_description: e.target.value })} placeholder="(defaults to first 80 chars)" /></label>
       <div class="admin-grid2">
@@ -1017,7 +1015,7 @@ function AdminOpsTab() {
   const stat = (label, value, warn) => html`
     <div class="card admin-card" style=${{ padding: "var(--s3)" }}>
       <div class="caption">${label}</div>
-      <div style=${{ fontSize: "20px", fontWeight: 700, color: warn ? "var(--red, #b3261e)" : "inherit" }}>${value}</div>
+      <div style=${{ fontSize: "var(--fs-subhead)", fontWeight: 700, color: warn ? "var(--red, #b3261e)" : "inherit" }}>${value}</div>
     </div>`;
   const sweep = async (withDigest) => {
     if (!window.confirm(withDigest

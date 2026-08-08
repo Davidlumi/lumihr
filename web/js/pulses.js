@@ -247,7 +247,7 @@ function PulseReport({ report, pid, me }) {
             <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Download PDF</button>
           </div>
         </div>
-        ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--neutral-perf)" }}>Illustrative sample data — figures shown for demonstration.</div>`}
+        ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--neutral-perf)" }}>Illustrative sample data.</div>`}
         ${(nar.summary || (nar.key_findings || []).length) && html`
           <div class="pulse-narrative">
             ${nar.summary && html`<p style=${{ margin: "0 0 var(--s2)" }}>${nar.summary}</p>`}
@@ -284,7 +284,7 @@ function PulseQuestionBlock({ q, pid, me }) {
     <div class="q-block">
       <div style=${{ fontWeight: 600, marginBottom: "var(--s2)" }}>${q.title}</div>
       ${blk.suppressed ? html`
-        <div class="caption">Fewer than 5 cohort answers for this question — protected, not shown.</div>` : html`
+        <div class="caption">Fewer than 5 cohort answers — protected, not shown.</div>` : html`
         <div>
           ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} />`}
           ${blk.options && (q.type === "multi_select"
@@ -381,11 +381,10 @@ window.RunPulsePage = function ({ me }) {
       <div class="row spread" style=${{ alignItems: "flex-end", gap: "var(--s3)" }}>
         <div>
           <h1 class="display-title" style=${{ margin: 0 }}>Run a pulse</h1>
-          <p class="pulse-lead">Design your own short survey and launch it to the lumi community — answers come back
-            as anonymised, 5+-organisation aggregates, the same protection as your core benchmark.</p>
+          <p class="pulse-lead">Design a short survey and launch it to the lumi community — answers come back as anonymised, 5+-organisation aggregates.</p>
         </div>
         <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}>
-          <${Icon} name="list-checks" size=${15} /> New survey</button>
+          <${Icon} name="list-checks" size=${15} /> New pulse</button>
       </div>
 
       <div class="pulse-how">
@@ -399,9 +398,7 @@ window.RunPulsePage = function ({ me }) {
           <div class="unlock-spark"><${Icon} name="sparkle" size=${20} /></div>
           <div>
             <b>“${liveMoment.name}” is live to the community</b>
-            <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can
-              now answer. Responses build behind the same 5-organisation protection as your core benchmark —
-              the report unlocks the moment it clears the floor.</p>
+            <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can now answer — the report unlocks at 5+ organisations.</p>
           </div>
           <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}>
             <${Icon} name="close" size=${13} /></button>
@@ -414,8 +411,7 @@ window.RunPulsePage = function ({ me }) {
         <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center", marginTop: "var(--s3)" }}>
           <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
           <b>No surveys yet</b>
-          <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only
-            lumi can answer — pay equity, four-day weeks, AI in reward, whatever's on your board's mind.</p>
+          <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only lumi can answer — pay equity, four-day weeks, AI in reward.</p>
           <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first survey</button>
         </div>` :
         html`<div style=${{ marginTop: "var(--s3)" }}>${data.pulses.map(p => html`
@@ -554,7 +550,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   return html`
     <div class="card pulse-form" style=${{ padding: "var(--s5)", marginTop: "var(--s3)" }}>
       <h2 class="section-title">${isNew ? "New survey" : "Edit your survey"}</h2>
-      <p class="caption" style=${{ marginTop: "2px" }}>Members answer what applies; you get back anonymised aggregates (5+ organisations).</p>
+      
       <label>Survey name<input class="ctl" maxlength="120" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
       <label>Description<textarea class="ctl" maxlength="280" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)} placeholder="One line on what you're asking and why."></textarea></label>
       <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional — closes at end of that day</span>
@@ -632,7 +628,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         </div>` : ""}
       ${preview && html`
         <div class="pulse-preview">
-          <div class="pulse-preview-head"><b>Preview</b> <span class="caption">· how a member sees your survey — answers here aren't saved</span></div>
+          <div class="pulse-preview-head"><b>Preview</b> <span class="caption">· answers here aren't saved</span></div>
           <div class="pulse-preview-body">
             <h3 class="pulse-preview-title">${name || "Untitled survey"}</h3>
             ${desc ? html`<p class="caption" style=${{ marginTop: "2px" }}>${desc}</p>` : ""}
@@ -686,8 +682,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
     <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s3)", textAlign: "center" }}>
       <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
       <b>With lumi for review</b>
-      <p class="caption" style=${{ margin: "var(--s1) auto 0", maxWidth: "44ch" }}>We're checking your survey before it goes
-        out to the community — usually within a couple of working days. We'll let you know when it's approved.</p>
+      <p class="caption" style=${{ margin: "var(--s1) auto 0", maxWidth: "44ch" }}>Review usually takes a couple of working days — we'll let you know when it's approved.</p>
     </div>
     ${QList()}`;
   if (ls === "approved") return html`
@@ -696,9 +691,9 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
       <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your survey opens to the whole community on confirmation.</p>
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
-      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced — a VAT invoice is issued</div>
+      <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced</div>
       <button class="btn primary" onClick=${pay}>Request launch</button>
-      <p class="caption" style=${{ marginTop: "var(--s3)" }}>lumi confirms and opens your launch once the invoice is settled.</p>
+      
     </div>
     ${QList()}`;
   if (ls === "paid") return html`

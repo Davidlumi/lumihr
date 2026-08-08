@@ -12,7 +12,7 @@
 // se = the one-line "signal-effect" reveal; pill markup inline. C dials carry none.
 const SE = (t) => t;   // marker — strings may contain <b>/<span class="se-pill …">
 const SCALE = {
-  market: { q: 'As a broad stance, where do you aim to sit on pay against peers? <span class="strat-faint">You can refine by area below.</span>',
+  market: { q: 'Where do you aim to sit on pay against peers?',
     stops: [
       { v: "lag", t: "Below market", d: "By design, not by accident", se: 'A below-market position reads as <span class="se-pill amber">intended</span> — we won’t flag it as a gap to close.' },
       { v: "match", t: "On market", d: "In line with peers", se: 'An on-market position reads as <span class="se-pill green">on target</span> — where you mean to be.' },
@@ -308,7 +308,7 @@ window.StrategyPage = function ({ me }) {
         <section class="strat-step">
           <div class="strat-eyebrow">Your business <span class="strat-mode confirm">Pre-filled · confirm</span></div>
           <h1 class="strat-title">Does this still describe you?</h1>
-          <p class="strat-sub">We've filled these in from what we already hold. They shape who you're compared against and how we read your results — correct anything that's changed.</p>
+          <p class="strat-sub">These shape who you're compared against and how we read your results — correct anything that's changed.</p>
           <div class="confirm-grid">
             ${planeA.map((f, i) => html`
               <div key=${f.key} class="confirm-row">
@@ -324,7 +324,7 @@ window.StrategyPage = function ({ me }) {
                 </div>
               </div>`)}
             <div class="derived-note"><${Icon} name="info" size=${15} />
-              <div><b>Labour intensity is worked out for you</b> — from your sector and size, so we know how heavily each reward £ lands on your P&L. Nothing to answer here.</div></div>
+              <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — from your sector and size.</div></div>
           </div>
         </section>`}
 
@@ -332,7 +332,7 @@ window.StrategyPage = function ({ me }) {
         <section class="strat-step">
           <div class="strat-eyebrow">Your philosophy <span class="strat-mode choose">Your call</span></div>
           <h1 class="strat-title">The positions you've chosen</h1>
-          <p class="strat-sub">These are deliberate commitments, not facts about your business — so we ask you fresh. They're what let us tell "below the market" from "below the market, on purpose."</p>
+          <p class="strat-sub">Deliberate commitments, not business facts — they let us tell "below the market" from "below the market, on purpose."</p>
           ${shownFields(planeBfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"}
             extra=${f === "market_position" ? html`<${DomainOverrides} domains=${data.competitive_domains || []} targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />` : null} />`)}
         </section>`}
@@ -341,7 +341,7 @@ window.StrategyPage = function ({ me }) {
         <section class="strat-step">
           <div class="strat-eyebrow">Right now <span class="strat-mode choose">Your call</span></div>
           <h1 class="strat-title">What you're working on this year</h1>
-          <p class="strat-sub">Philosophy is your long game; this is the near term. It changes yearly, so we ask it fresh — it tunes how urgently a gap is flagged and which moves we surface first.</p>
+          <p class="strat-sub">The near term, asked fresh each year — it tunes how urgently a gap is flagged and which moves we surface first.</p>
           ${shownFields(planeCfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`)}
         </section>`}
 
@@ -356,7 +356,7 @@ window.StrategyPage = function ({ me }) {
             rows=${shownFields(planeBfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} />
           <${ReviewSection} title="Right now" chip="this year" chipCls="choices"
             rows=${shownFields(planeCfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} />
-          <p class="strat-trust"><b>These are company facts and choices, not employee data.</b> They stay at organisation level, set only by an Admin, and shape how your results are read — never what your people see.</p>
+          <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
         </section>`}
 
       <div class="strat-footer">

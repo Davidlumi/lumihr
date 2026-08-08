@@ -144,7 +144,7 @@ function LoginForm({ onAuthed, initialMode }) {
     setBusy(false);
   };
   return html`
-    <${Shell} sub=${mode === "register" ? "Join the co-operative — benchmark against 220 UK organisations" : undefined}>
+    <${Shell} sub=${mode === "register" ? "Join the co-operative — benchmark against UK peers" : undefined}>
       <form onSubmit=${go}>
         ${mode === "register" && regOpen === false && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", textAlign: "left" }}>
@@ -164,7 +164,7 @@ function LoginForm({ onAuthed, initialMode }) {
           <//>`}
         ${mode === "register" && regOpen !== false && html`
           <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-            lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
+            lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your figures, not advice. On by default; turn off any time in Settings.
           </div>`}
         ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }}>Terms of Use</a>
@@ -232,9 +232,7 @@ function InviteForm({ token, onAuthed }) {
     <${Shell} sub=${info ? `Join ${info.org_name} on lumi as ${ROLE_LABEL[info.role] || info.role}` : "Team invite"}>
       ${err && !info ? html`
         <div class="error-text" role="alert">${err}</div>
-        <p class="caption" style=${{ margin: "var(--s3) 0" }}>Expired or already-used invite
-          links land here — often from a browser autocompleting an old link. If you
-          already have an account, just sign in.</p>
+        <p class="caption" style=${{ margin: "var(--s3) 0" }}>This link has expired or already been used. If you already have an account, sign in.</p>
         <button class="btn primary block" onClick=${toSignIn}>Go to sign in</button>` :
       !info ? html`<${Spinner} />` :
       html`<form onSubmit=${go}>

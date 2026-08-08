@@ -285,7 +285,7 @@ function humanSentence(c) {
     const live = c.matrix_rows.filter(r => !r.suppressed && r.block && r.block.modal_label);
     if (live.length) {
       const r0 = live[0];
-      return { lead: `Level by level, the most common peer answer is shown below — e.g. ${r0.label}: “${r0.block.modal_label}” (${r0.block.modal_pct}% of ${r0.block.n} ${compositionNoun(r0.block.n_real)}).`, support: null };
+      return { lead: `Most common at ${r0.label}: “${r0.block.modal_label}” (${r0.block.modal_pct}% of ${r0.block.n} ${compositionNoun(r0.block.n_real)}).`, support: null };
     }
   }
   if (!c.you && !c.readout && c.type !== "matrix") {
@@ -316,9 +316,9 @@ function meaningLines(c, pos) {
       ? "Most similar organisations are further ahead here — a more formal approach has become standard practice at your size and sector."
       : "You're behind most similar organisations on this measure." + (p50 ? ` The market median sits at ${p50}.` : "");
   } else if (pos.kind === "good") {
-    base = "You're ahead of most similar organisations here — worth protecting, and worth telling your people about.";
+    base = "You're ahead of most similar organisations here.";
   } else {
-    base = "You're broadly in line with similar organisations — no urgent action, but watch your movement from the next cycle.";
+    base = "You're broadly in line with similar organisations.";
   }
   // strategy read-through: the market position is only half the story — read it
   // against the org's DECLARED aim for this area (the "mirror, not consultant"
@@ -506,7 +506,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   if (c.suppressed) {
     return html`<div class="suppressed-box">
       <${Icon} name="shield" size=${18} />
-      <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data to show safely</div>
+      <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough organisations to show safely</div>
       <${Chip}>n=${c.n}<//>
     </div>`;
   }
@@ -521,7 +521,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
           </div>` :
         html`<div class="noanswer-box" style=${{ marginBottom: "var(--s1)" }}>${readOnly
           ? "Not answered yet — the peer picture below still holds."
-          : html`Answer this to see where you stand among the peers below. <a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"}>Add your data</a>`}</div>`}
+          : html`Answer this to see where you stand. <a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"}>Add your data</a>`}</div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} median=${c.block ? c.block.p50 : null} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}

@@ -23,8 +23,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   if (!state.firmographics_done) return html`
     <div style=${{ maxWidth: "560px" }}>
       <h1 class="display-title">First, tell us who you are</h1>
-      <p>Before the data terms and the questionnaire, we need a few company facts — sector, size,
-      region — so the benchmark compares you to the right peers. Two minutes, organisation-level only.</p>
+      <p>A few company facts — sector, size, region — so the benchmark compares you to the right peers. Two minutes, organisation-level only.</p>
       ${me.user.role === "admin"
         ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
         : html`<${EmptyState} icon="lock" title="Waiting on your Admin"
@@ -150,7 +149,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       : (drafts[q.id + "|"] || "") !== "";
     const total = qs.length, doneN = qs.filter(isAns).length;
     if (prevDoneRef.current != null && prevDoneRef.current < total && doneN === total && total > 0) {
-      toast("Nice — " + sp + " is complete ✨");
+      toast(sp + " is complete ✨");
       window.confettiBurst({ count: 100, duration: 2200, origin: { x: 0.5, y: 0.26 } });
     }
     prevDoneRef.current = doneN;
@@ -186,7 +185,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       if (r.ok) { setSavedAt(new Date()); setSaveState("idle"); window.markUnsubmitted(); }
       else if (r.errors && r.errors.length) setSaveState("idle");
     } catch (e) {
-      setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — your value is still here, just not saved yet."], warnings: [] } }));
+      setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — your answer is still here, just not saved yet."], warnings: [] } }));
       setSavedAt(null); setSaveState("error");
       toast("Couldn't save your last answer", "error", { label: "Retry", fn: () => save(q, rowId, value) });
     } finally {
@@ -315,7 +314,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
               onClick=${() => goTo(i)}></button>`)}
         </div>
         ${optionalStart && html`
-          <div class="qwiz-divider"><span>Optional from here</span> — these add depth to your benchmarks when you have the data to hand.</div>`}
+          <div class="qwiz-divider" title="Optional questions add depth to your benchmarks when you have the data to hand."><span>Optional from here</span></div>`}
         <div class="qwiz-card card">
           <div class="qwiz-qhead">
             <span class=${"pulse-q-num" + (curAnswered ? " done" : "")}>${curAnswered ? "✓" : at + 1}</span>
@@ -361,7 +360,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
             ${t.label} <span class="num">${t.n}</span></button>`)}
         </div>
         <button class="btn small" onClick=${toGuided} title="Walk through this section one question at a time">
-          <${Icon} name="sparkle" size=${13} /> Step me through it</button>
+          <${Icon} name="sparkle" size=${13} /> Step-by-step</button>
       </div>
 
       ${visible.length === 0 ? html`
@@ -393,7 +392,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                 </div>
                 <div class="dq-sum-right">
                   <span class=${"data-q-flag " + (ans && q.needs_refresh ? "refresh" : ans ? "ok" : "todo")}>
-                    <${Icon} name=${ans && q.needs_refresh ? "refresh" : ans ? "award" : "pencil"} size=${13} /> ${ans && q.needs_refresh ? "Refresh" : ans ? "Answered" : "To do"}</span>
+                    <${Icon} name=${ans && q.needs_refresh ? "refresh" : ans ? "award" : "pencil"} size=${13} /> ${ans && q.needs_refresh ? "Refresh" : ans ? "Answered" : "To answer"}</span>
                   <span class="dq-chev"><${Icon} name=${open ? "chevron-up" : "chevron-down"} size=${15} /></span>
                 </div>
               </div>
@@ -699,7 +698,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
       ${val.unanswered_required.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
           <b>Unanswered key questions (${val.unanswered_required.length})</b>
-          <div class="caption" style=${{ margin: "2px 0 var(--s1)" }}>“Not applicable” counts as an answer — use it where a question doesn't apply.</div>
+          <div class="caption" style=${{ margin: "2px 0 var(--s1)" }}>“Not applicable” counts as an answer.</div>
           ${val.unanswered_required.slice(0, 12).map((u, i) => html`
             <div key=${i} class="caption" style=${{ marginTop: "var(--s1)" }}>
               <a href=${"#/your-data/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}
