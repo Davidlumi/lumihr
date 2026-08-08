@@ -338,7 +338,7 @@ check("L6 seed orgs NEVER receive a member-lifecycle label",
       all(o["lifecycle"] is None for o in d0["orgs"] if o["source"] == "seed"))
 check("L7 the staff org carries no member lifecycle",
       all(o["lifecycle"] is None for o in d0["orgs"] if o["source"] == "staff"))
-api(staff, "/api/admin/orgs/%s/deactivate" % LOID, "POST", {})
+api(staff, "/api/admin/orgs/%s/deactivate" % LOID, "POST", {"reason": "L8 overlay probe"})
 _, d0 = api(staff, "/api/admin/orgs")
 row0 = next(o for o in d0["orgs"] if o["org_id"] == LOID)
 check("L8 deactivation is an OVERLAY: flag true, lifecycle still 'complete'",
@@ -357,7 +357,7 @@ seam_env = dict(os.environ, LUMI_QA_SEAMS="on", ANTHROPIC_API_KEY="", ANTHROPIC_
 # standalone run (no run_gates umask) is just as contained.
 _seam_log = os.path.join(os.environ.get("TMPDIR", "/tmp"), "qa_backoffice_seam_8061.log")
 seam_proc = subprocess.Popen(
-    [sys.executable, "-m", "uvicorn", "app:app", "--port", "8061"],
+    [sys.executable, "-u", "-m", "uvicorn", "app:app", "--port", "8061"],   # -u: S7 reads the log live
     cwd=SRV_DIR, env=seam_env,
     stdout=os.fdopen(os.open(_seam_log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"),
     stderr=subprocess.STDOUT)
@@ -458,6 +458,19 @@ try:
         check("S6 forced failure between invalidate and insert -> 500, prior invite STILL LIVE, no new row",
               st == 500 and "nothing changed" in r.get("detail", "")
               and yrow is not None and yrow["used_at"] is None and ycount == 1, (st, ycount))
+        # S7 (PH-PROV-1f): the provisioning invite's console-email fallback logs
+        # a DIGEST, never the bearer — the API response already hands the
+        # operator the link. Asserted on the seam server's CAPTURED stdout.
+        st, r1f = api(seam, "/api/admin/orgs/%s/invite" % YOID, "POST",
+                      {"email": "qa-1f-%s@probe.example" % TAG, "role": "viewer"}, base=BASE2)
+        tok1f = r1f.get("link", "").rsplit("/", 1)[-1]
+        time.sleep(1.0)   # child runs -u; a beat for the print to land
+        logtxt = open(_seam_log, errors="replace").read()
+        dig1f = hashlib.sha256(tok1f.encode()).hexdigest()[:12]
+        check("S7a (1f) provisioning invite bearer appears NOWHERE in the server log",
+              st == 200 and bool(tok1f) and tok1f not in logtxt, st)
+        check("S7b (1f) the log carries the labelled digest instead",
+              ("token sha256[:12]=%s" % dig1f) in logtxt, dig1f)
 finally:
     seam_proc.terminate()
     try:
@@ -521,18 +534,30 @@ check("E5 reset-link for unknown user -> 404", st == 404, st)
 # ---- F. soft-deactivate matrix
 print("\n-- F. soft-deactivate --")
 api(founder, "/api/auth/login", "POST", {"email": FOUNDER, "password": FPW})           # login 2
+# PH-PAY-3: a suspension always carries WHY — reasonless deactivation refused
 st, r = api(staff, "/api/admin/users/%s/deactivate" % FUID, "POST", {})
-check("F1 deactivate user", st == 200, r)
+check("F0 (PAY-3) user deactivate WITHOUT a reason -> 400 with the operator hint",
+      st == 400 and "reason" in r.get("detail", "").lower(), r.get("detail", "")[:60])
+st, r = api(staff, "/api/admin/users/%s/deactivate" % FUID, "POST",
+            {"reason": "sole-admin recovery in progress"})
+check("F1 deactivate user (with reason)", st == 200, r)
 st, _ = api(founder, "/api/me")
 check("F2 live session dies at deactivation", st == 401, st)
 st, r = api(founder, "/api/auth/login", "POST", {"email": FOUNDER, "password": FPW})   # login 3
 check("F3 relogin 403 with the honest message", st == 403 and "deactivated" in r.get("detail", ""), r)
-st, _ = api(staff, "/api/admin/users/%s/deactivate" % FUID, "POST", {})
+st, _ = api(staff, "/api/admin/users/%s/deactivate" % FUID, "POST",
+            {"reason": "double-deactivate probe"})
 check("F4 double-deactivate refused", st == 400, st)
 st, lk = api(staff, "/api/admin/users/lookup?email=" + FOUNDER)
 check("F5 lookup shows disabled_at", bool(lk["user"].get("disabled_at")), lk["user"].get("disabled_at"))
+check("F5b (PAY-3) lookup shows the suspension reason",
+      lk["user"].get("disabled_reason") == "sole-admin recovery in progress",
+      lk["user"].get("disabled_reason"))
 st, _ = api(staff, "/api/admin/users/%s/reactivate" % FUID, "POST", {})
 check("F6 reactivate", st == 200, st)
+st, lk = api(staff, "/api/admin/users/lookup?email=" + FOUNDER)
+check("F6b (PAY-3) reactivation clears the reason (audit keeps history)",
+      lk["user"].get("disabled_reason") is None, lk["user"].get("disabled_reason"))
 st, _ = api(founder, "/api/auth/login", "POST", {"email": FOUNDER, "password": FPW})   # login 4
 check("F7 relogin works after reactivate", st == 200, st)
 # org level — mint a fresh invite first so the accept-during-deactivation path is testable
@@ -540,6 +565,8 @@ st, inv3 = api(staff, "/api/admin/orgs/%s/invite" % POID, "POST",
                {"email": "qa-second-%s@probe.example" % TAG, "role": "viewer"})
 tok3 = inv3["link"].rsplit("/", 1)[-1]
 st, r = api(staff, "/api/admin/orgs/%s/deactivate" % POID, "POST", {})
+check("F7b (PAY-3) org deactivate WITHOUT a reason -> 400", st == 400, st)
+st, r = api(staff, "/api/admin/orgs/%s/deactivate" % POID, "POST", {"reason": "unpaid invoice"})
 check("F8 deactivate org (revokes member sessions)", st == 200 and r.get("sessions_revoked", 0) >= 1, r)
 st, _ = api(founder, "/api/me")
 check("F9 member context gone (401)", st == 401, st)
@@ -554,8 +581,14 @@ check("F12 staff invite into a deactivated org refused", st == 400, st)
 st, orgs = api(staff, "/api/admin/orgs")
 check("F13 orgs list flags it deactivated",
       any(o["org_id"] == POID and o.get("deactivated") for o in orgs["orgs"]))
+check("F13b (PAY-3) the list carries the suspension reason",
+      any(o["org_id"] == POID and o.get("deactivated_reason") == "unpaid invoice"
+          for o in orgs["orgs"]))
 st, _ = api(staff, "/api/admin/orgs/%s/reactivate" % POID, "POST", {})
 check("F14 reactivate org", st == 200, st)
+st, orgs = api(staff, "/api/admin/orgs")
+check("F14b (PAY-3) reactivation clears the org reason",
+      any(o["org_id"] == POID and o.get("deactivated_reason") is None for o in orgs["orgs"]))
 st, _ = api(anon, "/api/auth/accept-invite", "POST",
             {"token": tok3, "password": "qa-second-pass-1", "accept_platform_terms": True})
 check("F15 the held invite completes after reactivation", st == 200, st)
