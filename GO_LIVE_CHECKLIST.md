@@ -107,13 +107,13 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Pending David's ruling / action
 
-- [ ] **PH-PAY-2 — suspension semantics: pause the clock, gate outbound mail.** Two
-  defects recorded in PH-PAY-1 §B: (1) the 30-day submission clock burns while an org
-  is suspended (named fix: pause on suspension, extend `clock_start` by the suspended
-  duration on reactivation); (2) the sweep/digest paths carry no `deactivated_at` or
-  `disabled_at` filter, so suspended members keep receiving benchmark emails.
-  *Unblocked by:* David ruling the clock-pause fix; the mail gate rides in the same
-  diff (both change what suspension DOES).
+- [x] **PH-PAY-2 — RULED (R3/R3a/R3b) and BUILT 2026-08-08.** Clock pauses via an
+  ACCUMULATED `suspended_seconds` (clock_start immutable, frozen while suspended,
+  accrues across suspensions); sweep/digest/reminders gated on suspension with
+  hold-not-suppress roll-forward; the R3b auth-mail carve-out (reset always sends;
+  sole-admin recovery named) is commented at the send sites. Verified V1–V8 on a
+  throwaway with real counts (132 held events delivered exactly once). **Commit:
+  `6d2752b`.**
 
 
 - [ ] **C1 — retention ceiling vs rotation depth.** Per-migration backups can outlive
