@@ -61,7 +61,13 @@ gate, solicitor-signed) is preserved in full below the gates.
   **Commits: `edc7ff7` (server) + `380ccd3` (console) + `a69fd69` (gate).**
 
 
-- [ ] **PH-PROV-1c — the two mislabelled `source='signup'` orgs (HR Datahub, Tester).**
+- [x] **PH-PROV-1c — EXECUTED 2026-08-08 (R4/R4a/R4b — the class ruled, three orgs
+  deleted).** HR Datahub, Tester AND the census-surfaced third ("tester 1") deleted
+  from BOTH stores via guarded namespace-census migration; book deliberately
+  re-baselined 89,321 → 89,320 with ruling ids; recon clean both directions; only
+  ALLOW_02's pool moved (212→211). **Commit: `fea8935`.**
+  Original entry retained below for the record:
+- ~~**the two mislabelled `source='signup'` orgs (HR Datahub, Tester).**~~
   Destructive, double-guarded, awaiting David's ruling. Now MORE visible: 2b's lifecycle
   column renders both as real members with lifecycle states; Tester's answer row is in
   the live answer book (89,321 → the book fingerprint moves when it goes); member counts
@@ -173,11 +179,13 @@ gate, solicitor-signed) is preserved in full below the gates.
 - [ ] **Post-soak DROP diff** — drops the dead `orgs.name`/`normalized_name` columns +
   `idx_orgs_norm`, and CARRIES PIN-RELEASE for `bak_pre_presplit` as one of its own
   close conditions (backup_policy.md). *Unblocked by:* soak ending.
-- [ ] **Phase 4 — deletion on exit.** SPEC WRITTEN 2026-08-08
-  (`PRIVACY_PHASE4_DELETION_ON_EXIT_SPEC_2026-08-08.md`): inventory, exit-tool shape,
-  copies-death-date computation, verification matrix. *Unblocked by:* David ruling the
-  five §6 parameters (grace window; terms rows; pulse responses; invoice ledger
-  statutory retention; suggestion attribution) — then the build.
+- [x] **Phase 4 — deletion on exit: RULED (R6 + R6-mech) and MECHANISM BUILT
+  2026-08-08.** `orgs.exited_at` state, countersigned exit/un-exit, day-0 pool
+  removal, 30d grace, REPORT-ONLY deletion sweep (real deletion needs
+  LUMI_EXIT_DELETION=on + double-guard), terms rows de-identified via random opaque
+  token, stated retentions. **Commit: `86bdc01`.** Remaining Phase-4 threads ride the
+  solicitor bundle: the 6.3 retention number, and the §6.6/§6.5 positions landing in
+  the member-facing terms text (never AI-drafted).
 - [ ] **Wider docs pass** (README beyond the corrected lines, handover docs).
   *Unblocked by:* scheduling; single-line corrections have landed with their diffs.
 
