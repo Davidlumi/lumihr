@@ -2898,8 +2898,11 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   const activeName = active.name || "My dashboard";
   // print-header context (Download PDF reuses the browser print pipeline, like the
   // board pack / pulse / metric one-pager). Peer label mirrors the "Comparing against" bar.
+  // R-P10/R-P2: the printed artefact names its comparison object. Static
+  // "reference panel" is EXACT today (real n = 0 everywhere); Phase 1 replaces
+  // it with the ruled composition chip (panel / members+panel / members).
   const peerLabel = (!cut || !cut.dim || cut.dim === "all")
-    ? "All peers · " + ((me.peer_pool || {}).responding_orgs || "—")
+    ? "All peers · " + ((me.peer_pool || {}).responding_orgs || "—") + " · reference panel"
     : (cut.value || cut.dim);
   const printDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
@@ -3409,10 +3412,18 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
 
         <div class="card how-card" id="who-compared">
           <h3 class="section-title">Who you're compared with (market norms)</h3>
-          <p>A peer norm is built only from organisations that have completed a lumi submission. The pool holds
-          <b>${m.peer_pool.responding_orgs} UK organisations</b>; ${m.peer_pool.classified_orgs} carry full firmographic
-          profiles (sector, size, region, ownership) and appear in filtered peer groups, while ${m.unclassified_count}
-          await classification and sit in the "All peers" group only.</p>
+          ${/* R-P10 (2026-08-08): the pool IS a reference panel today — say so,
+              leading with the anchor register, not apologising for it. R-P1
+              first-use description verbatim. The old sentence ("built only from
+              organisations that have completed a lumi submission") read as
+              member-sourced and was false in the reading any member would take. */ ""}
+          <p>Today the comparison pool is a <b>reference panel</b> of <b>${m.peer_pool.responding_orgs} UK
+          organisation profiles</b> — modelled from published UK survey data, not lumi member submissions.
+          Every panel figure is calibrated against lumi's anchor register: graded published sources with
+          explicit bases, metric by metric. ${m.peer_pool.classified_orgs} profiles carry full firmographics (sector, size, region, ownership)
+          and appear in filtered peer groups, while ${m.unclassified_count} sit in the "All peers" group only.
+          As member organisations complete submissions, their data joins the pool and each figure states its
+          composition alongside n.</p>
           <table class="data" style=${{ marginTop: "var(--s3)" }}>
             <thead><tr><th>Sector</th>${m.fte_bands.map(b => html`<th key=${b} class="num">${b}</th>`)}<th class="num">Total</th></tr></thead>
             <tbody>
@@ -3576,7 +3587,12 @@ window.cutLabelOf = function (cut, cuts) {
 /* Pool size of the currently selected cut — mirrors the "· N" the peer control
    (PeerSetBar) shows, so the small-sample caveat's number always equals it.
    Returns null when size isn't known (the twin cut doesn't expose its pool size
-   → treated as not-thin by design; recorded as a known gap in DECISIONS.md). */
+   → treated as not-thin by design; recorded as a known gap in DECISIONS.md).
+   R-P9 (RULED 2026-08-08): this number — and the ConfidenceChip it feeds — reads
+   TOTAL n DELIBERATELY. A 212-org calibrated panel genuinely is a more stable
+   figure than a 6-org one; the chip is not lying about what it measures, and it
+   is always paired with composition (R-P2). Do NOT re-point this at real n
+   later thinking you found a bug. */
 window.cutSize = function (cut, cuts, peerPool) {
   if (!cut || !cut.dim || cut.dim === "all") {
     const n = (peerPool || {}).responding_orgs;

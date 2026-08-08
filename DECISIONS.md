@@ -14880,3 +14880,21 @@ cannot be resolved the derivation itself FAILS as a check and the floor is force
 impossibly high — the gate fails loudly rather than asserting nothing. In-suite:
 derived floor 5, world 6, PASS honestly; deleting a demo/staff account now fails
 loudly, deleting anything outside the expected set passes without an edit.
+
+## 2026-08-08 — R-P10: the public correction ships first
+
+The methodology page's "Who you're compared with" card claimed the pool was "built
+only from organisations that have completed a lumi submission" — member-sourced in
+the reading any member would take, and false with real n = 0. Rewritten LEADING
+WITH THE ANCHOR REGISTER, per the ruling: the pool is named a REFERENCE PANEL
+(R-P1 label + first-use description verbatim: "modelled from published UK survey
+data, not lumi member submissions"), calibrated against graded published sources
+with explicit bases — a statement of strength, not an apology; the closing
+sentence pre-announces R-P2 ("each figure states its composition alongside n").
+The dashboard PRINT HEADER (a shared artefact) now reads "All peers · N ·
+reference panel" — static wording that is EXACT today (real n = 0 everywhere) and
+is replaced by the ruled composition chip in Phase 1. R-P9 recorded AT THE
+TEMPTATION SITE: cutSize()'s comment now states the ConfidenceChip reads TOTAL n
+deliberately and must not be re-pointed at real n by someone thinking they found
+a bug. Verified rendered (spacing defects from htm whitespace collapse caught in
+the browser and fixed; cache v442 — bumped AFTER the fix, the v436 lesson).
