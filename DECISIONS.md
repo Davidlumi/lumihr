@@ -15213,3 +15213,36 @@ spawned as its own task rather than guess-fixed); Pay-card fixed-height
 whitespace (cosmetic, needs a pinned repro). Design law held throughout: one
 blue, no composition/attribution wording in-product, verdict vocabulary
 locked, no animated numbers.
+
+## 2026-08-08 — Site-wide text review: minimal on screen, explanation on demand
+
+David: "text review across the site — consistent sizing, plain english, reduce
+unnecessary wording, min text with tips, fonts and spacing consistent."
+Method: 10-lens copy fleet over every JS surface + a typography lens over
+app.css (242 findings; 241 verified verbatim by grep before anything was
+touched — the one drop was a locked-string violation). I acted as the
+synthesiser: every finding re-judged editorially, applied in three committed
+batches (T1 45 high 202fa84, T2 104 medium 27d1de7, T3 72 low 73f9e81 —
+221 applied, 21 declined with reasons).
+
+THE EDITORIAL LINE (worth re-reading before writing any new UI copy):
+- A caption must not restate the control beside it, the header above it, or a
+  number already on screen. Delete first; if the explanation matters, it goes
+  behind a Term tip, a title= attribute, or a disclosure — the visible surface
+  carries the minimum.
+- Advice-adjacent tails are banned ("worth telling your people about", "no
+  urgent action, but…", "a story worth telling") — lumi is a mirror, never
+  advice, and the verdict sentence carries no counsel.
+- Error states end " — nothing is lost." (7 sites unified); never "it usually
+  works on a retry", never "Sorry —".
+- Terminology singulars: pulse (never survey), organisation (never orgs),
+  peer group (never cut member-facing), answer (never response/submission),
+  Suggest a metric (never Request), Market P50 / MARKET RANGE headers.
+- Type/spacing tokens only; the single deliberate off-scale glyph (34px
+  completion tick) is commented as such. Undefined --fs-h3 was silently
+  inheriting — now --fs-subhead.
+DECLINED ON PRINCIPLE: metric-page question text (defines the number — not
+clutter); how-lumi-works explainers (that page IS the on-demand layer);
+acceptance-record detail (near-legal transparency); "comparison pool" pill
+wording (SIG-1 ruled); staff console "Users" tab (members = organisations).
+Suite 14/14 green after the full sweep; all routes + console walked clean.
