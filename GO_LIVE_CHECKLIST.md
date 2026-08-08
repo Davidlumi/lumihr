@@ -100,11 +100,24 @@ gate, solicitor-signed) is preserved in full below the gates.
   the 90-day ceiling if migrations pause; which rule yields is a ruling (PH-BAK-2 §A.4
   C1 — reported, not resolved). *Unblocked by:* David ruling ceiling-binds or
   rotation-binds.
-- [ ] **Time Machine GUI check — `/private/tmp`.** Open since PH-LOG-1; it is CF-2's
-  LAST open close-condition limb (limbs a and b are satisfied: purge scope reports 0
-  candidates; the teardown zero-survivors assertion is green on every suite run).
-  *Unblocked by:* David confirming in System Settings → Time Machine that no custom
-  rule pulls `/tmp` into backup scope.
+- [ ] **Presplit pin — formal pin-dead ruling (2026-08-08).** The factual question is
+  settled: the pinned backup is unrecoverable (TM never ran; no snapshot; no stray
+  copy — evidence in the closed TM item above). What remains is the ruling: declare
+  the pin DEAD in `data/backup_policy.md` and rewrite the post-soak DROP diff's
+  pin-release close condition as a REBUILD-RECIPE precondition (the recipe is recorded
+  in the 2026-08-05 incident entry, DECISIONS.md). *Unblocked by:* David's one-line
+  ruling; the policy edit and DROP-diff condition rewrite then land together.
+- [x] **Time Machine check — `/private/tmp` + presplit recovery (2026-08-08).** Resolved
+  by direct measurement, stronger than the GUI check: `tmutil destinationinfo` = "No
+  destinations configured", empty TM preferences (no SkipPaths/custom rules), no local
+  snapshots — **Time Machine has never run on this machine**, so nothing (including
+  /tmp gate workdirs and the in-tree bak copies) has ever been duplicated into a
+  backup. **CF-2 is now CLOSED** (all three limbs; standing condition recorded: re-check
+  /tmp scope if a TM destination is ever configured). SECOND ANSWER THE SAME EVIDENCE
+  GIVES: the deleted `bak_pre_presplit` is **unrecoverable** — no TM copy, no snapshot,
+  no stray copy on disk (mdfind + find sweep). The documented REBUILD recipe
+  (identity.db values re-joined into the still-present nulled columns) is the only
+  rollback vehicle. The formal **pin-dead ruling remains David's** (below).
 - [ ] **AI Insights go-live flip** — David's steps a–d + steps 5/6 in the preserved
   section below. *Unblocked by:* David executing them in production.
 - [x] **Stripe — RETIRED, not owed (PH-PAY-1, ruled all-payments-by-invoice).** The

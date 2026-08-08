@@ -14522,3 +14522,24 @@ carried — whitelisted payloads need every new column added by hand. qa_backoff
 reactivation, S7a/S7b (1f) assert on the seam server's CAPTURED stdout that the bearer
 appears nowhere and the labelled digest does (:8061 now launched with -u so the log is
 readable live). Suite 13/13 green. Cache v440.
+
+**TM check executed — CF-2 CLOSED; presplit unrecoverable (2026-08-08).** The checklist's
+Time Machine errand, done by direct measurement rather than the GUI: `tmutil
+destinationinfo` reports NO destinations configured, the TimeMachine preferences plist
+is empty ({PreferencesVersion = 6} — no SkipPaths, no custom rules), `tmutil
+listlocalsnapshots /` is empty. TIME MACHINE HAS NEVER RUN ON THIS MACHINE. Two
+consequences, opposite in flavour, recorded honestly: (1) CF-2's last open limb closes
+FAVOURABLY — /private/tmp gate workdirs (credential-bearing logs) have never been
+duplicated into any backup, and the earlier "project tree IS TM-included" flag meant
+in-scope-if-TM-ran, never an actual copy; standing condition recorded in the register:
+re-check /tmp scope before the first backup if a destination is ever configured.
+(2) The pinned bak_pre_presplit deleted in the 2026-08-05 incident is UNRECOVERABLE —
+no TM copy, no APFS snapshot, and a disk-wide sweep (mdfind + find) finds no stray
+copy. The rebuild recipe (identity.db values re-joined into the reward store's
+still-present nulled columns) is the ONLY rollback vehicle for the split. Awaiting
+David's one-line pin-dead ruling; the backup_policy.md edit and the post-soak DROP
+diff's close-condition rewrite land together when ruled. ALSO NOTED: with TM
+unconfigured, the live stores' only durable copies are the in-tree rotation set (3 DB
++ 1 identity bak) on the SAME disk — no off-disk backup of the platform exists at all;
+worth weighing alongside the deployment/hosting ruling (a production environment
+brings its own backup regime).

@@ -56,5 +56,16 @@ Each entry mirrors its DECISIONS.md close condition EXACTLY — the two must not
   assertion green, and (c) David confirms in the Time Machine GUI whether /private/tmp is
   excluded from backups; the Group A position remains accepted-bounded under
   data/backup_policy.md and is not part of this finding.
-- **Owner:** David Whitfield (TM GUI confirmation); gate suite enforces the teardown
-  assertion from here.
+- **Status: CLOSED 2026-08-08.** All three limbs satisfied. (a) purge scope reports 0
+  candidates; (b) the teardown zero-survivors assertion is green on every suite run;
+  (c) limb (c) resolved by direct measurement, stronger than the GUI check it asked
+  for: `tmutil destinationinfo` = "No destinations configured", the TimeMachine
+  preferences plist is empty (`{PreferencesVersion = 6}` — no SkipPaths, no custom
+  rules), and `tmutil listlocalsnapshots /` is empty. TIME MACHINE HAS NEVER RUN ON
+  THIS MACHINE — no backup of /private/tmp (or anything else) exists via TM, and the
+  earlier "project tree IS TM-included" flag was scope-if-TM-ran, never an actual
+  copy. **Standing condition (survives the close):** if a TM destination is ever
+  configured, /private/tmp scope must be re-checked before the first backup runs —
+  the same evidence commands re-run.
+- **Owner:** was David Whitfield (TM confirmation — resolved by CLI evidence,
+  2026-08-08); gate suite enforces the teardown assertion from here.
