@@ -508,13 +508,15 @@ st, r = api(anon, "/api/auth/register", "POST",
              "password": "long-enough-pass", "accept_platform_terms": True})
 check("R1 self-serve register -> 403 with enquiry pointer (default closed)",
       st == 403 and "hello@lumihr.co.uk" in r.get("detail", ""), r)
-# verify-as-is (ruling §5): tenant invite role=admin COERCES to viewer today (400 in PH-PROV-1b)
+# PH-PROV-1b (built 2026-08-08): tenant invite role=admin is an EXPLICIT 400
+# pointing at promotion — no invite row is minted for the attempt.
+n_inv0 = raw.execute("SELECT COUNT(*) c FROM invites").fetchone()["c"]
 st, tinv = api(tenant, "/api/team/invite", "POST",
                {"email": "qa-coerce-%s@probe.example" % TAG, "role": "admin"})
-ttok = tinv.get("link", "").rsplit("/", 1)[-1] if st == 200 else None
-trole = raw.execute("SELECT role FROM invites WHERE token=?", (ttok,)).fetchone() if ttok else None
-check("R2 /api/team/invite role=admin coerces to viewer (as-is; changes in PH-PROV-1b)",
-      st == 200 and trole is not None and trole["role"] == "viewer", (st, dict(trole) if trole else None))
+n_inv1 = raw.execute("SELECT COUNT(*) c FROM invites").fetchone()["c"]
+check("R2 (1b) /api/team/invite role=admin -> explicit 400 pointing at promotion",
+      st == 400 and "promotion" in tinv.get("detail", ""), (st, tinv.get("detail", "")[:60]))
+check("R2b (1b) the refused attempt minted NO invite row", n_inv1 == n_inv0, (n_inv0, n_inv1))
 
 # ---- E. support actions
 print("\n-- E. support --")

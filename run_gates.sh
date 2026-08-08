@@ -20,6 +20,9 @@ WORK="${1:-$(mktemp -d /tmp/lumi_gates.XXXXXX)}"
 # tree is refused outright: outside-the-tree is the control, .gitignore is only
 # defence in depth. Checked BEFORE anything is touched.
 umask 077
+# PH-CFG-1 Branch A: link minting REFUSES without a configured base; the suite's
+# servers + self-spawned seam servers all inherit this explicit dry-run value.
+export LUMI_BASE_URL="http://localhost:8060"
 case "${WORK:A}/" in
   "${ROOT:A}"/*)
     print "FATAL (PH-LOG-1): workdir '$WORK' resolves inside the git tree ($ROOT)."
@@ -219,6 +222,18 @@ start_server "$DB" srv_backoffice; run_gate qa_backoffice
 #     timestamps, one same-value re-submit) — after backoffice, before the
 #     LAST-by-doctrine pair, on a fresh server for rate-limiter hygiene.
 start_server "$DB" srv_refresh; run_gate qa_refresh
+
+# --- identity reconciliation (PH-PROV-1e, 2026-08-08): the split's step-7 debt.
+#     Runs LAST of the mutating gates so it audits the WHOLE suite's dual-write
+#     hygiene — any gate that left a single-store org/user/invite fails the run
+#     here with the orphan named (digests only, PH-PROV-1d). Direct call, like
+#     qa_plausibility: identity_recon.py is not qa_-prefixed (it is also an
+#     operator tool; docs/ORPHAN_REMEDIATION.md is its runbook).
+say "identity_recon"
+( cd "$SRV" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" python3 identity_recon.py ) >"$WORK/identity_recon.out" 2>&1
+RECON_RC=$?
+tail -3 "$WORK/identity_recon.out"
+if [[ $RECON_RC -eq 0 ]]; then PASS+=(identity_recon); else FAIL+=("identity_recon (rc=$RECON_RC, see $WORK/identity_recon.out)"); fi
 
 # --- LAST by doctrine ---
 run_gate qa_pulse
