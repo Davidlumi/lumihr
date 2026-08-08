@@ -203,6 +203,16 @@ def do_sweep(conn, write):
         oid = r["org_id"]
         uids = [u["user_id"] for u in conn.execute(
             "SELECT user_id FROM users WHERE org_id=?", (oid,))]
+        # Commit I (2026-08-08): IDENTITY FIRST, then reward — the REVERSE of
+        # Commit C's order, deliberately. C was attended, one-shot, dead orgs;
+        # the sweep is unattended on a timer against real members. If it dies
+        # between stores in reward-first order, the survivor is identity rows —
+        # including any live invite token — authenticating against an org whose
+        # reward data is gone. Identity-first, the survivor is inert benchmark
+        # rows with nobody attached. Do NOT "tidy" this back to match C.
+        identity.remove_org_identity(oid)
+        if os.environ.get("LUMI_QA_SEAMS") == "on" and os.environ.get("_QA_FAIL_BETWEEN_STORES"):
+            sys.exit("qa seam: forced failure BETWEEN identity and reward deletion")
         counts = {}
         cur = conn.cursor()
         try:
@@ -240,8 +250,10 @@ def do_sweep(conn, write):
             conn.commit()
         except Exception as e:
             conn.rollback()
-            sys.exit("FATAL: exit-delete failed for %s (%s) — rolled back." % (oid, e))
-        identity.remove_org_identity(oid)
+            sys.exit("FATAL: reward-side exit-delete failed for %s (%s) — reward rolled "
+                     "back; identity already removed (the INERT half-state: benchmark "
+                     "rows with nobody attached, no authenticable credential). Re-run "
+                     "the sweep to finish; identity_recon names the org meanwhile." % (oid, e))
         print("exit-deleted %s both stores: %s (retained, stated: %s)"
               % (oid, counts, ", ".join(RETAINED_TABLES)))
     rec = subprocess.run([sys.executable, "identity_recon.py"], cwd=HERE,

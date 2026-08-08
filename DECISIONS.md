@@ -14828,3 +14828,21 @@ second command: 320 answered metrics, served n moved on 307 (ALLOW_02 211→210 
 straight from the payload store). Payload fact recorded: payloads are pure
 aggregates — org ids never appear in them — so an id-presence assertion would pass
 vacuously; the count-movement assertion is the honest one.
+
+## 2026-08-08 — Commit I: the sweep deletes IDENTITY FIRST — the ordering is not arbitrary
+
+Commit C's reward-then-identity order was right for C: attended, one-shot, dead
+orgs, one operator watching. The sweep is none of those — unattended, on a timer,
+against real members. If it dies between stores in reward-first order, the
+SURVIVING state is identity rows — including any live invite token —
+authenticating against an org whose reward data no longer exists. Reversed, the
+surviving state is inert benchmark rows with nobody attached. The order is now
+identity-first in member_exit.py's deletion path ONLY (Commit C stays as recorded,
+per David's confirmation — do not retro-fit), with the reasoning in the code
+comment so the next reader does not "tidy" it back. VERIFIED BY INJECTION, not
+hope: a LUMI_QA_SEAMS-gated seam forced failure between the stores — the
+half-state held ZERO identity rows for the org (org_register/users/invites all 0;
+the planted live invite token gone identity-side, nothing authenticable) while
+402 inert reward answer rows survived; identity_recon FAILED LOUDLY naming the
+direction mid-state; the re-run completed both stores, recon PASS, and the sweep
+re-aggregated (Commit H's enforcement on this path).
