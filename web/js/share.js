@@ -94,6 +94,7 @@ function ShareApp() {
           <div class="logo" style=${{ padding: 0 }}>lumi<span>.benchmark</span></div>
           <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${data.org_name}</h1>
           <div class="caption">Shared read-only benchmark view · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
+          <div class="caption" style=${{ marginTop: "2px" }}>Comparison pool: ${cutN != null ? cutN : 220} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>
         </div>
         <${Chip} kind="accent">Read-only<//>
       </div>

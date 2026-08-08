@@ -1662,7 +1662,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       </div>
       ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-foot" aria-hidden="true">
-        Source: lumi HR${period ? " · " + period : ""} · generated ${new Date().toLocaleDateString("en-GB")} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.</div>
+        Source: lumi HR${period ? " · " + period : ""} · generated ${new Date().toLocaleDateString("en-GB")} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.
+        Comparison pool: ${(me.peer_pool || {}).responding_orgs || 220} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>
     </div>`;
 }
 

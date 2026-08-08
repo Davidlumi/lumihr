@@ -3079,6 +3079,8 @@ async def gap_register_csv(request: Request):
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
                     r["gap"] if r["gap"] is not None else "", r["n"]])
+    w.writerow([])
+    w.writerow(["Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=lumi-gap-register.csv"})
 
@@ -3145,6 +3147,8 @@ async def benchmark_csv(request: Request):
     for r in rows:
         w.writerow(r)
 
+    w.writerow([])
+    w.writerow(["Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
     fname = "lumi-benchmark-%s.csv" % (cut.get("dim") or "all")
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="%s"' % fname})

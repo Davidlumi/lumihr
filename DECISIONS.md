@@ -15062,3 +15062,16 @@ in bell + signals page + briefing + digests, gate-checked copy).** That is the
 product's whole voice, a distinct fix class needing its own ruling — the same
 "of peers" language also pre-dates P1-C, making it a §1.1 pre-existing-string
 finding by the amendment's own definition.
+
+## 2026-08-08 — Amended R-P2 §2/§3: durable artefacts carry ONE footer line; the methodology page stays true, matter-of-fact
+
+§2: board pack (print footer), BOTH member CSVs (gap register + benchmark
+export, final row, count DERIVED from peer_pool meta), exported chart images
+(one 9px line baked under the meta line), and share views each carry exactly:
+"Comparison pool: N UK organisation profiles. See lumihr.co.uk methodology for
+sources." — one line at the foot, nothing per-cell. These artefacts outlive the
+conversation that sold the membership and cannot be relabelled after they are
+sent; the footer closes that permanently at zero cost to the in-product
+experience, because none of it is in-product. §3: the methodology sentence is
+de-headlined — plain prose, same facts, still findable — and the pre-R-P10
+member-sourced claim does not return to a public page. Suite 14/14 ALL GREEN.

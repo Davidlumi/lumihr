@@ -3419,8 +3419,8 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
               first-use description verbatim. The old sentence ("built only from
               organisations that have completed a lumi submission") read as
               member-sourced and was false in the reading any member would take. */ ""}
-          <p>Today the comparison pool is a <b>reference panel</b> of <b>${m.peer_pool.responding_orgs} UK
-          organisation profiles</b> — modelled from published UK survey data, not lumi member submissions.
+          <p>The comparison pool is a reference panel of ${m.peer_pool.responding_orgs} UK
+          organisation profiles, modelled from published UK survey data rather than lumi member submissions.
           Every panel figure is calibrated against lumi's anchor register: graded published sources with
           explicit bases, metric by metric. ${m.peer_pool.classified_orgs} profiles carry full firmographics (sector, size, region, ownership)
           and appear in filtered peer groups, while ${m.unclassified_count} sit in the "All peers" group only.
