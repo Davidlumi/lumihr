@@ -10,13 +10,30 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Gate 1 — before the first organisation is provisioned
 
-- [ ] **DEPLOYMENT — a publicly reachable instance (PH-CFG-1 Branch B finding,
-  2026-08-04).** No deployed instance of the application exists: lumihr.co.uk serves a
-  parking-class 403 (MX is Google — mail is real, the app is not there), and the repo
-  has no deploy configuration. Every artifact that reaches a member (invite link, reset
-  link, digest email) depends on this. *Unblocked by:* David ruling the hosting
-  approach (host, TLS, domain/subdomain, where the production env lives) — a decision,
-  then its own scoped work.
+- [ ] **DEPLOYMENT — RULED 2026-08-08 (Master Ruling Transmission R1 family), execution
+  open.** `DEPLOY_TARGET = EC2 (ARM, Ubuntu LTS), eu-west-2, single instance`; TLS =
+  Caddy fronting uvicorn (automatic ACME); member host `app.lumihr.co.uk` (marketing
+  keeps the apex); `LUMI_BASE_URL = https://app.lumihr.co.uk`; DB at launch = SQLite
+  (Phase 2 its own gate). Rejected alternatives recorded in DECISIONS (Lightsail/
+  serverless, nginx+certbot, Postgres-at-launch). *Split of labour:* Claude produces
+  deploy artefacts + runbook (transmission Commit D); DAVID runs it against his AWS
+  account and DNS — infrastructure is never provisioned from here. *Unblocked by:*
+  Commit D landing, then David executing the runbook.
+- [ ] **OFF-BOX BACKUP (R1e) — Gate 1, not post-launch.** No off-disk copy of the
+  platform exists anywhere (TM-check finding, 2026-08-08); a single volume loses the
+  company. Three distinct layers per transmission §5.3: DLM EBS snapshots
+  (machine restore), on-box rotation (wal_checkpoint first), and the S3 off-box copy
+  (SSE, block-public-access, versioned, lifecycle AND noncurrent-version expiry BOTH
+  = the R5 35-day ceiling). *Unblocked by:* Commit F artefacts, then David's AWS
+  execution alongside the deployment runbook.
+- [ ] **PH-LOG-1 re-assessment — RULED 2026-08-08 (A4): `CONTAIN_NOW +
+  D2_BEFORE_FIRST_PROVISIONING`.** The dev-box acceptance of link-bearing server logs
+  does not transfer to an internet-facing host. Containment (0600, non-web-served
+  path, excluded from every off-box backup, retention capped in backup_policy.md)
+  lands in Commit F unconditionally; **D2 real email delivery (SES on the deployed
+  instance) is a HARD PRECONDITION of first provisioning**, not merely PH-LOG-1's
+  close condition. Token-TTL pre-check passed: invites 7d, resets 2h, both enforced
+  at read time. *Unblocked by:* Commit F (containment); D2 build on the deployed box.
 - [x] **`LUMI_BASE_URL` + link-minting guard (PH-CFG-1 Branch A) — BUILT AHEAD of the
   deployment ruling (2026-08-08)** so go-live is turnkey: one `base_url()` accessor
   (per-call env read, trailing-slash normalised, https required for non-localhost),

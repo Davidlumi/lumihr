@@ -14577,3 +14577,49 @@ copies-death-date computation from the creation-time schedule, verification matr
 and FIVE open parameters for David (§6: grace window, terms rows, pulse responses,
 invoice ledger statutory retention, suggestion attribution). Suite 14/14 green;
 backoffice 106; recon PASS.
+
+## 2026-08-08 — MASTER RULING TRANSMISSION recorded (APPROVED_BY_DAVID = 2026-08-08, all; amendments A1–A4)
+
+**The ledger, verbatim.** R1 `DEPLOY_TARGET = EC2 (ARM, Ubuntu LTS), eu-west-2, single
+instance` · R1a `TLS = Caddy fronting uvicorn, automatic ACME` · R1b `MEMBER_HOST =
+app.lumihr.co.uk` (marketing keeps the apex) · R1c `LUMI_BASE_URL =
+https://app.lumihr.co.uk` · R1d `DB_AT_LAUNCH = SQLite` (Phase 2 a separate gate) ·
+R1e `OFF_BOX_BACKUP = GATE_1` · R2 `PRESPLIT_BACKUP = DEAD` · R3
+`SUSPENSION_PAUSES_CLOCK = YES` (accumulated, never a single delta) · R3a
+`OUTBOUND_MAIL_ON_SUSPENSION = GATED` at sweep and digest · R3b
+`AUTH_MAIL_ON_SUSPENSION = STILL_SENDS` (invite + reset) · R4
+`HR_DATAHUB_DISPOSITION = DELETE` (HELD pending factual restatement, §4 STOP) · R4a
+`TESTER_DISPOSITION = DELETE` + deliberate book re-baseline (HELD with R4) · R5
+`BACKUP_RETENTION = CEILING_BINDS`, ceiling 35 days, count is a floor beneath it · R6
+Phase 4 five parameters (PROVISIONAL — reconciled against the spec's §6 at the G STOP)
+· R7 solicitor bundle = six items, one visit (David's action) · R8 AI flip after
+deployment AND after provenance surfacing; dpo@ must be MONITORED, not merely live.
+
+**Rejected alternatives — the paper trail against reopening.** R1 rejected Lightsail
+and any container/serverless runtime: cheaper today, but they push a VPC/RDS
+re-platform into Phase 2, forcing the migration and a deployment change into the same
+window; EC2-in-a-VPC makes Phase 2 a connection-string change. R1a rejected
+nginx+certbot: fewer moving parts wins because a renewal cron silently failing on a
+members-only host is an outage nobody reports. R1d rejected migrate-to-Postgres-at-
+launch: bundles two fix classes and puts the first member behind the largest remaining
+unknown. R2 rejected leaving the presplit backup nominally alive: an unrecoverable
+backup on the books invites the next reader to plan a rollback around an artefact that
+cannot deliver one (the rebuild recipe in the 2026-08-05 incident entry is the honest
+successor). R3 rejected the single-delta pause from deactivated_at: correct on the
+first suspension, wrong on the second. R5 rejected ROTATION_BINDS: a count says
+nothing about age — if the job stops, seven copies can be seven months old with the
+disclosure broken and no error anywhere; ceiling-binds fails safe.
+
+**Amendments recorded.** A1: Commit E is verify-and-attest against LIVE (independent
+assertions; 03801e8 cited as provenance never evidence). A2: transmission §9 was stale
+— PH-PROV-1f (edc7ff7) and PH-PAY-3 (380ccd3, a69fd69) already landed and are closed
+on the checklist. A3: the shipped deactivation reason is REQUIRED FREE TEXT (1–200
+chars, `_suspension_reason`), NOT an enum — so R3b's carve-out keys off the suspended
+STATE with sole-admin recovery named as its load-bearing case, and R6's
+pool-removal-at-day-0 has NO machine-readable exit state to key off in the shipped
+mechanism (reported at the G STOP; extending is a ruling, not a build). A4:
+`PH_LOG_1_DISPOSITION = CONTAIN_NOW + D2_BEFORE_FIRST_PROVISIONING`; token-TTL
+pre-check REPORTED: invites 7 days (auth.py INVITE_TTL_DAYS, stamped at create,
+ENFORCED at every read via `expires_at > datetime('now')`), resets 2 hours
+(RESET_TTL_HOURS, enforced in get_valid_reset) — both expire and both are enforced,
+so no TTL defect outranks the containment.
