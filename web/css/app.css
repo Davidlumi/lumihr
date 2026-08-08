@@ -1970,6 +1970,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .unsub-x { border: 0; background: transparent; color: var(--ink-faint); cursor: pointer;
   padding: var(--s2); border-radius: 50%; display: inline-flex; }
 .unsub-x:hover { background: var(--surface-sunk); color: var(--ink); }
+/* while the drafts bar floats, the page reserves room so it never occludes
+   the last element (tables, footers, save buttons) — Batch 2, 2026-08-08 */
+body.has-unsub-bar .content { padding-bottom: 88px; }
 @media (max-width: 600px) { .unsub-bar { left: 16px; right: 16px; transform: none; }
   @keyframes unsub-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   .unsub-bar-msg { white-space: normal; } }

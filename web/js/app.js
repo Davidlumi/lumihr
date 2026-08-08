@@ -428,7 +428,7 @@ function App() {
             onRequest=${() => { const term = search; setSearch(""); setActiveHit(-1); setMetricReq({ prefill: term, source: "search" }); }} />`}
         </div>
         <div class="topbar-right">
-          <${DataProgressChip} contrib=${contrib} role=${me.user.role} />
+          <${DataProgressChip} contrib=${contrib} role=${me.user.role} platformAdmin=${me.user.platform_admin} />
           <button class="btn feature suggest-pill" aria-label="Suggest a new metric" onClick=${() => setSuggestOpen(true)}>Suggest a metric</button>
           ${me.features && me.features.analyst && html`
           <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>`}
@@ -487,7 +487,7 @@ function App() {
       ${unsub && !barHidden && !leaveTo && !route.startsWith("/your-data/review")
         && (me.user.role === "admin" || me.user.role === "contributor") && html`${/* viewers
           cannot submit — the reminder is an editor's call to action (QA 2026-08-04) */ ""}
-        <div class="unsub-bar no-print" role="status">
+        <div class="unsub-bar no-print" role="status" ref=${el => { if (el) document.body.classList.add("has-unsub-bar"); else document.body.classList.remove("has-unsub-bar"); }}>
           <span class="unsub-bar-msg"><span class="unsub-dot"><${Icon} name="award" size=${13} /></span>
             Your answers are <b>saved</b> — but not submitted to the benchmark yet.</span>
           <button class="btn small primary" onClick=${() => nav("/your-data/review")}>Review & submit</button>
@@ -882,8 +882,9 @@ window.sectionList = function (qIndex) {
    control that can't act) and gone at 100% — its job is done, the bar stays clean. The
    louder ContributionBanner still owns the pre-unlock deadline story; this is the gentle
    always-there cue after that banner earns its retirement. */
-function DataProgressChip({ contrib, role }) {
-  if (!contrib || role === "viewer") return null;
+function DataProgressChip({ contrib, role, platformAdmin }) {
+  // staff org carries no benchmark data by design — a 0% nudge there is noise
+  if (!contrib || role === "viewer" || platformAdmin) return null;
   const pct = Math.round(contrib.core_pct || 0);
   if (pct >= 100) return null;
   const c = 2 * Math.PI * 7;
