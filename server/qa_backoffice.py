@@ -123,13 +123,27 @@ check("B1 staff /api/me carries platform_admin", st == 200 and bool(me["user"].g
 st, h = api(staff, "/api/admin/health")
 check("B2 health: counts+storage+modes present", st == 200 and
       all(k in h for k in ("counts", "storage", "modes", "uptime_seconds")), list(h))
-# users floor is the STRUCTURAL minimum (Thornbridge's 3 demo accounts + the
-# staff admin = 4): the old >=8 counted the signup-era artefact orgs deleted
-# under R4/R4a/R4b (2026-08-08) — a floor that encodes deleted fixtures fails
-# on the ruling executing, not on a defect.
-check("B3 health counts sane (orgs>=220, users>=4, questions>0)",
-      h["counts"]["orgs_total"] >= 220 and h["counts"]["users"] >= 4
-      and h["counts"]["questions_active"] > 0, h["counts"])
+# Commit K (ruled 2026-08-08): the users floor DERIVES from the expected world —
+# the staff org's users + the Thornbridge demo org's users, COUNTED LIVE at gate
+# start. >=8 became >=4 when fixtures were deleted; a threshold hand-edited
+# downward at every deletion eventually asserts nothing. Derived, the next
+# deletion of anything OUTSIDE the expected set passes honestly, and deleting a
+# demo or staff account fails loudly.
+_idc = sqlite3.connect("file:%s?mode=ro" % IDB, uri=True); _idc.row_factory = sqlite3.Row
+_demo = _idc.execute("SELECT org_id FROM users WHERE email=?", (ORG_ADMIN[0],)).fetchone()
+_idc.close()
+if _demo is None:
+    check("B3 expected-world derivation (demo admin resolvable identity-side)", False,
+          ORG_ADMIN[0])
+    EXPECTED_MIN_USERS = 10**9   # force B3 to fail loudly rather than assert nothing
+else:
+    EXPECTED_MIN_USERS = raw.execute(
+        "SELECT COUNT(*) c FROM users WHERE org_id=? OR org_id IN "
+        "(SELECT org_id FROM orgs WHERE source='staff')", (_demo["org_id"],)).fetchone()["c"]
+check("B3 health counts sane (orgs>=220, users>=derived %d, questions>0)" % EXPECTED_MIN_USERS,
+      h["counts"]["orgs_total"] >= 220 and h["counts"]["users"] >= EXPECTED_MIN_USERS
+      and h["counts"]["questions_active"] > 0,
+      dict(h["counts"], derived_floor=EXPECTED_MIN_USERS))
 st, cfg = api(staff, "/api/admin/config")
 check("B4 config inventory served", st == 200 and len(cfg["config"]) >= 20, len(cfg.get("config", [])))
 

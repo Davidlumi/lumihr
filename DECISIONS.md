@@ -14867,3 +14867,16 @@ SINGLE-COPY today (retain-1 on-box, no S3 layer exercised, presplit dead) — th
 R1e item now states plainly that it is not done until one restore from S3 has
 actually been performed; a restore never performed is not a backup, which is how
 the presplit copy died.
+
+## 2026-08-08 — Commit K: qa_backoffice B3 derives its floor from the expected world
+
+`users >= 8` became `>= 4` when the signup-era fixtures were deleted — correct that
+day, but a threshold hand-edited downward at every deletion eventually asserts
+nothing. B3 now DERIVES its floor at gate start: the Thornbridge demo org (resolved
+identity-side from the gate's own ORG_ADMIN constant) plus the staff org, users
+counted live (derive-don't-hardcode applies to gate thresholds as much as to book
+counts — David's K confirmation, cited in the gate comment). If the demo admin
+cannot be resolved the derivation itself FAILS as a check and the floor is forced
+impossibly high — the gate fails loudly rather than asserting nothing. In-suite:
+derived floor 5, world 6, PASS honestly; deleting a demo/staff account now fails
+loudly, deleting anything outside the expected set passes without an edit.
