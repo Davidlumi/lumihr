@@ -5172,12 +5172,17 @@ NOTIFY_EMAIL = os.environ.get("LUMI_NOTIFY_EMAIL", "hello@lumihr.co.uk")
 BASE_URL = os.environ.get("LUMI_BASE_URL", "http://localhost:8060").rstrip("/")
 
 
-def send_notification(subject, body, to=None):
+def send_notification(subject, body, to=None, log_body=None):
     """Best-effort email. SMTP isn't configured in this environment, so this
     logs to console like every other outbound mail; when LUMI_SMTP_HOST is set
     it sends for real with no other changes. Never raises — the stored row is
     the source of truth. `to` defaults to the ops inbox (NOTIFY_EMAIL) for
-    internal alerts; member digests pass the member's address."""
+    internal alerts; member digests pass the member's address.
+
+    PH-PROV-1f: `log_body` is the REDACTED body for every console/log path
+    (SMTP-unset fallback AND the send-failure print). A caller whose body
+    carries a bearer (invite/reset link) passes a digest-bearing log_body so
+    the bearer never lands in a log; the real body still goes to SMTP."""
     recipient = to or NOTIFY_EMAIL
     host = os.environ.get("LUMI_SMTP_HOST")
     if host:
@@ -5199,9 +5204,11 @@ def send_notification(subject, body, to=None):
                 smtp.send_message(msg)
             return "sent"
         except Exception as e:
-            print("[lumi] EMAIL SEND FAILED (%s) — request is stored regardless:\n%s\n%s" % (e, subject, body))
+            print("[lumi] EMAIL SEND FAILED (%s) — request is stored regardless:\n%s\n%s"
+                  % (e, subject, log_body if log_body is not None else body))
             return "failed"
-    print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n" % (recipient, subject, body))
+    print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n"
+          % (recipient, subject, log_body if log_body is not None else body))
     return "logged"
 
 
@@ -5359,6 +5366,7 @@ async def admin_orgs(request: Request):
             # from a staff list view, unlike org_unlocked().
             "unlocked": bool(o["insights_unlocked_at"]) or bool(o["submission_complete"]),
             "deactivated": bool(o["deactivated_at"]),
+            "deactivated_reason": o["deactivated_reason"],
             "lifecycle": _org_lifecycle(conn, o),
         })
     return {"orgs": out, "total": len(out)}
@@ -6036,6 +6044,10 @@ async def admin_org_invite(org_id: str, request: Request):
         prior = []
     link = "%s/app#/invite/%s" % (BASE_URL, token)
     org_name = (identity.org_display(org_id) or {}).get("name") or "your organisation"
+    # PH-PROV-1f: the console/log fallback carries a DIGEST, never the link —
+    # the API response below already hands the operator the link directly, so
+    # the logged copy served no one and exposed a live bearer (PH-PROV-1d's
+    # defect class). The real email body (SMTP path) still carries the link.
     send_notification(
         "You've been invited to lumi",
         "Hello,\n\nThe lumi team has invited you to join %s on lumi — the UK reward "
@@ -6043,7 +6055,10 @@ async def admin_org_invite(org_id: str, request: Request):
         "The link expires in %d days. If you weren't expecting this, you can ignore "
         "this email.\n\n— lumi · UK reward benchmarking"
         % (org_name, ROLE_LABELS.get(role, role), link, auth_lib.INVITE_TTL_DAYS),
-        to=email)
+        to=email,
+        log_body="[provisioning invite — link withheld from logs (PH-PROV-1f); "
+                 "token sha256[:12]=%s; the link was returned to the console operator "
+                 "in the API response]" % hashlib.sha256(token.encode()).hexdigest()[:12])
     # the email itself stays out of the reward-store audit row (Phase-1 split);
     # the invite's identity half already records it, org-scoped. Superseded
     # tokens appear as sha256[:12] digests — the PH-PROV-1d convention: the
@@ -6075,9 +6090,26 @@ async def admin_invite_revoke(token: str, request: Request):
 
 # ----- soft-deactivate (ACCESS gates only — nothing is deleted, contributed ---
 # ----- answers stay in the pool; retire-never-delete) -------------------------
+def _suspension_reason(body):
+    """PH-PAY-3: every suspension carries WHY — a bare timestamp couldn't tell
+    'unpaid' from 'sole-admin recovery in progress', which need opposite
+    operator responses. Required, short, and kept out of the identity space
+    (name the situation, not a person)."""
+    reason = (body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(400, "Give a reason for the suspension — it's what tells the "
+                                 "next operator whether this is e.g. 'unpaid invoice' or "
+                                 "'sole-admin recovery in progress' (opposite responses).")
+    if len(reason) > 200:
+        raise HTTPException(400, "Keep the reason under 200 characters — it's a label for "
+                                 "the console, not a case file.")
+    return reason
+
+
 @app.post("/api/admin/users/{user_id}/deactivate")
 async def admin_user_deactivate(user_id: str, request: Request):
     staff = require_platform_admin(request)
+    reason = _suspension_reason(await _json(request))
     conn = get_conn()
     row = conn.execute("SELECT platform_admin, disabled_at FROM users WHERE user_id=?",
                        (user_id,)).fetchone()
@@ -6087,10 +6119,11 @@ async def admin_user_deactivate(user_id: str, request: Request):
         raise HTTPException(400, "Staff accounts can't be deactivated from the console.")
     if row["disabled_at"]:
         raise HTTPException(400, "That account is already deactivated.")
-    conn.execute("UPDATE users SET disabled_at=datetime('now') WHERE user_id=?", (user_id,))
+    conn.execute("UPDATE users SET disabled_at=datetime('now'), disabled_reason=? "
+                 "WHERE user_id=?", (reason, user_id))
     conn.commit()
     n = identity.delete_sessions_for_user(user_id)
-    _audit(staff, "user.deactivate", "user", user_id, {"sessions_revoked": n})
+    _audit(staff, "user.deactivate", "user", user_id, {"sessions_revoked": n, "reason": reason})
     return {"ok": True, "sessions_revoked": n}
 
 
@@ -6103,7 +6136,10 @@ async def admin_user_reactivate(user_id: str, request: Request):
         raise HTTPException(404, "Unknown user")
     if not row["disabled_at"]:
         raise HTTPException(400, "That account isn't deactivated.")
-    conn.execute("UPDATE users SET disabled_at=NULL WHERE user_id=?", (user_id,))
+    # reason cleared with the state (it describes the CURRENT suspension only;
+    # the audit log keeps the history)
+    conn.execute("UPDATE users SET disabled_at=NULL, disabled_reason=NULL WHERE user_id=?",
+                 (user_id,))
     conn.commit()
     _audit(staff, "user.reactivate", "user", user_id)
     return {"ok": True}
@@ -6116,6 +6152,7 @@ async def admin_org_deactivate(org_id: str, request: Request):
     — profile, answers, history — are untouched, and reactivation restores
     access exactly as it was."""
     staff = require_platform_admin(request)
+    reason = _suspension_reason(await _json(request))
     conn = get_conn()
     row = conn.execute("SELECT source, deactivated_at FROM orgs WHERE org_id=?",
                        (org_id,)).fetchone()
@@ -6126,13 +6163,14 @@ async def admin_org_deactivate(org_id: str, request: Request):
                                  "the console out of itself.")
     if row["deactivated_at"]:
         raise HTTPException(400, "That organisation is already deactivated.")
-    conn.execute("UPDATE orgs SET deactivated_at=datetime('now') WHERE org_id=?", (org_id,))
+    conn.execute("UPDATE orgs SET deactivated_at=datetime('now'), deactivated_reason=? "
+                 "WHERE org_id=?", (reason, org_id))
     conn.commit()
     members = [r["user_id"] for r in
                conn.execute("SELECT user_id FROM users WHERE org_id=?", (org_id,))]
     revoked = sum(identity.delete_sessions_for_user(u) for u in members)
     _audit(staff, "org.deactivate", "org", org_id,
-           {"members": len(members), "sessions_revoked": revoked})
+           {"members": len(members), "sessions_revoked": revoked, "reason": reason})
     return {"ok": True, "members": len(members), "sessions_revoked": revoked}
 
 
@@ -6145,7 +6183,8 @@ async def admin_org_reactivate(org_id: str, request: Request):
         raise HTTPException(404, "Unknown organisation")
     if not row["deactivated_at"]:
         raise HTTPException(400, "That organisation isn't deactivated.")
-    conn.execute("UPDATE orgs SET deactivated_at=NULL WHERE org_id=?", (org_id,))
+    conn.execute("UPDATE orgs SET deactivated_at=NULL, deactivated_reason=NULL "
+                 "WHERE org_id=?", (org_id,))
     conn.commit()
     _audit(staff, "org.reactivate", "org", org_id)
     return {"ok": True}
@@ -6162,8 +6201,8 @@ async def admin_org_detail(org_id: str, request: Request):
     o = dict(o)
     ident = identity.org_display(org_id)
     urows = conn.execute(
-        "SELECT user_id, role, platform_admin, created_at, disabled_at FROM users "
-        "WHERE org_id=? ORDER BY created_at", (org_id,)).fetchall()
+        "SELECT user_id, role, platform_admin, created_at, disabled_at, disabled_reason "
+        "FROM users WHERE org_id=? ORDER BY created_at", (org_id,)).fetchall()
     # org-scoped identity batch (capped at 200 — the contract's org-sized shape).
     uids = [r["user_id"] for r in urows][:200]
     idents = identity.user_display_batch(uids)
@@ -6176,6 +6215,7 @@ async def admin_org_detail(org_id: str, request: Request):
             "email": d.get("email"), "display_name": d.get("display_name"),
             "active_sessions": len(identity.sessions_for_user(r["user_id"])),
             "disabled_at": r["disabled_at"],
+            "disabled_reason": r["disabled_reason"],
         })
     terms = []
     for t in conn.execute(
@@ -6214,6 +6254,7 @@ async def admin_org_detail(org_id: str, request: Request):
             "insights_unlocked_at": o["insights_unlocked_at"],
             "unlocked_release": o["unlocked_release"], "default_cut": o["default_cut"],
             "deactivated_at": o["deactivated_at"],
+            "deactivated_reason": o["deactivated_reason"],
             "lifecycle": _org_lifecycle(conn, o),
         },
         "users": users, "terms": terms, "counts": counts,
@@ -6236,8 +6277,8 @@ async def admin_user_lookup(request: Request):
         return {"found": False}
     conn = get_conn()
     acct = conn.execute(
-        "SELECT role, platform_admin, created_at, disabled_at FROM users WHERE user_id=?",
-        (ident["user_id"],)).fetchone()
+        "SELECT role, platform_admin, created_at, disabled_at, disabled_reason "
+        "FROM users WHERE user_id=?", (ident["user_id"],)).fetchone()
     org_ident = identity.org_display(ident["org_id"])
     sessions = identity.sessions_for_user(ident["user_id"])
     return {"found": True, "user": {
@@ -6248,6 +6289,7 @@ async def admin_user_lookup(request: Request):
         "platform_admin": bool(acct["platform_admin"]) if acct else False,
         "created_at": acct["created_at"] if acct else None,
         "disabled_at": acct["disabled_at"] if acct else None,
+        "disabled_reason": acct["disabled_reason"] if acct else None,
         "active_sessions": len(sessions),
         "sessions": sessions,      # created/expires only — tokens never leave identity.py
     }}

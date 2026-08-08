@@ -646,6 +646,12 @@ def init_schema(conn=None):
                 # who can cross tenants in the staff console. Defaults to 0 so every
                 # existing user stays a normal tenant member.
                 "ALTER TABLE users ADD COLUMN platform_admin INTEGER NOT NULL DEFAULT 0",
+                # PH-PAY-3 (2026-08-05): WHY a membership/account is suspended — the
+                # bare timestamp couldn't tell "unpaid" from "sole-admin recovery in
+                # progress", which need opposite operator responses. Set at
+                # deactivation, cleared at reactivation; the audit log keeps history.
+                "ALTER TABLE orgs ADD COLUMN deactivated_reason TEXT",
+                "ALTER TABLE users ADD COLUMN disabled_reason TEXT",
                 # metric-suggestion triage: staff review workflow over the existing
                 # write-only suggestions inbox (status new -> reviewed -> accepted|rejected)
                 "ALTER TABLE metric_suggestions ADD COLUMN reviewed_by TEXT",
