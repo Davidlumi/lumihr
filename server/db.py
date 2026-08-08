@@ -662,6 +662,13 @@ def init_schema(conn=None):
                 # second one). clock_start is never rewritten; the effective
                 # window derives from clock_start + suspended_seconds.
                 "ALTER TABLE orgs ADD COLUMN suspended_seconds INTEGER NOT NULL DEFAULT 0",
+                # R6-mech (2026-08-08): the EXIT state — a timestamp DISTINCT from
+                # deactivation (a state that triggers irreversible deletion must
+                # not be expressible as a typo in a free-text field). Set only by
+                # the countersigned exit action (member_exit.py); pool removal
+                # keys off it at day 0; physical deletion at exited_at + 30d
+                # grace; un-exit inside grace is its own guarded, audited action.
+                "ALTER TABLE orgs ADD COLUMN exited_at TEXT",
                 # metric-suggestion triage: staff review workflow over the existing
                 # write-only suggestions inbox (status new -> reviewed -> accepted|rejected)
                 "ALTER TABLE metric_suggestions ADD COLUMN reviewed_by TEXT",

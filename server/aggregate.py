@@ -765,10 +765,19 @@ def build_payload(q, cuts, answers_for_q):
 # --------------------------------------------------------------- snapshot ---
 
 def load_answers(conn, snapshot_id):
-    """{question_id: {(org_id, matrix_row_id): value}}"""
+    """{question_id: {(org_id, matrix_row_id): value}}
+
+    POOL REMOVAL AT DAY 0 (R6/R6-mech, 2026-08-08): an EXITED org's answers
+    leave every future computation the day exited_at is stamped — physical
+    deletion follows at grace end, but the pool never waits for it. Exit is
+    keyed off orgs.exited_at, DISTINCT from suspension (deactivated_at), which
+    STAYS_IN_POOL by the PH-PAY-1 §B ruling — do not "tidy" these into one
+    filter."""
     out = defaultdict(dict)
     for r in conn.execute(
-            "SELECT org_id, question_id, matrix_row_id, value FROM answers WHERE snapshot_id=?",
+            "SELECT a.org_id, a.question_id, a.matrix_row_id, a.value FROM answers a "
+            "JOIN orgs o ON o.org_id = a.org_id "
+            "WHERE a.snapshot_id=? AND o.exited_at IS NULL",
             (snapshot_id,)):
         out[r["question_id"]][(r["org_id"], r["matrix_row_id"] or "")] = r["value"]
     return out

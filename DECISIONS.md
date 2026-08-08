@@ -14767,3 +14767,48 @@ MATCH, retain-1 rotation performed. Post-write: aggregate re-run (344 payloads),
 suite 14/14 ALL GREEN — one gate floor updated honestly (qa_backoffice B3
 users>=8 encoded the deleted fixtures; now >=4, the structural minimum, comment
 cites this ruling).
+
+## 2026-08-08 — Commit G (R6 + R6-mech): the exit state machine — pool removal at day 0, deletion only after grace, and the one timer that destroys data ships guarded
+
+**R6-mech recorded with its rejections.** ORG_EXIT_STATE = `orgs.exited_at` — a
+timestamp DISTINCT from deactivation. (c) magic reason string REJECTED: a state that
+triggers irreversible deletion must not be expressible as a typo. (b) enum retrofit
+REJECTED: the free-text reason shipped for operator legibility stays the human note;
+grace arithmetic needs a timestamp either way, so (b)/(c) both end up carrying a
+string AND a date — two sources of truth for one state.
+
+**The machine (server/member_exit.py, countersigned CLI — exit is never a button).**
+`--exit ORG_ID --reason`: sets exited_at + suspends access via the EXISTING
+mechanism (deactivated_at + "exited: <note>" as the human note), revokes sessions,
+audits org.exit. POOL REMOVAL IS DAY 0: aggregate.load_answers, the peer-twin
+candidate pool and group counts all now carry `exited_at IS NULL` — with the comment
+that SUSPENSION (deactivated_at) STAYS IN POOL by the PH-PAY-1 §B ruling, so nobody
+"tidies" the two states into one filter. `--un-exit`: inside grace only, clears
+exited_at ONLY (own audit row org.unexit); the org comes back SUSPENDED and
+reactivation stays a separate deliberate staff action; past grace it refuses —
+restoration becomes a David-level decision. `--sweep`: GRACE_WINDOW = 30 days;
+REPORT-ONLY BY DEFAULT ("would delete X on Y"); real deletion requires
+LUMI_EXIT_DELETION=on in the environment AND --write --confirmed-by-david — the
+only timer in the system that destroys data carries the guard the doctrine would
+otherwise put on the decision (verified: ripe org + both CLI flags WITHOUT the env
+still refuses).
+
+**Grace-end deletion implements the R6 parameters.** terms_acceptances RETAINED
+de-identified — per-user RANDOM OPAQUE TOKEN, mapping destroyed by never being
+stored (R6 §6.3: a plain hash is dictionary-reversible at this population size;
+org_id/kind/version kept); pulse_responses DELETED (fact §6.4 established first:
+org-keyed, no user column — 110 rows / 13 orgs); pulse_launch_orders and
+admin_audit_log RETAINED, STATED in the audit detail and the sweep output (§6.6 —
+never quiet); metric suggestions/requests DE-ATTRIBUTED (§6.7's name-match flagging
+rides the tool); already-served aggregates never retro-edited (§6.5 — deletion
+changes future computation only, which is also what day-0 pool removal means).
+
+**Verified on a throwaway (G1–G9 + fixture2).** Dry-run writes nothing; exit
+removes the org from the aggregation pool the same day (402-answer fixture org:
+absent from load_answers post-exit); un-exit restores exited_at=NULL while leaving
+the suspension; ripe sweep reports and refuses twice (no env; env-less flags);
+enabled sweep deletes both stores (402 answers + 421 history + 34 events + 63
+signal rows + org) with recon PASS both directions; fixture2 (a user + two terms
+rows) proves the de-identification path NON-VACUOUSLY: both terms rows retained
+under `exited-<random>` with the user row gone — the first fixture ran that path
+vacuously (0 users) and is recorded as such. Suite 14/14 ALL GREEN post-build.

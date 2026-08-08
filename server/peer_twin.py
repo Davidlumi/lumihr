@@ -52,7 +52,8 @@ def compute_twin(conn, org_id, force=False):
     sims = []
     candidates = conn.execute(
         "SELECT org_id, similarity_vector_json, registry_json FROM orgs "
-        "WHERE similarity_vector_json IS NOT NULL AND org_id != ? AND submission_complete=1",
+        "WHERE similarity_vector_json IS NOT NULL AND org_id != ? AND submission_complete=1 "
+        "AND exited_at IS NULL",   # R6: exited orgs leave the twin pool at day 0 (suspension stays)
         (org_id,)).fetchall()
     for c in candidates:
         sims.append((cosine(my_vec, uj(c["similarity_vector_json"])), c["org_id"],
@@ -167,7 +168,9 @@ def group_org_ids(conn, criteria):
     """Org ids matching ALL criteria fields (OR within a field's value list),
     among organisations contributing to the benchmark. Server-side only."""
     out = set()
-    for row in conn.execute("SELECT * FROM orgs WHERE submission_complete=1").fetchall():
+    # R6: exited orgs leave group counts at day 0; SUSPENDED orgs STAY (PH-PAY-1 §B)
+    for row in conn.execute("SELECT * FROM orgs WHERE submission_complete=1 "
+                            "AND exited_at IS NULL").fetchall():
         reg = uj(row["registry_json"], {}) or {}
         ok = True
         for field, values in (criteria or {}).items():
