@@ -512,10 +512,10 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       <div class="pack-page">
         <${PackSecHead} num=${PN.evid} title=${"The evidence — where " + p.organisation.name + " leads"} />
         <p>${n.strengths_narrative}</p>
-        <${PackTable} rows=${p.strengths} good=${true} />
+        <${PackTable} rows=${p.strengths} good=${true} max=${8} />
         <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Largest gaps to the market</h2>
         <p>${n.gaps_narrative}</p>
-        <${PackTable} rows=${p.gaps} good=${false} />
+        <${PackTable} rows=${p.gaps} good=${false} max=${8} />
         ${n.evidence_commentary ? html`<p style=${{ fontSize: "var(--fs-label)" }}>${n.evidence_commentary}</p>` : null}
         <${Footer} page=${String(PN.evid)} />
       </div>
@@ -538,8 +538,14 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
     </div>`;
 };
 
-function PackTable({ rows, good }) {
+function PackTable({ rows, good, max }) {
   if (!rows || !rows.length) return html`<p class="caption">None identified in this peer group.</p>`;
+  // fit budget (print): a .pack-page is a fixed 296mm sheet with overflow clipped —
+  // slicing here with an honest remainder line beats silently losing bottom rows
+  // (and the pinned confidential footer) to the clip.
+  const shown = max && rows.length > max ? rows.slice(0, max) : rows;
+  const cut = rows.length - shown.length;
+  rows = shown;
   // quartile/tail columns render only when the pack carries them (2026-07-02, WTW/Mercer
   // percentile-spread convention; Sprint-2 graduated display) — packs stored earlier keep
   // the old 5-column layout. Masked statistics (thin cuts) show as '—' with the legend.
@@ -568,6 +574,7 @@ function PackTable({ rows, good }) {
           </tr>`; })}
       </tbody>
     </table>
+    ${cut > 0 ? html`<p class="caption" style=${{ marginTop: "var(--s1)" }}>+ ${cut} more metric${cut === 1 ? "" : "s"} — the full set is in the evidence CSV and the lumi dashboard.</p>` : null}
     ${masked ? html`<p class="caption bp-masknote">— = sample too small for that statistic (quartiles need n≥7, P10/P90 need n≥10; nothing below n=5 is ever shown).</p>` : null}`;
 }
 window.PackTable = PackTable;

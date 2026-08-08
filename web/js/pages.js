@@ -1963,6 +1963,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const dismissIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
     setStatus(sid, "dismissed");
     sigToast("Dismissed — recover any time from the Dismissed folder", () => setStatus(sid, null)); }); };
+  const unsave = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
+    setStatus(sid, null);
+    sigToast("Removed from saved — back in your feed — " + sigName(s), () => setStatus(sid, "saved")); }); };
 
   // ---- folder-view verbs (same pattern: exit + toast-borne Undo)
   const moveTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
@@ -2007,8 +2010,12 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const cntFolder = name => Object.keys(assign).filter(k => assign[k] === name && present.has(k)).length;
   // (stubFor retired 2026-07-10, David: toast instead of stub rows — an actioned card simply
   // leaves the feed; the Undo lives on the toast, so no placeholder row holds its slot.)
-  const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed" && !assign[sidOf(s)]);
-  const ordKey = s => [s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
+  // quick-saves from the home briefing / metric pages (status "saved", no folder yet)
+  // surface in a built-in Saved view — a star anywhere is never invisible here; filing
+  // it to a named folder from that view keeps the one-vocabulary promise.
+  const savedItems = all.filter(s => s.status === "saved" && !assign[sidOf(s)]);
+  const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed" && s.status !== "saved" && !assign[sidOf(s)]);
+  const ordKey = s => [s.status === "priority" ? 0 : 1, s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
   feedItems.sort((a, b) => { const ka = ordKey(a), kb = ordKey(b);
     for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; });
   const feedN = feedItems.length;
@@ -2019,8 +2026,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const viewItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
     : v.kind === "snoozed" ? snoozedItems
     : v.kind === "dismissed" ? dismissedItems
+    : v.kind === "saved" ? savedItems
     : feedItems;
-  const emptyLine = v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.'
+  const emptyLine = v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
+    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.' 
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
     : "Everything is filed — every signal is saved to a folder, snoozed or dismissed.";
@@ -2037,6 +2046,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <span class="brf-cap-name">${s.name || s.label_short}</span>
         ${s.domain ? html`<span class="brf-cap-dom">· ${domainLabel(s.domain)}</span>` : null}
         ${s.new ? html`<span class="sig-new-tag">NEW</span>` : null}
+        ${s.status === "priority" ? html`<span class="sfold-prio" title="Prioritised — ranks first in your feed"><${Icon} name="pin" size=${10} /> priority</span>` : null}
         ${s.risk_framed ? html`<span class="brf-shield"><${Icon} name="shield" size=${10} /> risk</span>` : null}
         ${v.kind === "snoozed" && s.snooze_until ? html`<span class="sfold-snz"><${Icon} name="clock" size=${10} /> ${snoozeReturn(s.snooze_until)}</span>` : null}
       </div>
@@ -2058,6 +2068,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         : v.kind === "folder" ? html`
           <${SigFolderMenu} label="Move to…" folders=${folders} exclude=${v.name} onPick=${n => moveTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unfolder(s)}>Remove from folder</button>`
+        : v.kind === "saved" ? html`
+          <${SigFolderMenu} label="File to folder…" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <button type="button" class="brf-verb" onClick=${() => unsave(s)}>Remove from saved</button>`
         : v.kind === "snoozed" ? html`
           <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`
         : html`
@@ -2098,6 +2111,8 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
               onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
             ${isFold(f) ? html`<${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />` : null}
           </span>`)}
+          ${savedItems.length ? html`<button type="button" class=${"sfold-pill" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
+            onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved <b class="num">${savedItems.length}</b></button>` : null}
           <button type="button" class=${"sfold-pill" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
             onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
           <button type="button" class=${"sfold-pill" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
@@ -2924,6 +2939,18 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     next.splice(idx, 0, moved);
     setDrag(null); persist(next);
   };
+  // keyboard path for reorder (WCAG 2.1.1) — the drag handle is a real button;
+  // arrows move the card one slot, the live region reports the new position.
+  const moveBy = (i, delta) => {
+    const j = i + delta;
+    if (j < 0 || j >= layout.length) return;
+    const next = [...layout];
+    const [m] = next.splice(i, 1);
+    next.splice(j, 0, m);
+    persist(next);
+    const el = document.getElementById("dash-reorder-live");
+    if (el) el.textContent = "Moved to position " + (j + 1) + " of " + next.length;
+  };
 
   const switchTo = async (id) => {
     if (id === activeId || busy) return;
@@ -3071,6 +3098,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
         body="Use the pin icon on any benchmark card — across Overview, Benchmark or Signals — and it lands here."
         action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
 
+      <div id="dash-reorder-live" class="sr-only" aria-live="polite"></div>
       <div class=${"bench-grid" + (busy ? " is-busy" : "")}>
         ${layout.map((slot, i) => {
           const c = cards[cardKey(slot)];
@@ -3084,7 +3112,13 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
               onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]}
               footTools=${html`
                 <button class="iconbtn" title=${slot.size === 2 ? "Single width" : "Double width"} aria-label="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
-                <span class="iconbtn" title="Drag to reorder" aria-label="Drag to reorder" style=${{ cursor: "grab" }}>⠿</span>`} />`}
+                <button class="iconbtn" title="Reorder — drag, or focus and use arrow keys"
+                  aria-label=${"Reorder card — position " + (i + 1) + " of " + layout.length + ". Use arrow keys to move."}
+                  style=${{ cursor: "grab" }}
+                  onKeyDown=${e => {
+                    if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); moveBy(i, -1); }
+                    else if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); moveBy(i, 1); }
+                  }}>⠿</button>`} />`}
           </div>`;
         })}
       </div>

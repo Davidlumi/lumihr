@@ -1181,6 +1181,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* new-since-last-seen markers */
 /* NEW badge sits inline at the start of the name line (vertical-aligned) so a
    new signal row stays the SAME height as the others — no eyebrow line. */
+.sfold-prio { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
+  font-weight: 700; color: var(--blue-deep); background: var(--blue-tint); border-radius: 5px;
+  padding: 1px var(--s1); vertical-align: middle; position: relative; top: -1px; }
 .sig-new-tag { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; color: #fff;
   background: var(--blue-bright); padding: 1px var(--s1); border-radius: 5px;
   display: inline-block; vertical-align: middle; position: relative; top: -1px;
