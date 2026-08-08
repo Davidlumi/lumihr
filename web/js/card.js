@@ -45,24 +45,24 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
   // both exports carry the card's CURRENT cut label + n (c is the override card when set)
   const exportMeta = () => ({
-    title: c.title, cutLabel: c.cut.label, n: c.n, window: collWindow, card: c,
+    title: c.title, cutLabel: c.cut.label, n: c.n, n_real: c.n_real, window: collWindow, card: c,
     suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
   });
   const doExport = async () => {
     const res = await exportCardPNG(ref.current, exportMeta(), "download");
-    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
+    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
   };
   const doCopy = async () => {
     // clipboard mode, with a graceful download fallback if the browser blocks
     // ClipboardItem or write() throws (permissions / focus)
     try {
       const res = await exportCardPNG(ref.current, exportMeta(), "clipboard");
-      if (res === "copied") toast(`Chart copied — labelled ${c.cut.label}, n=${c.n}`);
-      else if (res === "downloaded") toast(`Copy isn't available here — downloaded the chart instead (${c.cut.label}, n=${c.n})`);
+      if (res === "copied") toast(`Chart copied — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}`);
+      else if (res === "downloaded") toast(`Copy isn't available here — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})`);
       else toast("Nothing to export yet");
     } catch (e) {
       const res = await exportCardPNG(ref.current, exportMeta(), "download");
-      toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, n=${c.n})` : "Nothing to export yet");
+      toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})` : "Nothing to export yet");
     }
   };
   const share = () => {
@@ -81,7 +81,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${cardSignalPill(c, signal, readOnly)}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
-        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}
+        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "."}
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
         title=${c.suppressed ? "Protected — fewer than 5 organisations behind this figure, so there's no chart to open" : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
@@ -109,7 +109,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
             : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
         ${c.unbenchmarked && !c.practice ? html`
           <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">Unbenchmarked</span>` : null}
-        <span class="bench-n" title="The number of organisations behind this comparison">n=${c.n}</span>
+        <span class="bench-n" title=${"The number behind this comparison. " + COMPOSITION_DESC}>${compositionLabel(c.n, c.n_real)}</span>
         ${c.base ? html`
           <span class="caption base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies.">of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : null}
         <div class="card-tools no-print">
@@ -284,7 +284,7 @@ function humanSentence(c) {
     const live = c.matrix_rows.filter(r => !r.suppressed && r.block && r.block.modal_label);
     if (live.length) {
       const r0 = live[0];
-      return { lead: `Level by level, the most common peer answer is shown below — e.g. ${r0.label}: “${r0.block.modal_label}” (${r0.block.modal_pct}% of ${r0.block.n} organisations).`, support: null };
+      return { lead: `Level by level, the most common peer answer is shown below — e.g. ${r0.label}: “${r0.block.modal_label}” (${r0.block.modal_pct}% of ${r0.block.n} ${compositionNoun(r0.block.n_real)}).`, support: null };
     }
   }
   if (!c.you && !c.readout && c.type !== "matrix") {
@@ -347,9 +347,9 @@ function multiSelectReadout(c) {
   const top = opts.reduce((a, b) => (b.pct > (a ? a.pct : -1) ? b : a), null);
   const mine = c.you ? c.you.labels.length : null;
   if (mine != null && top) {
-    return `You selected ${mine} of the ${opts.length} options tracked; the most common among similar organisations is “${top.label}” (${Math.round(top.pct)}%, n=${c.n}).`;
+    return `You selected ${mine} of the ${opts.length} options tracked; the most common among ${c.n_real > 0 ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
   }
-  if (top) return `The most common selection among similar organisations is “${top.label}” (${Math.round(top.pct)}%, n=${c.n}).`;
+  if (top) return `The most common selection among ${c.n_real > 0 ? "similar organisations" : "the reference panel"} is “${top.label}” (${Math.round(top.pct)}%, ${compositionLabel(c.n, c.n_real)}).`;
   return null;
 }
 
@@ -692,7 +692,7 @@ window.CardDetail = function ({ card: c, onClose }) {
       <div class="row" style=${{ marginTop: "var(--s3)" }}>
         <${Chip}>${c.subpower || c.superpower}<//>
         <${Chip}>${c.category}<//>
-        <${Chip}>peer group: ${c.cut.label}, n=${c.n}<//>
+        <${Chip}>peer group: ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}<//>
       </div>
       <p class="caption" style=${{ marginTop: "var(--s3)" }}>
         Percentiles use linear interpolation across all valid market answers; anything based on fewer

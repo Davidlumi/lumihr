@@ -349,7 +349,12 @@ def _email_allowed(conn, user_id, alert):
 
 def _digest_subject(n, freq):
     word = {"daily": "today", "weekly": "this week"}.get(freq, "recently")
-    return "lumi: %d thing%s moved against your peers %s" % (n, "" if n == 1 else "s", word)
+    # P1-C: the framing names the comparison object. With no real members in
+    # the pool, "your peers" would be the digest making the false composition
+    # claim in the inbox subject line — the most-read string in the product.
+    from aggregate import real_org_ids
+    against = "your peers" if real_org_ids() else "the reference panel"
+    return "lumi: %d thing%s moved against %s %s" % (n, "" if n == 1 else "s", against, word)
 
 
 def _digest_body(org_name, events, settings_link, overview_link):
@@ -358,7 +363,9 @@ def _digest_body(org_name, events, settings_link, overview_link):
     worth = [render_event(e) for e in events if e["event_kind"] != "cleared"]
     good = [render_event(e) for e in events if e["event_kind"] == "cleared"]
     lines = ["Hello %s," % org_name, "",
-             "Since we last wrote, here's what changed in how you sit against your peers.",
+             "Since we last wrote, here's what changed in how you sit against %s." % (
+                 "your peers" if __import__("aggregate").real_org_ids() else
+                 "the reference panel (modelled from published UK survey data)"),
              "These are pointers, not advice — open lumi to see the full picture.", ""]
     if worth:
         lines.append("WORTH A LOOK")

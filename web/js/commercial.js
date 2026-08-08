@@ -402,7 +402,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 A different way of doing things is not a gap to close.</p>
               ${(b.rare_stances || []).map(r => html`
                 <p key=${r.label} class="caption pack-prac-rare">— ${r.label}: one of ${r.orgs} orgs (${r.share_pct}%)
-                  — “${r.stance}” · n=${r.n}</p>`)}
+                  — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</p>`)}
             </div>`;
         })() : p.practice_prevalence && p.practice_prevalence.pool ? (() => {
           const pp = p.practice_prevalence;

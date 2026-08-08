@@ -885,6 +885,8 @@ def run_snapshot(snapshot_id=1, verbose=True):
     set_meta("peer_pool", {
         "snapshot_id": snapshot_id,
         "responding_orgs": len(responding),
+        # P1-C: pool-level composition for chips that cite the whole pool
+        "real_orgs": len(set(responding) & real_org_ids(conn)),
         "classified_orgs": len({o for s in cuts["by_industry"].values() for o in s}),
         "industries": {k: len(v) for k, v in sorted(cuts["by_industry"].items())},
         "fte_bands": {k: len(v) for k, v in sorted(cuts["by_fte_band"].items())},

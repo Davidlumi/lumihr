@@ -571,7 +571,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   wrap.innerHTML = `
     <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
     <text x="${PAD}" y="${PAD + 6}" font-family="Helvetica, Arial" font-size="13" font-weight="700" fill="#211B26">${esc(meta.title)}</text>
-    <text x="${PAD}" y="${PAD + 24}" font-family="Helvetica, Arial" font-size="10" fill="#5B5560">${esc(meta.cutLabel)} · n=${meta.n}${meta.suffix ? " · " + esc(meta.suffix) : ""}</text>
+    <text x="${PAD}" y="${PAD + 24}" font-family="Helvetica, Arial" font-size="10" fill="#5B5560">${esc(meta.cutLabel)} · ${esc(compositionLabel(meta.n, meta.n_real))}${meta.suffix ? " · " + esc(meta.suffix) : ""}</text>
     <line x1="${PAD}" y1="${sepY}" x2="${W - PAD}" y2="${sepY}" stroke="#E7E2DA" stroke-width="1"/>
     <g transform="translate(${PAD}, ${logoY}) scale(${lscale})">${LUMI_EXPORT_LOGO}</g>
     <text x="${W - PAD}" y="${footY}" text-anchor="end" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">${src}</text>`;

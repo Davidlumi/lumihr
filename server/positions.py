@@ -290,7 +290,7 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         "polarity": pol,
         "favourable": favourable,           # good | mid | bad | None(neutral)
         "distance": (rank - 50.0) * (1 if pol == "higher_is_better" else -1 if pol == "lower_is_better" else 0),
-        "n": blk["n"],
+        "n": blk["n"], "n_real": blk.get("n_real", 0),
         "p50": blk.get("p50"),
         "p50_display": fmt_value(blk.get("p50"), q.unit_block()) if kind == "value" else None,
         # additive display fields (board pack quartile columns, 2026-07-02; tails Sprint 2) —
@@ -575,7 +575,7 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
                     tot75 += impact
             rows_out.append({
                 "row_id": row["row_id"], "label": row["label"], "your_value": v,
-                "p50": blk.get("p50"), "p75": blk.get("p75"), "n": blk["n"],
+                "p50": blk.get("p50"), "p75": blk.get("p75"), "n": blk["n"], "n_real": blk.get("n_real", 0),
             })
         if not any_data or (round(tot50) == 0 and round(tot75) == 0):
             continue
@@ -647,7 +647,7 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
             "org_score": own_points,
             "peer_adoption_pct": adoption,
             "sector_adoption_pct": sector_adoption,
-            "n": blk["n"] if blk else 0,
+            "n": blk["n"] if blk else 0, "n_real": (blk.get("n_real", 0) if blk else 0),
             "suppressed": bool(is_suppressed(blk)),
             "gap": round(gap, 1) if gap is not None else None,
         })
@@ -784,7 +784,7 @@ def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, tw
                 "modal_answer": " + ".join(o["label"] for o in core),
                 "modal_share": min((o.get("pct") or 0) for o in core),
                 "is_modal": len(offered) == len(core),
-                "n": blk["n"], "cut_label": cut_label,
+                "n": blk["n"], "n_real": blk.get("n_real", 0), "cut_label": cut_label,
                 "routed_from_polarised": q.polarity in ("higher_is_better", "lower_is_better"),
                 "ms_band": "match" if len(offered) == len(core) else "common_alt" if offered else "rarer",
                 "ms_core_size": len(core), "ms_core_offered": len(offered),
@@ -821,7 +821,7 @@ def prevalence_items(org_id, cut, questions, payloads, org_answers, entitled, tw
             "your_answer": raw, "your_share": mine.get("pct"),
             "modal_answer": modal["label"], "modal_share": modal.get("pct"),
             "is_modal": mine["label"] == modal["label"],
-            "n": blk["n"], "cut_label": cut_label,
+            "n": blk["n"], "n_real": blk.get("n_real", 0), "cut_label": cut_label,
             "routed_from_polarised": polarised,
         })
     return out
@@ -895,7 +895,7 @@ def practice_bucket(questions, cfg, prev_items, org_answers, uncommon_pct):
         "rare_stances": [{
             "label": i["label"], "stance": i["your_answer"],
             "share_pct": round(i["your_share"] or 0),
-            "orgs": max(1, round((i["your_share"] or 0) * i["n"] / 100.0)), "n": i["n"],
+            "orgs": max(1, round((i["your_share"] or 0) * i["n"] / 100.0)), "n": i["n"], "n_real": i.get("n_real", 0),
         } for i in rare[:3]],
     }
 

@@ -15005,3 +15005,33 @@ new epoch; sweep4 normal diffing resumed, 0. Suite 14/14 ALL GREEN
 sweep has never run; weeks of engine changes accumulated). The first production
 sweep will emit them, rate-capped per user with roll-forward. Flagged for the
 deployment runbook's operator awareness, not silently absorbed.
+
+## 2026-08-08 — P1-C: composition shown wherever n is shown — closed by SEARCH, with one named exception
+
+ONE renderer each side: web `compositionLabel(n, n_real)` (core.js) + server
+`composition_label()` (app.py) — the ruled progression ("N · reference panel" /
+"N · R members + panel" / "N members"), first use per surface carrying the R-P1
+description (chip tooltip + aria; prose on pages). n_real THREADED end-to-end:
+every payload lift in app.py (13 sites incl. overview/teaser/reduced, share
+views, gap register, strategy capture, domain summary) and positions.py (6 item
+sites) carries n_real beside n; peer_pool meta gains real_orgs for pool-level
+chips; the board-pack ruler sub and BOTH CSV tables gain composition/n_real (a
+pack already sent cannot be relabelled — it now says the truth on generation
+day); the exported chart image bakes the label into its pixels; digest SUBJECT
+and body key their "against your peers" framing off composition (real 0 → "the
+reference panel" — the inbox subject line was the census's most-read string).
+
+**EXIT BY SEARCH, per amendment 0.5 — and the search earned its keep:** the
+census-list pass left ELEVEN survivors the search caught (export toasts ×5,
+metric one-pager header + hint + PDF cells, search-result caption, practice
+row in commercial.js, pulse results line). Ten fixed. **ONE DOCUMENTED
+EXCEPTION, by name:** pulses.js — pulse cohorts are opt-in survey responses,
+NEVER the reference panel; the benchmark chip's label would claim a provenance
+pulse responses don't have. Composition wording for PULSE surfaces needs its
+own ruling word (flagged for David); the plain n stays there until ruled, and
+the search's exception list has exactly this one entry. Final search state:
+0 uncomposed n-citations in web/js outside the named exception; 0 surviving
+"n=%d" strings server-side; 15,260/15,260 live served n-blocks carry n_real.
+Verified in the browser at v444: chips render "220 · reference panel" with the
+R-P1 description in the tooltip, console clean. Suite 14/14 ALL GREEN (run
+after the server-side threading; subsequent edits were web-only).

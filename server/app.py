@@ -773,7 +773,7 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         "unit": q.unit_block(),
         "polarity": q.polarity,
         "cut": {"dim": cut["dim"], "value": cut.get("value"), "label": cut_label},
-        "n": (blk or {}).get("n", 0),
+        "n": (blk or {}).get("n", 0), "n_real": (blk or {}).get("n_real", 0),
         "suppressed": bool(pos.is_suppressed(blk)),
         "movement": None,  # vs-last-period slot: populated once a second snapshot exists
         # firewall-reviewed market position (below/at/above), from the SAME Substance pool
@@ -1402,7 +1402,7 @@ async def pulse_commentary(pid: str, request: Request):
     payload = {
         "metric": entry["title"], "definition": q.definition or "",
         "cut_label": "the %s pulse cohort" % p["name"],
-        "n": blk.get("n"), "suppressed": bool(blk.get("suppressed")),
+        "n": blk.get("n"), "n_real": blk.get("n_real", 0), "suppressed": bool(blk.get("suppressed")),
         "polarity": q.polarity, "you": mine and mine[0], "percentile": None,
         "stance": None,
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
@@ -1536,7 +1536,7 @@ async def metric_trend(qid: str, request: Request):
         if blk.get("suppressed"):
             continue
         pt = {"snapshot_id": s["snapshot_id"], "period": s["collection_window"],
-              "release_id": s["release_id"], "n": blk.get("n")}
+              "release_id": s["release_id"], "n": blk.get("n"), "n_real": blk.get("n_real", 0)}
         if blk.get("p50") is not None:
             pt["p50"] = blk["p50"]
         elif (p.get("scores") or {}).get("all") and not (p["scores"]["all"] or {}).get("suppressed"):
@@ -1757,7 +1757,7 @@ async def questions_index(request: Request):
             "subpower": q.sub_power, "sub_power_order": q.sub_power_order,
             "type": q.type, "category": q.category,
             "locked": not entitled(q), "answered": qid in answered_q,
-            "n": (p.get("all") or {}).get("n", 0),
+            "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0),
         })
     return {"questions": out}
 
@@ -1802,7 +1802,7 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
                 "sub_power_order": q.sub_power_order, "type": q.type,
                 "category": q.category,
                 "cut": {"dim": cut["dim"], "value": cut.get("value"), "label": "All peers"},
-                "n": (p.get("all") or {}).get("n", 0), "reduced": True,
+                "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0), "reduced": True,
             })
             continue
         cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None,
@@ -1828,7 +1828,7 @@ async def single_benchmark(qid: str, request: Request):
                 "sub_power_order": q.sub_power_order, "type": q.type,
                 "category": q.category,
                 "cut": {"dim": "all", "value": None, "label": "All peers"},
-                "n": (p.get("all") or {}).get("n", 0), "reduced": True}
+                "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0), "reduced": True}
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
     card = assemble_card(q, p, org, org_answers_for(org), cut,
@@ -1898,7 +1898,7 @@ async def benchmark_batch(request: Request):
                           "sub_power_order": q.sub_power_order, "type": q.type,
                           "category": q.category,
                           "cut": {"dim": "all", "value": None, "label": "All peers"},
-                          "n": (p.get("all") or {}).get("n", 0), "reduced": True}
+                          "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0), "reduced": True}
             continue
         cards[qid] = assemble_card(q, p, org, answers, cut,
                                    {qid: tb.get(qid)} if tb else None, entitled)
@@ -3071,14 +3071,14 @@ async def gap_register_csv(request: Request):
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["Benchmark", "Category", "Type", "Practice / policy", "Tier",
-                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n"])
+                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n", "n_real"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
                     r["org_status"],
                     {"in_place": "In place", "partial": "Partially", "not_in_place": "Not in place"}.get(r.get("status"), "Not assessable"),
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
-                    r["gap"] if r["gap"] is not None else "", r["n"]])
+                    r["gap"] if r["gap"] is not None else "", r["n"], r.get("n_real", 0)])
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=lumi-gap-register.csv"})
 
@@ -3089,7 +3089,7 @@ async def gap_register_csv(request: Request):
 # export — one row per metric, numbers matching the cards exactly (same assemble_card
 # path), suppressed cells blank + suppressed=true so a small-cell distribution never leaks.
 BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value",
-                    "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"]
+                    "p10", "p25", "p50", "p75", "p90", "n", "n_real", "cut_label", "suppressed"]
 
 
 def _bench_csv_row(qid, q, card):
@@ -3113,7 +3113,7 @@ def _bench_csv_row(qid, q, card):
     else:
         stats = ["", "", "", "", ""]
     return [qid, q.display_title, q.sub_power, your_value,
-            *stats, card.get("n", 0), cut_label,
+            *stats, card.get("n", 0), card.get("n_real", 0), cut_label,
             "true" if suppressed else "false"]
 
 
@@ -3337,7 +3337,7 @@ async def analyst(request: Request):
                 lines.append("%s — %s" % (m["metric"], blk["readout"]))
             if blk.get("you_display") and blk.get("you_percentile") is not None:
                 chips.append({"label": m["metric"], "value": blk["you_display"],
-                              "sub": "P%d · All peers · n=%d" % (round(blk["you_percentile"]), blk.get("n", 0)),
+                              "sub": "P%d · All peers · %s" % (round(blk["you_percentile"]), composition_label(blk.get("n", 0), blk.get("n_real", 0))),
                               "question_id": m["question_id"]})
         if not lines:
             resp = {"answer": "The closest matches don't have enough peer data to show safely "
@@ -3434,7 +3434,7 @@ async def _guide_response(question, intent, extra, org, vis):
 
 
 def _analyst_block(card):
-    out = {"suppressed": card.get("suppressed"), "n": card.get("n"),
+    out = {"suppressed": card.get("suppressed"), "n": card.get("n"), "n_real": card.get("n_real", 0),
            "cut_label": card["cut"]["label"], "readout": card.get("readout")}
     if card.get("block"):
         b = dict(card["block"])
@@ -3673,7 +3673,7 @@ def assemble_pack_payload(request, user, org, cut):
                                              "agency_premium_pct", "fte_band_midpoints")},
         "gap_register_top": [
             {"name": r["name"], "superpower": r["superpower"], "your_status": r["org_status"],
-             "peer_adoption_pct": r["peer_adoption_pct"], "n": r["n"]}
+             "peer_adoption_pct": r["peer_adoption_pct"], "n": r["n"], "n_real": r.get("n_real", 0)}
             for r in reg["rows"] if not r["suppressed"] and r["gap"] is not None and r["gap"] > 0
         ][:10],
         "maturity": reg["maturity"],   # legacy field kept for STORED-pack renders; new packs read practice_prevalence
@@ -3722,7 +3722,7 @@ def _pack_item(i):
     q_ok = n >= PACK_QUARTILE_MIN_N
     t_ok = n >= PACK_TAIL_MIN_N
     return {"label": i["label"], "value_display": i["value_display"],
-            "percentile": int(round(i["percentile"])), "n": n, "cut_label": i["cut_label"],
+            "percentile": int(round(i["percentile"])), "n": n, "n_real": i.get("n_real", 0), "cut_label": i["cut_label"],
             "p50_display": i["p50_display"], "superpower": i["superpower"],
             "polarity": i.get("polarity"), "favourable": i.get("favourable"),
             "p25_display": i.get("p25_display") if q_ok else None,
@@ -4949,7 +4949,7 @@ def build_domain_summary_payload(conn, org, user, name, cut, apply_strategy=True
         if i.get("row_id") and " — " in i["label"]:
             base = base + " — " + i["label"].rsplit(" — ", 1)[-1]
         return base
-    _gs = lambda i: {"metric": _gname(i), "adj_pctl": round(50.0 + i["distance"]), "n": i["n"]}  # integer percentile (no false precision)
+    _gs = lambda i: {"metric": _gname(i), "adj_pctl": round(50.0 + i["distance"]), "n": i["n"], "n_real": i.get("n_real", 0)}  # integer percentile (no false precision)
     gaps = [_gs(i) for i in pos.top_gaps(dom_pool, 3)]
     strengths = [_gs(i) for i in pos.top_strengths(dom_pool, 3)]
     prev = d.get("prevalence") or {}
@@ -5055,7 +5055,7 @@ def build_commentary_payload(conn, org, user, qid, dim, value):
         "metric": card["title"],
         "definition": card.get("definition") or "",
         "cut_label": card["cut"]["label"],
-        "n": card["n"],
+        "n": card["n"], "n_real": card.get("n_real", 0),
         "suppressed": bool(card.get("suppressed")),
         "polarity": _dir or pol,
         "you": you.get("display") or you.get("label"),
@@ -5262,6 +5262,19 @@ def base_url(minting=False):
             raise HTTPException(503, "A non-localhost LUMI_BASE_URL must be https — "
                                      "emailed links must not downgrade members to plain http.")
     return raw
+
+
+def composition_label(n, n_real):
+    """P1-C (R-P1/R-P2): the ruled chip progression, server-rendered twin of
+    web compositionLabel — shared artefacts (pack subs, CSV, digests) carry the
+    same composition language as the live surfaces."""
+    if n is None:
+        return ""
+    if not n_real or n_real <= 0:
+        return "%s \u00b7 reference panel" % n
+    if n_real >= n:
+        return "%s members" % n
+    return "%s \u00b7 %d member%s + panel" % (n, n_real, "" if n_real == 1 else "s")
 
 
 def send_notification(subject, body, to=None, log_body=None):

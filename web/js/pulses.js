@@ -302,7 +302,12 @@ function PulseQuestionBlock({ q, pid, me }) {
                   <td class="num">${r.block && r.block.suppressed ? "—" :
                     r.block && r.block.p50 != null ? "median " + fmtValue(r.block.p50, q.unit) :
                     r.block && r.block.modal_label ? r.block.modal_label + " (" + r.block.modal_pct + "%)" : "—"}
-                    ${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td>
+                    ${/* P1-C DOCUMENTED EXCEPTION (DECISIONS 2026-08-08): pulse cohorts are
+                        opt-in survey responses, NEVER the reference panel — the benchmark
+                        chip's "reference panel" label would claim a provenance pulse
+                        responses don't have. Composition wording for PULSE surfaces needs
+                        its own ruling word; until then the plain n stays, and the P1-C
+                        search carries this one exception by name. */ ""}${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td>
                   <td class="num" style=${{ color: r.you != null && r.you !== "" ? "var(--blue-deep)" : "var(--ink-faint)", fontWeight: 600 }}>${r.you != null && r.you !== "" ? fmtValue(parseFloat(r.you), q.unit) : "—"}</td></tr>`)}
               </tbody></table>`}
           <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}${q.you != null && q.you !== "" && q.type !== "matrix" ? " · your answer marked" : ""}</div>

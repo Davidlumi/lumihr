@@ -477,3 +477,19 @@ window.CHART_LABELS = {
   bar: "Bars", ordered: "Ordered distribution",
   heatmap: "Distribution", grouped_bars: "Grouped bars", matrix_table: "Per-level table",
 };
+
+/* P1-C (R-P1/R-P2, ruled 2026-08-08): THE composition renderer — every surface
+   that shows an n shows composition through this one function, always (never
+   only on divergence), with the ruled chip progression so no surface ever
+   displays an embarrassing zero. The first use per surface carries
+   COMPOSITION_DESC (tooltip/aria on chips, prose on pages). */
+window.compositionLabel = function (n, nReal) {
+  if (n == null) return "";
+  if (!nReal || nReal <= 0) return n + " · reference panel";
+  if (nReal >= n) return n + " members";
+  return n + " · " + nReal + " member" + (nReal === 1 ? "" : "s") + " + panel";
+};
+window.compositionNoun = function (nReal) {   // for prose sentences
+  return (!nReal || nReal <= 0) ? "reference-panel profiles" : "organisations";
+};
+window.COMPOSITION_DESC = "Reference panel: modelled from published UK survey data — not lumi member submissions.";

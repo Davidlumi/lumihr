@@ -970,7 +970,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
           ${b.rare_stances.map(r => html`
             <div key=${r.label} class="prac-rare-row">
               <span class="prac-rare-lab">${r.label}</span>
-              <span class="caption">One of ${r.orgs} orgs (${r.share_pct}%) — “${r.stance}” · n=${r.n}</span>
+              <span class="caption">One of ${r.orgs} orgs (${r.share_pct}%) — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</span>
             </div>`)}
         </div>` : null}
       <div class="caption prac-bucket-foot">Rarity is the signal — whether it's deliberate is your call. Open the practice lens →</div>
@@ -1480,7 +1480,7 @@ const sigParts = (s, pt) => [
   // Keyboard lands here; the triage buttons are focusable SIBLINGS, not descendants.
   html`<button class="signal-body sig-open" key="b" onClick=${e => { e.stopPropagation(); openMetric(s.question_id); }}>
     <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
-    <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · n=${s.n}` : null}</span></button>`,
+    <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · ${compositionLabel(s.n, s.n_real)}` : null}</span></button>`,
   // 2026-07-09 row diet (home briefing only — the explore page keeps both):
   // · the unlabelled grey gap-dash read as noise on the calm home band — retired here;
   // · ONE verdict carrier per row — prevalence/rare bodies state the fact in the sentence
@@ -2041,7 +2041,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         ${v.kind === "snoozed" && s.snooze_until ? html`<span class="sfold-snz"><${Icon} name="clock" size=${10} /> ${snoozeReturn(s.snooze_until)}</span>` : null}
       </div>
       <h3 class="brf-head">${brfCap(s.stand || s.detail)}</h3>
-      <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num"> · n=${s.n}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
+      <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num"> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
         ${s.gap_pct != null ? html`<span class="brf-gapbar" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
@@ -2902,7 +2902,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   // "reference panel" is EXACT today (real n = 0 everywhere); Phase 1 replaces
   // it with the ruled composition chip (panel / members+panel / members).
   const peerLabel = (!cut || !cut.dim || cut.dim === "all")
-    ? "All peers · " + ((me.peer_pool || {}).responding_orgs || "—") + " · reference panel"
+    ? "All peers · " + compositionLabel((me.peer_pool || {}).responding_orgs, (me.peer_pool || {}).real_orgs)
     : (cut.value || cut.dim);
   const printDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 

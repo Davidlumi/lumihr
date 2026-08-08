@@ -1306,7 +1306,7 @@ function SearchPop({ qIndex, search, role, onGo, onRequest, activeHit, onActiveH
     <div key=${q.id} id=${"search-hit-" + i} class=${"search-hit" + (extra || "")} role="option"
       aria-selected=${activeHit === i} onMouseEnter=${() => setActive(i)} onClick=${() => onGo(q)}>
       <b style=${{ fontSize: "var(--fs-label)" }}>${q.title}</b> ${q.locked && html`<${Icon} name="lock" size=${11} style=${{ verticalAlign: "-1px", color: "var(--ink-faint)" }} />`}
-      <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · n=${q.n}</div>
+      <div class="caption">${q.superpower}${q.subpower ? " · " + q.subpower : ""} · ${q.category} · ${compositionLabel(q.n, q.n_real)}</div>
     </div>`;
   return html`
     <div class="searchpop" id="searchpop-list" role="listbox" aria-label="Search results">
@@ -1492,7 +1492,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       title: c.title, cutLabel: c.cut.label, n: c.n, window: period, card: c,
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
     }, "download");
-    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, n=${c.n}` : "Nothing to export yet");
+    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
   };
   const share = () => {
     const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim + "::" + (sel.value || "")) : "";
@@ -1536,7 +1536,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     <div class="metric-page">
       ${/* print-only masthead for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-head" aria-hidden="true">
-        <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · n=${c.n}${c.base ? " · of " + c.base.label : ""}${period ? " · " + period : ""}</div>
+        <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · ${compositionLabel(c.n, c.n_real)}${c.base ? " · of " + c.base.label : ""}${period ? " · " + period : ""}</div>
       <button class="btn quiet no-print" onClick=${goBack}>← Back</button>
       <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s2)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
@@ -1595,7 +1595,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
                   ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
                 </optgroup>`}
             </select>
-            <div class="hint">${c.cut.label} · n=${c.n}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</div>
+            <div class="hint">${c.cut.label} · ${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</div>
           </div>
           ${alts.length > 1 && html`
             <div class="chart-switch" role="group" aria-label="Chart type">
@@ -1768,7 +1768,7 @@ function ExactFigures({ card: c }) {
     const top = [...c.block.options].sort((a, b) => b.pct - a.pct)[0];
     if (top) cells.push(["Most common", `${top.label} (${top.pct}%)`]);
   }
-  cells.push(["Organisations", "n=" + c.n]);
+  cells.push(["Organisations", compositionLabel(c.n, c.n_real)]);
   return html`
     <div class="exact-figs">
       ${cells.map(([k, v], i) => html`<div key=${i}><span class="caption">${k}</span><b class="num">${v}</b></div>`)}
