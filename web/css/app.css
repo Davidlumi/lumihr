@@ -3345,19 +3345,21 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-done { text-align: center; margin-bottom: var(--s6); }
 .strat-check { width: 52px; height: 52px; border-radius: 50%; background: var(--favourable-tint); color: var(--favourable);
   display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--s3); }
-.review-sec { margin-bottom: var(--s4); }
-.review-h { display: flex; align-items: center; gap: var(--s3); font-size: var(--fs-card-title); font-weight: 700; color: var(--ink); margin-bottom: var(--s3); }
+.review-sec { margin-bottom: var(--s5); }
+.review-h { display: flex; align-items: center; gap: var(--s3); font-size: var(--fs-caption); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s2); }
 .review-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: 999px; }
 .review-chip.confirmed { background: var(--blue-tint); color: var(--blue-deep); }
 .review-chip.choices { background: #F1ECE4; color: var(--ink-soft); }
 .review-edit { margin-left: auto; font-family: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--blue-bright);
   background: none; border: none; cursor: pointer; }
 .review-edit:hover { text-decoration: underline; }
-.review-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.review-row { display: flex; justify-content: space-between; gap: var(--s4); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+.review-list { background: none; border: 0; }
+.review-row { display: flex; justify-content: space-between; gap: var(--s4); padding: var(--s2) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
 .review-row:last-child { border-bottom: none; }
 .rr-label { font-size: var(--fs-label); color: var(--ink-soft); }
-.rr-val { font-size: var(--fs-label); font-weight: 600; color: var(--ink); text-align: right; }
+.rr-val { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; color: var(--ink); text-align: right; }
 .rr-val.skipped { font-weight: 400; color: var(--ink-faint); font-style: italic; }
 .strat-trust { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.55; margin-top: var(--s4); padding: var(--s3) var(--s4);
   background: var(--paper); border-radius: var(--radius-sm); border: 1px solid var(--border); }

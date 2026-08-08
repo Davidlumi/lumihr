@@ -15286,3 +15286,17 @@ work), consequences-of-all-three-stops visible pre-pick, per-area aims
 promoted in capture, next-review-due governance metadata. The synthesizer
 agent died on payload size AGAIN (2nd time) — recover from journal.jsonl and
 judge inline; don't re-run big-payload judges.
+
+## 2026-08-08 — Strategy delivery closed: AI overlay live (dark-gated) + final polish
+
+David: "commit everything and deliver." The PROMPT_strategy_polish_ai_overlay
+plan is now fully executed and the file retired. Shipped: 96fb0ed (the
+"lumi's reading" overlay — see that commit for the grounding/validation/cache
+contract) and this commit (review step onto the document's ledger language —
+uppercase section heads, hairline rows, display-face values; boxes gone).
+VERIFICATION DOCTRINE HONOURED: the AI path was proven on a throwaway :8070
+PAIR built from the REPO-ROOT stores (the data/lumi.db copy leaves the demo
+org unclassified and every session 401s — trap recorded); live :8060 confirms
+the 403-dark path hides the section. Deterministic floor renders real figures
+(8 areas on aim, control cost) and upgrades to the model automatically when
+David flips LUMI_AI_INSIGHTS_ENABLED. Suite 14/14 green through v470.
