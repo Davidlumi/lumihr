@@ -154,7 +154,7 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
 function DialCard({ field, value, onPick, required, context, extra }) {
   const sk = SCALE_FIELD[field];
   const flagged = required && !value;     // unset required → amber prompt
-  const tag = required ? html`<span class="strat-req">Required</span>` : html`<span class="strat-opt">Optional</span>`;
+  const tag = null;   // Required/Optional pills retired — requirement enforced quietly at Next
   let body, se = null;
   if (sk) {
     const cfg = SCALE[sk];
@@ -226,137 +226,145 @@ function DomainOverrides({ domains, targets, globalValue, onSet }) {
     </div>`;
 }
 
-// ---- the strategy VIEW — what a completed strategy looks like when you visit ----
-// A strategy is a document, not a form: the stance in words, the dial profile,
-// and where it meets your live position. Edit re-enters the wizard.
-const SV_STANCE = { lag: "below market", match: "on market", lead: "above market" };
-const ALIGN_READ = { on_target: { t: "On aim", cls: "ok" }, above_target: { t: "Ahead of aim", cls: "warn" },
-  below_target: { t: "Behind aim", cls: "warn" } };
+// ---- the strategy DOCUMENT — the completed strategy as a typeset deliverable ----
+// One sheet, navy masthead, three numbered sections: the stance in authored prose,
+// position against intent (the live centrepiece), and the positions ledger.
+const SD_STANCE = { lag: "below market", match: "on market", lead: "above market" };
+const SD_IDX = { lag: 0, match: 1, lead: 2, below: 0, on: 1, above: 2 };
+const SD_MIX = { cash: "a package led by base pay", balanced: "pay and benefits sharing the load", benefits: "the wider package doing the work" };
+const SD_P4P = { egal: "pay held close across the board", moderate: "a measured spread for performance", strong: "strong differentiation for top performers" };
+const SD_TRANS = { closed: "held privately", ranges: "shared as ranges", open: "fully open" };
+const SD_FAM = { statutory: "set at the statutory floor", market: "in line with the market", over: "deliberately generous" };
+const SD_OBJ = { attract: "winning talent", retain: "holding on to the people you have", cost: "cost discipline", compliance: "getting the foundations right", hold: "holding steady" };
+const SD_DRIVES = {
+  market_position: "The aim every position is read against.",
+  reward_mix: "How pay and package figures are weighed together.",
+  pay_for_performance: "The pay-spread shape read as intended.",
+  transparency: "Which openness practices count as commitments.",
+  location_approach: "Whether local pay markets are read separately.",
+  benefits_lead: "The benefit areas read as deliberate leads.",
+  family_position: "The family-support bar you are held to.",
+  primary_objective: "What your signals surface first.",
+};
 
-function stanceSentences(strat, orgName) {
-  const s1 = [];
+function sdStance(strat, orgName) {
+  const parts = [];
   if (strat.market_position) {
     const n = Object.keys(strat.domain_targets || {}).length;
-    s1.push(html`${orgName} aims to sit <b>${SV_STANCE[strat.market_position]}</b> on reward${n ? html` (<b>${n}</b> area${n === 1 ? "" : "s"} refined)` : ""}`);
+    let s = orgName + " aims to sit " + SD_STANCE[strat.market_position] + " on reward";
+    if (n) s += ", refined in " + n + " area" + (n === 1 ? "" : "s");
+    const sub = [];
+    if (strat.reward_mix && SD_MIX[strat.reward_mix]) sub.push(SD_MIX[strat.reward_mix]);
+    if (strat.pay_for_performance && SD_P4P[strat.pay_for_performance]) sub.push(SD_P4P[strat.pay_for_performance]);
+    if (sub.length) s += " — " + sub.join(", with ");
+    parts.push(s + ".");
   }
-  if (strat.reward_mix) s1.push(html`with a <b>${labelOf("reward_mix", strat.reward_mix).toLowerCase()}</b> package`);
-  if (strat.pay_for_performance) s1.push(html`and <b>${labelOf("pay_for_performance", strat.pay_for_performance).toLowerCase()}</b> on performance pay`);
   const s2 = [];
-  if (strat.transparency) s2.push(html`Pay is <b>${labelOf("transparency", strat.transparency).toLowerCase()}</b> internally`);
-  if (strat.family_position) s2.push(html`family support is <b>${labelOf("family_position", strat.family_position).toLowerCase()}</b>`);
-  const s3 = strat.primary_objective
-    ? html`This year the focus is <b>${labelOf("primary_objective", strat.primary_objective).toLowerCase()}</b>.` : null;
-  return { s1, s2, s3 };
+  if (strat.transparency && SD_TRANS[strat.transparency]) s2.push("Pay information is " + SD_TRANS[strat.transparency]);
+  if (strat.family_position && SD_FAM[strat.family_position]) s2.push("family support is " + SD_FAM[strat.family_position]);
+  if (s2.length) parts.push(s2.join("; ") + ".");
+  if (strat.primary_objective && SD_OBJ[strat.primary_objective]) parts.push("The focus this year is " + SD_OBJ[strat.primary_objective] + ".");
+  return parts;
 }
 
-// readonly miniature of the 3-stop dial — the chosen stop lit, the others ghosts
-function MiniDial({ field, value }) {
-  const sk = SCALE_FIELD[field];
-  const stops = sk ? SCALE[sk].stops : null;
-  if (!stops) return null;
-  const idx = stops.findIndex(s => s.v === value);
-  return html`<div class="sv-minidial" aria-hidden="true">
-    ${stops.map((s, i) => html`<span key=${s.v} class=${"sv-dot" + (i === idx ? " on" : "")}></span>
-      ${i < stops.length - 1 ? html`<span class=${"sv-seg" + (idx > i ? " lit" : "")}></span>` : null}`)}
-  </div>`;
+// intent (ring) vs actual (dot) on one below—on—above axis
+function SdAxis({ intent, actual }) {
+  const ii = SD_IDX[intent], ai = SD_IDX[actual];
+  const pos = ["12%", "50%", "88%"];
+  return html`<span class="sd-axis" aria-hidden="true">
+    <span class="sd-axis-line"></span>
+    ${[0, 1, 2].map(i => html`<span key=${i} class="sd-axis-tick" style=${{ left: pos[i] }}></span>`)}
+    ${ii != null && html`<span class="sd-mark intent" style=${{ left: pos[ii] }} title="Your aim"></span>`}
+    ${ai != null && html`<span class="sd-mark actual" style=${{ left: pos[ai] }} title="Your position"></span>`}
+  </span>`;
 }
-
-// what each dial DRIVES — the connection line under every profile entry
-const DIAL_DRIVES = {
-  market_position: "Sets the aim your position is read against — the AIM ticks on your Overview.",
-  reward_mix: "Weights how pay and package figures are read together.",
-  pay_for_performance: "Sets the pay-spread shape we expect before flagging.",
-  transparency: "Sets which openness practices count as commitments to track.",
-  location_approach: "Switches per-location reads on or off.",
-  benefits_lead: "Tells the practice lens which benefit areas are deliberate leads.",
-  family_position: "Sets the family-benefits bar you are held to.",
-  primary_objective: "Orders your signals — what gets flagged first.",
-  budget_direction: "Kept for context — recorded, not yet shaping signals.",
-  acute_pressure: "Kept for context — recorded, not yet shaping signals.",
-  risk_appetite: "Kept for context — recorded, not yet shaping signals.",
-};
 
 function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const [hero, setHero] = useState(null);
   useEffect(() => { apiCached("/api/overview").then(o => setHero(o.hero || null)).catch(() => setHero(null)); }, []);
   const orgName = (me.org && me.org.name) || "Your organisation";
-  const { s1, s2, s3 } = stanceSentences(strat, orgName);
+  const stance = sdStance(strat, orgName);
   const doms = (hero && hero.domains || []).filter(d => d.target);
   const offAim = doms.filter(d => d.target.alignment && d.target.alignment !== "on_target");
   const when = data.completed_at ? fmtDate(data.completed_at) : null;
-  const profileFields = ["market_position", "reward_mix", "pay_for_performance", "transparency",
-    "location_approach", "benefits_lead", "family_position", "primary_objective",
-    "budget_direction", "acute_pressure", "risk_appetite"].filter(f => fieldState(f) !== "coming");
-  const valueOf = (f) => f === "benefits_lead"
-    ? ((strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t).join(", ") || null)
+  const aimRead = (d) => {
+    const al = d.target.alignment;
+    if (!al) return { t: "—", cls: "" };
+    if (al === "on_target") return { t: "On aim", cls: "ok" };
+    const ii = SD_IDX[d.target.stance], ai = d.position && SD_IDX[d.position.verdict];
+    return (ai != null && ii != null && ai > ii) ? { t: "Ahead of aim", cls: "ahead" } : { t: "Behind aim", cls: "behind" };
+  };
+  const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
+  const valOf = (f) => f === "benefits_lead"
+    ? ((strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t).join(" · ") || null)
     : (strat[f] ? labelOf(f, strat[f]) : null);
+  const ctxBits = [["budget_direction", strat.budget_direction], ["acute_pressure", strat.acute_pressure], ["risk_appetite", strat.risk_appetite]]
+    .filter(x => x[1]).map(x => DIAL_LABEL[x[0]] + ": " + labelOf(x[0], x[1]).toLowerCase());
+  let secN = 0; const num = () => String(++secN).padStart(2, "0");
   return html`
-    <div class="strat-view">
-      <div class="row spread no-print" style=${{ alignItems: "flex-start", marginBottom: "var(--s4)" }}>
-        <div>
-          <h1 class="display-title" style=${{ margin: 0 }}>Reward strategy</h1>
-          ${when && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>Captured ${when} · set by your Admins</div>`}
-        </div>
-        <div class="row" style=${{ gap: "var(--s2)" }}>
-          <button class="btn" onClick=${() => window.print()}><${Icon} name="file-text" size=${14} /> Download (PDF)</button>
-          ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="sliders" size=${14} /> Edit strategy</button>` : null}
-        </div>
+    <div class="sd-wrap">
+      <div class="sd-actions no-print">
+        <button class="btn" onClick=${() => window.print()}><${Icon} name="download" size=${14} /> Download (PDF)</button>
+        ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
       </div>
+      <article class="sd-doc">
+        <header class="sd-mast">
+          <div>
+            <div class="sd-eyebrow">Reward strategy</div>
+            <div class="sd-org">${orgName}</div>
+          </div>
+          <div class="sd-mast-meta">
+            ${when && html`<div>Captured <b>${when}</b></div>`}
+            <div>Set by your Admins · held in lumi</div>
+          </div>
+        </header>
 
-      ${/* the stance, in words — navy strategy channel */ ""}
-      <div class="sv-stance">
-        <div class="sv-stance-eyebrow"><${Icon} name="compass" size=${13} /> The stance</div>
-        <p class="sv-stance-text">
-          ${s1.length ? html`${s1.map((x, i) => html`<span key=${i}>${i > 0 ? ", " : ""}${x}</span>`)}. ` : ""}
-          ${s2.length ? html`${s2.map((x, i) => html`<span key=${i}>${i > 0 ? "; " : ""}${x}</span>`)}. ` : ""}
-          ${s3 || ""}
-        </p>
-        <div class="sv-stance-foot">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
-      </div>
+        <section class="sd-sec">
+          <div class="sd-secnum">${num()} — The stance</div>
+          ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
+            : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
+          <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
+        </section>
 
-      ${/* where the strategy meets your live position — the connection layer */ ""}
-      ${doms.length ? html`
-        <div class="sv-sec-head">
-          <h2 class="section-title">Aim vs position</h2>
-          <span class="caption">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "All " + doms.length + " areas on aim"} · updates with your benchmark</span>
-        </div>
-        <div class="sv-align card">
-          ${doms.map(d => { const read = ALIGN_READ[d.target.alignment]; return html`
-            <a key=${d.name} class="sv-align-row" href=${"#/category/" + encodeURIComponent(d.name)}>
-              <span class="sv-align-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sv-ov-tag">area aim</span>` : ""}</span>
-              <span class="sv-align-aim">aim <b>${SV_STANCE[d.target.stance] || "—"}</b></span>
-              <span class="sv-align-pos">position <b>${d.position && d.position.verdict ? d.position.verdict + " market" : "—"}</b></span>
-              ${read ? html`<span class=${"sv-align-chip " + read.cls}>${read.t}</span>` : html`<span class="sv-align-chip">—</span>`}
-            </a>`; })}
-        </div>` : hero === null ? null : html`
-        <div class="caption" style=${{ margin: "var(--s3) 0" }}>Aim-vs-position appears once your benchmark unlocks.</div>`}
+        ${doms.length ? html`
+        <section class="sd-sec">
+          <div class="sd-secnum">${num()} — Position against intent
+            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
+          <div class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual" style=${{ position: "static", transform: "none" }}></span> position
+            <span class="sd-axis-scale"><span>below</span><span>on market</span><span>above</span></span></div>
+          <div class="sd-exhibit">
+            ${doms.map(d => { const r = aimRead(d); return html`
+              <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
+                <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov">area aim</span>` : ""}</span>
+                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} />
+                <span class=${"sd-ex-read " + r.cls}>${r.t}</span>
+              </a>`; })}
+          </div>
+        </section>` : null}
 
-      ${/* the dial profile — every part with its purpose */ ""}
-      <div class="sv-sec-head">
-        <h2 class="section-title">The positions behind it</h2>
-        <span class="caption no-print">every dial states what it drives</span>
-      </div>
-      <div class="sv-profile">
-        ${profileFields.map(f => { const v = valueOf(f); return html`
-          <div key=${f} class=${"sv-dial card" + (v ? "" : " skipped")}>
-            <div class="sv-dial-top">
-              <span class="sv-dial-ic"><${Icon} name=${DIAL_ICON[f] || "target"} size=${14} /></span>
-              <span class="sv-dial-label">${DIAL_LABEL[f]}</span>
-              <${MiniDial} field=${f} value=${strat[f]} />
+        <section class="sd-sec">
+          <div class="sd-secnum">${num()} — The positions</div>
+          <div class="sd-ledger">
+            ${philosophy.map(f => { const v = valOf(f); return html`
+              <div key=${f} class=${"sd-led-row" + (v ? "" : " unset")}>
+                <span class="sd-led-name">${DIAL_LABEL[f]}</span>
+                <span class="sd-led-val">${v || "Not set"}${f === "market_position" && Object.keys(strat.domain_targets || {}).length ? html` <span class="sd-led-sub">· ${Object.keys(strat.domain_targets || {}).length} area${Object.keys(strat.domain_targets || {}).length === 1 ? "" : "s"} refined</span>` : ""}</span>
+                <span class="sd-led-why">${v ? SD_DRIVES[f] : "Read neutrally."}</span>
+              </div>`; })}
+            <div class=${"sd-led-row" + (strat.primary_objective ? "" : " unset")}>
+              <span class="sd-led-name">${DIAL_LABEL.primary_objective}</span>
+              <span class="sd-led-val">${strat.primary_objective ? labelOf("primary_objective", strat.primary_objective) : "Not set"}</span>
+              <span class="sd-led-why">${strat.primary_objective ? SD_DRIVES.primary_objective : "Read neutrally."}</span>
             </div>
-            <div class="sv-dial-val">${v || "Skipped — read neutrally"}</div>
-            <div class="sv-dial-drives">${DIAL_DRIVES[f]}</div>
-          </div>`; })}
-      </div>
-      <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
+          </div>
+          ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
+        </section>
 
-      ${/* print-only artefact — the downloadable strategy one-pager */ ""}
-      <div class="strat-pdf-head" aria-hidden="true">
-        <b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}
-      </div>
-      <div class="strat-pdf-foot" aria-hidden="true">
-        Private ${"&"} confidential · Prepared in lumi · Company facts and choices, not employee data · lumihr.co.uk
-      </div>
+        <footer class="sd-docfoot">Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
+      </article>
+
+      <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
+      <div class="strat-pdf-foot" aria-hidden="true">Private ${"&"} confidential · Prepared in lumi · lumihr.co.uk</div>
     </div>`;
 }
 
@@ -426,9 +434,8 @@ window.StrategyPage = function ({ me }) {
       // (a pre-wiring stored value stays inert until this). True only while the field is live.
       await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
         transparency_confirmed: fieldState("transparency") === "live" } });
-      setCommitted(true);                                  // the payoff — a quiet flourish, then land
-      if (window.confettiBurst) window.confettiBurst({ count: 90, duration: 2000, origin: { x: 0.5, y: 0.42 } });
-      apiCacheInvalidate("/api/overview");                 // aim ticks may have moved
+      setCommitted(true);                                  // a governance act closes quietly — no confetti
+      apiCacheInvalidate("/api/overview");
       const wasEdit = editing;
       setTimeout(() => {
         if (wasEdit) {
@@ -463,14 +470,10 @@ window.StrategyPage = function ({ me }) {
             ${planeA.map((f, i) => html`
               <div key=${f.key} class="confirm-row">
                 <div><div class="cr-label">${f.label}</div><div class="cr-why">${f.why}</div></div>
-                <div class="cr-val">
-                  <span class="cr-tag">On file</span>
-                  <select aria-label=${f.label} value=${f.value || ""}
-                    onChange=${e => setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: e.target.value } : x))}>
-                    ${!f.value && html`<option value="" disabled>Select…</option>`}
-                    ${(f.options || []).map(o => html`<option key=${o} value=${o}>${o}</option>`)}
-                    ${f.value && !(f.options || []).includes(f.value) ? html`<option value=${f.value}>${f.value}</option>` : null}
-                  </select>
+                <div class="cr-seg" role="radiogroup" aria-label=${f.label}>
+                  ${(f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []).map(o => html`
+                    <button key=${o} type="button" class=${"cr-opt" + (o === f.value ? " on" : "")} role="radio" aria-checked=${o === f.value}
+                      onClick=${() => setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: o } : x))}>${o}</button>`)}
                 </div>
               </div>`)}
             <div class="derived-note"><${Icon} name="info" size=${15} />
@@ -478,6 +481,12 @@ window.StrategyPage = function ({ me }) {
           </div>
         </section>`}
 
+      ${step >= 1 && step <= 2 && html`
+        <aside class="strat-rail-live no-print" aria-label="Your strategy so far">
+          <div class="srl-head">Your strategy so far</div>
+          ${sdStance(strat, (me.org && me.org.name) || "Your organisation").map((s, i) => html`<p key=${i} class="srl-line">${s}</p>`)}
+          ${!sdStance(strat, "x").length ? html`<p class="srl-line muted">It builds here as you set positions.</p>` : null}
+        </aside>`}
       ${step === 1 && html`
         <section class="strat-step">
           <div class="strat-eyebrow">Your philosophy <span class="strat-mode choose">Your call</span></div>
