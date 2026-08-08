@@ -14543,3 +14543,37 @@ unconfigured, the live stores' only durable copies are the in-tree rotation set 
 + 1 identity bak) on the SAME disk — no off-disk backup of the platform exists at all;
 worth weighing alongside the deployment/hosting ruling (a production environment
 brings its own backup regime).
+
+**"Fix all – deliver all" close (2026-08-08): six items, everything buildable without a
+ruling.** (1) B1 DATA HALF: ALREADY CLEAN — REW_Q528801/REW_Q534581 carry
+sub_power_order=1 and every domain has one uniform order value; the SHIP_REVIEW note
+was stale, no migration needed, verified by census. (2) PH-PROV-1b: /api/team/invite
+role=admin is an EXPLICIT 400 pointing at promotion (was a silent viewer downgrade);
+no invite row minted on refusal; the Team UI never offered admin so no client change;
+qa_backoffice R2 rewritten from verify-as-is to assert the refusal + R2b row-count
+guard (gate 106 checks). (3) PH-PROV-1e: identity_recon wired into run_gates as the
+LAST mutating-phase gate — suite is 14 — auditing the WHOLE run's dual-write hygiene;
+docs/ORPHAN_REMEDIATION.md is the operator runbook (orphan classes both directions,
+per-direction remediation, digest-confirmation recipe, backup-naming conventions incl.
+the pins-never-count rule in bold). (4) PH-CFG-1 BRANCH A, built ahead of the
+deployment ruling so go-live is turnkey: ONE accessor base_url() (env read per call —
+the restart-to-apply C2 defect dies; trailing-slash normalised; non-localhost must be
+https), MINTING GATED NOT BOOT — invite/reset creation 503s with the exact fix while
+unset (verified live both ways on a throwaway; boot logs the value loudly in all three
+states); the _base_url() dup and BOTH ""-fallback digest readers are gone (11 sites
+converted, module global deleted, grep-clean); digests with no base now write WORDS
+("See these in context on your lumi Overview page"), never a relative dead link;
+run_gates exports the dry-run value suite-wide; launch.json carries it for the preview
+server. ⚠ OPERATOR NOTE: a BARE `uvicorn` dev launch now refuses link minting until
+LUMI_BASE_URL is set — the 503 says exactly what to export. (5) GATE-3 FRESH-DDL HALF:
+db.py's CREATE TABLE declared the pre-split shape (orgs.name/normalized_name,
+users.email/pw_hash, invites.email all NOT NULL) making a fresh build structurally
+impossible; now nullable with the split comment — smoke-tested (fresh schema accepts
+the step-5 writer shape); the post-soak DROP diff still owns removing the columns.
+(6) PHASE 4 SPEC written (PRIVACY_PHASE4_DELETION_ON_EXIT_SPEC_2026-08-08.md):
+deletion inventory by namespace, exit tool shape (house double-guard + pin-aware
+backups + reward-then-identity ordering so a crash leaves the NAMED orphan direction),
+copies-death-date computation from the creation-time schedule, verification matrix,
+and FIVE open parameters for David (§6: grace window, terms rows, pulse responses,
+invoice ledger statutory retention, suggestion attribution). Suite 14/14 green;
+backoffice 106; recon PASS.

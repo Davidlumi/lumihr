@@ -17,13 +17,16 @@ gate, solicitor-signed) is preserved in full below the gates.
   link, digest email) depends on this. *Unblocked by:* David ruling the hosting
   approach (host, TLS, domain/subdomain, where the production env lives) — a decision,
   then its own scoped work.
-- [ ] **`LUMI_BASE_URL` + link-minting guard (PH-CFG-1 Branch A — DEPENDENT on the
-  deployment item above).** Once somewhere exists to point at: one accessor everywhere
-  (three divergent reads found and banked in DECISIONS — `_base_url()` dup; digest
-  paths with a "" fallback emitting relative dead links), refuse to MINT invite/reset
-  links when unset (gate the action, never the boot), https required for non-localhost,
-  trailing-slash normalisation, boot-log the value. *Unblocked by:* the deployment item;
-  then the Branch-A build against DECISIONS 2026-08-04 PH-CFG-1.
+- [x] **`LUMI_BASE_URL` + link-minting guard (PH-CFG-1 Branch A) — BUILT AHEAD of the
+  deployment ruling (2026-08-08)** so go-live is turnkey: one `base_url()` accessor
+  (per-call env read, trailing-slash normalised, https required for non-localhost),
+  minting REFUSES with the exact fix while unset (gate the action, never the boot),
+  divergent readers gone (11 sites converted, global + `_base_url()` dup retired),
+  digests write words instead of relative dead links, boot logs the value; run_gates
+  exports the dry-run value, launch.json carries it for the preview server.
+  ⚠ A bare dev `uvicorn` now needs `LUMI_BASE_URL=http://localhost:8060` exported to
+  mint invite/reset links. *What still lands with deployment:* only the production
+  VALUE itself. **Commit: `03801e8`.**
 - [x] **PH-PROV-1f — provisioning log line → digest.** The provisioning invite's
   console/log fallback (AND the send-failure print) now carries a sha256[:12] digest via
   send_notification's `log_body` channel — the bearer never lands in a log; the API
@@ -62,11 +65,11 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Gate 3 — before Phase 2 (Postgres)
 
-- [ ] **`db.py` fresh-database DDL divergence.** `CREATE TABLE orgs` still declares the
-  pre-split shape (`name NOT NULL` etc.) — a fresh build is structurally impossible
-  (proven, PH-SEED-1 §5) and Phase 2 would port the pre-split shape. *Unblocked by:* the
-  DDL catching up with the step-5 world — related to the post-soak DROP diff, but the
-  FRESH-DDL half cannot wait for soak end if Phase 2 moves first.
+- [x] **`db.py` fresh-database DDL divergence — FRESH-DDL half closed (2026-08-08).**
+  The split-nulled identity columns (orgs.name/normalized_name, users.email/pw_hash,
+  invites.email) are now nullable in the fresh schema with the split comment; a fresh
+  build accepts the step-5 writer shape (smoke-tested). The post-soak DROP diff still
+  owns removing the columns from DDL + live together. **Commit: `e2240df`.**
 
 ## Gate 4 — before a second environment exists (staging, pen test, off-live repro)
 
@@ -134,12 +137,13 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Deferred post-launch (deliberately; the stopping rules hold)
 
-- [ ] **PH-PROV-1b** — `/api/team/invite` silent admin→viewer coercion becomes an
-  explicit 400. Member-facing behaviour change; verified as-is in the gates meanwhile.
-  *Unblocked by:* David scheduling it once launch settles (own diff, its prompt exists).
-- [ ] **PH-PROV-1e** — identity_recon gate wiring (the split's step-7 debt), orphan
-  remediation runbook, backup naming convention. *Unblocked by:* scheduling — no
-  dependency; the manufactured-orphan cycle already exercises recon inside qa_backoffice.
+- [x] **PH-PROV-1b (2026-08-08)** — `/api/team/invite` role=admin is an explicit 400
+  pointing at promotion; no invite row minted; UI unchanged (never offered admin);
+  R2/R2b assert it. **Commits: `03801e8` + `b0216f6`.**
+- [x] **PH-PROV-1e (2026-08-08)** — identity_recon runs as the suite's 14th gate
+  (last mutating phase, audits the whole run's dual-write hygiene);
+  `docs/ORPHAN_REMEDIATION.md` is the runbook (both orphan directions, digest
+  confirmation, backup-naming conventions incl. pins-never-count). **Commit: `b0216f6`.**
 - [ ] **D2 — real email delivery.** CF-1's close condition; console-logged links remain
   the accepted, contained exposure until then (PH-LOG-1 record). *Unblocked by:* the
   delivery build (SMTP already env-wired; `LUMI_SMTP_*`).
@@ -152,8 +156,11 @@ gate, solicitor-signed) is preserved in full below the gates.
 - [ ] **Post-soak DROP diff** — drops the dead `orgs.name`/`normalized_name` columns +
   `idx_orgs_norm`, and CARRIES PIN-RELEASE for `bak_pre_presplit` as one of its own
   close conditions (backup_policy.md). *Unblocked by:* soak ending.
-- [ ] **Phase 4 — deletion-on-exit spec.** Now specifiable, no longer blocked: live-store
-  deletion at exit + copies extinct within ≤90 days (PH-BAK-1 dependency resolution).
+- [ ] **Phase 4 — deletion on exit.** SPEC WRITTEN 2026-08-08
+  (`PRIVACY_PHASE4_DELETION_ON_EXIT_SPEC_2026-08-08.md`): inventory, exit-tool shape,
+  copies-death-date computation, verification matrix. *Unblocked by:* David ruling the
+  five §6 parameters (grace window; terms rows; pulse responses; invoice ledger
+  statutory retention; suggestion attribution) — then the build.
 - [ ] **Wider docs pass** (README beyond the corrected lines, handover docs).
   *Unblocked by:* scheduling; single-line corrections have landed with their diffs.
 
