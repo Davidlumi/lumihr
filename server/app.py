@@ -3532,6 +3532,86 @@ async def analyst_starters(request: Request):
     return {"starters": starters}
 
 
+# ---------------------------------------------------- strategy commentary ----
+def _strategy_commentary_payload(request, user, org):
+    """Grounded payload for the strategy reading: the declared dials plus the SAME
+    per-domain aim-vs-position rows the board pack computes (hero path, all peers)."""
+    conn = get_conn()
+    cut = {"dim": "all"}
+    items, tb = build_items(request, org, user, cut)
+    _visq = org_visible_questions(org)
+    _answers = org_answers_for(org)
+    _mp_cfg = pos.market_position_config()
+    strat = strategy_for_engine(conn, org["org_id"])
+    done = bool(conn.execute(
+        "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+        (org["org_id"],)).fetchone())
+    if not (strat and done):
+        return None
+    _prev = pos.prevalence_items(org["org_id"], cut, _visq, payloads(), _answers, make_entitled(user, org), tb)
+    _prac = pos.practice_position_items(org["org_id"], cut, _visq, payloads(), _answers, make_entitled(user, org), tb)
+    _sec_order = []
+    for _q in _visq.values():
+        if _q.sub_power and _q.sub_power not in _sec_order:
+            _sec_order.append(_q.sub_power)
+    _sec_order.sort(key=lambda x: min(q.sub_power_order or 999 for q in _visq.values() if q.sub_power == x))
+    hero = pos.hero_signals(items, _prev, _sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=_prac, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=_mp_cfg, strategy=strat)
+    stance_word = {"lag": "below market", "match": "on market", "lead": "above market"}
+    rows = []
+    for d in hero.get("domains", []):
+        t = d.get("target")
+        if not t:
+            continue
+        rows.append({"area": d["name"], "aim": stance_word.get(t.get("stance")),
+                     "position": (d.get("position") or {}).get("verdict"),
+                     "alignment": t.get("alignment"),
+                     "aim_is_override": d["name"] in (strat.get("domain_targets") or {})})
+    return {
+        "org_name": org.get("name"),
+        "stance": {k: strat.get(k) for k in ("market_position", "reward_mix", "pay_for_performance",
+                                             "transparency", "location_approach", "family_position",
+                                             "primary_objective")},
+        "objective_label": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
+        "areas": rows,
+        "off_aim": [r["area"] for r in rows if r["alignment"] and r["alignment"] != "on_target"],
+    }
+
+
+@app.post("/api/strategy/commentary")
+async def strategy_commentary(request: Request):
+    """AI reading of the declared strategy against the live position — grounded ONLY in
+    the dials + the pack's aim-vs-position rows, validated post-generation, cached until
+    the underlying read changes (metric_commentary table, question_id '__strategy__')."""
+    user, org = require_user(request)
+    require_ai(get_conn(), user, AI_COMMENTARY)
+    body = await _json(request)
+    conn = get_conn()
+    payload = _strategy_commentary_payload(request, user, org)
+    if payload is None:
+        raise HTTPException(404, "No completed strategy to read.")
+    phash = hashlib.sha256(
+        (j(payload) + "|" + claude_api.STRATEGY_COMMENTARY_VERSION).encode()).hexdigest()[:16]
+    if not body.get("force"):
+        row = conn.execute(
+            "SELECT * FROM metric_commentary WHERE org_id=? AND question_id=? AND cut_key=? AND payload_hash=?",
+            (org["org_id"], "__strategy__", "strategy", phash)).fetchone()
+        if row:
+            return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
+                    "generated_at": row["created_at"]}
+    if body.get("peek"):
+        return {"parts": None, "source": None, "cached": False}
+    res = await to_thread.run_sync(claude_api.generate_strategy_commentary, payload)
+    conn.execute(
+        "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
+        "VALUES (?,?,?,?,?,?)",
+        (org["org_id"], "__strategy__", "strategy", phash, j(res["parts"]), res["source"]))
+    conn.commit()
+    return {"parts": res["parts"], "source": res["source"], "cached": False}
+
+
 # ================================================================ BOARD PACK ==
 
 def assemble_pack_payload(request, user, org, cut):

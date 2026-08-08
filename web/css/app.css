@@ -3166,6 +3166,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-led-why { font-size: var(--fs-caption); color: var(--ink-faint); }
 .sd-led-row.unset .sd-led-val { font-weight: 500; color: var(--ink-faint); }
 .sd-ctx { margin-top: var(--s3); font-size: var(--fs-caption); color: var(--ink-faint); }
+.sd-ai { background: var(--surface-sunk); }
+.sd-ai-p { font-size: var(--fs-label); line-height: 1.6; margin: 0 0 var(--s2); max-width: 46em; }
+.sd-ai-p b { font-weight: 700; }
+.sd-ai-refresh { border: 0; background: none; color: var(--blue); font: inherit; font-size: var(--fs-caption);
+  cursor: pointer; margin-left: var(--s2); padding: 0; }
+.sd-ai-refresh:hover { text-decoration: underline; }
 .sd-docfoot { padding: var(--s4) var(--s6); background: var(--surface-sunk); font-size: var(--fs-caption);
   color: var(--ink-soft); }
 @media (max-width: 760px) {

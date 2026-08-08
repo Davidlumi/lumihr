@@ -282,6 +282,20 @@ function SdAxis({ intent, actual }) {
 function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const [hero, setHero] = useState(null);
   useEffect(() => { apiCached("/api/overview").then(o => setHero(o.hero || null)).catch(() => setHero(null)); }, []);
+  // lumi's reading — the grounded AI overlay. undefined = hidden (AI off / no access),
+  // null = available but not generated, object = the three parts.
+  const [ai, setAi] = useState(undefined);
+  const [aiBusy, setAiBusy] = useState(false);
+  useEffect(() => {
+    api("/api/strategy/commentary", { method: "POST", body: { peek: true } })
+      .then(r => setAi(r.parts || null)).catch(() => setAi(undefined));
+  }, []);
+  const genAi = async (force) => {
+    setAiBusy(true);
+    try { const r = await api("/api/strategy/commentary", { method: "POST", body: force ? { force: true } : {} }); setAi(r.parts); }
+    catch (e) { toast(e.message, "error"); }
+    setAiBusy(false);
+  };
   const orgName = (me.org && me.org.name) || "Your organisation";
   const stance = sdStance(strat, orgName);
   const doms = (hero && hero.domains || []).filter(d => d.target);
@@ -360,6 +374,20 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
+        ${ai !== undefined ? html`
+        <section class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
+          <div class="sd-secnum">${num()} — lumi's reading
+            <span class="sd-secnote">AI · grounded only in the figures on this page</span></div>
+          ${ai ? html`
+            <p class="sd-ai-p"><b>Where you stand.</b> ${ai.reading}</p>
+            <p class="sd-ai-p"><b>Tensions.</b> ${ai.tensions}</p>
+            <p class="sd-ai-p"><b>To watch.</b> ${ai.watch}</p>
+            <div class="sd-note">A description of your strategy against your data, not advice.
+              <button class="sd-ai-refresh no-print" disabled=${aiBusy} onClick=${() => genAi(true)}>Regenerate</button></div>`
+          : html`
+            <p class="sd-note" style=${{ marginBottom: "var(--s3)" }}>A short reading of this strategy against your live position — generated from the figures above, nothing else.</p>
+            <button class="btn no-print" disabled=${aiBusy} onClick=${() => genAi(false)}>${aiBusy ? html`<${Spinner} />` : "Generate the reading"}</button>`}
+        </section>` : null}
         <footer class="sd-docfoot">Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
       </article>
 

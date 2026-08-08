@@ -794,6 +794,72 @@ COMMENTARY_SCHEMA = {
 # metric_commentary cache self-invalidates — the cache key is keyed on the payload
 # hash, which can't see a change to _measures_text / _deterministic_commentary.
 COMMENTARY_GEN_VERSION = "2026-06-18.sdk-opus48-v4-malformguard"
+STRATEGY_COMMENTARY_VERSION = "2026-08-08.strategy-v1"
+
+# ---- strategy reading: the declared strategy against the live position ----------
+STRATEGY_SYSTEM = (
+    "You write a short reading of an organisation's declared reward strategy against its live "
+    "benchmark position, for the HR director who set it. The JSON you receive is the ONLY set of "
+    "facts you may use. Rules: never invent a number or an area name; only counts derivable from "
+    "the payload; never use the words 'reported', 'submitted' or 'told us'; British English; calm, "
+    "precise, no advice — a description of their strategy against their data. Return JSON only: "
+    '{"reading": "…", "tensions": "…", "watch": "…"} — each one to two sentences.')
+
+STRATEGY_SCHEMA = {"type": "object", "required": ["reading", "tensions", "watch"],
+                   "properties": {"reading": {"type": "string"}, "tensions": {"type": "string"},
+                                  "watch": {"type": "string"}}}
+
+def _deterministic_strategy_commentary(p):
+    """The floor: composed purely from the payload, ships whenever the model can't."""
+    stance = {"lag": "below market", "match": "on market", "lead": "above market"}.get(
+        (p.get("stance") or {}).get("market_position"))
+    areas = p.get("areas") or []
+    off = p.get("off_aim") or []
+    if areas:
+        reading = "Your declared aim is to sit %s, and %s of your %d benchmarked areas currently read on aim." % (
+            stance or "where you choose", "all" if not off else str(len(areas) - len(off)), len(areas))
+    else:
+        reading = "Your strategy is set; the position read appears once your benchmark unlocks."
+    tensions = ("Running off aim: %s — where your live position and your declared intent disagree."
+                % ", ".join(off)) if off else "No area currently runs against your declared intent."
+    watch = ("The focus you declared for this year is %s — your signals are ordered accordingly."
+             % p["objective_label"].lower()) if p.get("objective_label") else         "Set a primary objective to order your signals around this year's focus."
+    return {"reading": reading, "tensions": tensions, "watch": watch}
+
+def validate_strategy_commentary(parts, payload):
+    """P1D grounding gate: no attribution verbs; every bare number derivable from the payload."""
+    txt = " ".join(str(parts.get(k, "")) for k in ("reading", "tensions", "watch"))
+    low = txt.lower()
+    for verb in ("reported", "submitted", "told us", "peers say", "peers told"):
+        if verb in low:
+            return False, "attribution wording: " + verb
+    n = len(payload.get("areas") or []); off = len(payload.get("off_aim") or [])
+    allowed = {str(n), str(off), str(n - off)}
+    for num in re.findall(r"\b\d+\b", txt):
+        if num not in allowed:
+            return False, "ungrounded number " + num
+    return True, ""
+
+def generate_strategy_commentary(payload):
+    """Three grounded parts on the whole strategy. Model output passes the validator
+    or the deterministic floor ships — never an unvalidated sentence."""
+    fb = _deterministic_strategy_commentary(payload)
+    res = call_claude(STRATEGY_SYSTEM, json.dumps(payload, ensure_ascii=False),
+                      max_tokens=1500, schema=STRATEGY_SCHEMA)
+    if res.get("ok"):
+        try:
+            text = res["text"].strip()
+            if text.startswith("```"):
+                text = text.strip("`").lstrip("json").strip()
+            parts = json.loads(text)
+            if all(isinstance(parts.get(k), str) and parts.get(k) for k in ("reading", "tensions", "watch")):
+                ok, _why = validate_strategy_commentary(parts, payload)
+                if ok:
+                    return {"ok": True, "parts": parts, "source": "model"}
+        except Exception:
+            pass
+    return {"ok": True, "parts": fb, "source": "deterministic"}
+
 
 
 def _commentary_numbers(payload):
