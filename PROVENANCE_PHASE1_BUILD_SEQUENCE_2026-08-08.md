@@ -4,10 +4,11 @@ Drafted by Claude against R-P1..R-P10 (ruled 2026-08-08) and the Phase 0
 diagnostic. **Nothing below is operative unless the approval line is present:**
 
 ```
-APPROVED_BY_DAVID = ____________________   # date + "all" or a list of diff ids
+APPROVED_BY_DAVID = 2026-08-08 — approved AGAINST THE AMENDED SEQUENCE ONLY
+                    (amendment of 2026-08-08: Commit 0; ordering P1-AB -> P1-F
+                    -> P1-C -> P1-D -> P1-E). The original ordering was never
+                    authorised.
 ```
-
-If blank: stop and say so. A build sequence is not an authorisation.
 
 Standing conditions: every lettered diff is its own commit and DECISIONS entry;
 derive don't hardcode; state which case obtains with counts where a check could
@@ -16,25 +17,48 @@ R-P10 already shipped (`f1a8a72`) and is not re-opened here.
 
 ---
 
-## Diff P1-A — the partition, structural (R-P5's seam first)
+## Diff P1-AB — composition enters the engine (R-P5 + n_real, ONE diff — amended)
 
-The floor moves INSIDE `aggregate_question_for_orgs`: the function floors
-against the org set it was handed, and the seven external comparison sites
-become consumers of blocks that arrive already-floored. Add `real_org_ids(conn)`
-as THE one partition helper (rule: `source NOT IN ('seed','staff','demo') AND
-submission_complete=1` — 'demo' included ahead of P1-E so the rule never needs a
-second edit). No behaviour change yet at real n = 0 — this diff is the seam.
-Gate: extend qa_engine_audit with a subset-floor check (a 4-org subset must
-suppress regardless of total n).
+**Why merged (amendment 0.2, recorded so nobody later splits them back on
+diff-size grounds):** A and B are one fix class — composition entering the
+engine — not two. Same function, same loop, same 15,260 n-blocks. Split, the
+floor half becomes subset-aware while no caller passes a subset, so its only
+available verification is STRUCTURAL — reading the code and agreeing with it,
+the proof family this programme has learned to distrust (nine failures on
+record). Merged, the verification is an EXERCISE: hand the function a filtered
+org set and watch the floor bite.
 
-## Diff P1-B — n_real beside n, same pass (R-P2's data)
+Content: `real_org_ids(conn)` as THE one partition helper (`source NOT IN
+('seed','staff','demo') AND submission_complete=1` — 'demo' from the start so
+the rule is never edited twice); `aggregate_question_for_orgs` computes
+`n_real` per block (intersection with the real set, same pass) and its floor
+is proven subset-safe against the org set it was handed.
 
-`aggregate_question_for_orgs` computes `n_real` per block from the intersection
-with `real_org_ids` (measured cost: one set intersection × 15,260 blocks,
-~+4.6% payload). Every block gains `n_real`; matrix rows and presence blocks
-included. Freeze-gate note: payload shape changes — qa_plausibility compares
-values not shapes, but qa_domain_summary's 143 checks and qa_hero must be run
-and any shape assertions updated honestly (report which, with counts).
+**Compensating rehearsal (amendment 0.4) — the merged diff gets a STRONGER
+rehearsal, not a smaller diff.** On the throwaway, before any live write:
+compare ALL 15,260 n-scalars across ALL 344 payloads before/after; assert `n`
+byte-identical everywhere (`n_real` purely additive); a single moved total-n is
+a STOP-and-report finding, wanted before the write; exercise the subset path
+explicitly — a filtered org set below the floor must be suppressed by the
+mechanism itself, fail-closed, not by a caller remembering to check.
+
+## Diff P1-F — the signal composition-epoch seam (R-P6, seam only — SECOND, amended)
+
+**Why second (amendment 0.3):** the marker must exist before `n_real` moves any
+served figure — not before the taper ships. The nightly sweep diffs signal sets
+recomputed from current served payloads with no composition awareness; the
+moment a payload shifts for a composition reason, the digest mails "moved
+against your peers". Today that reaches nobody — which is precisely why the
+marker is free now and an incident after first provisioning. Ordering, not
+content, is the whole point of the move.
+
+`signal_state` gains `composition_epoch`; the sweep rebaselines (record_baseline
+idiom, app.py:2300) instead of diffing when an org's stored epoch differs from
+the current one. The epoch value only ever changes when a future taper diff
+changes composition — at launch it is constant, so behaviour is unchanged
+(stated, not assumed: the sweep's event counts before/after must be identical on
+the throwaway). The taper MECHANISM stays deferred per the ruling.
+
 
 ## Diff P1-C — the composition chip (R-P1/R-P2/R-P3/R-P4)
 
@@ -51,6 +75,13 @@ composition), print header (replaces R-P10's static label). Panel-only cuts
 render labelled, never suppressed (R-P3); no new threshold anywhere (R-P4);
 ConfidenceChip untouched (R-P9).
 
+**Exit criterion (amendment 0.5): not "the sites were updated" — "NO SITE WAS
+MISSED."** Twenty-three emission and render points from the census, plus the
+board-pack CSV, plus the chart image with n baked into the pixels, plus the
+digest subject line. Closed by a SEARCH AGAINST LIVE proving no n reaches any
+surface without composition beside it — never a list of the sites changed. The
+Commit-E discipline: assert against the world, not this commit's claims.
+
 ## Diff P1-D — the AI three-part fix (R-P7, all or none; unblocks R8)
 
 (a) `build_commentary_payload` + pack payload carry `n_real` + composition
@@ -65,28 +96,22 @@ rejection fires, not just that good output passes).
 ## Diff P1-E — source='demo' (R-P8)
 
 Console provisioning form gains the explicit class choice (member | demo);
-`_insert_member_org` takes the class; 'demo' excluded from the partition (P1-A
+`_insert_member_org` takes the class; 'demo' excluded from the partition (P1-AB
 already wrote the rule), from lifecycle (renders as provenance like seed/staff),
 and from real-contributor counts. qa_backoffice: provisioning a demo org must
 not move any real-n; B3's derived floor unaffected (demo orgs are outside the
 expected-world set by construction — state which case obtains).
 
-## Diff P1-F — the signal composition-epoch seam (R-P6, seam only)
-
-`signal_state` gains `composition_epoch`; the sweep rebaselines (record_baseline
-idiom, app.py:2300) instead of diffing when an org's stored epoch differs from
-the current one. The epoch value only ever changes when a future taper diff
-changes composition — at launch it is constant, so behaviour is unchanged
-(stated, not assumed: the sweep's event counts before/after must be identical on
-the throwaway). The taper MECHANISM stays deferred per the ruling.
-
 ## Ordering and gates
 
-A → B → C → D → E → F. A/B are engine diffs (full suite after each); C is
-web+server surface (suite + browser verification of each census site); D gates
-R8; E before any console demo provisioning; F closes the ruled seam. After F:
-the checklist's R8 entry flips from "blocked on R-P7" to "blocked on David's
-production flip only".
+**RULED ORDERING (amendment 0.1): P1-AB → P1-F → P1-C → P1-D → P1-E.**
+AB and F are engine diffs (full suite after each; F proves sweep event counts
+identical before/after on the throwaway since the epoch is constant at launch);
+C is web+server surface closed by search-against-live; D gates R8; E stays last
+and genuinely independent (its only timing constraint is the first
+console-provisioned demo org, which has not happened). After D: the checklist's
+R8 entry flips from "blocked on R-P7" to "blocked on David's production flip
+only".
 
 ## Not in this sequence
 

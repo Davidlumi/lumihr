@@ -14928,3 +14928,26 @@ deliberately (a 212-org calibrated panel is genuinely more stable than a 6-org
 set; always paired with composition) — recorded at the code site so nobody
 re-points it. R-P10 the public correction shipped FIRST (f1a8a72), ahead of
 Phase 1.
+
+## 2026-08-08 — Provenance Phase 1: Commit 0 (the amendment, before any engine code)
+
+The sequence is approved AGAINST THE AMENDED ORDERING ONLY: **P1-AB → P1-F →
+P1-C → P1-D → P1-E**. WHY A AND B MERGE (recorded here and in the document so
+nobody later splits them back on diff-size grounds): they are one fix class —
+composition entering the engine — same function, same loop, same 15,260
+n-blocks. Split, the floor half is subset-aware with no caller passing a subset,
+leaving only STRUCTURAL verification (reading the code and agreeing with it) —
+the proof family with nine recorded failures. Merged, verification is an
+EXERCISE: hand the function a filtered set and watch the floor bite. WHY F MOVES
+SECOND: the composition-epoch marker must exist before n_real moves any served
+figure, not before the taper ships — the sweep has no composition awareness, and
+a composition-driven payload shift would mail "moved against your peers"; today
+that reaches nobody, which is exactly why the marker is free now and an incident
+after first provisioning. THE MERGED DIFF GETS A STRONGER REHEARSAL, NOT A
+SMALLER DIFF: all 15,260 n-scalars compared before/after on the throwaway, n
+byte-identical (n_real purely additive), one moved total-n = stop-and-report,
+and the subset path exercised fail-closed. P1-C's exit criterion restated: "NO
+SITE WAS MISSED", closed by search against live, never a list of changed sites.
+Checklist 0.7: the solicitor visit is unblocked on THREE named items (H's §6.5
+mechanism, F's R5 ceiling record, R6's retention number as a taken parameter) so
+a quiet regression names itself.

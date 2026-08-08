@@ -168,7 +168,13 @@ gate, solicitor-signed) is preserved in full below the gates.
   keys were never delivered; the card path (checkout routes, webhook, client redirect)
   is removed and `payments.py` is the invoice seam. Reinstating card is a deliberate
   build against DECISIONS 2026-08-04 PH-PAY-1. **Commit: see PH-PAY-1 §A.**
-- [ ] **Solicitor bundle** (one visit): C2 above · AI-terms draft review
+- [ ] **Solicitor bundle** (one visit) — **UNBLOCKED on three named items
+  (amendment 0.7, 2026-08-08), so a quiet regression names itself:** (1) Commit H
+  made §6.5's mechanism TRUE before the sentence is drafted (exit re-aggregates
+  in-operation, `c6b0533`); (2) Commit F recorded the R5 ceiling in
+  data/backup_policy.md (35d ceiling-binds, `64dfd1c`); (3) the R6 terms-row
+  retention number is a parameter TAKEN TO the solicitor, not needed from them
+  (mechanism built composition-blind to the number, `86bdc01`). Items: C2 above · AI-terms draft review
   (`lumi_AI_terms_DRAFT_for_solicitor.md` — AI-drafted text is never operative) ·
   privacy-notice retention number · paid-launch billing/refund clause (2026-06-22,
   now INVOICE-based per PH-PAY-1) · **non-payment/suspension gap (PH-PAY-1 §B.4): the
