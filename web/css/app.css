@@ -541,6 +541,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   font-variant-numeric: tabular-nums; margin-top: auto; cursor: help;
   padding-right: var(--s2); margin-right: var(--s1); border-right: 1px solid var(--border); }
 .bench-lead { font-size: var(--fs-body); line-height: 23px; font-weight: 500; color: var(--ink); }
+.bench-support { margin-top: var(--s1); color: var(--ink-faint); }
 .bench-proof { flex: 1.9 1 340px; min-width: 0; position: relative; }
 @media (max-width: 700px) {
   .bench-body { flex-direction: column; }

@@ -639,7 +639,14 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
         Key questions answered: <b>${done.completion_pct}%</b>.</p>
         <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
-        the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>`}
+        the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>
+        <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s3)" }}>
+          <button class="btn primary" onClick=${() => {
+            const gap = (state.sections || []).find(s => s.key_answered < s.key_questions);
+            nav(gap ? "/your-data/" + encodeURIComponent(gap.section) : "/your-data");
+          }}>Continue answering →</button>
+          <button class="btn" onClick=${() => nav("/your-data")}>Back to Your data</button>
+        </div>`}
     </div>`;
   if (val && val._error) return html`<${EmptyState} title="Couldn't check your submission"
     body="Nothing is lost — your answers are saved. Try again in a moment."

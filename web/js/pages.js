@@ -162,7 +162,7 @@ window.UnlockMoment = function ({ onDismiss }) {
           ${/* the £ opportunity lives INSIDE signals (money flags) since the 80/20 hero —
                 this used to say "(below)" and point at a tile that no longer renders */ ""}
           <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="coins" size=${13} /> £ opportunity — in your signals</button>
-          <button class="btn small" onClick=${() => onDismiss && onDismiss()}><${Icon} name="file-text" size=${13} /> Export a board pack (top right)</button>
+          <button class="btn small" onClick=${() => { nav("/overview"); onDismiss && onDismiss(); }}><${Icon} name="file-text" size=${13} /> Export a board pack — on your Overview</button>
         </div>
       </div>
     </div>`;
@@ -3194,7 +3194,9 @@ window.YourDataPage = function ({ me }) {
             <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
               <div><b>Insights unlocked</b> — thank you for contributing to the benchmark.</div></div>` : html`
             <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
-              <div><b>${fresh ? "Answer your reward questions to unlock your insights." : "Reach " + target + "% to unlock your insights."}</b>${c.days_left != null ? ` ${c.days_left} days to go.` : ""}</div></div>`}
+              <div><b>${fresh ? "Answer your reward questions to unlock your insights."
+                : "You're at " + Math.round(c.core_pct || 0) + "% of your key questions — " + target + "% unlocks your insights."}</b>${c.days_left != null ? ` ${c.days_left} days to go.` : ""}
+                ${!fresh ? html`<div class="caption" style=${{ marginTop: "2px" }}>The ring counts every question; unlocking is measured on the key set.</div>` : ""}</div></div>`}
           ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
           ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
           ${c.reduced && html`

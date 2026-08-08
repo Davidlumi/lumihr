@@ -88,6 +88,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
           html`<${CardBody} card=${c} chart=${chart} showP1090=${pref.p1090 !== false} showValues=${pref.values !== false} fav=${cfav} wide=${true} readOnly=${readOnly} />`}
       </div>
       <div class="bench-lead">${sentence.lead || ""}</div>
+      ${sentence.support && sentence.support !== sentence.lead ? html`<div class="caption bench-support">${sentence.support}</div>` : ""}
       ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
       <${WhatThisMeans} card=${c} pos=${meaningPos} />
       <div class="bench-foot">
@@ -448,6 +449,10 @@ function cardSignalState(c, sigs) {
   if (c.suppressed || c.reduced) return null;
   if (sigList(sigs).length) return "signal";
   if (c.locked || !cardAnswered(c)) return "add";
+  // review #3 (2026-08-08): a card with no market comparison must not claim
+  // "within the typical market range" — the pill copy varies by kind below
+  if (c.unbenchmarked) return "clear-unbenchmarked";
+  if (c.practice) return "clear-practice";
   return "clear";
 }
 window.cardSignalState = cardSignalState;
@@ -483,6 +488,10 @@ function cardSignalPill(c, sigs, readOnly) {
       title=${"Add your data for this metric to see if it flags vs the market."}>
       <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
   }
+  if (state === "clear-unbenchmarked") return html`<span class="sig-pill is-clear" title="This metric has no market verdict — nothing to flag either way.">
+    <${Icon} name="sparkle" size=${11} /> No comparison</span>`;
+  if (state === "clear-practice") return html`<span class="sig-pill is-clear" title="Nothing flags here — your choice is in line with the comparison pool.">
+    <${Icon} name="sparkle" size=${11} /> No signal</span>`;
   return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical market range.">
     <${Icon} name="sparkle" size=${11} /> No signal</span>`;
 }
