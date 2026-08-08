@@ -847,11 +847,12 @@ print("\n================ EDGE CASES (production functions under crafted input) 
 import aggregate as prod  # the SUBJECT — not used as a reference anywhere above
 
 cases = [
-    ("single value", lambda: prod.numeric_block([42.0])),
-    ("zero variance n=6", lambda: prod.numeric_block([5.0] * 6)),
+    # P1-AB: numeric_block takes (org_id, value) pairs so n_real mirrors n
+    ("single value", lambda: prod.numeric_block([("qa-o1", 42.0)])),
+    ("zero variance n=6", lambda: prod.numeric_block([("qa-o%d" % i, 5.0) for i in range(6)])),
     ("empty", lambda: prod.numeric_block([])),
-    ("legit negatives", lambda: prod.numeric_block([-2.0, -1.0, 0.0, 1.0, 2.0, 3.0])),
-    ("zeros only n=5", lambda: prod.numeric_block([0.0] * 5)),
+    ("legit negatives", lambda: prod.numeric_block(list(zip(("qa-o%d" % i for i in range(6)), [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0])))),
+    ("zeros only n=5", lambda: prod.numeric_block([("qa-o%d" % i, 0.0) for i in range(5)])),
 ]
 for name, fn in cases:
     try:

@@ -14951,3 +14951,37 @@ SITE WAS MISSED", closed by search against live, never a list of changed sites.
 Checklist 0.7: the solicitor visit is unblocked on THREE named items (H's §6.5
 mechanism, F's R5 ceiling record, R6's retention number as a taken parameter) so
 a quiet regression names itself.
+
+## 2026-08-08 — P1-AB: composition enters the engine (one diff, as amended)
+
+**Why one diff** (recorded per amendment 0.2, against a future re-split): A and B
+are one fix class — same function, same loop, same 15,260 n-blocks. Split, the
+floor half is verifiable only structurally (the nine-failure proof family);
+merged, it is verifiable by EXERCISE.
+
+**What landed.** `real_org_ids(conn)` — THE partition helper (`source NOT IN
+('seed','staff','demo') AND submission_complete=1`; 'demo' from the start so the
+rule is never edited twice), cached per process and refreshed at every
+run_snapshot (the events that change membership all re-run the snapshot). Every
+block builder now takes **(org_id, value) pairs** so each block's `n_real`
+mirrors EXACTLY the denominator its `n` counted — numeric (parsed values only),
+select (matched options only), multi (recognised-selection orgs only), matrix
+rows (per-row observed), matrix top (answering set), scores (scoreable orgs),
+presence (assessable orgs) — and every suppressed block carries n_real too.
+WHICH CASE OBTAINED on R-P5: the floor was ALREADY structural per-handed-set in
+every builder (`n < SUPPRESSION_FLOOR` against the set's own count); what was
+missing was any caller passing a subset, i.e. the un-exercisable proof the
+amendment predicted. qa_engine_audit's builder edge-case fixtures converted to
+pairs.
+
+**Rehearsal output (amendment 0.4), stated as counts and results.** On the
+throwaway, before the live write: BEFORE 15,260 n-scalars / 344 payloads; AFTER
+15,260; **moved total-n: 0; paths gone: 0; new: 0; n-blocks without n_real: 0;
+n_real≠0 anywhere: 0** (real set is empty — 0 is the correct value everywhere).
+Subset exercise: S1 a 4-org subset SUPPRESSED by the mechanism (n=4, n_real=0);
+S2 a 6-org subset aggregates (n=6, n_real=0); S3 one org marked real →
+n_real=1 tracks the partition; **S4 the R-P5 scenario itself — a member-only
+2-org call — comes back suppressed with n=2, n_real=2, floored automatically,
+fail-closed, by the mechanism and not by a caller remembering.** Live write
+after rehearsal: 344 payloads re-stored; served ALLOW_02 all-block reads
+n=211, n_real=0. Suite 14/14 ALL GREEN.

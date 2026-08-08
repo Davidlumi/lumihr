@@ -70,15 +70,44 @@ def coerce_number(text):
     return float(t)
 
 
-def suppressed(n):
-    return {"suppressed": True, "n": n}
+# --- P1-AB (R-P5 + R-P2, ruled 2026-08-08): composition enters the engine ---
+# THE one partition helper. 'demo' is in the rule from the start (R-P8) so the
+# rule is never edited twice. Cached per process; run_snapshot refreshes it —
+# the events that change membership (submission complete, exit) all re-run the
+# snapshot, so the cache cannot serve a stale composition to a fresh payload.
+_REAL_IDS = None
 
 
-def numeric_block(values, excluded=0):
-    """Aggregate a list of floats with suppression."""
+def real_org_ids(conn=None, refresh=False):
+    global _REAL_IDS
+    if _REAL_IDS is None or refresh:
+        c = conn or get_conn()
+        _REAL_IDS = {r[0] for r in c.execute(
+            "SELECT org_id FROM orgs WHERE source NOT IN ('seed','staff','demo') "
+            "AND submission_complete=1")}
+    return _REAL_IDS
+
+
+def _nreal(oids):
+    """n_real for a block: how many of the orgs its n counted are real members."""
+    return len(set(oids) & real_org_ids())
+
+
+def suppressed(n, oids=None):
+    b = {"suppressed": True, "n": n}
+    if oids is not None:
+        b["n_real"] = _nreal(oids)
+    return b
+
+
+def numeric_block(pairs, excluded=0):
+    """Aggregate (org_id, float) pairs with suppression. n_real mirrors EXACTLY
+    the denominator n counts — the orgs whose values entered the distribution."""
+    values = [v for _, v in pairs]
+    oids = [o for o, _ in pairs]
     n = len(values)
     if n < SUPPRESSION_FLOOR:
-        b = suppressed(n)
+        b = suppressed(n, oids)
         if excluded:
             b["excluded_non_numeric"] = excluded
         return b
@@ -87,7 +116,7 @@ def numeric_block(values, excluded=0):
     # (e.g. 60.400000000000034 -> 60.4); the raw values stay in _values for scoring
     r = lambda p: round(percentile(vs, p), 2)
     return {
-        "n": n, "min": round(vs[0], 2), "max": round(vs[-1], 2),
+        "n": n, "n_real": _nreal(oids), "min": round(vs[0], 2), "max": round(vs[-1], 2),
         "p10": r(10), "p25": r(25),
         "p50": r(50), "p75": r(75),
         "p90": r(90), "mean": round(sum(vs) / n, 2),
@@ -126,18 +155,20 @@ def matrix_select_block(option_order, raw_answers):
     Ordered by the column's defined option list; unexpected labels are KEPT
     (appended, flagged) — never dropped."""
     counts = defaultdict(int)
-    for a in raw_answers:
+    counted_oids = []
+    for oid, a in raw_answers:                       # (org_id, value) pairs (P1-AB)
         if a is not None and str(a).strip() != "":
             counts[str(a).strip()] += 1
+            counted_oids.append(oid)
     n = sum(counts.values())
     if n < SUPPRESSION_FLOOR:
-        return suppressed(n)
+        return suppressed(n, counted_oids)
     order = [o for o in (option_order or []) if o in counts] + \
             [l for l in counts if l not in (option_order or [])]
     opts = [{"label": l, "count": counts[l], "pct": round(100.0 * counts[l] / n, 1)} for l in order]
     modal = max(opts, key=lambda o: o["count"])
     unexpected = [l for l in counts if option_order and l not in option_order]
-    blk = {"n": n, "kind": "select", "options": opts,
+    blk = {"n": n, "n_real": _nreal(counted_oids), "kind": "select", "options": opts,
            "modal_label": modal["label"], "modal_pct": modal["pct"]}
     if unexpected:
         blk["unexpected_labels"] = unexpected
@@ -146,13 +177,14 @@ def matrix_select_block(option_order, raw_answers):
 
 
 def select_block(q, raw_answers):
-    """raw_answers: list of option-label strings (one per org)."""
+    """raw_answers: (org_id, option-label) pairs, one per org (P1-AB)."""
     by_label = {_norm_label(o["label"]): o for o in (q.options or [])}
     na_ex = _ab_na_labels(q.id)          # r3sw9: declared answerer_only exclusions
     excluded_na = 0
     counts = defaultdict(int)
+    counted_oids = []
     unmatched = 0
-    for a in raw_answers:
+    for oid, a in raw_answers:
         if na_ex and _norm_label(a) in na_ex:
             excluded_na += 1
             continue
@@ -161,9 +193,10 @@ def select_block(q, raw_answers):
             unmatched += 1
         else:
             counts[o["code"]] += 1
+            counted_oids.append(oid)
     n = sum(counts.values())
     if n < SUPPRESSION_FLOOR:
-        b = suppressed(n)
+        b = suppressed(n, counted_oids)
         b["unmatched"] = unmatched
         if na_ex is not None:
             b["excluded_na"] = excluded_na
@@ -175,7 +208,7 @@ def select_block(q, raw_answers):
         c = counts.get(o["code"], 0)
         opts.append({"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na")),
                      "count": c, "pct": round(100.0 * c / n, 1)})
-    b = {"n": n, "options": opts, "unmatched": unmatched}
+    b = {"n": n, "n_real": _nreal(counted_oids), "options": opts, "unmatched": unmatched}
     if na_ex is not None:
         b["excluded_na"] = excluded_na
     return b
@@ -191,9 +224,10 @@ def multi_block(q, raw_answers):
     na_ex = _ab_na_labels(q.id)          # r3sw9: declared answerer_only exclusions
     excluded_na = 0
     counts = defaultdict(int)
+    counted_oids = []
     unmatched_tokens = 0
     n = 0
-    for a in raw_answers:
+    for oid, a in raw_answers:                       # (org_id, value) pairs (P1-AB)
         seen = set()
         had_na = False
         for tok in (a or "").split(";"):
@@ -211,10 +245,11 @@ def multi_block(q, raw_answers):
                 counts[o["code"]] += 1
         if seen:
             n += 1                       # this org contributed a recognized selection
+            counted_oids.append(oid)
         elif had_na:
             excluded_na += 1             # org held ONLY declared-N/A tokens: leaves the base
     if n < SUPPRESSION_FLOOR:
-        b = suppressed(n)
+        b = suppressed(n, counted_oids)
         b["unmatched_tokens"] = unmatched_tokens
         if na_ex is not None:
             b["excluded_na"] = excluded_na
@@ -226,7 +261,8 @@ def multi_block(q, raw_answers):
         c = counts.get(o["code"], 0)
         opts.append({"code": o["code"], "label": o["label"], "is_na": bool(o.get("is_na")),
                      "count": c, "pct": round(100.0 * c / n, 1)})
-    b = {"n": n, "options": opts, "unmatched_tokens": unmatched_tokens}
+    b = {"n": n, "n_real": _nreal(counted_oids), "options": opts,
+         "unmatched_tokens": unmatched_tokens}
     if na_ex is not None:
         b["excluded_na"] = excluded_na
     return b
@@ -574,17 +610,20 @@ STATUS_POINTS = {"in_place": 100.0, "partial": 50.0, "not_in_place": 0.0}
 
 
 def presence_block(statuses):
-    """Peer presence for one question under one cut. Adoption counts a
-    practice that is at least partly in place; unknowns are excluded from
-    the denominator. Same n>=5 suppression as everything else."""
-    assessable = [st for st in statuses if st in STATUS_POINTS]
+    """Peer presence for one question under one cut, from (org_id, status)
+    pairs (P1-AB). Adoption counts a practice that is at least partly in
+    place; unknowns are excluded from the denominator. Same n>=5 suppression
+    as everything else."""
+    assessable = [(oid, st) for oid, st in statuses if st in STATUS_POINTS]
+    oids = [oid for oid, _ in assessable]
+    assessable = [st for _, st in assessable]
     n = len(assessable)
     if n < SUPPRESSION_FLOOR:
-        return suppressed(n)
+        return suppressed(n, oids)
     in_n = sum(1 for st in assessable if st == "in_place")
     pa_n = sum(1 for st in assessable if st == "partial")
     return {
-        "n": n,
+        "n": n, "n_real": _nreal(oids),
         "in_place_pct": round(100.0 * in_n / n, 1),
         "partial_pct": round(100.0 * pa_n / n, 1),
         "adoption_pct": round(100.0 * (in_n + pa_n) / n, 1),
@@ -593,12 +632,15 @@ def presence_block(statuses):
 
 
 def score_block(scores, with_adoption):
+    """(org_id, score) pairs (P1-AB)."""
+    oids = [o for o, _ in scores]
+    scores = [s for _, s in scores]
     n = len(scores)
     if n < SUPPRESSION_FLOOR:
-        return suppressed(n)
+        return suppressed(n, oids)
     vs = sorted(scores)
     b = {
-        "n": n, "p25": percentile(vs, 25), "p50": percentile(vs, 50),
+        "n": n, "n_real": _nreal(oids), "p25": percentile(vs, 25), "p50": percentile(vs, 50),
         "p75": percentile(vs, 75), "mean": sum(vs) / n, "_scores": vs,
     }
     if with_adoption:
@@ -644,15 +686,16 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
         mr = []
         answering = set()
         for rid, label in rows:
-            raws = []
+            raws = []                                # (org_id, value) pairs (P1-AB)
             for oid, v in observed.get(rid, {}).items():
                 if v is not None and str(v).strip() != "":
-                    raws.append(v)
+                    raws.append((oid, v))
                     answering.add(oid)
-            na = sum(1 for v in raws if _row_na(v))
-            raws = [v for v in raws if not _row_na(v)]
+            na = sum(1 for _, v in raws if _row_na(v))
+            raws = [(o, v) for o, v in raws if not _row_na(v)]
             if numeric_mode:
-                vals = [f for f in (matrix_value(v) for v in raws) if f is not None]
+                vals = [(o, f) for o, f in ((o, matrix_value(v)) for o, v in raws)
+                        if f is not None]
                 excl = len(raws) - len(vals)
                 if excl:
                     print("[aggregate] WARN %s row %s: %d values failed numeric parse (kept as excluded count)" % (q.id, rid, excl))
@@ -662,19 +705,20 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
             if na:
                 blk["excluded_na"] = na
             mr.append({"row_id": rid, "label": label, "block": blk})
-        top = {"n": len(answering)} if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering))
+        top = ({"n": len(answering), "n_real": _nreal(answering)}
+               if len(answering) >= SUPPRESSION_FLOOR else suppressed(len(answering), answering))
         # Diff 20: metric-level matrix score (count_yes / ordinal_select) — one score per org from its
         # answered cells, so the matrix positions as a single verdict via the SAME score path scored
         # selects use (payload["scores"]). N/A cells excluded (never in the denominator).
         score_blk = None
         if q.is_scored and (q.scoring_config or {}).get("scoring_method") in MATRIX_SCORE_METHODS:
-            org_scores = []
+            org_scores = []                          # (org_id, score) pairs (P1-AB)
             for oid in answering:
                 cells = [observed[rid].get(oid) for rid, _ in rows]
                 cells = [v for v in cells if v not in (None, "") and str(v).strip() != "" and not _row_na(v)]
                 s = matrix_metric_score(q, cells)
                 if s is not None:
-                    org_scores.append(s)
+                    org_scores.append((oid, s))
             score_blk = score_block(org_scores, with_adoption=q.category in ("practice", "policy", "benefit")) if org_scores else None
         return top, mr, score_blk, None
 
@@ -683,16 +727,16 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
     # e.g. REW_INC_061) and must be IGNORED — never silently collapsed into a
     # single arbitrary row's distribution (integrity-review Phase A fix).
     per_org = {oid: v for (oid, rid), v in answers_for_q.items() if oid in org_ids and not rid}
-    raw = list(per_org.values())
+    pairs = list(per_org.items())                    # (org_id, value) pairs (P1-AB)
 
     if q.type == "numeric":
         # N/A answers count as answered (the gate) but never enter the
         # distribution — kept distinct from a real 0 and from blank.
         vals, excl, na = [], 0, 0
-        for v in raw:
+        for oid, v in pairs:
             f = coerce_number(v)
             if f is not None:
-                vals.append(f)
+                vals.append((oid, f))
             elif _NA_LABEL.match(str(v).strip()):
                 na += 1
             else:
@@ -701,19 +745,20 @@ def aggregate_question_for_orgs(q, org_ids, answers_for_q):
         if na:
             blk["excluded_na"] = na
     elif q.type in ("single_select", "yes_no"):
-        blk = select_block(q, raw)
+        blk = select_block(q, pairs)
     elif q.type == "multi_select":
-        blk = multi_block(q, raw)
+        blk = multi_block(q, pairs)
     else:
-        blk = suppressed(0)
+        blk = suppressed(0, [])
 
     score_blk = None
     presence_blk = None
     if q.is_scored and q.type in ("single_select", "yes_no", "multi_select"):
-        scores = [s for s in (score_answer(q, v) for v in raw) if s is not None]
+        scores = [(oid, s) for oid, s in ((oid, score_answer(q, v)) for oid, v in pairs)
+                  if s is not None]
         score_blk = score_block(scores, with_adoption=q.category in ("practice", "policy", "benefit"))
         if q.category in ("practice", "policy"):
-            presence_blk = presence_block([practice_status(q, v) for v in raw])
+            presence_blk = presence_block([(oid, practice_status(q, v)) for oid, v in pairs])
     return blk, None, score_blk, presence_blk
 
 
@@ -802,6 +847,7 @@ def build_cuts(conn, responding_org_ids):
 def run_snapshot(snapshot_id=1, verbose=True):
     conn = get_conn()
     init_schema(conn)
+    real_org_ids(conn, refresh=True)   # P1-AB: composition is per-pass fresh
     questions = load_questions()
     answers = load_answers(conn, snapshot_id)
     responding = {oid for qa in answers.values() for (oid, _r) in qa}
