@@ -112,6 +112,14 @@ delete its own off-box copies.
 
 ## 6. Hard preconditions of FIRST PROVISIONING (not of deployment)
 
+0. **One-time signal_state rebaseline (P1-C-doc, 2026-08-08).** The database
+   carries a ~11,247-event un-swept dev backlog (seed orgs, no recipients —
+   nothing would mail, but production must not begin life replaying a dev
+   backlog through its first sweep). Run once, before first provisioning:
+   bump `composition_epoch` in meta (`set_meta("composition_epoch", "prod-1")`)
+   and run one sweep — P1-F's epoch mechanism rebaselines every org SILENTLY,
+   zero events. Use the built idiom; do not invent a truncation.
+
 1. **D2 — SES email delivery live** (A4 ruling): domain verified, DKIM, sandbox
    exit, `LUMI_SMTP_*` set, a real invite delivered to a test mailbox. Until D2,
    invite links only exist in API responses and journald — and the journald copy is

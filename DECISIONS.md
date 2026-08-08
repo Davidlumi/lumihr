@@ -15075,3 +15075,17 @@ sent; the footer closes that permanently at zero cost to the in-product
 experience, because none of it is in-product. §3: the methodology sentence is
 de-headlined — plain prose, same facts, still findable — and the pre-R-P10
 member-sourced claim does not return to a public page. Suite 14/14 ALL GREEN.
+
+## 2026-08-08 — P1-C-doc: two carry-forwards (ride along per David's confirmation)
+
+(1) PRODUCTION STARTS CLEAN: runbook §6.0 — one-time signal_state rebaseline
+via P1-F's composition-epoch bump before first provisioning, retiring the
+11,247-event dev backlog silently with the built idiom, never a truncation.
+(2) THE CENSUS LESSON, recorded beside P1-C in the terms ruled: the Phase 0
+census was the best enumeration available and still missed ELEVEN surfaces —
+roughly a third (export toasts, one-pager header/hint/PDF cells, search
+captions, practice rows, the pulse line). Same failure shape as a census scoped
+to inventory rather than filesystem: it measured what was KNOWN, not what
+EXISTED. The next proposal to close by list will come with a longer list and
+sound more convincing — the exit criterion is a SEARCH AGAINST THE WORLD, every
+time.
