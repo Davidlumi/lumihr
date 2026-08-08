@@ -37,7 +37,7 @@ function cutToURL(cut) {
 }
 // The benchmark-family routes are the only surfaces whose URL carries the peer
 // cut (mirrors the benchRoute test in App) — everything else stays clean.
-const CUT_ROUTES = ["/overview", "/benchmark", "/superpower", "/myview", "/dashboards", "/metric", "/priorities", "/category/"];
+const CUT_ROUTES = ["/overview", "/benchmark", "/superpower", "/myview", "/dashboards", "/metric", "/priorities", "/signals", "/category/"];
 const isCutRoute = r => r === "" || r === "/" || CUT_ROUTES.some(p => r.startsWith(p));
 
 function App() {
@@ -235,6 +235,9 @@ function App() {
       }, 150);
       return () => clearInterval(t);
     }
+    // forward navigation starts at the top — without this, arriving from a
+    // long page lands the new page mid-scroll (review #28, 2026-08-08)
+    window.scrollTo(0, 0);
   }, [route]);
 
   window.openMetricRequest = (prefill, source) => setMetricReq({ prefill: prefill || "", source: source || "button" });
@@ -245,7 +248,17 @@ function App() {
   // the SAME line as the tiles + signals, so they can never drift.
   if (me && me.config && me.config.market_band) window.MARKET_BAND = me.config.market_band;
   const activeSupers = scope.superpowers;
-  if (me === null) return html`<${AuthScreen} route=${route} onAuthed=${() => { window.location.hash = "/overview"; refreshMe(); }} />`;
+  if (me === null) {
+    // remember where the user was headed — session expiry or a cold deep link
+    // must return them there, not dump them on Overview
+    const h = (window.location.hash || "").replace(/^#/, "");
+    if (h && !/^\/(invite|reset|register)\b/.test(h) && h !== "/" && h !== "/overview")
+      window.__resumeRoute = h;
+    return html`<${AuthScreen} route=${route} onAuthed=${() => {
+      window.location.hash = window.__resumeRoute || "/overview";
+      window.__resumeRoute = null; refreshMe();
+    }} />`;
+  }
   // Ship review 2026-07-09 (Pack 1.3): pages read saved view prefs (strategy
   // off / practice view / rail state) in one-shot useState initializers, so a
   // cold load or deep link used to mount with EMPTY prefs, render the default
@@ -418,7 +431,8 @@ function App() {
               if (e.key === "ArrowDown") { e.preventDefault(); if (opts.length) setActiveHit(i => (i + 1) % opts.length); }
               else if (e.key === "ArrowUp") { e.preventDefault(); if (opts.length) setActiveHit(i => (i <= 0 ? opts.length - 1 : i - 1)); }
               else if (e.key === "Enter") {
-                const q = opts[activeHit];
+                // no highlight yet -> the first result is the obvious intent
+                const q = opts[activeHit] || opts[0];
                 if (q) { e.preventDefault(); setSearch(""); setActiveHit(-1); q.kind === "nav" ? nav(q.route) : openMetric(q.id); }
               }
             }} />
@@ -466,7 +480,7 @@ function App() {
           <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />`}
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
-          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />`}
+          <${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />
         </div>
         ${me.user.platform_admin && html`
         <div class="nav-group">
@@ -1148,9 +1162,7 @@ function NotificationBell({ me }) {
                   </button>`)}
               </div>`)}
           </div>`}
-          <div class="notif-foot">${me && me.user.role === "admin"
-            ? html`<a href="#" onClick=${e => { e.preventDefault(); setOpen(false); nav("/settings"); }}>Notification settings →</a>`
-            : html`<span class="caption">Ask your Admin to adjust notification settings.</span>`}</div>
+          <div class="notif-foot"><a href="#" onClick=${e => { e.preventDefault(); setOpen(false); nav("/settings"); }}>Notification settings →</a></div>
         </div>`}
     </div>`;
 }
@@ -1272,7 +1284,7 @@ const NAV_INDEX = [
   { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
   { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
   { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
-  { label: "Settings", route: "/settings", group: "Pages", role: "admin", kw: "assumptions sharing notifications account" },
+  { label: "Settings", route: "/settings", group: "Pages", kw: "assumptions sharing notifications account" },
   { label: "Your profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
   { label: "How lumi works", route: "/how-lumi-works", group: "Help", kw: "help methodology co-op legal" },
   { label: "How the numbers are calculated", route: "/how-lumi-works/calculations", group: "Help", kw: "methodology median percentile suppression method" },

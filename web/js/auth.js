@@ -84,7 +84,8 @@ function Shell({ children, sub }) {
     <div class="auth-wrap">
       <div class="card auth-card">
         <div class="logo" style=${{ padding: 0, marginBottom: "var(--s1)" }}>lumi<span>.benchmark</span></div>
-        <div class="caption" style=${{ marginBottom: "var(--s5)" }}>${sub || "Reward benchmarking for UK HR teams"}</div>
+        <div class="caption" style=${{ marginBottom: "var(--s5)" }}>${sub || (window.__resumeRoute
+          ? "Sign in to continue where you left off." : "Reward benchmarking for UK HR teams")}</div>
         ${children}
       </div>
       <div class="auth-footer">
