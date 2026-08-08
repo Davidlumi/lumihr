@@ -1,0 +1,36 @@
+# lumi production edge (R1a: Caddy fronting uvicorn, automatic ACME).
+# TLS terminates here; uvicorn is loopback-only (systemd unit binds 127.0.0.1).
+# Port 80 stays open ONLY for the ACME HTTP challenge + redirect — Caddy does
+# both automatically for a site block named with a public hostname.
+
+app.lumihr.co.uk {
+	# Automatic HTTPS: certificate issuance + renewal via ACME, no cron to
+	# silently fail (the reason nginx+certbot was rejected — R1a, DECISIONS
+	# 2026-08-08).
+	encode gzip
+
+	reverse_proxy 127.0.0.1:8060 {
+		# uvicorn sees the member's IP + original scheme
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Access logs: 0640 under /var/log/caddy (packaged default), no bearer
+	# tokens ever appear in URLs by design (invite/reset tokens ride fragments
+	# client-side: /app#/invite/<tok> — the fragment never reaches the server
+	# log). Keep it that way: any new link format must keep tokens out of
+	# paths and query strings.
+	log {
+		output file /var/log/caddy/app.lumihr.co.uk.log {
+			mode 0640
+		}
+	}
+}

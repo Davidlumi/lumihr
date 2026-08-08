@@ -14663,3 +14663,19 @@ recon PASS). NOTED HONESTLY: gate-safety-2 flagged live orgs content moving duri
 the run — that is the one-time idempotent ALTER adding suspended_seconds at the
 teardown dev-server boot (the house boot-migration pattern), 224 rows, all zeros,
 no data touched; the next suite baselines clean.
+
+## 2026-08-08 — Commit D: deployment artefacts + runbook (R1/R1a/R1b — artefacts only, David executes)
+
+`deploy/Caddyfile` (app.lumihr.co.uk, automatic ACME, security headers, access log
+0640 with the note that bearer tokens ride URL FRAGMENTS and so never reach server
+logs — any new link format must keep it that way), `deploy/lumi.service` (non-root,
+loopback-only uvicorn, ProtectSystem=strict with write access ONLY to data+logs,
+EnvironmentFile 0600), `deploy/DEPLOY_RUNBOOK.md` (security group 443/80/named-SSH
+and nothing else; boot assertions that FAIL CLOSED on: base URL wrong/unset, AI
+surfaces not dark, registration not closed, uvicorn not loopback; relaunch-from-
+committed-source discipline; journald retention = the R5 35-day ceiling as PH-LOG-1
+containment; the R1d sentence verbatim — SQLite on EBS at launch, Phase 2 attaches
+RDS to the same instance as a connection-string change, which is the whole reason
+for R1). Hard preconditions of FIRST PROVISIONING stated in the runbook: D2/SES
+live (A4), one proven S3 restore, and the §4 STOP executed. Nothing provisioned
+from here — the artefacts are the deliverable, David runs them.

@@ -1,0 +1,39 @@
+# /etc/systemd/system/lumi.service — uvicorn, loopback only, non-root.
+# R1: EC2 (ARM, Ubuntu LTS), single instance. Caddy (its own packaged unit)
+# terminates TLS and proxies to this.
+
+[Unit]
+Description=lumi platform (uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=lumi
+Group=lumi
+WorkingDirectory=/srv/lumi/app/server
+# 127.0.0.1 ONLY — the app is never internet-facing directly (Caddy fronts it).
+ExecStart=/srv/lumi/venv/bin/python3 -m uvicorn app:app --host 127.0.0.1 --port 8060
+Restart=on-failure
+RestartSec=3
+
+# Environment: the production posture. EnvironmentFile keeps secrets out of
+# the unit (0600, owned root:lumi). The runbook's boot assertions check these.
+EnvironmentFile=/srv/lumi/env/lumi.env
+
+# Write access ONLY to data + logs (write permission does not imply delete
+# permission is the doctrine; on a filesystem we don't own yet, least-write is
+# how it is expressed). Everything else read-only.
+ProtectSystem=strict
+ReadWritePaths=/srv/lumi/data /srv/lumi/logs
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+
+# stdout/err -> journald; journald retention is capped in the runbook (the
+# PH-LOG-1 containment: auth links appear in app logs until D2 lands, and D2
+# is a HARD precondition of first provisioning — A4 ruling).
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
