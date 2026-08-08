@@ -15168,3 +15168,48 @@ FIXTURE-PROVEN AND STATED AS SUCH (real n = 0 live, so the real-viewer path has
 no live exercise): seed viewer participants=13, below_floor=False, demo
 unchanged; real-class fixture viewer participants=0, below_floor=True, EVERY
 question block suppressed. Suite 14/14 ALL GREEN (qa_pulse 0 failures).
+
+## 2026-08-08 — Platform-wide UX/UI review loop: 9 batches, everything but the data
+
+David: "complete review of the entire platform … everything EXCEPT the data …
+world class user experience … deploy your rec as you go." Method: a 10-lens
+review fleet (design-system, cards, submission, signals, auth, backoffice,
+a11y, copy/states, artefacts, nav) synthesised 109 raw findings into 30 ranked
+items; every claim verified against the code before fixing; first-hand browser
+walks added more. Nine batches, each browser-verified, suite-green and
+committed separately (99b9bf1, e023ada, afbb2c4, 887a368, 8c6d3f6, faf7b86,
+3b7c8f4, 2f626f1, eccb433, 6ca6846 — Batch 0–9).
+
+WORTH RE-READING LATER:
+- REGISTRATION DOOR (B5): /register no longer dead-ends into a 403 — new
+  public GET /api/auth/registration posture endpoint; closed = a warm
+  "Membership is set up for you" card (mailto), all fields hidden, fail-open
+  on fetch error so an open door is never blocked by a hiccup.
+- £0 FEE (B6): four falsy-coercion sites would have billed the £750 default
+  on a staff-WAIVED £0 pulse launch fee (app.py launch + confirm-launch,
+  review coercion, pulses.review_pulse gate — now "0 waives it").
+- POOL TRUTH (B7): "Comparison pool: N UK organisation profiles" now always
+  cites the GLOBAL panel via new setPoolTotal/poolTotal globals or omits
+  itself; cut-scoped n and hardcoded 220 fallbacks eliminated from chart PNG
+  footer, share header, one-pager. One-pager footer methodology corrected
+  ("linear interpolation", not "medians"). fmtDate() no-arg now = today —
+  every "generated <date>" footer printed blank before.
+- SAVE HONESTY (B8): debounce window now counts in _pendingSaves
+  (beforeunload covers typed-then-closed edits); failed saves invalidate the
+  header "Saved" line (+ Saving…/error states); matrix "Not applicable"
+  confirms before wiping populated rows.
+- ONE TRIAGE VOCABULARY (B9): quick-saves from home/metric surface in a
+  built-in Saved view on Signals; priority ranks first with a pin tag; feed
+  partition still reconciles. Dashboard reorder gained the keyboard path
+  (arrow keys + live region). Board pack evidence tables got a fit budget
+  (8+8 with honest remainder) so the fixed 296mm sheet can't silently clip.
+- GATE HARDENING (incidental): qa_signals_system torn-run guard — a prior
+  interrupted run had leaked max_signals/max_per_lens=999 to disk and every
+  later run "restored" the leak as baseline (live app served an uncapped
+  briefing). Gate now refuses a 999 baseline; leak reverted (28f8f28).
+
+Deliberately NOT fixed: Priorities false-empty flash (root cause unpinned —
+spawned as its own task rather than guess-fixed); Pay-card fixed-height
+whitespace (cosmetic, needs a pinned repro). Design law held throughout: one
+blue, no composition/attribution wording in-product, verdict vocabulary
+locked, no animated numbers.
