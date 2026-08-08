@@ -15270,3 +15270,19 @@ pages.js's and killed the whole file at load; renamed SV_STANCE. Indirect
 eval AFTER the failure succeeds (the name was freed), which disguises the
 cause — check for cross-file const collisions before trusting an eval repro.
 Suite 14/14 green.
+
+## 2026-08-08 — Strategy page rebuild 2: the persona-fleet spec (61fe39d)
+
+Rebuild 1 (4526ff4) ruled not premium by David. A 6-agent fleet (3 reward
+personas, 3 design directions) converged on musts now shipped: output = a
+TYPESET DELIVERABLE (navy masthead, numbered sections, authored stance prose
+with phrase lexicons — no assembly seams; the aim-ring/position-dot exhibit
+per area; a typographic ledger; context demoted to one line; no unfinished-
+product confessions). Input = conversational capture (segmented facts, no
+native selects, no Required/Optional pills, the stance building LIVE in a
+navy rail, confetti removed — saving is a governance act). Personas' unmet
+asks recorded for later: attributed change history per field (needs server
+work), consequences-of-all-three-stops visible pre-pick, per-area aims
+promoted in capture, next-review-due governance metadata. The synthesizer
+agent died on payload size AGAIN (2nd time) — recover from journal.jsonl and
+judge inline; don't re-run big-payload judges.
