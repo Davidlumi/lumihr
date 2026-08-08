@@ -14623,3 +14623,43 @@ pre-check REPORTED: invites 7 days (auth.py INVITE_TTL_DAYS, stamped at create,
 ENFORCED at every read via `expires_at > datetime('now')`), resets 2 hours
 (RESET_TTL_HOURS, enforced in get_valid_reset) — both expire and both are enforced,
 so no TTL defect outranks the containment.
+
+## 2026-08-08 — Commit B (PH-PAY-2, R3/R3a/R3b): suspension pauses the clock, gates the noise, keeps the lifeline
+
+**3.1 Clock — accumulated, never a single delta.** New `orgs.suspended_seconds`
+(idempotent ALTER, default 0). CHOICE, as required: `clock_start` is IMMUTABLE — the
+moment of data-terms acceptance is a fact worth keeping — and the pause is an
+accumulator banked AT REACTIVATION (`suspended_seconds += now − deactivated_at`,
+computed in SQL against the same clock that stamped it, MAX(0)-guarded). The window
+derives as `elapsed = min(now, deactivated_at) − clock_start − suspended_seconds` —
+frozen while currently suspended, and a second suspension accrues on top of the first.
+
+**3.2 Mail gates.** run_signal_sweep's org selection now carries
+`deactivated_at IS NULL` (no events accrue for members who cannot see them);
+run_email_digest skips deactivated accounts and suspended orgs' members — SKIP, never
+suppress: `emailed_at` stays NULL so held events roll forward (the rate-cap idiom
+reused, as ruled, not a new suppression path); maybe_send_clock_reminder returns
+BEFORE marking reminders_json, so a due reminder is held, not consumed.
+
+**3.3 The R3b carve-out, NAMED (against the shipped free-text reasons — A3: there is
+no enum, so the carve-out keys off the suspended STATE).** Password-reset mail STILL
+SENDS for a suspended org's members — sole-admin recovery is precisely the case that
+needs it; comments at the send sites say so in those words so no tidy-up closes it.
+Invite mail sends wherever invite CREATION is permitted; creation into an
+org-suspended tenant remains refused by the F12 design — a creation rule, not a mail
+gate, and it does not touch sole-admin recovery, which suspends a USER, not the org.
+
+**Verification (throwaway :8076, real counts).** V1 clock frozen while suspended
+(10d run − 5d suspended = 5d elapsed, exact); V2 reactivation banks 432,000s (5d
+exact) and effective elapsed excludes it; V3 second suspension ACCRUES (691,200s = 8d,
+not 3d); V4 suspended org: digest sent=0 with 132 genuinely pending events HELD
+(emailed_at NULL, suppressed_reason NULL); V6 reset for the suspended org's admin →
+200 + live token minted (R3b); V7 the 132 held events land in the FIRST
+post-reactivation digest (sent=1, all 132 stamped) and never again (third run
+sent=0); V8 sweep selection excludes suspended orgs. My first V7 fixture was
+synthetic and correctly REJECTED by _live_at_send — the proof stands on the real
+backlog, which is the stronger case. Suite 14/14 green (backoffice 106, refresh 46,
+recon PASS). NOTED HONESTLY: gate-safety-2 flagged live orgs content moving during
+the run — that is the one-time idempotent ALTER adding suspended_seconds at the
+teardown dev-server boot (the house boot-migration pattern), 224 rows, all zeros,
+no data touched; the next suite baselines clean.

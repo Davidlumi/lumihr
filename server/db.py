@@ -657,6 +657,11 @@ def init_schema(conn=None):
                 # deactivation, cleared at reactivation; the audit log keeps history.
                 "ALTER TABLE orgs ADD COLUMN deactivated_reason TEXT",
                 "ALTER TABLE users ADD COLUMN disabled_reason TEXT",
+                # PH-PAY-2 R3 (2026-08-08): suspension pauses the 30-day clock —
+                # ACCUMULATED across suspensions (single-delta is wrong on the
+                # second one). clock_start is never rewritten; the effective
+                # window derives from clock_start + suspended_seconds.
+                "ALTER TABLE orgs ADD COLUMN suspended_seconds INTEGER NOT NULL DEFAULT 0",
                 # metric-suggestion triage: staff review workflow over the existing
                 # write-only suggestions inbox (status new -> reviewed -> accepted|rejected)
                 "ALTER TABLE metric_suggestions ADD COLUMN reviewed_by TEXT",

@@ -396,6 +396,21 @@ def run_email_digest(conn, base_url="", frequencies=("daily", "weekly")):
         user = conn.execute("SELECT * FROM users WHERE user_id=?", (uid,)).fetchone()
         if not user:
             continue
+        # PH-PAY-2 R3a: no digest to a deactivated account or a suspended org's
+        # members. SKIP, never suppress — emailed_at stays NULL so the held
+        # events roll into the first post-reactivation digest (the same idiom
+        # as the rate cap: excess stays unemailed, rolls forward, bell shows it).
+        # R3b CARVE-OUT, named so no tidy-up closes it: AUTH mail (password
+        # reset; invite where creation is permitted) still sends during
+        # suspension — see the carve-out comments at those send sites; without
+        # it, sole-admin recovery is impossible on precisely the orgs most
+        # likely to need it.
+        if user["disabled_at"]:
+            continue
+        _org_deact = conn.execute("SELECT deactivated_at FROM orgs WHERE org_id=?",
+                                  (user["org_id"],)).fetchone()
+        if _org_deact and _org_deact["deactivated_at"]:
+            continue
         prefs = user_prefs(user["notify_prefs_json"], alert)
         if prefs["email_frequency"] not in frequencies:
             continue

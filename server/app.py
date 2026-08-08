@@ -252,7 +252,22 @@ def contribution_state(conn, org):
             started = datetime.strptime(clock_start[:19], "%Y-%m-%d %H:%M:%S")
         except (ValueError, TypeError):
             started = datetime.utcnow()
-        days_left = max(0, CLOCK_DAYS - (datetime.utcnow() - started).days)
+        # PH-PAY-2 R3: suspension pauses the clock. clock_start is IMMUTABLE
+        # (the original moment of data-terms acceptance is a fact worth
+        # keeping); the pause is an ACCUMULATED suspended_seconds counter
+        # incremented at each reactivation — a single delta from
+        # deactivated_at would be right once and wrong on the second
+        # suspension. While CURRENTLY suspended the clock is frozen at the
+        # suspension moment (elapsed stops accruing).
+        _o = org if isinstance(org, dict) else dict(org)   # sqlite Row has no .get
+        now = datetime.utcnow()
+        if _o.get("deactivated_at"):
+            try:
+                now = min(now, datetime.strptime(_o["deactivated_at"][:19], "%Y-%m-%d %H:%M:%S"))
+            except (ValueError, TypeError):
+                pass
+        elapsed = now - started - timedelta(seconds=_o.get("suspended_seconds") or 0)
+        days_left = max(0, CLOCK_DAYS - elapsed.days)
     # team invited = any pending invite OR any member beyond the founding Admin —
     # the "invite your team" setup step's done-state (persistent onboarding checklist)
     team_invited = bool(conn.execute(
@@ -279,6 +294,12 @@ def maybe_send_clock_reminder(conn, org, state):
     fires automatically once SMTP is configured; in-app banners are driven
     by days_left regardless."""
     if state["insights_unlocked"] or state["days_left"] is None:
+        return
+    # PH-PAY-2 R3a: no clock nagging while suspended — and the guard sits BEFORE
+    # reminders_json is marked, so the reminder is HELD (fires after
+    # reactivation if still due), never silently consumed.
+    _o = org if isinstance(org, dict) else dict(org)
+    if _o.get("deactivated_at"):
         return
     due = "7d" if state["days_left"] <= 7 and state["days_left"] > 1 else \
           "1d" if state["days_left"] <= 1 else None
@@ -412,7 +433,8 @@ class SessionMiddleware(BaseHTTPMiddleware):
                     "SELECT org_id, source, tier_entitlement, classified, industry, subsector, "
                     "fte_band, hq_region, ownership_type, registry_json, submission_complete, "
                     "clock_start, insights_unlocked_at, reminders_json, unionised_level, "
-                    "hr_maturity, business_maturity, operating_model, default_cut, deactivated_at "
+                    "hr_maturity, business_maturity, operating_model, default_cut, deactivated_at, "
+                    "suspended_seconds "
                     "FROM orgs WHERE org_id=?", (user["org_id"],)).fetchone()
                 # soft-deactivated org: its members carry no request context at all —
                 # every authed route sees the same 401 a signed-out user gets.
@@ -971,6 +993,10 @@ async def request_reset(request: Request):
         token = auth_lib.create_reset(user["user_id"])
         # a real member-facing email (send_notification console-logs it, link
         # included, until SMTP is configured — same dev flow, no dev-copy leak)
+        # PH-PAY-2 R3b CARVE-OUT — DO NOT gate this on suspension: reset mail
+        # STILL SENDS for a suspended org's members (sole-admin recovery is
+        # exactly the case that needs it; the login gate, not the mail gate,
+        # is what suspension means here). Only digest/signal mail is gated.
         send_notification(
             "Reset your lumi password",
             "Hello,\n\nSomeone asked to reset the lumi password for this address. If that was "
@@ -1106,6 +1132,11 @@ async def invite(request: Request):
         raise HTTPException(400, "Please enter a valid email address.")
     if auth_lib.find_user(email):
         raise HTTPException(400, "That email already has a lumi account.")
+    # PH-PAY-2 R3b CARVE-OUT: invite mail is AUTH mail — where invite CREATION
+    # is permitted, the mail always sends regardless of suspension state.
+    # (Creation into an org-suspended tenant is separately refused by the F12
+    # design — that is a creation rule, not a mail gate, and it does not touch
+    # the sole-admin-recovery path, which suspends a USER, not the org.)
     token = auth_lib.create_invite(org["org_id"], email, role, user["user_id"])
     link = "%s/app#/invite/%s" % (base_url(minting=True), token)
     inviter = user["display_name"] or user["email"]
@@ -2251,9 +2282,11 @@ def run_signal_sweep(conn=None, verbose=True):
     events), checked here. Returns (orgs_swept, events_written)."""
     conn = conn or get_conn()
     swept, total_events = 0, 0
+    # PH-PAY-2 R3a: suspended orgs are OUT of the sweep — no signal events accrue
+    # for members who cannot see them, and no downstream mail path receives them.
     for row in conn.execute(
             "SELECT org_id, industry, fte_band, insights_unlocked_at, "
-            "submission_complete, default_cut FROM orgs"):
+            "submission_complete, default_cut FROM orgs WHERE deactivated_at IS NULL"):
         org = dict(row)
         try:
             if not org_unlocked(conn, org):
@@ -6216,7 +6249,14 @@ async def admin_org_reactivate(org_id: str, request: Request):
         raise HTTPException(404, "Unknown organisation")
     if not row["deactivated_at"]:
         raise HTTPException(400, "That organisation isn't deactivated.")
-    conn.execute("UPDATE orgs SET deactivated_at=NULL, deactivated_reason=NULL "
+    # PH-PAY-2 R3: bank THIS suspension's elapsed seconds into the accumulator
+    # before clearing the state — accumulated, never a single delta, so a
+    # second suspension accrues on top of the first. Computed in SQL against
+    # the same clock that stamped deactivated_at.
+    conn.execute("UPDATE orgs SET "
+                 "suspended_seconds = suspended_seconds + "
+                 "  MAX(0, strftime('%s','now') - strftime('%s', deactivated_at)), "
+                 "deactivated_at=NULL, deactivated_reason=NULL "
                  "WHERE org_id=?", (org_id,))
     conn.commit()
     _audit(staff, "org.reactivate", "org", org_id)
