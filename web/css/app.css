@@ -1587,7 +1587,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* embedded narrative = two clean paragraphs, readable size, generous leading (format pass
    2026-07-13); the quiet provenance foot separates itself with a hairline */
 .cat-brief-narrwrap .cat-summary-body { display: flex; flex-direction: column; gap: var(--s3); }
-.cat-brief-narrwrap .cat-sum-text { font-size: 13.5px; line-height: 1.65; margin: 0; color: var(--ink); }
+.cat-brief-narrwrap .cat-sum-text { font-size: var(--fs-label); line-height: 1.65; margin: 0; color: var(--ink); }
 .cat-brief-narrwrap .cat-sum-prov { border-top: 1px solid var(--border); padding-top: var(--s2);
   margin-top: var(--s1); font-size: var(--fs-caption); color: var(--ink-faint); }
 /* the unified filter bar (2026-07-13, filters separated from the insight cards): one home for
@@ -3824,7 +3824,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border: 1px solid color-mix(in srgb, var(--unfavourable) 32%, var(--surface));
   border-radius: 999px; padding: 0 var(--s2); }
 .brf-shield svg { color: var(--lumi-coral); }
-.brf-head { font-family: var(--font-head); font-size: 17px; line-height: 1.35; font-weight: 650;
+.brf-head { font-family: var(--font-head); font-size: var(--fs-card-title); line-height: 1.35; font-weight: 650;
   letter-spacing: -.01em; color: var(--ink); margin: var(--s1) 0 var(--s2); }
 .brf-why { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.5; }
 .brf-why b { color: var(--ink); font-weight: 600; }

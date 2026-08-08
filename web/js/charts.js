@@ -295,7 +295,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
           ${(rows || []).map(r => {
             if (r.suppressed || !r.block) return html`
               <tr key=${r.row_id} class="mn-row"><th scope="row" class="mn-lvl"><span class="mn-lvl-txt" title=${r.label}>${r.label}</span></th>
-                <td colspan="4" class="mn-supp caption">not enough organisations to show safely</td></tr>`;
+                <td colspan="4" class="mn-supp caption">not enough organisations</td></tr>`;
             const b = r.block, you = r.you ? r.you.value : null;
             const f = favOf(you, b.p50, r.you ? r.you.percentile : null);
             return html`
@@ -347,11 +347,11 @@ window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_
           <text x=${labelW - 8} y=${y + rowH / 2 - 2} text-anchor="end" font-size="9.5" fill="var(--ink-soft)">
             ${r.label.length > 22 ? r.label.slice(0, 21) + "…" : r.label}</text>
           ${p50 != null ? html`<rect x=${labelW} y=${y} width=${bw(p50)} height=${bh} rx="2.5" fill="var(--chart-band-mid)"/>` :
-          html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">n<5 — suppressed</text>`}
+          html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">not enough organisations</text>`}
           ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">${fmtValue(p50, unit)}</text>`}
           ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill=${youColour(fav)}/>`}
           ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill=${youColour(fav)}>${fmtValue(you, unit)} · You</text>`}
-          ${r.unbenchmarked && html`<text x=${labelW} y=${y - 2} font-size="8" fill="var(--ink-faint)">EST — market comparison suppressed for this tier</text>`}
+          ${r.unbenchmarked && html`<text x=${labelW} y=${y - 2} font-size="8" fill="var(--ink-faint)">Estimate — no market comparison for this level</text>`}
         </g>`;
       })}
       <g>

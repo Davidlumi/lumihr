@@ -382,14 +382,14 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                 onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(open ? null : q.id); } }}>
                 <div class="dq-sum-left">
                   <div class="data-q-title">${q.title || q.text}
-                    ${q.is_required ? html`<span class="data-q-req" title="Counts toward the completion that keeps your access">required</span>` : ""}</div>
+                    ${q.is_required ? html`<span class="data-q-req" title="Counts toward unlocking your insights">key</span>` : ""}</div>
                   ${open ? null : (ans
                     ? (Array.isArray(sum)
                         ? html`<div class="data-q-rows">${sum.map((r, i) => html`<span key=${i}><span class="muted">${r.row}:</span> ${r.val}</span>`)}</div>`
                         : html`<div class="data-q-val">${sum || "—"}</div>`)
                     : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add it</span></div>`)}
                   ${!open && ans && q.needs_refresh && html`<div class="data-q-updated">
-                    Last updated ${window.fmtUpdated(q.last_updated)} — update it, or re-save to confirm it's still right.</div>`}
+                    Last updated ${window.fmtUpdated(q.last_updated)} — update, or re-save to confirm.</div>`}
                 </div>
                 <div class="dq-sum-right">
                   <span class=${"data-q-flag " + (ans && q.needs_refresh ? "refresh" : ans ? "ok" : "todo")}>
@@ -653,7 +653,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <h1 class="display-title">Your insights are unlocked</h1>
         <p>${done.answers_saved} answers saved — and you've reached <b>${done.completion_pct}%</b> of your key reward
         questions. The £ opportunity, your board pack and your biggest gaps to the market are now live with your real position.
-        Thank you for contributing to the pool — that's what makes the benchmark work.</p>
+        Thank you for contributing to the pool.</p>
         <button class="btn primary" onClick=${() => nav("/overview")}>See where you stand</button>` : html`
         <h1 class="display-title">Submission received</h1>
         <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
@@ -706,8 +706,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
           ${val.unanswered_required.length > 12 && html`<div class="caption">…and ${val.unanswered_required.length - 12} more.</div>`}
         </div>`}
       <div class="card" style=${{ padding: "var(--s5)" }}>
-        <p>Submitting saves a timestamped version of your answers into the current collection window and refreshes the
-        live benchmark. Nothing is ever overwritten — future windows will show your movement.</p>
+        <p>Submitting saves a timestamped version of your answers and refreshes the live benchmark. Nothing is overwritten — future windows will show your movement.</p>
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         <button class="btn primary" disabled=${busy || val.problems.length > 0 || !(val.pending_changes > 0)} onClick=${submit}>
           ${busy ? html`<${Spinner} /> Submitting…` : val.pending_changes > 0 ? "Submit my data" : "Nothing new to submit"}</button>

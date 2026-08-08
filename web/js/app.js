@@ -927,8 +927,7 @@ window.ContributionBanner = function ({ contrib }) {
     <div class="card contrib-banner paused">
       <div>
         <b>Your full benchmark is paused.</b>
-        <div class="caption">The 30 days passed before your reward data reached 90% — everything you've explored is still here,
-          and a sample stays open below. Complete your reward questions to restore the full benchmark and unlock your insights. You're at ${pct}%.</div>
+        <div class="caption">The 30 days passed before your reward data was complete — everything you've explored is still here, and a sample stays open below. You're at ${pct}%.</div>
       </div>
       <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Complete your reward data</button>
     </div>`;
@@ -975,7 +974,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
           <div class="row" style=${{ gap: "var(--s2)", marginBottom: "var(--s1)" }}>
             <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
-            <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>You're set up — here's what's next</b>
+            <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>You're set up — here's what's next</b>
           </div>
           <p style=${{ margin: "2px 0 0" }}>Explore every metric and all ${pool.responding_orgs} peer
             organisations from day one. Your 30 days only start once your Admin accepts the data terms —
@@ -1017,7 +1016,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
       </div>
       <div class="submit-banner-msg">
         <div class="submit-banner-head">Submit your reward data to unlock insights</div>
-        <p class="submit-banner-body">At ${targetPct}% complete, your benchmark unlocks — the £ opportunity, your board pack and your biggest gaps. If day 30 arrives first, your benchmark simply pauses to a sample until you finish — nothing is lost.</p>
+        <p class="submit-banner-body">At ${targetPct}%, your insights unlock — the £ opportunity, your board pack and your biggest gaps. If day 30 arrives first, your benchmark pauses to a sample until you finish.</p>
         <div class="submit-banner-progress">
           <div class="progressbar"><div style=${{ width: Math.min(100, pct / targetPct * 100) + "%" }}></div></div>
           <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}% complete · autosaves</span>
@@ -1197,7 +1196,7 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
           ${cuts && (cuts.groups || []).length > 0 && html`
             <optgroup label="Your groups">
               ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
-                ${g.name}${g.too_small ? " (too few orgs)" : ` · ${g.match_count}`}</option>`)}
+                ${g.name}${g.too_small ? " (too few organisations)" : ` · ${g.match_count}`}</option>`)}
             </optgroup>`}
           ${me.org.classified && html`<option value="manage-groups">+ Create / manage peer groups…</option>`}
         </select>
@@ -1629,7 +1628,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
           role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
           ${c.suppressed ? html`
             <${EmptyState} icon="shield" title="Not enough organisations to show this safely"
-              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question — protecting every member's data comes first. Try a broader peer group."}
+              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question. Try a broader peer group."}
               action=${html`<a class="btn small" href="#/how-lumi-works/suppression">Why figures are hidden</a>`} />` :
           html`<${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />`}
         </div>
@@ -1722,9 +1721,7 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
       </div>
       ${detBase && html`<p style=${{ margin: "var(--s2) 0 0" }}>${detBase}</p>`}
       ${!data && !busy && featureOn && html`
-        <p class="caption commentary-cta" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>${detBase
-          ? "Want the fuller read? A short, structured interpretation drafted from the figures on this page — yours to review, edit and make your own."
-          : "A short, structured interpretation of this metric for your organisation, drafted from the figures on this page — yours to review, edit and make your own."}</p>
+        <p class="caption commentary-cta" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>A structured interpretation drafted from the figures on this page — yours to review and edit.</p>
         ${err && html`<div class="error-text no-print" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
         <button class="btn primary" onClick=${() => onGenerate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
       ${!data && !busy && !featureOn && !detBase && html`

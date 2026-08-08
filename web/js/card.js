@@ -258,14 +258,14 @@ function AddToDashboard({ c }) {
 window.humanSentence = humanSentence;
 function humanSentence(c) {
   if (c.suppressed) {
-    return { lead: "There aren't enough organisations in this peer group to show this safely.", support: "We never show a figure based on fewer than 5 organisations." };
+    return { lead: "We never show a figure based on fewer than 5 organisations.", support: null };
   }
   if (c.unbenchmarked) {
     // Diff 14: no "X in 10 similar organisations" comparison on a distribution
     // with no verified anchor — the shape shows, the peer claim doesn't.
     const you = c.you ? `You answered “${c.you.label || c.you.display}”. ` : "";
     return { lead: you + "The peer distribution is shown for information only.",
-             support: "Unbenchmarked — no market comparison until this metric carries a verified anchor." };
+             support: null };
   }
   if ((c.type === "single_select" || c.type === "yes_no") && c.you && c.block && c.block.options) {
     const mine = c.block.options.find(o => o.label.toLowerCase() === (c.you.label || "").toLowerCase());
@@ -289,7 +289,7 @@ function humanSentence(c) {
     }
   }
   if (!c.you && !c.readout && c.type !== "matrix") {
-    return { lead: "Answer this to see where you stand — the peer picture is already here.", support: null };
+    return { lead: "", support: null };
   }
   return { lead: c.readout, support: null };
 }
@@ -666,7 +666,7 @@ window.ReducedCard = function ({ card: c }) {
       </div>
       <div class="locked-overlay">
         <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
-          ${c.n} organisations have contributed here. Complete your reward data to restore this comparison.
+          ${c.n} organisations have contributed here.
         </div>
         <button class="btn small primary" onClick=${() => nav("/your-data/submit")}>Complete your reward data</button>
       </div>

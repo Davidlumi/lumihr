@@ -50,9 +50,7 @@ window.PulsesPage = function ({ me }) {
   return html`
     <div style=${{ maxWidth: "760px" }}>
       <h1 class="display-title">Pulse</h1>
-      <p>Short, timely deep-dives on what's moving in reward right now — separate from your core
-      benchmark. Each pulse has its own opt-in group and its own window; take part (free) and you
-      see that pulse's report. Your core benchmark is never affected.</p>
+      <p>Short, timely deep-dives on what's moving in reward. Each pulse has its own opt-in group and window — take part (free) to see its report. Your core benchmark is never affected.</p>
       ${me.user.role === "admin" && html`
         <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", display: "flex",
           justifyContent: "space-between", alignItems: "center", gap: "var(--s3)" }}>
@@ -142,13 +140,12 @@ window.PulseDetailPage = function ({ me, pid }) {
       ${!p.joined && p.accepting && html`
         <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
           <b>Take part to see this pulse's report</b>
-          <p class="caption" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Free for participants. Answer what applies —
-            partial answers count. Taking part doesn't change your core benchmark or its unlock.</p>
+          <p class="caption" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Free for participants — answer what applies.</p>
           ${(p.question_list || []).length ? html`
             <div class="pulse-teaser">
               <div class="eyebrow" style=${{ marginBottom: "var(--s2)" }}>What this pulse asks · ${p.question_list.length} question${p.question_list.length === 1 ? "" : "s"}</div>
               <ul>${p.question_list.slice(0, 6).map((q, i) => html`<li key=${i}>${q.text}</li>`)}</ul>
-              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your report unlocks the whole-cohort answer to each — once ${5}+ organisations have taken part.</div>
+              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Cohort answers unlock once ${5}+ organisations have taken part.</div>
             </div>` : null}
           ${editor ? html`<button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${join}>Join this pulse</button>` :
             html`<div class="caption" style=${{ marginTop: "var(--s3)" }}>Ask an Admin or Contributor on your team to join and answer.</div>`}
@@ -186,7 +183,7 @@ window.PulseDetailPage = function ({ me, pid }) {
               </div>`; })}
           </div>
           <div class="pulse-survey-foot">
-            <button class="btn primary" disabled=${busy} aria-busy=${busy ? "true" : "false"} onClick=${submit}>${busy ? html`<${Spinner} />` : (p.participated ? "Update my submission" : "Submit and see the report")}</button>
+            <button class="btn primary" disabled=${busy} aria-busy=${busy ? "true" : "false"} onClick=${submit}>${busy ? html`<${Spinner} />` : (p.participated ? "Update my answers" : "Submit and see the report")}</button>
           </div>
         </div>`}
     </div>`;
@@ -235,9 +232,8 @@ function PulseReport({ report, pid, me }) {
   if (belowFloor) return html`
     <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0", textAlign: "center" }}>
       <div class="unlock-spark" style=${{ margin: "0 auto var(--s2)" }}><${Icon} name="flag" size=${20} /></div>
-      <b>Your responses are in — results appear once ${report.floor}+ organisations have taken part.</b>
-      <div class="caption" style=${{ marginTop: "var(--s2)" }}>${report.participants} of ${report.floor} so far.
-        Every answer stays protected by the same ${report.floor}-organisation rule as the core benchmark.</div>
+      <b>Your answers are in — results appear once ${report.floor}+ organisations have taken part.</b>
+      <div class="caption" style=${{ marginTop: "var(--s2)" }} title=${`Every answer stays protected by the same ${report.floor}-organisation rule as the core benchmark.`}>${report.participants} of ${report.floor} so far.</div>
     </div>`;
   const genDate = (report.generated_at || "").slice(0, 10);
   return html`

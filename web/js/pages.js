@@ -20,7 +20,7 @@ function StrategyNudge() {
       <span class="strat-nudge-icon"><${Icon} name="compass" size=${20} /></span>
       <div class="strat-nudge-body">
         <b>Set your reward strategy</b>
-        <span>Tell us your stance — where you aim to sit, what your package leads on — so we can read “below market” from “below market, on purpose.” Two minutes.</span>
+        <span>Set where you aim to sit, so lumi can tell “below market” from “below market, on purpose”.</span>
       </div>
       <button class="btn primary strat-nudge-cta" onClick=${() => nav("/strategy")}>Set it up</button>
       <button class="strat-nudge-x" aria-label="Dismiss for now"
@@ -156,7 +156,7 @@ window.UnlockMoment = function ({ onDismiss }) {
       <div class="unlock-spark"><${Icon} name="sparkle" size=${22} /></div>
       <div style=${{ flex: 1, minWidth: "240px" }}>
         <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-h3)" }}>Your insights are live</b>
-        <p style=${{ margin: "2px 0 var(--s3)" }}>Your organisation's reward data is in — here's what just came alive:</p>
+        <p style=${{ margin: "0 0 var(--s3)" }}>Your organisation's reward data is in:</p>
         <div class="unlock-links">
           <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="flag" size=${13} /> Your signals</button>
           ${/* the £ opportunity lives INSIDE signals (money flags) since the 80/20 hero —
@@ -826,8 +826,8 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
       <div class="arc-verdict">
         <div class="arc-word arc-word-pending">Not enough data to position yet</div>
         <div class="arc-lean">${(pct || 0) === 0
-          ? "Add your reward data — your position appears once enough of it is comparable."
-          : "Keep submitting — your position appears once enough data is comparable."}</div>
+          ? "Add your reward data to see your position."
+          : "Keep submitting — it appears once enough is comparable."}</div>
       </div>
       <div class="arc-legend num"><span class="arc-pending-note">Data pending — ${pct || 0}% of key reward questions submitted</span></div>
     </div>`;
@@ -933,7 +933,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
       ${!market.target && !stratOff ? html`
         <button class="arc-target arc-target-unset" onClick=${() => nav("/strategy")}
           title="Set your market-position stance so lumi reads this against your aim, not a generic flag.">
-          <${Icon} name="target" size=${13} /><span>Set your reward strategy to read this against your aim</span>
+          <${Icon} name="target" size=${13} /><span>Set your reward strategy</span>
         </button>` : null}
     </div>`;
 }
@@ -959,7 +959,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
       title="Open the practice lens — every practice choice, with how common each is among your peers.">
       <div class="prac-bucket-top">
         <div class="cat-brief-collab" style=${{ marginBottom: 0 }}>Practice choices</div>
-        <div class="prac-bucket-head">You're in line with the norm on <b>${b.in_line}</b> of <b>${b.answered}</b> answered
+        <div class="prac-bucket-head">
           <span class="prac-bucket-split num"><b>${b.in_line}</b> in line <span class="prac-dot">·</span>
             <b>${b.off_norm}</b> off the norm <span class="prac-dot">·</span>
             <b>${b.low_peer}</b> low peer data</span></div>
@@ -973,7 +973,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
               <span class="caption">One of ${r.orgs} orgs (${r.share_pct}%) — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</span>
             </div>`)}
         </div>` : null}
-      <div class="caption prac-bucket-foot">Rarity is the signal — whether it's deliberate is your call. Open the practice lens →</div>
+      <div class="caption prac-bucket-foot" title="Rarity is the signal — whether it's deliberate is your call.">Open the practice lens →</div>
     </div>`;
 }
 
@@ -1119,7 +1119,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
   // sentence duplicated the donut + repeated what the bars already show. Kept ONLY for the
   // pending/locked state, where there are no rows yet to explain themselves.
   const stand = pending
-    ? "Your per-domain position appears here once enough of your data is comparable — complete your key reward questions to unlock it."
+    ? "Your per-domain position appears once enough of your data is comparable."
     : null;
   const openDomain = (name) => nav("/category/" + encodeURIComponent(name));
   // strategy summary (2026-07-09): an always-on anchor so the navy channel says something even at
@@ -1437,7 +1437,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
       shown.length === 0 ? html`
         <div class="signals-empty">
           <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
-          <div class="caption" style=${{ maxWidth: "320px" }}>No signals right now — nothing in your data crosses a signal threshold. They'll appear here as your position or the market moves.</div>
+          <div class="caption" style=${{ maxWidth: "320px" }}>Nothing crosses a signal threshold right now — signals appear as your position or the market moves.</div>
         </div>` :
       [html`<div class="signals-list" key="list" ref=${listRef}>
         ${shown.map(s => { const pt = posTag(s); const sid = s.sig_id || s.question_id; return html`
@@ -2133,7 +2133,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="brf-navy">
           <div class="brf-navy-reg">
             <${Icon} name="table" size=${15} />
-            <span><b>Full gap register</b> — every metric's presence against the market, beyond what crosses a threshold. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href="/api/gap-register.csv" download>Download CSV</a>` : null}</span>
+            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href="/api/gap-register.csv" download>Download CSV</a>` : null}</span>
           </div>
           <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
         </div>`}
@@ -2242,7 +2242,7 @@ function CategoryTile({ d, pending, aim, view }) {
         </div>` : noRate ? html`
         <div class="cat-na num" style=${{ marginTop: "var(--s2)" }}
           title="No market rate to be under or over — these are approach choices, not a market position.">N/A</div>
-        <div class="cat-na-note">Approach choices — no market rate to sit above or below.</div>` : html`
+        ` : html`
         <div class="tile-band" style=${{ margin: "2px 0 0" }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>
@@ -2283,7 +2283,7 @@ window.TrajectoryTile = function ({ windowLabel }) {
       </svg>
       <div class="ov-journey-copy caption">
         <b>This is your ${windowLabel ? windowLabel + " " : ""}baseline.</b>${" "}
-        From your next cycle you'll see exactly where you've moved — every card grows a "vs last time" story.
+        Movement shows here from your next cycle.
       </div>
     </div>`;
 };
@@ -2761,7 +2761,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
               the count, so the grid never changes silently. Mutual exclusion between the two chip
               groups is unchanged — but now both groups sit side by side, so the swap is visible. */ ""}
         <div class="cat-sec-head"><span class="cat-sec-ico"><${Icon} name="table" size=${14} /></span>
-          <b>All metrics</b><span class="pulse-count-chip">${cards.length}</span>
+          <b>All benchmarks</b><span class="pulse-count-chip">${cards.length}</span>
           <span class="caption">shown${_fdesc ? html` · filtered to <b>${_fdesc}</b>` : ""}</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
         </div>
@@ -3030,9 +3030,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
       <div class="row spread no-print" style=${{ marginBottom: "var(--s3)" }}>
         <div>
           <h1 class="display-title">My dashboards</h1>
-          <div class="caption" style=${{ marginTop: "var(--s1)" }}>
-            Pin any card to build a view — drag to arrange, and switch between your saved dashboards here.
-          </div>
+
         </div>
         <div class="row">
           ${saved && html`<${Chip} kind="good">${saved}<//>`}
@@ -3230,13 +3228,13 @@ window.YourDataPage = function ({ me }) {
             <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
               <div><b>${fresh ? "Answer your reward questions to unlock your insights."
                 : "You're at " + Math.round(c.core_pct || 0) + "% of your key questions — " + target + "% unlocks your insights."}</b>${c.days_left != null ? ` ${c.days_left} days to go.` : ""}
-                ${!fresh ? html`<div class="caption" style=${{ marginTop: "2px" }}>The ring counts every question; unlocking is measured on the key set.</div>` : ""}</div></div>`}
+                </div></div>`}
           ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
           ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
           ${c.reduced && html`
             <div class="data-access warn">
               <${Icon} name="shield" size=${13} />
-              <span><b>Access reduced.</b> Your benchmark is in teaser mode until you reach ${target}%. Complete your data to restore full access.</span>
+              <span><b>Access reduced.</b> Complete your data to ${target}% to restore full access.</span>
             </div>`}
           ${!fresh && html`
             <div class="dh-stats">
@@ -3249,9 +3247,8 @@ window.YourDataPage = function ({ me }) {
       </div>
 
       <div class="row spread" style=${{ marginTop: "var(--s5)", alignItems: "baseline" }}>
-        <h2 class="section-title" style=${{ margin: 0 }}>By area <span class="caption">${fresh ? "tap an area to start answering its questions" : "tap an area to view or complete its questions"}</span></h2>
-        ${!fresh && html`<span class="caption" style=${{ fontVariantNumeric: "tabular-nums" }}>
-          ${(data.domains || []).filter(d => d.answered >= d.total).length} of ${(data.domains || []).length} areas complete</span>`}
+        <h2 class="section-title" style=${{ margin: 0 }}>By area</h2>
+        
       </div>
       ${/* Redesigned 2026-08-04: the 8-domain world outgrew the ring-per-card
           grid (a 7-column rule left one orphan card, and eight donuts encode

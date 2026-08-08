@@ -220,7 +220,7 @@ window.PercentileRuler = function ({ pctl, band, comparable, inLine, compact }) 
             below/on/above market — everywhere this atom renders, INCLUDING the board pack
             (the old less/more-competitive axis wording is retired product-wide). */ ""}
       <div class="caption bp-scale-labels"><span>below market</span><span>on market</span><span>above market</span></div>
-      ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} comparable metrics sit within the on-market band.</p>` : null}
+      ${!compact && comparable ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Your typical comparable metric sits at <b>P${p}</b>; ${inLine} of ${comparable} sit within the on-market band.</p>` : null}
     </div>`;
 };
 

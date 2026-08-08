@@ -53,8 +53,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
             <${Icon} name="chevron-left" size=${13} /> Back to Signals</a>
           <h1 class="display-title">Full gap register</h1>
           <div class="caption" style=${{ marginTop: "var(--s1)" }}>
-            Every metric's presence against the market — what similar organisations have in place that you don't, sorted so the most commonly held missing items lead.
-            Signals surfaces the flags that cross a threshold; this is the complete list. Peer group: ${cutLabelOf(cut, cuts)}.
+            What similar organisations have in place that you don't — most common first. Peer group: ${cutLabelOf(cut, cuts)}.
           </div>
         </div>
         <div class="row">
@@ -98,7 +97,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           </tbody>
         </table>
         </div>
-        <div class="caption" style=${{ padding: "var(--s3) var(--s5)" }}>${rows.length} metric${rows.length === 1 ? "" : "s"} shown · click a column to sort · download the CSV for the raw data.</div>
+        <div class="caption" style=${{ padding: "var(--s3) var(--s5)" }}>${rows.length} metric${rows.length === 1 ? "" : "s"} shown</div>
       </div>`}
     </div>`;
 };
