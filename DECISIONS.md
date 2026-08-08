@@ -14812,3 +14812,19 @@ signal rows + org) with recon PASS both directions; fixture2 (a user + two terms
 rows) proves the de-identification path NON-VACUOUSLY: both terms rows retained
 under `exited-<random>` with the user row gone — the first fixture ran that path
 vacuously (0 users) and is recorded as such. Suite 14/14 ALL GREEN post-build.
+
+## 2026-08-08 — Commit H: day-0 pool removal is ENFORCED, not requested
+
+`member_exit.py --exit` previously printed "re-run aggregate.py" — day-0-if-someone-
+remembers removal, unacceptable with §6.5 about to be drafted into terms (the
+mechanism must be true before the sentence is written). Now: exit captures the
+served top-level n for every metric the org answered (from benchmark_snapshots —
+the thing members are served, never the tool's own stdout), re-runs the snapshot
+IN THE SAME GUARDED OPERATION, and reports the delta; if the org had answers and
+NOT ONE served n moved, the tool refuses to call the exit complete (which-case-
+obtains stated: uncountable-values vs enforcement failure). The ripe-sweep path
+gained the identical enforcement. VERIFIED against benchmark_snapshots with no
+second command: 320 answered metrics, served n moved on 307 (ALLOW_02 211→210 read
+straight from the payload store). Payload fact recorded: payloads are pure
+aggregates — org ids never appear in them — so an id-presence assertion would pass
+vacuously; the count-movement assertion is the honest one.

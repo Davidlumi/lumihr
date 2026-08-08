@@ -74,6 +74,44 @@ def org_keyed_tables(conn):
     return sorted(out)
 
 
+def _payload_ns(conn, qids):
+    """{question_id: top-level n} from the SERVED benchmark_snapshots payloads."""
+    out = {}
+    for qid in qids:
+        row = conn.execute("SELECT payload_json FROM benchmark_snapshots "
+                           "WHERE snapshot_id=1 AND question_id=?", (qid,)).fetchone()
+        if row:
+            p = json.loads(row["payload_json"])
+            top = p.get("all") or p.get("top") or {}
+            out[qid] = top.get("n") if isinstance(top, dict) else None
+    return out
+
+
+def _reaggregate_and_report(conn, org_id, answered, before):
+    """Re-run the snapshot in-process and report the delta on the org's answered
+    set — asserting against benchmark_snapshots, the thing members are served,
+    never against this tool's own output."""
+    sys.path.insert(0, HERE)
+    import aggregate
+    aggregate.run_snapshot(1, verbose=False)
+    after = _payload_ns(conn, answered)
+    moved = {q: (before.get(q), after.get(q)) for q in answered
+             if before.get(q) != after.get(q)}
+    print("re-aggregated: %d answered metrics; top-level n moved on %d (e.g. %s)"
+          % (len(answered), len(moved),
+             ", ".join("%s %s->%s" % (q, b, a) for q, (b, a) in list(moved.items())[:4]) or "-"))
+    # Enforcement assertion, against the SERVED store. Payloads are pure
+    # aggregates (org ids never appear in them), so the honest check is the
+    # count: if the org had answers and NOT ONE served n moved, either every
+    # one of its values was uncountable (possible but must be stated) or
+    # enforcement failed — refuse to call the exit complete either way.
+    if answered and not moved:
+        sys.exit("FATAL: %d answered metrics but no served n moved after "
+                 "re-aggregation. Either the org contributed no countable values "
+                 "(verify by hand and record which case obtains) or day-0 removal "
+                 "FAILED — exit is NOT complete." % len(answered))
+
+
 def do_exit(conn, org_id, reason, write):
     o = conn.execute("SELECT org_id, source, exited_at, deactivated_at FROM orgs "
                      "WHERE org_id=?", (org_id,)).fetchone()
@@ -91,6 +129,10 @@ def do_exit(conn, org_id, reason, write):
     if not write:
         print("DRY-RUN — nothing written.")
         return
+    answered = [r["question_id"] for r in conn.execute(
+        "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=1",
+        (org_id,))]
+    before = _payload_ns(conn, answered)
     conn.execute("UPDATE orgs SET exited_at=datetime('now'), "
                  "deactivated_at=COALESCE(deactivated_at, datetime('now')), "
                  "deactivated_reason=COALESCE(deactivated_reason, ?) WHERE org_id=?",
@@ -101,8 +143,13 @@ def do_exit(conn, org_id, reason, write):
     import identity
     n = sum(identity.delete_sessions_for_user(r["user_id"]) for r in
             conn.execute("SELECT user_id FROM users WHERE org_id=?", (org_id,)))
-    print("EXITED. Sessions revoked: %d. Re-run aggregate.py so stored payloads "
-          "drop the org's contributions today (day-0 pool removal)." % n)
+    # Commit H (2026-08-08): exit is not complete until the SERVED payloads no
+    # longer carry the member — day-0 pool removal is ENFORCED here, in the same
+    # guarded operation, never delegated to a printed instruction. §6.5's
+    # external promise is about to be drafted into terms; the mechanism must be
+    # true before the sentence is written.
+    _reaggregate_and_report(conn, org_id, answered, before)
+    print("EXITED. Sessions revoked: %d." % n)
 
 
 def do_unexit(conn, org_id, write):
@@ -202,7 +249,12 @@ def do_sweep(conn, write):
     print(rec.stdout.strip().splitlines()[-1])
     if rec.returncode != 0:
         sys.exit("FATAL: identity_recon NOT clean after exit-delete.")
-    print("Re-run aggregate.py + the full gate suite; append the exit record to DECISIONS.md.")
+    # Commit H: the sweep has the same day-0 exposure as --exit — enforce the
+    # re-aggregation here too, in the same guarded operation.
+    import aggregate
+    aggregate.run_snapshot(1, verbose=False)
+    print("re-aggregated post-sweep: served payloads recomputed without the deleted org(s).")
+    print("Run the full gate suite; append the exit record to DECISIONS.md.")
 
 
 def main():
