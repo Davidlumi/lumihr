@@ -85,7 +85,7 @@ function AdminOrgsTab() {
         </tr></thead>
         <tbody>
           ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer", opacity: o.deactivated ? 0.55 : 1 }} onClick=${() => setSelected(o.org_id)}>
-            <td><b>${o.name}</b>${o.deactivated ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</td>
+            <td><b>${o.name}</b>${o.deactivated ? html` <span class="admin-status admin-status-rejected" title=${o.deactivated_reason || ""}>deactivated${o.deactivated_reason ? " — " + o.deactivated_reason : ""}</span>` : ""}</td>
             <td><${LifecycleChip} lc=${o.lifecycle} /></td>
             <td>${o.industry || "—"}</td>
             <td>${o.fte_band || "—"}</td>
@@ -246,13 +246,21 @@ function AdminOrgDetail({ orgId, onBack }) {
   const o = d.org;
   const fact = (label, value) => html`<div><div class="caption">${label}</div><div><b>${value == null || value === "" ? "—" : value}</b></div></div>`;
   const orgDeactivate = async () => {
-    const msg = o.deactivated_at
-      ? "Reactivate " + (o.name || "this organisation") + "? Members can sign in again immediately."
-      : "Deactivate " + (o.name || "this organisation") + "?\n\nEvery member is signed out and locked out until you reactivate. Nothing is deleted — their data and settings are untouched.";
-    if (!window.confirm(msg)) return;
+    // PH-PAY-3: a suspension always names WHY — the next operator's response
+    // to "unpaid invoice" and "sole-admin recovery in progress" is opposite.
+    let reason = null;
+    if (o.deactivated_at) {
+      if (!window.confirm("Reactivate " + (o.name || "this organisation") + "? Members can sign in again immediately.")) return;
+    } else {
+      reason = window.prompt(
+        "Deactivate " + (o.name || "this organisation") + "?\n\nEvery member is signed out and locked out until you reactivate. Nothing is deleted — their data and settings are untouched.\n\nWhy is this membership being suspended? (shown in the console, e.g. \"unpaid invoice\", \"sole-admin recovery in progress\", \"member requested pause\")");
+      if (reason === null) return;
+      if (!reason.trim()) { toast("A reason is required to deactivate.", "error"); return; }
+    }
     try {
       const verb = o.deactivated_at ? "reactivate" : "deactivate";
-      const r = await api("/api/admin/orgs/" + orgId + "/" + verb, { method: "POST", body: {} });
+      const r = await api("/api/admin/orgs/" + orgId + "/" + verb,
+        { method: "POST", body: reason ? { reason: reason.trim() } : {} });
       toast(o.deactivated_at ? "Reactivated." : "Deactivated — " + r.sessions_revoked + " session" + (r.sessions_revoked === 1 ? "" : "s") + " revoked.");
       load();
     } catch (e) { toast(e.message, "error"); }
@@ -267,7 +275,7 @@ function AdminOrgDetail({ orgId, onBack }) {
           ${o.deactivated_at ? "Reactivate organisation" : "Deactivate organisation"}</button>`}
       </div>
       ${o.deactivated_at && html`<div class="caption" style=${{ color: "var(--red, #b3261e)", marginBottom: "var(--s2)" }}>
-        Deactivated ${o.deactivated_at.slice(0, 16)} — members can't sign in and pending invites won't complete. Data is untouched.</div>`}
+        Deactivated ${o.deactivated_at.slice(0, 16)}${o.deactivated_reason ? html` — <b>${o.deactivated_reason}</b>` : ""} — members can't sign in and pending invites won't complete. Data is untouched.</div>`}
       <div class="caption" style=${{ marginBottom: "var(--s3)", display: "flex", gap: "var(--s2)", alignItems: "center", flexWrap: "wrap" }}>
         <span class="admin-pill">${o.source}</span>
         <${LifecycleChip} lc=${o.lifecycle} />
@@ -296,7 +304,7 @@ function AdminOrgDetail({ orgId, onBack }) {
       html`<table class="data admin-table">
         <thead><tr><th>Email</th><th>Name</th><th>Role</th><th class="num">Live sessions</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody>${d.users.map(u => html`<tr key=${u.user_id} style=${{ opacity: u.disabled_at ? 0.55 : 1 }}>
-          <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</td>
+          <td><b>${u.email || "—"}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected" title=${u.disabled_reason || ""}>deactivated${u.disabled_reason ? " — " + u.disabled_reason : ""}</span>` : ""}</td>
           <td>${u.display_name || "—"}</td>
           <td>${u.role}</td>
           <td class="num">${u.active_sessions}</td>
@@ -449,10 +457,18 @@ function AdminUserActions({ user, onChanged }) {
   const copy = () => { navigator.clipboard && navigator.clipboard.writeText(link); toast("Copied."); };
   const toggleActive = async () => {
     const deactivating = !user.disabled_at;
-    if (deactivating && !window.confirm("Deactivate " + (user.email || "this account") + "?\n\nThey are signed out everywhere and can't sign in until you reactivate. Nothing is deleted.")) return;
+    let reason = null;
+    if (deactivating) {
+      // PH-PAY-3: suspension always names WHY (see org deactivate)
+      reason = window.prompt(
+        "Deactivate " + (user.email || "this account") + "?\n\nThey are signed out everywhere and can't sign in until you reactivate. Nothing is deleted.\n\nWhy is this account being suspended? (shown in the console, e.g. \"sole-admin recovery in progress\", \"member requested\")");
+      if (reason === null) return;
+      if (!reason.trim()) { toast("A reason is required to deactivate.", "error"); return; }
+    }
     setBusy(true);
     try {
-      await api("/api/admin/users/" + user.user_id + "/" + (deactivating ? "deactivate" : "reactivate"), { method: "POST", body: {} });
+      await api("/api/admin/users/" + user.user_id + "/" + (deactivating ? "deactivate" : "reactivate"),
+        { method: "POST", body: reason ? { reason: reason.trim() } : {} });
       toast(deactivating ? "Deactivated." : "Reactivated — they can sign in again.");
       if (onChanged) onChanged();
     } catch (e) { toast(e.message, "error"); }
@@ -892,7 +908,7 @@ function AdminUsersTab() {
       ${u && html`
         <div class="card admin-card">
           <div class="row spread">
-            <div><b>${u.email}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected">deactivated</span>` : ""}</div>
+            <div><b>${u.email}</b>${u.platform_admin ? html` <span class="admin-pill">staff</span>` : ""}${u.disabled_at ? html` <span class="admin-status admin-status-rejected" title=${u.disabled_reason || ""}>deactivated${u.disabled_reason ? " — " + u.disabled_reason : ""}</span>` : ""}</div>
             <span class="admin-pill">${u.role || "—"}</span>
           </div>
           <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>
