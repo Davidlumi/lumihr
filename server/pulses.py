@@ -309,8 +309,8 @@ def review_pulse(pulse_id, decision, reviewed_by, notes="", fee_pence=None, conn
     target = {"approve": "approved", "changes": "changes_requested", "reject": "rejected"}.get(decision)
     if not target:
         raise ValueError("decision must be approve | changes | reject")
-    if target == "approved" and not fee_pence:
-        raise ValueError("Approval needs a launch fee.")
+    if target == "approved" and fee_pence is None:
+        raise ValueError("Approval needs a launch fee (0 waives it).")
     conn.execute(
         "UPDATE pulses SET launch_status=?, review_notes=?, reviewed_by=?, reviewed_at=?, "
         "launch_fee_pence=COALESCE(?, launch_fee_pence) WHERE pulse_id=?",

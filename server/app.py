@@ -5797,7 +5797,8 @@ async def org_pulse_checkout(pid: str, request: Request):
     p = _owned_pulse(conn, pid, org)
     if p["launch_status"] != "approved":
         raise HTTPException(400, "This pulse isn't approved for launch yet.")
-    fee = p["launch_fee_pence"] or PULSE_LAUNCH_FEE_PENCE
+    # explicit 0 = staff-waived fee; only an UNSET fee falls back to the default
+    fee = p["launch_fee_pence"] if p["launch_fee_pence"] is not None else PULSE_LAUNCH_FEE_PENCE
     oid = pulses_mod.create_launch_order(pid, org["org_id"], fee, created_by=user["user_id"], conn=conn)
     return {"ok": True, "mode": "invoice", "order_id": oid, "amount_pence": fee,
             "message": "Launch requested — lumi will invoice you, and your pulse opens "
@@ -5820,8 +5821,15 @@ async def admin_pulse_review(pid: str, request: Request):
     decision = body.get("decision")
     notes = (body.get("notes") or "").strip()
     fee = body.get("fee_pence")
-    if decision == "approve" and not fee:
-        fee = PULSE_LAUNCH_FEE_PENCE
+    if fee in (None, ""):
+        fee = PULSE_LAUNCH_FEE_PENCE if decision == "approve" else None
+    elif decision == "approve":
+        try:
+            fee = int(fee)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "fee_pence must be a whole number of pence")
+        if fee < 0:
+            raise HTTPException(400, "fee_pence cannot be negative")
     try:
         pulses_mod.review_pulse(pid, decision, staff["user_id"], notes=notes, fee_pence=fee, conn=get_conn())
     except ValueError as e:
@@ -5844,7 +5852,8 @@ async def admin_pulse_confirm_launch(pid: str, request: Request):
         raise HTTPException(404, "Unknown pulse")
     if not p["owner_org_id"] or p["launch_status"] not in ("approved", "paid"):
         raise HTTPException(400, "Only an approved self-service pulse can be confirmed.")
-    fee = p["launch_fee_pence"] or PULSE_LAUNCH_FEE_PENCE
+    # explicit 0 = staff-waived fee; only an UNSET fee falls back to the default
+    fee = p["launch_fee_pence"] if p["launch_fee_pence"] is not None else PULSE_LAUNCH_FEE_PENCE
     o = pulses_mod.latest_order(pid, conn)
     oid = (o["order_id"] if (o and o["status"] != "paid")
            else pulses_mod.create_launch_order(pid, p["owner_org_id"], fee, created_by=staff["user_id"], conn=conn))

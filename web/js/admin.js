@@ -556,8 +556,15 @@ function AdminPulsesTab() {
     catch (e) { toast(e.message, "error"); }
   };
   const applyExtend = (pid) => {
-    if (!extendVal.trim()) { toast("Enter a close date/time.", "error"); return; }
-    act(pid, "extend", { closes_at: extendVal.trim() }).then(() => { setExtendPid(null); setExtendVal(""); });
+    const v = extendVal.trim();
+    if (!v) { toast("Enter a close date/time.", "error"); return; }
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) { toast("Use YYYY-MM-DD HH:MM (24-hour).", "error"); return; }
+    const dt = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0));
+    if (isNaN(dt) || dt.getMonth() !== +m[2] - 1 || dt.getDate() !== +m[3]) { toast("That date doesn't exist — check the day/month.", "error"); return; }
+    if (dt <= new Date()) { toast("The new close must be in the future.", "error"); return; }
+    const closes = m[6] ? v.replace("T", " ") : v.replace("T", " ") + ":00";
+    act(pid, "extend", { closes_at: closes }).then(() => { setExtendPid(null); setExtendVal(""); });
   };
   return html`
     <div>
@@ -582,16 +589,16 @@ function AdminPulsesTab() {
           <td>
             ${extendPid === p.pulse_id ? html`
               <div class="admin-actions">
-                <input class="ctl" style=${{ width: "180px" }} placeholder="YYYY-MM-DD HH:MM:SS"
+                <input class="ctl" style=${{ width: "180px" }} placeholder="YYYY-MM-DD HH:MM"
                   value=${extendVal} onInput=${e => setExtendVal(e.target.value)} aria-label="New close date" />
                 <button class="btn small primary" onClick=${() => applyExtend(p.pulse_id)}>Apply</button>
                 <button class="btn small" onClick=${() => { setExtendPid(null); setExtendVal(""); }}>Cancel</button>
               </div>` : html`
               <div class="admin-actions">
-                ${p.status === "draft" && html`<button class="btn small primary" onClick=${() => act(p.pulse_id, "open")}>Open</button>`}
+                ${p.status === "draft" && html`<button class="btn small primary" onClick=${() => { if (window.confirm(`Open "${p.name}"? The question set is snapshotted and members can join from now on.`)) act(p.pulse_id, "open"); }}>Open</button>`}
                 ${p.status === "open" && html`<button class="btn small" onClick=${() => { setExtendPid(p.pulse_id); setExtendVal(p.closes_at || ""); }}>Extend</button>`}
-                ${p.status === "open" && html`<button class="btn small" onClick=${() => act(p.pulse_id, "close")}>Close</button>`}
-                ${p.status === "closed" && html`<button class="btn small" onClick=${() => act(p.pulse_id, "archive")}>Archive</button>`}
+                ${p.status === "open" && html`<button class="btn small" onClick=${() => { if (window.confirm(`Close "${p.name}" now? Members can no longer submit; results freeze as they stand.`)) act(p.pulse_id, "close"); }}>Close</button>`}
+                ${p.status === "closed" && html`<button class="btn small" onClick=${() => { if (window.confirm(`Archive "${p.name}"? It leaves members' lists; the report stays available here.`)) act(p.pulse_id, "archive"); }}>Archive</button>`}
                 ${p.status !== "draft" && html`<button class="btn small" onClick=${() => setView({ mode: "report", pid: p.pulse_id })}>Report</button>`}
               </div>`}
           </td>
@@ -634,6 +641,15 @@ function AdminPulseBuilder({ onDone, onCancel }) {
   const libRows = (lib || []).filter(x => !needle || (x.title || "").toLowerCase().includes(needle) || (x.subpower || "").toLowerCase().includes(needle));
   const create = async () => {
     if (!name.trim()) { toast("Give the pulse a name.", "error"); return; }
+    let closes = closesAt.trim() || null;
+    if (closes) {
+      const m = closes.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) { toast("Close date: use YYYY-MM-DD HH:MM (24-hour), or leave blank for no deadline.", "error"); return; }
+      const dt = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0));
+      if (isNaN(dt) || dt.getMonth() !== +m[2] - 1 || dt.getDate() !== +m[3]) { toast("That close date doesn't exist — check the day/month.", "error"); return; }
+      if (dt <= new Date()) { toast("The close date must be in the future.", "error"); return; }
+      closes = (m[6] ? closes : closes + ":00").replace("T", " ");
+    }
     const bespoke = newQs.filter(nq => (nq.text || "").trim()).map(nq => {
       const isSel = ["single_select", "yes_no", "multi_select"].includes(nq.type);
       const labels = (nq.optionsText || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -645,7 +661,7 @@ function AdminPulseBuilder({ onDone, onCancel }) {
     if (!picked.length && !bespoke.length) { toast("Add at least one question.", "error"); return; }
     setBusy(true);
     try {
-      await api("/api/admin/pulses", { method: "POST", body: { name: name.trim(), description: desc.trim(), closes_at: closesAt.trim() || null, question_ids: picked, new_questions: bespoke } });
+      await api("/api/admin/pulses", { method: "POST", body: { name: name.trim(), description: desc.trim(), closes_at: closes, question_ids: picked, new_questions: bespoke } });
       toast("Pulse created as a draft.");
       onDone();
     } catch (e) { toast(e.message, "error"); }
@@ -658,7 +674,7 @@ function AdminPulseBuilder({ onDone, onCancel }) {
       <p class="caption">Created as a draft. Open it to snapshot the questions and let members join.</p>
       <label>Name<input class="ctl" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. EU Pay Transparency readiness 2026" /></label>
       <label>Description<textarea class="ctl" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)}></textarea></label>
-      <label>Closes at (optional)<input class="ctl" value=${closesAt} onInput=${e => setClosesAt(e.target.value)} placeholder="YYYY-MM-DD HH:MM:SS" /></label>
+      <label>Closes at (optional)<input class="ctl" value=${closesAt} onInput=${e => setClosesAt(e.target.value)} placeholder="YYYY-MM-DD HH:MM" /></label>
 
       <label>Reuse library questions ${picked.length ? html`<span class="admin-pill">${picked.length} picked</span>` : ""}</label>
       <input class="ctl" placeholder="Search the library…" value=${q} onInput=${e => setQ(e.target.value)} style=${{ marginBottom: "var(--s2)" }} />
@@ -785,7 +801,8 @@ function AdminMetricsTab() {
   if (err) return html`<${EmptyState} icon="info" title="Couldn't load the backlog" body=${err} />`;
   if (!data) return adminSpinner;
   if (editing) return html`<${AdminMetricEditor} onDone=${() => { setEditing(false); load(); }} onCancel=${() => setEditing(false)} />`;
-  const publish = async (id) => {
+  const publish = async (id, title) => {
+    if (!window.confirm(`Publish "${title}" live? It joins the question bank for every member (unscored + optional) — there's no unpublish from here.`)) return;
     try { const r = await api("/api/admin/metrics/" + id + "/publish", { method: "POST", body: {} }); toast("Published live as " + r.question_id + "."); load(); }
     catch (e) { toast(e.message, "error"); }
   };
@@ -810,7 +827,7 @@ function AdminMetricsTab() {
           <td><span class=${"admin-status admin-status-" + b.status}>${b.status}</span></td>
           <td class="caption">${(b.created_at || "").slice(0, 10)}</td>
           <td>${b.source === "admin_console" && b.status === "queued"
-            ? html`<button class="btn small primary" onClick=${() => publish(b.id)}>Publish live</button>`
+            ? html`<button class="btn small primary" onClick=${() => publish(b.id, b.title)}>Publish live</button>`
             : html`<span class="caption">—</span>`}</td>
         </tr>`)}</tbody>
       </table>`}
