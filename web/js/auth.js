@@ -58,11 +58,10 @@ window.InviteWhileAuthed = function ({ me, token }) {
   return html`
     <div class="card" style=${{ maxWidth: "560px", margin: "var(--s6) auto", padding: "var(--s5)" }}>
       <h2 class="section-title" style=${{ marginTop: 0 }}>This is an invite link</h2>
-      <p>You're signed in as <b>${me.user.email}</b>${me.org && me.org.org_id ? "" : ""}.
+      <p>You're signed in as <b>${me.user.email}</b>.
         Accepting an invite creates and signs in a <b>separate account</b>, so it isn't
         opened automatically while you're signed in.</p>
-      <p class="caption">Delivering this link to someone else? Just send it — nothing has
-        been used. Testing it yourself? A private window leaves your session untouched.</p>
+      <p class="caption">Sending it to someone else? It hasn't been used. Testing it yourself? Use a private window.</p>
       <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
         <button class="btn primary" onClick=${() => { window.location.hash = "/overview"; }}>Stay signed in</button>
         <button class="btn" onClick=${signOutToInvite}>Sign out & open the invite</button>
@@ -151,7 +150,7 @@ function LoginForm({ onAuthed, initialMode }) {
           <b>Membership is set up for you.</b>
           <div class="caption" style=${{ marginTop: "var(--s1)" }}>lumi memberships are provisioned by our team so your
             organisation starts with the right profile and peers. Email
-            ${" "}<a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a> and we'll set you up — usually same day.</div>
+            ${" "}<a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a> — usually same day.</div>
         </div>`}
         ${mode === "register" && regOpen !== false && html`<${Field} label="Organisation name" value=${orgName} onInput=${setOrgName} placeholder="Acme Retail Ltd" autoFocus=${true} autoComplete="organization" />`}
         ${mode === "register" && regOpen !== false && html`<${Field} label="Your name" value=${name} onInput=${setName} autoComplete="name" />`}
@@ -177,8 +176,7 @@ function LoginForm({ onAuthed, initialMode }) {
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
         </button>`}
         ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
-          You'll be your organisation's Admin. Before your team first submits data, you'll also review
-          the Data Contribution Terms — your 30 days to contribute start then, not now.</div>`}
+          You'll be your organisation's Admin. You'll review the Data Contribution Terms before your team first submits — your 30 days to contribute start then, not now.</div>`}
         ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
         ${legalDoc && html`<${LegalDocModal} docKey=${legalDoc} onClose=${() => setLegalDoc(null)} />`}
       </form>
@@ -248,8 +246,7 @@ function InviteForm({ token, onAuthed }) {
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         <button class="btn primary block" disabled=${!tick}>Join ${info.org_name}</button>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your organisation's Data Contribution Terms were
-          already accepted by your Admin — you don't accept those again.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your Admin has already accepted the Data Contribution Terms for your organisation.</div>
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>Not ${info.email}?
           <a href="#" onClick=${toSignIn}> Sign in to your own account instead</a>.</div>
       </form>`}

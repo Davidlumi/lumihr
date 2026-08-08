@@ -196,11 +196,11 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   box-shadow: 0 6px 16px rgba(33,27,38,.03); padding: var(--s2) var(--s5);
   display: flex; align-items: flex-start; gap: var(--s4); position: sticky; top: 0; z-index: var(--z-nav); flex-wrap: wrap; }
 .ctlgroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ctlgroup .hint { font-size: var(--fs-micro); line-height: 14px; color: var(--ink-faint);
+.ctlgroup .hint { font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-faint);
   max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar .ctl, .topbar .btn { height: 36px; }
 .topbar { align-items: center; }
-.peerset-note { font-size: var(--fs-micro); line-height: 14px; color: var(--ink-faint);
+.peerset-note { font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-faint);
   overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
 .peerset-note a { color: var(--blue-bright); }
 /* peer set moved out of the top bar (it only filters benchmark surfaces). Search now
@@ -543,7 +543,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .bench-pctl { font-size: var(--fs-caption); color: var(--ink); font-weight: 600;
   font-variant-numeric: tabular-nums; margin-top: auto; cursor: help;
   padding-right: var(--s2); margin-right: var(--s1); border-right: 1px solid var(--border); }
-.bench-lead { font-size: var(--fs-body); line-height: 23px; font-weight: 500; color: var(--ink); }
+.bench-lead { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 500; color: var(--ink); }
 .bench-support { margin-top: var(--s1); color: var(--ink-faint); }
 .bench-proof { flex: 1.9 1 340px; min-width: 0; position: relative; }
 @media (max-width: 700px) {
@@ -597,7 +597,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 /* a calm, satisfying completion moment */
 @keyframes popIn { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
 .success-ring { width: 72px; height: 72px; border-radius: 50%; background: var(--favourable-tint);
-  color: var(--favourable); font-size: 34px; display: flex; align-items: center; justify-content: center;
+  color: var(--favourable); font-size: 34px;   /* deliberate off-scale display glyph — sized to the 72px ring */ display: flex; align-items: center; justify-content: center;
   margin: 0 auto var(--s3); border: 2px solid var(--favourable); animation: popIn 360ms ease both; }
 .success-pop h1 { animation: riseIn 240ms ease 120ms both; }
 .success-pop.unlocked .success-ring { width: 84px; height: 84px;
@@ -642,7 +642,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .conf-line { flex-basis: 100%; display: flex; justify-content: flex-end; margin-top: 2px; }
 .conf-chip { position: relative; display: inline-flex; align-items: center; gap: var(--s2);
   border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
-  padding: 4px 12px; font-size: var(--fs-caption); color: var(--ink-soft); }
+  padding: var(--s1) var(--s3); font-size: var(--fs-caption); color: var(--ink-soft); }
 .conf-chip b { color: var(--ink); font-weight: 650; }
 .conf-n { color: var(--ink-faint); }
 .conf-meter { display: inline-flex; gap: 2.5px; }
@@ -705,7 +705,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .qdots { display: flex; gap: 3px; }
 .qdot { width: 22px; height: 5px; border-radius: 3px; background: var(--surface-sunk); }
 .callout { padding: var(--s2) var(--s4); border-left: 3px solid var(--border); background: var(--surface);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: var(--fs-label); line-height: 19px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: var(--fs-label); line-height: var(--lh-label);
   color: var(--ink-soft); margin-bottom: var(--s2);
   border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
   transition: box-shadow .12s; }
@@ -1575,7 +1575,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-brief-collab-sub { font-weight: 400; text-transform: none; letter-spacing: 0; }
 .cat-driver { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
   background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0;
-  padding: 10px 2px; cursor: pointer; font-size: var(--fs-body); color: var(--ink); }
+  padding: var(--s3) 2px; cursor: pointer; font-size: var(--fs-body); color: var(--ink); }
 .cat-driver:hover .cat-driver-lab { color: var(--blue); text-decoration: underline; }
 .cat-driver svg { flex: none; color: var(--amber-deep, #854F0B); }
 .cat-driver:last-of-type { border-bottom: none; }
@@ -2466,7 +2466,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 /* the atom's marker is the PILL (2026-07-12) — one marker grammar across pack, category
    pages and the home dashboard. Prints exactly (the pack is a print artefact). */
 .bp-scale-pill { position: absolute; top: 50%; transform: translate(-50%, -50%);
-  display: inline-flex; align-items: center; height: 19px; padding: 0 8px; border-radius: 999px;
+  display: inline-flex; align-items: center; height: 19px; padding: 0 var(--s2); border-radius: 999px;
   background: var(--ink); color: #fff; font-size: var(--fs-micro); font-weight: 700; line-height: 1;
   white-space: nowrap; box-shadow: 0 0 0 2px var(--surface);
   print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -2499,7 +2499,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
    (the bare .di-dot retired in the premium pass). Indicative = dashed pill on surface.
    White-on-ink clears AA comfortably; rows lift their pill a beat on hover. */
 .di-pill { position: absolute; top: 50%; transform: translate(-50%, -50%);
-  display: inline-flex; align-items: center; height: 19px; padding: 0 8px; border-radius: 999px;
+  display: inline-flex; align-items: center; height: 19px; padding: 0 var(--s2); border-radius: 999px;
   background: var(--ink); color: #fff; font-size: var(--fs-micro); font-weight: 700; line-height: 1;
   white-space: nowrap; box-shadow: 0 0 0 2px var(--surface); animation: di-dot-in .3s ease-out .12s both;
   transition: transform var(--ease-out), box-shadow var(--ease-out); }
@@ -2668,7 +2668,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .suggest-modal { position: relative; background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 560px;
   max-height: 90vh; padding: var(--s6) var(--s6) var(--s6); box-shadow: var(--shadow-pop);
   display: flex; flex-direction: column; }
-.suggest-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border: 0; background: none;
+.suggest-close { position: absolute; top: var(--s4); right: var(--s4); width: 32px; height: 32px; border: 0; background: none;
   color: var(--ink-faint); cursor: pointer; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
 .suggest-close:hover { background: var(--surface-sunk); color: var(--ink); }
 .suggest-head { flex: none; padding-right: var(--s6); }
@@ -3682,7 +3682,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-seg-ind { opacity: .55; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent); }
 /* practice colour key (the navy family is defined nowhere else; the market lens key retired —
    the donut card's swatched legend is the whole screen's single RAG key) */
-.di-axis-key { display: flex; align-items: center; gap: 14px; height: 30px; overflow: hidden; }
+.di-axis-key { display: flex; align-items: center; gap: var(--s3); height: 30px; overflow: hidden; }
 .di-kk { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); white-space: nowrap; }
 .di-sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
 .di-sw.di-seg-rare { box-shadow: inset 0 0 0 1px var(--border); }
@@ -3776,7 +3776,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-pill.on { background: var(--navy); border-color: var(--navy); color: #fff; }
 .sfold-pill.on svg, .sfold-pill.on b { color: #fff; }
 .sfold-ops { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
-  background: none; border: 0; border-radius: 999px; font-size: 15px; font-weight: 700;
+  background: none; border: 0; border-radius: 999px; font-size: var(--fs-body); font-weight: 700;
   color: var(--ink-faint); cursor: pointer; line-height: 0; }
 .sfold-ops:hover { background: rgba(15,23,42,.08); color: var(--ink); }
 .sfold-new { background: none; border: 1px dashed var(--border); border-radius: 999px; font: inherit;

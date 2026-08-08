@@ -491,7 +491,7 @@ function StrategyCheck({ onGoToDomain, signalDomains }) {
         <button class="btn primary" onClick=${run}>Run the check</button>`}
       ${st.phase === "loading" && html`
         <div class="strat-loading"><${Spinner} /> Reading your strategy against your data…
-          <span class="caption">a few seconds</span></div>`}
+          </div>`}
       ${st.phase === "done" && html`
         <p class="strat-summary">${f.summary}</p>
         <div class="strat-findings">
@@ -1625,7 +1625,7 @@ function SignalsLocked({ contrib, me }) {
     { lens: "save", icon: "coins", tag: "£ GAP", name: "Bonus opportunity", stand: "sits below the market median for your size" },
     { lens: "retain", icon: "magnet", tag: "LOWER THAN MARKET", name: "Company sick pay", stand: "below where most of your peers land" },
     { lens: "engage", icon: "users", tag: "COMMON — YOU DON'T", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
-    { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market — a story worth telling" },
+    { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market for your size" },
   ];
   return html`
     <div class="sig-unlock">
@@ -2030,7 +2030,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.' 
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
-    : "Everything is filed — every signal is saved to a folder, snoozed or dismissed.";
+    : "Everything is filed — saved, snoozed or dismissed.";
 
   // ---- the evidence card (Briefing anatomy, unchanged): caption + risk shield, stand-
   // sentence headline, "Flagged because … · n · verified/estimate", soft chips, gap bar,
@@ -2241,7 +2241,7 @@ function CategoryTile({ d, pending, aim, view }) {
         <div class="cat-na num" style=${{ marginTop: "var(--s2)" }}
           title="No market rate to be under or over — these are approach choices, not a market position.">N/A</div>
         ` : html`
-        <div class="tile-band" style=${{ margin: "2px 0 0" }}>
+        <div class="tile-band" style=${{ marginTop: "var(--s1)" }}>
           <div class="tile-fill" style=${{ width: (prev.pool ? Math.round(100 * prev.with_majority / prev.pool) : 0) + "%" }}></div>
         </div>
         ${prev.with_majority != null && html`<div class="caption num" title=${prev.verdict || ""}>${prev.with_majority}/${prev.pool} ${prev.states.with_majority}</div>`}`}
@@ -2398,7 +2398,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
         </div>
       </div>
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"
-        body="Try clearing the filters." action=${html`<button class="btn small" onClick=${() => { setCat(""); setSigF(""); }}>Clear filters</button>`} />`}
+        action=${html`<button class="btn small" onClick=${() => { setCat(""); setSigF(""); }}>Clear filters</button>`} />`}
       ${bySub.map(g => html`
         <div key=${g.sub} style=${{ marginBottom: "var(--s5)" }}>
           ${!subF && html`<h2 class="section-title">${g.sub}</h2>`}
@@ -2676,7 +2676,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
           ${dl && html`<div class="card bp-menu" role="menu">
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(true)}>
               <b>With metric charts</b>
-              <span class="caption" style=${{ display: "block" }}>Every benchmark as shown — charts included</span></button>
+              <span class="caption" style=${{ display: "block" }}>Every benchmark as shown</span></button>
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(false)}>
               <b>Figures only</b>
               <span class="caption" style=${{ display: "block" }}>Positions, values and peer stats — no charts</span></button>
@@ -3225,7 +3225,7 @@ window.YourDataPage = function ({ me }) {
               <div><b>Insights unlocked</b> — thank you for contributing to the benchmark.</div></div>` : html`
             <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
               <div><b>${fresh ? "Answer your reward questions to unlock your insights."
-                : "You're at " + Math.round(c.core_pct || 0) + "% of your key questions — " + target + "% unlocks your insights."}</b>${c.days_left != null ? ` ${c.days_left} days to go.` : ""}
+                : "You're at " + Math.round(c.core_pct || 0) + "% of your key questions — " + target + "% unlocks your insights."}</b>${c.days_left != null ? ` ${c.days_left} days left.` : ""}
                 </div></div>`}
           ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
           ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
@@ -3416,7 +3416,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
 
         ${/* ---------- §4.1 Calculations ---------- */ ""}
         <h2 class="how-section-head" id="calculations">How the numbers are calculated</h2>
-        <p class="caption" style=${{ marginTop: "-4px" }}>Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v${m.methodology_version || 1}</p>
+        <p class="caption">Benchmark snapshot dated ${m.snapshot_date} · collection window ${m.collection_window} · methodology v${m.methodology_version || 1}</p>
 
         <div class="card how-card" id="market-position">
           <h3 class="section-title">Where you stand — your market position</h3>
@@ -3565,7 +3565,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         ${/* ---------- §4.3 Legal ---------- */ ""}
         <h2 class="how-section-head" id="legal">Legal</h2>
         <div class="card how-card">
-          <p class="caption">Each document is its own page; this is the index. Any document still in review is marked <b>Draft</b>.</p>
+          <p class="caption">Documents still in review are marked <b>Draft</b>.</p>
           <div class="legal-list">
             ${(legal || []).map(d => html`
               <button key=${d.key} class="legal-row" onClick=${() => setDoc(d.key)}>

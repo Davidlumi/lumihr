@@ -158,7 +158,7 @@ window.PulseDetailPage = function ({ me, pid }) {
         <div class="card pulse-survey" style=${{ margin: "var(--s4) 0" }}>
           <div class="pulse-survey-head">
             <div class="row spread" style=${{ alignItems: "baseline", gap: "var(--s2)" }}>
-              <div><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are simply excluded</span></div>
+              <div><b>Your answers</b> <span class="caption">· answer what applies — skipped questions are excluded</span></div>
               <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
                 ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : answeredCount + " of " + p.question_list.length + " answered · autosaves"}</div>
             </div>
@@ -606,7 +606,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         </div>`)}
       <button class="pulse-add-tile" onClick=${addNew}>+ Add a question</button>
       <div class="row" style=${{ marginTop: "var(--s2)" }}>
-        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "+ Or add one from the lumi library"}</button>
+        <button class="btn small quiet" onClick=${() => setShowLib(s => !s)}>${showLib ? "Hide library" : "+ Add from the lumi library"}</button>
       </div>
       ${showLib && html`
         <div style=${{ marginTop: "var(--s2)" }}>
@@ -631,11 +631,11 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
           <div class="pulse-preview-head"><b>Preview</b> <span class="caption">· answers here aren't saved</span></div>
           <div class="pulse-preview-body">
             <h3 class="pulse-preview-title">${name || "Untitled survey"}</h3>
-            ${desc ? html`<p class="caption" style=${{ marginTop: "2px" }}>${desc}</p>` : ""}
+            ${desc ? html`<p class="caption" style=${{ marginTop: "var(--s1)" }}>${desc}</p>` : ""}
             ${keep.map((k, i) => html`
               <div key=${"pvk" + k.id} class="pulse-preview-q">
                 <div class="pulse-preview-label"><span class="pulse-preview-num">${i + 1}</span> ${k.text}</div>
-                <p class="caption pulse-preview-reused">Reused lumi library question · ${TYPE_LABEL[k.type] || k.type} — members answer with the standard control.</p>
+                <p class="caption pulse-preview-reused">Reused library question · ${TYPE_LABEL[k.type] || k.type}</p>
               </div>`)}
             ${liveNew().map((nq, i) => { const q = previewQ(nq, i); return html`
               <div key=${"pvn" + i} class="pulse-preview-q">
@@ -650,7 +650,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         ${!isNew && onSubmitReview && html`<button class="btn primary" disabled=${busy} onClick=${saveThenReview}>Submit for review →</button>`}
         ${!isNew && onDiscard && html`<button class="btn quiet" style=${{ marginLeft: "auto" }} onClick=${onDiscard}>Discard</button>`}
       </div>
-      ${isNew && html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Save the draft, then submit it for review when you're ready.</p>`}
+      ${isNew && html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Save the draft, then submit it for review.</p>`}
     </div>`;
 }
 
@@ -676,7 +676,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
     <div class="card" style=${{ padding: "var(--s4)", marginTop: "var(--s3)" }}>
       <div class="qsec-head"><b>${detail.name}</b></div>
       ${detail.description ? html`<p class="caption">${detail.description}</p>` : ""}
-      ${(detail.question_list || []).map(q => html`<div key=${q.id} class="caption" style=${{ padding: "3px 0" }}>• ${q.text} <span style=${{ opacity: 0.7 }}>(${TYPE_LABEL[q.type] || q.type})</span></div>`)}
+      ${(detail.question_list || []).map(q => html`<div key=${q.id} class="caption" style=${{ padding: "var(--s1) 0" }}>• ${q.text} <span style=${{ opacity: 0.7 }}>(${TYPE_LABEL[q.type] || q.type})</span></div>`)}
     </div>`;
   if (ls === "in_review") return html`
     <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s3)", textAlign: "center" }}>

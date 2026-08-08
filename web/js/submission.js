@@ -27,7 +27,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
       ${me.user.role === "admin"
         ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
         : html`<${EmptyState} icon="lock" title="Waiting on your Admin"
-            body="Your organisation's Admin sets up the company profile and accepts the data terms first — then your questionnaire opens. Nothing is needed from you yet."
+            body="Your organisation's Admin sets up the company profile and accepts the data terms — then your questionnaire opens."
             action=${html`<button class="btn small" onClick=${() => nav("/how-lumi-works")}>See how lumi works</button>`} />`}
     </div>`;
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
@@ -58,8 +58,7 @@ function DataTermsGate({ me, onAccepted }) {
   return html`
     <div style=${{ maxWidth: "680px" }}>
       <h1 class="display-title">Data Contribution Terms</h1>
-      <p>Before your organisation's first submission, your Admin reviews and accepts the terms that
-      govern how contributed data is used. ${isAdmin ? "You accept once, on behalf of your whole organisation — your team never re-accepts." :
+      <p>Before your organisation's first submission, your Admin accepts the terms that govern how contributed data is used. ${isAdmin ? "You accept once, on behalf of your whole organisation — your team never re-accepts." :
       "Your Admin does this — once accepted, you can begin submitting."}</p>
       <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
         <h2 class="section-title">The essentials</h2>
@@ -71,7 +70,7 @@ function DataTermsGate({ me, onAccepted }) {
         <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)" }}>
           <a href="#" onClick=${e => { e.preventDefault(); setFull(!full); }}>
             ${full ? "Hide the full terms" : "Read the full terms"}</a>
-          <a href="/api/terms/dpa" download>Download the full Data Sharing Agreement (DPA)</a>
+          <a href="/api/terms/dpa" download>Download the Data Sharing Agreement (DPA)</a>
         </div>
         ${full && terms && html`
           <div style=${{ maxHeight: "320px", overflow: "auto", border: "1px solid var(--border)",
@@ -95,7 +94,7 @@ function DataTermsGate({ me, onAccepted }) {
             ${busy ? html`<${Spinner} />` : "Accept and begin"}</button>
         </div>` : html`
         <${EmptyState} icon="lock" title="Waiting on your Admin"
-          body="Only your organisation's Admin can accept the Data Contribution Terms. Once they have, you can start submitting here — your 30 days to contribute start at that moment, so no time is being lost." />`}
+          body="Only your organisation's Admin can accept the Data Contribution Terms. Once they have, you can start submitting — your 30 days to contribute start then." />`}
     </div>`;
 }
 
@@ -266,7 +265,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
     </div>
     <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
       <div>
-        <h1 class="display-title" style=${{ margin: "0 0 3px" }}>${sp}</h1>
+        <h1 class="display-title" style=${{ margin: "0 0 var(--s1)" }}>${sp}</h1>
         <div class=${"qwiz-saved" + (saveState === "error" ? " err" : savedAt ? " on" : "")} role="status">
           ${saveState === "error" ? "Some answers aren't saved — retry the highlighted rows"
             : saveState === "saving" ? "Saving\u2026"
@@ -366,7 +365,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       ${visible.length === 0 ? html`
         <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
           <span class="signals-empty-ring"><${Icon} name=${filter === "unanswered" ? "award" : "table"} size=${18} /></span>
-          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + sp + " — fully complete." : "No questions to show in this view."}</div>
+          <div class="caption">${filter === "unanswered" ? "Nothing left to answer in " + sp + "." : "No questions to show in this view."}</div>
         </div>` :
       html`<div class="dq-list">
         ${visible.map(q => {
@@ -444,7 +443,7 @@ function IssueNotes({ iss, onConfirm }) {
         ${iss.warnings.map((w, i) => html`<div key=${i} class="warn-text">⚠ ${w}</div>`)}
         <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s2)", alignItems: "center" }}>
           <button class="btn small" onClick=${onConfirm}>Yes, it's right — keep it</button>
-          <span class="caption">or correct the value above. Your answer is saved either way.</span>
+          <span class="caption">or correct the value above — it's saved either way.</span>
         </div>
       </div>`}`;
 }
@@ -520,7 +519,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
       if (on) {
         const filled = q.matrix_rows.filter(r => (drafts[q.id + "|" + r.row_id] || "") !== "");
         if (filled.length && !window.confirm(
-          `Mark this as not applicable? This clears the ${filled.length} value${filled.length === 1 ? "" : "s"} you've entered in the grid — unticking won't bring them back.`)) return;
+          `Mark this as not applicable? This clears the ${filled.length} value${filled.length === 1 ? "" : "s"} you've entered — unticking won't bring them back.`)) return;
       }
       save(q, "", on ? "Not applicable" : "");
       if (on) q.matrix_rows.forEach(r => { if ((drafts[q.id + "|" + r.row_id] || "") !== "") save(q, r.row_id, ""); });
@@ -674,7 +673,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
   return html`
     <div style=${{ maxWidth: "680px" }}>
       <button class="btn quiet" onClick=${() => nav("/your-data")}>← Your data</button>
-      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Review and submit</h1>
+      <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s3)" }}>Review & submit</h1>
       <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
         <div class="row spread" style=${{ alignItems: "baseline", marginBottom: "var(--s2)" }}>
           <b>${val.pending_changes > 0
@@ -698,7 +697,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
       ${val.unanswered_required.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)" }}>
           <b>Unanswered key questions (${val.unanswered_required.length})</b>
-          <div class="caption" style=${{ margin: "2px 0 var(--s1)" }}>“Not applicable” counts as an answer.</div>
+          <div class="caption" style=${{ margin: "var(--s1) 0" }}>“Not applicable” counts as an answer.</div>
           ${val.unanswered_required.slice(0, 12).map((u, i) => html`
             <div key=${i} class="caption" style=${{ marginTop: "var(--s1)" }}>
               <a href=${"#/your-data/" + encodeURIComponent(u.section || u.superpower)}>${u.section || u.superpower}</a> — ${u.title}</div>`)}

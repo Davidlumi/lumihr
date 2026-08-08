@@ -89,7 +89,7 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
     return html`
       <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
         <line x1=${x(consensus)} x2=${x(consensus)} y1=${padT} y2=${H - padB} stroke="var(--chart-median)" stroke-width="2"/>
-        <text x=${W / 2} y=${padT - 4} text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-weight="600">The market is unanimous here</text>
+        <text x=${W / 2} y=${padT - 4} text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-weight="600">The market is unanimous</text>
         <text x=${x(consensus)} y=${H - 5} text-anchor="middle" font-size="9" fill="var(--ink-faint)">Everyone: ${fmtValue(consensus, unit)}</text>
         ${you != null && html`
           <${YouDot} x=${xClamp(you)} y=${padT + (H - padT - padB) / 2} fav=${off ? favourable : "mid"}

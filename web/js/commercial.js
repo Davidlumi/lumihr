@@ -633,10 +633,10 @@ window.AnalystPane = function ({ onClose }) {
       setMsgs(m => [...m, { role: "bot", text: r.answer, chips: r.chips, links: r.links, noMetric: r.no_metric, topic: r.topic }]);
     } catch (e) {
       const friendly = (e && e.name === "AbortError")
-        ? "That took longer than it should — give it another go."
+        ? "That took longer than it should — try again."
         : (e.status === 400 || e.status === 403 || e.status === 429 || e.status === 0)
           ? e.message
-          : "Sorry — something went wrong on our side. Try again in a moment.";
+          : "Something went wrong on our side — try again in a moment.";
       setMsgs(m => [...m, { role: "bot", text: friendly, retryQ: q }]);
     }
     clearTimeout(timer);
@@ -1071,7 +1071,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
           const landOpts = [opt("all", `All peers · ${pool}`), ...firmo,
             ...(cuts && cuts.twin_available ? [opt("twin", "Organisations like you")] : []),
             ...((cuts && cuts.groups) || []).map(g => opt("group::" + g.group_id,
-              g.name + (g.too_small ? " (too few orgs)" : ` · ${g.match_count}`)))];
+              g.name + (g.too_small ? " (too few organisations)" : ` · ${g.match_count}`)))];
           const sigVal = me.org.signal_peer_cut || "all";
           const sigLabel = sigVal === "all" ? `All peers · ${pool}`
             : sigVal.split("::", 2)[1] + (sigVal.startsWith("fte_band::") ? " FTE" : "");

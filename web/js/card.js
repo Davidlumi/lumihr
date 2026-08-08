@@ -189,7 +189,7 @@ function ComparePill({ c, cuts, effectiveKey, globalKey, onCut }) {
               ${ch.key === globalKey ? html`<span class="caption" style=${{ marginLeft: "auto" }}>page</span>` : null}
             </button>`)}
           ${unprofiled && html`<button class="kebab-item" onClick=${() => { setOpen(false); nav("/profile"); }}>
-            Unlock sector & size — complete your profile</button>`}
+            Compare by sector & size — complete your profile</button>`}
         </div>`}
     </div>`;
 }
@@ -529,7 +529,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   }
   if (c.type === "single_select" || c.type === "yes_no" || c.type === "multi_select") {
     const youLabels = c.you ? c.you.labels : [];
-    if (!c.block) return html`<div class="suppressed-box">No peer distribution to show for this group yet — try a wider peer group.</div>`;
+    if (!c.block) return html`<div class="suppressed-box">No peer distribution for this peer group yet — try a wider one.</div>`;
     return html`
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "var(--s2)" }}>${readOnly
@@ -620,7 +620,7 @@ window.MatrixSelect = function ({ rows }) {
                   const isMode = b === modal, isYou = youLabel && b === youLabel;
                   return html`<td key=${b} class=${"mh-cell" + (isMode ? " mode" : "") + (isYou ? " you" : "")}
                     style=${{ background: mix(t), color: t >= 0.52 ? "#fff" : "var(--ink)" }}
-                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of the market"}>${fmtCell(disp[b] || 0)}</td>`;
+                    title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of peers at this level"}>${fmtCell(disp[b] || 0)}</td>`;
                 })}
                 <td class="mh-you">${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;

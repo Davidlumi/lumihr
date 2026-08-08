@@ -41,7 +41,7 @@ const SCALE = {
     stops: [
       { v: "statutory", t: "Legal minimum", d: "What the law requires", se: 'We’ll hold you to the <b>statutory</b> floor — extra spend reads as discretionary.' },
       { v: "market", t: "In line", d: "Around the same as peers", se: 'We’ll read you against the <b>market norm</b> for family benefits.' },
-      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on strategy</span> — your stated stance is the evidence it’s intended, not overspend.' } ] },
+      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on strategy</span> — intended, not overspend.' } ] },
   budget: { q: "Which way is your pay and reward budget heading?",
     stops: [
       { v: "investing", t: "Investing", d: "More to spend" }, { v: "flat", t: "Flat", d: "Holding the line" },
@@ -215,7 +215,7 @@ function DomainOverrides({ domains, targets, globalValue, onSet }) {
         <${Icon} name="sliders" size=${13} /> Refine by area${n ? html` · <b>${n}</b> set` : ""}
         <span class="dom-chev">${open ? "▾" : "▸"}</span></button>
       ${open && html`<div class="dom-panel">
-        <p class="dom-hint">Set a different aim for any reward area. Areas you leave alone follow your overall position${globalValue ? html` (<b>${labelOf("market_position", globalValue)}</b>)` : ""}.</p>
+        <p class="dom-hint">Set a different aim for any area — the rest follow your overall position${globalValue ? html` (<b>${labelOf("market_position", globalValue)}</b>)` : ""}.</p>
         ${domains.map(dom => html`<div key=${dom} class="dom-row">
           <div class="dom-row-head"><span class="dom-name">${dom}</span>
             ${t[dom] ? html`<button type="button" class="dom-clear" onClick=${() => onSet(dom, null)}>Clear · follow overall</button>`
@@ -246,7 +246,7 @@ window.StrategyPage = function ({ me }) {
   if (err) return html`<${EmptyState} icon="compass" title="Couldn't load your strategy" body=${err} />`;
   if (!data) return html`<${PageLoading} />`;
   if (!isAdmin) return html`<${EmptyState} icon="lock" title="Admin only"
-    body="Your reward strategy is set by an organisation Admin. Ask yours to complete it — you'll see your results read through it." />`;
+    body="Your reward strategy is set by an organisation Admin — ask yours to complete it." />`;
 
   const pick = (field, val) => setStrat(s => ({ ...s, [field]: val }));
   // per-domain override write (step-3 layer 2): only set domains carry a key — null deletes
@@ -361,7 +361,7 @@ window.StrategyPage = function ({ me }) {
 
       <div class="strat-footer">
         <div class="strat-footer-in">
-          <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " questions", "Review your strategy"][step]}</div>
+          <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " dials", "Review your strategy"][step]}</div>
           <div class="row" style=${{ gap: "var(--s2)" }}>
             ${step > 0 && !committed && html`<button class="btn" onClick=${back}>Back</button>`}
             ${step < 3 ? html`<button class="btn primary strat-next" onClick=${next}>${step === 0 ? "Looks right" : "Next"}</button>`

@@ -798,7 +798,7 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
               : count === null ? html`<${Spinner} />`
               : count.too_small
                 ? `Only ${count.match_count} organisation${count.match_count === 1 ? "" : "s"} currently match — at least ${count.min_orgs} are needed before any benchmark shows. You can still save it.`
-                : `${count.match_count} organisations currently match — comfortably above the minimum of ${count.min_orgs}.`}
+                : `${count.match_count} organisations currently match.`}
           </div>
           ${err && html`<div class="error-text" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
           <div class="row">
@@ -815,8 +815,7 @@ window.NotFoundPage = function ({ route }) {
     <div style=${{ maxWidth: "480px", margin: "var(--s7) auto", textAlign: "center" }}>
       <div style=${{ color: "var(--ink-faint)", marginBottom: "var(--s3)" }}><${Icon} name="search" size=${26} /></div>
       <h1 class="display-title">That page doesn't exist</h1>
-      <p class="caption">There's nothing at <b>${route}</b> — it may be an old or mistyped link.
-        If someone shared it with you, ask them for a fresh one — shared links can expire.</p>
+      <p class="caption">There's nothing at <b>${route}</b> — it may be an old or mistyped link.</p>
       <div class="row" style=${{ gap: "var(--s2)", justifyContent: "center", flexWrap: "wrap" }}>
         <button class="btn primary" onClick=${() => nav("/overview")}>Back to your overview</button>
         <button class="btn quiet" onClick=${() => nav("/how-lumi-works")}>How lumi works</button>
@@ -1669,7 +1668,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
         </div>
       </details>
       <div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
-        From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category of your reward benchmark.
+        From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category.
       </div>
       ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-foot" aria-hidden="true">

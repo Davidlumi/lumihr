@@ -27,7 +27,7 @@ window.AdminConsolePage = function ({ me, route }) {
     <div class="admin-console">
       <div class="admin-head">
         <div class="eyebrow">lumi staff · back office</div>
-        <h1 class="display-title" style=${{ margin: "2px 0 0" }}>Console</h1>
+        <h1 class="display-title" style=${{ margin: 0 }}>Console</h1>
         <p class="caption" style=${{ margin: "var(--s1) 0 0" }}>Signed in as ${me.user.email}.</p>
       </div>
       <div class="admin-tabs">
@@ -175,7 +175,7 @@ function AdminProvisionForm({ onCancel, onOpenOrg }) {
         industry: f.industry, fte_band: f.fte_band, hq_region: f.hq_region,
         ownership_type: f.ownership_type } });
       setDone(r);
-      toast("Provisioned — copy the founding-Admin invite link.");
+      toast("Provisioned.");
     } catch (e) {
       setErr({ message: e.message, ...provisionErrorClass(e) });
     }
@@ -226,8 +226,8 @@ function AdminProvisionForm({ onCancel, onOpenOrg }) {
       </div>`}
       <div class="admin-actions" style=${{ marginTop: "var(--s3)" }}>
         <button class="btn primary" disabled=${!complete || busy} onClick=${submit}>
-          ${busy ? "Provisioning…" : "Provision + mint founding-Admin invite"}</button>
-        ${!complete && html`<span class="caption">complete all six fields to enable</span>`}
+          ${busy ? "Provisioning…" : "Provision + mint invite"}</button>
+        
       </div>
     </div>`;
 }
@@ -348,7 +348,7 @@ function AdminOrgInvitePanel({ orgId, orgName, invites, onChanged }) {
       const r = await api("/api/admin/orgs/" + orgId + "/invite",
                           { method: "POST", body: { email: addr, role } });
       setLink(r.link);
-      toast("Invite created — expires in " + r.expires_days + " days. Copy the link to deliver it.");
+      toast("Invite created — expires in " + r.expires_days + " days.");
       setEmail("");
       onChanged();
     } catch (e) {
@@ -408,7 +408,7 @@ function AdminOrgInvitePanel({ orgId, orgName, invites, onChanged }) {
             member's own Team page, never by invite.</div>
         </div>`}
       ${invites.length ? html`
-        <div class="admin-toolbar" style=${{ marginTop: "var(--s3)" }}><b>Pending invites</b> <span class="caption">${invites.length} · expired ones need a reissue</span></div>
+        <div class="admin-toolbar" style=${{ marginTop: "var(--s3)" }}><b>Pending invites</b> <span class="caption">${invites.length}</span></div>
         <table class="data admin-table">
           <thead><tr><th>Email</th><th>Role</th><th>Expiry</th><th>Actions</th></tr></thead>
           <tbody>${invites.map(i => html`<tr key=${i.token} style=${{ opacity: i.expired ? 0.75 : 1 }}>
@@ -919,7 +919,7 @@ function AdminUsersTab() {
         <span class="caption">Exact email only — or drill in from the Organisations tab.</span>
       </div>
       ${result && !result.found && html`<${EmptyState} icon="users" title="No account with that email"
-        body="Check the spelling — the lookup is exact, not fuzzy." />`}
+        body="The lookup is exact — check the spelling." />`}
       ${u && html`
         <div class="card admin-card">
           <div class="row spread">
@@ -947,7 +947,7 @@ function AdminBillingTab() {
   if (!data) return adminSpinner;
   const gbp = (p) => "£" + ((p || 0) / 100).toLocaleString("en-GB");
   if (!data.orders.length) return html`<${EmptyState} icon="coins" title="No orders yet"
-    body="Self-service pulse launch fees will appear here once members start paying (or you confirm invoiced launches)." />`;
+    body="Pulse launch fees appear here once paid or invoice-confirmed." />`;
   return html`
     <div>
       <div class="admin-toolbar">
@@ -981,7 +981,7 @@ function AdminComplianceTab() {
     <div>
       <div class="admin-toolbar">
         <b>${data.total} acceptance${data.total === 1 ? "" : "s"} on record</b>
-        <span class="caption">current versions: platform v${data.versions.platform} · data-contribution v${data.versions.data_contribution} · who accepted is in each org's drill-down</span>
+        <span class="caption" title="Who accepted is listed in each organisation's drill-down">platform v${data.versions.platform} · data-contribution v${data.versions.data_contribution}</span>
       </div>
       <table class="data admin-table">
         <thead><tr><th>Organisation</th><th>Kind</th><th>Version</th><th>Accepted</th></tr></thead>
@@ -1024,7 +1024,7 @@ function AdminOpsTab() {
     setSweeping(true);
     try {
       const r = await api("/api/notifications/run-sweep" + (withDigest ? "?digest=daily,weekly" : ""), { method: "POST", body: {} });
-      toast(r.orgs_swept + " orgs swept, " + r.events + " events" + (r.digests_sent != null ? ", " + r.digests_sent + " digests sent" : "") + ".");
+      toast(r.orgs_swept + " organisations swept, " + r.events + " events" + (r.digests_sent != null ? ", " + r.digests_sent + " digests sent" : "") + ".");
       load();
     } catch (e) { toast(e.message, "error"); }
     setSweeping(false);
