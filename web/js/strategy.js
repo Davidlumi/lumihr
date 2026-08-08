@@ -226,6 +226,140 @@ function DomainOverrides({ domains, targets, globalValue, onSet }) {
     </div>`;
 }
 
+// ---- the strategy VIEW — what a completed strategy looks like when you visit ----
+// A strategy is a document, not a form: the stance in words, the dial profile,
+// and where it meets your live position. Edit re-enters the wizard.
+const SV_STANCE = { lag: "below market", match: "on market", lead: "above market" };
+const ALIGN_READ = { on_target: { t: "On aim", cls: "ok" }, above_target: { t: "Ahead of aim", cls: "warn" },
+  below_target: { t: "Behind aim", cls: "warn" } };
+
+function stanceSentences(strat, orgName) {
+  const s1 = [];
+  if (strat.market_position) {
+    const n = Object.keys(strat.domain_targets || {}).length;
+    s1.push(html`${orgName} aims to sit <b>${SV_STANCE[strat.market_position]}</b> on reward${n ? html` (<b>${n}</b> area${n === 1 ? "" : "s"} refined)` : ""}`);
+  }
+  if (strat.reward_mix) s1.push(html`with a <b>${labelOf("reward_mix", strat.reward_mix).toLowerCase()}</b> package`);
+  if (strat.pay_for_performance) s1.push(html`and <b>${labelOf("pay_for_performance", strat.pay_for_performance).toLowerCase()}</b> on performance pay`);
+  const s2 = [];
+  if (strat.transparency) s2.push(html`Pay is <b>${labelOf("transparency", strat.transparency).toLowerCase()}</b> internally`);
+  if (strat.family_position) s2.push(html`family support is <b>${labelOf("family_position", strat.family_position).toLowerCase()}</b>`);
+  const s3 = strat.primary_objective
+    ? html`This year the focus is <b>${labelOf("primary_objective", strat.primary_objective).toLowerCase()}</b>.` : null;
+  return { s1, s2, s3 };
+}
+
+// readonly miniature of the 3-stop dial — the chosen stop lit, the others ghosts
+function MiniDial({ field, value }) {
+  const sk = SCALE_FIELD[field];
+  const stops = sk ? SCALE[sk].stops : null;
+  if (!stops) return null;
+  const idx = stops.findIndex(s => s.v === value);
+  return html`<div class="sv-minidial" aria-hidden="true">
+    ${stops.map((s, i) => html`<span key=${s.v} class=${"sv-dot" + (i === idx ? " on" : "")}></span>
+      ${i < stops.length - 1 ? html`<span class=${"sv-seg" + (idx > i ? " lit" : "")}></span>` : null}`)}
+  </div>`;
+}
+
+// what each dial DRIVES — the connection line under every profile entry
+const DIAL_DRIVES = {
+  market_position: "Sets the aim your position is read against — the AIM ticks on your Overview.",
+  reward_mix: "Weights how pay and package figures are read together.",
+  pay_for_performance: "Sets the pay-spread shape we expect before flagging.",
+  transparency: "Sets which openness practices count as commitments to track.",
+  location_approach: "Switches per-location reads on or off.",
+  benefits_lead: "Tells the practice lens which benefit areas are deliberate leads.",
+  family_position: "Sets the family-benefits bar you are held to.",
+  primary_objective: "Orders your signals — what gets flagged first.",
+  budget_direction: "Kept for context — recorded, not yet shaping signals.",
+  acute_pressure: "Kept for context — recorded, not yet shaping signals.",
+  risk_appetite: "Kept for context — recorded, not yet shaping signals.",
+};
+
+function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
+  const [hero, setHero] = useState(null);
+  useEffect(() => { apiCached("/api/overview").then(o => setHero(o.hero || null)).catch(() => setHero(null)); }, []);
+  const orgName = (me.org && me.org.name) || "Your organisation";
+  const { s1, s2, s3 } = stanceSentences(strat, orgName);
+  const doms = (hero && hero.domains || []).filter(d => d.target);
+  const offAim = doms.filter(d => d.target.alignment && d.target.alignment !== "on_target");
+  const when = data.completed_at ? fmtDate(data.completed_at) : null;
+  const profileFields = ["market_position", "reward_mix", "pay_for_performance", "transparency",
+    "location_approach", "benefits_lead", "family_position", "primary_objective",
+    "budget_direction", "acute_pressure", "risk_appetite"].filter(f => fieldState(f) !== "coming");
+  const valueOf = (f) => f === "benefits_lead"
+    ? ((strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t).join(", ") || null)
+    : (strat[f] ? labelOf(f, strat[f]) : null);
+  return html`
+    <div class="strat-view">
+      <div class="row spread no-print" style=${{ alignItems: "flex-start", marginBottom: "var(--s4)" }}>
+        <div>
+          <h1 class="display-title" style=${{ margin: 0 }}>Reward strategy</h1>
+          ${when && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>Captured ${when} · set by your Admins</div>`}
+        </div>
+        <div class="row" style=${{ gap: "var(--s2)" }}>
+          <button class="btn" onClick=${() => window.print()}><${Icon} name="file-text" size=${14} /> Download (PDF)</button>
+          ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="sliders" size=${14} /> Edit strategy</button>` : null}
+        </div>
+      </div>
+
+      ${/* the stance, in words — navy strategy channel */ ""}
+      <div class="sv-stance">
+        <div class="sv-stance-eyebrow"><${Icon} name="compass" size=${13} /> The stance</div>
+        <p class="sv-stance-text">
+          ${s1.length ? html`${s1.map((x, i) => html`<span key=${i}>${i > 0 ? ", " : ""}${x}</span>`)}. ` : ""}
+          ${s2.length ? html`${s2.map((x, i) => html`<span key=${i}>${i > 0 ? "; " : ""}${x}</span>`)}. ` : ""}
+          ${s3 || ""}
+        </p>
+        <div class="sv-stance-foot">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
+      </div>
+
+      ${/* where the strategy meets your live position — the connection layer */ ""}
+      ${doms.length ? html`
+        <div class="sv-sec-head">
+          <h2 class="section-title">Aim vs position</h2>
+          <span class="caption">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "All " + doms.length + " areas on aim"} · updates with your benchmark</span>
+        </div>
+        <div class="sv-align card">
+          ${doms.map(d => { const read = ALIGN_READ[d.target.alignment]; return html`
+            <a key=${d.name} class="sv-align-row" href=${"#/category/" + encodeURIComponent(d.name)}>
+              <span class="sv-align-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sv-ov-tag">area aim</span>` : ""}</span>
+              <span class="sv-align-aim">aim <b>${SV_STANCE[d.target.stance] || "—"}</b></span>
+              <span class="sv-align-pos">position <b>${d.position && d.position.verdict ? d.position.verdict + " market" : "—"}</b></span>
+              ${read ? html`<span class=${"sv-align-chip " + read.cls}>${read.t}</span>` : html`<span class="sv-align-chip">—</span>`}
+            </a>`; })}
+        </div>` : hero === null ? null : html`
+        <div class="caption" style=${{ margin: "var(--s3) 0" }}>Aim-vs-position appears once your benchmark unlocks.</div>`}
+
+      ${/* the dial profile — every part with its purpose */ ""}
+      <div class="sv-sec-head">
+        <h2 class="section-title">The positions behind it</h2>
+        <span class="caption no-print">every dial states what it drives</span>
+      </div>
+      <div class="sv-profile">
+        ${profileFields.map(f => { const v = valueOf(f); return html`
+          <div key=${f} class=${"sv-dial card" + (v ? "" : " skipped")}>
+            <div class="sv-dial-top">
+              <span class="sv-dial-ic"><${Icon} name=${DIAL_ICON[f] || "target"} size=${14} /></span>
+              <span class="sv-dial-label">${DIAL_LABEL[f]}</span>
+              <${MiniDial} field=${f} value=${strat[f]} />
+            </div>
+            <div class="sv-dial-val">${v || "Skipped — read neutrally"}</div>
+            <div class="sv-dial-drives">${DIAL_DRIVES[f]}</div>
+          </div>`; })}
+      </div>
+      <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
+
+      ${/* print-only artefact — the downloadable strategy one-pager */ ""}
+      <div class="strat-pdf-head" aria-hidden="true">
+        <b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}
+      </div>
+      <div class="strat-pdf-foot" aria-hidden="true">
+        Private ${"&"} confidential · Prepared in lumi · Company facts and choices, not employee data · lumihr.co.uk
+      </div>
+    </div>`;
+}
+
 window.StrategyPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -235,6 +369,7 @@ window.StrategyPage = function ({ me }) {
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
   const [committed, setCommitted] = useState(false);   // brief "captured" flourish before nav
+  const [editing, setEditing] = useState(false);       // a completed strategy shows the VIEW until Edit
   const isAdmin = me && me.user && me.user.role === "admin";
   useEffect(() => {
     api("/api/strategy").then(d => {
@@ -245,8 +380,15 @@ window.StrategyPage = function ({ me }) {
   }, []);
   if (err) return html`<${EmptyState} icon="compass" title="Couldn't load your strategy" body=${err} />`;
   if (!data) return html`<${PageLoading} />`;
-  if (!isAdmin) return html`<${EmptyState} icon="lock" title="Admin only"
-    body="Your reward strategy is set by an organisation Admin — ask yours to complete it." />`;
+  const complete = !!data.completed_at;
+  if (!isAdmin) {
+    // non-admins with a completed strategy still get the READ view — it explains
+    // how their organisation's results are being read; only editing is admin-only.
+    if (complete) return html`<${StrategyView} me=${me} data=${data} strat=${data.strategy || {}} canEdit=${false} />`;
+    return html`<${EmptyState} icon="lock" title="Admin only"
+      body="Your reward strategy is set by an organisation Admin — ask yours to complete it." />`;
+  }
+  if (complete && !editing) return html`<${StrategyView} me=${me} data=${data} strat=${strat} onEdit=${() => { setEditing(true); setStep(0); }} />`;
 
   const pick = (field, val) => setStrat(s => ({ ...s, [field]: val }));
   // per-domain override write (step-3 layer 2): only set domains carry a key — null deletes
@@ -284,9 +426,17 @@ window.StrategyPage = function ({ me }) {
       // (a pre-wiring stored value stays inert until this). True only while the field is live.
       await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
         transparency_confirmed: fieldState("transparency") === "live" } });
-      setCommitted(true);                                  // the payoff — a quiet flourish, then land on the dashboard
+      setCommitted(true);                                  // the payoff — a quiet flourish, then land
       if (window.confettiBurst) window.confettiBurst({ count: 90, duration: 2000, origin: { x: 0.5, y: 0.42 } });
-      setTimeout(() => nav("/"), 1400);
+      apiCacheInvalidate("/api/overview");                 // aim ticks may have moved
+      const wasEdit = editing;
+      setTimeout(() => {
+        if (wasEdit) {
+          api("/api/strategy").then(d => { setData(d); setStrat({ ...d.strategy }); setPlaneA(d.plane_a.map(f => ({ ...f }))); });
+          setEditing(false); setCommitted(false); setSaving(false); setStep(0);
+          window.scrollTo(0, 0);
+        } else nav("/");
+      }, 1400);
     } catch (e) { flash("Couldn't save — try again."); setSaving(false); }
   };
 
@@ -363,6 +513,7 @@ window.StrategyPage = function ({ me }) {
         <div class="strat-footer-in">
           <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " dials", "Review your strategy"][step]}</div>
           <div class="row" style=${{ gap: "var(--s2)" }}>
+            ${editing && !committed && html`<button class="btn quiet" onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setStep(0); }}>Cancel</button>`}
             ${step > 0 && !committed && html`<button class="btn" onClick=${back}>Back</button>`}
             ${step < 3 ? html`<button class="btn primary strat-next" onClick=${next}>${step === 0 ? "Looks right" : "Next"}</button>`
               : html`<button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
