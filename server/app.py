@@ -4305,13 +4305,37 @@ def _strategy_plane_a(org):
     ]
 
 
+def _canon_domain_targets(dt, mpc=None):
+    """Heal legacy short domain keys ('Time Off', pre-canonicalisation rows) to the
+    canonical sub_power names ('Time Off & Family') the engine and the validator both
+    speak. Exact keys pass through; a UNIQUE prefix match rewrites; anything else is
+    left for validation to reject. Root cause 2026-08-08 deep QA: a stored short key
+    made every strategy save 400 AND the engine silently ignored the member's aim."""
+    if not dt:
+        return dt or {}
+    mpc = mpc or pos.market_position_config()
+    doms = list(mpc.get("_domains", {}))
+    out = {}
+    for k, v in dt.items():
+        if k in doms:
+            out[k] = v
+            continue
+        hits = [d for d in doms if d.startswith(k)]
+        out[hits[0] if len(hits) == 1 else k] = v
+    return out
+
+
 def strategy_state(conn, org):
     """The org's stored B/C strategy + provenance + Plane-A facts, shaped for the API."""
     r = conn.execute("SELECT * FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
     row = dict(r) if r else {}
     strat = {f: row.get(f) for f in STRATEGY_ENUMS}
     strat["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
-    strat["domain_targets"] = uj(row.get("domain_targets"), {}) or {}   # step-3 layer 1 round-trip (no consumer yet)
+    # legacy keys healed on read; keys no canonicalisation can place are DROPPED here
+    # (they are inert in the engine and would 400 every save — unusable garbage config)
+    _dt = _canon_domain_targets(uj(row.get("domain_targets"), {}) or {})
+    _known = set(pos.market_position_config().get("_domains", {}))
+    strat["domain_targets"] = {k: v for k, v in _dt.items() if k in _known}
     # competitive domains for the per-domain override UI (step-3 layer 2) — derived from the
     # SAME config source the save-route validation uses (_domains where competitive), so the
     # UI list and the validation can't drift. Governance (competitiveness=False) falls out.
@@ -4381,6 +4405,7 @@ async def put_strategy(request: Request):
     if not isinstance(dt, dict):
         raise HTTPException(400, "domain_targets must be an object of {domain: stance}.")
     _mpc = pos.market_position_config()
+    dt = _canon_domain_targets(dt, _mpc)          # heal legacy short keys before the gate
     _doms = _mpc.get("_domains", {})              # the canonical domain set (config = single source of truth)
     for dom, stance in dt.items():
         if stance not in STRATEGY_ENUMS["market_position"]:
@@ -4449,7 +4474,7 @@ def strategy_for_engine(conn, org_id):
     out = {f: row.get(f) for f in STRATEGY_ENUMS}
     out["benefits_lead"] = uj(row.get("benefits_lead"), []) or []
     out["provenance"] = uj(row.get("field_provenance"), {}) or {}
-    out["domain_targets"] = uj(row.get("domain_targets"), {}) or {}   # step-3 layer 3: per-domain aims for the engine (null col → {} → every domain reads global)
+    out["domain_targets"] = _canon_domain_targets(uj(row.get("domain_targets"), {}) or {})   # legacy keys healed — the engine matches sub_power names
     return out
 
 

@@ -3117,11 +3117,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: var(--navy); color: #fff; padding: var(--s6) var(--s6) var(--s5); flex-wrap: wrap; }
 .sd-eyebrow { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
   opacity: .72; margin-bottom: var(--s2); }
-.sd-org { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 700; }
+.sd-org { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
 .sd-mast-meta { font-size: var(--fs-caption); line-height: var(--lh-caption); opacity: .78; text-align: right; }
 .sd-mast-meta b { font-weight: 700; opacity: 1; }
 .sd-sec { padding: var(--s5) var(--s6); border-bottom: 1px solid var(--border); }
 .sd-sec:last-of-type { border-bottom: 0; }
+.sd-ai { border-top: 1px solid var(--border); }
 .sd-secnum { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--fs-caption); font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s4); }
 .sd-secnote { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); margin-left: auto; }
@@ -3239,12 +3240,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .cr-label { font-size: var(--fs-label); font-weight: 600; color: var(--ink); margin-bottom: 3px; }
 .cr-why { font-size: var(--fs-caption); color: var(--ink-faint); line-height: 1.4; }
 .cr-val { display: flex; align-items: center; gap: var(--s3); flex-shrink: 0; }
-.cr-tag { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); background: var(--blue-tint); padding: 3px var(--s2); border-radius: 5px; }
-.confirm-row select { font-family: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--ink); border: 1px solid var(--chrome-edge);
-  border-radius: var(--radius); height: 44px; padding: 0 var(--s3); background: var(--paper); cursor: pointer; min-width: 180px;
-  transition: border-color .15s, box-shadow .15s; }
-.confirm-row select:hover { border-color: var(--ink-faint); }
-.confirm-row select:focus, .confirm-row select:focus-visible { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
 .derived-note { background: var(--blue-tint); border: 1px dashed var(--blue-tint-2); border-radius: var(--radius-sm);
   padding: var(--s3) var(--s4); font-size: var(--fs-label); color: var(--blue-deep); display: flex; gap: var(--s2); align-items: flex-start; }
 .derived-note svg { flex: none; margin-top: 1px; }
@@ -3261,8 +3256,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .dial-roundel.flagged { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); color: var(--lumi-coral-deep); }
 .dial-title { font-size: var(--fs-body); font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: var(--s2); margin-bottom: 2px; }
 .dial-q { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.45; }
-.strat-req { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--blue); background: var(--blue-tint); padding: 2px var(--s2); border-radius: 5px; }
-.strat-opt { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-faint); background: var(--paper); border: 1px solid var(--border); padding: 2px var(--s2); border-radius: 5px; }
 
 /* scale track — connected line + measured thumb + 3 stops */
 .scale { position: relative; padding: var(--s2) 0 2px; }

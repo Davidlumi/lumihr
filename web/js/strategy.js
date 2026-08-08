@@ -128,12 +128,16 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
     return () => ro.disconnect();
   }, [idx, value]);
   const move = (e) => {
-    if (idx < 0) return;
-    let n = idx;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") n = Math.min(cfg.stops.length - 1, idx + 1);
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = Math.max(0, idx - 1);
+    let n;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") n = idx < 0 ? 0 : Math.min(cfg.stops.length - 1, idx + 1);
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = idx < 0 ? cfg.stops.length - 1 : Math.max(0, idx - 1);
     else return;
     e.preventDefault(); onPick(cfg.stops[n].v);
+    // keep focus with the selection (roving tabindex re-targets on re-render)
+    requestAnimationFrame(() => {
+      const el = stopsRef.current && stopsRef.current.querySelectorAll(".scale-stop")[n];
+      if (el) el.focus();
+    });
   };
   return html`
     <div class="scale" role="presentation">
@@ -164,9 +168,19 @@ function DialCard({ field, value, onPick, required, context, extra }) {
     var q = cfg.q;
   } else if (field === "primary_objective") {
     var q = "What is pay and reward mainly for, right now?";
-    body = html`<div class="dial-opts" role="radiogroup" aria-label="Primary objective">
+    body = html`<div class="dial-opts" role="radiogroup" aria-label="Primary objective"
+      onKeyDown=${e => {
+        if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) return;
+        e.preventDefault();
+        const cur = Math.max(0, OBJECTIVES.findIndex(x => x.v === value));
+        const nxt = ("ArrowRight" === e.key || "ArrowDown" === e.key) ? Math.min(OBJECTIVES.length - 1, cur + 1) : Math.max(0, cur - 1);
+        onPick(field, OBJECTIVES[nxt].v);
+        requestAnimationFrame(() => { const el = e.currentTarget && e.currentTarget.querySelectorAll(".dial-opt")[nxt]; if (el) el.focus(); });
+      }}>
       ${OBJECTIVES.map(o => html`<button key=${o.v} class=${"dial-opt" + (o.v === value ? " on" : "")}
-        role="radio" aria-checked=${o.v === value} onClick=${() => onPick(field, o.v)}>
+        role="radio" aria-checked=${o.v === value}
+        tabindex=${o.v === value || (!value && o === OBJECTIVES[0]) ? 0 : -1}
+        onClick=${() => onPick(field, o.v)}>
         <span class="ot">${o.t}</span><span class="od">${o.d}</span></button>`)}</div>`;
   } else if (field === "benefits_lead") {
     var q = "Which areas do your benefits focus on? Pick any that fit.";
@@ -177,7 +191,8 @@ function DialCard({ field, value, onPick, required, context, extra }) {
         <${Icon} name="check" size=${12} /> ${b.t}</button>`)}</div>`;
   }
   return html`
-    <div class=${"dial-card" + (flagged ? " flagged" : "")} id=${"dial-" + field}>
+    <div class=${"dial-card" + (flagged ? " flagged" : "")} id=${"dial-" + field} aria-invalid=${flagged ? "true" : undefined}>
+      ${flagged ? html`<span class="sr-only">Required — choose a position to continue.</span>` : null}
       <div class="dial-head">
         <span class=${"dial-roundel" + (flagged ? " flagged" : "")}><${Icon} name=${DIAL_ICON[field] || "target"} size=${16} /></span>
         <div>
@@ -230,7 +245,7 @@ function DomainOverrides({ domains, targets, globalValue, onSet }) {
 // One sheet, navy masthead, three numbered sections: the stance in authored prose,
 // position against intent (the live centrepiece), and the positions ledger.
 const SD_STANCE = { lag: "below market", match: "on market", lead: "above market" };
-const SD_IDX = { lag: 0, match: 1, lead: 2, below: 0, on: 1, above: 2 };
+const SD_IDX = { lag: 0, match: 1, lead: 2, below: 0, on: 1, above: 2, at: 1 };
 const SD_MIX = { cash: "a package led by base pay", balanced: "pay and benefits sharing the load", benefits: "the wider package doing the work" };
 const SD_P4P = { egal: "pay held close across the board", moderate: "a measured spread for performance", strong: "strong differentiation for top performers" };
 const SD_TRANS = { closed: "held privately", ranges: "shared as ranges", open: "fully open" };
@@ -302,11 +317,12 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const offAim = doms.filter(d => d.target.alignment && d.target.alignment !== "on_target");
   const when = data.completed_at ? fmtDate(data.completed_at) : null;
   const aimRead = (d) => {
+    // the server's alignment (positions.py _market_target) is the single source of truth
     const al = d.target.alignment;
-    if (!al) return { t: "—", cls: "" };
     if (al === "on_target") return { t: "On aim", cls: "ok" };
-    const ii = SD_IDX[d.target.stance], ai = d.position && SD_IDX[d.position.verdict];
-    return (ai != null && ii != null && ai > ii) ? { t: "Ahead of aim", cls: "ahead" } : { t: "Behind aim", cls: "behind" };
+    if (al === "ahead") return { t: "Ahead of aim", cls: "ahead" };
+    if (al === "behind") return { t: "Behind aim", cls: "behind" };
+    return { t: "—", cls: "" };
   };
   const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
   const valOf = (f) => f === "benefits_lead"
@@ -314,13 +330,15 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
     : (strat[f] ? labelOf(f, strat[f]) : null);
   const ctxBits = [["budget_direction", strat.budget_direction], ["acute_pressure", strat.acute_pressure], ["risk_appetite", strat.risk_appetite]]
     .filter(x => x[1]).map(x => DIAL_LABEL[x[0]] + ": " + labelOf(x[0], x[1]).toLowerCase());
-  let secN = 0; const num = () => String(++secN).padStart(2, "0");
+  // FIXED numbering — sections must not renumber as async fetches resolve
+  const NUM = { stance: "01", exhibit: "02", positions: "03", reading: "04" };
   return html`
     <div class="sd-wrap">
       <div class="sd-actions no-print">
         <button class="btn" onClick=${() => window.print()}><${Icon} name="download" size=${14} /> Download (PDF)</button>
         ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
       </div>
+      <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
       <article class="sd-doc">
         <header class="sd-mast">
           <div>
@@ -334,15 +352,19 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </header>
 
         <section class="sd-sec">
-          <div class="sd-secnum">${num()} — The stance</div>
+          <div class="sd-secnum">${NUM.stance} — The stance</div>
           ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
             : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
           <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
         </section>
 
-        ${doms.length ? html`
+        ${hero === null ? html`
         <section class="sd-sec">
-          <div class="sd-secnum">${num()} — Position against intent
+          <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
+          <div class="sd-note">Reading your live position…</div>
+        </section>` : doms.length ? html`
+        <section class="sd-sec">
+          <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
           <div class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual" style=${{ position: "static", transform: "none" }}></span> position
             <span class="sd-axis-scale"><span>below</span><span>on market</span><span>above</span></span></div>
@@ -350,14 +372,19 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
             ${doms.map(d => { const r = aimRead(d); return html`
               <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
                 <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov">area aim</span>` : ""}</span>
+                <span class="sr-only">aim ${SD_STANCE[d.target.stance] || "not set"}, position ${d.position && d.position.verdict ? (d.position.verdict === "at" ? "on market" : d.position.verdict + " market") : "not read yet"}.</span>
                 <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} />
                 <span class=${"sd-ex-read " + r.cls}>${r.t}</span>
               </a>`; })}
           </div>
-        </section>` : null}
+        </section>` : html`
+        <section class="sd-sec">
+          <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
+          <div class="sd-note">Aim-vs-position appears once your benchmark unlocks.</div>
+        </section>`}
 
         <section class="sd-sec">
-          <div class="sd-secnum">${num()} — The positions</div>
+          <div class="sd-secnum">${NUM.positions} — The positions</div>
           <div class="sd-ledger">
             ${philosophy.map(f => { const v = valOf(f); return html`
               <div key=${f} class=${"sd-led-row" + (v ? "" : " unset")}>
@@ -376,9 +403,10 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
 
         ${ai !== undefined ? html`
         <section class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
-          <div class="sd-secnum">${num()} — lumi's reading
+          <div class="sd-secnum">${NUM.reading} — lumi's reading
             <span class="sd-secnote">AI · grounded only in the figures on this page</span></div>
           ${ai ? html`
+            <div role="status" class="sr-only">Reading generated.</div>
             <p class="sd-ai-p"><b>Where you stand.</b> ${ai.reading}</p>
             <p class="sd-ai-p"><b>Tensions.</b> ${ai.tensions}</p>
             <p class="sd-ai-p"><b>To watch.</b> ${ai.watch}</p>
@@ -386,12 +414,11 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
               <button class="sd-ai-refresh no-print" disabled=${aiBusy} onClick=${() => genAi(true)}>Regenerate</button></div>`
           : html`
             <p class="sd-note" style=${{ marginBottom: "var(--s3)" }}>A short reading of this strategy against your live position — generated from the figures above, nothing else.</p>
-            <button class="btn no-print" disabled=${aiBusy} onClick=${() => genAi(false)}>${aiBusy ? html`<${Spinner} />` : "Generate the reading"}</button>`}
+            <button class="btn no-print" disabled=${aiBusy} aria-label=${aiBusy ? "Generating the reading" : "Generate the reading"} onClick=${() => genAi(false)}>${aiBusy ? html`<${Spinner} />` : "Generate the reading"}</button>`}
         </section>` : null}
         <footer class="sd-docfoot">Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
       </article>
 
-      <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
       <div class="strat-pdf-foot" aria-hidden="true">Private ${"&"} confidential · Prepared in lumi · lumihr.co.uk</div>
     </div>`;
 }
@@ -450,13 +477,21 @@ window.StrategyPage = function ({ me }) {
       return;
     }
     setStep(s => Math.min(3, s + 1)); window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => { const h = document.querySelector(".strat-title"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); } });
   };
-  const back = () => { setStep(s => Math.max(0, s - 1)); window.scrollTo({ top: 0, behavior: "auto" }); };
+  const back = () => { setStep(s => Math.max(0, s - 1)); window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => { const h = document.querySelector(".strat-title"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); } }); };
 
   const commit = async () => {
     setSaving(true);
     try {
-      const pa = {}; planeA.forEach(f => { pa[f.key] = f.value; });
+      // only facts the user actually changed travel — an untouched DERIVED fact
+      // (workforce shape) must not become a registry override on save
+      const pa = {};
+      planeA.forEach((f, i) => {
+        const orig = (data.plane_a || [])[i] || {};
+        if (f.value && f.value !== orig.value) pa[f.key] = f.value;
+      });
       // transparency reconfirm marker (step-3 tagging unit 2): saving through the now-live field
       // means the user has SEEN the transparency dial — confirm it so the engine reads the value
       // (a pre-wiring stored value stays inert until this). True only while the field is live.
@@ -465,14 +500,17 @@ window.StrategyPage = function ({ me }) {
       setCommitted(true);                                  // a governance act closes quietly — no confetti
       apiCacheInvalidate("/api/overview");
       const wasEdit = editing;
+      const settle = () => { setEditing(false); setCommitted(false); setSaving(false); setStep(0); window.scrollTo(0, 0); };
       setTimeout(() => {
         if (wasEdit) {
-          api("/api/strategy").then(d => { setData(d); setStrat({ ...d.strategy }); setPlaneA(d.plane_a.map(f => ({ ...f }))); });
-          setEditing(false); setCommitted(false); setSaving(false); setStep(0);
-          window.scrollTo(0, 0);
+          // exit editing only once the refetch lands — the view must never render stale data,
+          // and an Edit click in the flourish window can't be re-seeded underneath the user
+          api("/api/strategy")
+            .then(d => { setData(d); setStrat({ ...d.strategy }); setPlaneA(d.plane_a.map(f => ({ ...f }))); settle(); })
+            .catch(settle);
         } else nav("/");
       }, 1400);
-    } catch (e) { flash("Couldn't save — try again."); setSaving(false); }
+    } catch (e) { flash(e && e.message && e.status !== 0 ? e.message : "Couldn't save — try again."); setSaving(false); }
   };
 
   const STEPS = [
@@ -483,7 +521,8 @@ window.StrategyPage = function ({ me }) {
     <div class="strat-flow">
       <div class="strat-rail" role="group" aria-label="Progress">
         ${STEPS.slice(0, 3).map((s, i) => html`
-          <div key=${s.k} class=${"strat-seg" + (step === i ? " active" : step > i ? " done" : "")}>
+          <div key=${s.k} class=${"strat-seg" + (step === i ? " active" : step > i ? " done" : "")} aria-current=${step === i ? "step" : undefined}>
+            <span class="sr-only">${s.name}: ${step > i ? "complete" : step === i ? "current step" : "not started"}.</span>
             <div class="strat-bar"><i style=${{ width: step > i ? "100%" : step === i ? "50%" : "0" }}></i></div>
             <div class="strat-meta"><span class="strat-letter">${step > i ? html`<${Icon} name="check" size=${11} />` : s.k}</span><span>${s.name}</span></div>
           </div>`)}
@@ -498,9 +537,19 @@ window.StrategyPage = function ({ me }) {
             ${planeA.map((f, i) => html`
               <div key=${f.key} class="confirm-row">
                 <div><div class="cr-label">${f.label}</div><div class="cr-why">${f.why}</div></div>
-                <div class="cr-seg" role="radiogroup" aria-label=${f.label}>
+                <div class="cr-seg" role="radiogroup" aria-label=${f.label}
+                  onKeyDown=${e => {
+                    if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) return;
+                    e.preventDefault();
+                    const opts = (f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []);
+                    const cur = Math.max(0, opts.indexOf(f.value));
+                    const nxt = ("ArrowRight" === e.key || "ArrowDown" === e.key) ? Math.min(opts.length - 1, cur + 1) : Math.max(0, cur - 1);
+                    setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: opts[nxt] } : x));
+                    requestAnimationFrame(() => { const el = e.currentTarget && e.currentTarget.querySelectorAll(".cr-opt")[nxt]; if (el) el.focus(); });
+                  }}>
                   ${(f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []).map(o => html`
                     <button key=${o} type="button" class=${"cr-opt" + (o === f.value ? " on" : "")} role="radio" aria-checked=${o === f.value}
+                      tabindex=${o === f.value || (!f.value && o === (f.options || [])[0]) ? 0 : -1}
                       onClick=${() => setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: o } : x))}>${o}</button>`)}
                 </div>
               </div>`)}
@@ -538,11 +587,11 @@ window.StrategyPage = function ({ me }) {
             <h1 class="strat-title" style=${{ textAlign: "center" }}>That's your strategy captured</h1>
             <p class="strat-sub" style=${{ margin: "var(--s2) auto 0", textAlign: "center" }}>Here's what we'll read your benchmark through. Change anything before it goes live — you can edit all of this later in Settings.</p></div>
           <${ReviewSection} title="Your business" chip="confirmed" chipCls="confirmed"
-            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => setStep(0)} />
+            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => setStep(0)} locked=${committed || saving} />
           <${ReviewSection} title="Your philosophy" chip="your choices" chipCls="choices"
-            rows=${shownFields(planeBfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} />
+            rows=${shownFields(planeBfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} locked=${committed || saving} />
           <${ReviewSection} title="Right now" chip="this year" chipCls="choices"
-            rows=${shownFields(planeCfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} />
+            rows=${shownFields(planeCfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} locked=${committed || saving} />
           <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
         </section>`}
 
@@ -550,15 +599,16 @@ window.StrategyPage = function ({ me }) {
         <div class="strat-footer-in">
           <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " dials", "Review your strategy"][step]}</div>
           <div class="row" style=${{ gap: "var(--s2)" }}>
-            ${editing && !committed && html`<button class="btn quiet" onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setStep(0); }}>Cancel</button>`}
-            ${step > 0 && !committed && html`<button class="btn" onClick=${back}>Back</button>`}
+            ${editing && !committed && html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); }}>Cancel</button>`}
+            ${step > 0 && !committed && html`<button class="btn" disabled=${saving} onClick=${back}>Back</button>`}
             ${step < 3 ? html`<button class="btn primary strat-next" onClick=${next}>${step === 0 ? "Looks right" : "Next"}</button>`
               : html`<button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
                   committed ? html`<${Icon} name="check" size=${15} /> Saved` : saving ? "Saving…" : "Save & finish"}</button>`}
           </div>
         </div>
       </div>
-      ${toast && html`<div class="strat-toast" role="status" aria-live="polite">${toast}</div>`}
+      <div class="sr-only" role="status" aria-live="polite">${toast || ""}</div>
+      ${toast && html`<div class="strat-toast">${toast}</div>`}
     </div>`;
 };
 
@@ -575,11 +625,11 @@ function reviewRow(field, strat) {
   }
   return { label: DIAL_LABEL[field], value: labelOf(field, v) };
 }
-function ReviewSection({ title, chip, chipCls, rows, onEdit }) {
+function ReviewSection({ title, chip, chipCls, rows, onEdit, locked }) {
   return html`
     <div class="review-sec">
       <div class="review-h">${title} <span class=${"review-chip " + chipCls}>${chip}</span>
-        <button class="review-edit" onClick=${onEdit}>Edit</button></div>
+        <button class="review-edit" disabled=${locked} aria-label=${"Edit " + title.toLowerCase()} onClick=${() => { if (!locked) onEdit(); }}>Edit</button></div>
       <div class="review-list">
         ${rows.map((r, i) => html`<div key=${i} class="review-row">
           <span class="rr-label">${r.label}</span>
