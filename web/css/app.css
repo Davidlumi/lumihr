@@ -856,6 +856,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .matrix-num { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;
   font-size: var(--fs-label); }
 .matrix-num thead th { font-size: var(--fs-micro); font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   color: var(--ink-soft); text-align: right; padding: 0 var(--s2) var(--s2); vertical-align: bottom;
   border-bottom: 1px solid var(--chart-grid); white-space: nowrap; }
 .matrix-num thead th.mn-lvl { text-align: left; }

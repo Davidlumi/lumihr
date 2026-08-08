@@ -2938,7 +2938,12 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     if (busy) return;
     setBusy(true); setConfirmDel(false);
     try {
-      const d = await api("/api/dashboards", { method: "POST", body: { name: "New dashboard" } });
+      // auto-number so three fresh dashboards don't all read "New dashboard"
+      const base = "New dashboard";
+      const taken = new Set(list.map(x => x.name));
+      let nm = base, k = 2;
+      while (taken.has(nm)) nm = base + " " + (k++);
+      const d = await api("/api/dashboards", { method: "POST", body: { name: nm } });
       await reload();
       setNameDraft(d.name); setRenaming(true);
     } finally { setBusy(false); }

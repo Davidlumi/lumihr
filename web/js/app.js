@@ -63,7 +63,11 @@ function App() {
     else if (route.startsWith("/boardpack/")) document.title = "Board pack · lumi";
     else {
       const hit = TITLES.find(([p]) => route.startsWith(p));
-      document.title = hit ? hit[1] + " · lumi" : "lumi · UK reward benchmarking";
+      // /admin renders NotFound for non-staff — the tab title must not claim
+      // a Console page that is not being shown (Batch 0, 2026-08-08)
+      const t = (hit && hit[0] === "/admin" && !(me && me.user && me.user.platform_admin))
+        ? "Page not found" : hit && hit[1];
+      document.title = t ? t + " · lumi" : "lumi · UK reward benchmarking";
     }
     if (prevRouteRef.current !== null && prevRouteRef.current !== route) {
       const el = document.getElementById("main-content");
@@ -1662,7 +1666,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       </div>
       ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-foot" aria-hidden="true">
-        Source: lumi HR${period ? " · " + period : ""} · generated ${new Date().toLocaleDateString("en-GB")} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.
+        Source: lumi HR${period ? " · " + period : ""} · generated ${fmtDate()} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.
         Comparison pool: ${(me.peer_pool || {}).responding_orgs || 220} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>
     </div>`;
 }
@@ -1721,7 +1725,7 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
             </div>`)}
           <div class="caption metric-cm-foot" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
             ${edited
-              ? html`Edited by your team${data.edited_by ? " (" + data.edited_by + ")" : ""}${data.edited_at ? " · " + new Date(data.edited_at + "Z").toLocaleDateString("en-GB") : ""} — your organisation's own words. Consider your own context and seek professional input where relevant.`
+              ? html`Edited by your team${data.edited_by ? " (" + data.edited_by + ")" : ""}${data.edited_at ? " · " + fmtDate(data.edited_at + "Z") : ""} — your organisation's own words. Consider your own context and seek professional input where relevant.`
               : "An AI-drafted starting point — edit it into your own advice, or take it as a prompt for your own judgement. Consider your own context and seek professional input where relevant."}
           </div>
           <div class="row no-print" style=${{ marginTop: "var(--s2)", gap: "var(--s2)", flexWrap: "wrap" }}>

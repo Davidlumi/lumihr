@@ -286,7 +286,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
           <tr>
             <th class="mn-lvl">Level</th>
             <th class="mn-num">Median</th>
-            <th class="mn-strip-h">Where the market sits · you</th>
+            <th class="mn-strip-h">Market range · you</th>
             <th class="mn-num">You</th>
             <th class="mn-num">Position</th>
           </tr>
@@ -567,7 +567,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   // branded source footer: hairline · lumi logo (bottom-left) · "Source: lumi HR"
   // attribution + date (bottom-right). Logo scaled from its 0..390×0..178 box.
   const LOGO_H = 18, lscale = LOGO_H / 178, logoY = H - 32, sepY = H - 40, footY = H - 18;
-  const src = `Source: lumi HR${meta.window ? " · " + esc(meta.window) : ""} · generated ${new Date().toLocaleDateString("en-GB")}`;
+  const src = `Source: lumi HR${meta.window ? " · " + esc(meta.window) : ""} · generated ${fmtDate()}`;
   wrap.innerHTML = `
     <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
     <text x="${PAD}" y="${PAD + 6}" font-family="Helvetica, Arial" font-size="13" font-weight="700" fill="#211B26">${esc(meta.title)}</text>

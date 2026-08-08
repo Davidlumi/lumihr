@@ -786,7 +786,7 @@ window.SharesPage = function ({ embedded }) {
                 <td>${s.revoked ? html`<span class="muted">revoked</span>` :
                   html`<a href=${s.url} target="_blank">${window.location.origin}${s.url.slice(0, 18)}…</a>
                   <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); }}><${Icon} name="copy" size=${14} /></button>`}</td>
-                <td>${s.expires_at ? new Date(s.expires_at + "Z").toLocaleDateString("en-GB") : "Never"}</td>
+                <td>${s.expires_at ? fmtDate(s.expires_at + "Z") : "Never"}</td>
                 <td>${s.revoked ? html`<span class="chip bad">Revoked</span>` :
                   (s.expires_at && new Date(s.expires_at + "Z") < new Date()) ? html`<span class="chip warn">Expired</span>` :
                   html`<span class="chip good">Live</span>`}</td>
@@ -875,7 +875,7 @@ window.TeamPage = function ({ me }) {
                   <option value="viewer">Viewer</option>
                 </select>` :
                 html`<span class=${"chip " + (u.role === "admin" ? "accent" : "")} title=${ROLE_DESC[u.role]}>${ROLE_LABEL[u.role] || u.role}</span>`}</td>
-              <td class="caption">${new Date(u.created_at + "Z").toLocaleDateString("en-GB")}</td>
+              <td class="caption">${fmtDate(u.created_at + "Z")}</td>
               ${isAdmin && html`<td style=${{ textAlign: "right" }}>
                 <button class="btn small quiet" onClick=${() => remove(u.email)}>Remove</button></td>`}</tr>`)}
           </tbody>
@@ -913,7 +913,7 @@ window.TeamPage = function ({ me }) {
             <h3 style=${{ fontSize: "var(--fs-label)", margin: "var(--s4) 0 var(--s2)" }}>Outstanding invites</h3>
             ${data.invites.map(i => html`
               <div key=${i.token} class="caption row spread">
-                <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${new Date(i.expires_at + "Z").toLocaleDateString("en-GB")}</span>
+                <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${fmtDate(i.expires_at + "Z")}</span>
                 <button class="btn small quiet" onClick=${async () => { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }}>Revoke</button>
               </div>`)}`}
         </div>`}
@@ -1111,7 +1111,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
         <div class="row spread" style=${{ alignItems: "center", marginTop: "var(--s3)" }}>
           <div>
             <b>${ai.consented ? "On for you" : "Off"}</b>${ai.consented && ai.consented_at ? html`
-              <span class="caption"> · since ${new Date(ai.consented_at + "Z").toLocaleDateString("en-GB")}
+              <span class="caption"> · since ${fmtDate(ai.consented_at + "Z")}
               ${" "}(v${termsVer(ai.version || ai.terms_version)})</span>` : null}
           </div>
           <button class=${"btn small" + (ai.consented ? "" : " primary")} disabled=${aiBusy}
@@ -1135,7 +1135,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
         <h2 class="section-title">Terms & agreements</h2>
         ${me.org.data_terms && me.org.data_terms.accepted ? html`
           <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on
-            ${" "}${new Date(me.org.data_terms.accepted_at + "Z").toLocaleDateString("en-GB")} (v${termsVer(me.org.data_terms.version)}).
+            ${" "}${fmtDate(me.org.data_terms.accepted_at + "Z")} (v${termsVer(me.org.data_terms.version)}).
             This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
           <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
             them on the <a href="#/your-data/submit">Your data</a> page before the first submission.</p>`}

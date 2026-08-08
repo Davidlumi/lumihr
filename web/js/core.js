@@ -502,3 +502,10 @@ window.compositionNoun = function (nReal) {   // for prose sentences
   return (!nReal || nReal <= 0) ? "reference-panel profiles" : "organisations";
 };
 window.COMPOSITION_DESC = "Reference panel: modelled from published UK survey data — not lumi member submissions.";
+
+/* Batch 0 (experience review, 2026-08-08): ONE date voice. "11 Jun 2026" reads
+   unambiguously British; "11/06/2026" reads as June 11 to half the room. */
+window.fmtDate = function (d) {
+  const dt = d instanceof Date ? d : new Date(d);
+  return isNaN(dt) ? "" : dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
