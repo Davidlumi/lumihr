@@ -114,8 +114,21 @@ def main():
     src.backup(dst)
     dst.close(); src.close()
     print("backup: %s" % os.path.basename(bak))
+    # PINNED backups are named exceptions to the retain-N rotation
+    # (data/backup_policy.md "Named exception: the pre-split backup pin") and
+    # MUST be excluded from the rotation count. This guard exists because this
+    # very script's first run violated the pin and deleted bak_pre_presplit
+    # (2026-08-05 incident, DECISIONS) — the policy's own warning ("the pin is
+    # not released by anyone remembering it independently") proved true of
+    # code, not just people. Any future pin must be added here AND in the
+    # policy file.
+    PINNED = ("presplit",)
     baks = sorted(glob.glob(db_abs + ".bak_pre_*"), key=os.path.getmtime)
     baks = [b for b in baks if not b.endswith(("-shm", "-wal"))]
+    pinned = [b for b in baks if any(p in os.path.basename(b) for p in PINNED)]
+    for p in pinned:
+        print("pinned (excluded from rotation): %s" % os.path.basename(p))
+    baks = [b for b in baks if b not in pinned]
     for old in baks[:-RETAIN]:
         for f in (old, old + "-shm", old + "-wal"):
             if os.path.exists(f):

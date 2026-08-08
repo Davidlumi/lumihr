@@ -14479,3 +14479,25 @@ Suite 13/13 green; qa_refresh's neutralisation NOTE now reads "0 validation-bloc
 answers" (the no-op the gate was designed to reach). The systemic lesson stands
 recorded: a question-type migration MUST write every definition surface the consumers
 read — validator, UI and engine all derive from matrix_json, not from type alone.
+
+**INCIDENT — the pre-split backup pin was violated (2026-08-05, self-reported).** The
+PAYCOMMS close's retention sweep applied the DB-class retain-3 rule mechanically and
+deleted lumi.db.bak_pre_presplit_20260730_221335 (+sidecars) — the backup that
+data/backup_policy.md names as a PINNED exception, excluded from rotation, held until
+the post-soak DROP diff, "the only copy of the pre-split shape". The script read the
+retention rule but not the named-exception clause below it; the policy's own warning —
+"the pin is not released by anyone remembering it independently" — proved true of code
+as well as people. WHAT WAS LEGITIMATE: kidsfix_20260801's deletion was correct (with
+the pin excluded, the rotation set was exactly 3 and creating paycommsdef made 4).
+RECOVERY STATE: no APFS local snapshot and no Time Machine volume reachable from this
+machine at incident time; IF David's TM disk holds a backup from 2026-08-01..05 the
+pair is restorable from there (the TM GUI check already open on the go-live checklist
+is the same errand). MITIGATION IF UNRECOVERABLE: the pre-split SHAPE remains
+reconstructible — the reward store still carries the nulled identity columns (DROP has
+not run) and identity.db holds every moved value keyed by the same ids; a rollback
+would be a documented REBUILD (re-join identity.db values into the nulled columns),
+not a file restore. The DROP diff's pin-release close condition becomes moot only if
+David rules the pin dead rather than restored. FIXES LANDED: the migration's sweep now
+excludes PINNED names and prints them (guard comment cites this incident); standing
+rule for every future retention-touching script: THE ROTATION COUNT NEVER INCLUDES
+PINS, and any new pin lands in the policy file AND the sweep guard together.
