@@ -14679,3 +14679,21 @@ RDS to the same instance as a connection-string change, which is the whole reaso
 for R1). Hard preconditions of FIRST PROVISIONING stated in the runbook: D2/SES
 live (A4), one proven S3 restore, and the §4 STOP executed. Nothing provisioned
 from here — the artefacts are the deliverable, David runs them.
+
+## 2026-08-08 — Commit E (A1): LUMI_BASE_URL consolidation — VERIFIED AND ATTESTED against live
+
+Attested by independent search, per A1 (03801e8 is cited as PROVENANCE of the build,
+never as evidence). E1: exactly ONE accessor exists (`def base_url`, app.py:5224).
+E2: every env read of LUMI_BASE_URL is the accessor's own line plus
+notification_sweep's CLI-arg default (same normalisation, "" fallback whose empty
+case writes words, not links) — the config-inventory row and boot-log lines are
+display, not reads of a second source. E3: NO localhost DEFAULT survives in any code
+path — the surviving "localhost:8060" strings are (a) advice copy inside the 503 and
+boot-log messages, and (b) gate-script BASE constants, which are the QA harness's
+own target addresses, not link sources; which case obtains, with counts: 3 advice
+strings + 17 gate/verify harness constants, 0 code paths. E4: the retired names are
+GONE — zero hits for the module-global BASE_URL or `_base_url()`. E5: all seven
+minting sites (tenant invite, reset email + its body template substitution verified
+at app.py:1005, org-create invite_link ×2, staff invite, pending-invites list, staff
+reset-link) route through `base_url(minting=True)`; digest links ride the accessor
+value or degrade to words. No second source of truth exists by search.
