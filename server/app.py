@@ -1246,8 +1246,16 @@ async def revoke_invite(token: str, request: Request):
 def _pulse_member_view(conn, p, org):
     part = pulses_mod.participant(p["pulse_id"], org["org_id"], conn)
     n_q = len(uj(p["question_ids_json"], []))
-    n_parts = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
-                           (p["pulse_id"],)).fetchone()[0]
+    # PULSE-1: a real member's participant count reads the REAL subset — the
+    # floor gate must agree with the report the same viewer will see.
+    if org["source"] not in ("seed", "staff", "demo"):
+        n_parts = conn.execute(
+            "SELECT COUNT(*) FROM pulse_participants pp JOIN orgs o ON o.org_id=pp.org_id "
+            "WHERE pp.pulse_id=? AND pp.submission_complete=1 "
+            "AND o.source NOT IN ('seed','staff','demo')", (p["pulse_id"],)).fetchone()[0]
+    else:
+        n_parts = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
+                               (p["pulse_id"],)).fetchone()[0]
     return {
         "pulse_id": p["pulse_id"], "name": p["name"], "description": p["description"],
         "status": p["status"], "opens_at": p["opens_at"], "closes_at": p["closes_at"],
@@ -1305,7 +1313,7 @@ async def pulse_detail(pid: str, request: Request):
     # results). Below the floor, the honest holding state is shown (never blank).
     view["is_owner"] = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
     if view["participated"] or view["is_owner"]:
-        rep = strip_internal(pulses_mod.pulse_report(pid, conn))
+        rep = strip_internal(pulses_mod.pulse_report(pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo")))
         # thread the org's OWN answer into each report question so the report can
         # mark "you" against the cohort — a benchmark that never shows 'you' isn't one.
         # Values store as the display label (selects), "; "-joined labels (multi), or
@@ -1391,7 +1399,7 @@ async def pulse_commentary(pid: str, request: Request):
     part = pulses_mod.participant(pid, org["org_id"], conn)
     if not (part and part["submission_complete"]):
         raise HTTPException(403, "Participate in this pulse to see its commentary.")
-    rep = pulses_mod.pulse_report(pid, conn)
+    rep = pulses_mod.pulse_report(pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo"))
     entry = next((x for x in rep["questions"] if x["question_id"] == qid), None)
     if entry is None:
         raise HTTPException(404, "That question isn't part of this pulse.")

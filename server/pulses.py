@@ -496,7 +496,7 @@ def participant(pulse_id, org_id, conn=None):
 
 
 # ----------------------------------------------------------------- the report
-def pulse_report(pulse_id, conn=None):
+def pulse_report(pulse_id, conn=None, real_viewer=False):
     """Aggregate the pulse's questions over ITS cohort only — through the
     SAME engine entry point the core uses (aggregate_question_for_orgs), so
     calculation, suppression (n>=5) and matrix/multi handling are identical
@@ -507,6 +507,17 @@ def pulse_report(pulse_id, conn=None):
     qs = pulse_questions(p)
     cohort = {r["org_id"] for r in conn.execute(
         "SELECT org_id FROM pulse_participants WHERE pulse_id=? AND submission_complete=1", (pulse_id,))}
+    # PULSE-1 (ruled 2026-08-08): SEEDED_PULSE_VISIBILITY = seed/demo/staff only.
+    # A REAL member sees REAL responses only — seeded pulse responses are
+    # fabricated answers to a commissioned question, not a market reference; the
+    # give-to-get logic that justifies the benchmark panel does not reach them.
+    # Below the participant floor the report reads "not yet enough responses".
+    # Seed/staff/demo viewers see the full cohort (the demo keeps working —
+    # Thornbridge is seed-class). Same source rule as the P1-AB partition.
+    if real_viewer:
+        real = {r["org_id"] for r in conn.execute(
+            "SELECT org_id FROM orgs WHERE source NOT IN ('seed','staff','demo')")}
+        cohort &= real
     answers_by_q = {}
     for r in conn.execute("SELECT org_id, question_id, matrix_row_id, value FROM pulse_responses WHERE pulse_id=?",
                           (pulse_id,)):

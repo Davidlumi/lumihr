@@ -15146,3 +15146,25 @@ runbook §6.0 says so explicitly. SEQUENCE HONOURED: this lands ahead of the
 production rebaseline, so no production row is ever stored with the old
 wording. Suite 14/14 ALL GREEN (hero 59, signals-system 14 — no gate asserted
 the old strings).
+
+## 2026-08-08 — PULSE-1: seeded pulse cohorts are for seed/demo/staff eyes only
+
+MODEL REPORT FIRST, as ruled: pulses confirmed commissioned and cohort-specific
+— opt-in cohort per pulse (pulse_participants + pulse_responses, structural
+separation qa_pulse guards), commissioned via the self-service launch and the
+pulse_launch_orders ledger (staff confirm-launch for the invoice path); the
+cohort is whoever responded to THIS pulse, community-open. The ruling's basis
+holds; no stop. THE BUILD: pulse_report() gains real_viewer — a REAL member's
+report intersects the cohort with real-class orgs (source NOT IN
+('seed','staff','demo'), the P1-AB source rule) and the member-view participant
+count reads the same real subset, so the floor gate and the report the viewer
+sees always agree; below the floor the existing below_floor path renders "not
+yet enough responses". Seed/staff/demo viewers see the full cohort (Thornbridge
+is seed-class — the demo keeps working untouched); the staff/admin report route
+is deliberately unfiltered. The commissioning OWNER is real-class and therefore
+also sees real-only — a member reading fabricated responses to a pulse they
+paid to launch is the worst version of this problem anywhere in the product.
+FIXTURE-PROVEN AND STATED AS SUCH (real n = 0 live, so the real-viewer path has
+no live exercise): seed viewer participants=13, below_floor=False, demo
+unchanged; real-class fixture viewer participants=0, below_floor=True, EVERY
+question block suppressed. Suite 14/14 ALL GREEN (qa_pulse 0 failures).
