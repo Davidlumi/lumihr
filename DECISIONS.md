@@ -14501,3 +14501,24 @@ David rules the pin dead rather than restored. FIXES LANDED: the migration's swe
 excludes PINNED names and prints them (guard comment cites this incident); standing
 rule for every future retention-touching script: THE ROTATION COUNT NEVER INCLUDES
 PINS, and any new pin lands in the policy file AND the sweep guard together.
+
+**PH-PROV-1f + PH-PAY-3 landed (2026-08-08).** Gate 1's last buildable item and Gate 2's
+first, both sequenced before the first real provisioning. 1f: send_notification gained a
+`log_body` channel — the REDACTED body used by BOTH console/log paths (SMTP-unset
+fallback AND the send-failure print, which also leaked); the staff provisioning invite
+passes a digest line (token sha256[:12], PH-PROV-1d convention) so the bearer never
+lands in a log while the API response still hands the operator the link, and the REAL
+email body (SMTP path) still carries it. Tenant-invite and reset emails are untouched —
+they ARE the delivery path until D2 (CF-1 governs). PAY-3: suspension always names WHY —
+orgs.deactivated_reason / users.disabled_reason (idempotent ALTERs), REQUIRED at
+deactivation (400 with the operator hint naming the two opposite cases), cleared at
+reactivation (audit rows keep history, reason included in the deactivate audit detail),
+rendered in the console org list chip, org drill-down header, members table, and user
+lookup; both console prompts collect it; SOLE_ADMIN_RECOVERY.md step 1 now instructs
+"sole-admin recovery in progress" verbatim. Fix caught in browser verification: the org
+DETAIL payload whitelists fields and silently dropped the reason the list already
+carried — whitelisted payloads need every new column added by hand. qa_backoffice
+96→105: F0/F7b reasonless-400s, F5b/F13b reason surfaced, F6b/F14b cleared on
+reactivation, S7a/S7b (1f) assert on the seam server's CAPTURED stdout that the bearer
+appears nowhere and the labelled digest does (:8061 now launched with -u so the log is
+readable live). Suite 13/13 green. Cache v440.

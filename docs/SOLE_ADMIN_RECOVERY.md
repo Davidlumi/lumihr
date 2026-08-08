@@ -9,6 +9,9 @@ working route to a fresh founding Admin. All through the console; no database su
 ## The procedure
 
 1. **Deactivate the stranded Admin** — org page → Members table → Deactivate.
+   When prompted for the reason (PH-PAY-3, required), enter **"sole-admin recovery in
+   progress"** — the reason is what tells the next operator this suspension must NOT be
+   treated as an unpaid/suspension case (opposite responses).
    Soft-deactivate GATES ACCESS AND DELETES NOTHING: their sessions die instantly and
    sign-in refuses, but every artifact they created and every terms acceptance they
    recorded survives, because the record of what the organisation agreed to is the
