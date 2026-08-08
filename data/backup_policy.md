@@ -49,7 +49,29 @@ Implementation of the check belongs in the backup-creating script. The
 requirement belongs here, so that retain-1 cannot quietly come into effect
 through a script rewrite that drops the assertion.
 
-### Named exception: the pre-split backup pin
+### Named exception: the pre-split backup pin — **PIN DEAD (R2, ruled 2026-08-08)**
+
+**Status: the pinned artefact no longer exists and the pin is formally DEAD.** The
+copy was deleted 2026-08-05 by a retention sweep that failed to honour this section
+(incident recorded in DECISIONS.md that day), and the 2026-08-08 measurement proved
+it unrecoverable (no Time Machine destination has ever existed on the machine; no
+snapshot; no stray copy on disk). Per R2, an unrecoverable backup left nominally
+alive on the books is worse than none — it invites the next reader to plan a
+rollback around an artefact that cannot deliver one. **The successor to the pin is
+the REBUILD RECIPE** (DECISIONS 2026-08-05 incident entry): the reward store still
+carries the nulled identity columns and identity.db holds every moved value keyed by
+the same ids, so a pre-split-shape store is reconstructible by re-join. **The
+post-soak DROP diff's close condition is accordingly REWRITTEN: it no longer carries
+pin-release (nothing to release); it carries instead the assertion that the rebuild
+recipe has been re-verified against the stores AS THEY ARE at DROP time** — the DROP
+destroys the recipe's ingredients, so the check belongs to the diff that removes
+them. The standing lesson stays in force for every FUTURE pin: the rotation count
+never includes pins, and any new pin lands in this file AND in every sweep's
+exclusion guard together.
+
+The original pin text is retained below for the record:
+
+### (historical) the pre-split backup pin
 
 The backup taken immediately before the Phase-1 split migration (S6 step 0
 of `PRIVACY_PHASE1_SPLIT_SPEC_2026-07-30.md`) is a **named exception** to
@@ -138,3 +160,55 @@ was being followed exactly. The gap was the scope line, not the discipline.
 This correction is recorded as such, dated, with the prior text left standing
 above — the gap is the finding, and a policy whose history is quietly rewritten
 stops being evidence of anything.
+
+---
+
+## Amendment 2026-08-08 — R5 ceiling-binds, and the three production layers (Master Ruling Transmission, Commit F)
+
+### R5: `BACKUP_RETENTION = CEILING_BINDS`, ceiling **35 days**
+
+The ceiling BINDS; the count is a FLOOR beneath it. Concretely: a DB-class pre-diff
+backup older than 35 days is deleted **even if that takes the set below 3** —
+because a count says nothing about age: if migrations pause, three copies can be
+seven months old and the member-facing retention disclosure is broken with no error
+anywhere. Ceiling-binds fails safe; rotation-binds fails open (rejected, recorded in
+DECISIONS 2026-08-08). Every retention mechanism in this file — DB class, identity
+class, journald caps, the off-box bucket — carries the same 35-day ceiling. The
+combined member-facing outer bound is computed in the Phase-4 spec (grace 30d +
+ceiling 35d → the honest external statement is "90 days, with slack") and is C2
+solicitor material.
+
+### The three production backup layers — distinct purposes, never conflated
+
+Conflating layers is how an estate ends up with 1,058 files and no restore (the
+census-scoping lesson). On the deployed instance (deploy/DEPLOY_RUNBOOK.md):
+
+1. **DLM daily EBS snapshots — machine-level restore.** Whole-volume, for "the
+   instance died". NOT a data backup: restoring one resurrects every file on the
+   box, so its retention is ALSO capped at 35 days (the DLM policy's own setting)
+   or the ceiling silently breaks through the snapshot layer.
+2. **On-box rotation (`server/backup_identity.py`) — operational restore.** WHICH
+   CASE OBTAINS: the script already runs `PRAGMA wal_checkpoint(TRUNCATE)` first
+   (line 112) and copies via the SQLite backup API, never cp — the layer-2
+   requirement was already met as shipped; recorded here so a rewrite that drops
+   the checkpoint fails review against this sentence.
+3. **Off-box S3 copy (`deploy/offbox_backup.sh`) — the copy you actually restore
+   DATA from (R1e, Gate 1).** eu-west-2, SSE, block-public-access, versioned.
+   **THE VERSIONED-BUCKET TRAP, closed by rule:** a versioned bucket retains
+   deleted and overwritten objects as noncurrent versions unless noncurrent-version
+   expiration is ALSO configured. BOTH rules — current-version lifecycle expiry AND
+   noncurrent-version expiration — must equal the 35-day ceiling, or the off-box
+   copy silently defeats ceiling-binds and the retention disclosure becomes false.
+   The backup script ASSERTS both rules exist before every upload and refuses to
+   copy if either is missing (fail closed, not fail open).
+
+### PH-LOG-1 containment on the deployed box (A4 ruling)
+
+App logs (journald) carry auth links until D2 lands. Containment, unconditional:
+journald retention capped at **35 days / 200M** (`MaxRetentionSec=35day`,
+`SystemMaxUse=200M`), root-readable only, outside every web-served path, and
+**excluded from every backup that leaves the box** — offbox_backup.sh copies the
+two databases only, never logs; the DLM snapshot layer is machine-restore scope and
+its 35-day cap bounds the residual copy of the journal it necessarily contains.
+D2 (SES delivery) is a HARD PRECONDITION of first provisioning (A4), not merely
+PH-LOG-1's close condition.

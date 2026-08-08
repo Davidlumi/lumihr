@@ -14697,3 +14697,29 @@ minting sites (tenant invite, reset email + its body template substitution verif
 at app.py:1005, org-create invite_link ×2, staff invite, pending-invites list, staff
 reset-link) route through `base_url(minting=True)`; digest links ride the accessor
 value or degrade to words. No second source of truth exists by search.
+
+## 2026-08-08 — Commit F: backups (R5, R1e, R2 policy edit) + PH-LOG-1 containment (A4)
+
+**backup_policy.md amendments.** (1) R5: CEILING_BINDS, 35 days, the count is a
+FLOOR beneath it — a copy older than the ceiling dies even if that takes the set
+below 3; ceiling applies uniformly (DB class, identity class, journald caps, the
+off-box bucket); the member-facing outer bound (grace 30d + ceiling 35d → "90 days,
+with slack") is the C2 sentence. (2) THE THREE PRODUCTION LAYERS, purposes stated:
+DLM EBS snapshots = machine restore (its own retention ALSO 35d or the ceiling
+breaks through the snapshot layer); on-box rotation = operational restore — WHICH
+CASE OBTAINS: backup_identity.py ALREADY runs wal_checkpoint(TRUNCATE) before the
+backup-API copy (line 112), so the layer-2 requirement was met as shipped and is now
+pinned in policy text against a rewrite dropping it; off-box S3 = the data-restore
+copy (R1e, Gate 1). (3) THE VERSIONED-BUCKET TRAP closed by rule: current-version
+lifecycle expiry AND noncurrent-version expiration must BOTH equal the ceiling —
+deploy/offbox_backup.sh ASSERTS both rules (and block-public-access) before every
+upload and refuses to copy otherwise; fail closed, not open. (4) R2 policy edit
+folded here where the file was already open: the presplit pin section is marked PIN
+DEAD with the ground (unrecoverable, measured 2026-08-08), the rebuild recipe named
+as successor, and the post-soak DROP diff's close condition REWRITTEN from
+pin-release to re-verifying the rebuild recipe against the stores as they are at
+DROP time (the DROP destroys the recipe's ingredients, so the check belongs to that
+diff); original pin text retained as historical record. (5) PH-LOG-1 containment on
+the deployed box (A4): journald 35d/200M, root-only, non-web-served, EXCLUDED from
+every backup that leaves the box (offbox_backup.sh copies the two databases only,
+never logs); D2/SES is a HARD precondition of first provisioning.
