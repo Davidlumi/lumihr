@@ -15300,3 +15300,31 @@ org unclassified and every session 401s — trap recorded); live :8060 confirms
 the 403-dark path hides the section. Deterministic floor renders real figures
 (8 areas on aim, control cost) and upgrades to the model automatically when
 David flips LUMI_AI_INSIGHTS_ENABLED. Suite 14/14 green through v470.
+
+## 2026-08-08 — Strategy deep QA (e966cd0): the un-savable strategy + 20 fleet fixes
+
+David: "deep QA of the reward strategy section — functionality, ux, ui."
+Method: 34-agent fleet (5 code lenses, adversarial verify — 27 confirmed / 2
+refuted; 2 find-lenses died on connection drops, their ground partially
+covered by overlap) + a first-hand browser walk on a throwaway :8070 pair.
+THE HEADLINE (first-hand): the demo org's strategy was UN-SAVABLE — a legacy
+short domain_targets key ("Time Off") 400'd every PUT with only "Couldn't
+save — try again", and the engine had been silently IGNORING the declared
+area aim all along (it matches full sub_power names). _canon_domain_targets
+now heals legacy keys at the gate and on both read paths; GET drops
+unhealable garbage. The member's Time Off & Family aim became live the
+moment the read-path heal shipped — no re-save needed.
+ALSO REAL AND FIXED: the wire verdict "at" missing from SD_IDX (on-market
+rows lost their dot; one state INVERTED the aim read vs the server);
+cancelled plane-A edits persisting via a later save; the post-save
+refetch/editing race; derived workforce shape becoming a registry override
+on any save; 10 a11y defects (roving tabindex, dead arrows on unset dials,
+silent live regions, unnamed controls); the PDF header printing at the END
+of the document; live section renumbering.
+FLEET LESSONS: (3rd occurrence) big-payload agents die on connection drops —
+the per-finding verify fan-out (29 small agents) was robust while both
+big-context find-lenses (server-contract, copy) were the ones that died;
+prefer many small payloads. Two verifier outputs arrived unclassified
+(safety layer down) — both were re-verified by hand against the code before
+any fix landed (both held).
+Suite 14/14 green through v471.
