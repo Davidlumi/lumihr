@@ -96,8 +96,12 @@ CREATE TABLE IF NOT EXISTS questions (
 
 CREATE TABLE IF NOT EXISTS orgs (
     org_id TEXT PRIMARY KEY,           -- UUID
-    name TEXT NOT NULL,
-    normalized_name TEXT NOT NULL,
+    -- Phase-1 split (step 5, 2026-08-02): identity fields live in identity.db;
+    -- these reward-side columns are NULLED for every row and stay nullable so a
+    -- FRESH build matches the live shape (Gate-3 DDL repair, 2026-08-08). The
+    -- post-soak DROP diff removes them from BOTH the DDL and the live store.
+    name TEXT,
+    normalized_name TEXT,
     source TEXT NOT NULL DEFAULT 'seed',        -- seed | signup
     tier_entitlement TEXT NOT NULL DEFAULT 'core',  -- core | full
     classified INTEGER NOT NULL DEFAULT 0,      -- 1 if firmographics known
@@ -150,8 +154,9 @@ CREATE TABLE IF NOT EXISTS meta (
 CREATE TABLE IF NOT EXISTS users (
     user_id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES orgs(org_id),
-    email TEXT NOT NULL UNIQUE,
-    pw_hash TEXT NOT NULL,
+    -- nulled reward-side since the split (same rule as orgs.name above)
+    email TEXT UNIQUE,
+    pw_hash TEXT,
     role TEXT NOT NULL DEFAULT 'viewer',  -- admin | viewer
     display_name TEXT,
     chart_prefs_json TEXT NOT NULL DEFAULT '{}',
@@ -169,7 +174,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS invites (
     token TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES orgs(org_id),
-    email TEXT NOT NULL,
+    email TEXT,  -- nulled reward-side since the split
     role TEXT NOT NULL DEFAULT 'viewer',
     created_by TEXT NOT NULL REFERENCES users(user_id),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
