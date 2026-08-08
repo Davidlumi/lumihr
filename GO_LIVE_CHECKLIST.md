@@ -24,18 +24,21 @@ gate, solicitor-signed) is preserved in full below the gates.
   links when unset (gate the action, never the boot), https required for non-localhost,
   trailing-slash normalisation, boot-log the value. *Unblocked by:* the deployment item;
   then the Branch-A build against DECISIONS 2026-08-04 PH-CFG-1.
-- [ ] **PH-PROV-1f — provisioning log line → digest.** `send_notification` console-logs
-  the founding-invite link (the SMTP-less delivery path); the provisioning-specific line
-  is replaced with a sha256[:12] digest since the API already returns the link directly.
-  *Unblocked by:* building it (sequenced "lands before the first real provisioning",
-  PH-PROV-2a preamble; CF-1 governs the wider path until D2).
+- [x] **PH-PROV-1f — provisioning log line → digest.** The provisioning invite's
+  console/log fallback (AND the send-failure print) now carries a sha256[:12] digest via
+  send_notification's `log_body` channel — the bearer never lands in a log; the API
+  response still returns the link, and the real SMTP body still carries it. Tenant
+  invite/reset emails untouched (they ARE delivery until D2; CF-1 governs).
+  qa_backoffice S7a/S7b assert it on captured server stdout. **Commit: `edc7ff7`.**
 
 ## Gate 2 — before the first member submission
 
-- [ ] **PH-PAY-3 — suspension-reason visibility.** `deactivated_at` is a bare timestamp;
-  the console cannot tell "unpaid" from "sole-admin recovery in progress" — opposite
-  operator responses (PH-PAY-1 §B, §3.1). Sequenced before the first provisioning by
-  the ruling. *Unblocked by:* building it — its own diff, no dependency.
+- [x] **PH-PAY-3 — suspension-reason visibility.** Every deactivation (org + user) now
+  REQUIRES a reason (400 with the operator hint otherwise), stored in
+  `orgs.deactivated_reason` / `users.disabled_reason`, audited, cleared at reactivation,
+  and rendered in the console list chip, drill-down header, members table and user
+  lookup; SOLE_ADMIN_RECOVERY.md names its reason verbatim. qa_backoffice = 105 checks.
+  **Commits: `edc7ff7` (server) + `380ccd3` (console) + `a69fd69` (gate).**
 
 
 - [ ] **PH-PROV-1c — the two mislabelled `source='signup'` orgs (HR Datahub, Tester).**
