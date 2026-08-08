@@ -14898,3 +14898,33 @@ TEMPTATION SITE: cutSize()'s comment now states the ConfidenceChip reads TOTAL n
 deliberately and must not be re-pointed at real n by someone thinking they found
 a bug. Verified rendered (spacing defects from htm whitespace collapse caught in
 the browser and fixed; cache v442 — bumped AFTER the fix, the v436 lesson).
+
+## 2026-08-08 — Provenance rulings R-P1..R-P10 recorded (RULED by David against the Phase 0 diagnostic)
+
+R-P1 PANEL_CLASS_LABEL = "reference panel"; public first use per surface carries
+"modelled from published UK survey data — not lumi member submissions", never the
+label alone. REJECTED: "seed" (internal), "synthetic" (inaccurate given the anchor
+register; reads as invented), "sample"/"baseline" (both collide with existing
+language). R-P2 composition shown WHEREVER n is shown, always — chip progression
+so no surface displays an embarrassing zero: "212 · reference panel" → "212 · 6
+members + panel" → "212 members". R-P3 panel-only cuts RENDER, labelled; no
+suppression; verdict vocabulary untouched — the comparison OBJECT is named. R-P4
+no fifth threshold — state the count. R-P5 the n≥5 floor applies to any figure
+derived from a filtered org subset FOR THAT SUBSET, implemented STRUCTURALLY:
+inside aggregate_question_for_orgs against the org set it was handed, never a
+global constant against a global n — a member-only call is then floored
+automatically at all seven enumerated comparison sites. R-P6 taper per-cut,
+weight-based, monotonic, never a hard cutover; taper-driven movement EXCLUDED
+from signal detection via the composition-epoch marker on signal_state (the
+record_baseline idiom, app.py:2300) — mechanism deferred, seam ruled. R-P7 AI is
+three parts, ALL OR NONE: payload carries n_real + composition; the prompt
+template stops teaching a composition-blind register (claude_api.py:132); the
+validator rejects peer/employer framing where real n = 0 — and R-P7 IS R8'S
+UNBLOCKING CONDITION, in those words, on the checklist. R-P8 orgs.source gains
+'demo', set by explicit class choice on the console provisioning form — today the
+only demo org is excluded by luck of being seed-class, not design; needed before
+the first console-provisioned demo org. R-P9 ConfidenceChip keeps TOTAL n
+deliberately (a 212-org calibrated panel is genuinely more stable than a 6-org
+set; always paired with composition) — recorded at the code site so nobody
+re-points it. R-P10 the public correction shipped FIRST (f1a8a72), ahead of
+Phase 1.

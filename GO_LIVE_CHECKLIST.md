@@ -120,6 +120,17 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Pending David's ruling / action
 
+- [ ] **PROVENANCE PHASE 1 (R-P1..R-P9, ruled 2026-08-08) — the last launch
+  prerequisite.** Build sequence written and awaiting David's approval
+  (`PROVENANCE_PHASE1_BUILD_SEQUENCE_2026-08-08.md`). R-P10's public correction
+  already shipped (`f1a8a72`). **R-P7 is R8's unblocking condition — not
+  provenance work in general**: the AI flip stays dark until the payload carries
+  n_real + composition, the prompt template stops teaching the composition-blind
+  register, and the validator rejects peer/employer framing at real n = 0 (all
+  three or none). R-P8 (source='demo' on the console form) lands before the first
+  console-provisioned demo org — likely sooner than the first member.
+
+
 - [x] **PH-PAY-2 — RULED (R3/R3a/R3b) and BUILT 2026-08-08.** Clock pauses via an
   ACCUMULATED `suspended_seconds` (clock_start immutable, frozen while suspended,
   accrues across suspensions); sweep/digest/reminders gated on suspension with
