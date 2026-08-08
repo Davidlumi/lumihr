@@ -787,7 +787,7 @@ window.SharesPage = function ({ embedded }) {
         ${rows.length === 0 ? html`<p class="caption" style=${{ margin: 0 }}>No live share links.</p>` : html`
         <div style=${{ overflowX: "auto" }}>
         <table class="data">
-          <thead><tr><th>Type</th><th>Link</th><th>Expires</th><th>Status</th><th>Activity</th><th></th></tr></thead>
+          <thead><tr><th>Type</th><th>Link</th><th>Expires</th><th>Status</th><th>Activity</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             ${rows.map(s => html`
               <tr key=${s.token} style=${s.revoked ? { opacity: 0.55 } : null}>
@@ -874,7 +874,7 @@ window.TeamPage = function ({ me }) {
         contribution clock. Roles decide who can edit.</p>
       <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s4) 0" }}>
         <table class="data">
-          <thead><tr><th>Member</th><th>Role</th><th>Joined</th>${isAdmin && html`<th></th>`}</tr></thead>
+          <thead><tr><th>Member</th><th>Role</th><th>Joined</th>${isAdmin && html`<th><span class="sr-only">Actions</span></th>`}</tr></thead>
           <tbody>
             ${data.users.map(u => html`
               <tr key=${u.email}><td><b>${u.display_name || u.email}</b><div class="caption">${u.email}${u.email === me.user.email ? " (you)" : ""}</div></td>
@@ -1037,7 +1037,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     action=${html`<button class="btn small primary" onClick=${loadA}>Retry</button>`} />`;
   if (!a) return html`<${PageLoading} />`;
   return html`
-    <div style=${{ maxWidth: "640px" }}>
+    <div style=${{ maxWidth: "640px", margin: "0 auto" }}>
       <h1 class="display-title">Settings</h1>
       <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
         <h2 class="section-title">£ modelling assumptions</h2>

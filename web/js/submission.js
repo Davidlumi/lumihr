@@ -118,6 +118,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
   const [drafts, setDrafts] = useState({});
   const [issues, setIssues] = useState({});   // key -> {errors, warnings}
   const [savedAt, setSavedAt] = useState(null);
+  const [saveState, setSaveState] = useState("idle");   // idle | saving | error
   const [loadErr, setLoadErr] = useState(null);
   const [mode, setMode] = useState(() => /[?&]mode=guided/.test(window.location.hash) ? "guided" : "list");
   const [filter, setFilter] = useState("all");   // all | answered | unanswered (list mode)
@@ -177,13 +178,16 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
     const key = q.id + "|" + (rowId || "");
     setDrafts(d => ({ ...d, [key]: value }));
     window._pendingSaves++;
+    setSaveState("saving");
     try {
       const r = await api("/api/submission/draft", { method: "PUT",
         body: { question_id: q.id, matrix_row_id: rowId || "", value } });
       setIssues(s => ({ ...s, [key]: { errors: r.errors || [], warnings: r.warnings || [] } }));
-      if (r.ok) { setSavedAt(new Date()); window.markUnsubmitted(); }
+      if (r.ok) { setSavedAt(new Date()); setSaveState("idle"); window.markUnsubmitted(); }
+      else if (r.errors && r.errors.length) setSaveState("idle");
     } catch (e) {
       setIssues(s => ({ ...s, [key]: { errors: [(e.message || "Couldn't save this answer") + " — your value is still here, just not saved yet."], warnings: [] } }));
+      setSavedAt(null); setSaveState("error");
       toast("Couldn't save your last answer", "error", { label: "Retry", fn: () => save(q, rowId, value) });
     } finally {
       window._pendingSaves = Math.max(0, window._pendingSaves - 1);
@@ -264,8 +268,11 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
     <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
       <div>
         <h1 class="display-title" style=${{ margin: "0 0 3px" }}>${sp}</h1>
-        <div class=${"qwiz-saved" + (savedAt ? " on" : "")} role="status">
-          ${savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB") : done + " of " + total + " answered · autosaves as you go"}</div>
+        <div class=${"qwiz-saved" + (saveState === "error" ? " err" : savedAt ? " on" : "")} role="status">
+          ${saveState === "error" ? "Some answers aren't saved — retry the highlighted rows"
+            : saveState === "saving" ? "Saving\u2026"
+            : savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB")
+            : done + " of " + total + " answered · autosaves as you go"}</div>
       </div>
       <div style=${{ minWidth: "128px" }}>
         <div class="progressbar"><div style=${{ width: pct + "%" }}></div></div>
@@ -511,6 +518,11 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
     const isSelect = col0.type === "select" && (col0.options || []).length > 0;
     const isNA = drafts[key] === "Not applicable";
     const setNA = (on) => {
+      if (on) {
+        const filled = q.matrix_rows.filter(r => (drafts[q.id + "|" + r.row_id] || "") !== "");
+        if (filled.length && !window.confirm(
+          `Mark this as not applicable? This clears the ${filled.length} value${filled.length === 1 ? "" : "s"} you've entered in the grid — unticking won't bring them back.`)) return;
+      }
       save(q, "", on ? "Not applicable" : "");
       if (on) q.matrix_rows.forEach(r => { if ((drafts[q.id + "|" + r.row_id] || "") !== "") save(q, r.row_id, ""); });
     };
@@ -574,11 +586,19 @@ function DebouncedNumber({ value, onSave, unitName, unit, compact, disabled }) {
   const [v, setV] = useState(fmt(value));
   const [editing, setEditing] = useState(false);
   const t = useRef(null);
+  const held = useRef(false);   // an edit is sitting in the debounce timer
   useEffect(() => { if (!editing) setV(fmt(value)); }, [value, editing]);
-  const commit = (nv) => onSave(parseUKNumber(nv));
+  useEffect(() => () => {       // unmount with a held edit: release the counter
+    if (held.current) { held.current = false; window._pendingSaves = Math.max(0, window._pendingSaves - 1); }
+  }, []);
+  const commit = (nv) => {
+    if (held.current) { held.current = false; window._pendingSaves = Math.max(0, window._pendingSaves - 1); }
+    onSave(parseUKNumber(nv));
+  };
   const change = (nv) => {
     setV(nv);
     clearTimeout(t.current);
+    if (!held.current) { held.current = true; window._pendingSaves++; }   // beforeunload guards the debounce window too
     t.current = setTimeout(() => commit(nv), 600);
   };
   return html`
