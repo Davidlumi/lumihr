@@ -285,6 +285,27 @@ check("V", "validator accepts a faithful commentary (no false positives)", okv, 
 print()
 print("=" * 100)
 fails = [(s, n, d) for s, n, ok, d in RESULTS if not ok]
+# ---- P1-D (R-P7): the composition-conditional attribution gate ---------------
+# Non-vacuous by construction: the injected sample was PROVEN to pass the
+# pre-P1-D validator (git-show run, DECISIONS 2026-08-08) — these checks catch
+# the composition rule specifically, not a number mismatch.
+_pd_payload = appmod.build_commentary_payload(conn, org, user, "ALLOW_02", "all", None)
+_pd_n = _pd_payload.get("n")
+_pd_parts = {k: "This reads on market." for k in ca.COMMENTARY_PARTS}
+_pd_parts["compare"] = "%d peers reported their approach; most organisations that submitted keep reviews regular." % _pd_n
+_ok, _reason = ca.validate_commentary(_pd_parts, _pd_payload)
+check("P1D", "true-number/false-attribution sentence REJECTED naming the composition rule",
+      (not _ok) and "composition" in (_reason or ""), _reason)
+_ok2, _r2 = ca.validate_commentary(_pd_parts, dict(_pd_payload, n_real=10))
+check("P1D", "same sentence with real n=10 is NOT composition-blocked (no over-block)",
+      _ok2 or "composition" not in (_r2 or ""), _r2)
+_ok3, _r3 = ca.validate_commentary(_pd_parts, {k: v for k, v in _pd_payload.items() if k != "n_real"})
+check("P1D", "missing n_real FAILS CLOSED", (not _ok3) and "n_real" in (_r3 or ""), _r3)
+_vparts = {k: "This sits below market against the benchmark." for k in ca.COMMENTARY_PARTS}
+_ok4, _r4 = ca.validate_commentary(_vparts, _pd_payload)
+check("P1D", "locked verdict vocabulary passes at real n=0 (whitelist holds)",
+      "composition" not in (_r4 or ""), _r4)
+
 print("RESULTS: %d checks, %d passed, %d failed" % (len(RESULTS), len(RESULTS) - len(fails), len(fails)))
 for s, n, d in fails:
     print("  FAIL [%s] %s | %s" % (s, n, d))

@@ -120,7 +120,19 @@ gate, solicitor-signed) is preserved in full below the gates.
 
 ## Pending David's ruling / action
 
-- [ ] **PROVENANCE PHASE 1 (R-P1..R-P9, ruled 2026-08-08) — the last launch
+- [ ] **PROVENANCE PHASE 1 — R-P7/P1-D COMPLETE 2026-08-08: R8's unblocking
+  condition is MET.** The AI gate is built and proven: payload carries n_real
+  (fail-closed if absent), the prompt forbids member-attribution at real n=0
+  (verdict vocabulary whitelisted), the validator is composition-conditional and
+  self-relaxing, pack template prose neutraled; rejection test proven non-vacuous
+  (the injected sample PASSES the pre-fix validator, git-show run) and permanent
+  in qa_commentary (44 checks); 4-call live observation: ZERO attribution
+  language, captured verbatim (data/p1d_observation_2026-08-08.json). WHAT
+  REMAINS FOR R8, all David's: Anthropic DPA accepted · attestation email ·
+  dpo@ MONITORED not merely live · SES confirmed · production env flip — after
+  deployment, and after provenance surfacing is live to members. Master switch
+  UNTOUCHED (AI stays dark). Original entry:
+- [ ] **(original) PROVENANCE PHASE 1 (R-P1..R-P9, ruled 2026-08-08) — the last launch
   prerequisite.** Build sequence written and awaiting David's approval
   (`PROVENANCE_PHASE1_BUILD_SEQUENCE_2026-08-08.md`). R-P10's public correction
   already shipped (`f1a8a72`). **R-P7 is R8's unblocking condition — not

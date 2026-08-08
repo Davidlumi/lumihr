@@ -1,0 +1,70 @@
+[
+ {
+  "tag": "1-position",
+  "qid": "OT_04_b14623a6",
+  "n": 214,
+  "n_real": 0,
+  "hits": [],
+  "out": {
+   "ok": true,
+   "parts": {
+    "measures": "This metric records whether the organisation pays shift premiums for unsocial hours, captured as a simple categorical response. It reflects the presence or absence of extra pay for shifts worked outside normal hours, not the amount of any premium.",
+    "compare": "You answered No (no shift premiums paid), placing you at the 18.5th percentile among 214 peers. The most common response is Yes, at 63.1% of peers, while your position of No is shared by 36.9%; on this measure you sit behind the group.",
+    "implications": "Sitting in the minority that does not pay unsocial-hours premiums may affect how competitive your reward looks to staff working these patterns, and could feed into recruitment and retention for shift-based roles. It does not tell you about your wider pay position, only about this one form of provision.",
+    "considerations": "Organisations in this position often review how their base pay and overall package compensate for unsocial hours, and explore whether a premium would help with recruitment or retention where shift work is common; where pay terms touch contractual obligations, professional input is advisable. Your own budget, strategy and operational context should guide any change first."
+   },
+   "source": "model"
+  }
+ },
+ {
+  "tag": "2-prevalence",
+  "qid": "REW26_BEN_SALSAC",
+  "n": 220,
+  "n_real": 0,
+  "hits": [],
+  "out": {
+   "ok": true,
+   "parts": {
+    "measures": "This metric records whether the organisation runs its pension on a salary sacrifice basis by default, so contributions are made through an exchange of salary rather than paid separately.",
+    "compare": "You answered No. Across all 220 peers, the most common answer is Yes at 52.3%, while your answer, No, is shared by 47.7% of peers, so the group is fairly evenly split.",
+    "implications": "Not using salary sacrifice by default places you with a sizeable minority of peers rather than in an unusual position, though it may mean a different administrative and take-home arrangement compared with those offering it by default.",
+    "considerations": "Organisations in this position often explore whether a salary sacrifice default would suit their payroll and workforce, and take professional input given the tax and payroll implications, while recognising that your own budget, strategy and constraints come first."
+   },
+   "source": "model"
+  }
+ },
+ {
+  "tag": "3-metric",
+  "qid": "ALLOW_02",
+  "n": 211,
+  "n_real": 0,
+  "hits": [],
+  "out": {
+   "ok": true,
+   "parts": {
+    "measures": "This metric records whether allowances are reviewed regularly as part of the organisation's reward governance, captured as a simple stated response rather than a measured value.",
+    "compare": "Across all 211 peers, the most common response is No at 65.4%, while your answer of Ad hoc / irregular is shared by 13.7% of peers, so regular review is not the prevailing pattern in this group.",
+    "implications": "An ad hoc or irregular approach means allowances may only be examined when something prompts it, which can leave gaps between reviews; the peer picture suggests many organisations have yet to embed a regular cadence either.",
+    "considerations": "Organisations in this position often explore setting a defined review point within their reward governance and clarifying who owns it, while recognising that your own budget, strategy and operating constraints come first."
+   },
+   "source": "model"
+  }
+ },
+ {
+  "tag": "4-matrix",
+  "qid": "323ffcf1-749b-43f3-bf34-1de6b8b1ca67",
+  "n": 148,
+  "n_real": 0,
+  "hits": [],
+  "out": {
+   "ok": true,
+   "parts": {
+    "measures": "This metric captures the maximum bonus opportunity offered at each population level, expressed as a percentage of base salary. It shows the ceiling of variable pay potential rather than what is typically paid out.",
+    "compare": "Your organisation has not answered this question, so we cannot show your position. Across this peer group, 148 responses describe the range of maximum bonus opportunities offered by level.",
+    "implications": "Because the maximum bonus opportunity often signals how much weight an organisation places on variable pay within total reward, an unanswered position means you cannot yet see where your ceilings sit relative to peers. Completing the question would let you gauge how your incentive design compares.",
+    "considerations": "Organisations in this position often explore capturing their maximum bonus opportunity by level so they can benchmark against peers, and any decision should reflect your own budget, strategy and reward priorities first."
+   },
+   "source": "model"
+  }
+ }
+]

@@ -135,6 +135,16 @@ Return STRICT JSON with keys:
      further"). Do NOT issue commands ("Increase…", "Implement…", "Raise pay to…"),
      do NOT prescribe targets, budgets or amounts, and do NOT recommend a course of
      action. Every option must cite the gap's metric, percentile and n verbatim.
+
+ATTRIBUTION RULE (composition): the comparison figures are aggregates over the
+pool described in the payload. Where the payload's "n_real" is 0 (no lumi member
+submissions in this pool), DO NOT attribute figures to member submission — never
+"peers report/reported", "employers told us", "% of respondents", "companies
+surveyed", "organisations that submitted/reported", or any construction claiming
+the figure came from members. Describe the figures themselves instead ("the
+benchmark median is X", "X% of the comparison pool", "X% of similar
+organisations have this in place"). ALWAYS PERMITTED regardless of composition:
+the locked verdict vocabulary — "below market", "on market", "above market".
 Return ONLY the JSON object, no markdown fences."""
 
 
@@ -386,8 +396,8 @@ def _deterministic_pack(payload):
                     "sits above the market.".format(int(savings)))
     para2 = " ".join(bits)
 
-    para3 = ("The pages that follow set out where %s leads, the largest gaps to peers, what closing "
-             "them is indicatively worth, and the practices common among peers but not yet in place. "
+    para3 = ("The pages that follow set out where %s leads, the largest gaps to the benchmark, what closing "
+             "them is indicatively worth, and the practices common in the comparison pool but not yet in place. "
              "lumi is a mirror, not a scoreboard: it shows where you stand; the judgement stays with "
              "the board." % name)
 
@@ -431,7 +441,7 @@ def _deterministic_pack(payload):
                 g0["label"], g0["value_display"], int(round(g0["percentile"])), g0["n"]))
     top_reg = (payload.get("gap_register_top") or [{}])[0]
     if top_reg.get("name"):
-        findings.append("%s%% of peers have %s in place; %s does not." % (
+        findings.append("%s%% of the comparison pool have %s in place; %s does not." % (
             top_reg.get("peer_adoption_pct"), top_reg["name"], name))
     position_commentary = ""
     if widest:
@@ -798,6 +808,18 @@ def _commentary_numbers(payload):
     return allowed
 
 
+# P1-D: member-attribution constructions — verb-coupled ("peers reported",
+# "organisations that submitted", "employers told us") plus the bare nouns that
+# only ever mean survey respondents. Neutral comparatives ("similar
+# organisations", bare "peers") are NOT matched; the verdict vocabulary cannot
+# match by construction.
+ATTRIBUTION_RE = re.compile(
+    r"\b(?:peers?|employers?|compan(?:y|ies)|organisations?|members?)\s+"
+    r"(?:that\s+|who\s+|have\s+)?(?:report(?:ed|s)?|submit(?:ted|s)?|told(?:\s+us)?|"
+    r"surveyed|responded|said)\b"
+    r"|\brespondents?\b|\bcompanies\s+surveyed\b|\bsurvey(?:ed)?\s+members\b", re.I)
+
+
 def validate_commentary(parts, payload):
     """The runtime trust gate every model output must pass; any failure means
     the deterministic fallback ships instead. Returns (ok, reason)."""
@@ -837,6 +859,22 @@ def validate_commentary(parts, payload):
     if payload.get("you") is None and not payload.get("suppressed"):
         if re.search(r"\byou(r organisation)? (answered|are|sit|stand|rank)\b", parts["compare"], re.I):
             return False, "fabricated 'you' position on an unanswered metric"
+    # P1-D (R-P7, amended R-P2 §4): composition-conditional attribution gate.
+    # The numbers are TRUE, so the number checks above cannot see a false
+    # provenance sentence — this rule reads the same n_real the payload carries
+    # and forbids attributing figures to member submission where the real
+    # subset cannot support it (n_real 0 or below the R-P5 floor of 5). It
+    # RELAXES ITSELF as membership grows. FAIL CLOSED: composition data absent
+    # from the payload is not permission. The locked verdict vocabulary
+    # (below/on/above market) is whitelisted by construction — ATTRIBUTION_RE
+    # only matches member-attribution constructions, which the verdict words
+    # cannot form.
+    n_real = payload.get("n_real")
+    if n_real is None:
+        return False, "composition data (n_real) missing from payload — fail closed"
+    if n_real < 5 and ATTRIBUTION_RE.search(text_all):
+        return False, ("attribution language with real n below the floor "
+                       "(composition rule): %s" % ATTRIBUTION_RE.search(text_all).group(0))
     return True, None
 
 

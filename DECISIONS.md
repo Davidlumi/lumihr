@@ -15089,3 +15089,37 @@ to inventory rather than filesystem: it measured what was KNOWN, not what
 EXISTED. The next proposal to close by list will come with a longer list and
 sound more convincing — the exit criterion is a SEARCH AGAINST THE WORLD, every
 time.
+
+## 2026-08-08 — P1-D (R-P7, amended R-P2 §4): the AI composition gate — built, proven failing-before, and dark
+
+ALL PARTS, ONE DIFF. (a) PAYLOAD: which case obtains — build_commentary_payload
+already carried n_real via P1-C's lift (app.py:5062); the validator now FAILS
+CLOSED if it is absent (missing is not permission). (b) PROMPT: an ATTRIBUTION
+RULE block — at n_real=0 the model must not attribute figures to member
+submission (no "peers reported", "employers told us", "% of respondents",
+"organisations that submitted"); descriptive framing unrestricted; the LOCKED
+VERDICT VOCABULARY (below/on/above market) explicitly whitelisted in prompt and
+validator — the collision named in the ruling. (c) VALIDATOR:
+composition-conditional, not a banned-word list — ATTRIBUTION_RE matches only
+member-attribution constructions (verb-coupled + bare "respondents"; neutral
+comparatives like "similar organisations" unmatched), forbidden where n_real <
+the R-P5 floor (5), so the rule RELAXES ITSELF as membership grows. On
+rejection: deterministic fallback (itself neutraled), never accept-last-attempt.
+(4.4) Pack template prose neutraled: "largest gaps to the benchmark",
+"practices common in the comparison pool", "% of the comparison pool have Y in
+place" — template text that previously made the claim EVERY time, in the
+artefact that leaves the building. THE REJECTION TEST, three parts:
+(1) OBSERVATION — 4 live calls as authorized (2 metric families + 1 spare when
+the pack signature differed + 1 matrix), all real n_real=0 payloads: ZERO
+attribution language in any output, captured verbatim in
+data/p1d_observation_2026-08-08.json including the good behaviour;
+(2) INJECTION — a true-number/false-attribution sentence ("211 peers reported
+their approach; most organisations that submitted…") REJECTED naming the
+composition rule, the same sentence at real n=10 NOT composition-blocked (no
+over-block), missing n_real fails closed, verdict vocabulary passes at n=0;
+(3) PROVEN FAILING BEFORE — the identical sample run against the PRE-FIX
+validator via git show: PASSES (ok=True). The test catches the composition
+rule, not something else. Permanent: qa_commentary 40→44 checks, keyless.
+MASTER SWITCH UNTOUCHED — P1-D proves the gate and flips nothing; the checklist
+records R8's unblocking condition as MET with David's five remaining steps.
+Suite 14/14 ALL GREEN.
