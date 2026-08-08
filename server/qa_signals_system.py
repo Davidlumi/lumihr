@@ -139,6 +139,14 @@ def main():
 
     # --- firing invariants (uncapped) ---
     base = json.load(open(SL))
+    # torn-run guard: if a prior interrupted run leaked the uncapped fixture to disk,
+    # "base" IS the leak and the finally below would faithfully restore it. Refuse.
+    check("signal_lenses.json on disk is a real baseline, not a leaked 999 fixture",
+          base.get("max_signals") != 999 and base.get("max_per_lens") != 999,
+          {"max_signals": base.get("max_signals"), "max_per_lens": base.get("max_per_lens")})
+    if base.get("max_signals") == 999 or base.get("max_per_lens") == 999:
+        raise SystemExit("REFUSING: on-disk signal_lenses.json carries fixture caps (999) — "
+                         "restore it (git checkout -- data/signal_lenses.json) before running.")
     hi = dict(base); hi["max_signals"] = 999; hi["max_per_lens"] = 999
     sigs = []
     try:
