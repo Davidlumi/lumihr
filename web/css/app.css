@@ -338,7 +338,10 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
    overflow:visible painted the wrapped search/actions straight over the page
    (the mobile-overlap bug). Search takes its own full-width row; the suggest
    pill hides (the affordance also lives in the search empty state). */
-@media (max-width: 640px) {
+@media (max-width: 860px) {
+  /* Batch 1 (experience review, 2026-08-08): between 640 and ~860px the
+     brandbar's right cluster used to WRAP under its fixed height and collide
+     with the page header below. The 640px escape now covers the whole range. */
   .brandbar { height: auto; min-height: var(--brandbar-h); }
   .topbar { row-gap: 0; padding-bottom: var(--s2); }
   .topbar .suggest-pill { display: none; }
@@ -2507,7 +2510,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .di-axis-poskey { display: flex; flex-direction: column; justify-content: center; height: 30px; }
 .di-pk-labels { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--ink-faint); line-height: 1; }
 .di-pk-labels span:nth-child(2) { text-align: center; }
-.di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600;
+.di-colhead { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 600; padding: 0 var(--s2);
   letter-spacing: .04em; text-transform: uppercase; text-align: center; white-space: nowrap; }
 /* mode-transition (David 2026-07-11, "add animation as you transition"): the rows container
    is keyed by mode, so a toggle remounts it and the entrance plays; the marker dots and
@@ -3576,7 +3579,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
      their bars ran longer — per-row grids don't share column sizing. 52px fits the SIGNALS
      header with the 24px chip centred beneath; 30px fits AIM + the tick. Every bar now ends
      on the same line in every row, in both lenses. */
-  grid-template-columns: 132px minmax(0, 1fr) auto 52px 30px 16px; }
+  /* 64px fits the SIGNALS header (fs-micro + .04em tracking measured ~58px);
+     52px clipped it and the label spilled into AIM at tablet widths (Batch 1). */
+  grid-template-columns: 132px minmax(0, 1fr) auto 64px 40px 16px; }
 .di-axis { margin: var(--s2) 0 0; }
 .di-axis-scale { position: relative; height: 30px; }
 .di-rows { display: flex; flex-direction: column; flex: 1; }
