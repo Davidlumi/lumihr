@@ -14723,3 +14723,47 @@ diff); original pin text retained as historical record. (5) PH-LOG-1 containment
 the deployed box (A4): journald 35d/200M, root-only, non-web-served, EXCLUDED from
 every backup that leaves the box (offbox_backup.sh copies the two databases only,
 never logs); D2/SES is a HARD precondition of first provisioning.
+
+## 2026-08-08 — Commit C (R4/R4a/R4b): the signup-era artefacts are gone, both stores, book deliberately re-baselined
+
+**The approved rationale, on the record (applies to the class):** created via the open
+self-serve registration path before PH-PROV-1 §4 made source='signup' mean "real
+member organisation"; neither seed nor provisioned member; every future
+provenance-keyed rule would have to carry an exception for them. Deleted as
+signup-era artefacts. R4b rules the CLASS (SIGNUP_ERA_ARTEFACT = DELETE where
+answer_rows = 0) so a fourth arrival is eligible BY RULE — but the migration
+refuses to act on any census that differs from the enumeration David approved: a
+new arrival is eligible, not approved.
+
+**C-1 (census, not a sighting):** source census seed=220 / signup=3 / staff=1; the
+three enumerated (HR Datahub 0 answers [R4], Tester 1 answer [R4a], tester 1
+0 answers [R4b]); no fourth. **C-2 (org-counting surfaces):** all three gate out of
+every org-counting surface — peer-twin candidate pool, methodology composition and
+custom-group counts ALL require submission_complete=1 (peer_twin.py:55/:170,
+app.py:2440), which none had; peer_groups owned 0; the 2 peer_twin_cache rows were
+keyed BY the deleted orgs (self-scoped). WHICH CASE OBTAINS: exactly ONE aggregate
+moved — ALLOW_02's pool 212→211 (Tester's row), floor n≥5 untouched; the staff
+console total reads 221. **C-3 (both stores, one guarded operation):**
+migrate_r4_signup_artefacts.py — namespace census of every org_id-carrying table
+per org (HR Datahub 5 rows, Tester 11, tester 1 5 — incl. terms_acceptances,
+dashboards, signal_seen, answers_history), reward-side per-org transaction first,
+then identity.remove_org_identity(); identity_recon PASS in both directions after.
+
+**The dry-run caught two things worth recording.** (1) My first book-fingerprint
+re-IMPLEMENTED the recipe instead of importing dbsnapshot.table_fingerprint and the
+baseline check failed closed exactly as designed — the recipe is NAMED in the
+baseline file so it gets imported, not imitated. (2) The rehearsal wrote
+book_baseline.json from a THROWAWAY run — a harness leak now guarded (baseline
+writes on the live target only), and the identity-backup subprocess is likewise
+live-target-only because backup_identity's retain-1 rotation is repo-rooted (the
+presplit-incident class, caught before it repeated).
+
+**Book:** 89,321 / 3c587eaa191d17a1 → **89,320 / 24f1da756e95461c**, derived then
+matched against the transmission's claim before the write; book_baseline.json
+re-baselined with the reason + ruling ids so the moved baseline reads as the ruling
+executing, not drift. Backups: reward bak_pre_r4signup (rotation swept sessdel,
+pins excluded); identity backup via backup_identity.py, both policy assertions
+MATCH, retain-1 rotation performed. Post-write: aggregate re-run (344 payloads),
+suite 14/14 ALL GREEN — one gate floor updated honestly (qa_backoffice B3
+users>=8 encoded the deleted fixtures; now >=4, the structural minimum, comment
+cites this ruling).

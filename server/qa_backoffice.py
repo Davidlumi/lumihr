@@ -123,8 +123,12 @@ check("B1 staff /api/me carries platform_admin", st == 200 and bool(me["user"].g
 st, h = api(staff, "/api/admin/health")
 check("B2 health: counts+storage+modes present", st == 200 and
       all(k in h for k in ("counts", "storage", "modes", "uptime_seconds")), list(h))
-check("B3 health counts sane (orgs>=220, users>=8, questions>0)",
-      h["counts"]["orgs_total"] >= 220 and h["counts"]["users"] >= 8
+# users floor is the STRUCTURAL minimum (Thornbridge's 3 demo accounts + the
+# staff admin = 4): the old >=8 counted the signup-era artefact orgs deleted
+# under R4/R4a/R4b (2026-08-08) — a floor that encodes deleted fixtures fails
+# on the ruling executing, not on a defect.
+check("B3 health counts sane (orgs>=220, users>=4, questions>0)",
+      h["counts"]["orgs_total"] >= 220 and h["counts"]["users"] >= 4
       and h["counts"]["questions_active"] > 0, h["counts"])
 st, cfg = api(staff, "/api/admin/config")
 check("B4 config inventory served", st == 200 and len(cfg["config"]) >= 20, len(cfg.get("config", [])))
