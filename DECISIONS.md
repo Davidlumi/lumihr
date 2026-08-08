@@ -15246,3 +15246,27 @@ clutter); how-lumi-works explainers (that page IS the on-demand layer);
 acceptance-record detail (near-legal transparency); "comparison pool" pill
 wording (SIG-1 ruled); staff console "Users" tab (members = organisations).
 Suite 14/14 green after the full sweep; all routes + console walked clean.
+
+## 2026-08-08 — Reward strategy page redesign: document-first, downloadable, connected
+
+David: "deep review… looks like a 90s website… more engaging… download their
+reward strategy… every part must have a purpose and show connections."
+DIAGNOSIS: the page re-entered the 4-step capture wizard on EVERY visit even
+with a completed strategy — a select stack with no summary state, no
+artefact, and the choice→effect line visible only mid-form after picking.
+THE BUILD (4526ff4, client-only): completed strategies render a STRATEGY
+VIEW — navy stance statement generated from the dials (every bold term a
+choice); a live Aim-vs-position table from hero.domains (aim / position /
+On-aim chips, override tags, rows link to areas — the strategy→benchmark
+connection); an 11-dial profile where each card carries a DIAL_DRIVES line
+stating exactly what it changes (context dials honestly say "not yet shaping
+signals"); Download (PDF) via the house print pattern (brand head, exact-
+colour stance, confidential footer). Edit re-enters the wizard (Cancel
+restores; a saved edit invalidates the overview cache and returns to the
+view). Non-admins now get the read-only view instead of a lock screen.
+LESSON (cost a broken page-load): classic scripts share global lexical
+scope — a new module-scope `const STANCE_WORD` in strategy.js collided with
+pages.js's and killed the whole file at load; renamed SV_STANCE. Indirect
+eval AFTER the failure succeeds (the name was freed), which disguises the
+cause — check for cross-file const collisions before trusting an eval repro.
+Suite 14/14 green.
