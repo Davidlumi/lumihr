@@ -269,7 +269,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   border-radius: 999px; background: var(--blue); color: #fff; font-size: var(--fs-micro); font-weight: 700;
   display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--surface); }
 .notif-pop { position: absolute; top: calc(100% + 8px); right: 0; width: 360px; max-height: 470px;
-  display: flex; flex-direction: column; padding: 0; z-index: 90; box-shadow: var(--shadow-pop); overflow: hidden; }
+  display: flex; flex-direction: column; padding: 0; z-index: var(--z-popover); box-shadow: var(--shadow-pop); overflow: hidden; }
 .notif-head { display: flex; align-items: center; justify-content: space-between; padding: var(--s3) var(--s4);
   border-bottom: 1px solid var(--border); }
 .notif-mark { border: 0; background: transparent; color: var(--blue); font-size: var(--fs-caption); font-weight: 600; cursor: pointer; }
@@ -508,7 +508,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .term { border-bottom: 1px dotted var(--ink-faint); cursor: help; position: relative; }
 .term .tip, .hastip .tip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
   transform: translateX(-50%); background: var(--ink); color: #fff; padding: var(--s2) var(--s3);
-  border-radius: var(--radius-sm); font-size: var(--fs-caption); line-height: 1.5; width: 230px; z-index: 90;
+  border-radius: var(--radius-sm); font-size: var(--fs-caption); line-height: 1.5; width: 230px; z-index: var(--z-popover);
   font-weight: 400; white-space: normal; }
 .term:hover .tip, .hastip:hover .tip { display: block; }
 /* keyboard/touch parity: Term spans are focusable (core.js sets tabindex) —
@@ -1414,14 +1414,6 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-differ .cat-differ-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--differs); flex: none; }
 .cat-differ-txt { white-space: nowrap; }   /* count + phrase as one flow on a single line (no wrap, no detached count) */
 .cat-differ b { font-weight: 650; color: var(--differs); font-variant-numeric: tabular-nums; margin-right: 2px; }
-.chip-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s2); cursor: pointer;
-  border-radius: var(--radius-sm); transition: background var(--ease); }
-.chip-row:hover { background: var(--surface-sunk); }
-.chip-label { flex: 1; min-width: 0; font-size: var(--fs-label); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chip-band { position: relative; width: 92px; height: 6px; background: var(--surface-sunk); border-radius: 3px; flex: 0 0 auto; }
-.p-pill { font-size: var(--fs-micro); font-weight: 650; border-radius: 999px; padding: 2px var(--s2); min-width: 36px; text-align: center; }
-.p-pill.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
-.p-pill.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 
 /* ---- premium depth (2026-06-12): ambient aurora behind the hero, crisp
    hairlines, lens-hued hover glows. Quiet luxury, zero loops. ---- */
@@ -2029,7 +2021,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .signal-row .sig-act.on { color: var(--blue); opacity: 1; }
 /* snooze duration menu (P16) */
 .sig-snooze-wrap { position: relative; display: inline-flex; }
-.sig-snooze-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 148px;
+.sig-snooze-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--z-popover); min-width: 148px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-card); padding: var(--s2); display: flex; flex-direction: column; gap: 2px; }
 .sig-snooze-lbl { font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px var(--s2) 4px; }
@@ -2072,7 +2064,6 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .arc-verdict, .arc-caption, .ov-after { animation: ov-rise 400ms ease-out both; animation-delay: 320ms; }
 .arc-median { animation: ov-rise 460ms ease-out both; animation-delay: 600ms; }
 .tile-dot { animation: dot-pop 460ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
-.chip-band .tile-dot { animation-delay: 700ms; }
 .signal-go { opacity: 0; transform: translateX(-4px); transition: opacity var(--ease), transform var(--ease);
   font-weight: 650; flex: 0 0 auto; }
 .signal-row:hover .signal-go { opacity: 1; transform: none; }
@@ -2096,8 +2087,6 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-top-width 200ms ease-out; }
 .cat-tile:hover { transform: translateY(-2px); border-top-width: 4px;
   box-shadow: 0 8px 20px rgba(36,54,66,.10), inset 0 1px 0 rgba(255,255,255,.85); }
-.chip-row:hover .p-pill { transform: scale(1.08); }
-.p-pill { transition: transform var(--ease); }
 
 /* ---- category page delight: calm entrances (once), warm hover responses ---- */
 .category-page .page-head { animation: ov-rise 360ms cubic-bezier(.2,.7,.3,1) both; }
@@ -2929,7 +2918,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .group-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3) var(--s5);
   max-height: 46vh; overflow-y: auto; padding-right: var(--s2); margin-bottom: var(--s3); }
 @media (max-width: 760px) { .group-fields { grid-template-columns: 1fr; } }
-.chip-row { display: flex; flex-wrap: wrap; gap: var(--s1); }
+.group-fields .chip-row { display: flex; flex-wrap: wrap; gap: var(--s1); }
 .crit-chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
   padding: var(--s1) var(--s3); font: 500 12px/1.2 var(--font-body); color: var(--ink-soft); cursor: pointer; }
 .crit-chip:hover { border-color: var(--blue-tint-2); color: var(--ink); }
@@ -3075,6 +3064,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .admin-table { width: 100%; }
 .admin-table td, .admin-table th { vertical-align: top; }
 .admin-card { padding: var(--s4); margin-bottom: var(--s3); }
+/* keyboard-reachable row opener — the row's onClick stays for mouse convenience */
+.admin-rowlink { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--ink);
+  cursor: pointer; text-align: left; }
+.admin-rowlink:hover { color: var(--blue); text-decoration: underline; }
+.admin-rowlink:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 2px; border-radius: var(--radius-xs); }
 .admin-pill { display: inline-block; font-size: var(--fs-micro); font-weight: 600; padding: 1px var(--s2);
   border-radius: 8px; background: var(--lumi-tile); color: var(--blue-deep); white-space: nowrap; }
 .admin-status { display: inline-block; font-size: var(--fs-micro); font-weight: 600; padding: 1px var(--s2);
@@ -3188,7 +3182,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .dial-opt.on { border-color: var(--blue); background: var(--blue-tint); }
 .dial-opt.on .ot { color: var(--blue-deep); }
 .dial-opt:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 1px; }
-.chip-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.dial-card .chip-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .strat-chip { display: inline-flex; align-items: center; gap: var(--s2); background: var(--paper); border: 1px solid var(--chrome-edge);
   border-radius: 999px; padding: var(--s2) var(--s3); font-family: inherit; font-size: var(--fs-label); color: var(--ink-soft); cursor: pointer; transition: all .15s; }
 .strat-chip svg { opacity: 0; transition: opacity .15s; }
@@ -3262,7 +3256,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--chrome-edge); z-index: 30; }
 .strat-footer-in { max-width: 760px; margin: 0 auto; padding: var(--s3) var(--s5); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
 .strat-count { font-size: var(--fs-label); color: var(--ink-faint); }
-.strat-toast { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); z-index: 50; max-width: 460px;
+.strat-toast { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); z-index: var(--z-toast); max-width: 460px;
   background: var(--navy); color: #fff; font-size: var(--fs-label); line-height: 1.45; padding: var(--s3) var(--s4); border-radius: var(--radius);
   box-shadow: var(--shadow-lift); animation: stratRise .25s ease; }
 @media (max-width: 640px) { .confirm-row { flex-wrap: wrap; } .strat-flow { padding-left: var(--s4); padding-right: var(--s4); } }
@@ -3400,7 +3394,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    both formats without crowding the header. */
 .dash-dl { position: relative; }
 .dash-dl-chev { font-size: 10px; opacity: .7; margin-left: 1px; }
-.dash-dl-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60;
+.dash-dl-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: var(--z-popover);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-lift); padding: var(--s1); min-width: 244px; }
 .dash-dl-item { display: block; width: 100%; text-align: left; background: none; border: none;
@@ -3875,10 +3869,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
    OVER the open menu (each card is its own stacking context via the entrance animation).
    Fix: anchor under the button's left edge + lift the OPEN card above its siblings. */
 .brf-later-wrap { position: relative; display: inline-flex; flex: none; }
-.brf-menu { position: absolute; left: 0; right: auto; top: calc(100% + 4px); z-index: 30; min-width: 158px;
+.brf-menu { position: absolute; left: 0; right: auto; top: calc(100% + 4px); z-index: var(--z-popover); min-width: 158px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--s1); box-shadow: var(--shadow-pop, var(--shadow-lift)); }
-.brf-card:has(.brf-menu) { position: relative; z-index: 41; }
+.brf-card:has(.brf-menu) { position: relative; z-index: 2; }  /* above sibling cards, below --z-nav */
 .brf-menu-lbl { font-size: var(--fs-micro); color: var(--ink-soft); padding: 2px var(--s2) 4px; }
 .brf-menu-opt { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
   border: 0; background: none; font: inherit; font-size: var(--fs-label); color: var(--ink);

@@ -85,7 +85,7 @@ function AdminOrgsTab() {
         </tr></thead>
         <tbody>
           ${rows.map(o => html`<tr key=${o.org_id} style=${{ cursor: "pointer", opacity: o.deactivated ? 0.55 : 1 }} onClick=${() => setSelected(o.org_id)}>
-            <td><b>${o.name}</b>${o.deactivated ? html` <span class="admin-status admin-status-rejected" title=${o.deactivated_reason || ""}>deactivated${o.deactivated_reason ? " — " + o.deactivated_reason : ""}</span>` : ""}</td>
+            <td><button class="admin-rowlink" onClick=${e => { e.stopPropagation(); setSelected(o.org_id); }}>${o.name}</button>${o.deactivated ? html` <span class="admin-status admin-status-rejected" title=${o.deactivated_reason || ""}>deactivated${o.deactivated_reason ? " — " + o.deactivated_reason : ""}</span>` : ""}</td>
             <td><${LifecycleChip} lc=${o.lifecycle} /></td>
             <td>${o.industry || "—"}</td>
             <td>${o.fte_band || "—"}</td>

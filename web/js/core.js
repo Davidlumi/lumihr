@@ -490,6 +490,11 @@ window.CHART_LABELS = {
    "organisations" — NO verb of attribution; disclosure lives in the sale, the
    member agreement, and the methodology page). */
 window.SHOW_COMPOSITION_IN_PRODUCT = false;
+// global comparison-pool total (peer_pool.responding_orgs) — durable artefacts cite
+// THIS, never a cut-scoped n and never a hardcoded number; null = omit the sentence.
+window.setPoolTotal = function (n) { window.__poolTotal = (typeof n === "number" && n > 0) ? n : null; };
+window.poolTotal = function () { return window.__poolTotal || null; };
+
 window.compositionLabel = function (n, nReal) {
   if (n == null) return "";
   if (!SHOW_COMPOSITION_IN_PRODUCT) return "n=" + n;
@@ -506,6 +511,7 @@ window.COMPOSITION_DESC = "Reference panel: modelled from published UK survey da
 /* Batch 0 (experience review, 2026-08-08): ONE date voice. "11 Jun 2026" reads
    unambiguously British; "11/06/2026" reads as June 11 to half the room. */
 window.fmtDate = function (d) {
-  const dt = d instanceof Date ? d : new Date(d);
+  // no argument = today ("generated <date>" call sites); invalid input still returns ""
+  const dt = d === undefined ? new Date() : (d instanceof Date ? d : new Date(d));
   return isNaN(dt) ? "" : dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };

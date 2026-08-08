@@ -1,5 +1,5 @@
 /* Read-only share viewer — no login; the API enforces what a link can see. */
-/* global html, useState, useEffect, useRef, api, Chip, Spinner, EmptyState, BenchmarkCard, BoardPackView, Term */
+/* global html, useState, useEffect, useRef, api, Chip, Spinner, EmptyState, BenchmarkCard, BoardPackView, Term, setPoolTotal */
 
 /* The board-pack is laid out at a fixed A4 width (210mm ≈ 794px). On a phone that
    overflows and scrolls sideways. Wrap it in a viewport-fitting shell: when the
@@ -51,7 +51,7 @@ function ShareApp() {
   const token = window.location.pathname.split("/").pop();
   const [data, setData] = useState(undefined);
   useEffect(() => {
-    api(`/api/share/${token}/data`).then(setData).catch(e => setData({ error: e.message }));
+    api(`/api/share/${token}/data`).then(d => { setPoolTotal((d.peer_pool || {}).responding_orgs); setData(d); }).catch(e => setData({ error: e.message }));
   }, [token]);
   if (data === undefined) return html`<div class="auth-wrap"><${Spinner} /></div>`;
   if (data.error) return html`
@@ -94,7 +94,7 @@ function ShareApp() {
           <div class="logo" style=${{ padding: 0 }}>lumi<span>.benchmark</span></div>
           <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${data.org_name}</h1>
           <div class="caption">Shared read-only benchmark view · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
-          <div class="caption" style=${{ marginTop: "2px" }}>Comparison pool: ${cutN != null ? cutN : 220} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>
+          ${(data.peer_pool || {}).responding_orgs ? html`<div class="caption" style=${{ marginTop: "2px" }}>Comparison pool: ${data.peer_pool.responding_orgs} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>` : ""}
         </div>
         <${Chip} kind="accent">Read-only<//>
       </div>

@@ -14,7 +14,7 @@ window.LUMI_LOGO_SVG = LUMI_LOGO_SVG;   // the board pack cover renders the real
    OverviewPage, SuperpowerPage, CategoryPage, DashboardsPage, YourDataPage, DomainDataView, HowLumiWorksPage, GapRegisterPage, SignalsPage, StrategyPage, RailItem,
    BoardPackView, AnalystPane, PeerTwinPanel, SharesPage, TeamPage, SettingsPage,
    SubmissionPage, BenchmarkCard, SUPERPOWERS, SP_ICONS, EmptyState, cutLabelOf, cutKeyOf,
-   AdminConsolePage, NotFoundPage */
+   AdminConsolePage, NotFoundPage, setPoolTotal */
 
 /* Deep linking: the peer cut lives in the hash query (?cut=industry::X) so a
    filtered view is shareable and back-button-safe. Section is already in the
@@ -145,6 +145,7 @@ function App() {
   const prefsTimer = useRef(null);
 
   const refreshMe = () => api("/api/me").then(setMe).catch(() => setMe(null));
+  useEffect(() => { setPoolTotal(me && me.peer_pool ? me.peer_pool.responding_orgs : null); }, [me]);
   useEffect(() => {
     const pre = window._mePrefetch;
     window._mePrefetch = null;                    // one shot — refreshes go through api()
@@ -1679,8 +1680,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       </div>
       ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-foot" aria-hidden="true">
-        Source: lumi HR${period ? " · " + period : ""} · generated ${fmtDate()} · Percentiles use medians across valid peer answers; peer groups under 5 organisations are suppressed.
-        Comparison pool: ${(me.peer_pool || {}).responding_orgs || 220} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>
+        Source: lumi HR${period ? " · " + period : ""} · generated ${fmtDate()} · Percentiles use linear interpolation across all valid peer answers; peer groups under 5 organisations are suppressed.${(me.peer_pool || {}).responding_orgs ? html`
+        Comparison pool: ${me.peer_pool.responding_orgs} UK organisation profiles. See lumihr.co.uk methodology for sources.` : ""}</div>
     </div>`;
 }
 

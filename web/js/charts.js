@@ -4,7 +4,7 @@
    appear solely when polarity applies, and only on the "you" marker / delta
    cells. Categorical distributions use the muted --cat ramp. No gridlines or
    chrome that don't earn their place. */
-/* global html, fmtValue, pLabel */
+/* global html, fmtValue, pLabel, poolTotal, fmtDate, compositionLabel */
 
 const CHART_W = 420;
 
@@ -572,7 +572,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
     <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
     <text x="${PAD}" y="${PAD + 6}" font-family="Helvetica, Arial" font-size="13" font-weight="700" fill="#211B26">${esc(meta.title)}</text>
     <text x="${PAD}" y="${PAD + 24}" font-family="Helvetica, Arial" font-size="10" fill="#5B5560">${esc(meta.cutLabel)} · ${esc(compositionLabel(meta.n, meta.n_real))}${meta.suffix ? " · " + esc(meta.suffix) : ""}</text>
-    <text x="${PAD}" y="${PAD + 36}" font-family="Helvetica, Arial" font-size="9" fill="#8B8590">Comparison pool: ${esc(String(meta.n))} UK organisation profiles. See lumihr.co.uk methodology for sources.</text>
+    ${(meta.pool || poolTotal()) ? `<text x="${PAD}" y="${PAD + 36}" font-family="Helvetica, Arial" font-size="9" fill="#8B8590">Comparison pool: ${esc(String(meta.pool || poolTotal()))} UK organisation profiles. See lumihr.co.uk methodology for sources.</text>` : ""}
     <line x1="${PAD}" y1="${sepY}" x2="${W - PAD}" y2="${sepY}" stroke="#E7E2DA" stroke-width="1"/>
     <g transform="translate(${PAD}, ${logoY}) scale(${lscale})">${LUMI_EXPORT_LOGO}</g>
     <text x="${W - PAD}" y="${footY}" text-anchor="end" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">${src}</text>`;
