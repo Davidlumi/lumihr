@@ -933,6 +933,14 @@ def _open_registration():
     return os.environ.get("LUMI_OPEN_REGISTRATION", "").lower() in ("on", "true", "1")
 
 
+@app.get("/api/auth/registration")
+async def registration_posture():
+    """Public, unauthenticated: is self-serve registration open? The register
+    FORM reads this so a closed door is shown as a door, not discovered as a
+    403 after the prospect has filled in the whole form (review #1)."""
+    return {"open": _open_registration()}
+
+
 @app.post("/api/auth/register")
 async def register(request: Request):
     """New member organisation sign-up (tier: core)."""

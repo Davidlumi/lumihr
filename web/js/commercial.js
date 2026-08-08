@@ -144,10 +144,13 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const [expiry, setExpiry] = useState(30);
   const [regen, setRegen] = useState(false);
   useEffect(() => {
-    if (!sharedData) { setPack(null); api("/api/boardpack/" + packId).then(setPack).catch(() => setPack({ error: true })); }
+    if (!sharedData) { setPack(null); api("/api/boardpack/" + packId).then(setPack).catch(e => setPack({ error: true, status: e.status })); }
   }, [packId]);
   if (!pack) return html`<${PageLoading} />`;
-  if (pack.error) return html`<${EmptyState} title="Board pack not found" />`;
+  if (pack.error) return pack.status === 404
+    ? html`<${EmptyState} title="Board pack not found" body="It may have been removed, or the link is stale." />`
+    : html`<${EmptyState} title="Couldn't load the board pack" body="Nothing is lost — try again in a moment."
+        action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Try again</button>`} />`;
   const p = pack.payload, n = pack.narrative;
   const mVerdict = p.headline.market && p.headline.market.verdict;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v${p.methodology_version || 1}`;
@@ -732,13 +735,17 @@ window.PeerTwinPanel = function ({ onUse, onClose }) {
 // ----------------------------------------------------------------- shares --
 window.SharesPage = function ({ embedded }) {
   const [data, setData] = useState(null);
-  const refresh = () => api("/api/shares").then(setData);
+  const [loadErr, setLoadErr] = useState(null);
+  const refresh = () => { setLoadErr(null); api("/api/shares").then(setData).catch(e => setLoadErr(e.message)); };
   useEffect(() => { refresh(); }, []);
   const [making, setMaking] = useState(false);
   // B10 + high-pack 2·5 (2026-07-09 ship review): revoked links collapse behind a toggle —
   // every link ever minted rendered forever (122 rows, 111 revoked → a 16,500px Settings page).
   const [showRevoked, setShowRevoked] = useState(false);
-  const revoke = async (t) => { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); toast("Share link revoked"); };
+  const revoke = async (t) => {
+    try { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); toast("Share link revoked"); }
+    catch (e) { toast(e.message || "Couldn't revoke that link.", "error"); }
+  };
   const createDash = async (days) => {
     if (making) return;
     setMaking(true);
@@ -748,6 +755,8 @@ window.SharesPage = function ({ embedded }) {
     } catch (e) { toast(e.message || "Couldn't create the share link", "error"); }
     setMaking(false);
   };
+  if (loadErr) return html`<${EmptyState} title="Couldn't load your share links" body=${loadErr}
+    action=${html`<button class="btn small primary" onClick=${refresh}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "880px" }}>
@@ -823,7 +832,8 @@ window.TeamPage = function ({ me }) {
   const [role, setRole] = useState("contributor");
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
-  const refresh = () => api("/api/team").then(setData);
+  const [loadErr, setLoadErr] = useState(null);
+  const refresh = () => { setLoadErr(null); api("/api/team").then(setData).catch(e => setLoadErr(e.message)); };
   useEffect(() => { refresh(); }, []);
   const isAdmin = me.user.role === "admin";
   const [inviting, setInviting] = useState(false);
@@ -854,6 +864,8 @@ window.TeamPage = function ({ me }) {
     try { await api("/api/team/member", { method: "DELETE", body: { email: uEmail } }); setMsg(`${uEmail} removed.`); refresh(); toast(uEmail + " removed from your organisation"); }
     catch (e) { setErr(e.message); }
   };
+  if (loadErr) return html`<${EmptyState} title="Couldn't load your team" body=${loadErr}
+    action=${html`<button class="btn small primary" onClick=${refresh}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   return html`
     <div style=${{ maxWidth: "800px" }}>
@@ -1013,10 +1025,12 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
   useEffect(() => { loadA(); }, []);
   const save = async () => {
-    await api("/api/assumptions", { method: "PUT", body: { assumptions: {
-      median_salary_gbp: +a.median_salary_gbp, cost_per_leaver_pct_salary: +a.cost_per_leaver_pct_salary,
-      agency_premium_pct: +a.agency_premium_pct } } });
-    setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
+    try {
+      await api("/api/assumptions", { method: "PUT", body: { assumptions: {
+        median_salary_gbp: +a.median_salary_gbp, cost_per_leaver_pct_salary: +a.cost_per_leaver_pct_salary,
+        agency_premium_pct: +a.agency_premium_pct } } });
+      setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
+    } catch (e) { toast(e.message || "Couldn't save your assumptions — nothing was changed.", "error"); }
   };
   if (err) return html`<${EmptyState} title="Couldn't load settings"
     body=${err + " — nothing is lost; it usually works on a retry."}

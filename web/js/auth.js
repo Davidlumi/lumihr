@@ -127,6 +127,11 @@ function LoginForm({ onAuthed, initialMode }) {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(false);
+  const [regOpen, setRegOpen] = useState(null);   // null = unknown; false shows the set-up-for-you panel
+  useEffect(() => {
+    if (mode === "register" && regOpen === null)
+      api("/api/auth/registration").then(d => setRegOpen(!!d.open)).catch(() => setRegOpen(true));
+  }, [mode]);
   const [showTerms, setShowTerms] = useState(false);
   const go = async (e) => {
     e.preventDefault();
@@ -141,29 +146,37 @@ function LoginForm({ onAuthed, initialMode }) {
   return html`
     <${Shell} sub=${mode === "register" ? "Join the co-operative — benchmark against 220 UK organisations" : undefined}>
       <form onSubmit=${go}>
-        ${mode === "register" && html`<${Field} label="Organisation name" value=${orgName} onInput=${setOrgName} placeholder="Acme Retail Ltd" autoFocus=${true} autoComplete="organization" />`}
-        ${mode === "register" && html`<${Field} label="Your name" value=${name} onInput=${setName} autoComplete="name" />`}
-        <${Field} label="Work email" type="email" value=${email} onInput=${setEmail} placeholder="you@yourorg.co.uk" autoFocus=${mode === "login"} autoComplete="email" />
-        ${mode !== "forgot" && html`<${Field} label=${mode === "register" ? "Password (8+ characters)" : "Password"} type="password" value=${pw} onInput=${setPw}
+        ${mode === "register" && regOpen === false && html`
+        <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", textAlign: "left" }}>
+          <b>Membership is set up for you.</b>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>lumi memberships are provisioned by our team so your
+            organisation starts with the right profile and peers. Email
+            ${" "}<a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a> and we'll set you up — usually same day.</div>
+        </div>`}
+        ${mode === "register" && regOpen !== false && html`<${Field} label="Organisation name" value=${orgName} onInput=${setOrgName} placeholder="Acme Retail Ltd" autoFocus=${true} autoComplete="organization" />`}
+        ${mode === "register" && regOpen !== false && html`<${Field} label="Your name" value=${name} onInput=${setName} autoComplete="name" />`}
+        ${!(mode === "register" && regOpen === false) && html`<${Field} label="Work email" type="email" value=${email} onInput=${setEmail} placeholder="you@yourorg.co.uk" autoFocus=${mode === "login"} autoComplete="email" />`}
+        ${!(mode === "register" && regOpen === false) && mode !== "forgot" && html`<${Field} label=${mode === "register" ? "Password (8+ characters)" : "Password"} type="password" value=${pw} onInput=${setPw}
           autoComplete=${mode === "register" ? "new-password" : "current-password"} />`}
-        ${mode === "register" && html`
+        ${mode === "register" && regOpen !== false && html`
           <${TermsTick} checked=${tick} onChange=${setTick}>
             I accept the lumi <a href="#" onClick=${e => { e.preventDefault(); setShowTerms(true); }}>Platform Terms of Use</a>.
           <//>`}
-        ${mode === "register" && html`
+        ${mode === "register" && regOpen !== false && html`
           <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
             lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
           </div>`}
-        ${mode === "register" && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
+        ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }}>Terms of Use</a>
           ${" "}and <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }}>Privacy Notice</a>.</div>`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         ${msg && html`<div class="ok-text" role="status" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>`}
+        ${!(mode === "register" && regOpen === false) && html`
         <button class="btn primary block" disabled=${busy || (mode === "register" && !tick)}
           title=${mode === "register" && !tick ? "Accept the Platform Terms of Use above to continue" : null}>
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
-        </button>
-        ${mode === "register" && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
+        </button>`}
+        ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
           You'll be your organisation's Admin. Before your team first submits data, you'll also review
           the Data Contribution Terms — your 30 days to contribute start then, not now.</div>`}
         ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
@@ -171,7 +184,7 @@ function LoginForm({ onAuthed, initialMode }) {
       </form>
       <div class="row spread" style=${{ marginTop: "var(--s4)" }}>
         ${mode !== "login" ? html`<a href="#" onClick=${e => { e.preventDefault(); setMode("login"); }}>Sign in</a>` : html`<a href="#" onClick=${e => { e.preventDefault(); setMode("register"); }}>New organisation</a>`}
-        ${mode !== "forgot" && html`<a href="#" onClick=${e => { e.preventDefault(); setMode("forgot"); }}>Forgotten password?</a>`}
+        ${!(mode === "register" && regOpen === false) && mode !== "forgot" && html`<a href="#" onClick=${e => { e.preventDefault(); setMode("forgot"); }}>Forgotten password?</a>`}
       </div>
     <//>`;
 }
@@ -179,11 +192,13 @@ function LoginForm({ onAuthed, initialMode }) {
 function ResetForm({ token, onAuthed }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const go = async (e) => {
-    e.preventDefault(); setErr(null);
+    e.preventDefault(); setErr(null); setBusy(true);
     try { await api("/api/auth/reset", { method: "POST", body: { token, password: pw } }); setDone(true); }
     catch (ex) { setErr(ex.message); }
+    setBusy(false);
   };
   return html`
     <${Shell} sub="Choose a new password">
@@ -191,8 +206,9 @@ function ResetForm({ token, onAuthed }) {
         <button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Sign in</button>` :
       html`<form onSubmit=${go}>
         <${Field} label="New password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoFocus=${true} autoComplete="new-password" />
-        ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
-        <button class="btn primary block">Set password</button>
+        ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}
+          ${/expired|used/i.test(err) ? html` <a href="#/" onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Request a new link →</a>` : ""}</div>`}
+        <button class="btn primary block" disabled=${busy}>${busy ? html`<${Spinner} />` : "Set password"}</button>
       </form>`}
     <//>`;
 }
