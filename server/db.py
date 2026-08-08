@@ -151,6 +151,18 @@ CREATE TABLE IF NOT EXISTS meta (
     value_json TEXT NOT NULL
 );
 
+-- P1-F (R-P6 seam, 2026-08-08): which pool-composition epoch an org's signal
+-- baseline was recorded under. The sweep REBASELINES (record_baseline idiom)
+-- instead of diffing when the epochs differ — a figure that moved because the
+-- pool composition changed is not a market movement, and mailing it as one
+-- would be the product lying in its most trusted channel. The epoch value
+-- (meta key 'composition_epoch', default "0") only ever changes when a future
+-- taper diff changes composition; at launch it is constant.
+CREATE TABLE IF NOT EXISTS org_signal_epoch (
+    org_id TEXT PRIMARY KEY REFERENCES orgs(org_id),
+    epoch  TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     user_id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES orgs(org_id),

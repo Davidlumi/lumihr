@@ -2297,11 +2297,33 @@ def run_signal_sweep(conn=None, verbose=True):
                 "SELECT (EXISTS(SELECT 1 FROM signal_state WHERE org_id=?) "
                 "     OR EXISTS(SELECT 1 FROM notification_events WHERE org_id=?)) e",
                 (oid, oid)).fetchone()["e"]
+            # P1-F (R-P6 seam): if the pool-composition epoch moved since this
+            # org's baseline, REBASELINE silently instead of diffing — taper-
+            # driven movement is excluded from signal detection by rule. A
+            # MISSING epoch row is treated as the CURRENT epoch (stamped lazily
+            # below): treating it as "different" would silently rebaseline every
+            # pre-P1F org on the first sweep and eat genuinely pending changes.
+            cur_epoch = str(get_meta("composition_epoch", "0"))
+            ep_row = conn.execute("SELECT epoch FROM org_signal_epoch WHERE org_id=?",
+                                  (oid,)).fetchone()
             if not seen_before:
                 notifications.record_baseline(conn, oid, fresh)   # silent: establish baseline
+                conn.execute("INSERT OR REPLACE INTO org_signal_epoch VALUES (?,?)",
+                             (oid, cur_epoch))
+                conn.commit()
+                swept += 1
+                continue
+            if ep_row is not None and ep_row["epoch"] != cur_epoch:
+                notifications.record_baseline(conn, oid, fresh)   # composition moved: no events
+                conn.execute("INSERT OR REPLACE INTO org_signal_epoch VALUES (?,?)",
+                             (oid, cur_epoch))
+                conn.commit()
                 swept += 1
                 continue
             events = notifications.diff_and_record(conn, oid, fresh)
+            conn.execute("INSERT OR REPLACE INTO org_signal_epoch VALUES (?,?)",
+                         (oid, cur_epoch))
+            conn.commit()
             if events:
                 notifications.fan_out(conn, oid, events)
             swept += 1

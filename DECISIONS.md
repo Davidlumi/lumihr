@@ -14985,3 +14985,23 @@ n_real=1 tracks the partition; **S4 the R-P5 scenario itself — a member-only
 fail-closed, by the mechanism and not by a caller remembering.** Live write
 after rehearsal: 344 payloads re-stored; served ALLOW_02 all-block reads
 n=211, n_real=0. Suite 14/14 ALL GREEN.
+
+## 2026-08-08 — P1-F: the composition-epoch seam (second in the amended ordering, before n_real moves any figure)
+
+`org_signal_epoch(org_id, epoch)` + meta key `composition_epoch` (default "0" —
+only a future taper diff ever bumps it). The sweep REBASELINES silently
+(record_baseline idiom) instead of diffing when an org's stored epoch differs
+from the current one — taper-driven movement is excluded from signal detection
+by rule (R-P6): a figure that moved because the pool composition changed is not
+a market movement. CHOICE STATED: a MISSING epoch row is treated as the CURRENT
+epoch and stamped lazily — treating it as "different" would have silently
+rebaselined every pre-P1F org on the first sweep and eaten genuinely pending
+changes. FOUR-SWEEP PROOF on a throwaway: sweep1 (epoch constant) behaves
+exactly as the old code — 220 orgs, 11,247 events; sweep2 stable world, 0;
+sweep3 EPOCH BUMPED → 220 orgs rebaselined SILENTLY, 0 events, all rows on the
+new epoch; sweep4 normal diffing resumed, 0. Suite 14/14 ALL GREEN
+(signals-system 14/14). SIDE-FINDING, pre-existing and not fixed here: sweep1's
+11,247 events are LIVE's real un-swept signal backlog (~51/org — the production
+sweep has never run; weeks of engine changes accumulated). The first production
+sweep will emit them, rate-capped per user with roll-forward. Flagged for the
+deployment runbook's operator awareness, not silently absorbed.
