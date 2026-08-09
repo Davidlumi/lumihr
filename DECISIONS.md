@@ -15383,3 +15383,20 @@ the vector is bounded to automated wizard interaction on the live :8060.
 STANDING RULE from here: ANY wizard interaction (not just saves) in
 automated walkthroughs runs on a throwaway pair; live gets read-only checks.
 Suite 14/14 green through v476.
+
+## 2026-08-09 — Exhibit take 2 (7bff77d) + the stale-tab writer
+
+DESIGN RULING (David: "confusing — try again"): an aim is a ZONE, never a
+point-marker. The exhibit now shades the aimed zone and places one
+percentile-true dot — dot inside the shade = on aim. Anchor rule for any
+future intent-vs-actual visual: encode intent as an AREA, actual as a MARK;
+never two marks.
+INCIDENT #2 (same day, different vector than the morning's): a stale
+browser-pane tab running old code fired a commit()-shaped PUT while I
+worked in another tab — server log pinned it; strategy.js is the sole
+writer. Cause class: suspended automated click-loops in hidden tabs
+resuming on tab-front. CONTAINED: stale tabs closed, data restored exactly
+(verified in-row, second restore of the day). STANDING HYGIENE: browser
+probes short + idempotent, no pending click-loops, close scratch tabs when
+done, wizard automation only ever on throwaway pairs. Suite 14/14 green
+through v477.
