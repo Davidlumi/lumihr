@@ -954,12 +954,15 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .warn-panel { margin-top: var(--s2); padding: var(--s2) var(--s3); border: 1px solid #E5C26B;
   background: #FCF6E8; border-radius: var(--radius-sm); max-width: 560px; text-align: left; }
 .warn-panel .warn-text { margin-top: 0; }
-.seg-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  overflow: hidden; }
-.seg-btn { padding: var(--s2) var(--s4); background: var(--surface); border: 0; cursor: pointer;
-  font-size: var(--fs-body); color: var(--ink); border-right: 1px solid var(--border); }
-.seg-btn:last-child { border-right: 0; }
-.seg-btn.on { background: var(--blue); color: #fff; font-weight: 600; }
+/* segmented control — ONE house recipe (ruled .ov-seg, David 2026-07-12: solid blue
+   is the selected-state). .seg-toggle / .chart-switch converge here. */
+.seg-toggle { display: inline-flex; background: color-mix(in srgb, var(--ink) 6%, var(--surface));
+  border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.seg-btn { padding: var(--s1) var(--s4); background: none; border: 0; cursor: pointer; border-radius: var(--radius-xs);
+  font-size: var(--fs-label); font-weight: 600; color: var(--ink-soft);
+  transition: background var(--dur-fast), color var(--dur-fast); }
+.seg-btn.on { background: var(--blue); color: #fff; box-shadow: 0 1px 3px color-mix(in srgb, var(--blue) 35%, transparent); }
+.seg-btn:not(.on):hover { color: var(--ink); }
 .def-toggle { cursor: pointer; font-size: var(--fs-label); }
 .def-box { background: var(--surface-sunk); border-radius: var(--radius-sm);
   padding: var(--s2) var(--s3); font-size: var(--fs-label); color: var(--ink-soft);
@@ -2923,11 +2926,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* ----- metric page: controls row + chart-type switch ----- */
 .metric-controls { margin-bottom: var(--s3); align-items: flex-start; }
-.chart-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 999px;
-  padding: 2px; background: var(--surface); }
-.chart-switch-btn { border: none; background: none; cursor: pointer; padding: var(--s2) var(--s3);
-  border-radius: 999px; font: 600 var(--fs-label)/1 var(--font-body); color: var(--ink-soft); }
-.chart-switch-btn.on { background: var(--blue-tint); color: var(--blue-deep); }
+.chart-switch { display: inline-flex; background: color-mix(in srgb, var(--ink) 6%, var(--surface));
+  border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.chart-switch-btn { border: none; background: none; cursor: pointer; padding: var(--s1) var(--s3);
+  border-radius: var(--radius-xs); font: 600 var(--fs-label)/1 var(--font-body); color: var(--ink-soft);
+  transition: background var(--dur-fast), color var(--dur-fast); }
+.chart-switch-btn.on { background: var(--blue); color: #fff; box-shadow: 0 1px 3px color-mix(in srgb, var(--blue) 35%, transparent); }
 .chart-switch-btn:hover:not(.on) { color: var(--ink); }
 
 /* 2026-07-09 ship review (pack 4.3): raw --favourable on its tint is 4.30:1 — the
