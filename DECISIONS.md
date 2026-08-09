@@ -15365,3 +15365,21 @@ the pane hidden — the blank-above-topbar ghost is CAPTURE, not product;
 verify spatial claims with getBoundingClientRect, screenshots only at
 scrollY 0 in a fronted tab. Code fleets find state machines and contracts;
 only a walkthrough finds paint. Suite 14/14 green through v475.
+
+## 2026-08-09 — Strategy refinement (8e52bee) + the live-save incident
+
+Shipped on David's four asks: percentile-true coloured exhibit (house gauge
+palette, P35-65 band, zone-centred rings), one-idea-per-sentence stance
+lexicons, staggered stage entrances + pick bloom, print artefact hardened
+(the critical one: entrance keyframes with 'both' fill could print sections
+at OPACITY 0 — any animated surface must kill animations in @media print).
+INCIDENT, in full: at 08:44 a PUT /api/strategy landed on LIVE carrying my
+automated walkthrough probe state (match/benefits/moderate/closed/market),
+overwriting the demo org's strategy. Detected same session (the exhibit
+suddenly read 7-of-8 behind aim), restored EXACTLY via the app's own PUT —
+values cross-checked against multiple session artefacts — and confirmed in
+the stored row (healed domain key intact). The precise click was not pinned;
+the vector is bounded to automated wizard interaction on the live :8060.
+STANDING RULE from here: ANY wizard interaction (not just saves) in
+automated walkthroughs runs on a throwaway pair; live gets read-only checks.
+Suite 14/14 green through v476.
