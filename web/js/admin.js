@@ -44,6 +44,7 @@ window.AdminConsolePage = function ({ me, route }) {
         ${active === "pulses" && html`<${AdminPulsesTab} />`}
         ${active === "pulse-reviews" && html`<${AdminPulseReviewsTab} />`}
         ${active === "metrics" && html`<${AdminMetricsTab} />`}
+        ${active === "governance" && html`<${GovernancePage} me=${me} embedded=${true} />`}
         ${active === "billing" && html`<${AdminBillingTab} />`}
         ${active === "compliance" && html`<${AdminComplianceTab} />`}
         ${active === "ops" && html`<${AdminOpsTab} />`}

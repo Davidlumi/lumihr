@@ -3570,9 +3570,9 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           <p>We benchmark on medians, suppress thin samples, exclude "don't know" and "not applicable" rather than
           counting them against anyone, and never present a neutral metric with a good/bad colour. The benchmark is a
           mirror, not a scoreboard — it tells you where you stand, never what you must do.</p>
-          ${me && me.user.role === "admin" && html`
-            <p class="caption" style=${{ marginTop: "var(--s3)" }}>Admins: the question-set release console — current release, change
-            log and backlog — lives in <a href="#/governance">the governance console</a>.</p>`}
+          ${me && me.user.platform_admin && html`
+            <p class="caption" style=${{ marginTop: "var(--s3)" }}>lumi staff: the question-set release console lives in
+            <a href="#/governance">the governance console</a>.</p>`}
         </div>
 
         ${/* ---------- §4.3 Legal ---------- */ ""}

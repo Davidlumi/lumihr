@@ -1468,7 +1468,7 @@ async def pulse_narrative(pid: str, request: Request):
 @app.get("/api/governance")
 async def governance(request: Request):
     """Releases, change log and backlog — read surface for the admin page."""
-    user, org = require_admin(request)
+    user = require_platform_admin(request)
     conn = get_conn()
     cur = releases.current_release(conn)
     return {
@@ -1486,7 +1486,7 @@ async def governance(request: Request):
 
 @app.post("/api/governance/backlog")
 async def governance_backlog_add(request: Request):
-    user, org = require_admin(request)
+    user = require_platform_admin(request)
     body = await _json(request)
     title = (body.get("title") or "").strip()
     if not title:
@@ -1498,7 +1498,7 @@ async def governance_backlog_add(request: Request):
 
 @app.post("/api/governance/ingest-requests")
 async def governance_ingest(request: Request):
-    user, org = require_admin(request)
+    user = require_platform_admin(request)
     n = releases.ingest_metric_requests(get_conn())
     return {"ok": True, "ingested": n}
 
@@ -1507,7 +1507,7 @@ async def governance_ingest(request: Request):
 async def governance_emergency(request: Request):
     """The between-release lane. High bar by design: refused without BOTH the
     external trigger that made the question factually wrong AND a sign-off."""
-    user, org = require_admin(request)
+    user = require_platform_admin(request)
     body = await _json(request)
     try:
         releases.emergency_change(

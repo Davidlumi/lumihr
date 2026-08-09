@@ -364,7 +364,9 @@ function App() {
   // SettingsPage (assumptions read-only, sharing hidden, signal-email default read-only).
   else if (route.startsWith("/settings")) page =
     html`<${SettingsPage} me=${me} refreshMe=${refreshMe} cuts=${cuts} prefs=${prefs} onPref=${onPref} />`;
-  else if (route.startsWith("/governance")) page = html`<${GovernancePage} me=${me} />`;
+  else if (route.startsWith("/governance")) page = me.user.platform_admin
+    ? html`<${GovernancePage} me=${me} />`
+    : html`<${NotFoundPage} route=${route} />`;   // staff-only, invisible to members (craft review 2026-08-09)
   else if ((m = route.match(/^\/run-a-pulse\/([^?]+)/))) page = me.user.role === "admin"
     ? html`<${PulseBuilderPage} me=${me} pid=${m[1]} />`
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
