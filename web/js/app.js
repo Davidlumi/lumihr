@@ -161,11 +161,11 @@ function App() {
   }, []);
   useEffect(() => {
     if (!me) return;
-    api("/api/cuts").then(setCuts);
+    api("/api/cuts").then(setCuts).catch(() => setCuts(c => c || { industries: {}, fte_bands: {}, groups: [] }));
     // a failed prefs fetch resolves to {} so the prefs gate below can never hang
     api("/api/prefs").then(d => setPrefs(d.prefs || {})).catch(() => setPrefs({}));
-    api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id))));
-    api("/api/questions").then(setQIndex);
+    api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id)))).catch(() => {});
+    api("/api/questions").then(setQIndex).catch(() => {});
   }, [me && me.org && me.org.name]);
   // per-user DEFAULT peer group (2026-07-10, David): if the URL carries no explicit cut, open
   // on the member's saved default (prefs._peer_default) instead of all-peers. Once, on prefs
@@ -285,8 +285,12 @@ function App() {
   };
   // the global pin-star toggles a card on the user's ACTIVE dashboard
   const onPin = async (qid) => {
-    const r = await api("/api/dashboards/pin", { method: "POST", body: { question_id: qid } });
-    setLayoutIds(new Set(r.pinned_ids || []));
+    try {
+      const was = layoutIds.has(qid);
+      const r = await api("/api/dashboards/pin", { method: "POST", body: { question_id: qid } });
+      setLayoutIds(new Set(r.pinned_ids || []));
+      toast(was ? "Removed from your dashboard" : "Added to your dashboard");
+    } catch (e) { toast("Couldn't update your dashboard — try again", "error"); }
   };
   const setGlobalCut = (key) => {
     if (key === "all") setCut({ dim: "all", value: null });
@@ -462,7 +466,7 @@ function App() {
           <button class="btn feature" title="Find a metric, learn a term, get help, or ask how you compare" onClick=${() => setAnalystOpen(true)}><${Icon} name="sparkle" size=${14} /> Ask lumi</button>`}
           <span class="topbar-sep" aria-hidden="true"></span>
           <${NotificationBell} me=${me} />
-          <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }); setMe(null); }} />
+          <${ProfileMenu} me=${me} onSignOut=${async () => { await api("/api/auth/logout", { method: "POST" }).catch(() => {}); setMe(null); }} />
         </div>
       </header>
       <div class="shell-body">
@@ -746,8 +750,8 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
   };
   const del = async (g) => {
     if (!window.confirm(`Delete the peer group “${g.name}”? This only removes the saved filter — no data is affected.`)) return;
-    await api("/api/peer-groups/" + g.group_id, { method: "DELETE" });
-    toast("Peer group deleted"); refresh();
+    try { await api("/api/peer-groups/" + g.group_id, { method: "DELETE" }); toast("Peer group deleted"); refresh(); }
+    catch (e) { toast("Couldn't delete that peer group — try again", "error"); }
   };
 
   if (!options || !groups) return html`<${Modal} onClose=${onClose} label="Manage peer groups"><${Spinner} /><//>`;

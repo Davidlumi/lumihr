@@ -923,7 +923,11 @@ window.TeamPage = function ({ me }) {
             ${data.invites.map(i => html`
               <div key=${i.token} class="caption row spread">
                 <span>${i.email} (${ROLE_LABEL[i.role] || i.role}) — expires ${fmtDate(i.expires_at + "Z")}</span>
-                <button class="btn small quiet" onClick=${async () => { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }}>Revoke</button>
+                <button class="btn small quiet" onClick=${async () => {
+                  if (!window.confirm("Revoke this invite? The link stops working — if the colleague already has it, they won't be able to join.")) return;
+                  try { await api("/api/team/invite/" + i.token, { method: "DELETE" }); refresh(); toast("Invite revoked"); }
+                  catch (e) { toast("Couldn't revoke that invite — try again", "error"); }
+                }}>Revoke</button>
               </div>`)}`}
         </div>`}
     </div>`;
@@ -1016,7 +1020,8 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const ai = me.ai_insights || {};
   const setAiConsent = async (consent) => {
     if (aiBusy) return; setAiBusy(true);
-    try { await api("/api/ai-consent", { method: "POST", body: { consent } }); await refreshMe(); } catch (e) {}
+    try { await api("/api/ai-consent", { method: "POST", body: { consent } }); await refreshMe(); }
+    catch (e) { toast("Couldn't update AI Insights — nothing was changed", "error"); }
     setAiBusy(false);
   };
   const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
