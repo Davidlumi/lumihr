@@ -15421,3 +15421,26 @@ OPEN FOR DAVID (deliberately not done): expanding the p4p curated
 variable-pay metric set (data/register ruling — the mechanism is precise
 but covers 7 metrics). Suite 14/14 green under the new multipliers through
 v478.
+
+## 2026-08-09 — Persona review implemented (68def54)
+
+Five-persona fleet (reward director / HR generalist / people analytics /
+CHRO / new admin — 65 findings) implemented in one pass. THE KEEPERS:
+- R-P2 VOCABULARY COMPLIANCE: "peer organisations" had crept into the
+  confidence chip, pack methodology and welcome hero — all now the ruled
+  neutral forms. The trust surfaces are the LAST place attribution creep is
+  acceptable; grep "peer organisations|peers behind" should stay empty.
+- The strategy-document zone geometry is now DERIVED from window.MARKET_BAND
+  through the shared mapper — never hardcode band-dependent geometry.
+- Twin cut finally carries a confidence read (/api/cuts twin_n).
+- Invite terms line is conditional on org_data_terms (payload
+  data_terms_accepted) — never assert an acceptance that hasn't happened.
+- Newcomer orientation: prefs._seen ABSENT = first session; UnlockMoment
+  renders its orientation variant.
+- Register suppression is now DISCLOSED ("N under the 5-organisation floor
+  not shown") — silent filtering of suppressed rows is banned.
+DECLINED/DEFERRED with reasons: share header dual counts (cut-n vs ruled
+pool footer both legitimate); provenance-absence marks (needs a design
+ruling); above-market palette itself (RAG ruling stands — aim words gained
+weight instead); confidence sub-tier table on the methodology page
+(documentation nicety, banked). Suite 14/14 green through v479.
