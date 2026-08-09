@@ -447,7 +447,7 @@ function App() {
               }
             }}
             onFocus=${() => setSearchFocused(true)}
-            onBlur=${() => setTimeout(() => setSearchFocused(false), 160)} />
+            onBlur=${e => { const to = e.relatedTarget; if (to && to.closest && to.closest(".searchpop")) return; setTimeout(() => setSearchFocused(false), 160); }} />
           ${!searchPopOpen && searchFocused && !search && qIndex ? html`<${SearchZeroState} qIndex=${qIndex}
             onGo=${(qid) => { setSearch(""); setSearchFocused(false); openMetric(qid); }} />` : null}
           ${searchPopOpen && html`<${SearchPop} qIndex=${qIndex} search=${search} role=${me.user.role}
@@ -1331,7 +1331,8 @@ function SearchZeroState({ qIndex, onGo }) {
   return html`<div class="searchpop" role="listbox" aria-label="Recent metrics">
     <div class="searchpop-head caption">Recent</div>
     ${rows.map(r => html`<button key=${r.id} class="search-hit" role="option"
-      onMouseDown=${e => { e.preventDefault(); onGo(r.id); }}>${r.title}</button>`)}
+      onMouseDown=${e => { e.preventDefault(); onGo(r.id); }}
+      onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onGo(r.id); } }}>${r.title}</button>`)}
   </div>`;
 }
 

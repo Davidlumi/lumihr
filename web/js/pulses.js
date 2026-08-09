@@ -654,14 +654,6 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
 
 function PulseLaunchPanel({ detail, pid, onChange }) {
   const ls = detail.launch_status;
-  useEffect(() => {
-    if (ls === "paid") {
-      const k = "lumi.pulse.celebrated." + pid;
-      if (!localStorage.getItem(k)) {
-        localStorage.setItem(k, "1");
-      }
-    }
-  }, [ls, pid]);
   const [paying, setPaying] = useState(false);
   const pay = async () => {
     if (paying) return;

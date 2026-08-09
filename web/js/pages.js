@@ -154,11 +154,13 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 // animating. Stamps prefs._seen.visit on every Overview mount.
 function ReturnStrip({ prefs, onPref }) {
   const [line, setLine] = useState(null);
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;   // always the latest, so the deferred stamp reads live _seen
   useEffect(() => {
     const last = (prefs && prefs._seen && prefs._seen.visit) ? new Date(prefs._seen.visit) : null;
-    // stamp reads prefs LIVE at call time (never a mount-time snapshot) so a
-    // concurrent _seen write — e.g. the unlock-dismissed flag — is never clobbered
-    const stamp = () => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), visit: new Date().toISOString() });
+    // stamp merges onto the LATEST _seen (via ref) so a concurrent write — e.g. the
+    // unlock-dismissed flag set between mount and this async callback — is never clobbered
+    const stamp = () => onPref && onPref("_seen", { ...((prefsRef.current && prefsRef.current._seen) || {}), visit: new Date().toISOString() });
     if (!last || isNaN(last)) { stamp(); return; }
     if ((Date.now() - last.getTime()) / 86400000 < 7) { stamp(); return; }
     api("/api/notifications").then(d => {
