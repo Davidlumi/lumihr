@@ -149,6 +149,7 @@ function ScaleTrack({ skey, value, onPick, ariaLabel }) {
           <button key=${s.v} class=${"scale-stop" + (s.v === value ? " on" : "")} role="radio"
             aria-checked=${s.v === value} tabindex=${s.v === value || (idx < 0 && s === cfg.stops[0]) ? 0 : -1}
             onClick=${() => onPick(s.v)}>
+            <span class="kbd" aria-hidden="true">${cfg.stops.indexOf(s) + 1}</span>
             <span class="ot">${s.t}</span><span class="od">${s.d}</span></button>`)}
       </div>
     </div>`;
@@ -181,6 +182,7 @@ function DialCard({ field, value, onPick, required, context, extra }) {
         role="radio" aria-checked=${o.v === value}
         tabindex=${o.v === value || (!value && o === OBJECTIVES[0]) ? 0 : -1}
         onClick=${() => onPick(field, o.v)}>
+        <span class="kbd" aria-hidden="true">${OBJECTIVES.indexOf(o) + 1}</span>
         <span class="ot">${o.t}</span><span class="od">${o.d}</span></button>`)}</div>`;
   } else if (field === "benefits_lead") {
     var q = "Which areas do your benefits focus on? Pick any that fit.";
@@ -340,7 +342,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
       </div>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
       <article class="sd-doc">
-        <header class="sd-mast">
+        <header class="sd-mast" style=${{ "--i": 0 }}>
           <div>
             <div class="sd-eyebrow">Reward strategy</div>
             <div class="sd-org">${orgName}</div>
@@ -351,7 +353,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           </div>
         </header>
 
-        <section class="sd-sec">
+        <section class="sd-sec" style=${{ "--i": 1 }}>
           <div class="sd-secnum">${NUM.stance} — The stance</div>
           ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
             : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
@@ -359,11 +361,11 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </section>
 
         ${hero === null ? html`
-        <section class="sd-sec">
+        <section class="sd-sec" style=${{ "--i": 2 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
           <div class="sd-note">Reading your live position…</div>
         </section>` : doms.length ? html`
-        <section class="sd-sec">
+        <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
           <div class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual" style=${{ position: "static", transform: "none" }}></span> position
@@ -378,12 +380,12 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
               </a>`; })}
           </div>
         </section>` : html`
-        <section class="sd-sec">
+        <section class="sd-sec" style=${{ "--i": 4 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
           <div class="sd-note">Aim-vs-position appears once your benchmark unlocks.</div>
         </section>`}
 
-        <section class="sd-sec">
+        <section class="sd-sec" style=${{ "--i": 5 }}>
           <div class="sd-secnum">${NUM.positions} — The positions</div>
           <div class="sd-ledger">
             ${philosophy.map(f => { const v = valOf(f); return html`
@@ -402,7 +404,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </section>
 
         ${ai !== undefined ? html`
-        <section class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
+        <section style=${{ "--i": 6 }} class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
           <div class="sd-secnum">${NUM.reading} — lumi's reading
             <span class="sd-secnote">AI · grounded only in the figures on this page</span></div>
           ${ai ? html`
@@ -414,9 +416,10 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
               <button class="sd-ai-refresh no-print" disabled=${aiBusy} onClick=${() => genAi(true)}>Regenerate</button></div>`
           : html`
             <p class="sd-note" style=${{ marginBottom: "var(--s3)" }}>A short reading of this strategy against your live position — generated from the figures above, nothing else.</p>
+            ${aiBusy ? html`<div class="sd-ai-skel" aria-hidden="true"><i></i><i></i><i></i></div>` : null}
             <button class="btn no-print" disabled=${aiBusy} aria-label=${aiBusy ? "Generating the reading" : "Generate the reading"} onClick=${() => genAi(false)}>${aiBusy ? html`<${Spinner} />` : "Generate the reading"}</button>`}
         </section>` : null}
-        <footer class="sd-docfoot">Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
+        <footer class="sd-docfoot" style=${{ "--i": 6 }}>Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
       </article>
 
       <div class="strat-pdf-foot" aria-hidden="true">Private ${"&"} confidential · Prepared in lumi · lumihr.co.uk</div>
@@ -432,6 +435,8 @@ window.StrategyPage = function ({ me }) {
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
   const [committed, setCommitted] = useState(false);   // brief "captured" flourish before nav
+  const [leaving, setLeaving] = useState(false);       // stage exit animation in flight
+  const [returnTo, setReturnTo] = useState(null);      // "review" → change round-trip lands back on review
   const [editing, setEditing] = useState(false);       // a completed strategy shows the VIEW until Edit
   const isAdmin = me && me.user && me.user.role === "admin";
   useEffect(() => {
@@ -454,8 +459,7 @@ window.StrategyPage = function ({ me }) {
   if (complete && !editing) return html`<${StrategyView} me=${me} data=${data} strat=${strat} onEdit=${() => { setEditing(true); setStep(0); }} />`;
 
   const pick = (field, val) => setStrat(s => ({ ...s, [field]: val }));
-  // per-domain override write (step-3 layer 2): only set domains carry a key — null deletes
-  // it (back to inherit-global). Partial dict → partial payload → unset domains inherit global.
+  // per-domain override write: only set domains carry a key — null deletes (inherit global)
   const setDomainTarget = (dom, val) => setStrat(s => {
     const dt = { ...(s.domain_targets || {}) };
     if (val == null) delete dt[dom]; else dt[dom] = val;
@@ -464,23 +468,60 @@ window.StrategyPage = function ({ me }) {
   const planeBfields = ["market_position", "reward_mix", "pay_for_performance", "transparency",
     "location_approach", "benefits_lead", "family_position"];
   const planeCfields = ["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
-  // required dials owned by each plane
-  const planeReq = { 1: ["market_position", "reward_mix"], 2: ["primary_objective"] };
-  const missingFor = (s) => (planeReq[s] || []).filter(f => !strat[f]);
 
+  // ---- the flow: one question per stage (GDS one-thing-per-page) --------------
+  // stage: "facts" | question index | "review". step kept only as a legacy alias.
+  const QUESTIONS = [...shownFields(planeBfields), ...shownFields(planeCfields)];
+  const qIndex = typeof step === "number" && step >= 10 ? step - 10 : null;   // stages 10.. = questions
+  const stage = step === 0 ? "facts" : step === 3 ? "review" : qIndex;
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
-  const next = () => {
-    const miss = missingFor(step);
-    if (miss.length) {
-      flash("Set " + miss.map(f => DIAL_LABEL[f]).join(" and ") + " first — they change how we read your results.");
-      const el = document.getElementById("dial-" + miss[0]); if (el) scrollIntoViewSafe(el);
+  const REDUCED = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // exit-fast / enter-slow swap (motion research: 120ms out ease-in, 200ms in ease-out;
+  // reduced motion falls back to a quick opacity crossfade)
+  const goTo = (nextStage) => {
+    setLeaving(true);
+    setTimeout(() => {
+      setLeaving(false);
+      setStep(nextStage === "facts" ? 0 : nextStage === "review" ? 3 : 10 + nextStage);
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => {
+        const h = document.querySelector(".qstage .strat-title, .strat-step .strat-title");
+        if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+      });
+    }, REDUCED() ? 120 : 150);
+  };
+  const advance = () => {
+    if (returnTo === "review") { setReturnTo(null); goTo("review"); return; }
+    if (qIndex == null) { goTo(0); return; }
+    if (qIndex >= QUESTIONS.length - 1) goTo("review"); else goTo(qIndex + 1);
+  };
+  const goBack = () => {
+    if (returnTo === "review") { setReturnTo(null); goTo("review"); return; }
+    if (stage === "review") { goTo(QUESTIONS.length - 1); return; }
+    if (qIndex === 0) { goTo("facts"); return; }
+    if (qIndex != null) goTo(qIndex - 1);
+  };
+  // single-select pick = the submit (Typeform split-advance): a short beat so the
+  // choice and its effect line register, then move. Multi-select waits for Enter.
+  const pickAndGo = (field, val) => {
+    pick(field, val);
+    setTimeout(advance, REDUCED() ? 300 : 650);
+  };
+  const changeFrom = (field) => {           // GOV.UK check-answers Change round-trip
+    setReturnTo("review");
+    goTo(QUESTIONS.indexOf(field));
+  };
+  const tryContinue = (field) => {          // Enter / Continue on a question stage
+    if (REQUIRED.includes(field) && !strat[field]) {
+      flash("This one changes how we read your results — choose a position to continue.");
       return;
     }
-    setStep(s => Math.min(3, s + 1)); window.scrollTo({ top: 0, behavior: "auto" });
-    requestAnimationFrame(() => { const h = document.querySelector(".strat-title"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); } });
+    advance();
   };
-  const back = () => { setStep(s => Math.max(0, s - 1)); window.scrollTo({ top: 0, behavior: "auto" });
-    requestAnimationFrame(() => { const h = document.querySelector(".strat-title"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); } }); };
+
+  const answered = QUESTIONS.filter(f => f === "benefits_lead" ? (strat[f] || []).length : strat[f]).length;
+  const progress = stage === "facts" ? 0.04 : stage === "review" ? 1 : (qIndex + 1) / (QUESTIONS.length + 1);
 
   const commit = async () => {
     setSaving(true);
@@ -513,26 +554,49 @@ window.StrategyPage = function ({ me }) {
     } catch (e) { flash(e && e.message && e.status !== 0 ? e.message : "Couldn't save — try again."); setSaving(false); }
   };
 
-  const STEPS = [
-    { k: "A", name: "Your business" }, { k: "B", name: "Your philosophy" },
-    { k: "C", name: "Right now" }, { k: "R", name: "Review" }];
+  const curField = qIndex != null ? QUESTIONS[qIndex] : null;
+  const isMulti = curField === "benefits_lead";
+  const orgName = (me.org && me.org.name) || "Your organisation";
+
+  // digit keys select scale stops / objective options (Typeform key badges)
+  const onStageKeys = (e) => {
+    if (stage !== qIndex || curField == null) return;
+    if (e.key === "Enter" && (isMulti || strat[curField] || !REQUIRED.includes(curField))) { e.preventDefault(); tryContinue(curField); return; }
+    const n = parseInt(e.key, 10);
+    if (!n) return;
+    const sk = SCALE_FIELD[curField];
+    if (sk && SCALE[sk].stops[n - 1]) { e.preventDefault(); pickAndGo(curField, SCALE[sk].stops[n - 1].v); }
+    else if (curField === "primary_objective" && OBJECTIVES[n - 1]) { e.preventDefault(); pickAndGo(curField, OBJECTIVES[n - 1].v); }
+  };
 
   return html`
-    <div class="strat-flow">
-      <div class="strat-rail" role="group" aria-label="Progress">
-        ${STEPS.slice(0, 3).map((s, i) => html`
-          <div key=${s.k} class=${"strat-seg" + (step === i ? " active" : step > i ? " done" : "")} aria-current=${step === i ? "step" : undefined}>
-            <span class="sr-only">${s.name}: ${step > i ? "complete" : step === i ? "current step" : "not started"}.</span>
-            <div class="strat-bar"><i style=${{ width: step > i ? "100%" : step === i ? "50%" : "0" }}></i></div>
-            <div class="strat-meta"><span class="strat-letter">${step > i ? html`<${Icon} name="check" size=${11} />` : s.k}</span><span>${s.name}</span></div>
-          </div>`)}
+    <div class="strat-flow" onKeyDown=${onStageKeys}>
+      ${/* one thin continuous progress bar (research: segments fill, linear map, no counters) */ ""}
+      <div class="strat-progress" role="progressbar" aria-valuemin="0" aria-valuemax=${QUESTIONS.length + 2}
+        aria-valuenow=${stage === "facts" ? 1 : stage === "review" ? QUESTIONS.length + 2 : qIndex + 2}
+        aria-label="Strategy progress">
+        <i style=${{ transform: "scaleX(" + progress + ")" }}></i>
       </div>
 
-      ${step === 0 && html`
-        <section class="strat-step">
+      ${stage !== "facts" || editing ? html`
+        <div class="strat-topline no-print">
+          <button class="btn quiet strat-back" onClick=${goBack} disabled=${saving || committed}>← Back</button>
+          <span class="strat-count">${stage === "review" ? "Review" : stage === "facts" ? "Your business" : (qIndex + 1) + " of " + QUESTIONS.length}</span>
+          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); }}>Cancel</button>` : html`<span></span>`}
+        </div>` : null}
+
+      ${qIndex != null && html`
+        <aside class="strat-rail-live no-print" aria-label="Your strategy so far">
+          <div class="srl-head">Your strategy so far</div>
+          ${sdStance(strat, orgName).map((s, i) => html`<p key=${i} class="srl-line">${s}</p>`)}
+          ${!sdStance(strat, "x").length ? html`<p class="srl-line muted">It builds here as you set positions.</p>` : null}
+        </aside>`}
+
+      ${stage === "facts" && html`
+        <section key="facts" class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
           <div class="strat-eyebrow">Your business <span class="strat-mode confirm">Pre-filled · confirm</span></div>
           <h1 class="strat-title">Does this still describe you?</h1>
-          <p class="strat-sub">These shape who you're compared against and how we read your results — correct anything that's changed.</p>
+          <p class="strat-sub">These shape who you're compared against — correct anything that's changed.</p>
           <div class="confirm-grid">
             ${planeA.map((f, i) => html`
               <div key=${f.key} class="confirm-row">
@@ -556,57 +620,50 @@ window.StrategyPage = function ({ me }) {
             <div class="derived-note"><${Icon} name="info" size=${15} />
               <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — from your sector and size.</div></div>
           </div>
+          <div class="strat-stagefoot">
+            <button class="btn primary strat-next" onClick=${advance}>Looks right <span class="kbd-hint">press Enter ↵</span></button>
+          </div>
         </section>`}
 
-      ${step >= 1 && step <= 2 && html`
-        <aside class="strat-rail-live no-print" aria-label="Your strategy so far">
-          <div class="srl-head">Your strategy so far</div>
-          ${sdStance(strat, (me.org && me.org.name) || "Your organisation").map((s, i) => html`<p key=${i} class="srl-line">${s}</p>`)}
-          ${!sdStance(strat, "x").length ? html`<p class="srl-line muted">It builds here as you set positions.</p>` : null}
-        </aside>`}
-      ${step === 1 && html`
-        <section class="strat-step">
-          <div class="strat-eyebrow">Your philosophy <span class="strat-mode choose">Your call</span></div>
-          <h1 class="strat-title">The positions you've chosen</h1>
-          <p class="strat-sub">Deliberate commitments, not business facts — they let us tell "below the market" from "below the market, on purpose."</p>
-          ${shownFields(planeBfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"}
-            extra=${f === "market_position" ? html`<${DomainOverrides} domains=${data.competitive_domains || []} targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />` : null} />`)}
+      ${qIndex != null && html`
+        <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
+          <div class="strat-eyebrow">${planeBfields.includes(curField) ? "Your philosophy" : "Right now"}
+            ${fieldState(curField) === "context" ? html`<span class="strat-mode confirm">Context</span>` : html`<span class="strat-mode choose">Your call</span>`}</div>
+          <${DialCard} field=${curField} value=${strat[curField]}
+            onPick=${(f, v) => (isMulti ? pick(f, v) : pickAndGo(f, v))}
+            required=${REQUIRED.includes(curField)} context=${fieldState(curField) === "context"}
+            extra=${curField === "market_position" ? html`<${DomainOverrides} domains=${data.competitive_domains || []} targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />` : null} />
+          <div class="strat-stagefoot">
+            ${isMulti || strat[curField]
+              ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
+              : REQUIRED.includes(curField)
+                ? html`<span class="caption">Choose a position — press <b>1</b>, <b>2</b> or <b>3</b></span>`
+                : html`<button class="btn quiet" onClick=${advance}>Skip — read neutrally</button>`}
+          </div>
         </section>`}
 
-      ${step === 2 && html`
-        <section class="strat-step">
-          <div class="strat-eyebrow">Right now <span class="strat-mode choose">Your call</span></div>
-          <h1 class="strat-title">What you're working on this year</h1>
-          <p class="strat-sub">The near term, asked fresh each year — it tunes how urgently a gap is flagged and which moves we surface first.</p>
-          ${shownFields(planeCfields).map(f => html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick} required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`)}
-        </section>`}
-
-      ${step === 3 && html`
-        <section class="strat-step">
+      ${stage === "review" && html`
+        <section key="review" class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
           <div class=${"strat-done" + (committed ? " celebrating" : "")}><span class="strat-check"><${Icon} name="check" size=${22} /></span>
             <h1 class="strat-title" style=${{ textAlign: "center" }}>That's your strategy captured</h1>
-            <p class="strat-sub" style=${{ margin: "var(--s2) auto 0", textAlign: "center" }}>Here's what we'll read your benchmark through. Change anything before it goes live — you can edit all of this later in Settings.</p></div>
+            <p class="strat-sub" style=${{ margin: "var(--s2) auto 0", textAlign: "center" }}>Change anything before it goes live — each change returns you straight here.</p></div>
           <${ReviewSection} title="Your business" chip="confirmed" chipCls="confirmed"
-            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => setStep(0)} locked=${committed || saving} />
+            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => { setReturnTo("review"); goTo("facts"); }} locked=${committed || saving} />
           <${ReviewSection} title="Your philosophy" chip="your choices" chipCls="choices"
-            rows=${shownFields(planeBfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(1)} locked=${committed || saving} />
+            rows=${shownFields(planeBfields).map(f => ({ ...reviewRow(f, strat), field: f }))}
+            onEdit=${() => { setReturnTo("review"); goTo(QUESTIONS.indexOf(shownFields(planeBfields)[0])); }}
+            onChangeRow=${changeFrom} locked=${committed || saving} />
           <${ReviewSection} title="Right now" chip="this year" chipCls="choices"
-            rows=${shownFields(planeCfields).map(f => reviewRow(f, strat))} onEdit=${() => setStep(2)} locked=${committed || saving} />
+            rows=${shownFields(planeCfields).map(f => ({ ...reviewRow(f, strat), field: f }))}
+            onEdit=${() => { setReturnTo("review"); goTo(QUESTIONS.indexOf(shownFields(planeCfields)[0])); }}
+            onChangeRow=${changeFrom} locked=${committed || saving} />
           <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
+          <div class="strat-stagefoot">
+            <button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
+              committed ? html`<${Icon} name="check" size=${15} /> Saved` : saving ? "Saving…" : "Save & finish"}</button>
+          </div>
         </section>`}
 
-      <div class="strat-footer">
-        <div class="strat-footer-in">
-          <div class="strat-count">${["Your business · 4 facts to confirm", "Your philosophy · " + shownFields(planeBfields).length + " dials", "Right now · " + shownFields(planeCfields).length + " dials", "Review your strategy"][step]}</div>
-          <div class="row" style=${{ gap: "var(--s2)" }}>
-            ${editing && !committed && html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); }}>Cancel</button>`}
-            ${step > 0 && !committed && html`<button class="btn" disabled=${saving} onClick=${back}>Back</button>`}
-            ${step < 3 ? html`<button class="btn primary strat-next" onClick=${next}>${step === 0 ? "Looks right" : "Next"}</button>`
-              : html`<button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
-                  committed ? html`<${Icon} name="check" size=${15} /> Saved` : saving ? "Saving…" : "Save & finish"}</button>`}
-          </div>
-        </div>
-      </div>
       <div class="sr-only" role="status" aria-live="polite">${toast || ""}</div>
       ${toast && html`<div class="strat-toast">${toast}</div>`}
     </div>`;
@@ -625,7 +682,7 @@ function reviewRow(field, strat) {
   }
   return { label: DIAL_LABEL[field], value: labelOf(field, v) };
 }
-function ReviewSection({ title, chip, chipCls, rows, onEdit, locked }) {
+function ReviewSection({ title, chip, chipCls, rows, onEdit, onChangeRow, locked }) {
   return html`
     <div class="review-sec">
       <div class="review-h">${title} <span class=${"review-chip " + chipCls}>${chip}</span>
@@ -633,7 +690,9 @@ function ReviewSection({ title, chip, chipCls, rows, onEdit, locked }) {
       <div class="review-list">
         ${rows.map((r, i) => html`<div key=${i} class="review-row">
           <span class="rr-label">${r.label}</span>
-          <span class=${"rr-val" + (r.skipped ? " skipped" : "")}>${r.value}</span></div>`)}
+          <span class=${"rr-val" + (r.skipped ? " skipped" : "")}>${r.value}</span>
+          ${onChangeRow && r.field ? html`<button class="rr-change" disabled=${locked} aria-label=${"Change " + r.label.toLowerCase()}
+            onClick=${() => { if (!locked) onChangeRow(r.field); }}>Change</button>` : null}</div>`)}
       </div>
     </div>`;
 }

@@ -28,6 +28,9 @@
   --fs-label: 13px;    --lh-label: 18px;
   --fs-caption: 12px;  --lh-caption: 16px;
   --fs-micro: 11px;    --lh-micro: 14px;    /* smallest rung — uppercase eyebrows, dense meta */
+  /* motion budget (2026-08-09 research): three durations, two easings — nothing else */
+  --dur-fast: 120ms; --dur-base: 200ms; --dur-slow: 300ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1); --ease-in: cubic-bezier(0.6, 0, 0.8, 0.6);
 
   /* ---- spacing scale (4px base — no arbitrary values) ---- */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
@@ -3362,6 +3365,42 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--chrome-edge); z-index: 30; }
 .strat-footer-in { max-width: 760px; margin: 0 auto; padding: var(--s3) var(--s5); display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
 .strat-count { font-size: var(--fs-label); color: var(--ink-faint); }
+/* ---- one-question flow (2026-08-09 research rebuild) ---- */
+.strat-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: var(--z-nav); background: transparent; }
+.strat-progress i { display: block; height: 100%; background: var(--blue); transform-origin: left;
+  transition: transform var(--dur-base) var(--ease-out); }
+.strat-topline { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  max-width: 760px; margin: 0 auto var(--s2); }
+.strat-count { font-size: var(--fs-caption); color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.strat-stagefoot { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); }
+.kbd-hint { font-size: var(--fs-micro); opacity: .65; font-weight: 500; margin-left: var(--s2); }
+.qstage { opacity: 1; transition: opacity var(--dur-fast) var(--ease-in); }
+.qstage.leaving { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .qstage { animation: q-in var(--dur-base) var(--ease-out) both; }
+  .qstage.leaving { animation: none; transform: translateY(-10px); transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in); }
+  @keyframes q-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .scale-stop:active, .cr-opt:active, .dial-opt:active, .strat-chip:active { transform: scale(0.97); }
+  .scale-stop, .cr-opt, .dial-opt, .strat-chip { transition: transform 140ms var(--ease-out), background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast); }
+}
+.scale-stop .kbd { display: inline-block; font-size: var(--fs-micro); font-weight: 700; border: 1px solid var(--chrome-edge);
+  border-radius: 4px; padding: 0 5px; margin-bottom: 4px; color: var(--ink-faint); background: var(--paper); }
+.rr-change { border: 0; background: none; color: var(--blue-bright); font: 600 var(--fs-label)/1 var(--font-body);
+  cursor: pointer; padding: 0; margin-left: var(--s3); flex: none; }
+.rr-change:hover { text-decoration: underline; }
+.rr-change:disabled { color: var(--ink-faint); cursor: default; text-decoration: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .sd-doc > * { animation: rise-in var(--dur-base) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 40ms); }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}
+.sd-ai-skel { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s2) 0; }
+.sd-ai-skel i { height: 12px; border-radius: 4px; background: var(--surface-sunk); display: block; }
+.sd-ai-skel i:nth-child(1) { width: 92%; } .sd-ai-skel i:nth-child(2) { width: 78%; } .sd-ai-skel i:nth-child(3) { width: 45%; }
+@media (prefers-reduced-motion: no-preference) {
+  .sd-ai-skel i { animation: skel-pulse 1.2s ease-in-out infinite; }
+  @keyframes skel-pulse { 50% { opacity: .55; } }
+}
+
 .strat-toast { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); z-index: var(--z-toast); max-width: 460px;
   background: var(--navy); color: #fff; font-size: var(--fs-label); line-height: 1.45; padding: var(--s3) var(--s4); border-radius: var(--radius);
   box-shadow: var(--shadow-lift); animation: stratRise .25s ease; }
