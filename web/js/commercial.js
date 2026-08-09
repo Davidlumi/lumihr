@@ -603,16 +603,8 @@ window.AnalystPane = function ({ onClose }) {
     const t = setTimeout(() => { inputRef.current && inputRef.current.focus(); }, 0);
     return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
   }, []);
-  // Trap Tab/Shift+Tab within the pane (wrap first↔last, same idiom as Modal).
-  const trapTab = (e) => {
-    if (e.key !== "Tab" || !paneRef.current) return;
-    const f = [...paneRef.current.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
-      .filter(el => !el.disabled && el.offsetParent);
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
+  // Trap Tab/Shift+Tab within the pane (shared tabTrap).
+  const trapTab = tabTrap(paneRef);
   // The transcript survives close/reopen (one stray Esc must not wipe a
   // conversation) — session-scoped, never persisted anywhere.
   const [msgs, setMsgs] = useState(window._analystMsgs || [ANALYST_GREETING]);
@@ -1245,16 +1237,9 @@ window.SuggestMetricModal = function ({ onClose, userEmail }) {
     const t = setTimeout(() => nameRef.current && nameRef.current.focus(), 0);
     return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
   }, []);
-  // Escape closes; Tab cycles within the card (close → fields → cancel → submit → close)
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") { close(); return; }
-    if (e.key !== "Tab" || !cardRef.current) return;
-    const f = [...cardRef.current.querySelectorAll("button, input, textarea, select")].filter(el => !el.disabled && el.offsetParent);
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
+  // Escape closes; Tab cycles within the card (shared tabTrap)
+  const _trap = tabTrap(cardRef);
+  const onKeyDown = (e) => { if (e.key === "Escape") { close(); return; } _trap(e); };
   const submit = async () => {
     if (busy) return;
     const next = {};

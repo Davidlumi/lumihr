@@ -111,6 +111,18 @@ window.NBadge = ({ n, cutLabel }) => html`
 
 window.Spinner = () => html`<span class="spinner"></span>`;
 
+// One focus-trap for every modal/pane (craft review — was hand-rolled 3×).
+// focusables(el): the tabbable set; tabTrap(ref)(e): wrap Tab/Shift+Tab first<->last.
+window.focusables = (el) => el ? [...el.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')].filter(n => !n.disabled && n.offsetParent) : [];
+window.tabTrap = (ref) => (e) => {
+  if (e.key !== "Tab" || !ref.current) return;
+  const f = focusables(ref.current);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+};
+
 // Card-level error containment (craft review 2026-08-09): one bad card must not
 // blank the whole app. Wrap grid/card renders; the root catcher stays the backstop.
 window.Guarded = class extends React.Component {
@@ -138,22 +150,12 @@ window.Modal = function ({ onClose, children, width, xl, label, role }) {
     const t = setTimeout(() => {
       const el = cardRef.current;
       if (!el) return;
-      const first = [...el.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
-        .filter(n => !n.disabled && n.offsetParent)[0];
-      (first || el).focus();
+      (focusables(el)[0] || el).focus();
     }, 0);
     return () => { clearTimeout(t); if (trigger && trigger.focus) trigger.focus(); };
   }, []);
-  // Trap Tab/Shift+Tab within .modal (wrap first↔last).
-  const onKeyDown = (e) => {
-    if (e.key !== "Tab" || !cardRef.current) return;
-    const f = [...cardRef.current.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
-      .filter(el => !el.disabled && el.offsetParent);
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
+  // Trap Tab/Shift+Tab within .modal (shared tabTrap).
+  const onKeyDown = tabTrap(cardRef);
   return html`
     <div class="modal-back" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
       <div class=${"modal" + (xl ? " xl" : "")} style=${width ? { width } : null} ref=${cardRef} tabindex="-1" role=${role || "dialog"} aria-modal="true" aria-label=${label || "Dialog"} onKeyDown=${onKeyDown}>${children}</div>
