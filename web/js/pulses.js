@@ -28,7 +28,7 @@ window.PulsesPage = function ({ me }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   useEffect(() => { api("/api/pulses").then(setData).catch(e => setErr(e.message)); }, []);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load pulses" body=${err} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load pulses" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const open = data.pulses.filter(p => p.accepting);
   const past = data.pulses.filter(p => !p.accepting);
@@ -81,7 +81,7 @@ window.PulseDetailPage = function ({ me, pid }) {
     setDrafts(init);
   }).catch(e => setErr(e.message));
   useEffect(() => { refresh(); }, [pid]);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this pulse" body=${err} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this pulse" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!p) return html`<${PageLoading} />`;
 
   const editor = me.user.role === "admin" || me.user.role === "contributor";
@@ -366,7 +366,7 @@ window.RunPulsePage = function ({ me }) {
       }
     } catch (e) {}
   }).catch(e => setErr(e.message)); }, []);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your surveys" body=${err} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your surveys" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const chip = (p) => {
     const ls = p.launch_status;
@@ -435,7 +435,7 @@ window.PulseBuilderPage = function ({ me, pid }) {
     // here was removed with the card path — all payments are by invoice, and
     // the launch opens when lumi confirms it.
   }, [pid]);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this survey" body=${err} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this survey" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!detail) return html`<${PageLoading} />`;
   const ls = detail.launch_status;
   const editable = ls === "building" || ls === "changes_requested";

@@ -2433,10 +2433,29 @@ async def data_overview(request: Request):
     submitted value. Drives the Your-data landing + per-domain drill-down."""
     user, org = require_user(request)
     conn = get_conn()
-    answers = org_answers_for(org)                       # {(qid,row): value}
+    # DRAFT-INCLUSIVE (empty-state review 2026-08-09): autosaved drafts count
+    # toward the unlock gate (completion_counts unions answers|drafts), so the
+    # Your-data view must show them too — otherwise a company that has drafted 40
+    # answers but not yet hit Submit sees "0 answered" here while the Overview
+    # says "N from unlocking", and the "autosaved as you go" promise reads false.
+    # Committed answers first, then drafts win per cell (the latest edit); an
+    # explicit blank draft clears the cell. Refresh-due stays answers-only below
+    # (a draft is not aged submitted data).
+    answers = org_answers_for(org)                       # {(qid,row): value} — committed
+    merged = dict(answers)
+    for r in conn.execute("SELECT question_id, matrix_row_id, value FROM drafts WHERE org_id=?",
+                          (org["org_id"],)):
+        key = (r["question_id"], r["matrix_row_id"] or "")
+        v = (r["value"] or "").strip()
+        if v == "":
+            merged.pop(key, None)
+        else:
+            merged[key] = r["value"]
     questions = org_visible_questions(org)
     by_q = {}
-    for (qid, row_id), value in answers.items():
+    for (qid, row_id), value in merged.items():
+        if value is None or (isinstance(value, str) and value.strip() == ""):
+            continue
         by_q.setdefault(qid, []).append((row_id, value))
     basis = {q.id for q in completion_basis_questions()}
     # refresh-cadence flags (data/metric_refresh_register.json): an answered

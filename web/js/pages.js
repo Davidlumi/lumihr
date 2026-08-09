@@ -363,6 +363,16 @@ function ShareDialog({ cut, name, layout, onClose }) {
    category (seven tiles). Leads/gaps become micro-band chips. The £
    opportunity lives inside signals; the journey strip returns when a second
    data period exists. */
+// A taste of what unlocks — shared by the /signals SignalsLocked hero AND the
+// home Overview insight-lock (empty-state review: the most-seen locked surface
+// used a bare "£—k" placeholder; it now shows the same concrete teaser vocabulary).
+const SIGNAL_TEASERS = [
+  { lens: "save", icon: "coins", tag: "£ GAP", name: "Bonus opportunity", stand: "sits below the market median for your size" },
+  { lens: "retain", icon: "magnet", tag: "LOWER THAN MARKET", name: "Company sick pay", stand: "below where most of your peers land" },
+  { lens: "engage", icon: "users", tag: "COMMON — YOU DON'T", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
+  { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market for your size" },
+];
+
 function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setApplyStrat, barMode, setBarMode,
                         me, onCut, onTwinInfo, prefs, onPref, refreshMe, sampleN, unlocked }) {
   const m = data.hero && data.hero.market;
@@ -1487,7 +1497,12 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
-            ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a signal appears here once unlocked</span></div>`)}
+            ${SIGNAL_TEASERS.slice(0, 3).map((t, i) => html`
+              <div key=${i} class=${"signal-row lens-" + t.lens + " sig-teaser"}>
+                <span class="signal-roundel"><${Icon} name=${t.icon} size=${15} /></span>
+                <span class="signal-body"><b class="sig-name">${t.name}</b><span class="sig-stand">${t.stand}</span></span>
+                <span class="sig-tag">${t.tag}</span>
+              </div>`)}
           </div>
           <div class="lock-note">
             ${(() => {
@@ -1694,12 +1709,7 @@ function SignalsLocked({ contrib, me }) {
   const target = contrib.target_pct || 90;
   const days = contrib.days_left;
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
-  const teasers = [
-    { lens: "save", icon: "coins", tag: "£ GAP", name: "Bonus opportunity", stand: "sits below the market median for your size" },
-    { lens: "retain", icon: "magnet", tag: "LOWER THAN MARKET", name: "Company sick pay", stand: "below where most of your peers land" },
-    { lens: "engage", icon: "users", tag: "COMMON — YOU DON'T", name: "Paid parental leave", stand: "offered by 8 in 10 similar organisations" },
-    { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market for your size" },
-  ];
+  const teasers = SIGNAL_TEASERS;
   return html`
     <div class="sig-unlock">
       <div class="card sig-unlock-hero">
@@ -1714,6 +1724,7 @@ function SignalsLocked({ contrib, me }) {
             <span class="caption">unlocks at ${target}%${contrib.reduced ? " · paused to a sample — finish to restore" : (days != null ? ` · ${days} days left` : "")}</span>
           </div>
           <div class="progressbar"><div style=${{ width: Math.min(100, target ? 100 * pct / target : 0) + "%" }}></div></div>
+          ${!contrib.reduced && days != null ? html`<p class="caption sig-unlock-clocknote">No rush — if the ${days} days pass, your benchmark just pauses to a sample until you finish. Nothing is deleted.</p>` : null}
         </div>
         ${canEdit
           ? html`<button class="btn primary sig-unlock-cta" onClick=${() => nav("/your-data")}>
@@ -3292,7 +3303,7 @@ window.YourDataPage = function ({ me }) {
       <div class="row spread" style=${{ marginBottom: "var(--s4)" }}>
         <div>
           <h1 class="display-title">Your data</h1>
-          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Everything your organisation has submitted — only your team can see this.</div>
+          <div class="caption" style=${{ marginTop: "var(--s1)" }}>Everything your organisation has entered — autosaved and private to your team.</div>
         </div>
         ${canEdit && !fresh && html`<button class="btn primary" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
       </div>

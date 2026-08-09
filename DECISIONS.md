@@ -15641,3 +15641,38 @@ line): wholesale bespoke-disc retirement, the icon-per-kind map, NotFound via
 the atom, the pulse Draft "Edit" button (editor route undefined), and the broad
 tone="error" recolour of admin-console empties. v491 → v493 (a mid-verify bump
 forced the fixed pages.js past the browser cache). Suite 14/14 green.
+
+## 2026-08-09 — Empty-state audit: draft-inclusive Your-data fix (2 real bugs) + gap closures
+
+An 8-agent audit (4 coverage lenses × the 51 findings + 4 adversarial bug-hunters
+over the diff) checked the shipped arc. Coverage: 25 done / 17 partial / 9 missing
+— the misses are the deferrals recorded above (disc retirement, icon map,
+NotFound, bare-caption empties, signals-empty invite, section-milestone confetti,
+By-area reorder, DomainDataView key-tab), left deferred by design.
+
+TWO REAL BUGS FOUND (both MEDIUM, same root, now fixed at v494): the Your-data
+page mixed two denominators. `/api/data-overview` (`org_answers_for` →
+`get_org_answers`) counts the **answers** table ONLY, but the wizard autosaves to
+**drafts** (committed to answers only on Submit), and the unlock gate
+(`completion_counts`) unions answers|drafts. I had wired the DRAFT-inclusive
+`unlockNeed(c)`/`core_pct` into the ring, the "N to unlock" stat and the CTA,
+while the per-area chips and `fresh` stayed DRAFT-exclusive — so a company that
+had drafted N key answers but not submitted saw contradictory numbers (header
+"54 to unlock" vs rows summing to 82; a 49% ring beside a "Let's build from
+scratch" fresh headline) AND the Your-data page showed "0 answered" while I'd
+plastered "Autosaved as you go" everywhere. FIX (the truthful one, since drafts
+DO count toward unlock): made `/api/data-overview` draft-inclusive — committed
+answers first, drafts win per cell, blank draft clears; refresh-due stays
+answers-only (a draft is not aged submitted data); caption "…has submitted" →
+"…has entered — autosaved and private". Verified on a throwaway with the exact
+repro (25 key drafts, 0 answers): server `basis_answered` (24) == client key-
+answered from data.domains (24); Your-data + Overview now BOTH show 31% / "46 to
+unlock" and per-area counts include drafts (Benefits 9/41, Governance 15/65);
+Wellbeing (no required Qs) correctly shows plain "19 to do".
+
+GAP CLOSURES shipped alongside: the most-seen locked surface (home Overview
+insight-lock) now reuses the real SignalsLocked teaser rows via a hoisted
+`SIGNAL_TEASERS` const instead of the "£—k" placeholder; SignalsLocked pairs its
+day-countdown with the "nothing is deleted" reassurance; the four pulse load-
+error empties gained a Retry. Suite 14/14 green (the data-overview change passed
+every gate); live DB untouched. v493 → v494.

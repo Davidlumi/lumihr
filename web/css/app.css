@@ -1217,6 +1217,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .sig-unlock-prog { max-width: 360px; margin: var(--s4) auto 0; text-align: left; }
 .sig-unlock-cta { margin-top: var(--s4); }
 .sig-unlock-reassure { margin-top: var(--s2); color: var(--ink-faint); }
+.sig-unlock-clocknote { margin: var(--s2) 0 0; color: var(--ink-faint); text-align: left; }
 .sig-teaser-label { text-align: center; margin: var(--s5) 0 var(--s2); color: var(--ink-faint); }
 .sig-teaser-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
 @media (max-width: 640px) { .sig-teaser-grid { grid-template-columns: 1fr; } }
