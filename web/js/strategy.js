@@ -248,8 +248,8 @@ function DomainOverrides({ domains, targets, globalValue, onSet }) {
 // position against intent (the live centrepiece), and the positions ledger.
 const SD_STANCE = { lag: "below market", match: "on market", lead: "above market" };
 const SD_IDX = { lag: 0, match: 1, lead: 2, below: 0, on: 1, above: 2, at: 1 };
-const SD_MIX = { cash: "a package led by base pay", balanced: "pay and benefits sharing the load", benefits: "the wider package doing the work" };
-const SD_P4P = { egal: "pay held close across the board", moderate: "a measured spread for performance", strong: "strong differentiation for top performers" };
+const SD_MIX = { cash: "is led by base pay", balanced: "balances pay and benefits", benefits: "leads on benefits over pay" };
+const SD_P4P = { egal: "pay is held close across the board", moderate: "performance earns a measured premium", strong: "top performers are paid well above the rest" };
 const SD_TRANS = { closed: "held privately", ranges: "shared as ranges", open: "fully open" };
 const SD_FAM = { statutory: "set at the statutory floor", market: "in line with the market", over: "deliberately generous" };
 const SD_OBJ = { attract: "winning talent", retain: "holding on to the people you have", cost: "cost discipline", compliance: "getting the foundations right", hold: "holding steady" };
@@ -265,17 +265,17 @@ const SD_DRIVES = {
 };
 
 function sdStance(strat, orgName) {
+  // one idea per sentence — assembled prose must read authored, never jammed
   const parts = [];
   if (strat.market_position) {
     const n = Object.keys(strat.domain_targets || {}).length;
-    let s = orgName + " aims to sit " + SD_STANCE[strat.market_position] + " on reward";
-    if (n) s += ", refined in " + n + " area" + (n === 1 ? "" : "s");
-    const sub = [];
-    if (strat.reward_mix && SD_MIX[strat.reward_mix]) sub.push(SD_MIX[strat.reward_mix]);
-    if (strat.pay_for_performance && SD_P4P[strat.pay_for_performance]) sub.push(SD_P4P[strat.pay_for_performance]);
-    if (sub.length) s += " — " + sub.join(", with ");
-    parts.push(s + ".");
+    parts.push(orgName + " aims to sit " + SD_STANCE[strat.market_position] + " on reward."
+      + (n ? " " + (n === 1 ? "One area is set differently." : n + " areas are set differently.") : ""));
   }
+  const pkg = [];
+  if (strat.reward_mix && SD_MIX[strat.reward_mix]) pkg.push("The package " + SD_MIX[strat.reward_mix]);
+  if (strat.pay_for_performance && SD_P4P[strat.pay_for_performance]) pkg.push(SD_P4P[strat.pay_for_performance]);
+  if (pkg.length) parts.push(pkg.join("; ") + ".");
   const s2 = [];
   if (strat.transparency && SD_TRANS[strat.transparency]) s2.push("Pay information is " + SD_TRANS[strat.transparency]);
   if (strat.family_position && SD_FAM[strat.family_position]) s2.push("family support is " + SD_FAM[strat.family_position]);
@@ -284,15 +284,21 @@ function sdStance(strat, orgName) {
   return parts;
 }
 
-// intent (ring) vs actual (dot) on one below—on—above axis
-function SdAxis({ intent, actual }) {
+// intent (ring) vs actual (dot) on one percentile axis: zones tinted, the ring
+// anchored at the aimed zone's centre, the dot at the TRUE depth percentile when
+// the engine carries one (falls back to the zone centre). Verdict colours = the
+// house gauge palette, same language as the Overview bars.
+const SD_ZONE = ["22.7%", "50%", "77.3%"];            // zone centres on the 8-92% track
+const sdPctlX = (p) => (8 + Math.max(0, Math.min(100, p)) * 0.84) + "%";
+function SdAxis({ intent, actual, pctl }) {
   const ii = SD_IDX[intent], ai = SD_IDX[actual];
-  const pos = ["12%", "50%", "88%"];
+  const dotX = (pctl != null && ai != null) ? sdPctlX(pctl) : (ai != null ? SD_ZONE[ai] : null);
+  const vcls = actual === "below" ? " v-below" : actual === "above" ? " v-above" : " v-on";
   return html`<span class="sd-axis" aria-hidden="true">
     <span class="sd-axis-line"></span>
-    ${[0, 1, 2].map(i => html`<span key=${i} class="sd-axis-tick" style=${{ left: pos[i] }}></span>`)}
-    ${ii != null && html`<span class="sd-mark intent" style=${{ left: pos[ii] }} title="Your aim"></span>`}
-    ${ai != null && html`<span class="sd-mark actual" style=${{ left: pos[ai] }} title="Your position"></span>`}
+    <span class="sd-axis-band"></span>
+    ${ii != null && html`<span class="sd-mark intent" style=${{ left: SD_ZONE[ii] }} title="Your aim"></span>`}
+    ${dotX && html`<span class=${"sd-mark actual" + vcls} style=${{ left: dotX }} title="Your position"></span>`}
   </span>`;
 }
 
@@ -371,7 +377,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual"></span> position</span>
-            <span class="sd-axis sd-axis-labels"><i style=${{ left: "12%" }}>below</i><i style=${{ left: "50%" }}>on market</i><i style=${{ left: "88%" }}>above</i></span>
+            <span class="sd-axis sd-axis-labels"><i style=${{ left: "22.7%" }}>below</i><i style=${{ left: "50%" }}>on market</i><i style=${{ left: "77.3%" }}>above</i></span>
             <span></span>
           </div>
           <div class="sd-exhibit">
@@ -379,7 +385,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
               <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
                 <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov">area aim</span>` : ""}</span>
                 <span class="sr-only">aim ${SD_STANCE[d.target.stance] || "not set"}, position ${d.position && d.position.verdict ? (d.position.verdict === "at" ? "on market" : d.position.verdict + " market") : "not read yet"}.</span>
-                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} />
+                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} pctl=${d.position && d.position.depth_pctl} />
                 <span class=${"sd-ex-read " + r.cls}>${r.t}</span>
               </a>`; })}
           </div>
