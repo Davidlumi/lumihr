@@ -222,6 +222,8 @@ function ExportBoardPack({ me, cut }) {
   const [packs, setPacks] = useState(null);
   const [gen, setGen] = useState(false);
   const [err, setErr] = useState(null);
+  const menuRef = useRef(null);
+  useMenuClose(menuRef, open, setOpen);
   const [pulse, setPulse] = useState(false);
   useEffect(() => {
     try {
@@ -253,7 +255,7 @@ function ExportBoardPack({ me, cut }) {
   // never render a control that can't act.
   const isEditor = me.user && (me.user.role === "admin" || me.user.role === "contributor");
   return html`
-    <div class="bp-export">
+    <div class="bp-export" ref=${menuRef}>
       ${isEditor && html`<button class=${"btn small" + (pulse ? " pulse-once" : "")} disabled=${gen} onClick=${generate}
         title="A board-ready narrative of your reward position, written from your live benchmark under the current peer filter.">
         <${Icon} name="file-text" size=${14} /> ${gen ? "Writing…" : "Export board pack"}</button>`}
@@ -1784,15 +1786,7 @@ const SIG_SNOOZE = [["2 weeks", 14], ["6 weeks", 42], ["3 months", 90]];
 const sigRetDate = days => new Date(Date.now() + days * 86400000)
   .toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 // shared dropdown chrome: close on outside click / Escape (focus back on the trigger)
-function useMenuClose(ref, open, setOpen) {
-  useEffect(() => {
-    if (!open) return;
-    const away = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const esc = e => { if (e.key === "Escape") { setOpen(false); const t = ref.current && ref.current.querySelector("button"); if (t) t.focus(); } };
-    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
-  }, [open]);
-}
+// useMenuClose hoisted to core.js (window.useMenuClose) — single source for popover dismiss.
 // "Snooze ▾" verb — labelled "Until…", each option shows its return date.
 function SigSnoozeMenu({ onPick }) {
   const [open, setOpen] = useState(false);
@@ -3844,7 +3838,7 @@ window.GovernancePage = function ({ me }) {
         </div>
         <div class="row" style=${{ gap: "var(--s2)", margin: "var(--s2) 0" }}>
           <input style=${{ flex: 1, height: "34px", padding: "0 var(--s3)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
-            placeholder="Add a candidate change for a future release…" value=${title}
+            aria-label="New backlog item" placeholder="Add a candidate change for a future release…" value=${title}
             onInput=${e => setTitle(e.target.value)} />
           <button class="btn small primary" onClick=${addBacklog}>Queue it</button>
         </div>

@@ -535,6 +535,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
     };
     return html`
       <div>
+      <div class="matrix-num-wrap">
       <table class="data matrix-grid" style=${isNA ? { opacity: 0.45 } : null}>
         <thead><tr><th>Level</th>${cols.map((c, i) => html`<th key=${i} class="num">${c.label}${
           q.unit && q.unit.symbol && !isSelect && !(c.label || "").includes(q.unit.symbol)
@@ -573,6 +574,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
           })}
         </tbody>
       </table>
+      </div>
       ${q.na_allowed && html`<div style=${{ marginTop: "var(--s2)" }}><${NAToggle} checked=${isNA} onChange=${setNA} /></div>`}
       </div>`;
   }

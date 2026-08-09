@@ -602,7 +602,7 @@ window.BenchmarkNav = function ({ route, qIndex, prefs, onPref, collapsed }) {
     return html`
       <div class="rail-flyout-wrap" ref=${ref}>
         <button class=${"nav-item" + (benchActive ? " active" : "")} aria-label="Benchmark"
-          data-tip="Benchmark" aria-haspopup="true" aria-expanded=${flyout} onClick=${() => setFlyout(!flyout)}>
+          data-tip="Benchmark" aria-expanded=${flyout} onClick=${() => setFlyout(!flyout)}>
           <${SpIcon} sp="Reward" />
         </button>
         ${flyout && html`
@@ -1087,18 +1087,11 @@ function cutTooSmall(cut, cuts) {
 function ProfileMenu({ me, onSignOut }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onEsc = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onEsc);
-    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
-  }, [open]);
+  useMenuClose(ref, open, setOpen);
   const go = (path) => { setOpen(false); nav(path); };
   return html`
     <div class="profile-menu" ref=${ref}>
-      <button class=${"avatar" + (open ? " active" : "")} aria-haspopup="true" aria-expanded=${open}
+      <button class=${"avatar" + (open ? " active" : "")} aria-expanded=${open}
         aria-label="Account menu" onClick=${() => setOpen(!open)}>${initialsOf(me.user)}</button>
       ${open && html`
         <div class="card profile-pop" role="group">
@@ -1131,13 +1124,7 @@ function NotificationBell({ me }) {
   const ref = useRef(null);
   const load = () => api("/api/notifications").then(setData).catch(() => {});
   useEffect(() => { load(); const t = setInterval(load, 120000); return () => clearInterval(t); }, []);
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onEsc = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDoc); document.addEventListener("keydown", onEsc);
-    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
-  }, [open]);
+  useMenuClose(ref, open, setOpen);
   if (!data || !data.inbox_enabled) return null;        // inbox switched off → no bell
   const unread = data.unread || 0;
   const events = data.events || [];
@@ -1150,7 +1137,7 @@ function NotificationBell({ me }) {
   const groups = NOTIF_LENS_ORDER.map(l => ({ lens: l, items: events.filter(e => e.lens === l) })).filter(g => g.items.length);
   return html`
     <div class="notif-bell" ref=${ref}>
-      <button class=${"notif-btn" + (open ? " active" : "")} aria-haspopup="true" aria-expanded=${open}
+      <button class=${"notif-btn" + (open ? " active" : "")} aria-expanded=${open}
         aria-label=${"Notifications" + (unread ? " — " + unread + " unread" : "")} onClick=${() => setOpen(!open)}>
         <${Icon} name="bell" size=${17} />
         ${unread > 0 && html`<span class="notif-badge">${unread > 99 ? "99+" : unread}</span>`}

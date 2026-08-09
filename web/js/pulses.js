@@ -291,7 +291,7 @@ function PulseQuestionBlock({ q, pid, me }) {
             ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
             : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} />`)}
           ${q.matrix_rows && html`
-            <table class="data" style=${{ marginTop: "var(--s2)" }}>
+<div class="matrix-num-wrap"><table class="data" style=${{ marginTop: "var(--s2)" }}>
               <thead><tr><th>Level</th><th class="num">Cohort</th><th class="num">You</th></tr></thead>
               <tbody>${q.matrix_rows.map(r => html`
                 <tr key=${r.row_id}><td>${r.label}</td>
@@ -305,7 +305,7 @@ function PulseQuestionBlock({ q, pid, me }) {
                         its own ruling word; until then the plain n stays, and the P1-C
                         search carries this one exception by name. */ ""}${r.block && r.block.n ? html`<span class="caption"> · n=${r.block.n}</span>` : ""}</td>
                   <td class="num" style=${{ color: r.you != null && r.you !== "" ? "var(--blue-deep)" : "var(--ink-faint)", fontWeight: 600 }}>${r.you != null && r.you !== "" ? fmtValue(parseFloat(r.you), q.unit) : "—"}</td></tr>`)}
-              </tbody></table>`}
+              </tbody></table></div>`}
           <div class="caption num" style=${{ marginTop: "var(--s1)" }}>n=${blk.n} · asked as ${q.as_asked_version || "v1"}${q.you != null && q.you !== "" && q.type !== "matrix" ? " · your answer marked" : ""}</div>
           ${me.features && me.features.pulse_ai && html`
             <div style=${{ marginTop: "var(--s2)" }}>
@@ -608,7 +608,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
       </div>
       ${showLib && html`
         <div style=${{ marginTop: "var(--s2)" }}>
-          <input class="ctl" style=${{ width: "100%" }} placeholder="Search the library…" value=${libQ} onInput=${e => setLibQ(e.target.value)} />
+          <input class="ctl" style=${{ width: "100%" }} aria-label="Search the pulse library" placeholder="Search the library…" value=${libQ} onInput=${e => setLibQ(e.target.value)} />
           <div class="pulse-libpick">
             ${lib === null ? html`<${Spinner} />` : libRows.slice(0, 120).map(x => html`
               <button key=${x.id} class="pulse-librow" disabled=${keep.some(k => k.id === x.id)} onClick=${() => addLib(x)}>

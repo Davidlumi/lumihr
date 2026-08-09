@@ -439,7 +439,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .btn.danger:hover { border-color: var(--unfavourable); }
 .btn.small { height: 28px; padding: 0 var(--s3); font-size: var(--fs-caption); }
 .btn.block { width: 100%; justify-content: center; }                 /* full-width form actions (auth) */
-.btn.disclose { padding: 0; height: 18px; color: var(--blue-bright); font-family: var(--font); }  /* inline "What this means" reveal */
+.btn.disclose { min-height: 24px; display: inline-flex; align-items: center; padding: 0; color: var(--blue-bright); font-family: var(--font); }  /* inline "What this means" reveal */
 /* "Ask lumi" — a considered feature: blue-tinted pill */
 .btn.feature { border-color: var(--blue-tint-2); background: var(--blue-tint); color: var(--blue-deep);
   border-radius: 999px; padding: 0 var(--s4); }
@@ -2381,7 +2381,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .statchip span { font-size: var(--fs-caption); color: var(--ink-soft); }
 .msg { animation: msg-in .16s var(--dur-fast) ease both; }
 @keyframes msg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.msg-copy { background: none; border: 0; padding: 2px; margin-left: var(--s1); color: var(--ink-faint);
+.msg-copy { background: none; border: 0; padding: 6px; margin-left: var(--s1); color: var(--ink-faint);
   cursor: pointer; vertical-align: middle; }
 .msg-copy:hover { color: var(--ink); }
 .tdots { display: inline-flex; gap: 3px; margin-right: var(--s1); vertical-align: middle; }

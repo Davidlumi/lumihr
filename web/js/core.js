@@ -114,6 +114,18 @@ window.Spinner = () => html`<span class="spinner"></span>`;
 // One focus-trap for every modal/pane (craft review — was hand-rolled 3×).
 // focusables(el): the tabbable set; tabTrap(ref)(e): wrap Tab/Shift+Tab first<->last.
 window.focusables = (el) => el ? [...el.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])')].filter(n => !n.disabled && n.offsetParent) : [];
+// One popover-dismiss hook (craft review — was inline in pages.js + copied into the
+// profile menu and notification bell). Outside-click + Escape close; Escape returns
+// focus to the wrap's trigger (its first button) so keyboard users aren't dropped to body.
+window.useMenuClose = function (ref, open, setOpen) {
+  useEffect(() => {
+    if (!open) return;
+    const away = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const esc = e => { if (e.key === "Escape") { setOpen(false); const t = ref.current && ref.current.querySelector("button"); if (t) t.focus(); } };
+    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+};
 window.tabTrap = (ref) => (e) => {
   if (e.key !== "Tab" || !ref.current) return;
   const f = focusables(ref.current);
