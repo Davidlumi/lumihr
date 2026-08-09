@@ -237,7 +237,8 @@ def contribution_state(conn, org):
     The clock starts when the Admin accepts the Data Contribution Terms —
     the moment the org can actually contribute — NOT at signup or first
     login, so setup time never eats into the 30 days."""
-    completion = completion_pct(conn, org)
+    answered_ct, basis_ct = completion_counts(conn, org)
+    completion = 100.0 if not basis_ct else round(100.0 * answered_ct / basis_ct, 1)
     unlocked = org_unlocked(conn, org, completion)
     terms = org_data_terms(conn, org["org_id"])
     clock_start = org["clock_start"]
@@ -277,7 +278,8 @@ def contribution_state(conn, org):
     return {
         "core_pct": completion,
         "target_pct": TARGET_PCT,
-        "basis_total": len(completion_basis_questions()),   # the ~82 key questions the gate measures (for honest effort copy)
+        "basis_total": basis_ct,          # the ~82 key questions the gate measures (for honest effort copy)
+        "basis_answered": answered_ct,    # exact count answered — drives "N key questions to unlock" proximity copy
         "insights_unlocked": unlocked,
         "terms_accepted": terms is not None,
         "team_invited": team_invited,
@@ -767,7 +769,9 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         "sub_power_order": q.sub_power_order,
         "type": q.type,
         "category": q.category,
-       
+        # key = one of the is_required questions the unlock gate measures; lets the
+        # benchmark card flag its own relevance to the org's insight unlock (empty-state review)
+        "is_required": q.is_required,
         "locked": locked,
         "chart_default": q.default_chart_type,
         "unit": q.unit_block(),
@@ -4057,12 +4061,14 @@ def completion_basis_questions():
     return list(questions.values())
 
 
-def completion_pct(conn, org):
-    """% of the BASIS set answered. N/A and Don't-know selections are stored
-    values, so they count as answered — only skipped questions don't."""
+def completion_counts(conn, org):
+    """(answered, total) over the BASIS (key-question) set. N/A and Don't-know
+    selections are stored values, so they count as answered — only skipped
+    questions don't. Single source for both the % and the exact 'N key
+    questions left to unlock' effort copy the funnel leans on."""
     basis = completion_basis_questions()
     if not basis:
-        return 100.0
+        return 0, 0
     answered = {r["question_id"] for r in conn.execute(
         "SELECT DISTINCT question_id FROM answers WHERE org_id=? AND snapshot_id=?",
         (org["org_id"], CURRENT_SNAPSHOT))}
@@ -4070,7 +4076,13 @@ def completion_pct(conn, org):
         "SELECT DISTINCT question_id FROM drafts WHERE org_id=? AND value IS NOT NULL AND value != ''",
         (org["org_id"],))}
     have = answered | drafted
-    return round(100.0 * sum(1 for q in basis if q.id in have) / len(basis), 1)
+    return sum(1 for q in basis if q.id in have), len(basis)
+
+
+def completion_pct(conn, org):
+    """% of the BASIS set answered."""
+    a, t = completion_counts(conn, org)
+    return 100.0 if not t else round(100.0 * a / t, 1)
 
 
 # ============================================================== PEER GROUPS ==
@@ -5029,7 +5041,8 @@ async def submit(request: Request):
             now_rows += 1
     conn.execute("DELETE FROM drafts WHERE org_id=?", (org["org_id"],))
     conn.commit()
-    completion = completion_pct(conn, dict(org))
+    basis_answered, basis_total = completion_counts(conn, dict(org))
+    completion = 100.0 if not basis_total else round(100.0 * basis_answered / basis_total, 1)
     if completion >= TARGET_PCT:
         conn.execute("UPDATE orgs SET submission_complete=1 WHERE org_id=?", (org["org_id"],))
         conn.commit()
@@ -5038,6 +5051,9 @@ async def submit(request: Request):
     invalidate_payloads()
     return {"ok": True, "answers_saved": now_rows,
             "completion_pct": completion,
+            # exact key-question counts so the post-submit screen can say "just N more"
+            "basis_answered": basis_answered, "basis_total": basis_total,
+            "threshold_pct": TARGET_PCT,
             "benchmark_unlocked": completion >= TARGET_PCT}
 
 

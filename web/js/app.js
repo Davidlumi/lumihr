@@ -939,16 +939,17 @@ window.ContributionBanner = function ({ contrib }) {
         <b>Your full benchmark is paused.</b>
         <div class="caption">The 30 days passed before your reward data was complete — everything you've explored is still here, and a sample stays open below. You're at ${pct}%.</div>
       </div>
-      <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Complete your reward data</button>
+      <button class="btn primary small" onClick=${() => nav("/your-data")}>${window.submitVerb(pct === 0)}</button>
     </div>`;
   if (contrib.days_left > 7) return null;
+  const need = window.unlockNeed(contrib);
   return html`
     <div class="card contrib-banner">
       <div>
-        <b>${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} left to unlock your insights.</b>
-        <div class="caption">You're at ${pct}% of your key reward questions — complete them and your insights go live with your real position.</div>
+        <b>${need > 0 ? `You're ${need} key question${need === 1 ? "" : "s"} from your insights.` : `You're ${pct}% of the way to your insights.`}</b>
+        <div class="caption">Complete your key reward questions and your insights go live with your real position — ${contrib.days_left} day${contrib.days_left === 1 ? "" : "s"} left in your window, but nothing is lost if it passes; your benchmark simply pauses to a sample until you finish.</div>
       </div>
-      <button class="btn primary small" onClick=${() => nav("/your-data/submit")}>Continue your submission</button>
+      <button class="btn primary small" onClick=${() => nav("/your-data")}>${window.submitVerb(pct === 0)}</button>
     </div>`;
 };
 
@@ -986,16 +987,15 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
         <div style=${{ flex: "1.6 1 320px", minWidth: "280px" }}>
           <div class="row" style=${{ gap: "var(--s2)", marginBottom: "var(--s1)" }}>
             <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
-            <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>You're set up — here's what's next</b>
+            <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>Welcome — your benchmark is ready to build</b>
           </div>
-          <p style=${{ margin: "2px 0 0" }}>Explore every metric and the full ${pool.responding_orgs}-organisation comparison pool from day one. Your 30 days only start once your Admin accepts the data terms —
-            setup never counts against you.</p>
+          <p style=${{ margin: "2px 0 0" }}>Answer your reward questions and lumi shows exactly where you sit against your ${pool.responding_orgs}-organisation peer group — your <b>£ gaps</b>, the practices <b>most peers offer that you don't</b>, and a <b>board-ready pack</b>. Explore every metric now; your 30 days only start once your Admin accepts the data terms, so setup never counts against you.</p>
         </div>
         <div style=${{ flex: "1.2 1 280px", minWidth: "260px" }}>
           ${steps.map(st => html`
-            <div key=${st.n} class="next-step">
+            <div key=${st.n} class=${"next-step" + (st.n === 3 && !st.done ? " is-value" : "")}>
               <span class=${"next-step-n" + (st.done ? " done" : "")}>${st.done ? "✓" : st.n}</span>
-              <div><b>${st.label}</b><div class="caption">${st.hint}</div></div>
+              <div><b>${st.label}</b>${st.n === 3 && !st.done ? html` <span class="next-step-badge">unlocks your insights</span>` : null}<div class="caption">${st.hint}</div></div>
             </div>`)}
           <div class="row" style=${{ marginTop: "var(--s2)" }}>
             ${role === "admin" && !profiled && html`<button class="btn primary" onClick=${() => nav("/profile")}>Tell us about your organisation</button>`}
@@ -1011,31 +1011,34 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
   // done-state (profile/terms/data/team) and don't evaporate the moment terms
   // are accepted — they run until insights unlock.
   const profiledPost = !!(me && me.org && me.org.classified);
+  const need = window.unlockNeed(contrib);
+  const mins = window.keyMinutes(need);
   const setupSteps = [
     { label: "Tell us about your organisation", done: profiledPost },
     { label: "Accept the Data Contribution Terms", done: true },
     { label: "Complete your reward data", done: pct >= targetPct, now: pct < targetPct,
-      note: pct + "% of " + targetPct + "%" },
+      note: pct >= targetPct ? pct + "%"
+        : need > 0 ? need + " key to go" + (mins ? " · " + mins : "")
+        : pct + "% of " + targetPct + "%" },
     { label: "Invite your team", done: !!contrib.team_invited, optional: true },
   ];
   const doneCount = setupSteps.filter(s => s.done).length;
   return html`
     <div class="submit-banner">
-      <div class="submit-banner-counter">
-        <div class="submit-banner-days num">${contrib.days_left}</div>
-        <div class="submit-banner-dayword">${contrib.days_left === 1 ? "day left" : "days left"}</div>
-      </div>
       <div class="submit-banner-msg">
-        <div class="submit-banner-head">Submit your reward data to unlock insights</div>
-        <p class="submit-banner-body">At ${targetPct}%, your insights unlock — the £ opportunity, your board pack and your biggest gaps. If day 30 arrives first, your benchmark pauses to a sample until you finish.</p>
+        <div class="submit-banner-head">${need > 0
+          ? `You're ${need} key question${need === 1 ? "" : "s"} from your insights`
+          : `You're ${pct}% of the way to your insights`}</div>
+        <p class="submit-banner-body">At ${targetPct}%, lumi unlocks your <b>£ opportunity</b>, your <b>biggest gaps</b> and a <b>board-ready pack</b>. Your answers autosave and stay private to your organisation.</p>
         <div class="submit-banner-progress">
           <div class="progressbar"><div style=${{ width: Math.min(100, pct / targetPct * 100) + "%" }}></div></div>
-          <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}% complete · autosaves</span>
+          <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}%${contrib.days_left != null ? html` · <span class="num">${contrib.days_left}</span> ${contrib.days_left === 1 ? "day" : "days"} left in your window` : ""}</span>
         </div>
+        ${contrib.days_left != null ? html`<p class="caption submit-banner-reassure">No rush to finish today — if day 30 arrives first, your benchmark simply pauses to a sample until you're done. Nothing you've entered is lost.</p>` : null}
       </div>
       ${role === "viewer"
         ? html`<span class="caption">Your Admin or a Contributor completes the data.</span>`
-        : html`<button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data/submit")}>Continue submission</button>`}
+        : html`<button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data")}>Continue your reward data</button>`}
     </div>
     <div class="setup-checklist card">
       <div class="setup-checklist-head"><span class="eyebrow">Setup · ${doneCount} of ${setupSteps.length}</span></div>

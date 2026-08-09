@@ -474,7 +474,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
         </div>` : html`
       <div class="ov-top">
-        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} />
+        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
           activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
@@ -829,7 +829,7 @@ function leanCaption(market) {
     : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
   return strength + " " + (v === "below" ? "below" : "above") + " the market";
 }
-function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed }) {
+function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed, contribution, canEdit }) {
   // Hooks run BEFORE the early return so the order is stable when market is null
   // vs present. 2.1 — the needle settles ONCE per org, on the first populated
   // render (localStorage gate); every later visit snaps. Reduced motion + no
@@ -868,12 +868,21 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
         </svg>
       </div>
       <div class="arc-verdict">
-        <div class="arc-word arc-word-pending">Not enough data to position yet</div>
+        <div class="arc-word arc-word-pending">${(() => {
+          const t = Math.round((contribution && contribution.target_pct) || 90);
+          return `Your position unlocks at ${t}%`;
+        })()}</div>
         <div class="arc-lean">${(pct || 0) === 0
-          ? "Add your reward data to see your position."
-          : "Keep submitting — it appears once enough is comparable."}</div>
+          ? "Answer your key reward questions and your market position appears here."
+          : (() => {
+              const need = window.unlockNeed(contribution);
+              return need > 0
+                ? `You're ${need} key question${need === 1 ? "" : "s"} away — then your position appears here.`
+                : "Almost there — it appears once enough is comparable.";
+            })()}</div>
       </div>
       <div class="arc-legend num"><span class="arc-pending-note">Data pending — ${pct || 0}% of key reward questions submitted</span></div>
+      ${canEdit ? html`<button class="btn small primary arc-pending-cta" onClick=${() => nav("/your-data")}>${window.submitVerb((pct || 0) === 0)}</button>` : null}
     </div>`;
 
   if (!market) return html`
@@ -1481,10 +1490,19 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
             ${[1, 2, 3].map(i => html`<div key=${i} class="signal-row"><span class="signal-val">£—k</span><span class="caption">a signal appears here once unlocked</span></div>`)}
           </div>
           <div class="lock-note">
-            <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
-            <div class="caption" style=${{ textAlign: "center", maxWidth: "260px" }}>
-              Signals unlock with your insights — complete your key reward questions${contribution && contribution.days_left != null ? ` (${contribution.days_left} days left)` : ""}.</div>
-            <button class="btn small outline-navy" onClick=${() => nav("/your-data/submit")}>Submit data</button>
+            ${(() => {
+              const lp = Math.round((contribution && contribution.core_pct) || 0);
+              const lt = (contribution && contribution.target_pct) || 90;
+              return html`
+                <${Chip} kind="accent"><${Icon} name="lock" size=${11} /> Locked<//>
+                <div class="caption" style=${{ textAlign: "center", maxWidth: "280px" }}>
+                  ${lp > 0
+                    ? html`You're at <b>${lp}%</b> of your key questions — <b>${lt}%</b> unlocks your £ gaps, where you sit against the market, and the practices most peers offer that you don't.`
+                    : html`Answer your key reward questions and lumi shows your <b>£ gaps</b>, where you sit against the market, and the practices <b>most peers offer that you don't</b>.`}
+                  ${contribution && contribution.days_left != null ? html` <span class="num">${contribution.days_left} days left.</span>` : null}</div>
+                <div class="progressbar il-lock-prog" aria-hidden="true"><div style=${{ width: Math.min(100, lt ? 100 * lp / lt : 0) + "%" }}></div></div>
+                <button class="btn small primary" onClick=${() => nav("/your-data")}>${lp > 0 ? "Continue your reward data" : "Add your reward data"}</button>`;
+            })()}
           </div>
         </div>` :
       shown.length === 0 ? html`
@@ -1692,14 +1710,15 @@ function SignalsLocked({ contrib, me }) {
         practices <b>most peers offer that you don't</b>. No dashboards to wade through; we flag, you decide.</p>
         <div class="sig-unlock-prog">
           <div class="row spread" style=${{ marginBottom: "var(--s2)", alignItems: "baseline" }}>
-            <b>Reward data ${pct}%</b>
+            <b>Key questions ${pct}%</b>
             <span class="caption">unlocks at ${target}%${contrib.reduced ? " · paused to a sample — finish to restore" : (days != null ? ` · ${days} days left` : "")}</span>
           </div>
           <div class="progressbar"><div style=${{ width: Math.min(100, target ? 100 * pct / target : 0) + "%" }}></div></div>
         </div>
         ${canEdit
           ? html`<button class="btn primary sig-unlock-cta" onClick=${() => nav("/your-data")}>
-              <${Icon} name="pencil" size=${14} /> ${pct > 0 ? "Continue adding your data" : "Add your reward data"}</button>`
+              <${Icon} name="pencil" size=${14} /> ${pct > 0 ? "Continue your reward data" : "Add your reward data"}</button>
+            <p class="caption sig-unlock-reassure">Autosaved as you go · private to your organisation · resume any time.</p>`
           : html`<div class="caption" style=${{ marginTop: "var(--s3)" }}>Your Admin or a Contributor adds the reward data that unlocks these for the whole team.</div>`}
       </div>
       <div class="sig-teaser-label caption">A taste of what you'll unlock</div>
@@ -3142,9 +3161,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
           </div>
         </div>`}
 
-      ${layout.length === 0 && html`<${EmptyState} icon="star" title="This dashboard is empty"
+      ${layout.length === 0 && html`<${EmptyState} tone="invite" icon="star" title="This dashboard is empty"
         body="Use the pin icon on any benchmark card — it lands here."
-        action=${html`<button class="btn small" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
+        action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
 
       <div id="dash-reorder-live" class="sr-only" aria-live="polite"></div>
       <div class=${"bench-grid" + (busy ? " is-busy" : "")}>
@@ -3155,7 +3174,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
             onDragStart=${() => setDrag(i)} onDragOver=${e => e.preventDefault()} onDrop=${() => onDrop(i)}
             style=${slot.size === 2 ? { gridColumn: "span 2" } : null}>
             ${!c ? html`<${SkeletonCard} />` :
-            c.error ? html`<div class="card bench-card"><${EmptyState} title="Couldn't load this card" /></div>` :
+            c.error ? html`<div class="card bench-card"><${EmptyState} tone="error" title="Couldn't load this card" body="Nothing is lost — reopen the page to try again." /></div>` :
             html`<${Guarded}><${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
               onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]}
               footTools=${html`
@@ -3245,17 +3264,28 @@ window.YourDataPage = function ({ me }) {
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
   const target = c.target_pct || 90;
   const fresh = data.answered === 0;            // brand-new: a start, not a deficit
+  // Proximity to the unlock gate — the North-Star lever (empty-state review). The
+  // gate measures KEY (required) questions only, so the page leads with those, not
+  // the all-question totals that make a close org look far away.
+  const locked = !c.insights_unlocked;
+  const corePct = Math.round(c.core_pct || 0);
+  const need = window.unlockNeed(c);            // exact key questions left to unlock
+  const mins = window.keyMinutes(need);
+  const keyLeftOf = d => (d.questions || []).filter(q => q.required && !q.answered).length;
   // One forward CTA, gate-aware. Until firmographics + data terms are cleared,
   // the on-ramp (/your-data/submit) runs those gates; after that the CTA points
-  // straight into the first unfinished area, or to Review & submit when done.
+  // at the SHORTEST path to unlock — the area with the fewest unanswered key
+  // questions — not just whichever area sorts first.
   const profiled = !!(me && me.org && me.org.classified);   // firmographics done
   const termsAccepted = !!c.terms_accepted;                 // data terms accepted
   const gated = !profiled || !termsAccepted;
-  const nextDomain = (data.domains || []).find(d => d.answered < d.total);
+  const domainsArr = data.domains || [];
+  const keyDomains = domainsArr.filter(d => keyLeftOf(d) > 0).sort((a, b) => keyLeftOf(a) - keyLeftOf(b));
+  const nextDomain = keyDomains[0] || domainsArr.find(d => d.answered < d.total);
   const cta = gated
-    ? { label: !profiled ? "Get started" : "Review the data terms", to: "/your-data/submit" }
+    ? { label: !profiled ? "Add your reward data" : "Review the data terms", to: "/your-data/submit" }
     : nextDomain
-      ? { label: fresh ? "Start answering" : "Continue answering", to: "/your-data/" + encodeURIComponent(nextDomain.name) }
+      ? { label: fresh ? "Add your reward data" : (locked && need > 0 ? `Continue — ${need} key to unlock` : "Continue your reward data"), to: "/your-data/" + encodeURIComponent(nextDomain.name) }
       : { label: "Review & submit", to: "/your-data/review" };
   return html`
     <div class="yourdata">
@@ -3268,21 +3298,23 @@ window.YourDataPage = function ({ me }) {
       </div>
 
       <div class=${"card data-hero" + (fresh ? " fresh" : "")}>
-        <div class="data-hero-ringwrap" title="The ring counts every question; unlocking is measured on your key questions.">
-          <${CompletionRing} pct=${data.pct} size=${118} stroke=${12} />
-          <div class="caption" style=${{ textAlign: "center", marginTop: "var(--s1)" }}>all questions</div>
+        <div class="data-hero-ringwrap" title=${locked ? "This dial tracks your key questions — insights unlock at " + target + "%. Optional extras don't gate unlock." : "You've unlocked — this now tracks every question you've answered."}>
+          <${CompletionRing} pct=${locked ? corePct : data.pct} size=${118} stroke=${12} />
+          <div class="caption" style=${{ textAlign: "center", marginTop: "var(--s1)" }}>${locked ? "key questions · unlocks at " + target + "%" : "all questions"}</div>
         </div>
         <div class="data-hero-body">
           <div class="data-hero-fig">${fresh ? html`<b>Let's build your reward benchmark.</b>`
             : html`<span class="dh-num">${data.answered}</span><span class="dh-den"> / ${data.total}</span><span class="dh-lbl">questions answered</span>`}</div>
+          ${fresh ? html`<p class="data-hero-payoff">Answer your ${c.basis_total || "key"} key questions and lumi shows exactly where your pay, benefits and policies sit against your peer group — your £ gaps, the practices most peers offer that you don't, and a board-ready pack.</p>` : null}
           ${c.insights_unlocked ? html`
             <div class="data-unlock good"><span class="du-ico"><${Icon} name="sparkle" size=${14} /></span>
               <div><b>Insights unlocked</b> — thank you for contributing to the benchmark.</div></div>` : html`
             <div class="data-unlock"><span class="du-ico"><${Icon} name=${fresh ? "sparkle" : "lock"} size=${14} /></span>
-              <div><b>${fresh ? "Answer your reward questions to unlock your insights."
+              <div><b>${fresh ? "Insights unlock at " + target + "% of your key questions."
                 : "You're at " + Math.round(c.core_pct || 0) + "% of your key questions — " + target + "% unlocks your insights."}</b>${c.days_left != null ? ` ${c.days_left} days left.` : ""}
                 </div></div>`}
           ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
+          ${fresh && canEdit && html`<p class="caption data-hero-reassure">Autosaved as you go · private to your organisation · resume any time.</p>`}
           ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
           ${c.reduced && html`
             <div class="data-access warn">
@@ -3291,10 +3323,10 @@ window.YourDataPage = function ({ me }) {
             </div>`}
           ${!fresh && html`
             <div class="dh-stats">
-              <div class="dh-stat"><b>${(data.domains || []).filter(d => d.answered >= d.total).length}</b><span>of ${(data.domains || []).length} areas complete</span></div>
-              <div class="dh-stat"><b>${data.total - data.answered}</b><span>question${data.total - data.answered === 1 ? "" : "s"} remaining</span></div>
+              ${locked && need > 0 ? html`<div class="dh-stat key"><b>${need}</b><span>key question${need === 1 ? "" : "s"} to unlock${mins ? " · " + mins : ""}</span></div>` : null}
+              <div class="dh-stat"><b>${domainsArr.filter(d => d.answered >= d.total).length}</b><span>of ${domainsArr.length} areas complete</span></div>
+              ${(!locked || need === 0) ? html`<div class="dh-stat"><b>${data.total - data.answered}</b><span>question${data.total - data.answered === 1 ? "" : "s"} remaining</span></div>` : null}
               ${data.to_refresh > 0 && html`<div class="dh-stat refresh"><b>${data.to_refresh}</b><span>due a refresh</span></div>`}
-              ${c.days_left != null && html`<div class="dh-stat"><b>${c.days_left}</b><span>days left</span></div>`}
             </div>`}
         </div>
       </div>
@@ -3310,12 +3342,14 @@ window.YourDataPage = function ({ me }) {
           as the Overview domain ruler. Bars are the house blue (magnitude,
           single hue); green appears only as the Complete status chip. */ ""}
       <div class="card data-rows">
-        ${(data.domains || []).map((d, di) => {
+        ${domainsArr.map((d, di) => {
           const done = d.answered >= d.total;
+          const keyLeft = keyLeftOf(d);
           return html`
           <div key=${d.name} class="data-row" role="button" tabindex="0"
             style=${{ "--i": di }}
             aria-label=${domainLabel(d.name) + ": " + d.answered + " of " + d.total + " answered"
+              + (locked && keyLeft > 0 ? ", " + keyLeft + " of them key questions" : "")
               + (d.to_refresh > 0 ? ", " + d.to_refresh + " due a refresh" : "")}
             onClick=${() => nav("/your-data/" + encodeURIComponent(d.name))}
             onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/your-data/" + encodeURIComponent(d.name)); } }}>
@@ -3331,7 +3365,9 @@ window.YourDataPage = function ({ me }) {
                 finished area whose answers have aged needs attention, not
                 celebration. The aria-label always carries both counts. */ ""}
             ${!done
-              ? html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`
+              ? (locked && keyLeft > 0
+                  ? html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${keyLeft} key to do</span>`
+                  : html`<span class="data-q-flag todo"><${Icon} name="pencil" size=${13} /> ${d.total - d.answered} to do</span>`)
               : d.to_refresh > 0
                 ? html`<span class="data-q-flag refresh"><${Icon} name="refresh" size=${13} /> ${d.to_refresh} to refresh</span>`
                 : html`<span class="data-q-flag ok"><${Icon} name="award" size=${13} /> Complete</span>`}
@@ -3390,7 +3426,7 @@ window.DomainDataView = function ({ me, section }) {
               ${q.answered ? (q.rows ? html`
                 <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
                 : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
-                : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>answer now</a>` : ""}</div>`}
+                : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>add your answer</a>` : ""}</div>`}
               ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)} — check it's still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
             </div>
             <span class=${"data-q-flag " + (q.needs_refresh ? "refresh" : q.answered ? "ok" : "todo")}>

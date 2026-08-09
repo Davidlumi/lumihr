@@ -473,7 +473,8 @@ window.StrategyPage = function ({ me }) {
       setPlaneA(d.plane_a.map(f => ({ ...f })));
     }).catch(e => setErr(e.message));
   }, []);
-  if (err) return html`<${EmptyState} icon="compass" title="Couldn't load your strategy" body=${err} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your strategy" body=${err + " — nothing is lost."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const complete = !!data.completed_at;
   if (!isAdmin) {
@@ -481,7 +482,8 @@ window.StrategyPage = function ({ me }) {
     // how their organisation's results are being read; only editing is admin-only.
     if (complete) return html`<${StrategyView} me=${me} data=${data} strat=${data.strategy || {}} canEdit=${false} />`;
     return html`<${EmptyState} icon="lock" title="Admin only"
-      body="Your reward strategy is set by an organisation Admin — ask yours to complete it." />`;
+      body="Your reward strategy is set by an organisation Admin — ask yours to complete it."
+      action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Explore the benchmark</button>`} />`;
   }
   if (complete && !editing) return html`<${StrategyView} me=${me} data=${data} strat=${strat} onEdit=${() => { setEditing(true); setStep(0); }} />`;
 

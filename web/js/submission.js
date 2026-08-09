@@ -4,6 +4,20 @@
    N/A is first-class (never faked with 0 or blank); units show inline. */
 /* global html, useState, useEffect, useRef, api, Chip, Spinner, EmptyState, nav, SP_ICONS, SUPERPOWERS, toast */
 
+// One "waiting on your Admin" state for both gates (profile + terms). It is never
+// a dead end (empty-state review): a non-editor can still explore the day-one
+// benchmark and nudge their Admin, so both call sites carry the same forward row.
+function AdminGateEmpty({ stage }) {
+  const body = stage === "terms"
+    ? "Only your organisation's Admin can accept the Data Contribution Terms. Once they have, your questionnaire opens — your 30 days to contribute start then."
+    : "Your organisation's Admin sets up the company profile and accepts the data terms — then your questionnaire opens.";
+  return html`<${EmptyState} icon="lock" title="Waiting on your Admin" body=${body}
+    action=${html`
+      <button class="btn small primary" onClick=${() => nav("/overview")}>Explore the benchmark</button>
+      <button class="btn small" onClick=${() => nav("/how-lumi-works")}>See how lumi works</button>`} />`;
+}
+window.AdminGateEmpty = AdminGateEmpty;
+
 window.SubmissionPage = function ({ me, refreshMe, section }) {
   const [state, setState] = useState(null);
   const [err, setErr] = useState(null);
@@ -26,9 +40,7 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
       <p>A few company facts — sector, size, region — so the benchmark compares you to the right peers. Two minutes, organisation-level only.</p>
       ${me.user.role === "admin"
         ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
-        : html`<${EmptyState} icon="lock" title="Waiting on your Admin"
-            body="Your organisation's Admin sets up the company profile and accepts the data terms — then your questionnaire opens."
-            action=${html`<button class="btn small" onClick=${() => nav("/how-lumi-works")}>See how lumi works</button>`} />`}
+        : html`<${AdminGateEmpty} stage="profile" />`}
     </div>`;
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
     onAccepted=${() => { refresh(); refreshMe(); }} />`;
@@ -93,8 +105,7 @@ function DataTermsGate({ me, onAccepted }) {
           <button class="btn primary" disabled=${!tick || busy} onClick=${accept}>
             ${busy ? html`<${Spinner} />` : "Accept and begin"}</button>
         </div>` : html`
-        <${EmptyState} icon="lock" title="Waiting on your Admin"
-          body="Only your organisation's Admin can accept the Data Contribution Terms. Once they have, you can start submitting — your 30 days to contribute start then." />`}
+        <${AdminGateEmpty} stage="terms" />`}
     </div>`;
 }
 
@@ -257,11 +268,27 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
   const toList = async () => { await flush(); setMode("list"); window.scrollTo(0, 0); };
   const goSection = async (to) => { await flush(); nav("/your-data/" + encodeURIComponent(to)); };
 
+  // Org-level unlock counter (empty-state review): heads-down in a section, the one
+  // metric that creates pull — how many KEY questions across the whole submission
+  // still stand between the org and unlock — was invisible. Drawn from the org-wide
+  // submission state; it refreshes as sections complete. The section bar stays the
+  // live per-keystroke signal.
+  const orgTotal = (state && state.basis_total) || 0;
+  const orgThr = (state && state.threshold_pct) || 90;
+  const orgNeed = orgTotal ? Math.max(0, Math.ceil(orgThr / 100 * orgTotal) - (state.basis_answered || 0)) : 0;
+  const orgPct = state ? Math.round(state.completion_pct || 0) : 0;
+  const orgUnlocked = state && (orgPct >= orgThr || orgNeed === 0);
   const header = html`
     <div class="row spread" style=${{ marginBottom: "var(--s3)" }}>
       <a class="caption back-link" href="#/your-data"><${Icon} name="chevron-left" size=${13} /> Your data</a>
       <div class="caption">Section ${idx + 1} of ${sections.length}</div>
     </div>
+    ${orgTotal && !orgUnlocked ? html`
+      <div class="qwiz-unlock" title="Across your whole submission — key questions are the ones that unlock your insights.">
+        <span class="qwiz-unlock-lead"><${Icon} name="lock" size=${12} /> <b>${orgNeed}</b> key question${orgNeed === 1 ? "" : "s"} to unlock</span>
+        <span class="qwiz-unlock-bar" aria-hidden="true"><span style=${{ width: Math.min(100, orgThr ? orgPct / orgThr * 100 : 0) + "%" }}></span></span>
+        <span class="caption">${orgPct}% of ${orgThr}%</span>
+      </div>` : null}
     <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
       <div>
         <h1 class="display-title" style=${{ margin: "0 0 var(--s1)" }}>${sp}</h1>
@@ -336,8 +363,8 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
           <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
           <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
             ${!curAnswered && html`
-              <a class="qwiz-skip" href="#" title=${cur.is_required ? "You can come back — key questions count toward the 90% that unlocks your insights." : null}
-                onClick=${e => { e.preventDefault(); next(); }}>${cur.is_required ? "Leave for later" : "Skip for now"}</a>`}
+              <a class=${"qwiz-skip" + (cur.is_required ? " qwiz-skip-key" : "")} href="#" title=${cur.is_required ? "You can come back — but this one counts toward the " + orgThr + "% that unlocks your insights." : null}
+                onClick=${e => { e.preventDefault(); next(); }}>${cur.is_required ? "I'll come back to this" : "Skip for now"}</a>`}
             <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel} <span class="kbd-hint">press Enter ↵</span></button>
           </div>
         </div>
@@ -394,7 +421,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                     ? (Array.isArray(sum)
                         ? html`<div class="data-q-rows">${sum.map((r, i) => html`<span key=${i}><span class="muted">${r.row}:</span> ${r.val}</span>`)}</div>`
                         : html`<div class="data-q-val">${sum || "—"}</div>`)
-                    : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add it</span></div>`)}
+                    : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add your answer</span></div>`)}
                   ${!open && ans && q.needs_refresh && html`<div class="data-q-updated">
                     Last updated ${window.fmtUpdated(q.last_updated)} — update, or re-save to confirm.</div>`}
                 </div>
@@ -684,18 +711,30 @@ function ReviewStep({ state, refresh, refreshMe }) {
         Thank you for contributing to the pool.</p>
         <${UnlockPositionLine} />
         <button class="btn primary" onClick=${() => nav("/overview")}>See your full position</button>` : html`
-        <h1 class="display-title">Submission received</h1>
-        <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
-        Key questions answered: <b>${done.completion_pct}%</b>.</p>
-        <p class="caption">Reach ${state.threshold_pct}% of your key reward questions to unlock your insights —
-        the £ opportunity, board pack and biggest gaps. “Not applicable” counts as an answer.</p>
-        <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s3)" }}>
+        ${(() => {
+          const thr = done.threshold_pct || state.threshold_pct || 90;
+          const total = done.basis_total || state.basis_total || 0;
+          const answered = done.basis_answered != null ? done.basis_answered
+            : Math.round((done.completion_pct || 0) / 100 * total);
+          const need = total ? Math.max(0, Math.ceil(thr / 100 * total) - answered) : 0;
+          const mins = window.keyMinutes(need);
+          const fill = thr ? Math.min(100, 100 * (done.completion_pct || 0) / thr) : 0;
+          return html`
+        <h1 class="display-title">You're almost there</h1>
+        <p>${done.answers_saved} answers saved — you're at <b>${done.completion_pct}%</b> of your key questions.
+        ${need > 0
+          ? html`Just <b>${need} more</b>${mins ? " (about " + mins.replace("~", "") + ")" : ""} and your insights unlock: the £ opportunity, your board pack and your biggest gaps.`
+          : html`A little more and your insights unlock: the £ opportunity, your board pack and your biggest gaps.`}</p>
+        <div class="progressbar" style=${{ maxWidth: "360px", margin: "var(--s3) auto 0" }}><div style=${{ width: fill + "%" }}></div></div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>${done.completion_pct}% of ${thr}% · “Not applicable” counts as an answer.</div>
+        <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "center" }}>
           <button class="btn primary" onClick=${() => {
             const gap = (state.sections || []).find(s => s.key_answered < s.key_questions);
             nav(gap ? "/your-data/" + encodeURIComponent(gap.section) : "/your-data");
-          }}>Continue answering →</button>
+          }}>${need > 0 ? `Answer the last ${need} →` : "Finish the rest →"}</button>
           <button class="btn" onClick=${() => nav("/your-data")}>Back to Your data</button>
-        </div>`}
+        </div>`;
+        })()}`}
     </div>`;
   if (val && val._error) return html`<${EmptyState} title="Couldn't check your submission"
     body="Nothing is lost — your answers are saved. Try again in a moment."
@@ -718,6 +757,10 @@ function ReviewStep({ state, refresh, refreshMe }) {
             ? html`<span style=${{ color: "var(--favourable)", fontWeight: 600 }}>✓ Past the ${state.threshold_pct}% unlock threshold</span> — submitting keeps your insights live with your latest data.`
             : html`${state.completion_pct}% of your key questions answered · insights unlock at <b>${state.threshold_pct}%</b>`}
         </div>
+        ${state.completion_pct >= state.threshold_pct && val.unanswered_required.length > 0 ? html`
+          <div class="caption" style=${{ marginTop: "var(--s2)", color: "var(--ink-soft)" }}>
+            You've unlocked — ${val.unanswered_required.length} key question${val.unanswered_required.length === 1 ? "" : "s"} still open.
+            Finishing ${val.unanswered_required.length === 1 ? "it" : "them"} sharpens every benchmark you get back.</div>` : null}
       </div>
       ${val.problems.length > 0 && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", borderColor: "var(--unfavourable)" }}>

@@ -6,6 +6,15 @@
    PercentileBand, Histogram, BoxPlot, OptionBars, OrderedDist, MatrixHeat, MatrixGrouped,
    chartAlternatives, normaliseChart, CHART_LABELS, exportCardPNG, fmtGBPCompact, EmptyState, nav */
 
+// One route from any card straight to its own question in the questionnaire —
+// deep-links to the metric so "add your answer" lands exactly where the org acts.
+// Single source (empty-state review) so the ~300 per-card CTAs can't drift.
+function qHref(c) {
+  return c.subpower
+    ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id)
+    : "#/your-data";
+}
+
 window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cuts, globalCut, window: collWindow, highlight, signal, footTools, readOnly }) {
   const [expanded, setExpanded] = useState(false);          // full question & definition
   const [override, setOverride] = useState(null);           // per-card peer cut — exploratory, never saved
@@ -82,7 +91,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${cardSignalPill(c, signal, readOnly)}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
-        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (SHOW_COMPOSITION_IN_PRODUCT && c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "."}
+        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (SHOW_COMPOSITION_IN_PRODUCT && c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "." + (!cardAnswered(c) && !readOnly ? " Not yet answered — add your answer to see where you stand." + (c.is_required ? " This is a key question that unlocks your insights." : "") : "")}
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
         title=${c.suppressed ? "Protected — fewer than 5 organisations behind this figure, so there's no chart to open" : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :
@@ -290,7 +299,19 @@ function humanSentence(c) {
     }
   }
   if (!c.you && !c.readout && c.type !== "matrix") {
-    return { lead: "", support: null };
+    // Unanswered but benchmarked: the headline was blank on ~300 cards. Give it a
+    // factual market hook from fields already on the card (no 'N orgs answered'
+    // attribution — reference-panel doctrine). The role-appropriate CTA lives in
+    // the noanswer-box below, so proof appears once here and the ask appears there.
+    if (c.block && c.block.p50 != null) {
+      return { lead: `Market median ${fmtValue(c.block.p50, c.unit)}.`, support: null };
+    }
+    if (c.block && c.block.options) {
+      const opts = c.block.options.filter(o => !o.is_na);
+      const top = opts.reduce((a, b) => (b.pct > (a ? a.pct : -1) ? b : a), null);
+      if (top) return { lead: `Most similar organisations chose “${top.label}” (${Math.round(top.pct)}%).`, support: null };
+    }
+    return { lead: "No market verdict here yet — your answer helps set it as the panel grows.", support: null };
   }
   return { lead: c.readout, support: null };
 }
@@ -483,9 +504,8 @@ function cardSignalPill(c, sigs, readOnly) {
     // §4.9(5): an outside viewer on a share link can't add data — no member CTA, no pill
     // (a "No signal" claim would be dishonest on an unanswered metric).
     if (readOnly) return null;
-    const href = c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data";
-    return html`<a class="sig-pill is-add" href=${href} onClick=${e => e.stopPropagation()}
-      title=${"Add your data for this metric to see if it flags vs the market."}>
+    return html`<a class="sig-pill is-add" href=${qHref(c)} onClick=${e => e.stopPropagation()}
+      title=${"Add your answer for this metric to see if you're above or below market."}>
       <${Icon} name=${c.locked ? "lock" : "pencil"} size=${11} /> Add data</a>`;
   }
   if (state === "clear-unbenchmarked") return html`<span class="sig-pill is-clear" title="This metric has no market verdict — nothing to flag either way.">
@@ -508,6 +528,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
       <${Icon} name="shield" size=${18} />
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough organisations to show safely</div>
       <${Chip}>n=${c.n}<//>
+      ${!readOnly && !c.you ? html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>You can still <a class="noanswer-cta" href=${qHref(c)}>add your answer</a> — the comparison appears once 5+ organisations are in this group.</div>` : null}
     </div>`;
   }
   if (c.type === "numeric") {
@@ -521,7 +542,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
           </div>` :
         html`<div class="noanswer-box" style=${{ marginBottom: "var(--s1)" }}>${readOnly
           ? "Not answered yet — the peer picture below still holds."
-          : html`Answer this to see where you stand. <a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"}>Add your data</a>`}</div>`}
+          : html`The market picture below is ready — <a class="noanswer-cta" href=${qHref(c)}>add your answer</a> to see where you land.${c.is_required ? html` <span class="noanswer-key" title="One of the key reward questions that unlock your insights.">Key question</span>` : null}`}</div>`}
         ${chart === "histogram" ? html`<${Histogram} histogram=${c.histogram} you=${you} unit=${c.unit} favourable=${fav} median=${c.block ? c.block.p50 : null} showValues=${showValues} width=${W} />`
         : chart === "box" ? html`<${BoxPlot} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showValues=${showValues} width=${W} />`
         : html`<${PercentileBand} block=${c.block} you=${you} unit=${c.unit} favourable=${fav} showP1090=${showP1090} showValues=${showValues} width=${W} />`}
@@ -529,12 +550,14 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   }
   if (c.type === "single_select" || c.type === "yes_no" || c.type === "multi_select") {
     const youLabels = c.you ? c.you.labels : [];
-    if (!c.block) return html`<div class="suppressed-box">No peer distribution for this peer group yet — try a wider one.</div>`;
+    if (!c.block) return html`<div class="noanswer-box">No market view for this peer group yet — it fills in as the panel grows.${readOnly
+      ? ""
+      : html` You can still <a class="noanswer-cta" href=${qHref(c)}>add your answer</a> — it counts toward your unlock.`}</div>`;
     return html`
       <div>
         ${!c.you && html`<div class="noanswer-box" style=${{ marginBottom: "var(--s2)" }}>${readOnly
           ? "Not answered yet."
-          : html`<a href=${c.subpower ? "#/your-data/" + encodeURIComponent(c.subpower) + "?focus=" + encodeURIComponent(c.id) : "#/your-data"} style=${{ color: "inherit" }}>Answer this to see where you stand.</a>`}</div>`}
+          : html`<a class="noanswer-cta" href=${qHref(c)}>Add your answer</a> to see where you land.${c.is_required ? html` <span class="noanswer-key" title="One of the key reward questions that unlock your insights.">Key question</span>` : null}`}</div>`}
         ${chart === "ordered" && c.type !== "multi_select"
           ? html`<${OrderedDist} options=${c.block.options} youLabels=${youLabels} showValues=${showValues}
               width=${W} height=${rowH || (c.you ? 172 : 140)} fav=${fav} />`
@@ -547,7 +570,8 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     if (allSuppressed) return html`<div class="suppressed-box">
       <${Icon} name="shield" size=${18} />
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough data in this peer group</div>
-      <div>Fewer than 5 organisations per level — try a wider peer group.</div></div>`;
+      <div>Fewer than 5 organisations per level — try a wider peer group.</div>
+      ${!readOnly && !c.you ? html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>You can still <a class="noanswer-cta" href=${qHref(c)}>add your figures</a> — the comparison appears once 5+ organisations report at each level.</div>` : null}</div>`;
     // categorical matrices (Yes/No participation, ordered bands like notice
     // periods) carry per-row distributions, not quartiles
     const isSelect = (c.matrix_rows || []).some(r => r.block && r.block.kind === "select");

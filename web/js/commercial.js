@@ -71,8 +71,11 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
         </div>
       </div>
 
-      ${rows.length === 0 ? html`<${EmptyState} icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
-        body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try different filters."} />` :
+      ${rows.length === 0 ? html`<${EmptyState} tone="invite" icon="list-checks" title=${show === "gaps" ? "No common gaps found" : "Nothing to show"}
+        body=${show === "gaps" ? "Nothing widely adopted by this peer group is missing from your organisation." : "Try a different filter, or show the full register."}
+        action=${show === "gaps"
+          ? html`<button class="btn small" onClick=${() => setShow("all")}>See the full register →</button>`
+          : html`<button class="btn small" onClick=${() => { setSp(null); setShow("all"); }}>Show everything</button>`} />` :
       html`<div class="card" style=${{ padding: "0", overflow: "hidden" }}>
         <div style=${{ overflowX: "auto" }}>
         <table class="data gap-table">
@@ -774,7 +777,7 @@ window.SharesPage = function ({ embedded }) {
           <button class="btn" disabled=${making} onClick=${() => createDash(90)}>90 days</button>
         </div>
       </div>
-      ${data.shares.length === 0 ? html`<${EmptyState} icon="link" title="No share links yet"
+      ${data.shares.length === 0 ? html`<${EmptyState} tone="invite" icon="link" title="No share links yet"
         body="Create a dashboard share above, or share a board pack from its page." />` :
       html`<div class="card" style=${{ padding: "var(--s4)" }}>
         ${(() => {
@@ -1346,7 +1349,7 @@ window.BoardPacksPage = function ({ me }) {
       <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>Board packs</h1>
       <p class="caption" style=${{ marginBottom: "var(--s4)" }}>Every pack your team has generated — each a snapshot
         of your position when it was written. Export a fresh one from Overview.</p>
-      ${packs.length === 0 ? html`<${EmptyState} icon="file-text" title="No board packs yet"
+      ${packs.length === 0 ? html`<${EmptyState} tone="invite" icon="file-text" title="No board packs yet"
         body="Export writes a board-ready narrative of your position under the current peer filter."
         action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Go to Overview</button>`}/>` :
       html`<div class="bp-list">

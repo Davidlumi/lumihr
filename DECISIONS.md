@@ -15582,3 +15582,62 @@ gate (the commit chained past the failure) — the Q2 code was fine, the red
 was this data corruption, but committing without green was wrong; caught and
 resolved same session. STANDING RULE reinforced: never chain git commit after
 a gate grep; read the gate result first.
+
+## 2026-08-09 — Empty-state review: the whole locked funnel rebuilt for conversion
+
+NORTH STAR (David): "review of all the empty states … the main aim is to get
+the new company to submit all their data." A 4-lens fleet returned 51 findings
+(locked-funnel, per-card, nearly-there, craft-consistency); the dominant theme
+was CTA-verb chaos (one action wore seven labels) and a proximity lever that
+was hidden exactly where a zero-answer org decides whether to start. Shipped in
+six batches, verified end-to-end on a fresh-org throwaway (:8070), gates 14/14.
+
+SHARED MECHANICS (the load-bearing part). Server: `completion_pct` refactored
+onto a single `completion_counts(conn, org)` so the exact answered/total key
+counts have ONE source; `contribution_state` now returns `basis_answered`
+alongside `basis_total`, `/api/submission/submit` returns both + `threshold_pct`,
+and `assemble_card` carries `is_required`. Client (core.js): `window.submitVerb`
+(one verb pair — "Add your reward data" / "Continue your reward data" — for the
+one make-or-break action), `window.unlockNeed(c)` (exact KEY questions still
+standing between the org and unlock, from the server counts), `window.keyMinutes`
+(~0.6 min/Q effort read). EmptyState atom gained a `tone` prop
+(invite / info / error) with the ring baked in, so dead-ends stop being
+hand-rolled discs and load-failures read as failures, not empties.
+
+CONVERSION SURFACES. Fresh Your-data hero: specific payoff ("Answer your 77 key
+questions and lumi shows … your £ gaps, the practices most peers offer that you
+don't, and a board-ready pack"), the 90% gate stated, autosave/private/resume
+reassurance, ring rebound to core_pct while locked ("key questions · unlocks at
+90%"). Overview submit-banner: the big day-countdown DEMOTED from hero number to
+a soft "N days left in your window" + a "nothing is lost" reassurance; leads
+with "You're N key questions from your insights". SignalsLocked: "Key questions
+%" (was "Reward data %") so the number == the gate. Overview insight-lock +
+OverallArc pending: proximity + a forward CTA (the gauge was a dead-end). Per
+area: "N key to do" (not the all-question total) while locked; the Continue CTA
+targets the area nearest to clearing its key set. Post-submit screen reframed
+from a filing receipt ("Submission received") to the near-win ("You're almost
+there — just N more (~M min)"). Guided mode gained a persistent org-level unlock
+counter; the key-question skip is quieter. ~300 benchmark cards: the blank
+headline now carries a factual market hook, the noanswer CTA is a real one-blue
+link (was plain text / color:inherit), suppressed + no-distribution boxes now
+offer the answer path (suppression only hides the peer view — the org can still
+record its answer), and required cards wear a "Key question" tag.
+
+CRAFT DEAD-ENDS: non-admin gates (profile + terms) unified into one
+`AdminGateEmpty` that always offers "Explore the benchmark"; the strategy
+"Admin only" and load-error states got forward actions; dashboard / board-pack /
+share empties are tone="invite"; the gap-register filter empty got a reset
+action; pulse closed-state got "See open pulses"; load-failure empties across
+strategy/pulses/card got tone="error" + reassurance.
+
+VERIFICATION CAUGHT A REAL BUG: `OverallArc` was handed `canEdit=${isEditor}`
+but `isEditor` lives in `OverviewPage`, not the `OverviewHero` that renders it —
+the whole Overview tripped the error boundary. Found only by loading a fresh-org
+throwaway (screenshot + console), fixed to derive canEdit from `me` in scope.
+Reinforces: a green gate suite proves the SERVER, never the React render tree;
+the locked/fresh branches only exist for an org the demo isn't — verify on a
+throwaway with the right state. DEFERRED (documented, below the conversion
+line): wholesale bespoke-disc retirement, the icon-per-kind map, NotFound via
+the atom, the pulse Draft "Edit" button (editor route undefined), and the broad
+tone="error" recolour of admin-console empties. v491 → v493 (a mid-verify bump
+forced the fixed pages.js past the browser cache). Suite 14/14 green.

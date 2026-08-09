@@ -76,6 +76,31 @@ window.pLabel = r => "P" + Math.round(r);
 // single source for ruled lookup tables (craft review — was copied across card.js/pages.js)
 window.LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 
+// ── Submission funnel: ONE verb for the make-or-break action (empty-state review
+// 2026-08-09). Seven labels for "record your reward data" diluted recognition of
+// the single button that moves a new company forward — this is the single source.
+// Destinations legitimately differ (a pre-terms org must route through the terms
+// gate), so callers keep routing; only the LABEL is unified here.
+window.submitVerb = fresh => fresh ? "Add your reward data" : "Continue your reward data";
+
+// Proximity — the strongest conversion lever. Exact count of KEY questions still
+// standing between the org and the insight unlock, from the contribution payload
+// (basis_answered/basis_total are exact server counts; core_pct is a rounded %).
+// Returns 0 when already unlocked or the fields aren't present.
+window.unlockNeed = function (c) {
+  if (!c || c.insights_unlocked) return 0;
+  const total = c.basis_total, answered = c.basis_answered, target = c.target_pct || 90;
+  if (!total || answered == null) return 0;
+  return Math.max(0, Math.ceil(target / 100 * total) - answered);
+};
+
+// Honest, gentle effort estimate for N remaining key questions (~0.6 min each,
+// floored at 1). Returns "" for nothing left so callers can concatenate freely.
+window.keyMinutes = function (n) {
+  if (!n || n <= 0) return "";
+  return "~" + Math.max(1, Math.round(n * 0.6)) + " min";
+};
+
 // glossary used for first-use tooltips (plain-English, UK gov style register)
 window.GLOSSARY = {
   percentile: "If you lined all organisations up from lowest to highest, the percentile tells you where a value sits. P75 means three quarters of organisations are at or below it.",
@@ -263,13 +288,24 @@ window.scrollIntoViewSafe = function (el, opts) {
   el.scrollIntoView({ block: "center", ...(opts || {}), behavior: reduce ? "auto" : ((opts && opts.behavior) || "smooth") });
 };
 
-window.EmptyState = ({ icon, title, body, action }) => html`
-  <div class="suppressed-box" style=${{ minHeight: "140px" }}>
-    <div style=${{ color: "var(--ink-faint)" }}>${typeof icon === "string" && window.Icon ? html`<${Icon} name=${icon} size=${20} />` : (icon || (window.Icon ? html`<${Icon} name="info" size=${20} />` : "—"))}</div>
-    <div style=${{ fontWeight: 650, color: "var(--ink)" }}>${title}</div>
-    ${body ? html`<div>${body}</div>` : null}
-    ${action || null}
+// The ONE empty-state atom (empty-state review 2026-08-09). `tone` gives the
+// state a meaning at a glance, baking the ring in so call sites stop hand-rolling
+// discs: "invite" = a forward-looking empty worth acting on (blue ring), "info" =
+// a will-fill-later / neutral empty (grey ring, the default), "error" = a load
+// failure (red-tint ring — always pair with a Retry action + a 'nothing is lost'
+// reassurance). Container stays .suppressed-box so height/centering in grid cells
+// is unchanged for every existing caller.
+window.EmptyState = ({ icon, title, body, action, tone }) => {
+  const t = tone === "invite" || tone === "error" ? tone : "info";
+  const nm = icon || (t === "error" ? "info" : "info");
+  return html`
+  <div class=${"suppressed-box empty-state es-" + t} style=${{ minHeight: "140px" }}>
+    <span class="es-ring">${typeof nm === "string" && window.Icon ? html`<${Icon} name=${nm} size=${t === "invite" ? 24 : 20} />` : (icon || "—")}</span>
+    ${title ? html`<div class="es-title">${title}</div>` : null}
+    ${body ? html`<div class="es-body">${body}</div>` : null}
+    ${action ? html`<div class="es-action">${action}</div>` : null}
   </div>`;
+};
 
 // ------------------------------------------------------------- toasts ------
 // Lightweight background-action feedback: bottom-left, auto-dismiss, no deps.
