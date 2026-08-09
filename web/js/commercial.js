@@ -188,6 +188,13 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       o.direction + " · to P50 " + o.to_p50_gbp + " GBP/yr · to P75 " + o.to_p75_gbp + " GBP/yr"].map(esc).join(",")));
     (p.gap_register_top || []).forEach(r => lines.push(["practice gap", r.name, r.superpower, "", r.your_status,
       "", "", "", "", "", "", r.n, "peer adoption " + r.peer_adoption_pct + "%"].map(esc).join(",")));
+    if (p.strategy_alignment && (p.strategy_alignment.domains || []).length) {
+      const AW = { on_target: "on aim", ahead: "ahead of aim", behind: "behind aim" };
+      p.strategy_alignment.domains.forEach(d => lines.push(["strategy alignment", d.name, "", "", "",
+        "", "", "", "", "", "", "",
+        ("aim " + (d.aim || "—") + (d.aim_is_override ? " (area aim)" : "") + " · position " + (d.position || "—")
+          + " · " + (AW[d.alignment] || "—"))].map(esc).join(",")));
+    }
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);

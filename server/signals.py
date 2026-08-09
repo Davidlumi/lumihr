@@ -363,7 +363,7 @@ def _p4p_mult(strategy, qid, variable_pay_set):
 # value (provenance "set", never seen in the visible field) reads as unset → 1.0. open → 1.4;
 # ranges / closed / unset / unreconfirmed → 1.0. Folds into the SAME capped product (≤2.0) as
 # objective × p4p at the application site — no separate uncapped multiply.
-TRANSPARENCY_MULT = {"open": 1.4}    # ranges / closed / unset → 1.0 via .get default
+TRANSPARENCY_MULT = {"open": 1.4, "ranges": 1.2}   # closed / unset → 1.0 via .get default; ranges = a stated norm, read at measured weight
 def _transparency_mult(strategy, qid, transparency_set):
     if qid not in (transparency_set or ()):
         return 1.0
@@ -422,7 +422,16 @@ BENEFIT_THEME_DOMAINS = {
     "financial": {"Pay", "Benefits", "Incentives"},
     "worklife":  {"Time Off", "Wellbeing"},
 }
-def _benefits_mult(strategy, domain):
+MIX_CASH_DOMAINS = {"Pay", "Incentives"}
+def _mix_mult(strategy, domain, kind):
+    """reward_mix=cash: base pay is the declared lever, so under-delivery in the cash
+    domains surfaces harder — same shape and weight as the benefits-lead lift."""
+    if _strategy_field(strategy, "reward_mix") != "cash":
+        return 1.0
+    return 1.25 if (domain in MIX_CASH_DOMAINS and kind in ("behind", "rare")) else 1.0
+
+
+def _benefits_mult(strategy, domain, kind=None):
     if not strategy or (strategy.get("provenance") or {}).get("benefits_lead") == "skipped":
         return 1.0
     leads = strategy.get("benefits_lead") or []
@@ -431,6 +440,8 @@ def _benefits_mult(strategy, domain):
     doms = set()
     for t in leads:
         doms |= BENEFIT_THEME_DOMAINS.get(t, set())
+    if kind is not None and kind not in ("behind", "rare"):
+        return 1.0                     # a declared lead lifts GAPS to it, never savings/overspend
     return 1.25 if domain in doms else 1.0
 
 
@@ -1007,7 +1018,8 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             ("budget_direction",    _strategy_field(strategy, "budget_direction"),    _budget_mult(strategy, s.get("position"))),
             ("acute_pressure",      _strategy_field(strategy, "acute_pressure"),      _acute_mult(strategy, s.get("lens"))),
             ("risk_appetite",       _strategy_field(strategy, "risk_appetite"),       _risk_appetite_mult(strategy, s.get("kind"))),
-            ("benefits_lead",       (strategy or {}).get("benefits_lead"),            _benefits_mult(strategy, s.get("domain"))),
+            ("benefits_lead",       (strategy or {}).get("benefits_lead"),            _benefits_mult(strategy, s.get("domain"), s.get("kind"))),
+            ("reward_mix",          _strategy_field(strategy, "reward_mix"),          _mix_mult(strategy, s.get("domain"), s.get("kind"))),
         ]
         _prod = 1.0
         for _f, _v, _mm in _parts:
@@ -1039,6 +1051,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             # high family spend reads as intended, not overspend — relabel + demote,
             # never hide a family metric that's BELOW (that contradicts the stance)
             s["strategy_note"] = "intended — your generous family stance"
+            s["impact"] = round((s.get("impact") or 0) * 0.4)
+        elif (_strategy_field(strategy, "family_position") == "statutory" and _m.get("family_metric")
+              and (s.get("position") == "below" or s.get("kind") == "behind")):
+            # the statutory floor is the declared stance — sitting at it reads as
+            # intended, not a gap to close; extra spend (above) still surfaces
+            s["strategy_note"] = "intended — your statutory-floor family stance"
             s["impact"] = round((s.get("impact") or 0) * 0.4)
         # STEP-3 LAYER 4 — confirm-suppression (ruling C: demote + cap-aware). A non-risk
         # signal in a domain whose position CONFIRMS its aim (alignment == on_target) is

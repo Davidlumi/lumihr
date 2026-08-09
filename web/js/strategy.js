@@ -26,7 +26,7 @@ const SCALE = {
     stops: [
       { v: "egal", t: "Everyone similar", d: "Pay stays close across the board", se: 'Flat pay spreads read as <b>intended</b>, not a failure to reward top performers.' },
       { v: "moderate", t: "Some gap", d: "Strong performers paid a bit more", se: 'We’ll expect a <b>moderate</b> spread and read your spreads against that.' },
-      { v: "strong", t: "Big gap", d: "Top performers paid well above", se: 'Wide pay spreads read as <span class="se-pill green">on strategy</span> — strong differentiation is the design.' } ] },
+      { v: "strong", t: "Big gap", d: "Top performers paid well above", se: 'Wide pay spreads read as <span class="se-pill green">on aim</span> — strong differentiation is the design.' } ] },
   transparency: { q: "How openly do you share pay information inside the company?",
     stops: [
       { v: "closed", t: "Private", d: "Pay isn’t shared", se: 'We’ll treat open-pay practices as <b>optional</b> for you, not expected.' },
@@ -41,7 +41,7 @@ const SCALE = {
     stops: [
       { v: "statutory", t: "Legal minimum", d: "What the law requires", se: 'We’ll hold you to the <b>statutory</b> floor — extra spend reads as discretionary.' },
       { v: "market", t: "In line", d: "Around the same as peers", se: 'We’ll read you against the <b>market norm</b> for family benefits.' },
-      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on strategy</span> — intended, not overspend.' } ] },
+      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on aim</span> — intended, not overspend.' } ] },
   budget: { q: "Which way is your pay and reward budget heading?",
     stops: [
       { v: "investing", t: "Investing", d: "More to spend" }, { v: "flat", t: "Flat", d: "Holding the line" },
@@ -76,8 +76,10 @@ const REQUIRED = ["market_position", "reward_mix", "primary_objective"];
 //               surfacing, SHOW BUT LABEL honestly so the user isn't misled.
 //   "live" (default) → wired, drives output, render normally (no label).
 // Re-showing a "coming" field once it's wired is a ONE-LINE flip to "live".
+// 2026-08-09 review: budget/acute/risk are LIVE signal re-rankers (signals.py _parts)
+// — the "context" honesty labels were stale and told members the opposite.
 const FIELD_STATE = { transparency: "live",
-  budget_direction: "context", risk_appetite: "context", acute_pressure: "context" };
+  budget_direction: "live", risk_appetite: "live", acute_pressure: "live" };
 const fieldState = (f) => FIELD_STATE[f] || "live";
 const shownFields = (fields) => fields.filter(f => fieldState(f) !== "coming");   // render/review only
 const DIAL_LABEL = { market_position: "Market position", reward_mix: "Total-reward mix",
@@ -262,6 +264,9 @@ const SD_DRIVES = {
   benefits_lead: "The benefit areas read as deliberate leads.",
   family_position: "The family-support bar you are held to.",
   primary_objective: "What your signals surface first.",
+  budget_direction: "Weights saving or investment signals with the budget's direction.",
+  acute_pressure: "Sharpens which signal lenses surface first this year.",
+  risk_appetite: "Weights early-mover practice signals up or down.",
 };
 
 function sdStance(strat, orgName) {
@@ -337,8 +342,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const valOf = (f) => f === "benefits_lead"
     ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
     : (strat[f] ? labelOf(f, strat[f]) : null);
-  const ctxBits = [["budget_direction", strat.budget_direction], ["acute_pressure", strat.acute_pressure], ["risk_appetite", strat.risk_appetite]]
-    .filter(x => x[1]).map(x => DIAL_LABEL[x[0]] + ": " + labelOf(x[0], x[1]).toLowerCase());
+  const ctxBits = [];   // every dial is live post-2026-08-09 — the demoted strip retired
   // FIXED numbering — sections must not renumber as async fetches resolve
   const NUM = { stance: "01", exhibit: "02", positions: "03", reading: "04" };
   return html`
@@ -374,7 +378,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </section>` : doms.length ? html`
         <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
-            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
+            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · vs all peers</span></div>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
             <span class="sd-axis sd-axis-labels"><i style=${{ left: "22.7%" }}>below</i><i style=${{ left: "47.9%" }}>on market</i><i style=${{ left: "75.2%" }}>above</i></span>
@@ -404,11 +408,12 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
                 <span class="sd-led-val">${v || "Not set"}${f === "market_position" && Object.keys(strat.domain_targets || {}).length ? html` <span class="sd-led-sub">· ${Object.keys(strat.domain_targets || {}).length} area${Object.keys(strat.domain_targets || {}).length === 1 ? "" : "s"} refined</span>` : ""}</span>
                 <span class="sd-led-why">${v ? SD_DRIVES[f] : "Read neutrally."}</span>
               </div>`; })}
-            <div class=${"sd-led-row" + (strat.primary_objective ? "" : " unset")}>
-              <span class="sd-led-name">${DIAL_LABEL.primary_objective}</span>
-              <span class="sd-led-val">${strat.primary_objective ? labelOf("primary_objective", strat.primary_objective) : "Not set"}</span>
-              <span class="sd-led-why">${strat.primary_objective ? SD_DRIVES.primary_objective : "Read neutrally."}</span>
-            </div>
+            ${["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"].map(f => html`
+            <div key=${f} class=${"sd-led-row" + (strat[f] ? "" : " unset")}>
+              <span class="sd-led-name">${DIAL_LABEL[f]}</span>
+              <span class="sd-led-val">${strat[f] ? labelOf(f, strat[f]) : "Not set"}</span>
+              <span class="sd-led-why">${strat[f] ? SD_DRIVES[f] : "Read neutrally."}</span>
+            </div>`)}
           </div>
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>

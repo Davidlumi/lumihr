@@ -440,7 +440,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             clause moved into the header subtitle ("baseline — movement shows from your next
             cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
       <div class="ov-signals-band">
-        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied}
+        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} objective=${data.strategy_objective}
           cutActive=${!!(cut && cut.dim && cut.dim !== "all")} domainFilter=${sigDomain} onClearDomain=${() => setSigDomain(null)} />
       </div>
     </div>`;
@@ -584,7 +584,7 @@ function proportionalNeedleRot(market) {
 const STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
 function targetCopy(t) {
   const w = STANCE_WORD[t.stance] || "your aim";
-  if (t.alignment === "on_target") return "On strategy — you aim to sit " + w;
+  if (t.alignment === "on_target") return "On aim — you aim to sit " + w;
   if (t.alignment === "ahead") return "Ahead of strategy — you aim to sit " + w;
   return "Behind strategy — you aim to sit " + w;
 }
@@ -632,7 +632,7 @@ const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber
 // behind vs ahead, which the old attainment colour could not (it lumped both as amber); the
 // full sentence (targetCopy) rides as the title. DORMANT in Phase B: defined here, wired onto
 // NO surface yet — the gauge / tiles / spectrum / category-hero revert passes adopt it.
-const ALIGN_LABEL = { on_target: "On strategy", behind: "Behind strategy", ahead: "Ahead of strategy" };
+const ALIGN_LABEL = { on_target: "On aim", behind: "Behind aim", ahead: "Ahead of aim" };
 // Compact tile chip: the state WORD alone — the full "… strategy" phrase overflows the tile's
 // own-row even at the 11px type floor (David 2026-06-27). "strategy" is implied by the navy
 // align-row context; the full phrase still rides the tooltip (targetCopy) + the gauge & hero chips.
@@ -651,7 +651,7 @@ function AlignmentChip({ target, compact }) {
 // pure RAG position with zero strategy indicators (on==off parity holds). Full read rides the row
 // aria-label + this title; the glyph is decorative.
 const STRAT_GLYPH = { on_target: { cls: "on", icon: "check" }, behind: { cls: "off", icon: "arrow-down" }, ahead: { cls: "off", icon: "arrow-up" } };
-const STRAT_CLAUSE = { on_target: "On strategy — you're on aim.", behind: "Behind strategy — short of your aim.", ahead: "Ahead of strategy — past your aim." };
+const STRAT_CLAUSE = { on_target: "On aim — where you mean to be.", behind: "Behind aim — short of where you mean to be.", ahead: "Ahead of aim — past where you mean to be." };
 function StrategyMark({ target }) {
   const g = target && STRAT_GLYPH[target.alignment];
   if (!g) return null;
@@ -1328,7 +1328,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     </div>`;
 }
 
-function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, cutActive, domainFilter, onClearDomain }) {
+function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, objective, cutActive, domainFilter, onClearDomain }) {
   // domain filter (2026-07-12): a scent-chip click narrows the band to ONE domain's signals —
   // uncapped (the count chip promised N; show N), the briefing cap applies only unfiltered.
   const sigs = (signals || []).filter(s => !domainFilter || s.domain === domainFilter);
@@ -1419,7 +1419,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
             to your aim") — same truth, one clause fewer; the founder's posture clause stays. */ ""}
       ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(domainFilter
         ? domainLabel(domainFilter) + " · " + shown.length + " of " + total + " · "
-        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? "ranked by gap to your aim" : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
+        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? (objective ? "ordered for " + objective.toLowerCase() + " · gap to your aim" : "ranked by gap to your aim") : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
@@ -2306,13 +2306,14 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     api(`/api/benchmarks/${encodeURIComponent(sp)}?` + cutQS(cut))
       .then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(e.message); });
     // signals come from the same computed data the home/category pages use; one
-    // fetch per page builds the qid -> signal map for every card's status pill
-    apiCached("/api/overview?" + cutQS(cut)).then(o => {
+    // fetch per page builds the qid -> signal map for every card's status pill.
+    // 2026-08-09 review: honour the strategy-off preference like every other surface.
+    apiCached("/api/overview?" + cutQS(cut) + (((prefs && prefs._overview) || {}).apply_strategy !== false ? "" : "&strategy=off")).then(o => {
       if (!live) return;
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => { if (live) setSigMap({}); });
     return () => { live = false; };
-  }, [sp, cutKeyOf(cut)]);
+  }, [sp, cutKeyOf(cut), ((prefs && prefs._overview) || {}).apply_strategy]);
   useEffect(() => {
     if (data && focusQ) {
       const el = document.getElementById("q-" + focusQ);
@@ -2857,12 +2858,13 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     // Ship review 2026-07-09 B4 (cut-switch race): live-flag guard so a slower older
     // cut's overview can't repaint the signal pills after the newer cut's map landed.
     let live = true;
-    apiCached("/api/overview?" + cutQS(cut)).then(o => {
+    // 2026-08-09 review: honour the strategy-off preference like every other surface.
+    apiCached("/api/overview?" + cutQS(cut) + (((prefs && prefs._overview) || {}).apply_strategy !== false ? "" : "&strategy=off")).then(o => {
       if (!live) return;
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => { if (live) setSigMap({}); });
     return () => { live = false; };
-  }, [cutKeyOf(cut)]);
+  }, [cutKeyOf(cut), ((prefs && prefs._overview) || {}).apply_strategy]);
   useEffect(() => {
     if (!layout) return;
     // one request per cut group instead of one per pinned card (20 pins was 20 GETs)

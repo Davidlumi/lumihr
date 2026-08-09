@@ -1971,6 +1971,13 @@ async def overview(request: Request):
     # dashboard never disagree about the same org)
     mp_cfg = pos.market_position_config()
     _strategy_full = strategy_for_engine(conn, org["org_id"])   # the org's declared strategy (None if unset)
+    # ONE definition of "has a strategy" platform-wide: a strategy applies only once
+    # COMPLETED (same gate as metric cards / pack / strategy check) — a half-saved
+    # capture must not lens one page while every other surface says "no strategy yet".
+    if _strategy_full and not conn.execute(
+            "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+            (org["org_id"],)).fetchone():
+        _strategy_full = None
     # "Apply my strategy" toggle (?strategy=off): read the dashboard WITHOUT the stance
     # lens — absolute RAG colours, impact-ordered signals, plain verdict (no aim/target).
     # Reuses the engine's strategy=None degrade path (§5.5); the org's strategy still
@@ -3571,9 +3578,11 @@ def _strategy_commentary_payload(request, user, org):
                      "aim_is_override": d["name"] in (strat.get("domain_targets") or {})})
     return {
         "org_name": org.get("name"),
-        "stance": {k: strat.get(k) for k in ("market_position", "reward_mix", "pay_for_performance",
-                                             "transparency", "location_approach", "family_position",
-                                             "primary_objective")},
+        "stance": dict(
+            {k: strat.get(k) for k in ("market_position", "reward_mix", "pay_for_performance",
+                                       "location_approach", "family_position", "primary_objective")},
+            **({"transparency": strat.get("transparency")}
+               if (strat.get("provenance") or {}).get("transparency") == "live" else {})),
         "objective_label": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
         "areas": rows,
         "off_aim": [r["area"] for r in rows if r["alignment"] and r["alignment"] != "on_target"],
@@ -5199,6 +5208,14 @@ def build_commentary_payload(conn, org, user, qid, dim, value):
         "metric_type": q.type,
         "illustrative_sample_data": bool(get_meta("synthetic_pool", False)),
     }
+    # the declared aim rides along (identical gate to the card's domain_aim) so the
+    # model can never contradict the aim chip rendered beside it
+    _cstrat = strategy_for_engine(conn, org["org_id"])
+    if _cstrat and conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                                (org["org_id"],)).fetchone():
+        _cstance = (_cstrat.get("domain_targets") or {}).get(q.sub_power) or _cstrat.get("market_position")
+        if _cstance and (pos.market_position_config().get("_domains") or {}).get(q.sub_power, {}).get("competitiveness", True):
+            payload["declared_aim"] = {"lag": "below market", "match": "on market", "lead": "above market"}.get(_cstance)
     if blk.get("p50") is not None:
         payload["peer_median_display"] = pos.fmt_value(blk["p50"], q.unit_block())
         payload["peer_p25_display"] = pos.fmt_value(blk["p25"], q.unit_block()) if blk.get("p25") is not None else None
