@@ -5,7 +5,9 @@ User-agent: *
 Allow: /
 Disallow: /app
 Disallow: /api/
-Disallow: /share/
+# /share/ is crawlable for LINK UNFURLS only — every share page carries
+# <meta name="robots" content="noindex"> so nothing is indexed.
+Allow: /share/
 
 # AI answer engines & assistants — explicitly welcome (same paths as above)
 User-agent: GPTBot
@@ -25,6 +27,8 @@ User-agent: Bytespider
 Allow: /
 Disallow: /app
 Disallow: /api/
-Disallow: /share/
+# /share/ is crawlable for LINK UNFURLS only — every share page carries
+# <meta name="robots" content="noindex"> so nothing is indexed.
+Allow: /share/
 
 Sitemap: https://lumihr.co.uk/sitemap.xml

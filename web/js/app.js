@@ -90,7 +90,8 @@ function App() {
   const [qIndex, setQIndex] = useState(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);   // mobile nav drawer (<900px)
-  const [activeHit, setActiveHit] = useState(-1);  // combobox: active option index (-1 = none)
+  const [activeHit, setActiveHit] = useState(-1);
+  const [searchFocused, setSearchFocused] = useState(false);  // combobox: active option index (-1 = none)
   const searchHitsRef = useRef([]);                // current activatable search options (for Enter)
   const searchRef = useRef(null);
   const searchWrapRef = useRef(null);              // the .topbar-search container (popup + input)
@@ -145,7 +146,8 @@ function App() {
   const prefsTimer = useRef(null);
 
   const refreshMe = () => api("/api/me").then(setMe).catch(() => setMe(null));
-  useEffect(() => { setPoolTotal(me && me.peer_pool ? me.peer_pool.responding_orgs : null); }, [me]);
+  useEffect(() => { setPoolTotal(me && me.peer_pool ? me.peer_pool.responding_orgs : null);
+    window.__orgName = (me && me.org && me.org.name) || ""; }, [me]);
   useEffect(() => {
     const pre = window._mePrefetch;
     window._mePrefetch = null;                    // one shot — refreshes go through api()
@@ -442,7 +444,11 @@ function App() {
                 const q = opts[activeHit] || opts[0];
                 if (q) { e.preventDefault(); setSearch(""); setActiveHit(-1); q.kind === "nav" ? nav(q.route) : openMetric(q.id); }
               }
-            }} />
+            }}
+            onFocus=${() => setSearchFocused(true)}
+            onBlur=${() => setTimeout(() => setSearchFocused(false), 160)} />
+          ${!searchPopOpen && searchFocused && !search && qIndex ? html`<${SearchZeroState} qIndex=${qIndex}
+            onGo=${(qid) => { setSearch(""); setSearchFocused(false); openMetric(qid); }} />` : null}
           ${searchPopOpen && html`<${SearchPop} qIndex=${qIndex} search=${search} role=${me.user.role}
             activeHit=${activeHit} onActiveHit=${setActiveHit}
             onGo=${(q) => { setSearch(""); setActiveHit(-1); q.kind === "nav" ? nav(q.route) : openMetric(q.id); }}
@@ -1313,6 +1319,21 @@ function searchOptions(qIndex, search, role) {
   return [...metrics, ...navMatches(search, role)];
 }
 
+// ⌘K zero state (2026-08-09 delight review): recents make the trained gesture
+// land somewhere useful before the first keystroke.
+function SearchZeroState({ qIndex, onGo }) {
+  let recents = [];
+  try { recents = JSON.parse(localStorage.getItem("lumi-recents") || "[]"); } catch (e) {}
+  const byId = {}; (qIndex.questions || []).forEach(q => { byId[q.id] = q; });
+  const rows = recents.map(id => byId[id] && { id, title: byId[id].title }).filter(Boolean).slice(0, 5);
+  if (!rows.length) return null;
+  return html`<div class="search-pop" role="listbox" aria-label="Recent metrics">
+    <div class="search-pop-head caption">Recent</div>
+    ${rows.map(r => html`<button key=${r.id} class="search-hit" role="option"
+      onMouseDown=${e => { e.preventDefault(); onGo(r.id); }}>${r.title}</button>`)}
+  </div>`;
+}
+
 function SearchPop({ qIndex, search, role, onGo, onRequest, activeHit, onActiveHit }) {
   const s = search.toLowerCase();
   const hits = qIndex.questions.filter(q => (q.title || "").toLowerCase().includes(s)).slice(0, 12);
@@ -1512,7 +1533,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   const profiled = !!(org.industry && org.fte_band);
   const doExport = async () => {
     const res = await exportCardPNG(chartRef.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: period, card: c,
+      title: c.title, cutLabel: c.cut.label, n: c.n, window: period, card: c, org: (window.__orgName || ""),
       suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
     }, "download");
     toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");

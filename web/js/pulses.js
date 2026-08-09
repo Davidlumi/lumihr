@@ -362,7 +362,6 @@ window.RunPulsePage = function ({ me }) {
       if (justLive.length) {
         justLive.forEach(p => localStorage.setItem("lumi-pulse-live-" + p.pulse_id, "1"));
         setLiveMoment(justLive[0]);
-        if (window.confettiBurst) confettiBurst({ count: 140, duration: 2600, origin: { x: 0.5, y: 0.25 } });
       }
     } catch (e) {}
   }).catch(e => setErr(e.message)); }, []);
@@ -450,7 +449,6 @@ window.PulseBuilderPage = function ({ me, pid }) {
     try {
       await api("/api/org/pulses/" + pid + "/submit-for-review", { method: "POST", body: {} });
       toast("Submitted for review — we'll be in touch.", "success");
-      if (window.confettiBurst) window.confettiBurst({ count: 80, spread: 0.85, origin: { x: 0.5, y: 0.3 } });
       load();
     } catch (e) { toast(e.message, "error"); } setBusy(false); };
   const discard = async () => { if (!window.confirm("Discard this draft survey?")) return;
@@ -661,7 +659,6 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       const k = "lumi.pulse.celebrated." + pid;
       if (!localStorage.getItem(k)) {
         localStorage.setItem(k, "1");
-        setTimeout(() => window.confettiBurst && window.confettiBurst({ origin: { x: 0.5, y: 0.34 } }), 250);
       }
     }
   }, [ls, pid]);

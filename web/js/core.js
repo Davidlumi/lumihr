@@ -434,6 +434,10 @@ window.confettiBurst = function (opts) {
 /* The metric full page is each metric's home. openMetric remembers where the
    user came from (route + scroll) so Back restores their exact position. */
 window.openMetric = function (qid) {
+  try {   // recents ring for the ⌘K zero state (2026-08-09 delight review)
+    const r = JSON.parse(localStorage.getItem("lumi-recents") || "[]").filter(x => x !== qid);
+    r.unshift(qid); localStorage.setItem("lumi-recents", JSON.stringify(r.slice(0, 5)));
+  } catch (e) { /* private mode */ }
   try {
     sessionStorage.setItem("lumi-return", JSON.stringify({
       hash: window.location.hash, y: window.scrollY || document.documentElement.scrollTop || 0 }));

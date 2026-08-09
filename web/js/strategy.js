@@ -355,7 +355,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   return html`
     <div class="sd-wrap">
       <div class="sd-actions no-print">
-        <button class="btn" onClick=${() => window.print()}><${Icon} name="download" size=${14} /> Print / save as PDF</button>
+        <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / save as PDF</button>
         ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
       </div>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
@@ -566,6 +566,7 @@ window.StrategyPage = function ({ me }) {
       await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
         transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // a governance act closes quietly — no confetti
+      toast("Saved — your benchmark now reads through this strategy.");
       apiCacheInvalidate("/api/overview");
       const wasEdit = editing;
       const settle = () => { setEditing(false); setCommitted(false); setSaving(false); setStep(0); window.scrollTo(0, 0); };

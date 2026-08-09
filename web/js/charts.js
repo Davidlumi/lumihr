@@ -597,7 +597,8 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   }
   const a = document.createElement("a");
   a.href = canvas.toDataURL("image/png");
-  a.download = (meta.title || "lumi-chart").toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".png";
+  a.download = ["lumi", meta.org || "", meta.title || "chart", meta.cutLabel || "", fmtDate()]
+    .filter(Boolean).join(" — ").replace(/[/\\:*?"<>|]+/g, "") + ".png";
   a.click();
   return "downloaded";
 };

@@ -3094,6 +3094,28 @@ async def gap_register_route(request: Request):
     return build_gap_register(request, user, org, cut)
 
 
+def cut_label_of(cut):
+    if not cut or cut.get("dim") in (None, "all"): return "All peers"
+    if cut.get("dim") == "twin": return "Organisations like you"
+    if cut.get("dim") == "group": return cut.get("label") or "Custom group"
+    return str(cut.get("value") or cut.get("dim"))
+
+
+def _csv_response(buf, org, artefact, cut_label):
+    """World-class export discipline (2026-08-09): BOM for Excel £/dash safety, and a
+    filename that files itself — lumi — <org> — <artefact> — <cut> — <date>.csv."""
+    import datetime as _dt
+    safe = lambda s: re.sub(r"[^A-Za-z0-9&+ '-]+", "", s or "").strip()
+    # display names live in the identity store (D6) — the middleware org carries none
+    _name = (identity.org_display(org["org_id"]) or {}).get("name") if org else None
+    fname = "lumi — %s — %s — %s — %s.csv" % (
+        safe(_name or "organisation"), artefact, safe(cut_label or "All peers"),
+        _dt.date.today().isoformat())
+    return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": "attachment; filename*=UTF-8''%s; filename=\"%s\"" % (
+                        urllib.parse.quote(fname), fname.replace("—", "-"))})
+
+
 @app.get("/api/gap-register.csv")
 async def gap_register_csv(request: Request):
     user, org = require_admin(request)
@@ -3111,9 +3133,8 @@ async def gap_register_csv(request: Request):
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
                     r["gap"] if r["gap"] is not None else "", r["n"]])
     w.writerow([])
-    w.writerow(["Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
-    return Response(buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=lumi-gap-register.csv"})
+    w.writerow(["# Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
+    return _csv_response(buf, org, "gap register", cut_label_of(cut))
 
 
 # ============================================================== BENCHMARK CSV ==
@@ -3121,8 +3142,8 @@ async def gap_register_csv(request: Request):
 # quantitative CSV shape shared by the whole-benchmark export and the per-dashboard
 # export — one row per metric, numbers matching the cards exactly (same assemble_card
 # path), suppressed cells blank + suppressed=true so a small-cell distribution never leaks.
-BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value",
-                    "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "suppressed"]
+BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value", "unit",
+                    "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "window", "suppressed"]
 
 
 def _bench_csv_row(qid, q, card):
@@ -3145,8 +3166,12 @@ def _bench_csv_row(qid, q, card):
                  blk.get("p75", ""), blk.get("p90", "")]
     else:
         stats = ["", "", "", "", ""]
-    return [qid, q.display_title, q.sub_power, your_value,
-            *stats, card.get("n", 0), cut_label,
+    _unit = (q.unit_block() or {}).get("symbol") or (q.unit_block() or {}).get("type") or ""
+    _snap = get_conn().execute("SELECT collection_window FROM snapshots WHERE snapshot_id=?",
+                               (CURRENT_SNAPSHOT,)).fetchone()
+    _win = (_snap and _snap["collection_window"]) or ""
+    return [qid, q.display_title, q.sub_power, your_value, _unit,
+            *stats, card.get("n", 0), cut_label, _win,
             "true" if suppressed else "false"]
 
 
@@ -3166,8 +3191,11 @@ async def benchmark_csv(request: Request):
     w = csv.writer(buf)
     w.writerow(BENCH_CSV_HEADER)
 
+    _sp = request.query_params.get("sp")   # optional domain scope (category-page export)
     rows = []
     for qid, q in org_visible_questions(org).items():
+        if _sp and q.sub_power != _sp:
+            continue
         p = payloads().get(qid)
         if p is None:
             continue
@@ -3179,10 +3207,8 @@ async def benchmark_csv(request: Request):
         w.writerow(r)
 
     w.writerow([])
-    w.writerow(["Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
-    fname = "lumi-benchmark-%s.csv" % (cut.get("dim") or "all")
-    return Response(buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": 'attachment; filename="%s"' % fname})
+    w.writerow(["# Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
+    return _csv_response(buf, org, (_sp + " benchmarks") if _sp else "benchmark", cut_label_of(cut))
 
 
 @app.get("/api/dashboards/{did}/export.csv")

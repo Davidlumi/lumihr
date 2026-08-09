@@ -46,6 +46,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
   // both exports carry the card's CURRENT cut label + n (c is the override card when set)
   const exportMeta = () => ({
     title: c.title, cutLabel: c.cut.label, n: c.n, n_real: c.n_real, window: collWindow, card: c,
+    org: (window.__orgName || ""),
     suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
   });
   const doExport = async () => {

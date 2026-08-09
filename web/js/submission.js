@@ -148,8 +148,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       : (drafts[q.id + "|"] || "") !== "";
     const total = qs.length, doneN = qs.filter(isAns).length;
     if (prevDoneRef.current != null && prevDoneRef.current < total && doneN === total && total > 0) {
-      toast(sp + " is complete ✨");
-      window.confettiBurst({ count: 100, duration: 2200, origin: { x: 0.5, y: 0.26 } });
+      toast(sp + " is complete ✨");   // the toast IS the beat — confetti stays reserved for unlock
     }
     prevDoneRef.current = doneN;
   }, [drafts, data]);
@@ -269,7 +268,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
         <div class=${"qwiz-saved" + (saveState === "error" ? " err" : savedAt ? " on" : "")} role="status">
           ${saveState === "error" ? "Some answers aren't saved — retry the highlighted rows"
             : saveState === "saving" ? "Saving\u2026"
-            : savedAt ? "Saved " + savedAt.toLocaleTimeString("en-GB")
+            : savedAt ? "Saved just now"
             : done + " of " + total + " answered · autosaves as you go"}</div>
       </div>
       <div style=${{ minWidth: "128px" }}>
@@ -325,13 +324,15 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
           <${QuestionInput} key=${cur.id} q=${cur} drafts=${drafts}
             issues=${issues} save=${save} confirmValue=${confirmValue} />
         </div>
-        <div class="qwiz-nav row spread">
+        <div class="qwiz-nav row spread" onKeyDown=${e => {
+          if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && !curError) { e.preventDefault(); next(); }
+        }}>
           <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
           <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
             ${!curAnswered && html`
               <a class="qwiz-skip" href="#" title=${cur.is_required ? "You can come back — key questions count toward the 90% that unlocks your insights." : null}
                 onClick=${e => { e.preventDefault(); next(); }}>${cur.is_required ? "Leave for later" : "Skip for now"}</a>`}
-            <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel}</button>
+            <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel} <span class="kbd-hint">press Enter ↵</span></button>
           </div>
         </div>
         ${curError && html`<div class="caption" style=${{ textAlign: "right", marginTop: "var(--s2)", color: "var(--unfavourable)" }}>
@@ -615,6 +616,25 @@ function DebouncedNumber({ value, onSave, unitName, unit, compact, disabled }) {
     </span>`;
 }
 
+// The unlock payoff shows the position itself — one authored line from the
+// already-cached overview, landing after the ring pop (2026-08-09 delight review).
+function UnlockPositionLine() {
+  const [line, setLine] = useState(null);
+  useEffect(() => {
+    apiCached("/api/overview").then(o => {
+      const m = o.hero && o.hero.market;
+      const w = m && m.verdict ? (m.verdict === "at" ? "on market" : m.verdict + " market") : null;
+      const c = o.headline || {};
+      if (w) setLine("You sit " + w + " overall" +
+        (c.comparable_metrics && c.above_median != null
+          ? " — " + c.above_median + " of " + c.comparable_metrics + " comparable metrics above the median."
+          : "."));
+    }).catch(() => {});
+  }, []);
+  if (!line) return null;
+  return html`<p class="unlock-position-line" style=${{ fontFamily: "var(--font-head)", fontWeight: 650 }}>${line}</p>`;
+}
+
 // ----------------------------------------------------------------- review --
 function ReviewStep({ state, refresh, refreshMe }) {
   const [val, setVal] = useState(null);
@@ -653,7 +673,8 @@ function ReviewStep({ state, refresh, refreshMe }) {
         <p>${done.answers_saved} answers saved — and you've reached <b>${done.completion_pct}%</b> of your key reward
         questions. The £ opportunity, your board pack and your biggest gaps to the market are now live with your real position.
         Thank you for contributing to the pool.</p>
-        <button class="btn primary" onClick=${() => nav("/overview")}>See where you stand</button>` : html`
+        <${UnlockPositionLine} />
+        <button class="btn primary" onClick=${() => nav("/overview")}>See your full position</button>` : html`
         <h1 class="display-title">Submission received</h1>
         <p>${done.answers_saved} answers saved and the benchmark has been refreshed — peer group sizes already include you.
         Key questions answered: <b>${done.completion_pct}%</b>.</p>

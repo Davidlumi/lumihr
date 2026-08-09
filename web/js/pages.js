@@ -133,6 +133,7 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
       ${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced &&
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
+      ${unlocked ? html`<${ReturnStrip} prefs=${prefs} onPref=${onPref} />` : null}
       ${unlocked && !(prefs && prefs._seen && prefs._seen.unlock) &&
         html`<${UnlockMoment} newcomer=${!(prefs && prefs._seen)} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
 
@@ -144,6 +145,38 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 
     </div>`;
 };
+
+// Return recognition (2026-08-09 delight review): one dismissible line when the
+// member has been away >7 days and things moved — pure recognition, no counters
+// animating. Stamps prefs._seen.visit on every Overview mount.
+function ReturnStrip({ prefs, onPref }) {
+  const [line, setLine] = useState(null);
+  useEffect(() => {
+    const seen = (prefs && prefs._seen) || {};
+    const last = seen.visit ? new Date(seen.visit) : null;
+    const stamp = () => onPref && onPref("_seen", { ...seen, visit: new Date().toISOString() });
+    if (!last || isNaN(last)) { stamp(); return; }
+    const days = (Date.now() - last.getTime()) / 86400000;
+    if (days < 7) { stamp(); return; }
+    api("/api/notifications").then(d => {
+      const evs = (d.notifications || d.events || []).filter(e => e.created_at && new Date(e.created_at) > last);
+      const appeared = evs.filter(e => /appear|new|flag/i.test(e.kind || e.type || "")).length;
+      const cleared = evs.filter(e => /clear|resolve/i.test(e.kind || e.type || "")).length;
+      if (appeared || cleared) {
+        const bits = [];
+        if (cleared) bits.push(cleared + " signal" + (cleared === 1 ? "" : "s") + " cleared");
+        if (appeared) bits.push(appeared + " new flag" + (appeared === 1 ? "" : "s"));
+        setLine("Since you were last here — " + bits.join(", ") + ".");
+      }
+      stamp();
+    }).catch(stamp);
+  }, []);
+  if (!line) return null;
+  return html`<div class="return-strip" role="status">
+    <${Icon} name="flag" size=${13} /> ${line}
+    <button class="iconbtn" aria-label="Dismiss" onClick=${() => setLine(null)}><${Icon} name="close" size=${12} /></button>
+  </div>`;
+}
 
 // Org-wide unlock moment: insights unlock for the WHOLE organisation the moment
 // one member submits (sticky, server-stamped) — so every OTHER member next signs
@@ -2042,7 +2075,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.' 
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
-    : "Everything is filed — saved, snoozed or dismissed.";
+    : "Inbox zero. Everything is filed — saved, snoozed or dismissed. New signals land here as your position or the market moves.";
 
   // ---- the evidence card (Briefing anatomy, unchanged): caption + risk shield, stand-
   // sentence headline, "Flagged because … · n · verified/estimate", soft chips, gap bar,
@@ -2143,7 +2176,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="brf-navy">
           <div class="brf-navy-reg">
             <${Icon} name="table" size=${15} />
-            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href="/api/gap-register.csv" download>Download CSV</a>` : null}</span>
+            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(cut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(cut, cuts) + ".")}>Download CSV</a>` : null}</span>
           </div>
           <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
         </div>`}
@@ -2693,7 +2726,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(false)}>
               <b>Figures only</b>
               <span class="caption" style=${{ display: "block" }}>Positions, values and peer stats — no charts</span></button>
-            <a class="bp-menu-item" role="menuitem" href=${"/api/benchmark.csv?" + cutQS(cut)} download>
+            <a class="bp-menu-item" role="menuitem" href=${"/api/benchmark.csv?" + cutQS(cut) + "&sp=" + encodeURIComponent(sp)} download onClick=${() => toast("Spreadsheet downloading — " + sp + " on " + cutLabelOf(cut, cuts) + ".")}>
               <b>Spreadsheet (CSV)</b>
               <span class="caption" style=${{ display: "block" }}>The raw numbers on this peer group</span></a>
           </div>`}
