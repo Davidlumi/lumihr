@@ -40,7 +40,7 @@ function ConfidenceChip({ n, window: win }) {
   const cs = confScore(n);   // the ONE score rule (core.js) — shared with the board pack
   if (!cs) return null;
   const score = cs.score, band = cs.band;
-  const tip = "Confidence " + score + "/10 — " + n + " peer organisations behind this comparison. "
+  const tip = "Confidence " + score + "/10 — " + n + " organisations in this comparison. "
     + "20 or more peers rates 7–10 (high confidence); 5–19 rates 4–6 (directional — treat as a "
     + "steer, not a verdict); fewer than 5 is never shown."
     + (win ? " " + win + " baseline — movement shows from your next cycle." : "");
@@ -48,6 +48,7 @@ function ConfidenceChip({ n, window: win }) {
     <span class=${"conf-chip conf-" + band} tabindex="0" role="note" aria-label=${tip}
       onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}>
       <span class="conf-meter" aria-hidden="true"><i></i><i class=${score >= 4 ? "" : "off"}></i><i class=${score >= 7 ? "" : "off"}></i></span>
+      <span class="conf-label">Confidence</span>
       <span class="conf-score num">${score}/10</span>
       <span class="indic-tip">${tip}</span>
     </span>`;
@@ -133,7 +134,7 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
         html`<${WelcomeHero} contrib=${data.contribution} pool=${data.peer_pool} me=${me} />`}
 
       ${unlocked && !(prefs && prefs._seen && prefs._seen.unlock) &&
-        html`<${UnlockMoment} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
+        html`<${UnlockMoment} newcomer=${!(prefs && prefs._seen)} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
 
       <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
         view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat}
@@ -149,20 +150,23 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 // in to a silently different product. This one-time, per-user (prefs._seen.unlock)
 // banner introduces the three things that just came alive. Shown to whoever hasn't
 // dismissed it, not only the person who clicked Submit.
-window.UnlockMoment = function ({ onDismiss }) {
+window.UnlockMoment = function ({ onDismiss, newcomer }) {
+  // a week-one joiner (no prefs._seen at all) gets ORIENTATION, not a celebration
+  // written for someone who watched the journey (2026-08-09 persona review)
   return html`
     <div class="card unlock-moment" role="status">
       <button class="iconbtn unlock-x" aria-label="Dismiss" onClick=${onDismiss}><${Icon} name="close" size=${14} /></button>
       <div class="unlock-spark"><${Icon} name="sparkle" size=${22} /></div>
       <div style=${{ flex: 1, minWidth: "240px" }}>
-        <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>Your insights are live</b>
-        <p style=${{ margin: "0 0 var(--s3)" }}>Your organisation's reward data is in:</p>
+        <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>${newcomer ? "New to lumi?" : "Your insights are live"}</b>
+        <p style=${{ margin: "0 0 var(--s3)" }}>${newcomer ? "This is your organisation's live reward benchmark — your position, the signals worth attention, and how every number is built:" : "Your organisation's reward data is in:"}</p>
         <div class="unlock-links">
           <button class="btn small" onClick=${() => { nav("/signals"); onDismiss && onDismiss(); }}><${Icon} name="flag" size=${13} /> Your signals</button>
           ${/* the £ opportunity lives INSIDE signals (money flags) since the 80/20 hero —
                 this used to say "(below)" and point at a tile that no longer renders */ ""}
           
           <button class="btn small" onClick=${() => { nav("/overview"); onDismiss && onDismiss(); }}><${Icon} name="file-text" size=${13} /> Export a board pack — on your Overview</button>
+          ${newcomer ? html`<a class="btn small quiet" href="#/how-lumi-works">How the numbers work</a>` : null}
         </div>
       </div>
     </div>`;
@@ -395,6 +399,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
           ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
+          ${unlocked && data.snapshot && data.snapshot.window ? html`<span class="caption ov-period num">${data.snapshot.window} · baseline</span>` : null}
         </div>
         ${!locked ? html`
         <div class="ov-lens">
@@ -961,7 +966,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
           <span class="prac-bucket-split num"><b>${b.in_line}</b> in line <span class="prac-dot">·</span>
             <b>${b.off_norm}</b> off the norm <span class="prac-dot">·</span>
             <b>${b.low_peer}</b> low peer data</span></div>
-        <div class="caption prac-bucket-basis">${b.answered} of ${b.book} answered · peer pools under 5 excluded${b.ms_excluded ? ` · split excludes ${b.ms_excluded} multi-select inventor${b.ms_excluded === 1 ? "y" : "ies"}` : ""}</div>
+        <div class="caption prac-bucket-basis">${b.answered} of ${b.book} answered · peer pools under 5 excluded${b.ms_excluded ? ` · ${b.ms_excluded} pick-all-that-apply question${b.ms_excluded === 1 ? "" : "s"} counted separately` : ""}</div>
       </div>
       ${(b.rare_stances || []).length ? html`
         <div class="prac-bucket-rare">
@@ -1419,7 +1424,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
             to your aim") — same truth, one clause fewer; the founder's posture clause stays. */ ""}
       ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(domainFilter
         ? domainLabel(domainFilter) + " · " + shown.length + " of " + total + " · "
-        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? (objective ? "ordered for " + objective.toLowerCase() + " · gap to your aim" : "ranked by gap to your aim") : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
+        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? (objective ? "ordered for " + objective.toLowerCase() : "ranked by gap to your aim") : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
@@ -1518,7 +1523,7 @@ function SignalActions({ status, sid, onSet }) {
       <button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>
       <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
       <span class="sig-snooze-wrap" ref=${wrapRef}>
-        <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — revisit next cycle" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
+        <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — pick a return date" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
         ${snoozeOpen ? html`<div class="sig-snooze-menu" role="group">
           <div class="sig-snooze-lbl">Snooze until…</div>
           <button class="sig-snooze-opt" onClick=${() => snooze(14)}>2 weeks</button>
@@ -2053,7 +2058,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
         ${s.gap_pct != null ? html`<span class="brf-gapbar" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
-        ${s.lens ? html`<span class="brf-lens">${s.lens}</span>` : null}
+        ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens}</span>` : null}
         ${s.confirm ? html`<span class="brf-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
@@ -2627,7 +2632,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   const setHeroHidden = v => onPref && onPref("_cat", { ...catUi, hero_hidden: v });
   // ANALYSIS PACK (David 2026-07-13): a print product from the live page — the briefing +
   // every metric card, with charts or figures-only. Client-side print (the board-pack
-  // "Download PDF" pattern); the pack mirrors the CURRENT view — cut, strategy state,
+  // "Print / save as PDF" pattern); the pack mirrors the CURRENT view — cut, strategy state,
   // folded insights and active filters all print as seen, which is the honest contract.
   const printPack = (withCharts) => {
     setDl(false);
@@ -2681,6 +2686,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(false)}>
               <b>Figures only</b>
               <span class="caption" style=${{ display: "block" }}>Positions, values and peer stats — no charts</span></button>
+            <a class="bp-menu-item" role="menuitem" href=${"/api/benchmark.csv?" + cutQS(cut)} download>
+              <b>Spreadsheet (CSV)</b>
+              <span class="caption" style=${{ display: "block" }}>The raw numbers on this peer group</span></a>
           </div>`}
         </div>`)}
 
@@ -3218,7 +3226,10 @@ window.YourDataPage = function ({ me }) {
       </div>
 
       <div class=${"card data-hero" + (fresh ? " fresh" : "")}>
-        <div class="data-hero-ringwrap"><${CompletionRing} pct=${data.pct} size=${118} stroke=${12} /></div>
+        <div class="data-hero-ringwrap" title="The ring counts every question; unlocking is measured on your key questions.">
+          <${CompletionRing} pct=${data.pct} size=${118} stroke=${12} />
+          <div class="caption" style=${{ textAlign: "center", marginTop: "var(--s1)" }}>all questions</div>
+        </div>
         <div class="data-hero-body">
           <div class="data-hero-fig">${fresh ? html`<b>Let's build your reward benchmark.</b>`
             : html`<span class="dh-num">${data.answered}</span><span class="dh-den"> / ${data.total}</span><span class="dh-lbl">questions answered</span>`}</div>
@@ -3333,7 +3344,7 @@ window.DomainDataView = function ({ me, section }) {
           <div key=${q.question_id} class=${"data-q" + (q.answered ? "" : " unans")}>
             <div class="data-q-main">
               <div class="data-q-title">${q.title}
-                ${q.required ? html`<span class="data-q-req" title="Counts toward the completion that keeps your access">required</span>` : ""}</div>
+                ${q.required ? html`<span class="data-q-req" title="Counts toward the 90% that unlocks your insights">key</span>` : ""}</div>
               ${q.answered ? (q.rows ? html`
                 <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
                 : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
@@ -3483,7 +3494,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           <p><b>Percentiles.</b> P10, P25, P50 (median), P75 and P90 use linear interpolation across all valid peer
           answers — the same method the main survey houses use. We benchmark on medians, not averages, so a single
           unusual organisation cannot skew a figure.</p>
-          <p><b>Your percentile.</b> Your P-number is the share of peer organisations whose value sits below yours
+          <p><b>Your percentile.</b> Your P-number is the share of organisations in the comparison whose value sits below yours
           (ties counted half), so P63 means you are higher than about 6 in 10 peers.</p>
           <p><b>Favourable vs the market.</b> Each question carries a polarity — higher is better, lower is better, or
           neutral (where "better" depends on strategy). Green/amber/red colouring is polarity-adjusted and is never
@@ -3650,7 +3661,12 @@ window.cutSize = function (cut, cuts, peerPool) {
     const g = cuts && (cuts.groups || []).find(x => x.group_id === cut.value);
     return g && typeof g.match_count === "number" ? g.match_count : null;
   }
-  return null; // twin — pool size not exposed
+  if (cut.dim === "twin") {
+    // 2026-08-09 persona review: the methodology promises every peer group a
+    // confidence label — the twin pool size now rides /api/cuts (twin_n)
+    return cuts && typeof cuts.twin_n === "number" ? cuts.twin_n : null;
+  }
+  return null;
 };
 
 /* ===================== versioning & governance (2026-06-12) ===============

@@ -31,7 +31,7 @@ const SCALE = {
     stops: [
       { v: "closed", t: "Private", d: "Pay isn’t shared", se: 'We’ll treat open-pay practices as <b>optional</b> for you, not expected.' },
       { v: "ranges", t: "Ranges shared", d: "People see the pay bands", se: 'Sharing ranges internally is your <b>stated</b> norm — we read against it.' },
-      { v: "open", t: "Fully open", d: "Actual pay is visible", se: 'Full openness becomes a <span class="se-pill green">commitment we track</span> — gaps to it surface as actions.' } ] },
+      { v: "open", t: "Fully open", d: "Actual pay is visible", se: 'Full openness becomes a <span class="se-pill green">commitment we track</span> — we track your openness commitments against it.' } ] },
   location: { q: "Does where someone works change their pay?",
     stops: [
       { v: "local", t: "Local rates", d: "Pay follows the local area", se: 'We’ll give you <b>per-location</b> reads — local market rates matter to you.' },
@@ -292,10 +292,16 @@ function sdStance(strat, orgName) {
 // aim (a ZONE, shaded navy) vs position (one dot at the true percentile).
 // The three zone extents follow the real market band (P35-65) on an 8-92% track;
 // on aim = the dot sits inside the shaded stretch. One band, one dot, one chip.
-const SD_ZONES = [[8, 37.4], [37.4, 58.4], [58.4, 92]];   // below | on market | above
-const sdPctlX = (p) => (8 + Math.max(0, Math.min(100, p)) * 0.84) + "%";
+// zone extents DERIVED from the live market band through the same mapper as the
+// dot — zone, dot and alignment chip cannot disagree (2026-08-09 persona review:
+// a hardcoded 58.4 drew the aim zone to P60 while alignment read to P65)
+const sdPX = (p) => 8 + Math.max(0, Math.min(100, p)) * 0.84;
+const sdBand = () => (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
+const SD_ZONES_F = () => { const [lo, hi] = sdBand(); return [[8, sdPX(lo)], [sdPX(lo), sdPX(hi)], [sdPX(hi), 92]]; };
+const sdPctlX = (p) => sdPX(p) + "%";
 function SdAxis({ intent, actual, pctl }) {
   const ii = SD_IDX[intent], ai = SD_IDX[actual];
+  const SD_ZONES = SD_ZONES_F();
   const dotX = (pctl != null && ai != null) ? sdPctlX(pctl)
     : (ai != null ? ((SD_ZONES[ai][0] + SD_ZONES[ai][1]) / 2) + "%" : null);
   const vcls = actual === "below" ? " v-below" : actual === "above" ? " v-above" : " v-on";
@@ -348,7 +354,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   return html`
     <div class="sd-wrap">
       <div class="sd-actions no-print">
-        <button class="btn" onClick=${() => window.print()}><${Icon} name="download" size=${14} /> Download (PDF)</button>
+        <button class="btn" onClick=${() => window.print()}><${Icon} name="download" size=${14} /> Print / save as PDF</button>
         ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
       </div>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
@@ -381,7 +387,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · vs all peers</span></div>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
-            <span class="sd-axis sd-axis-labels"><i style=${{ left: "22.7%" }}>below</i><i style=${{ left: "47.9%" }}>on market</i><i style=${{ left: "75.2%" }}>above</i></span>
+            <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
             <span></span>
           </div>
           <div class="sd-exhibit">

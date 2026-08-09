@@ -246,7 +246,9 @@ function InviteForm({ token, onAuthed }) {
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         <button class="btn primary block" disabled=${!tick}>Join ${info.org_name}</button>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your Admin has already accepted the Data Contribution Terms for your organisation.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>${info.data_terms_accepted
+          ? "Your Admin has already accepted the Data Contribution Terms for your organisation."
+          : "Your Admin accepts the Data Contribution Terms for the whole organisation — nothing is needed from you."}</div>
         <div class="caption" style=${{ marginTop: "var(--s3)" }}>Not ${info.email}?
           <a href="#" onClick=${toSignIn}> Sign in to your own account instead</a>.</div>
       </form>`}

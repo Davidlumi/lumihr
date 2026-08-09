@@ -328,8 +328,9 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
         <div class="qwiz-nav row spread">
           <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
           <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
-            ${!curAnswered && !cur.is_required && html`
-              <a class="qwiz-skip" href="#" onClick=${e => { e.preventDefault(); next(); }}>Skip for now</a>`}
+            ${!curAnswered && html`
+              <a class="qwiz-skip" href="#" title=${cur.is_required ? "You can come back — key questions count toward the 90% that unlocks your insights." : null}
+                onClick=${e => { e.preventDefault(); next(); }}>${cur.is_required ? "Leave for later" : "Skip for now"}</a>`}
             <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel}</button>
           </div>
         </div>
@@ -455,7 +456,7 @@ function NAToggle({ checked, onChange }) {
   return html`
     <label class="na-toggle">
       <input type="checkbox" checked=${checked} onChange=${e => onChange(e.target.checked)} />
-      <span>Not applicable to us</span>
+      <span>Not applicable to us <span class="caption" style=${{ fontWeight: 400 }}>· counts as an answer, excluded from your benchmarks</span></span>
     </label>`;
 }
 

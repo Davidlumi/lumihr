@@ -953,14 +953,16 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
     const steps = [
       { n: 1, label: "Tell us about your organisation", done: profiled,
         hint: profiled ? "Done — your peer groups are live."
-          : "8 quick facts (sector, size, region…) so we compare you to the right peers. Two minutes, company facts only." },
+          : role === "admin" ? "8 quick facts (sector, size, region…) so we compare you to the right peers. Two minutes, company facts only."
+          : "Your Admin does this — nothing is needed from you." },
       { n: 2, label: "Review and accept the Data Contribution Terms", done: false,
         hint: role === "admin" ? "You accept once, for the whole organisation — your 30 days start then."
                                : "Your Admin does this — nothing is needed from you yet." },
       { n: 3, label: "Complete your reward data", done: false,
         hint: (basisN ? "About " + basisN + " key questions (~" + Math.round(basisN * 0.6 / 10) * 10 + " min), by section" : "Your reward questions by section") + " — autosaved, resume any time; insights unlock at " + targetPct + "%." },
       { n: 4, label: "Invite your team", done: false,
-        hint: "Contributors fill the questionnaire; Viewers see the benchmark." },
+        hint: role === "admin" ? "Contributors fill the questionnaire; Viewers see the benchmark."
+          : "Your Admin does this — nothing is needed from you." },
     ];
     return html`
       <div class="card welcome-hero">
@@ -969,8 +971,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
             <span style=${{ color: "var(--blue)" }}><${Icon} name="sparkle" size=${18} /></span>
             <b style=${{ fontFamily: "var(--font-head)", fontSize: "var(--fs-subhead)" }}>You're set up — here's what's next</b>
           </div>
-          <p style=${{ margin: "2px 0 0" }}>Explore every metric and all ${pool.responding_orgs} peer
-            organisations from day one. Your 30 days only start once your Admin accepts the data terms —
+          <p style=${{ margin: "2px 0 0" }}>Explore every metric and the full ${pool.responding_orgs}-organisation comparison pool from day one. Your 30 days only start once your Admin accepts the data terms —
             setup never counts against you.</p>
         </div>
         <div style=${{ flex: "1.2 1 280px", minWidth: "260px" }}>
@@ -1015,7 +1016,9 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
           <span class="caption submit-banner-pct"><b class="num">${pct}%</b> of ${targetPct}% complete · autosaves</span>
         </div>
       </div>
-      <button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data/submit")}>Continue submission</button>
+      ${role === "viewer"
+        ? html`<span class="caption">Your Admin or a Contributor completes the data.</span>`
+        : html`<button class="btn primary submit-banner-cta" onClick=${() => nav("/your-data/submit")}>Continue submission</button>`}
     </div>
     <div class="setup-checklist card">
       <div class="setup-checklist-head"><span class="eyebrow">Setup · ${doneCount} of ${setupSteps.length}</span></div>
@@ -1185,7 +1188,7 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
             html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
           ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
             html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
-          ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+          ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
           ${cuts && (cuts.groups || []).length > 0 && html`
             <optgroup label="Your groups">
               ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
@@ -1591,7 +1594,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
               ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
               ${sel.dim === "industry" && sel.value && sel.value !== org.industry && html`<option value=${"industry::" + sel.value}>Sector: ${sel.value}</option>`}
               ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && html`<option value=${"fte_band::" + sel.value}>Size: ${sel.value} FTE</option>`}
-              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you</option>`}
+              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
               ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
                 <optgroup label="Compare a sector">
                   ${Object.keys(cuts.industries).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}

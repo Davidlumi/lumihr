@@ -654,6 +654,8 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 /* 10-point rating bands (David 2026-07-12): icon + score only — the words live in the
    tooltip/aria. Bars + score ink take the band hue (78%-ink mixes clear AA); the meter
    fills 1/2/3 bars for red/amber/green. Reverses the navy-only trust ruling on David's call. */
+.ov-period { color: var(--ink-faint); white-space: nowrap; }
+.conf-label { font-size: var(--fs-micro); font-weight: 600; color: var(--ink-soft); letter-spacing: .02em; }
 .conf-score { font-weight: 700; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
 .conf-green .conf-meter i:not(.off) { background: var(--favourable); }
 .conf-green .conf-score { color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }

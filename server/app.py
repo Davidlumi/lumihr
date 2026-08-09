@@ -1691,8 +1691,10 @@ async def invite_info(token: str):
     # P1b: the org name comes from the identity store (D6). Display-shaped and
     # no-fallback, like every other read switch — a miss renders unnamed rather
     # than reaching back into the reward store, which would mask a broken split.
+    _terms = org_data_terms(get_conn(), row["org_id"]) is not None
     return {"email": identity.invite_email(token), "role": row["role"],
-            "org_name": (identity.org_display(row["org_id"]) or {}).get("name")}
+            "org_name": (identity.org_display(row["org_id"]) or {}).get("name"),
+            "data_terms_accepted": _terms}
 
 
 @app.post("/api/auth/accept-invite")
@@ -1933,6 +1935,7 @@ async def cuts_available(request: Request):
         "industries": pool.get("industries", {}),
         "fte_bands": pool.get("fte_bands", {}),
         "twin_available": twin is not None,
+        "twin_n": len(twin["peer_org_ids"]) if twin else None,
         "org_industry": org["industry"], "org_fte_band": org["fte_band"],
         "groups": groups,
     }

@@ -93,7 +93,7 @@ function ShareApp() {
         <div>
           <div class="logo" style=${{ padding: 0 }}>lumi<span>.benchmark</span></div>
           <h1 class="display-title" style=${{ marginTop: "var(--s2)" }}>${data.org_name}</h1>
-          <div class="caption">Shared benchmark · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}</div>
+          <div class="caption">Shared benchmark · peer group: ${data.cut.dim === "all" ? "All peers" : data.cut.value}${cutN != null ? ` (${cutN} organisations)` : ""}${data.snapshot && data.snapshot.window ? " · " + data.snapshot.window : ""} · as at ${fmtDate()}</div>
           ${(data.peer_pool || {}).responding_orgs ? html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>Comparison pool: ${data.peer_pool.responding_orgs} UK organisation profiles. See lumihr.co.uk methodology for sources.</div>` : ""}
         </div>
         <${Chip} kind="accent">Read-only<//>

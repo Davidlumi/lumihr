@@ -81,7 +81,7 @@ window.GLOSSARY = {
   suppressed: "When fewer than 5 organisations are behind a number we don't show it, so no individual organisation's data can be worked out.",
   "peer group": "The organisations you're being compared with. Use the filter to compare against everyone, your industry, organisations your size, or organisations like you.",
   n: "The number of organisations behind this comparison. A benchmark without its sample size isn't publishable — so n is always shown.",
-  indicative: "A modelled, directional figure built on the stated assumptions — useful for sizing a conversation, not for budgeting.",
+  indicative: "Directional, not definitive. On £ figures: modelled from the stated assumptions — for sizing a conversation, not budgeting. On comparisons: resting on a small peer group, so read with care.",
   "market position": "Where you sit versus peers on a measure — below, on, or above market. The headline is built only from market-rate measures where higher is better, so it answers one question: how competitive is your reward?",
   "a practice choice": "You do something differently from most peers on a measure with no better-or-worse — a choice, not a gap to close.",
   favourable: "A measure where being lower is the good outcome — such as a pay gap — and you sit on the good side of the market.",

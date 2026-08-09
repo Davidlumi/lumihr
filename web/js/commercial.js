@@ -32,6 +32,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
     action=${html`<button class="btn small primary" onClick=${() => setGretry(k => k + 1)}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const focused = window.SCOPE && window.SCOPE.focused;
+  const suppressedN = data.rows.filter(r => r.suppressed).length;
   let rows = data.rows.filter(r => !r.suppressed);
   if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
   if (show === "gaps") rows = rows.filter(r => r.org_answered && r.in_place === false && (r.gap || 0) > 0);
@@ -97,7 +98,7 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           </tbody>
         </table>
         </div>
-        <div class="caption" style=${{ padding: "var(--s3) var(--s5)" }}>${rows.length} metric${rows.length === 1 ? "" : "s"} shown</div>
+        <div class="caption" style=${{ padding: "var(--s3) var(--s5)" }}>${rows.length} metric${rows.length === 1 ? "" : "s"} shown${suppressedN ? ` · ${suppressedN} under the 5-organisation floor not shown` : ""}</div>
       </div>`}
     </div>`;
 };
@@ -279,7 +280,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           <dd>${p.collection_window} collection window; figures are read from the live benchmark at generation (${p.generated_date}).
             No ageing or annualisation is applied — the benchmark is live, not an annual survey.</dd>
           <dt>Peer group</dt>
-          <dd>${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total}, drawn from a pool of ${p.peer_pool.total} UK organisations (${p.peer_pool.classified} fully classified).${
+          <dd>${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total}, drawn from a comparison pool of ${p.peer_pool.total} UK organisation profiles (${p.peer_pool.classified} fully classified).${
             p.cut_criteria && Object.keys(p.cut_criteria).length
               ? " Constructed from: " + Object.entries(p.cut_criteria).map(([k, v]) => k.replace(/_/g, " ") + ": " + (Array.isArray(v) ? v.join(", ") : v)).join(" · ") + "."
               : ""}</dd>
@@ -317,7 +318,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           ${(() => { const cs = confScore(p.cut_n != null ? p.cut_n : p.peer_pool.total);
             return cs ? html`<div class="bp-stat">
               <div class="metric-value num">${cs.score}/10</div>
-              <div class="caption">confidence — ${(p.cut_n != null ? p.cut_n : p.peer_pool.total)} peers behind this comparison (${cs.tier} tier)</div>
+              <div class="caption">confidence — ${(p.cut_n != null ? p.cut_n : p.peer_pool.total)} organisations in this comparison (${cs.tier} tier)</div>
             </div>` : null; })()}
         </div>
         ${n.key_findings && n.key_findings.length ? html`
@@ -405,7 +406,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               <p class="caption"><b>Practice choices:</b> in line with the norm on <b>${b.in_line}</b> of
                 <b>${b.answered}</b> answered — ${b.in_line} in line · ${b.off_norm} off the norm ·
                 ${b.low_peer} low peer data. ${b.answered} of ${b.book} answered · peer pools under 5
-                excluded${b.ms_excluded ? ` · split excludes ${b.ms_excluded} multi-select inventor${b.ms_excluded === 1 ? "y" : "ies"}` : ""}.
+                excluded${b.ms_excluded ? ` · ${b.ms_excluded} pick-all-that-apply question${b.ms_excluded === 1 ? "" : "s"} counted separately` : ""}.
                 A different way of doing things is not a gap to close.</p>
               ${(b.rare_stances || []).map(r => html`
                 <p key=${r.label} class="caption pack-prac-rare">— ${r.label}: one of ${r.orgs} organisations (${r.share_pct}%)
@@ -473,7 +474,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           </table>
           <p class="caption">Indicative modelling only. Assumptions: median salary £${(p.opportunity_assumptions.median_salary_gbp || 0).toLocaleString("en-GB")};
           cost per leaver ${p.opportunity_assumptions.cost_per_leaver_pct_salary}% of salary; agency premium ${p.opportunity_assumptions.agency_premium_pct}%;
-          FTE from band midpoints. Edit these in Settings and regenerate.</p>
+          FTE from band midpoints. Assumptions can be adjusted in lumi (Settings) and the pack regenerated.</p>
           <div class="bp-qbox">
             <b>Questions the board may ask</b>
             <ul>
