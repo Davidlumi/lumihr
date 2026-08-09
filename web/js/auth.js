@@ -220,10 +220,12 @@ function InviteForm({ token, onAuthed }) {
   const [showTerms, setShowTerms] = useState(false);
   const [aiDoc, setAiDoc] = useState(false);
   useEffect(() => { api("/api/invite/" + token).then(setInfo).catch(e => setErr(e.message)); }, [token]);
+  const [joining, setJoining] = useState(false);
   const go = async (e) => {
-    e.preventDefault(); setErr(null);
+    e.preventDefault(); if (joining) return; setErr(null); setJoining(true);
     try { await api("/api/auth/accept-invite", { method: "POST", body: { token, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
     catch (ex) { setErr(ex.message); }
+    setJoining(false);
   };
   const toSignIn = (e) => { e.preventDefault(); window.location.hash = "/"; };
   return html`
@@ -245,7 +247,7 @@ function InviteForm({ token, onAuthed }) {
         </div>
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
-        <button class="btn primary block" disabled=${!tick}>Join ${info.org_name}</button>
+        <button class="btn primary block" disabled=${!tick || joining}>${joining ? html`<${Spinner} />` : "Join " + info.org_name}</button>
         <div class="caption" style=${{ marginTop: "var(--s2)" }}>${info.data_terms_accepted
           ? "Your Admin has already accepted the Data Contribution Terms for your organisation."
           : "Your Admin accepts the Data Contribution Terms for the whole organisation — nothing is needed from you."}</div>

@@ -108,6 +108,19 @@ window.NBadge = ({ n, cutLabel }) => html`
 
 window.Spinner = () => html`<span class="spinner"></span>`;
 
+// Card-level error containment (craft review 2026-08-09): one bad card must not
+// blank the whole app. Wrap grid/card renders; the root catcher stays the backstop.
+window.Guarded = class extends React.Component {
+  constructor(p) { super(p); this.state = { broken: false }; }
+  static getDerivedStateFromError() { return { broken: true }; }
+  componentDidCatch(err) { console.error("[lumi] card render error:", err); }
+  render() {
+    if (this.state.broken) return html`<div class="card bench-card"><${EmptyState} icon="info"
+      title="This card hit a snag" body="The rest of the page is unaffected — reload to retry it." /></div>`;
+    return this.props.children;
+  }
+};
+
 window.Modal = function ({ onClose, children, width, xl, label, role }) {
   const cardRef = useRef(null);
   useEffect(() => {
@@ -264,7 +277,9 @@ window.toast = function (msg, kind, action) {
   }
   host.appendChild(el);
   setTimeout(() => el.classList.add("show"), 16);
-  const ttl = action ? 6500 : 3600;   // undo needs a beat longer
+  // reading time scales with message length (craft review 2026-08-09): ~55ms/char,
+  // clamped — undo toasts keep their longer floor
+  const ttl = Math.max(action ? 6500 : 3600, Math.min(9000, (msg || "").length * 55));
   setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, ttl);
 };
 

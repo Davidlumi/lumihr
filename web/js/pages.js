@@ -1354,14 +1354,21 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
     // dismiss AND snooze both remove the signal from the briefing — animate them out
     if ((status === "dismissed" || status === "snoozed") && !reduceMotion) {
       setLeaving(p => ({ ...p, [sid]: true }));
-      signalAction(sid, status, days).catch(() => {});
+      signalAction(sid, status, days).catch(() => {
+        setStOv(p => { const n = { ...p }; delete n[sid]; return n; });   // revert
+        setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
+        toast("Couldn't save that — try again", "error");
+      });
       setTimeout(() => {
         setStOv(p => ({ ...p, [sid]: status }));
         setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
       }, 260);
     } else {
       setStOv(p => ({ ...p, [sid]: status || "active" }));
-      signalAction(sid, status, days).catch(() => {});
+      signalAction(sid, status, days).catch(() => {
+        setStOv(p => { const n = { ...p }; delete n[sid]; return n; });
+        toast("Couldn't save that — try again", "error");
+      });
     }
     // same recovery the Signals page offers — a home-briefing dismiss/snooze was one-way
     if (status === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(sid, null) });
@@ -1778,7 +1785,7 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
       ${opts.map(f => html`<button key=${f} class="brf-menu-opt" onClick=${() => pick(f)}>
         <${Icon} name="folder" size=${12} /> ${f}</button>`)}
       ${naming ? html`<div class="sfold-newrow">
-        <input type="text" class="sfold-newinput" placeholder="Folder name" maxlength="40" value=${nm}
+        <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${nm}
           ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
@@ -1802,7 +1809,7 @@ function SigFolderOps({ name, onRename, onDelete }) {
       onClick=${() => { setOpen(o => !o); setRenaming(false); setNm(name); }}><span aria-hidden="true">⋯</span></button>
     ${open ? html`<div class="brf-menu" role="group">
       ${renaming ? html`<div class="sfold-newrow">
-        <input type="text" class="sfold-newinput" maxlength="40" value=${nm}
+        <input type="text" class="sfold-newinput" maxlength="40" aria-label=${"Rename folder " + name} value=${nm}
           ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Save</button>
@@ -2121,7 +2128,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           <button type="button" class=${"sfold-pill" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
             onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="check" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
           ${navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
-            <input type="text" class="sfold-newinput" placeholder="Folder name" maxlength="40" value=${navNm}
+            <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${navNm}
               ref=${el => el && el.focus()} onInput=${e => setNavNm(e.target.value)}
               onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitNavFolder(); }
                 if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
@@ -2411,9 +2418,9 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
           <div class="bench-grid">
             ${g.cards.map(c => html`
               <div key=${c.id} id=${"q-" + c.id}>
-                <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
+                <${Guarded}><${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
                   pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[c.id]}
-                  window=${me.peer_pool && me.peer_pool.collection_window} highlight=${focusQ === c.id} />
+                  window=${me.peer_pool && me.peer_pool.collection_window} highlight=${focusQ === c.id} /><//>
               </div>`)}
           </div>
         </div>`)}
@@ -2810,9 +2817,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>
-              <${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
+              <${Guarded}><${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} onPin=${onPin}
                 pinned=${pinnedIds.has(c.id)} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[c.id]}
-                window=${me.peer_pool && me.peer_pool.collection_window} />
+                window=${me.peer_pool && me.peer_pool.collection_window} /><//>
             </div>`)}
         </div>`}
       </section>
@@ -3092,7 +3099,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
       </div>
 
       ${confirmDel && html`
-        <div class="dash-confirm" role="alertdialog">
+        <div class="dash-confirm" role="alertdialog" aria-label="Confirm dashboard change" ref=${el => { if (el && !el.dataset.focused) { el.dataset.focused = "1"; const b = el.querySelector("button"); if (b) b.focus(); } }}>
           <span><b>${onlyOne ? "Reset" : "Delete"} “${activeName}”?</b> ${onlyOne ? "It will be cleared back to your starting layout." : "This can't be undone."}</span>
           <div class="row" style=${{ gap: "var(--s2)" }}>
             <button class="btn small" onClick=${() => setConfirmDel(false)}>Cancel</button>
@@ -3114,7 +3121,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
             style=${slot.size === 2 ? { gridColumn: "span 2" } : null}>
             ${!c ? html`<${SkeletonCard} />` :
             c.error ? html`<div class="card bench-card"><${EmptyState} title="Couldn't load this card" /></div>` :
-            html`<${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
+            html`<${Guarded}><${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
               onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]}
               footTools=${html`
                 <button class="iconbtn" title=${slot.size === 2 ? "Single width" : "Double width"} aria-label="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
@@ -3124,7 +3131,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
                   onKeyDown=${e => {
                     if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); moveBy(i, -1); }
                     else if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); moveBy(i, 1); }
-                  }}>⠿</button>`} />`}
+                  }}>⠿</button>`} /><//>`}
           </div>`;
         })}
       </div>

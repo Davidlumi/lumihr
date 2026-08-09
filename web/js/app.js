@@ -48,11 +48,11 @@ function App() {
   const prevRouteRef = useRef(null);
   useEffect(() => {
     const TITLES = [["/overview", "Overview"], ["/dashboards", "My dashboards"], ["/signals", "Signals"],
-      ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
+      ["/priorities", "Priorities"], ["/boardpack", "Board packs"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
       ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
-      ["/profile", "Your profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
+      ["/profile", "Company profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
     // named routes first (category/superpower carry their name in the path);
     // the signed-out shell is always "Sign in", never a page it isn't showing
@@ -375,6 +375,10 @@ function App() {
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
   else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
   else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} />`;
+  else if (route.startsWith("/register") || route.startsWith("/invite") || route.startsWith("/reset")) {
+    // an auth deep link while signed in lands home, never on a 404 (craft review)
+    page = html`<${PageLoading} />`; setTimeout(() => nav("/overview"), 0);
+  }
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route.startsWith("/strategy")) page = html`<${StrategyPage} me=${me} />`;
   else if (route.startsWith("/admin")) page = me.user.platform_admin
@@ -1283,7 +1287,7 @@ const NAV_INDEX = [
   { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
   { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
   { label: "Settings", route: "/settings", group: "Pages", kw: "assumptions sharing notifications account" },
-  { label: "Your profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
+  { label: "Company profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
   { label: "How lumi works", route: "/how-lumi-works", group: "Help", kw: "help methodology co-op legal" },
   { label: "How the numbers are calculated", route: "/how-lumi-works/calculations", group: "Help", kw: "methodology median percentile suppression method" },
   { label: "Why figures are hidden", route: "/how-lumi-works/suppression", group: "Help", kw: "suppressed hidden anonymity fewer than 5 n<5" },
@@ -1398,8 +1402,12 @@ function MetricSignalBar({ qid }) {
   }, [qid]);
   if (!sig) return null;
   const onSet = (sid, st, days) => {
+    const prev = status;
     setStatus(st || "active");
-    signalAction(qid, st, days).catch(() => {});
+    signalAction(qid, st, days).catch(() => {
+      setStatus(prev);                                   // revert the optimistic flip
+      toast("Couldn't save that — try again", "error");
+    });
     if (st === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(qid, null) });
     else if (st === "snoozed") toast("Snoozed", null, { label: "Undo", fn: () => onSet(qid, null) });
   };

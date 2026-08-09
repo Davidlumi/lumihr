@@ -175,10 +175,11 @@ function DialCard({ field, value, onPick, required, context, extra }) {
       onKeyDown=${e => {
         if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) return;
         e.preventDefault();
+        const wrap = e.currentTarget;
         const cur = Math.max(0, OBJECTIVES.findIndex(x => x.v === value));
         const nxt = ("ArrowRight" === e.key || "ArrowDown" === e.key) ? Math.min(OBJECTIVES.length - 1, cur + 1) : Math.max(0, cur - 1);
         onPick(field, OBJECTIVES[nxt].v);
-        requestAnimationFrame(() => { const el = e.currentTarget && e.currentTarget.querySelectorAll(".dial-opt")[nxt]; if (el) el.focus(); });
+        requestAnimationFrame(() => { const el = wrap && wrap.querySelectorAll(".dial-opt")[nxt]; if (el) el.focus(); });
       }}>
       ${OBJECTIVES.map(o => html`<button key=${o.v} class=${"dial-opt" + (o.v === value ? " on" : "")}
         role="radio" aria-checked=${o.v === value}
@@ -631,11 +632,12 @@ window.StrategyPage = function ({ me }) {
                   onKeyDown=${e => {
                     if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) return;
                     e.preventDefault();
+                    const wrap = e.currentTarget;                     // hoisted — nulled after the handler in React 18
                     const opts = (f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []);
                     const cur = Math.max(0, opts.indexOf(f.value));
                     const nxt = ("ArrowRight" === e.key || "ArrowDown" === e.key) ? Math.min(opts.length - 1, cur + 1) : Math.max(0, cur - 1);
                     setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: opts[nxt] } : x));
-                    requestAnimationFrame(() => { const el = e.currentTarget && e.currentTarget.querySelectorAll(".cr-opt")[nxt]; if (el) el.focus(); });
+                    requestAnimationFrame(() => { const el = wrap && wrap.querySelectorAll(".cr-opt")[nxt]; if (el) el.focus(); });
                   }}>
                   ${(f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []).map(o => html`
                     <button key=${o} type="button" class=${"cr-opt" + (o === f.value ? " on" : "")} role="radio" aria-checked=${o === f.value}

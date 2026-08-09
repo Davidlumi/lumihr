@@ -551,7 +551,7 @@ function InputForType({ q, drafts, issues, save, confirmValue }) {
                       <option value="">Choose…</option>
                       ${col0.options.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
                     </select>` : html`
-                    <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit}
+                    <${DebouncedNumber} value=${drafts[rkey]} compact=${true} unit=${q.unit} unitName=${r.label + (q.unit && q.unit.symbol ? " (" + q.unit.symbol + ")" : "")}
                       disabled=${isNA} onSave=${v => save(q, r.row_id, v)} />`}
                 </td>
               </tr>`,

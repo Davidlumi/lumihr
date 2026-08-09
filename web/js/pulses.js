@@ -286,7 +286,7 @@ function PulseQuestionBlock({ q, pid, me }) {
       ${blk.suppressed ? html`
         <div class="caption">Fewer than 5 cohort answers — protected, not shown.</div>` : html`
         <div>
-          ${blk.p50 != null && html`<${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} />`}
+          ${blk.p50 != null && html`<div role="img" aria-label=${q.title + " — cohort median " + (blk.p50_display || blk.p50) + (youNum != null ? ", your answer " + youNum : "") + ", " + (blk.n || 0) + " organisations."}><${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} /></div>`}
           ${blk.options && (q.type === "multi_select"
             ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
             : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} />`)}
@@ -665,12 +665,17 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       }
     }
   }, [ls, pid]);
+  const [paying, setPaying] = useState(false);
   const pay = async () => {
+    if (paying) return;
+    if (!window.confirm("Request the launch? lumi will invoice your organisation for the launch fee and open the pulse to the community once it's settled.")) return;
+    setPaying(true);
     try {
       const r = await api("/api/org/pulses/" + pid + "/checkout", { method: "POST", body: {} });
       toast(r.message || "Launch requested — lumi will invoice you and confirm shortly.", "info");
       onChange();
     } catch (e) { toast(e.message, "error"); }
+    setPaying(false);
   };
   const QList = () => html`
     <div class="card" style=${{ padding: "var(--s4)", marginTop: "var(--s3)" }}>
@@ -692,7 +697,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
       <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your survey opens to the whole community on confirmation.</p>
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
       <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced</div>
-      <button class="btn primary" onClick=${pay}>Request launch</button>
+      <button class="btn primary" disabled=${paying} onClick=${pay}>${paying ? html`<${Spinner} />` : "Request launch"}</button>
       
     </div>
     ${QList()}`;

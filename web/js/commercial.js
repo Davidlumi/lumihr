@@ -58,11 +58,11 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           </div>
         </div>
         <div class="row">
-          <select class="ctl" value=${sp} onChange=${e => setSp(e.target.value)}>
+          <select class="ctl" aria-label="Filter by area" value=${sp} onChange=${e => setSp(e.target.value)}>
             <option value="">${window.SCOPE && window.SCOPE.focused ? "All sections" : "All areas"}</option>
             ${gapGroups(data).map(s => html`<option key=${s} value=${s}>${s}</option>`)}
           </select>
-          <select class="ctl" value=${show} onChange=${e => setShow(e.target.value)}>
+          <select class="ctl" aria-label="Show gaps only or everything" value=${show} onChange=${e => setShow(e.target.value)}>
             <option value="gaps">Gaps only</option><option value="all">Everything</option>
           </select>
           <a class="btn" href=${"/api/benchmark.csv?" + cutQS(cut)} download>Download data (CSV)</a>
@@ -77,9 +77,9 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
         <div style=${{ overflowX: "auto" }}>
         <table class="data gap-table">
           <thead><tr>
-            <th><button class="th-sort" onClick=${() => onSort("name")}>Metric${sortArrow("name")}</button></th>
-            <th><button class="th-sort" onClick=${() => onSort("area")}>${areaLabel}${sortArrow("area")}</button></th>
-            <th><button class="th-sort" onClick=${() => onSort("status")}>Your status${sortArrow("status")}</button></th>
+            <th aria-sort=${sort.key === "name" ? (sort.dir === 1 ? "ascending" : "descending") : undefined}><button class="th-sort" onClick=${() => onSort("name")}>Metric${sortArrow("name")}</button></th>
+            <th aria-sort=${sort.key === "area" ? (sort.dir === 1 ? "ascending" : "descending") : undefined}><button class="th-sort" onClick=${() => onSort("area")}>${areaLabel}${sortArrow("area")}</button></th>
+            <th aria-sort=${sort.key === "status" ? (sort.dir === 1 ? "ascending" : "descending") : undefined}><button class="th-sort" onClick=${() => onSort("status")}>Your status${sortArrow("status")}</button></th>
             <th class="num"><button class="th-sort" onClick=${() => onSort("peer_adoption_pct")}>Market${sortArrow("peer_adoption_pct")}</button></th>
             <th class="num"><button class="th-sort" onClick=${() => onSort("sector_adoption_pct")}>Sector${sortArrow("sector_adoption_pct")}</button></th>
             <th class="num"><button class="th-sort" onClick=${() => onSort("n")}>n${sortArrow("n")}</button></th>
@@ -1218,7 +1218,7 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
 // a metric"): name + definition + rationale + optional category, its own table
 // and endpoint. The honest subtitle deliberately does NOT promise inclusion —
 // suggestions are input to a deliberate, research-standards review.
-window.SUGGEST_CATEGORIES = ["Pay", "Incentives", "Benefits", "Time off", "Wellbeing", "Recognition", "Governance", "Not sure"];
+window.SUGGEST_CATEGORIES = ["Pay", "Pensions & Savings", "Health & Protection", "Benefits & Lifestyle", "Time Off & Family", "Incentives & Recognition", "Wellbeing", "Governance & Transparency", "Not sure"];   // live 8 domains (craft review — was the retired pre-Diff-1 taxonomy)
 window.SuggestMetricModal = function ({ onClose, userEmail }) {
   const [name, setName] = useState("");
   const [measures, setMeasures] = useState("");
