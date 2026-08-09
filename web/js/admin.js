@@ -222,7 +222,7 @@ function AdminProvisionForm({ onCancel, onOpenOrg }) {
             ${(choices[k] || []).map(v => html`<option key=${v} value=${v}>${v}</option>`)}
           </select></label>`)}
       </div>`}
-      ${err && html`<div class="card" style=${{ background: "var(--paper-2, #faf7f2)", borderLeft: "3px solid var(--red, #b3261e)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0" }}>
+      ${err && html`<div class="card" style=${{ background: "var(--paper-2)", borderLeft: "3px solid var(--red)", padding: "var(--s2) var(--s3)", margin: "var(--s2) 0 0" }}>
         <b>${err.message}</b>
         ${err.hint && html`<div class="caption" style=${{ marginTop: "2px" }}>${err.hint}</div>`}
       </div>`}
@@ -274,7 +274,7 @@ function AdminOrgDetail({ orgId, onBack }) {
         ${o.source !== "staff" && html`<button class=${"btn small" + (o.deactivated_at ? " primary" : " quiet")} onClick=${orgDeactivate}>
           ${o.deactivated_at ? "Reactivate organisation" : "Deactivate organisation"}</button>`}
       </div>
-      ${o.deactivated_at && html`<div class="caption" style=${{ color: "var(--red, #b3261e)", marginBottom: "var(--s2)" }}>
+      ${o.deactivated_at && html`<div class="caption" style=${{ color: "var(--red)", marginBottom: "var(--s2)" }}>
         Deactivated ${o.deactivated_at.slice(0, 16)}${o.deactivated_reason ? html` — <b>${o.deactivated_reason}</b>` : ""} — members can't sign in and pending invites won't complete. Data is untouched.</div>`}
       <div class="caption" style=${{ marginBottom: "var(--s3)", display: "flex", gap: "var(--s2)", alignItems: "center", flexWrap: "wrap" }}>
         <span class="admin-pill">${o.source}</span>
@@ -1017,7 +1017,7 @@ function AdminOpsTab() {
   const stat = (label, value, warn) => html`
     <div class="card admin-card" style=${{ padding: "var(--s3)" }}>
       <div class="caption">${label}</div>
-      <div style=${{ fontSize: "var(--fs-subhead)", fontWeight: 700, color: warn ? "var(--red, #b3261e)" : "inherit" }}>${value}</div>
+      <div style=${{ fontSize: "var(--fs-subhead)", fontWeight: 700, color: warn ? "var(--red)" : "inherit" }}>${value}</div>
     </div>`;
   const sweep = async (withDigest) => {
     if (!window.confirm(withDigest
@@ -1051,7 +1051,7 @@ function AdminOpsTab() {
         ${stat("identity.db", mb(h.storage.identity_db.db))}
         ${stat("Backups", h.storage.backups_total)}
       </div>
-      ${m.base_url_is_localhost && html`<div class="caption" style=${{ marginTop: "var(--s2)", color: "var(--red, #b3261e)" }}>
+      ${m.base_url_is_localhost && html`<div class="caption" style=${{ marginTop: "var(--s2)", color: "var(--red)" }}>
         ⚠ LUMI_BASE_URL is ${m.base_url} — emailed invite/reset/share links will break for real recipients. Set it before go-live.</div>`}
 
       <div class="admin-toolbar" style=${{ marginTop: "var(--s4)" }}><b>Signal sweep</b>

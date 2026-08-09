@@ -426,7 +426,7 @@ function abbrBand(l) {
     .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
 }
 function mixBlueRGB(t) {
-  const b = [37, 71, 176];
+  const b = [32, 72, 176];   // brand blue #2048B0
   return "rgb(" + Math.round(255 + (b[0] - 255) * t) + "," + Math.round(255 + (b[1] - 255) * t)
     + "," + Math.round(255 + (b[2] - 255) * t) + ")";
 }

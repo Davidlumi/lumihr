@@ -73,6 +73,9 @@ window.fmtGBPCompact = v => {
 };
 window.pLabel = r => "P" + Math.round(r);
 
+// single source for ruled lookup tables (craft review — was copied across card.js/pages.js)
+window.LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
+
 // glossary used for first-use tooltips (plain-English, UK gov style register)
 window.GLOSSARY = {
   percentile: "If you lined all organisations up from lowest to highest, the percentile tells you where a value sits. P75 means three quarters of organisations are at or below it.",

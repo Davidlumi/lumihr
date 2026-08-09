@@ -1066,7 +1066,6 @@ function PracticeArc({ prevalence, pending }) {
 }
 
 
-const LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 // B' taxonomy (Diff 1, 2026-07-14): 8 domains. Legacy 7-domain keys retained below so
 // STORED payloads (board packs, cached summaries) keep their icons — degrade contract.
 const CAT_ICON = {

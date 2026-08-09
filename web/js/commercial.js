@@ -257,7 +257,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             : html`<div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em" }}>lumi</div>`}
           <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700, color: "var(--blue-deep)", letterSpacing: ".1em", marginTop: "var(--s3)" }}>UK REWARD BENCHMARKING</div>
           <div class=${"pack-accent" + (mVerdict ? " v-" + mVerdict : "")}></div>
-          <h1 style=${{ fontSize: "34px", lineHeight: 1.15, margin: "var(--s3) 0 var(--s2)", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
+          <h1 style=${{ fontSize: "var(--fs-display)", lineHeight: 1.15, margin: "var(--s3) 0 var(--s2)", letterSpacing: "-0.02em" }}>${p.organisation.name}</h1>
           <div style=${{ fontSize: "var(--fs-card-title)", color: "var(--ink-soft)" }}>Board pack · ${p.collection_window}</div>
           <div class="row" style=${{ marginTop: "var(--s4)" }}>
             <${Chip} kind="accent">${p.organisation.industry || "Unclassified"}<//>

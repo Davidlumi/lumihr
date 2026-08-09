@@ -418,7 +418,6 @@ window.metricAim = metricAim;
 // fallback tags only — the engine now supplies sig.tag in plain market language
 const SIG_KIND = { money: "£ GAP", save: "HIGHER THAN MARKET", behind: "LOWER THAN MARKET",
   prevalence: "COMMON — YOU DON'T", outlier: "LOWER THAN MARKET", depth: "LOWER THAN MARKET", rare: "A RARE CHOICE" };
-const SIG_LENS_ICON = { save: "coins", attract: "magnet", retain: "anchor", engage: "heart" };
 function cardAnswered(c) {
   // numeric/select/multi carry c.you; matrix answers live per-row in matrix_rows
   if (c.you) return true;
@@ -474,11 +473,11 @@ function cardSignalPill(c, sigs, readOnly) {
         : up ? up + " above market" : dn ? dn + " below market" : list.length + " off market";
       const title = list.map(s => s.name + " — " + s.tag).join(" · ");
       return html`<span class=${"sig-pill lens-" + lens} title=${title}>
-        <${Icon} name=${SIG_LENS_ICON[lens] || "flag"} size=${12} /> ${txt}</span>`;
+        <${Icon} name=${LENS_ICON[lens] || "flag"} size=${12} /> ${txt}</span>`;
     }
     const sig = list[0];
     return html`<span class=${"sig-pill lens-" + sig.lens} title=${sig.stand || sig.label_short || sig.detail}>
-      <${Icon} name=${SIG_LENS_ICON[sig.lens] || "flag"} size=${12} /> ${sig.tag || SIG_KIND[sig.kind] || sig.kind}</span>`;
+      <${Icon} name=${LENS_ICON[sig.lens] || "flag"} size=${12} /> ${sig.tag || SIG_KIND[sig.kind] || sig.kind}</span>`;
   }
   if (state === "add") {
     // §4.9(5): an outside viewer on a share link can't add data — no member CTA, no pill
@@ -587,7 +586,7 @@ window.MatrixSelect = function ({ rows }) {
   // alpha wash) so a cell's shade never shifts with row striping or whatever
   // sits behind it — darkness is one honest scale across the whole grid.
   const mix = t => {
-    const b = [37, 71, 176];
+    const b = [32, 72, 176];   // brand blue #2048B0 (was a mistuned [37,71,176])
     return "rgb(" + Math.round(255 + (b[0] - 255) * t) + "," + Math.round(255 + (b[1] - 255) * t)
       + "," + Math.round(255 + (b[2] - 255) * t) + ")";
   };

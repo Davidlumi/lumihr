@@ -24,6 +24,7 @@
   --fs-card-title: 16px; --lh-card-title: 22px; --fw-card-title: 600;
   --fs-metric: 28px;   --lh-metric: 32px;   --fw-metric: 600;
   --fs-metric-lg: 40px; --lh-metric-lg: 44px;
+  --fs-metric-xl: 44px; --lh-metric-xl: 48px;   /* the your-data hero numeral (dh-num) */
   --fs-body: 15px;     --lh-body: 22px;
   --fs-label: 13px;    --lh-label: 18px;
   --fs-caption: 12px;  --lh-caption: 16px;
@@ -39,6 +40,7 @@
   --radius: 16px;        /* cards */
   --radius-sm: 10px;     /* buttons, inputs */
   --radius-xs: 8px;      /* menu items, icon squares, cell chips — the 7-9px tier hardcoded ~18× */
+  --radius-2xs: 5px;     /* bar-ends, swatches, fine chips — the 4-6px tier */
   --blue-soft: var(--blue-tint-2);   /* was referenced undefined → key-question pips rendered as plain --border (invisible wayfinding) */
   --disabled-opacity: .5;
   /* z-index scale (was ad-hoc 0-200) — nav < popover < pane < modal < toast */
@@ -104,6 +106,10 @@
   --lumi-ink: #243642;        /* wordmark / descriptor ink (wordmark itself is outlined in the SVG) */
   --lumi-tile: #EAF0FB;       /* soft icon background */
   --color-text-danger: #B42318;  /* form-error red — distinct from the verdict red (--unfavourable) */
+  --red: #B3261E;             /* admin/staff error accent (promoted from fallback literals, craft review) */
+  --paper-2: #FAF7F2;         /* faint sunk paper for staff error cards */
+  --amber-deep: #854F0B;      /* dark amber ink — driver captions */
+  --green-deep: #3B6D11;      /* dark green ink — strength captions */
   --color-text-tertiary: var(--ink-faint);  /* faintest text — tertiary labels/qualifiers (aliased so the AA fix covers both names) */
   --brandbar-h: 56px;         /* height of the full-width navy brand bar */
 
@@ -397,7 +403,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .bp-menu { position: absolute; right: 0; top: calc(100% + 4px); min-width: 240px; z-index: var(--z-nav);
   padding: var(--s2); box-shadow: var(--shadow-pop); }
 .bp-menu-item { display: block; width: 100%; text-align: left; border: 0; background: none;
-  padding: var(--s2) var(--s3); border-radius: 8px; font-size: var(--fs-label); color: var(--ink); cursor: pointer; }
+  padding: var(--s2) var(--s3); border-radius: var(--radius-xs); font-size: var(--fs-label); color: var(--ink); cursor: pointer; }
 .bp-menu-item:hover { background: var(--surface-sunk); }
 @keyframes pulse-once { 0%, 100% { box-shadow: 0 0 0 0 rgba(46, 98, 217, 0); }
   35% { box-shadow: 0 0 0 6px rgba(46, 98, 217, .25); } }
@@ -517,7 +523,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 /* keyboard/touch parity: Term spans are focusable (core.js sets tabindex) —
    same hover+focus pattern as .indic-flag; Escape blurs to dismiss (1.4.13) */
 .term:focus .tip, .term:focus-within .tip { display: block; }
-.term:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: 4px; }
+.term:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: var(--radius-2xs); }
 
 /* ======================================================== benchmark cards
    Fixed vertical skeleton: title (2-line clamp) → meta → chart region
@@ -787,7 +793,7 @@ td.num, th.num { text-align: right; }
 .qwiz-saved.on { color: var(--favourable); }
 .qwiz-saved.err { color: var(--color-text-danger); font-weight: 600; }
 .qwiz-pips { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s1) 0 var(--s4); }
-.qwiz-pip { width: 22px; height: 7px; border-radius: 4px; border: 0; padding: 0; cursor: pointer;
+.qwiz-pip { width: 22px; height: 7px; border-radius: var(--radius-2xs); border: 0; padding: 0; cursor: pointer;
   background: var(--surface-sunk); box-shadow: inset 0 0 0 1px var(--border); transition: background var(--dur-fast), transform var(--dur-fast); }
 .qwiz-pip:hover { transform: translateY(-1px); }
 .qwiz-pip.key { box-shadow: inset 0 0 0 1px var(--blue-soft); }
@@ -862,10 +868,10 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--chart-grid);
   font-size: var(--fs-label); color: var(--ink-soft); }
 .mscale { display: inline-flex; align-items: center; gap: var(--s2); }
-.mscale-bar { width: 96px; height: 9px; border-radius: 5px;
+.mscale-bar { width: 96px; height: 9px; border-radius: var(--radius-2xs);
   background: linear-gradient(90deg, rgb(224,229,245), var(--quartile-fill)); }
 .mleg { display: inline-flex; align-items: center; gap: var(--s2); white-space: nowrap; }
-.msw { width: 13px; height: 13px; border-radius: 4px; flex: 0 0 auto; background: var(--surface); }
+.msw { width: 13px; height: 13px; border-radius: var(--radius-2xs); flex: 0 0 auto; background: var(--surface); }
 .mh-mode-key { color: var(--ink); font-weight: 700; }
 .msw-you { background: rgb(133,152,211); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px var(--blue-deep); }
 
@@ -898,7 +904,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .mn-track { position: relative; height: 20px; }
 .mn-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
   transform: translateY(-50%); background: var(--chart-grid); }
-.mn-iqr { position: absolute; top: 50%; transform: translateY(-50%); height: 9px; border-radius: 5px;
+.mn-iqr { position: absolute; top: 50%; transform: translateY(-50%); height: 9px; border-radius: var(--radius-2xs);
   background: var(--chart-band-mid); }
 .mn-median { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 15px;
   background: var(--chart-median); border-radius: 1px; }
@@ -911,7 +917,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--chart-grid);
   font-size: var(--fs-label); color: var(--ink-soft); }
 .matrix-num-scale .mleg { display: inline-flex; align-items: center; gap: var(--s2); white-space: nowrap; }
-.mn-key-iqr { width: 22px; height: 9px; border-radius: 5px; background: var(--chart-band-mid); flex: 0 0 auto; }
+.mn-key-iqr { width: 22px; height: 9px; border-radius: var(--radius-2xs); background: var(--chart-band-mid); flex: 0 0 auto; }
 .mn-key-median { width: 2px; height: 14px; background: var(--chart-median); flex: 0 0 auto; }
 .mn-key-you { width: 11px; height: 11px; transform: rotate(45deg); background: var(--you); border-radius: 2px;
   box-shadow: 0 0 0 1.5px #fff; flex: 0 0 auto; }
@@ -921,7 +927,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .qsec-head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border);
   background: var(--surface-sunk); border-radius: var(--radius) var(--radius) 0 0; }
 .key-chip { background: var(--blue); color: #fff; font-size: var(--fs-micro); padding: 1px var(--s2);
-  border-radius: 9px; vertical-align: 2px; text-transform: uppercase; letter-spacing: .04em; }
+  border-radius: var(--radius-xs); vertical-align: 2px; text-transform: uppercase; letter-spacing: .04em; }
 /* the unit lives INSIDE the field: £ prefix, % suffix — no guessing what the number means */
 /* P13: the numeric entry box modernised to the member-field standard (44px,
    --radius, blue focus ring) — it's the field members type into most, on the
@@ -1023,8 +1029,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   padding-top: var(--s4); text-align: center; }
 
 /* Practice-view category card */
-.cat-tile-practice .catp-bar { height: 9px; border-radius: 5px; background: var(--differs-tint); overflow: hidden; margin-top: var(--s2); }
-.cat-tile-practice .catp-bar-fill { height: 100%; background: var(--differs); border-radius: 5px; transition: width var(--dur-fast) ease; }
+.cat-tile-practice .catp-bar { height: 9px; border-radius: var(--radius-2xs); background: var(--differs-tint); overflow: hidden; margin-top: var(--s2); }
+.cat-tile-practice .catp-bar-fill { height: 100%; background: var(--differs); border-radius: var(--radius-2xs); transition: width var(--dur-fast) ease; }
 .cat-tile-practice .cat-differ { margin-top: var(--s2); }
 /* Hero gauge (2026-06-13 rebuild) — instrument, not segments */
 .arc-card { padding: var(--s5) var(--s5) var(--s4); display: flex; flex-direction: column;   /* 2026-07-09 polish: insets past the radius */
@@ -1067,7 +1073,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    NEUTRAL ink — the ring carries the RAG colour, so the word is not re-coloured (no doubled
    cue). The metric total is demoted to a small line beneath. centerWord is opt-in: the market
    gauge passes it; the practice donut keeps its count-centric centre. Sized to fit "On market". */
-.donut-word { font-family: var(--font-head); font-size: 28px; line-height: 30px; letter-spacing: -0.015em; font-weight: 700;
+.donut-word { font-family: var(--font-head); font-size: var(--fs-metric); line-height: 30px; letter-spacing: -0.015em; font-weight: 700;
   letter-spacing: -0.015em; color: var(--ink); text-align: center; }
 .donut-count { font-size: var(--fs-caption); font-weight: 500; letter-spacing: .01em; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
 /* spectrum hero SVG: mirror .arc-svg so it can't collapse to 0 width in WebKit
@@ -1122,7 +1128,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
    gives the card head/body/foot structure instead of a floating strip. */
 .arc-marker { margin-top: var(--s4); border-top: 1px solid var(--border); padding-top: var(--s4); }
 .arc-markscale { height: 16px; }
-.arc-markscale .z-below { border-radius: 8px 0 0 8px; }
+.arc-markscale .z-below { border-radius: var(--radius-xs) 0 0 8px; }
 .arc-markscale .z-above { border-radius: 0 8px 8px 0; }
 .arc-marker-cap { text-align: center; margin-top: var(--s1); }
 .arc-marker .bp-scale-labels { margin-top: var(--s2); }
@@ -1192,18 +1198,18 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* NEW badge sits inline at the start of the name line (vertical-aligned) so a
    new signal row stays the SAME height as the others — no eyebrow line. */
 .sfold-prio { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
-  font-weight: 700; color: var(--blue-deep); background: var(--blue-tint); border-radius: 5px;
+  font-weight: 700; color: var(--blue-deep); background: var(--blue-tint); border-radius: var(--radius-2xs);
   padding: 1px var(--s1); vertical-align: middle; position: relative; top: -1px; }
 .sig-new-tag { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; color: #fff;
-  background: var(--blue-bright); padding: 1px var(--s1); border-radius: 5px;
+  background: var(--blue-bright); padding: 1px var(--s1); border-radius: var(--radius-2xs);
   display: inline-block; vertical-align: middle; position: relative; top: -1px;
   animation: popIn var(--dur-slow) ease; }
 .sig-new-chip { font-size: var(--fs-micro); font-weight: 700; color: var(--blue); background: var(--blue-tint);
-  padding: 1px var(--s2); border-radius: 9px; animation: pulse-once 1.6s ease-out 600ms 2; }   /* one soft double-pulse on load — there's news here */
+  padding: 1px var(--s2); border-radius: var(--radius-xs); animation: pulse-once 1.6s ease-out 600ms 2; }   /* one soft double-pulse on load — there's news here */
 /* active domain-filter chip beside the Signals title (scent-filter, 2026-07-12) */
 .sig-domchip { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-micro); font-weight: 700;
   color: var(--blue-deep); background: var(--blue-tint); border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
-  padding: 1px var(--s2); border-radius: 9px; cursor: pointer; transition: background var(--dur-fast) ease; }
+  padding: 1px var(--s2); border-radius: var(--radius-xs); cursor: pointer; transition: background var(--dur-fast) ease; }
 .sig-domchip:hover { background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
 .sig-domchip svg { flex: none; }
 .signal-row.is-new .signal-roundel { box-shadow: 0 0 0 2px var(--blue-bright), 0 0 0 4px color-mix(in srgb, var(--blue-bright) 22%, transparent); }
@@ -1258,7 +1264,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .sig-filters { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .sig-filters-lbl { font-size: var(--fs-label); color: var(--ink-soft); white-space: nowrap; }
 .sig-fchip { display: inline-flex; align-items: center; gap: var(--s2); background: var(--surface); border: 1px dashed var(--border);
-  border-radius: 22px; padding: var(--s2) var(--s3); font-size: var(--fs-label); font-family: inherit; color: var(--ink-soft); cursor: pointer; transition: border-color var(--dur-fast), background var(--dur-fast); }
+  border-radius: 999px; padding: var(--s2) var(--s3); font-size: var(--fs-label); font-family: inherit; color: var(--ink-soft); cursor: pointer; transition: border-color var(--dur-fast), background var(--dur-fast); }
 .sig-fchip:hover { border-color: var(--ink-faint); }
 .sig-fchip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .sig-fchip.on { background: color-mix(in srgb, var(--blue) 12%, var(--surface)); border: 1px solid var(--blue); color: var(--blue); }
@@ -1346,7 +1352,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* Governance / non-competitive: a DELIBERATE "N/A" slot where the spectrum bar would sit,
    so the absence reads as not-applicable by design, never as a bar that failed to load
    (the real bars are solid + coloured). */
-.cat-na { height: 26px; border-radius: 6px; border: 1.5px dashed var(--border);
+.cat-na { height: 26px; border-radius: var(--radius-2xs); border: 1.5px dashed var(--border);
   background: color-mix(in srgb, var(--surface-sunk) 50%, transparent);
   display: flex; align-items: center; justify-content: center;
   font-size: var(--fs-caption); font-weight: 700; letter-spacing: 0.06em; color: var(--ink-faint); }
@@ -1363,7 +1369,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* brand-new-org pending tile: a quiet "no data yet" caption, consistent across the
    Market + Practice views so the 7 tiles speak with the gauge's "not enough data" voice */
 .cat-pending-note { margin-top: var(--s2); color: var(--ink-faint); }
-.cat-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--blue-tint);
+.cat-icon { width: 26px; height: 26px; border-radius: var(--radius-xs); background: var(--blue-tint);
   display: inline-flex; align-items: center; justify-content: center; color: var(--blue); flex: 0 0 auto; }
 .tile-chip { font-size: var(--fs-micro); font-weight: 650; padding: 2px var(--s2); }
 .chip-bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
@@ -1383,10 +1389,10 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .indic-flag { display: inline-flex; align-items: center; gap: 3px; position: relative;
   font-size: var(--fs-micro); font-weight: 500; color: var(--color-text-tertiary); white-space: nowrap; cursor: default; }
 .indic-flag svg { color: var(--color-text-tertiary); flex: 0 0 auto; }
-.indic-flag:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: 4px; }
+.indic-flag:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: var(--radius-2xs); }
 .indic-tip { position: absolute; bottom: calc(100% + 6px); left: 0; width: 200px; white-space: normal;
   background: var(--ink); color: #fff; font-size: var(--fs-caption); font-weight: 400; line-height: 1.4; padding: var(--s2) var(--s2);
-  border-radius: 6px; box-shadow: var(--shadow-pop); opacity: 0; visibility: hidden;
+  border-radius: var(--radius-2xs); box-shadow: var(--shadow-pop); opacity: 0; visibility: hidden;
   transition: opacity var(--dur-fast) ease; z-index: var(--z-nav); pointer-events: none; }
 .indic-flag:hover .indic-tip, .indic-flag:focus .indic-tip, .indic-flag:focus-within .indic-tip { opacity: 1; visibility: visible; }
 /* small-sample peer-confidence caveat — its own line beneath the header
@@ -1396,17 +1402,17 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .sample-caveat-line { flex-basis: 100%; display: flex; justify-content: flex-end; margin-top: 2px; }
 .sample-caveat-line .indic-tip { left: auto; right: 0; }  /* anchor tip to the right edge so a right-aligned flag's tooltip stays on-screen */
 @media (prefers-reduced-motion: reduce) { .indic-tip { transition: none; } }
-.tile-band { position: relative; height: 7px; background: var(--surface-sunk); border-radius: 4px; margin: 0; }
-.tile-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: 4px; }
+.tile-band { position: relative; height: 7px; background: var(--surface-sunk); border-radius: var(--radius-2xs); margin: 0; }
+.tile-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: var(--radius-2xs); }
 .tile-dot { position: absolute; top: -3.5px; width: 14px; height: 14px; border-radius: 50%;
   border: 2.5px solid var(--surface); box-shadow: 0 1px 3px rgba(33,27,38,.25); }
-.tile-fill { position: absolute; left: 0; height: 100%; background: var(--chart-cat); border-radius: 4px; }
+.tile-fill { position: absolute; left: 0; height: 100%; background: var(--chart-cat); border-radius: var(--radius-2xs); }
 /* domain card = the hero dial, flattened: a proportional stacked bar (segments ∝
    count, verdict segment richer) + a neutral "you are here" marker line at the
    centroid + the counts as a labelled footer pinned to the card's bottom edge. */
 .cat-pos { margin-top: var(--s2); }
 .cat-bar { position: relative; }
-.cat-bar-track { display: flex; height: 11px; border-radius: 5px; overflow: hidden;
+.cat-bar-track { display: flex; height: 11px; border-radius: var(--radius-2xs); overflow: hidden;
   background: var(--surface-sunk); box-shadow: inset 0 0 0 1px rgba(20,24,40,.05); }
 /* segment fills are set inline, stance-aware (see marketTone in pages.js) */
 .cat-bar-seg { min-width: 0; transition: width var(--dur-fast) ease; }
@@ -1473,7 +1479,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .signal-row.is-risk:hover { box-shadow: inset 3px 0 0 var(--lumi-coral), 0 8px 22px color-mix(in srgb, var(--lumi-coral) 22%, transparent); }
 .sig-risk { display: inline-flex; align-items: center; gap: 3px; margin-left: var(--s2); vertical-align: middle;
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
-  background: color-mix(in srgb, var(--lumi-coral) 20%, transparent); padding: 0 var(--s2); border-radius: 5px; }
+  background: color-mix(in srgb, var(--lumi-coral) 20%, transparent); padding: 0 var(--s2); border-radius: var(--radius-2xs); }
 .sig-risk svg { color: var(--lumi-coral); flex: none; }
 /* ON-PLAN / CONFIRM marker (Signals Pass 2, 2026-06-25, ruling: mark-the-exceptions) — a strategy-
    CONFIRMING signal (s.confirm from L4: its domain sits on the declared aim, non-risk) gets a quiet
@@ -1484,7 +1490,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    exclusive with .is-risk by construction (the confirm gate excludes risk_framed). */
 .sig-onplan { display: inline-flex; align-items: center; gap: 3px; margin-left: var(--s2); vertical-align: middle;
   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .02em; color: var(--ink-soft);
-  background: color-mix(in srgb, var(--favourable) 18%, transparent); padding: 0 var(--s2); border-radius: 5px; }
+  background: color-mix(in srgb, var(--favourable) 18%, transparent); padding: 0 var(--s2); border-radius: var(--radius-2xs); }
 .sig-onplan svg { color: var(--favourable); flex: none; }
 /* ---- dedicated Signals explore page (2026-06-13) ----
    (the duplicate .sig-chip block + dead .num/lens-*.on rules and the legacy
@@ -1502,7 +1508,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .signals-page .signal-val { white-space: nowrap; flex: 0 0 auto; min-width: 0; }
 .signals-page .signal-row { gap: var(--s3); }
 .sig-kind { font-size: var(--fs-micro); font-weight: 650; text-transform: uppercase; letter-spacing: .04em;
-  white-space: nowrap; opacity: .75; padding: 2px var(--s2); border-radius: 7px;
+  white-space: nowrap; opacity: .75; padding: 2px var(--s2); border-radius: var(--radius-xs);
   background: color-mix(in srgb, currentColor 12%, transparent); }
 /* category detail page — hero (position + prevalence), signals, metric grid */
 /* the back-link sits INLINE in the centred title row (not stacked) — the old stacked-layout
@@ -1521,8 +1527,8 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    subset lens of the page's 60 benchmarks, not a partition that should sum to it) */
 .cat-lens-of { font-weight: 400; text-transform: none; letter-spacing: 0;
   font-variant-numeric: tabular-nums; opacity: .8; }
-.cat-band { position: relative; height: 9px; background: var(--surface-sunk); border-radius: 5px; }
-.cat-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: 5px; }
+.cat-band { position: relative; height: 9px; background: var(--surface-sunk); border-radius: var(--radius-2xs); }
+.cat-band-mid { position: absolute; left: 25%; width: 50%; height: 100%; background: var(--chart-band-mid); border-radius: var(--radius-2xs); }
 .cat-band-dot { position: absolute; top: -4px; width: 17px; height: 17px; border-radius: 50%;
   border: 2.5px solid var(--surface); box-shadow: 0 1px 3px rgba(33,27,38,.25); }
 .cat-band-ends { display: flex; justify-content: space-between; margin-top: var(--s2);
@@ -1567,13 +1573,13 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-brief-read .chip { justify-self: start; min-width: 88px; justify-content: center; }
 .cat-brief-ruler .bp-scale-wrap { margin: 0; }
 .cat-brief-ruler .bp-scale { height: 22px; }
-.cat-brief-ruler .z-below { border-radius: 11px 0 0 11px; }
+.cat-brief-ruler .z-below { border-radius: var(--radius-sm) 0 0 11px; }
 .cat-brief-ruler .z-above { border-radius: 0 11px 11px 0; }
 .cat-brief-ruler .bp-scale-labels { display: none; }
 .cat-brief-minibar { display: flex; gap: 3px; height: 22px; }
-.cat-brief-minibar span { border-radius: 5px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-.cat-brief-minibar span:first-child { border-radius: 11px 5px 5px 11px; }
-.cat-brief-minibar span:last-child { border-radius: 5px 11px 11px 5px; }
+.cat-brief-minibar span { border-radius: var(--radius-2xs); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cat-brief-minibar span:first-child { border-radius: var(--radius-sm) 5px 5px 11px; }
+.cat-brief-minibar span:last-child { border-radius: var(--radius-2xs) 11px 11px 5px; }
 .cat-brief-counts { font-size: var(--fs-caption); color: var(--ink-soft); white-space: nowrap;
   display: inline-flex; align-items: center; gap: var(--s1); justify-self: end; }
 .cat-brief-span { grid-column: 2 / -1; }
@@ -1587,12 +1593,12 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0;
   padding: var(--s3) 2px; cursor: pointer; font-size: var(--fs-body); color: var(--ink); }
 .cat-driver:hover .cat-driver-lab { color: var(--blue); text-decoration: underline; }
-.cat-driver svg { flex: none; color: var(--amber-deep, #854F0B); }
+.cat-driver svg { flex: none; color: var(--amber-deep); }
 .cat-driver:last-of-type { border-bottom: none; }
 .cat-driver-lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cat-driver-p { margin-left: auto; font-size: var(--fs-caption); font-weight: 600; color: var(--amber-deep, #854F0B); }
+.cat-driver-p { margin-left: auto; font-size: var(--fs-caption); font-weight: 600; color: var(--amber-deep); }
 .cat-driver-p i { font-style: normal; font-weight: 400; color: var(--ink-faint); }
-.cat-driver-p.strength, .cat-driver:has(.cat-driver-p.strength) svg { color: var(--green-deep, #3B6D11); }
+.cat-driver-p.strength, .cat-driver:has(.cat-driver-p.strength) svg { color: var(--green-deep); }
 .cat-brief-drivers .cat-flag-link { display: inline-flex; margin-top: var(--s2); }
 /* embedded narrative = two clean paragraphs, readable size, generous leading (format pass
    2026-07-13); the quiet provenance foot separates itself with a hairline */
@@ -1699,7 +1705,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   background: var(--lumi-tile); border: 1px solid var(--border); border-radius: var(--radius);
   padding: var(--s3) var(--s4); flex-wrap: wrap; }
 .cat-sec-head > b { font-size: var(--fs-body); }
-.cat-sec-ico { width: 24px; height: 24px; border-radius: 7px; background: var(--blue-tint); color: var(--blue);
+.cat-sec-ico { width: 24px; height: 24px; border-radius: var(--radius-xs); background: var(--blue-tint); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .cat-sec-link { margin-left: auto; font-weight: 600; }
 /* slim flagged-pointer in the All-metrics head — a link-out to Signals, NOT a filter chip */
@@ -1764,7 +1770,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-sum-prov { font-size: var(--fs-caption); color: var(--ink-soft); padding-top: var(--s2);
   border-top: 1px solid var(--border); }
 .cat-sum-caveat { font-size: var(--fs-micro); color: var(--ink-faint); font-style: italic; }
-.cat-sum-skel { height: 2.6em; border-radius: 6px; background: linear-gradient(90deg,
+.cat-sum-skel { height: 2.6em; border-radius: var(--radius-2xs); background: linear-gradient(90deg,
   var(--surface-sunk) 25%, color-mix(in srgb, var(--surface-sunk) 60%, var(--surface)) 50%,
   var(--surface-sunk) 75%); background-size: 200% 100%; animation: cat-sum-shimmer 1.3s infinite; }
 @keyframes cat-sum-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
@@ -1778,7 +1784,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-hero-ringwrap { position: relative; flex: 0 0 auto; display: grid; place-items: center;
   padding: var(--s2); border-radius: 50%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--blue) 9%, transparent), transparent 72%); }
-.dh-num { font-size: 44px; font-weight: 750; letter-spacing: -0.02em;
+.dh-num { font-size: var(--fs-metric-xl); font-weight: 750; letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums; line-height: 1; }
 .dh-den { font-size: var(--fs-section); font-weight: 500; color: var(--ink-faint);
   font-variant-numeric: tabular-nums; }
@@ -1813,7 +1819,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-unlock { display: flex; gap: var(--s3); align-items: flex-start; font-size: var(--fs-label);
   color: var(--ink-soft); line-height: 1.5; }
 .data-unlock b { color: var(--ink); }
-.du-ico { width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto; display: inline-flex;
+.du-ico { width: 26px; height: 26px; border-radius: var(--radius-xs); flex: 0 0 auto; display: inline-flex;
   align-items: center; justify-content: center; background: var(--blue-tint); color: var(--blue); }
 .data-unlock.good .du-ico { background: color-mix(in srgb, var(--favourable) 16%, transparent); color: var(--favourable); }
 .data-access { display: flex; gap: var(--s2); align-items: flex-start; margin-top: var(--s3); padding: var(--s2) var(--s3);
@@ -1872,7 +1878,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-row:hover .data-row-go { transform: translateX(2px); color: var(--blue); }
 .data-row .data-row-go { transition: transform var(--dur-fast) ease, color var(--dur-fast) ease; }
 .data-row .data-q-flag.ok { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--favourable) 24%, transparent); }
-.data-row .cat-icon { width: 30px; height: 30px; border-radius: 9px;
+.data-row .cat-icon { width: 30px; height: 30px; border-radius: var(--radius-xs);
   background: linear-gradient(135deg, var(--blue-tint), color-mix(in srgb, var(--blue-tint) 35%, #fff));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 14%, transparent),
               0 1px 2px color-mix(in srgb, var(--blue) 8%, transparent); }
@@ -1907,7 +1913,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-q-main { flex: 1; min-width: 0; }
 .data-q-title { font-weight: 600; font-size: var(--fs-label); display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .data-q-req { font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--blue); background: var(--blue-tint); padding: 1px var(--s2); border-radius: 6px; }
+  color: var(--blue); background: var(--blue-tint); padding: 1px var(--s2); border-radius: var(--radius-2xs); }
 .data-q-val { font-size: var(--fs-label); color: var(--ink); font-weight: 600; margin-top: 3px; }
 .data-q-rows { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-top: var(--s1); font-size: var(--fs-caption); color: var(--ink); }
 .data-q-none { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
@@ -2018,7 +2024,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .sig-tab:hover { color: var(--ink); }
 .sig-tab:not(.on):hover { border-bottom-color: var(--ink-faint); }
 .sig-tab .num { font-variant-numeric: tabular-nums; font-size: var(--fs-caption); padding: 1px var(--s2);
-  border-radius: 9px; background: var(--surface-sunk); color: var(--ink-soft); }
+  border-radius: var(--radius-xs); background: var(--surface-sunk); color: var(--ink-soft); }
 .sig-tab.on { color: var(--blue); border-bottom-color: var(--blue); }
 .sig-tab.on .num { background: var(--blue-tint); color: var(--blue-deep); }
 .sig-actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
@@ -2154,7 +2160,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 /* self-service pulse builder + paid launch (2026-06-22) */
 .pulse-stepper { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; margin: var(--s3) 0 0; }
 .pulse-step { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-label);
-  color: var(--color-text-tertiary); padding: 3px var(--s3); border-radius: 14px; background: var(--surface-sunk); }
+  color: var(--color-text-tertiary); padding: 3px var(--s3); border-radius: var(--radius); background: var(--surface-sunk); }
 .pulse-step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
 .pulse-step.done { color: var(--blue-deep); }
 .pulse-step.done .pulse-step-dot { background: var(--blue-bright); }
@@ -2162,7 +2168,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-step.current .pulse-step-dot { background: var(--blue); }
 .pulse-step.warn { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
 .pulse-step.warn .pulse-step-dot { background: var(--unfavourable); }
-.pulse-libpick { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: var(--s2); }
+.pulse-libpick { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); margin-top: var(--s2); }
 .pulse-librow { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   width: 100%; text-align: left; padding: var(--s2) var(--s3); border: 0;
   border-bottom: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; }
@@ -2447,7 +2453,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .bp-signals { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
 .bp-signal { border-left: 3px solid var(--border); padding: var(--s1) 0 var(--s1) var(--s3); }
 .bp-risk { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; color: var(--unfavourable);
-  border: 1px solid var(--unfavourable); border-radius: 5px; padding: 0 var(--s1); vertical-align: 1px; }
+  border: 1px solid var(--unfavourable); border-radius: var(--radius-2xs); padding: 0 var(--s1); vertical-align: 1px; }
 .bp-menu-row { display: flex; align-items: stretch; }
 .bp-menu-row .bp-menu-item { flex: 1; }
 .bp-menu-del { border: none; background: none; color: var(--ink-faint); cursor: pointer; padding: 0 var(--s3); }
@@ -2470,7 +2476,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 /* zones moved to the SOFT gauge tints (2026-07-11, PercentileRuler resurrection) — the
    full-strength RAG fills predated the 2026-07-09 soft-palette doctrine; the pack's own
    donut already made this move (§4.4 Pack 4), the strip now matches it and the home gauge. */
-.bp-scale .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
+.bp-scale .z-below { background: var(--gauge-below); border-radius: var(--radius-xs) 0 0 7px; }
 .bp-scale .z-on { background: var(--gauge-on); }
 .bp-scale .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
 /* the atom's marker is the PILL (2026-07-12) — one marker grammar across pack, category
@@ -2487,9 +2493,9 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
    below/on/above-market scale per row: soft gauge zones (kept by David's ruling), a dashed
    market centre line at P50, ONE ink dot at the org's depth_pctl. No connector/stem, no pill
    (locked). Indicative = hollow DASHED ring; the word rides the aria. */
-.di-markrow { position: relative; display: flex; height: 14px; width: 100%; border-radius: 7px; }
+.di-markrow { position: relative; display: flex; height: 14px; width: 100%; border-radius: var(--radius-xs); }
 .di-mk-zone { height: 100%; }
-.di-markrow .z-below { background: var(--gauge-below); border-radius: 7px 0 0 7px; }
+.di-markrow .z-below { background: var(--gauge-below); border-radius: var(--radius-xs) 0 0 7px; }
 .di-markrow .z-on { background: var(--gauge-on); }
 .di-markrow .z-above { background: var(--gauge-above); border-radius: 0 7px 7px 0; }
 /* NEUTRAL-MIRROR variant (ruled 2026-07-12): the Position toggle state drops the RAG zones to
@@ -2553,7 +2559,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   padding-bottom: var(--s2); border-bottom: 2px solid var(--border); }
 .bp-sechead .section-title { margin: 0; }
 .bp-secnum { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-  border-radius: 7px; color: #fff; font-weight: 750; font-size: var(--fs-label); flex: none; }
+  border-radius: var(--radius-xs); color: #fff; font-weight: 750; font-size: var(--fs-label); flex: none; }
 .bp-c1 { border-bottom-color: var(--navy); }        .bp-c1 .bp-secnum { background: var(--navy); }
 .bp-c2 { border-bottom-color: var(--blue-deep); }   .bp-c2 .bp-secnum { background: var(--blue-deep); }
 .bp-c3 { border-bottom-color: var(--blue); }        .bp-c3 .bp-secnum { background: var(--blue); }
@@ -2680,7 +2686,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   max-height: 90vh; padding: var(--s6) var(--s6) var(--s6); box-shadow: var(--shadow-pop);
   display: flex; flex-direction: column; }
 .suggest-close { position: absolute; top: var(--s4); right: var(--s4); width: 32px; height: 32px; border: 0; background: none;
-  color: var(--ink-faint); cursor: pointer; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+  color: var(--ink-faint); cursor: pointer; border-radius: var(--radius-xs); display: inline-flex; align-items: center; justify-content: center; }
 .suggest-close:hover { background: var(--surface-sunk); color: var(--ink); }
 .suggest-head { flex: none; padding-right: var(--s6); }
 .suggest-title { font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 500; color: var(--ink); margin: 0; }
@@ -2901,13 +2907,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
     var(--surface);
   scrollbar-width: thin; scrollbar-color: var(--ink-faint) transparent; }
 .kebab-menu::-webkit-scrollbar { width: 9px; }
-.kebab-menu::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 5px; border: 3px solid var(--surface); }
+.kebab-menu::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: var(--radius-2xs); border: 3px solid var(--surface); }
 .kebab-menu::-webkit-scrollbar-track { background: transparent; }
 /* flip above the button when there isn't room below (long menu / card near the fold) */
 .kebab-menu.up { top: auto; bottom: 30px; transform-origin: bottom right; }
 .kebab-label { color: var(--ink-faint); padding: var(--s2) var(--s3) var(--s1); }
 .kebab-item { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
-  background: none; border: none; cursor: pointer; padding: var(--s2) var(--s3); border-radius: 7px;
+  background: none; border: none; cursor: pointer; padding: var(--s2) var(--s3); border-radius: var(--radius-xs);
   font: 500 var(--fs-label)/1.2 var(--font-body); color: var(--ink); }
 .kebab-item:hover { background: var(--blue-tint); color: var(--blue-deep); }
 .kebab-item.on { font-weight: 650; color: var(--blue-deep); }
@@ -2963,13 +2969,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .profile-id-org { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: 1px; }
 .profile-sep { height: 1px; background: var(--border); margin: var(--s1) 2px; }
 .profile-item { display: block; width: 100%; text-align: left; border: 0; background: none;
-  padding: var(--s2) var(--s3); border-radius: 8px; font-size: var(--fs-label); color: var(--ink); cursor: pointer; }
+  padding: var(--s2) var(--s3); border-radius: var(--radius-xs); font-size: var(--fs-label); color: var(--ink); cursor: pointer; }
 .profile-item:hover { background: var(--surface-sunk); }
 
 /* How lumi works hub (chrome spec §4) */
 .how-hub { display: flex; gap: var(--s5); align-items: flex-start; }
 .how-tabs { position: sticky; top: 76px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 2px; }
-.how-tab { text-align: left; border: 0; background: none; padding: var(--s2) var(--s3); border-radius: 8px;
+.how-tab { text-align: left; border: 0; background: none; padding: var(--s2) var(--s3); border-radius: var(--radius-xs);
   font-size: var(--fs-label); color: var(--ink-soft); cursor: pointer; }
 .how-tab:hover { background: var(--surface-sunk); color: var(--ink); }
 .how-tab.active { background: var(--blue-tint); color: var(--blue-deep); font-weight: 650; }
@@ -2986,7 +2992,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .mp-class-note { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px dashed var(--border); }
 .mp-class-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s1); flex-wrap: wrap; }
 .mp-class-label { color: var(--ink-faint); }
-.mp-class-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: 6px; white-space: nowrap; }
+.mp-class-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: var(--radius-2xs); white-space: nowrap; }
 /* 2026-07-09 ship review (pack 4.3): .headline/.fav were raw --favourable (4.30:1,
    member-facing on the metric page) — 78%-ink mix per the house AA recipe */
 .mp-class-chip.headline { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
@@ -3020,7 +3026,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* Search empty state + fuzzy suggestions (chrome spec §5) */
 .search-empty { padding: var(--s2); }
-.search-suggest { border-radius: 8px; }
+.search-suggest { border-radius: var(--radius-xs); }
 .search-divider { height: 1px; background: var(--border); margin: var(--s2) 0; }
 .search-nores { padding: 2px; }
 
@@ -3030,7 +3036,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sidebar-head { position: relative; display: flex; align-items: center; justify-content: flex-end;
   min-height: 28px; padding: var(--s1) 0 var(--s2); }
 .rail-toggle { border: 0; background: none; cursor: pointer; color: var(--ink-faint); padding: var(--s1);
-  border-radius: 7px; display: inline-flex; align-items: center; transition: background var(--dur-fast) ease, color var(--dur-fast) ease; }
+  border-radius: var(--radius-xs); display: inline-flex; align-items: center; transition: background var(--dur-fast) ease, color var(--dur-fast) ease; }
 .rail-toggle:hover { background: var(--surface-sunk); color: var(--ink); }
 
 .sidebar.collapsed { width: 66px; flex-basis: 66px; padding-left: var(--s2); padding-right: var(--s2); }
@@ -3046,7 +3052,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sidebar.collapsed .nav-item::after {
   content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
   background: var(--ink); color: #fff; font-size: var(--fs-caption); font-weight: 600; white-space: nowrap;
-  padding: var(--s1) var(--s2); border-radius: 7px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none;
+  padding: var(--s1) var(--s2); border-radius: var(--radius-xs); box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none;
   transition: opacity var(--dur-fast) ease; z-index: var(--z-popover); }
 .sidebar.collapsed .nav-item:hover::after,
 .sidebar.collapsed .nav-item:focus-visible::after { opacity: 1; }
@@ -3057,7 +3063,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding: var(--s2); box-shadow: var(--shadow-pop); }
 .rail-flyout-head { color: var(--ink-faint); padding: var(--s1) var(--s2) var(--s2); }
 .rail-flyout-item { display: flex; align-items: center; width: 100%; text-align: left; border: 0;
-  background: none; padding: var(--s2) var(--s3); border-radius: 8px; font-size: var(--fs-label); color: var(--ink);
+  background: none; padding: var(--s2) var(--s3); border-radius: var(--radius-xs); font-size: var(--fs-label); color: var(--ink);
   cursor: pointer; }
 .rail-flyout-item .nav-count { margin-left: auto; font-size: var(--fs-caption); color: var(--ink-faint); font-weight: 500; }
 .rail-flyout-item:hover { background: var(--surface-sunk); }
@@ -3090,9 +3096,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .admin-rowlink:hover { color: var(--blue); text-decoration: underline; }
 .admin-rowlink:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 2px; border-radius: var(--radius-xs); }
 .admin-pill { display: inline-block; font-size: var(--fs-micro); font-weight: 600; padding: 1px var(--s2);
-  border-radius: 8px; background: var(--lumi-tile); color: var(--blue-deep); white-space: nowrap; }
+  border-radius: var(--radius-xs); background: var(--lumi-tile); color: var(--blue-deep); white-space: nowrap; }
 .admin-status { display: inline-block; font-size: var(--fs-micro); font-weight: 600; padding: 1px var(--s2);
-  border-radius: 8px; text-transform: capitalize; background: var(--surface-sunk); color: var(--ink); white-space: nowrap; }
+  border-radius: var(--radius-xs); text-transform: capitalize; background: var(--surface-sunk); color: var(--ink); white-space: nowrap; }
 /* 2026-07-09 ship review (pack 4.3): raw hues measured 4.30/4.44:1 on their tints —
    78%-ink mix per the house AA recipe */
 .admin-status-open, .admin-status-accepted, .admin-status-applied { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
@@ -3110,7 +3116,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .admin-qpick { max-height: 280px; overflow: auto; border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: var(--s2); margin-top: var(--s1); }
 .admin-qpick label { display: flex; gap: var(--s2); align-items: center; padding: var(--s1) var(--s2);
-  font-size: var(--fs-label); cursor: pointer; border-radius: 6px; }
+  font-size: var(--fs-label); cursor: pointer; border-radius: var(--radius-2xs); }
 .admin-qpick label:hover { background: var(--surface-sunk); }
 .admin-subform { border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--s3) var(--s3); margin-top: var(--s3); background: var(--surface-sunk); }
@@ -3160,9 +3166,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-axis { position: relative; display: block; height: 22px; }
 .sd-zone { position: absolute; top: calc(50% - 2px); height: 4px; border-radius: 2px;
   background: var(--surface-sunk); }
-.sd-zone.aimed { top: calc(50% - 5px); height: 10px; border-radius: 5px;
+.sd-zone.aimed { top: calc(50% - 5px); height: 10px; border-radius: var(--radius-2xs);
   background: color-mix(in srgb, var(--navy) 22%, var(--surface)); }
-.sd-zone-swatch { display: inline-block; width: 18px; height: 8px; border-radius: 4px;
+.sd-zone-swatch { display: inline-block; width: 18px; height: 8px; border-radius: var(--radius-2xs);
   background: color-mix(in srgb, var(--navy) 22%, var(--surface)); }
 .sd-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); border-radius: 50%;
   display: inline-block; z-index: 1; }
@@ -3281,7 +3287,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    verdict, this is "needs your input" (mirrors .sig-fchip-risk.on / .signal-row.is-risk). */
 .dial-card.flagged { border-color: var(--lumi-coral); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); }
 .dial-head { display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s4); }
-.dial-roundel { width: 34px; height: 34px; border-radius: 9px; background: var(--lumi-tile); color: var(--blue);
+.dial-roundel { width: 34px; height: 34px; border-radius: var(--radius-xs); background: var(--lumi-tile); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .dial-roundel.flagged { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); color: var(--lumi-coral-deep); }
 .dial-title { font-size: var(--fs-body); font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: var(--s2); margin-bottom: 2px; }
@@ -3304,7 +3310,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .scale-stop.on .ot { color: var(--blue-deep); }
 .scale-stop.on .od { opacity: 1; }
 .scale-stop:hover .ot { color: var(--ink-soft); }
-.scale-stop:focus-visible { outline: var(--focus-outline); outline-offset: 3px; border-radius: 8px; }
+.scale-stop:focus-visible { outline: var(--focus-outline); outline-offset: 3px; border-radius: var(--radius-xs); }
 
 /* objective cards + benefit chips */
 .dial-opts { display: flex; flex-wrap: wrap; gap: var(--s2); }
@@ -3329,13 +3335,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: var(--paper); border-radius: var(--radius-sm); border: 1px solid var(--border); animation: stratRise var(--dur-slow) ease; }
 .se-eye { color: var(--blue); flex: none; margin-top: 1px; }
 .se-text { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5; }
-.se-pill { font-weight: 650; padding: 1px var(--s2); border-radius: 5px; white-space: nowrap; }
+.se-pill { font-weight: 650; padding: 1px var(--s2); border-radius: var(--radius-2xs); white-space: nowrap; }
 /* Three-state survey field treatment (2026-06-24) — a "context" dial is collected but NOT
    wired to surfacing: a muted neutral badge + a quiet note in place of the live blue signal-
    effect reveal, so it visibly reads as "not shaping your signals". Reuses the attainment grey. */
 .strat-ctx { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
   color: var(--grey-neutral-ink); background: color-mix(in srgb, var(--grey-neutral) 16%, transparent);
-  padding: 2px var(--s2); border-radius: 5px; }
+  padding: 2px var(--s2); border-radius: var(--radius-2xs); }
 .signal-effect.strat-ctx-note { background: color-mix(in srgb, var(--surface-sunk) 60%, transparent);
   border-color: var(--border); animation: none; }
 .strat-ctx-note .se-eye { color: var(--grey-neutral-ink); }
@@ -3416,7 +3422,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .scale-stop, .cr-opt, .dial-opt, .strat-chip { transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast); }
 }
 .scale-stop .kbd { display: inline-block; font-size: var(--fs-micro); font-weight: 700; border: 1px solid var(--chrome-edge);
-  border-radius: 4px; padding: 0 5px; margin-bottom: 4px; color: var(--ink-faint); background: var(--paper); }
+  border-radius: var(--radius-2xs); padding: 0 5px; margin-bottom: 4px; color: var(--ink-faint); background: var(--paper); }
 .rr-change { border: 0; background: none; color: var(--blue-bright); font: 600 var(--fs-label)/1 var(--font-body);
   cursor: pointer; padding: 0; margin-left: var(--s3); flex: none; }
 .rr-change:hover { text-decoration: underline; }
@@ -3426,7 +3432,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
 .sd-ai-skel { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s2) 0; }
-.sd-ai-skel i { height: 12px; border-radius: 4px; background: var(--surface-sunk); display: block; }
+.sd-ai-skel i { height: 12px; border-radius: var(--radius-2xs); background: var(--surface-sunk); display: block; }
 .sd-ai-skel i:nth-child(1) { width: 92%; } .sd-ai-skel i:nth-child(2) { width: 78%; } .sd-ai-skel i:nth-child(3) { width: 45%; }
 @media (prefers-reduced-motion: no-preference) {
   .sd-ai-skel i { animation: skel-pulse 1.2s ease-in-out infinite; }
@@ -3455,7 +3461,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    glyph reads "vs your aim". DORMANT until the gauge/tile revert passes adopt <AlignmentChip>. */
 .align-chip { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-caption);
   font-weight: 600; color: var(--navy); background: color-mix(in srgb, var(--navy) 8%, transparent);
-  padding: 1px var(--s2); border-radius: 5px; line-height: 1.3; white-space: nowrap; }
+  padding: 1px var(--s2); border-radius: var(--radius-2xs); line-height: 1.3; white-space: nowrap; }
 .align-chip svg { color: var(--navy); flex: none; }
 .align-chip-sm { font-size: var(--fs-micro); padding: 0 6px; gap: 3px; }
 /* reward_mix=benefits reframe — quiet note on the Pay tile */
@@ -3474,7 +3480,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-nudge-body b { font-size: var(--fs-label); color: var(--ink); }
 .strat-nudge-body span { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.4; }
 .strat-nudge-cta { flex: none; }
-.strat-nudge-x { flex: none; background: none; border: none; color: var(--ink-faint); cursor: pointer; padding: var(--s2); border-radius: 6px; line-height: 0; }
+.strat-nudge-x { flex: none; background: none; border: none; color: var(--ink-faint); cursor: pointer; padding: var(--s2); border-radius: var(--radius-2xs); line-height: 0; }
 .strat-nudge-x:hover { background: rgba(0,0,0,.05); color: var(--ink-soft); }
 @media (max-width: 640px) { .strat-nudge { flex-wrap: wrap; } .strat-nudge-body { flex-basis: 100%; } }
 
@@ -3489,7 +3495,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-title { font-size: var(--fs-display); letter-spacing: -.025em; }
 
 /* dial card — premium surface, hover lift, gradient roundel */
-.dial-card { border-radius: 14px; transition: box-shadow .22s ease, transform .22s ease, border-color var(--dur-base); }
+.dial-card { border-radius: var(--radius); transition: box-shadow .22s ease, transform .22s ease, border-color var(--dur-base); }
 .dial-card:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
 .dial-roundel { background: linear-gradient(135deg, var(--lumi-tile), var(--blue-tint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 7%, transparent); transition: transform var(--dur-base) ease; }
 .dial-card:hover .dial-roundel { transform: scale(1.06) rotate(-3deg); }
@@ -3615,12 +3621,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .kebab-item.kebab-haschild { display: flex; align-items: center; }
 .kebab-chev { margin-left: auto; color: var(--ink-faint); font-weight: 700; font-size: var(--fs-body); padding-left: var(--s2); }
 .kebab-back { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left; background: none;
-  border: none; cursor: pointer; padding: var(--s2) var(--s3) var(--s2) var(--s2); margin-bottom: 2px; border-radius: 7px;
+  border: none; cursor: pointer; padding: var(--s2) var(--s3) var(--s2) var(--s2); margin-bottom: 2px; border-radius: var(--radius-xs);
   font: 700 var(--fs-label)/1.2 var(--font-body); color: var(--ink); }
 .kebab-back:hover { background: var(--surface-sunk); }
 .kebab-chev-back { color: var(--ink-faint); font-weight: 800; font-size: var(--fs-card-title); line-height: 1; }
 .kebab-pickrow { gap: var(--s2); }
-.kebab-box { width: 17px; height: 17px; flex: none; border: 1.6px solid var(--border); border-radius: 5px;
+.kebab-box { width: 17px; height: 17px; flex: none; border: 1.6px solid var(--border); border-radius: var(--radius-2xs);
   display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-micro); font-weight: 800; color: #fff; }
 .kebab-box.on { background: var(--blue); border-color: var(--blue); color: #fff; }
 .kebab-box { display: inline-flex; align-items: center; justify-content: center; }
@@ -3781,14 +3787,14 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-trackcell { min-width: 0; }
 .di-track { position: relative; display: block; height: 28px; }
 .di-norate { font-size: var(--fs-micro); color: var(--ink-faint); }   /* de-italicised (polish 2026-07-11 — the page's only italic) */
-.di-track-pending { position: relative; display: block; height: 10px; border-radius: 5px;
+.di-track-pending { position: relative; display: block; height: 10px; border-radius: var(--radius-2xs);
   border: 1.5px dashed var(--border); background: color-mix(in srgb, var(--surface-sunk) 50%, transparent); }
 /* ═══ STACKED RAG BAR (market lens, 2026-07-09) — the row's position read: below=amber ·
    on=green · above=red, each segment sized to the metric COUNT in its band with the count
    printed inside. Soft gauge tones = the platform's one RAG fill (identical to the donut).
    Flex, not absolute, so segments self-size; a per-segment min-width floor (set inline) keeps
    every numeral inside its own block — no floating labels, no JS measuring. */
-.di-bar { position: relative; display: flex; height: 20px; border-radius: 7px; overflow: hidden;
+.di-bar { position: relative; display: flex; height: 20px; border-radius: var(--radius-xs); overflow: hidden;
   background: var(--surface-sunk); }
 /* the bar as a machined object (2026-07-09 polish): a 1px ink perimeter over the fills gives the
    edge definition the pastels can't provide themselves */
@@ -3834,8 +3840,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* proportional segments — length + colour carry the read; the numbers live once, in the
    evidence column (in-bar numerals retired 2026-07-09) */
 .di-seg { position: absolute; top: calc(50% - 7px); height: 14px; }
-.di-seg:first-child { border-radius: 4px 0 0 4px; } .di-seg:last-child { border-radius: 0 4px 4px 0; }
-.di-seg:only-child { border-radius: 4px; }
+.di-seg:first-child { border-radius: var(--radius-2xs) 0 0 4px; } .di-seg:last-child { border-radius: 0 4px 4px 0; }
+.di-seg:only-child { border-radius: var(--radius-2xs); }
 /* practice prevalence bar (navy family — "how common", not position) */
 .di-seg-common { background: var(--navy); }
 .di-seg-alt { background: color-mix(in srgb, var(--navy) 38%, var(--surface)); }
@@ -3974,11 +3980,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* ---- THE FEED — evidence cards (Briefing anatomy, unchanged) ---- */
 .brf-card { position: relative; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: var(--s4) var(--s4) var(--s3) calc(var(--s4) + 6px);
+  border-radius: var(--radius); padding: var(--s4) var(--s4) var(--s3) calc(var(--s4) + 6px);
   margin-bottom: var(--s3); box-shadow: var(--shadow-card);
   scroll-margin-top: calc(var(--brandbar-h) + var(--s6)); }
 .brf-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  border-radius: 14px 0 0 14px; background: var(--border); }
+  border-radius: var(--radius) 0 0 14px; background: var(--border); }
 .brf-tone-amber::before    { background: var(--gauge-below); }
 .brf-tone-red::before      { background: var(--gauge-above); }
 .brf-tone-green::before    { background: var(--gauge-on); }
