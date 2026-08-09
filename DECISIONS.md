@@ -15515,3 +15515,28 @@ sweep; and a feature that "renders clean" is not "works" (verify the
 payload contract, not just the absence of console errors). Suite 14/14
 green through v484. NB the browser pane keeps STALE console errors in its
 buffer (v472-stamped) — assert on version, never on raw buffer contents.
+
+## 2026-08-09 — Design-system epic: DS-1/2/3 shipped, pill epic scoped (c30965f, b2a435c, 695f9d2)
+
+Worked the craft-review design-system findings in risk-ordered, verified
+batches. DONE:
+- DS-1 (correctness, zero visual change): --red/--paper-2/--amber-deep/
+  --green-deep promoted from fallback-only literals to real :root tokens;
+  radius fully tokenised (--radius-2xs minted; 71 hardcoded values swept;
+  only 999px + sub-3px decorative remain); type strays (donut-word, dh-num
+  → --fs-metric/--fs-metric-xl, pack h1 → --fs-display); LENS_ICON hoisted
+  to core.js (3 copies → 1); matrix heat blue base [37,71,176]→[32,72,176].
+- DS-2: three segmented-control implementations → one ruled recipe
+  (.ov-seg solid-blue), CSS-only convergence, verified the settings digest
+  toggle now matches the overview toggle.
+- DS-3: 4 lens-ink hex literals → the shared color-mix recipe; warn-panel
+  onto the soft-warning token role. Shadow sweep declined (4 subtle bases,
+  churn > gain).
+DELIBERATELY STILL OPEN — the pill/chip/tag consolidation (~35 base classes
+→ 4 primitives: status pill / filter chip / count badge / meta tag). This
+is the biggest and riskiest DS item: it touches nearly every surface and
+each merge needs a per-surface visual diff — a focused sub-epic, not a
+tail-of-session sweep. Also open: empty-state ring variant (3 bespoke rings
+→ EmptyState prop), the useFocusTrap hook (3 hand-rolled copies), icon-scale
+4-step rule (183 calls). Recorded so the next pass starts from a clean list.
+Suite 14/14 green through v488.
