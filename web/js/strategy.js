@@ -303,9 +303,10 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   // null = available but not generated, object = the three parts.
   const [ai, setAi] = useState(undefined);
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiDark, setAiDark] = useState(false);   // 403 = switched off for the platform
   useEffect(() => {
     api("/api/strategy/commentary", { method: "POST", body: { peek: true } })
-      .then(r => setAi(r.parts || null)).catch(() => setAi(undefined));
+      .then(r => setAi(r.parts || null)).catch(e => { setAi(undefined); if (e && e.status === 403) setAiDark(true); });
   }, []);
   const genAi = async (force) => {
     setAiBusy(true);
@@ -368,8 +369,11 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
-          <div class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual" style=${{ position: "static", transform: "none" }}></span> position
-            <span class="sd-axis-scale"><span>below</span><span>on market</span><span>above</span></span></div>
+          <div class="sd-ex-row sd-ex-head" aria-hidden="true">
+            <span class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual"></span> position</span>
+            <span class="sd-axis sd-axis-labels"><i style=${{ left: "12%" }}>below</i><i style=${{ left: "50%" }}>on market</i><i style=${{ left: "88%" }}>above</i></span>
+            <span></span>
+          </div>
           <div class="sd-exhibit">
             ${doms.map(d => { const r = aimRead(d); return html`
               <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
@@ -403,6 +407,11 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
+        ${ai === undefined && aiDark && canEdit ? html`
+        <section class="sd-sec no-print">
+          <div class="sd-secnum">${NUM.reading} — lumi's reading</div>
+          <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI Insights are enabled for the platform.</div>
+        </section>` : null}
         ${ai !== undefined ? html`
         <section style=${{ "--i": 6 }} class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
           <div class="sd-secnum">${NUM.reading} — lumi's reading
@@ -570,7 +579,7 @@ window.StrategyPage = function ({ me }) {
   };
 
   return html`
-    <div class="strat-flow" onKeyDown=${onStageKeys}>
+    <div class=${"strat-flow" + (qIndex != null ? " has-rail" : "")} onKeyDown=${onStageKeys}>
       ${/* one thin continuous progress bar (research: segments fill, linear map, no counters) */ ""}
       <div class="strat-progress" role="progressbar" aria-valuemin="0" aria-valuemax=${QUESTIONS.length + 2}
         aria-valuenow=${stage === "facts" ? 1 : stage === "review" ? QUESTIONS.length + 2 : qIndex + 2}
@@ -580,8 +589,8 @@ window.StrategyPage = function ({ me }) {
 
       ${stage !== "facts" || editing ? html`
         <div class="strat-topline no-print">
-          <button class="btn quiet strat-back" onClick=${goBack} disabled=${saving || committed}>← Back</button>
-          <span class="strat-count">${stage === "review" ? "Review" : stage === "facts" ? "Your business" : (qIndex + 1) + " of " + QUESTIONS.length}</span>
+          ${stage !== "facts" ? html`<button class="btn quiet strat-back" onClick=${goBack} disabled=${saving || committed}>← Back</button>` : html`<span></span>`}
+          <span class="strat-count">${stage === "review" ? "Review" : stage === "facts" ? "" : (qIndex + 1) + " of " + QUESTIONS.length}</span>
           ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); }}>Cancel</button>` : html`<span></span>`}
         </div>` : null}
 
@@ -628,7 +637,7 @@ window.StrategyPage = function ({ me }) {
       ${qIndex != null && html`
         <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
           <div class="strat-eyebrow">${planeBfields.includes(curField) ? "Your philosophy" : "Right now"}
-            ${fieldState(curField) === "context" ? html`<span class="strat-mode confirm">Context</span>` : html`<span class="strat-mode choose">Your call</span>`}</div>
+            ${fieldState(curField) === "context" ? html`<span class="strat-mode confirm">Context</span>` : null}</div>
           <${DialCard} field=${curField} value=${strat[curField]}
             onPick=${(f, v) => (isMulti ? pick(f, v) : pickAndGo(f, v))}
             required=${REQUIRED.includes(curField)} context=${fieldState(curField) === "context"}
