@@ -15444,3 +15444,30 @@ pool footer both legitimate); provenance-absence marks (needs a design
 ruling); above-market palette itself (RAG ruling stands — aim words gained
 weight instead); confidence sub-tier table on the methodology page
 (documentation nicety, banked). Suite 14/14 green through v479.
+
+## 2026-08-09 — Craft review implemented (bc040e2, 315d149, 0b350d7)
+
+Six-discipline fleet (PM/design/UX/FE/a11y/perf — 66 findings, 12 highs all
+verified real). SHIPPED: the governance-console privilege hole (customer
+org admins could read the cross-tenant backlog and fire EMERGENCY CHANGES
+to the shared question core — now require_platform_admin on all four
+routes, staff-tab home, member link/route gone); the motion system repaired
+(a leftover hybrid --ease-out token beat the ruled easing and added a
+hidden 200ms DELAY to every budget-grammar composition; 112 raw durations
+reconciled onto the three-token budget; legacy --ease/--ease-fast retired);
+triage failure paths unified (revert + error, never success-toast on a
+failed write); billable launch confirmed + guarded; invite double-submit
+closed; React-18 rAF currentTarget nulls fixed; per-card error containment
+(Guarded); length-scaled toasts; the a11y batch; board packs searchable;
+auth deep links land home; live suggestion taxonomy.
+ACCEPTED DEBT — DESIGN-SYSTEM EPIC (recorded, not attempted in this pass;
+inventory in scratchpad/craft_review.json): consolidating ~35 pill-like
+classes / 3 segmented-control implementations / 3 modal focus-trap copies /
+empty-state ring variants; the 5× hand-rolled overview fetch → one helper;
+generic top-level const renames; icon-size trio normalisation; --radius-xs
+adoption (27 hardcoded); undefined-token definitions (--amber-deep family);
+Escape/focus-restore sweep for the four header menus; wide-table clip
+strategy at 320px; perf-release lens re-run (its find agent died on a
+connection drop — 4th big-payload casualty). These are coherent refactors
+needing visual verification budget, not scattered fixes.
+Suite 14/14 green through v481.
