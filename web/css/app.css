@@ -616,7 +616,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   50% { box-shadow: 0 0 0 13px color-mix(in srgb, #f0c14b 7%, transparent), 0 10px 34px rgba(240,193,75,.5); } }
 /* stop the infinite celebration loop when motion is reduced (keeps the pop-in) */
 @media (prefers-reduced-motion: reduce) {
-  .success-pop.unlocked .success-ring { animation: popIn var(--dur-slow) ease both; } }
+  .success-pop.unlocked .success-ring { animation: popIn 420ms ease both; } }
 
 /* calm entrance: cards ease rather than snap when a filter changes */
 @keyframes riseIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -1082,7 +1082,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-band { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
 .arc-minors { animation: none; }
 /* verdict word fades in as the needle settles (first populated render only) */
-.arc-word-reveal { animation: arc-word-reveal var(--dur-base) ease both; animation-delay: var(--dur-slow); }
+.arc-word-reveal { animation: arc-word-reveal var(--dur-base) ease both; animation-delay: 300ms; }
 @keyframes arc-word-reveal { from { opacity: 0; } to { opacity: 1; } }
 /* needle tip: a soft live pulse so the instrument feels alive */
 .arc-tip-glow { transform-box: fill-box; transform-origin: center; opacity: .5;
@@ -1728,7 +1728,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 @keyframes cat-pill-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
 .cat-brief-minibar span { transform-origin: left; animation: cat-bar-grow var(--dur-slow) cubic-bezier(.2,.7,.3,1) backwards; }
 .cat-brief-minibar span:nth-child(2) { animation-delay: 70ms; }
-.cat-brief-minibar span:nth-child(3) { animation-delay: var(--dur-fast); }
+.cat-brief-minibar span:nth-child(3) { animation-delay: 140ms; }
 .cat-brief-ruler .bp-scale-pill { animation: cat-pill-pop var(--dur-slow) var(--dur-base) cubic-bezier(.2,.7,.3,1) backwards; }
 @media (prefers-reduced-motion: reduce) {
   .cat-brief-minibar span, .cat-brief-ruler .bp-scale-pill { animation: none; }
@@ -2000,7 +2000,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .data-unlock.good .du-ico { animation: du-pulse 2.6s ease-in-out 600ms 2; }
 @keyframes du-pulse { 0%,100% { transform: none; } 50% { transform: scale(1.12); box-shadow: 0 0 0 5px color-mix(in srgb, var(--favourable) 14%, transparent); } }
 .data-q { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; }
-.data-q:nth-child(1){animation-delay:30ms}.data-q:nth-child(2){animation-delay:70ms}.data-q:nth-child(3){animation-delay:110ms}.data-q:nth-child(4){animation-delay:var(--dur-fast)}.data-q:nth-child(5){animation-delay:190ms}
+.data-q:nth-child(1){animation-delay:30ms}.data-q:nth-child(2){animation-delay:70ms}.data-q:nth-child(3){animation-delay:110ms}.data-q:nth-child(4){animation-delay:150ms}.data-q:nth-child(5){animation-delay:190ms}
 .data-q-flag.ok { transition: transform var(--dur-fast) ease; }
 .data-q:hover .data-q-flag.ok { transform: scale(1.06); }
 @media (prefers-reduced-motion: reduce) {
@@ -2076,9 +2076,9 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .cat-tile { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; }
 /* (2026-07-08 hero redesign: the Overview .cat-grid tile stagger retired with the tiles —
    the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */
-.ov-signals-band .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: var(--dur-base); }
+.ov-signals-band .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
 .grid2 .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
-.arc-verdict, .arc-caption, .ov-after { animation: ov-rise var(--dur-slow) ease-out both; animation-delay: var(--dur-slow); }
+.arc-verdict, .arc-caption, .ov-after { animation: ov-rise var(--dur-slow) ease-out both; animation-delay: 320ms; }
 .arc-median { animation: ov-rise var(--dur-slow) ease-out both; animation-delay: 600ms; }
 .tile-dot { animation: dot-pop var(--dur-slow) cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
 .signal-go { opacity: 0; transform: translateX(-4px); transition: opacity var(--dur-fast) ease, transform var(--dur-fast) ease;
@@ -2110,15 +2110,15 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .cat-hero-cell { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both;
   transition: box-shadow var(--dur-fast) ease, transform var(--dur-fast) ease, border-color var(--dur-fast) ease; }
 .cat-hero-cell:nth-child(1) { animation-delay: 70ms; }
-.cat-hero-cell:nth-child(2) { animation-delay: var(--dur-fast); }
+.cat-hero-cell:nth-child(2) { animation-delay: 150ms; }
 .cat-hero-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift);
   border-color: color-mix(in srgb, var(--blue) 28%, var(--border)); }
-.category-page .cat-section { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: var(--dur-base); }
+.category-page .cat-section { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
 /* the position dot settles in; the prevalence donut sweeps in, centre count pops */
-.cat-band-dot { animation: dot-pop 540ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: var(--dur-slow); }
-.cat-donut { animation: donut-in 620ms cubic-bezier(.2,.7,.3,1) both; animation-delay: var(--dur-base); transform-origin: center; }
+.cat-band-dot { animation: dot-pop 540ms cubic-bezier(.34,1.4,.5,1) both; animation-delay: 320ms; }
+.cat-donut { animation: donut-in 620ms cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; transform-origin: center; }
 @keyframes donut-in { from { transform: rotate(-16deg) scale(.86); opacity: 0; } to { transform: none; opacity: 1; } }
-.cat-donut-center b { display: inline-block; animation: prev-pop 560ms cubic-bezier(.34,1.5,.4,1) both; animation-delay: var(--dur-slow); }
+.cat-donut-center b { display: inline-block; animation: prev-pop 560ms cubic-bezier(.34,1.5,.4,1) both; animation-delay: 420ms; }
 @keyframes prev-pop { 0% { transform: scale(.45); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: none; opacity: 1; } }
 /* the back arrow nudges home; the glyph wakes on hover, like the tiles */
 .category-page .back-link svg { transition: transform var(--dur-fast) ease; }
@@ -2131,7 +2131,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   padding: var(--s3) var(--s4); border-radius: var(--radius); font-size: var(--fs-caption); color: var(--ink-soft);
   background: linear-gradient(100deg, color-mix(in srgb, var(--favourable) 9%, var(--surface-sunk)), var(--surface-sunk));
   border: 1px solid color-mix(in srgb, var(--favourable) 22%, var(--border));
-  animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: var(--dur-base); }
+  animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
 .cat-allclear-ring { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--favourable) 16%, transparent); color: var(--favourable); }
@@ -2369,8 +2369,8 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .tdots { display: inline-flex; gap: 3px; margin-right: var(--s1); vertical-align: middle; }
 .tdots span { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-soft);
   animation: tdot 1s ease-in-out infinite; }
-.tdots span:nth-child(2) { animation-delay: var(--dur-fast); }
-.tdots span:nth-child(3) { animation-delay: var(--dur-slow); }
+.tdots span:nth-child(2) { animation-delay: .15s; }
+.tdots span:nth-child(3) { animation-delay: .3s; }
 @keyframes tdot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-2px); } }
 @media (max-width: 480px) { .analyst-pane { width: 100%; max-width: 100vw; } }
 @media (prefers-reduced-motion: reduce) {
@@ -2606,6 +2606,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
    (horizontal scroll). Allow them to shrink; the chip labels truncate to fit. */
 .grid2 > .card { min-width: 0; }
 @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+.searchpop-head { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); padding: var(--s2) var(--s3) var(--s1); }
 .searchpop { position: absolute; top: calc(100% + 4px); left: 0; width: 420px; max-width: 90vw; max-height: 50vh;
   overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow-pop); z-index: var(--z-popover); }
@@ -2709,17 +2710,17 @@ textarea.suggest-input { resize: vertical; min-height: 76px; height: auto; paddi
 .suggest-done-btn { background: var(--lumi-navy); border-color: var(--lumi-navy); color: #fff; margin-top: var(--s5); height: auto; padding: var(--s3) var(--s4); }
 /* 2.6 — modal entry/exit. Entry: backdrop fade 200ms + card scale .96→1 250ms.
    Exit (.closing): card scale→.96 fade 200ms, backdrop fade 250ms. */
-.suggest-back { animation: suggest-back-in var(--dur-base) ease both; }
-.suggest-modal { animation: suggest-modal-in var(--dur-base) ease-out both; }
-.suggest-back.closing { animation: suggest-back-out var(--dur-base) ease both; }
-.suggest-modal.closing { animation: suggest-modal-out var(--dur-base) ease both; }
+.suggest-back { animation: suggest-back-in 200ms ease both; }
+.suggest-modal { animation: suggest-modal-in 250ms ease-out both; }
+.suggest-back.closing { animation: suggest-back-out 250ms ease both; }
+.suggest-modal.closing { animation: suggest-modal-out 200ms ease both; }
 @keyframes suggest-back-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes suggest-back-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes suggest-modal-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 @keyframes suggest-modal-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.96); } }
 /* 2.7 — confirmation tick reveal: tick scales in (overshoot), heading fades 100ms after. */
 .suggest-done-ring { animation: suggest-tick var(--dur-slow) cubic-bezier(.34,1.56,.64,1) both; }
-.suggest-done-head { animation: suggest-head-fade var(--dur-base) ease both; animation-delay: var(--dur-fast); }
+.suggest-done-head { animation: suggest-head-fade var(--dur-base) ease both; animation-delay: 100ms; }
 @keyframes suggest-tick { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes suggest-head-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
@@ -3133,9 +3134,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-sec { padding: var(--s5) var(--s6); border-bottom: 1px solid var(--border); }
 .sd-sec:last-of-type { border-bottom: 0; }
 .sd-ai { border-top: 1px solid var(--border); }
-@media (prefers-reduced-motion: no-preference) {
-  .sd-doc > * { animation: riseIn var(--dur-base) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
-}
 @media print { .sd-doc > * { animation: none !important; opacity: 1 !important; } }
 .sd-secnum { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--fs-caption); font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s4); }
@@ -3409,7 +3407,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .qstage { animation: q-in var(--dur-base) var(--ease-out) both; }
   .qstage > * { animation: q-in var(--dur-base) var(--ease-out) both; }
   .qstage > *:nth-child(2) { animation-delay: 50ms; }
-  .qstage > *:nth-child(3) { animation-delay: var(--dur-fast); }
+  .qstage > *:nth-child(3) { animation-delay: 100ms; }
   .scale-stop.on { animation: pick-bloom var(--dur-slow) var(--ease-out); }
   @keyframes pick-bloom { 0% { box-shadow: 0 0 0 0 var(--blue-tint); } 55% { box-shadow: 0 0 0 10px var(--blue-tint); } 100% { box-shadow: 0 0 0 0 transparent; } }
   .qstage.leaving { animation: none; transform: translateY(-10px); transition: opacity var(--dur-fast) var(--ease-in), transform var(--dur-fast) var(--ease-in); }
@@ -3525,7 +3523,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .strat-done.celebrating .strat-check { animation: checkCelebrate .8s ease; }
 @keyframes checkCelebrate { 0%,100%{transform:scale(1)} 30%{transform:scale(1.22) rotate(-6deg)} 60%{transform:scale(1.1) rotate(4deg)} }
 .review-sec { animation: stratRise var(--dur-slow) cubic-bezier(.22,.9,.3,1) both; }
-.review-sec:nth-of-type(2){animation-delay:.05s} .review-sec:nth-of-type(3){animation-delay:.1s} .review-sec:nth-of-type(4){animation-delay:var(--dur-fast)}
+.review-sec:nth-of-type(2){animation-delay:.05s} .review-sec:nth-of-type(3){animation-delay:.1s} .review-sec:nth-of-type(4){animation-delay:.15s}
 .review-row { transition: background var(--dur-fast); }
 .review-row:hover { background: var(--paper); }
 
@@ -4034,7 +4032,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    kills any completed entrance animation so its fill can't pin opacity. */
 .brf-card.brf-leave { overflow: hidden; opacity: 0; min-height: 0; animation: none;
   padding-top: 0; padding-bottom: 0; margin-bottom: 0; border-width: 0; pointer-events: none;
-  transition: height var(--dur-base) var(--ease-out), opacity var(--dur-fast) var(--ease-out),
+  transition: height 240ms var(--ease-out), opacity 180ms var(--ease-out),
     padding 240ms var(--ease-out), margin 240ms var(--ease-out), border-width 240ms var(--ease-out); }
 /* (.brf-more, .brf-zero family, and the whole LEDGER block — .brf-band/.brf-bandhead/
    .brf-bandtoggle/.brf-bandchev/.brf-counts/.brf-flt/.brf-domsec/.brf-domlbl/.brf-lrow

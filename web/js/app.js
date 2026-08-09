@@ -48,7 +48,7 @@ function App() {
   const prevRouteRef = useRef(null);
   useEffect(() => {
     const TITLES = [["/overview", "Overview"], ["/dashboards", "My dashboards"], ["/signals", "Signals"],
-      ["/priorities", "Priorities"], ["/boardpack", "Board packs"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
+      ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
       ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
@@ -377,8 +377,9 @@ function App() {
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
   else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
   else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} />`;
-  else if (route.startsWith("/register") || route.startsWith("/invite") || route.startsWith("/reset")) {
-    // an auth deep link while signed in lands home, never on a 404 (craft review)
+  else if (route.startsWith("/register") || (route.startsWith("/reset") && !route.startsWith("/reset/"))) {
+    // a bare register/reset deep link while signed in lands home, never a 404 (craft
+    // review) — /invite/ and /reset/<token> keep their real handlers below
     page = html`<${PageLoading} />`; setTimeout(() => nav("/overview"), 0);
   }
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
@@ -1327,8 +1328,8 @@ function SearchZeroState({ qIndex, onGo }) {
   const byId = {}; (qIndex.questions || []).forEach(q => { byId[q.id] = q; });
   const rows = recents.map(id => byId[id] && { id, title: byId[id].title }).filter(Boolean).slice(0, 5);
   if (!rows.length) return null;
-  return html`<div class="search-pop" role="listbox" aria-label="Recent metrics">
-    <div class="search-pop-head caption">Recent</div>
+  return html`<div class="searchpop" role="listbox" aria-label="Recent metrics">
+    <div class="searchpop-head caption">Recent</div>
     ${rows.map(r => html`<button key=${r.id} class="search-hit" role="option"
       onMouseDown=${e => { e.preventDefault(); onGo(r.id); }}>${r.title}</button>`)}
   </div>`;

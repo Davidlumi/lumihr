@@ -56,6 +56,9 @@ function ConfidenceChip({ n, window: win }) {
 window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut, onTwinInfo }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
+  // newcomer captured ONCE at first mount — ReturnStrip stamps _seen.visit on mount,
+  // which would otherwise flip this false mid-celebration (deep-QA 2026-08-09)
+  const newcomerRef = useRef(!(prefs && prefs._seen));
   // Home dashboard lens (persisted in prefs._overview): MARKET view (gauge + below/
   // on/above) vs PRACTICE view (how you operate — the differ/approach read), and
   // whether the reward-strategy stance is APPLIED. Strategy-off re-fetches the
@@ -135,7 +138,7 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 
       ${unlocked ? html`<${ReturnStrip} prefs=${prefs} onPref=${onPref} />` : null}
       ${unlocked && !(prefs && prefs._seen && prefs._seen.unlock) &&
-        html`<${UnlockMoment} newcomer=${!(prefs && prefs._seen)} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
+        html`<${UnlockMoment} newcomer=${newcomerRef.current} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
 
       <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
         view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat}
@@ -152,16 +155,17 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
 function ReturnStrip({ prefs, onPref }) {
   const [line, setLine] = useState(null);
   useEffect(() => {
-    const seen = (prefs && prefs._seen) || {};
-    const last = seen.visit ? new Date(seen.visit) : null;
-    const stamp = () => onPref && onPref("_seen", { ...seen, visit: new Date().toISOString() });
+    const last = (prefs && prefs._seen && prefs._seen.visit) ? new Date(prefs._seen.visit) : null;
+    // stamp reads prefs LIVE at call time (never a mount-time snapshot) so a
+    // concurrent _seen write — e.g. the unlock-dismissed flag — is never clobbered
+    const stamp = () => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), visit: new Date().toISOString() });
     if (!last || isNaN(last)) { stamp(); return; }
-    const days = (Date.now() - last.getTime()) / 86400000;
-    if (days < 7) { stamp(); return; }
+    if ((Date.now() - last.getTime()) / 86400000 < 7) { stamp(); return; }
     api("/api/notifications").then(d => {
-      const evs = (d.notifications || d.events || []).filter(e => e.created_at && new Date(e.created_at) > last);
-      const appeared = evs.filter(e => /appear|new|flag/i.test(e.kind || e.type || "")).length;
-      const cleared = evs.filter(e => /clear|resolve/i.test(e.kind || e.type || "")).length;
+      // events carry event_kind (appeared|moved|cleared) + detected_at (server/notifications.py)
+      const evs = (d.events || []).filter(e => e.detected_at && new Date(e.detected_at) > last && !e.confirm);
+      const cleared = evs.filter(e => e.event_kind === "cleared").length;
+      const appeared = evs.filter(e => e.event_kind === "appeared").length;
       if (appeared || cleared) {
         const bits = [];
         if (cleared) bits.push(cleared + " signal" + (cleared === 1 ? "" : "s") + " cleared");
@@ -1387,15 +1391,18 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
     // dismiss AND snooze both remove the signal from the briefing — animate them out
     if ((status === "dismissed" || status === "snoozed") && !reduceMotion) {
       setLeaving(p => ({ ...p, [sid]: true }));
-      signalAction(sid, status, days).catch(() => {
-        setStOv(p => { const n = { ...p }; delete n[sid]; return n; });   // revert
-        setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
-        toast("Couldn't save that — try again", "error");
-      });
-      setTimeout(() => {
+      let failed = false;
+      const t = setTimeout(() => {
+        if (failed) return;                              // a fast reject already reverted — don't re-hide
         setStOv(p => ({ ...p, [sid]: status }));
         setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
       }, 260);
+      signalAction(sid, status, days).catch(() => {
+        failed = true; clearTimeout(t);
+        setStOv(p => { const n = { ...p }; delete n[sid]; return n; });
+        setLeaving(p => { const n = { ...p }; delete n[sid]; return n; });
+        toast("Couldn't save that — try again", "error");
+      });
     } else {
       setStOv(p => ({ ...p, [sid]: status || "active" }));
       signalAction(sid, status, days).catch(() => {

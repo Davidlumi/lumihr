@@ -12,6 +12,7 @@ const ADMIN_TABS = [
   { key: "pulses", label: "Pulses", icon: "zap" },
   { key: "pulse-reviews", label: "Pulse reviews", icon: "list-checks" },
   { key: "metrics", label: "Metrics", icon: "target" },
+  { key: "governance", label: "Governance", icon: "book-open" },
   { key: "billing", label: "Billing", icon: "coins" },
   { key: "compliance", label: "Compliance", icon: "lock" },
   { key: "ops", label: "Ops", icon: "sliders" },
@@ -44,7 +45,7 @@ window.AdminConsolePage = function ({ me, route }) {
         ${active === "pulses" && html`<${AdminPulsesTab} />`}
         ${active === "pulse-reviews" && html`<${AdminPulseReviewsTab} />`}
         ${active === "metrics" && html`<${AdminMetricsTab} />`}
-        ${active === "governance" && html`<${GovernancePage} me=${me} embedded=${true} />`}
+        ${active === "governance" && html`<${GovernancePage} me=${me} />`}
         ${active === "billing" && html`<${AdminBillingTab} />`}
         ${active === "compliance" && html`<${AdminComplianceTab} />`}
         ${active === "ops" && html`<${AdminOpsTab} />`}

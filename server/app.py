@@ -3109,11 +3109,12 @@ def _csv_response(buf, org, artefact, cut_label):
     # display names live in the identity store (D6) — the middleware org carries none
     _name = (identity.org_display(org["org_id"]) or {}).get("name") if org else None
     fname = "lumi — %s — %s — %s — %s.csv" % (
-        safe(_name or "organisation"), artefact, safe(cut_label or "All peers"),
+        safe(_name or "organisation"), safe(artefact) or "benchmark", safe(cut_label or "All peers"),
         _dt.date.today().isoformat())
+    ascii_fn = re.sub(r"[^A-Za-z0-9 .-]", "", fname.replace("—", "-"))
     return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": "attachment; filename*=UTF-8''%s; filename=\"%s\"" % (
-                        urllib.parse.quote(fname), fname.replace("—", "-"))})
+                        urllib.parse.quote(fname), ascii_fn)})
 
 
 @app.get("/api/gap-register.csv")
@@ -3146,7 +3147,7 @@ BENCH_CSV_HEADER = ["question_id", "title", "subpower", "your_value", "unit",
                     "p10", "p25", "p50", "p75", "p90", "n", "cut_label", "window", "suppressed"]
 
 
-def _bench_csv_row(qid, q, card):
+def _bench_csv_row(qid, q, card, window=""):
     suppressed = bool(card.get("suppressed"))
     cut_label = (card.get("cut") or {}).get("label", "")
     # your_value: numeric value, else the selected label (multi_select joined)
@@ -3166,12 +3167,11 @@ def _bench_csv_row(qid, q, card):
                  blk.get("p75", ""), blk.get("p90", "")]
     else:
         stats = ["", "", "", "", ""]
-    _unit = (q.unit_block() or {}).get("symbol") or (q.unit_block() or {}).get("type") or ""
-    _snap = get_conn().execute("SELECT collection_window FROM snapshots WHERE snapshot_id=?",
-                               (CURRENT_SNAPSHOT,)).fetchone()
-    _win = (_snap and _snap["collection_window"]) or ""
+    _ub = q.unit_block() or {}
+    _ut = _ub.get("type")
+    _unit = _ub.get("symbol") or ("" if _ut in (None, "none") else _ut)   # "none" is not a unit
     return [qid, q.display_title, q.sub_power, your_value, _unit,
-            *stats, card.get("n", 0), cut_label, _win,
+            *stats, card.get("n", 0), cut_label, window,
             "true" if suppressed else "false"]
 
 
@@ -3192,15 +3192,21 @@ async def benchmark_csv(request: Request):
     w.writerow(BENCH_CSV_HEADER)
 
     _sp = request.query_params.get("sp")   # optional domain scope (category-page export)
+    _visq = org_visible_questions(org)
+    if _sp and not any(q.sub_power == _sp for q in _visq.values()):
+        raise HTTPException(404, "No such area for this organisation.")
+    _snap = conn.execute("SELECT collection_window FROM snapshots WHERE snapshot_id=?",
+                         (CURRENT_SNAPSHOT,)).fetchone()
+    _win = (_snap and _snap["collection_window"]) or ""    # fetched ONCE, not per row
     rows = []
-    for qid, q in org_visible_questions(org).items():
+    for qid, q in _visq.items():
         if _sp and q.sub_power != _sp:
             continue
         p = payloads().get(qid)
         if p is None:
             continue
         card = assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None, entitled)
-        rows.append(_bench_csv_row(qid, q, card))
+        rows.append(_bench_csv_row(qid, q, card, _win))
 
     rows.sort(key=lambda r: (r[2] or "", r[1] or ""))
     for r in rows:
@@ -3226,6 +3232,9 @@ async def dashboard_csv(did: str, request: Request):
     req_cut = parse_cut(request, org)
     answers = org_answers_for(org)
 
+    _snap = conn.execute("SELECT collection_window FROM snapshots WHERE snapshot_id=?",
+                         (CURRENT_SNAPSHOT,)).fetchone()
+    _win = (_snap and _snap["collection_window"]) or ""
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(BENCH_CSV_HEADER)
@@ -3242,12 +3251,9 @@ async def dashboard_csv(did: str, request: Request):
         eff_cut = slot.get("cut") or req_cut
         tb = twin_blocks_if_needed(conn, org, eff_cut)
         card = assemble_card(q, p, org, answers, eff_cut, {qid: tb.get(qid)} if tb else None, entitled)
-        w.writerow(_bench_csv_row(qid, q, card))
+        w.writerow(_bench_csv_row(qid, q, card, _win))
 
-    safe = re.sub(r"[^A-Za-z0-9 _-]+", "", row["name"] or "dashboard").strip()[:40] or "dashboard"
-    fname = "lumi-dashboard-%s.csv" % safe
-    return Response(buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": 'attachment; filename="%s"' % fname})
+    return _csv_response(buf, org, "dashboard — " + (row["name"] or "view"), cut_label_of(req_cut))
 
 
 # ================================================================== ANALYST ==

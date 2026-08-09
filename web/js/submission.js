@@ -313,6 +313,14 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
         </div>
         ${optionalStart && html`
           <div class="qwiz-divider" title="Optional questions add depth to your benchmarks when you have the data to hand."><span>Optional from here</span></div>`}
+        <div class="qwiz-stage" onKeyDown=${e => {
+          if (e.key !== "Enter" || e.target.tagName === "TEXTAREA" || curError) return;
+          if (e.target.closest("a")) return;                       // let links activate
+          const btn = e.target.closest("button");
+          if (btn && !btn.classList.contains("btn")) return;       // option toggles etc
+          if (btn && (btn.textContent || "").trim().startsWith("←")) return;  // Back = native
+          e.preventDefault(); next();                              // input Enter / anywhere else → advance
+        }}>
         <div class="qwiz-card card">
           <div class="qwiz-qhead">
             <span class=${"pulse-q-num" + (curAnswered ? " done" : "")}>${curAnswered ? "✓" : at + 1}</span>
@@ -324,9 +332,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
           <${QuestionInput} key=${cur.id} q=${cur} drafts=${drafts}
             issues=${issues} save=${save} confirmValue=${confirmValue} />
         </div>
-        <div class="qwiz-nav row spread" onKeyDown=${e => {
-          if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && !curError) { e.preventDefault(); next(); }
-        }}>
+        <div class="qwiz-nav row spread">
           <button class="btn" onClick=${prev}>← ${at > 0 ? "Back" : "List view"}</button>
           <div class="row" style=${{ gap: "var(--s3)", alignItems: "center" }}>
             ${!curAnswered && html`
@@ -334,6 +340,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                 onClick=${e => { e.preventDefault(); next(); }}>${cur.is_required ? "Leave for later" : "Skip for now"}</a>`}
             <button class="btn primary" disabled=${curError} onClick=${next}>${nextLabel} <span class="kbd-hint">press Enter ↵</span></button>
           </div>
+        </div>
         </div>
         ${curError && html`<div class="caption" style=${{ textAlign: "right", marginTop: "var(--s2)", color: "var(--unfavourable)" }}>
           Fix the value above to continue.</div>`}
