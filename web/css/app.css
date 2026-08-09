@@ -3149,14 +3149,15 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-ex-ov { font-size: var(--fs-micro); font-weight: 600; color: var(--navy); background: color-mix(in srgb, var(--navy) 10%, transparent);
   border-radius: 999px; padding: 1px var(--s2); }
 .sd-axis { position: relative; display: block; height: 22px; }
-.sd-axis-line { position: absolute; left: 8%; right: 8%; top: 50%; height: 2px; border-radius: 1px;
-  background: linear-gradient(to right, var(--gauge-below), var(--gauge-on) 38%, var(--gauge-on) 62%, var(--gauge-above)); }
-.sd-axis-band { position: absolute; left: 37.4%; width: 25.2%; top: calc(50% - 5px); height: 10px;
-  border-radius: 5px; background: var(--gauge-on); opacity: .38; }
-.sd-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px;
-  border-radius: 50%; display: inline-block; z-index: 1; }
-.sd-mark.intent { width: 16px; height: 16px; border: 2.5px solid var(--navy); background: transparent; }
-.sd-mark.actual { width: 10px; height: 10px; background: var(--navy); box-shadow: 0 0 0 2px var(--surface); }
+.sd-zone { position: absolute; top: calc(50% - 2px); height: 4px; border-radius: 2px;
+  background: var(--surface-sunk); }
+.sd-zone.aimed { top: calc(50% - 5px); height: 10px; border-radius: 5px;
+  background: color-mix(in srgb, var(--navy) 22%, var(--surface)); }
+.sd-zone-swatch { display: inline-block; width: 18px; height: 8px; border-radius: 4px;
+  background: color-mix(in srgb, var(--navy) 22%, var(--surface)); }
+.sd-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); border-radius: 50%;
+  display: inline-block; z-index: 1; }
+.sd-mark.actual { width: 11px; height: 11px; background: var(--navy); box-shadow: 0 0 0 2px var(--surface); }
 .sd-mark.actual.v-below { background: var(--amber-bright); }
 .sd-mark.actual.v-on { background: var(--favourable); }
 .sd-mark.actual.v-above { background: var(--unfavourable); }

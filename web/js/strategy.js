@@ -284,20 +284,20 @@ function sdStance(strat, orgName) {
   return parts;
 }
 
-// intent (ring) vs actual (dot) on one percentile axis: zones tinted, the ring
-// anchored at the aimed zone's centre, the dot at the TRUE depth percentile when
-// the engine carries one (falls back to the zone centre). Verdict colours = the
-// house gauge palette, same language as the Overview bars.
-const SD_ZONE = ["22.7%", "50%", "77.3%"];            // zone centres on the 8-92% track
+// aim (a ZONE, shaded navy) vs position (one dot at the true percentile).
+// The three zone extents follow the real market band (P35-65) on an 8-92% track;
+// on aim = the dot sits inside the shaded stretch. One band, one dot, one chip.
+const SD_ZONES = [[8, 37.4], [37.4, 58.4], [58.4, 92]];   // below | on market | above
 const sdPctlX = (p) => (8 + Math.max(0, Math.min(100, p)) * 0.84) + "%";
 function SdAxis({ intent, actual, pctl }) {
   const ii = SD_IDX[intent], ai = SD_IDX[actual];
-  const dotX = (pctl != null && ai != null) ? sdPctlX(pctl) : (ai != null ? SD_ZONE[ai] : null);
+  const dotX = (pctl != null && ai != null) ? sdPctlX(pctl)
+    : (ai != null ? ((SD_ZONES[ai][0] + SD_ZONES[ai][1]) / 2) + "%" : null);
   const vcls = actual === "below" ? " v-below" : actual === "above" ? " v-above" : " v-on";
   return html`<span class="sd-axis" aria-hidden="true">
-    <span class="sd-axis-line"></span>
-    <span class="sd-axis-band"></span>
-    ${ii != null && html`<span class="sd-mark intent" style=${{ left: SD_ZONE[ii] }} title="Your aim"></span>`}
+    ${SD_ZONES.map(([l, r], i) => html`<span key=${i}
+      class=${"sd-zone" + (i === ii ? " aimed" : "")}
+      style=${{ left: l + "%", width: (r - l) + "%" }}></span>`)}
     ${dotX && html`<span class=${"sd-mark actual" + vcls} style=${{ left: dotX }} title="Your position"></span>`}
   </span>`;
 }
@@ -376,8 +376,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live</span></div>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
-            <span class="sd-axis-key"><span class="sd-mark intent"></span> aim <span class="sd-mark actual"></span> position</span>
-            <span class="sd-axis sd-axis-labels"><i style=${{ left: "22.7%" }}>below</i><i style=${{ left: "50%" }}>on market</i><i style=${{ left: "77.3%" }}>above</i></span>
+            <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
+            <span class="sd-axis sd-axis-labels"><i style=${{ left: "22.7%" }}>below</i><i style=${{ left: "47.9%" }}>on market</i><i style=${{ left: "75.2%" }}>above</i></span>
             <span></span>
           </div>
           <div class="sd-exhibit">
