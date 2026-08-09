@@ -73,8 +73,10 @@ window.AuthScreen = function ({ onAuthed, route }) {
   if (route.startsWith("/reset/")) return html`<${ResetForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
   if (route.startsWith("/invite/")) return html`<${InviteForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
   // /app#/register lands register-intent traffic ("Get your benchmark") on the
-  // register form directly instead of behind the small "New organisation" link
-  return html`<${LoginForm} onAuthed=${onAuthed} initialMode=${route.startsWith("/register") ? "register" : "login"} />`;
+  // register form directly; /app#/forgot opens the reset-request form (so an
+  // expired reset link's "request a new link" lands ready to send, not on Sign in)
+  const initialMode = route.startsWith("/register") ? "register" : route.startsWith("/forgot") ? "forgot" : "login";
+  return html`<${LoginForm} onAuthed=${onAuthed} initialMode=${initialMode} />`;
 };
 
 function Shell({ children, sub }) {
@@ -96,7 +98,7 @@ function Shell({ children, sub }) {
     </div>`;
 }
 
-function Field({ label, type, value, onInput, placeholder, autoFocus, autoComplete }) {
+function Field({ label, type, value, onInput, placeholder, autoFocus, autoComplete, minLength }) {
   // programmatic label association (screen readers announced these inputs
   // nameless) + autocomplete hints + show/hide on passwords
   const id = "auth-" + (label || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -110,10 +112,31 @@ function Field({ label, type, value, onInput, placeholder, autoFocus, autoComple
           onClick=${() => setShow(s => !s)}>${show ? "Hide" : "Show"}</button>`}
       </div>
       <input id=${id} type=${isPw && show ? "text" : (type || "text")} value=${value} placeholder=${placeholder || ""}
-        autoFocus=${autoFocus} autocomplete=${autoComplete || null}
+        autoFocus=${autoFocus} autocomplete=${autoComplete || null} minlength=${minLength || null}
         onInput=${e => onInput(e.target.value)} onKeyDown=${e => { if (e.key === "Enter") { const f = e.target.closest("form"); f && f.requestSubmit(); } }} />
     </div>`;
 }
+
+// Length-first strength hint — mirrors the server policy (a real length floor +
+// a common-password blocklist, NOT character-class rules; see auth.validate_password),
+// so the client never promises a rule the server doesn't enforce. Advisory only.
+const PW_MIN = 8;
+function pwHint(pw) {
+  const n = (pw || "").length;
+  if (!n) return null;
+  if (n < PW_MIN) return { pct: Math.round(n / PW_MIN * 100), tone: "weak", text: n + "/" + PW_MIN + " characters — at least " + PW_MIN };
+  if (n < 12) return { pct: 66, tone: "fair", text: "Good — a longer passphrase is stronger" };
+  return { pct: 100, tone: "ok", text: "Strong" };
+}
+function PwStrength({ pw }) {
+  const h = pwHint(pw);
+  if (!h) return null;
+  return html`<div class="pw-meter">
+    <div class=${"pw-bar pw-" + h.tone} aria-hidden="true"><span style=${{ width: h.pct + "%" }}></span></div>
+    <span class="caption pw-note" role="status">${h.text}</span>
+  </div>`;
+}
+const pwOk = (pw) => (pw || "").length >= PW_MIN;
 
 function LoginForm({ onAuthed, initialMode }) {
   const [mode, setMode] = useState(initialMode || "login"); // login | register | forgot
@@ -126,6 +149,7 @@ function LoginForm({ onAuthed, initialMode }) {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(false);
+  const [sent, setSent] = useState(false);        // forgot-password: switch to a "check your email" panel
   const [regOpen, setRegOpen] = useState(null);   // null = unknown; false shows the set-up-for-you panel
   useEffect(() => {
     if (mode === "register" && regOpen === null)
@@ -134,17 +158,32 @@ function LoginForm({ onAuthed, initialMode }) {
   const [showTerms, setShowTerms] = useState(false);
   const go = async (e) => {
     e.preventDefault();
-    setErr(null); setMsg(null); setBusy(true);
+    setErr(null); setMsg(null);
+    // client-side guards so a blank/weak form never round-trips to a bare 400/401
+    if (mode === "register" && !pwOk(pw)) { setErr("Password must be at least " + PW_MIN + " characters."); return; }
+    setBusy(true);
     try {
       if (mode === "login") { await api("/api/auth/login", { method: "POST", body: { email, password: pw } }); onAuthed(); }
       else if (mode === "register") { await api("/api/auth/register", { method: "POST", body: { org_name: orgName, email, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
-      else { const r = await api("/api/auth/request-reset", { method: "POST", body: { email } }); setMsg(r.message); }
+      else { const r = await api("/api/auth/request-reset", { method: "POST", body: { email } }); setMsg(r.message); setSent(true); }
     } catch (ex) { setErr(ex.message); }
     setBusy(false);
   };
+  // forgot-password success: a dedicated confirmation, not a form that invites a re-submit
+  if (mode === "forgot" && sent) return html`
+    <${Shell} sub="Check your email">
+      <div class="ok-text" role="status" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>
+      <p class="caption" style=${{ marginBottom: "var(--s4)" }}>Didn't get it? Check your spam folder, or wait a couple of minutes before trying again.</p>
+      <button class="btn primary block" onClick=${() => { setMode("login"); setSent(false); setMsg(null); }}>Back to sign in</button>
+    <//>`;
+  const canSubmit = mode === "login" ? (!!email && !!pw)
+    : mode === "forgot" ? !!email
+    : (regOpen === true && !!orgName && !!name && !!email && pwOk(pw) && tick);
   return html`
     <${Shell} sub=${mode === "register" ? "Join the co-operative — benchmark against UK peers" : undefined}>
       <form onSubmit=${go}>
+        ${/* register + posture unknown: show a spinner, never flash the full form then collapse it */ ""}
+        ${mode === "register" && regOpen === null && html`<div style=${{ textAlign: "center", padding: "var(--s4)" }}><${Spinner} /></div>`}
         ${mode === "register" && regOpen === false && html`
         <div class="card" style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", textAlign: "left" }}>
           <b>Membership is set up for you.</b>
@@ -152,30 +191,31 @@ function LoginForm({ onAuthed, initialMode }) {
             organisation starts with the right profile and peers. Email
             ${" "}<a href="mailto:hello@lumihr.co.uk">hello@lumihr.co.uk</a> — usually same day.</div>
         </div>`}
-        ${mode === "register" && regOpen !== false && html`<${Field} label="Organisation name" value=${orgName} onInput=${setOrgName} placeholder="Acme Retail Ltd" autoFocus=${true} autoComplete="organization" />`}
-        ${mode === "register" && regOpen !== false && html`<${Field} label="Your name" value=${name} onInput=${setName} autoComplete="name" />`}
-        ${!(mode === "register" && regOpen === false) && html`<${Field} label="Work email" type="email" value=${email} onInput=${setEmail} placeholder="you@yourorg.co.uk" autoFocus=${mode === "login"} autoComplete="email" />`}
-        ${!(mode === "register" && regOpen === false) && mode !== "forgot" && html`<${Field} label=${mode === "register" ? "Password (8+ characters)" : "Password"} type="password" value=${pw} onInput=${setPw}
-          autoComplete=${mode === "register" ? "new-password" : "current-password"} />`}
-        ${mode === "register" && regOpen !== false && html`
+        ${mode === "register" && regOpen === true && html`<${Field} label="Organisation name" value=${orgName} onInput=${setOrgName} placeholder="Acme Retail Ltd" autoFocus=${true} autoComplete="organization" />`}
+        ${mode === "register" && regOpen === true && html`<${Field} label="Your name" value=${name} onInput=${setName} autoComplete="name" />`}
+        ${(mode !== "register" || regOpen === true) && html`<${Field} label="Work email" type="email" value=${email} onInput=${setEmail} placeholder="you@yourorg.co.uk" autoFocus=${mode === "login"} autoComplete=${mode === "login" ? "username" : "email"} />`}
+        ${(mode !== "register" || regOpen === true) && mode !== "forgot" && html`<${Field} label=${mode === "register" ? "Password (8+ characters)" : "Password"} type="password" value=${pw} onInput=${setPw}
+          minLength=${mode === "register" ? PW_MIN : null} autoComplete=${mode === "register" ? "new-password" : "current-password"} />`}
+        ${mode === "register" && regOpen === true && html`<${PwStrength} pw=${pw} />`}
+        ${mode === "register" && regOpen === true && html`
           <${TermsTick} checked=${tick} onChange=${setTick}>
             I accept the lumi <a href="#" onClick=${e => { e.preventDefault(); setShowTerms(true); }}>Platform Terms of Use</a>.
           <//>`}
-        ${mode === "register" && regOpen !== false && html`
+        ${mode === "register" && regOpen === true && html`
           <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
             lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your figures, not advice. On by default; turn off any time in Settings.
           </div>`}
-        ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
+        ${mode === "register" && regOpen === true && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }}>Terms of Use</a>
           ${" "}and <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("privacy"); }}>Privacy Notice</a>.</div>`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
         ${msg && html`<div class="ok-text" role="status" style=${{ marginBottom: "var(--s3)" }}>${msg}</div>`}
-        ${!(mode === "register" && regOpen === false) && html`
-        <button class="btn primary block" disabled=${busy || (mode === "register" && !tick)}
+        ${(mode !== "register" || regOpen === true) && html`
+        <button class="btn primary block" disabled=${busy || !canSubmit}
           title=${mode === "register" && !tick ? "Accept the Platform Terms of Use above to continue" : null}>
           ${busy ? html`<${Spinner} />` : mode === "login" ? "Sign in" : mode === "register" ? "Create organisation account" : "Send reset link"}
         </button>`}
-        ${mode === "register" && regOpen !== false && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
+        ${mode === "register" && regOpen === true && html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
           You'll be your organisation's Admin. You'll review the Data Contribution Terms before your team first submits — your 30 days to contribute start then, not now.</div>`}
         ${showTerms && html`<${TermsModal} kind="platform" onClose=${() => setShowTerms(false)} />`}
         ${legalDoc && html`<${LegalDocModal} docKey=${legalDoc} onClose=${() => setLegalDoc(null)} />`}
@@ -193,20 +233,24 @@ function ResetForm({ token, onAuthed }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const go = async (e) => {
-    e.preventDefault(); setErr(null); setBusy(true);
+    e.preventDefault(); setErr(null);
+    if (!pwOk(pw)) { setErr("Password must be at least " + PW_MIN + " characters."); return; }
+    setBusy(true);
     try { await api("/api/auth/reset", { method: "POST", body: { token, password: pw } }); setDone(true); }
     catch (ex) { setErr(ex.message); }
     setBusy(false);
   };
+  const toForgot = () => { window.location.hash = "/forgot"; window.location.reload(); };
   return html`
     <${Shell} sub="Choose a new password">
-      ${done ? html`<div class="ok-text">Password updated.</div>
-        <button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Sign in</button>` :
+      ${done ? html`<div class="ok-text">Password updated — for your security, any other sessions have been signed out.</div>
+        <button class="btn primary block" style=${{ marginTop: "var(--s3)" }} onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Sign in</button>` :
       html`<form onSubmit=${go}>
-        <${Field} label="New password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoFocus=${true} autoComplete="new-password" />
+        <${Field} label="New password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoFocus=${true} autoComplete="new-password" minLength=${PW_MIN} />
+        <${PwStrength} pw=${pw} />
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}
-          ${/expired|used/i.test(err) ? html` <a href="#/" onClick=${() => { window.location.hash = "/"; window.location.reload(); }}>Request a new link →</a>` : ""}</div>`}
-        <button class="btn primary block" disabled=${busy}>${busy ? html`<${Spinner} />` : "Set password"}</button>
+          ${/expired|used/i.test(err) ? html` <a href="#/forgot" onClick=${e => { e.preventDefault(); toForgot(); }}>Request a new link →</a>` : ""}</div>`}
+        <button class="btn primary block" disabled=${busy || !pwOk(pw)}>${busy ? html`<${Spinner} />` : "Set password"}</button>
       </form>`}
     <//>`;
 }
@@ -222,7 +266,9 @@ function InviteForm({ token, onAuthed }) {
   useEffect(() => { api("/api/invite/" + token).then(setInfo).catch(e => setErr(e.message)); }, [token]);
   const [joining, setJoining] = useState(false);
   const go = async (e) => {
-    e.preventDefault(); if (joining) return; setErr(null); setJoining(true);
+    e.preventDefault(); if (joining) return; setErr(null);
+    if (!pwOk(pw)) { setErr("Password must be at least " + PW_MIN + " characters."); return; }
+    setJoining(true);
     try { await api("/api/auth/accept-invite", { method: "POST", body: { token, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
     catch (ex) { setErr(ex.message); }
     setJoining(false);
@@ -238,7 +284,8 @@ function InviteForm({ token, onAuthed }) {
       html`<form onSubmit=${go}>
         <div class="field"><label>Email</label><input value=${info.email} disabled /></div>
         <${Field} label="Your name" value=${name} onInput=${setName} autoFocus=${true} autoComplete="name" />
-        <${Field} label="Choose a password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoComplete="new-password" />
+        <${Field} label="Choose a password (8+ characters)" type="password" value=${pw} onInput=${setPw} autoComplete="new-password" minLength=${PW_MIN} />
+        <${PwStrength} pw=${pw} />
         <${TermsTick} checked=${tick} onChange=${setTick}>
           I accept the lumi <a href="#" onClick=${e => { e.preventDefault(); setShowTerms(true); }}>Platform Terms of Use</a>.
         <//>
@@ -247,7 +294,7 @@ function InviteForm({ token, onAuthed }) {
         </div>
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
-        <button class="btn primary block" disabled=${!tick || joining}>${joining ? html`<${Spinner} />` : "Join " + info.org_name}</button>
+        <button class="btn primary block" disabled=${!tick || joining || !name || !pwOk(pw)}>${joining ? html`<${Spinner} />` : "Join " + info.org_name}</button>
         <div class="caption" style=${{ marginTop: "var(--s2)" }}>${info.data_terms_accepted
           ? "Your Admin has already accepted the Data Contribution Terms for your organisation."
           : "Your Admin accepts the Data Contribution Terms for the whole organisation — nothing is needed from you."}</div>

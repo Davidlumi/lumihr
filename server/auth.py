@@ -5,6 +5,7 @@ rate-limited login, tokenised reset/invite links (console-logged in this
 environment instead of email). Org scoping is enforced by middleware in
 app.py: every request's org_id comes from the session, never from the client.
 """
+import re
 import secrets
 import time
 import uuid
@@ -19,6 +20,47 @@ import identity
 SESSION_TTL_DAYS = 14
 INVITE_TTL_DAYS = 7
 RESET_TTL_HOURS = 2
+
+# ------------------------------------------------------ password policy ---
+# NIST 800-63B posture: a real length floor + screening against the passwords
+# attackers try first — NOT character-class composition rules (which push users
+# to predictable P@ssw0rd! patterns). The blocklist is the head of every public
+# breach corpus; equality with the email local-part or the org name is also
+# refused. bcrypt silently ignores bytes past 72, so a hard 72-byte ceiling
+# stops a long passphrase from being quietly truncated (and colliding).
+PASSWORD_MIN = 8
+PASSWORD_MAX_BYTES = 72
+_COMMON_PASSWORDS = frozenset("""
+password password1 password123 passw0rd 12345678 123456789 1234567890 123123123
+qwerty qwertyuiop qwerty123 1q2w3e4r 1qaz2wsx zaq12wsx abc12345 letmein welcome
+welcome1 iloveyou admin123 administrator changeme trustno1 sunshine princess
+football baseball dragon monkey master shadow superman batman michael jennifer
+whatever qazwsxedc 11111111 00000000 aaaaaaaa 88888888 87654321 password!
+p@ssword p@ssw0rd secret123 login123 test1234 samsung123 google123 starwars
+lovely123 hello123 charlie123 default lumi1234 rewarddata benchmark123
+""".split())
+
+
+def validate_password(pw, *, email=None, org_name=None):
+    """Return a human error string if the password is unacceptable, else None.
+    One source for register / reset / invite so the rule never drifts."""
+    pw = pw or ""
+    if len(pw) < PASSWORD_MIN:
+        return "Password must be at least %d characters." % PASSWORD_MIN
+    if len(pw.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        return "Password is too long — please use %d characters or fewer." % PASSWORD_MAX_BYTES
+    low = pw.lower().strip()
+    if low in _COMMON_PASSWORDS:
+        return "That password is one of the most common — please choose something less guessable."
+    if email:
+        local = str(email).split("@")[0].lower().strip()
+        if local and low == local:
+            return "Your password can't be your email address."
+    if org_name:
+        on = re.sub(r"[^a-z0-9]", "", str(org_name).lower())
+        if on and len(on) >= 4 and re.sub(r"[^a-z0-9]", "", low) == on:
+            return "Your password can't be your organisation name."
+    return None
 COOKIE_NAME = "lumi_session"
 
 

@@ -798,6 +798,14 @@ td.num, th.num { text-align: right; }
 .field textarea { height: auto; min-height: 76px; padding: var(--s3) var(--s4); line-height: 1.5; }
 .field input::placeholder, .field textarea::placeholder { color: var(--ink-faint); }
 .field input:hover, .field select:hover, .field textarea:hover { border-color: var(--ink-faint); }
+/* password strength hint (auth-review 2026-08-09) — length-first, advisory */
+.pw-meter { margin: calc(-1 * var(--s2)) 0 var(--s3); display: flex; align-items: center; gap: var(--s2); }
+.pw-bar { flex: 1 1 auto; height: 4px; border-radius: 3px; background: var(--surface-sunk); overflow: hidden; }
+.pw-bar > span { display: block; height: 100%; border-radius: 3px; transition: width var(--dur-base) var(--ease-out), background var(--dur-base); }
+.pw-bar.pw-weak > span { background: var(--unfavourable); }
+.pw-bar.pw-fair > span { background: #C9871F; }
+.pw-bar.pw-ok > span { background: var(--favourable); }
+.pw-note { flex: 0 0 auto; white-space: nowrap; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none;
   border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
 /* P13: the Team invite form (email + role) uses global .ctl; scope the modern

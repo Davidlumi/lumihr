@@ -890,15 +890,44 @@ pos.score_answer_safe = _score_answer
 
 # ================================================================== AUTH ====
 
+# Session cookie is marked Secure whenever the deployment is HTTPS (production is
+# always https — base_url() rejects a non-localhost non-https LUMI_BASE_URL), so
+# the token is never sent in cleartext; localhost dev (http) stays cookie-friendly.
+def _cookie_secure():
+    return (os.environ.get("LUMI_BASE_URL") or "").strip().lower().startswith("https://")
+
+
+def _set_session_cookie(resp, token):
+    resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
+                    secure=_cookie_secure(), max_age=auth_lib.SESSION_TTL_DAYS * 86400)
+
+
+def _clear_session_cookie(resp):
+    # attributes must match the set-cookie for the browser to clear it
+    resp.delete_cookie(auth_lib.COOKIE_NAME, samesite="lax", secure=_cookie_secure())
+
+
+# A fixed bcrypt hash so a login attempt on an UNKNOWN email still runs a full
+# verify — equal work on both branches closes the timing side-channel that would
+# otherwise reveal which emails are registered (feeds enumeration + lockout DoS).
+_DUMMY_PW_HASH = auth_lib.hash_password("lumi-timing-equaliser-not-a-real-password")
+
+
 @app.post("/api/auth/login")
 async def login(request: Request):
     body = await _json(request)
     email = (body.get("email") or "").lower().strip()
     ip = request.client.host if request.client else "?"
-    if auth_lib.rate_limited("login:%s" % email) or auth_lib.rate_limited("login-ip:%s" % ip):
+    # Evaluate BOTH tiers (no `or` short-circuit) so the per-IP budget always
+    # increments; key the strict tier per (email, IP) not bare email, so a remote
+    # attacker can't lock a victim out of their own account by burning the email key.
+    ip_hit = auth_lib.rate_limited("login-ip:%s" % ip)
+    em_hit = auth_lib.rate_limited("login:%s|%s" % (email, ip))
+    if ip_hit or em_hit:
         raise HTTPException(429, "Too many attempts — please wait a few minutes and try again.")
     user = auth_lib.find_user(email)
-    if not user or not auth_lib.verify_password(body.get("password") or "", user["pw_hash"]):
+    # constant-ish work whether or not the email exists (timing equaliser)
+    if not auth_lib.verify_password(body.get("password") or "", user["pw_hash"] if user else _DUMMY_PW_HASH) or not user:
         raise HTTPException(401, "That email and password don't match our records.")
     # soft-deactivate gates (back office, 2026-08-03): a correct password on a
     # deactivated account gets the honest message, not the credentials one.
@@ -914,8 +943,7 @@ async def login(request: Request):
                                  "Contact hello@lumihr.co.uk to reactivate it.")
     token = auth_lib.create_session(user["user_id"])
     resp = JSONResponse({"ok": True})
-    resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
-                    max_age=auth_lib.SESSION_TTL_DAYS * 86400)
+    _set_session_cookie(resp, token)
     return resp
 
 
@@ -925,7 +953,7 @@ async def logout(request: Request):
     if token:
         auth_lib.destroy_session(token)
     resp = JSONResponse({"ok": True})
-    resp.delete_cookie(auth_lib.COOKIE_NAME)
+    _clear_session_cookie(resp)
     return resp
 
 
@@ -960,8 +988,9 @@ async def register(request: Request):
     for f in ("org_name", "email", "password"):
         if not body.get(f):
             raise HTTPException(400, "Missing %s" % f)
-    if len(body["password"]) < 8:
-        raise HTTPException(400, "Password must be at least 8 characters.")
+    _pwerr = auth_lib.validate_password(body["password"], email=body.get("email"), org_name=body.get("org_name"))
+    if _pwerr:
+        raise HTTPException(400, _pwerr)
     if body.get("accept_platform_terms") is not True:
         raise HTTPException(400, "Please accept the Platform Terms of Use to create your account.")
     conn = get_conn()
@@ -989,8 +1018,7 @@ async def register(request: Request):
         record_ai_consent(conn, org_id, uid)
     token = auth_lib.create_session(uid)
     resp = JSONResponse({"ok": True})
-    resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
-                    max_age=auth_lib.SESSION_TTL_DAYS * 86400)
+    _set_session_cookie(resp, token)
     return resp
 
 
@@ -998,7 +1026,10 @@ async def register(request: Request):
 async def request_reset(request: Request):
     body = await _json(request)
     email = (body.get("email") or "").strip()
-    if auth_lib.rate_limited("reset:%s" % email.lower()):
+    ip = request.client.host if request.client else "?"
+    # key the strict tier per (email, IP) so an attacker can't stop a victim
+    # receiving reset mail by burning the email key from elsewhere; IP tier bounds abuse
+    if auth_lib.rate_limited("reset-ip:%s" % ip) or auth_lib.rate_limited("reset:%s|%s" % (email.lower(), ip)):
         raise HTTPException(429, "Too many attempts — please wait a few minutes.")
     user = auth_lib.find_user(email)
     if user:
@@ -1026,15 +1057,27 @@ async def do_reset(request: Request):
     row = auth_lib.get_valid_reset(body.get("token") or "")
     if not row:
         raise HTTPException(400, "That reset link has expired or already been used.")
-    if len(body.get("password") or "") < 8:
-        raise HTTPException(400, "Password must be at least 8 characters.")
     conn = get_conn()
+    # an individually-deactivated user can't set a new password (login stays blocked
+    # regardless; refusing here avoids a pointless credential change). The suspended-
+    # ORG sole-admin recovery carve-out is preserved — only per-USER disable is checked.
+    _acct = conn.execute("SELECT disabled_at FROM users WHERE user_id=?", (row["user_id"],)).fetchone()
+    if _acct and _acct["disabled_at"]:
+        raise HTTPException(403, "This account has been deactivated. Contact hello@lumihr.co.uk.")
+    _pwerr = auth_lib.validate_password(body.get("password") or "",
+                                       email=identity.user_email(row["user_id"]))
+    if _pwerr:
+        raise HTTPException(400, _pwerr)
     ph = auth_lib.hash_password(body["password"])
     # step 5: pw_hash is identity-side only; identity.update_pw_hash below is the write.
     conn.execute("UPDATE password_resets SET used_at=datetime('now') WHERE token=?", (row["token"],))
     conn.commit()
     identity.shadow(identity.update_pw_hash, row["user_id"], ph)
     identity.shadow(identity.consume_password_reset, row["token"])
+    # SECURITY: a password reset is the canonical post-compromise recovery — revoke
+    # every existing session so a stolen/old cookie can't survive the reset. The user
+    # is not auto-logged-in; they re-authenticate with the new password.
+    identity.delete_sessions_for_user(row["user_id"])
     return {"ok": True}
 
 
@@ -1142,8 +1185,17 @@ async def invite(request: Request):
     role = body.get("role") if body.get("role") in ("contributor", "viewer") else "viewer"
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Please enter a valid email address.")
-    if auth_lib.find_user(email):
-        raise HTTPException(400, "That email already has a lumi account.")
+    # Email is globally unique, so an existing account genuinely can't accept a new
+    # invite — but don't turn that into a cross-tenant membership oracle for an org
+    # admin. Same-org: say so plainly (the admin sees their own team anyway).
+    # Otherwise: a non-confirmatory refusal that doesn't reveal membership elsewhere.
+    # (The staff provisioning routes keep the plain message — staff read cross-tenant by design.)
+    _existing = auth_lib.find_user(email)
+    if _existing:
+        if str(_existing.get("org_id") or "") == org["org_id"]:
+            raise HTTPException(400, "That person is already on your team.")
+        raise HTTPException(400, "We couldn't send an invite to that address. If it already "
+                                 "has a lumi account, that person should sign in with it.")
     # PH-PAY-2 R3b CARVE-OUT: invite mail is AUTH mail — where invite CREATION
     # is permitted, the mail always sends regardless of suspension state.
     # (Creation into an org-suspended tenant is separately refused by the F12
@@ -1711,8 +1763,6 @@ async def accept_invite(request: Request):
                           (row["org_id"],)).fetchone():
         raise HTTPException(400, "This organisation's lumi membership is deactivated — "
                                  "the invite can't be completed.")
-    if len(body.get("password") or "") < 8:
-        raise HTTPException(400, "Password must be at least 8 characters.")
     if body.get("accept_platform_terms") is not True:
         raise HTTPException(400, "Please accept the Platform Terms of Use to join.")
     conn = get_conn()
@@ -1723,6 +1773,9 @@ async def accept_invite(request: Request):
     if not _email:
         raise HTTPException(500, "This invite can't be completed — its record is incomplete. "
                                  "Please ask your Admin to send a new one.")
+    _pwerr = auth_lib.validate_password(body.get("password") or "", email=_email)
+    if _pwerr:
+        raise HTTPException(400, _pwerr)
     uid = auth_lib.create_user(row["org_id"], _email, body["password"], row["role"],
                                body.get("display_name"))
     # Joiners accept the Platform Terms only — the org's Data Contribution
@@ -1737,8 +1790,7 @@ async def accept_invite(request: Request):
     identity.shadow(identity.mark_invite_used, row["token"])
     token = auth_lib.create_session(uid)
     resp = JSONResponse({"ok": True})
-    resp.set_cookie(auth_lib.COOKIE_NAME, token, httponly=True, samesite="lax",
-                    max_age=auth_lib.SESSION_TTL_DAYS * 86400)
+    _set_session_cookie(resp, token)
     return resp
 
 
@@ -4186,7 +4238,7 @@ async def peer_groups_list(request: Request):
 
 @app.post("/api/peer-groups")
 async def peer_groups_create(request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)   # peer groups are org-shared config — editors only
     body = await _json(request)
     name = (body.get("name") or "").strip()
     if not name or len(name) > 60:
@@ -4202,7 +4254,7 @@ async def peer_groups_create(request: Request):
 
 @app.put("/api/peer-groups/{gid}")
 async def peer_groups_update(gid: str, request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)   # org-shared config — editors only
     conn = get_conn()
     row = conn.execute("SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
                        (gid, org["org_id"])).fetchone()
@@ -4219,7 +4271,7 @@ async def peer_groups_update(gid: str, request: Request):
 
 @app.delete("/api/peer-groups/{gid}")
 async def peer_groups_delete(gid: str, request: Request):
-    user, org = require_user(request)
+    user, org = require_editor(request)   # org-shared config — editors only
     conn = get_conn()
     n = conn.execute("DELETE FROM peer_groups WHERE group_id=? AND org_id=?",
                      (gid, org["org_id"])).rowcount
@@ -6629,6 +6681,15 @@ async def admin_user_lookup(request: Request):
     }}
 
 
+def _refuse_staff_target(user_id):
+    """Console credential actions (force-logout, reset-link) must not target a
+    platform-staff account — minting a reset link for a super-admin would be an
+    account-takeover path. Mirrors the deactivate guard so all three are consistent."""
+    r = get_conn().execute("SELECT platform_admin FROM users WHERE user_id=?", (user_id,)).fetchone()
+    if r and r["platform_admin"]:
+        raise HTTPException(400, "Staff accounts are managed out of band, not from the console.")
+
+
 @app.post("/api/admin/users/{user_id}/logout")
 async def admin_user_logout(user_id: str, request: Request):
     """Force sign-out everywhere — the support action for a lost laptop or a
@@ -6637,6 +6698,7 @@ async def admin_user_logout(user_id: str, request: Request):
     staff = require_platform_admin(request)
     if identity.user_display(user_id) is None:
         raise HTTPException(404, "Unknown user")
+    _refuse_staff_target(user_id)
     n = identity.delete_sessions_for_user(user_id)
     _audit(staff, "user.force_logout", "user", user_id, {"sessions_revoked": n})
     return {"ok": True, "sessions_revoked": n}
@@ -6652,6 +6714,7 @@ async def admin_user_reset_link(user_id: str, request: Request):
     staff = require_platform_admin(request)
     if identity.user_display(user_id) is None:
         raise HTTPException(404, "Unknown user")
+    _refuse_staff_target(user_id)
     token = auth_lib.create_reset(user_id)
     _audit(staff, "user.reset_link", "user", user_id)
     return {"ok": True, "link": "%s/app#/reset/%s" % (base_url(minting=True), token),
@@ -6736,7 +6799,7 @@ async def admin_health(request: Request):
 # console twin of the boot log: what IS the environment, not what could be.
 _CONFIG_INVENTORY = [
     ("LUMI_BASE_URL", "value", "Public origin for emailed invite/reset/share links"),
-    ("LUMI_SUPER_ADMINS", "value", "Back-office allowlist (comma-separated emails)"),
+    ("LUMI_SUPER_ADMINS", "secret", "Back-office allowlist (comma-separated emails)"),
     ("LUMI_OPEN_REGISTRATION", "value", "Self-serve signup — CLOSED unless 'on' (membership is staff-provisioned)"),
     ("LUMI_QA_SEAMS", "value", "Gate-only fault injection in provisioning; default unset = inert. MUST NEVER be set outside gate runs"),
     ("LUMI_AI_INSIGHTS_ENABLED", "value", "AI master gate — all AI features off unless 'on'"),

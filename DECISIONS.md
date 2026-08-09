@@ -15676,3 +15676,63 @@ insight-lock) now reuses the real SignalsLocked teaser rows via a hoisted
 day-countdown with the "nothing is deleted" reassurance; the four pulse load-
 error empties gained a Retry. Suite 14/14 green (the data-overview change passed
 every gate); live DB untouched. v493 → v494.
+
+
+## 2026-08-09 — Auth / admin security + UX review (David: "check through the platform admin")
+
+A 6-dimension adversarial review fleet (auth/session, password, user-mgmt,
+RBAC/tenancy, staff-console, auth-UX) — each finding verified against the code
+before it counted — returned 23 confirmed issues (3 high, 5 medium, 15 low) and,
+importantly, a clean bill on the hardest part: EVERY /api/admin/* route requires
+platform-staff (mechanically re-audited — 32/32), no cross-tenant IDOR, org
+scope always from the session. Fixed the clear wins; verified every auth flow on
+a throwaway before it touched anything real.
+
+HIGH (fixed): (1) session cookie was never marked Secure at any of the three
+mint points — an HTTPS session token would ride a plain-HTTP request in the
+clear. Centralised all cookie writes through _set_session_cookie /
+_clear_session_cookie; Secure is on whenever LUMI_BASE_URL is https (prod is
+always https; localhost dev stays cookie-friendly). (2) password reset never
+invalidated existing sessions — a stolen/old cookie survived the victim's
+recovery for up to 14 days. do_reset now calls delete_sessions_for_user after the
+hash write (verified: pre-reset session -> 401 immediately after reset), and
+refuses a reset on an individually-deactivated account (org-suspension sole-admin
+carve-out preserved).
+
+MEDIUM (fixed): (3) the login rate-limiter keyed the strict tier on bare email,
+so five wrong tries locked any victim out (DoS), and Python's 'or' short-circuit
+meant the per-IP counter didn't increment. Now both tiers are evaluated (IP
+always counts) and the strict tier is keyed per (email, IP); same fix on
+request-reset. (4) password policy was length-only — added auth.validate_password
+(NIST posture: length floor + common-password blocklist + reject
+email-local-part/org-name + 72-byte bcrypt ceiling; NO composition rules), wired
+into register/reset/accept-invite. (5) no client-side password feedback — added a
+length-first strength meter (PwStrength) + minLength + pre-submit guards on
+register/reset/invite (verified: "river42" shows a red 7/8-characters bar live).
+(6) the register form flashed the full sign-up fields before the closed-door
+panel resolved — gated on regOpen===true with a spinner while unknown.
+
+LOW (fixed): Viewer could create/edit/delete org-shared peer groups (require_user
+-> require_editor on the three writers; verified viewer -> 403); console
+reset-link/force-logout could target a staff account (added _refuse_staff_target,
+mirroring the deactivate guard); /api/admin/config leaked the LUMI_SUPER_ADMINS
+allowlist as a plaintext value -> reclassified 'secret'; team/invite was a
+cross-tenant existence oracle -> same-org says so plainly, else a non-confirmatory
+refusal (a silent-success close was declined — it misleads the admin into
+thinking an invite was sent); login timing side-channel closed with a
+dummy-bcrypt on unknown emails; expired reset link now routes to the forgot form
+(new #/forgot route) not Sign in; forgot-password gained a "Check your email"
+state; blank-field submit disabled; role-dropdown self-demote/promote-to-admin
+and staff reset-link now confirm; autocomplete username/new-password set.
+
+DEFERRED (documented — schema/contract work or low ROI): sliding session
+idle-timeout + token rotation (needs a last-seen column); create_user's
+fire-and-forget identity shadow write (Seam-B dual-write contract — recon gate
+catches drift); audit-write failures only print (escalate to a counter later);
+HIBP breached-password API (offline env — the blocklist is the in-scope stand-in).
+
+Verified on throwaway :8070: login (correct/wrong/unknown), authed /api/me,
+viewer peer-group 403, reset (weak-reject + session-kill + single-use token +
+new-password login), strength meter, register no-flash + disabled-until-valid,
+end-to-end browser login. Suite 14/14 green (incl. qa_backoffice); live DB
+untouched. v494 -> v495.

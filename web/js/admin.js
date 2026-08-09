@@ -446,6 +446,7 @@ function AdminUserActions({ user, onChanged }) {
     setBusy(false);
   };
   const resetLink = async () => {
+    if (!window.confirm("Mint a password-reset link for " + (user.email || "this user") + "? It's a live 2-hour link — pass it to them out of band.")) return;
     setBusy(true);
     try {
       const r = await api("/api/admin/users/" + user.user_id + "/reset-link", { method: "POST", body: {} });

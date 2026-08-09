@@ -858,6 +858,13 @@ window.TeamPage = function ({ me }) {
   };
   const setMemberRole = async (uEmail, newRole) => {
     setErr(null); setMsg(null);
+    // confirm the two consequential changes; on cancel refresh() resets the <select>
+    // back to the server's value (it's a controlled input bound to the fetched role)
+    if (uEmail === me.user.email && newRole !== "admin") {
+      if (!window.confirm("Change your own role to " + ROLE_LABEL[newRole] + "? You'll lose admin access — another admin would have to restore it.")) { refresh(); return; }
+    } else if (newRole === "admin") {
+      if (!window.confirm("Make " + uEmail + " an Admin? Admins have full control over your organisation's data, team and terms.")) { refresh(); return; }
+    }
     try {
       await api("/api/team/role", { method: "PUT", body: { email: uEmail, role: newRole } });
       setMsg(`${uEmail} is now ${ROLE_LABEL[newRole]}.`); refresh();
