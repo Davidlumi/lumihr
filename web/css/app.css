@@ -119,13 +119,17 @@
 
   /* ---- performance vs peers ONLY (polarity-aware), never decorative ---- */
   --favourable: #2E7D52;   --favourable-tint: #E4F0E9;
+  --favourable-ink: var(--favourable-ink);   /* AA verdict-ink recipe */
   --neutral-perf: #8A5805; --neutral-perf-tint: #FBEFD9;   /* text amber (readable) */
+  --neutral-perf-ink: var(--neutral-perf-ink);
   --amber-bright: #F5A60A;                                  /* graphic amber: fills, dots, segments */
   --unfavourable: #C0392B; --unfavourable-tint: #F7E4E1;
+  --unfavourable-ink: var(--unfavourable-ink);
   --unfavourable-deep: #8A1C12;   /* 2nd red — strategy mode: ABOVE your aim (overshot) vs --unfavourable BELOW (short) */
   /* Approach register — "differs from market": a choice, not a gap. Purple so it
      reads as neither good nor bad (spec §5). Distinct from the signal lens hues. */
   --differs: #6257C9;      --differs-tint: #ECE9FA;
+  --differs-ink: var(--differs-ink);
 
   /* ---- lens identity (SIGNALS ONLY, 2026-06-12): each outcome lens owns
      one hue, used exclusively on signal chips/dots with its tag attached —
@@ -134,6 +138,10 @@
   --lens-attract: #6D5BD0;  --lens-attract-tint: #ECE8FB;
   --lens-retain: #0E7A8A;   --lens-retain-tint: #DFF1F4;
   --lens-engage: #C2542E;   --lens-engage-tint: #FBE9E0;
+  --lens-save-ink: var(--lens-save-ink);
+  --lens-attract-ink: var(--lens-attract-ink);
+  --lens-retain-ink: var(--lens-retain-ink);
+  --lens-engage-ink: var(--lens-engage-ink);
 
   /* ---- distribution inks — NOT a multi-hue ramp. Since the 2026-06-12 redesign
      categorical charts are mono blue (--chart-cat) with the You accent; the only
@@ -447,17 +455,17 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
   border-radius: 999px; background: var(--surface-sunk); border: 1px solid transparent;
   font-size: var(--fs-caption); font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
 .chip.accent { background: var(--blue-tint); color: var(--blue-deep); }
-.chip.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
-.chip.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
-.chip.warn { background: var(--neutral-perf-tint); color: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink)); }
+.chip.good { background: var(--favourable-tint); color: var(--favourable-ink); }
+.chip.bad { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
+.chip.warn { background: var(--neutral-perf-tint); color: var(--neutral-perf-ink); }
 .chip.you { background: var(--you-soft); color: var(--you); }
 
 /* the at-a-glance position pill (top-right of cards; performance colour only) */
 .pos-pill { display: inline-flex; align-items: center; gap: var(--s1); height: 22px; padding: 0 var(--s2);
   border-radius: 999px; font-size: var(--fs-caption); font-weight: 700; flex: 0 0 auto; }
-.pos-pill.good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
-.pos-pill.bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
-.pos-pill.mid { background: var(--neutral-perf-tint); color: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink)); }
+.pos-pill.good { background: var(--favourable-tint); color: var(--favourable-ink); }
+.pos-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
+.pos-pill.mid { background: var(--neutral-perf-tint); color: var(--neutral-perf-ink); }
 
 /* the per-card status pill: signal (lens-tinted) / add-data prompt / quiet no-flag */
 .sig-pill { display: inline-flex; align-items: center; gap: var(--s1); flex: 0 0 auto; max-width: 230px;
@@ -467,10 +475,10 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 /* lens text darkened toward ink (raw lens hues sit at 3.8–4.4:1 on their tints —
    under the 4.5:1 text floor; the 78%-ink mix is the same fix .chip.good uses)
    2026-07-09 ship review (pack 4.3): 72% drifted from the house 78% recipe — aligned */
-.sig-pill.lens-save    { background: var(--lens-save-tint);    color: color-mix(in srgb, var(--lens-save) 78%, var(--ink)); }
-.sig-pill.lens-attract { background: var(--lens-attract-tint); color: color-mix(in srgb, var(--lens-attract) 78%, var(--ink)); }
-.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: color-mix(in srgb, var(--lens-retain) 78%, var(--ink)); }
-.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: color-mix(in srgb, var(--lens-engage) 78%, var(--ink)); }
+.sig-pill.lens-save    { background: var(--lens-save-tint);    color: var(--lens-save-ink); }
+.sig-pill.lens-attract { background: var(--lens-attract-tint); color: var(--lens-attract-ink); }
+.sig-pill.lens-retain  { background: var(--lens-retain-tint);  color: var(--lens-retain-ink); }
+.sig-pill.lens-engage  { background: var(--lens-engage-tint);  color: var(--lens-engage-ink); }
 .sig-pill.is-clear { background: var(--surface-sunk); color: var(--ink-faint); font-weight: 600; }
 .sig-pill.is-add { background: var(--blue-tint); color: var(--blue); text-decoration: none;
   cursor: pointer; transition: background var(--dur-fast) ease, transform var(--dur-fast) ease; }
@@ -669,11 +677,11 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .conf-label { font-size: var(--fs-micro); font-weight: 600; color: var(--ink-soft); letter-spacing: .02em; }
 .conf-score { font-weight: 700; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
 .conf-green .conf-meter i:not(.off) { background: var(--favourable); }
-.conf-green .conf-score { color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.conf-green .conf-score { color: var(--favourable-ink); }
 .conf-amber .conf-meter i:not(.off) { background: var(--amber-bright); }
 .conf-amber .conf-score { color: color-mix(in srgb, var(--amber-bright) 38%, #3a2600); }
 .conf-red .conf-meter i:not(.off) { background: var(--unfavourable); }
-.conf-red .conf-score { color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.conf-red .conf-score { color: var(--unfavourable-ink); }
 .conf-chip .indic-tip { left: auto; right: 0; width: 240px; }
 .conf-chip:hover .indic-tip, .conf-chip:focus .indic-tip, .conf-chip:focus-within .indic-tip { opacity: 1; visibility: visible; }
 /* "Your journey" strip — slim band between the hero row and the domain grid */
@@ -1224,16 +1232,16 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   align-self: center; }
 .signal-row.lens-save    { background: var(--lens-save-tint); }
 .signal-row.lens-save    svg, .signal-row.lens-save .sig-tag { color: var(--lens-save); }
-.signal-row.lens-save    .sig-stand, .signal-row.lens-save .sig-name { color: color-mix(in srgb, var(--lens-save) 78%, var(--ink)); }
+.signal-row.lens-save    .sig-stand, .signal-row.lens-save .sig-name { color: var(--lens-save-ink); }
 .signal-row.lens-attract { background: var(--lens-attract-tint); }
 .signal-row.lens-attract svg, .signal-row.lens-attract .sig-tag { color: var(--lens-attract); }
-.signal-row.lens-attract .sig-stand, .signal-row.lens-attract .sig-name { color: color-mix(in srgb, var(--lens-attract) 78%, var(--ink)); }
+.signal-row.lens-attract .sig-stand, .signal-row.lens-attract .sig-name { color: var(--lens-attract-ink); }
 .signal-row.lens-retain  { background: var(--lens-retain-tint); }
 .signal-row.lens-retain  svg, .signal-row.lens-retain .sig-tag { color: var(--lens-retain); }
-.signal-row.lens-retain  .sig-stand, .signal-row.lens-retain .sig-name { color: color-mix(in srgb, var(--lens-retain) 78%, var(--ink)); }
+.signal-row.lens-retain  .sig-stand, .signal-row.lens-retain .sig-name { color: var(--lens-retain-ink); }
 .signal-row.lens-engage  { background: var(--lens-engage-tint); }
 .signal-row.lens-engage  svg, .signal-row.lens-engage .sig-tag { color: var(--lens-engage); }
-.signal-row.lens-engage  .sig-stand, .signal-row.lens-engage .sig-name { color: color-mix(in srgb, var(--lens-engage) 78%, var(--ink)); }
+.signal-row.lens-engage  .sig-stand, .signal-row.lens-engage .sig-name { color: var(--lens-engage-ink); }
 /* home signal cards are toned by VERDICT (sig-tone-*, RAG) — the lens stays as the roundel icon colour only */
 .signal-roundel.lens-save    svg { color: var(--lens-save); }
 .signal-roundel.lens-attract svg { color: var(--lens-attract); }
@@ -1303,9 +1311,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 /* verdict tags: darken green/red onto their tints with the same color-mix recipe
    as .chip/.pos-pill so the text clears AA (≥4.5:1); amber already ships the deep
    contrast-safe text amber (--neutral-perf), so it stays. */
-.pos-green    { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.pos-green    { background: var(--favourable-tint); color: var(--favourable-ink); }
 .pos-amber    { background: var(--neutral-perf-tint); color: var(--neutral-perf); }   /* contrast-safe text amber, as on the home */
-.pos-red      { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.pos-red      { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
 .pos-approach { background: var(--differs-tint); color: var(--differs); }
 .pos-neutral  { background: #E9EBF6; color: var(--navy); }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s4); }
@@ -1376,11 +1384,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-icon { width: 26px; height: 26px; border-radius: var(--radius-xs); background: var(--blue-tint);
   display: inline-flex; align-items: center; justify-content: center; color: var(--blue); flex: 0 0 auto; }
 .tile-chip { font-size: var(--fs-micro); font-weight: 650; padding: 2px var(--s2); }
-.chip-bad { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.chip-bad { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
 .chip-bad-over { background: var(--unfavourable-tint); color: var(--unfavourable-deep); }   /* strategy: above your aim */
-.chip-good { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.chip-good { background: var(--favourable-tint); color: var(--favourable-ink); }
 .chip-mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
-.chip-practice { background: var(--differs-tint); color: color-mix(in srgb, var(--differs) 78%, var(--ink)); }
+.chip-practice { background: var(--differs-tint); color: var(--differs-ink); }
 /* FIX 1 — strategy-attainment OFF (no stance set): a neutral grey verdict chip. The label
    uses --grey-neutral-ink (AA-safe), not the lighter swatch token. */
 .chip-neutral-mkt { background: color-mix(in srgb, var(--grey-neutral) 18%, transparent); color: var(--grey-neutral-ink); }
@@ -1923,7 +1931,7 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .data-q-none { font-size: var(--fs-caption); color: var(--ink-faint); margin-top: 3px; }
 .data-q-flag { display: inline-flex; align-items: center; gap: var(--s1); flex: 0 0 auto; font-size: var(--fs-micro);
   font-weight: 650; padding: 3px var(--s2); border-radius: 999px; }
-.data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.data-q-flag.ok { background: color-mix(in srgb, var(--favourable) 13%, transparent); color: var(--favourable-ink); }
 .data-q-flag.todo { background: var(--blue-tint); color: var(--blue); }
 /* refresh-due: attention semantics (data hygiene), the same warn register as
    .data-access.warn on this page — NOT performance RAG. Soft amber wash,
@@ -2170,7 +2178,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-step.done .pulse-step-dot { background: var(--blue-bright); }
 .pulse-step.current { background: var(--lumi-tile); color: var(--blue-deep); font-weight: 600; }
 .pulse-step.current .pulse-step-dot { background: var(--blue); }
-.pulse-step.warn { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.pulse-step.warn { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
 .pulse-step.warn .pulse-step-dot { background: var(--unfavourable); }
 .pulse-libpick { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); margin-top: var(--s2); }
 .pulse-librow { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
@@ -2182,7 +2190,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-lib-tags { flex: none; display: flex; gap: 4px; align-items: center; }
 .pulse-lib-tag { font-size: var(--fs-micro); font-weight: 600; line-height: 1; white-space: nowrap;
   padding: 3px 7px; border-radius: 999px; background: var(--surface-sunk); color: var(--ink-soft); }
-.pulse-lib-tag.added { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.pulse-lib-tag.added { background: var(--favourable-tint); color: var(--favourable-ink); }
 .pulse-lib-tag.locked { display: inline-flex; align-items: center; gap: 3px; background: var(--lumi-tile); color: var(--blue-deep); }
 /* participant preview inside the builder */
 .pulse-preview { border: 1px solid var(--border); border-radius: var(--radius);
@@ -2235,7 +2243,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-survey .radio-row:has(input:checked), .pulse-survey .check-row:has(input:checked) {
   background: var(--blue-tint); border-color: var(--blue); }
 /* launch_status badges on the staff review queue + owner list */
-.admin-status-approved { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.admin-status-approved { background: var(--favourable-tint); color: var(--favourable-ink); }
 .admin-status-in_review, .admin-status-changes_requested { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .admin-status-paid { background: var(--blue); color: #fff; }
 .admin-status-building { background: var(--lumi-tile); color: var(--blue-deep); }
@@ -2315,7 +2323,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .setup-step.now .setup-label { color: var(--ink); font-weight: 600; }
 .setup-tick { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; display: flex;
   align-items: center; justify-content: center; background: var(--surface-sunk); color: var(--ink-faint); }
-.setup-step.done .setup-tick { background: color-mix(in srgb, var(--favourable) 16%, var(--surface)); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.setup-step.done .setup-tick { background: color-mix(in srgb, var(--favourable) 16%, var(--surface)); color: var(--favourable-ink); }
 .setup-step.now .setup-tick { background: var(--blue-tint); color: var(--blue); }
 .setup-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .setup-note { flex: 0 0 auto; }
@@ -2937,7 +2945,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* 2026-07-09 ship review (pack 4.3): raw --favourable on its tint is 4.30:1 — the
    house 78%-ink mix (see .pos-pill) lifts it over the 4.5:1 AA floor */
-.next-step-n.done { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.next-step-n.done { background: var(--favourable-tint); color: var(--favourable-ink); }
 
 /* the profile-gating prompt must never truncate — it's the path to peer cuts */
 .ctlgroup .hint.hint-wide { max-width: 420px; white-space: normal; line-height: 1.3; }
@@ -3000,10 +3008,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .mp-class-chip { font-size: var(--fs-micro); font-weight: 650; padding: 3px var(--s2); border-radius: var(--radius-2xs); white-space: nowrap; }
 /* 2026-07-09 ship review (pack 4.3): .headline/.fav were raw --favourable (4.30:1,
    member-facing on the metric page) — 78%-ink mix per the house AA recipe */
-.mp-class-chip.headline { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.mp-class-chip.headline { background: var(--favourable-tint); color: var(--favourable-ink); }
 .mp-class-chip.differs  { background: var(--differs-tint); color: var(--differs); }
 .mp-class-chip.context  { background: #E9EBF6; color: var(--navy); }
-.mp-class-chip.fav      { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.mp-class-chip.fav      { background: var(--favourable-tint); color: var(--favourable-ink); }
 .how-note { background: var(--neutral-perf-tint); border-radius: var(--radius-sm); padding: var(--s3) var(--s4);
   margin-bottom: var(--s3); font-size: var(--fs-body); }
 .anchor-flash { animation: anchor-flash 1.6s ease-out; }
@@ -3106,8 +3114,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--radius-xs); text-transform: capitalize; background: var(--surface-sunk); color: var(--ink); white-space: nowrap; }
 /* 2026-07-09 ship review (pack 4.3): raw hues measured 4.30/4.44:1 on their tints —
    78%-ink mix per the house AA recipe */
-.admin-status-open, .admin-status-accepted, .admin-status-applied { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
-.admin-status-closed, .admin-status-rejected { background: var(--unfavourable-tint); color: color-mix(in srgb, var(--unfavourable) 78%, var(--ink)); }
+.admin-status-open, .admin-status-accepted, .admin-status-applied { background: var(--favourable-tint); color: var(--favourable-ink); }
+.admin-status-closed, .admin-status-rejected { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
 .admin-status-draft, .admin-status-queued, .admin-status-new { background: var(--lumi-tile); color: var(--blue-deep); }
 .admin-status-archived, .admin-status-reviewed, .admin-status-scheduled { background: var(--surface-sunk); color: var(--color-text-tertiary); }
 .admin-yes { color: #1B7740; font-weight: 600; font-size: var(--fs-caption); }
@@ -3371,7 +3379,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .dom-clear { font-size: var(--fs-micro); font-weight: 600; color: var(--blue); background: none; border: 0; cursor: pointer; padding: 0; }
 .dom-clear:hover { text-decoration: underline; }
 /* 2026-07-09 ship review (pack 4.3): raw --favourable is 4.30:1 on its tint — 78%-ink mix */
-.se-pill.green { background: var(--favourable-tint); color: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+.se-pill.green { background: var(--favourable-tint); color: var(--favourable-ink); }
 .se-pill.amber { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
 .se-pill.blue { background: var(--blue-tint); color: var(--blue-deep); }
 
@@ -3936,8 +3944,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-std b { color: var(--ink); }
 /* chip/accent ink pairs — text on the soft gauge tints, contrast-safe (same recipe as .pos-*) */
 .brf-page { --brf-below-ink: var(--neutral-perf);
-  --brf-above-ink: color-mix(in srgb, var(--unfavourable) 78%, var(--ink));
-  --brf-on-ink: color-mix(in srgb, var(--favourable) 78%, var(--ink)); }
+  --brf-above-ink: var(--unfavourable-ink);
+  --brf-on-ink: var(--favourable-ink); }
 
 /* (.brf-newstrip and .brf-brieflbl retired 2026-07-10 with the Folders simplification —
    NOTHING sits above the feed except the masthead and the folder nav; NEW rides card tags.) */
