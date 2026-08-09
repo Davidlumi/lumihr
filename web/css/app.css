@@ -951,8 +951,9 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   font-size: var(--fs-label); color: var(--ink-soft); white-space: nowrap; }
 .na-toggle input { accent-color: var(--blue); }
 /* soft warning: amber, allows + confirms — never a blocker */
-.warn-panel { margin-top: var(--s2); padding: var(--s2) var(--s3); border: 1px solid #E5C26B;
-  background: #FCF6E8; border-radius: var(--radius-sm); max-width: 560px; text-align: left; }
+.warn-panel { margin-top: var(--s2); padding: var(--s2) var(--s3);
+  border: 1px solid color-mix(in srgb, var(--amber-bright) 45%, var(--surface));
+  background: var(--neutral-perf-tint); border-radius: var(--radius-sm); max-width: 560px; text-align: left; }
 .warn-panel .warn-text { margin-top: 0; }
 /* segmented control — ONE house recipe (ruled .ov-seg, David 2026-07-12: solid blue
    is the selected-state). .seg-toggle / .chart-switch converge here. */
@@ -1223,16 +1224,16 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   align-self: center; }
 .signal-row.lens-save    { background: var(--lens-save-tint); }
 .signal-row.lens-save    svg, .signal-row.lens-save .sig-tag { color: var(--lens-save); }
-.signal-row.lens-save    .sig-stand, .signal-row.lens-save .sig-name { color: #1E5F45; }
+.signal-row.lens-save    .sig-stand, .signal-row.lens-save .sig-name { color: color-mix(in srgb, var(--lens-save) 78%, var(--ink)); }
 .signal-row.lens-attract { background: var(--lens-attract-tint); }
 .signal-row.lens-attract svg, .signal-row.lens-attract .sig-tag { color: var(--lens-attract); }
-.signal-row.lens-attract .sig-stand, .signal-row.lens-attract .sig-name { color: #4F3F9E; }
+.signal-row.lens-attract .sig-stand, .signal-row.lens-attract .sig-name { color: color-mix(in srgb, var(--lens-attract) 78%, var(--ink)); }
 .signal-row.lens-retain  { background: var(--lens-retain-tint); }
 .signal-row.lens-retain  svg, .signal-row.lens-retain .sig-tag { color: var(--lens-retain); }
-.signal-row.lens-retain  .sig-stand, .signal-row.lens-retain .sig-name { color: #0A5562; }
+.signal-row.lens-retain  .sig-stand, .signal-row.lens-retain .sig-name { color: color-mix(in srgb, var(--lens-retain) 78%, var(--ink)); }
 .signal-row.lens-engage  { background: var(--lens-engage-tint); }
 .signal-row.lens-engage  svg, .signal-row.lens-engage .sig-tag { color: var(--lens-engage); }
-.signal-row.lens-engage  .sig-stand, .signal-row.lens-engage .sig-name { color: #8F3A1D; }
+.signal-row.lens-engage  .sig-stand, .signal-row.lens-engage .sig-name { color: color-mix(in srgb, var(--lens-engage) 78%, var(--ink)); }
 /* home signal cards are toned by VERDICT (sig-tone-*, RAG) — the lens stays as the roundel icon colour only */
 .signal-roundel.lens-save    svg { color: var(--lens-save); }
 .signal-roundel.lens-attract svg { color: var(--lens-attract); }
