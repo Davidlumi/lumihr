@@ -15540,3 +15540,21 @@ tail-of-session sweep. Also open: empty-state ring variant (3 bespoke rings
 → EmptyState prop), the useFocusTrap hook (3 hand-rolled copies), icon-scale
 4-step rule (183 calls). Recorded so the next pass starts from a clean list.
 Suite 14/14 green through v488.
+
+## 2026-08-09 — Design-system epic continued: DS-4/5 (19a2df3, 3cf6950)
+
+Went into the pill/chip consolidation and found the review's "35 classes
+where 3 would do" premise was partly wrong: the ~40 pill-like classes are
+MOSTLY legitimate distinct roles (badge vs tag vs stat-card vs pill vs
+roundel) — collapsing them to 4 primitives would destroy real distinctions.
+The GENUINE duplication was the verdict-COLOUR recipe (color-mix 78%,ink)
+inlined 30+×. DS-4 minted 8 ink tokens (favourable/unfavourable/neutral-
+perf/differs + 4 lens) and swept every inline — a verdict colour now changes
+in one place. DS-5 extracted window.focusables + window.tabTrap (3 identical
+focus-trap copies → 1). RULING for a future hand: do NOT force a 40→4
+markup migration — the roles are real; the win was the shared colour recipe
+and the shared trap, both now done. What genuinely remains is small: the
+empty-state ring variant (3 bespoke rings, cosmetic) and the icon-size
+4-step rule (183 calls, mechanical). The design-system epic is
+substantially complete; those two are optional polish. Suite 14/14 green
+through v490.
