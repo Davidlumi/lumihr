@@ -15471,3 +15471,24 @@ strategy at 320px; perf-release lens re-run (its find agent died on a
 connection drop — 4th big-payload casualty). These are coherent refactors
 needing visual verification budget, not scattered fixes.
 Suite 14/14 green through v481.
+
+## 2026-08-09 — Delight + downloads/sharing review implemented (aed455f, 1223ecc)
+
+Three-lens fleet (delight / downloads / sharing lifecycle, 41 findings).
+KEEPERS: share.html is a STATIC TWIN of index.html — it sat 58 cache
+versions stale; bumps now cover both files (memory + build law). Unfurl
+meta is useless while robots.txt blocks /share/ — both halves now shipped
+(data-free preview + crawl allowance + per-page noindex). Export law:
+every file that leaves lumi files itself — org, artefact, cut, date in the
+name; BOM on CSVs; unit + window columns; # comments for prose; a toast on
+download. Delight law held: recognition over gamification (return strip,
+unlock position line, ⌘K recents), confetti reserved for the two earned
+moments. The fleet also caught MY regression (the document stagger CSS
+lost in the motion sweep — restored; fleet-reviewing your own recent work
+pays).
+DEFERRED (needs schema/investigation): share view-tracking column +
+"did the CFO open it" surface, pack-delete share cascade, the reported
+12-card share render cap (site not found in a quick pass — verify against
+the stored config cap), board-pack generation staging, pulse
+floor-crossing beat, expiry-choice parity + share-row labels. Suite 14/14
+green through v482.
