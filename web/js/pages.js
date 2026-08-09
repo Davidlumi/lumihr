@@ -2726,7 +2726,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(false)}>
               <b>Figures only</b>
               <span class="caption" style=${{ display: "block" }}>Positions, values and peer stats — no charts</span></button>
-            <a class="bp-menu-item" role="menuitem" href=${"/api/benchmark.csv?" + cutQS(cut) + "&sp=" + encodeURIComponent(sp)} download onClick=${() => toast("Spreadsheet downloading — " + sp + " on " + cutLabelOf(cut, cuts) + ".")}>
+            <a class="bp-menu-item" role="menuitem" href=${"/api/benchmark.csv?" + cutQS(cut) + "&sp=" + encodeURIComponent(name)} download onClick=${() => toast("Spreadsheet downloading — " + domainLabel(name) + " on " + cutLabelOf(cut, cuts) + ".")}>
               <b>Spreadsheet (CSV)</b>
               <span class="caption" style=${{ display: "block" }}>The raw numbers on this peer group</span></a>
           </div>`}
