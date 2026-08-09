@@ -15347,3 +15347,21 @@ no-preference. VERIFICATION CAVEAT for future sessions: browser-pane probes
 of timed transitions LIE when the pane is hidden (background tabs clamp
 timers to ≥1s) — front the tab before timing anything, and treat state
 assertions, not timing reads, as the proof. Suite 14/14 green through v473.
+
+## 2026-08-09 — Strategy walkthrough QA (9ba7d4c): what only a walkthrough finds
+
+David: "complete QA… do a walkthrough as there are issues." He was right —
+seven real defects the code-lens fleet missed, all VISUAL/SPATIAL: the
+manuscript rail colliding with the question card (fixed-position maths
+ignored the sidebar — now an in-flow grid column), the progress bar painted
+invisibly UNDER the navy brandbar, exhibit scale labels unaligned with
+their tick columns, a dead Back button, duplicated stage labels, chip
+furniture, and no admin-visible trace of the dark-gated AI section.
+TWO DURABLE LESSONS: (1) grid item + margin:0 auto + max-width collapses a
+stretched item to content width — place grid children EXPLICITLY (row AND
+column) and strip auto margins inside grids; (2) the browser pane's
+screenshots misplace fixed/sticky chrome whenever the page is scrolled or
+the pane hidden — the blank-above-topbar ghost is CAPTURE, not product;
+verify spatial claims with getBoundingClientRect, screenshots only at
+scrollY 0 in a fronted tab. Code fleets find state machines and contracts;
+only a walkthrough finds paint. Suite 14/14 green through v475.
