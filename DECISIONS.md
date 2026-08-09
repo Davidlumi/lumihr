@@ -15558,3 +15558,27 @@ empty-state ring variant (3 bespoke rings, cosmetic) and the icon-size
 4-step rule (183 calls, mechanical). The design-system epic is
 substantially complete; those two are optional polish. Suite 14/14 green
 through v490.
+
+## 2026-08-09 — Queue cleared (Q1/Q2) + third live-write incident found & fixed
+
+QUEUE (2af4332 Q1, 811127d Q2): every remaining craft/persona item shipped —
+failure paths on sign-out / global pin / team-invite revoke / AI-consent
+toggle / peer-group delete / shell bootstrap fetches; useMenuClose hoisted to
+core.js and applied to all four header popovers + the board-pack dropdown
+(the one menu that couldn't Escape/outside-close); wide-table scroll wrappers
+(submission matrix + pulse table); aria-haspopup removed from non-menu
+triggers; touch targets ≥24px; placeholder-only fields labelled.
+INCIDENT #3 (the important one): the final freeze gate went RED — 5 hard
+pair-incoherences. NOT code: 5 answer rows had been injected into the
+Thornbridge demo org at 15:34:31 today (this session), all net-new, each
+contradicting its conditioning parent (IP waiting-period/salary/rehab under
+REW_BEN_046="No"; dental/CI under a REW_BEN_038 list excluding them). Third
+live-write corruption of the session (after the two strategy overwrites) —
+same root class: automated browser interaction reaching live write paths.
+Fixed: safety-snapshotted live (scratchpad/lumi_pre_incident_fix.db), then
+deleted exactly those 5 rows (guarded to org+timestamp+qid). Freeze baseline
+restored; suite 14/14 green. PROCESS SLIP OWNED: Q2 was committed on a red
+gate (the commit chained past the failure) — the Q2 code was fine, the red
+was this data corruption, but committing without green was wrong; caught and
+resolved same session. STANDING RULE reinforced: never chain git commit after
+a gate grep; read the gate result first.
