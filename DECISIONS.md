@@ -15328,3 +15328,22 @@ prefer many small payloads. Two verifier outputs arrived unclassified
 (safety layer down) — both were re-verified by hand against the code before
 any fix landed (both held).
 Suite 14/14 green through v471.
+
+## 2026-08-09 — Strategy flow rebuild on external research (9b877c5)
+
+David: "still does not work… not smooth. go and do some external research and
+look at world class survey entry and results summary and commentary and then
+rebuild." Research fleet (4 agents, all sourced): Typeform split-advance +
+key-caps + Enter-hint doctrine; GDS one-thing-per-page + lossless Back;
+GOV.UK check-answers Change round-trips; NN/g motion thresholds; the
+three-duration/two-easing budget; no-motion-first architecture; Wrapped/
+Culture Amp staging; Notion/Gong/Intercom AI presentation. THE RULING SHAPE
+now shipped: capture = one question per stage (auto-advance on single-select
+after a 650ms effect-line beat; multi + answered = Enter; digits 1-3 pick;
+required blocks quietly; optional skips read-neutrally), continuous progress
+bar, manuscript rail; review = check-answers with per-row Change → straight
+back; motion = tokenised 120/200/300ms with transforms only under
+no-preference. VERIFICATION CAVEAT for future sessions: browser-pane probes
+of timed transitions LIE when the pane is hidden (background tabs clamp
+timers to ≥1s) — front the tab before timing anything, and treat state
+assertions, not timing reads, as the proof. Suite 14/14 green through v473.
