@@ -15492,3 +15492,26 @@ DEFERRED (needs schema/investigation): share view-tracking column +
 the stored config cap), board-pack generation staging, pulse
 floor-crossing beat, expiry-choice parity + share-row labels. Suite 14/14
 green through v482.
+
+## 2026-08-09 — Deep QA bug hunt implemented (f061e0f, 182fe59)
+
+50-agent element-level hunt over the session's own change surface (the right
+call — rapid python-regex edits on no-build React were the risk). 44
+confirmed / 1 refuted → ~20 distinct bugs, all fixed. THE LESSON, twice
+over: this session's own "improvements" carried the bugs. (1) The delight
+CSV edit used SuperpowerPage's `sp` inside CategoryPage → a ReferenceError
+that crashed the whole domain page whenever the Download menu opened
+(CRITICAL, f061e0f) — my live walk missed it because I never opened that
+menu; the fleet's static element sweep caught it. (2) The craft-review
+MOTION SWEEP's regex tokenised stagger DELAYS as duration tokens, silently
+breaking ~15 animation ladders (a token belongs on a transition/animation
+DURATION, never on an animation-delay — restored every one from the
+pre-sweep git blob). (3) The delight ReturnStrip shipped filtering on field
+names the API never sends — dead on arrival, masked by its own silent
+stamp(). (4) The craft auth-redirect reopened a closed incident
+(2026-08-04 silent invite). DOCTRINE: after a broad regex/codemod pass,
+diff-audit every hunk with fresh eyes — the author is blind to their own
+sweep; and a feature that "renders clean" is not "works" (verify the
+payload contract, not just the absence of console errors). Suite 14/14
+green through v484. NB the browser pane keeps STALE console errors in its
+buffer (v472-stamped) — assert on version, never on raw buffer contents.
