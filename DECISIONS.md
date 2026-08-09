@@ -15400,3 +15400,24 @@ resuming on tab-front. CONTAINED: stale tabs closed, data restored exactly
 probes short + idempotent, no pending click-loops, close scratch tabs when
 done, wizard automation only ever on throwaway pairs. Suite 14/14 green
 through v477.
+
+## 2026-08-09 — Strategy application: review recommendations implemented (3595e33)
+
+The strategy-application review's 15 confirmed findings, 14 shipped: the
+three unwired wizard promises now have real engine mechanisms (ranges 1.2x
+provenance-gated; cash-mix 1.25x on Pay/Incentives under-delivery;
+statutory floor-hold reframe mirroring the generous branch); benefits_lead
+direction-gated; ONE completed-at definition of "has a strategy"
+platform-wide; metric AI commentary aim-aware (declared_aim + prompt rule —
+the model can no longer contradict the aim chip); strategy reading honours
+the transparency reconfirm gate; the stale "context" labels flipped to the
+truth (budget/acute/risk are live re-rankers, now first-class ledger rows);
+strategy-off honoured by the last two hold-out pages; strategy_objective
+finally consumed ("ordered for <objective> · gap to your aim"); alignment
+vocabulary unified to aim-speak member-facing (domain-summary MODEL lock
+untouched); pack CSV carries the alignment rows; exhibit states "vs all
+peers".
+OPEN FOR DAVID (deliberately not done): expanding the p4p curated
+variable-pay metric set (data/register ruling — the mechanism is precise
+but covers 7 metrics). Suite 14/14 green under the new multipliers through
+v478.
