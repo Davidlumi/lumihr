@@ -16033,3 +16033,21 @@ each conserving its anchored global exactly (14/14 throwaway + live):
 Two gate issues surfaced and were fixed before live: qa_commentary demo-fixture flip
 (excluded demo from OT_04) and freeze-gate coherence breaks (cleared DC-only pension
 children on DB conversion). Backup lumi.db.bak_pre_manual_20260810_140559; aggregate.
+
+## 2026-08-10 — Seed realism B5 (coherence rederivation vs final parents)
+
+migrate_seedreal_b5_coherence_2026_08_10.py — the Tier-1 coherence cleanups that had
+to wait for B2/B3 to finalise parents (all free metrics; 14/14 throwaway + live):
+- REW_BEN_038 checklist: 6 mirrored flags (PMI/life/EAP/salsac car/enh maternity/enh
+  paternity) recomputed from their standalone parents — were off by 69-141 each; now
+  0 residual mismatch. All other 038 tokens untouched. 210 orgs corrected.
+- REW263_WEL_DATA: dropped orphan tracking picks (PMI-claims w/o PMI, EAP-util w/o
+  EAP), 36 orgs; empty -> 'None'.
+- Risk satellites gated on cover held: RISKFLEXUP 17, GIPREHAB 15 -> N/A, SPOUSELIFE
+  2 -> No. Core 045/046 untouched.
+- Repaired a B2 gap: 7 orgs held full PMI detail (components/premium/excess) but an
+  all-No 139 matrix, so B2 had set them 100='Not offered'. They genuinely have PMI ->
+  gave them senior-only 139 eligibility + 100='10-24%'/044='Grade-restricted' so all
+  PMI child pairs (PMICOMP/139/044/premium/excess conditioned on 038-PMI) cohere.
+Backup lumi.db.bak_pre_manual_20260810_142453; aggregate. Tier 1 + Tier-2 core now
+complete: no internal contradictions remain across the audited clusters.
