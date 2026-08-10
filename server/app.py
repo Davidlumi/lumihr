@@ -13,6 +13,7 @@ import csv
 import hashlib
 import io
 import json
+import logging
 import os
 import re
 import urllib.parse
@@ -23,6 +24,11 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Structured-ish logging to stdout (journald/CloudWatch capture it in production).
+# Failure paths log at WARNING/ERROR so an operator can alert on severity, not grep prints.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [lumi] %(message)s")
+log = logging.getLogger("lumi")
 
 
 def _load_local_env():
@@ -5779,7 +5785,9 @@ def _audit(user, action, target_kind=None, target_id=None, detail=None):
              j(detail) if detail else None))
         conn.commit()
     except Exception as e:
-        print("[admin-audit] WRITE FAILED (%s): %s" % (action, e), flush=True)
+        # security-relevant: a destructive console action completed but its audit row
+        # didn't land. Log at ERROR so monitoring alerts rather than it scrolling past.
+        log.error("admin-audit WRITE FAILED (%s): %s", action, e)
 
 
 def _org_lifecycle(conn, o):
@@ -6890,6 +6898,9 @@ async def admin_health(request: Request):
 # console twin of the boot log: what IS the environment, not what could be.
 _CONFIG_INVENTORY = [
     ("LUMI_BASE_URL", "value", "Public origin for emailed invite/reset/share links"),
+    ("LUMI_MFA", "value", "Enforce email one-time-code MFA on every login — MUST be 'on' in production (CE A7.16/A7.17)"),
+    ("LUMI_SEED_DEMO", "value", "Provision demo accounts with known passwords — dev/QA only, MUST be unset in production (CE A5.2/A5.3)"),
+    ("LUMI_STAFF_PASSWORD", "secret", "Initial password for the seeded staff/super-admin account (else strong-random)"),
     ("LUMI_SUPER_ADMINS", "secret", "Back-office allowlist (comma-separated emails)"),
     ("LUMI_OPEN_REGISTRATION", "value", "Self-serve signup — CLOSED unless 'on' (membership is staff-provisioned)"),
     ("LUMI_QA_SEAMS", "value", "Gate-only fault injection in provisioning; default unset = inert. MUST NEVER be set outside gate runs"),
@@ -7252,6 +7263,41 @@ class _CachedStatic(StaticFiles):
 app.mount("/static", _CachedStatic(directory=WEB_DIR), name="static")
 
 
+@app.get("/healthz")
+async def healthz():
+    """Unauthenticated liveness/readiness probe for the process supervisor, the
+    reverse proxy and uptime monitoring. Confirms BOTH datastores answer a trivial
+    query; returns nothing else (no counts, paths or config). 200 healthy, 503 not."""
+    try:
+        get_conn().execute("SELECT 1")
+        identity.get_conn().execute("SELECT 1")
+        return {"status": "ok"}
+    except Exception as e:
+        log.error("healthz failed: %s", e)
+        return JSONResponse({"status": "error"}, status_code=503)
+
+
+@app.exception_handler(Exception)
+async def unhandled_error(request: Request, exc):
+    """Last-resort handler: log the failure with method+path (and org/user when
+    resolved) at ERROR so it can be alerted on, and return a clean response — never
+    a stack trace — to the client."""
+    who = ""
+    try:
+        u = getattr(request.state, "user", None)
+        if u:
+            who = " user=%s org=%s" % (u.get("user_id"), (getattr(request.state, "org", None) or {}).get("org_id"))
+    except Exception:
+        pass
+    log.error("unhandled error %s %s%s: %s", request.method, request.url.path, who, exc, exc_info=True)
+    if request.url.path.startswith("/api/"):
+        return JSONResponse({"detail": "Something went wrong. Please try again."}, status_code=500)
+    return HTMLResponse(status_code=500, content="<!doctype html><meta charset=utf-8>"
+                        "<title>Something went wrong · lumi</title>"
+                        "<p style='font-family:system-ui;text-align:center;margin-top:20vh'>"
+                        "Something went wrong. Please try again.</p>")
+
+
 @app.exception_handler(404)
 async def not_found(request: Request, exc):
     """A mistyped public URL (a PA re-typing a share link) gets a branded page,
@@ -7311,8 +7357,45 @@ def backfill_terms(conn):
     conn.commit()
 
 
+def _validate_prod_config():
+    """Boot-time guard against the config mistakes that would silently ship an
+    insecure or broken production instance. 'Production posture' is detected by an
+    https LUMI_BASE_URL (localhost/dev is http). Fatal misconfigurations REFUSE to
+    boot (raise) with the exact fix; softer ones log a prominent warning. Escape
+    hatch LUMI_ALLOW_NO_MFA=on exists only for a deliberate, documented exception."""
+    base = (os.environ.get("LUMI_BASE_URL") or "").strip().lower()
+    prod = base.startswith("https://")
+    on = lambda k: os.environ.get(k, "").lower() in ("on", "1", "true", "yes")
+    fatal = []
+    if prod:
+        if on("LUMI_SEED_DEMO"):
+            fatal.append("LUMI_SEED_DEMO is on — this would create demo accounts with KNOWN passwords "
+                         "in production (Cyber Essentials A5.2/A5.3). Unset it.")
+        if not on("LUMI_MFA") and not on("LUMI_ALLOW_NO_MFA"):
+            fatal.append("LUMI_MFA is not on — production must enforce MFA (Cyber Essentials A7.16/A7.17). "
+                         "Set LUMI_MFA=on (and configure SMTP), or set LUMI_ALLOW_NO_MFA=on to override deliberately.")
+        if on("LUMI_MFA") and not os.environ.get("LUMI_SMTP_HOST"):
+            fatal.append("LUMI_MFA is on but LUMI_SMTP_HOST is unset — sign-in codes would be console-logged, "
+                         "not emailed, locking every user out. Configure SMTP (SES) before enforcing MFA.")
+    if fatal:
+        raise RuntimeError("Refusing to start — production config errors:\n  - " + "\n  - ".join(fatal))
+    # single-instance assumptions: the in-memory rate limiter (auth.py), the signal
+    # scheduler thread, and the lru_cache'd question library are per-process. More than
+    # one worker silently weakens login throttling and can serve a stale library.
+    try:
+        wc = int(os.environ.get("WEB_CONCURRENCY", "1"))
+    except ValueError:
+        wc = 1
+    if wc > 1:
+        print("[lumi] ⚠ WEB_CONCURRENCY=%d — lumi assumes a SINGLE worker. Multiple workers weaken the "
+              "in-memory login rate limiter and can serve a stale question library, and would duplicate "
+              "the signal digest. Run --workers 1 (behind a reverse proxy) unless these are addressed." % wc,
+              flush=True)
+
+
 @app.on_event("startup")
 def startup():
+    _validate_prod_config()
     init_schema()
     # AI go-live status — ONE grep-able line printed on every boot, so a restart
     # confirms at a glance exactly what's live (the go-live switches are env-only by

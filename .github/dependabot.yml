@@ -1,0 +1,16 @@
+# Cyber Essentials A6.4/A6.5: surface dependency CVEs so the 14-day patch clock is
+# easy to meet. Dependabot opens PRs to bump pinned versions in requirements.txt.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"                 # requirements.txt lives at the repo root
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "security"]
+    commit-message:
+      prefix: "deps"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Byte-compile the server (syntax check — no build step in this app)
+        run: python -m py_compile server/*.py
+      - name: Dependency vulnerability scan (CE A6.4/A6.5 — report; Dependabot opens the fix PRs)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt || echo "::warning::pip-audit reported advisories — review and patch within 14 days"
+        continue-on-error: true
