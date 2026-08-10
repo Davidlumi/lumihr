@@ -13,11 +13,16 @@ refuses to duplicate the staff org or the staff user, so it is safe to re-run.
 The staff org carries NO benchmark data (source='staff', classified=0) so it can
 never enter the peer pool or aggregates. The staff user is a normal org 'admin'
 of that empty org AND carries platform_admin=1 — the cross-tenant tier the
-console gates on. Password defaults to the demo password (override with
-LUMI_STAFF_PASSWORD); change it after first login.
+console gates on.
+
+Password: set LUMI_STAFF_PASSWORD to a strong secret; if unset, a strong random
+password is generated and printed ONCE at creation. There is no known/guessable
+default (Cyber Essentials A5.3 — this is the super-admin account). Change it after
+first login.
 """
 import os
 import re
+import secrets
 import sys
 import uuid
 
@@ -29,7 +34,9 @@ import identity    # noqa: E402  (step 5: the staff org is resolved and attached
 STAFF_ORG_NAME = "Lumi HR (staff)"
 STAFF_EMAIL = "david@lumihr.co.uk"
 STAFF_NAME = "David Whitfield"
-STAFF_PASSWORD = os.environ.get("LUMI_STAFF_PASSWORD", "lumi-demo-2026")
+# No hard-coded default (was 'lumi-demo-2026' — a known password on the super-admin
+# account, a Cyber Essentials A5.3 failure). Env-provided, else strong-random.
+STAFF_PASSWORD = os.environ.get("LUMI_STAFF_PASSWORD") or secrets.token_urlsafe(18)
 
 
 def main():

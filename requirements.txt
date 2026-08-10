@@ -1,0 +1,19 @@
+# lumi runtime dependencies — Cyber Essentials A6 (Security Update Management):
+# all software must be licensed, supported, and patched within 14 days of a
+# high/critical (CVSS >= 7) fix. Pinned to the supported versions in use as of
+# 2026-08-10. When a pin is bumped for a security fix, note it in DECISIONS.
+# Runtime: Python 3.9+.  Install:  pip install -r requirements.txt
+#
+# Direct dependencies:
+fastapi==0.128.8          # web framework (ASGI)
+starlette==0.49.3         # ASGI toolkit (FastAPI core)
+uvicorn==0.39.0           # ASGI server
+pydantic==2.13.4          # request/response validation
+bcrypt==5.0.0             # password hashing
+anthropic==0.109.2        # AI Insights (server-side model calls; dark-gated)
+httpx==0.28.1             # HTTP client (used by the anthropic SDK)
+anyio==4.12.1             # async runtime (starlette/httpx dependency, pinned for tracking)
+#
+# Transitive dependencies (certifi, click, h11, httpcore, idna, sniffio,
+# annotated-types, typing-extensions, pydantic_core) resolve from the above and
+# are covered by the same 14-day patch rule.

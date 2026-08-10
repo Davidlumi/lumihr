@@ -57,7 +57,9 @@ start_server() {  # $1 = db path ("" = real DB), $2 = log name, $3 = extra env (
   # PH-PROV-1: self-serve registration is CLOSED by default. Gate servers whose
   # suites self-register probe orgs (qa_strategy) pass LUMI_OPEN_REGISTRATION=on;
   # srv_backoffice runs with the production default so the 403 is verifiable.
-  ( cd "$SRV" && env LUMI_DB="${1}" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' ${=3:-} \
+  # LUMI_SEED_DEMO=on: gates authenticate as the demo/staff accounts, which are now
+  # provisioned only when this flag is set (production leaves them off — CE A5.2/A5.3).
+  ( cd "$SRV" && env LUMI_DB="${1}" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' LUMI_SEED_DEMO=on ${=3:-} \
       nohup python3 -m uvicorn app:app --port $PORT >"$log" 2>&1 & print $! ) | read SERVER_PID
   for i in {1..40}; do
     curl -s -o /dev/null "http://localhost:$PORT/api/legal" && break
@@ -72,7 +74,7 @@ start_server() {  # $1 = db path ("" = real DB), $2 = log name, $3 = extra env (
 run_gate() {  # $1 = script name (in server/), rest = extra env assignments
   local g="$1"
   say "$g"
-  ( cd "$SRV" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' \
+  ( cd "$SRV" && env LUMI_DB="$DB" LUMI_IDENTITY_DB="$IDB" ANTHROPIC_API_KEY='' LUMI_AI_LIVE='' LUMI_SEED_DEMO=on \
       python3 "$g.py" ) >"$WORK/$g.out" 2>&1
   local rc=$?
   tail -4 "$WORK/$g.out"

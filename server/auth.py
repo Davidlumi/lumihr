@@ -5,6 +5,8 @@ rate-limited login, tokenised reset/invite links (console-logged in this
 environment instead of email). Org scoping is enforced by middleware in
 app.py: every request's org_id comes from the session, never from the client.
 """
+import base64
+import hashlib
 import re
 import secrets
 import time
@@ -22,14 +24,12 @@ INVITE_TTL_DAYS = 7
 RESET_TTL_HOURS = 2
 
 # ------------------------------------------------------ password policy ---
-# NIST 800-63B posture: a real length floor + screening against the passwords
-# attackers try first — NOT character-class composition rules (which push users
-# to predictable P@ssw0rd! patterns). The blocklist is the head of every public
-# breach corpus; equality with the email local-part or the org name is also
-# refused. bcrypt silently ignores bytes past 72, so a hard 72-byte ceiling
-# stops a long passphrase from being quietly truncated (and colliding).
+# NIST 800-63B + Cyber Essentials posture: a real length floor + screening against
+# the passwords attackers try first — NOT character-class composition rules, and NO
+# maximum length (CE A5.5 requires no max; hash_password pre-hashes so long passphrases
+# are safe). The blocklist is the head of every public breach corpus; equality with the
+# email local-part or the org name is also refused.
 PASSWORD_MIN = 8
-PASSWORD_MAX_BYTES = 72
 _COMMON_PASSWORDS = frozenset("""
 password password1 password123 passw0rd 12345678 123456789 1234567890 123123123
 qwerty qwertyuiop qwerty123 1q2w3e4r 1qaz2wsx zaq12wsx abc12345 letmein welcome
@@ -47,8 +47,6 @@ def validate_password(pw, *, email=None, org_name=None):
     pw = pw or ""
     if len(pw) < PASSWORD_MIN:
         return "Password must be at least %d characters." % PASSWORD_MIN
-    if len(pw.encode("utf-8")) > PASSWORD_MAX_BYTES:
-        return "Password is too long — please use %d characters or fewer." % PASSWORD_MAX_BYTES
     low = pw.lower().strip()
     if low in _COMMON_PASSWORDS:
         return "That password is one of the most common — please choose something less guessable."
@@ -64,13 +62,28 @@ def validate_password(pw, *, email=None, org_name=None):
 COOKIE_NAME = "lumi_session"
 
 
+def _bcrypt_input(pw):
+    # SHA-256 -> base64 (~44 bytes) BEFORE bcrypt. bcrypt silently ignores bytes past
+    # 72, which both weakens long passphrases and imposes an effective maximum length.
+    # Pre-hashing removes both: bcrypt now sees a fixed-size digest, so there is NO
+    # maximum password length (Cyber Essentials A5.5 requires "no maximum length") and
+    # no truncation/collision for long passphrases.
+    return base64.b64encode(hashlib.sha256((pw or "").encode("utf-8")).digest())
+
+
 def hash_password(pw):
-    return bcrypt.hashpw(pw.encode("utf-8"), bcrypt.gensalt()).decode("ascii")
+    return bcrypt.hashpw(_bcrypt_input(pw), bcrypt.gensalt()).decode("ascii")
 
 
 def verify_password(pw, pw_hash):
     try:
-        return bcrypt.checkpw(pw.encode("utf-8"), pw_hash.encode("ascii"))
+        h = pw_hash.encode("ascii")
+        if bcrypt.checkpw(_bcrypt_input(pw), h):
+            return True
+        # Legacy hashes (minted before the 2026-08-10 pre-hash switch) were bcrypt(raw pw).
+        # Still accept them so no existing login breaks; they migrate to the pre-hash
+        # scheme automatically the next time the password is set (register/reset/invite).
+        return bcrypt.checkpw((pw or "").encode("utf-8"), h)
     except ValueError:
         return False
 

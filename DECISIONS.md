@@ -15736,3 +15736,45 @@ viewer peer-group 403, reset (weak-reject + session-kill + single-use token +
 new-password login), strength meter, register no-flash + disabled-until-valid,
 end-to-end browser login. Suite 14/14 green (incl. qa_backoffice); live DB
 untouched. v494 -> v495.
+
+
+## 2026-08-10 — Cyber Essentials v3.3 audit: stack hardening (code-fixable controls)
+
+David: "we will need to be Cyber Essentials accredited — do an audit of our stack
+and fix any gaps." CE certifies the WHOLE IT estate (devices, cloud accounts,
+firewalls, patching, MFA on Google/AWS) — most of it is organisational and cannot
+be fixed in this repo. The full mapped gap analysis is in CYBER_ESSENTIALS_AUDIT_2026-08.md.
+This entry records the STACK gaps fixed in code (the lumi web app appears in CE as
+"an external service you host" A5.4-A5.7 and "a cloud service you use" A7.14-A7.17).
+
+FIXED:
+- A5.5 "no maximum length": the 72-byte password cap (added in the auth review)
+  directly conflicted with CE's explicit "no maximum length restrictions". Replaced
+  with a SHA-256 pre-hash before bcrypt (removes bcrypt's 72-byte truncation AND any
+  max-length limit) + a legacy raw-bcrypt verify fallback so existing logins survive
+  and migrate on next password set. Unit-verified: new/legacy/long(>72, no collision).
+  Our A5.5 answer is now truthfully "B: min-8, no max, common-password deny-list".
+- A5.2/A5.3 default & guessable credentials: demo accounts (known passwords printed
+  at startup) were seeded UNCONDITIONALLY — a production fail. Now gated behind
+  LUMI_SEED_DEMO (default OFF; production provisions none; run_gates.sh + dev set it
+  on). seed_staff_admin.py's 'lumi-demo-2026' default for the SUPER-ADMIN removed —
+  now env-provided or strong-random, printed once.  [ACTION for David: the live
+  david@lumihr.co.uk account still holds the old known password — change it.]
+- Secure Configuration: added SecurityHeadersMiddleware — X-Content-Type-Options,
+  X-Frame-Options SAMEORIGIN, Referrer-Policy, Permissions-Policy, a conservative CSP
+  (script/style 'unsafe-inline' for the inline bootstrap + inline styles), and HSTS
+  emitted only on an https LUMI_BASE_URL. Verified on a throwaway.
+- A6 Security Update Management: created requirements.txt pinning the supported
+  runtime deps (fastapi 0.128.8, starlette 0.49.3, uvicorn 0.39.0, bcrypt 5.0.0,
+  pydantic 2.13.4, anthropic 0.109.2, httpx 0.28.1, anyio 4.12.1 — all current) so
+  the stack is trackable/patchable against the 14-day rule.
+
+Already-compliant from the 2026-08-09 auth review: brute-force throttling (A5.7/A7.10),
+common-password deny-list (A5.5/A7.11), Secure session cookie, session-kill on reset,
+all 32 /api/admin/* platform-admin gated.
+
+OPEN — needs a product decision (BLOCKS certification): A7.16/A7.17 make MFA on
+cloud services an AUTOMATIC FAIL. The lumi app has NO MFA. This is a feature build
+(TOTP enrol/verify/recovery + login step-up), scope pending David's call (admin-only
+vs all users; TOTP app vs email code). Tracked in CYBER_ESSENTIALS_AUDIT_2026-08.md.
+Suite 14/14 green; live DB untouched. (No ?v bump — no web/ asset changed.)
