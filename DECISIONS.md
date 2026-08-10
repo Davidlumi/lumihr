@@ -15880,3 +15880,20 @@ FREEZE GATE PASS (register marginals within 5pp; settled targets within 0.1pp). 
 identity_recon fail on the first live run was a pre-existing EXPIRED-invite reward/identity drift (not
 this migration — answers-only, "answer book untouched" asserted); the :8060 restart purged the expired
 invites and the re-run was clean. lumi.db is gitignored (data not committed); the migration script is.
+
+## 2026-08-10 — Widen sweep result + profit-share correction
+
+Widened the reward-persona sense-check across the rest of the benefit metrics.
+CLEAN: every by-level matrix (target bonus %, LTI % max/typical, employer & max
+pension %, flex allowance %, status-car eligibility REW_PAY_109, LTI eligibility
+REW_INC_133, PMI eligibility REW_BEN_139) — no gradient inversions, no frontline
+status/LTI eligibility; board bonuses correctly absent in Public/Charity; share
+plans and recognition budgets sector-consistent.
+
+ONE further defect fixed (migrate_seedreal_profitshare_2026_08_10.py): 6 orgs in
+non-profit / public-money sectors (Public Sector 4, Education 1, Charity 1) answered
+REW265_INC_PROFITSHARE='Profit share — all-employee' — no profits to share there.
+Set to 'No'; 'Gainshare (site or team)' left (defensible team scheme, not profit-
+dependent). Metric is not a marginal, not ruled, no coherence pair → side-effect-free.
+Verified full suite 14/14 on a throwaway then live (backup lumi.db.bak_pre_manual_
+20260810_114037, aggregate recompute, gates 14/14). lumi.db gitignored; script committed.
