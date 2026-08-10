@@ -15810,3 +15810,43 @@ off, login returns a session directly (gates unaffected). Suite 14/14 green. v49
 CE status now: the code-fixable controls are done; A7.16/A7.17 satisfied once
 LUMI_MFA=on + SMTP live. Remaining CE work is organisational (see
 CYBER_ESSENTIALS_AUDIT_2026-08.md) + the live david@lumihr.co.uk password change.
+
+
+## 2026-08-10 — Go-live pre-migration code (batches A–D)
+
+Answering "what can we do on the repo now before we migrate" (grounded 7-dimension
+readiness audit). Deploy artefacts already existed (deploy/: Caddyfile, lumi.service,
+offbox_backup.sh, IAM policy, DEPLOY_RUNBOOK.md); these batches fill the wiring +
+safety net. All verified on a throwaway; suite 14/14 after each.
+
+A — safety net: boot-time _validate_prod_config() REFUSES to start an https instance
+  with LUMI_SEED_DEMO on / LUMI_MFA off (override LUMI_ALLOW_NO_MFA) / MFA-on-but-no-SMTP;
+  warns on WEB_CONCURRENCY>1. Unauth /healthz (both DBs). Generic 500 handler + logging
+  module (+ audit-write failure now ERROR). Root .env.example (tracked via gitignore
+  negation). LUMI_MFA/LUMI_SEED_DEMO/LUMI_STAFF_PASSWORD added to _CONFIG_INVENTORY.
+  .github/dependabot.yml + ci.yml (py_compile + pip-audit). Removed stray 0-byte server/*.db.
+
+B — backup/restore: deploy/lumi-backup.{service,timer} schedule offbox_backup.sh (daily
+  02:30 UTC). deploy/restore.sh (integrity-check-before-swap, refuses while service up,
+  keeps pre_restore copy). server/backup_lumi.py (DB-class retain-3 on-box rotation,
+  fail-closed like backup_identity.py). identity.get_conn WAL+30s timeout; init_identity_db
+  at startup. --workers 1 pinned on lumi.service. Runbook backup/restore section.
+
+C — resilience/perf: run_snapshot offloaded to a worker thread on submit (was blocking
+  the event loop ~2s + holding the write lock). Board-pack daily cap (LUMI_BOARDPACK_PER_DAY,
+  caps only the paid call). Global AI kill-switch (LUMI_AI_DAILY_CALL_CAP, 0=off) in
+  call_claude. DEFERRED: payload-cache multi-worker freshness token — unneeded at the
+  ruled single-worker deployment; would add a DB read to the hottest path.
+
+D — legal/GDPR: /api/account/personal-data (Art.15 SAR export — account identity, consent/
+  withdrawal history, session metadata; no tokens). Privacy-notice Retention rewritten to
+  concrete periods (30d live deletion, 35d backup ceiling, 14d sessions, 2h resets).
+  Removed the superseded root lumi_AI_terms_DRAFT (finalised in legal/ai-insights-terms-v1.0.md).
+
+Commits: A b41a9dc/906d8ca · B 0c01d57 · C cb4fd01 · D (this).
+
+STILL OPERATIONAL (David — not code): rotate the live david@lumihr.co.uk password;
+rotate the ANTHROPIC_API_KEY (present in server/.env.local working tree); provision AWS
+(S3 bucket+IAM+DLM to offbox_backup.sh's asserted posture); run the runbook (EC2/Caddy/
+systemd) with prod env (LUMI_BASE_URL https, LUMI_MFA=on, SMTP/SES, LUMI_SEED_DEMO off);
+perform ONE restore drill; finalise + sign off the Cookie Policy (then flip its draft flag).

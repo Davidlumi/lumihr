@@ -55,9 +55,19 @@ the **AI Insights Terms** for full detail.
 
 ## Retention
 
-Account data is kept while your account is active and for a limited period
-afterwards. Benchmark submissions are versioned per collection window and
-retained as historical snapshots so trends remain meaningful.
+We keep personal data only as long as we need it:
+
+- **Account data** (your name, email, role and consent records) is kept while your
+  account is active. If your organisation leaves lumi, or you or your organisation
+  ask us to delete your data, it is removed from live systems **within 30 days** of
+  the request (see the Data Sharing Agreement, §5.2). Residual copies in our
+  encrypted backups then expire under our backup rotation **within a further 35
+  days**, after which no copy remains.
+- **Benchmark submissions** are versioned per collection window and retained as
+  anonymised historical snapshots so trends stay meaningful; these carry no personal
+  identifiers.
+- **Sign-in and security records** are short-lived by design: sessions expire after
+  14 days, and password-reset links after 2 hours.
 
 ## Your rights
 

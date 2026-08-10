@@ -2575,6 +2575,44 @@ async def my_data(request: Request):
     return {"rows": rows}
 
 
+@app.get("/api/account/personal-data")
+async def account_personal_data(request: Request):
+    """Subject-access export (UK GDPR Art. 15): the personal data lumi holds about
+    the REQUESTING USER — their account identity, role, consent/withdrawal history and
+    active-session metadata. This is distinct from /api/my-data, which is the
+    ORGANISATION's contributed reward answers (org-level, not personal). No tokens or
+    other members' data are ever included; a user can only export their own record."""
+    user, org = require_user(request)
+    conn = get_conn()
+    disp = identity.user_display(user["user_id"]) or {}
+    acct = conn.execute("SELECT role, created_at FROM users WHERE user_id=?",
+                        (user["user_id"],)).fetchone()
+    consents = [dict(r) for r in conn.execute(
+        "SELECT kind, version, accepted_at FROM terms_acceptances WHERE user_id=? "
+        "ORDER BY accepted_at", (user["user_id"],))]
+    org_name = (identity.org_display(org["org_id"]) or {}).get("name")
+    return {
+        "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S") + " UTC",
+        "account": {
+            "user_id": user["user_id"],
+            "email": disp.get("email"),
+            "display_name": disp.get("display_name"),
+            "role": acct["role"] if acct else user.get("role"),
+            "created_at": acct["created_at"] if acct else None,
+            "organisation": org_name,
+            "organisation_id": org["org_id"],
+        },
+        # the immutable consent/terms audit trail for this user (platform terms,
+        # AI-insights consent + any withdrawal, etc.)
+        "consents": consents,
+        # active sessions — metadata only; session tokens are NEVER exported
+        "active_sessions": identity.sessions_for_user(user["user_id"]),
+        "notes": "Your organisation's contributed reward data is available separately via "
+                 "the 'Your data' export (/api/my-data). This export is the personal data "
+                 "lumi holds about you as an individual.",
+    }
+
+
 @app.get("/api/data-overview")
 async def data_overview(request: Request):
     """Completion-first view of the org's own data: overall + per-domain
