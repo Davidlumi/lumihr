@@ -16110,3 +16110,16 @@ by construction. Result: DC pooled median 10 -> 5.0, cells in 3-6% 25% -> 71% (m
 orgs LEFT UNTOUCHED (DB stays flat 15-28% from B4; verified frontline range 15-28).
 195 DC orgs, 1,286 cells. Not frozen/marginal; numeric matrix skipped by CHECK A ->
 gate-safe. Backup lumi.db.bak_pre_manual_20260810_184931; aggregate; 14/14.
+
+## 2026-08-10 — Seed realism B10 (Tier-3: target-bonus ladder heaping + uncap)
+
+migrate_seedreal_b10_bonus_ladder_2026_08_10.py — REW_INC_111 (target bonus %, by
+level) was a fixed multiplier chain (board/director 1.333 sd 0.017), no round-number
+heaping (16% on-heap), board hard-capped at 52% every sector. Regenerated each
+responder's ladder: sector-tilted HEAPED board (FS/Tech [50,60,75,100] uncapped;
+MID [40,50,60]; STD [25,30,40,50]) then a jittered, heaped, monotonic descent.
+Result: board median PRESERVED at 40 with the top tail uncapped (max 52 -> 100;
+FS/Tech reach 100), on-heap share 16% -> 100%, 155/155 monotonic. Each org's answered
+LEVEL SET is unchanged (bonus breadth / INC_103 coherence untouched). Free, no
+coherence pair, numeric matrix (skipped by CHECK A) -> gate-safe. 811 cells. Backup
+lumi.db.bak_pre_manual_20260810_185426; aggregate; 14/14.
