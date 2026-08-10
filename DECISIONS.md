@@ -16069,3 +16069,18 @@ Three register marginals David ruled to move — data + anchor updated together
   target_share 0.15 -> 0.4318 (positive_from='Documented strategy').
 Freeze gate PASS (max register-marginal drift 4.09pp, within 5pp). Backup
 lumi.db.bak_pre_manual_20260810_143828; aggregate --snapshot 1.
+
+## 2026-08-10 — Seed realism B7 (Tier-3 texture: numeric round-number heaping)
+
+migrate_seedreal_b7_heaping_2026_08_10.py — snap ~70% of numeric £/% values to their
+natural heap grid, keep ~30% as off-heap actuals (deterministic sha256; value-only).
+Designed via the tier-3 design workflow; none of the 7 metrics is anchored (freeze
+gate skips numeric/matrix types), so realism-only. MEDIAN is locked by pinning the
+central order-statistic + a no-cross-median clamp — verified byte-stable:
+  PROP_9e4ad87f 3.4 | PENSION_COST_SHARE 6.8 | PROP_e63cf45a 37 | PROP_d16bae79 44000
+  | REW26_WEL_BUDGET 103 (all Δ=0).
+Heap-share jumped: pay budget 20->75%, pension cost share 18->72%, workforce cost %
+28->80%, wellbeing budget 5->65%. Car allowance (by level) snapped whole-org + DESC
+re-sorted (monotonicity held); allowances (by type) per-type median-pinned.
+REW_BEN_FLEX_ALLOW_01 excluded (heaping collapses its 0.1 seniority ladder). 958 cells
+changed. Backup lumi.db.bak_pre_manual_20260810_151400; aggregate; 14/14.
