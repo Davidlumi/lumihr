@@ -15997,3 +15997,18 @@ migrate_seedreal_b2_market_pmi_life_2026_08_10.py (both metrics free; full suite
 REW_BEN_038 PMI/life checklist membership realigned to these parents in the later
 coherence-rederivation batch. Backup lumi.db.bak_pre_manual_20260810_134737;
 aggregate --snapshot 1; live 14/14.
+
+## 2026-08-10 — Seed realism B3 (Tier-2 market): free single/multi-selects
+
+migrate_seedreal_b3_market_free_2026_08_10.py (all free; 14/14 throwaway + live):
+- REW264_BEN_EVSALSAC: EV-share among scheme-havers 32%->91% (2024-26 BiK reality);
+  SME (50-249) scheme prevalence 50%->27%.
+- REW_PAY_007: single-source 61%->6%; recruiter intelligence 17->91, live tools 5->31
+  (modal now 2 sources).
+- REW264_HLT_CASHPLAN: large-band employer-paid 55-58%->~25% (no more double medical
+  provision alongside ~90% PMI); SME any-provision lifted toward ~17%.
+- REW_BEN_038 'Retail discounts': Retail 8->13/15, Hospitality 4->11/15.
+Backup lumi.db.bak_pre_manual_20260810_135243; aggregate --snapshot 1; live 14/14.
+Deferred: dental (REW263_BEN_DENTAL, only 11/220 rows -> needs INSERTs, paired with
+the B5 timestamp/completion work); education bonus (REW_INC_103, possible bonus-detail
+chain -> B4); board target-bonus cap (REW_INC_111 -> B5 texture, uncap + reheap).
