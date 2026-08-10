@@ -1,0 +1,14 @@
+# /etc/systemd/system/lumi-backup.timer — schedules the daily off-box backup.
+# Enable with:  systemctl enable --now lumi-backup.timer
+# Persistent=true runs a missed backup after downtime (laptop-lid / reboot).
+[Unit]
+Description=Daily lumi off-box backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=lumi-backup.service
+
+[Install]
+WantedBy=timers.target

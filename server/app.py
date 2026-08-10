@@ -7397,6 +7397,7 @@ def _validate_prod_config():
 def startup():
     _validate_prod_config()
     init_schema()
+    identity.init_identity_db()   # self-create the identity store like the reward store (was __main__-only)
     # AI go-live status — ONE grep-able line printed on every boot, so a restart
     # confirms at a glance exactly what's live (the go-live switches are env-only by
     # design). "LIVE — paid Claude" needs all three: the master gate, LUMI_AI_LIVE=on,

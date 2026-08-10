@@ -132,3 +132,43 @@ delete its own off-box copies.
    scratch instance before any member data exists worth losing.
 3. The §4 STOP (HR Datahub / Tester / "tester 1" dispositions) executed, so the
    first member lands in a clean member namespace.
+
+---
+
+## Backup & restore operations (artefacts landed 2026-08-10)
+
+**Automated off-box backup.** `offbox_backup.sh` is now scheduled — install the timer:
+
+```
+sudo cp deploy/lumi-backup.service deploy/lumi-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now lumi-backup.timer
+systemctl list-timers lumi-backup.timer      # confirm next run
+```
+
+The timer runs daily at 02:30 UTC (Persistent=true catches a missed run). Requires
+`LUMI_BACKUP_BUCKET` in `/srv/lumi/env/lumi.env` and the instance role with the
+PUT-only policy (`iam_backup_writer_policy.json`). The script is fail-closed: it
+refuses to upload unless the bucket is eu-west-2 + SSE + versioned + both 35-day
+lifecycle rules + public-access-blocked.
+
+**Restore drill (§6.2 precondition — do this ONCE before first provisioning).**
+
+```
+sudo systemctl stop lumi
+LUMI_BACKUP_BUCKET=<bucket> LUMI_DATA_DIR=/srv/lumi/data ./deploy/restore.sh lumi.db latest
+LUMI_BACKUP_BUCKET=<bucket> LUMI_DATA_DIR=/srv/lumi/data ./deploy/restore.sh identity.db latest
+sudo systemctl start lumi
+curl -fsS http://127.0.0.1:8060/healthz          # expect {"status":"ok"}
+```
+
+`restore.sh` refuses to run while `lumi.service` is active, integrity-checks the
+pulled copy before touching the live file, and keeps the replaced file as
+`<db>.pre_restore_<ts>`. Rehearse on a scratch instance first; only then is
+"off-box backup restored ONCE in anger" (Gate 1) satisfied.
+
+**On-box pre-change snapshot** (fast local rollback before a migration; DB class,
+retain-3): `python3 server/backup_lumi.py --tag pre_migration --write --confirmed-by-david`.
+
+**Liveness.** `GET /healthz` (unauthenticated) returns `{"status":"ok"}` (200) when
+both stores answer, else 503 — use it for the Caddy upstream check and uptime monitoring.

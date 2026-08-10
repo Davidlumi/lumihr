@@ -1,0 +1,26 @@
+# /etc/systemd/system/lumi-backup.service — off-box backup (R1e, Gate 1).
+# Oneshot invoked by lumi-backup.timer. Runs deploy/offbox_backup.sh, which is
+# fail-closed: it refuses to upload unless the S3 bucket is eu-west-2 + SSE +
+# versioned + both 35-day lifecycle rules + public-access-blocked. Copies the two
+# DATABASES ONLY (never logs, never the checkout), via the SQLite backup API.
+[Unit]
+Description=lumi off-box backup (S3)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=lumi
+Group=lumi
+WorkingDirectory=/srv/lumi/app/deploy
+# LUMI_BACKUP_BUCKET (+ AWS creds/region via the instance role) and LUMI_DATA_DIR
+# come from the same env file as the app. LUMI_DATA_DIR defaults to /srv/lumi/data.
+EnvironmentFile=/srv/lumi/env/lumi.env
+ExecStart=/usr/bin/env bash /srv/lumi/app/deploy/offbox_backup.sh
+# read-only except nothing to write (the script uses its own mktemp under PrivateTmp)
+ProtectSystem=strict
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+StandardOutput=journal
+StandardError=journal

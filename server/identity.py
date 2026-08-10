@@ -60,8 +60,13 @@ def _resolve_identity_db_path():
 
 
 def get_conn():
-    conn = sqlite3.connect(_resolve_identity_db_path())
+    # match the reward store's durability posture (db.get_conn): a 30s busy timeout
+    # (vs the 5s default) and WAL, so concurrent reads during a write don't raise
+    # "database is locked". WAL is a persistent DB property; setting it per-connect
+    # is a cheap no-op once enabled.
+    conn = sqlite3.connect(_resolve_identity_db_path(), timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 

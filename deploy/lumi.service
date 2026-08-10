@@ -12,7 +12,9 @@ User=lumi
 Group=lumi
 WorkingDirectory=/srv/lumi/app/server
 # 127.0.0.1 ONLY — the app is never internet-facing directly (Caddy fronts it).
-ExecStart=/srv/lumi/venv/bin/python3 -m uvicorn app:app --host 127.0.0.1 --port 8060
+# --workers 1 is PINNED deliberately: the in-memory login rate limiter, the signal
+# scheduler thread and the lru_cache'd question library all assume a single worker.
+ExecStart=/srv/lumi/venv/bin/python3 -m uvicorn app:app --host 127.0.0.1 --port 8060 --workers 1
 Restart=on-failure
 RestartSec=3
 
