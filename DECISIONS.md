@@ -15778,3 +15778,35 @@ cloud services an AUTOMATIC FAIL. The lumi app has NO MFA. This is a feature bui
 (TOTP enrol/verify/recovery + login step-up), scope pending David's call (admin-only
 vs all users; TOTP app vs email code). Tracked in CYBER_ESSENTIALS_AUDIT_2026-08.md.
 Suite 14/14 green; live DB untouched. (No ?v bump — no web/ asset changed.)
+
+
+## 2026-08-10 — MFA: email one-time code (Cyber Essentials A7.16/A7.17)
+
+The one automatic-fail CE gap. David chose email OTP, enforced for all users.
+Built and verified; production activation is a config step (LUMI_MFA=on + SMTP).
+
+Flow: correct password no longer creates a session when LUMI_MFA is on — it mints
+a challenge (auth.create_mfa_challenge) and emails a 6-digit code (_send_mfa_code
+via send_notification), returning {mfa_required, challenge}. /api/auth/mfa/verify
+checks the code and, on success, re-checks account/org active then creates the
+session. /api/auth/mfa/resend mints a fresh code and invalidates the old.
+
+Security: code stored HASHED (hash_password), 10-min expiry, single-use, 5-attempt
+cap per challenge (auth.verify_mfa_challenge), plus per-IP rate-limit on verify and
+resend. New mfa_challenges table (db.py; created by init_schema, IF NOT EXISTS —
+not a dual-write table, so identity_recon is unaffected). Frontend: MfaForm in
+auth.js (LoginForm hands off on mfa_required); autocomplete=one-time-code.
+
+Env gate: LUMI_MFA (default OFF) so dev/QA/gates run password-only (they can't read
+an emailed code) — production sets it ON. HARD DEPENDENCY: email OTP needs live SMTP
+(LUMI_SMTP_HOST) in production or codes never reach users; until then they are
+console-logged only.
+
+Verified on a throwaway (LUMI_MFA=on): login→no session + challenge; wrong code 400;
+correct code 200 + session; /api/me 200; reused challenge 400; resend invalidates
+old + new works; browser end-to-end (login→OTP screen→code→Overview). With LUMI_MFA
+off, login returns a session directly (gates unaffected). Suite 14/14 green. v496.
+
+CE status now: the code-fixable controls are done; A7.16/A7.17 satisfied once
+LUMI_MFA=on + SMTP live. Remaining CE work is organisational (see
+CYBER_ESSENTIALS_AUDIT_2026-08.md) + the live david@lumihr.co.uk password change.

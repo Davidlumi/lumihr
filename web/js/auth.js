@@ -138,6 +138,49 @@ function PwStrength({ pw }) {
 }
 const pwOk = (pw) => (pw || "").length >= PW_MIN;
 
+// Second-factor screen (email one-time code). Shown after a correct password when
+// MFA is enforced; the session is only created once the emailed code is verified.
+function MfaForm({ challenge, email, onAuthed, onCancel }) {
+  const [chal, setChal] = useState(challenge);
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [resent, setResent] = useState(false);
+  const go = async (e) => {
+    e.preventDefault(); setErr(null);
+    if (!/^\d{6}$/.test(code.trim())) { setErr("Enter the 6-digit code from your email."); return; }
+    setBusy(true);
+    try { await api("/api/auth/mfa/verify", { method: "POST", body: { challenge: chal, code: code.trim() } }); onAuthed(); }
+    catch (ex) { setErr(ex.message); }
+    setBusy(false);
+  };
+  const resend = async () => {
+    setErr(null); setResent(false);
+    try { const r = await api("/api/auth/mfa/resend", { method: "POST", body: { challenge: chal } }); setChal(r.challenge); setCode(""); setResent(true); }
+    catch (ex) { setErr(ex.message); }
+  };
+  return html`
+    <${Shell} sub="Two-step sign-in">
+      <form onSubmit=${go}>
+        <p style=${{ margin: "0 0 var(--s3)" }}>We've emailed a 6-digit code to <b>${email}</b>. Enter it to finish signing in.</p>
+        <div class="field">
+          <label htmlFor="auth-mfa-code">6-digit code</label>
+          <input id="auth-mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+            value=${code} autoFocus=${true} placeholder="000000"
+            onInput=${e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+        </div>
+        ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}
+        ${resent && !err && html`<div class="ok-text" role="status" style=${{ marginBottom: "var(--s3)" }}>A new code is on its way.</div>`}
+        <button class="btn primary block" disabled=${busy || code.length !== 6}>${busy ? html`<${Spinner} />` : "Verify & sign in"}</button>
+        <p class="caption" style=${{ marginTop: "var(--s2)" }}>The code expires in a few minutes. Check your spam folder if it doesn't arrive.</p>
+      </form>
+      <div class="row spread" style=${{ marginTop: "var(--s4)" }}>
+        <a href="#" onClick=${e => { e.preventDefault(); resend(); }}>Resend code</a>
+        <a href="#" onClick=${e => { e.preventDefault(); onCancel(); }}>Back to sign in</a>
+      </div>
+    <//>`;
+}
+
 function LoginForm({ onAuthed, initialMode }) {
   const [mode, setMode] = useState(initialMode || "login"); // login | register | forgot
   const [legalDoc, setLegalDoc] = useState(null);
@@ -150,6 +193,7 @@ function LoginForm({ onAuthed, initialMode }) {
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(false);
   const [sent, setSent] = useState(false);        // forgot-password: switch to a "check your email" panel
+  const [mfa, setMfa] = useState(null);           // {challenge, email} when a login needs the emailed code
   const [regOpen, setRegOpen] = useState(null);   // null = unknown; false shows the set-up-for-you panel
   useEffect(() => {
     if (mode === "register" && regOpen === null)
@@ -163,12 +207,15 @@ function LoginForm({ onAuthed, initialMode }) {
     if (mode === "register" && !pwOk(pw)) { setErr("Password must be at least " + PW_MIN + " characters."); return; }
     setBusy(true);
     try {
-      if (mode === "login") { await api("/api/auth/login", { method: "POST", body: { email, password: pw } }); onAuthed(); }
+      if (mode === "login") { const r = await api("/api/auth/login", { method: "POST", body: { email, password: pw } }); if (r && r.mfa_required) { setMfa({ challenge: r.challenge, email }); } else onAuthed(); }
       else if (mode === "register") { await api("/api/auth/register", { method: "POST", body: { org_name: orgName, email, password: pw, display_name: name, accept_platform_terms: tick } }); onAuthed(); }
       else { const r = await api("/api/auth/request-reset", { method: "POST", body: { email } }); setMsg(r.message); setSent(true); }
     } catch (ex) { setErr(ex.message); }
     setBusy(false);
   };
+  // password verified, second factor pending → hand off to the code screen
+  if (mfa) return html`<${MfaForm} challenge=${mfa.challenge} email=${mfa.email}
+    onAuthed=${onAuthed} onCancel=${() => { setMfa(null); setBusy(false); setPw(""); }} />`;
   // forgot-password success: a dedicated confirmation, not a form that invites a re-submit
   if (mode === "forgot" && sent) return html`
     <${Shell} sub="Check your email">

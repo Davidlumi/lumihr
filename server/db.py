@@ -202,6 +202,20 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at TEXT
 );
 
+-- MFA (email one-time code) login challenges. A password-verified login mints a
+-- short-lived challenge; the real session is only created once the emailed code is
+-- verified. Codes are stored hashed (never plaintext); attempts are capped.
+-- Cyber Essentials A7.16/A7.17 (MFA on cloud-service accounts).
+CREATE TABLE IF NOT EXISTS mfa_challenges (
+    challenge TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    code_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    consumed_at TEXT
+);
+
 -- "My view" pinned layouts. user_id='' means the org default layout.
 -- Retained as the org-default TEMPLATE that seeds a new user's first dashboard
 -- (and for backward-compat); per-user working layouts now live in `dashboards`.

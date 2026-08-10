@@ -63,9 +63,9 @@ None of this is in the repo. Actions:
 | A7.5–A7.9 | Admin process / separation / tracking / review | ✅ **code:** platform-admin is a separate tier from org roles + 👤 keep a list of who has admin, review regularly, use separate admin accounts (no email/web-browsing on them) |
 | A7.10/A7.11 | Brute-force + password quality | ✅ **code:** throttling + deny-list + min-8 |
 | A7.12/A7.13 | Encourage strong passwords / compromise process | ✅ **code:** live strength meter + reset flow + 👤 staff education |
-| **A7.14** | MFA **available** on all cloud services | ⛔ **lumi app has no MFA** (gap) · 👤 confirm MFA is enabled on Google/MS365/AWS/GitHub |
-| **A7.16** | **MFA applied to all admins** of cloud services — **AUTO FAIL** | ⛔ **GAP** — the lumi platform-admin console has no MFA |
-| **A7.17** | **MFA applied to all users** of cloud services — **AUTO FAIL** | ⛔ **GAP** — lumi app users have no MFA |
+| **A7.14** | MFA **available** on all cloud services | ✅ **code:** email one-time-code MFA built into the lumi app · 👤 confirm MFA is enabled on Google/MS365/AWS/GitHub too |
+| **A7.16** | **MFA applied to all admins** of cloud services — **AUTO FAIL** | ✅ **code:** enforced for every account (incl. platform-admin) when `LUMI_MFA=on` · 🔧 **set `LUMI_MFA=on` + SMTP in production** |
+| **A7.17** | **MFA applied to all users** of cloud services — **AUTO FAIL** | ✅ **code:** enforced for all users when `LUMI_MFA=on` · 🔧 **production activation below** |
 
 ## 5. Malware Protection (A8.x) — 👤 organisational
 
@@ -75,17 +75,25 @@ Not in the repo. Actions:
 
 ---
 
-## ⛔ The one blocker: MFA (A7.16 / A7.17 are automatic fails)
+## ✅ MFA — built (email one-time code, enforced for all users)
 
-CE requires MFA on every cloud service the organisation uses. Because lumi (the
-company) uses its own web app — and staff/admins sign in to it — the lumi app must
-offer MFA and have it applied to admins (**A7.16**) and users (**A7.17**), or the
-assessment **fails outright**. The app has no MFA today.
+A7.16/A7.17 (MFA on cloud-service admins **and** users) are automatic fails, and
+the lumi app now satisfies them. On a correct password the app mints a short-lived
+challenge and emails a 6-digit code; the session is created only after the code is
+verified. Codes are stored hashed, expire in 10 minutes, are single-use, capped at
+5 attempts, and the endpoint is rate-limited. Verified end-to-end on a throwaway
+(login→code→session; wrong code; resend invalidates the old; reuse rejected).
 
-This is a **feature build**, not a config change: a TOTP enrolment + verification
-flow, recovery codes, a login step-up, a settings toggle, and a small DB table.
-Scope is a product decision — see the question I've put to you separately
-(admin-only vs all users; authenticator-app TOTP vs email one-time code).
+**Production activation (🔧 you/devops):**
+1. **Set `LUMI_MFA=on`** on the production server — this enforces the code step for
+   every login. (Off by default so dev/QA/gates run password-only; they can't read
+   an emailed code.)
+2. **Configure SMTP** (`LUMI_SMTP_HOST`, etc.) — email OTP is useless until real
+   email delivery is live. Until then codes are only written to the server log.
+   This is the one hard dependency of the email-code choice.
+
+If you later want stronger MFA (authenticator-app TOTP), it slots into the same
+challenge/verify flow — email code can stay as a fallback.
 
 Everything else in the stack is done or is on the organisational checklist above.
 

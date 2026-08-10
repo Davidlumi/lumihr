@@ -939,6 +939,39 @@ def _clear_session_cookie(resp):
 _DUMMY_PW_HASH = auth_lib.hash_password("lumi-timing-equaliser-not-a-real-password")
 
 
+# MFA (email one-time code). Enforced in production to satisfy Cyber Essentials
+# A7.16/A7.17 (MFA on every cloud-service account). Env-gated so dev/QA/gates run
+# password-only (they can't read an emailed code); production sets LUMI_MFA=on.
+def _mfa_enforced():
+    return os.environ.get("LUMI_MFA", "").lower() in ("on", "1", "true", "yes")
+
+
+def _send_mfa_code(email, code):
+    # Delivered via send_notification, which console-logs until SMTP is live. NOTE:
+    # enforced email-OTP in production REQUIRES a configured SMTP (LUMI_SMTP_HOST),
+    # otherwise codes never reach users. The code itself is never logged elsewhere.
+    send_notification(
+        "Your lumi sign-in code",
+        "Hello,\n\nYour lumi sign-in code is:\n\n    %s\n\nEnter it to finish signing in. "
+        "It expires in %d minutes. If you didn't try to sign in, you can ignore this email "
+        "and consider changing your password.\n\n— lumi · UK reward benchmarking"
+        % (code, auth_lib.MFA_TTL_MINUTES),
+        to=email)
+
+
+def _account_active_or_403(conn, user_id):
+    """Shared post-auth gate: refuse a deactivated user or a deactivated org before a
+    session is minted (used by both the direct-login and the MFA-verify paths)."""
+    acct = conn.execute("SELECT disabled_at, org_id FROM users WHERE user_id=?", (user_id,)).fetchone()
+    if acct and acct["disabled_at"]:
+        raise HTTPException(403, "This account has been deactivated. Contact hello@lumihr.co.uk "
+                                 "if you think this is a mistake.")
+    if acct and conn.execute("SELECT 1 FROM orgs WHERE org_id=? AND deactivated_at IS NOT NULL",
+                             (acct["org_id"],)).fetchone():
+        raise HTTPException(403, "Your organisation's lumi membership is deactivated. "
+                                 "Contact hello@lumihr.co.uk to reactivate it.")
+
+
 @app.post("/api/auth/login")
 async def login(request: Request):
     body = await _json(request)
@@ -958,19 +991,51 @@ async def login(request: Request):
     # soft-deactivate gates (back office, 2026-08-03): a correct password on a
     # deactivated account gets the honest message, not the credentials one.
     conn = get_conn()
-    acct = conn.execute("SELECT disabled_at, org_id FROM users WHERE user_id=?",
-                        (user["user_id"],)).fetchone()
-    if acct and acct["disabled_at"]:
-        raise HTTPException(403, "This account has been deactivated. Contact hello@lumihr.co.uk "
-                                 "if you think this is a mistake.")
-    if acct and conn.execute("SELECT 1 FROM orgs WHERE org_id=? AND deactivated_at IS NOT NULL",
-                             (acct["org_id"],)).fetchone():
-        raise HTTPException(403, "Your organisation's lumi membership is deactivated. "
-                                 "Contact hello@lumihr.co.uk to reactivate it.")
+    _account_active_or_403(conn, user["user_id"])
+    # MFA step-up (Cyber Essentials A7.16/A7.17): when enforced, a correct password
+    # does NOT create a session — it mints a challenge and emails a one-time code;
+    # the session is created only after /api/auth/mfa/verify.
+    if _mfa_enforced():
+        challenge, code = auth_lib.create_mfa_challenge(user["user_id"])
+        _send_mfa_code(email, code)
+        return JSONResponse({"ok": True, "mfa_required": True, "challenge": challenge})
     token = auth_lib.create_session(user["user_id"])
     resp = JSONResponse({"ok": True})
     _set_session_cookie(resp, token)
     return resp
+
+
+@app.post("/api/auth/mfa/verify")
+async def mfa_verify(request: Request):
+    body = await _json(request)
+    ip = request.client.host if request.client else "?"
+    # brute-force guard on the 6-digit code endpoint (per-challenge attempt cap is in
+    # verify_mfa_challenge; this bounds attempts across challenges from one IP too)
+    if auth_lib.rate_limited("mfa-ip:%s" % ip):
+        raise HTTPException(429, "Too many attempts — please wait a few minutes and try again.")
+    uid = auth_lib.verify_mfa_challenge(body.get("challenge") or "", (body.get("code") or "").strip())
+    if not uid:
+        raise HTTPException(400, "That code is wrong or has expired. Request a new one.")
+    conn = get_conn()
+    _account_active_or_403(conn, uid)   # re-check active between password step and session
+    token = auth_lib.create_session(uid)
+    resp = JSONResponse({"ok": True})
+    _set_session_cookie(resp, token)
+    return resp
+
+
+@app.post("/api/auth/mfa/resend")
+async def mfa_resend(request: Request):
+    body = await _json(request)
+    ip = request.client.host if request.client else "?"
+    if auth_lib.rate_limited("mfa-resend-ip:%s" % ip):
+        raise HTTPException(429, "Too many requests — please wait a few minutes and try again.")
+    uid = auth_lib.mfa_challenge_user(body.get("challenge") or "")
+    if not uid:
+        raise HTTPException(400, "Your sign-in attempt has expired — please sign in again.")
+    challenge, code = auth_lib.create_mfa_challenge(uid)   # invalidates the old code
+    _send_mfa_code(identity.user_email(uid), code)
+    return {"ok": True, "challenge": challenge}
 
 
 @app.post("/api/auth/logout")

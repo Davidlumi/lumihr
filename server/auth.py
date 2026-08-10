@@ -207,3 +207,55 @@ def get_valid_reset(token):
     return conn.execute(
         "SELECT * FROM password_resets WHERE token=? AND used_at IS NULL AND expires_at > datetime('now')",
         (token,)).fetchone()
+
+
+# ------------------------------------------- MFA (email one-time code) -----
+# A password-verified login mints a short-lived challenge; the real session is
+# only created once the emailed 6-digit code is verified. The code is stored
+# HASHED (never plaintext), expires quickly, and is capped at a handful of
+# attempts. Cyber Essentials A7.16/A7.17 (MFA on cloud-service accounts).
+MFA_TTL_MINUTES = 10
+MFA_MAX_ATTEMPTS = 5
+
+
+def create_mfa_challenge(user_id):
+    """Mint a challenge + 6-digit code for a user. Returns (challenge_token, code).
+    Any earlier unconsumed challenges for the user are invalidated so only the
+    latest code works."""
+    conn = get_conn()
+    conn.execute("UPDATE mfa_challenges SET consumed_at=datetime('now') "
+                 "WHERE user_id=? AND consumed_at IS NULL", (user_id,))
+    challenge = secrets.token_urlsafe(24)
+    code = "%06d" % secrets.randbelow(1_000_000)
+    expires = (datetime.utcnow() + timedelta(minutes=MFA_TTL_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute("INSERT INTO mfa_challenges(challenge, user_id, code_hash, expires_at) VALUES (?,?,?,?)",
+                 (challenge, user_id, hash_password(code), expires))
+    conn.commit()
+    return challenge, code
+
+
+def verify_mfa_challenge(challenge, code):
+    """Return the user_id on a correct, unexpired, not-yet-consumed, under-attempt-cap
+    challenge (consuming it); else None. Wrong guesses increment the attempt counter."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT * FROM mfa_challenges WHERE challenge=? AND consumed_at IS NULL "
+        "AND expires_at > datetime('now')", (challenge,)).fetchone()
+    if row is None or row["attempts"] >= MFA_MAX_ATTEMPTS:
+        return None
+    if not verify_password(code or "", row["code_hash"]):
+        conn.execute("UPDATE mfa_challenges SET attempts=attempts+1 WHERE challenge=?", (challenge,))
+        conn.commit()
+        return None
+    conn.execute("UPDATE mfa_challenges SET consumed_at=datetime('now') WHERE challenge=?", (challenge,))
+    conn.commit()
+    return row["user_id"]
+
+
+def mfa_challenge_user(challenge):
+    """The user_id behind a still-valid challenge (for 'resend'), or None."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT user_id FROM mfa_challenges WHERE challenge=? AND consumed_at IS NULL "
+        "AND expires_at > datetime('now')", (challenge,)).fetchone()
+    return row["user_id"] if row else None
