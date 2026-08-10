@@ -3209,10 +3209,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-secnum { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--fs-caption); font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s4); }
 .sd-secnote { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); margin-left: auto; }
-.sd-stance { font-family: var(--font-head); font-size: var(--fs-subhead); line-height: 1.5; font-weight: 600;
+.sd-stance { font-family: var(--font-head); font-size: var(--fs-subhead); line-height: 1.5; font-weight: 500;
   color: var(--ink); margin: 0 0 var(--s3); max-width: 44em; }
-.sd-stance.lead { font-size: var(--fs-section); line-height: var(--lh-section); }
-.sd-note { font-size: var(--fs-caption); color: var(--ink-faint); }
+.sd-stance.lead { font-weight: 700; }   /* one prose size — the opener leads by weight, not size */
+.sd-note { font-size: var(--fs-label); color: var(--ink-faint); }
+.sd-ex-cap { margin: 0 0 var(--s4); max-width: 60em; line-height: var(--lh-label); }
 /* the exhibit: intent ring vs actual dot on one axis */
 .sd-exhibit { display: flex; flex-direction: column; }
 .sd-ex-head { border-bottom: 0 !important; padding-bottom: 0; }
@@ -3238,9 +3239,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); border-radius: 50%;
   display: inline-block; z-index: 1; }
 .sd-mark.actual { width: 11px; height: 11px; background: var(--navy); box-shadow: 0 0 0 2px var(--surface); }
-.sd-mark.actual.v-below { background: var(--amber-bright); }
-.sd-mark.actual.v-on { background: var(--favourable); }
-.sd-mark.actual.v-above { background: var(--unfavourable); }
+/* dot colour = ALIGNMENT (it agrees with the label), NOT a raw market verdict:
+   on aim reads positive-green, off aim reads neutral navy — below/above market is a
+   choice the page reads through, not a fault to flag in red/amber. */
+.sd-mark.actual.a-on { background: var(--favourable); }
+.sd-mark.actual.a-off { background: var(--navy); }
 .sd-axis-key .sd-mark { position: static; transform: none; }
 .sd-ex-read { font-size: var(--fs-micro); font-weight: 700; text-align: right; color: var(--ink-soft); }
 .sd-ex-read.ok { color: color-mix(in srgb, var(--favourable) 80%, var(--ink)); }

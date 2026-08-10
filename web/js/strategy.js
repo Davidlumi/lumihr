@@ -300,17 +300,19 @@ const sdPX = (p) => 8 + Math.max(0, Math.min(100, p)) * 0.84;
 const sdBand = () => (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
 const SD_ZONES_F = () => { const [lo, hi] = sdBand(); return [[8, sdPX(lo)], [sdPX(lo), sdPX(hi)], [sdPX(hi), 92]]; };
 const sdPctlX = (p) => sdPX(p) + "%";
-function SdAxis({ intent, actual, pctl }) {
+function SdAxis({ intent, actual, pctl, align }) {
   const ii = SD_IDX[intent], ai = SD_IDX[actual];
   const SD_ZONES = SD_ZONES_F();
   const dotX = (pctl != null && ai != null) ? sdPctlX(pctl)
     : (ai != null ? ((SD_ZONES[ai][0] + SD_ZONES[ai][1]) / 2) + "%" : null);
-  const vcls = actual === "below" ? " v-below" : actual === "above" ? " v-above" : " v-on";
+  // dot colour follows ALIGNMENT, not raw market position — on aim reads positive,
+  // off aim neutral (the page reads below/above market through intent, not as a fault)
+  const acls = align === "on_target" ? " a-on" : " a-off";
   return html`<span class="sd-axis" aria-hidden="true">
     ${SD_ZONES.map(([l, r], i) => html`<span key=${i}
       class=${"sd-zone" + (i === ii ? " aimed" : "")}
       style=${{ left: l + "%", width: (r - l) + "%" }}></span>`)}
-    ${dotX && html`<span class=${"sd-mark actual" + vcls} style=${{ left: dotX }} title="Your position"></span>`}
+    ${dotX && html`<span class=${"sd-mark actual" + acls} style=${{ left: dotX }} title="Your position"></span>`}
   </span>`;
 }
 
@@ -386,6 +388,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · vs all peers</span></div>
+          <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your aim; the dot is where you actually land. Inside the band is on aim.</p>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
             <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
@@ -396,7 +399,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
               <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
                 <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov">area aim</span>` : ""}</span>
                 <span class="sr-only">aim ${SD_STANCE[d.target.stance] || "not set"}, position ${d.position && d.position.verdict ? (d.position.verdict === "at" ? "on market" : d.position.verdict + " market") : "not read yet"}.</span>
-                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} pctl=${d.position && d.position.depth_pctl} />
+                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} pctl=${d.position && d.position.depth_pctl} align=${d.target.alignment} />
                 <span class=${"sd-ex-read " + r.cls}>${r.t}</span>
               </a>`; })}
           </div>
