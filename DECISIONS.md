@@ -15940,3 +15940,41 @@ VERIFICATION: full suite 14/14 on a patched throwaway (LUMI_GATES_SRC) BEFORE li
 backup lumi.db.bak_pre_manual_20260810_121829; applied live (25/71/1/42/42/42 cells);
 aggregate.py --snapshot 1; 14/14 on live, live DB untouched, zero copies survive.
 lumi.db gitignored (data not committed); the migration script is.
+
+## 2026-08-10 — Seed realism: 10-lens audit + M1 (Tier-1 clear errors)
+
+Ran a 10-lens realism audit (statutory / market / philosophy / soft-coherence /
+texture / sectors / gradients / multiselect / metadata / matrixdepth + a
+completeness critic) over the whole seeded bank. Full tiered findings in
+SEED_REALISM_AUDIT_2026-08-10.md. David ruled: execute ALL tiers + full panel-data
+realism. Sequenced as four ordered, independently-gated batches — M1 value
+corrections (Tier-1 clear errors), M2 market calibration (Tier-2 + parent-dependent
+coherence cleanups), M3 texture + panel data (Tier-3), M4 structural latent +
+ownership (Tier-4). Ordered so each builds on corrected parents; the latent
+reshuffle runs last.
+
+M1 (migrate_seedreal_m1_tier1_2026_08_10.py) — Tier-1 fixes whose parents Tier-2
+does not re-touch (all verified vs raw data; full suite 14/14 on throwaway then live):
+- PROP_36b990f9 (free): 14 orgs 'pension not offered' but giving 3-5% in their own
+  REW_BEN_112 -> mapped to the band implied by that contribution (AE impossibility).
+- REW_BEN_SICK_001 (marginal): 3 'No sick pay provided' -> 'Statutory sick pay only'
+  (+1.4pp, within tolerance; SSP is mandatory).
+- CAR_STATUS_03 (free): 71 orgs answered the car-or-cash CHOICE = Yes with no status
+  car (CAR_STATUS_01=No) -> No.
+- REW_BEN_038 (free): 1 org 'None' + 'Income protection' -> drop None.
+- REW26_WEL_MH_SUPPORT (FROZEN): 17 orgs 'None' mental-health support while holding
+  an EAP -> pairwise whole-vector swap with EAP=No orgs; frozen token counts
+  (118/98/85/63/31/25) conserved EXACTLY.
+- REW263_REC_CURRENCY (free): 42 orgs 'Not applicable' while funding a recognition
+  budget -> reassigned to a substantive currency (proportional draw); 3 genuine NA kept.
+- REW_BEN_112 (free): all 21 DB-pension orgs paid <=7% (median 3%, the DC floor) —
+  impossible for DB -> reseeded to DB-appropriate flat rates (public 20-28%, private
+  15-18%).
+
+DEFERRED to a ruling (added to the gender-pay-gap queue): REW_BEN_FAM_001 (enhanced
+maternity pay, marginal 0.67) and REW_BEN_FAM_002 (enhanced weeks, marginal 0.544)
+are jointly inconsistent by ~25 orgs, so 25 show 'enhanced pay / zero weeks'. No
+coherence-preserving swap exists; fixing it requires moving one register marginal.
+
+Backup lumi.db.bak_pre_manual_20260810_133430; aggregate.py --snapshot 1; live gates
+14/14, live DB untouched, zero copies survive. lumi.db gitignored; scripts committed.
