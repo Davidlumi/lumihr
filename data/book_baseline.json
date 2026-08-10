@@ -3,13 +3,13 @@
  "store": "reward (lumi.db, project root)",
  "table": "answers",
  "recipe": "server/dbsnapshot.py table_fingerprint: sha256 over all columns, rows ordered by primary key (org_id, snapshot_id, question_id, matrix_row_id), fields joined with \\x1f, rows terminated with \\x1e, NULL as \\x00; first 16 hex chars",
- "rows": 89320,
- "hash16": "24f1da756e95461c",
- "recorded": "2026-08-08",
+ "rows": 89094,
+ "hash16": "f78ecd7824a88e4f",
+ "recorded": "2026-08-10",
  "supersedes": {
-  "rows": 89321,
-  "hash16": "3c587eaa191d17a1",
-  "recorded": "2026-08-03",
-  "why": "DELIBERATE re-baseline, rulings R4/R4a/R4b (Master Ruling Transmission 2026-08-08): three signup-era artefact orgs deleted from both stores (HR Datahub 0 answers, Tester 1 answer, tester 1 0 answers). The book moved by exactly Tester's one row. A moved baseline read without this note is drift; with it, it is the ruling executing."
+  "rows": 89320,
+  "hash16": "24f1da756e95461c",
+  "recorded": "2026-08-08",
+  "why": "DELIBERATE re-baseline — the 2026-08-10 seed-realism program (batches M1..B12: clear-error/market/coherence corrections, 3 David-ruled marginal moves, numeric heaping, dental prevalence, pension+bonus ladder recentre/diversity, per-org timestamp re-stamp, minimal partial-completer tail). Answer values, per-org submitted_at, and row count all moved by design: +69 dental inserts, -297 completion-tail deletions, net 89320 -> 89094. Full lineage in DECISIONS.md (2026-08-10 entries) + SEED_REALISM_AUDIT_2026-08-10.md. A moved baseline read without this note is drift; with it, it is the program executing. Prior baseline 2026-08-08 (24f1da756e95461c) superseded R4/R4a/R4b 2026-08-03 (3c587eaa191d17a1)."
  }
 }

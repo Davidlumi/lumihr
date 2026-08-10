@@ -16154,3 +16154,32 @@ the response CSVs (L1 value-diff/presence skipped) — which is also the realist
 a partial completer skips (peripheral optional questions). No anchor/marginal/frozen/
 coherence touched; submission_complete/aggregation flags untouched; smallest affected
 metric n=208. Backup lumi.db.bak_pre_manual_20260810_192028; aggregate; 14/14.
+
+## 2026-08-10 — Seed realism: latent DESCOPED + SICK coherence repair + book re-baseline
+
+LATENT MODEL (Tier-4) — DESCOPED after a bounded attempt (throwaway-only, never live).
+A within-band domain-block permutation to decorrelate cross-domain generosity kept
+breaking constraints that cross block boundaries and are NOT in coherence_pairs (the
+SICK_001->SICK_002/004/005 chain; REW_BEN_HOL_001 keyed on a non-FTE dimension ->
+KEYED-BAND-DRIFT). Doing it safely needs a COMPLETE metric-dependency graph
+(coherence_pairs + conditioning_map + the David-ruled M1/T8 rules hardcoded in
+qa_plausibility + every keyed-gradient's key) so each dependency-closed group permutes
+within its own correct stratum — a dedicated design effort, not a bounded batch. Also:
+a safe within-band proxy showed the residual health<->family rho is already ~0.45 (the
+0.85 headline was a fuller composite driven largely by the size/sector latent, which is
+REAL). Recommendation: leave the latent model for a dedicated, dependency-graph-first
+effort; the marginal realism gain does not justify risking the shipped work.
+
+SICK COHERENCE REPAIR (migrate_seedreal_b13_sick_coherence_2026_08_10.py): M1's
+'No sick pay' -> 'Statutory' flip missed that 1 org (the demo fixture, Thornbridge)
+carries REW_BEN_SICK_005='Yes' (OSP eligibility, a coherence child requiring OSP-exists).
+Set that org's SICK_001='Combination of enhanced sick pay and SSP'. 14/14 live.
+
+BOOK RE-BASELINE: data/book_baseline.json re-recorded for the whole program —
+rows 89320 -> 89094 (+69 dental inserts, -297 completion deletions), hash16
+24f1da756e95461c -> f78ecd7824a88e4f, with a supersedes note naming the program.
+
+PROGRAM COMPLETE: 13 seed-realism batches shipped (M1, B2-B12 + SICK repair), all
+gate-verified 14/14. Remaining non-shipped: the latent model (descoped, above) and a
+few low-value template/gradient tails (PENS-max ladders, ~10 governance size-gradient
+inversions) — optional follow-ons.
