@@ -16123,3 +16123,19 @@ FS/Tech reach 100), on-heap share 16% -> 100%, 155/155 monotonic. Each org's ans
 LEVEL SET is unchanged (bonus breadth / INC_103 coherence untouched). Free, no
 coherence pair, numeric matrix (skipped by CHECK A) -> gate-safe. 811 cells. Backup
 lumi.db.bak_pre_manual_20260810_185426; aggregate; 14/14.
+
+## 2026-08-10 — Seed realism B11 (Tier-3 panel: timestamp re-stamp)
+
+migrate_seedreal_b11_timestamps_2026_08_10.py — answers.submitted_at had ~30 distinct
+values (build batches; every org 'answered' in the same second) + 1,739 build-tag
+strings ('diff15' etc.) where a timestamp belongs. Re-stamped all 89,389 rows into a
+per-org SESSION model (1-2 weekday business-hour sittings, ~15% evenings) across a
+2026-05-04..2026-07-17 window; staggered orgs.created_at (+ clock_start/insights_
+unlocked_at where non-null). VALUE-ONLY on answers (submitted_at) — no answer value
+touched, so all anchors/monotonicity byte-identical. Result: distinct stamps 30 ->
+83,299; non-canonical 1,739 -> 0 (bug fixed); all weekday, canonical 19-char. Window
+is <12mo old (min refresh cadence) so refresh-cadence stays FRESH — REFRESH GATE 46/46.
+Deterministic sha256. Backup lumi.db.bak_pre_manual_20260810_191226; 14/14.
+NOTE: data/book_baseline.json (answer-book fingerprint) will be re-recorded ONCE at
+the end of the seed-realism program (after completion + latent) with a supersedes note
+covering the whole transformation — it is a printed NOTE, not a gate check.
