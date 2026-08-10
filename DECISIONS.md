@@ -16012,3 +16012,24 @@ Backup lumi.db.bak_pre_manual_20260810_135243; aggregate --snapshot 1; live 14/1
 Deferred: dental (REW263_BEN_DENTAL, only 11/220 rows -> needs INSERTs, paired with
 the B5 timestamp/completion work); education bonus (REW_INC_103, possible bonus-detail
 chain -> B4); board target-bonus cap (REW_INC_111 -> B5 texture, uncap + reheap).
+
+## 2026-08-10 — Seed realism B4 (Tier-2 sector fingerprints, marginal-conserving)
+
+migrate_seedreal_b4_sector_marginals_2026_08_10.py — three sector/size corrections,
+each conserving its anchored global exactly (14/14 throwaway + live):
+- OT_04_b14623a6 (register marginal): unsocial-hours premium was inverted (Tech 8/8,
+  Hospitality 4/15). Reset per-sector Yes-counts to a shift-operating profile
+  (Construction/Retail/Logistics 14/15, Hospitality 13/15 ... Tech 2/8, Media/FS 3);
+  global 135 Yes conserved. Demo fixture org excluded (qa_commentary pins it 'behind'
+  on OT_04 — a real data change flipped it; kept the fixture stable).
+- REW26_BEN_PENSION_TYPE (FROZEN 21DB/195DC/4H): Education had 0/10 DB despite
+  statutory TPS/LGPS/USS. Swapped 3 Education DC->DB with 3 stray non-public DB->DC
+  (frozen global conserved exactly); set Education-DB REW_BEN_112 to 23% flat, dropped
+  the de-DB'd orgs to a DC ladder, and cleared the DC-only children (REW264_PEN_
+  AEDEFAULT/GREENDEFAULT -> 'Not applicable') to hold the two coherence pairs.
+- REW264_HLT_VIRTUALGP (RULED): 'Yes all employees' saturated the top bands (100%/92%
+  vs the register's ~54% anchor). Permuted top-band 'Yes all' with SME non-'Yes-all'
+  (ruled option counts conserved exactly); band profile now 10/8/16/30/23.
+Two gate issues surfaced and were fixed before live: qa_commentary demo-fixture flip
+(excluded demo from OT_04) and freeze-gate coherence breaks (cleared DC-only pension
+children on DB conversion). Backup lumi.db.bak_pre_manual_20260810_140559; aggregate.
