@@ -15897,3 +15897,46 @@ Set to 'No'; 'Gainshare (site or team)' left (defensible team scheme, not profit
 dependent). Metric is not a marginal, not ruled, no coherence pair → side-effect-free.
 Verified full suite 14/14 on a throwaway then live (backup lumi.db.bak_pre_manual_
 20260810_114037, aggregate recompute, gates 14/14). lumi.db gitignored; script committed.
+
+## 2026-08-10 — All-metrics persona sweep (overall / by-sector / by-FTE) + corrections #3
+
+Ran a reward-professional persona sweep (reward manager, reward analyst, benefits
+analyst) across ALL remaining seeded metrics, on three cuts: overall, by sector,
+by company FTE band. Verified every flagged finding against raw data before acting
+— several 'high-confidence' flags were SUBSTRATE ARTEFACTS, not data defects, and
+were correctly discarded: REW_PAY_109 "all-null" (a binary Yes/No matrix my numeric
+stats can't parse), REW_INC_061 "median 5160" (banded strings like "51%–60%"
+mis-parsed by digit-stripping), and REW265_PAY_GEOPAY/CONTRACTOR small-band 100%
+uniformity (realistic small-firm homogeneity, not an error).
+
+FIXED (migrate_seedreal_persona2_2026_08_10.py — none frozen/marginal; verified):
+- EMI at >=250 FTE (REW264_INC_EMICSOP): 21 orgs in the 250-999/1k-5k/5k-10k/10k+
+  bands held 'EMI'/'Both'. EMI is statutorily <250 FTE only (ITEPA 2003 Sch 5) ->
+  'CSOP' (large-firm equivalent, coherence-safe). Removing them left ZERO EMI
+  anywhere (itself implausible), so seeded 4 EMI into legally-eligible 50-249 firms
+  with share capital in EMI-typical sectors (Tech/Media/Prof-svcs/Manufacturing).
+- Enhanced optical (REW264_HLT_OPTICAL): had an INVERSE size gradient (Yes 87%@50-249
+  falling to 25%@10k+) — backwards for a cheap near-universal perk. Rebalanced to a
+  rising gradient (80/83/87/89/94%).
+- EOT in Public Sector (REW265_INC_EOT): 1 'EOT-owned' public body -> 'No' (an
+  Employee Ownership Trust is a private share structure a public body cannot hold).
+- Earned Wage Access (REW264_WEL_EWA): sector inversion — a frontline/hourly product
+  but adoption led by white-collar sectors (Tech/FS/Media 67-75%) over Retail/
+  Hospitality (27%). Rebalanced so frontline sectors lead (Retail/Hospitality 67%,
+  Logistics 60%, Manufacturing 53% ... Tech 25%, Media 20%); global offer ~conserved
+  (77->75, not a marginal). Cascaded the two coherence children (EWACAP/EWAFEES) so
+  they stay 'Not applicable' iff parent = No (0 incoherent cells verified).
+
+DEFERRED to a ruling (NOT changed): REW_FAI_079 gender-pay-gap reporting is
+statutory at 250+ FTE but the data shows only 17% Yes @250-999 and even 10k+ has 6
+'No'. It is a register MARGINAL, so raising 250+ compliance to the statutory level
+would breach its target — the marginal must be updated alongside the data (David's
+call on how compliant to model — real-world compliance is high but not 100%).
+Also left as generator-realism / judgment calls (reported, not auto-fixed): a few
+identical-draw pairs, over-clean gradients/floors, PENSION_COST_SHARE public-sector
+split, and the pension 'not offered' cluster — low value / high churn / need a ruling.
+
+VERIFICATION: full suite 14/14 on a patched throwaway (LUMI_GATES_SRC) BEFORE live;
+backup lumi.db.bak_pre_manual_20260810_121829; applied live (25/71/1/42/42/42 cells);
+aggregate.py --snapshot 1; 14/14 on live, live DB untouched, zero copies survive.
+lumi.db gitignored (data not committed); the migration script is.
