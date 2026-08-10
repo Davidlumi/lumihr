@@ -16183,3 +16183,33 @@ PROGRAM COMPLETE: 13 seed-realism batches shipped (M1, B2-B12 + SICK repair), al
 gate-verified 14/14. Remaining non-shipped: the latent model (descoped, above) and a
 few low-value template/gradient tails (PENS-max ladders, ~10 governance size-gradient
 inversions) — optional follow-ons.
+
+## 2026-08-10 — Plain-English review of all metric question texts
+
+Reviewed all 333 active question texts (6 parallel reviewers + a high-effort
+meaning-preservation verifier). Light touch — 13 rewritten (all verifier-confirmed,
+0 rejected); the rest were already clear (the only 'jargon' is domain-standard reward
+terms — EMI/CSOP/SAYE/SIP/SSP — appropriate for the reward-professional audience, left
+as-is). migrate_qtext_plain_english_2026_08_10.py (text-only; options/type/values
+untouched; 14/14 throwaway + live). Most fixes corrected a STEM THAT DID NOT MATCH ITS
+OWN OPTIONS:
+- REW263_GOV_REWTEAM: 'size relative to total FTE' (ratio) -> 'How large (in FTE)'
+  (options are absolute FTE bands) — removed false precision.
+- REW265_GOV_TRS: 'proportion of reward SPEND communicated' -> 'proportion of employees
+  who receive a TRS' (options measure employee coverage).
+- REW263_BEN_NEURO / REW263_GOV_FIREREHIRE: yes/no stems -> 'what level'/'what policy'
+  (maturity-ladder options).
+- REW265_TIME_EXTRADAYS / FLEXPATTERN / REW264_WEL_COLACTION: yes/no stems -> 'Which…'
+  (multi-select option sets); FLEXPATTERN stem had named only 2 of 5 options.
+- REW265_TIME_WORKATION: 'cap on consecutive days' contradicted the 'days per year'
+  option -> 'What is your policy on…'.
+- REW26_WEL_BUDGET: yes/no stem on a NUMERIC field -> 'What is the annual wellbeing
+  budget per employee?'.
+- REW264_HLT_MENSHEALTH: expanded 'MH' -> 'mental health support'.
+- REW_FAI_128 / REW_PRO_035: de-garden-pathed (fronted the scope clause).
+- REW_PAY_018: removed duplicated 'call-out'.
+NOTE: this revisits the earlier 'metric question text = declined-on-principle zone'
+(minimal-text doctrine, 2026-08-08) — but that was about not TRIMMING; David's request
+was plain-English CLARITY, which this delivers without stripping detail. DB is the live
+source served (master-register CSVs are historical lineage, not reloaded). Backup
+lumi.db.bak_pre_manual_20260810_203352.
