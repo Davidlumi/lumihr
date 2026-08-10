@@ -15978,3 +15978,22 @@ coherence-preserving swap exists; fixing it requires moving one register margina
 
 Backup lumi.db.bak_pre_manual_20260810_133430; aggregate.py --snapshot 1; live gates
 14/14, live DB untouched, zero copies survive. lumi.db gitignored; scripts committed.
+
+## 2026-08-10 — Seed realism B2 (Tier-2 market): life assurance + PMI cluster
+
+migrate_seedreal_b2_market_pmi_life_2026_08_10.py (both metrics free; full suite
+14/14 on throwaway then live):
+- LIFE ASSURANCE (REW_BEN_045): was 60% and rarer than PMI (inverted). Raised to a
+  rising gradient 60/76/90/94/97% by band; flipped death-in-service sectors first
+  (fixes Construction-worst finding). Global life 132->173, now > PMI (147).
+- PMI CLUSTER: REW_BEN_100/044 were seeded independently of the 154-org 139 matrix
+  (the real PMI population, which already had a healthy 40->94% gradient). Realigned
+  100 + 044 to cohere with each org's 139 depth (senior-only->low band/Grade;
+  reaches supervisor/frontline->high band/All employees); non-139 orgs -> 'Not
+  offered'. This fixed the 14 'Not offered'-but-contradicted orgs and the 12
+  'All employees'-but-senior-only orgs in one pass (0 incoherent post). Seeded 10
+  all-staff schemes in Tech/FS/Prof (frontline-eligible was 0). PMI now 30/48/74/86/
+  94% by band. PMICOMP coherence pair held.
+REW_BEN_038 PMI/life checklist membership realigned to these parents in the later
+coherence-rederivation batch. Backup lumi.db.bak_pre_manual_20260810_134737;
+aggregate --snapshot 1; live 14/14.
