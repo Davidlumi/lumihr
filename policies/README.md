@@ -7,9 +7,11 @@ items are actually true in production.
 
 | Policy | Answers CE questions | Key `[fill-in]` / confirm |
 |---|---|---|
+| [Information Security Policy](INFORMATION_SECURITY_POLICY.md) (umbrella) | overall commitment, scope, roles, data protection, backups, sign-off | owner; director sign-off; backup cadence + restore test |
 | [Account Management](ACCOUNT_MANAGEMENT_POLICY.md) | A5.2, A5.3, A5.6, A5.9, A7.1–A7.17 | owner; MFA ON everywhere (incl. `LUMI_MFA=on`); account + admin registers |
 | [Patch Management](PATCH_MANAGEMENT_POLICY.md) | A4.6, A6.1–A6.7 | Dependabot/pip-audit on; server OS supported; auto-updates on |
 | [Incident Response](INCIDENT_RESPONSE_POLICY.md) | A4.4, A5.6, A7.13, A1.13 | incident lead + contacts; backups restorable |
+| [Secure Configuration / Device Standards](SECURE_CONFIGURATION_STANDARD.md) | A4.1.1, A4.2, A5.1–A5.4, A5.8–A5.10, A8.x | per-device baseline; hosting firewall 443-only; asset inventory |
 
 ## How to use them
 1. Fill every `[bracketed]` field and resolve each "[Confirm …]".
@@ -29,11 +31,8 @@ The big organisational items:
 - The one lumi-side action still outstanding: **change the live `david@lumihr.co.uk`
   password** off the old known value.
 
-## Not drafted (offer)
-Optional supporting documents that some assessors like but CE doesn't strictly
-require as separate files:
-- an overarching **Information Security Policy** (umbrella), and
-- a **Secure Configuration / Device Standards** note (firewall on, malware, screen
-  lock, auto-run off, MFA) covering A4.1.1 / A5.8 / A5.9 / A8.x from a policy angle.
-
-Ask if you'd like these too.
+## Records to keep (an assessor expects these to be real, not just described)
+- **Account register** + **admin register** (Account Management)
+- **Software / asset inventory** + **patch log** (Patch Management, Secure Config)
+- **Incident log** (Incident Response)
+- Backups exist and a **restore has been tested** (Information Security §9)
