@@ -16051,3 +16051,21 @@ to wait for B2/B3 to finalise parents (all free metrics; 14/14 throwaway + live)
   PMI child pairs (PMICOMP/139/044/premium/excess conditioned on 038-PMI) cohere.
 Backup lumi.db.bak_pre_manual_20260810_142453; aggregate. Tier 1 + Tier-2 core now
 complete: no internal contradictions remain across the audited clusters.
+
+## 2026-08-10 — Seed realism B6 (David-ruled marginal moves)
+
+Three register marginals David ruled to move — data + anchor updated together
+(migrate_seedreal_b6_ruled_marginals_2026_08_10.py + generated_marginals.json;
+14/14 throwaway + live):
+- REW_BEN_FAM_002 enhanced maternity weeks: the 25 'enhanced pay / zero weeks' orgs
+  given weeks (resolves the FAM_001/FAM_002 joint inconsistency). target_share
+  0.544 -> 0.6604 (base_type -> all_only).
+- REW_FAI_079 gender-pay-gap reporting: 250+ raised to ~92% Yes (small 'In
+  development' tail); <250 left low (not statutory). positive=Yes+In development;
+  target_share 0.44 -> 0.6591.
+- REW263_WEL_FINWELL: aligned provision to the frozen REW26_WEL_FINWELL programme
+  flag — the 141 programme orgs given substantive provision (~60% Documented / ~40%
+  Ad hoc), resolving the 108-org 'programme but no provision' contradiction.
+  target_share 0.15 -> 0.4318 (positive_from='Documented strategy').
+Freeze gate PASS (max register-marginal drift 4.09pp, within 5pp). Backup
+lumi.db.bak_pre_manual_20260810_143828; aggregate --snapshot 1.

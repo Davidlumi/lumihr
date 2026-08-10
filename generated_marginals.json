@@ -616,13 +616,12 @@
    "positive_from": "Enhanced pay (above statutory)"
   },
   "REW_BEN_FAM_002": {
-   "target_share": 0.5441,
-   "base_type": "sme_large(ruled)",
-   "sme": 19.0,
-   "large": 60.0,
+   "target_share": 0.6604,
+   "base_type": "all_only",
+   "all": 66,
    "grade": "A",
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "rule": "blend 0.19/0.60 (all-UK Fig28 as SME-side rate, large 250+ 0.60) -> enhance-any 0.544; emit None (statutory only) = 0.45"
+   "rule": "David-ruled 2026-08-10: raised from 0.544 to match FAM_001 'enhanced pay' anchor (the ~25 enhanced-pay/zero-weeks orgs were given weeks); enhance-any = 0.66"
   },
   "REW_BEN_FAM_007": {
    "target_share": 0.36,
@@ -710,12 +709,12 @@
    "rule": "no-blend large-only 0.15 (active-use rate; NEVER the ~0.45 use-or-considering composite — considering is not using); cav"
   },
   "REW263_WEL_FINWELL": {
-   "target_share": 0.15,
+   "target_share": 0.4318,
    "base_type": "all_only",
-   "all": 15,
+   "all": 43,
    "grade": "A",
    "source": "CIPD Reward Survey: Focus on Employee Benefits (Feb 2026, YouGov, n=1,059; large",
-   "evidence": "Financial wellbeing strategy/policy: 15% all orgs; 53% large have-or-plan",
+   "evidence": "David-ruled 2026-08-10: aligned provision to the frozen REW26_WEL_FINWELL programme flag (141 'Yes' orgs given substantive provision, ~60% Documented / ~40% Ad hoc); resolves the 108-org 'programme-but-no-provision' contradiction",
    "positive_from": "Documented strategy"
   },
   "REW263_WEL_OH": {
@@ -855,12 +854,12 @@
    "evidence": "53% publish ranges always/sometimes; only 16% publish both ranges+specifics"
   },
   "REW_FAI_079": {
-   "target_share": 0.44,
+   "target_share": 0.6591,
    "base_type": "all_only",
-   "all": 44,
+   "all": 66,
    "grade": "A",
    "source": "CIPD Pay, Performance and Transparency 2024 (n=832; large 250+ 57%; SME 43%)",
-   "evidence": "44% carry out (30% always+14% sometimes share); mandatory 250+; public sector 52%; 79% of <250 had NOT"
+   "evidence": "David-ruled 2026-08-10: raised to statutory reality — 250+ set to ~92% Yes (small 'In development' tail); <250 left low (not required). positive = Yes + In development"
   },
   "REW_FAI_088": {
    "target_share": 0.4,
