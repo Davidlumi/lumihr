@@ -71,7 +71,7 @@ function ShareApp() {
                  (that check is owner-only) — so the topbar states the as-at date up front. */}
           <span class="caption">Shared read-only by ${data.org_name}${data.payload && data.payload.generated_date
             ? " · benchmark as at " + data.payload.generated_date : ""} · powered by <a href="/">lumi</a></span>
-          <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + data.org_name; window.print(); document.title = t; }}>Download PDF</button>
+          <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + data.org_name; window.print(); document.title = t; }}>Print / save as PDF</button>
         </div>
         <${PackFit}>
           <${BoardPackView} packId=${null} shared=${true} sharedData=${data} />

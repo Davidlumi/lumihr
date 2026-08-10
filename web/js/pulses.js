@@ -54,7 +54,7 @@ window.PulsesPage = function ({ me }) {
       ${me.user.role === "admin" && html`
         <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", display: "flex",
           justifyContent: "space-between", alignItems: "center", gap: "var(--s3)" }}>
-          <div><b>Run your own pulse</b><div class="caption">Design a survey and launch it to the community.</div></div>
+          <div><b>Run your own pulse</b><div class="caption">Design a pulse and launch it to the community.</div></div>
           <button class="btn primary" onClick=${() => nav("/run-a-pulse")}>Get started</button>
         </div>`}
       <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Open now</h2>
@@ -245,7 +245,7 @@ function PulseReport({ report, pid, me }) {
           <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · ${report.floor}+ suppression · whole-cohort view${genDate ? " · " + genDate : ""}</span></div>
           <div class="row no-print" style=${{ gap: "var(--s2)" }}>
             <button class="btn small" onClick=${() => downloadPulseCsv(report)}><${Icon} name="download" size=${13} /> CSV</button>
-            <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Download PDF</button>
+            <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Print / save as PDF</button>
           </div>
         </div>
         ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--neutral-perf)" }}>Illustrative sample data.</div>`}
@@ -366,7 +366,7 @@ window.RunPulsePage = function ({ me }) {
       }
     } catch (e) {}
   }).catch(e => setErr(e.message)); }, []);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your surveys" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your pulses" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const chip = (p) => {
     const ls = p.launch_status;
@@ -381,7 +381,7 @@ window.RunPulsePage = function ({ me }) {
       <div class="row spread" style=${{ alignItems: "flex-end", gap: "var(--s3)" }}>
         <div>
           <h1 class="display-title" style=${{ margin: 0 }}>Run a pulse</h1>
-          <p class="pulse-lead">Design a short survey and launch it to the lumi community — answers come back as anonymised, 5+-organisation aggregates.</p>
+          <p class="pulse-lead">Design a short pulse and launch it to the lumi community — answers come back as anonymised, 5+-organisation aggregates.</p>
         </div>
         <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}>
           <${Icon} name="list-checks" size=${15} /> New pulse</button>
@@ -410,15 +410,15 @@ window.RunPulsePage = function ({ me }) {
       ${!data.pulses.length ? html`
         <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center", marginTop: "var(--s3)" }}>
           <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
-          <b>No surveys yet</b>
+          <b>No pulses yet</b>
           <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only lumi can answer — pay equity, four-day weeks, AI in reward.</p>
-          <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first survey</button>
+          <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
         </div>` :
         html`<div style=${{ marginTop: "var(--s3)" }}>${data.pulses.map(p => html`
           <div key=${p.pulse_id} class="card pulse-srow" role="button" tabindex="0" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}
             onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/run-a-pulse/" + p.pulse_id); } }}>
             <div class="row spread"><b>${p.name}</b>${chip(p)}</div>
-            <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} response${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
+            <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
           </div>`)}</div>`}
     </div>`;
 };
@@ -435,7 +435,7 @@ window.PulseBuilderPage = function ({ me, pid }) {
     // here was removed with the card path — all payments are by invoice, and
     // the launch opens when lumi confirms it.
   }, [pid]);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this survey" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this pulse" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!detail) return html`<${PageLoading} />`;
   const ls = detail.launch_status;
   const editable = ls === "building" || ls === "changes_requested";
@@ -452,13 +452,13 @@ window.PulseBuilderPage = function ({ me, pid }) {
       toast("Submitted for review — we'll be in touch.", "success");
       load();
     } catch (e) { toast(e.message, "error"); } setBusy(false); };
-  const discard = async () => { if (!window.confirm("Discard this draft survey?")) return;
+  const discard = async () => { if (!window.confirm("Discard this draft pulse?")) return;
     try { await api("/api/org/pulses/" + pid, { method: "DELETE" }); toast("Discarded."); nav("/run-a-pulse"); }
     catch (e) { toast(e.message, "error"); } };
 
   return html`
     <div style=${{ maxWidth: "780px" }}>
-      <button class="btn quiet" onClick=${() => nav("/run-a-pulse")}>← Your surveys</button>
+      <button class="btn quiet" onClick=${() => nav("/run-a-pulse")}>← Your pulses</button>
       ${!isNew && html`<${LaunchStepper} ls=${ls} />`}
       ${ls === "changes_requested" && detail.review_notes && html`
         <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", borderLeft: "3px solid var(--amber-bright)" }}>
@@ -532,7 +532,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
       question_ids: keep.map(k => k.id), new_questions: bespoke };
   };
   const valid = () => {
-    if (!name.trim()) { toast("Give your survey a name.", "error"); return false; }
+    if (!name.trim()) { toast("Give your pulse a name.", "error"); return false; }
     if (!keep.length && !liveNew().length) { toast("Add at least one question.", "error"); return false; }
     return true;
   };
@@ -548,9 +548,9 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   const libRows = (lib || []).filter(x => !needle || (x.title || "").toLowerCase().includes(needle) || (x.subpower || "").toLowerCase().includes(needle));
   return html`
     <div class="card pulse-form" style=${{ padding: "var(--s5)", marginTop: "var(--s3)" }}>
-      <h2 class="section-title">${isNew ? "New survey" : "Edit your survey"}</h2>
+      <h2 class="section-title">${isNew ? "New pulse" : "Edit your pulse"}</h2>
       
-      <label>Survey name<input class="ctl" maxlength="120" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
+      <label>Pulse name<input class="ctl" maxlength="120" value=${name} onInput=${e => setName(e.target.value)} placeholder="e.g. Four-day-week appetite 2026" /></label>
       <label>Description<textarea class="ctl" maxlength="280" rows=${2} value=${desc} onInput=${e => setDesc(e.target.value)} placeholder="One line on what you're asking and why."></textarea></label>
       <label>Close date <span class="caption" style=${{ fontWeight: 400 }}>· optional — closes at end of that day</span>
         <input class="ctl" type="date" value=${(closesAt || "").slice(0, 10)} onInput=${e => setClosesAt(e.target.value)} /></label>
@@ -629,7 +629,7 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         <div class="pulse-preview">
           <div class="pulse-preview-head"><b>Preview</b> <span class="caption">· answers here aren't saved</span></div>
           <div class="pulse-preview-body">
-            <h3 class="pulse-preview-title">${name || "Untitled survey"}</h3>
+            <h3 class="pulse-preview-title">${name || "Untitled pulse"}</h3>
             ${desc ? html`<p class="caption" style=${{ marginTop: "var(--s1)" }}>${desc}</p>` : ""}
             ${keep.map((k, i) => html`
               <div key=${"pvk" + k.id} class="pulse-preview-q">
@@ -684,7 +684,7 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
     <div class="card pulse-launch" style=${{ marginTop: "var(--s3)" }}>
       <div class="pulse-empty-ico"><${Icon} name="check" size=${24} /></div>
       <b style=${{ fontSize: "var(--fs-card-title)" }}>Approved — ready to launch</b>
-      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your survey opens to the whole community on confirmation.</p>
+      <p class="caption" style=${{ margin: "var(--s2) auto 0", maxWidth: "40ch" }}>Request your launch and lumi will invoice the one-off fee — your pulse opens to the whole community on confirmation.</p>
       <div class="pulse-fee">${fmtFee(detail.launch_fee_pence)}</div>
       <div class="caption" style=${{ marginBottom: "var(--s2)" }}>ex VAT · invoiced</div>
       <button class="btn primary" disabled=${paying} onClick=${pay}>${paying ? html`<${Spinner} />` : "Request launch"}</button>
@@ -695,11 +695,11 @@ function PulseLaunchPanel({ detail, pid, onChange }) {
     <div class="card pulse-launch live" style=${{ marginTop: "var(--s3)" }}>
       <div class="pulse-empty-ico"><${Icon} name="sparkle" size=${24} /></div>
       <b style=${{ fontSize: "var(--fs-card-title)" }}>You're live — open to the community</b>
-      <p class="caption" style=${{ margin: "var(--s2) auto var(--s3)", maxWidth: "40ch" }}>${detail.n_submitted || 0} response${detail.n_submitted === 1 ? "" : "s"} so far · results unlock at 5+ organisations.</p>
+      <p class="caption" style=${{ margin: "var(--s2) auto var(--s3)", maxWidth: "40ch" }}>${detail.n_submitted || 0} organisation${detail.n_submitted === 1 ? "" : "s"} so far · results unlock at 5+ organisations.</p>
       <button class="btn primary" onClick=${() => nav("/pulse/" + pid)}>View the live pulse & report →</button>
     </div>`;
   if (ls === "rejected") return html`
     <${EmptyState} icon="info" title="Not approved for launch"
-      body=${detail.review_notes || "lumi wasn't able to approve this survey for the community."} />`;
-  return html`<${EmptyState} icon="info" title="Draft" body="Edit your survey to continue." />`;
+      body=${detail.review_notes || "lumi wasn't able to approve this pulse for the community."} />`;
+  return html`<${EmptyState} icon="info" title="Draft" body="Edit your pulse to continue." />`;
 }

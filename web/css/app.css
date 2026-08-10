@@ -119,17 +119,17 @@
 
   /* ---- performance vs peers ONLY (polarity-aware), never decorative ---- */
   --favourable: #2E7D52;   --favourable-tint: #E4F0E9;
-  --favourable-ink: var(--favourable-ink);   /* AA verdict-ink recipe */
+  --favourable-ink: color-mix(in srgb, var(--favourable) 78%, var(--ink));   /* AA verdict-ink recipe */
   --neutral-perf: #8A5805; --neutral-perf-tint: #FBEFD9;   /* text amber (readable) */
-  --neutral-perf-ink: var(--neutral-perf-ink);
+  --neutral-perf-ink: color-mix(in srgb, var(--neutral-perf) 78%, var(--ink));
   --amber-bright: #F5A60A;                                  /* graphic amber: fills, dots, segments */
   --unfavourable: #C0392B; --unfavourable-tint: #F7E4E1;
-  --unfavourable-ink: var(--unfavourable-ink);
+  --unfavourable-ink: color-mix(in srgb, var(--unfavourable) 78%, var(--ink));
   --unfavourable-deep: #8A1C12;   /* 2nd red — strategy mode: ABOVE your aim (overshot) vs --unfavourable BELOW (short) */
   /* Approach register — "differs from market": a choice, not a gap. Purple so it
      reads as neither good nor bad (spec §5). Distinct from the signal lens hues. */
   --differs: #6257C9;      --differs-tint: #ECE9FA;
-  --differs-ink: var(--differs-ink);
+  --differs-ink: color-mix(in srgb, var(--differs) 78%, var(--ink));
 
   /* ---- lens identity (SIGNALS ONLY, 2026-06-12): each outcome lens owns
      one hue, used exclusively on signal chips/dots with its tag attached —
@@ -138,10 +138,10 @@
   --lens-attract: #6D5BD0;  --lens-attract-tint: #ECE8FB;
   --lens-retain: #0E7A8A;   --lens-retain-tint: #DFF1F4;
   --lens-engage: #C2542E;   --lens-engage-tint: #FBE9E0;
-  --lens-save-ink: var(--lens-save-ink);
-  --lens-attract-ink: var(--lens-attract-ink);
-  --lens-retain-ink: var(--lens-retain-ink);
-  --lens-engage-ink: var(--lens-engage-ink);
+  --lens-save-ink: color-mix(in srgb, var(--lens-save) 78%, var(--ink));
+  --lens-attract-ink: color-mix(in srgb, var(--lens-attract) 78%, var(--ink));
+  --lens-retain-ink: color-mix(in srgb, var(--lens-retain) 78%, var(--ink));
+  --lens-engage-ink: color-mix(in srgb, var(--lens-engage) 78%, var(--ink));
 
   /* ---- distribution inks — NOT a multi-hue ramp. Since the 2026-06-12 redesign
      categorical charts are mono blue (--chart-cat) with the You accent; the only
@@ -3999,8 +3999,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-std b { color: var(--ink); }
 /* chip/accent ink pairs — text on the soft gauge tints, contrast-safe (same recipe as .pos-*) */
 .brf-page { --brf-below-ink: var(--neutral-perf);
-  --brf-above-ink: var(--unfavourable-ink);
-  --brf-on-ink: var(--favourable-ink); }
+  --brf-above-ink: color-mix(in srgb, var(--brf-above) 78%, var(--ink));
+  --brf-on-ink: color-mix(in srgb, var(--brf-on) 78%, var(--ink)); }
 
 /* (.brf-newstrip and .brf-brieflbl retired 2026-07-10 with the Folders simplification —
    NOTHING sits above the feed except the masthead and the folder nav; NEW rides card tags.) */

@@ -16231,3 +16231,20 @@ verbatim copies of the OLD, now-fixed, question text — REWTEAM ratio, TRS spen
 WORKATION consecutive-days). migrate_qdef_plain_english_2026_08_10.py (definition column
 only; options/type/values untouched; 14/14 throwaway + live; qa_commentary — which uses
 the definition — clean). Backup lumi.db.bak_pre_manual_20260810_204807.
+
+## 2026-08-10 — UX polish (audit batch 1/N): verdict-ink tokens, pulse terminology, verbs
+
+Pre-prod polish from UX_AUDIT_2026-08-10.md. David ruled: colour model = POSITION-NEUTRAL
+(market lens neutral; value only on the strategy 'vs your aim' lens), scope = High+Med.
+Batch 1 (all safe/no-design-dependency; app loads clean, 14/14):
+- HIGH #1 verdict-ink tokens: all 8 (--favourable/unfavourable/neutral-perf/differs +
+  4 lens inks) were self-referential (--x-ink: var(--x-ink)) since DS-4, so verdict TEXT
+  rendered near-black. Restored the AA recipe color-mix(in srgb, var(--x) 78%, var(--ink)).
+- HIGH #3 pulse terminology: 17 member-facing 'survey'->'pulse' and count 'response(s)'->
+  'organisation(s)' in pulses.js (CSS classes / API endpoint / comments untouched).
+- MED download verb: 'Download PDF' -> 'Print / save as PDF' (commercial.js, share.js,
+  pulses.js) — honest label (it opens the print dialog).
+- LOW banned advice tail '— worth a look.' removed from card.js behind-plan branch
+  (+ restored its full stop).
+Cache-bust v=497->498. HIGH #6 (lower-is-better pill) folded into the position-neutral
+colour batch. Verified app loads (no console errors) + gates 14/14.

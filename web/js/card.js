@@ -33,9 +33,9 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     setCutBusy(true);
     const [dim, value] = override.split("::");
     api(`/api/benchmark/${card.id}?cut=${encodeURIComponent(dim)}${value ? "&cut_value=" + encodeURIComponent(value) : ""}`)
-      .then(d => { if (!dead) setLocalCard(d); })
-      .catch(() => { if (!dead) { setLocalCard(null); setOverride(null); toast("Couldn't load that peer group — showing the page's view.", "error"); } })
-      .finally(() => { if (!dead) setCutBusy(false); });
+     .then(d => { if (!dead) setLocalCard(d); })
+     .catch(() => { if (!dead) { setLocalCard(null); setOverride(null); toast("Couldn't load that peer group — showing the page's view.", "error"); } })
+     .finally(() => { if (!dead) setCutBusy(false); });
     return () => { dead = true; };
   }, [override, card.id]);
 
@@ -46,7 +46,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
   const pos = cardPosition(c);
   const cfav = cardFav(c, signal);                    // chart colour follows the flag, not the percentile
-  const meaningPos = pos ? { ...pos, kind: cfav || "mid" } : null;  // "What this means" agrees with the flag
+  const meaningPos = pos ? {...pos, kind: cfav || "mid" } : null;  // "What this means" agrees with the flag
   const overridden = !!override && !!localCard;
   const globalKey = !globalCut || globalCut.startsWith("all") ? "all" : globalCut;
   const effectiveKey = override || globalKey;
@@ -219,10 +219,10 @@ function AddToDashboard({ c }) {
   useEffect(() => { if (creating && newRef.current) newRef.current.focus(); }, [creating]);
   const toggleDash = (d) => {
     const adding = !d.has_card;
-    setDl(list => list.map(x => x.id === d.id ? { ...x, has_card: adding, count: x.count + (adding ? 1 : -1) } : x));
+    setDl(list => list.map(x => x.id === d.id ? {...x, has_card: adding, count: x.count + (adding ? 1 : -1) } : x));
     api(`/api/dashboards/${d.id}/toggle-card`, { method: "POST", body: { question_id: c.id } })
-      .then(() => { window.dispatchEvent(new Event("lumi:pins-changed")); toast(adding ? "Added to " + d.name : "Removed from " + d.name); })
-      .catch(() => { setDl(list => list.map(x => x.id === d.id ? { ...x, has_card: !adding, count: x.count + (adding ? -1 : 1) } : x)); toast("Couldn't update that dashboard.", "error"); });
+     .then(() => { window.dispatchEvent(new Event("lumi:pins-changed")); toast(adding ? "Added to " + d.name : "Removed from " + d.name); })
+     .catch(() => { setDl(list => list.map(x => x.id === d.id ? {...x, has_card: !adding, count: x.count + (adding ? -1 : 1) } : x)); toast("Couldn't update that dashboard.", "error"); });
   };
   const createDash = async () => {
     const nm = (newName || "").trim().slice(0, 60);
@@ -349,7 +349,7 @@ function meaningLines(c, pos) {
   if (aim) {
     const verb = STANCE_VERB[aim.stance] || ("aim " + aim.stance);
     base += aim.alignment === "behind"
-      ? ` Set against your aim to ${verb} on ${aim.domain}, this sits behind your plan — worth a look.`
+      ? ` Set against your aim to ${verb} on ${aim.domain}, this sits behind your plan.`
       : aim.alignment === "ahead"
       ? ` That's ahead of your aim to ${verb} on ${aim.domain} — more than your strategy asks for here.`
       : ` That's on plan for your aim to ${verb} on ${aim.domain}.`;
@@ -605,7 +605,7 @@ window.MatrixSelect = function ({ rows }) {
   let maxPct = 1;
   live.forEach(r => (r.block.options || []).forEach(o => { if (o.pct > maxPct) maxPct = o.pct; }));
   const abbr = l => (l || "").replace(/^More than\s*/i, ">").replace(/\bweeks?\b/i, "wk")
-    .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
+   .replace(/\bmonths?\b/i, "mo").replace(/\bdays?\b/i, "d").trim();
   // Opaque cell colour, mixed white→brand-blue by prevalence. Opaque (not an
   // alpha wash) so a cell's shade never shifts with row striping or whatever
   // sits behind it — darkness is one honest scale across the whole grid.

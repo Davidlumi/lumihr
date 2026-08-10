@@ -238,7 +238,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
               </select>
               <button class="btn" disabled=${shareBusy} onClick=${makeShare}>${shareBusy ? "Creating…" : "Create share link"}</button>`}
             <button class="btn" title="The data behind this document, as a spreadsheet" onClick=${downloadCsv}>Download data (CSV)</button>
-            <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + p.organisation.name + " — " + p.generated_date; window.print(); document.title = t; }}>Download PDF</button>
+            <button class="btn primary" onClick=${() => { const t = document.title; document.title = "Board pack — " + p.organisation.name + " — " + p.generated_date; window.print(); document.title = t; }}>Print / save as PDF</button>
           </div>
         </div>`}
       ${stale && html`
