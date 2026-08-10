@@ -16258,3 +16258,10 @@ colour batch. Verified app loads (no console errors) + gates 14/14.
 - MED strategy 'press 1, 2 or 3' caption on a 5-option required gate -> 'Choose one to
   continue' (removes the false 3-option cue). Keyboard 1..N still works.
 Cache-bust v=499; app loads clean; 14/14 gates.
+
+## 2026-08-10 — UX polish (batch 3): board-pack regenerate warning (HIGH #4)
+
+David ruled 'new version + warn'. Regenerate now confirms first ("creates a new version;
+links you've already sent keep showing THIS version — re-share the new pack") and the
+stale banner spells out the same link behaviour. Preserves old snapshots; alerts the user.
+commercial.js; v=500; 14/14 gates.

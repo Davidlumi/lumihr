@@ -167,6 +167,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
     setShareBusy(false);
   };
   const regenerate = async () => {
+    if (!window.confirm("Regenerate creates a new version of this pack. Any share links you've already sent will keep showing THIS version — re-share the new pack to update recipients. Continue?")) return;
     setRegen(true);
     try {
       const r = await api("/api/boardpack/generate", { method: "POST",
@@ -244,7 +245,8 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
       ${stale && html`
         <div class="card no-print bp-stale" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
           This pack reads from the <b>${p.collection_window}</b> snapshot; the benchmark has moved to
-          <b> ${pack.current_collection_window}</b>. Regenerate for current numbers.
+          <b> ${pack.current_collection_window}</b>. Regenerate for current numbers — this writes a new
+          version, so any links you've already shared still show this one; re-share the new pack to update recipients.
         </div>`}
       ${shareLink && html`
         <div class="card no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
