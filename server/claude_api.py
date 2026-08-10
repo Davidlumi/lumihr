@@ -44,6 +44,30 @@ def _client_or_none():
     return _client
 
 
+# Global daily kill-switch on paid Claude calls (cost ceiling). Off by default
+# (0 = unlimited); set LUMI_AI_DAILY_CALL_CAP=N to hard-stop once N live calls have
+# been made in a UTC day — callers then fall back to the deterministic floor.
+# Single-instance/single-worker deployment, so a module counter is accurate.
+_ai_calls = {"day": None, "n": 0}
+
+
+def _ai_cap_reached():
+    try:
+        cap = int(os.environ.get("LUMI_AI_DAILY_CALL_CAP", "0") or "0")
+    except ValueError:
+        cap = 0
+    if cap <= 0:
+        return False
+    import datetime as _dt
+    today = _dt.datetime.utcnow().strftime("%Y-%m-%d")
+    if _ai_calls["day"] != today:
+        _ai_calls["day"], _ai_calls["n"] = today, 0
+    if _ai_calls["n"] >= cap:
+        return True
+    _ai_calls["n"] += 1
+    return False
+
+
 def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=True, effort="medium"):
     """One grounded Claude call via the official SDK. Returns {ok, text} on success
     or {ok: False, error} otherwise — the caller always has a deterministic fallback.
@@ -59,6 +83,8 @@ def call_claude(system, user_content, max_tokens=4000, schema=None, thinking=Tru
     client = _client_or_none()
     if client is None:
         return {"ok": False, "error": "no ANTHROPIC_API_KEY configured"}
+    if _ai_cap_reached():
+        return {"ok": False, "error": "daily AI call cap reached — using the deterministic fallback"}
     kwargs = {
         "model": MODEL,
         "max_tokens": max_tokens,

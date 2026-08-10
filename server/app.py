@@ -3448,6 +3448,23 @@ def _analyst_rate_limited(org_id):
     return False
 
 
+# Board-pack generation fires a large (max_tokens=8000, high-effort) Claude call.
+# Cap it per org per day so a member can't rack up spend by regenerating; the
+# deterministic pack floor is never capped (only the paid AI call is).
+BOARDPACK_PER_DAY = int(os.environ.get("LUMI_BOARDPACK_PER_DAY", "20"))
+_boardpack_gen = defaultdict(list)
+
+
+def _boardpack_rate_limited(org_id):
+    import time as _t
+    now = _t.time()
+    _boardpack_gen[org_id] = [t for t in _boardpack_gen[org_id] if now - t < 86400]
+    if len(_boardpack_gen[org_id]) >= BOARDPACK_PER_DAY:
+        return True
+    _boardpack_gen[org_id].append(now)
+    return False
+
+
 ANALYST_LOG_RETENTION_DAYS = int(os.environ.get("LUMI_ANALYST_LOG_RETENTION_DAYS", "180"))
 
 
@@ -4089,6 +4106,10 @@ async def boardpack_generate(request: Request):
         cut["value"] = org["industry"]
     if cut["dim"] == "fte_band" and not cut["value"]:
         cut["value"] = org["fte_band"]
+    # cap only the paid AI call — the deterministic pack floor is always available
+    if _ai_ok and _boardpack_rate_limited(org["org_id"]):
+        raise HTTPException(429, "You've generated a lot of board packs today — please try again "
+                                 "tomorrow. Packs you've already produced are still available.")
     payload = assemble_pack_payload(request, user, org, cut)
     result = (await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)) if _ai_ok \
         else {"ok": False, "error": "AI narrative not enabled for this member",
@@ -5214,8 +5235,11 @@ async def submit(request: Request):
     if completion >= TARGET_PCT:
         conn.execute("UPDATE orgs SET submission_complete=1 WHERE org_id=?", (org["org_id"],))
         conn.commit()
-    # aggregates refresh synchronously (≈2s); peer group size updates live
-    run_snapshot(CURRENT_SNAPSHOT, verbose=False)
+    # aggregates refresh (~2s, full-pool recompute holding the SQLite write lock).
+    # Offloaded to a worker thread so the submit doesn't freeze the whole event loop
+    # for every other concurrent request; run_snapshot uses its own thread-local
+    # connection and commits independently.
+    await to_thread.run_sync(run_snapshot, CURRENT_SNAPSHOT, False)
     invalidate_payloads()
     return {"ok": True, "answers_saved": now_rows,
             "completion_pct": completion,
