@@ -16265,3 +16265,22 @@ David ruled 'new version + warn'. Regenerate now confirms first ("creates a new 
 links you've already sent keep showing THIS version — re-share the new pack") and the
 stale banner spells out the same link behaviour. Preserves old snapshots; alerts the user.
 commercial.js; v=500; 14/14 gates.
+
+## 2026-08-10 — UX polish (batch 4): POSITION-NEUTRAL colour model (HIGH #2 + #6)
+
+David ruled the market lens neutral (on-market = target; below/above = off-band, no
+verdict; value only on the 'vs your aim' strategy lens). Turned out to be a system-wide
+change across every market surface — done consistently + verified live (donut now
+green/grey/grey, not amber/green/red) + 14/14:
+- Tokens: --gauge-below/above -> neutral grey (on stays green); --below/above-ink -> neutral.
+- pages.js MKT_RICH below/above -> neutral (MKT_SOFT auto-followed the tokens); this drives
+  the Overview 'Where you stand' donut + bands.
+- CSS classes: .pos-pill.good/.bad -> neutral, .mid -> green target; .cat-tile.v-below/above
+  + .pack-accent.v-below/above -> neutral; .chip-good/.chip-bad -> neutral, .chip-mid -> green
+  (aim-lens .v-above-over / .chip-bad-over KEEP their valence).
+- charts.js youColour() -> one neutral You-marker (position shown by placement); numeric-matrix
+  You diamond/value -> neutral.
+- card.js cardPosition(): pill now shows RAW market position (no polarity flip) — neutral
+  colour + word/arrow now agree with the printed P{p} (resolves HIGH #6).
+Verified via static-render harness (David's chosen method) then live. v=501. Lens-key labels
+('vs the market'/'vs your aim') + remaining Med items still to come.

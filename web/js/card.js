@@ -396,19 +396,19 @@ function cardPosition(c) {
   // §4.8(5): a practice/approach card (a how-often/how-you-do-it choice) has no market verdict —
   // a bare "P1" percentile on a yes/no practice reads as an unexplained judgement. Suppress it.
   if (c.classification && c.classification.register === "Approach") return null;
-  const adj = pol === "lower_is_better" ? 100 - p : p;
-  // Use the SAME market band the tiles + signals use — sourced from the engine
-  // (window.MARKET_BAND, set from /api/me) so the card colour can never drift
-  // from the env band. Below = below market (red); above = above market (green);
-  // the middle = on market (neutral). Default 35-65 if the global isn't loaded.
+  // POSITION-NEUTRAL (2026-08-10 ruling): the pill shows RAW market position — no
+  // polarity flip and no good/bad colour (on-market = target, below/above = neutral
+  // off-band). Whether a position is on target is the 'vs your aim' read, not this.
+  // Band sourced from the engine (window.MARKET_BAND) so it can't drift. This also
+  // makes the word/arrow agree with the printed P{p} on lower-is-better metrics.
   const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
-  const kind = adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+  const kind = p > band[1] ? "good" : p < band[0] ? "bad" : "mid";   // good=above, bad=below, mid=on — position only; colour is neutral for good/bad
   return {
     kind,
     pctl: Math.round(p),
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
     label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + " · P" + Math.round(p),
-    tip: "Your position vs the market, adjusted for whether higher or lower is favourable.",
+    tip: "Where you sit in the market on this metric — a position, not a verdict. Whether it's on target is your ‘vs your aim’ read.",
   };
 }
 window.cardPosition = cardPosition;

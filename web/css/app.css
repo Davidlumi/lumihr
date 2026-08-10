@@ -48,15 +48,16 @@
   --border: #E2DBD0;   /* deepened 2026-07-09 polish (was #EAE5DE — 1.16:1, invisible on bright screens); still clearly lighter than --chrome-edge */
   --chrome-edge: #D4CCC0;   /* rail/top-bar dividers — must register on warm paper */
   /* hero gauge: quiet desaturated scale (the arc is backdrop, the needle is data) */
-  --gauge-below: color-mix(in srgb, var(--amber-bright) 42%, var(--surface));
-  --gauge-on:    color-mix(in srgb, var(--favourable) 46%, var(--surface));    /* 40→46% (2026-07-09 polish): presence parity with the amber */
-  --gauge-above: color-mix(in srgb, var(--unfavourable) 44%, var(--surface));  /* 38→44% */
-  /* count text ON the soft gauge fills — a darker relative of each hue, legible on the pastel
-     (2026-07-09 stacked-bar: the fills are the universal RAG, these ink the numerals inside them;
-     below-ink deepened 60→38% amber in the polish pass — the old mix measured 3.0:1, AA fail) */
-  --below-ink: color-mix(in srgb, var(--amber-bright) 38%, #3a2600);
+  /* POSITION-NEUTRAL market lens (2026-08-10 ruling): on-market = the target band
+     (calm green); below AND above market are the same neutral "off-band" — no good/bad
+     verdict on the market read. Value lives only on the 'vs your aim' strategy lens. */
+  --gauge-below: color-mix(in srgb, var(--ink) 11%, var(--surface));
+  --gauge-on:    color-mix(in srgb, var(--favourable) 46%, var(--surface));    /* on-market = target */
+  --gauge-above: color-mix(in srgb, var(--ink) 11%, var(--surface));
+  /* count text ON the soft gauge fills — legible neutral for off-band, deep green on-band */
+  --below-ink: color-mix(in srgb, var(--ink) 68%, var(--surface));
   --on-ink:    color-mix(in srgb, var(--favourable) 42%, var(--ink));
-  --above-ink: color-mix(in srgb, var(--unfavourable) 46%, var(--ink));
+  --above-ink: color-mix(in srgb, var(--ink) 68%, var(--surface));
   /* practice prevalence ladder — the PURPLE theme so the practice lens mirrors the market bar's
      construction while staying non-RAG (it's "how common", never good/bad). Deepened in the
      2026-07-09 premium polish (was 44/24/9 — David: "way too light, barely visible"): common
@@ -463,9 +464,9 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 /* the at-a-glance position pill (top-right of cards; performance colour only) */
 .pos-pill { display: inline-flex; align-items: center; gap: var(--s1); height: 22px; padding: 0 var(--s2);
   border-radius: 999px; font-size: var(--fs-caption); font-weight: 700; flex: 0 0 auto; }
-.pos-pill.good { background: var(--favourable-tint); color: var(--favourable-ink); }
-.pos-pill.bad { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
-.pos-pill.mid { background: var(--neutral-perf-tint); color: var(--neutral-perf-ink); }
+/* position-neutral: above & below market are the same neutral off-band; on-market = target */
+.pos-pill.good, .pos-pill.bad { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); color: var(--ink-soft); }
+.pos-pill.mid { background: var(--favourable-tint); color: var(--favourable-ink); }
 
 /* the per-card status pill: signal (lens-tinted) / add-data prompt / quiet no-flag */
 .sig-pill { display: inline-flex; align-items: center; gap: var(--s1); flex: 0 0 auto; max-width: 230px;
@@ -1376,9 +1377,10 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
    var(--s2) matches .cat-pos, and the label's negative margin-bottom snugs the chip up to it. */
 .cat-tile-align { margin-top: var(--s2); }
 .cat-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
-.cat-tile.v-below { border-top-color: var(--amber-bright); }
-.cat-tile.v-above { border-top-color: var(--unfavourable); }
-.cat-tile.v-above-over { border-top-color: var(--unfavourable-deep); }   /* strategy: above your aim (overshot) */
+/* market lens = position-neutral: below/above off-band neutral, on-market = target green */
+.cat-tile.v-below { border-top-color: color-mix(in srgb, var(--ink) 22%, var(--surface)); }
+.cat-tile.v-above { border-top-color: color-mix(in srgb, var(--ink) 22%, var(--surface)); }
+.cat-tile.v-above-over { border-top-color: var(--unfavourable-deep); }   /* strategy (aim lens): above your aim (overshot) — keeps valence */
 .cat-tile.v-at { border-top-color: var(--favourable); }
 .cat-tile.v-practice { border-top-color: var(--blue-tint-2); }
 .cat-tile.v-neutral-mkt { border-top-color: var(--grey-neutral); }   /* FIX 1: strategy-off attainment border */
@@ -1427,10 +1429,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .cat-icon { width: 26px; height: 26px; border-radius: var(--radius-xs); background: var(--blue-tint);
   display: inline-flex; align-items: center; justify-content: center; color: var(--blue); flex: 0 0 auto; }
 .tile-chip { font-size: var(--fs-micro); font-weight: 650; padding: 2px var(--s2); }
-.chip-bad { background: var(--unfavourable-tint); color: var(--unfavourable-ink); }
-.chip-bad-over { background: var(--unfavourable-tint); color: var(--unfavourable-deep); }   /* strategy: above your aim */
-.chip-good { background: var(--favourable-tint); color: var(--favourable-ink); }
-.chip-mid { background: var(--neutral-perf-tint); color: var(--neutral-perf); }
+/* market-position chips (via MKT_CHIP): position-neutral — below/above off-band neutral, on = target */
+.chip-bad { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); color: var(--ink-soft); }
+.chip-bad-over { background: var(--unfavourable-tint); color: var(--unfavourable-deep); }   /* strategy (aim lens): above your aim — keeps valence */
+.chip-good { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); color: var(--ink-soft); }
+.chip-mid { background: var(--favourable-tint); color: var(--favourable-ink); }   /* on market = target */
 .chip-practice { background: var(--differs-tint); color: var(--differs-ink); }
 /* FIX 1 — strategy-attainment OFF (no stance set): a neutral grey verdict chip. The label
    uses --grey-neutral-ink (AA-safe), not the lighter swatch token. */
@@ -2500,9 +2503,9 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 /* ---- board pack Tier 2/3 (2026-07-02): story-arc pages, charts, management ---- */
 .bp-logo svg { width: 42mm; height: auto; }
 .pack-accent { height: 6px; width: 64mm; border-radius: 3px; background: var(--blue); margin: var(--s4) 0 var(--s3); }
-.pack-accent.v-below { background: var(--amber-bright); }
-.pack-accent.v-above { background: var(--unfavourable); }
-.pack-accent.v-at { background: var(--favourable); }
+.pack-accent.v-below { background: color-mix(in srgb, var(--ink) 22%, var(--surface)); }
+.pack-accent.v-above { background: color-mix(in srgb, var(--ink) 22%, var(--surface)); }
+.pack-accent.v-at { background: var(--favourable); }   /* on-market = target */
 .bp-stale { border-left: 3px solid var(--amber-bright); }
 .bp-position-row { display: flex; gap: var(--s5); align-items: center; flex-wrap: wrap; margin: var(--s3) 0; }
 .bp-donut { flex: 0 0 auto; text-align: center; }
