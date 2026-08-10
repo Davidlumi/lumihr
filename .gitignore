@@ -33,6 +33,8 @@ nonrew2_local_archive/
 # --- secrets (belt-and-braces; already ignored, keep explicit) ---
 server/.env.local
 .env*
+!.env.example
+!server/.env.local.example
 .DS_Store
 
 # --- machine-local tooling config (not product; keeps a per-machine permission allowlist) ---
