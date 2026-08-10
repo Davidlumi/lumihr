@@ -16139,3 +16139,18 @@ Deterministic sha256. Backup lumi.db.bak_pre_manual_20260810_191226; 14/14.
 NOTE: data/book_baseline.json (answer-book fingerprint) will be re-recorded ONCE at
 the end of the seed-realism program (after completion + latent) with a supersedes note
 covering the whole transformation — it is a printed NOTE, not a gate check.
+
+## 2026-08-10 — Seed realism B12 (Tier-3 panel: partial-completer tail, minimal)
+
+migrate_seedreal_b12_completion_2026_08_10.py — every org was 88-97% complete (no
+abandonment tail). Introduced a MODEST tail: 8 orgs dropped to 82-86% completion by
+deleting 297 answers. DELIBERATELY MINIMAL by judgment (a partial tail trades benchmark
+richness for forensic realism — a weak trade for a benchmark product; kept light).
+KEY CONSTRAINT discovered via the gate: qa_engine_audit L1 asserts the store matches
+the documented seed lineage, so deleting a CSV-documented metric (EXT_*/ALLOW_*/PROP_*)
+FAILS L1. Restricted deletions to DB-origin WAVE metrics (REW26*/REW262*/REW263*/
+REW264*/REW265*) that are non-anchored, non-coherence, non-textured, and absent from
+the response CSVs (L1 value-diff/presence skipped) — which is also the realistic thing
+a partial completer skips (peripheral optional questions). No anchor/marginal/frozen/
+coherence touched; submission_complete/aggregation flags untouched; smallest affected
+metric n=208. Backup lumi.db.bak_pre_manual_20260810_192028; aggregate; 14/14.
