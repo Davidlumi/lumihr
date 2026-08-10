@@ -16084,3 +16084,16 @@ Heap-share jumped: pay budget 20->75%, pension cost share 18->72%, workforce cos
 re-sorted (monotonicity held); allowances (by type) per-type median-pinned.
 REW_BEN_FLEX_ALLOW_01 excluded (heaping collapses its 0.1 seniority ladder). 958 cells
 changed. Backup lumi.db.bak_pre_manual_20260810_151400; aggregate; 14/14.
+
+## 2026-08-10 — Seed realism B8 (Tier-3: dental prevalence)
+
+migrate_seedreal_b8_dental_2026_08_10.py — REW263_BEN_DENTAL had only 11 rows (5%
+offer vs ~20-35% UK norm; the cut was unusable). The design pass showed a naive
+209-insert FAILS the coherence gate (DENTAL is a conditioned child of the REW_BEN_038
+'Dental cover' tick; child_any_answer must ⊆ parent). Fix: grow PARENT + CHILD together
+for the SAME orgs, size-tilted to ~30% offer; non-offerers left absent. Result: 80/220
+(36%) offer, rising with size (50-249 30% -> 10,000+ 63%), funding 55 voluntary / 25
+employer-paid (employer-paid tilted large). Coherence child⊆parent holds by
+construction (child set == parent set, both 80). 69 new 038 ticks + 69 new DENTAL
+rows (89,320 -> 89,389). Deterministic (sha256). Backup lumi.db.bak_pre_manual_
+20260810_154938; aggregate; 14/14 throwaway + live.
