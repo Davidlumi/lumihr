@@ -16097,3 +16097,16 @@ employer-paid (employer-paid tilted large). Coherence child⊆parent holds by
 construction (child set == parent set, both 80). 69 new 038 ticks + 69 new DENTAL
 rows (89,320 -> 89,389). Deterministic (sha256). Backup lumi.db.bak_pre_manual_
 20260810_154938; aggregate; 14/14 throwaway + live.
+
+## 2026-08-10 — Seed realism B9 (Tier-3: DC pension ladder recentre + diversity)
+
+migrate_seedreal_b9_pension_ladders_2026_08_10.py — REW_BEN_112 (typical employer
+pension %, by level) had two defects: MAGNITUDE (~10% median vs UK ~5-6%, only 25% of
+cells in 3-6%) and TEXTURE (one rigid template on all 220 orgs). David ruled RECENTRE
+TO MARKET. Regenerated each DC org's ladder from a deterministic shape mixture (~55%
+flat / ~25% 2-tier / ~20% 3-tier), heaped base in 3-8% (~17% generous 7-8), monotonic
+by construction. Result: DC pooled median 10 -> 5.0, cells in 3-6% 25% -> 71% (market
+~68), 1 template -> 37 distinct shapes, 220/220 monotonic. PENSION_TYPE='DB'/'Hybrid'
+orgs LEFT UNTOUCHED (DB stays flat 15-28% from B4; verified frontline range 15-28).
+195 DC orgs, 1,286 cells. Not frozen/marginal; numeric matrix skipped by CHECK A ->
+gate-safe. Backup lumi.db.bak_pre_manual_20260810_184931; aggregate; 14/14.
