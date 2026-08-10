@@ -16213,3 +16213,21 @@ NOTE: this revisits the earlier 'metric question text = declined-on-principle zo
 was plain-English CLARITY, which this delivers without stripping detail. DB is the live
 source served (master-register CSVs are historical lineage, not reloaded). Backup
 lumi.db.bak_pre_manual_20260810_203352.
+
+## 2026-08-10 — Plain-English review of all metric DEFINITIONS
+
+Reviewed all 333 active definitions (the metric-page 'Question & definition' card,
+served via library.py) — 6-slice generate + per-slice high-effort accuracy verify
+against each metric's question + options. The field was poor: 158 were verbatim copies
+of the question (metric page showed the same sentence twice), 33 were auto-generated
+boilerplate ('Binary indicator for whether the organisation meets the described
+condition: …'), and several described a DIFFERENT metric than the question (e.g. a
+PMI-premium question with a PMI-eligibility definition; a max-bonus 'by population' vs
+'by level'). Replaced 308/333 with accurate one-sentence plain-English definitions that
+explain what the metric captures and how to read the answer scale (distinct from the
+question, no invented facts, British spelling); 25 already-good ones left as-is. Also
+re-synced the definitions of the 13 questions reworded earlier today (their defs were
+verbatim copies of the OLD, now-fixed, question text — REWTEAM ratio, TRS spend,
+WORKATION consecutive-days). migrate_qdef_plain_english_2026_08_10.py (definition column
+only; options/type/values untouched; 14/14 throwaway + live; qa_commentary — which uses
+the definition — clean). Backup lumi.db.bak_pre_manual_20260810_204807.
