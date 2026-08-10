@@ -15850,3 +15850,33 @@ rotate the ANTHROPIC_API_KEY (present in server/.env.local working tree); provis
 (S3 bucket+IAM+DLM to offbox_backup.sh's asserted posture); run the runbook (EC2/Caddy/
 systemd) with prod env (LUMI_BASE_URL https, LUMI_MFA=on, SMTP/SES, LUMI_SEED_DEMO off);
 perform ONE restore drill; finalise + sign off the Cookie Policy (then flip its draft flag).
+
+
+## 2026-08-10 — Seed-realism correction: status cars + education LTIP (reward-persona sense-check)
+
+David: "use reward personas to sense-check the metric data ... fix the issues." A reward-professional
+review of the 221-org seed found sector-fit implausibilities; none are frozen-anchored (frozen_targets.json
+holds only the 8 wellbeing/pension metrics), so they were safe to correct. Applied via
+server/migrate_seedreal_car_ltip_2026_08_10.py (guarded --write --confirmed-by-david, LUMI_DB-aware),
+after an on-box backup (lumi.db.bak_pre_manual_20260810_113131, retain-3) and full verification.
+
+FIXES (147 answer cells):
+- CAR_STATUS_01 was distributed BACKWARDS by sector (Tech 88% / Media 78% highest; Construction/
+  Logistics 7% lowest). It's a Tier-2 GLOBAL marginal (35% ±5pp, base_type all_only) — not sector-
+  conditioned — so rebalanced WHICH sectors hold 'Yes' to a real-world spread (Energy/Prof-Svc/FS/
+  Manufacturing/Construction/Logistics higher; Tech/Media/Public/Charity/Education low), keeping the
+  global on 35% (now 33.5%, within tolerance). CAR_COST_02 soft lean aligned. Now: Tech 12%, Public 7%,
+  Education 10% vs Energy 62%, FS 56%.
+- Education operating LTIP/equity (5 orgs, RSUs/options/perf-shares — implausible for schools): set
+  REW_INC_131=No + cascade INC_132='Not applicable', INC_133 all levels 'No' (coherence chain held).
+- 'Grants equity but no shares' contradiction (7 orgs): 1 resolved by the education fix; the 6 sector-
+  plausible ones switched REW_INC_132 equity->'Cash LTIP' so 'no shares' is consistent (no share-plan
+  child chain touched).
+- One Healthcare bonus gradient inversion (Manager > Senior Manager): SM raised to restore monotonicity.
+
+VERIFICATION: full gate suite 14/14 on a patched throwaway (via LUMI_GATES_SRC) BEFORE applying to live;
+then applied to live, recomputed aggregates (aggregate.py --snapshot 1), 14/14 on live. qa_plausibility
+FREEZE GATE PASS (register marginals within 5pp; settled targets within 0.1pp). One transient
+identity_recon fail on the first live run was a pre-existing EXPIRED-invite reward/identity drift (not
+this migration — answers-only, "answer book untouched" asserted); the :8060 restart purged the expired
+invites and the re-run was clean. lumi.db is gitignored (data not committed); the migration script is.
