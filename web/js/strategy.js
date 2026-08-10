@@ -671,7 +671,7 @@ window.StrategyPage = function ({ me }) {
             ${isMulti || strat[curField]
               ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
               : REQUIRED.includes(curField)
-                ? html`<span class="caption">Choose a position — press <b>1</b>, <b>2</b> or <b>3</b></span>`
+                ? html`<span class="caption">Choose one to continue</span>`
                 : html`<button class="btn quiet" onClick=${advance}>Skip — read neutrally</button>`}
           </div>
         </section>`}

@@ -1284,6 +1284,7 @@ const NAV_INDEX = [
   { label: "Priorities — the gap register", route: "/priorities", group: "Pages", kw: "gaps register full list export csv" },
   { label: "Pulse", route: "/pulse", group: "Pages", kw: "surveys check-ins" },
   { label: "Benchmark", route: "/benchmark", group: "Pages", kw: "all metrics categories compare" },
+  { label: "Board packs", route: "/boardpack", group: "Pages", kw: "board report export pdf pack briefing" },
   { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
   { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
   { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },

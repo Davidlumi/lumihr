@@ -296,6 +296,7 @@ function ExportBoardPack({ me, cut }) {
 function ShareButton({ me, cut, name, layout }) {
   const [open, setOpen] = useState(false);
   if (!me || !me.user || me.user.role !== "admin") return null;
+  if (me.contribution && !me.contribution.insights_unlocked) return null;   // nothing to share until the benchmark unlocks (mirror ExportBoardPack)
   return html`
     <button class="btn small" onClick=${() => setOpen(true)}
       title="Create a read-only public link to your benchmark summary (30 days).">

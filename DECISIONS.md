@@ -16248,3 +16248,13 @@ Batch 1 (all safe/no-design-dependency; app loads clean, 14/14):
   (+ restored its full stop).
 Cache-bust v=497->498. HIGH #6 (lower-is-better pill) folded into the position-neutral
 colour batch. Verified app loads (no console errors) + gates 14/14.
+
+## 2026-08-10 — UX polish (batch 2/N): journey/trust/comprehension quick wins
+
+- MED ShareButton: gated on contribution.insights_unlocked (mirrors ExportBoardPack) —
+  a new admin can no longer mint a public link to an empty/locked benchmark.
+- MED board-pack discoverability: added a /boardpack NAV_INDEX entry so the flagship
+  output is findable from the ⌘K search box.
+- MED strategy 'press 1, 2 or 3' caption on a 5-option required gate -> 'Choose one to
+  continue' (removes the false 3-option cue). Keyboard 1..N still works.
+Cache-bust v=499; app loads clean; 14/14 gates.
