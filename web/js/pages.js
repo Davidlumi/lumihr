@@ -931,7 +931,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
               { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
               { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
             ]}
-            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${192} stroke=${26} />
+            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${192} stroke=${20} />   ${/* stroke 26→20 (2026-08-11): the 216px breathing-room scale thickened the ring to ~29px, which cramped the small above/on-market segments — a lighter ring gives them air */""}
         </div>
         <div class="arc-caption num">
           <span class="arc-lean">${headLean}</span>
@@ -1046,7 +1046,7 @@ function PracticeArc({ prevalence, pending }) {
               { value: alt, color: "var(--prev-alt)" },
               { value: rare, color: "var(--prev-rare)" },
             ]}
-            total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${192} stroke=${26} />
+            total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${192} stroke=${20} />   ${/* stroke 26→20 (2026-08-11): the 216px breathing-room scale thickened the ring to ~29px, which cramped the small above/on-market segments — a lighter ring gives them air */""}
         </div>
         <div class="arc-caption num">
           <span class="arc-lean">${cap}</span>

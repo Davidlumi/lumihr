@@ -16567,3 +16567,15 @@ the right. Reorg:
   as one clean row. Removed the dead .dash-actions/.dash-cardcount CSS.
 Verified live: desktop (one row, full name, aligned) + 720px (actions wrap cleanly); kebab opens
 Rename/Duplicate/Delete, Rename → inline edit works, Escape cancels. v=520; 14/14 gates green.
+
+## 2026-08-11 — Home donut: lighter ring (the above/on-market segments looked cramped) (David)
+
+David (screenshot): "the above market and on market on the donut looks cramped!!" Root cause was
+this session's breathing-room fix: growing the "Where you stand" donut 192→216 (CSS scale) also
+scaled the ring stroke 26→~29px (13.4% of the diameter) — a heavy ring that made the small
+'above' wedge stubby and crowded the segment boundaries. Fix: drop the Donut stroke prop 26→20 on
+the market + practice donuts, so at the 216 scale the ring is ~23px (10% thickness) — a lighter
+ring with air around the segments and a bigger centre hole (158→171px) for the verdict text. The
+breathing-room 216 size is unchanged. Chosen from a 4-treatment harness (current / thinner /
+thinner+gap / lightest); thinner-ring (~22px) read cleanest without touching the shared segment
+gap. Verified: desktop donut 216px, stroke now 23px (10%); SPA clean; v=521; 14/14 gates green.
