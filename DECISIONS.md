@@ -16792,3 +16792,29 @@ default-dedup) and app.js jsc-parse-clean; frontend-only, 14/14 gates. v=532. NO
 verify was blocked by the in-app dev session dropping on reload (can't re-login) — David to confirm in
 his own browser. Separately noticed a PRE-EXISTING fragility: a mid-session auth drop white-screens
 ("Something went wrong" / setGlobalCut TDZ) instead of showing sign-in — flagged, not fixed here.
+
+## 2026-08-11 — Signals: filter by market position + fix a session-drop white-screen (David)
+
+**Market-position filter (David's ask).** SignalsPage (pages.js) gains a second pill row under the
+folder nav — POSITION: All · Below market · On market · Above market — that narrows the CURRENT view
+(feed / folder / domain / snoozed / dismissed) to signals sitting that way vs the market. Each signal
+carries `s.position` (below|on|above; practice signals carry differs|practice). Counts come from the
+view; picking a position filters to it; "All" keeps everything including practice signals (which have
+no market position). A stale filter is ignored on a practice-only view (`hasPos` guard), and the whole
+row hides when the view has no positioned signals. `posFilter` persists in the Back-restore UI state
+alongside `view`. Chips are neutral with a marketTone DOT (below=amber/on=green/above=red — the fixed
+position language, Signals is a benchmark surface); the active position pill tints to its own hue,
+"All" active = navy (`.sig-posfilter` / `.sig-pos-pill` CSS). VERIFIED LIVE (logged in, Thornbridge):
+All 42 → Below market 31 → feed narrows to 31 cards, amber-tinted active pill; On/Above = 0 for this
+below-market org (correct — its signals are gaps, i.e. below); the 11-signal All/positioned gap is
+practice signals (correctly under All only).
+
+**Fix: mid-session auth-drop white-screened the app.** app.js `setGlobalCut` was a `const` arrow at
+~L305, but an effect above it (the landing-cut effect) closes over it — so when a session dies mid-use
+and the render early-returns <AuthScreen> before that line initialises, a temporal-dead-zone throw
+("Cannot access 'setGlobalCut' before initialization") tripped the top-level error boundary
+("Something went wrong") instead of a clean sign-in. Converted it to a HOISTED function declaration so
+it's defined from the top of every render — the TDZ path can no longer occur. Pre-existing, unrelated
+to the filter, but it was crashing every dev reload; verified the Signals page now renders through a
+session flicker. v=534; 14/14 gates. A broader Signals design review (workflow) is running for other
+improvements. jsc-clean, CSS braces balanced.

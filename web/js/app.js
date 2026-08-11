@@ -296,12 +296,17 @@ function App() {
       toast(was ? "Removed from your dashboard" : "Added to your dashboard");
     } catch (e) { toast("Couldn't update your dashboard — try again", "error"); }
   };
-  const setGlobalCut = (key) => {
+  // A hoisted function declaration (NOT a const arrow): an effect above (the landing-cut effect)
+  // closes over setGlobalCut, and on a mid-session auth drop the render early-returns <AuthScreen>
+  // before a const on this line would initialise — a temporal-dead-zone crash ("Cannot access
+  // 'setGlobalCut' before initialization" → the whole app white-screens instead of showing sign-in).
+  // Hoisting makes it defined from the top of every render, so that path can never TDZ. (2026-08-11)
+  function setGlobalCut(key) {
     if (key === "all") setCut({ dim: "all", value: null });
     else if (key === "twin") setCut({ dim: "twin", value: null });
     else if (key === "manage-groups") setGroupsOpen(true);
     else { const [dim, value] = key.split("::"); setCut({ dim, value }); }
-  };
+  }
   const refreshCuts = () => api("/api/cuts").then(setCuts);
 
   const pageProps = { me, refreshMe, cut, cuts, prefs, onPref, onPin, pinnedIds: layoutIds,

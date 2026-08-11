@@ -4126,6 +4126,28 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sfold-newgo:disabled { opacity: .45; cursor: default; }
 .sfold-caret { font-size: 9px; color: var(--ink-faint); }
 .sfold-ret { margin-left: auto; color: var(--ink-faint); font-size: var(--fs-micro); padding-left: var(--s3); }
+/* market-position filter row (Signals, David 2026-08-11) — secondary pill row under the folder nav.
+   Neutral pills carry a marketTone dot; the active position pill tints to its own hue (below=amber /
+   on=green / above=red — the fixed position language, never strategy colour). "All" active = navy. */
+.sig-posfilter { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin: calc(-1 * var(--s2)) 0 var(--s4); }
+.sig-posfilter-lab { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); font-weight: 650; margin-right: var(--s1); }
+.sig-pos-pill { display: inline-flex; align-items: center; gap: var(--s1); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--ink-soft); cursor: pointer; padding: 4px var(--s3); min-height: 28px;
+  transition: border-color var(--dur-fast), color var(--dur-fast), background var(--dur-fast); }
+.sig-pos-pill:hover { border-color: var(--ink-faint); color: var(--ink); }
+.sig-pos-pill b { font-weight: 700; margin-left: 2px; }
+.sig-pos-pill .pos-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.sig-pos-pill.pos-below .pos-dot { background: var(--neutral-perf); }
+.sig-pos-pill.pos-on .pos-dot { background: var(--favourable); }
+.sig-pos-pill.pos-above .pos-dot { background: var(--unfavourable); }
+.sig-pos-pill.on { border-color: var(--navy); background: var(--navy); color: #fff; }
+.sig-pos-pill.on b { color: #fff; }
+.sig-pos-pill.pos-below.on { background: var(--neutral-perf-tint); border-color: var(--neutral-perf); color: var(--neutral-perf-ink); }
+.sig-pos-pill.pos-on.on { background: var(--favourable-tint); border-color: var(--favourable); color: var(--favourable-ink); }
+.sig-pos-pill.pos-above.on { background: var(--unfavourable-tint); border-color: var(--unfavourable); color: var(--unfavourable-ink); }
+.sig-pos-pill.pos-below.on b, .sig-pos-pill.pos-on.on b, .sig-pos-pill.pos-above.on b { color: inherit; }
+.sig-pos-pill:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 .sfold-snz { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 650; color: var(--navy); border: 1px solid color-mix(in srgb, var(--navy) 25%, var(--surface));
   border-radius: 999px; padding: 0 var(--s2); }

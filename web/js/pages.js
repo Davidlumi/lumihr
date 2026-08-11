@@ -1931,6 +1931,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const _ret = returnUiState("lumi-signals-ui") || {};   // Back-leg restore (Pack 1 §1)
   // active view: {kind:"all"} | {kind:"folder",name} | {kind:"snoozed"} | {kind:"dismissed"}
   const [view, setView] = useState(_ret.view && _ret.view.kind ? _ret.view : { kind: "all" });
+  // market-position filter (David 2026-08-11): "all" | "below" | "on" | "above" — narrows the
+  // current view to signals sitting that way vs the market (practice signals show only under "all").
+  const [posFilter, setPosFilter] = useState(_ret.pos || "all");
   // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
   // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
   const [acting, setActing] = useState({});            // optimistic status overrides
@@ -1951,7 +1954,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     else { try { localStorage.setItem("lumi-signals-folders", JSON.stringify(next)); } catch (e) {} setLsSig(next); }
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
-  useEffect(() => { saveUiState("lumi-signals-ui", { view }); }, [view]);
+  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter }); }, [view, posFilter]);
   // Overview per-domain scent chip → land on THIS domain's signals only (2026-08-11). The
   // domain rides a module global set by OverviewHero.goToSignals (client-side hash nav, so it
   // survives); consume + clear it once on mount, showing the domain-filtered view.
@@ -2117,7 +2120,16 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     : v.kind === "dismissed" ? dismissedItems
     : v.kind === "saved" ? savedItems
     : feedItems;
-  const emptyLine = v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
+  // market-position filter: counts come from the current view, then narrow the list to the picked
+  // position ("all" keeps everything, incl. practice signals which carry no below/on/above position)
+  const posCounts = { below: 0, on: 0, above: 0 };
+  viewItems.forEach(s => { if (posCounts[s.position] != null) posCounts[s.position]++; });
+  const hasPos = (posCounts.below + posCounts.on + posCounts.above) > 0;   // any positioned (non-practice) signals here?
+  const posOn = posFilter !== "all" && hasPos;                            // a stale filter is ignored on a practice-only view
+  const shownItems = posOn ? viewItems.filter(s => s.position === posFilter) : viewItems;
+  const POS_LABEL = { below: "Below market", on: "On market", above: "Above market" };
+  const emptyLine = posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
+    : v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
     : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.'
     : v.kind === "domain" ? "No live signals in " + domainLabel(v.name) + " right now — anything filed, snoozed or dismissed sits in its own tab."
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
@@ -2226,7 +2238,19 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             <button type="button" class="sfold-filter-clear" onClick=${() => setView({ kind: "all" })}><${Icon} name="close" size=${11} /> Show all signals</button>
           </div>` : null}
 
-        ${viewItems.length === 0 ? html`<div class="sfold-empty caption">${emptyLine}</div>` : viewItems.map(sigCard)}
+        ${/* market-position filter — narrow the current view to below / on / above the market (David 2026-08-11) */ ""}
+        ${hasPos ? html`
+          <div class="sig-posfilter" role="group" aria-label="Filter by market position">
+            <span class="sig-posfilter-lab">Position</span>
+            <button type="button" class=${"sig-pos-pill" + (posFilter === "all" ? " on" : "")} aria-pressed=${posFilter === "all"}
+              onClick=${() => setPosFilter("all")}>All <b class="num">${viewItems.length}</b></button>
+            ${["below", "on", "above"].map(p => html`
+              <button key=${p} type="button" class=${"sig-pos-pill pos-" + p + (posFilter === p ? " on" : "")} aria-pressed=${posFilter === p}
+                onClick=${() => setPosFilter(posFilter === p ? "all" : p)}>
+                <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
+          </div>` : null}
+
+        ${shownItems.length === 0 ? html`<div class="sfold-empty caption">${emptyLine}</div>` : shownItems.map(sigCard)}
 
         ${v.kind === "all" && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
         ${/* navy trust footer: the register + the promise — filing is never deletion */ ""}
