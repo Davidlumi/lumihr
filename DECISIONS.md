@@ -16688,3 +16688,15 @@ VERIFIED live on Thornbridge (test-and-reverted, org left at all-peers): UI sele
 narrow combo → 0 signals (correct suppression); broad 4-sector combo → 95 orgs, 46 signals (real
 data); auto group reused not duplicated; empty selection → null default + auto group deleted, user
 groups untouched. v=527; 14/14 gates green.
+
+## 2026-08-11 — Fix: Company-default multi-select rendered broken (David "the ui is rubbish") + Settings review kicked off
+
+The sector/size checkbox rows rendered jammed (checkbox against label, count against label, awkward
+wraps). ROOT CAUSE: `.sigpeer-chk` is a <label> inside `.field`, so `.field label { display:block;
+font-weight:600; margin-bottom }` (higher specificity) OVERRODE the flex/gap layout. Fix: scope the
+rules under `.sigpeer-opts .sigpeer-chk` (beats `.field label`), reset the label styling, and use
+dedicated `.sigpeer-name` (flex:1) + `.sigpeer-n` (right-aligned, tabular) spans; uppercase muted
+column labels; accent-color checkboxes; blue-tint selected rows. Verified via a static harness that
+reproduces the exact markup inside a `.field` wrapper against the real app.css (login-independent).
+A full world-class Settings-page redesign review is running (workflow) — the broader IA/nav/layout
+rework follows. v=528; 14/14 gates green.

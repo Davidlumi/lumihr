@@ -1108,7 +1108,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
               <div class="sigpeer-opts">
                 ${opts.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
                   <input type="checkbox" checked=${sel.includes(v)} onChange=${() => toggle(sel, setSel, v)} />
-                  <span>${v}${suffix}</span><span class="caption num">${n}</span></label>`)}
+                  <span class="sigpeer-name">${v}${suffix}</span><span class="sigpeer-n">${n}</span></label>`)}
               </div>
             </div>`;
           return html`
