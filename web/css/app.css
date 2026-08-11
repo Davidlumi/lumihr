@@ -3654,6 +3654,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border: 1px solid var(--blue); border-radius: var(--radius-sm); }
 .dash-actions { display: flex; align-items: center; gap: 2px; }
 .dash-actions .iconbtn { height: 28px; min-width: 28px; }
+/* per-dashboard sample control (2026-08-11): the PeerSetBar sits on the right of the toolbar;
+   its inline peerbar chrome already reads "Comparing against <sample>". */
+.dash-toolbar-r { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.dash-toolbar-r .peerbar { margin: 0; }
+.dash-cardcount { white-space: nowrap; }
+@media (max-width: 640px) { .dash-toolbar { flex-wrap: wrap; } .dash-toolbar-r { justify-content: flex-start; } }
 
 /* Download menu (PDF / CSV) — a small dropdown so one "Download" affordance offers
    both formats without crowding the header. */

@@ -408,6 +408,9 @@ function App() {
   // category pages joined the inline club (2026-07-13, "the nav takes way too much space"):
   // CategoryPage renders PeerSetBar inside its one-row masthead, same as the Overview.
   const isCategory = route.startsWith("/category/");
+  // My dashboards owns its peer sample PER DASHBOARD (2026-08-11, David) — it renders its own
+  // PeerSetBar in the dashboard toolbar, so the app-wide selector is suppressed on this page.
+  const isDashboards = route.startsWith("/dashboards") || route.startsWith("/myview");
 
   // Combobox: the search popup is open at >1 char with an index; keep the
   // activatable-option list in a ref so the input's Enter handler can act on it.
@@ -508,7 +511,7 @@ function App() {
       </nav>
       <div class="main">
         <main class="content" id="main-content" tabindex="-1">
-          ${benchRoute && !isOverview && !isCategory && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
+          ${benchRoute && !isOverview && !isCategory && !isDashboards && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
             onSelect=${setGlobalCut} onTwinInfo=${() => setTwinOpen(true)}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />`}
           ${contrib && benchRoute && html`<${ContributionBanner} contrib=${contrib} />`}

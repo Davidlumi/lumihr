@@ -2854,9 +2854,44 @@ def _dash_visible_layout(row, vis):
     return [s for s in uj(row["layout_json"], []) if s.get("question_id") in vis]
 
 
+# Per-dashboard peer sample (2026-08-11). Stored as a {dim,value} cut in cut_json;
+# NULL / "all" means the full peer pool. Only these dims are honoured; anything else
+# normalises to all-peers so a stale/hand-crafted body can't smuggle an odd filter.
+_DASH_CUT_DIMS = {"industry", "fte_band", "group"}
+
+
+def _dash_cut(row):
+    """The dashboard's stored cut as {dim,value}, or None (= all peers)."""
+    raw = row["cut_json"] if "cut_json" in row.keys() else None
+    if not raw:
+        return None
+    c = uj(raw, None)
+    if not isinstance(c, dict):
+        return None
+    dim = c.get("dim")
+    if dim == "twin":
+        return {"dim": "twin", "value": None}
+    if dim in _DASH_CUT_DIMS and c.get("value"):
+        return {"dim": dim, "value": str(c.get("value"))}
+    return None
+
+
+def _norm_dash_cut(c):
+    """A request-body cut → the value to store (None = all peers, else {dim,value})."""
+    if not isinstance(c, dict):
+        return None
+    dim = c.get("dim")
+    if dim == "twin":
+        return {"dim": "twin", "value": None}
+    if dim in _DASH_CUT_DIMS and c.get("value"):
+        return {"dim": dim, "value": str(c.get("value"))[:120]}
+    return None
+
+
 def _dash_meta(row, vis):
     return {"id": row["dashboard_id"], "name": row["name"], "position": row["position"],
-            "count": len(_dash_visible_layout(row, vis)), "updated_at": row["updated_at"]}
+            "count": len(_dash_visible_layout(row, vis)), "cut": _dash_cut(row),
+            "updated_at": row["updated_at"]}
 
 
 def _own_dashboard(conn, did, org, user):
@@ -2885,7 +2920,8 @@ async def list_dashboards(request: Request):
         "dashboards": metas,
         "active_id": aid,
         "active": {"id": active["dashboard_id"], "name": active["name"],
-                   "position": active["position"], "layout": _dash_visible_layout(active, vis)},
+                   "position": active["position"], "layout": _dash_visible_layout(active, vis),
+                   "cut": _dash_cut(active)},
     }
 
 
@@ -2898,7 +2934,7 @@ async def get_dashboard(did: str, request: Request):
         raise HTTPException(404, "No such dashboard.")
     vis = org_visible_questions(org)
     return {"id": row["dashboard_id"], "name": row["name"], "position": row["position"],
-            "layout": _dash_visible_layout(row, vis)}
+            "layout": _dash_visible_layout(row, vis), "cut": _dash_cut(row)}
 
 
 @app.post("/api/dashboards")
@@ -2909,11 +2945,15 @@ async def create_dashboard(request: Request):
     _ensure_dashboards(request, org, user, conn)
     name = (body.get("name") or "New dashboard").strip()[:60] or "New dashboard"
     layout = []
+    cut = None
     clone = body.get("clone_from")
     if clone:
         src = _own_dashboard(conn, clone, org, user)
         if src:
             layout = uj(src["layout_json"], [])
+            cut = _dash_cut(src)          # a duplicate inherits the source's sample
+    if "cut" in body:                     # explicit sample on create wins over the clone's
+        cut = _norm_dash_cut(body.get("cut"))
     # create-with-a-card (the "+ New dashboard" option in the card picker)
     with_card = body.get("with_card")
     if with_card and not any(s.get("question_id") == with_card for s in layout):
@@ -2922,11 +2962,11 @@ async def create_dashboard(request: Request):
                        (org["org_id"], user["user_id"])).fetchone()["p"]
     did = str(uuid.uuid4())
     conn.execute(
-        "INSERT INTO dashboards(dashboard_id, org_id, user_id, name, layout_json, position) VALUES (?,?,?,?,?,?)",
-        (did, org["org_id"], user["user_id"], name, j(layout), pos))
+        "INSERT INTO dashboards(dashboard_id, org_id, user_id, name, layout_json, cut_json, position) VALUES (?,?,?,?,?,?,?)",
+        (did, org["org_id"], user["user_id"], name, j(layout), (j(cut) if cut else None), pos))
     conn.execute("UPDATE users SET active_dashboard_id=? WHERE user_id=?", (did, user["user_id"]))
     conn.commit()
-    return {"id": did, "name": name, "position": pos, "layout": layout}
+    return {"id": did, "name": name, "position": pos, "layout": layout, "cut": cut}
 
 
 @app.put("/api/dashboards/{did}")
@@ -2943,10 +2983,17 @@ async def update_dashboard(did: str, request: Request):
     layout_json = row["layout_json"]
     if body.get("layout") is not None:
         layout_json = j(body.get("layout") or [])
-    conn.execute("UPDATE dashboards SET name=?, layout_json=?, updated_at=datetime('now') WHERE dashboard_id=?",
-                 (name, layout_json, did))
+    # cut is set only when the key is present, so a layout/name PUT never clobbers the
+    # sample. cut:null (or "all") explicitly clears it back to all-peers.
+    cut_json = row["cut_json"] if "cut_json" in row.keys() else None
+    cut_out = _dash_cut(row)
+    if "cut" in body:
+        cut_out = _norm_dash_cut(body.get("cut"))
+        cut_json = j(cut_out) if cut_out else None
+    conn.execute("UPDATE dashboards SET name=?, layout_json=?, cut_json=?, updated_at=datetime('now') WHERE dashboard_id=?",
+                 (name, layout_json, cut_json, did))
     conn.commit()
-    return {"ok": True, "name": name}
+    return {"ok": True, "name": name, "cut": cut_out}
 
 
 @app.delete("/api/dashboards/{did}")

@@ -2888,10 +2888,14 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
 // Several named, saveable dashboards per user. A switcher tab-bar sits above the
 // same draggable card grid the old single "My view" used; the active dashboard
 // is what the global pin-star (anywhere in the app) writes to.
-window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
-  const [list, setList] = useState(null);       // [{id,name,position,count}]
+window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onCut, onTwinInfo, refreshMe }) {
+  const [list, setList] = useState(null);       // [{id,name,position,count,cut}]
   const [activeId, setActiveId] = useState(null);
   const [layout, setLayout] = useState(null);   // active dashboard's slots
+  // Per-dashboard peer sample (2026-08-11, David): each dashboard owns its cut. This is the
+  // EFFECTIVE cut for every card on the active dashboard — NOT the app-wide selector (which is
+  // hidden on this page). Defaults to all-peers until the user picks a sample for the dashboard.
+  const [activeCut, setActiveCut] = useState({ dim: "all", value: null });
   const [cards, setCards] = useState({});
   const [drag, setDrag] = useState(null);
   const [saved, setSaved] = useState(null);
@@ -2906,15 +2910,16 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   const dlRef = useRef(null);
   const cancelRename = useRef(false);   // Escape sets this so the input's onBlur doesn't commit
 
-  const applyActive = (id, lay) => {
+  const applyActive = (id, lay, dcut) => {
     setActiveId(id); setLayout(lay); setCards({});
+    setActiveCut(dcut && dcut.dim ? dcut : { dim: "all", value: null });
     if (setPinned) setPinned((lay || []).map(s => s.question_id));
   };
-  // cache key folds in the EFFECTIVE peer cut, so changing the global filter
-  // (or a slot's own cut) yields a fresh key → refetch, not a stale card.
-  const cardKey = slot => slotKey(slot) + "|" + cutKeyOf(slot.cut || cut);
+  // cache key folds in the EFFECTIVE peer cut (this dashboard's sample, or a slot's own
+  // override), so switching the dashboard's sample yields a fresh key → refetch, not a stale card.
+  const cardKey = slot => slotKey(slot) + "|" + cutKeyOf(slot.cut || activeCut);
   const reload = () => { setErr(null); return api("/api/dashboards").then(d => {
-    setList(d.dashboards); applyActive(d.active_id, d.active.layout);
+    setList(d.dashboards); applyActive(d.active_id, d.active.layout, d.active.cut);
   }).catch(e => setErr(e.message)); };
   useEffect(() => { reload(); }, []);
   // a card's "Add to dashboard" picker (anywhere) can change this dashboard's
@@ -2932,12 +2937,13 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     // cut's overview can't repaint the signal pills after the newer cut's map landed.
     let live = true;
     // 2026-08-09 review: honour the strategy-off preference like every other surface.
-    apiCached("/api/overview?" + cutQS(cut) + (((prefs && prefs._overview) || {}).apply_strategy !== false ? "" : "&strategy=off")).then(o => {
+    // Signal overlay reflects THIS dashboard's sample (activeCut), not the app-wide selector.
+    apiCached("/api/overview?" + cutQS(activeCut) + (((prefs && prefs._overview) || {}).apply_strategy !== false ? "" : "&strategy=off")).then(o => {
       if (!live) return;
       const m = {}; (o.signals_all || []).forEach(s => { (m[s.question_id] = m[s.question_id] || []).push(s); }); setSigMap(m);
     }).catch(() => { if (live) setSigMap({}); });
     return () => { live = false; };
-  }, [cutKeyOf(cut), ((prefs && prefs._overview) || {}).apply_strategy]);
+  }, [cutKeyOf(activeCut), ((prefs && prefs._overview) || {}).apply_strategy]);
   useEffect(() => {
     if (!layout) return;
     // one request per cut group instead of one per pinned card (20 pins was 20 GETs)
@@ -2945,7 +2951,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     if (!missing.length) return;
     const groups = new Map();
     missing.forEach(slot => {
-      const qs = cutQS(slot.cut || cut);
+      const qs = cutQS(slot.cut || activeCut);
       if (!groups.has(qs)) groups.set(qs, []);
       groups.get(qs).push(slot);
     });
@@ -2962,7 +2968,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
           return next;
         }));
     });
-  }, [layout, cutKeyOf(cut)]);
+  }, [layout, cutKeyOf(activeCut)]);
   useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
   useEffect(() => {
     if (!dlOpen) return;
@@ -2989,11 +2995,12 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
   // R-P10/R-P2: the printed artefact names its comparison object. Static
   // "reference panel" is EXACT today (real n = 0 everywhere); Phase 1 replaces
   // it with the ruled composition chip (panel / members+panel / members).
-  const peerLabel = (!cut || !cut.dim || cut.dim === "all")
+  const peerLabel = (!activeCut || !activeCut.dim || activeCut.dim === "all")
     ? "All peers · " + (SHOW_COMPOSITION_IN_PRODUCT
         ? compositionLabel((me.peer_pool || {}).responding_orgs, (me.peer_pool || {}).real_orgs)
         : ((me.peer_pool || {}).responding_orgs || "—"))
-    : (cut.value || cut.dim);
+    : activeCut.dim === "twin" ? "Organisations like you"
+    : (activeCut.value || activeCut.dim);
   const printDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   const persist = async (next) => {
@@ -3031,8 +3038,22 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
     try {
       await api(`/api/dashboards/${id}/activate`, { method: "POST" });
       const d = await api(`/api/dashboards/${id}`);
-      applyActive(id, d.layout);
+      applyActive(id, d.layout, d.cut);
     } finally { setBusy(false); }
+  };
+  // Set THIS dashboard's peer sample (David 2026-08-11). PeerSetBar hands us a cut KEY;
+  // parse it, apply locally (cards refetch — cardKey folds in the cut), and persist to the
+  // dashboard. "manage-groups" is the app-level modal, so delegate it to the global handler.
+  const setDashboardCut = (key) => {
+    if (key === "manage-groups") { onCut && onCut(key); return; }
+    const c = key === "all" || !key ? { dim: "all", value: null }
+      : key === "twin" ? { dim: "twin", value: null }
+      : (() => { const [dim, value] = key.split("::"); return { dim, value }; })();
+    setActiveCut(c);
+    const stored = c.dim === "all" ? null : c;
+    setList(l => l.map(d => d.id === activeId ? { ...d, cut: stored } : d));
+    api(`/api/dashboards/${activeId}`, { method: "PUT", body: { cut: stored } })
+      .catch(() => toast("Couldn't save this dashboard's sample — it may reset next visit.", "error"));
   };
   const createNew = async () => {
     if (busy) return;
@@ -3072,7 +3093,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
       const r = await api(`/api/dashboards/${activeId}`, { method: "DELETE" });
       setList(r.dashboards);
       const d = await api(`/api/dashboards/${r.active_id}`);
-      applyActive(r.active_id, d.layout);
+      applyActive(r.active_id, d.layout, d.cut);
     } finally { setBusy(false); }
   };
   const saveDefault = async () => {
@@ -3116,7 +3137,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
               <div class="dash-dl-menu" role="group">
                 <button class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
                   <b>PDF</b><small>Print-ready document — every card</small></button>
-                <a class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(cut)}
+                <a class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(activeCut)}
                   download onClick=${() => setDlOpen(false)}>
                   <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
               </div>`}
@@ -3153,7 +3174,14 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
               <button class="iconbtn" title=${onlyOne ? "Reset this dashboard" : "Delete this dashboard"} onClick=${() => setConfirmDel(true)} disabled=${busy}><${Icon} name="close" size=${14} /></button>
             </div>`}
         </div>
-        <div class="caption">${layout.length} card${layout.length === 1 ? "" : "s"}</div>
+        <div class="dash-toolbar-r no-print">
+          ${/* per-dashboard SAMPLE (2026-08-11, David): this selector belongs to the dashboard —
+                it sets + saves THIS dashboard's peer sample, and every card above reads it. The
+                app-wide "Comparing against" bar is hidden on this page (app.js). */ ""}
+          <${PeerSetBar} me=${me} cut=${activeCut} cuts=${cuts} onSelect=${setDashboardCut}
+            onTwinInfo=${onTwinInfo || (() => {})} inline=${true} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+          <span class="caption dash-cardcount">${layout.length} card${layout.length === 1 ? "" : "s"}</span>
+        </div>
       </div>
 
       ${confirmDel && html`
@@ -3180,7 +3208,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned }) {
             ${!c ? html`<${SkeletonCard} />` :
             c.error ? html`<div class="card bench-card"><${EmptyState} tone="error" title="Couldn't load this card" body="Nothing is lost — reopen the page to try again." /></div>` :
             html`<${Guarded}><${BenchmarkCard} card=${c} prefs=${prefs} onPref=${onPref} size=${slot.size}
-              onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(cut)} signal=${sigMap[slot.question_id]}
+              onPin=${() => remove(slot.question_id)} pinned=${true} cuts=${cuts} globalCut=${cutKeyOf(activeCut)} signal=${sigMap[slot.question_id]}
               footTools=${html`
                 <button class="iconbtn" title=${slot.size === 2 ? "Single width" : "Double width"} aria-label="Card width" onClick=${() => resize(slot.question_id, slot.size === 2 ? 1 : 2)}>${slot.size === 2 ? "1×" : "2×"}</button>
                 <button class="iconbtn" title="Reorder — drag, or focus and use arrow keys"

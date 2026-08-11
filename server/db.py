@@ -238,6 +238,10 @@ CREATE TABLE IF NOT EXISTS dashboards (
     user_id      TEXT NOT NULL,
     name         TEXT NOT NULL,
     layout_json  TEXT NOT NULL DEFAULT '[]',
+    -- each dashboard carries its OWN peer sample (2026-08-11): a {dim,value} cut, or
+    -- NULL = all peers. So a user can keep one dashboard on all-peers and another on a
+    -- named group / industry / FTE band. The active dashboard's cut drives every card on it.
+    cut_json     TEXT,
     position     INTEGER NOT NULL DEFAULT 0,
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at   TEXT NOT NULL DEFAULT (datetime('now'))

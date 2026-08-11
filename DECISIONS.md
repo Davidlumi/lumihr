@@ -16476,3 +16476,31 @@ each chip deep-links to that domain's signals only.
   the domain filter isn't a shareable URL (acceptable: the chip is a button, not a link).
 Verified live: Overview "Pay 9" chip → Signals shows exactly 9 Pay cards + banner; "Show all
 signals" restores the 38-card / 7-domain feed with the All pill re-highlighted. v=514; 14/14.
+
+## 2026-08-11 — My dashboards: each dashboard carries its own peer sample (David)
+
+David: "each dashboard should have its own tied sample filter — so a user can have a dashboard
+with a different sample group." Rulings (AskUserQuestion): the sample BELONGS TO THE DASHBOARD
+(the app-wide selector is hidden on this page); default = ALL PEERS for existing + new dashboards.
+
+DATA MODEL: new nullable `dashboards.cut_json` column ({dim,value} cut, NULL = all peers).
+Migration server/migrate_dashboard_cut_2026_08_11.py (idempotent ALTER; 10 existing dashboards
+→ NULL). db.py DDL updated for fresh DBs. Backed up lumi.db (SQLite backup API) pre-migration.
+
+SERVER (app.py): _dash_cut()/_norm_dash_cut() (only industry/fte_band/twin/group honoured, else
+all-peers). list/get/active payloads return `cut`; create accepts `cut` and a clone/duplicate
+inherits the source's sample; update persists `cut` only when the key is present (so a layout/name
+PUT never clobbers the sample; cut:null clears to all-peers).
+
+CLIENT (pages.js DashboardsPage): new `activeCut` state = the active dashboard's cut (default
+all-peers). It is the EFFECTIVE cut for every card, the sigMap overlay, the CSV export, and the
+print peer label — replacing the app-wide `cut`. applyActive/switchTo/delete load the dashboard's
+cut; setDashboardCut() parses the PeerSetBar key, applies locally (cards refetch — cardKey folds
+in the cut) and persists via PUT. A per-dashboard PeerSetBar renders in the dash toolbar
+(onSelect=setDashboardCut; "manage-groups" delegates to the app modal). app.js: the masthead
+PeerSetBar is suppressed on /dashboards + /myview (isDashboards). CSS: .dash-toolbar-r layout.
+
+Verified live: sample selector in the toolbar, masthead selector gone; switching to "My competitor
+set" refetched cards (cut=group&cut_value=…) + PUT 200; survived a full reload; a second dashboard
+kept its own "all peers" — samples are independent per dashboard. Reverted the test change on the
+real "My dashboard". v=515; 14/14 gates green.
