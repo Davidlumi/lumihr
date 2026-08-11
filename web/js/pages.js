@@ -2274,7 +2274,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
     </div>`;
   return html`
-    <div class="signals-page brf-page" style=${{ maxWidth: "880px" }}>
+    <div class="signals-page brf-page" style=${{ maxWidth: "1080px" }}>
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
       ${unlocked ? html`<p class="brf-std" style=${{ maxWidth: "680px", marginTop: 0 }}>Grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
@@ -2288,7 +2288,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       </div>
       <div class="sig-subhead" style=${{ marginBottom: "var(--s4)" }}>
         <span class="caption sig-peer-note">Flagged against your <b>default peer group</b> — ${(me.org && me.org.signal_peer_label) || "all peers"}.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}</span>
-        <a href="#/priorities" class="caption sig-reg-link">Full register <span aria-hidden="true">→</span></a>
+        <a href="#/priorities" class="btn small sig-reg-btn"><${Icon} name="table" size=${13} /> Full gap register</a>
       </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`

@@ -16920,3 +16920,13 @@ sp : ""` — and bind BOTH the row filter and the `<select value>` to `spEff`, s
 filter is harmless and the dropdown can never disagree with what's applied. Diagnosed by instrumenting
 the component (temp console.log → `sp:"Benefits"` while the select read ""). VERIFIED live on the group
 default cut: the register went 0 → "84 metrics shown". Frontend-only; 14/14 gates. v=539.
+
+## 2026-08-11 — Signals: wider column + a findable gap-register entry (David "cramped … gap log is lost")
+
+On a wide screen the Signals feed was capped at max-width 880px — a narrow strip hugging the left with
+dead space, reading as cramped — and batch-3 had demoted the full-register entry to a faint top-right
+text link ("the gap log is lost"). Two fixes: (1) widen `.signals-page` 880 → 1080px so it uses a wide
+screen and the control rows breathe; (2) the header register entry is now a clear **"Full gap register"
+button** (`.btn.small` + table icon), and the navy footer register block stays — so the register is
+findable at the top AND bottom. `.sig-subhead` now centre-aligns (button + peer-note). Verified live at
+1500px: pageWidth 1080, the button + footer both present. Frontend-only; 14/14 gates. v=540.

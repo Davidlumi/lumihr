@@ -4166,10 +4166,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-domhead:first-child { margin-top: 0; }
 /* ── Signals review batch 3 (David 2026-08-11) ── */
 /* subhead: peer-note (left) + full-register escape hatch (right) */
-.sig-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
-.sig-peer-note { max-width: 620px; }
-.sig-reg-link { white-space: nowrap; font-weight: 600; color: var(--blue-bright); text-decoration: none; }
-.sig-reg-link:hover { color: var(--blue-deep); text-decoration: underline; }
+.sig-subhead { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+.sig-peer-note { max-width: 640px; }
+.sig-reg-btn { white-space: nowrap; flex: none; }
 /* inbox unread badge */
 .sfold-unread { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px;
   padding: 0 4px; margin-left: 2px; border-radius: 999px; background: var(--blue); color: #fff; font-size: var(--fs-micro); font-weight: 700; }
