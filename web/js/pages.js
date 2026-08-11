@@ -440,7 +440,9 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo} inline=${true}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
           ${unlocked ? html`<${ConfidenceChip} n=${sampleN} window=${data.snapshot && data.snapshot.window} />` : null}
-          ${unlocked && data.snapshot && data.snapshot.window ? html`<span class="caption ov-period num">${data.snapshot.window} · baseline</span>` : null}
+          ${/* period/baseline label ("2026 H1 · baseline") removed 2026-08-11 (David) — the
+                collection window still rides the ConfidenceChip's detail; the standalone
+                caption was noise in the controls row. */ ""}
         </div>
         ${!locked ? html`
         <div class="ov-lens">

@@ -16424,3 +16424,10 @@ qa_overview 9c (verified: _pool/_viewLive/_viewTotal + the " of " + total rankno
 Verified live: SPA renders (no parse error), both sections gone, 7 scent chips remain and a
 click routes #/overview → #/signals (Signals page renders); console clean bar benign 401s.
 The breathing-room donut (216) still applies. v=511; 14/14 gates green.
+
+## 2026-08-11 — Home: removed the "2026 H1 · baseline" period caption (David)
+
+David: "remove the h2 2026 text." Deleted the .ov-period caption span from the Overview
+controls row (OverviewHero, pages.js) — it read "<window> · baseline" (e.g. "2026 H1 ·
+baseline"). The collection window still rides the ConfidenceChip's detail, so no information
+is lost; the standalone caption was noise beside the confidence chip. v=512; 14/14.
