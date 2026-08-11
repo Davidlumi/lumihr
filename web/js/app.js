@@ -167,16 +167,19 @@ function App() {
     api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id)))).catch(() => {});
     api("/api/questions").then(setQIndex).catch(() => {});
   }, [me && me.org && me.org.name]);
-  // per-user DEFAULT peer group (2026-07-10, David): if the URL carries no explicit cut, open
-  // on the member's saved default (prefs._peer_default) instead of all-peers. Once, on prefs
-  // load — a later explicit "all" selection isn't overridden (initialHadCut latches).
+  // Landing peer group = the COMPANY DEFAULT (org.default_cut → me.org.signal_peer_cut), David
+  // 2026-08-11: the admin-set company default drives signals AND is the app-wide default, so every
+  // member opens on the SAME group (the per-user landing pref was dropped). An explicit cut in the
+  // URL still wins (shared links / back button); applied once, and a later explicit "all" isn't
+  // overridden (initialHadCut latches).
   const initialHadCut = useRef(/[?&]cut=/.test(window.location.hash || ""));
   useEffect(() => {
-    if (prefs && !initialHadCut.current && prefs._peer_default && prefs._peer_default !== "all") {
+    const def = me && me.org && me.org.signal_peer_cut;
+    if (def && !initialHadCut.current && def !== "all") {
       initialHadCut.current = true;
-      setGlobalCut(prefs._peer_default);
+      setGlobalCut(def);
     }
-  }, [prefs]);
+  }, [me && me.org && me.org.signal_peer_cut]);
   // Ship review 2026-07-09 B3 (+ the hashchange companion): nav() writes a bare
   // hash, so keying this effect on the cut alone meant every route change ERASED
   // ?cut= — a refresh then silently swapped Directional·15 for the 220-org pool,
@@ -1183,11 +1186,9 @@ function NotificationBell({ me }) {
    global state (App owns `cut`); this is just where it's surfaced. */
 function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref, refreshMe }) {
   const note = (!me.org.classified || (cut.dim === "group" && cutTooSmall(cut, cuts)));
-  // ★/🔔 default-setters REMOVED from the capsule (David 2026-07-12, "the icons at the end of
-  // the bar do nothing — remove"): on the default all-peers view both read as already-set, so
-  // they looked inert. Both defaults are now set from Settings → Defaults (2026-07-13):
-  // prefs._peer_default drives the landing view (the load-default effect above) and
-  // orgs.default_cut drives the signal-email sweep (PUT /api/org/signal-peers).
+  // ★/🔔 default-setters REMOVED from the capsule (David 2026-07-12). The ONE company default
+  // (orgs.default_cut) is set from Settings → Company default peer group; it drives signals +
+  // alerts AND everyone's landing view (the per-user _peer_default pref was dropped 2026-08-11).
   return html`
     <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
       <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>

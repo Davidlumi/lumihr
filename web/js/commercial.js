@@ -1023,7 +1023,6 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const [a, setA] = useState(null);
   const [editable, setEditable] = useState(false);
   const [msg, setMsg] = useState(null);
-  const [landMsg, setLandMsg] = useState(null);
   const [sigMsg, setSigMsg] = useState(null);
   const [sigBusy, setSigBusy] = useState(false);
   const [aiDoc, setAiDoc] = useState(false);
@@ -1073,22 +1072,17 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
         <${NotificationsSettings} />
       </div>
       <div class="card" id="defaults" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Default peer groups</h2>
-        <p class="caption">Narrowing on a page never changes these defaults — set them here.</p>
+        <h2 class="section-title">Company default peer group</h2>
+        <p class="caption">The peer group your whole organisation is measured against — it drives your signals and email alerts and is the group everyone lands on. Exploring another group on a page never changes it.</p>
         ${(() => {
-          // Settings home for the two defaults (2026-07-13) — replaces the removed ★/🔔
-          // capsule icons. Landing = per-user pref (any peer group, mirrors the PeerSetBar
-          // list); signal emails = org-level, editor-set, firmographic cuts only (the sweep
-          // can't run on twins or saved groups — server rejects them).
+          // ONE org-level default (David 2026-08-11) — editor-set, firmographic cuts only (the
+          // nightly sweep can't run on twins or saved groups, and it now doubles as everyone's
+          // landing view). The per-user "landing peer group" pref was dropped.
           const pool = (me.peer_pool || {}).responding_orgs || "—";
           const opt = (v, label) => html`<option key=${v} value=${v}>${label}</option>`;
           const firmo = !cuts || !me.org.classified ? [] :
             Object.keys(cuts.industries || {}).map(i => opt("industry::" + i, `${i} · ${cuts.industries[i]}`)).concat(
             Object.keys(cuts.fte_bands || {}).map(b => opt("fte_band::" + b, `${b} FTE · ${cuts.fte_bands[b]}`)));
-          const landOpts = [opt("all", `All peers · ${pool}`), ...firmo,
-            ...(cuts && cuts.twin_available ? [opt("twin", "Organisations like you")] : []),
-            ...((cuts && cuts.groups) || []).map(g => opt("group::" + g.group_id,
-              g.name + (g.too_small ? " (too few organisations)" : ` · ${g.match_count}`)))];
           const sigVal = me.org.signal_peer_cut || "all";
           const sigLabel = sigVal === "all" ? `All peers · ${pool}`
             : sigVal.split("::", 2)[1] + (sigVal.startsWith("fte_band::") ? " FTE" : "");
@@ -1098,31 +1092,26 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
             try {
               await api("/api/org/signal-peers", { method: "PUT", body: { cut: v } });
               await refreshMe();
-              setSigMsg("Saved — tonight's sweep flags against this peer group.");
+              setSigMsg("Saved — this is now the default for signals, alerts and everyone's view (from their next visit).");
               setTimeout(() => setSigMsg(null), 4000);
             } catch (e) { toast(e.message, "error"); }
             setSigBusy(false);
           };
           return html`
-            <div class="field"><label>Your landing peer group <span class="caption">— personal to you</span></label>
-              <select class="ctl" aria-label="Your landing peer group"
-                value=${(prefs && prefs._peer_default) || "all"}
-                onChange=${e => { onPref("_peer_default", e.target.value);
-                  setLandMsg("Saved — the dashboard opens here from your next sign-in.");
-                  setTimeout(() => setLandMsg(null), 4000); }}>${landOpts}</select>
-              ${landMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s1)" }}>${landMsg}</div>`}
-            </div>
+            ${/* ONE company default (David 2026-08-11): the per-user "landing peer group" control was
+                  dropped — the org default now drives signals, alerts AND everyone's landing view, so
+                  there's a single consistent frame. Editor-set, firmographic cuts only. */ ""}
             <div class="field" style=${{ marginBottom: 0 }}>
-              <label>Signal-email peer group <span class="caption">— organisation-wide</span></label>
+              <label>Default peer group <span class="caption">— organisation-wide</span></label>
               ${isEd ? html`
-                <select class="ctl" aria-label="Signal-email peer group" disabled=${sigBusy}
+                <select class="ctl" aria-label="Company default peer group" disabled=${sigBusy}
                   value=${sigVal} onChange=${e => saveSig(e.target.value)}>
                   ${[opt("all", `All peers · ${pool}`), ...firmo]}</select>` : html`
                 <div><span class="chip">${sigLabel}</span>
                   <span class="caption"> — Admins and Contributors set this.</span></div>`}
               ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s1)" }}>${sigMsg}</div>`}
-              <div class="caption" style=${{ marginTop: "var(--s1)" }}>Sector and size groups only — the nightly
-                sweep flags every member's email against these peers.</div>
+              <div class="caption" style=${{ marginTop: "var(--s1)" }}>Sector and size groups only. Every member lands on
+                this group, and your signals + email alerts flag against it — one consistent view for the whole organisation.</div>
               ${!me.org.classified && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>
                 ${me.user.role === "admin" ? html`<a href="#/profile">Add your company profile</a> to unlock sector & size groups.`
                   : "Your Admin can add the company profile to unlock sector & size groups."}</div>`}

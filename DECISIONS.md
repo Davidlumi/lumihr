@@ -16621,3 +16621,28 @@ VERIFIED live: signals_all IDENTICAL (56) across all-peers/fte/industry requests
 fires when requested≠default and returns the default set); Signals page renders, shows the note,
 selector hidden, chip=default group; console clean. v=524; 14/14 gates green (byte-identical on the
 default path).
+
+## 2026-08-11 — ONE company default peer group (locked to the org, drives everything) (David)
+
+David: "on company set up the user admin must create a default peer group which will be used for
+signals and be available for all sample areas. Should we allow users to change the default for
+their profile or have one locked for the company?" Rulings (AskUserQuestion): COMPANY-LOCKED
+(admin/editor only, not per-user); and DROP the separate per-user landing preference — everyone
+lands on the company default.
+
+CHANGE (client-only this commit; the signal-anchoring server side shipped in 1b855e0):
+- LANDING: app.js now opens the app on the COMPANY default (me.org.signal_peer_cut = orgs.default_cut)
+  when the URL carries no explicit cut — was the per-user prefs._peer_default. So every member lands
+  on the same group. An explicit URL cut still wins (shared links / back button).
+- SETTINGS (commercial.js "Default peer groups" → "Company default peer group"): removed the per-user
+  "Your landing peer group" control (+ its landOpts/landMsg); the single remaining control is the
+  org-level default (editor-set, firmographic or all) — reframed as driving signals + alerts + the
+  whole org's landing view. Save message + intro updated. prefs._peer_default is no longer read
+  anywhere (vestigial in storage; harmless).
+- Anyone can still EXPLORE any peer group ad-hoc via the selector (position/benchmark) — that's
+  transient and doesn't touch signals; the selector stays everywhere except /signals.
+STILL OWED (Piece 4, deferred — its own flow design): "must create at company setup" — require/nudge
+the admin to set the default during onboarding (currently optional, defaults to all-peers; depends on
+classification for firmographic cuts). Not a hard gate yet.
+Verified live: Settings shows the single "Company default peer group" control (per-user landing gone);
+SPA renders; console clean. v=525; 14/14 gates green.
