@@ -3142,7 +3142,7 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
                   <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
               </div>`}
           </div>
-          <${ShareButton} me=${me} cut=${null} name=${activeName} layout=${layout} />
+          <${ShareButton} me=${me} cut=${activeCut} name=${activeName} layout=${layout} />
           ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members start from this layout">Save as team default</button>`}
         </div>
       </div>

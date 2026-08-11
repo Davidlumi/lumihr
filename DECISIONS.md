@@ -16504,3 +16504,11 @@ Verified live: sample selector in the toolbar, masthead selector gone; switching
 set" refetched cards (cut=group&cut_value=…) + PUT 200; survived a full reload; a second dashboard
 kept its own "all peers" — samples are independent per dashboard. Reverted the test change on the
 real "My dashboard". v=515; 14/14 gates green.
+
+## 2026-08-11 — My dashboards: share a dashboard at ITS sample (follow-up)
+
+Consistency follow-up to the per-dashboard sample: the Share dialog builds its read-only
+snapshot from the passed `cut` (falling back to all-peers), but the dashboards page passed
+cut=null — so a dashboard pinned to a group would have shared an ALL-PEERS snapshot. Now
+ShareButton receives activeCut, so a shared dashboard reflects the sample it's tied to.
+Verified the Share dialog opens carrying the dashboard's cut (no link created). v=516; 14/14.
