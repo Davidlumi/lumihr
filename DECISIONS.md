@@ -16317,3 +16317,12 @@ decision (fixed 296mm + overflow:hidden) — not changed unilaterally post colou
 Remaining tail = two BROAD comprehension passes (analyst-notation de-jargon; hover-only
 meaning on the other surfaces) + the '1×' multiplier fmtValue + status-label vocabulary
 (semantically distinct states — needs care) — best as a dedicated pass.
+
+## 2026-08-11 — UX polish (#3 of the final 5): multiplier value formatting
+
+Pay/overtime multiplier matrices (REW_Q534581 hourly pay multipliers, REW_Q528801
+overtime multiplier) rendered derived medians as a bare number ('you 1, market median
+1.25'). Tagged both unit_type='multiplier' (migrate_multiplier_unit_2026_08_10.py,
+questions-table only — no answer-book/L1 impact) + added a 'multiplier' branch to BOTH
+formatters: server positions.fmt_value and web/js/core.js fmtValue -> '1.25×'. Verified
+1.0->1×, 1.25->1.25×. Backup lumi.db.bak_pre_manual_20260811_085420; aggregate; v=506; 14/14.

@@ -61,6 +61,7 @@ window.fmtValue = function (v, unit) {
   const dp = Math.abs(v) < 10 ? 2 : 1;
   let s = (Math.round(v * Math.pow(10, dp)) / Math.pow(10, dp)).toLocaleString("en-GB", { maximumFractionDigits: dp });
   if (ut === "percentage") return s + "%";
+  if (ut === "multiplier") return s + "×";   // pay/overtime multipliers read as "1.25×", never a bare "1"
   if (ut === "days" || ut === "hours" || ut === "weeks") return s + " " + ut;
   return s;
 };

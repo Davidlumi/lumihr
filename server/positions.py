@@ -27,6 +27,9 @@ def fmt_value(v, unit, decimals=None):
     if ut == "percentage":
         s = "{:.1f}".format(v).rstrip("0").rstrip(".")
         return s + "%"
+    if ut == "multiplier":
+        s = "{:.2f}".format(v).rstrip("0").rstrip(".")
+        return s + "×"   # 1.25× — never a bare "1"
     if ut in ("days", "hours", "weeks"):
         s = "{:.1f}".format(v).rstrip("0").rstrip(".")
         return "%s %s" % (s, ut)
