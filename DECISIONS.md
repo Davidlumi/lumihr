@@ -16700,3 +16700,38 @@ column labels; accent-color checkboxes; blue-tint selected rows. Verified via a 
 reproduces the exact markup inside a `.field` wrapper against the real app.css (login-independent).
 A full world-class Settings-page redesign review is running (workflow) — the broader IA/nav/layout
 rework follows. v=528; 14/14 gates green.
+
+## 2026-08-11 — Settings: full two-pane world-class redesign (David "Full two-pane redesign")
+
+After the multi-select fix, David asked for a complete Settings review + redesign ("do a complete
+review of the settings page — what do other world-class platforms do"). A design-panel workflow
+returned the north star; David chose the FULL two-pane redesign. Shipped (commercial.js SettingsPage +
+new `.settings-*` CSS atoms in app.css):
+
+- **Two-pane shell** — `.settings-shell` (max 940) → `.settings-grid` (196px sticky left rail +
+  minmax(0,1fr) content, ~712px). Rail sticky at `calc(brandbar-h + s4)`; cards `scroll-margin-top:
+  calc(brandbar-h + s5)` so smooth-scroll anchors clear the 56px brandbar.
+- **Grouped scroll-spy rail** — Personal (Notifications, AI insights) / Organisation (Default peer
+  group, Company profile, Modelling assumptions) / Legal & sharing (Terms, Sharing). Rail items are
+  BUTTONS calling `goSec()` → `scrollIntoView` (NOT `href="#id"` — that would corrupt the `#/settings`
+  hash route). An IntersectionObserver (rootMargin -18%/-72%) highlights the section nearest the top.
+- **Regrouped + reordered** — Default peer group promoted to the top of Organisation; Modelling
+  assumptions (was first) demoted. Stable ids on all cards: notifications, ai-insights, defaults,
+  profile, modelling, terms, sharing.
+- **Consistent cards** — `.settings-card` on one white surface; sentence-case 16px
+  `.settings-card-title` (was 22px `.section-title` ALL-CAPS-ish); `.settings-desc` helper; a
+  `.scope-chip` per card — "Just you" (blue tint, personal) vs "Org-wide" (neutral). NO RAG colour
+  (RAG stays benchmark-only). `.set-row` primitive (label-left / control-right / hairline) for the AI
+  toggle + notifications.
+- **Multi-select rebuilt as a searchable chip picker** — removable selection chips (`.sigpeer-tag`)
+  above two facets, each a search box (`.sigpeer-search`) filtering its checkbox list; a LIVE match
+  count ("Matches N organisations", warn <5) via `POST /api/peer-groups/preview` (debounced 250ms,
+  editors only); Save disabled until dirty, "Saved" cue when clean. Replaces the bare checkbox columns.
+- **Responsive** — ≤900px the rail collapses to a horizontal sticky scroller (group labels hidden),
+  grid → single column.
+
+VERIFIED: static-DOM harness against the real app.css (both desktop-metrics — grid cols "196px 712px",
+rail 196 sticky — and a readable ≤768px capture showing the collapsed rail, scope chips, selection
+chips, dual search + checkbox lists, live match line, all cards); commercial.js passes a jsc syntax +
+top-level eval check; app.css braces balanced. v=529; 14/14 gates green. Interactive behaviour
+(scroll-spy, live count, save) for David to confirm in his logged-in Chrome.

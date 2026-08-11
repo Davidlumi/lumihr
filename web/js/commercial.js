@@ -1030,6 +1030,10 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const _sigCrit0 = (me.org && me.org.signal_peer_criteria) || {};
   const [sigSectors, setSigSectors] = useState(_sigCrit0.industry || []);
   const [sigSizes, setSigSizes] = useState(_sigCrit0.fte_band || []);
+  const [sigMatch, setSigMatch] = useState(null);   // live "matches ~N orgs" for the current selection
+  const [sigSecQ, setSigSecQ] = useState("");        // sector search
+  const [sigSizQ, setSigSizQ] = useState("");        // size search
+  const [activeSec, setActiveSec] = useState("notifications");   // rail scroll-spy
   const [aiDoc, setAiDoc] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [err, setErr] = useState(null);   // §4.10(2): don't hang on the loader if settings fail
@@ -1042,6 +1046,32 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   };
   const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
   useEffect(() => { loadA(); }, []);
+  const isEd = me.user.role === "admin" || me.user.role === "contributor";
+  const isAdmin = me.user.role === "admin";
+  // rail scroll-spy — highlight the section nearest the top of the reading band
+  useEffect(() => {
+    if (!a) return;
+    const ids = ["notifications", "ai-insights", "defaults", "profile", "modelling", "terms"].concat(isAdmin ? ["sharing"] : []);
+    const obs = new IntersectionObserver((entries) => {
+      const vis = entries.filter(e => e.isIntersecting);
+      if (!vis.length) return;
+      vis.sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top);
+      setActiveSec(vis[0].target.id);
+    }, { rootMargin: "-18% 0px -72% 0px", threshold: 0 });
+    ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [a, isAdmin]);
+  // live "matches ~N organisations" for the peer-default builder (debounced; editors only)
+  useEffect(() => {
+    if (!isEd || (!sigSectors.length && !sigSizes.length)) { setSigMatch(null); return; }
+    let live = true;
+    const t = setTimeout(() => {
+      api("/api/peer-groups/preview", { method: "POST", body: { criteria: { industry: sigSectors, fte_band: sigSizes } } })
+        .then(r => { if (live) setSigMatch(r); }).catch(() => { if (live) setSigMatch(null); });
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [sigSectors.join("|"), sigSizes.join("|"), isEd]);
+  const goSec = (id) => { const el = document.getElementById(id); if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); setActiveSec(id); } };
   const save = async () => {
     try {
       await api("/api/assumptions", { method: "PUT", body: { assumptions: {
@@ -1054,128 +1084,171 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${loadA}>Retry</button>`} />`;
   if (!a) return html`<${PageLoading} />`;
-  return html`
-    <div style=${{ maxWidth: "640px", margin: "0 auto" }}>
-      <h1 class="display-title">Settings</h1>
-      <div class="card" style=${{ padding: "var(--s5)", margin: "var(--s4) 0" }}>
-        <h2 class="section-title">£ modelling assumptions</h2>
-        <p class="caption">Every "opportunity" figure in lumi is indicative and rests on these assumptions. Change them to match your organisation.</p>
-        <div class="field"><label>Median salary (£/yr)</label>
-          <input type="number" value=${a.median_salary_gbp} disabled=${!editable} onInput=${e => setA({ ...a, median_salary_gbp: e.target.value })} /></div>
-        <div class="field"><label>Cost per leaver (% of salary — recruitment, cover and ramp-up)</label>
-          <input type="number" value=${a.cost_per_leaver_pct_salary} disabled=${!editable} onInput=${e => setA({ ...a, cost_per_leaver_pct_salary: e.target.value })} /></div>
-        <div class="field"><label>Agency premium (% over employed cost)</label>
-          <input type="number" value=${a.agency_premium_pct} disabled=${!editable} onInput=${e => setA({ ...a, agency_premium_pct: e.target.value })} /></div>
-        <div class="caption" style=${{ marginBottom: "var(--s3)" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
-        ${editable ? html`<button class="btn primary" onClick=${save}>Save assumptions</button>` :
-        html`<div class="caption">Only admins can edit assumptions.</div>`}
-        ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}
+
+  // ---- rail + card scaffolding (two-pane world-class redesign, David 2026-08-11) ----
+  const railItem = (id, label) => html`<button type="button"
+    class=${"settings-rail-item" + (activeSec === id ? " active" : "")} onClick=${() => goSec(id)}>${label}</button>`;
+  const card = (id, title, chip, chipYou, desc, body) => html`
+    <section class="card settings-card" id=${id}>
+      <div class="settings-card-head">
+        <h2 class="settings-card-title">${title}</h2>
+        ${chip ? html`<span class=${"scope-chip" + (chipYou ? " you" : "")}>${chip}</span>` : null}
       </div>
-      <div class="card" id="notifications" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Notifications</h2>
-        <p class="caption">When a flag appears, clears or shifts, it reaches your bell and — if you opt in — an email digest. Personal to you.</p>
-        <${NotificationsSettings} />
-      </div>
-      <div class="card" id="defaults" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Company default peer group</h2>
-        <p class="caption">The peer group your whole organisation is measured against — it drives your signals and email alerts and is the group everyone lands on. Exploring another group on a page never changes it.</p>
-        ${(() => {
-          // The company default = ANY MIX of sectors × sizes (David 2026-08-11) — editor-set, drives
-          // signals, alerts + everyone's landing view. Multi-select criteria: none → all peers; a
-          // single value → the pre-aggregated single cut; a combination → an auto company-default
-          // GROUP (the server manages it). The per-user "landing peer group" pref was dropped.
-          const isEd = me.user.role === "admin" || me.user.role === "contributor";
-          const sectorOpts = cuts && me.org.classified ? Object.entries(cuts.industries || {}) : [];
-          const sizeOpts = cuts && me.org.classified ? Object.entries(cuts.fte_bands || {}) : [];
-          const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
-          const nSel = sigSectors.length + sigSizes.length;
-          const saveSig = async () => {
-            setSigBusy(true); setSigMsg(null);
-            try {
-              const r = await api("/api/org/signal-peers", { method: "PUT",
-                body: { criteria: { industry: sigSectors, fte_band: sigSizes } } });
-              await refreshMe();
-              setSigMsg(r && r.match_count != null && r.match_count < 5
-                ? "Saved — but this mix matches only " + r.match_count + " organisations, so figures under 5 stay hidden. Consider broadening it."
-                : "Saved — now the default for signals, alerts and everyone's view (from their next visit).");
-              setTimeout(() => setSigMsg(null), 6000);
-            } catch (e) { toast(e.message, "error"); }
-            setSigBusy(false);
-          };
-          const col = (title, opts, sel, setSel, suffix) => html`
-            <div class="sigpeer-col">
-              <div class="sigpeer-lbl">${title} <span class="caption">— any, or none for all</span></div>
-              <div class="sigpeer-opts">
-                ${opts.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
-                  <input type="checkbox" checked=${sel.includes(v)} onChange=${() => toggle(sel, setSel, v)} />
-                  <span class="sigpeer-name">${v}${suffix}</span><span class="sigpeer-n">${n}</span></label>`)}
-              </div>
-            </div>`;
-          return html`
-            <div class="field" style=${{ marginBottom: 0 }}>
-              ${isEd ? html`
-                <div class="sigpeer-grid">
-                  ${col("Sectors", sectorOpts, sigSectors, setSigSectors, "")}
-                  ${col("Sizes", sizeOpts, sigSizes, setSigSizes, " FTE")}
-                </div>
-                <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)", alignItems: "center" }}>
-                  <button class="btn small primary" disabled=${sigBusy} onClick=${saveSig}>${sigBusy ? "Saving…" : "Save default"}</button>
-                  <span class="caption">${nSel === 0 ? "Currently: all peers"
-                    : sigSectors.length + " sector" + (sigSectors.length === 1 ? "" : "s") + " × " + sigSizes.length + " size" + (sigSizes.length === 1 ? "" : "s")}</span>
-                </div>` : html`
-                <div><span class="chip">${(me.org && me.org.signal_peer_label) || "All peers"}</span>
-                  <span class="caption"> — Admins and Contributors set this.</span></div>`}
-              ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${sigMsg}</div>`}
-              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Pick any mix of sectors and sizes — the default is the
-                organisations matching your selection (all peers if you pick none). Signals, alerts and everyone's landing view all use it.</div>
-              ${!me.org.classified && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>
-                ${me.user.role === "admin" ? html`<a href="#/profile">Add your company profile</a> to unlock sector & size groups.`
-                  : "Your Admin can add the company profile to unlock sector & size groups."}</div>`}
-            </div>`;
-        })()}
-      </div>
-      <div class="card" id="ai-insights" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">AI Insights</h2>
-        <p class="caption">AI-written interpretations of <b>your own benchmark figures</b> — a description of your data, not advice. On by default; personal to you.</p>
-        <div class="row spread" style=${{ alignItems: "center", marginTop: "var(--s3)" }}>
-          <div>
-            <b>${ai.consented ? "On for you" : "Off"}</b>${ai.consented && ai.consented_at ? html`
-              <span class="caption"> · since ${fmtDate(ai.consented_at + "Z")}
-              ${" "}(v${termsVer(ai.version || ai.terms_version)})</span>` : null}
-          </div>
-          <button class=${"btn small" + (ai.consented ? "" : " primary")} disabled=${aiBusy}
-            onClick=${() => setAiConsent(!ai.consented)}>
-            ${aiBusy ? html`<${Spinner} />` : ai.consented ? "Turn off AI Insights" : "Turn on AI Insights"}</button>
+      ${desc ? html`<p class="settings-desc">${desc}</p>` : null}
+      ${body}
+    </section>`;
+
+  // ---- Default peer group builder (searchable chip multi-select + live match count) ----
+  const sectorOpts = cuts && me.org.classified ? Object.entries(cuts.industries || {}) : [];
+  const sizeOpts = cuts && me.org.classified ? Object.entries(cuts.fte_bands || {}) : [];
+  const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+  const nSel = sigSectors.length + sigSizes.length;
+  const _norm = (arr) => JSON.stringify([...(arr || [])].sort());
+  const sigDirty = _norm(sigSectors) !== _norm(_sigCrit0.industry) || _norm(sigSizes) !== _norm(_sigCrit0.fte_band);
+  const saveSig = async () => {
+    setSigBusy(true); setSigMsg(null);
+    try {
+      const r = await api("/api/org/signal-peers", { method: "PUT",
+        body: { criteria: { industry: sigSectors, fte_band: sigSizes } } });
+      await refreshMe();
+      setSigMsg(r && r.match_count != null && r.match_count < 5
+        ? "Saved — but this mix matches only " + r.match_count + " organisations, so figures under 5 stay hidden. Consider broadening it."
+        : "Saved — now the default for signals, alerts and everyone's view (from their next visit).");
+      setTimeout(() => setSigMsg(null), 6000);
+    } catch (e) { toast(e.message, "error"); }
+    setSigBusy(false);
+  };
+  const facet = (title, opts, sel, setSel, q, setQ, suffix) => {
+    const ql = q.trim().toLowerCase();
+    const shown = ql ? opts.filter(([v]) => v.toLowerCase().includes(ql)) : opts;
+    return html`
+      <div class="sigpeer-col">
+        <div class="sigpeer-lbl">${title}</div>
+        <input class="sigpeer-search" type="text" placeholder=${"Search " + title.toLowerCase() + "…"}
+          value=${q} onInput=${e => setQ(e.target.value)} />
+        <div class="sigpeer-opts">
+          ${shown.length ? shown.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
+            <input type="checkbox" checked=${sel.includes(v)} onChange=${() => toggle(sel, setSel, v)} />
+            <span class="sigpeer-name">${v}${suffix}</span><span class="sigpeer-n">${n}</span></label>`)
+          : html`<div class="caption" style=${{ padding: "var(--s2)" }}>No matches for "${q}"</div>`}
         </div>
-        ${ai.consented && !ai.master ? html`<div class="caption" style=${{ marginTop: "var(--s2)" }}>
-          AI Insights aren't switched on across lumi yet — your setting is saved and applies the moment they go
-          live.</div>` : null}
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>
-          Read the <a onClick=${e => { e.preventDefault(); setAiDoc(true); }} style=${{ cursor: "pointer" }}>AI Insights Terms</a>.</div>
+      </div>`;
+  };
+  const selChips = [
+    ...sigSectors.map(v => ({ k: "s" + v, v, label: v, kind: "s" })),
+    ...sigSizes.map(v => ({ k: "z" + v, v, label: v + " FTE", kind: "z" })),
+  ];
+  const peerBuilder = () => {
+    if (!isEd) return html`<div class="set-row"><div class="set-row-l">
+      <b>${(me.org && me.org.signal_peer_label) || "All peers"}</b>
+      <span class="set-help">Admins and Contributors set the company default.</span></div></div>`;
+    if (!me.org.classified) return html`<p class="settings-desc" style=${{ margin: 0 }}>
+      ${isAdmin ? html`<a href="#/profile">Add your company profile</a> to unlock sector &amp; size groups. Until then the default is all peers.`
+        : "Your Admin can add the company profile to unlock sector & size groups. Until then the default is all peers."}</p>`;
+    return html`
+      ${selChips.length ? html`<div class="sigpeer-chips">
+        ${selChips.map(c => html`<span key=${c.k} class="sigpeer-tag">${c.label}
+          <button type="button" aria-label=${"Remove " + c.label}
+            onClick=${() => c.kind === "s" ? setSigSectors(sigSectors.filter(x => x !== c.v)) : setSigSizes(sigSizes.filter(x => x !== c.v))}>×</button></span>`)}
+      </div>` : null}
+      <div class="sigpeer-grid">
+        ${facet("Sectors", sectorOpts, sigSectors, setSigSectors, sigSecQ, setSigSecQ, "")}
+        ${facet("Sizes", sizeOpts, sigSizes, setSigSizes, sigSizQ, setSigSizQ, " FTE")}
+      </div>
+      ${nSel === 0
+        ? html`<div class="sigpeer-match">Currently <b>all peers</b> — every organisation in lumi.</div>`
+        : sigMatch
+          ? html`<div class=${"sigpeer-match" + (sigMatch.too_small ? " warn" : "")}>Matches <b>${sigMatch.match_count}</b> organisation${sigMatch.match_count === 1 ? "" : "s"}${sigMatch.too_small ? " — under " + (sigMatch.min_orgs || 5) + ", so figures stay hidden. Broaden the mix." : "."}</div>`
+          : html`<div class="sigpeer-match">Checking…</div>`}
+      <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)", alignItems: "center" }}>
+        <button class="btn small primary" disabled=${sigBusy || !sigDirty} onClick=${saveSig}>${sigBusy ? "Saving…" : "Save default"}</button>
+        ${!sigDirty && !sigBusy ? html`<span class="caption ok-text">Saved</span>` : null}
+      </div>
+      ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${sigMsg}</div>`}`;
+  };
+
+  return html`
+    <div class="settings-shell">
+      <h1 class="display-title">Settings</h1>
+      <div class="settings-grid">
+        <nav class="settings-rail" aria-label="Settings sections">
+          <div class="settings-rail-group">Personal</div>
+          ${railItem("notifications", "Notifications")}
+          ${railItem("ai-insights", "AI insights")}
+          <div class="settings-rail-group">Organisation</div>
+          ${railItem("defaults", "Default peer group")}
+          ${railItem("profile", "Company profile")}
+          ${railItem("modelling", "Modelling assumptions")}
+          <div class="settings-rail-group">Legal &amp; sharing</div>
+          ${railItem("terms", "Terms &amp; agreements")}
+          ${isAdmin ? railItem("sharing", "Sharing") : null}
+        </nav>
+
+        <div class="settings-stack">
+          ${card("notifications", "Notifications", "Just you", true,
+            html`When a flag appears, clears or shifts it reaches your bell and — if you opt in — an email digest.`,
+            html`<${NotificationsSettings} />`)}
+
+          ${card("ai-insights", "AI insights", "Just you", true,
+            html`AI-written interpretations of <b>your own benchmark figures</b> — a description of your data, not advice. On by default.`,
+            html`
+              <div class="set-row">
+                <div class="set-row-l">
+                  <b>${ai.consented ? "On for you" : "Off"}</b>
+                  <span class="set-help">${ai.consented && ai.consented_at
+                    ? html`Since ${fmtDate(ai.consented_at + "Z")} · v${termsVer(ai.version || ai.terms_version)}`
+                    : "Switched off for your account."}</span>
+                </div>
+                <div class="set-row-ctl">
+                  <button class=${"btn small" + (ai.consented ? "" : " primary")} disabled=${aiBusy}
+                    onClick=${() => setAiConsent(!ai.consented)}>
+                    ${aiBusy ? html`<${Spinner} />` : ai.consented ? "Turn off" : "Turn on"}</button>
+                </div>
+              </div>
+              ${ai.consented && !ai.master ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>
+                AI Insights aren't switched on across lumi yet — your setting is saved and applies the moment they go live.</p>` : null}
+              <p class="caption" style=${{ marginTop: "var(--s2)" }}>Read the
+                <a onClick=${e => { e.preventDefault(); setAiDoc(true); }} style=${{ cursor: "pointer" }}>AI Insights Terms</a>.</p>`)}
+
+          ${card("defaults", "Default peer group", "Org-wide", false,
+            html`The peer group your whole organisation is measured against — it drives your signals, email alerts and the view everyone lands on. Exploring another group on a page never changes it.`,
+            peerBuilder())}
+
+          ${card("profile", "Company profile", "Org-wide", false,
+            html`The organisation facts behind your peer groups — sector, size, region, ownership and workforce shape. ${isAdmin ? "Firmographics change; update them any time." : "Your Admin keeps these up to date."}`,
+            html`<a class="btn small" href="#/profile">${isAdmin ? "View / edit profile" : "View profile"}</a>`)}
+
+          ${card("modelling", "Modelling assumptions", "Org-wide", false,
+            html`Every "opportunity" figure in lumi is indicative and rests on these assumptions. Change them to match your organisation.`,
+            html`
+              <div class="field"><label>Median salary (£/yr)</label>
+                <input type="number" value=${a.median_salary_gbp} disabled=${!editable} onInput=${e => setA({ ...a, median_salary_gbp: e.target.value })} /></div>
+              <div class="field"><label>Cost per leaver (% of salary — recruitment, cover and ramp-up)</label>
+                <input type="number" value=${a.cost_per_leaver_pct_salary} disabled=${!editable} onInput=${e => setA({ ...a, cost_per_leaver_pct_salary: e.target.value })} /></div>
+              <div class="field"><label>Agency premium (% over employed cost)</label>
+                <input type="number" value=${a.agency_premium_pct} disabled=${!editable} onInput=${e => setA({ ...a, agency_premium_pct: e.target.value })} /></div>
+              <div class="caption" style=${{ marginBottom: "var(--s3)" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
+              ${editable ? html`<button class="btn primary" onClick=${save}>Save assumptions</button>`
+                : html`<div class="caption">Only admins can edit assumptions.</div>`}
+              ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}`)}
+
+          ${card("terms", "Terms & agreements", "Org-wide", false, null,
+            html`
+              ${me.org.data_terms && me.org.data_terms.accepted ? html`
+                <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on
+                  ${" "}${fmtDate(me.org.data_terms.accepted_at + "Z")} (v${termsVer(me.org.data_terms.version)}).
+                  This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
+                <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
+                  them on the <a href="#/your-data/submit">Your data</a> page before the first submission.</p>`}
+              <div class="row" style=${{ gap: "var(--s3)" }}>
+                <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
+              </div>
+              <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>`)}
+
+          ${isAdmin ? html`<section class="card settings-card" id="sharing"><${SharesPage} embedded=${true} /></section>` : null}
+        </div>
       </div>
       ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Company profile</h2>
-        <p class="caption">The organisation facts behind your peer groups — sector, size, region, ownership
-        and workforce shape. ${me.user.role === "admin" ? "Firmographics change; update them any time." : "Your Admin keeps these up to date."}</p>
-        <a class="btn small" href="#/profile">${me.user.role === "admin" ? "View / edit profile" : "View profile"}</a>
-      </div>
-      <div class="card" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <h2 class="section-title">Terms & agreements</h2>
-        ${me.org.data_terms && me.org.data_terms.accepted ? html`
-          <p>Data Contribution Terms <b>accepted</b> by <b>${me.org.data_terms.accepted_by}</b> on
-            ${" "}${fmtDate(me.org.data_terms.accepted_at + "Z")} (v${termsVer(me.org.data_terms.version)}).
-            This logged acceptance is your organisation's agreement — it covers your whole team.</p>` : html`
-          <p>Data Contribution Terms <b>not yet accepted</b> — your organisation's Admin reviews and accepts
-            them on the <a href="#/your-data/submit">Your data</a> page before the first submission.</p>`}
-        <div class="row" style=${{ gap: "var(--s3)" }}>
-          <a href="/api/terms/dpa" download class="btn small">Download the full Data Sharing Agreement (DPA)</a>
-        </div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>
-      </div>
-      ${me.user.role === "admin" && html`<div class="card" id="sharing" style=${{ padding: "var(--s5)", marginBottom: "var(--s4)" }}>
-        <${SharesPage} embedded=${true} />
-      </div>`}
     </div>`;
 };
 
