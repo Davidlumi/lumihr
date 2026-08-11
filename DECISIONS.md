@@ -16380,3 +16380,23 @@ David: "move the legend so it is on one row · delete the '14 metrics...' line �
    card now that two text lines are gone.
 Verified via static-render harness at the real 356px column width (one-row legend, both lines
 gone, balanced donut, RAG colours intact). v=509; 14/14.
+
+## 2026-08-11 — Home-page: "Where you stand" fills its stretched height (David)
+
+Follow-on to the caption cleanup. David: "look at the spacing — we now have more
+breathing room so use it." DIAGNOSIS (measured on the live card): the market card is the
+LEFT cell of the .ov-top grid and stretches (align-items:stretch) to the taller
+DomainInstrument beside it (both 474px on Thornbridge), but its content is only ~390px and
+top-aligned — so ~79px of dead space pooled at the card floor (widened by today's two
+deleted lines). FIX (CSS only, app.css): the donut+caption body (.arc-duo) now grows
+(flex:1 1 auto) and centres (justify-content:center) to absorb the slack, which grounds the
+.arc-marker as a true footer; and the donut grows 192→216 (≥1001px only) so the hero owns
+the space instead of a small ring floating in air (a CSS width/height !important override on
+.donut — the SVG viewBox scales stroke 26u→~29px and .donut-center inset:0 keeps the verdict
+word centred; RAG geometry + colours untouched). Scoped to .ov-top:not(.ov-top-lens) >
+.arc-card so it CANNOT reach the practice lens or mobile; the body rule is inert at natural
+height (single-column mobile keeps donut 192, no void). Result: card bottom now aligns
+exactly with the Position-by-domain card (0px delta), marker grounded (17px = padding).
+Design chosen via a 4-way spacing panel (hero-forward won; footer-anchored + robust-flex
+blended in). Verified live at 1120px (216, aligned) and 760px (192, natural, no gap);
+console clean bar benign 401 probes. v=510; 14/14.

@@ -1187,6 +1187,24 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-marker-cap { text-align: center; margin-top: var(--s1); }
 .arc-marker .bp-scale-labels { margin-top: var(--s2); }
 .arc-card .bp-scale-labels { font-size: var(--fs-micro); }   /* quiet axis words under the strip */
+/* "Where you stand" — fill the stretched height (2026-08-11, David: "use the breathing room").
+   The market card is the LEFT cell of .ov-top and stretches (align-items:stretch) to the taller
+   DomainInstrument beside it (~474px), while its content is only ~390px and top-aligned — so a
+   ~79px void pooled at the card floor (widened by today's two deleted caption lines). Fix: the
+   donut+caption body (.arc-duo) grows to absorb the slack and sits centred, which grounds the
+   marker as a true footer; and the donut grows 192→216 so the hero owns the freed space instead
+   of a small ring floating in air. Flex-grow only bites when extra height exists, so the body
+   rule is inert on single-column mobile (natural height). The donut-SIZE growth is additionally
+   gated to the two-column context (≥1001px) and scoped by :not(.ov-top-lens) direct-child, so it
+   can NEVER reach the practice lens or mobile — only width/height/font-size change, RAG donut
+   geometry and colours are untouched. */
+.ov-top:not(.ov-top-lens) > .arc-card .arc-duo { flex: 1 1 auto; justify-content: center; }
+@media (min-width: 1001px) {
+  .ov-top:not(.ov-top-lens) > .arc-card .arc-duo { gap: var(--s4); }
+  .ov-top:not(.ov-top-lens) > .arc-card .donut { width: 216px !important; height: 216px !important; }
+  .ov-top:not(.ov-top-lens) > .arc-card .donut-word { font-size: 31px; line-height: 33px; }
+  .ov-top:not(.ov-top-lens) > .arc-card .donut-count { font-size: var(--fs-label); }
+}
 .card-head-side { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2);
   font-size: var(--fs-caption); }
 /* Approach companion — a quiet line under the legend, never on the arc (spec §6.1).
