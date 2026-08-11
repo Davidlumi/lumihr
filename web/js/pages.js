@@ -50,6 +50,7 @@ function ConfidenceChip({ n, window: win }) {
       <span class="conf-meter" aria-hidden="true"><i></i><i class=${score >= 4 ? "" : "off"}></i><i class=${score >= 7 ? "" : "off"}></i></span>
       <span class="conf-label">Confidence</span>
       <span class="conf-score num">${score}/10</span>
+      <span class="num" style=${{ fontSize: "var(--fs-micro)", color: "var(--ink-faint)", marginLeft: "var(--s1)" }}>${n} peers</span>
       <span class="indic-tip">${tip}</span>
     </span>`;
 }
@@ -1034,7 +1035,7 @@ function PracticeBucketCard({ bucket, onOpen }) {
           ${b.rare_stances.map(r => html`
             <div key=${r.label} class="prac-rare-row">
               <span class="prac-rare-lab">${r.label}</span>
-              <span class="caption">One of ${r.orgs} organisations (${r.share_pct}%) — “${r.stance}” · ${compositionLabel(r.n, r.n_real)}</span>
+              <span class="caption">Only ${r.orgs} of ${r.n} organisation${r.n === 1 ? "" : "s"} (${r.share_pct}%) — “${r.stance}”</span>
             </div>`)}
         </div>` : null}
       <div class="caption prac-bucket-foot" title="Rarity is the signal — whether it's deliberate is your call.">Open the practice lens →</div>

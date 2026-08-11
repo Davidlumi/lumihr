@@ -16303,3 +16303,17 @@ Cache-bust v=502->503; app bootstraps clean (no JS errors); 14/14 gates.
   re-checked every {N} months … — update it if it's changed' (submission.js + pages.js;
   {N} from q.refresh_months, guarded).
 v=504; 14/14 gates.
+
+## 2026-08-10 — UX polish (batch 7): Confidence chip sample-size + practice phrasing
+
+- MED hover-only meaning: Confidence chip now shows '{n} peers' on-screen beside the
+  score so '10/10' reads as sample size, not an accuracy grade (full detail still in tip).
+- Live-walk copy: practice rare-stance line 'One of 1 organisations (1%)…' -> 'Only 1 of
+  157 organisations (1%) — "…"' (fixed the "One of 1" grammar; dropped the duplicate pool
+  count).
+v=505; app bootstraps clean; 14/14.
+DEFERRED (flagged for David): board-pack print prose clipping is a pagination DESIGN
+decision (fixed 296mm + overflow:hidden) — not changed unilaterally post colour-revert.
+Remaining tail = two BROAD comprehension passes (analyst-notation de-jargon; hover-only
+meaning on the other surfaces) + the '1×' multiplier fmtValue + status-label vocabulary
+(semantically distinct states — needs care) — best as a dedicated pass.
