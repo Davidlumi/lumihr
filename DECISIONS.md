@@ -16456,3 +16456,23 @@ ruling, so left as-is (domain-carry available as an optional enhancement); (b) t
 below the hero — recommendation was LEAVE AS-IS (don't vertical-centre; it'd break the top-left
 reading anchor and jump between locked/nudge height states), aligning with David's "clean" intent.
 Verified live (SPA renders, toggle now 24px, donut still 216, card shadow intact); v=513; 14/14.
+
+## 2026-08-11 — Per-domain signal deep-links now filter the Signals page (David)
+
+David: "we need the per domain signal links." The Position-by-domain "Signals" count chips
+(added when the home band was retired) previously landed on the UNFILTERED Signals feed. Now
+each chip deep-links to that domain's signals only.
+- OverviewHero.goToSignals(dom) stashes the domain in a module global (window.__sigJumpDomain)
+  then navs to a BARE /signals (so the app's cut-reapply logic is untouched); the Overview→
+  Signals hop is a client-side hash nav, so the global survives. Scent chip copy updated to
+  "See <Domain>'s N signals on the Signals page".
+- SignalsPage: new view kind {kind:"domain", name}. A mount effect consumes+clears the global
+  and sets the domain view. viewItems for a domain = feedItems (live, unfiled feed) filtered to
+  that domain — consistent with the page's partition model (a saved/foldered/snoozed signal
+  lives in its own tab, not the domain feed). A filter banner ("Showing <Domain> only · N
+  signals · Show all signals") sits above the feed; its clear returns to {kind:"all"}. Domain
+  cards get the full feed verbs (Save/Snooze/Dismiss). StrategyCheck stays all-view-only.
+- No router change (global, not a URL param) — avoids the cut-reapply interaction; downside is
+  the domain filter isn't a shareable URL (acceptable: the chip is a button, not a link).
+Verified live: Overview "Pay 9" chip → Signals shows exactly 9 Pay cards + banner; "Show all
+signals" restores the 38-card / 7-domain feed with the All pill re-highlighted. v=514; 14/14.

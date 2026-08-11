@@ -406,11 +406,12 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
   // dismissed rows).
   const _domCounts = {};
   _viewLive.forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
-  // scent-click → the Signals page (David 2026-08-11, "clean dashboard"): the home signals
-  // band was retired, so the per-domain count chips now deep-link to the dedicated Signals
-  // page instead of scrolling+filtering a band below. (_domCounts above still feeds the
-  // count shown on each Position-by-domain row.)
-  const goToSignals = () => nav("/signals");
+  // scent-click → the Signals page FILTERED to that domain (David 2026-08-11). The home band
+  // was retired, so each Position-by-domain count deep-links to /signals showing only that
+  // domain's signals. The domain rides a module global (Overview→Signals is a client-side hash
+  // nav, so it survives); SignalsPage reads + clears it on mount. nav stays a BARE route so the
+  // app's cut-reapply logic is untouched. (_domCounts above feeds the per-row count.)
+  const goToSignals = (dom) => { window.__sigJumpDomain = (typeof dom === "string" && dom) ? dom : null; nav("/signals"); };
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   // (.ov-wrap scope, 2026-07-08: the signals card moved below the hero row, so the
@@ -1341,8 +1342,8 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
                   <button class="di-scent"
-                    title=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — open the Signals page"}
-                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — open the Signals page"}
+                    title=${"See " + label + "'s " + nSig + " signal" + (nSig === 1 ? "" : "s") + " on the Signals page"}
+                    aria-label=${"See " + label + "'s " + nSig + " signal" + (nSig === 1 ? "" : "s") + " on the Signals page"}
                     onClick=${e => { e.stopPropagation(); onScent && onScent(d.name); }}>${nSig}</button>` : null}
               </span>
               <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
@@ -1923,6 +1924,13 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
   useEffect(() => { saveUiState("lumi-signals-ui", { view }); }, [view]);
+  // Overview per-domain scent chip → land on THIS domain's signals only (2026-08-11). The
+  // domain rides a module global set by OverviewHero.goToSignals (client-side hash nav, so it
+  // survives); consume + clear it once on mount, showing the domain-filtered view.
+  useEffect(() => {
+    const d = window.__sigJumpDomain;
+    if (d) { window.__sigJumpDomain = null; setView({ kind: "domain", name: d }); }
+  }, []);
   // Signals now honour the app-wide PEER CUT (David 2026-07-10: the page hardcoded all-peers and
   // ignored the selector) AND the overview strategy toggle (so the strategy re-rank + the per-signal
   // "why ranked" line degrade to pure market when strategy is off). Same source-of-truth params as
@@ -2073,12 +2081,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // a folder deleted elsewhere (another tab) can leave a stale view — fall back to the feed
   const v = (view.kind === "folder" && !folders.includes(view.name)) ? { kind: "all" } : view;
   const viewItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
+    : v.kind === "domain" ? feedItems.filter(s => (s.domain || "") === v.name)   // live feed, one domain (Overview scent chip)
     : v.kind === "snoozed" ? snoozedItems
     : v.kind === "dismissed" ? dismissedItems
     : v.kind === "saved" ? savedItems
     : feedItems;
   const emptyLine = v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
-    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.' 
+    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.'
+    : v.kind === "domain" ? "No live signals in " + domainLabel(v.name) + " right now — anything filed, snoozed or dismissed sits in its own tab."
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
     : "Inbox zero. Everything is filed — saved, snoozed or dismissed. New signals land here as your position or the market moves.";
@@ -2110,7 +2120,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       ${s.strategy_influence && s.strategy_influence.length ? html`
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs">
-        ${v.kind === "all" ? html`
+        ${(v.kind === "all" || v.kind === "domain") ? html`
           <${SigFolderMenu} label="Save" folders=${folders} onPick=${n => saveTo(s, n)} />
           <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
           <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
@@ -2174,6 +2184,12 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
           </span>` : html`<button type="button" class="sfold-new" onClick=${() => setNavNaming(true)}>+ New folder</button>`}
         </div>
+
+        ${v.kind === "domain" ? html`
+          <div class="sfold-filter">
+            <span class="sfold-filter-lab">Showing <b>${domainLabel(v.name)}</b> only · <span class="num">${viewItems.length}</span> signal${viewItems.length === 1 ? "" : "s"}</span>
+            <button type="button" class="sfold-filter-clear" onClick=${() => setView({ kind: "all" })}><${Icon} name="close" size=${11} /> Show all signals</button>
+          </div>` : null}
 
         ${viewItems.length === 0 ? html`<div class="sfold-empty caption">${emptyLine}</div>` : viewItems.map(sigCard)}
 
