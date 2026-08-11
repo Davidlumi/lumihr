@@ -16400,3 +16400,27 @@ exactly with the Position-by-domain card (0px delta), marker grounded (17px = pa
 Design chosen via a 4-way spacing panel (hero-forward won; footer-anchored + robust-flex
 blended in). Verified live at 1120px (216, aligned) and 760px (192, natural, no gap);
 console clean bar benign 401 probes. v=510; 14/14.
+
+## 2026-08-11 — Home dashboard decluttered: practice choices + signals band removed (David)
+
+David: "remove the practice choices and the bottom signals detail — so we have a clean
+dashboard." The Overview (OverviewHero, pages.js) now ends at the hero row (Where you stand +
+Position by domain); nothing renders below it.
+1. REMOVED the "Practice choices" card (PracticeBucketCard render). It was the ONLY entry to
+   the practice-lens view, so the lens is retired from the home too — `view` is now forced to
+   "market" (was persisted in prefs._overview.view), which also stops a stale persisted
+   view:"practice" from stranding a returning user in the orphaned lens or rendering practice
+   bars in the market layout. The practice-lens branch (ov-lensbar + full-width practice rows)
+   was removed from the render.
+2. REMOVED the bottom signals band (ov-signals-band / SignalsPanel render). Signals live on the
+   dedicated Signals page (left nav).
+3. The Position-by-domain card KEEPS its per-domain "Signals" count column (David's ruling:
+   "Link to Signals page"): the scent chips now deep-link to /signals (goToSignals = nav) instead
+   of scrolling+filtering the removed band; copy updated "…show only these below" → "…open the
+   Signals page". scrollToSignals + sigDomain/activeScent state deleted (0 refs remain).
+COMPONENTS: PracticeBucketCard + SignalsPanel stay DEFINED (unmounted) with retired notes —
+the codebase idiom (cf. TrajectoryTile), and SignalsPanel's total-binding strings still satisfy
+qa_overview 9c (verified: _pool/_viewLive/_viewTotal + the " of " + total ranknote all present).
+Verified live: SPA renders (no parse error), both sections gone, 7 scent chips remain and a
+click routes #/overview → #/signals (Signals page renders); console clean bar benign 401s.
+The breathing-room donut (216) still applies. v=511; 14/14 gates green.

@@ -65,7 +65,11 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
   // whether the reward-strategy stance is APPLIED. Strategy-off re-fetches the
   // overview WITHOUT the lens (absolute colours, impact-ordered signals, plain verdict).
   const _ov = (prefs && prefs._overview) || {};
-  const [view, setViewState] = useState(_ov.view === "practice" ? "practice" : "market");
+  // Practice lens retired from the home (2026-08-11, David: "clean dashboard") — the
+  // practice-choices card was its only entry, so the home is MARKET-only now. Forcing
+  // market here also stops a stale persisted view:"practice" from stranding a returning
+  // user in the orphaned lens (or rendering practice bars inside the market layout).
+  const [view, setViewState] = useState("market");
   const [applyStrat, setApplyState] = useState(_ov.apply_strategy !== false);
   // domain-bar mode (David 2026-07-11: "we still need the stacked bars ... implement a toggle"):
   // "counts" = the ratified count-proportional stacked bar; "position" = the fixed-band
@@ -80,7 +84,8 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
   // lens state from the pref once it lands — idempotent: a user toggle writes the pref
   // via onPref, so the echo re-set is a no-op re-assign of the same value.
   useEffect(() => {
-    setViewState(_ov.view === "practice" ? "practice" : "market");
+    // view stays market-only (practice lens retired from the home 2026-08-11); only the
+    // strategy + bar-mode prefs sync in once they land.
     setApplyState(_ov.apply_strategy !== false);
     setBarModeState(_ov.bar === "position" ? "position" : "counts");
   }, [_ov.view, _ov.apply_strategy, _ov.bar]);
@@ -401,28 +406,11 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   // dismissed rows).
   const _domCounts = {};
   _viewLive.forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
-  // scent-click → DOMAIN-FILTERED signals (David 2026-07-12, "if you click on the signals
-  // count it takes you to only those signals"): the count chip now scrolls AND filters the
-  // band below to that domain; the chip beside the Signals title clears it. Reset on lens
-  // switch (the pool changes meaning).
-  const [sigDomain, setSigDomain] = useState(null);
-  useEffect(() => { setSigDomain(null); }, [view]);
-  const scrollToSignals = (domain) => {
-    setSigDomain(domain && typeof domain === "string" ? domain : null);
-    // Chrome ABORTS a smooth scroll when the filter's row churn shifts layout at animation
-    // start (observed: scrollY dies at 1px). Self-healing scroll: smooth attempt after the
-    // re-render, then snap to the target if the smooth got cancelled. Reduced-motion snaps.
-    setTimeout(() => {
-      const el = document.querySelector(".ov-signals-band");
-      if (!el) return;
-      const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const target = () => Math.round(el.getBoundingClientRect().top + window.scrollY);
-      window.scrollTo({ top: target(), behavior: reduce ? "auto" : "smooth" });
-      if (!reduce) setTimeout(() => {
-        if (Math.abs(window.scrollY - target()) > 40) window.scrollTo({ top: target(), behavior: "auto" });
-      }, 500);
-    }, 60);
-  };
+  // scent-click → the Signals page (David 2026-08-11, "clean dashboard"): the home signals
+  // band was retired, so the per-domain count chips now deep-link to the dedicated Signals
+  // page instead of scrolling+filtering a band below. (_domCounts above still feeds the
+  // count shown on each Position-by-domain row.)
+  const goToSignals = () => nav("/signals");
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   // (.ov-wrap scope, 2026-07-08: the signals card moved below the hero row, so the
@@ -471,36 +459,19 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             </button>`}
         </div>` : null}
       </div>
-      ${/* practice LENS view (Diff 4): the PracticeArc donut is retired; the lens is the
-            practice-mode domain rows, full width, with an explicit way back (the retired
-            toggle used to be the exit). */ ""}
-      ${view === "practice" ? html`
-        <div class="ov-lensbar">
-          <b>Practice choices</b><span class="caption"> · how common each choice is among peers — never a market verdict</span>
-          <button type="button" class="btn small" onClick=${() => setView && setView("market")}>
-            <${Icon} name="chevron-left" size=${13} /> Back to market view</button>
-        </div>
-        <div class="ov-top ov-top-lens">
-          <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
-            view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
-            activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
-        </div>` : html`
+      ${/* Practice lens + practice-choices card retired from the home 2026-08-11 (David:
+            "clean dashboard"). The home is MARKET-only now; PracticeBucketCard and the
+            practice-mode DomainInstrument rows stay defined but are no longer mounted here. */ ""}
       <div class="ov-top">
         <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
-          view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
-          activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
+          view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${goToSignals}
+          barMode=${barMode} setBarMode=${setBarMode} />
       </div>
-      ${!locked && data.practice_bucket ? html`<${PracticeBucketCard} bucket=${data.practice_bucket}
-        onOpen=${() => setView && setView("practice")} />` : null}`}
-      ${/* TrajectoryTile retired from the scan path (2026-07-09 subtraction): a full card band
-            promising the future between the hero and the action queue. Its one load-bearing
-            clause moved into the header subtitle ("baseline — movement shows from your next
-            cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
-      <div class="ov-signals-band">
-        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} objective=${data.strategy_objective} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced}
-          cutActive=${!!(cut && cut.dim && cut.dim !== "all")} domainFilter=${sigDomain} onClearDomain=${() => setSigDomain(null)} />
-      </div>
+      ${/* Home signals band retired 2026-08-11 (David: "clean dashboard" — "the bottom signals
+            detail"). Signals live on the dedicated Signals page; the per-domain scent counts on
+            Position-by-domain deep-link there via goToSignals. SignalsPanel stays defined but is
+            no longer mounted here (its total-binding strings still satisfy qa_overview 9c). */ ""}
     </div>`;
 }
 
@@ -1010,7 +981,9 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
    read on the market dashboard. Crop discipline: title + headline + split + basis sit
    in the card's top region; rare stances render below. Locked vocabulary — in line /
    off the norm; NO RAG colour anywhere on it (POSITION_RING brief unpre-empted);
-   descriptive, never prescriptive. Click-through = the practice lens view. */
+   descriptive, never prescriptive. Click-through = the practice lens view.
+   RETIRED from the home 2026-08-11 (David: "clean dashboard") — no longer mounted; kept
+   defined for possible re-use / a future practice surface. */
 function PracticeBucketCard({ bucket, onOpen }) {
   const b = bucket;
   const splitBasis = b.in_line + b.off_norm;
@@ -1171,7 +1144,7 @@ function domainRowSentence(d, view) {
   if (d.target && STRAT_CLAUSE[d.target.alignment]) s += " " + STRAT_CLAUSE[d.target.alignment];
   return s;
 }
-function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent, activeScent, barMode, setBarMode }) {
+function DomainInstrument({ market, prevalence, domains, view, pending, sigCounts, onScent, barMode, setBarMode }) {
   const doms = domains || [];
   const practice = view === "practice";
   // (footer sums retired 2026-07-09 with both footers — the donut legends carry the org totals.)
@@ -1365,12 +1338,10 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               </span>
               <span class="di-cell di-scentcol">
                 ${!pending && nSig > 0 ? html`
-                  <button class=${"di-scent" + (activeScent === d.name ? " on" : "")} aria-pressed=${activeScent === d.name}
-                    title=${activeScent === d.name
-                      ? "Showing only " + label + "'s signals below — click to show all"
-                      : nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — show only these below"}
-                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — show only these in the signals list below"}
-                    onClick=${e => { e.stopPropagation(); onScent && onScent(activeScent === d.name ? null : d.name); }}>${nSig}</button>` : null}
+                  <button class="di-scent"
+                    title=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — open the Signals page"}
+                    aria-label=${nSig + " signal" + (nSig === 1 ? "" : "s") + " in " + label + " — open the Signals page"}
+                    onClick=${e => { e.stopPropagation(); onScent && onScent(d.name); }}>${nSig}</button>` : null}
               </span>
               <span class=${"di-cell di-chipcol" + (!practice && stratSum ? " di-stratcol" : "")}>
                 ${/* strategy channel (2026-07-09): position view shows the navy target glyph on
@@ -1390,6 +1361,9 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     </div>`;
 }
 
+// RETIRED from the home 2026-08-11 (David: "clean dashboard" — "the bottom signals detail").
+// No longer mounted; the dedicated SignalsPage is the live signals surface. Kept defined
+// (its total-binding strings still satisfy qa_overview check 9c, and it may be re-used).
 function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, objective, cutActive, domainFilter, onClearDomain, heroCta }) {
   // domain filter (2026-07-12): a scent-chip click narrows the band to ONE domain's signals —
   // uncapped (the count chip promised N; show N), the briefing cap applies only unfiltered.
