@@ -16594,3 +16594,30 @@ a full-resolution 3-treatment harness (607/240 spacious·premium, 607/268 donut 
 559/230 moderate) — 575/232/56px is the balanced middle. Degrades on a 768-tall laptop with only
 ~17px scroll. Verified live at 1440 (rows 56, donut 232, bottoms aligned, no console errors).
 v=523; 14/14 gates green.
+
+## 2026-08-11 — Signals anchored to the org DEFAULT peer group (David)
+
+David: "signals should only be tied to the company's default peer group — otherwise alerts etc
+will be all over the place." Ruling (AskUserQuestion): ALL signal surfaces → default.
+
+BEFORE: the nightly EMAIL sweep already used orgs.default_cut (org_signals → _org_sweep_cut), but
+the ON-SCREEN signals (/api/overview signals/signals_all/signals_practice → Overview scent counts +
+Signals page) followed the REQUESTED cut (the 2026-07-10 "signals honour the peer selector"). So the
+page and the emails flagged different sets the moment a user picked another peer group.
+
+CHANGE (reverses 2026-07-10 for on-screen signals):
+- SERVER (/api/overview): the signal build now runs against sig_cut = _org_sweep_cut(org) — the
+  org default (firmographic or all) — regardless of the requested cut. Position / hero / bars keep
+  the requested cut; only build_signals re-points (items/money/get_block/alignment rebuilt for
+  sig_cut, alignment only when a strategy is applied). When requested == default (common case + every
+  gate frame) it's a no-op ALIAS — byte-identical. Payload gains "signal_cut".
+- CLIENT: SignalsPage reads signalCut(me) (me.org.signal_peer_cut) not the app-wide cut — fetch,
+  ConfidenceChip, CSV all use it, plus a note "Flagged against your default peer group — <label> —
+  the same group your email alerts use…" with a Settings "Change" link for editors. The masthead
+  PeerSetBar is hidden on /signals (app.js isSignals); /priorities (gap register) keeps it. The
+  Overview scent counts follow automatically (they derive from the now-default signals_all), so the
+  per-domain deep-link counts still match the Signals page.
+VERIFIED live: signals_all IDENTICAL (56) across all-peers/fte/industry requests (the rebuild path
+fires when requested≠default and returns the default set); Signals page renders, shows the note,
+selector hidden, chip=default group; console clean. v=524; 14/14 gates green (byte-identical on the
+default path).

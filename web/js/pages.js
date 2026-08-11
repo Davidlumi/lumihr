@@ -1897,6 +1897,15 @@ function sigStratLine(infl) {
   const s = parts.join(" · ");
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+// The org's DEFAULT peer group for signals (orgs.default_cut, exposed as me.org.signal_peer_cut) —
+// a "dim::value" string or null. Signals + alert emails are anchored to it (David 2026-08-11), so
+// the Signals page reads it instead of the app-wide selector. NULL / unset → all peers.
+function signalCut(me) {
+  const raw = me && me.org && me.org.signal_peer_cut;
+  if (!raw) return { dim: "all", value: null };
+  const i = String(raw).indexOf("::");
+  return i < 0 ? { dim: String(raw), value: null } : { dim: raw.slice(0, i), value: raw.slice(i + 2) };
+}
 window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -1931,16 +1940,19 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     const d = window.__sigJumpDomain;
     if (d) { window.__sigJumpDomain = null; setView({ kind: "domain", name: d }); }
   }, []);
-  // Signals now honour the app-wide PEER CUT (David 2026-07-10: the page hardcoded all-peers and
-  // ignored the selector) AND the overview strategy toggle (so the strategy re-rank + the per-signal
-  // "why ranked" line degrade to pure market when strategy is off). Same source-of-truth params as
-  // every other bench surface — cutQS + &strategy=off — so the feed recomputes on the chosen group.
+  // Signals are ANCHORED TO THE ORG DEFAULT PEER GROUP (David 2026-08-11: "signals should only be
+  // tied to the company default — otherwise alerts will be all over the place"). The server computes
+  // signals against orgs.default_cut regardless of the requested cut, so the page and the nightly
+  // alert emails always agree; we fetch with that same cut so the confidence chip + peer label match
+  // the signals. Reverses the 2026-07-10 "signals honour the app-wide selector" — the app-wide
+  // selector is now hidden on /signals (app.js), and this page ignores it.
+  const sigCut = signalCut(me);
   const _applyStrat = ((prefs && prefs._overview) || {}).apply_strategy !== false;
-  const _cutKey = cut ? cutKeyOf(cut) : "all";
+  const _cutKey = cutKeyOf(sigCut);
   useEffect(() => {
     let live = true;
     setData(null);
-    apiCached("/api/overview?" + cutQS(cut) + (_applyStrat ? "" : "&strategy=off")).then(d => {
+    apiCached("/api/overview?" + cutQS(sigCut) + (_applyStrat ? "" : "&strategy=off")).then(d => {
       if (!live) return;
       setData(d);
       // viewing the Signals page clears NEW: mark every current signal seen
@@ -2145,13 +2157,20 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
       ${unlocked ? html`<p class="brf-std" style=${{ maxWidth: "680px", marginTop: 0 }}>Grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
-      ${/* the page now HONOURS the peer selector (2026-07-10) — so its trust surface is the same
-            ConfidenceChip as the masthead, reading the ACTIVE cut's n. The old hardcoded
-            "Peer group: All peers · 220" line lied the moment a cut was chosen (David: "comparing
-            against shows different sample to the text"). */ ""}
-      ${unlocked ? html`<div class="conf-line" style=${{ justifyContent: "flex-start", marginTop: 0, marginBottom: "var(--s3)" }}>
-        <${ConfidenceChip} n=${cutSize(cut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
-      </div>` : null}
+      ${/* Signals are anchored to the org DEFAULT peer group (David 2026-08-11), so the page and
+            the nightly email alerts never flag different things. Trust surface = that group's
+            ConfidenceChip + a note naming it; the app-wide selector is hidden on /signals (app.js).
+            (Reverses the 2026-07-10 "honour the app-wide selector" — that made alerts and the page
+            disagree the moment a cut was chosen.) */ ""}
+      ${unlocked ? html`<div class="conf-line" style=${{ justifyContent: "flex-start", marginTop: 0, marginBottom: "var(--s1)" }}>
+        <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
+      </div>
+      <p class="caption sig-peer-note" style=${{ marginTop: 0, marginBottom: "var(--s4)", maxWidth: "680px" }}>
+        Flagged against your <b>default peer group</b>${(() => {
+          const raw = me.org && me.org.signal_peer_cut;
+          return " — " + (!raw ? "all peers" : String(raw).split("::")[1] + (String(raw).startsWith("fte_band::") ? " FTE" : ""));
+        })()} — the same group your email alerts use, so the two never disagree.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}
+      </p>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`
         <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
@@ -2198,7 +2217,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="brf-navy">
           <div class="brf-navy-reg">
             <${Icon} name="table" size=${15} />
-            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(cut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(cut, cuts) + ".")}>Download CSV</a>` : null}</span>
+            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
           </div>
           <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
         </div>`}

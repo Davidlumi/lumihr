@@ -2198,18 +2198,42 @@ async def overview(request: Request):
     # degrades byte-identical. Drives confirm-suppression inside build_signals.
     _dom_align = {d["name"]: (d.get("target") or {}).get("alignment")
                   for d in hero["domains"] if d.get("target")}
-    _sigs_brief = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
+    # SIGNALS ANCHORED TO THE ORG DEFAULT PEER GROUP (David 2026-08-11): on-screen signals must
+    # match the nightly alert sweep (org_signals → _org_sweep_cut) and never drift as the user
+    # browses other cuts — otherwise the page and the emails flag different things. Position /
+    # hero / bars keep the REQUESTED cut; only the signal build re-points to the default. When the
+    # requested cut IS the default (the common case, and every gate's frame), this is a no-op alias
+    # — byte-identical to before. The default is a firmographic cut (industry/fte_band) or all.
+    sig_cut = _org_sweep_cut(org)
+    if sig_cut.get("dim") == cut.get("dim") and sig_cut.get("value") == cut.get("value"):
+        sig_items, sig_money, sig_get_block, sig_align = items, money, _get_block, _dom_align
+    else:
+        sig_items, sig_tb = build_items(request, org, user, sig_cut)
+        sig_money = pos.money_opportunities(conn, org, _visq, payloads(), _answers, sig_cut, sig_tb)
+        sig_get_block = lambda qid: pos.block_for(payloads().get(qid) or {}, sig_cut, (sig_tb or {}).get(qid))[0] if payloads().get(qid) else None
+        sig_align = {}
+        if _strategy:   # confirm-suppression alignment only bites with a strategy applied
+            _sig_ent = make_entitled(user, org)
+            _sig_prev = pos.prevalence_items(org["org_id"], sig_cut, _visq, payloads(), _answers, _sig_ent, sig_tb)
+            _sig_prac = pos.practice_position_items(org["org_id"], sig_cut, _visq, payloads(), _answers, _sig_ent, sig_tb)
+            _sig_hero = pos.hero_signals(sig_items, _sig_prev, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                                         DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                                         practice_items=_sig_prac, tile_min=TILE_MIN_POSITIONED,
+                                         mp_config=mp_cfg, strategy=_strategy)
+            sig_align = {d["name"]: (d.get("target") or {}).get("alignment")
+                         for d in _sig_hero["domains"] if d.get("target")}
+    _sigs_brief = signals_mod.build_signals(sig_items, sig_money, _visq, sig_get_block, _answers,
                                             conn=conn, org_id=org["org_id"], statuses=_statuses,
-                                            strategy=_strategy, domain_alignment=_dom_align)
+                                            strategy=_strategy, domain_alignment=sig_align)
     # per-view briefings (signals.py caps each position pool separately):
     # `signals` KEEPS its meaning — the market-view balanced briefing (qa_hero
     # asserts its caps) — while the practice-view briefing rides alongside.
     sigs = [s for s in _sigs_brief if s.get("position") in ("below", "on", "above")]
     sigs_practice = [s for s in _sigs_brief if s.get("position") not in ("below", "on", "above")]
     # full uncapped set for the dedicated Signals explore page (home stays capped)
-    sigs_all = signals_mod.build_signals(items, money, _visq, _get_block, _answers,
+    sigs_all = signals_mod.build_signals(sig_items, sig_money, _visq, sig_get_block, _answers,
                                          conn=conn, org_id=org["org_id"], cap=False, statuses=_statuses,
-                                         strategy=_strategy, domain_alignment=_dom_align)
+                                         strategy=_strategy, domain_alignment=sig_align)
     # new-since-last-seen: a signal is NEW until the user has viewed it on the
     # Signals page. Annotate both sets + count the un-dismissed new ones.
     _seen = {r["sig_id"] for r in conn.execute(
@@ -2256,6 +2280,9 @@ async def overview(request: Request):
         "signals_practice": sigs_practice,
         "signals_all": sigs_all,
         "signals_new": signals_new,
+        # the peer group the signals above were computed against — the org default (2026-08-11),
+        # so the page + emails agree; the client shows it and anchors the Signals page to it.
+        "signal_cut": sig_cut,
         # reward strategy completion — drives the dashboard nudge for Admins who
         # haven't set their stance yet (the engines read None = legacy until then)
         "strategy_complete": bool(conn.execute(
