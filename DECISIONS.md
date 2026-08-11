@@ -16579,3 +16579,18 @@ ring with air around the segments and a bigger centre hole (158→171px) for the
 breathing-room 216 size is unchanged. Chosen from a 4-treatment harness (current / thinner /
 thinner+gap / lightest); thinner-ring (~22px) read cleanest without touching the shared segment
 gap. Verified: desktop donut 216px, stroke now 23px (10%); SPA clean; v=521; 14/14 gates green.
+
+## 2026-08-11 — Home: taller hero cards use the space freed by the two removed sections (David)
+
+David: "now that we have removed the bottom two sections of the home page we can give more space
+to the dashboard vertically." Measured: on a 1440×900 the hero row was 479px with ~211px of empty
+space below it. Grew the dashboard: DomainInstrument rows 44→56px (each domain breathes more —
+the right card drives the height, the left arc-card stretches to match), and the hero donut
+216→232 so it stays proportionate in the taller left card (donut-word 31→32). Result: hero 575px
+(bottoms aligned), freed space halved to ~115px, head-to-donut gap ~72px. Bounded on purpose —
+NOT filled to the full viewport (on very tall screens that would make the rows cavernous; the
+reviewer's earlier "don't vertical-centre / don't fill the whole viewport" note holds). Chosen from
+a full-resolution 3-treatment harness (607/240 spacious·premium, 607/268 donut crowded the column,
+559/230 moderate) — 575/232/56px is the balanced middle. Degrades on a 768-tall laptop with only
+~17px scroll. Verified live at 1440 (rows 56, donut 232, bottoms aligned, no console errors).
+v=523; 14/14 gates green.
