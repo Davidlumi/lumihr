@@ -36,10 +36,10 @@ window.SubmissionPage = function ({ me, refreshMe, section }) {
   if (!state) return html`<${PageLoading} />`;
   if (!state.firmographics_done) return html`
     <div style=${{ maxWidth: "560px" }}>
-      <h1 class="display-title">First, tell us who you are</h1>
+      <h1 class="display-title">Tell us about your organisation</h1>
       <p>A few company facts — sector, size, region — so the benchmark compares you to the right peers. Two minutes, organisation-level only.</p>
       ${me.user.role === "admin"
-        ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Complete your company profile</button>`
+        ? html`<button class="btn primary" onClick=${() => nav("/profile")}>Tell us about your organisation</button>`
         : html`<${AdminGateEmpty} stage="profile" />`}
     </div>`;
   if (!state.data_terms_accepted) return html`<${DataTermsGate} me=${me} refreshMe=${refreshMe}
@@ -423,7 +423,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
                         : html`<div class="data-q-val">${sum || "—"}</div>`)
                     : html`<div class="data-q-none">Not answered yet — <span class="dq-add">add your answer</span></div>`)}
                   ${!open && ans && q.needs_refresh && html`<div class="data-q-updated">
-                    Last updated ${window.fmtUpdated(q.last_updated)} — update, or re-save to confirm.</div>`}
+                    Last updated ${window.fmtUpdated(q.last_updated)}${q.refresh_months ? ", re-checked every " + q.refresh_months + " months so benchmarks stay current" : ""} — update it if it's changed.</div>`}
                 </div>
                 <div class="dq-sum-right">
                   <span class=${"data-q-flag " + (ans && q.needs_refresh ? "refresh" : ans ? "ok" : "todo")}>

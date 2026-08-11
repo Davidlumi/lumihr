@@ -3439,7 +3439,7 @@ window.DomainDataView = function ({ me, section }) {
                 <div class="data-q-rows">${q.rows.map((rw, i) => html`<span key=${i}><span class="muted">${rw.row}:</span> ${dataVal(rw.value, q)}</span>`)}</div>`
                 : html`<div class="data-q-val">${dataVal(q.value, q)}</div>`)
                 : html`<div class="data-q-none">Not answered yet${canEdit ? html` — <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>add your answer</a>` : ""}</div>`}
-              ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)} — check it's still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
+              ${q.needs_refresh && html`<div class="data-q-updated">Last updated ${fmtUpdated(q.last_updated)}${q.refresh_months ? ", re-checked every " + q.refresh_months + " months" : ""} — check it's still current${canEdit ? html`. <a href=${"#/your-data/submit/" + encodeURIComponent(section)}>Update or re-confirm</a>` : ""}</div>`}
             </div>
             <span class=${"data-q-flag " + (q.needs_refresh ? "refresh" : q.answered ? "ok" : "todo")}>
               <${Icon} name=${q.needs_refresh ? "refresh" : q.answered ? "award" : "pencil"} size=${13} /> ${q.needs_refresh ? "Refresh" : q.answered ? "Answered" : "To do"}</span>

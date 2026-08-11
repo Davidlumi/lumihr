@@ -16292,3 +16292,14 @@ smaller change than the neutral model was.
 - MED terminology: 'Request a/this metric' -> 'Suggest…' (canonical) in the trigger buttons +
   modal heading/label; component name kept internal.
 Cache-bust v=502->503; app bootstraps clean (no JS errors); 14/14 gates.
+
+## 2026-08-10 — UX polish (batch 6): profile-step naming + refresh-flag reason
+
+- MED profile step: unified the pre-profile interstitial to one name — 'First, tell us who
+  you are' / 'Complete your company profile' -> 'Tell us about your organisation' (matches
+  the profile page + checklist). 'Company profile' kept as the settled/returning + nav name.
+- MED refresh flag: added the cadence reason and dropped the misleading 'update, or re-save
+  to confirm' (re-saving an unchanged value doesn't clear the flag). Now 'Last updated {date},
+  re-checked every {N} months … — update it if it's changed' (submission.js + pages.js;
+  {N} from q.refresh_months, guarded).
+v=504; 14/14 gates.
