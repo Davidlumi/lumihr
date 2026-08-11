@@ -33,8 +33,13 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
   if (!data) return html`<${PageLoading} />`;
   const focused = window.SCOPE && window.SCOPE.focused;
   const suppressedN = data.rows.filter(r => r.suppressed).length;
+  const groups = gapGroups(data);
+  // Ignore a stale/cross-mode area filter that matches no current option (e.g. a saved superpower name
+  // "Benefits" when the focused-mode sections read "Benefits & Lifestyle"). Without this, the native
+  // <select> falls back to showing "All sections" while `sp` silently filters the register to zero.
+  const spEff = groups.includes(sp) ? sp : "";
   let rows = data.rows.filter(r => !r.suppressed);
-  if (sp) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === sp);
+  if (spEff) rows = rows.filter(r => (focused ? (r.subpower || "General") : r.superpower) === spEff);
   if (show === "gaps") rows = rows.filter(r => r.org_answered && r.in_place === false && (r.gap || 0) > 0);
   const STATUS_RANK = { not_in_place: 0, partial: 1, unknown: 2, in_place: 3 };
   const sortVal = (r, k) => k === "name" ? (r.name || "").toLowerCase()
@@ -58,9 +63,9 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           </div>
         </div>
         <div class="row">
-          <select class="ctl" aria-label="Filter by area" value=${sp} onChange=${e => setSp(e.target.value)}>
+          <select class="ctl" aria-label="Filter by area" value=${spEff} onChange=${e => setSp(e.target.value)}>
             <option value="">${window.SCOPE && window.SCOPE.focused ? "All sections" : "All areas"}</option>
-            ${gapGroups(data).map(s => html`<option key=${s} value=${s}>${s}</option>`)}
+            ${groups.map(s => html`<option key=${s} value=${s}>${s}</option>`)}
           </select>
           <select class="ctl" aria-label="Show gaps only or everything" value=${show} onChange=${e => setShow(e.target.value)}>
             <option value="gaps">Gaps only</option><option value="all">Everything</option>

@@ -16905,3 +16905,18 @@ VERIFIED LIVE: search filters to matching names; the strategy strip expands; the
 filters (+ chip); Inbox rename, zoned nav, register link, footer all render. jsc-clean (pages/core),
 CSS braces balanced, 14/14 gates. v=537. (Deferred as a further nicety: a snooze custom-date picker,
 full arrow-key roving inside the menus.)
+
+## 2026-08-11 — Fix: Full gap register (/priorities) silently showed "Nothing to show"
+
+David hit an empty register ("Nothing to show") with the filters reading "All sections" + "Everything"
+— but the data was there (84 rows, 0 suppressed). ROOT CAUSE (commercial.js GapRegisterPage): the
+persisted area filter `_ui_gap.sp` held a STALE / cross-mode value ("Benefits") that matches no current
+option — the focused-mode sections read "Benefits & Lifestyle" (subpower), and the non-focused list
+uses superpower short names, so an `sp` saved in one mode filters to zero in the other. Worse, a native
+`<select value=${sp}>` whose value isn't among its options silently falls back to displaying the FIRST
+option ("All sections"), so the control lied: it showed "All sections" while `sp` filtered every row
+out. FIX: ignore any `sp` that isn't a current option — `const spEff = gapGroups(data).includes(sp) ?
+sp : ""` — and bind BOTH the row filter and the `<select value>` to `spEff`, so a stale/cross-mode
+filter is harmless and the dropdown can never disagree with what's applied. Diagnosed by instrumenting
+the component (temp console.log → `sp:"Benefits"` while the select read ""). VERIFIED live on the group
+default cut: the register went 0 → "84 metrics shown". Frontend-only; 14/14 gates. v=539.
