@@ -16551,3 +16551,19 @@ into the dashboard toolbar (the row carrying the dashboard name + rename/duplica
 - The "N cards" count moved to dash-toolbar-l next to the name/edit icons.
 Verified live at 1120px (one row, no overflow) and 760px (actions wrap cleanly under the sample);
 buttons now clearly belong to the dashboard, not the page. v=519; 14/14 gates green.
+
+## 2026-08-11 — My dashboards: reorg the individual-dashboard header (David)
+
+David (screenshot): "looks a little messy and clunky — do a reorg of the individual dashboard
+menu." The toolbar crammed the name + three bare icons (✏️ ⧉ ✕ — the × read as a close) + a
+"3 cards" caption on the left, plus the sample selector + two buttons of differing heights on
+the right. Reorg:
+- LEFT: dashboard name + a single ⋯ kebab menu (Rename / Duplicate / Delete dashboard) — the
+  three loose icons collapse into one, and "Delete dashboard" is explicit (no ambiguous ×). The
+  kebab reuses the shared pattern (useMenuClose + .brf-menu/.brf-menu-opt); Rename still triggers
+  the inline name-edit, Duplicate/Delete call the existing handlers.
+- Dropped the "N cards" caption here — the active tab already carries its own count badge.
+- RIGHT: sample selector + Download PDF + Share, now height-aligned to 34px so the cluster reads
+  as one clean row. Removed the dead .dash-actions/.dash-cardcount CSS.
+Verified live: desktop (one row, full name, aligned) + 720px (actions wrap cleanly); kebab opens
+Rename/Duplicate/Delete, Rename → inline edit works, Escape cancels. v=520; 14/14 gates green.

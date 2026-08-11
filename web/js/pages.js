@@ -2904,8 +2904,11 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);          // §4.10(2): a failed load must not hang on the skeleton
+  const [opsOpen, setOpsOpen] = useState(false); // the dashboard's ⋯ menu (rename/duplicate/delete)
   const nameRef = useRef(null);
+  const opsRef = useRef(null);
   const cancelRename = useRef(false);   // Escape sets this so the input's onBlur doesn't commit
+  useMenuClose(opsRef, opsOpen, setOpsOpen);
 
   const applyActive = (id, lay, dcut) => {
     setActiveId(id); setLayout(lay); setCards({});
@@ -3132,13 +3135,21 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
                 onBlur=${commitName}
                 onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitName(); } else if (e.key === "Escape") { cancelRename.current = true; setRenaming(false); } }} />`
             : html`<h2 class="dash-name" onDoubleClick=${startRename} title="Double-click to rename">${activeName}</h2>`}
+          ${/* the dashboard's structural actions (rename / duplicate / delete) collapse into one
+                ⋯ menu (David 2026-08-11, "messy and clunky") — the three bare icons (the × read as
+                a close) crowded the name. Reuses the shared kebab pattern (useMenuClose + brf-menu).
+                The card count is dropped here: the active tab already carries its own count badge. */ ""}
           ${!renaming && html`
-            <div class="dash-actions no-print">
-              <button class="iconbtn" title="Rename" onClick=${startRename}><${Icon} name="pencil" size=${14} /></button>
-              <button class="iconbtn" title="Duplicate this dashboard" onClick=${duplicate} disabled=${busy}><${Icon} name="copy" size=${14} /></button>
-              <button class="iconbtn" title=${onlyOne ? "Reset this dashboard" : "Delete this dashboard"} onClick=${() => setConfirmDel(true)} disabled=${busy}><${Icon} name="close" size=${14} /></button>
-            </div>`}
-          <span class="caption dash-cardcount">${layout.length} card${layout.length === 1 ? "" : "s"}</span>
+            <span class="brf-later-wrap dash-ops no-print" ref=${opsRef}>
+              <button type="button" class="iconbtn kebab" aria-haspopup="menu" aria-expanded=${opsOpen}
+                aria-label="Dashboard options" title="Rename, duplicate or delete this dashboard"
+                onClick=${() => setOpsOpen(o => !o)}><span aria-hidden="true">⋯</span></button>
+              ${opsOpen && html`<div class="brf-menu dash-menu" role="menu">
+                <button class="brf-menu-opt" role="menuitem" onClick=${() => { setOpsOpen(false); startRename(); }}><${Icon} name="pencil" size=${13} /> Rename</button>
+                <button class="brf-menu-opt" role="menuitem" disabled=${busy} onClick=${() => { setOpsOpen(false); duplicate(); }}><${Icon} name="copy" size=${13} /> Duplicate</button>
+                <button class="brf-menu-opt" role="menuitem" disabled=${busy} onClick=${() => { setOpsOpen(false); setConfirmDel(true); }}><${Icon} name="close" size=${13} /> ${onlyOne ? "Reset dashboard" : "Delete dashboard"}</button>
+              </div>`}
+            </span>`}
         </div>
         <div class="dash-toolbar-r no-print">
           ${/* per-dashboard SAMPLE + per-dashboard ACTIONS (2026-08-11, David): the sample selector

@@ -3652,13 +3652,18 @@ textarea:focus-visible, [tabindex]:focus-visible {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50vw; }
 .dash-name-input { height: 34px; font-size: var(--fs-subhead); font-weight: 600; padding: 0 var(--s3); min-width: 220px;
   border: 1px solid var(--blue); border-radius: var(--radius-sm); }
-.dash-actions { display: flex; align-items: center; gap: 2px; }
-.dash-actions .iconbtn { height: 28px; min-width: 28px; }
+/* dashboard header ⋯ menu (2026-08-11 reorg): the rename/duplicate/delete icons collapse into
+   one kebab beside the name; the menu reuses .brf-menu/.brf-menu-opt. */
+.dash-ops { margin-left: 2px; }
+.dash-ops .brf-menu { min-width: 176px; }
+.brf-menu-opt:disabled { opacity: .45; cursor: not-allowed; }
+.brf-menu-opt:disabled:hover { background: none; color: var(--ink); }
 /* per-dashboard sample control (2026-08-11): the PeerSetBar sits on the right of the toolbar;
    its inline peerbar chrome already reads "Comparing against <sample>". */
-.dash-toolbar-r { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.dash-toolbar-r { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
 .dash-toolbar-r .peerbar { margin: 0; }
-.dash-cardcount { white-space: nowrap; }
+/* line the sample pill up with the action buttons so the right cluster reads as one row */
+.dash-toolbar-r .peerbar-pill, .dash-toolbar-r .btn.small { height: 34px; box-sizing: border-box; }
 @media (max-width: 640px) { .dash-toolbar { flex-wrap: wrap; } .dash-toolbar-r { justify-content: flex-start; } }
 
 /* .dash-dl* download-menu styles removed 2026-08-11 — the CSV item was dropped and the
