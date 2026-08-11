@@ -1025,6 +1025,11 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const [msg, setMsg] = useState(null);
   const [sigMsg, setSigMsg] = useState(null);
   const [sigBusy, setSigBusy] = useState(false);
+  // company default peer group — MULTIPLE sectors + FTE bands (David 2026-08-11), pre-filled from
+  // the saved criteria (me.org.signal_peer_criteria).
+  const _sigCrit0 = (me.org && me.org.signal_peer_criteria) || {};
+  const [sigSectors, setSigSectors] = useState(_sigCrit0.industry || []);
+  const [sigSizes, setSigSizes] = useState(_sigCrit0.fte_band || []);
   const [aiDoc, setAiDoc] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [err, setErr] = useState(null);   // §4.10(2): don't hang on the loader if settings fail
@@ -1075,43 +1080,54 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
         <h2 class="section-title">Company default peer group</h2>
         <p class="caption">The peer group your whole organisation is measured against — it drives your signals and email alerts and is the group everyone lands on. Exploring another group on a page never changes it.</p>
         ${(() => {
-          // ONE org-level default (David 2026-08-11) — editor-set, firmographic cuts only (the
-          // nightly sweep can't run on twins or saved groups, and it now doubles as everyone's
-          // landing view). The per-user "landing peer group" pref was dropped.
-          const pool = (me.peer_pool || {}).responding_orgs || "—";
-          const opt = (v, label) => html`<option key=${v} value=${v}>${label}</option>`;
-          const firmo = !cuts || !me.org.classified ? [] :
-            Object.keys(cuts.industries || {}).map(i => opt("industry::" + i, `${i} · ${cuts.industries[i]}`)).concat(
-            Object.keys(cuts.fte_bands || {}).map(b => opt("fte_band::" + b, `${b} FTE · ${cuts.fte_bands[b]}`)));
-          const sigVal = me.org.signal_peer_cut || "all";
-          const sigLabel = sigVal === "all" ? `All peers · ${pool}`
-            : sigVal.split("::", 2)[1] + (sigVal.startsWith("fte_band::") ? " FTE" : "");
+          // The company default = ANY MIX of sectors × sizes (David 2026-08-11) — editor-set, drives
+          // signals, alerts + everyone's landing view. Multi-select criteria: none → all peers; a
+          // single value → the pre-aggregated single cut; a combination → an auto company-default
+          // GROUP (the server manages it). The per-user "landing peer group" pref was dropped.
           const isEd = me.user.role === "admin" || me.user.role === "contributor";
-          const saveSig = async (v) => {
+          const sectorOpts = cuts && me.org.classified ? Object.entries(cuts.industries || {}) : [];
+          const sizeOpts = cuts && me.org.classified ? Object.entries(cuts.fte_bands || {}) : [];
+          const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+          const nSel = sigSectors.length + sigSizes.length;
+          const saveSig = async () => {
             setSigBusy(true); setSigMsg(null);
             try {
-              await api("/api/org/signal-peers", { method: "PUT", body: { cut: v } });
+              const r = await api("/api/org/signal-peers", { method: "PUT",
+                body: { criteria: { industry: sigSectors, fte_band: sigSizes } } });
               await refreshMe();
-              setSigMsg("Saved — this is now the default for signals, alerts and everyone's view (from their next visit).");
-              setTimeout(() => setSigMsg(null), 4000);
+              setSigMsg(r && r.match_count != null && r.match_count < 5
+                ? "Saved — but this mix matches only " + r.match_count + " organisations, so figures under 5 stay hidden. Consider broadening it."
+                : "Saved — now the default for signals, alerts and everyone's view (from their next visit).");
+              setTimeout(() => setSigMsg(null), 6000);
             } catch (e) { toast(e.message, "error"); }
             setSigBusy(false);
           };
+          const col = (title, opts, sel, setSel, suffix) => html`
+            <div class="sigpeer-col">
+              <div class="sigpeer-lbl">${title} <span class="caption">— any, or none for all</span></div>
+              <div class="sigpeer-opts">
+                ${opts.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
+                  <input type="checkbox" checked=${sel.includes(v)} onChange=${() => toggle(sel, setSel, v)} />
+                  <span>${v}${suffix}</span><span class="caption num">${n}</span></label>`)}
+              </div>
+            </div>`;
           return html`
-            ${/* ONE company default (David 2026-08-11): the per-user "landing peer group" control was
-                  dropped — the org default now drives signals, alerts AND everyone's landing view, so
-                  there's a single consistent frame. Editor-set, firmographic cuts only. */ ""}
             <div class="field" style=${{ marginBottom: 0 }}>
-              <label>Default peer group <span class="caption">— organisation-wide</span></label>
               ${isEd ? html`
-                <select class="ctl" aria-label="Company default peer group" disabled=${sigBusy}
-                  value=${sigVal} onChange=${e => saveSig(e.target.value)}>
-                  ${[opt("all", `All peers · ${pool}`), ...firmo]}</select>` : html`
-                <div><span class="chip">${sigLabel}</span>
+                <div class="sigpeer-grid">
+                  ${col("Sectors", sectorOpts, sigSectors, setSigSectors, "")}
+                  ${col("Sizes", sizeOpts, sigSizes, setSigSizes, " FTE")}
+                </div>
+                <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)", alignItems: "center" }}>
+                  <button class="btn small primary" disabled=${sigBusy} onClick=${saveSig}>${sigBusy ? "Saving…" : "Save default"}</button>
+                  <span class="caption">${nSel === 0 ? "Currently: all peers"
+                    : sigSectors.length + " sector" + (sigSectors.length === 1 ? "" : "s") + " × " + sigSizes.length + " size" + (sigSizes.length === 1 ? "" : "s")}</span>
+                </div>` : html`
+                <div><span class="chip">${(me.org && me.org.signal_peer_label) || "All peers"}</span>
                   <span class="caption"> — Admins and Contributors set this.</span></div>`}
-              ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s1)" }}>${sigMsg}</div>`}
-              <div class="caption" style=${{ marginTop: "var(--s1)" }}>Sector and size groups only. Every member lands on
-                this group, and your signals + email alerts flag against it — one consistent view for the whole organisation.</div>
+              ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${sigMsg}</div>`}
+              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Pick any mix of sectors and sizes — the default is the
+                organisations matching your selection (all peers if you pick none). Signals, alerts and everyone's landing view all use it.</div>
               ${!me.org.classified && html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>
                 ${me.user.role === "admin" ? html`<a href="#/profile">Add your company profile</a> to unlock sector & size groups.`
                   : "Your Admin can add the company profile to unlock sector & size groups."}</div>`}

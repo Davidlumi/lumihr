@@ -2185,10 +2185,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
       </div>
       <p class="caption sig-peer-note" style=${{ marginTop: 0, marginBottom: "var(--s4)", maxWidth: "680px" }}>
-        Flagged against your <b>default peer group</b>${(() => {
-          const raw = me.org && me.org.signal_peer_cut;
-          return " — " + (!raw ? "all peers" : String(raw).split("::")[1] + (String(raw).startsWith("fte_band::") ? " FTE" : ""));
-        })()} — the same group your email alerts use, so the two never disagree.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}
+        Flagged against your <b>default peer group</b> — ${(me.org && me.org.signal_peer_label) || "all peers"} — the same group your email alerts use, so the two never disagree.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}
       </p>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`

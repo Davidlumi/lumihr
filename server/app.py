@@ -1193,6 +1193,7 @@ async def me(request: Request):
     # respects the master switch + consent with no client change. ai_insights carries the
     # gate state for the settings toggle + the consent prompt.
     _aig = ai_gate(conn, user)
+    _sp_cut, _sp_label, _sp_crit = _default_cut_info(conn, org)   # org default peer group for the client
     return {
         "contribution": contrib,
         "features": {"commentary": ai_feature_on(_aig, AI_COMMENTARY), "analyst": ai_feature_on(_aig, AI_ANALYST),
@@ -1215,9 +1216,12 @@ async def me(request: Request):
         "org": {"name": (identity.org_display(org["org_id"]) or {}).get("name"),
                 "industry": org["industry"], "subsector": org["subsector"],
                 "fte_band": org["fte_band"], "hq_region": org["hq_region"],
-                # the org's DEFAULT peer group for the signal-email sweep (2026-07-10) — the
-                # PeerSetBar marks it + editors set it; NULL = all-peers.
+                # the org's DEFAULT peer group (drives signals, alerts + everyone's landing view).
+                # signal_peer_cut = raw (all/industry::X/fte_band::Y/group::gid); label + criteria
+                # let the client name it and pre-fill the Settings multi-select. NULL = all-peers.
                 "signal_peer_cut": org.get("default_cut"),
+                "signal_peer_label": _sp_label,
+                "signal_peer_criteria": _sp_crit,
                 "ownership_type": org["ownership_type"], "classified": bool(org["classified"]),
                 "profile_rich_complete": all(org.get(f) for f in PROFILE_RICH),
                 "tier_entitlement": org["tier_entitlement"], "source": org["source"],
@@ -2204,7 +2208,7 @@ async def overview(request: Request):
     # hero / bars keep the REQUESTED cut; only the signal build re-points to the default. When the
     # requested cut IS the default (the common case, and every gate's frame), this is a no-op alias
     # — byte-identical to before. The default is a firmographic cut (industry/fte_band) or all.
-    sig_cut = _org_sweep_cut(org)
+    sig_cut = _org_sweep_cut(conn, org)
     if sig_cut.get("dim") == cut.get("dim") and sig_cut.get("value") == cut.get("value"):
         sig_items, sig_money, sig_get_block, sig_align = items, money, _get_block, _dom_align
     else:
@@ -2407,10 +2411,20 @@ async def strategy_diagnosis(request: Request):
 # (needs membership). Anything else → all-peers.
 SWEEP_CUT_DIMS = ("industry", "fte_band")
 
-def _org_sweep_cut(org):
-    """The org's default_cut as a cut dict for the signal-email sweep — restricted to the
-    stable firmographic dims; NULL / unsupported → all-peers (the historical frame)."""
+def _org_sweep_cut(conn, org):
+    """The org's default_cut as a cut dict for signals/alerts. A single firmographic value
+    (industry::X / fte_band::Y) resolves inline; a COMPANY-DEFAULT GROUP (group::gid) loads its
+    criteria — a multi sector × size intersection computed via peer_twin.group_blocks, which is
+    request-free (conn + criteria only), so the nightly sweep can build it too. A deleted group or
+    NULL / unsupported value → all-peers."""
     raw = (org.get("default_cut") or "").strip()
+    if raw.startswith("group::"):
+        gid = raw.split("::", 1)[1]
+        row = conn.execute("SELECT criteria_json FROM peer_groups WHERE group_id=? AND org_id=?",
+                           (gid, org["org_id"])).fetchone()
+        if row:
+            return {"dim": "group", "value": gid, "criteria": uj(row["criteria_json"], {}) or {}}
+        return {"dim": "all", "value": None}
     if "::" in raw:
         dim, val = raw.split("::", 1)
         if dim in SWEEP_CUT_DIMS and val:
@@ -2418,22 +2432,99 @@ def _org_sweep_cut(org):
     return {"dim": "all", "value": None}
 
 
+def _default_cut_info(conn, org):
+    """(raw_cut, label, criteria) describing the org default, for the client — the criteria
+    pre-fills the Settings multi-select (checked sectors/sizes) and the label names the group on
+    the Signals page. NULL / missing → all peers."""
+    raw = (org.get("default_cut") or "").strip()
+    if raw.startswith("group::"):
+        gid = raw.split("::", 1)[1]
+        row = conn.execute("SELECT name, criteria_json FROM peer_groups WHERE group_id=? AND org_id=?",
+                           (gid, org["org_id"])).fetchone()
+        if row:
+            return raw, row["name"], (uj(row["criteria_json"], {}) or {})
+        return None, "All peers", {}
+    if "::" in raw:
+        dim, val = raw.split("::", 1)
+        if dim == "industry":
+            return raw, val, {"industry": [val]}
+        if dim == "fte_band":
+            return raw, val + " FTE", {"fte_band": [val]}
+    return None, "All peers", {}
+
+
+def _default_group_name(criteria):
+    """Readable name for the auto company-default group, from its firmographic criteria."""
+    parts = []
+    inds, ftes = criteria.get("industry") or [], criteria.get("fte_band") or []
+    if inds:
+        parts.append(", ".join(inds) if len(inds) <= 2 else ("%d sectors" % len(inds)))
+    if ftes:
+        parts.append((", ".join(ftes) if len(ftes) <= 2 else ("%d sizes" % len(ftes))) + " FTE")
+    return " · ".join(parts) or "Company default"
+
+
 @app.put("/api/org/signal-peers")
 async def set_org_signal_peers(request: Request):
-    """Editor-only: set the org's default peer group for the nightly signal EMAILS (David
-    2026-07-10). Restricted to firmographic cuts (or 'all' to clear). This is the ORG-level
-    default that powers notifications; the per-USER landing default is a client pref."""
+    """Editor-only: set the ORG DEFAULT peer group (drives signals, alerts AND everyone's landing
+    view — David 2026-08-11). Accepts a firmographic CRITERIA with MULTIPLE sectors and/or size
+    bands: nothing selected → all peers; a single firmographic value → the trusted pre-aggregated
+    single cut; a genuine combination → a company-default peer GROUP (criteria resolved dynamically
+    via group_blocks, request-free so the nightly sweep can build it). A group default can ONLY come
+    from this flow (the old control + sweep never allowed groups), so `cur_gid` is always the auto
+    group — safe to reuse/replace. Legacy {cut:"industry::X"} body still accepted."""
     user, org = require_editor(request)
     body = await _json(request)
-    raw = (body.get("cut") or "all").strip()
-    dim = raw.split("::", 1)[0]
-    if raw != "all" and dim not in SWEEP_CUT_DIMS:
-        return JSONResponse({"error": "Signal emails can only default to an industry or size peer group."}, status_code=400)
-    val = None if raw == "all" else raw
     conn = get_conn()
-    conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?", (val, org["org_id"]))
+    cur = (org.get("default_cut") or "")
+    cur_gid = cur.split("::", 1)[1] if cur.startswith("group::") else None
+    def _drop_auto_group():
+        if cur_gid:
+            conn.execute("DELETE FROM peer_groups WHERE group_id=? AND org_id=?", (cur_gid, org["org_id"]))
+    # legacy single-cut body (back-compat)
+    if "criteria" not in body and body.get("cut") is not None:
+        raw = (body.get("cut") or "all").strip()
+        if raw != "all" and raw.split("::", 1)[0] not in SWEEP_CUT_DIMS:
+            return JSONResponse({"error": "Only industry or size peer groups are allowed."}, status_code=400)
+        _drop_auto_group()
+        conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?", (None if raw == "all" else raw, org["org_id"]))
+        conn.commit()
+        return {"ok": True, "signal_peer_cut": None if raw == "all" else raw}
+    # criteria body: multiple sectors / size bands
+    ci = body.get("criteria") or {}
+    crit = {}
+    for f in ("industry", "fte_band"):
+        vals = [v for v in (ci.get(f) or []) if isinstance(v, str) and v]
+        if vals:
+            crit[f] = vals
+    if not crit:                                       # nothing selected → all peers
+        _drop_auto_group()
+        conn.execute("UPDATE orgs SET default_cut=NULL WHERE org_id=?", (org["org_id"],))
+        conn.commit()
+        return {"ok": True, "signal_peer_cut": None}
+    criteria = validate_group_criteria(crit)           # validates against profile_choices
+    # a single firmographic value → use the trusted pre-aggregated single cut (exact + fast)
+    if len(criteria) == 1 and len(next(iter(criteria.values()))) == 1:
+        field = next(iter(criteria)); value = criteria[field][0]
+        _drop_auto_group()
+        conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?", (field + "::" + value, org["org_id"]))
+        conn.commit()
+        return {"ok": True, "signal_peer_cut": field + "::" + value}
+    # a genuine combination → the company-default GROUP (find-or-create, then point the default at it)
+    name = _default_group_name(criteria)
+    if cur_gid and conn.execute("SELECT 1 FROM peer_groups WHERE group_id=? AND org_id=?",
+                                (cur_gid, org["org_id"])).fetchone():
+        conn.execute("UPDATE peer_groups SET name=?, criteria_json=?, updated_at=datetime('now') WHERE group_id=?",
+                     (name, j(criteria), cur_gid))
+        gid = cur_gid
+    else:
+        gid = str(uuid.uuid4())
+        conn.execute("INSERT INTO peer_groups(group_id, org_id, name, criteria_json, created_by) VALUES (?,?,?,?,?)",
+                     (gid, org["org_id"], name, j(criteria), user["user_id"]))
+    conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?", ("group::" + gid, org["org_id"]))
     conn.commit()
-    return {"ok": True, "signal_peer_cut": val}
+    return {"ok": True, "signal_peer_cut": "group::" + gid,
+            "match_count": len(peer_twin.group_org_ids(conn, criteria))}
 
 
 def org_signals(conn, org):
@@ -2452,7 +2543,7 @@ def org_signals(conn, org):
     cares about, not always all-peers (the old RULED frame). Restricted to the stable
     firmographic cuts (industry/fte_band) so a nightly, request-free build never depends on
     twin vectors / group membership; NULL or anything else → all-peers (byte-identical)."""
-    cut = _org_sweep_cut(org)
+    cut = _org_sweep_cut(conn, org)
     items, tb = build_items(None, org, None, cut)
     visq = org_visible_questions(org)
     answers = org_answers_for(org)

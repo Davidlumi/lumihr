@@ -16659,3 +16659,32 @@ alerts and everyone's view are measured against… You can still explore other g
 once firmographic groups exist (safe for unclassified orgs — no premature all-peers-only prompt).
 Verified live on Thornbridge (admin, classified, default null): prompt shows, CTA routes to
 Settings, SPA renders, console clean. v=526; 14/14 gates green.
+
+## 2026-08-11 — Company default = any sector × size combination (multi-select) (David)
+
+David: "the default should be chosen from a combination of sectors and FTE not just one." Rulings
+(AskUserQuestion): build it as a company peer group; the admin can select MULTIPLE sectors AND
+multiple FTE bands. A sector×size intersection can't use the pre-aggregated single-dim blocks — it's
+resolved dynamically, exactly like criteria-based saved groups (peer_twin.group_blocks(conn,
+criteria, snapshot), request-free). So the compound default IS a criteria group.
+
+SERVER:
+- set_org_signal_peers now takes {criteria: {industry:[...], fte_band:[...]}}: none → all peers
+  (default_cut=NULL); a single firmographic value → the trusted pre-aggregated single cut; a genuine
+  combination → an auto COMPANY-DEFAULT peer_group (find-or-create; default_cut="group::gid"). A group
+  default can only come from this flow (the old control never allowed groups), so cur_gid is always
+  the auto group — safe to reuse/replace, no migration, never touches user groups. Legacy {cut:...}
+  body still accepted.
+- _org_sweep_cut(conn, org) resolves a group default → its criteria (so signals/alerts + the anchored
+  overview build all use group_blocks; build_items computes it request-free → the nightly sweep works).
+- /api/me exposes signal_peer_label + signal_peer_criteria (via _default_cut_info) so the client names
+  the group and pre-fills the multi-select.
+CLIENT: Settings "Company default peer group" = two multi-select checkbox columns (Sectors, Sizes) +
+Save (commercial.js + .sigpeer-* CSS); pre-filled from signal_peer_criteria; save PUTs the criteria and
+warns if the match is <5. The Signals-page note uses signal_peer_label (a gid would be meaningless).
+Landing / PeerDefaultNudge / signalCut already handle a group default.
+VERIFIED live on Thornbridge (test-and-reverted, org left at all-peers): UI select 2 sectors + 1 size
+→ created a group, label "Retail…, Tech… · 250-999 FTE"; signals identical across cuts (anchored);
+narrow combo → 0 signals (correct suppression); broad 4-sector combo → 95 orgs, 46 signals (real
+data); auto group reused not duplicated; empty selection → null default + auto group deleted, user
+groups untouched. v=527; 14/14 gates green.
