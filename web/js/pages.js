@@ -2274,7 +2274,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
     </div>`;
   return html`
-    <div class="signals-page brf-page" style=${{ maxWidth: "1080px" }}>
+    <div class="signals-page brf-page" style=${{ maxWidth: "1120px", margin: "0 auto" }}>
       <div class="ov-aurora" aria-hidden="true"></div>
       <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>Signals</h1>
       ${unlocked ? html`<p class="brf-std" style=${{ maxWidth: "680px", marginTop: 0 }}>Grounded in your peer data, never advice: <b>we flag, you decide</b>.</p>` : null}
