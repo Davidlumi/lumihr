@@ -3138,7 +3138,10 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
                 <button class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
                   <b>PDF</b><small>Print-ready document — every card</small></button>
                 <a class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(activeCut)}
-                  download onClick=${() => setDlOpen(false)}>
+                  download onClick=${() => setTimeout(() => setDlOpen(false), 0)}>
+                  ${/* defer the menu-close (2026-08-11 fix): closing it synchronously unmounts
+                        THIS anchor mid-click, which cancels the browser's download. setTimeout(0)
+                        lets the download's default action commit first, then closes the menu. */ ""}
                   <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
               </div>`}
           </div>

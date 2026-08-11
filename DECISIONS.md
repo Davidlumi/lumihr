@@ -16512,3 +16512,17 @@ snapshot from the passed `cut` (falling back to all-peers), but the dashboards p
 cut=null — so a dashboard pinned to a group would have shared an ALL-PEERS snapshot. Now
 ShareButton receives activeCut, so a shared dashboard reflects the sample it's tied to.
 Verified the Share dialog opens carrying the dashboard's cut (no link created). v=516; 14/14.
+
+## 2026-08-11 — Fix: My-dashboards CSV download did nothing (David)
+
+David: "on my dashboards the download does not work for the csv." Root cause was CLIENT-side
+(pre-existing, not from the sample feature): the CSV item is an <a download href>, and its
+onClick did setDlOpen(false) — closing the Download menu SYNCHRONOUSLY unmounts that very
+anchor mid-click, which cancels the browser's download default-action. The server endpoint was
+always fine (verified: GET /api/dashboards/{id}/export.csv → 200, Content-Disposition:
+attachment, valid CSV). Fix: defer the menu-close — onClick now setTimeout(()=>setDlOpen(false),0)
+so the download commits while the anchor is still mounted, then the menu closes on the next tick.
+Audited the sibling download links: the board-pack CSV (bp-menu) and the gap-register CSV only
+fire a toast onClick (never unmount their own anchor), so they were unaffected — this was the
+only instance. Verified live: after the fix the anchor stays mounted synchronously post-click and
+the export.csv GET fires (200). v=517; 14/14 gates green.
