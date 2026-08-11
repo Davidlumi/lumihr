@@ -16735,3 +16735,43 @@ rail 196 sticky — and a readable ≤768px capture showing the collapsed rail, 
 chips, dual search + checkbox lists, live match line, all cards); commercial.js passes a jsc syntax +
 top-level eval check; app.css braces balanced. v=529; 14/14 gates green. Interactive behaviour
 (scroll-spy, live count, save) for David to confirm in his logged-in Chrome.
+
+## 2026-08-11 — Settings polish pass: 46-finding design review applied (David "major polish + UX/UI review")
+
+A 5-lens adversarial workflow (visual hierarchy · IA/nav · interaction/microcopy · consistency ·
+a11y/edge-states → verify → synthesis) reviewed the shipped two-pane Settings live; 70 raw → 46
+confirmed findings. David ruled the four direction forks (AskUserQuestion): Sharing → own page;
+explicit saves made consistent; band dividers + profile-first order; single-blue lens tiles. Applied
+this batch (v=531):
+
+- **Sharing → its own admin page.** Retired the legacy `/shares → /settings?tab=sharing` remap
+  (core.js mapLegacyRoute); added an admin-gated `/shares` route (app.js, mirrors /team) rendering the
+  standalone SharesPage; Settings now shows a calm delegate **entry card** ("Manage share links →"),
+  mirroring Company profile → /profile. Kills the embed's system-breaking 30px "Manage shares" title,
+  card-in-card, 880px overflow and floating sticky table header. VERIFIED live: Settings→entry→/shares.
+- **Settings is RAG-free** (standing law). New blue `.settings-saved` cue replaces the green
+  `.ok-text` on every Settings success; `.sigpeer-match.warn` amber → blue-deep; the four notification
+  **lens tiles drop their identity hues** for ink/blue on the `.notif-prefs` surface (David's ruling).
+- **Save model — explicit, consistent.** Modelling save is now dirty-gated + `saving`-locked with
+  input **validation** (reject empty/non-positive salary, negative rates — they'd corrupt platform-wide
+  £ figures); Notifications save **reverts + toasts on failure** (was a silent swallow) and the loader
+  now shows an error+Retry instead of spinning forever; peer-group "Saved" is a transient post-save
+  tick (was a persistent "in sync"); one too-small-group helper drives both the live line and the note.
+- **Grouping — dividers + profile-first.** Three `.settings-group` band eyebrows in the content column
+  mirror the rail; Organisation reordered so **Company profile precedes Default peer group**
+  (prerequisite-first; the builder locks until classified).
+- **Controls & a11y.** Modelling inputs → `.unit-input.compact` (£-prefix / %-suffix) in `.set-row`s;
+  a permission **lock chip** ("View only") on org cards the viewer can't edit; FTE sizes **sorted by
+  headcount** (was string order); email-digest segmented control dropped the broken radiogroup for
+  `aria-pressed` toggles + a group label; AI-Terms link is now a keyboard/SR-reachable `.linklike`
+  button; `aria-current` on the active rail item; search-input `aria-label`s; `×`-remove hit target
+  ≥24px; scroll-spy gains a click-scroll lock, focus handoff and last-section dead-zone fallback,
+  honours reduced motion; **confirm before revoking** a share link; clipboard guard; `rel=noopener`;
+  facet columns equal-height; band eyebrows sentence-case; email-digest helper contradiction fixed;
+  empty-lenses warning; the entity double-escape (`&amp;` → `&`) fix committed.
+
+VERIFIED live (logged in, admin, org Thornbridge): every card, the three eyebrows, profile-first order,
+single-blue lens tiles, sorted sizes, modelling set-rows, disabled-until-dirty save, the Sharing entry
+card, and the /shares standalone page. commercial.js/app.js/core.js pass a jsc syntax check; CSS braces
+balanced; **14/14 gates green**. v=531. Deferred (David decisions, not applied): auto-save direction,
+deep-linkable settings sub-hashes, the scope-chip vocabulary unification.

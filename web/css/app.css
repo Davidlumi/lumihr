@@ -336,7 +336,10 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 /* 2026-07-09 ship review B11: complete the .check-row treatment — the selected
    tile reads like .yourdata/.pulse-survey check-rows (blue tint + blue border) */
 .notif-prefs .notif-lens-check:has(input:checked) { background: var(--blue-tint); border-color: var(--blue); }
-.notif-prefs .notif-lens-check:has(input:checked) { background: var(--blue-tint); border-color: var(--blue); }
+/* single-blue Settings surface (David 2026-08-11): the four lens labels drop their identity hues here —
+   selection reads from the blue-tint tile, not four colours competing on a calm preferences surface */
+.notif-prefs .notif-lens-check [class^="lens-"] { color: var(--ink); }
+.notif-prefs .notif-lens-check:has(input:checked) [class^="lens-"] { color: var(--blue-deep); }
 .content { padding: var(--s5); max-width: 1320px; width: 100%; margin: 0 auto; }
 
 /* hamburger lives in the brand bar; hidden on desktop, shown only as the drawer
@@ -532,16 +535,26 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
   text-decoration: none; transition: background var(--dur-fast) ease, color var(--dur-fast) ease; }
 .settings-rail-item:hover { background: var(--surface-sunk); color: var(--ink); }
 .settings-rail-item.active { background: var(--lumi-tile); color: var(--lumi-navy); font-weight: 600; }
-.settings-stack { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.settings-stack { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
 .settings-card { padding: var(--s5); scroll-margin-top: calc(var(--brandbar-h) + var(--s5)); }
-.settings-card-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s1); }
+.settings-card-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s2); }
 .settings-card-title { font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 650; color: var(--ink); margin: 0; letter-spacing: .01em; }
 .settings-desc { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.5; margin: 0 0 var(--s4); max-width: 62ch; }
 .scope-chip { margin-left: auto; flex: none; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .02em;
   padding: 3px 9px; border-radius: 999px; background: var(--surface-sunk); color: var(--ink-soft); white-space: nowrap; }
 .scope-chip.you { background: var(--blue-tint); color: var(--blue-deep); }
-/* the Legal band is set apart (Danger-Zone intent, no RAG colour) */
-.settings-legal { border-top: 1px solid var(--border); margin-top: var(--s5); padding-top: var(--s5); }
+.scope-chip.lock { background: var(--surface-sunk); color: var(--ink-faint); }
+/* band eyebrow in the content column — mirrors the rail's three groups so the stack reads as bands */
+.settings-group { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-faint); font-weight: 650; padding: 0 2px; margin-bottom: calc(-1 * var(--s2)); }
+.settings-group:first-of-type { margin-top: 0; }
+/* Settings success cue — RAG-free (blue, not the benchmark green of .ok-text) */
+.settings-saved { font-size: var(--fs-caption); font-weight: 600; color: var(--blue-deep); }
+/* inline text button that reads as a link — keyboard- and SR-reachable, unlike a bare <a onClick> */
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--blue-bright);
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.linklike:hover { color: var(--blue-deep); }
+.linklike:focus-visible { outline: var(--focus-outline); outline-offset: 2px; border-radius: 2px; }
 /* one setting = one row: label + helper left, control right */
 .set-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); padding: var(--s3) 0; }
 .set-row + .set-row { border-top: 1px solid var(--border); }
@@ -556,10 +569,12 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .sigpeer-chips { display: flex; flex-wrap: wrap; gap: var(--s1); margin-bottom: var(--s2); }
 .sigpeer-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--blue-tint); color: var(--blue-deep);
   font-size: var(--fs-caption); font-weight: 550; padding: 3px 4px 3px 9px; border-radius: 999px; }
-.sigpeer-tag button { background: none; border: 0; cursor: pointer; color: var(--blue-deep); line-height: 0; padding: 2px; border-radius: 999px; display: inline-flex; }
+.sigpeer-tag button { background: none; border: 0; cursor: pointer; color: var(--blue-deep); line-height: 0;
+  padding: 2px; margin: -2px -2px -2px 0; min-width: 24px; min-height: 24px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; }
 .sigpeer-tag button:hover { background: rgba(0,0,0,.08); }
 .sigpeer-match { font-size: var(--fs-caption); color: var(--ink); margin-top: var(--s3); }
-.sigpeer-match.warn { color: var(--neutral-perf); }
+.sigpeer-match.warn { color: var(--blue-deep); font-weight: 600; }
 @media (max-width: 900px) {
   .settings-grid { grid-template-columns: 1fr; gap: var(--s3); }
   .settings-rail { position: sticky; top: 0; z-index: 3; flex-direction: row; overflow-x: auto; gap: var(--s1);
@@ -869,9 +884,9 @@ td.num, th.num { text-align: right; }
    Scoped under .sigpeer-opts so the row LABELs beat `.field label { display:block; font-weight:600 }`. */
 .sigpeer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
 @media (max-width: 720px) { .sigpeer-grid { grid-template-columns: 1fr; } }
-.sigpeer-lbl { font-size: var(--fs-caption); font-weight: 600; color: var(--ink-soft); margin-bottom: var(--s2);
-  text-transform: uppercase; letter-spacing: .04em; }
-.sigpeer-opts { display: flex; flex-direction: column; gap: 1px; max-height: 236px; overflow-y: auto;
+.sigpeer-lbl { font-size: var(--fs-label); font-weight: 600; color: var(--ink); margin-bottom: var(--s2); }
+/* fixed height (not max-) so the two facet columns bottom-align regardless of list length */
+.sigpeer-opts { display: flex; flex-direction: column; gap: 1px; height: 236px; overflow-y: auto;
   border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--s1); background: var(--surface); }
 .sigpeer-opts .sigpeer-chk { display: flex; align-items: center; gap: var(--s2); width: 100%; box-sizing: border-box;
   margin: 0; padding: var(--s2); border-radius: var(--radius-xs); font-size: var(--fs-label); font-weight: 400;

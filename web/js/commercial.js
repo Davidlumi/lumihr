@@ -751,6 +751,7 @@ window.SharesPage = function ({ embedded }) {
   // every link ever minted rendered forever (122 rows, 111 revoked → a 16,500px Settings page).
   const [showRevoked, setShowRevoked] = useState(false);
   const revoke = async (t) => {
+    if (!window.confirm("Revoke this share link? Anyone you've sent it to loses access immediately — this can't be undone.")) return;
     try { await api("/api/shares/" + t, { method: "DELETE" }); refresh(); toast("Share link revoked"); }
     catch (e) { toast(e.message || "Couldn't revoke that link.", "error"); }
   };
@@ -801,8 +802,8 @@ window.SharesPage = function ({ embedded }) {
               <tr key=${s.token} style=${s.revoked ? { opacity: 0.55 } : null}>
                 <td><b>${s.kind === "boardpack" ? "Board pack" : "Dashboard"}</b></td>
                 <td>${s.revoked ? html`<span class="muted">revoked</span>` :
-                  html`<a href=${s.url} target="_blank">${window.location.origin}${s.url.slice(0, 18)}…</a>
-                  <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); }}><${Icon} name="copy" size=${14} /></button>`}</td>
+                  html`<a href=${s.url} target="_blank" rel="noopener noreferrer">${window.location.origin}${s.url.slice(0, 18)}…</a>
+                  <button class="iconbtn" title="Copy link" aria-label="Copy share link" onClick=${() => { if (navigator.clipboard) { navigator.clipboard.writeText(window.location.origin + s.url); toast("Link copied to clipboard"); } else toast("Copying isn't available in this browser", "error"); }}><${Icon} name="copy" size=${14} /></button>`}</td>
                 <td>${s.expires_at ? fmtDate(s.expires_at + "Z") : "Never"}</td>
                 <td>${s.revoked ? html`<span class="chip bad">Revoked</span>` :
                   (s.expires_at && new Date(s.expires_at + "Z") < new Date()) ? html`<span class="chip warn">Expired</span>` :
@@ -956,12 +957,19 @@ function NotificationsSettings() {
   const [p, setP] = useState(null);
   const [floor, setFloor] = useState(10000);
   const [saved, setSaved] = useState(false);
-  useEffect(() => { api("/api/notify-prefs").then(d => { setP(d.prefs); setFloor(d.min_money_floor || 10000); }).catch(() => {}); }, []);
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => { setLoadErr(null); api("/api/notify-prefs").then(d => { setP(d.prefs); setFloor(d.min_money_floor || 10000); }).catch(e => setLoadErr(e.message)); };
+  useEffect(() => { load(); }, []);
+  if (loadErr) return html`<${EmptyState} title="Couldn't load your notification settings" body=${loadErr}
+    action=${html`<button class="btn small primary" onClick=${load}>Retry</button>`} />`;
   if (!p) return html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /></div>`;
+  // optimistic write, but REVERT + surface the error on failure (never leave a toggle flipped silently)
   const save = (next) => {
+    const prev = p;
     setP(next);
     api("/api/notify-prefs", { method: "PUT", body: { prefs: next } })
-      .then(() => { setSaved(true); setTimeout(() => setSaved(false), 1500); }).catch(() => {});
+      .then(() => { setSaved(true); setTimeout(() => setSaved(false), 1500); })
+      .catch(e => { setP(prev); toast(e.message || "Couldn't save that change — nothing was changed", "error"); });
   };
   const toggleLens = (l) => {
     const set = new Set(p.lenses);
@@ -977,13 +985,13 @@ function NotificationsSettings() {
       </label>
       <div class="field">
         <label>Email digest</label>
-        <div class="seg-toggle" role="radiogroup" aria-label="Email digest frequency">
+        <div class="seg-toggle" role="group" aria-label="Email digest frequency">
           ${["off", "daily", "weekly"].map(f => html`
-            <button key=${f} class=${"seg-btn" + (p.email_frequency === f ? " on" : "")} role="radio"
-              aria-checked=${p.email_frequency === f} onClick=${() => save({ ...p, email_frequency: f })}>
+            <button key=${f} type="button" class=${"seg-btn" + (p.email_frequency === f ? " on" : "")}
+              aria-pressed=${p.email_frequency === f} onClick=${() => save({ ...p, email_frequency: f })}>
               ${f.charAt(0).toUpperCase() + f.slice(1)}</button>`)}
         </div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>A weekly digest is on by default — at most 3 a week, never more than one a day. Every email includes an unsubscribe link.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>Digests are capped at one a day and three a week. Every email has an unsubscribe link.</div>
       </div>
       <div class="field">
         <label>What to hear about</label>
@@ -994,6 +1002,7 @@ function NotificationsSettings() {
               <span class=${"lens-" + l.k}><${Icon} name=${l.icon} size=${13} /> ${l.label}</span>
             </label>`)}
         </div>
+        ${p.lenses.length === 0 ? html`<div class="caption" role="status" style=${{ marginTop: "var(--s2)" }}>Pick at least one — with none selected you won't be notified about anything.</div>` : null}
       </div>
       <label class="na-toggle">
         <input type="checkbox" checked=${goodNews}
@@ -1009,7 +1018,7 @@ function NotificationsSettings() {
         </div>
         <div class="caption" style=${{ marginTop: "var(--s2)" }}>Your floor can be stricter than lumi's (£${floor.toLocaleString("en-GB")}), never looser.</div>
       </div>
-      ${saved && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>Saved.</div>`}
+      ${saved && html`<div class="settings-saved" role="status" style=${{ marginTop: "var(--s2)" }}>Saved</div>`}
     </div>`;
 }
 
@@ -1021,10 +1030,14 @@ const termsVer = v => String(v == null ? "" : v).replace(/-draft$/, "");
 
 window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const [a, setA] = useState(null);
+  const [a0, setA0] = useState(null);        // loaded baseline — modelling dirty check
+  const [saving, setSaving] = useState(false);
   const [editable, setEditable] = useState(false);
   const [msg, setMsg] = useState(null);
   const [sigMsg, setSigMsg] = useState(null);
   const [sigBusy, setSigBusy] = useState(false);
+  const [sigSaved, setSigSaved] = useState(false);   // transient post-save tick, not a persistent "in sync"
+  const scrollLock = useRef(0);              // suppress scroll-spy while a rail click is animating
   // company default peer group — MULTIPLE sectors + FTE bands (David 2026-08-11), pre-filled from
   // the saved criteria (me.org.signal_peer_criteria).
   const _sigCrit0 = (me.org && me.org.signal_peer_criteria) || {};
@@ -1044,22 +1057,29 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     catch (e) { toast("Couldn't update AI Insights — nothing was changed", "error"); }
     setAiBusy(false);
   };
-  const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
+  const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setA0(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };
   useEffect(() => { loadA(); }, []);
   const isEd = me.user.role === "admin" || me.user.role === "contributor";
   const isAdmin = me.user.role === "admin";
+  const SEC_IDS = ["notifications", "ai-insights", "profile", "defaults", "modelling", "terms"].concat(isAdmin ? ["sharing"] : []);
   // rail scroll-spy — highlight the section nearest the top of the reading band
   useEffect(() => {
     if (!a) return;
-    const ids = ["notifications", "ai-insights", "defaults", "profile", "modelling", "terms"].concat(isAdmin ? ["sharing"] : []);
     const obs = new IntersectionObserver((entries) => {
+      if (scrollLock.current > Date.now()) return;   // a rail click owns activeSec until its scroll settles
       const vis = entries.filter(e => e.isIntersecting);
       if (!vis.length) return;
       vis.sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top);
       setActiveSec(vis[0].target.id);
     }, { rootMargin: "-18% 0px -72% 0px", threshold: 0 });
-    ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
-    return () => obs.disconnect();
+    SEC_IDS.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    // last-section dead-zone: a short final card can't reach the -18/-72 line, so pin it at page end
+    const onScroll = () => {
+      if (scrollLock.current > Date.now()) return;
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) setActiveSec(SEC_IDS[SEC_IDS.length - 1]);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { obs.disconnect(); window.removeEventListener("scroll", onScroll); };
   }, [a, isAdmin]);
   // live "matches ~N organisations" for the peer-default builder (debounced; editors only)
   useEffect(() => {
@@ -1071,14 +1091,32 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     }, 250);
     return () => { live = false; clearTimeout(t); };
   }, [sigSectors.join("|"), sigSizes.join("|"), isEd]);
-  const goSec = (id) => { const el = document.getElementById(id); if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); setActiveSec(id); } };
+  const goSec = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    scrollLock.current = Date.now() + 700;   // let the smooth scroll settle before the observer resumes
+    setActiveSec(id);
+    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    el.setAttribute("tabindex", "-1");
+    el.focus({ preventScroll: true });
+  };
+  const modKeys = ["median_salary_gbp", "cost_per_leaver_pct_salary", "agency_premium_pct"];
+  const modDirty = !!a0 && modKeys.some(k => +a[k] !== +a0[k]);
   const save = async () => {
+    if (saving) return;
+    const ms = +a.median_salary_gbp, cl = +a.cost_per_leaver_pct_salary, ap = +a.agency_premium_pct;
+    // guard the platform-wide £ figures: a cleared field would coerce to 0, negatives would flip the model
+    if (!(ms > 0)) { toast("Median salary must be a positive number.", "error"); return; }
+    if (!(cl >= 0) || !(ap >= 0)) { toast("Cost per leaver and agency premium can't be negative.", "error"); return; }
+    setSaving(true);
     try {
-      await api("/api/assumptions", { method: "PUT", body: { assumptions: {
-        median_salary_gbp: +a.median_salary_gbp, cost_per_leaver_pct_salary: +a.cost_per_leaver_pct_salary,
-        agency_premium_pct: +a.agency_premium_pct } } });
+      const body = { median_salary_gbp: ms, cost_per_leaver_pct_salary: cl, agency_premium_pct: ap };
+      await api("/api/assumptions", { method: "PUT", body: { assumptions: body } });
+      setA0({ ...a, ...body });
       setMsg("Saved — £ figures across lumi now use these assumptions."); setTimeout(() => setMsg(null), 3000);
     } catch (e) { toast(e.message || "Couldn't save your assumptions — nothing was changed.", "error"); }
+    setSaving(false);
   };
   if (err) return html`<${EmptyState} title="Couldn't load settings"
     body=${err + " — nothing is lost."}
@@ -1087,34 +1125,41 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
 
   // ---- rail + card scaffolding (two-pane world-class redesign, David 2026-08-11) ----
   const railItem = (id, label) => html`<button type="button"
-    class=${"settings-rail-item" + (activeSec === id ? " active" : "")} onClick=${() => goSec(id)}>${label}</button>`;
-  const card = (id, title, chip, chipYou, desc, body) => html`
+    class=${"settings-rail-item" + (activeSec === id ? " active" : "")} aria-current=${activeSec === id ? "true" : undefined}
+    onClick=${() => goSec(id)}>${label}</button>`;
+  // lock (a string) wins over the scope chip — it tells a viewer up front they can't edit this card
+  const card = (id, title, chip, chipYou, desc, body, lock) => html`
     <section class="card settings-card" id=${id}>
       <div class="settings-card-head">
         <h2 class="settings-card-title">${title}</h2>
-        ${chip ? html`<span class=${"scope-chip" + (chipYou ? " you" : "")}>${chip}</span>` : null}
+        ${lock ? html`<span class="scope-chip lock">${lock}</span>`
+          : chip ? html`<span class=${"scope-chip" + (chipYou ? " you" : "")}>${chip}</span>` : null}
       </div>
       ${desc ? html`<p class="settings-desc">${desc}</p>` : null}
       ${body}
     </section>`;
 
   // ---- Default peer group builder (searchable chip multi-select + live match count) ----
+  // FTE bands sort by headcount, not string order (else "1,000-4,999" precedes "50-249")
+  const bandLow = (s) => { const m = String(s).replace(/,/g, "").match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
   const sectorOpts = cuts && me.org.classified ? Object.entries(cuts.industries || {}) : [];
-  const sizeOpts = cuts && me.org.classified ? Object.entries(cuts.fte_bands || {}) : [];
+  const sizeOpts = cuts && me.org.classified ? Object.entries(cuts.fte_bands || {}).sort((x, y) => bandLow(x[0]) - bandLow(y[0])) : [];
   const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
   const nSel = sigSectors.length + sigSizes.length;
   const _norm = (arr) => JSON.stringify([...(arr || [])].sort());
   const sigDirty = _norm(sigSectors) !== _norm(_sigCrit0.industry) || _norm(sigSizes) !== _norm(_sigCrit0.fte_band);
+  // one wording for the suppression rule, server-driven (reused by the live line + the post-save note)
+  const tooSmallNote = (min) => "under " + (min || 5) + ", so figures stay hidden. Broaden the mix.";
   const saveSig = async () => {
-    setSigBusy(true); setSigMsg(null);
+    if (sigBusy) return;
+    setSigBusy(true); setSigMsg(null); setSigSaved(false);
     try {
       const r = await api("/api/org/signal-peers", { method: "PUT",
         body: { criteria: { industry: sigSectors, fte_band: sigSizes } } });
       await refreshMe();
-      setSigMsg(r && r.match_count != null && r.match_count < 5
-        ? "Saved — but this mix matches only " + r.match_count + " organisations, so figures under 5 stay hidden. Consider broadening it."
-        : "Saved — now the default for signals, alerts and everyone's view (from their next visit).");
-      setTimeout(() => setSigMsg(null), 6000);
+      setSigSaved(true); setTimeout(() => setSigSaved(false), 2500);
+      if (r && r.match_count != null && r.match_count < 5)
+        setSigMsg("Saved, but this mix matches only " + r.match_count + " organisation" + (r.match_count === 1 ? "" : "s") + " — " + tooSmallNote(r.min_orgs));
     } catch (e) { toast(e.message, "error"); }
     setSigBusy(false);
   };
@@ -1124,7 +1169,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
     return html`
       <div class="sigpeer-col">
         <div class="sigpeer-lbl">${title}</div>
-        <input class="sigpeer-search" type="text" placeholder=${"Search " + title.toLowerCase() + "…"}
+        <input class="sigpeer-search" type="text" aria-label=${"Search " + title.toLowerCase()} placeholder=${"Search " + title.toLowerCase() + "…"}
           value=${q} onInput=${e => setQ(e.target.value)} />
         <div class="sigpeer-opts">
           ${shown.length ? shown.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
@@ -1143,13 +1188,15 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
       <b>${(me.org && me.org.signal_peer_label) || "All peers"}</b>
       <span class="set-help">Admins and Contributors set the company default.</span></div></div>`;
     if (!me.org.classified) return html`<p class="settings-desc" style=${{ margin: 0 }}>
-      ${isAdmin ? html`<a href="#/profile">Add your company profile</a> to unlock sector &amp; size groups. Until then the default is all peers.`
+      ${isAdmin ? html`<a href="#/profile">Add your company profile</a> to unlock sector & size groups. Until then the default is all peers.`
         : "Your Admin can add the company profile to unlock sector & size groups. Until then the default is all peers."}</p>`;
     return html`
       ${selChips.length ? html`<div class="sigpeer-chips">
         ${selChips.map(c => html`<span key=${c.k} class="sigpeer-tag">${c.label}
           <button type="button" aria-label=${"Remove " + c.label}
             onClick=${() => c.kind === "s" ? setSigSectors(sigSectors.filter(x => x !== c.v)) : setSigSizes(sigSizes.filter(x => x !== c.v))}>×</button></span>`)}
+        <button type="button" class="linklike" style=${{ alignSelf: "center", marginLeft: "var(--s1)" }}
+          onClick=${() => { setSigSectors([]); setSigSizes([]); }}>Clear</button>
       </div>` : null}
       <div class="sigpeer-grid">
         ${facet("Sectors", sectorOpts, sigSectors, setSigSectors, sigSecQ, setSigSecQ, "")}
@@ -1158,13 +1205,13 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
       ${nSel === 0
         ? html`<div class="sigpeer-match">Currently <b>all peers</b> — every organisation in lumi.</div>`
         : sigMatch
-          ? html`<div class=${"sigpeer-match" + (sigMatch.too_small ? " warn" : "")}>Matches <b>${sigMatch.match_count}</b> organisation${sigMatch.match_count === 1 ? "" : "s"}${sigMatch.too_small ? " — under " + (sigMatch.min_orgs || 5) + ", so figures stay hidden. Broaden the mix." : "."}</div>`
+          ? html`<div class=${"sigpeer-match" + (sigMatch.too_small ? " warn" : "")}>Matches <b>${sigMatch.match_count}</b> organisation${sigMatch.match_count === 1 ? "" : "s"}${sigMatch.too_small ? " — " + tooSmallNote(sigMatch.min_orgs) : "."}</div>`
           : html`<div class="sigpeer-match">Checking…</div>`}
       <div class="row" style=${{ marginTop: "var(--s3)", gap: "var(--s3)", alignItems: "center" }}>
         <button class="btn small primary" disabled=${sigBusy || !sigDirty} onClick=${saveSig}>${sigBusy ? "Saving…" : "Save default"}</button>
-        ${!sigDirty && !sigBusy ? html`<span class="caption ok-text">Saved</span>` : null}
+        ${sigSaved && !sigDirty ? html`<span class="settings-saved" role="status">Saved</span>` : null}
       </div>
-      ${sigMsg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${sigMsg}</div>`}`;
+      ${sigMsg && html`<div class="settings-saved" style=${{ marginTop: "var(--s2)", fontWeight: 400 }}>${sigMsg}</div>`}`;
   };
 
   return html`
@@ -1176,15 +1223,16 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
           ${railItem("notifications", "Notifications")}
           ${railItem("ai-insights", "AI insights")}
           <div class="settings-rail-group">Organisation</div>
-          ${railItem("defaults", "Default peer group")}
           ${railItem("profile", "Company profile")}
+          ${railItem("defaults", "Default peer group")}
           ${railItem("modelling", "Modelling assumptions")}
-          <div class="settings-rail-group">Legal &amp; sharing</div>
-          ${railItem("terms", "Terms &amp; agreements")}
+          <div class="settings-rail-group">Legal & sharing</div>
+          ${railItem("terms", "Terms & agreements")}
           ${isAdmin ? railItem("sharing", "Sharing") : null}
         </nav>
 
         <div class="settings-stack">
+          <div class="settings-group">Personal</div>
           ${card("notifications", "Notifications", "Just you", true,
             html`When a flag appears, clears or shifts it reaches your bell and — if you opt in — an email digest.`,
             html`<${NotificationsSettings} />`)}
@@ -1206,32 +1254,49 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
                 </div>
               </div>
               ${ai.consented && !ai.master ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>
-                AI Insights aren't switched on across lumi yet — your setting is saved and applies the moment they go live.</p>` : null}
+                AI insights aren't switched on across lumi yet — your setting is saved and applies the moment they go live.</p>` : null}
               <p class="caption" style=${{ marginTop: "var(--s2)" }}>Read the
-                <a onClick=${e => { e.preventDefault(); setAiDoc(true); }} style=${{ cursor: "pointer" }}>AI Insights Terms</a>.</p>`)}
+                <button type="button" class="linklike" onClick=${() => setAiDoc(true)}>AI insights terms</button>.</p>`)}
+
+          <div class="settings-group">Organisation</div>
+          ${card("profile", "Company profile", "Org-wide", false,
+            html`The organisation facts behind your peer groups — sector, size, region, ownership and workforce shape. ${isAdmin ? "Firmographics change; update them any time." : "Your Admin keeps these up to date."}`,
+            html`<a class="btn small" href="#/profile">${isAdmin ? "View / edit profile" : "View profile"}</a>`,
+            isAdmin ? null : "View only")}
 
           ${card("defaults", "Default peer group", "Org-wide", false,
             html`The peer group your whole organisation is measured against — it drives your signals, email alerts and the view everyone lands on. Exploring another group on a page never changes it.`,
-            peerBuilder())}
-
-          ${card("profile", "Company profile", "Org-wide", false,
-            html`The organisation facts behind your peer groups — sector, size, region, ownership and workforce shape. ${isAdmin ? "Firmographics change; update them any time." : "Your Admin keeps these up to date."}`,
-            html`<a class="btn small" href="#/profile">${isAdmin ? "View / edit profile" : "View profile"}</a>`)}
+            peerBuilder(),
+            isEd ? null : "View only")}
 
           ${card("modelling", "Modelling assumptions", "Org-wide", false,
             html`Every "opportunity" figure in lumi is indicative and rests on these assumptions. Change them to match your organisation.`,
             html`
-              <div class="field"><label>Median salary (£/yr)</label>
-                <input type="number" value=${a.median_salary_gbp} disabled=${!editable} onInput=${e => setA({ ...a, median_salary_gbp: e.target.value })} /></div>
-              <div class="field"><label>Cost per leaver (% of salary — recruitment, cover and ramp-up)</label>
-                <input type="number" value=${a.cost_per_leaver_pct_salary} disabled=${!editable} onInput=${e => setA({ ...a, cost_per_leaver_pct_salary: e.target.value })} /></div>
-              <div class="field"><label>Agency premium (% over employed cost)</label>
-                <input type="number" value=${a.agency_premium_pct} disabled=${!editable} onInput=${e => setA({ ...a, agency_premium_pct: e.target.value })} /></div>
-              <div class="caption" style=${{ marginBottom: "var(--s3)" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
-              ${editable ? html`<button class="btn primary" onClick=${save}>Save assumptions</button>`
-                : html`<div class="caption">Only admins can edit assumptions.</div>`}
-              ${msg && html`<div class="ok-text" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}`)}
+              <div class="set-row">
+                <div class="set-row-l"><b>Median salary</b><span class="set-help">Whole-workforce midpoint, per year.</span></div>
+                <div class="set-row-ctl"><div class=${"unit-input compact" + (editable ? "" : " disabled")}>
+                  <span class="unit-sym">£</span>
+                  <input type="number" min="1" step="1000" aria-label="Median salary in pounds per year" value=${a.median_salary_gbp} disabled=${!editable}
+                    onInput=${e => setA({ ...a, median_salary_gbp: e.target.value })} /></div></div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-l"><b>Cost per leaver</b><span class="set-help">% of salary — recruitment, cover and ramp-up.</span></div>
+                <div class="set-row-ctl"><div class=${"unit-input compact" + (editable ? "" : " disabled")}>
+                  <input type="number" min="0" step="1" aria-label="Cost per leaver, percent of salary" value=${a.cost_per_leaver_pct_salary} disabled=${!editable}
+                    onInput=${e => setA({ ...a, cost_per_leaver_pct_salary: e.target.value })} /><span class="unit-sym">%</span></div></div>
+              </div>
+              <div class="set-row">
+                <div class="set-row-l"><b>Agency premium</b><span class="set-help">% over the employed cost.</span></div>
+                <div class="set-row-ctl"><div class=${"unit-input compact" + (editable ? "" : " disabled")}>
+                  <input type="number" min="0" step="1" aria-label="Agency premium, percent over employed cost" value=${a.agency_premium_pct} disabled=${!editable}
+                    onInput=${e => setA({ ...a, agency_premium_pct: e.target.value })} /><span class="unit-sym">%</span></div></div>
+              </div>
+              <div class="caption" style=${{ margin: "var(--s3) 0" }}>Workforce mix by level and FTE band midpoints are fixed platform assumptions, shown in the <a href="#/methodology">methodology</a>.</div>
+              ${editable ? html`<button class="btn primary" disabled=${!modDirty || saving} onClick=${save}>${saving ? "Saving…" : "Save assumptions"}</button>` : null}
+              ${msg && html`<div class="settings-saved" role="status" style=${{ marginTop: "var(--s2)" }}>${msg}</div>`}`,
+            editable ? null : "View only")}
 
+          <div class="settings-group">Legal & sharing</div>
           ${card("terms", "Terms & agreements", "Org-wide", false, null,
             html`
               ${me.org.data_terms && me.org.data_terms.accepted ? html`
@@ -1245,7 +1310,9 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
               </div>
               <div class="caption" style=${{ marginTop: "var(--s2)" }}>The DPA is optional — for legal or data-protection teams who want the fuller instrument.</div>`)}
 
-          ${isAdmin ? html`<section class="card settings-card" id="sharing"><${SharesPage} embedded=${true} /></section>` : null}
+          ${isAdmin ? card("sharing", "Sharing", "Org-wide", false,
+            html`Read-only links for people outside your team — they show only what your team sees.`,
+            html`<a class="btn small" href="#/shares">Manage share links</a>`) : null}
         </div>
       </div>
       ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}

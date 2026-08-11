@@ -52,6 +52,7 @@ function App() {
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
       ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
+      ["/shares", "Manage shares"],
       ["/profile", "Company profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
     // named routes first (category/superpower carry their name in the path);
@@ -367,6 +368,12 @@ function App() {
   else if (route.startsWith("/team")) page = me.user.role === "admin"
     ? html`<${TeamPage} me=${me} />`
     : html`<${EmptyState} icon="lock" title="Team is an Admin area" body="Your organisation's Admin manages members and roles." />`;
+  // Sharing moved off Settings to its own admin route (2026-08-11 design review): the share-link
+  // console is a full CRUD table, too heavy to sit inline among the calm settings cards. Settings
+  // keeps a delegate entry card ("Manage share links →"), mirroring Company profile → /profile.
+  else if (route.startsWith("/shares")) page = me.user.role === "admin"
+    ? html`<${SharesPage} />`
+    : html`<${EmptyState} icon="lock" title="Sharing is an Admin area" body="Your organisation's Admin creates and manages read-only share links." />`;
   // Settings opened to ALL roles (2026-07-13, Defaults follow-up): it hosts settings that are
   // personal to the signed-in user — notifications, AI consent, and the landing peer group the
   // removed ★ used to set from the capsule. Org-level cards gate themselves per role inside

@@ -384,7 +384,8 @@ window.mapLegacyRoute = function (r) {
   if (r.startsWith("/submission")) return "/your-data/submit" + r.slice("/submission".length);
   // /boardpack was a legacy no-op that bounced to Overview; it's now the real
   // board-packs home (U2), so it routes normally — no remap.
-  if (r.startsWith("/shares")) return "/settings?tab=sharing";
+  // /shares is now its OWN admin page (2026-08-11 design review) — no longer an alias
+  // for the embedded Settings sharing tab, so the legacy remap is retired.
   return null;
 };
 
