@@ -16646,3 +16646,16 @@ the admin to set the default during onboarding (currently optional, defaults to 
 classification for firmographic cuts). Not a hard gate yet.
 Verified live: Settings shows the single "Company default peer group" control (per-user landing gone);
 SPA renders; console clean. v=525; 14/14 gates green.
+
+## 2026-08-11 — Company default: guided setup prompt (Piece 4) (David)
+
+Completes the company-default work: David wanted the admin to "create a default peer group at
+company setup." Ruling (AskUserQuestion): a GUIDED PROMPT, not a hard gate. Added PeerDefaultNudge
+(pages.js, mirrors StrategyNudge) — shown on the Overview to EDITORS when the org is CLASSIFIED but
+`me.org.signal_peer_cut` is unset. NON-dismissible (no X), so it persists until they choose one;
+gone once set. Copy: "Choose your company's default peer group — the group your signals, email
+alerts and everyone's view are measured against… You can still explore other groups any time." CTA
+→ /settings (the single Company-default-peer-group control). Gated on `classified` so it only fires
+once firmographic groups exist (safe for unclassified orgs — no premature all-peers-only prompt).
+Verified live on Thornbridge (admin, classified, default null): prompt shows, CTA routes to
+Settings, SPA renders, console clean. v=526; 14/14 gates green.

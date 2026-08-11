@@ -27,6 +27,21 @@ function StrategyNudge() {
         onClick=${() => { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} setHidden(true); }}><${Icon} name="close" size=${15} /></button>
     </div>`;
 }
+// Company-default-peer-group setup prompt (David 2026-08-11: "on company set up the user admin must
+// create a default peer group"). A guided prompt (not a hard gate) shown to editors once the org is
+// classified but no default is set — NON-dismissible, so it persists until they choose one. The
+// default drives signals, alerts and everyone's landing view; set in Settings.
+function PeerDefaultNudge() {
+  return html`
+    <div class="strat-nudge">
+      <span class="strat-nudge-icon"><${Icon} name="users" size=${20} /></span>
+      <div class="strat-nudge-body">
+        <b>Choose your company's default peer group</b>
+        <span>The group your signals, email alerts and everyone's view are measured against — one consistent frame for your whole organisation. You can still explore other groups any time.</span>
+      </div>
+      <button class="btn primary strat-nudge-cta" onClick=${() => nav("/settings")}>Choose group</button>
+    </div>`;
+}
 // Masthead CONFIDENCE badge (2026-07-09 chip; COMPACTED to a 10-point rating 2026-07-12,
 // David: "just the icon … a 10 rating scale with colour coding"). The single trust surface:
 // an always-on badge (once insights unlock) rating the ACTIVE peer set by its live n. The
@@ -432,6 +447,10 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
       ${!locked && data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
+      ${/* company-default-peer-group setup prompt (David 2026-08-11): editors, org classified, no
+            default set yet — persists until they choose one (signals/alerts/landing all use it). */ ""}
+      ${!locked && me && me.user && (me.user.role === "admin" || me.user.role === "contributor")
+        && me.org && me.org.classified && !me.org.signal_peer_cut && html`<${PeerDefaultNudge} />`}
       ${/* the full-width CONTEXT TOOLBAR (spatial restructure 2026-07-12): peer context —
             "Comparing against [capsule ★🔔] [confidence]" — anchors LEFT; the view lenses
             (Market/Practice + strategy switch) anchor RIGHT; the row's width does the
