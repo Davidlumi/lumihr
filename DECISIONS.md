@@ -16818,3 +16818,30 @@ it's defined from the top of every render — the TDZ path can no longer occur. 
 to the filter, but it was crashing every dev reload; verified the Signals page now renders through a
 session flicker. v=534; 14/14 gates. A broader Signals design review (workflow) is running for other
 improvements. jsc-clean, CSS braces balanced.
+
+## 2026-08-11 — Signals review, batch 1: critical toast fix + safe bug/safety fixes
+
+A 5-lens Signals design review (workflow) returned 39 confirmed findings. This batch ships the
+critical + the safe, no-decision-needed subset (the structural/direction items go to David next):
+
+- **CRITICAL (app-wide): the toast Undo/Retry button was unclickable by mouse.** `#toast-host` is
+  `pointer-events:none` and `.toast` never re-enabled it, so the button inherited `none` and clicks
+  fell through to whatever was beneath — every Signals Undo AND every app-wide Retry toast. Added
+  `pointer-events:auto` to `.toast` (host stays none so gaps still click through). VERIFIED live: after
+  a Dismiss, the toast + its Undo button now compute `pointer-events:auto`.
+- Crash-guard: the Signals footer read `me.user.role` unguarded (a nullish `me.user` would throw and
+  white-screen the page) — now `me.user && me.user.role === "admin"`, matching the peer-note guard.
+- Destructive-action safety: **Delete folder** was the only verb with no recovery — added the house
+  snapshot+Undo (restores folders/assignments/view), so a mis-click scatters nothing permanently.
+- Optimistic-rollback: a failed Save/Snooze now reverts `actingSnz` too (not just `acting`), so a
+  server error can't leave a phantom snooze chip.
+- Dead-end fix: unsaving the last item in the Saved view now falls back to the feed (was a stranded
+  empty view with no lit pill).
+- Craft/a11y quick wins: Dismiss toast now names the signal (matched every sibling verb); the
+  Dismissed pill icon `check`→`close` (was the same glyph as the positive "On plan" marker); the
+  empty/inbox-zero line got `role="status"`; the folder-name inputs focus once on mount instead of
+  re-firing every keystroke (caret bounce / mobile soft-keyboard re-trigger).
+
+jsc-clean, CSS braces balanced, 14/14 gates. v=535. Remaining review items (sort control, folder-nav
+zoning, inbox rename, domain-as-filter, bulk actions, keyboard triage, filing vocabulary, gap-bar
+legibility, card-click-to-open, StrategyCheck placement, etc.) are staged for David's direction.

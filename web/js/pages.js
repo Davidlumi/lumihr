@@ -1845,7 +1845,7 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
         <${Icon} name="folder" size=${12} /> ${f}</button>`)}
       ${naming ? html`<div class="sfold-newrow">
         <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${nm}
-          ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
+          ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
       </div>` : html`<button class="brf-menu-opt" onClick=${() => setNaming(true)}>
@@ -1869,7 +1869,7 @@ function SigFolderOps({ name, onRename, onDelete }) {
     ${open ? html`<div class="brf-menu" role="group">
       ${renaming ? html`<div class="sfold-newrow">
         <input type="text" class="sfold-newinput" maxlength="40" aria-label=${"Rename folder " + name} value=${nm}
-          ref=${el => el && el.focus()} onInput=${e => setNm(e.target.value)}
+          ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Save</button>
       </div>` : [
@@ -2019,7 +2019,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     setActingSnz(m => ({ ...m, [sid]: status === "snoozed" ? new Date(Date.now() + days * 86400000).toISOString() : null }));
     api("/api/signals/action", { method: "POST", body: { question_id: sid, status: status || "active", ...(days ? { snooze_days: days } : {}) } })
       .then(() => apiCacheInvalidate("/api/overview"))
-      .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
+      .catch(() => { setActing(a => { const n = { ...a }; delete n[sid]; return n; }); setActingSnz(m => { const n = { ...m }; delete n[sid]; return n; }); toast("Couldn't save that — try again", "error"); });
   };
 
   // ---- verbs (2026-07-10, David: toast instead of stub rows). Every action lets the card
@@ -2053,7 +2053,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     sigToast("Snoozed until " + sigRetDate(days) + " — " + sigName(s), () => setStatus(sid, null)); }); };
   const dismissIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
     setStatus(sid, "dismissed");
-    sigToast("Dismissed — recover any time from the Dismissed folder", () => setStatus(sid, null)); }); };
+    sigToast("Dismissed — " + sigName(s) + " · recover any time from the Dismissed tab", () => setStatus(sid, null)); }); };
   const unsave = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
     setStatus(sid, null);
     sigToast("Removed from saved — back in your feed — " + sigName(s), () => setStatus(sid, "saved")); }); };
@@ -2084,11 +2084,13 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     writeSig({ folders: folders.map(f => f === from ? to : f), assign: na });
     if (view.kind === "folder" && view.name === from) setView({ kind: "folder", name: to }); };
   const deleteFolder = (name) => {
+    const prevFolders = folders, prevAssign = assign, prevView = view;   // snapshot for Undo (house pattern)
     const ids = Object.keys(assign).filter(k => assign[k] === name);
     const na = { ...assign }; ids.forEach(k => delete na[k]);
     writeSig({ folders: folders.filter(f => f !== name), assign: na });
     setView({ kind: "all" });
-    toast('Folder "' + name + '" deleted — ' + (ids.length ? "its " + ids.length + " signal" + (ids.length === 1 ? "" : "s") + " returned to your feed" : "it was empty")); };
+    sigToast('Folder "' + name + '" deleted — ' + (ids.length ? "its " + ids.length + " signal" + (ids.length === 1 ? "" : "s") + " back in your feed" : "it was empty"),
+      () => { writeSig({ folders: prevFolders, assign: prevAssign }); setView(prevView); }); };
   const commitNavFolder = () => { const t = navNm.trim(); if (!t) return;
     if (!folders.includes(t)) writeSig({ folders: [...folders, t], assign });
     setNavNaming(false); setNavNm(""); setView({ kind: "folder", name: t }); };
@@ -2113,7 +2115,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const snoozedItems = all.filter(s => s.status === "snoozed");
   const dismissedItems = all.filter(s => s.status === "dismissed");
   // a folder deleted elsewhere (another tab) can leave a stale view — fall back to the feed
-  const v = (view.kind === "folder" && !folders.includes(view.name)) ? { kind: "all" } : view;
+  const v = ((view.kind === "folder" && !folders.includes(view.name)) || (view.kind === "saved" && !savedItems.length)) ? { kind: "all" } : view;
   const viewItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
     : v.kind === "domain" ? feedItems.filter(s => (s.domain || "") === v.name)   // live feed, one domain (Overview scent chip)
     : v.kind === "snoozed" ? snoozedItems
@@ -2222,10 +2224,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           <button type="button" class=${"sfold-pill" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
             onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
           <button type="button" class=${"sfold-pill" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
-            onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="check" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
+            onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="close" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
           ${navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
             <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${navNm}
-              ref=${el => el && el.focus()} onInput=${e => setNavNm(e.target.value)}
+              ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNavNm(e.target.value)}
               onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitNavFolder(); }
                 if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
             <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
@@ -2250,14 +2252,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
                 <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
           </div>` : null}
 
-        ${shownItems.length === 0 ? html`<div class="sfold-empty caption">${emptyLine}</div>` : shownItems.map(sigCard)}
+        ${shownItems.length === 0 ? html`<div class="sfold-empty caption" role="status">${emptyLine}</div>` : shownItems.map(sigCard)}
 
         ${v.kind === "all" && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
         ${/* navy trust footer: the register + the promise — filing is never deletion */ ""}
         <div class="brf-navy">
           <div class="brf-navy-reg">
             <${Icon} name="table" size=${15} />
-            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
+            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
           </div>
           <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
         </div>`}

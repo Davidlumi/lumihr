@@ -2939,7 +2939,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .toast { background: var(--navy); color: #fff; border-radius: var(--radius-sm);
   padding: var(--s3) var(--s3); font-size: var(--fs-label); box-shadow: 0 6px 24px rgba(31,42,68,.28);
   opacity: 0; transform: translateY(6px); transition: opacity var(--dur-base) ease, transform var(--dur-base) ease;
-  max-width: 340px; }
+  max-width: 340px; pointer-events: auto; }   /* host is pointer-events:none so gaps click through — but the toast itself (and its Undo button) MUST be clickable */
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.error { background: var(--unfavourable); }
 .toast.success { background: var(--favourable); }
