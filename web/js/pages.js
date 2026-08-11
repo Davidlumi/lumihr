@@ -485,7 +485,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
         </div>` : html`
       <div class="ov-top">
-        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} />
+        <${OverallArc} market=${m} approach=${data.hero.approach} pending=${locked} pct=${Math.round((data.contribution && data.contribution.core_pct) || 0)} orgKey=${orgKey} stratOff=${data.strategy_complete && !applyStrat} absentDisclosed=${(data.headline && data.headline.absent_disclosed) || 0} contribution=${data.contribution} canEdit=${me && me.user && (me.user.role === "admin" || me.user.role === "contributor")} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced} />
         <${DomainInstrument} market=${m} prevalence=${data.hero.prevalence} domains=${data.hero.domains}
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${scrollToSignals}
           activeScent=${sigDomain} barMode=${barMode} setBarMode=${setBarMode} />
@@ -497,7 +497,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
             clause moved into the header subtitle ("baseline — movement shows from your next
             cycle"); the component stays for cycle 2, when it will carry real movement. */ ""}
       <div class="ov-signals-band">
-        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} objective=${data.strategy_objective}
+        <${SignalsPanel} signals=${_viewLive} total=${_viewTotal} newCount=${_viewNew} locked=${locked} contribution=${data.contribution} view=${view} stratOn=${!!data.strategy_applied} objective=${data.strategy_objective} heroCta=${data.contribution && !data.contribution.insights_unlocked && !data.contribution.reduced}
           cutActive=${!!(cut && cut.dim && cut.dim !== "all")} domainFilter=${sigDomain} onClearDomain=${() => setSigDomain(null)} />
       </div>
     </div>`;
@@ -840,7 +840,7 @@ function leanCaption(market) {
     : (dp > 75 ? "clearly" : dp > 60 ? "moderately" : "marginally");
   return strength + " " + (v === "below" ? "below" : "above") + " the market";
 }
-function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed, contribution, canEdit }) {
+function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDisclosed, contribution, canEdit, heroCta }) {
   // Hooks run BEFORE the early return so the order is stable when market is null
   // vs present. 2.1 — the needle settles ONCE per org, on the first populated
   // render (localStorage gate); every later visit snaps. Reduced motion + no
@@ -893,7 +893,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
             })()}</div>
       </div>
       <div class="arc-legend num"><span class="arc-pending-note">Data pending — ${pct || 0}% of key reward questions submitted</span></div>
-      ${canEdit ? html`<button class="btn small primary arc-pending-cta" onClick=${() => nav("/your-data")}>${window.submitVerb((pct || 0) === 0)}</button>` : null}
+      ${canEdit && !heroCta ? html`<button class="btn small primary arc-pending-cta" onClick=${() => nav("/your-data")}>${window.submitVerb((pct || 0) === 0)}</button>` : null}
     </div>`;
 
   if (!market) return html`
@@ -1393,7 +1393,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
     </div>`;
 }
 
-function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, objective, cutActive, domainFilter, onClearDomain }) {
+function SignalsPanel({ signals, total, newCount, locked, contribution, view, stratOn, objective, cutActive, domainFilter, onClearDomain, heroCta }) {
   // domain filter (2026-07-12): a scent-chip click narrows the band to ONE domain's signals —
   // uncapped (the count chip promised N; show N), the briefing cap applies only unfiltered.
   const sigs = (signals || []).filter(s => !domainFilter || s.domain === domainFilter);
@@ -1517,7 +1517,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
                     : html`Answer your key reward questions and lumi shows your <b>£ gaps</b>, where you sit against the market, and the practices <b>most peers offer that you don't</b>.`}
                   ${contribution && contribution.days_left != null ? html` <span class="num">${contribution.days_left} days left.</span>` : null}</div>
                 <div class="progressbar il-lock-prog" aria-hidden="true"><div style=${{ width: Math.min(100, lt ? 100 * lp / lt : 0) + "%" }}></div></div>
-                <button class="btn small primary" onClick=${() => nav("/your-data")}>${lp > 0 ? "Continue your reward data" : "Add your reward data"}</button>`;
+                ${!heroCta ? html`<button class="btn small primary" onClick=${() => nav("/your-data")}>${lp > 0 ? "Continue your reward data" : "Add your reward data"}</button>` : null}`;
             })()}
           </div>
         </div>` :

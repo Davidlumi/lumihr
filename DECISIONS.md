@@ -16279,3 +16279,16 @@ surfaces — 'above market' reads red on the gauge/Signals but green on the metr
 and HIGH #6 (lower-is-better pill: verdict vs raw P{p}). If wanted, RAG can be made
 CONSISTENT (pick one valence for above/below everywhere) without going neutral — a
 smaller change than the neutral model was.
+
+## 2026-08-10 — UX polish (batch 5): first-run CTAs + a11y focus + suggest-a-metric
+
+- HIGH #5 first-run funnel: WelcomeHero now owns the single pre-unlock CTA. The redundant
+  competing CTAs on the pending gauge (OverallArc arc-pending-cta) and the locked-Signals
+  card (SignalsPanel insight-lock) suppress when heroCta = (!insights_unlocked && !reduced),
+  threaded as a prop to both. Reduced state keeps its CTA (WelcomeHero absent there).
+- MED a11y: data-entry focus rings restored to the AA --focus-outline (2px --blue-bright)
+  on 6 rules (.field/.invite-form/.matrix-grid/.unit-input/.pulse-form/.suggest-input) —
+  they were outline:none + a ~1.1:1 --blue-tint shadow (effectively invisible).
+- MED terminology: 'Request a/this metric' -> 'Suggest…' (canonical) in the trigger buttons +
+  modal heading/label; component name kept internal.
+Cache-bust v=502->503; app bootstraps clean (no JS errors); 14/14 gates.

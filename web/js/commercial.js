@@ -669,7 +669,7 @@ window.AnalystPane = function ({ onClose }) {
                 onClick=${() => ask(m.retryQ)}>Try again</button></div>`}
             ${m.noMetric && html`
               <div><button class="btn small" style=${{ marginTop: "var(--s2)" }}
-                onClick=${() => window.openMetricRequest(m.topic, "ask-lumi")}>Request this metric</button></div>`}
+                onClick=${() => window.openMetricRequest(m.topic, "ask-lumi")}>Suggest this metric</button></div>`}
             ${m.links && m.links.length > 0 && html`
               <div style=${{ marginTop: "var(--s2)", display: "flex", gap: "var(--s2)", flexWrap: "wrap" }}>
                 ${m.links.map((l, j) => html`<button key=${j} class="btn small outline-navy"
@@ -1191,7 +1191,7 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
     setBusy(false);
   };
   return html`
-    <${Modal} onClose=${onClose} label="Request a metric">
+    <${Modal} onClose=${onClose} label="Suggest a metric">
       ${done ? html`
         <div style=${{ textAlign: "center", padding: "var(--s4) 0" }}>
           <div style=${{ color: "var(--blue)", marginBottom: "var(--s2)" }}><${Icon} name="sparkle" size=${22} /></div>
@@ -1199,7 +1199,7 @@ window.RequestMetricModal = function ({ prefill, source, onClose }) {
           <button class="btn" style=${{ marginTop: "var(--s3)" }} onClick=${onClose}>Close</button>
         </div>` : html`
         <div>
-          <h2 class="section-title">Request a metric</h2>
+          <h2 class="section-title">Suggest a metric</h2>
           <p class="caption" style=${{ marginTop: "-4px" }}>lumi is shaped by its members — tell us what to measure.</p>
           <div class="field" style=${{ marginTop: "var(--s4)" }}>
             <label>What would you like to benchmark?</label>

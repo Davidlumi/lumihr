@@ -1363,7 +1363,7 @@ function SearchPop({ qIndex, search, role, onGo, onRequest, activeHit, onActiveH
       ${metrics.length === 0 && navs.length === 0 && html`
         <div class="search-empty"><div class="search-nores">
           <div class="caption">No reward metric or page matches “${search}”.</div>
-          <button class="btn small" style=${{ marginTop: "var(--s2)" }} onClick=${request}>Request this metric</button>
+          <button class="btn small" style=${{ marginTop: "var(--s2)" }} onClick=${request}>Suggest this metric</button>
         </div></div>`}
     </div>`;
 }

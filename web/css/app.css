@@ -806,14 +806,14 @@ td.num, th.num { text-align: right; }
 .pw-bar.pw-fair > span { background: #C9871F; }
 .pw-bar.pw-ok > span { background: var(--favourable); }
 .pw-note { flex: 0 0 auto; white-space: nowrap; }
-.field input:focus, .field select:focus, .field textarea:focus { outline: none;
-  border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.field input:focus, .field select:focus, .field textarea:focus { outline: var(--focus-outline);
+  outline-offset: 1px; border-color: var(--blue); }
 /* P13: the Team invite form (email + role) uses global .ctl; scope the modern
    field treatment to its card so the search bar / filters / admin .ctl stay compact */
 .invite-form .ctl { height: 44px; max-width: none; padding: 0 var(--s4); border-radius: var(--radius);
   font-size: var(--fs-body); transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
 .invite-form .ctl:hover { border-color: var(--ink-faint); }
-.invite-form .ctl:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.invite-form .ctl:focus { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
 .error-text { color: var(--color-text-danger); font-size: var(--fs-label); margin-top: var(--s1); }
 .warn-text { color: var(--neutral-perf); font-size: var(--fs-label); margin-top: var(--s1); }
 .ok-text { color: var(--favourable); font-size: var(--fs-label); margin-top: var(--s1); }
@@ -867,7 +867,7 @@ td.num, th.num { text-align: right; }
   border-radius: var(--radius-sm); text-align: right; transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
 /* dense grid: kept compact (a 7-level matrix would balloon at 44px) but given
    the same blue focus ring so it reads as one family with the other fields */
-.matrix-grid input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.matrix-grid input:focus { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
 /* matrix entry: no zebra (row borders separate cleanly, and a soft-warning
    note row would otherwise flip the nth-child stripe parity below it). The
    note sits in its own full-width row attached to the flagged row above. */
@@ -985,7 +985,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   border-radius: var(--radius); background: var(--surface); padding: 0 var(--s3); height: 44px;
   transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
 .unit-input:hover { border-color: var(--ink-faint); }
-.unit-input:focus-within { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.unit-input:focus-within { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
 .unit-input input { border: 0 !important; outline: none !important; background: transparent;
   width: 110px; height: 100%; text-align: right; font-size: var(--fs-body); padding: 0 !important; }
 .unit-input.compact { height: 38px; }
@@ -2312,8 +2312,8 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-form textarea.ctl { min-height: 76px; padding: var(--s3) var(--s4); line-height: 1.5; }
 .pulse-form .ctl::placeholder { color: var(--ink-faint); }
 .pulse-form .ctl:hover { border-color: var(--ink-faint); }
-.pulse-form .ctl:focus, .pulse-form .ctl:focus-visible { outline: none; border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-tint); }
+.pulse-form .ctl:focus, .pulse-form .ctl:focus-visible { outline: var(--focus-outline);
+  outline-offset: 1px; border-color: var(--blue); }
 .pulse-form h2 { margin-top: 0; }
 /* Questions section header: a tinted band with a count chip */
 .pulse-form .qsec-head { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
@@ -2755,7 +2755,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .suggest-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 var(--s4); height: 44px;
   font-size: var(--fs-body); font-family: inherit; color: var(--ink); background: var(--surface); transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
 .suggest-input:hover { border-color: var(--ink-faint); }
-.suggest-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+.suggest-input:focus { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
 textarea.suggest-input { resize: vertical; min-height: 76px; height: auto; padding: var(--s3) var(--s4); line-height: 1.5; }
 .suggest-input.err { border-color: var(--color-text-danger); }
 .suggest-hint { font-size: var(--fs-caption); color: var(--ink-soft); margin-top: var(--s1); }
