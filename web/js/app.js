@@ -1196,6 +1196,36 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
   // ★/🔔 default-setters REMOVED from the capsule (David 2026-07-12). The ONE company default
   // (orgs.default_cut) is set from Settings → Company default peer group; it drives signals +
   // alerts AND everyone's landing view (the per-user _peer_default pref was dropped 2026-08-11).
+  //
+  // Menu ORDER (David 2026-08-11): the company default sits at the TOP labelled "Company Default",
+  // then the org's own custom groups, then the built-in market cuts. Putting the usual selection at
+  // the top also stops the native <select> popup opening scrolled off the top of the viewport.
+  const poolN = (me.peer_pool || {}).responding_orgs || "—";
+  const hasDefault = !!(me.org && me.org.signal_peer_cut);
+  const defCut = hasDefault ? me.org.signal_peer_cut : "all";
+  const bandLow = s => { const m = String(s).replace(/,/g, "").match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
+  const defGid = defCut.indexOf("group::") === 0 ? defCut.slice(7) : null;
+  const defGroup = defGid && ((cuts && cuts.groups) || []).find(g => g.group_id === defGid);
+  const defCount = defGroup ? defGroup.match_count
+    : defCut === "all" ? poolN
+    : defCut.indexOf("industry::") === 0 ? ((cuts && cuts.industries) || {})[defCut.slice(10)]
+    : defCut.indexOf("fte_band::") === 0 ? ((cuts && cuts.fte_bands) || {})[defCut.slice(10)]
+    : defCut === "twin" ? (cuts && cuts.twin_n) : null;
+  const defOptLabel = hasDefault
+    ? "Company Default" + (defCount != null ? " · " + defCount : "")
+    : "All peers · " + poolN;
+  // custom groups, minus whichever one IS the default (it shows once, at the top)
+  const customGroups = ((cuts && cuts.groups) || []).filter(g => ("group::" + g.group_id) !== defCut);
+  // built-in market cuts (all peers, sectors, sizes, similar orgs), minus the default one
+  const marketOpts = [];
+  if (defCut !== "all") marketOpts.push({ value: "all", label: "All peers · " + poolN });
+  if (me.org.classified && cuts) {
+    if (cuts.org_industry) marketOpts.push({ value: "industry::" + cuts.org_industry, label: cuts.org_industry + " · " + (cuts.industries[cuts.org_industry] || "?") });
+    Object.keys(cuts.industries || {}).filter(i => i !== cuts.org_industry).forEach(i => marketOpts.push({ value: "industry::" + i, label: i + " · " + cuts.industries[i] }));
+    Object.keys(cuts.fte_bands || {}).sort((x, y) => bandLow(x) - bandLow(y)).forEach(b => marketOpts.push({ value: "fte_band::" + b, label: b + " FTE · " + cuts.fte_bands[b] }));
+    if (cuts.twin_available) marketOpts.push({ value: "twin", label: "Organisations like you" + (typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : "") });
+  }
+  const marketShown = marketOpts.filter(o => o.value !== defCut);
   return html`
     <div class=${"peerbar no-print" + (inline ? " peerbar-inline" : "")}>
       <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
@@ -1204,17 +1234,15 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
         <select aria-label="Choose your peer group" class="peer-ctl"
           value=${cut.dim === "all" ? "all" : cut.dim === "twin" ? "twin" : cut.dim + "::" + cut.value}
           onChange=${e => { if (e.target.value === "twin-info") { onTwinInfo(); } else onSelect(e.target.value); }}>
-          <option value="all">All peers · ${(me.peer_pool || {}).responding_orgs || "—"}</option>
-          ${cuts && cuts.org_industry && html`<option value=${"industry::" + cuts.org_industry}>${cuts.org_industry} · ${cuts.industries[cuts.org_industry] || "?"}</option>`}
-          ${me.org.classified && cuts && Object.keys(cuts.industries || {}).filter(i => i !== (cuts || {}).org_industry).map(i =>
-            html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
-          ${me.org.classified && cuts && Object.keys(cuts.fte_bands || {}).map(b =>
-            html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
-          ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
-          ${cuts && (cuts.groups || []).length > 0 && html`
-            <optgroup label="Your groups">
-              ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
+          <option value=${defCut}>${defOptLabel}</option>
+          ${customGroups.length > 0 && html`
+            <optgroup label="Your peer groups">
+              ${customGroups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>
                 ${g.name}${g.too_small ? " (too few organisations)" : ` · ${g.match_count}`}</option>`)}
+            </optgroup>`}
+          ${marketShown.length > 0 && html`
+            <optgroup label="Other peer sets">
+              ${marketShown.map(o => html`<option key=${o.value} value=${o.value}>${o.label}</option>`)}
             </optgroup>`}
           ${me.org.classified && html`<option value="manage-groups">+ Create / manage peer groups…</option>`}
         </select>

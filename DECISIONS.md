@@ -16775,3 +16775,20 @@ single-blue lens tiles, sorted sizes, modelling set-rows, disabled-until-dirty s
 card, and the /shares standalone page. commercial.js/app.js/core.js pass a jsc syntax check; CSS braces
 balanced; **14/14 gates green**. v=531. Deferred (David decisions, not applied): auto-save direction,
 deep-linkable settings sub-hashes, the scope-chip vocabulary unification.
+
+## 2026-08-11 — Peer-set dropdown: Company Default at top, custom groups above market cuts (David)
+
+The peer selector (PeerSetBar, one native <select> shared by the masthead, CategoryPage, Overview and
+Dashboards — so "all sample dropdowns") reordered per David: (1) the org's company default sits at the
+TOP labelled **"Company Default · N"** (was buried mid-list as its raw criteria, e.g. "5 sectors ·
+10,000+…"); when no default is set the top item is "All peers · N". (2) The org's own custom groups
+("Your peer groups") come next — **above** the built-in cuts (were at the bottom); the group that IS
+the default is shown once (as Company Default), filtered out of the custom list. (3) Built-in cuts
+(All peers, sectors, sizes, similar orgs) sit last under "Other peer sets", with **FTE bands sorted by
+headcount** (50-249 → … → 10,000+; were string-sorted). Putting the usual selection at the top also
+fixes the native-<select> popup opening scrolled off the top of the viewport (David's "sort out the
+menu positioning"). Logic verified with a jsc mock of the org state (exact order + labels + FTE sort +
+default-dedup) and app.js jsc-parse-clean; frontend-only, 14/14 gates. v=532. NOTE: live browser
+verify was blocked by the in-app dev session dropping on reload (can't re-login) — David to confirm in
+his own browser. Separately noticed a PRE-EXISTING fragility: a mid-session auth drop white-screens
+("Something went wrong" / setGlobalCut TDZ) instead of showing sign-in — flagged, not fixed here.
