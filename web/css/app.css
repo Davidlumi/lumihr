@@ -2437,6 +2437,13 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-add-tile:hover { background: var(--lumi-tile); border-color: var(--blue); }
 /* lead intro + "how it works" rail */
 .pulse-lead { max-width: 60ch; color: var(--ink-soft); margin: var(--s2) 0 0; }
+/* Pulse Explore / Run-a-pulse tab toggle (merged 2026-08-11) */
+.pulse-tabs { display: inline-flex; gap: 2px; background: var(--surface-sunk); border-radius: 999px; padding: 3px; margin: var(--s4) 0 var(--s3); }
+.pulse-tab { background: none; border: 0; border-radius: 999px; font: inherit; font-size: var(--fs-label); font-weight: 600;
+  color: var(--ink-soft); cursor: pointer; padding: var(--s2) var(--s4); transition: color var(--dur-fast), background var(--dur-fast); }
+.pulse-tab:hover { color: var(--ink); }
+.pulse-tab.on { background: var(--surface); color: var(--navy); box-shadow: var(--shadow-card); }
+.pulse-tab:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
 .pulse-how { display: flex; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
 .pulse-how-step { flex: 1; display: flex; gap: var(--s3); align-items: center; padding: var(--s3) var(--s3);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }

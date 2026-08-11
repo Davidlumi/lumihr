@@ -16930,3 +16930,17 @@ screen and the control rows breathe; (2) the header register entry is now a clea
 button** (`.btn.small` + table icon), and the navy footer register block stays — so the register is
 findable at the top AND bottom. `.sig-subhead` now centre-aligns (button + peer-note). Verified live at
 1500px: pageWidth 1080, the button + footer both present. Frontend-only; 14/14 gates. v=540.
+
+## 2026-08-11 — Combine Pulse + Run a pulse into one tabbed page (David)
+
+The two adjacent sidebar items — Pulse (browse/take part in community pulses, everyone) and Run a pulse
+(design + launch your own, admin only) — merged into ONE "Pulse" page with a route-driven tab toggle
+(David: one page, two tabs). PulsesPage now takes a `tab` prop: `/pulse` → **Explore** (community pulses,
+everyone), `/run-a-pulse` → **Run a pulse** (the org's own pulses + pipeline + New pulse + how-it-works
++ live-moment banner, admin only; the tab is hidden for non-admins). RunPulsePage deleted (folded in);
+the builder routes (/run-a-pulse/new · /run-a-pulse/<id> → PulseBuilderPage) are unchanged. The sidebar
+"Run a pulse" RailItem is removed; `RAIL_PARENT["/run-a-pulse"] = "/pulse"` keeps the Pulse item lit on
+the Run tab; tabs nav between the two routes so URLs + back-button hold. `.pulse-tabs`/`.pulse-tab`
+segmented toggle added. VERIFIED live (admin): single Pulse nav item, Explore shows Open/Closed
+community pulses, Run a pulse shows the how-steps + New pulse + Your-pulses empty state, sidebar stays
+lit across both, URL flips /pulse ↔ /run-a-pulse. jsc-clean, 14/14 gates. v=543.

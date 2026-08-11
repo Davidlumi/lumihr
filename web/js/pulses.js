@@ -24,22 +24,37 @@ function CloseChip({ p }) {
   return html`<span class=${"pulse-close" + (c.soon ? " soon" : "")}>${c.soon ? html`<${Icon} name="flag" size=${11} /> ` : ""}${c.text}</span>`;
 }
 
-window.PulsesPage = function ({ me }) {
-  const [data, setData] = useState(null);
+// Pulse (David 2026-08-11): ONE page, two tabs — Explore (community pulses, everyone) and Run a pulse
+// (the org's own pulses + launch pipeline, admin only). Merges the former separate /pulse + /run-a-pulse
+// pages; the route drives the tab (/pulse = explore, /run-a-pulse = run), so URLs + back-button hold.
+window.PulsesPage = function ({ me, tab }) {
+  const isAdmin = me.user.role === "admin";
+  const isRun = tab === "run" && isAdmin;                 // "Run a pulse" tab (admin only)
+  const [data, setData] = useState(null);                // community pulses (/api/pulses) — Explore
+  const [org, setOrg] = useState(null);                  // this org's own pulses (/api/org/pulses) — Run
   const [err, setErr] = useState(null);
+  const [liveMoment, setLiveMoment] = useState(null);
   useEffect(() => { api("/api/pulses").then(setData).catch(e => setErr(e.message)); }, []);
+  useEffect(() => {
+    if (!isAdmin) return;
+    api("/api/org/pulses").then(d => {
+      setOrg(d);
+      // the LIVE moment (delight): once per pulse (localStorage marker), the owner gets a burst banner
+      try {
+        const justLive = (d.pulses || []).filter(p => p.launch_status === "paid" && p.status === "open"
+          && !localStorage.getItem("lumi-pulse-live-" + p.pulse_id));
+        if (justLive.length) { justLive.forEach(p => localStorage.setItem("lumi-pulse-live-" + p.pulse_id, "1")); setLiveMoment(justLive[0]); }
+      } catch (e) {}
+    }).catch(() => {});
+  }, [isAdmin]);
   if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load pulses" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
-  if (!data) return html`<${PageLoading} />`;
-  const open = data.pulses.filter(p => p.accepting);
-  const past = data.pulses.filter(p => !p.accepting);
-  const Card = (p) => html`
+  if (isRun ? !org : !data) return html`<${PageLoading} />`;
+
+  const communityCard = (p) => html`
     <div key=${p.pulse_id} class="card pulse-card" role="button" tabindex="0" onClick=${() => nav("/pulse/" + p.pulse_id)}
       onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/pulse/" + p.pulse_id); } }}
       style=${{ padding: "var(--s4)", marginBottom: "var(--s3)", cursor: "pointer" }}>
-      <div class="row spread">
-        <b>${p.name}</b>
-        <span class="chip ${p.accepting ? "pulse-chip" : ""}">${p.accepting ? "open" : p.status}</span>
-      </div>
+      <div class="row spread"><b>${p.name}</b><span class="chip ${p.accepting ? "pulse-chip" : ""}">${p.accepting ? "open" : p.status}</span></div>
       <div class="caption" style=${{ margin: "var(--s1) 0 var(--s2)" }}>${p.description}</div>
       <div class="caption num" style=${{ display: "flex", flexWrap: "wrap", gap: "var(--s1) var(--s2)", alignItems: "center" }}>
         <span>${p.questions} questions · ${p.participants} participating</span>
@@ -47,20 +62,69 @@ window.PulsesPage = function ({ me }) {
         ${p.participated ? html`<b style=${{ color: "var(--blue)" }}>you've taken part — report available</b>` :
           p.joined ? html`<span>you've joined — finish your answers</span>` : ""}</div>
     </div>`;
-  return html`
-    <div style=${{ maxWidth: "760px" }}>
-      <h1 class="display-title">Pulse</h1>
-      <p>Short, timely deep-dives on what's moving in reward. Each pulse has its own opt-in group and window — take part (free) to see its report. Your core benchmark is never affected.</p>
-      ${me.user.role === "admin" && html`
-        <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", display: "flex",
-          justifyContent: "space-between", alignItems: "center", gap: "var(--s3)" }}>
-          <div><b>Run your own pulse</b><div class="caption">Design a pulse and launch it to the community.</div></div>
-          <button class="btn primary" onClick=${() => nav("/run-a-pulse")}>Get started</button>
-        </div>`}
+
+  const runChip = (p) => {
+    const ls = p.launch_status;
+    const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "";
+    const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
+      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "awaiting invoice"
+      : ls === "rejected" ? "declined" : "draft";
+    return html`<span class="chip ${tone}">${label}</span>`;
+  };
+
+  const exploreView = () => {
+    const open = data.pulses.filter(p => p.accepting);
+    const past = data.pulses.filter(p => !p.accepting);
+    return html`
       <h2 class="section-title" style=${{ marginTop: "var(--s4)" }}>Open now</h2>
-      ${open.length ? open.map(Card) : html`<div class="caption">No pulse is open right now — new topics land here as they emerge.</div>`}
+      ${open.length ? open.map(communityCard) : html`<div class="caption">No pulse is open right now — new topics land here as they emerge.</div>`}
       <h2 class="section-title" style=${{ marginTop: "var(--s5)" }}>Closed & archived</h2>
-      ${past.length ? past.map(Card) : html`<div class="caption">Past pulses and their reports will be kept here.</div>`}
+      ${past.length ? past.map(communityCard) : html`<div class="caption">Past pulses and their reports will be kept here.</div>`}`;
+  };
+
+  const runView = () => html`
+    <div class="pulse-how">
+      <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
+      <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
+      <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? "from " + fmtFee(me.config.pulse_launch_fee_pence) + " (ex VAT), confirmed at approval" : "Pay once"} · opens to all members</span></div></div>
+    </div>
+    ${liveMoment && html`<div class="unlock-moment" role="status">
+      <div class="unlock-spark"><${Icon} name="sparkle" size=${20} /></div>
+      <div><b>“${liveMoment.name}” is live to the community</b>
+        <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can now answer — the report unlocks at 5+ organisations.</p></div>
+      <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}><${Icon} name="close" size=${13} /></button>
+    </div>`}
+    ${!org.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
+      <span>Once your pulse is approved, a lumi admin confirms and opens your launch to the community.</span></div>`}
+    <div class="row spread" style=${{ alignItems: "center", margin: "var(--s5) 0 var(--s2)" }}>
+      <b class="section-title" style=${{ margin: 0 }}>Your pulses</b>
+      <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}><${Icon} name="list-checks" size=${15} /> New pulse</button>
+    </div>
+    ${!org.pulses.length ? html`
+      <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center" }}>
+        <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
+        <b>No pulses yet</b>
+        <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only lumi can answer — pay equity, four-day weeks, AI in reward.</p>
+        <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
+      </div>` :
+      html`<div>${org.pulses.map(p => html`
+        <div key=${p.pulse_id} class="card pulse-srow" role="button" tabindex="0" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}
+          onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/run-a-pulse/" + p.pulse_id); } }}>
+          <div class="row spread"><b>${p.name}</b>${runChip(p)}</div>
+          <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
+        </div>`)}</div>`}`;
+
+  return html`
+    <div style=${{ maxWidth: "780px" }}>
+      <h1 class="display-title" style=${{ margin: 0 }}>Pulse</h1>
+      <p class="pulse-lead">${isRun
+        ? "Design a short pulse and launch it to the lumi community — answers come back as anonymised, 5+-organisation aggregates."
+        : "Short, timely deep-dives on what's moving in reward. Each pulse has its own opt-in group and window — take part (free) to see its report. Your core benchmark is never affected."}</p>
+      ${isAdmin ? html`<div class="pulse-tabs" role="tablist" aria-label="Pulse views">
+        <button type="button" role="tab" aria-selected=${!isRun} class=${"pulse-tab" + (!isRun ? " on" : "")} onClick=${() => nav("/pulse")}>Explore</button>
+        <button type="button" role="tab" aria-selected=${isRun} class=${"pulse-tab" + (isRun ? " on" : "")} onClick=${() => nav("/run-a-pulse")}>Run a pulse</button>
+      </div>` : null}
+      ${isRun ? runView() : exploreView()}
     </div>`;
 };
 
@@ -348,80 +412,8 @@ function LaunchStepper({ ls }) {
     </div>`;
 }
 
-window.RunPulsePage = function ({ me }) {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
-  // the LIVE moment (delight, 2026-07-13): the launch is the moment a member paid for,
-  // and it used to pass in silence — a status chip quietly flipping to "live". Once per
-  // pulse (localStorage marker), the owner gets the unlock-moment banner + a burst.
-  const [liveMoment, setLiveMoment] = useState(null);
-  useEffect(() => { api("/api/org/pulses").then(d => {
-    setData(d);
-    try {
-      const justLive = (d.pulses || []).filter(p => p.launch_status === "paid" && p.status === "open"
-        && !localStorage.getItem("lumi-pulse-live-" + p.pulse_id));
-      if (justLive.length) {
-        justLive.forEach(p => localStorage.setItem("lumi-pulse-live-" + p.pulse_id, "1"));
-        setLiveMoment(justLive[0]);
-      }
-    } catch (e) {}
-  }).catch(e => setErr(e.message)); }, []);
-  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your pulses" body=${err + " — nothing is lost."} action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
-  if (!data) return html`<${PageLoading} />`;
-  const chip = (p) => {
-    const ls = p.launch_status;
-    const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "";
-    const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
-      : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "awaiting invoice"
-      : ls === "rejected" ? "declined" : "draft";
-    return html`<span class="chip ${tone}">${label}</span>`;
-  };
-  return html`
-    <div style=${{ maxWidth: "780px" }}>
-      <div class="row spread" style=${{ alignItems: "flex-end", gap: "var(--s3)" }}>
-        <div>
-          <h1 class="display-title" style=${{ margin: 0 }}>Run a pulse</h1>
-          <p class="pulse-lead">Design a short pulse and launch it to the lumi community — answers come back as anonymised, 5+-organisation aggregates.</p>
-        </div>
-        <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}>
-          <${Icon} name="list-checks" size=${15} /> New pulse</button>
-      </div>
-
-      <div class="pulse-how">
-        <div class="pulse-how-step"><span class="pulse-how-num">1</span><div><b>Build</b><span class="caption">Design your questions</span></div></div>
-        <div class="pulse-how-step"><span class="pulse-how-num">2</span><div><b>We review</b><span class="caption">A quick quality check</span></div></div>
-        <div class="pulse-how-step"><span class="pulse-how-num">3</span><div><b>Go live</b><span class="caption">${me && me.config && me.config.pulse_launch_fee_pence ? "from " + fmtFee(me.config.pulse_launch_fee_pence) + " (ex VAT), confirmed at approval" : "Pay once"} · opens to all members</span></div></div>
-      </div>
-
-      ${liveMoment && html`
-        <div class="unlock-moment" role="status">
-          <div class="unlock-spark"><${Icon} name="sparkle" size=${20} /></div>
-          <div>
-            <b>“${liveMoment.name}” is live to the community</b>
-            <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can now answer — the report unlocks at 5+ organisations.</p>
-          </div>
-          <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}>
-            <${Icon} name="close" size=${13} /></button>
-        </div>`}
-
-      ${!data.payments_enabled && html`<div class="pulse-note"><${Icon} name="info" size=${14} />
-        <span>Once your pulse is approved, a lumi admin confirms and opens your launch to the community.</span></div>`}
-
-      ${!data.pulses.length ? html`
-        <div class="card" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center", marginTop: "var(--s3)" }}>
-          <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
-          <b>No pulses yet</b>
-          <p class="caption" style=${{ margin: "var(--s1) auto var(--s3)", maxWidth: "44ch" }}>Ask the community a question only lumi can answer — pay equity, four-day weeks, AI in reward.</p>
-          <button class="btn primary" onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
-        </div>` :
-        html`<div style=${{ marginTop: "var(--s3)" }}>${data.pulses.map(p => html`
-          <div key=${p.pulse_id} class="card pulse-srow" role="button" tabindex="0" onClick=${() => nav("/run-a-pulse/" + p.pulse_id)}
-            onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav("/run-a-pulse/" + p.pulse_id); } }}>
-            <div class="row spread"><b>${p.name}</b>${chip(p)}</div>
-            <div class="caption" style=${{ margin: "var(--s1) 0 0" }}>${p.n_questions} question${p.n_questions === 1 ? "" : "s"}${p.launch_status === "paid" ? ` · ${p.n_submitted} organisation${p.n_submitted === 1 ? "" : "s"}` : ""}${p.launch_fee_pence ? ` · ${fmtFee(p.launch_fee_pence)} launch fee` : ""}</div>
-          </div>`)}</div>`}
-    </div>`;
-};
+// RunPulsePage merged into PulsesPage's "Run a pulse" tab (David 2026-08-11). The /run-a-pulse route
+// now renders <PulsesPage tab="run" />; the builder (/run-a-pulse/new · /run-a-pulse/<id>) is below.
 
 window.PulseBuilderPage = function ({ me, pid }) {
   const isNew = pid === "new";

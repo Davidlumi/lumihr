@@ -392,10 +392,10 @@ function App() {
     ? html`<${PulseBuilderPage} me=${me} pid=${m[1]} />`
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
   else if (route.startsWith("/run-a-pulse")) page = me.user.role === "admin"
-    ? html`<${RunPulsePage} me=${me} />`
+    ? html`<${PulsesPage} me=${me} tab="run" />`   // Pulse page, "Run a pulse" tab (merged 2026-08-11)
     : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
   else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
-  else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} />`;
+  else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} tab="explore" />`;
   else if (route.startsWith("/register") || (route.startsWith("/reset") && !route.startsWith("/reset/"))) {
     // a bare register/reset deep link while signed in lands home, never a 404 (craft
     // review) — /invite/ and /reset/<token> keep their real handlers below
@@ -509,8 +509,7 @@ function App() {
                prevalence flags ARE the gap list. The page stays reachable at
                /priorities as the full exhaustive register + CSV export, linked
                from Signals, but it is no longer a rail surface. */ ""}
-          <${RailItem} route=${route} path="/pulse" icon="zap" label="Pulse" />
-          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/run-a-pulse" icon="list-checks" label="Run a pulse" />`}
+          <${RailItem} route=${route} path="/pulse" icon="zap" label="Pulse" />${/* "Run a pulse" is now a tab inside Pulse (admin only) — 2026-08-11 */ ""}
         </div>
         <div class="nav-group">
           <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} collapsed=${railCollapsed} />
@@ -1267,7 +1266,7 @@ function PeerSetBar({ me, cut, cuts, onSelect, onTwinInfo, inline, prefs, onPref
 // deep routes with no rail item of their own light up their parent, so the
 // sidebar always shows where you are (metric→Benchmark, priorities→Signals, …)
 const RAIL_PARENT = { "/metric": "/benchmark", "/category": "/benchmark",
-  "/priorities": "/signals", "/profile": "/your-data" };
+  "/priorities": "/signals", "/profile": "/your-data", "/run-a-pulse": "/pulse" };
 function navCls(route, path) {
   let r = route;
   for (const pfx in RAIL_PARENT) { if (r.startsWith(pfx)) { r = RAIL_PARENT[pfx]; break; } }
