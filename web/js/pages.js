@@ -1806,7 +1806,7 @@ const brfVerified = s => s.anchor_grade === "A" || s.anchor_grade === "B" || s.a
 // Folders simplification — the ledger bands and family roll-ups died with the two-tier split.)
 
 // Snooze options — the same snooze_days API; the menu shows the actual return date.
-const SIG_SNOOZE = [["2 weeks", 14], ["6 weeks", 42], ["3 months", 90]];
+const SIG_SNOOZE = [["Next week", 7], ["2 weeks", 14], ["6 weeks", 42], ["3 months", 90]];
 const sigRetDate = days => new Date(Date.now() + days * 86400000)
   .toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 // shared dropdown chrome: close on outside click / Escape (focus back on the trigger)
@@ -1819,9 +1819,9 @@ function SigSnoozeMenu({ onPick }) {
   return html`<span class="brf-later-wrap" ref=${ref}>
     <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
       onClick=${() => setOpen(o => !o)}>Snooze <span class="sfold-caret" aria-hidden="true">▾</span></button>
-    ${open ? html`<div class="brf-menu" role="group">
+    ${open ? html`<div class="brf-menu" role="menu" ref=${el => { if (el && !el._f) { el._f = 1; const b = el.querySelector("button"); if (b) b.focus(); } }}>
       <div class="brf-menu-lbl">Until…</div>
-      ${SIG_SNOOZE.map(([lab, days]) => html`<button key=${days} class="brf-menu-opt"
+      ${SIG_SNOOZE.map(([lab, days]) => html`<button key=${days} class="brf-menu-opt" role="menuitem"
         onClick=${() => { setOpen(false); onPick(days, lab); }}>${lab}<span class="sfold-ret num">${sigRetDate(days)}</span></button>`)}
     </div>` : null}
   </span>`;
@@ -1839,16 +1839,16 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
   return html`<span class="brf-later-wrap" ref=${ref}>
     <button type="button" class=${"brf-verb" + (open ? " on" : "")} aria-haspopup="true" aria-expanded=${open}
       onClick=${() => { setOpen(o => !o); setNaming(false); setNm(""); }}>${label} <span class="sfold-caret" aria-hidden="true">▾</span></button>
-    ${open ? html`<div class="brf-menu" role="group">
+    ${open ? html`<div class="brf-menu" role="menu" ref=${el => { if (el && !naming && !el._f) { el._f = 1; const b = el.querySelector("button"); if (b) b.focus(); } }}>
       ${opts.length ? html`<div class="brf-menu-lbl">To folder…</div>` : null}
-      ${opts.map(f => html`<button key=${f} class="brf-menu-opt" onClick=${() => pick(f)}>
+      ${opts.map(f => html`<button key=${f} class="brf-menu-opt" role="menuitem" onClick=${() => pick(f)}>
         <${Icon} name="folder" size=${12} /> ${f}</button>`)}
       ${naming ? html`<div class="sfold-newrow">
         <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${nm}
           ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNm(e.target.value)}
           onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
         <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
-      </div>` : html`<button class="brf-menu-opt" onClick=${() => setNaming(true)}>
+      </div>` : html`<button class="brf-menu-opt" role="menuitem" onClick=${() => setNaming(true)}>
         <${Icon} name="plus" size=${12} /> New folder…</button>`}
     </div>` : null}
   </span>`;
@@ -1936,6 +1936,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [posFilter, setPosFilter] = useState(_ret.pos || "all");
   const [sortMode, setSortMode] = useState(_ret.sort || "priority");   // priority | domain | gap (David 2026-08-11)
   const [kbIdx, setKbIdx] = useState(-1);   // keyboard-triage focus ring index into the shown list (-1 = none)
+  const [domFilter, setDomFilter] = useState(null);   // domain filter axis — composes with position (null = all domains)
+  const [textQuery, setTextQuery] = useState("");     // client-side find-by-name over the current view
+  const [flashSid, setFlashSid] = useState(null);     // a restored/woken/recovered card flashes back into place
+  const [stratOpen, setStratOpen] = useState(false);  // the strategy-check strip (now above the feed) starts collapsed
   // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
   // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
   const [acting, setActing] = useState({});            // optimistic status overrides
@@ -1962,7 +1966,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // survives); consume + clear it once on mount, showing the domain-filtered view.
   useEffect(() => {
     const d = window.__sigJumpDomain;
-    if (d) { window.__sigJumpDomain = null; setView({ kind: "domain", name: d }); }
+    if (d) { window.__sigJumpDomain = null; setView({ kind: "all" }); setDomFilter(d); }   // domain is a filter axis now
   }, []);
   // Signals are ANCHORED TO THE ORG DEFAULT PEER GROUP (David 2026-08-11: "signals should only be
   // tied to the company default — otherwise alerts will be all over the place"). The server computes
@@ -1973,18 +1977,20 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const sigCut = signalCut(me);
   const _applyStrat = ((prefs && prefs._overview) || {}).apply_strategy !== false;
   const _cutKey = cutKeyOf(sigCut);
+  // NEW handling (David 2026-08-11): DON'T clear NEW on load (that hid what was new before the user
+  // scrolled). Stash the current ids and mark them seen on UNMOUNT, so this visit keeps its badges.
+  const seenRef = useRef([]);
   useEffect(() => {
     let live = true;
     setData(null);
     apiCached("/api/overview?" + cutQS(sigCut) + (_applyStrat ? "" : "&strategy=off")).then(d => {
       if (!live) return;
       setData(d);
-      // viewing the Signals page clears NEW: mark every current signal seen
-      const ids = (d.signals_all || []).map(s => s.sig_id || s.question_id);
-      if (ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {});
+      seenRef.current = (d.signals_all || []).map(s => s.sig_id || s.question_id);
     }).catch(e => { if (live) setErr(e.message); });
     return () => { live = false; };
   }, [_cutKey, _applyStrat]);
+  useEffect(() => () => { const ids = seenRef.current; if (ids && ids.length) api("/api/signals/seen", { method: "POST", body: { sig_ids: ids } }).catch(() => {}); }, []);
   // Strategy-check signpost: the feed is flat now, so jump to the FIRST card of the target
   // domain (every card carries data-dom) and flash it — same sig-group-flash as before.
   useEffect(() => {
@@ -1997,7 +2003,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     }
     setJumpTo(null);
   }, [jumpTo, view]);
-  const goToDomain = (dom) => { setView({ kind: "all" }); setJumpTo(dom); };
+  const goToDomain = (dom) => { setView({ kind: "all" }); setPosFilter("all"); setDomFilter(dom); };   // strategy-check → filter to that domain (never dead-ends under a stale filter)
   // keyboard triage (David 2026-08-11): j/k move a focus ring, e/s/f act, Enter opens. Bound ONCE
   // (a stable listener above the early returns to satisfy hook order); it reads the live list +
   // handlers from kbRef, which the render refreshes each pass once data is in.
@@ -2024,7 +2030,15 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   }, []);
   // keep the focused card in view; reset the ring whenever the shown list changes underneath it
   useEffect(() => { if (kbIdx < 0) return; const el = document.querySelectorAll(".signals-page .brf-card")[kbIdx]; if (el) scrollIntoViewSafe(el, { block: "nearest" }); }, [kbIdx]);
-  useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode]);
+  useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode, domFilter, textQuery]);
+  // a restored card (Undo / wake / recover) flashes back into place using the existing sig-group-flash primitive
+  useEffect(() => {
+    if (!flashSid) return;
+    const esc = window.CSS && CSS.escape ? CSS.escape(flashSid) : flashSid;
+    const el = document.querySelector('.brf-card[data-sid="' + esc + '"]');
+    if (el) { scrollIntoViewSafe(el, { block: "nearest" }); el.classList.add("sig-group-flash"); setTimeout(() => el.classList.remove("sig-group-flash"), 1700); }
+    setFlashSid(null);
+  }, [flashSid, view, posFilter, domFilter]);
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
@@ -2054,19 +2068,26 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // ---- verbs (2026-07-10, David: toast instead of stub rows). Every action lets the card
   // leave the list with a soft exit (leaveThen), then a single confirmation toast carries
   // the Undo — the same restore paths the in-place stubs used, so nothing is lost.
+  // cap the toast stack at 3 (was: wipe the host on every toast, which destroyed earlier Undos
+  // still inside their TTL and blanked the live region mid-announcement — David review #2)
   const sigToast = (msg, undo) => {
-    const h = document.getElementById("toast-host"); if (h) h.textContent = "";   // one at a time
+    const h = document.getElementById("toast-host"); if (h) { while (h.children.length >= 3) h.removeChild(h.firstChild); }
     toast(msg, null, { label: "Undo", fn: undo }); };
+  const _cssEsc = (v) => window.CSS && CSS.escape ? CSS.escape(v) : v;
   const leaveThen = (sid, fn) => {
-    const esc = window.CSS && CSS.escape ? CSS.escape(sid) : sid;
-    const el = document.querySelector('.brf-card[data-sid="' + esc + '"]');
+    const el = document.querySelector('.brf-card[data-sid="' + _cssEsc(sid) + '"]');
+    // keyboard/AT: don't drop focus to <body> when the acted card unmounts — move it to a neighbour (David review #3)
+    const nb = el && ((el.nextElementSibling && el.nextElementSibling.classList.contains("brf-card") && el.nextElementSibling)
+      || (el.previousElementSibling && el.previousElementSibling.classList.contains("brf-card") && el.previousElementSibling));
+    const nbSid = nb ? nb.getAttribute("data-sid") : null;
+    const focusNb = () => { if (!nbSid) return; const n = document.querySelector('.brf-card[data-sid="' + _cssEsc(nbSid) + '"]'); const v = n && n.querySelector(".brf-verb"); if (v) v.focus(); };
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!el || reduce) { fn(); return; }                 // reduced-motion (or no node): snap
+    if (!el || reduce) { fn(); setTimeout(focusNb, 20); return; }   // reduced-motion (or no node): snap
     el.style.height = el.offsetHeight + "px";
     void el.offsetHeight;                                // commit the measured height first
     el.classList.add("brf-leave");
     el.style.height = "0px";
-    setTimeout(fn, 240);
+    setTimeout(() => { fn(); setTimeout(focusNb, 20); }, 240);
   };
   const sigName = s => s.name || s.label_short;
 
@@ -2094,15 +2115,15 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     sigToast("Moved to “" + name + "” — " + sigName(s), () => writeSig({ folders: fl, assign: { ...assign, [sid]: prev } })); }); };
   const unfolder = (s) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
     const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na });
-    setStatus(sid, null);
+    setStatus(sid, null); setFlashSid(sid);
     sigToast("Back in your feed — " + sigName(s),
       () => { writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
   const wake = (s) => { const sid = sidOf(s);
     const iso = s.snooze_until ? (s.snooze_until.includes("T") ? s.snooze_until : s.snooze_until.replace(" ", "T") + "Z") : null;
     const days = iso ? Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)) : 14;
-    leaveThen(sid, () => { setStatus(sid, null);
-      sigToast("Awake — back in your feed — " + sigName(s), () => setStatus(sid, "snoozed", days)); }); };
-  const recover = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, null);
+    leaveThen(sid, () => { setStatus(sid, null); setFlashSid(sid);
+      sigToast("Back in your feed — " + sigName(s), () => setStatus(sid, "snoozed", days)); }); };
+  const recover = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, null); setFlashSid(sid);
     sigToast("Recovered — back in your feed — " + sigName(s), () => setStatus(sid, "dismissed")); }); };
 
   // ---- folder ops (rename keeps every assignment; delete returns signals to the feed —
@@ -2145,12 +2166,17 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const dismissedItems = all.filter(s => s.status === "dismissed");
   // a folder deleted elsewhere (another tab) can leave a stale view — fall back to the feed
   const v = ((view.kind === "folder" && !folders.includes(view.name)) || (view.kind === "saved" && !savedItems.length)) ? { kind: "all" } : view;
-  const viewItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
-    : v.kind === "domain" ? feedItems.filter(s => (s.domain || "") === v.name)   // live feed, one domain (Overview scent chip)
+  const baseItems = v.kind === "folder" ? all.filter(s => assign[sidOf(s)] === v.name)
     : v.kind === "snoozed" ? snoozedItems
     : v.kind === "dismissed" ? dismissedItems
     : v.kind === "saved" ? savedItems
     : feedItems;
+  // domain filter axis + find-by-name compose with the view (David 2026-08-11); domain replaces the
+  // old {kind:"domain"} view — the Overview scent chip + StrategyCheck both set this one filter.
+  const domainOpts = Array.from(new Set(baseItems.map(s => s.domain).filter(Boolean))).sort((a, b) => domainLabel(a).localeCompare(domainLabel(b)));
+  const tq = textQuery.trim().toLowerCase();
+  const viewItems = baseItems.filter(s => (!domFilter || (s.domain || "") === domFilter)
+    && (!tq || ((s.name || s.label_short || "") + " " + domainLabel(s.domain || "")).toLowerCase().includes(tq)));
   // market-position filter: counts come from the current view, then narrow the list to the picked
   // position ("all" keeps everything, incl. practice signals which carry no below/on/above position)
   const posCounts = { below: 0, on: 0, above: 0 };
@@ -2159,13 +2185,16 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const posOn = posFilter !== "all" && hasPos;                            // a stale filter is ignored on a practice-only view
   const shownItems = posOn ? viewItems.filter(s => s.position === posFilter) : viewItems;
   const POS_LABEL = { below: "Below market", on: "On market", above: "Above market" };
+  const triaged = dismissedItems.length + snoozedItems.length + savedItems.length + Object.keys(assign).length;   // #28: a genuine cleared queue vs a quiet org
   const emptyLine = posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
+    : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
+    : domFilter ? "No live signals in " + domainLabel(domFilter) + " right now — clear the domain filter, or check the Snoozed and Dismissed tabs."
     : v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
-    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — Save a signal from the feed to file it here.'
-    : v.kind === "domain" ? "No live signals in " + domainLabel(v.name) + " right now — anything filed, snoozed or dismissed sits in its own tab."
+    : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — File a signal from the feed to keep it here.'
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
-    : "Inbox zero. Everything is filed — saved, snoozed or dismissed. New signals land here as your position or the market moves.";
+    : triaged > 0 ? "Inbox zero. Everything's filed — saved, snoozed or dismissed. New signals land here as your position or the market moves."
+    : "Nothing needs your attention right now — new signals land here as your position or the market moves.";
 
   // ---- sort (David 2026-08-11): priority (machine order) · by domain · biggest gap first ----
   const ordCmp = (a, b) => { const ka = ordKey(a), kb = ordKey(b); for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; };
@@ -2175,7 +2204,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // f = quick-save to the star-fed "Saved" tab (folderless), the single "save" concept (File to… is folders)
   const fileIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, "saved"); sigToast("Saved for later — " + sigName(s), () => setStatus(sid, null)); }); };
   // bulk actions on a NARROWED active view (a position filter, or a single domain) — one Undo reverts the batch
-  const bulkable = (v.kind === "all" || v.kind === "domain") && (posOn || v.kind === "domain") && sortedItems.length >= 2;
+  const bulkable = v.kind === "all" && (posOn || !!domFilter) && sortedItems.length >= 2;   // bulk on a narrowed feed (position or domain)
   const bulkAct = (status, days) => {
     const items = sortedItems.slice();
     const prior = items.map(s => ({ sid: sidOf(s), status: s.status || null }));
@@ -2216,7 +2245,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       ${s.strategy_influence && s.strategy_influence.length ? html`
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs" onClick=${e => e.stopPropagation()}>
-        ${(v.kind === "all" || v.kind === "domain") ? html`
+        ${v.kind === "all" ? html`
           <${SigFolderMenu} label="File to…" folders=${folders} onPick=${n => saveTo(s, n)} />
           <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
           <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
@@ -2236,6 +2265,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   };
 
   const isFold = f => v.kind === "folder" && v.name === f;
+  const unread = feedItems.filter(s => s.new).length;   // NEW badge count on the Inbox pill (no longer cleared on mount)
+  const navyFooter = html`
+    <div class="brf-navy">
+      <div class="brf-navy-reg"><${Icon} name="table" size=${15} />
+        <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
+      </div>
+      <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
+    </div>`;
   return html`
     <div class="signals-page brf-page" style=${{ maxWidth: "880px" }}>
       <div class="ov-aurora" aria-hidden="true"></div>
@@ -2249,22 +2286,24 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       ${unlocked ? html`<div class="conf-line" style=${{ justifyContent: "flex-start", marginTop: 0, marginBottom: "var(--s1)" }}>
         <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
       </div>
-      <p class="caption sig-peer-note" style=${{ marginTop: 0, marginBottom: "var(--s4)", maxWidth: "680px" }}>
-        Flagged against your <b>default peer group</b> — ${(me.org && me.org.signal_peer_label) || "all peers"} — the same group your email alerts use, so the two never disagree.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}
-      </p>` : null}
+      <div class="sig-subhead" style=${{ marginBottom: "var(--s4)" }}>
+        <span class="caption sig-peer-note">Flagged against your <b>default peer group</b> — ${(me.org && me.org.signal_peer_label) || "all peers"}.${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` <a href="#/settings">Change</a>` : ""}</span>
+        <a href="#/priorities" class="caption sig-reg-link">Full register <span aria-hidden="true">→</span></a>
+      </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
       : all.length === 0 ? html`
         <div class="signals-empty" style=${{ marginTop: "var(--s5)" }}>
           <span class="signals-empty-ring"><${Icon} name="flag" size=${18} /></span>
-          <div class="caption" style=${{ maxWidth: "360px" }}>Nothing to flag yet — signals appear here as your position or the market moves.</div>
-        </div>`
+          <div class="caption" style=${{ maxWidth: "380px" }}>Nothing to flag yet — signals appear here as your position or the market moves. Meanwhile, browse every metric in the <a href="#/priorities">full gap register</a>.</div>
+        </div>
+        ${navyFooter}`
       : html`
         ${/* FOLDER NAV — the only control above the feed: All · user folders · Snoozed ·
               Dismissed · a quiet + New folder. The active user folder carries a small "…"
               (Rename / Delete). */ ""}
         <div class="sfold-nav" role="group" aria-label="Signal folders">
-          <button type="button" class=${"sfold-pill" + (v.kind === "all" || v.kind === "domain" ? " on" : "")} aria-pressed=${v.kind === "all" || v.kind === "domain"}
-            onClick=${() => setView({ kind: "all" })}>All signals <b class="num">${feedN}</b></button>
+          <button type="button" class=${"sfold-pill sfold-inbox" + (v.kind === "all" ? " on" : "")} aria-pressed=${v.kind === "all"}
+            onClick=${() => setView({ kind: "all" })}>Inbox <b class="num">${feedN}</b>${unread > 0 ? html`<span class="sfold-unread" title=${unread + " new since your last visit"}>${unread}</span>` : null}</button>
           ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
             <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
               onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
@@ -2272,10 +2311,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           </span>`)}
           ${savedItems.length ? html`<button type="button" class=${"sfold-pill" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
             onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved <b class="num">${savedItems.length}</b></button>` : null}
-          <button type="button" class=${"sfold-pill" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
-            onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
-          <button type="button" class=${"sfold-pill" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
-            onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="close" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
           ${navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
             <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${navNm}
               ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNavNm(e.target.value)}
@@ -2283,12 +2318,19 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
                 if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
             <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
           </span>` : html`<button type="button" class="sfold-new" onClick=${() => setNavNaming(true)}>+ New folder</button>`}
+          ${/* lifecycle bins pushed right, recessive — filing, not active triage */ ""}
+          <span class="sfold-life">
+            <button type="button" class=${"sfold-pill sfold-quiet" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
+              onClick=${() => setView({ kind: "snoozed" })}><${Icon} name="clock" size=${12} /> Snoozed <b class="num">${snoozedItems.length}</b></button>
+            <button type="button" class=${"sfold-pill sfold-quiet" + (v.kind === "dismissed" ? " on" : "")} aria-pressed=${v.kind === "dismissed"}
+              onClick=${() => setView({ kind: "dismissed" })}><${Icon} name="close" size=${12} /> Dismissed <b class="num">${dismissedItems.length}</b></button>
+          </span>
         </div>
 
-        ${v.kind === "domain" ? html`
+        ${domFilter ? html`
           <div class="sfold-filter">
-            <span class="sfold-filter-lab">Showing <b>${domainLabel(v.name)}</b> only · <span class="num">${viewItems.length}</span> signal${viewItems.length === 1 ? "" : "s"}</span>
-            <button type="button" class="sfold-filter-clear" onClick=${() => setView({ kind: "all" })}><${Icon} name="close" size=${11} /> Show all signals</button>
+            <span class="sfold-filter-lab">Domain: <b>${domainLabel(domFilter)}</b> · <span class="num">${viewItems.length}</span> signal${viewItems.length === 1 ? "" : "s"}</span>
+            <button type="button" class="sfold-filter-clear" onClick=${() => setDomFilter(null)}><${Icon} name="close" size=${11} /> Clear domain</button>
           </div>` : null}
 
         ${/* market-position filter — narrow the current view to below / on / above the market (David 2026-08-11) */ ""}
@@ -2303,8 +2345,25 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
                 <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
           </div>` : null}
 
-        ${sortedItems.length > 0 ? html`
+        ${/* strategy-check moved ABOVE the feed (David review #17) — a collapsible orienting strip */ ""}
+        ${v.kind === "all" && data.strategy_complete ? html`
+          <div class=${"sig-strat-strip" + (stratOpen ? " open" : "")}>
+            <button type="button" class="sig-strat-toggle" aria-expanded=${stratOpen} onClick=${() => setStratOpen(o => !o)}>
+              <${Icon} name="compass" size=${14} /> <span>Are you delivering the strategy you set?</span>
+              <span class="sfold-caret" aria-hidden="true">${stratOpen ? "▴" : "▾"}</span>
+            </button>
+            ${stratOpen ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
+          </div>` : null}
+
+        ${baseItems.length > 0 ? html`
           <div class="sig-toolbar">
+            <input class="sig-search" type="search" placeholder="Find a signal…" aria-label="Find a signal by name"
+              value=${textQuery} onInput=${e => setTextQuery(e.target.value)} />
+            ${domainOpts.length > 1 ? html`<label class="sig-sort">Domain
+              <select value=${domFilter || ""} onChange=${e => setDomFilter(e.target.value || null)} aria-label="Filter by domain">
+                <option value="">All domains</option>
+                ${domainOpts.map(d => html`<option key=${d} value=${d}>${domainLabel(d)}</option>`)}
+              </select></label>` : null}
             ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
               <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
                 <option value="priority">Priority</option>
@@ -2319,7 +2378,11 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             <span class="sig-kbhint" aria-hidden="true">j / k move · e·s·f triage · ⏎ open</span>
           </div>` : null}
 
-        ${sortedItems.length === 0 ? html`<div class="sfold-empty caption" role="status">${emptyLine}</div>`
+        ${sortedItems.length === 0 ? html`
+            <div class="signals-empty sfold-empty" role="status" style=${{ marginTop: "var(--s5)" }}>
+              <span class="signals-empty-ring"><${Icon} name=${v.kind === "snoozed" ? "clock" : v.kind === "dismissed" ? "close" : v.kind === "folder" ? "folder" : "flag"} size=${18} /></span>
+              <div class="caption" style=${{ maxWidth: "380px" }}>${emptyLine}</div>
+            </div>`
           : sortMode === "domain" ? (() => {
               const rows = []; let last = null;
               sortedItems.forEach((s, i) => {
@@ -2331,15 +2394,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             })()
           : sortedItems.map((s, i) => sigCard(s, i === kbIdx))}
 
-        ${v.kind === "all" && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
-        ${/* navy trust footer: the register + the promise — filing is never deletion */ ""}
-        <div class="brf-navy">
-          <div class="brf-navy-reg">
-            <${Icon} name="table" size=${15} />
-            <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
-          </div>
-          <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
-        </div>`}
+        ${navyFooter}`}
     </div>`;
 };
 

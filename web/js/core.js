@@ -334,7 +334,17 @@ window.toast = function (msg, kind, action) {
   // reading time scales with message length (craft review 2026-08-09): ~55ms/char,
   // clamped — undo toasts keep their longer floor
   const ttl = Math.max(action ? 6500 : 3600, Math.min(9000, (msg || "").length * 55));
-  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, ttl);
+  const dismiss = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); };
+  let timer = setTimeout(dismiss, ttl);
+  // undo toasts: pause the countdown while hovered or keyboard-focused, so Tab-to-Undo has time
+  // (paired with .toast pointer-events:auto — Signals review #4). Focus is NOT auto-stolen, so
+  // keyboard triage (j/k/e) is never interrupted mid-flow.
+  if (action && action.label && action.fn) {
+    const pause = () => clearTimeout(timer);
+    const resume = () => { clearTimeout(timer); timer = setTimeout(dismiss, 2500); };
+    el.addEventListener("mouseenter", pause); el.addEventListener("mouseleave", resume);
+    el.addEventListener("focusin", pause); el.addEventListener("focusout", resume);
+  }
 };
 
 // ----------------------------------------------------- UK number inputs ----

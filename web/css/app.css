@@ -4164,6 +4164,34 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-domhead { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
   font-weight: 650; margin: var(--s4) 0 var(--s2); padding-left: calc(var(--s4) + 6px); }
 .sig-domhead:first-child { margin-top: 0; }
+/* ── Signals review batch 3 (David 2026-08-11) ── */
+/* subhead: peer-note (left) + full-register escape hatch (right) */
+.sig-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+.sig-peer-note { max-width: 620px; }
+.sig-reg-link { white-space: nowrap; font-weight: 600; color: var(--blue-bright); text-decoration: none; }
+.sig-reg-link:hover { color: var(--blue-deep); text-decoration: underline; }
+/* inbox unread badge */
+.sfold-unread { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px;
+  padding: 0 4px; margin-left: 2px; border-radius: 999px; background: var(--blue); color: #fff; font-size: var(--fs-micro); font-weight: 700; }
+.sfold-pill.on .sfold-unread { background: #fff; color: var(--navy); }
+/* lifecycle bins pushed right, recessive (filing, not active triage) */
+.sfold-life { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s2); }
+.sfold-quiet:not(.on) { color: var(--ink-faint); border-color: transparent; background: none; }
+.sfold-quiet:not(.on):hover { border-color: var(--border); color: var(--ink-soft); }
+@media (max-width: 640px) { .sfold-life { margin-left: 0; } }
+/* find-by-name search */
+.sig-search { height: 30px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+  font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0 var(--s3); min-width: 150px; }
+.sig-search:focus-visible { outline: var(--focus-outline); outline-offset: 1px; border-color: var(--blue); }
+/* strategy-check orienting strip, now above the feed (collapsible) */
+.sig-strat-strip { margin: 0 0 var(--s4); }
+.sig-strat-toggle { display: flex; align-items: center; gap: var(--s2); width: 100%; background: var(--lumi-tile);
+  border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: var(--fs-label);
+  font-weight: 600; color: var(--ink); cursor: pointer; padding: var(--s3) var(--s4); text-align: left; }
+.sig-strat-toggle svg { color: var(--navy); flex: none; }
+.sig-strat-toggle > span:first-of-type { flex: 1; }
+.sig-strat-toggle:hover { border-color: var(--ink-faint); }
+.sig-strat-strip.open .sig-strat-toggle { border-radius: var(--radius) var(--radius) 0 0; }
 .sfold-snz { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 650; color: var(--navy); border: 1px solid color-mix(in srgb, var(--navy) 25%, var(--surface));
   border-radius: 999px; padding: 0 var(--s2); }

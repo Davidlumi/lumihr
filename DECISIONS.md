@@ -16874,3 +16874,34 @@ bulk bar ("31 shown"); "45% below" gap in amber; card cursor pointer; "File to�
 braces balanced, 14/14 gates. v=536. Deferred to David (open questions): inbox rename, StrategyCheck
 placement, domain-as-filter model, text search, NEW/unread, peer-note copy, empty-state centred ring,
 zero-signals footer, restore flash, toast-stacking / keyboard-Undo.
+
+## 2026-08-11 — Signals review, batch 3: the remaining items (David "apply all your rec")
+
+Applied my recommended approach to every remaining review finding:
+
+- **Domain is now a filter axis** (was a `{kind:"domain"}` view with two inconsistent entry paths):
+  a `domFilter` composes with position + folder + search. The Overview scent chip AND StrategyCheck's
+  goToDomain both set this one filter (goToDomain also clears position so it never dead-ends); a
+  toolbar "Domain" dropdown + a removable filter chip give it an in-page entry.
+- **Find-by-name search** — a toolbar input narrows the current view by name/domain; the toolbar stays
+  visible when a search empties the feed so it's always clearable.
+- **NEW/unread** — stopped clearing NEW on mount (the whole feed was marked seen before the user
+  scrolled); the ids are now marked seen on UNMOUNT, and the Inbox pill carries an unread badge.
+- **"All signals" → "Inbox"**; folder nav zoned into active (Inbox) / filed (folders + Saved) /
+  recessive lifecycle bins (Snoozed + Dismissed pushed right).
+- **StrategyCheck** moved above the feed as a collapsible orienting strip (was buried below 50 cards).
+- **Register escape hatch** surfaced as a header "Full register →" link (kept the footer block); the
+  zero-signals state now shows the footer + a register link (was a dead end); inbox-zero copy branches
+  a genuine cleared queue ("Inbox zero.") from a quiet org ("Nothing needs your attention right now").
+- **Peer-note trimmed** (dropped the internal "…so the two never disagree" rationale).
+- **Toast/Undo hardening**: stopped wiping the host on every toast (earlier Undos survived their TTL) —
+  now a 3-deep cap; the toast pauses its auto-dismiss while hovered/focused (Tab-to-Undo has time),
+  without stealing focus from keyboard triage (core.js). Card actions move focus to a neighbour card
+  instead of dropping to <body>; restored cards (Undo/wake/recover) flash back into place.
+- **Menu a11y**: the Snooze/File popovers are role=menu with role=menuitem options and focus the first
+  item on open. **Snooze** gained a shorter "Next week" preset.
+
+VERIFIED LIVE: search filters to matching names; the strategy strip expands; the domain dropdown
+filters (+ chip); Inbox rename, zoned nav, register link, footer all render. jsc-clean (pages/core),
+CSS braces balanced, 14/14 gates. v=537. (Deferred as a further nicety: a snooze custom-date picker,
+full arrow-key roving inside the menus.)
