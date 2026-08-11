@@ -16526,3 +16526,15 @@ Audited the sibling download links: the board-pack CSV (bp-menu) and the gap-reg
 fire a toast onClick (never unmount their own anchor), so they were unaffected — this was the
 only instance. Verified live: after the fix the anchor stays mounted synchronously post-click and
 the export.csv GET fires (200). v=517; 14/14 gates green.
+
+## 2026-08-11 — My dashboards: remove CSV download + "Save as team default" (David)
+
+David: "remove the csv download from the dashboards for now — also remove the save as team
+[default] button." With CSV gone, the Download dropdown had only PDF left, so it collapses to a
+direct "Download PDF" button (no menu). Removed: the CSV <a> item, the whole Download dropdown
+(dlOpen/dlRef state + the outside-click useEffect + .dash-dl* CSS), and the admin "Save as team
+default" button + its saveDefault handler + the transient `saved` confirmation Chip. KEPT (server,
+untouched): the /api/dashboards/{id}/export.csv endpoint and /api/myview/save-default — so CSV can
+be restored later ("for now") and the team-default seed still works for new users. Verified live:
+header now shows just "Download PDF" + "Share"; no dropdown, no CSV link, no team-default button;
+SPA renders clean. v=518; 14/14 gates green.

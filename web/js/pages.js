@@ -2898,16 +2898,13 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
   const [activeCut, setActiveCut] = useState({ dim: "all", value: null });
   const [cards, setCards] = useState({});
   const [drag, setDrag] = useState(null);
-  const [saved, setSaved] = useState(null);
   const [sigMap, setSigMap] = useState({});
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);          // §4.10(2): a failed load must not hang on the skeleton
-  const [dlOpen, setDlOpen] = useState(false);   // Download menu (PDF / CSV)
   const nameRef = useRef(null);
-  const dlRef = useRef(null);
   const cancelRename = useRef(false);   // Escape sets this so the input's onBlur doesn't commit
 
   const applyActive = (id, lay, dcut) => {
@@ -2970,14 +2967,6 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
     });
   }, [layout, cutKeyOf(activeCut)]);
   useEffect(() => { if (renaming && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); } }, [renaming]);
-  useEffect(() => {
-    if (!dlOpen) return;
-    const onDown = e => { if (dlRef.current && !dlRef.current.contains(e.target)) setDlOpen(false); };
-    const onKey = e => { if (e.key === "Escape") setDlOpen(false); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [dlOpen]);
 
   if (err) return html`<${EmptyState} title="Couldn't load your dashboards"
     body=${err + " — nothing is lost."}
@@ -3096,11 +3085,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
       applyActive(r.active_id, d.layout, d.cut);
     } finally { setBusy(false); }
   };
-  const saveDefault = async () => {
-    await api("/api/myview/save-default", { method: "POST", body: { layout } });
-    setSaved("Saved as your team's starting layout");
-    setTimeout(() => setSaved(null), 2500);
-  };
+  // "Save as team default" button removed 2026-08-11 (David); the /api/myview/save-default
+  // endpoint stays for any admin flow that seeds a new user's first dashboard.
   // Download PDF: name the document, hand off to the browser's print pipeline
   // (a dashboard-scoped @media print block hides the app chrome + tabs/toolbar and
   // reveals a print header/footer), then restore the title. print() blocks, so the
@@ -3127,26 +3113,12 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
 
         </div>
         <div class="row">
-          ${saved && html`<${Chip} kind="good">${saved}<//>`}
-          <div class="dash-dl" ref=${dlRef}>
-            <button class="btn small" onClick=${() => setDlOpen(o => !o)} disabled=${layout.length === 0}
-              aria-haspopup="menu" aria-expanded=${dlOpen}
-              title=${layout.length === 0 ? "Add a card first" : "Download this dashboard"}>
-              <${Icon} name="download" size=${14} /> Download <span class="dash-dl-chev" aria-hidden="true">▾</span></button>
-            ${dlOpen && html`
-              <div class="dash-dl-menu" role="group">
-                <button class="dash-dl-item" onClick=${() => { setDlOpen(false); downloadPDF(); }}>
-                  <b>PDF</b><small>Print-ready document — every card</small></button>
-                <a class="dash-dl-item" href=${"/api/dashboards/" + activeId + "/export.csv?" + cutQS(activeCut)}
-                  download onClick=${() => setTimeout(() => setDlOpen(false), 0)}>
-                  ${/* defer the menu-close (2026-08-11 fix): closing it synchronously unmounts
-                        THIS anchor mid-click, which cancels the browser's download. setTimeout(0)
-                        lets the download's default action commit first, then closes the menu. */ ""}
-                  <b>Spreadsheet (CSV)</b><small>The numbers behind each card</small></a>
-              </div>`}
-          </div>
+          ${/* CSV download removed "for now" (David 2026-08-11) — with only PDF left, the
+                dropdown collapses to a direct action. "Save as team default" also removed. */ ""}
+          <button class="btn small" onClick=${downloadPDF} disabled=${layout.length === 0}
+            title=${layout.length === 0 ? "Add a card first" : "Download this dashboard as a PDF"}>
+            <${Icon} name="download" size=${14} /> Download PDF</button>
           <${ShareButton} me=${me} cut=${activeCut} name=${activeName} layout=${layout} />
-          ${me.user.role === "admin" && html`<button class="btn" onClick=${saveDefault} title="New team members start from this layout">Save as team default</button>`}
         </div>
       </div>
 
