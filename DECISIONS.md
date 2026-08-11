@@ -16266,21 +16266,16 @@ links you've already sent keep showing THIS version — re-share the new pack") 
 stale banner spells out the same link behaviour. Preserves old snapshots; alerts the user.
 commercial.js; v=500; 14/14 gates.
 
-## 2026-08-10 — UX polish (batch 4): POSITION-NEUTRAL colour model (HIGH #2 + #6)
+## 2026-08-10 — REVERTED the position-neutral colour model → red/amber/green restored
 
-David ruled the market lens neutral (on-market = target; below/above = off-band, no
-verdict; value only on the 'vs your aim' strategy lens). Turned out to be a system-wide
-change across every market surface — done consistently + verified live (donut now
-green/grey/grey, not amber/green/red) + 14/14:
-- Tokens: --gauge-below/above -> neutral grey (on stays green); --below/above-ink -> neutral.
-- pages.js MKT_RICH below/above -> neutral (MKT_SOFT auto-followed the tokens); this drives
-  the Overview 'Where you stand' donut + bands.
-- CSS classes: .pos-pill.good/.bad -> neutral, .mid -> green target; .cat-tile.v-below/above
-  + .pack-accent.v-below/above -> neutral; .chip-good/.chip-bad -> neutral, .chip-mid -> green
-  (aim-lens .v-above-over / .chip-bad-over KEEP their valence).
-- charts.js youColour() -> one neutral You-marker (position shown by placement); numeric-matrix
-  You diamond/value -> neutral.
-- card.js cardPosition(): pill now shows RAW market position (no polarity flip) — neutral
-  colour + word/arrow now agree with the printed P{p} (resolves HIGH #6).
-Verified via static-render harness (David's chosen method) then live. v=501. Lens-key labels
-('vs the market'/'vs your aim') + remaining Med items still to come.
+David reviewed the position-neutral market colours live and they didn't work for him.
+Reverted commit c5381bc in full (git revert), restoring the original RAG favourability
+model everywhere: --gauge-below amber / --gauge-on green / --gauge-above red; MKT_RICH/
+MKT_SOFT, .pos-pill/.cat-tile/.pack-accent/.chip-good/bad/mid, charts youColour + matrix
+You-marker, and cardPosition's polarity-adjusted verdict all back to their pre-batch-4
+state. Cache-bust bumped forward v=501->502 (not back to 500) so browsers refresh.
+NOTE: reverting also restores the audit's HIGH #2 (market colour is inconsistent across
+surfaces — 'above market' reads red on the gauge/Signals but green on the metric pill)
+and HIGH #6 (lower-is-better pill: verdict vs raw P{p}). If wanted, RAG can be made
+CONSISTENT (pick one valence for above/below everywhere) without going neutral — a
+smaller change than the neutral model was.

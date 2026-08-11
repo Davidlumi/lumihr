@@ -9,10 +9,10 @@
 const CHART_W = 420;
 
 function youColour(fav) {
-  // POSITION-NEUTRAL (2026-08-10 ruling): the You-marker is one neutral accent whatever
-  // the market position — where you sit is shown by the marker's PLACEMENT on the axis,
-  // not by colour. Value lives on the 'vs your aim' lens, never on this marker.
-  // (fav is still received so the ▲/▼ direction glyph can be drawn by callers.)
+  if (fav === "good") return "var(--favourable)";    // above the market
+  if (fav === "bad") return "var(--unfavourable)";   // below the market
+  // "mid" = on the market (inside the 25-75 band) reads neutral, never a verdict;
+  // performance colour is reserved for genuine divergence from the market.
   return "var(--you)";
 }
 // a SHAPE cue for the verdict that survives greyscale / colour-blindness — mirrors
@@ -507,10 +507,9 @@ function buildNumSVG(card, tok) {
     s += `<line x1="${Sx}" x2="${Sx + Sw}" y1="${cy}" y2="${cy}" stroke="${tok.grid}" stroke-width="1"/>`;
     s += `<rect x="${X(b.p25)}" y="${cy - 4.5}" width="${Math.max(2, X(b.p75) - X(b.p25))}" height="9" rx="4.5" fill="${tok.bandMid}"/>`;
     s += `<rect x="${X(b.p50) - 1}" y="${cy - 7.5}" width="2" height="15" fill="${tok.median}"/>`;
-    // position-neutral: the You diamond + value are one neutral accent; position is the placement on the row
-    if (yv != null) { const xx = X(yv), col = tok.you, rr = 5.5;
+    if (yv != null) { const xx = X(yv), col = f === "good" ? tok.fav : f === "bad" ? tok.unfav : tok.you, rr = 5.5;
       s += `<path d="M ${xx} ${cy - rr} L ${xx + rr} ${cy} L ${xx} ${cy + rr} L ${xx - rr} ${cy} Z" fill="${col}" stroke="#fff" stroke-width="1.5"/>`; }
-    const yvcol = tok.blueDeep;
+    const yvcol = f === "good" ? tok.fav : f === "bad" ? tok.unfav : tok.blueDeep;
     s += r.you
       ? `<text x="${Sx + Sw + Yw - 6}" y="${cy + 4}" text-anchor="end" font-size="11" font-weight="700" fill="${yvcol}">${esc(r.you.display)}</text>`
       : `<text x="${Sx + Sw + Yw - 6}" y="${cy + 4}" text-anchor="end" font-size="11" fill="${tok.inkSoft}">—</text>`;

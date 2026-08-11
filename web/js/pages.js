@@ -669,11 +669,9 @@ const MKT_SOFT = { green: "var(--gauge-on)", amber: "var(--gauge-below)", red: "
                    redover: "color-mix(in srgb, var(--unfavourable-deep) 42%, var(--surface))",
                    grey: "color-mix(in srgb, var(--grey-neutral) 30%, var(--surface))",
                    neutral: "color-mix(in srgb, var(--chart-band-mid) 65%, var(--surface))" };
-// position-neutral (2026-08-10): the tone KEYS below (amber=below, red=above) are legacy
-// labels; below & above market now render the same neutral off-band, on-market = target green.
 const MKT_RICH = { green: "color-mix(in srgb, var(--favourable) 56%, var(--surface))",
-                   amber: "color-mix(in srgb, var(--ink) 24%, var(--surface))",
-                   red: "color-mix(in srgb, var(--ink) 24%, var(--surface))",
+                   amber: "color-mix(in srgb, var(--amber-bright) 58%, var(--surface))",
+                   red: "color-mix(in srgb, var(--unfavourable) 54%, var(--surface))",
                    redover: "color-mix(in srgb, var(--unfavourable-deep) 72%, var(--surface))",
                    grey: "color-mix(in srgb, var(--grey-neutral) 62%, var(--surface))",
                    neutral: "var(--chart-band-mid)" };
