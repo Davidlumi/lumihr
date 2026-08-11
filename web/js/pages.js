@@ -2416,8 +2416,11 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   if (subF) cards = cards.filter(c => (c.subpower || "General") === subF);
   if (cat) cards = cards.filter(c => c.category === cat);
   const sigCounts = { signal: 0, add: 0, clear: 0 };
-  cards.forEach(c => { const st = cardSignalState(c, sigMap[c.id]); if (st) sigCounts[st]++; });
-  if (sigF) cards = cards.filter(c => cardSignalState(c, sigMap[c.id]) === sigF);
+  // every "clear*" variant (clear / clear-practice / clear-unbenchmarked) is one
+  // "No signal" bucket — else practice/unbenchmarked no-flag cards drop from the count AND filter
+  const sigBucket = st => (st && st.indexOf("clear") === 0) ? "clear" : st;
+  cards.forEach(c => { const b = sigBucket(cardSignalState(c, sigMap[c.id])); if (b) sigCounts[b]++; });
+  if (sigF) cards = cards.filter(c => sigBucket(cardSignalState(c, sigMap[c.id])) === sigF);
 
   const bySub = [];
   for (const c of cards) {

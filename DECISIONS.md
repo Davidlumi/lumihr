@@ -16348,3 +16348,13 @@ cardSignalState returns clear/clear-practice/clear-unbenchmarked but sigCounts o
 'clear', so practice-/unbenchmarked-clear cards carry the 'No signal' pill yet aren't counted
 (pages.js ~2418/2475). Flagged for a fix.
 v=507; app bootstraps clean; 14/14.
+
+## 2026-08-11 — UX polish (#4-adjacent fix): 'No signal' filter/count bucket
+
+Fixed the correctness bug surfaced during the status-vocab audit: the benchmark
+'No signal' filter+count only bucketed cardSignalState()=='clear', so 'clear-practice'
+and 'clear-unbenchmarked' cards (which carry a no-flag pill) were dropped from the count
+AND excluded when filtering 'No signal'. Added sigBucket() folding every 'clear*' variant
+into the 'clear' bucket for both count and filter (pages.js). v=508; 14/14.
+The status-label VOCABULARY itself (the one ruled 'No comparison'/'Unbenchmarked' synonymy)
+remains a David decision — not changed.
