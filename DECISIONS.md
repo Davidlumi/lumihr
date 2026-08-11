@@ -16358,3 +16358,25 @@ AND excluded when filtering 'No signal'. Added sigBucket() folding every 'clear*
 into the 'clear' bucket for both count and filter (pages.js). v=508; 14/14.
 The status-label VOCABULARY itself (the one ruled 'No comparison'/'Unbenchmarked' synonymy)
 remains a David decision — not changed.
+
+## 2026-08-11 — Home-page cleanup: "Where you stand" card (David)
+
+Targeted tidy of the market "Where you stand" card on Overview (OverallArc, pages.js).
+David: "move the legend so it is on one row · delete the '14 metrics...' line · delete the
+'typical metric...' line · resize and polish".
+1. LEGEND ON ONE ROW — the below/on/above counts wrapped to two lines. CSS only
+   (.arc-duo .arc-caption): flex-wrap keeps the adverb lean on its own line (flex-basis:100%)
+   with the three counts inline below it (gap trimmed to var(--s1) var(--s3), count spans
+   white-space:nowrap at --fs-micro, figures at --fs-caption). Fits the fixed ~356px column.
+2. DELETED the "N metrics don't apply to your organisation — not counted in your position"
+   absent-note line (the engine still excludes N/A metrics from below/on/above; it's just no
+   longer captioned on the home card).
+3. DELETED the visible "typical metric · on-market band P{lo}–P{hi}" caption under the ruler.
+   The P-pill already carries the figure; the ruler + below/on/above axis labels stay. The
+   load-bearing D2 "typical metric" phrase + the band remain in the ruler's aria-label (the
+   accessible equivalent). qa_overview 10a retargeted to read the D2 phrasing there (still
+   asserts the marker is bound to engine depth_pctl + the band is exposed).
+4. RESIZED both donuts (market card + PracticeArc twin) 210/28 → 192/26 for a more balanced
+   card now that two text lines are gone.
+Verified via static-render harness at the real 356px column width (one-row legend, both lines
+gone, balanced donut, RAG colours intact). v=509; 14/14.

@@ -1171,9 +1171,11 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-duo { display: flex; flex-direction: column; align-items: center; gap: var(--s3); padding: var(--s2) 0 0; min-width: 0; }
 .arc-duo .arc-stage { margin-top: 0; flex: none; max-width: 100%; }
 .arc-duo .arc-caption { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center;
-  gap: var(--s2) var(--s3); margin-top: 0; min-width: 0; }
+  gap: var(--s1) var(--s3); margin-top: 0; min-width: 0; }
 .arc-duo .arc-caption .arc-lean { flex-basis: 100%; text-align: center; font-size: var(--fs-label); font-weight: 650; color: var(--ink); }
-.arc-duo .arc-caption > span:not(.arc-lean):not(.arc-caption-sep) { display: inline-flex; align-items: center; gap: var(--s2); }
+/* legend on ONE row (2026-08-11): the three counts sit inline, no wrap; the adverb lean keeps its own line above */
+.arc-duo .arc-caption > span:not(.arc-lean):not(.arc-caption-sep) { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; font-size: var(--fs-micro); }
+.arc-duo .arc-leg-fig { font-size: var(--fs-caption); }
 .arc-duo .arc-caption-sep { display: none; }   /* the em-dash reads as an orphan in the stacked form */
 /* the single overall position marker (replaces the strip; same grammar as the domain rows) */
 /* the marker zone reads as the card's FOOTER (premium pass 2026-07-12): a hairline above it

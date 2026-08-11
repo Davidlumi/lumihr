@@ -240,11 +240,17 @@ check("9c. the signals total shown on the card derives from the live signal set 
 corejs = open(os.path.join(HERE, "..", "web", "js", "core.js"), encoding="utf-8").read()
 check("10a. the home card renders the overall marker from market.depth_pctl (engine value, D4 unweighted pool)",
       # FIX CLASS C (2026-07-11) + premium pass (2026-07-12): the overall marker is the SAME
-      # ink P-pill as the domain rows, bound to market.depth_pctl; the caption keeps D2's
-      # "typical metric" phrase (the pill carries the figure, so the caption doesn't repeat it).
+      # ink P-pill as the domain rows, bound to market.depth_pctl.
+      # HOME-PAGE CLEANUP (2026-08-11, David): the visible "typical metric · on-market band
+      # P{lo}–{hi}" caption line was deleted (the pill already carries the figure, so the
+      # caption repeated it). The load-bearing D2 "typical metric" phrasing + the on-market
+      # band now live only in the ruler's aria-label — the accessible equivalent of the
+      # pill+band — so clause 3 reads them there. Still the real contract: if the marker's
+      # depth binding or the band were removed, both aria-label clauses vanish and this fails.
       "arc-markscale" in pagesjs
       and "const depth = market.depth_pctl;" in pagesjs
-      and "typical metric · on-market band P${band[0]}" in pagesjs,
+      and 'typical metric at the " + pctlOrdinal(Math.round(depth))' in pagesjs
+      and 'the on-market band runs P" + band[0]' in pagesjs,
       "the overall marker is not bound to the engine depth_pctl / D2 phrasing")
 check("10b. the domain rows' Position view is the engine-bound single-marker scale; category hero renders the ruler from pos.depth_pctl",
       # FIX CLASS A (aggregate-marker rebuild 2026-07-11): one dot per domain at depth_pctl

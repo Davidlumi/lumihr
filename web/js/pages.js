@@ -957,7 +957,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
               { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
               { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
             ]}
-            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${210} stroke=${28} />
+            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${192} stroke=${26} />
         </div>
         <div class="arc-caption num">
           <span class="arc-lean">${headLean}</span>
@@ -967,11 +967,8 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
           <span><i class="arc-leg-dot di-fill-above" aria-hidden="true"></i><span class="arc-leg-fig">${market.above}</span> above</span>
         </div>
       </div>
-      ${/* Diff 16 (N/A-disclosure): gauge-eligible metrics that don't apply to this org — a
-            disclosed absence, NEVER counted in below/on/above. Muted count line, engine value
-            (data.headline.absent_disclosed), no per-metric list (a later UI pass). */ ""}
-      ${absentDisclosed > 0 ? html`
-        <div class="caption arc-absent-note">${absentDisclosed} ${absentDisclosed === 1 ? "metric doesn't" : "metrics don't"} apply to your organisation — not counted in your position</div>` : null}
+      ${/* N/A-disclosure count line removed 2026-08-11 (home-page cleanup); absent metrics
+            are still excluded from below/on/above by the engine — just not captioned here. */ ""}
       ${(() => {
         const band = window.MARKET_BAND || [35, 65];
         const depth = market.depth_pctl;
@@ -992,7 +989,6 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
                 title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of your per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
             </span>
             <div class="caption bp-scale-labels"><span>below market</span><span>on market</span><span>above market</span></div>
-            <div class="caption arc-marker-cap num">typical metric · on-market band P${band[0]}–${band[1]}</div>
           </div>`;
       })()}
       ${!market.target && !stratOff ? html`
@@ -1074,7 +1070,7 @@ function PracticeArc({ prevalence, pending }) {
               { value: alt, color: "var(--prev-alt)" },
               { value: rare, color: "var(--prev-rare)" },
             ]}
-            total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${210} stroke=${28} />
+            total=${pool} centerNum=${pool} sub="practices" centerWord=${word} size=${192} stroke=${26} />
         </div>
         <div class="arc-caption num">
           <span class="arc-lean">${cap}</span>
