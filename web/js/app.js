@@ -390,10 +390,12 @@ function App() {
     : html`<${NotFoundPage} route=${route} />`;   // staff-only, invisible to members (craft review 2026-08-09)
   else if ((m = route.match(/^\/run-a-pulse\/([^?]+)/))) page = me.user.role === "admin"
     ? html`<${PulseBuilderPage} me=${me} pid=${m[1]} />`
-    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
+    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action."
+        action=${html`<button class="btn small primary" onClick=${() => nav("/pulse")}>See open pulses</button>`} />`;
   else if (route.startsWith("/run-a-pulse")) page = me.user.role === "admin"
     ? html`<${PulsesPage} me=${me} tab="run" />`   // Pulse page, "Run a pulse" tab (merged 2026-08-11)
-    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action." />`;
+    : html`<${EmptyState} icon="lock" title="Admin only" body="Designing and launching a pulse is an Admin action."
+        action=${html`<button class="btn small primary" onClick=${() => nav("/pulse")}>See open pulses</button>`} />`;
   else if ((m = route.match(/^\/pulse\/(.+)$/))) page = html`<${PulseDetailPage} me=${me} pid=${m[1]} />`;
   else if (route.startsWith("/pulse")) page = html`<${PulsesPage} me=${me} tab="explore" />`;
   else if (route.startsWith("/register") || (route.startsWith("/reset") && !route.startsWith("/reset/"))) {

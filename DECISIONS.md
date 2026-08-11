@@ -16944,3 +16944,37 @@ the Run tab; tabs nav between the two routes so URLs + back-button hold. `.pulse
 segmented toggle added. VERIFIED live (admin): single Pulse nav item, Explore shows Open/Closed
 community pulses, Run a pulse shows the how-steps + New pulse + Your-pulses empty state, sidebar stays
 lit across both, URL flips /pulse ↔ /run-a-pulse. jsc-clean, 14/14 gates. v=543.
+
+## 2026-08-11 — Pulse: full redesign (David "odd next to the side menu, unused space, not engaging")
+
+The merged Pulse page read as a narrow left-hugging strip (inline max-width 780px, left-aligned) with a
+large empty right gutter and empty lower half, and plain bordered cards with no topic identity, momentum,
+or report teaser — David's "odd next to the side menu, lots of unused space, not very engaging". A 33-
+finding review (5-lens workflow + adversarial verify) drove this craft batch (pulses.js + app.css):
+
+LAYOUT — `.pulse-page` wrapper now `max-width: 1120px; margin: 0 auto` (centred, width-filling; verified
+828px balanced at a 1100 viewport, caps at 1120 on wide screens). New `.pulse-head` header BAND: title +
+one-line `.pulse-lead` on the left, the Explore/Run tabs + a `.pulse-head-stat` on the right, so the top
+uses the horizontal space instead of stacking. PulseDetailPage + PulseBuilderPage centred too (780 → 820,
+margin auto).
+
+ENGAGEMENT — community pulses are now an `.pulse-grid` (auto-fill minmax(320px,1fr)) of enriched
+`.pulse-card`s: a 34px round blue `.pulse-medallion` (zap icon) for topic identity, a 2-line clamped
+`.pulse-card-desc`, a `momentum(p)` line (blue `.pulse-meter` "N of floor · report unlocks at floor" when
+below the participation floor, else `.pulse-partic` "N participating"), and a `.pulse-card-foot` with the
+participated/joined state + a `cardCta` verb ("View report →" / "Finish your answers" / "Take part
+(free)" / "See report"). A full-width `.pulse-hero` leads with the soonest-closing OPEN pulse (real
+primary-button CTA); combined-empty falls to a warm EmptyState; the past section is retitled "Past pulses
+& your reports".
+
+RUN TAB — `runView` sorts action-required orgs first, celebrates a live pulse at the top, and shows the
+how-it-works steps only inside the first-run empty card (not as permanent chrome); `nextStep` gives each
+row a concrete next action ("Address lumi's notes" / "Request your launch"). Colour law held: Pulse is
+NOT a benchmark surface, so status chips are neutral/blue — the `approved` run chip is now a neutral
+"ready to launch" (was amber "awaiting invoice").
+
+BUG (review #6) — the Run tab could spin forever: the `/api/org/pulses` fetch swallowed its error and
+shared the Explore `err`, so an org-fetch failure never surfaced. Split into per-tab `orgErr`/`err` +
+`reload` state with separate error/loading gates and a working Retry. VERIFIED live: Explore renders the
+centred grid + medallion card + momentum + CTA, Run tab renders how-steps + New pulse + empty state with
+no infinite spinner. jsc-clean, CSS braces balanced, 14/14 gates. v=544.

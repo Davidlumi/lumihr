@@ -2312,7 +2312,6 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-banner { display: inline-block; background: var(--surface-sunk); border: 1px dashed var(--blue);
   color: var(--blue); font-size: var(--fs-label); padding: 2px var(--s3); border-radius: var(--radius-sm); margin-top: var(--s2); }
 .pulse-chip { background: var(--blue); color: #fff; }
-.pulse-card { border-left: 3px solid var(--blue-bright); }
 
 /* self-service pulse builder + paid launch (2026-06-22) */
 .pulse-stepper { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; margin: var(--s3) 0 0; }
@@ -2439,7 +2438,8 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-lead { max-width: 60ch; color: var(--ink-soft); margin: var(--s2) 0 0; }
 /* Pulse Explore / Run-a-pulse tab toggle (merged 2026-08-11) */
 .pulse-tabs { display: inline-flex; gap: 2px; background: var(--surface-sunk); border-radius: 999px; padding: 3px; margin: var(--s4) 0 var(--s3); }
-.pulse-tab { background: none; border: 0; border-radius: 999px; font: inherit; font-size: var(--fs-label); font-weight: 600;
+.pulse-tab { display: inline-flex; align-items: center; background: none; border: 0; border-radius: 999px; font: inherit;
+  font-size: var(--fs-label); font-weight: 600; text-decoration: none;
   color: var(--ink-soft); cursor: pointer; padding: var(--s2) var(--s4); transition: color var(--dur-fast), background var(--dur-fast); }
 .pulse-tab:hover { color: var(--ink); }
 .pulse-tab.on { background: var(--surface); color: var(--navy); box-shadow: var(--shadow-card); }
@@ -2514,6 +2514,50 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .unlock-links { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .unlock-x { position: absolute; top: var(--s2); right: var(--s2); }
 @media (prefers-reduced-motion: reduce) { .unlock-moment { animation: none; } }
+/* ── Pulse redesign (David 2026-08-11): fill the width, lead with the open pulse, richer cards ── */
+.chip-neutral { background: var(--surface-sunk); color: var(--ink-soft); }
+.pulse-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
+.pulse-head-l { min-width: 0; }
+.pulse-head-stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05; }
+.pulse-head-stat b { font-size: var(--fs-display); color: var(--navy); }
+.pulse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--s4); margin-top: var(--s3); align-items: stretch; }
+/* the soonest-closing open pulse — a full-width hero */
+.pulse-hero { display: flex; align-items: center; justify-content: space-between; gap: var(--s5); flex-wrap: wrap;
+  padding: var(--s5); border-left: 4px solid var(--blue); cursor: pointer;
+  background: linear-gradient(180deg, var(--lumi-tile), var(--surface));
+  transition: transform var(--dur-fast), box-shadow var(--dur-fast); }
+.pulse-hero:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(20,40,90,.10); }
+.pulse-hero-body { min-width: 0; flex: 1; }
+.pulse-hero-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--blue-deep); }
+.pulse-hero-tag svg { color: var(--blue); }
+.pulse-hero-name { font-family: var(--font-head); font-size: var(--fs-section); font-weight: 650; color: var(--ink); margin: var(--s1) 0; }
+.pulse-hero-desc { color: var(--ink-soft); margin: 0 0 var(--s2); max-width: 64ch; }
+.pulse-hero-meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.pulse-hero-cta { flex: none; }
+.pulse-dot { color: var(--ink-faint); }
+/* community card */
+.pulse-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s4); cursor: pointer;
+  transition: border-color var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-fast); }
+.pulse-card:hover { border-color: var(--blue-bright); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(20,40,90,.07); }
+.pulse-card-top { display: flex; gap: var(--s3); align-items: flex-start; }
+.pulse-medallion { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--lumi-tile);
+  color: var(--blue); display: inline-flex; align-items: center; justify-content: center; }
+.pulse-card-headwrap { min-width: 0; }
+.pulse-card-name { font-size: var(--fs-label); display: block; }
+.pulse-card-meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-top: 2px; }
+.pulse-card-desc { color: var(--ink-soft); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pulse-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin-top: auto; padding-top: var(--s1); }
+.pulse-card-cta { font-size: var(--fs-caption); font-weight: 600; color: var(--blue-bright); white-space: nowrap; }
+.pulse-card:hover .pulse-card-cta { color: var(--blue-deep); }
+.pulse-taken { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-caption); font-weight: 600; color: var(--blue-deep); }
+.pulse-partic { display: inline-flex; align-items: center; gap: 4px; }
+.pulse-momentum { display: flex; flex-direction: column; gap: 3px; }
+.pulse-meter { height: 5px; border-radius: 999px; background: var(--surface-sunk); overflow: hidden; max-width: 220px; }
+.pulse-meter i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+.pulse-action { display: inline-flex; align-items: center; gap: 4px; margin-top: var(--s2); font-size: var(--fs-caption); font-weight: 600; color: var(--blue-deep); }
+.pulse-first .pulse-how { text-align: left; max-width: 460px; margin: var(--s4) auto; }
+@media (max-width: 560px) { .pulse-hero { flex-direction: column; align-items: flex-start; } .pulse-hero-cta, .pulse-hero-cta .btn { width: 100%; } }
 
 /* =========================================================== analyst panel */
 .analyst-pane { position: fixed; right: 0; top: 0; bottom: 0; width: 430px; max-width: 95vw;
