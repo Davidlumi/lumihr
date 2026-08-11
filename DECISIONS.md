@@ -16431,3 +16431,28 @@ David: "remove the h2 2026 text." Deleted the .ov-period caption span from the O
 controls row (OverviewHero, pages.js) — it read "<window> · baseline" (e.g. "2026 H1 ·
 baseline"). The collection window still rides the ConfidenceChip's detail, so no information
 is lost; the standalone caption was noise beside the confidence chip. v=512; 14/14.
+
+## 2026-08-11 — Home: final polish pass (a11y + dead-code cleanup after the declutter)
+
+A multi-lens polish review of the Overview (4 lenses + adversarial verify) surfaced 12 real
+findings, all low-severity leftovers from this session's removals — no defects. Applied the 9
+confirmed-safe + 1 a11y:
+- A11Y (WCAG 2.5.8): the Counts|Position mini toggle computed to ~19px tall (under the 24px
+  floor the sibling .di-scent already holds). Added min-height:24px + inline-flex + centre to
+  .ov-seg-mini .ov-seg-btn (compact type kept). app.css.
+- DEAD CSS removed: .ov-period (period caption, removed earlier today), .di-scent.on (no scent
+  toggle state now), .ov-lensbar + .ov-lensbar .btn + standalone .ov-top-lens (practice lens
+  retired), .arc-marker-cap (orphan -cap variant), the .ov-signals-band cluster (3 solo rules +
+  a reduced-motion rule; removed only the fragment from two SHARED selector lists, kept the live
+  selectors), and .ov-top's margin-bottom (it spaced the hero from the now-removed sections;
+  .ov-top is the terminal row now). Stale comments fixed. CRITICAL: the :not(.ov-top-lens) donut
+  guards (7) are LOAD-BEARING (drive the 216px desktop donut) — kept; negation is now always-true.
+- DEAD JS removed: _viewNew (only consumer was the unmounted SignalsPanel) and the never-called
+  setView plumbing (const + prop + destructure) — its only caller was the retired Market|Practice
+  segment. Kept _viewLive/_viewTotal + the " of " + total string (qa_overview 9c binds to them).
+JUDGMENT CALLS surfaced, NOT auto-applied: (a) the per-domain signal count deep-links to /signals
+but lands generic (not domain-filtered) — this MATCHES David's earlier "Link to Signals page"
+ruling, so left as-is (domain-carry available as an optional enhancement); (b) the ~174px blank
+below the hero — recommendation was LEAVE AS-IS (don't vertical-centre; it'd break the top-left
+reading anchor and jump between locked/nudge height states), aligning with David's "clean" intent.
+Verified live (SPA renders, toggle now 24px, donut still 216, card shadow intact); v=513; 14/14.

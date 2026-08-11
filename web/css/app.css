@@ -693,9 +693,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .conf-meter i.off { background: var(--border); }
 /* 10-point rating bands (David 2026-07-12): icon + score only — the words live in the
    tooltip/aria. Bars + score ink take the band hue (78%-ink mixes clear AA); the meter
-   fills 1/2/3 bars for red/amber/green. Reverses the navy-only trust ruling on David's call. */
-.ov-period { color: var(--ink-faint); white-space: nowrap; }
-.conf-label { font-size: var(--fs-micro); font-weight: 600; color: var(--ink-soft); letter-spacing: .02em; }
+   fills 1/2/3 bars for red/amber/green. Reverses the navy-only trust ruling on David's call. */.conf-label { font-size: var(--fs-micro); font-weight: 600; color: var(--ink-soft); letter-spacing: .02em; }
 .conf-score { font-weight: 700; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
 .conf-green .conf-meter i:not(.off) { background: var(--favourable); }
 .conf-green .conf-score { color: var(--favourable-ink); }
@@ -1018,7 +1016,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
   margin-bottom: var(--s2); max-width: 620px; }
 
 /* ---- the 80/20 home hero (2026-06-12, polished) ---- */
-.ov-top { display: grid; grid-template-columns: 356px minmax(0, 1fr); gap: var(--s4); margin-bottom: var(--s4); }
+.ov-top { display: grid; grid-template-columns: 356px minmax(0, 1fr); gap: var(--s4); }   /* margin-bottom dropped 2026-08-11: .ov-top is the terminal hero row now (signals band + practice card removed) */
 .ov-wrap .grid2 { gap: var(--s4) !important; margin: var(--s4) 0 !important; }
 /* stacked hero: minmax(0,1fr), NEVER bare 1fr — a 1fr track's minimum is the content's
    min-width, so one unbreakable row (~530px of tag+actions) blew the track past a phone
@@ -1057,7 +1055,8 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .ov-seg-btn:not(.on):hover { color: var(--ink); }
 /* compact variant for card headers (2026-07-11 — the domain-bar Counts/Position toggle) */
 .ov-seg-mini { padding: 2px; }
-.ov-seg-mini .ov-seg-btn { font-size: var(--fs-micro); font-weight: 600; line-height: 1.4; padding: 2px var(--s2); }
+.ov-seg-mini .ov-seg-btn { font-size: var(--fs-micro); font-weight: 600; line-height: 1.4; padding: 2px var(--s2);
+  min-height: 24px; display: inline-flex; align-items: center; }   /* 24px min touch target (WCAG 2.5.8) — matches .di-scent on this card; compact type kept */
 .ov-strat { display: inline-flex; align-items: center; gap: var(--s2); background: none; border: none; cursor: pointer;
   font: inherit; font-size: var(--fs-caption); color: var(--ink-soft); padding: 2px; }
 .ov-strat-track { width: 34px; height: 20px; border-radius: 999px; background: var(--chrome-edge); position: relative; transition: background var(--dur-fast) ease; flex: none; box-shadow: inset 0 0 0 1px rgba(33,27,38,.06); }
@@ -1183,9 +1182,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .arc-marker { margin-top: var(--s4); border-top: 1px solid var(--border); padding-top: var(--s4); }
 .arc-markscale { height: 16px; }
 .arc-markscale .z-below { border-radius: var(--radius-xs) 0 0 8px; }
-.arc-markscale .z-above { border-radius: 0 8px 8px 0; }
-.arc-marker-cap { text-align: center; margin-top: var(--s1); }
-.arc-marker .bp-scale-labels { margin-top: var(--s2); }
+.arc-markscale .z-above { border-radius: 0 8px 8px 0; }.arc-marker .bp-scale-labels { margin-top: var(--s2); }
 .arc-card .bp-scale-labels { font-size: var(--fs-micro); }   /* quiet axis words under the strip */
 /* "Where you stand" — fill the stretched height (2026-08-11, David: "use the breathing room").
    The market card is the LEFT cell of .ov-top and stretches (align-items:stretch) to the taller
@@ -1524,11 +1521,11 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
   animation: aurora-drift 24s ease-in-out infinite alternate; will-change: transform; }
 @keyframes aurora-drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(-14px, 7px, 0) scale(1.05); } }
 .ov-wrap > :not(.ov-aurora) { position: relative; z-index: 1; }
-.ov-top .card, .ov-signals-band .card, .cat-tile, .grid2 .card { box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.85); }
+.ov-top .card, .cat-tile, .grid2 .card { box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.85); }
 .card-spot { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0; opacity: 0;
   transition: opacity var(--dur-slow) ease;
   background: radial-gradient(440px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--blue) 8%, transparent), transparent 60%); }
-.ov-top .card:hover .card-spot, .ov-signals-band .card:hover .card-spot { opacity: 1; }
+.ov-top .card:hover .card-spot { opacity: 1; }
 .arc-card > *:not(.card-spot), .signals-card > *:not(.card-spot), .dom-instr > *:not(.card-spot) { position: relative; z-index: 1; }
 .n-pill { font-size: var(--fs-caption); color: var(--ink-soft); background: var(--surface-sunk);
   border-radius: var(--radius-sm); padding: 2px var(--s3); }
@@ -1713,10 +1710,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .prac-rare-row { display: flex; gap: var(--s3); align-items: baseline; flex-wrap: wrap; }
 .prac-rare-lab { font-size: var(--fs-caption); font-weight: 600; color: var(--ink); }
 .prac-bucket-foot { margin-top: var(--s3); color: var(--ink-faint); }
-/* the practice-lens header bar (the retired toggle's replacement exit) */
-.ov-lensbar { display: flex; align-items: center; gap: var(--s2); margin: var(--s4) 0 var(--s3); }
-.ov-lensbar .btn { margin-left: auto; }
-.ov-top-lens { grid-template-columns: 1fr; }
+/* practice-lens CSS (.ov-lensbar, standalone .ov-top-lens) retired 2026-08-11 — the lens was
+   removed from the home. NOTE the :not(.ov-top-lens) guards on the .arc-card donut rules stay;
+   the negation is now always-true but load-bearing. */
 /* "A practice choice" tag + its bucket word on grid cards — quiet, chip-practice family */
 .prac-tag { font-size: var(--fs-micro); }
 .prac-tag-band { color: var(--ink-soft); padding-right: var(--s2); margin-right: var(--s1);
@@ -2163,9 +2159,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
    rise is the entrance; rows appear settled.) */
 .cat-tile { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; }
 /* (2026-07-08 hero redesign: the Overview .cat-grid tile stagger retired with the tiles —
-   the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */
-.ov-signals-band .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 240ms; }
-.grid2 .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
+   the DomainInstrument dot slides + signals band carry the entrance rhythm now.) */.grid2 .card { animation: ov-rise var(--dur-slow) cubic-bezier(.2,.7,.3,1) both; animation-delay: 380ms; }
 .arc-verdict, .arc-caption, .ov-after { animation: ov-rise var(--dur-slow) ease-out both; animation-delay: 320ms; }
 .arc-median { animation: ov-rise var(--dur-slow) ease-out both; animation-delay: 600ms; }
 .tile-dot { animation: dot-pop var(--dur-slow) cubic-bezier(.34,1.4,.5,1) both; animation-delay: 600ms; }
@@ -3828,8 +3822,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
    the axis header so the tracks align — the per-row gridlines, the dashed navy
    overall-percentile hairline and the dots then read as one continuous instrument.
    Dot = position.depth_pctl, navy always (position is strategy-invariant; strategy
-   rides the AlignmentChip). The signals card moved to a full-width .ov-signals-band
-   below the trajectory strip — mount move only, all triage choreography untouched. */
+   rides the AlignmentChip). (The home signals band this comment once referenced was retired
+   2026-08-11 — signals now live on the dedicated Signals page.) */
 /* ═══ DOMAIN INSTRUMENT (2026-07-09) — stacked RAG count bars + a navy strategy glyph.
    Padding matches .arc-card exactly so the two hero cards share one inset. RAG is the only
    position indicator (soft gauge fills + counts, zero P-anything); strategy rides a SEPARATE
@@ -3963,9 +3957,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   display: inline-flex; align-items: center; justify-content: center;
   transition: transform var(--dur-base) var(--ease-out), background var(--dur-fast) ease; }
 .di-scent:hover { transform: scale(1.12); background: color-mix(in srgb, var(--blue) 28%, var(--surface)); }
-/* active = this domain is filtering the signals band below (2026-07-12 scent-filter) */
-.di-scent.on { background: var(--blue); color: #fff; }
-.di-scentcol { display: flex; justify-content: center; }   /* centre the 24px count under its "Signals" header */
+/* active = this domain is filtering the signals band below (2026-07-12 scent-filter) */.di-scentcol { display: flex; justify-content: center; }   /* centre the 24px count under its "Signals" header */
 .di-chipcol { display: flex; justify-content: center; }    /* centre the aim glyph under its "Aim" header */
 /* faint by default so the whole row reads as click-through; sharpens on hover */
 .di-chev { color: var(--ink-faint); opacity: .55; transform: none;
@@ -3975,9 +3967,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .di-foot { margin-top: auto; padding-top: var(--s2); border-top: 1px solid var(--border);
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .di-foot b { color: var(--ink-soft); font-weight: 650; }
-/* the signals band below the hero — full width; internals untouched */
-.ov-signals-band { margin-top: var(--s5); }   /* hero↔signals groups looser than sibling cards (polish) */
-@media (max-width: 700px) { .arc-card, .dom-instr, .signals-card { padding: var(--s4) var(--s4) var(--s3); } }   /* keep phone insets tighter (polish) */
+/* the signals band below the hero — full width; internals untouched */@media (max-width: 700px) { .arc-card, .dom-instr, .signals-card { padding: var(--s4) var(--s4) var(--s3); } }   /* keep phone insets tighter (polish) */
 /* responsive: tablet narrows columns; phones stack each row to two lines
    (line 1: name · scent · chip · chevron; line 2: bar + citable count — the count
    must stay visible on mobile, it is the row's only number) */
@@ -4005,7 +3995,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 }
 @media (prefers-reduced-motion: reduce) {
   .di-dot { animation: none !important; }
-  .ov-signals-band .card { animation: none !important; opacity: 1; transform: none !important; }
 }
 
 /* ══════════════ SIGNALS PAGE · "FOLDERS" (founder simplification, 2026-07-10) ══════════════

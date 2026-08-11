@@ -75,7 +75,8 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
   // "counts" = the ratified count-proportional stacked bar; "position" = the fixed-band
   // percentile bar with the true-P marker. Per-user, persisted with the other lens prefs.
   const [barMode, setBarModeState] = useState(_ov.bar === "position" ? "position" : "counts");
-  const setView = (v) => { setViewState(v); onPref("_overview", { view: v, apply_strategy: applyStrat, bar: barMode }); };
+  // setView retired 2026-08-11 (its only caller was the removed Market|Practice segment; the
+  // home is market-only now). setViewState stays for the market-forcing initializer above.
   const setApplyStrat = (b) => { setApplyState(b); onPref("_overview", { view, apply_strategy: b, bar: barMode }); };
   const setBarMode = (m) => { setBarModeState(m); onPref("_overview", { view, apply_strategy: applyStrat, bar: m }); };
   // Ship review 2026-07-09 Pack 1 §3: prefs arrive async (GET /api/prefs lands after
@@ -147,7 +148,7 @@ window.OverviewPage = function ({ me, refreshMe, cut, cuts, prefs, onPref, onPin
         html`<${UnlockMoment} newcomer=${newcomerRef.current} onDismiss=${() => onPref && onPref("_seen", { ...((prefs && prefs._seen) || {}), unlock: true })} />`}
 
       <${OverviewHero} data=${data} cut=${cut} cuts=${cuts} orgKey=${me.org && me.org.name}
-        view=${view} applyStrat=${applyStrat} setView=${setView} setApplyStrat=${setApplyStrat}
+        view=${view} applyStrat=${applyStrat} setApplyStrat=${setApplyStrat}
         barMode=${barMode} setBarMode=${setBarMode}
         me=${me} onCut=${onCut} onTwinInfo=${onTwinInfo} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe}
         sampleN=${sampleN} unlocked=${unlocked} />
@@ -380,7 +381,7 @@ const SIGNAL_TEASERS = [
   { lens: "attract", icon: "star", tag: "HIGHER THAN MARKET", name: "Holiday allowance", stand: "ahead of the market for your size" },
 ];
 
-function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setApplyStrat, barMode, setBarMode,
+function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat, barMode, setBarMode,
                         me, onCut, onTwinInfo, prefs, onPref, refreshMe, sampleN, unlocked }) {
   const m = data.hero && data.hero.market;
   const locked = data.callouts && data.callouts.gaps_locked;
@@ -397,9 +398,8 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setView, setA
   const _bk = new Set(_brief.map(s => s.sig_id || s.question_id));
   const _viewSigs = [..._brief, ..._pool.filter(s => !_bk.has(s.sig_id || s.question_id))];
   const _viewLive = _viewSigs.filter(s => s.status !== "dismissed");   // full ranked live pool — the panel
-  const _viewTotal = _viewLive.length;                 // slices top-3 AFTER its optimistic dismiss filter
-                                                       // (filter-before-slice, so a dismiss backfills #4 from the tail)
-  const _viewNew = _viewSigs.filter(s => s.new && s.status !== "dismissed").length;
+  const _viewTotal = _viewLive.length;                 // kept: qa_overview 9c binds the card's
+                                                       // signals total to this live-set length
   // Per-domain live signal counts for the instrument's scent dots — derived from the
   // SAME filter-before-slice pool that feeds the band's "See all N", so the seven
   // counts always total the band's number (never raw signals_all, which still holds
