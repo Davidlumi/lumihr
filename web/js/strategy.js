@@ -652,7 +652,7 @@ window.StrategyPage = function ({ me }) {
                 </div>
               </div>`)}
             <div class="derived-note"><${Icon} name="info" size=${15} />
-              <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — from your sector and size.</div></div>
+              <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — it estimates how heavily each reward £ lands on your P&L, from your sector and size.</div></div>
           </div>
           <div class="strat-stagefoot">
             <button class="btn primary strat-next" onClick=${advance}>Looks right <span class="kbd-hint">press Enter ↵</span></button>

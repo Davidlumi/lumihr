@@ -1019,7 +1019,7 @@ window.WelcomeHero = function ({ contrib, pool, me }) {
     { label: "Complete your reward data", done: pct >= targetPct, now: pct < targetPct,
       note: pct >= targetPct ? pct + "%"
         : need > 0 ? need + " key to go" + (mins ? " · " + mins : "")
-        : pct + "% of " + targetPct + "%" },
+        : pct + "% answered · " + targetPct + "% unlocks" },
     { label: "Invite your team", done: !!contrib.team_invited, optional: true },
   ];
   const doneCount = setupSteps.filter(s => s.done).length;

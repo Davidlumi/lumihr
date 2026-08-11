@@ -156,7 +156,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
         action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Try again</button>`} />`;
   const p = pack.payload, n = pack.narrative;
   const mVerdict = p.headline.market && p.headline.market.verdict;
-  const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} · Methodology v${p.methodology_version || 1}`;
+  const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, ${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations · Methodology v${p.methodology_version || 1}`;
   const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential</span><span class="pack-pageno">lumi · ${page}</span></div>`;
   const makeShare = async () => {
     setShareBusy(true);
@@ -285,7 +285,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           <dd>${p.collection_window} collection window; figures are read from the live benchmark at generation (${p.generated_date}).
             No ageing or annualisation is applied — the benchmark is live, not an annual survey.</dd>
           <dt>Peer group</dt>
-          <dd>${p.cut_label}, n=${p.cut_n != null ? p.cut_n : p.peer_pool.total}, drawn from a comparison pool of ${p.peer_pool.total} UK organisation profiles (${p.peer_pool.classified} fully classified).${
+          <dd>${p.cut_label}, ${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations, drawn from a comparison pool of ${p.peer_pool.total} UK organisation profiles (${p.peer_pool.classified} fully classified).${
             p.cut_criteria && Object.keys(p.cut_criteria).length
               ? " Constructed from: " + Object.entries(p.cut_criteria).map(([k, v]) => k.replace(/_/g, " ") + ": " + (Array.isArray(v) ? v.join(", ") : v)).join(" · ") + "."
               : ""}</dd>
@@ -485,7 +485,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
             <ul>
               ${p.opportunity_totals && p.opportunity_totals.investment_to_p50_gbp ? html`<li>"What would it cost to reach the market median?" — the modelled total is ${fmtGBPCompact(p.opportunity_totals.investment_to_p50_gbp)}/yr on the stated assumptions.</li>` : null}
               ${p.opportunities[0] ? html`<li>"Which single lever moves us most?" — ${p.opportunities[0].label} (${fmtGBPCompact(p.opportunities[0].to_p50_gbp)}/yr to the median).</li>` : null}
-              <li>"How reliable are these figures?" — medians from n=${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations; anything resting on fewer than 5 is suppressed.</li>
+              <li>"How reliable are these figures?" — medians from ${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations; anything resting on fewer than 5 is suppressed.</li>
             </ul>
           </div>` :
         html`<p class="caption">No £ opportunities could be modelled for this peer group (metrics suppressed or not yet answered).</p>`}

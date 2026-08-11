@@ -16326,3 +16326,25 @@ overtime multiplier) rendered derived medians as a bare number ('you 1, market m
 questions-table only — no answer-book/L1 impact) + added a 'multiplier' branch to BOTH
 formatters: server positions.fmt_value and web/js/core.js fmtValue -> '1.25×'. Verified
 1.0->1×, 1.25->1.25×. Backup lumi.db.bak_pre_manual_20260811_085420; aggregate; v=506; 14/14.
+
+## 2026-08-11 — UX polish (#1/#2 of the final 5): de-jargon + hover-only meaning
+
+9 verified edits (discovery + high-effort meaning/safety verify workflow):
+- #1 de-jargon: board-pack 'n=X' -> 'X organisations' (3 running/foot/peer-group spots,
+  commercial.js); suppressed-card chip 'n=3' -> '3 organisations' (card.js, plural-guarded);
+  the misleading '% of %' -> '% answered · % unlocks' (submission.js ×2, app.js ×1).
+- #2 hover-only: strategy 'Labour intensity' definition surfaced on-screen (was title-only);
+  'No signal' pill tooltip 'comparison pool' -> 'your peers'.
+DEFERRED to David (judgment calls, NOT auto-applied): percentile 'P{n}' glosses (litigated —
+'bare Ps banned' was reversed 2026-07-11; changing the P-pill needs a ruling); pulse 'cohort'
+(a DOCUMENTED distinct concept, DECISIONS 2026-08-08); board-pack table '(n=X)' + mask note
+(technical notation in tables); practice 'off the norm = not a gap' reframe (ratified Diff-4 copy).
+#4 STATUS VOCAB: the five labels are CORRECTLY DISTINCT (No signal = compared-not-flagged;
+practice choice = Diff-4 ruled; 'no reading yet' = a Category-page filter) — only ONE needless
+synonymy: an unbenchmarked card shows BOTH 'No comparison' (pill) and 'Unbenchmarked' (chip)
+for the same fact; both are ruled (2026-08-08), so left for David's call.
+Also FOUND (engineering, not copy): the 'No signal' benchmark FILTER count under-reports —
+cardSignalState returns clear/clear-practice/clear-unbenchmarked but sigCounts only buckets
+'clear', so practice-/unbenchmarked-clear cards carry the 'No signal' pill yet aren't counted
+(pages.js ~2418/2475). Flagged for a fix.
+v=507; app bootstraps clean; 14/14.

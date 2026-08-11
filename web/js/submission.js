@@ -287,7 +287,7 @@ function DomainPage({ sp, state, refresh, refreshMe }) {
       <div class="qwiz-unlock" title="Across your whole submission — key questions are the ones that unlock your insights.">
         <span class="qwiz-unlock-lead"><${Icon} name="lock" size=${12} /> <b>${orgNeed}</b> key question${orgNeed === 1 ? "" : "s"} to unlock</span>
         <span class="qwiz-unlock-bar" aria-hidden="true"><span style=${{ width: Math.min(100, orgThr ? orgPct / orgThr * 100 : 0) + "%" }}></span></span>
-        <span class="caption">${orgPct}% of ${orgThr}%</span>
+        <span class="caption">${orgPct}% answered · ${orgThr}% unlocks</span>
       </div>` : null}
     <div class="row spread" style=${{ alignItems: "center", marginBottom: "var(--s3)" }}>
       <div>
@@ -726,7 +726,7 @@ function ReviewStep({ state, refresh, refreshMe }) {
           ? html`Just <b>${need} more</b>${mins ? " (about " + mins.replace("~", "") + ")" : ""} and your insights unlock: the £ opportunity, your board pack and your biggest gaps.`
           : html`A little more and your insights unlock: the £ opportunity, your board pack and your biggest gaps.`}</p>
         <div class="progressbar" style=${{ maxWidth: "360px", margin: "var(--s3) auto 0" }}><div style=${{ width: fill + "%" }}></div></div>
-        <div class="caption" style=${{ marginTop: "var(--s2)" }}>${done.completion_pct}% of ${thr}% · “Not applicable” counts as an answer.</div>
+        <div class="caption" style=${{ marginTop: "var(--s2)" }}>${done.completion_pct}% answered · ${thr}% unlocks · “Not applicable” counts as an answer.</div>
         <div class="row" style=${{ gap: "var(--s3)", marginTop: "var(--s4)", justifyContent: "center" }}>
           <button class="btn primary" onClick=${() => {
             const gap = (state.sections || []).find(s => s.key_answered < s.key_questions);

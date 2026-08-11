@@ -510,7 +510,7 @@ function cardSignalPill(c, sigs, readOnly) {
   }
   if (state === "clear-unbenchmarked") return html`<span class="sig-pill is-clear" title="This metric has no market verdict — nothing to flag either way.">
     <${Icon} name="sparkle" size=${11} /> No comparison</span>`;
-  if (state === "clear-practice") return html`<span class="sig-pill is-clear" title="Nothing flags here — your choice is in line with the comparison pool.">
+  if (state === "clear-practice") return html`<span class="sig-pill is-clear" title="Nothing flags here — your choice is in line with your peers.">
     <${Icon} name="sparkle" size=${11} /> No signal</span>`;
   return html`<span class="sig-pill is-clear" title="Nothing flags here — you're within the typical market range.">
     <${Icon} name="sparkle" size=${11} /> No signal</span>`;
@@ -527,7 +527,7 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     return html`<div class="suppressed-box">
       <${Icon} name="shield" size=${18} />
       <div style=${{ fontWeight: 650, color: "var(--ink)" }}>Not enough organisations to show safely</div>
-      <${Chip}>n=${c.n}<//>
+      <${Chip}>${c.n} organisation${c.n === 1 ? "" : "s"}<//>
       ${!readOnly && !c.you ? html`<div class="caption" style=${{ marginTop: "var(--s1)" }}>You can still <a class="noanswer-cta" href=${qHref(c)}>add your answer</a> — the comparison appears once 5+ organisations are in this group.</div>` : null}
     </div>`;
   }
