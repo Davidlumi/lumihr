@@ -3107,20 +3107,10 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
         <div class="dash-print-title">${activeName}</div>
         <div class="dash-print-meta">${peerLabel} · ${layout.length} card${layout.length === 1 ? "" : "s"}${me.org && me.org.name ? " · " + me.org.name : ""} · ${printDate}</div>
       </div>
-      <div class="row spread no-print" style=${{ marginBottom: "var(--s3)" }}>
-        <div>
-          <h1 class="display-title">My dashboards</h1>
-
-        </div>
-        <div class="row">
-          ${/* CSV download removed "for now" (David 2026-08-11) — with only PDF left, the
-                dropdown collapses to a direct action. "Save as team default" also removed. */ ""}
-          <button class="btn small" onClick=${downloadPDF} disabled=${layout.length === 0}
-            title=${layout.length === 0 ? "Add a card first" : "Download this dashboard as a PDF"}>
-            <${Icon} name="download" size=${14} /> Download PDF</button>
-          <${ShareButton} me=${me} cut=${activeCut} name=${activeName} layout=${layout} />
-        </div>
-      </div>
+      ${/* Download PDF + Share moved into the dashboard toolbar below (David 2026-08-11): up
+            here beside the page title they read as universal/app-level actions, but they act on
+            the ACTIVE dashboard — so they belong with its header. */ ""}
+      <h1 class="display-title no-print" style=${{ marginBottom: "var(--s3)" }}>My dashboards</h1>
 
       <div class="dash-tabs" role="group" aria-label="Your dashboards">
         ${list.map(d => html`
@@ -3148,14 +3138,18 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
               <button class="iconbtn" title="Duplicate this dashboard" onClick=${duplicate} disabled=${busy}><${Icon} name="copy" size=${14} /></button>
               <button class="iconbtn" title=${onlyOne ? "Reset this dashboard" : "Delete this dashboard"} onClick=${() => setConfirmDel(true)} disabled=${busy}><${Icon} name="close" size=${14} /></button>
             </div>`}
+          <span class="caption dash-cardcount">${layout.length} card${layout.length === 1 ? "" : "s"}</span>
         </div>
         <div class="dash-toolbar-r no-print">
-          ${/* per-dashboard SAMPLE (2026-08-11, David): this selector belongs to the dashboard —
-                it sets + saves THIS dashboard's peer sample, and every card above reads it. The
-                app-wide "Comparing against" bar is hidden on this page (app.js). */ ""}
+          ${/* per-dashboard SAMPLE + per-dashboard ACTIONS (2026-08-11, David): the sample selector
+                belongs to THIS dashboard (app-wide bar hidden on this page, app.js); Download PDF +
+                Share act on the active dashboard, so they live in its header, not the page title. */ ""}
           <${PeerSetBar} me=${me} cut=${activeCut} cuts=${cuts} onSelect=${setDashboardCut}
             onTwinInfo=${onTwinInfo || (() => {})} inline=${true} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
-          <span class="caption dash-cardcount">${layout.length} card${layout.length === 1 ? "" : "s"}</span>
+          <button class="btn small" onClick=${downloadPDF} disabled=${layout.length === 0}
+            title=${layout.length === 0 ? "Add a card first" : "Download this dashboard as a PDF"}>
+            <${Icon} name="download" size=${14} /> Download PDF</button>
+          <${ShareButton} me=${me} cut=${activeCut} name=${activeName} layout=${layout} />
         </div>
       </div>
 

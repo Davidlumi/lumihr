@@ -16538,3 +16538,16 @@ untouched): the /api/dashboards/{id}/export.csv endpoint and /api/myview/save-de
 be restored later ("for now") and the team-default seed still works for new users. Verified live:
 header now shows just "Download PDF" + "Share"; no dropdown, no CSV link, no team-default button;
 SPA renders clean. v=518; 14/14 gates green.
+
+## 2026-08-11 — My dashboards: Download PDF + Share moved into the dashboard header (David)
+
+David: "the download to pdf and share link should be aligned with the dashboard header —
+looks universal at the moment." They sat in the page-title row (next to the big "My dashboards"
+h1), so they read as app/page-level actions — but they act on the ACTIVE dashboard. Moved them
+into the dashboard toolbar (the row carrying the dashboard name + rename/duplicate/delete):
+- Page-title row is now just the "My dashboards" h1.
+- dash-toolbar-r: PeerSetBar (sample) + Download PDF + Share — the per-dashboard control + the
+  two per-dashboard actions, right-aligned; they wrap below the sample on narrow widths.
+- The "N cards" count moved to dash-toolbar-l next to the name/edit icons.
+Verified live at 1120px (one row, no overflow) and 760px (actions wrap cleanly under the sample);
+buttons now clearly belong to the dashboard, not the page. v=519; 14/14 gates green.
