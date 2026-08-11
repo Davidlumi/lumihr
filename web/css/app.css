@@ -1353,10 +1353,9 @@ button.sig-open { font: inherit; color: inherit; text-align: left; background: n
 .sfold-prio { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 700; color: var(--blue-deep); background: var(--blue-tint); border-radius: var(--radius-2xs);
   padding: 1px var(--s1); vertical-align: middle; position: relative; top: -1px; }
-.sig-new-tag { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; color: #fff;
-  background: var(--blue-bright); padding: 1px var(--s1); border-radius: var(--radius-2xs);
-  display: inline-block; vertical-align: middle; position: relative; top: -1px;
-  animation: popIn var(--dur-slow) ease; }
+.sig-new-tag { font-size: var(--fs-micro); font-weight: 800; letter-spacing: .06em; color: var(--blue-deep);
+  background: var(--blue-tint); padding: 1px var(--s1); border-radius: var(--radius-2xs);
+  display: inline-block; vertical-align: middle; position: relative; top: -1px; }
 .sig-new-chip { font-size: var(--fs-micro); font-weight: 700; color: var(--blue); background: var(--blue-tint);
   padding: 1px var(--s2); border-radius: var(--radius-xs); animation: pulse-once 1.6s ease-out 600ms 2; }   /* one soft double-pulse on load — there's news here */
 /* active domain-filter chip beside the Signals title (scent-filter, 2026-07-12) */
@@ -4148,6 +4147,23 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-pos-pill.pos-above.on { background: var(--unfavourable-tint); border-color: var(--unfavourable); color: var(--unfavourable-ink); }
 .sig-pos-pill.pos-below.on b, .sig-pos-pill.pos-on.on b, .sig-pos-pill.pos-above.on b { color: inherit; }
 .sig-pos-pill:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+/* feed toolbar: sort control (left), bulk actions on a narrowed view (middle), keyboard hint (right) */
+.sig-toolbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s3); }
+.sig-sort { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); color: var(--ink-soft); font-weight: 600; }
+.sig-sort select { height: 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  font: inherit; font-size: var(--fs-caption); color: var(--ink); padding: 0 var(--s2); cursor: pointer; }
+.sig-sort select:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+.sig-bulk { display: inline-flex; align-items: center; gap: var(--s2); padding-left: var(--s3); border-left: 1px solid var(--border); }
+.sig-bulk-lab { font-size: var(--fs-caption); color: var(--ink-faint); font-weight: 600; }
+.sig-bulk-btn { background: none; border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--ink-soft); cursor: pointer; padding: 3px var(--s3); min-height: 28px; }
+.sig-bulk-btn:hover { border-color: var(--blue); color: var(--blue-deep); }
+.sig-kbhint { margin-left: auto; font-size: var(--fs-micro); color: var(--ink-faint); white-space: nowrap; }
+@media (max-width: 640px) { .sig-kbhint { display: none; } }   /* keyboard triage is desktop-only affordance */
+/* by-domain grouping subhead */
+.sig-domhead { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
+  font-weight: 650; margin: var(--s4) 0 var(--s2); padding-left: calc(var(--s4) + 6px); }
+.sig-domhead:first-child { margin-top: 0; }
 .sfold-snz { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 650; color: var(--navy); border: 1px solid color-mix(in srgb, var(--navy) 25%, var(--surface));
   border-radius: 999px; padding: 0 var(--s2); }
@@ -4179,6 +4195,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-tone-green::before    { background: var(--gauge-on); }
 .brf-tone-approach::before { background: var(--prev-alt); }
 .brf-tone-neutral::before  { background: color-mix(in srgb, var(--navy) 30%, var(--surface)); }
+/* the whole card opens the metric (verbs stopPropagation) — signal that with a pointer + hover lift */
+.brf-card { cursor: pointer; transition: box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease; }
+.brf-card:hover { border-color: var(--blue-tint-2); box-shadow: 0 6px 20px rgba(31,42,68,.10); }
+.brf-card.kb-focus { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-tint-2), var(--shadow-card); }
+.brf-card .brf-verbs, .brf-card .brf-menu, .brf-card .sfold-newrow { cursor: auto; }
 .brf-cap { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
   font-size: var(--fs-micro); color: var(--ink-faint); }
 .brf-cap-name { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
@@ -4204,8 +4225,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-pos-green    { background: var(--gauge-on); color: var(--brf-on-ink); }
 .brf-pos-approach { background: var(--prev-rare); color: var(--prev-ink); }
 .brf-pos-neutral  { background: #E9EBF6; color: var(--navy); }
-.brf-gapbar { flex: 0 0 auto; width: 90px; height: 5px; border-radius: 999px; background: var(--surface-sunk); overflow: hidden; }
-.brf-gapbar i { display: block; height: 100%; background: var(--ink-faint); border-radius: 999px; }
+/* the magnitude as legible toned text (was an aria-hidden grey bar with the number only on hover) */
+.brf-gap { font-size: var(--fs-caption); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.brf-gap-amber { color: var(--brf-below-ink); }
+.brf-gap-red   { color: var(--brf-above-ink); }
+.brf-gap-green { color: var(--brf-on-ink); }
+.brf-gap-approach, .brf-gap-neutral { color: var(--ink-soft); }
 .brf-lens { font-size: var(--fs-micro); color: var(--ink-faint); }
 .brf-onplan { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 650; color: var(--navy); }
@@ -4218,8 +4243,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-verb:hover { color: var(--ink); }
 .brf-verb.on { color: var(--navy); }
 .brf-verb.on svg { color: var(--navy); }
-.brf-see { margin-left: auto; color: var(--navy); font-weight: 650; }
-.brf-see:hover { text-decoration: underline; }
+.brf-see { margin-left: auto; color: var(--ink-soft); font-weight: 600; }
+.brf-see:hover { color: var(--navy); text-decoration: underline; }
 /* (.brf-stub/.brf-stub-txt/.brf-undo retired 2026-07-10, David: toast instead of stub rows —
    an actioned card exits via .brf-leave and the Undo rides the confirmation toast.) */
 /* exit — JS pins the measured height, then this class collapses + fades it in ~240ms

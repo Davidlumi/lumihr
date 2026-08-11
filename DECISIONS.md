@@ -16845,3 +16845,32 @@ critical + the safe, no-decision-needed subset (the structural/direction items g
 jsc-clean, CSS braces balanced, 14/14 gates. v=535. Remaining review items (sort control, folder-nav
 zoning, inbox rename, domain-as-filter, bulk actions, keyboard triage, filing vocabulary, gap-bar
 legibility, card-click-to-open, StrategyCheck placement, etc.) are staged for David's direction.
+
+## 2026-08-11 — Signals review, batch 2: sort, keyboard triage, bulk actions, filing + craft (David approved)
+
+David chose all four Rec options; shipped with the flagged craft fixes:
+
+- **Feed sort control** (SignalsPage): Priority (the machine order — default) · By domain (quiet
+  `.sig-domhead` subheads) · Biggest gap. Persists in the Back-restore UI state next to view/position.
+- **Keyboard triage**: j/k (or ↓/↑) move a `.kb-focus` ring through the shown list; e = dismiss,
+  s = snooze (2 weeks), f = save for later, Enter/o = open. One stable window listener (bound above
+  the early returns, reads a per-render `kbRef`) so hook order holds; the ring resets when the shown
+  list changes and scrolls itself into view. A quiet "j/k move · e·s·f triage · ⏎ open" hint
+  (desktop only).
+- **Bulk actions**: on a NARROWED active view (a position filter or a single domain), a toolbar shows
+  "N shown · Snooze all · Dismiss all", each with one Undo that reverts the batch. Deliberately hidden
+  on the full unfiltered feed (no accidental mass-dismiss).
+- **Filing vocabulary**: the card's folder verb "Save" → **"File to…"**, leaving the star-fed "Saved"
+  tab as the single "save" concept (keyboard f stars/saves-for-later).
+- Craft: the **% gap** is now legible tinted text ("45% below", position-toned, with an aria-label)
+  instead of an aria-hidden grey bar with the number only on hover; **the whole card opens the metric**
+  (verbs stopPropagation; pointer + hover lift), and "See the evidence" is de-emphasised to a quiet
+  trailing link; the solid-blue **NEW tag softened** to a blue-tint chip (matches `.sfold-prio`, drops
+  popIn); the **domain scent-chip arrival keeps the "All signals" pill lit** instead of an orphaned
+  unlit nav.
+
+VERIFIED LIVE: sort→by-domain renders 8 subheads; j moves the ring; Below-market filter shows the
+bulk bar ("31 shown"); "45% below" gap in amber; card cursor pointer; "File to…". jsc-clean, CSS
+braces balanced, 14/14 gates. v=536. Deferred to David (open questions): inbox rename, StrategyCheck
+placement, domain-as-filter model, text search, NEW/unread, peer-note copy, empty-state centred ring,
+zero-signals footer, restore flash, toast-stacking / keyboard-Undo.

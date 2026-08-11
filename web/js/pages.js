@@ -1934,6 +1934,8 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   // market-position filter (David 2026-08-11): "all" | "below" | "on" | "above" — narrows the
   // current view to signals sitting that way vs the market (practice signals show only under "all").
   const [posFilter, setPosFilter] = useState(_ret.pos || "all");
+  const [sortMode, setSortMode] = useState(_ret.sort || "priority");   // priority | domain | gap (David 2026-08-11)
+  const [kbIdx, setKbIdx] = useState(-1);   // keyboard-triage focus ring index into the shown list (-1 = none)
   // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
   // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
   const [acting, setActing] = useState({});            // optimistic status overrides
@@ -1954,7 +1956,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     else { try { localStorage.setItem("lumi-signals-folders", JSON.stringify(next)); } catch (e) {} setLsSig(next); }
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
-  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter }); }, [view, posFilter]);
+  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter, sort: sortMode }); }, [view, posFilter, sortMode]);
   // Overview per-domain scent chip → land on THIS domain's signals only (2026-08-11). The
   // domain rides a module global set by OverviewHero.goToSignals (client-side hash nav, so it
   // survives); consume + clear it once on mount, showing the domain-filtered view.
@@ -1996,6 +1998,33 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     setJumpTo(null);
   }, [jumpTo, view]);
   const goToDomain = (dom) => { setView({ kind: "all" }); setJumpTo(dom); };
+  // keyboard triage (David 2026-08-11): j/k move a focus ring, e/s/f act, Enter opens. Bound ONCE
+  // (a stable listener above the early returns to satisfy hook order); it reads the live list +
+  // handlers from kbRef, which the render refreshes each pass once data is in.
+  const kbRef = useRef({});
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable || t.tagName === "SELECT")) return;
+      const st = kbRef.current; const list = st.items || [];
+      if (!list.length) return;
+      const k = (e.key || "").toLowerCase();
+      if (k === "j" || e.key === "ArrowDown") { e.preventDefault(); st.setKbIdx(i => Math.min((i < 0 ? -1 : i) + 1, list.length - 1)); }
+      else if (k === "k" || e.key === "ArrowUp") { e.preventDefault(); st.setKbIdx(i => Math.max((i < 0 ? 0 : i) - 1, 0)); }
+      else if (st.idx >= 0 && st.idx < list.length) {
+        const s = list[st.idx];
+        if (k === "e") { e.preventDefault(); st.dismissIt(s); }
+        else if (k === "s") { e.preventDefault(); st.snoozeIt(s, 14); }
+        else if (k === "f") { e.preventDefault(); st.fileIt(s); }
+        else if (e.key === "Enter" || k === "o") { e.preventDefault(); window.openMetric(s.question_id); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  // keep the focused card in view; reset the ring whenever the shown list changes underneath it
+  useEffect(() => { if (kbIdx < 0) return; const el = document.querySelectorAll(".signals-page .brf-card")[kbIdx]; if (el) scrollIntoViewSafe(el, { block: "nearest" }); }, [kbIdx]);
+  useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode]);
   if (err) return html`<${EmptyState} icon="flag" title="Couldn't load your signals" body=${err}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`
@@ -2138,14 +2167,36 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     : v.kind === "dismissed" ? "Nothing dismissed — anything you dismiss is kept here and can be recovered."
     : "Inbox zero. Everything is filed — saved, snoozed or dismissed. New signals land here as your position or the market moves.";
 
+  // ---- sort (David 2026-08-11): priority (machine order) · by domain · biggest gap first ----
+  const ordCmp = (a, b) => { const ka = ordKey(a), kb = ordKey(b); for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; };
+  const sortedItems = sortMode === "gap" ? [...shownItems].sort((a, b) => (b.gap_pct || 0) - (a.gap_pct || 0) || ordCmp(a, b))
+    : sortMode === "domain" ? [...shownItems].sort((a, b) => domainLabel(a.domain || "~").localeCompare(domainLabel(b.domain || "~")) || ordCmp(a, b))
+    : [...shownItems].sort(ordCmp);
+  // f = quick-save to the star-fed "Saved" tab (folderless), the single "save" concept (File to… is folders)
+  const fileIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, "saved"); sigToast("Saved for later — " + sigName(s), () => setStatus(sid, null)); }); };
+  // bulk actions on a NARROWED active view (a position filter, or a single domain) — one Undo reverts the batch
+  const bulkable = (v.kind === "all" || v.kind === "domain") && (posOn || v.kind === "domain") && sortedItems.length >= 2;
+  const bulkAct = (status, days) => {
+    const items = sortedItems.slice();
+    const prior = items.map(s => ({ sid: sidOf(s), status: s.status || null }));
+    items.forEach(s => setStatus(sidOf(s), status, days));
+    setKbIdx(-1);
+    sigToast((status === "dismissed" ? "Dismissed " : "Snoozed ") + items.length + " signal" + (items.length === 1 ? "" : "s")
+      + (status === "snoozed" ? " · until " + sigRetDate(days) : ""), () => prior.forEach(p => setStatus(p.sid, p.status)));
+  };
+  kbRef.current = { items: sortedItems, idx: kbIdx, setKbIdx, dismissIt, snoozeIt, fileIt };
+
   // ---- the evidence card (Briefing anatomy, unchanged): caption + risk shield, stand-
   // sentence headline, "Flagged because … · n · verified/estimate", soft chips, gap bar,
   // lens tag, On plan, "See the evidence →". Verbs vary by the active folder view.
-  const sigCard = (s) => {
+  const sigCard = (s, focused) => {
     const sid = sidOf(s);
     // (the in-place stub row retired 2026-07-10, David: toast instead of stub rows)
     const tone = brfTone(s);
-    return html`<article key=${sid} class=${"brf-card brf-tone-" + tone} data-dom=${s.domain || ""} data-sid=${sid}>
+    const gapDir = s.position === "above" ? "above" : s.position === "on" ? "off" : "below";
+    // the whole card opens the metric (verbs/menus stopPropagation); keyboard ring adds .kb-focus
+    return html`<article key=${sid} class=${"brf-card brf-tone-" + tone + (focused ? " kb-focus" : "")} data-dom=${s.domain || ""} data-sid=${sid}
+      onClick=${() => window.openMetric(s.question_id)}>
       <div class="brf-cap">
         <span class="brf-cap-name">${s.name || s.label_short}</span>
         ${s.domain ? html`<span class="brf-cap-dom">· ${domainLabel(s.domain)}</span>` : null}
@@ -2158,15 +2209,15 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
       <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num"> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
-        ${s.gap_pct != null ? html`<span class="brf-gapbar" title=${"About " + s.gap_pct + "% from the market median"} aria-hidden="true"><i style=${{ width: Math.max(6, Math.min(100, s.gap_pct)) + "%" }}></i></span>` : null}
+        ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the market median"}>${s.gap_pct}% ${gapDir}</span>` : null}
         ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens}</span>` : null}
         ${s.confirm ? html`<span class="brf-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
-      <div class="brf-verbs">
+      <div class="brf-verbs" onClick=${e => e.stopPropagation()}>
         ${(v.kind === "all" || v.kind === "domain") ? html`
-          <${SigFolderMenu} label="Save" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <${SigFolderMenu} label="File to…" folders=${folders} onPick=${n => saveTo(s, n)} />
           <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
           <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
         : v.kind === "folder" ? html`
@@ -2212,7 +2263,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
               Dismissed · a quiet + New folder. The active user folder carries a small "…"
               (Rename / Delete). */ ""}
         <div class="sfold-nav" role="group" aria-label="Signal folders">
-          <button type="button" class=${"sfold-pill" + (v.kind === "all" ? " on" : "")} aria-pressed=${v.kind === "all"}
+          <button type="button" class=${"sfold-pill" + (v.kind === "all" || v.kind === "domain" ? " on" : "")} aria-pressed=${v.kind === "all" || v.kind === "domain"}
             onClick=${() => setView({ kind: "all" })}>All signals <b class="num">${feedN}</b></button>
           ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
             <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
@@ -2252,7 +2303,33 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
                 <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
           </div>` : null}
 
-        ${shownItems.length === 0 ? html`<div class="sfold-empty caption" role="status">${emptyLine}</div>` : shownItems.map(sigCard)}
+        ${sortedItems.length > 0 ? html`
+          <div class="sig-toolbar">
+            ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
+              <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
+                <option value="priority">Priority</option>
+                <option value="domain">By domain</option>
+                <option value="gap">Biggest gap</option>
+              </select></label>` : null}
+            ${bulkable ? html`<span class="sig-bulk">
+              <span class="sig-bulk-lab">${sortedItems.length} shown</span>
+              <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("snoozed", 14)}>Snooze all</button>
+              <button type="button" class="sig-bulk-btn" onClick=${() => bulkAct("dismissed")}>Dismiss all</button>
+            </span>` : null}
+            <span class="sig-kbhint" aria-hidden="true">j / k move · e·s·f triage · ⏎ open</span>
+          </div>` : null}
+
+        ${sortedItems.length === 0 ? html`<div class="sfold-empty caption" role="status">${emptyLine}</div>`
+          : sortMode === "domain" ? (() => {
+              const rows = []; let last = null;
+              sortedItems.forEach((s, i) => {
+                const dl = s.domain ? domainLabel(s.domain) : "Other";
+                if (dl !== last) { last = dl; rows.push(html`<div key=${"dh-" + i} class="sig-domhead">${dl}</div>`); }
+                rows.push(sigCard(s, i === kbIdx));
+              });
+              return rows;
+            })()
+          : sortedItems.map((s, i) => sigCard(s, i === kbIdx))}
 
         ${v.kind === "all" && data.strategy_complete ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
         ${/* navy trust footer: the register + the promise — filing is never deletion */ ""}
