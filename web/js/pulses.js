@@ -6,7 +6,7 @@
 /* global html, useState, useEffect, api, Spinner, EmptyState, PageLoading, nav, toast, Icon,
    fmtValue, PercentileBand, OptionBars, OrderedDist, InputForType */
 
-// deadline urgency — a relative read with a "soon" flag for the amber cue
+// deadline urgency — a relative read with a "soon" flag for the blue "closing soon" cue
 function closesIn(iso, accepting) {
   if (!iso) return accepting ? { text: "open — no close date yet", soon: false } : null;
   const d = new Date(iso.replace(" ", "T"));
@@ -66,7 +66,7 @@ window.PulsesPage = function ({ me, tab }) {
     }
     return html`<span class="caption num pulse-partic"><${Icon} name="users" size=${12} /> ${p.participants} participating</span>`;
   };
-  const cardCta = (p) => p.participated ? "View report" : p.joined ? "Finish your answers" : p.accepting ? "Take part (free)" : "See report";
+  const cardCta = (p) => p.participated ? "View report" : p.joined ? "Finish your answers" : p.accepting ? "Take part (free)" : "View";
   const goPulse = (p) => nav("/pulse/" + p.pulse_id);
 
   const communityCard = (p) => html`
@@ -105,7 +105,7 @@ window.PulsesPage = function ({ me, tab }) {
 
   const runChip = (p) => {
     const ls = p.launch_status;
-    const tone = ls === "paid" ? "pulse-chip" : (ls === "rejected" || ls === "changes_requested") ? "warn" : "chip-neutral";
+    const tone = ls === "paid" ? "pulse-chip" : "chip-neutral";   // one-blue: workflow states read neutral, the label + nextStep carry the meaning (David 2026-08-11)
     const label = ls === "paid" ? (p.status === "open" ? "live" : p.status) : ls === "in_review" ? "in review"
       : ls === "changes_requested" ? "changes requested" : ls === "approved" ? "ready to launch"   // was "awaiting invoice" (review QW6)
       : ls === "rejected" ? "declined" : "draft";
@@ -117,15 +117,19 @@ window.PulsesPage = function ({ me, tab }) {
   const exploreView = () => {
     const open = [...data.pulses.filter(p => p.accepting)].sort((a, b) => (a.closes_at || "z") < (b.closes_at || "z") ? -1 : 1);
     const past = data.pulses.filter(p => !p.accepting);
+    const mine = past.filter(p => p.participated);        // closed pulses whose report is yours — foregrounded
+    const archived = past.filter(p => !p.participated);   // closed, your org sat out — the report belongs to participants
     if (!open.length && !past.length) return html`<${EmptyState} tone="invite" icon="zap" title="No pulses yet"
       body="Short, timely community deep-dives on reward land here — take part free to unlock each report."
       action=${isAdmin ? html`<button class="btn small primary" onClick=${() => nav("/run-a-pulse")}>Run a pulse →</button>` : null} />`;
+    const section = (title, list) => html`
+      <h2 class="section-title" style=${{ margin: "var(--s6) 0 var(--s3)" }}>${title}</h2>
+      <div class="pulse-grid">${list.map(communityCard)}</div>`;
     return html`
       ${open.length ? html`${heroCard(open[0])}${open.length > 1 ? html`<div class="pulse-grid">${open.slice(1).map(communityCard)}</div>` : null}`
         : html`<div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} /><span>No pulse is open right now — new topics land here as they emerge.</span></div>`}
-      ${past.length ? html`
-        <h2 class="section-title" style=${{ margin: "var(--s6) 0 var(--s3)" }}>${past.some(p => p.participated) ? "Past pulses & your reports" : "Past pulses"}</h2>
-        <div class="pulse-grid">${past.map(communityCard)}</div>` : null}`;
+      ${mine.length ? section("Your reports", mine) : null}
+      ${archived.length ? section("Archived", archived) : null}`;
   };
 
   const orgRow = (p) => html`
@@ -372,7 +376,7 @@ function PulseReport({ report, pid, me }) {
             <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Print / save as PDF</button>
           </div>
         </div>
-        ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--neutral-perf)" }}>Illustrative sample data.</div>`}
+        ${report.illustrative && html`<div class="caption" style=${{ margin: "var(--s2) 0", color: "var(--ink-faint)" }}>Illustrative sample data.</div>`}
         ${(nar.summary || (nar.key_findings || []).length) && html`
           <div class="pulse-narrative">
             ${nar.summary && html`<p style=${{ margin: "0 0 var(--s2)" }}>${nar.summary}</p>`}
@@ -492,9 +496,19 @@ window.PulseBuilderPage = function ({ me, pid }) {
   const ls = detail.launch_status;
   const editable = ls === "building" || ls === "changes_requested";
 
-  const submitCreate = async (body) => { setBusy(true);
-    try { const r = await api("/api/org/pulses", { method: "POST", body }); toast("Draft saved.", "success"); nav("/run-a-pulse/" + r.pulse_id); }
-    catch (e) { toast(e.message, "error"); } setBusy(false); };
+  const submitCreate = async (body, thenReview) => { setBusy(true);
+    try {
+      const r = await api("/api/org/pulses", { method: "POST", body });
+      if (thenReview) {
+        // one-step submit: create the draft, then send it for review with its fresh id.
+        // If review fails we STILL navigate to the saved draft — a retry there can't create a duplicate.
+        try { await api("/api/org/pulses/" + r.pulse_id + "/submit-for-review", { method: "POST", body: {} });
+          toast("Submitted for review — we'll be in touch.", "success"); }
+        catch (e2) { toast("Draft saved, but couldn't submit for review: " + e2.message, "error"); }
+      } else { toast("Draft saved.", "success"); }
+      nav("/run-a-pulse/" + r.pulse_id);
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false); };
   const submitUpdate = async (body) => { setBusy(true);
     try { await api("/api/org/pulses/" + pid, { method: "PUT", body }); toast("Saved.", "success"); load(); setBusy(false); return true; }
     catch (e) { toast(e.message, "error"); setBusy(false); return false; } };
@@ -513,7 +527,7 @@ window.PulseBuilderPage = function ({ me, pid }) {
       <button class="btn quiet" onClick=${() => nav("/run-a-pulse")}>← Your pulses</button>
       ${!isNew && html`<${LaunchStepper} ls=${ls} />`}
       ${ls === "changes_requested" && detail.review_notes && html`
-        <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", borderLeft: "3px solid var(--amber-bright)" }}>
+        <div class="card" style=${{ padding: "var(--s4)", margin: "var(--s3) 0", borderLeft: "3px solid var(--blue-bright)" }}>
           <b>lumi asked for a few changes</b><p class="caption" style=${{ margin: "var(--s1) 0 0" }}>${detail.review_notes}</p></div>`}
       ${editable
         ? html`<${PulseComposer} initial=${detail} isNew=${isNew} busy=${busy}
@@ -588,12 +602,15 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
     if (!keep.length && !liveNew().length) { toast("Add at least one question.", "error"); return false; }
     return true;
   };
-  const save = () => { if (valid()) onSubmit(buildBody()); };
-  // transactional: only submit for review if the save actually succeeded (a
-  // failed PUT used to still fire the review call, submitting a stale draft)
+  const save = () => { if (valid()) onSubmit(buildBody(), false); };
+  // one click from a full form to "in review": for a NEW pulse the create call
+  // submits for review itself (onSubmit(body, true)); for an existing draft we
+  // save then review, and only review if the save actually succeeded (a failed
+  // PUT used to still fire the review call, submitting a stale draft).
   const saveThenReview = async () => {
     if (!valid()) return;
-    const ok = await onSubmit(buildBody());
+    if (isNew) { onSubmit(buildBody(), true); return; }
+    const ok = await onSubmit(buildBody(), false);
     if (ok !== false) onSubmitReview();
   };
   const needle = libQ.trim().toLowerCase();
@@ -698,10 +715,10 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
         </div>` }
       <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s5)", flexWrap: "wrap" }}>
         <button class="btn" disabled=${busy} onClick=${save}>${isNew ? "Save draft" : "Save changes"}</button>
-        ${!isNew && onSubmitReview && html`<button class="btn primary" disabled=${busy} onClick=${saveThenReview}>Submit for review →</button>`}
+        ${(isNew || onSubmitReview) && html`<button class="btn primary" disabled=${busy} onClick=${saveThenReview}>Submit for review →</button>`}
         ${!isNew && onDiscard && html`<button class="btn quiet" style=${{ marginLeft: "auto" }} onClick=${onDiscard}>Discard</button>`}
       </div>
-      ${isNew && html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Save the draft, then submit it for review.</p>`}
+      ${isNew && html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>Submit for review now, or save a draft to finish later.</p>`}
     </div>`;
 }
 

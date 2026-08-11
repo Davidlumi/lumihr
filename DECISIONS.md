@@ -16978,3 +16978,37 @@ shared the Explore `err`, so an org-fetch failure never surfaced. Split into per
 `reload` state with separate error/loading gates and a working Retry. VERIFIED live: Explore renders the
 centred grid + medallion card + momentum + CTA, Run tab renders how-steps + New pulse + empty state with
 no infinite spinner. jsc-clean, CSS braces balanced, 14/14 gates. v=544.
+
+## 2026-08-11 — Pulse: one-blue colour re-tone + "Your reports" split + one-step review submit (David)
+
+Three follow-ups on the Pulse redesign, all ruled by David after the craft batch shipped.
+
+COLOUR (David: "one-blue, keep report ▲"). Pulse is NOT a benchmark surface, so RAG has no place on it —
+except the pulse REPORT, the one benchmark-like surface, which keeps its green favourable ▲. Re-toned to
+blue/neutral: the "closing soon" CloseChip amber → blue-deep on lumi-tile (app.css .pulse-close.soon);
+the answered "✓" tick + card green → blue (.pulse-q.answered border/bg → blue/lumi-tile,
+.pulse-q.answered .pulse-q-num bg → --blue); the changes-requested/rejected run chips amber → neutral
+(pulses.js runChip: non-paid states now all chip-neutral — the label + the nextStep hint + the
+action-first sort carry the state, not colour); the LaunchStepper "rejected" step red → neutral grey
+(.pulse-step.warn); the builder library "added" tag green → blue-deep (.pulse-lib-tag.added, matching
+.locked); the "changes requested" note border amber → blue-bright; and the report's "Illustrative sample
+data" caveat amber → --ink-faint. LEFT ALONE (out of this ruling's scope, separate surfaces): the core
+submission wizard's green tick (.pulse-q-num.done, submission.js), the internal admin-console pulse-review
+status pills (.admin-status-*), the overview all-clear ring (.cat-allclear-ring, a real benchmark
+surface), and app-wide form-validation warn/error text. VERIFIED live via computed-style probes:
+closing-soon rgb(30,58,138)=blue-deep, answered-num rgb(32,72,176)=--blue, rejected-step
+surface-sunk/ink-soft, lib-added blue-deep.
+
+IA — the past section split into **"Your reports"** (closed pulses your org took part in → the report is
+yours, foregrounded) and **"Archived"** (closed, your org sat out → the report belongs to participants),
+replacing the single "Past pulses & your reports" heading. The closed-not-participated card CTA changed
+"See report" → "View" (it can't show a report, so it must not promise one). Verified live: the demo org's
+participated pulse now sits under "Your reports".
+
+BUILDER (review #10 pt 2 — two-step submit trap). A first-time author could only "Save draft", which
+navigated away; they then had to find "Submit for review" on the next screen. Now the new-pulse composer
+shows "Submit for review →" directly: submitCreate takes a thenReview flag and, on create, submits the
+fresh pulse for review in one call. Crucially it ALWAYS navigates to the saved draft afterwards — even if
+the review call fails — so a retry lands on the existing draft and never creates a duplicate. Caption now
+"Submit for review now, or save a draft to finish later." Verified live: the new composer shows both
+buttons. jsc-clean, CSS braces balanced, 14/14 gates. v=545.
