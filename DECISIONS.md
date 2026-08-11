@@ -17012,3 +17012,30 @@ fresh pulse for review in one call. Crucially it ALWAYS navigates to the saved d
 the review call fails — so a retry lands on the existing draft and never creates a duplicate. Caption now
 "Submit for review now, or save a draft to finish later." Verified live: the new composer shows both
 buttons. jsc-clean, CSS braces balanced, 14/14 gates. v=545.
+
+## 2026-08-11 — Pulse server enrichment: derived topic glyph + report teaser (David: "do it now")
+
+The redesigned Explore cards used a generic zap medallion and gave away nothing about a pulse's report.
+David chose to build the enrichment now (over deferring). Two additions, both server-backed:
+
+TOPIC GLYPH (derived, not stored). pulses.py topic_for(name, description) keyword-classifies a pulse into
+one of 7 topics → a distinct glyph: pay→coins, benefits→award, wellbeing→heart, working patterns→clock,
+people→users, tech/AI→sparkle, policy→shield; unmatched → the neutral zap. First rule wins, so specific
+subjects are ordered before broad ones. DELIBERATELY derived, not a schema column: it needs no migration,
+no builder field, no backfill, and a wrong glyph is a self-correcting cosmetic nit on a lumi-reviewed
+feature — the upgrade path (a stored `topic` set at review) is noted in the code if exactness is ever
+needed. One-blue holds: the medallion is always a single blue tile; the topic changes the SHAPE, never
+the colour. _pulse_member_view now returns topic+icon; the card + hero medallions read p.icon.
+
+REPORT TEASER. pulses.py pulse_teaser(report) pulls the strongest single figure from the first
+non-suppressed question — {stat, on}, e.g. {"72% chose “Yes”", "Do you run pay audits?"} or
+{"Median 3.5%", "Merit budget"} — skipping suppressed questions and returning None if every question is
+below floor. _pulse_member_view computes it ONLY for a participant whose report has unlocked
+(participated AND n_parts >= floor) AND only when the caller passes with_teaser=True — which just
+list_pulses (/api/pulses) does. The detail page, which builds the full report anyway, passes the default
+False, so it never double-pays for the aggregation. The teaser renders as a blue-tinted .pulse-card-teaser
+line on "Your reports" cards (RAG-free). Cost is bounded by a member's participated-pulse count; if that
+ever grows, a cached headline column is the future fix (noted).
+
+Unit-verified in isolation (8 topic cases classify correctly; teaser handles options/numeric/suppressed/
+all-suppressed). py_compile clean, jsc-clean, CSS braces balanced. Gates + live verify to follow. v=546.

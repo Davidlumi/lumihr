@@ -599,6 +599,57 @@ def _fmt_num(v, unit):
     return s
 
 
+# ------------------------------------------------------ card enrichment (2026-08-11)
+# A pulse's topic identity is DERIVED, not stored: a keyword read of name+description
+# picks a glyph so the Explore cards look distinct and legible at a glance — no schema
+# column, no builder field, no backfill. Every medallion is a single blue tile
+# (one-blue law): the topic changes the SHAPE, never the colour. First rule wins, so
+# specific subjects are ordered before broad ones; an unmatched pulse falls to "zap".
+# (Upgrade path if this ever needs to be exact: a stored `topic` set at lumi review.)
+PULSE_TOPIC_RULES = (
+    ("wellbeing", "heart",   ("wellbeing", "wellness", "mental health", "burnout", "stress", "resilience")),
+    ("working",   "clock",   ("four-day", "4-day", "four day", "hybrid", "remote", "flexible working",
+                              "working week", "working hours", "wfh", "return to office", "in-office")),
+    ("people",    "users",   ("hiring", "recruit", "retention", "attrition", "turnover", "talent",
+                              "headcount", "onboarding", "diversity", "inclusion", "belonging", "dei")),
+    ("tech",      "sparkle", ("artificial intelligence", " ai ", "automation", "machine learning", "digital")),
+    ("benefits",  "award",   ("pension", "insurance", "healthcare", "medical", "annual leave",
+                              "parental leave", "holiday", "perk", "allowance", "benefit")),
+    ("pay",       "coins",   ("pay", "salary", "salaries", "wage", "reward", "compensation",
+                              "bonus", "transparency", "gender pay", "pay gap")),
+    ("policy",    "shield",  ("compliance", "policy", "regulation", "directive", "legislation",
+                              "legal", "statutory", "mandate")),
+)
+
+
+def topic_for(name, description):
+    """(topic, icon) derived from a pulse's name + description; falls to ('general', 'zap')."""
+    hay = " " + ((name or "") + " " + (description or "")).lower() + " "
+    for topic, icon, kws in PULSE_TOPIC_RULES:
+        if any(k in hay for k in kws):
+            return topic, icon
+    return "general", "zap"
+
+
+def pulse_teaser(report):
+    """A compact one-line finding for a participated pulse's card — the strongest single
+    figure from the FIRST non-suppressed question. Returns {stat, on} or None. Reads a
+    report already built by pulse_report(); never touches the core firewall."""
+    for q in report.get("questions", []):
+        blk = q.get("block") or {}
+        if blk.get("suppressed"):
+            continue
+        opts = blk.get("options") or []
+        if opts:
+            top = max(opts, key=lambda o: o.get("pct", 0) or 0)
+            return {"stat": u"%s%% chose “%s”" % (top.get("pct", 0), top.get("label", "")),
+                    "on": q.get("title") or q.get("text") or ""}
+        if blk.get("p50") is not None:
+            return {"stat": u"Median %s" % _fmt_num(blk["p50"], q.get("unit")),
+                    "on": q.get("title") or q.get("text") or ""}
+    return None
+
+
 # ----------------------------------------------------------------- graduation
 def graduate_question(qid, category, release_note="", conn=None):
     """Promote a pulse-origin question into the CORE at the next release —

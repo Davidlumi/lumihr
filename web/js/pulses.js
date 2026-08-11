@@ -73,13 +73,14 @@ window.PulsesPage = function ({ me, tab }) {
     <article key=${p.pulse_id} class="card pulse-card" role="button" tabindex="0" aria-label=${p.name + " — " + cardCta(p)}
       onClick=${() => goPulse(p)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goPulse(p); } }}>
       <div class="pulse-card-top">
-        <span class="pulse-medallion"><${Icon} name="zap" size=${15} /></span>
+        <span class="pulse-medallion"><${Icon} name=${p.icon || "zap"} size=${15} /></span>
         <div class="pulse-card-headwrap">
           <b class="pulse-card-name">${p.name}</b>
           <div class="pulse-card-meta"><${CloseChip} p=${p} /><span class="caption num">${p.questions} question${p.questions === 1 ? "" : "s"}</span></div>
         </div>
       </div>
       <div class="caption pulse-card-desc">${p.description}</div>
+      ${p.teaser ? html`<div class="pulse-card-teaser"><b>${p.teaser.stat}</b><span> on ${p.teaser.on}</span></div>` : null}
       ${momentum(p)}
       <div class="pulse-card-foot">
         ${p.participated ? html`<span class="pulse-taken"><${Icon} name="check" size=${12} /> You've taken part</span>`
@@ -93,7 +94,7 @@ window.PulsesPage = function ({ me, tab }) {
     <article class="card pulse-hero" role="button" tabindex="0" aria-label=${"Take part in " + p.name}
       onClick=${() => goPulse(p)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goPulse(p); } }}>
       <div class="pulse-hero-body">
-        <div class="pulse-hero-tag"><${Icon} name="zap" size=${13} /> Open pulse</div>
+        <div class="pulse-hero-tag"><${Icon} name=${p.icon || "zap"} size=${13} /> Open pulse</div>
         <h2 class="pulse-hero-name">${p.name}</h2>
         <p class="pulse-hero-desc">${p.description}</p>
         <div class="pulse-hero-meta"><${CloseChip} p=${p} /><span class="pulse-dot">·</span>${momentum(p)}</div>

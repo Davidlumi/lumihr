@@ -1408,7 +1408,7 @@ async def revoke_invite(token: str, request: Request):
 # data (structural separation — see pulses.py docstring). Fully independent
 # of the core unlock gate in both directions.
 
-def _pulse_member_view(conn, p, org):
+def _pulse_member_view(conn, p, org, with_teaser=False):
     part = pulses_mod.participant(p["pulse_id"], org["org_id"], conn)
     n_q = len(uj(p["question_ids_json"], []))
     # PULSE-1: a real member's participant count reads the REAL subset — the
@@ -1421,13 +1421,29 @@ def _pulse_member_view(conn, p, org):
     else:
         n_parts = conn.execute("SELECT COUNT(*) FROM pulse_participants WHERE pulse_id=? AND submission_complete=1",
                                (p["pulse_id"],)).fetchone()[0]
-    return {
+    topic, icon = pulses_mod.topic_for(p["name"], p["description"])
+    view = {
         "pulse_id": p["pulse_id"], "name": p["name"], "description": p["description"],
         "status": p["status"], "opens_at": p["opens_at"], "closes_at": p["closes_at"],
         "accepting": pulses_mod.is_accepting(p), "questions": n_q,
         "participants": n_parts, "floor": SUPPRESSION_FLOOR,
         "joined": part is not None, "participated": bool(part and part["submission_complete"]),
+        "topic": topic, "icon": icon,
     }
+    # a compact report teaser for the Explore card — only for a participant whose report
+    # has actually unlocked, and only when the caller asks (the list view), so the detail
+    # page (which builds the full report anyway) never double-pays for the aggregation.
+    if with_teaser and view["participated"] and n_parts >= SUPPRESSION_FLOOR:
+        try:
+            rep = pulses_mod.pulse_report(
+                p["pulse_id"], conn,
+                real_viewer=org["source"] not in ("seed", "staff", "demo"))
+            teaser = pulses_mod.pulse_teaser(rep)
+            if teaser:
+                view["teaser"] = teaser
+        except Exception:
+            pass
+    return view
 
 
 @app.get("/api/pulses")
@@ -1438,7 +1454,7 @@ async def list_pulses(request: Request):
     conn = get_conn()
     out = []
     for p in conn.execute("SELECT * FROM pulses WHERE status != 'draft' ORDER BY created_at DESC"):
-        out.append(_pulse_member_view(conn, p, org))
+        out.append(_pulse_member_view(conn, p, org, with_teaser=True))
     return {"pulses": out}
 
 
