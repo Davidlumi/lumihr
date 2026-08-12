@@ -17357,3 +17357,17 @@ of payroll" — "No comparison" minutes earlier — now renders "▼ Below marke
 stat pair and restored readout. Full gate suite run post-change (see below). Pre-lift config preserved at
 scratchpad/mp_config_before_lift.json for the session.
 GATES: full 14-gate suite ALL GREEN post-lift (qa_hero 59-fixture, freeze gate, engine audit incl.) — the lift is coherent with every ruled invariant. v unchanged (config-only).
+
+## 2026-08-12 — Metric page: the unanswered indicator becomes an "Add your answer" CTA (David)
+
+David: "if not answered link to the question so the user can answer - make it a cta." The metric-page
+indicator's else-branch — the quiet "Not yet answered" ctx-chip — is now a real primary CTA:
+`<a class="btn small primary" href=${qHref(c)}>✎ Add your answer</a>`, deep-linking via the SAME qHref
+route every benchmark-card CTA uses (#/your-data/{subpower}?focus={id} — lands on the exact question).
+Locked metrics show the lock glyph (qHref still routes; Your data handles entitlement). The title carries
+the key-question nudge when c.is_required ("A key question that unlocks your insights…"), else the
+standard "answer to see whether you're below, on or above the market". The ruled no-verdict chips
+(Protected / No comparison / Context) are unchanged — only the actionable state became an action.
+VERIFIED live at v=560: unanswered metric (REW264_HLT_GIPREHAB) shows the pencil "Add your answer"
+primary button in the card head; clicking it lands on Your data → Health & Protection with the
+focus param consumed (question present). Frontend-only; gates. v=560.

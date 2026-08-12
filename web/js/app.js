@@ -1750,7 +1750,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
                   : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}</span></span>`
               : pos
               ? html`<span class=${"pos-pill lg hastip " + pos.kind + (pos.kind === "good" ? " pill-glow" : "")} tabindex="0">${pos.arrow} ${pos.label}<span class="tip">${pos.tip}</span></span>`
-              : html`<span class="ctx-chip hastip" tabindex="0">Not yet answered<span class="tip">Add your answer for this metric to see whether you're below, on or above the market.</span></span>`}
+              : html`<a class="btn small primary" href=${qHref(c)}
+                  title=${c.is_required ? "A key question that unlocks your insights — answer it to see where you stand." : "Answer this question to see whether you're below, on or above the market."}>
+                  <${Icon} name=${c.locked ? "lock" : "pencil"} size=${13} /> Add your answer</a>`}
             ${aim && html`<${AlignmentChip} target=${aim} />`}
           </div>
         </div>
