@@ -17140,3 +17140,23 @@ happens". The two OTHER createObjectURL uses (pulse CSV, commercial CSV) feed `<
 not `<img>`, and are not blocked by this CSP — left as-is. VERIFIED live: exportCardPNG('download') now
 returns "downloaded" (was throwing); clipboard path works with real-click user-activation, else falls back
 to download. Frontend-only; v=551. (Copy = copies the chart PNG to the clipboard; Download = saves it.)
+
+## 2026-08-12 — Polish: exported-chart header — drop the verbose peer-set line, shrink the title (David)
+
+David reviewed a downloaded chart PNG (now that Copy/Download work): "no need to describe the sample
+criteria remove that part · why are the headers so large · do a polish and review." exportCardPNG
+(charts.js) built a 3-line header — title (13px/700), "{cutLabel} · n" (the cutLabel being the verbose
+peer-set composition, e.g. "5 sectors · 10,000+, 1,000-4,999 FTE · n=22"), and a "Comparison pool: N UK
+organisation profiles. See lumihr.co.uk methodology for sources." line. POLISH: (1) title 13→12px, weight
+700→600 — reads as the title without dominating; (2) the context line drops the verbose cutLabel
+composition — now just the sample size + the org's own position ("n=22 · You: No (P59)"); (3) the pool +
+methodology grounding folds into the FOOTER source line ("Source: lumi HR · {window|generated date} · {N}
+UK profiles · lumihr.co.uk/methodology"), so the header is title + ONE clean line; (4) TITLE_H 46→38→40
+tightened for the two-line head. Grounding (pool count + methodology reference) is preserved, just
+relocated to where the source attribution already lives. The same exportCardPNG serves the card Download
+and the MetricPage "Chart" button, so both get the cleaner layout; the on-screen MetricPage + print
+one-pager + share view keep their own (contextual, not flagged) treatments. Could NOT verify in-app (the
+in-app browser session logged out mid-session and I can't type the password) — verified instead by
+rendering the exact new header/footer SVG standalone (served via /static): title smaller, sample-criteria
+line gone, pool folded into a single tidy footer line. jsc-clean; gates. v=552. David to confirm on a
+real download.

@@ -546,7 +546,7 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   const clone = svg.cloneNode(true);
   const vb = (svg.getAttribute("viewBox") || "0 0 420 120").split(" ").map(Number);
   const cw = vb[2], ch = vb[3];
-  const PAD = 18, TITLE_H = 46, FOOT_H = 46;   // taller footer carries the lumi logo + source
+  const PAD = 18, TITLE_H = 40, FOOT_H = 46;   // header = title + one context line; footer carries the lumi logo + source
   const W = cw + PAD * 2, H = ch + TITLE_H + FOOT_H + PAD;
   const wrap = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   wrap.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -567,12 +567,16 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   // branded source footer: hairline · lumi logo (bottom-left) · "Source: lumi HR"
   // attribution + date (bottom-right). Logo scaled from its 0..390×0..178 box.
   const LOGO_H = 18, lscale = LOGO_H / 178, logoY = H - 32, sepY = H - 40, footY = H - 18;
-  const src = `Source: lumi HR${meta.window ? " · " + esc(meta.window) : ""} · generated ${fmtDate()}`;
+  // header = title + ONE concise context line (sample size + your position — NOT the verbose
+  // peer-set composition, David 2026-08-12). The pool + methodology grounding folds into the
+  // footer, where the source attribution already lives, so the head stays clean.
+  const poolN = meta.pool || poolTotal();
+  const context = `${esc(compositionLabel(meta.n, meta.n_real))}${meta.suffix ? " · " + esc(meta.suffix) : ""}`;
+  const src = `Source: lumi HR · ${meta.window ? esc(meta.window) : "generated " + fmtDate()}${poolN ? " · " + esc(String(poolN)) + " UK profiles" : ""} · lumihr.co.uk/methodology`;
   wrap.innerHTML = `
     <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
-    <text x="${PAD}" y="${PAD + 6}" font-family="Helvetica, Arial" font-size="13" font-weight="700" fill="#211B26">${esc(meta.title)}</text>
-    <text x="${PAD}" y="${PAD + 24}" font-family="Helvetica, Arial" font-size="10" fill="#5B5560">${esc(meta.cutLabel)} · ${esc(compositionLabel(meta.n, meta.n_real))}${meta.suffix ? " · " + esc(meta.suffix) : ""}</text>
-    ${(meta.pool || poolTotal()) ? `<text x="${PAD}" y="${PAD + 36}" font-family="Helvetica, Arial" font-size="9" fill="#8B8590">Comparison pool: ${esc(String(meta.pool || poolTotal()))} UK organisation profiles. See lumihr.co.uk methodology for sources.</text>` : ""}
+    <text x="${PAD}" y="${PAD + 7}" font-family="Helvetica, Arial" font-size="12" font-weight="600" fill="#211B26">${esc(meta.title)}</text>
+    <text x="${PAD}" y="${PAD + 22}" font-family="Helvetica, Arial" font-size="9.5" fill="#5B5560">${context}</text>
     <line x1="${PAD}" y1="${sepY}" x2="${W - PAD}" y2="${sepY}" stroke="#E7E2DA" stroke-width="1"/>
     <g transform="translate(${PAD}, ${logoY}) scale(${lscale})">${LUMI_EXPORT_LOGO}</g>
     <text x="${W - PAD}" y="${footY}" text-anchor="end" font-family="Helvetica, Arial" font-size="9" fill="#8E8893">${src}</text>`;
