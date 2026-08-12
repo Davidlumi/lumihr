@@ -28,6 +28,17 @@ import os
 import practice_axis                       # single source for the prevalence words (common/alternative/rare)
 from db import get_conn
 
+
+def _mp_unbenchmarked(qid):
+    """Diff-14 authority check for the signal paths that read blocks/routing DIRECTLY
+    (ordered-outlier, matrix-position, depth) and so bypass the _item polarity
+    silencing — a market-position claim ("LOWER THAN MARKET") must never fire on a
+    metric whose distribution carries no ruled authority (audit 2026-08-12:
+    REW_BEN_045 outlier leaked through this gap). Prevalence/rarity claims are
+    unaffected — they are practice facts, not market verdicts."""
+    from positions import market_position_config
+    return bool((market_position_config().get("metrics", {}).get(qid) or {}).get("unbenchmarked"))
+
 CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
                         "signal_lenses.json")
 _cache = {"mtime": None, "cfg": {}}
@@ -168,7 +179,7 @@ def matrix_depth_signals(conn, questions, org_id, seen_q):
     max_band, min_n = th.get("max_org_band_share", 0.50), th.get("min_n", 5)
     sigs = []
     for qid, spec in dm.items():
-        if qid in seen_q:
+        if qid in seen_q or _mp_unbenchmarked(qid):   # Diff-14: no market claim without ruled authority
             continue
         q = questions.get(qid)
         if q is None:
@@ -535,6 +546,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         qid = i["question_id"]
         if qid in pos_lenses and i["favourable"] == "bad":
             adj = 50.0 + i["distance"]
+            # median-tie ⇒ no market claim (David-ruled 2026-08-12): an org sharing the
+            # market's median answer is "at market" — the behind signal must agree
+            _t = i.get("tie_half") or 0
+            if _t and abs(50.0 - adj) < _t:
+                continue
             if adj <= behind_at and (qid not in worst_pos or adj < worst_pos[qid][0]):
                 worst_pos[qid] = (adj, i)
     for qid, (adj, i) in worst_pos.items():
@@ -568,6 +584,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         qid = i["question_id"]
         if qid in pos_lenses and i["favourable"] == "good":
             adj = 50.0 + i["distance"]
+            # median-tie guard, symmetric with BEHIND — a strength built on sharing
+            # the median answer is the same midrank artifact
+            _t = i.get("tie_half") or 0
+            if _t and abs(50.0 - adj) < _t:
+                continue
             if adj >= ahead_at and (qid not in best_pos or adj > best_pos[qid][0]):
                 best_pos[qid] = (adj, i)
     for qid, (adj, i) in best_pos.items():
@@ -645,7 +666,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     min_n = oth.get("min_n", 5)
     scales = ordr.get("scales", {})
     for qid in ordr.get("ordered_outlier", []):
-        if qid in seen_q:
+        if qid in seen_q or _mp_unbenchmarked(qid):   # Diff-14: no market claim without ruled authority
             continue
         q = questions.get(qid)
         spec = scales.get(qid)
@@ -734,7 +755,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     for qid, rws in rows_by_q.items():
         if qid in seen_q:                  # already flagged by money/behind/etc — one class per metric
             continue
-        cross = [i for i in rws if i["percentile"] <= mat_lo or i["percentile"] >= mat_hi]
+        if _mp_unbenchmarked(qid):         # Diff-14: no market claim without ruled authority
+            continue
+        # median-tie rows never cross (David-ruled 2026-08-12): a row sharing the
+        # market's median answer is "at market", not an outlier tail
+        cross = [i for i in rws if (i["percentile"] <= mat_lo or i["percentile"] >= mat_hi)
+                 and not ((i.get("tie_half") or 0) and abs(50.0 - i["percentile"]) < (i.get("tie_half") or 0))]
         if not cross:
             continue
         cross.sort(key=lambda x: -abs(x["percentile"] - 50))   # most divergent rows first

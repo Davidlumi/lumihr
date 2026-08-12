@@ -115,7 +115,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
               c.practice is the server-computed class flag). */ ""}
         ${/* unbenchmarked cards carry NO position pill either (Diff 14): a P-number
               against an unanchored distribution is the claim being suppressed. */ ""}
-        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
+        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp && cp.pctl != null ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
         ${/* "A practice choice" tag + prevalence bucket (Diff 4, exact ruled string): the
               bucket word only where the pool served (prevalence_band present); a practice
               card with a suppressed pool reads "low peer data". Locked vocabulary; no RAG. */ ""}
@@ -399,26 +399,38 @@ function cardPosition(c) {
   // with the "How lumi reads this" note and the AI commentary. Tiles/dashboards don't
   // carry classification, so they're unaffected.
   if (c.classification && c.classification.direction) pol = c.classification.direction;
-  if (p == null || pol === "neutral" || !pol) return null;
-  // §4.8(5): a practice/approach card (a how-often/how-you-do-it choice) has no market verdict —
-  // a bare "P1" percentile on a yes/no practice reads as an unexplained judgement. Suppress it.
-  if (c.classification && c.classification.register === "Approach") return null;
-  const adj = pol === "lower_is_better" ? 100 - p : p;
-  // Use the SAME market band the tiles + signals use — sourced from the engine
-  // (window.MARKET_BAND, set from /api/me) so the card colour can never drift
-  // from the env band. Below = below market (red); above = above market (green);
-  // the middle = on market (neutral). Default 35-65 if the global isn't loaded.
-  const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
-  // median-tie ⇒ on market (David-ruled 2026-08-12, mirroring the engine's
-  // _market_class): when the org's tie block contains the median — e.g. it gave
-  // the same answer as 59% of the market — the midrank must not read as a verdict.
-  const medianTie = tie > 0 && Math.abs(50 - adj) < tie;
-  const kind = medianTie ? "mid" : adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+  // THE VERDICT SOURCE (audit 2026-08-12): prefer the server's firewall-reviewed
+  // market_band — the SAME pool classification the §1 donut counts (median-tie rule
+  // included), computed once per request so card, expanded page and donut can never
+  // disagree. It covers positions the percentile path can't see (matrix collapse,
+  // practice-position ranks, score items whose cfg polarity was neutralised).
+  let kind = null, medianTie = false;
+  if (c.market_band === "above" || c.market_band === "below" || c.market_band === "at") {
+    kind = c.market_band === "above" ? "good" : c.market_band === "below" ? "bad" : "mid";
+    medianTie = kind === "mid" && tie > 0 && p != null
+      && Math.abs(50 - (pol === "lower_is_better" ? 100 - p : p)) < tie;
+  } else {
+    // fallback (band not served: locked/reduced/legacy payloads, lower-is-better
+    // substance metrics outside the gauge pool): the original percentile-vs-band read
+    if (p == null || pol === "neutral" || !pol) return null;
+    // §4.8(5): a practice/approach card (a how-often/how-you-do-it choice) has no market verdict —
+    // a bare "P1" percentile on a yes/no practice reads as an unexplained judgement. Suppress it.
+    if (c.classification && c.classification.register === "Approach") return null;
+    const adj = pol === "lower_is_better" ? 100 - p : p;
+    // Use the SAME market band the tiles + signals use — sourced from the engine
+    // (window.MARKET_BAND, set from /api/me) so the card colour can never drift
+    // from the env band. Default 35-65 if the global isn't loaded.
+    const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
+    // median-tie ⇒ on market (David-ruled 2026-08-12, mirroring the engine's _market_class)
+    medianTie = tie > 0 && Math.abs(50 - adj) < tie;
+    kind = medianTie ? "mid" : adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+  }
+  const pctl = p != null ? Math.round(p) : null;
   return {
     kind,
-    pctl: Math.round(p),
+    pctl,
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
-    label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + " · P" + Math.round(p),
+    label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + (pctl != null ? " · P" + pctl : ""),
     tip: medianTie
       ? "You share the market's median answer — most peers sit exactly where you do, so this reads as on market."
       : "Your position vs the market, adjusted for whether higher or lower is favourable.",

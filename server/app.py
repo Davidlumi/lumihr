@@ -2031,8 +2031,19 @@ async def single_benchmark(qid: str, request: Request):
                 "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0), "reduced": True}
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
+    # the SAME firewall-reviewed per-card market position the grid + donut use
+    # (pool_market_bands) — the expanded page's verdict can never disagree with
+    # the card the member clicked or the §1 donut it sums into (audit 2026-08-12:
+    # this endpoint previously passed market_band=None, so the hero page lacked
+    # the ruled verdict entirely).
+    _bi_items, _bi_tb = build_items(request, org, user, cut)
+    _bi_prac = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                           payloads(), org_answers_for(org), entitled, _bi_tb)
+    _band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
+                                      MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
     card = assemble_card(q, p, org, org_answers_for(org), cut,
-                         {qid: tb.get(qid)} if tb else None, entitled)
+                         {qid: tb.get(qid)} if tb else None, entitled,
+                         market_band=_band_map.get(qid))
     # opportunity panel for £-model metrics
     mm = next((m for m in pos.MONEY_METRICS if m["question_id"] == qid), None)
     if mm and not card["locked"] and q.polarity != "neutral":
@@ -2086,6 +2097,12 @@ async def benchmark_batch(request: Request):
     cut = parse_cut(request, org)
     tb = twin_blocks_if_needed(conn, org, cut)
     answers = org_answers_for(org)
+    # same ruled per-card market position as the grid + single routes (audit 2026-08-12) —
+    # one pool build per request, so pinned dashboard cards agree with the donut too
+    _bi_items, _bi_tb = build_items(request, org, user, cut)
+    _bi_prac = pos.practice_position_items(org["org_id"], cut, vis, payloads(), answers, entitled, _bi_tb)
+    _band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
+                                      MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
     cards = {}
     for qid in ids:
         q = vis.get(qid)
@@ -2101,7 +2118,8 @@ async def benchmark_batch(request: Request):
                           "n": (p.get("all") or {}).get("n", 0), "n_real": (p.get("all") or {}).get("n_real", 0), "reduced": True}
             continue
         cards[qid] = assemble_card(q, p, org, answers, cut,
-                                   {qid: tb.get(qid)} if tb else None, entitled)
+                                   {qid: tb.get(qid)} if tb else None, entitled,
+                                   market_band=_band_map.get(qid))
     return {"cards": cards}
 
 

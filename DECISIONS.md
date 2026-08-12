@@ -17399,3 +17399,50 @@ item favourable (45/55 rule) deliberately NOT tie-adjusted (feeds gaps/strengths
 wanted). Unit-proven on the ALLOW_04 shape (13/22 tied ⇒ rank 29.5, tie 29.5 ⇒ at; P20 with thin tie
 stays below). Gate suite = the end-to-end check: qa_hero's 59 fixtures pin verdict states — a green
 suite means the ruled fixtures hold; a failure stops the commit for David's fixture re-baseline call.
+
+## 2026-08-12 — Cross-surface metric QA audit: every metric, every state, four surfaces (David)
+
+David: "do a QA audit of every metric in every state - the home page, signals, benchmark pages, expanded
+metric - I want to make sure they are all correct." Built a deterministic audit harness (scratchpad
+audit_metrics.py) against a FULLY isolated throwaway (:8070, backup-API copies of lumi.db + identity.db,
+LUMI_DB + LUMI_IDENTITY_DB, a session minted in the identity COPY for the Thornbridge admin — the real
+identity store untouched; rig torn down + copies deleted after). The harness mirrors cardPosition + the
+metric-page indicator chain EXACTLY, fetches the grid/overview/single/batch payloads on two cuts (All
+peers + Company Default), and asserts the state machine + Diff-14/suppression/tie invariants + signal
+coherence + grid≡expanded-page sample equality + donut reconciliation.
+
+RUN 1 FOUND THE BIG ONE: only 79 of 328 cards rendered a verdict while the donut counted 269 positioned —
+because pool_market_bands (the firewall-reviewed per-card verdict, built to "never disagree with the
+donut", Pass 2a) was computed and passed on the GRID endpoint only, and THE FRONTEND NEVER READ IT.
+cardPosition re-derived verdicts from you/score percentiles + polarity — blind to matrix collapse,
+practice-position ranks, and score items whose cfg polarity the AFF programme neutralised (e.g.
+REW_PAY_021: served market_band "at", rendered nothing). The single-metric (the hero page!) and batch
+endpoints passed market_band=None outright.
+
+FIXES (this commit):
+1. VERDICT SOURCE UNIFIED — /api/benchmark/{qid} + /api/benchmark-batch now build the same
+   pool_market_bands map the grid/donut use and pass market_band per card; cardPosition PREFERS
+   c.market_band for the verdict (above→good/below→bad/at→mid), keeping the percentile as the display
+   number ("· P{n}", omitted when the pool ranks without a card-level percentile) and the old
+   percentile-vs-band read as the fallback (locked/reduced/legacy, lower-is-better substance outside the
+   gauge pool). bench-pctl guards pctl=null. Card verdicts per cut: 79 → 230, equal to the pool by
+   construction on every surface.
+2. SIGNAL LEAK (Diff-14): REW_BEN_045 fired an "outlier · LOWER THAN MARKET" while unbenchmarked by
+   ruling (_r3sw21) — the ordered-outlier/matrix-position/depth signal paths read blocks/routing directly
+   and bypassed the _item polarity silencing. New signals._mp_unbenchmarked() guard on all three paths.
+   (The two "rare" prevalence signals on unbenchmarked metrics are CORRECT — practice facts need no
+   market anchor — and stay.)
+3. MEDIAN-TIE × SIGNALS: behind + ahead loops and matrix-position rows now skip median-straddling ties
+   (same rule as the verdict; 2 behind-signals retired: REW_FAI_CANCEL_1bbcc629, PROP_ef4ff31e). Depth
+   was already tie-safe structurally (max_org_band_share gate).
+4. METRIC-PAGE STATE: answered metrics with no verdict (the accepted "neither"/unscored-selects debt,
+   15 real) fell to the "Add your answer" CTA while ANSWERED — now an honest quiet chip "Not yet rated"
+   (in-product vocabulary) with the CTA reserved for genuinely unanswered metrics.
+
+FINAL AUDIT: ZERO findings. Default cut: 230 verdicts (93 at / 119 below / 18 above) + 80 not-yet-rated
++ 7 no-comparison (ruled holds) + 2 protected + 9 add-answer CTAs = 328/328 accounted. All-peers cut the
+same shape. Audit artifacts: scratchpad audit_metrics.py + audit_run{1,2,3}.json. NOTED, not changed:
+grid cards don't carry `classification` (single endpoint only) — harmless today (grid's only cardPosition
+consumer is the practice-gated P-pill) but a parity gap to close if the grid ever needs the register;
+practice metrics with practice-position ranks ARE counted by the donut while cards show practice language
+(ruled §4.8(5) — by design).
