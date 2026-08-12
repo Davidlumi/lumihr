@@ -386,12 +386,13 @@ function multiSelectReadout(c) {
    Returns null when no judgement applies (neutral polarity / no answer). */
 function cardPosition(c) {
   if (c.suppressed || c.locked) return null;
-  let p = null, pol = c.polarity;
-  if (c.you && c.you.percentile != null) p = c.you.percentile;
-  else if (c.score && c.score.percentile != null) { p = c.score.percentile; pol = c.score.polarity; }
+  let p = null, pol = c.polarity, tie = 0;
+  if (c.you && c.you.percentile != null) { p = c.you.percentile; tie = c.you.tie_half || 0; }
+  else if (c.score && c.score.percentile != null) { p = c.score.percentile; pol = c.score.polarity; tie = c.score.tie_half || 0; }
   else if (c.type === "matrix" && c.matrix_rows) {
     const ps = c.matrix_rows.filter(r => r.you && r.you.percentile != null && !r.suppressed).map(r => r.you.percentile);
     if (ps.length) p = ps.reduce((a, b) => a + b, 0) / ps.length;
+    // (no tie semantics for a row-average — the engine's pool verdict handles matrix ties)
   }
   // the firewall-reviewed market-position direction (carried on the single-metric
   // page as c.classification) wins over the legacy DB polarity, so the pill agrees
@@ -408,13 +409,19 @@ function cardPosition(c) {
   // from the env band. Below = below market (red); above = above market (green);
   // the middle = on market (neutral). Default 35-65 if the global isn't loaded.
   const band = (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
-  const kind = adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
+  // median-tie ⇒ on market (David-ruled 2026-08-12, mirroring the engine's
+  // _market_class): when the org's tie block contains the median — e.g. it gave
+  // the same answer as 59% of the market — the midrank must not read as a verdict.
+  const medianTie = tie > 0 && Math.abs(50 - adj) < tie;
+  const kind = medianTie ? "mid" : adj > band[1] ? "good" : adj < band[0] ? "bad" : "mid";
   return {
     kind,
     pctl: Math.round(p),
     arrow: kind === "good" ? "▲" : kind === "bad" ? "▼" : "●",
     label: (kind === "good" ? "Above market" : kind === "bad" ? "Below market" : "On market") + " · P" + Math.round(p),
-    tip: "Your position vs the market, adjusted for whether higher or lower is favourable.",
+    tip: medianTie
+      ? "You share the market's median answer — most peers sit exactly where you do, so this reads as on market."
+      : "Your position vs the market, adjusted for whether higher or lower is favourable.",
   };
 }
 window.cardPosition = cardPosition;

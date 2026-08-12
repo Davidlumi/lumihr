@@ -49,6 +49,19 @@ def percentile_rank(sorted_vals, x):
     return min(99.0, max(1.0, r))
 
 
+def tie_halfwidth(sorted_vals, x):
+    """Half-width, in percentile points, of x's TIE BLOCK within sorted peer values —
+    the mass of peers sharing exactly x's value/score, as ± around the midrank.
+    Companion to percentile_rank: a midrank is the centre of this block. Drives the
+    median-tie verdict rule (David 2026-08-12): when the block contains P50, the org
+    shares the median answer and reads "at market", never below/above."""
+    if not sorted_vals:
+        return None
+    lo = bisect.bisect_left(sorted_vals, x)
+    hi = bisect.bisect_right(sorted_vals, x)
+    return 100.0 * (hi - lo) / len(sorted_vals) / 2.0
+
+
 # ---------------------------------------------------------------- cut logic
 
 def resolve_block(payload_section_all, payload_section_cuts, cut):
@@ -249,6 +262,9 @@ def practice_position_items(org_id, cut, questions, payloads, org_answers,
         it = _item(q, None, mine, r, blk, cut_label, "practice")
         it["value_display"] = st.replace("_", " ")
         it["org_answer_label"] = raw
+        # practice ranks come from option shares, not a value distribution — the tie
+        # block is the `equal` mass, so the median-tie rule holds here too
+        it["tie_half"] = round(100.0 * equal / (2.0 * total), 1)
         items.append(it)
     return items
 
@@ -280,6 +296,11 @@ def _item(q, row, value, rank, blk, cut_label, kind):
     elif pol == "lower_is_better":
         favourable = rank < 45 and "good" or (rank > 55 and "bad" or "mid")
     label = q.display_title + ((" — " + row["label"]) if row else "")
+    # tie width alongside the midrank: the mass of peers sharing exactly this value/score
+    # (drives the median-tie ⇒ at-market verdict rule; practice items set theirs at the
+    # call site, where the rank comes from option shares rather than a distribution)
+    _dist = blk.get("_scores") if kind == "score" else blk.get("_values")
+    _tie = tie_halfwidth(_dist, value) if _dist else None
     return {
         "question_id": q.id,
         "row_id": row["row_id"] if row else None,
@@ -290,6 +311,7 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         "value": value,
         "value_display": fmt_value(value, q.unit_block()) if kind == "value" else "{:.0f}/100".format(value),
         "percentile": round(rank, 1),
+        "tie_half": round(_tie, 1) if _tie is not None else None,
         "polarity": pol,
         "favourable": favourable,           # good | mid | bad | None(neutral)
         "distance": (rank - 50.0) * (1 if pol == "higher_is_better" else -1 if pol == "lower_is_better" else 0),
@@ -837,6 +859,14 @@ def _adj_percentile(item):
 
 def _market_class(item, band_low, band_high):
     a = _adj_percentile(item)
+    # median-tie ⇒ at market (David-ruled 2026-08-12, generalising the RED_TERM_01
+    # tie-at-top ruling): when the org's tie block CONTAINS the median, the org shares
+    # the market's median answer — a midrank artifact of a coarse ladder must never
+    # read as a below/above verdict. Symmetric in adjusted space (the block width
+    # doesn't change under the lower-is-better flip).
+    th = item.get("tie_half") or 0
+    if th and abs(50.0 - a) < th:
+        return "at"
     return "above" if a > band_high else "below" if a < band_low else "at"
 
 

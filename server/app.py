@@ -846,6 +846,9 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
                 # "X in 10 peers" claim — suppressed with the verdict (Diff 14)
                 r = pos.percentile_rank(blk["_values"], v)
                 you["percentile"] = round(r, 1)
+                _th = pos.tie_halfwidth(blk["_values"], v)
+                if _th:
+                    you["tie_half"] = round(_th, 1)   # median-tie ⇒ at-market rule (client mirror)
                 it = pos._item(q, None, v, r, blk, cut_label, "value")
                 base["readout"] = pos.readout_numeric(it)
                 base["favourable"] = it["favourable"]
@@ -874,6 +877,9 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
                 }
                 if not _unbench:  # score percentile vs peers = the same claim class (Diff 14)
                     base["score"]["percentile"] = round(pos.percentile_rank(sc_blk["_scores"], s), 1)
+                    _th = pos.tie_halfwidth(sc_blk["_scores"], s)
+                    if _th:
+                        base["score"]["tie_half"] = round(_th, 1)   # median-tie ⇒ at-market rule (client mirror)
                     base["score"]["peer_p50"] = sc_blk.get("p50")
 
     elif q.type == "matrix":
@@ -902,6 +908,9 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
                     r_out["unbenchmarked"] = True   # r3sw6 split verdict: EST tier
                 if not pos.is_suppressed(rblk) and "_values" in rblk and not _row_est:
                     r_out["you"]["percentile"] = round(pos.percentile_rank(rblk["_values"], v), 1)
+                    _rth = pos.tie_halfwidth(rblk["_values"], v)
+                    if _rth:
+                        r_out["you"]["tie_half"] = round(_rth, 1)
             rows.append(r_out)
         base["matrix_rows"] = rows
         vis = [r for r in rows if not r["suppressed"]]

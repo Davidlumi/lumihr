@@ -17371,3 +17371,31 @@ standard "answer to see whether you're below, on or above the market". The ruled
 VERIFIED live at v=560: unanswered metric (REW264_HLT_GIPREHAB) shows the pencil "Add your answer"
 primary button in the card head; clicking it lands on Your data → Health & Protection with the
 focus param consumed (question present). Frontend-only; gates. v=560.
+
+## 2026-08-12 — Engine ruling: median-tie ⇒ on market (David, generalising RED_TERM_01)
+
+David, on ALLOW_04 reading "▼ Below market · P30" while his answer ("No") is shared by 59.1% of the
+market: "should be showing on market?" MECHANICS: coarse select ladders put the org in a TIE BLOCK; the
+midrank (percentile_rank) centres it — 59.1% tied at the bottom rung ⇒ P≈30 ⇒ below the 35 band floor.
+But the block CONTAINS the median: the P50 org gave the same answer. A midrank artifact must not read as
+a verdict. MEASURED on the Company Default cut before ruling: 16 of 101 answered selects are
+median-straddling ties currently verdicted (14 below→at, 2 above→at — ALLOW_04, BEN_046 income
+protection, the RED_PROC redundancy trio, FAM_005 shared parental, FAM_010 volunteering, FAM_011
+sabbaticals, GAP_004 long service, the pay-gap cadence pair…). DAVID RULED: general rule — median-tie ⇒
+"at market" (the RED_TERM_01 tie-at-top ruling, 2026-07-28, was this rule applied to one metric).
+
+IMPLEMENTATION (one classifier, all surfaces): positions.tie_halfwidth(sorted_vals, x) — the companion
+to percentile_rank, half the tie-block mass in percentile points. _item carries tie_half on every pool
+item (value/score/matrix-row via the blk distributions; practice items from the option-share `equal`
+mass at the call site). _market_class short-circuits: |50 − adj| < tie_half ⇒ "at" — so the §1 donut,
+gauge, pool_market_bands, domain grids and metric-level bands all follow from the ONE rule. Payloads:
+you.tie_half / score.tie_half / matrix-row you.tie_half attached beside every percentile (same Diff-14
+gates as the percentile itself). Frontend cardPosition mirrors the rule (kind → "mid", label "On market
+· P{n}" — the P-NUMBER IS UNCHANGED, only the verdict word/colour/arrow) with a tie-aware tooltip ("You
+share the market's median answer…"). INVARIANTS: P-numbers untouched everywhere; Diff-14 unbenchmarked
+silencing unchanged (item pol neutralised before favourable, exactly as before); signals unaffected in
+the measured set (behind/save thresholds 25/85 are tighter than the band — no flip case fires a signal);
+item favourable (45/55 rule) deliberately NOT tie-adjusted (feeds gaps/strengths; separate ruling if
+wanted). Unit-proven on the ALLOW_04 shape (13/22 tied ⇒ rank 29.5, tie 29.5 ⇒ at; P20 with thin tie
+stays below). Gate suite = the end-to-end check: qa_hero's 59 fixtures pin verdict states — a green
+suite means the ruled fixtures hold; a failure stops the commit for David's fixture re-baseline call.
