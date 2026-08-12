@@ -861,6 +861,16 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         if raw is not None:
             base["you"] = {"label": raw,
                            "labels": [t.strip() for t in raw.split(";")] if q.type == "multi_select" else [raw]}
+            # the org's answer IS an N/A route (na_codes) — the metric can rank other orgs,
+            # but no rank applies to THIS answer. Surfaced so the UI says "doesn't apply"
+            # honestly instead of "not yet rated" (labelling doctrine 2026-08-12).
+            if q.type != "multi_select":
+                from aggregate import _norm_label as _nl
+                _na = set((q.scoring_config or {}).get("na_codes") or [])
+                if _na:
+                    _code = {_nl(o["label"]): o["code"] for o in (q.options or [])}.get(_nl(raw))
+                    if _code is not None and _code in _na:
+                        base["you_na"] = True
         if q.type == "multi_select":
             base["readout"] = pos.SUPPRESSED_COPY if base["suppressed"] else None
         elif _unbench:

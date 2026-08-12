@@ -1759,6 +1759,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
                   : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}</span></span>`
               : pos
               ? html`<span class=${"pos-pill lg hastip " + pos.kind + (pos.kind === "good" ? " pill-glow" : "")} tabindex="0">${pos.arrow} ${pos.label}<span class="tip">${pos.tip}</span></span>`
+              : c.you_na
+              ? html`<span class="ctx-chip hastip" tabindex="0">Doesn't apply to you<span class="tip">Your answer says this doesn't apply to your organisation — so there's no market position to give. The peer distribution is shown for context.</span></span>`
               : (c.you || (c.matrix_rows || []).some(r => r.you))
               ? html`<span class="ctx-chip hastip" tabindex="0">Not yet rated<span class="tip">Your answer is in — this answer type doesn't carry a market rating yet, so the distribution is shown for information.</span></span>`
               : html`<a class="btn small primary" href=${qHref(c)}
