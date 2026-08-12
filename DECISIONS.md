@@ -17466,3 +17466,29 @@ maps, ruled 2026-07-24) is ALREADY APPLIED in the live DB (is_scored=1, ruled co
 MH_SUPPORT equal-weight, JOBEVAL max_of_ticked, INC_133 range_max, PAYCOMMS practice reclass) — the
 "not yet rated" tail is NOT DIFF17 debt. Remaining phase 2: the 6 unscored 2026.x singles + the 7
 scored-but-unrankable answers. 14/14 gates. v=563.
+
+## 2026-08-12 — Labelling doctrine phase 2: the six ladders authored + honest N/A states (David "do all of these")
+
+SCOPING TRUTH FIRST: the DIFF17 go-order (15 ruled score maps) was found ALREADY APPLIED in the live DB —
+so the "not yet rated" tail decomposed to (a) 6 unscored 2026.x singles and (b) 7 metrics whose maps are
+complete but whose THORNBRIDGE answer is an N/A route ("Not applicable" / "Varies by grade/tenure") —
+(b) is correct engine behaviour, not debt. INC_071 carries scoring_config.polarity=neutral against an mp
+direction of higher_is_better — likely an AFF-era shield; LEFT UNTOUCHED and flagged for David (its
+Thornbridge answer is N/A anyway, so nothing renders differently today).
+
+MIGRATION (migrate_score6_2026_08_12.py, config class, rehearsed on a throwaway then applied live):
+authored order-preserving equal-spaced ladders for the 6 — NICSHARING 100/50/0, COMMCAP 100/50/0,
+SAYEDISC 100/66.67/33.33/0, SHAREPART 100/66.67/33.33/0, ETHDISREADY 100/66.67/33.33/0, GPGNAMING
+100/50/0 — scoring_method option_scores, curve linear, authored direction=1 (AFF: authored direction is
+LAW), is_scored 0→1. na_codes ADDED on SAYEDISC + SHAREPART ("Not applicable" was un-routed — would have
+returned None silently; now disclosed absence). Script asserts: every ladder label resolves to a live
+option code, every option is laddered-or-NA-routed (nothing silently unscorable), answers book
+byte-unchanged (89,094 rows, hash bb4e119dac84e56f, asserted pre/post). Spot-tested on the rehearsal
+copy: all 6 score exactly as authored; N/A → None. Re-aggregated live: census "authored 93 /
+numband 7 / route_b 11 | label-heuristic: none" (was 87 authored); 344 payloads stored.
+
+HONEST N/A STATE (code class): assemble_card sets `you_na` when a select answer's option code is in
+na_codes (same _norm_label matching as disclosed_absent) — the metric page now shows "Doesn't apply to
+you" (with the peer distribution shown for context) instead of the misleading "Not yet rated" for
+N/A answers. "Not yet rated" remains only for genuinely unrankable answered types. Audit mirror updated
+(practice_/doesnt_apply states). Gates + final rig audit follow.
