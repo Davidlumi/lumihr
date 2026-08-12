@@ -432,6 +432,9 @@ function App() {
   // selector — so the selector is hidden on /signals; the page names its own default group.
   // (/priorities is the full gap register, a benchmark table — it KEEPS the app-wide selector.)
   const isSignals = route.startsWith("/signals");
+  // the metric detail page renders its OWN "Comparing against" bar under the Back button
+  // (David 2026-08-12) — suppress the app-wide selector here so there aren't two peer pills.
+  const isMetric = route.startsWith("/metric");
 
   // Combobox: the search popup is open at >1 char with an index; keep the
   // activatable-option list in a ref so the input's Enter handler can act on it.
@@ -531,7 +534,7 @@ function App() {
       </nav>
       <div class="main">
         <main class="content" id="main-content" tabindex="-1">
-          ${benchRoute && !isOverview && !isCategory && !isDashboards && !isSignals && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
+          ${benchRoute && !isOverview && !isCategory && !isDashboards && !isSignals && !isMetric && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
             onSelect=${setGlobalCut} onTwinInfo=${() => setTwinOpen(true)}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />`}
           ${contrib && benchRoute && html`<${ContributionBanner} contrib=${contrib} />`}
@@ -1504,6 +1507,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref:" + qid); } catch (e) { return null; } });
+  const [showInfo, setShowInfo] = useState(false);   // on-demand question & definition (the chart's info tool)
   const chartRef = useRef(null);
   // primary narrative state, lifted here (was inside MetricCommentary) so the one-pager
   // can ENSURE the commentary is written before it opens the print dialog.
@@ -1556,6 +1560,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
 
   const c = card;
   const pos = cardPosition(c);
+  const exportable = !c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed));   // only a drawn chart can copy/download
   const aim = metricAim(c, pos);   // strategy read-through: this metric vs the org's declared domain aim
   const sent = humanSentence(c);
   // honest chart options only (curated per data type); the session preference
@@ -1577,12 +1582,27 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     else { const [dim, value] = k.split("::"); setSel({ dim, value }); }
   };
   const profiled = !!(org.industry && org.fte_band);
+  const exportMeta = () => ({
+    title: c.title, cutLabel: c.cut.label, n: c.n, n_real: c.n_real, window: period, card: c, org: (window.__orgName || ""),
+    suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
+  });
   const doExport = async () => {
-    const res = await exportCardPNG(chartRef.current, {
-      title: c.title, cutLabel: c.cut.label, n: c.n, window: period, card: c, org: (window.__orgName || ""),
-      suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
-    }, "download");
-    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
+    try {
+      const res = await exportCardPNG(chartRef.current, exportMeta(), "download");
+      toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
+    } catch (e) { toast("Couldn't export the chart here.", "error"); }
+  };
+  const doCopy = async () => {
+    try {
+      const res = await exportCardPNG(chartRef.current, exportMeta(), "clipboard");
+      if (res === "copied") toast("Chart copied to your clipboard.");
+      else if (res === "downloaded") toast("Copy isn't available here — downloaded the chart instead.");
+      else toast("Nothing to export yet");
+    } catch (e) {
+      try { const res = await exportCardPNG(chartRef.current, exportMeta(), "download");
+        toast(res === "downloaded" ? "Copy failed — downloaded the chart instead." : "Nothing to export yet"); }
+      catch (e2) { toast("Couldn't copy the chart here.", "error"); }
+    }
   };
   const share = () => {
     const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim + "::" + (sel.value || "")) : "";
@@ -1676,9 +1696,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
             <${AlignmentChip} target=${aim} compact=${true} />
           </div>`}
           <div class="metric-head-actions no-print">
-            ${!c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed)) && html`<button class="btn small" onClick=${doExport} title="Download just the chart as a labelled PNG image"><${Icon} name="download" size=${13} /> Chart</button>`}
+            ${/* chart download + link moved to the compact tool row on the graph (David 2026-08-12);
+                  the header keeps the two actions the graph tools don't cover — One-pager + Pin. */ ""}
             ${!c.suppressed && html`<button class="btn small" onClick=${printMetric} title="Download a one-page PDF — the chart plus the written story (what it means for you)"><${Icon} name="file-text" size=${13} /> One-pager</button>`}
-            <button class="btn small" onClick=${share} title="Copy a link that opens this metric on the current peer group"><${Icon} name="link" size=${13} /> Share</button>
             ${onPin && pinnedIds && html`<button class=${"btn small" + (pinnedIds.has(qid) ? " primary" : "")} onClick=${() => onPin(qid)}
               title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}>
               <${Icon} name=${pinnedIds.has(qid) ? "check" : "plus"} size=${13} /> ${pinnedIds.has(qid) ? "Pinned" : "Pin"}</button>`}
@@ -1707,6 +1727,20 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
         ${!c.suppressed && html`
           <div class="bench-lead" style=${{ marginTop: "var(--s3)" }}>${sent.lead || ""}</div>
           <${ExactFigures} card=${c} />`}
+        ${/* quick tools on the graph — the compact icon set from the benchmark card
+              (info / copy / download / link), David 2026-08-12 */ ""}
+        <div class="card-tools no-print" style=${{ justifyContent: "flex-end", marginTop: "var(--s3)", paddingTop: "var(--s3)", borderTop: "1px solid var(--border)" }}>
+          ${(c.definition || c.help_text) && html`<button class=${"iconbtn" + (showInfo ? " on" : "")} title="Question & definition" aria-label="Question & definition" aria-expanded=${showInfo} onClick=${() => setShowInfo(v => !v)}><${Icon} name="info" size=${15} /></button>`}
+          ${exportable && html`<button class="iconbtn" title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
+          ${exportable && html`<button class="iconbtn" title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
+          <button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>
+        </div>
+        ${showInfo && html`
+          <div class="metric-info-reveal" style=${{ marginTop: "var(--s3)" }}>
+            ${c.definition && html`<p class="caption" style=${{ margin: "0 0 var(--s2)" }}>${c.definition}</p>`}
+            ${c.help_text && html`<p class="caption" style=${{ margin: "0 0 var(--s2)" }}>${c.help_text}</p>`}
+            <p class="caption" style=${{ margin: 0 }}><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer answers; medians, not averages. Figures resting on fewer than 5 organisations are ${" "}<a href="#/how-lumi-works/suppression">suppressed</a>. ${" "}<a href="#/how-lumi-works/calculations">How this is calculated</a>.</p>
+          </div>`}
       </div>
 
       ${/* THE primary read — promoted directly under the chart (2026-07-06). Always
@@ -1714,7 +1748,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
             full structured commentary. The standalone "What this means for you" card
             is retired into this. Shown whenever AI is available OR there's a
             deterministic read to give (practice metrics only get the AI version). */ ""}
-      ${(me.features && me.features.commentary) || (pos && !c.suppressed) ? html`
+      ${!c.suppressed ? html`
         <${MetricCommentary} commentary=${commentary} busy=${cmBusy} err=${cmErr} onGenerate=${genCommentary}
           onSave=${saveCommentary} canEdit=${!!(me.user && me.user.role !== "viewer")}
           pos=${pos} card=${c} featureOn=${!!(me.features && me.features.commentary)} />` : null}

@@ -17177,3 +17177,23 @@ unaffected; the new bar + moved hint are `no-print`. Reused existing peerbar ato
 COULDN'T verify in-app (the in-app browser session logged out mid-session and I can't type the password);
 app.js is jsc-clean and the edits reuse proven markup. David to confirm on his live session. jsc-clean;
 gates. v=553.
+
+## 2026-08-12 — Metric page (round 2): dedupe peer bar, add AI-commentary + on-graph quick tools (David)
+
+Follow-up after the first metric-page cleanup. (1) DUPLICATE "Comparing against" pill: the app shell
+(app.js ~L534) renders the app-wide PeerSetBar on benchmark-family routes INCLUDING /metric, which stacked
+with the MetricPage's own new bar under the Back button. Added an `isMetric` route flag and `&& !isMetric`
+to the shell condition — the app-wide selector is now suppressed on /metric; the page's own bar (under
+Back) is the single control. (2) AI COMMENTARY below the chart: the MetricCommentary gate was
+`(features.commentary) || (pos && !suppressed)`, so on an UNBENCHMARKED metric (pos null, commentary
+feature off) the section didn't render. Relaxed to `!c.suppressed` — the section now shows below the chart
+for any drawn metric (deterministic base when there's a position, else the "switch on AI insights" prompt;
+the component already handles every case). (3) QUICK TOOLS on the graph: added the benchmark card's compact
+icon set to the bottom of the chart card — info (toggles an on-demand question+definition+methodology
+reveal, replacing the removed "About" section), copy (new doCopy, mirrors the card), download (doExport,
+now hardened with a catch), link (share). Factored an exportMeta() helper; added showInfo state +
+exportable. To AVOID the duplication David flagged, the header's now-redundant "Chart" (download) + "Share"
+(link) buttons moved onto the graph tool row; the header keeps One-pager + Pin (which the graph tools don't
+cover). Reused .card-tools/.iconbtn atoms (no new CSS). COULDN'T verify in-app (session logged out, can't
+type the password; Claude-in-Chrome extension not connected) — app.js jsc-clean, handlers reuse proven
+code, gates. David to confirm live. v=554.
