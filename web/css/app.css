@@ -519,7 +519,7 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .section-title { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
   font-weight: var(--fw-section); letter-spacing: 0.005em; margin: 0 0 var(--s3); }
 .display-title { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display); letter-spacing: -0.015em;
-  font-weight: var(--fw-display); letter-spacing: 0; margin: 0; }
+  font-weight: var(--fw-display); margin: 0; }
 
 /* ════════ SETTINGS — two-pane shell (2026-08-11 world-class redesign) ════════
    A calm two-column surface: sticky left rail (sections grouped by scope) + a stack of
@@ -2636,9 +2636,6 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
   max-width: 100%; max-height: 90vh; overflow-y: auto; padding: var(--s5); }
 .modal.xl { width: 980px; padding: var(--s6); }
 
-/* expanded (popped-out) chart region inside the modal */
-.bench-chart.xl { height: auto; min-height: 320px; }
-.bench-chart.xl svg { max-width: 100%; max-height: none; }
 .bench-chart.zoomable { cursor: zoom-in; }
 .bench-chart.zoomable:hover { background: color-mix(in srgb, var(--surface-sunk) 45%, transparent); border-radius: var(--radius-sm); }
 
@@ -3032,20 +3029,15 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .idle-count { font-variant-numeric: tabular-nums; font-weight: 700; }
 
 
-/* ----- single-metric full page ----- */
-.metric-page { max-width: 980px; }
+/* ----- single-metric full page (the hero surface — deep-dive pass 2026-08-12) ----- */
+.metric-page { max-width: 980px; margin: 0 auto; }
 /* editable AI commentary — the member reshapes the draft into their own note */
 .metric-cm-edit { width: 100%; resize: vertical; min-height: 62px; font: inherit;
   line-height: 1.5; padding: var(--s2) var(--s3); }
 .metric-commentary .metric-cm-foot { color: var(--ink-soft); }
-/* "About this metric" — methodology demoted to a collapsed disclosure below the read */
-.metric-about > summary.metric-about-sum { cursor: pointer; list-style: none; display: inline-flex;
-  align-items: center; gap: var(--s2); }
-.metric-about-sum::-webkit-details-marker { display: none; }
-.metric-about-sum::before { content: "▸"; color: var(--ink-faint); font-size: var(--fs-caption); }
-.metric-about[open] .metric-about-sum::before { content: "▾"; }
-.metric-about-body { margin-top: var(--s3); }
-.metric-about-body > *:first-child { margin-top: 0; }
+/* one slim utility row: Back + the page's peer selector share the line */
+.metric-utility { align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.metric-utility .peerbar { margin: 0; flex-wrap: wrap; }
 /* one-pager print masthead/footer — hidden on screen, shown only when printing to PDF */
 .metric-pdf-head, .metric-pdf-foot { display: none; }
 @media print {
@@ -3060,8 +3052,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .metric-pdf-head .logo { font-weight: 800; color: var(--ink); }
   .metric-pdf-foot { display: block; font-size: 8.5pt; color: var(--ink-soft);
     border-top: 1px solid var(--border); padding-top: 6pt; margin-top: 14pt; }
-  .metric-page .metric-controls, .metric-page .chart-switch, .metric-page button,
-  .metric-page select, .metric-page .metric-sigbar, .metric-page .metric-about,
+  .metric-page .chart-switch, .metric-page button,
+  .metric-page select, .metric-page .metric-sigbar, .metric-page .metric-info-reveal,
   .metric-page .metric-commentary:not(.has-narrative) { display: none !important; }
   .metric-page .card { box-shadow: none; border: 1px solid var(--border);
     break-inside: avoid; page-break-inside: avoid; margin-top: 10pt; }
@@ -3069,9 +3061,64 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .metric-page .metric-xl { --chart-h: 250px; break-inside: avoid; }
   .metric-page h1.display-title { font-size: 20pt; line-height: 1.1; }
 }
+/* THE READ — the plain-English sentence leads the hero card at lead scale */
 .metric-lead { font-size: var(--fs-section); font-family: var(--font-head); color: var(--ink);
-  max-width: 720px; margin: var(--s4) 0 0; line-height: 1.45; }
-.pos-pill.lg { font-size: var(--fs-body); padding: var(--s2) var(--s3); flex: none; }
+  max-width: 720px; margin: 0 0 var(--s4); line-height: 1.45; }
+.pos-pill.lg { font-size: var(--fs-body); height: 30px; padding: 0 var(--s3); flex: none; }
+/* verdict tips reachable by keyboard/touch, not title-only */
+.pos-pill.hastip, .ctx-chip { position: relative; }
+.hastip:focus .tip, .hastip:focus-within .tip { display: block; }
+.hastip:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+/* "no verdict here" states (Context / No comparison) — a QUIET chip, deliberately outside
+   the RAG pos-pill vocabulary so amber stays exclusive to genuine on-market verdicts */
+.ctx-chip { display: inline-flex; align-items: center; height: 30px; padding: 0 var(--s3);
+  border-radius: 999px; border: 1px solid var(--border); background: var(--surface-sunk);
+  color: var(--ink-soft); font-size: var(--fs-body); font-weight: 600; cursor: help; }
+/* good-news moment: ONE quiet ring on the favourable verdict as the page lands — fires
+   once, never loops, and stays deadpan under prefers-reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  .pos-pill.good.pill-glow { animation: pill-glow 900ms var(--ease-out) 400ms 1 both; }
+  @keyframes pill-glow {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--favourable) 45%, transparent); }
+    100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--favourable) 0%, transparent); }
+  }
+}
+/* hero stat pair: your number + the market median, labelled, left of the chart switch */
+.metric-statrow { align-items: flex-end; gap: var(--s4); margin-bottom: var(--s3); flex-wrap: wrap; }
+.metric-stats { display: flex; gap: var(--s6); align-items: flex-end; min-width: 0; }
+.metric-stat { display: flex; flex-direction: column; gap: 2px; }
+.metric-stat .metric-value { line-height: 1.05; }
+.metric-stat.mkt .metric-value { color: var(--ink-soft); font-size: var(--fs-section); font-weight: 600; }
+/* the chart stage: a quiet sunk well frames the plot as THE object; every chart type
+   centres in one stable 320px stage (no height jolt when switching chart types) */
+.metric-stage { background: color-mix(in srgb, var(--surface-sunk) 45%, transparent);
+  border-radius: var(--radius-sm); padding: var(--s4) var(--s3); }
+.metric-stage .metric-xl { transition: opacity var(--dur-fast); }
+.metric-stage.busy .metric-xl { opacity: .45; }
+.metric-xl { --chart-h: 320px; min-height: var(--chart-h); display: flex; flex-direction: column; justify-content: center; }
+.metric-xl > * { width: 100%; }
+.metric-chart-swap { width: 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .metric-chart-swap { animation: riseIn var(--dur-fast) ease both; }
+  .metric-xl .you-marker { animation: dot-pop var(--dur-slow) var(--ease-out) 300ms both;
+    transform-box: fill-box; transform-origin: center; }
+}
+/* one closing band: exact figures left, quick tools right, a single hairline above */
+.metric-foot-band { display: flex; align-items: flex-start; gap: var(--s4);
+  margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--border); }
+.metric-foot-band .exact-figs { border-top: none; margin-top: 0; padding-top: 0; flex: 1; min-width: 0; }
+.metric-foot-band .card-tools { margin-left: auto; }
+.exact-figs b { font-variant-numeric: tabular-nums; }
+.exact-figs .you b { font-size: var(--fs-card-title); }
+.iconbtn[disabled] { opacity: var(--disabled-opacity); pointer-events: none; }
+/* the signal strip arrives with intent (deep links: the strip loads after first paint) */
+@media (prefers-reduced-motion: no-preference) {
+  .metric-sigbar { animation: sigbar-in var(--dur-base) var(--ease-out) backwards; }
+  @keyframes sigbar-in {
+    from { opacity: 0; max-height: 0; margin-top: 0; padding-top: 0; padding-bottom: 0; }
+    to { opacity: 1; max-height: 140px; margin-top: var(--s3); padding-top: var(--s2); padding-bottom: var(--s2); }
+  }
+}
 /* metric-page header side stack: position pill, the declared-aim read, and the
    Download/Share actions (lifted from the page foot to the top, 2026-07-06). */
 .metric-head-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s2); flex: none; }
@@ -3094,7 +3141,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .cut-row:last-of-type { border-bottom: none; }
 .cut-row-label { flex: 0 0 210px; display: flex; flex-direction: column; gap: var(--s1); align-items: flex-start; }
 .cut-row-chart { flex: 1; min-width: 0; --chart-h: 120px; }
-.metric-xl { --chart-h: 320px; }
 .exact-figs { display: flex; gap: var(--s6); flex-wrap: wrap; margin-top: var(--s4);
   padding-top: var(--s3); border-top: 1px solid var(--border); }
 .exact-figs > div { display: flex; flex-direction: column; gap: 2px; }

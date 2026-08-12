@@ -79,11 +79,13 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       } catch (e2) { toast("Couldn't copy the chart here.", "error"); }
     }
   };
-  const share = () => {
+  const share = async () => {
     // the deep link carries the cut this card is showing, never silently the default
     const cutPart = effectiveKey !== "all" ? "?cut=" + encodeURIComponent(effectiveKey) : "";
-    navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + card.id + cutPart);
-    toast("Link copied — opens this metric on " + c.cut.label);
+    const url = window.location.href.split("#")[0] + "#/metric/" + card.id + cutPart;
+    // the toast must not lie: confirm the write landed, else hand the link over manually
+    try { await navigator.clipboard.writeText(url); toast("Link copied — opens this metric on " + c.cut.label); }
+    catch (e) { window.prompt("Copy this link", url); }
   };
 
   const matrixBlank = c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed);
@@ -524,8 +526,10 @@ window.cardSignalPill = cardSignalPill;
 window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wide, readOnly }) {
   // popped-out charts get a wider viewBox (more data room, same-size labels);
   // in-card charts get a narrower viewBox so labels render comfortably large
-  // in the side-by-side proof column
-  const W = xl ? 780 : wide ? 620 : 340;
+  // in the side-by-side proof column. At xl the viewBox is responsive: a 780
+  // viewBox scaled into a phone renders ~4px chart text, so narrow screens get
+  // a 420 box (bigger effective type at the same rendered width).
+  const W = xl ? (typeof matchMedia !== "undefined" && matchMedia("(max-width: 700px)").matches ? 420 : 780) : wide ? 620 : 340;
   const rowH = xl ? 420 : undefined;
   if (c.suppressed) {
     return html`<div class="suppressed-box">
@@ -539,11 +543,13 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
     const you = c.you ? c.you.value : null;
     return html`
       <div>
-        ${c.you ? html`
+        ${/* at xl the metric page renders its own You+median stat pair above the chart,
+              so the in-chart header row is skipped there (never states the median twice) */ ""}
+        ${c.you ? (xl ? null : html`
           <div class="row spread" style=${{ marginBottom: "0" }}>
             <div class="metric-value">${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
             ${c.block && html`<div class="caption">Market <${Term} word="median">median<//>: <b>${fmtValue(c.block.p50, c.unit)}</b></div>`}
-          </div>` :
+          </div>`) :
         html`<div class="noanswer-box" style=${{ marginBottom: "var(--s1)" }}>${readOnly
           ? "Not answered yet — the peer picture below still holds."
           : html`The market picture below is ready — <a class="noanswer-cta" href=${qHref(c)}>add your answer</a> to see where you land.${c.is_required ? html` <span class="noanswer-key" title="One of the key reward questions that unlock your insights.">Key question</span>` : null}`}</div>`}

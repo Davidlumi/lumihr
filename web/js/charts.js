@@ -23,18 +23,17 @@ function favGlyph(fav) { return fav === "good" ? "▲" : fav === "bad" ? "▼" :
    polarity applies) with a value label. Same treatment on every chart. When
    `bounds` [minX, maxX] is given the middle-anchored label is clamped to stay
    inside the canvas, so a "You · £12,345" at P90+ can't clip off the edge. */
-function YouDot({ x, y, fav, label, labelY, anchor, bounds }) {
-  const r = 8;
+function YouDot({ x, y, fav, label, labelY, anchor, bounds, r = 8, fs = 10.5 }) {
   let lx = x, la = anchor || "middle";
   if (label && bounds && la === "middle") {
-    const halfW = (favGlyph(fav) ? 2 : 0) + label.length * 0.52 * 10.5 / 2;  // ~char width at fs 10.5
+    const halfW = (favGlyph(fav) ? 2 : 0) + label.length * 0.52 * fs / 2;  // ~char width at the label's fs
     lx = Math.max(bounds[0] + halfW, Math.min(bounds[1] - halfW, x));
   }
   return html`
-    <g>
+    <g class="you-marker">
       <path d=${`M ${x} ${y - r} L ${x + r} ${y} L ${x} ${y + r} L ${x - r} ${y} Z`}
         fill=${youColour(fav)} stroke="#fff" stroke-width="1.8"/>
-      ${label && html`<text x=${lx} y=${labelY} text-anchor=${la} font-size="10.5"
+      ${label && html`<text x=${lx} y=${labelY} text-anchor=${la} font-size=${fs}
         font-weight="700" fill=${youColour(fav)}>${favGlyph(fav) ? favGlyph(fav) + " " : ""}${label}</text>`}
     </g>`;
 }
@@ -43,7 +42,11 @@ window.YouDot = YouDot;
 // ----------------------------------------------------- percentile band -----
 // P10–P90 bar, P25–P75 emphasised, median line, "you" marker with value.
 window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = true, showValues = true, width = CHART_W }) {
-  const W = width, H = 96, padL = 10, padR = 10, barY = 46, barH = 12;
+  // hero pass: wide (xl) canvases get taller geometry, bigger type, and each P mark
+  // carries its value — the chart reads as the page's centrepiece, not a card sparkline
+  const W = width, big = W >= 620;
+  const H = big ? 124 : 96, padL = 10, padR = 10, barY = big ? 54 : 46, barH = big ? 14 : 12;
+  const fsP50 = big ? 12.5 : 9.5, fsMark = big ? 11 : 9;
   const lo = Math.min(block.p10, you != null ? you : block.p10);
   const hi = Math.max(block.p90, you != null ? you : block.p90);
   const span = (hi - lo) || 1;
@@ -51,26 +54,41 @@ window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = tr
   const marks = [];
   if (showP1090) marks.push(["P10", block.p10], ["P90", block.p90]);
   marks.push(["P25", block.p25], ["P75", block.p75]);
+  // comp data is routinely skewed: when big, every mark label carries its value, so
+  // labels can collide. One shared baseline → the median always wins, quiet marks
+  // lose their TEXT (never the tick) when their extents would overprint.
+  const p50Text = "P50" + (showValues ? " · " + fmtValue(block.p50, unit) : "");
+  const labelText = (lbl, v) => big && showValues ? lbl + " · " + fmtValue(v, unit) : lbl;
+  const half = (t, fs) => t.length * 0.52 * fs / 2 + 6;
+  const placed = [[x(block.p50) - half(p50Text, fsP50), x(block.p50) + half(p50Text, fsP50)]];
+  const markLabelled = marks.map(([lbl, v]) => {
+    const t = labelText(lbl, v), cx = x(v), hw = half(t, fsMark);
+    const clash = placed.some(([a, b]) => cx + hw > a && cx - hw < b);
+    if (!clash) placed.push([cx - hw, cx + hw]);
+    return [lbl, v, t, !clash];
+  });
   return html`
     <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
       ${showP1090 && html`<rect x=${x(block.p10)} y=${barY} width=${Math.max(1, x(block.p90) - x(block.p10))} height=${barH} rx="6" fill="var(--chart-band)" />`}
       <rect x=${x(block.p25)} y=${barY} width=${Math.max(1, x(block.p75) - x(block.p25))} height=${barH} rx="6" fill="var(--chart-band-mid)" />
       <rect x=${x(block.p50) - 1} y=${barY - 5} width="2.5" height=${barH + 10} rx="1.25" fill="var(--chart-median)" />
-      <text x=${x(block.p50)} y=${barY + barH + 18} text-anchor="middle" font-size="9.5" fill="var(--ink-soft)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
-      ${marks.map(([lbl, v]) => html`
+      <text x=${x(block.p50)} y=${barY + barH + (big ? 22 : 18)} text-anchor="middle" font-size=${fsP50} fill="var(--ink-soft)" font-weight="600">${p50Text}</text>
+      ${markLabelled.map(([lbl, v, t, show]) => html`
         <g key=${lbl}>
           <line x1=${x(v)} x2=${x(v)} y1=${barY - 2} y2=${barY + barH + 2} stroke="var(--chart-axis)" stroke-width="1"/>
-          <text x=${x(v)} y=${barY + barH + 18} text-anchor="middle" font-size="9" fill="var(--ink-faint)">${lbl}</text>
+          ${show && html`<text x=${x(v)} y=${barY + barH + (big ? 22 : 18)} text-anchor="middle" font-size=${fsMark} fill="var(--ink-faint)">${t}</text>`}
         </g>`)}
-      ${you != null && html`<${YouDot} x=${x(you)} y=${barY + barH / 2} fav=${favourable}
-        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - 14} bounds=${[padL, W - padR]} />`}
+      ${you != null && html`<${YouDot} x=${x(you)} y=${barY + barH / 2} fav=${favourable} r=${big ? 10 : 8} fs=${big ? 12.5 : 10.5}
+        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - (big ? 18 : 14)} bounds=${[padL, W - padR]} />`}
     </svg>`;
 };
 
 // ----------------------------------------------------------- histogram -----
 window.Histogram = function ({ histogram: hist, you, unit, favourable, median = null, showValues = true, width = CHART_W }) {
   if (!hist || !hist.bins) return null;
-  const W = width, H = 116, padL = 10, padB = 18, padT = 18;
+  const W = width, big = W >= 620;
+  const H = big ? 150 : 116, padL = 10, padB = big ? 22 : 18, padT = big ? 22 : 18;
+  const fsAxis = big ? 11 : 9;
   const n = hist.bins.length, maxC = Math.max(...hist.bins, 1);
   const bw = (W - padL * 2) / n;
   const x = v => padL + ((v - hist.min) / ((hist.max - hist.min) || 1)) * (W - padL * 2);
@@ -101,7 +119,7 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
     <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
       <line x1=${padL} x2=${padL} y1=${padT} y2=${H - padB} stroke="var(--chart-axis)" stroke-width="1" opacity="0.5"/>
       <line x1=${padL - 2} x2=${padL + 2} y1=${padT} y2=${padT} stroke="var(--chart-axis)" stroke-width="1" opacity="0.5"/>
-      <text x=${padL + 1} y=${padT - 2} font-size="8.5" fill="var(--ink-faint)">${"max " + maxC}</text>
+      <text x=${padL + 1} y=${padT - 2} font-size=${big ? 10 : 8.5} fill="var(--ink-faint)">${big ? "tallest bin: " + maxC + " organisation" + (maxC === 1 ? "" : "s") : "max " + maxC}</text>
       ${hist.bins.map((c, i) => html`
         <rect key=${i} x=${padL + i * bw + 1} width=${Math.max(1, bw - 2)}
           y=${padT + (1 - c / maxC) * (H - padT - padB)} height=${(c / maxC) * (H - padT - padB)}
@@ -112,25 +130,37 @@ window.Histogram = function ({ histogram: hist, you, unit, favourable, median = 
             stroke-width="1.5" stroke-dasharray="3 3" />
           <text x=${x(median)} y=${H - 5} text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-weight="600">P50</text>
         </g>`}
-      <text x=${padL} y=${H - 4} font-size="9" fill="var(--ink-faint)">${fmtValue(hist.min, unit)}</text>
-      <text x=${W - padL} y=${H - 4} text-anchor="end" font-size="9" fill="var(--ink-faint)">${fmtValue(hist.max, unit)}</text>
+      <text x=${padL} y=${H - 4} font-size=${fsAxis} fill="var(--ink-faint)">${fmtValue(hist.min, unit)}</text>
+      <text x=${W - padL} y=${H - 4} text-anchor="end" font-size=${fsAxis} fill="var(--ink-faint)">${fmtValue(hist.max, unit)}</text>
       ${you != null && html`
         <g>
           <line x1=${xClamp(you)} x2=${xClamp(you)} y1=${padT - 2} y2=${H - padB} stroke=${youColour(favourable)} stroke-width="2" />
-          <${YouDot} x=${xClamp(you)} y=${padT - 2} fav=${favourable}
+          <${YouDot} x=${xClamp(you)} y=${padT - 2} fav=${favourable} r=${big ? 10 : 8} fs=${big ? 12.5 : 10.5}
             anchor=${you < hist.min ? "start" : you > hist.max ? "end" : "middle"} bounds=${[padL, W - padL]}
-            label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${10} />
+            label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${big ? 12 : 10} />
         </g>`}
     </svg>`;
 };
 
 // ------------------------------------------------------------- box plot ----
 window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, width = CHART_W }) {
-  const W = width, H = 104, padL = 10, padR = 10, midY = 50, boxH = 26;
+  const W = width, big = W >= 620;
+  const H = big ? 132 : 104, padL = 10, padR = 10, midY = big ? 62 : 50, boxH = big ? 32 : 26;
+  const fsP50 = big ? 12.5 : 9.5, fsMark = big ? 11 : 9, lblY = midY + (big ? 34 : 28);
   const lo = Math.min(block.p10, you != null ? you : block.p10);
   const hi = Math.max(block.p90, you != null ? you : block.p90);
   const span = (hi - lo) || 1;
   const x = v => padL + ((v - lo) / span) * (W - padL - padR);
+  // when big the whisker labels carry values — same collision rule as the band:
+  // the median's label always wins, a whisker that would overprint keeps just "P10"/"P90"
+  const p50Text = "P50" + (showValues ? " · " + fmtValue(block.p50, unit) : "");
+  const half = (t, fs) => t.length * 0.52 * fs / 2 + 6;
+  const whisker = (lbl, v) => {
+    if (!(big && showValues)) return lbl;
+    const t = lbl + " · " + fmtValue(v, unit);
+    const clash = Math.abs(x(v) - x(block.p50)) < half(t, fsMark) + half(p50Text, fsP50);
+    return clash ? lbl : t;
+  };
   return html`
     <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
       <line x1=${x(block.p10)} x2=${x(block.p90)} y1=${midY} y2=${midY} stroke="var(--chart-axis)" stroke-width="1.4"/>
@@ -139,11 +169,11 @@ window.BoxPlot = function ({ block, you, unit, favourable, showValues = true, wi
       <rect x=${x(block.p25)} y=${midY - boxH / 2} width=${Math.max(1, x(block.p75) - x(block.p25))} height=${boxH}
         rx="4" fill="var(--chart-band)" stroke="var(--chart-band-mid)"/>
       <rect x=${x(block.p50) - 1.25} y=${midY - boxH / 2} width="2.5" height=${boxH} fill="var(--chart-median)"/>
-      <text x=${x(block.p10)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P10</text>
-      <text x=${x(block.p50)} y=${midY + 28} text-anchor="middle" font-size="9.5" fill="var(--ink-soft)" font-weight="600">P50${showValues ? " · " + fmtValue(block.p50, unit) : ""}</text>
-      <text x=${x(block.p90)} y=${midY + 28} text-anchor="middle" font-size="9" fill="var(--ink-faint)">P90</text>
-      ${you != null && html`<${YouDot} x=${x(you)} y=${midY} fav=${favourable} bounds=${[padL, W - padR]}
-        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${midY - boxH / 2 - 8} />`}
+      <text x=${x(block.p10)} y=${lblY} text-anchor="middle" font-size=${fsMark} fill="var(--ink-faint)">${whisker("P10", block.p10)}</text>
+      <text x=${x(block.p50)} y=${lblY} text-anchor="middle" font-size=${fsP50} fill="var(--ink-soft)" font-weight="600">${p50Text}</text>
+      <text x=${x(block.p90)} y=${lblY} text-anchor="middle" font-size=${fsMark} fill="var(--ink-faint)">${whisker("P90", block.p90)}</text>
+      ${you != null && html`<${YouDot} x=${x(you)} y=${midY} fav=${favourable} r=${big ? 10 : 8} fs=${big ? 12.5 : 10.5} bounds=${[padL, W - padR]}
+        label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${midY - boxH / 2 - (big ? 10 : 8)} />`}
     </svg>`;
 };
 
@@ -157,10 +187,11 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
   let cap = opts.length <= 3 ? 42 : opts.length <= 5 ? 32 : 27;
   if (H > 300) cap += 16;
   const rowH = Math.max(15, Math.min(cap, Math.floor((H - 6) / Math.max(opts.length, 1))));
-  const fs = rowH >= 22 ? 10.5 : 9.5;
-  // label gutter sized to the actual labels, not a fixed share of the card
+  const fs = rowH >= 22 ? (width > 700 ? 12 : 10.5) : 9.5;
+  // label gutter sized to the actual labels, not a fixed share of the card; the hero
+  // canvas affords a wider gutter so long option labels stop truncating
   const longest = Math.max(...opts.map(o => Math.min(o.label.length, 34)), 3);
-  const labelW = Math.min(190, Math.max(34, longest * fs * 0.54) + 10), W = width;
+  const labelW = Math.min(width > 700 ? 300 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;
   // Match the server's whitespace-collapsing _norm_label so the "you" highlight
@@ -207,9 +238,9 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
   let cap = opts.length <= 3 ? 42 : opts.length <= 5 ? 32 : 27;
   if (H > 300) cap += 16;
   const rowH = Math.max(15, Math.min(cap, Math.floor((H - 6) / Math.max(opts.length, 1))));
-  const fs = rowH >= 22 ? 10.5 : 9.5;
+  const fs = rowH >= 22 ? (width > 700 ? 12 : 10.5) : 9.5;
   const longest = Math.max(...opts.map(o => Math.min(o.label.length, 34)), 3);
-  const labelW = Math.min(190, Math.max(34, longest * fs * 0.54) + 10), W = width;
+  const labelW = Math.min(width > 700 ? 300 : 190, Math.max(34, longest * fs * 0.54) + 10), W = width;
   const railX = labelW + 5;
   const maxP = Math.max(...opts.map(o => o.pct), 1);
   const usedH = opts.length * rowH + 4;

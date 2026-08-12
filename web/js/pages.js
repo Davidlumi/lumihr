@@ -3970,7 +3970,7 @@ window.MetricTrend = function ({ qid }) {
   const vals = pts.map(p => p.p50 != null ? p.p50 : p.modal_pct).filter(v => v != null);
   if (!vals.length) return null;
   const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
-  const W = 640, H = 120, PAD = 34;
+  const W = 930, H = 130, PAD = 40;   // same canvas width as the hero chart above it
   const xStep = (W - PAD * 2) / Math.max(1, pts.length - 1);
   let xi = 0;
   const segs = t.segments.map(seg => seg.map(p => {
@@ -3979,22 +3979,26 @@ window.MetricTrend = function ({ qid }) {
     xi += 1;
     return pt;
   }));
+  const lastPt = segs.length ? segs[segs.length - 1][segs[segs.length - 1].length - 1] : null;
+  const trendAria = "Market median by period: " + pts.map(p => p.period + " " + fmtValue(p.p50 != null ? p.p50 : p.modal_pct, null)).join(", ")
+    + "." + (t.breaks.length ? " " + t.breaks.length + " comparability reset" + (t.breaks.length === 1 ? "" : "s") + "." : "");
   return html`
     <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <h2 class="section-title">Across data periods</h2>
       ${t.breaks.length > 0 && html`
-        <div class="caption" style=${{ marginBottom: "var(--s2)" }}>
-          ⚠ This question changed materially (${t.breaks.map(b => b.release_id).join(", ")}) —
-          values either side of the break aren't comparable, so the trend resets rather than joining up.
+        <div class="caption" style=${{ marginBottom: "var(--s2)", display: "flex", gap: "var(--s2)", alignItems: "flex-start" }}>
+          <${Icon} name="info" size=${13} style=${{ flex: "none", marginTop: "2px" }} />
+          <span>This question changed materially (${t.breaks.map(b => b.release_id).join(", ")}) —
+          values either side of the break aren't comparable, so the trend resets rather than joining up.</span>
         </div>`}
-      <svg viewBox=${"0 0 " + W + " " + H} style=${{ width: "100%", maxWidth: W + "px" }}>
+      <svg viewBox=${"0 0 " + W + " " + H} style=${{ width: "100%" }} role="img" aria-label=${trendAria}>
         ${segs.map((seg, si) => html`
           <g key=${si}>
             ${seg.length > 1 && html`<polyline fill="none" stroke="var(--blue)" stroke-width="2"
               points=${seg.map(d => d.x + "," + d.y).join(" ")} />`}
             ${seg.map((d, i) => html`
               <g key=${i}>
-                <circle cx=${d.x} cy=${d.y} r="4" fill="var(--blue)" />
+                <circle cx=${d.x} cy=${d.y} r=${lastPt && d === lastPt ? 5.5 : 4} fill="var(--blue)" />
                 <text x=${d.x} y=${d.y - 9} text-anchor="middle" font-size="10" fill="var(--ink-soft)">${fmtValue(d.v, null)}</text>
                 <text x=${d.x} y=${H - 8} text-anchor="middle" font-size="10" fill="var(--ink-soft)">${d.p.period}</text>
               </g>`)}

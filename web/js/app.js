@@ -333,7 +333,9 @@ function App() {
     // ship review 2026-07-09 B2: match must stop at the query string — (.+$)
     // swallowed "?cut=…" into the qid, so every link the Share button mints
     // fetched a mangled id and hung on the cardStale skeleton forever.
-    page = html`<${MetricPage} ...${pageProps} qid=${m[1]} />`;
+    // key by qid: a metric→metric navigation must remount (fresh card/chart/commentary
+    // state) — without it the old metric's figures can paint under the new URL.
+    page = html`<${MetricPage} key=${m[1]} ...${pageProps} qid=${m[1]} />`;
   } else if ((m = route.match(/^\/boardpack\/(.+)$/))) {
     page = html`<${BoardPackView} packId=${m[1]} me=${me} />`;
   } else if (route.startsWith("/boardpack")) {   // bare route = the packs home (used to fall through to Overview)
@@ -1458,18 +1460,11 @@ function mpReadCopy(cl) {
 // the warm /api/overview cache (you almost always arrive from it); no signal → renders
 // nothing. Acts on question_id — the key signal_actions already uses.
 const LENS_WORD = { save: "cost", attract: "attraction", retain: "retention", engage: "engagement" };
-function MetricSignalBar({ qid }) {
-  const [sig, setSig] = useState(null);
-  const [status, setStatus] = useState(null);
-  useEffect(() => {
-    let dead = false;
-    apiCached("/api/overview").then(o => {
-      if (dead) return;
-      const s = (o.signals_all || []).find(x => x.question_id === qid && x.status !== "dismissed") || null;
-      setSig(s); setStatus(s ? s.status : null);
-    }).catch(() => {});
-    return () => { dead = true; };
-  }, [qid]);
+function MetricSignalBar({ qid, sig }) {
+  // the signal lookup is lifted into MetricPage (one fetch feeds this strip AND the
+  // chart's marker colour, so they can never disagree); this renders + triages only.
+  const [status, setStatus] = useState(sig ? sig.status : null);
+  useEffect(() => { setStatus(sig ? sig.status : null); }, [sig]);
   if (!sig) return null;
   const onSet = (sid, st, days) => {
     const prev = status;
@@ -1481,12 +1476,12 @@ function MetricSignalBar({ qid }) {
     if (st === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(qid, null) });
     else if (st === "snoozed") toast("Snoozed", null, { label: "Undo", fn: () => onSet(qid, null) });
   };
-  const word = LENS_WORD[sig.lens] || "the market";
+  const word = LENS_WORD[sig.lens];
   return html`
     <div class="metric-sigbar">
       <span class=${"signal-roundel lens-" + sig.lens}><${Icon} name=${LENS_ICON[sig.lens] || "flag"} size=${14} /></span>
       <div class="metric-sigbar-txt">
-        <b>Flagged in your signals</b> — for ${word}${sig.risk_framed ? " · a risk floor" : ""}
+        <b>Flagged in your signals</b>${word ? " — for " + word : ""}${sig.risk_framed ? " · a risk floor" : ""}
         ${sig.stand || sig.detail ? html`<span class="caption"> · ${sig.stand || sig.detail}</span>` : null}
       </div>
       <${SignalActions} status=${status === "active" ? null : status} sid=${qid} onSet=${onSet} />
@@ -1506,9 +1501,28 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   const [card, setCard] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [chartSel, setChartSel] = useState(() => { try { return sessionStorage.getItem("lumi-chart-pref:" + qid); } catch (e) { return null; } });
-  const [showInfo, setShowInfo] = useState(false);   // on-demand question & definition (the chart's info tool)
+  const [retryTick, setRetryTick] = useState(0);     // in-place retry (no full reload)
+  // chart preference round-trips with the benchmark card: saved pref first, then the
+  // session fallback (viewers can't persist prefs but still keep their choice locally)
+  const [chartSel, setChartSel] = useState(() => {
+    const saved = ((prefs || {})[qid] || {}).chart;
+    if (saved) return saved;
+    try { return sessionStorage.getItem("lumi-chart-pref:" + qid); } catch (e) { return null; }
+  });
+  const [showInfo, setShowInfo] = useState(false);   // on-demand definition & methodology (the chart's info tool)
+  const [sig, setSig] = useState(null);              // this metric's live signal — feeds the sigbar AND the marker colour
   const chartRef = useRef(null);
+  const genRef = useRef(null);                       // in-flight commentary generate (one-pager awaits it)
+  useEffect(() => {
+    let dead = false;
+    apiCached("/api/overview").then(o => {
+      if (dead) return;
+      setSig((o.signals_all || []).find(x => x.question_id === qid && x.status !== "dismissed") || null);
+    }).catch(() => {});
+    return () => { dead = true; };
+  }, [qid]);
+  // the browser tab / history entry names the metric, not just "Metric"
+  useEffect(() => { if (card && card.title) document.title = card.title + " · lumi"; }, [card && card.title]);
   // primary narrative state, lifted here (was inside MetricCommentary) so the one-pager
   // can ENSURE the commentary is written before it opens the print dialog.
   const [commentary, setCommentary] = useState(null);
@@ -1538,36 +1552,43 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       .catch(e => { if (!dead) setErr(e.message); })
       .finally(() => { if (!dead) setBusy(false); });
     return () => { dead = true; };
-  }, [qid, sel.dim, sel.value]);
-  if (err) return html`<${EmptyState} title="Couldn't load this metric"
-    body=${err + " — nothing is lost."}
-    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
-  if (!card) return html`
-    <div>
-      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "var(--s3)" }}></div>
-      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "var(--s4)" }}></div>
-      <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
-    </div>`;
-
-  const cardStale = card && card.cut && (card.cut.dim !== sel.dim
-    || (card.cut.value || null) !== (sel.value || null));
-  if (!card || cardStale) return html`
-    <div>
-      <div class="skel" style=${{ height: "32px", width: "440px", marginBottom: "var(--s3)" }}></div>
-      <div class="skel" style=${{ height: "18px", width: "560px", marginBottom: "var(--s4)" }}></div>
-      <div class="skel" style=${{ height: "420px", borderRadius: "var(--radius)" }}></div>
+  }, [qid, sel.dim, sel.value, retryTick]);
+  if (err) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load this metric"
+    body=${String(err).replace(/\.$/, "") + " — nothing is lost."}
+    action=${html`<button class="btn small primary" onClick=${() => { setErr(null); setRetryTick(t => t + 1); }}>Retry</button>`} />`;
+  // first load only — one skeleton mirroring the page silhouette (utility row, title, hero card).
+  // A peer-group change never comes back here: the frame stays mounted and the chart dims.
+  if (!card || card.id !== qid) return html`
+    <div class="metric-page">
+      <div class="skel" style=${{ height: "28px", width: "100%", maxWidth: "560px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "34px", width: "100%", maxWidth: "440px", marginBottom: "var(--s2)" }}></div>
+      <div class="skel" style=${{ height: "16px", width: "100%", maxWidth: "520px", marginBottom: "var(--s4)" }}></div>
+      <div class="skel" style=${{ height: "520px", borderRadius: "var(--radius)" }}></div>
     </div>`;
 
   const c = card;
+  // a cut change re-fetches into the SAME frame: dim the chart + disable exports while
+  // the new figures load, but never unmount the selector the user is holding
+  const staleCut = c.cut && (c.cut.dim !== sel.dim || (c.cut.value || null) !== (sel.value || null));
+  const busyNow = busy || staleCut;
   const pos = cardPosition(c);
   const exportable = !c.suppressed && !(c.type === "matrix" && (c.matrix_rows || []).every(r => r.suppressed));   // only a drawn chart can copy/download
+  // the marker colour follows the FLAG when this metric carries a live signal (same rule
+  // as the cards, card.js cardFav) — the sigbar and the chart can never disagree
+  const cfav = (typeof cardFav === "function" ? cardFav(c, sig) : null) || (pos ? pos.kind : null);
   const aim = metricAim(c, pos);   // strategy read-through: this metric vs the org's declared domain aim
   const sent = humanSentence(c);
   // honest chart options only (curated per data type); the session preference
   // applies only where valid — normaliseChart falls back to this metric's default
   const alts = chartAlternatives(c);
   const chart = normaliseChart(c, chartSel);
-  const pickChart = (t) => { setChartSel(t); try { sessionStorage.setItem("lumi-chart-pref:" + qid, t); } catch (e) {} };
+  const pickChart = (t) => {
+    setChartSel(t);
+    try { sessionStorage.setItem("lumi-chart-pref:" + qid, t); } catch (e) {}
+    // persist alongside the card prefs — MUST spread the existing per-metric pref
+    // object (onPref replaces it wholesale, so a bare {chart} would clobber p1090/values)
+    if (onPref) onPref(qid, { ...((prefs || {})[qid] || {}), chart: t });
+  };
   const period = (me.snapshots && me.snapshots[0] && me.snapshots[0].collection_window) || "";
   const backTo = "/benchmark" + (c.subpower ? "?cat=" + encodeURIComponent(c.subpower) : "");
   const goBack = () => {
@@ -1593,7 +1614,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     : defCut.indexOf("industry::") === 0 ? ((cuts && cuts.industries) || {})[defCut.slice(10)]
     : defCut.indexOf("fte_band::") === 0 ? ((cuts && cuts.fte_bands) || {})[defCut.slice(10)]
     : defCut === "twin" ? (cuts && cuts.twin_n) : null;
-  const defOptLabel = hasDefault ? "Company Default" + (defCount != null ? " · " + defCount : "") : "All peers";
+  const poolN = (me.peer_pool || {}).responding_orgs;
+  const defOptLabel = hasDefault ? "Company Default" + (defCount != null ? " · " + defCount : "") : "All peers" + (poolN ? " · " + poolN : "");
   const profiled = !!(org.industry && org.fte_band);
   const exportMeta = () => ({
     title: c.title, cutLabel: c.cut.label, n: c.n, n_real: c.n_real, window: period, card: c, org: (window.__orgName || ""),
@@ -1608,29 +1630,32 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   const doCopy = async () => {
     try {
       const res = await exportCardPNG(chartRef.current, exportMeta(), "clipboard");
-      if (res === "copied") toast("Chart copied to your clipboard.");
-      else if (res === "downloaded") toast("Copy isn't available here — downloaded the chart instead.");
+      if (res === "copied") toast(`Chart copied — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}`);
+      else if (res === "downloaded") toast(`Copy isn't available here — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})`);
       else toast("Nothing to export yet");
     } catch (e) {
       try { const res = await exportCardPNG(chartRef.current, exportMeta(), "download");
-        toast(res === "downloaded" ? "Copy failed — downloaded the chart instead." : "Nothing to export yet"); }
+        toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})` : "Nothing to export yet"); }
       catch (e2) { toast("Couldn't copy the chart here.", "error"); }
     }
   };
-  const share = () => {
+  const share = async () => {
     const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim + "::" + (sel.value || "")) : "";
-    navigator.clipboard.writeText(window.location.href.split("#")[0] + "#/metric/" + qid + cutPart);
-    toast("Link copied — opens this metric on " + c.cut.label);
+    const url = window.location.href.split("#")[0] + "#/metric/" + qid + cutPart;
+    // the toast must not lie: confirm the write landed, else hand the link over manually
+    try { await navigator.clipboard.writeText(url); toast("Link copied — opens this metric on " + c.cut.label); }
+    catch (e) { window.prompt("Copy this link", url); }
   };
-  const genCommentary = async (force) => {
-    if (cmBusy) return null;
+  const genCommentary = (force) => {
+    if (cmBusy) return genRef.current;   // already writing — share the in-flight promise
     setCmBusy(true); setCmErr(null);
-    try {
-      const r = await api("/api/metric-commentary", { method: "POST",
-        body: { question_id: qid, cut: sel.dim, cut_value: sel.value, force: !!force } });
-      setCommentary(r); return r;
-    } catch (e) { setCmErr(e.message); return null; }
-    finally { setCmBusy(false); }
+    const p = api("/api/metric-commentary", { method: "POST",
+        body: { question_id: qid, cut: sel.dim, cut_value: sel.value, force: !!force } })
+      .then(r => { setCommentary(r); return r; })
+      .catch(e => { setCmErr(e.message); return null; })
+      .finally(() => { setCmBusy(false); genRef.current = null; });
+    genRef.current = p;
+    return p;
   };
   // save a member-edited commentary — the org's own words become the stored draft
   const saveCommentary = async (parts) => {
@@ -1644,10 +1669,13 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   // chart-only PNG (doExport) stays. Reuses the browser print pipeline (pulse/board
   // pack pattern) — no new dependency, no server round-trip.
   const printMetric = async () => {
-    if (!commentary && !cmBusy && me.features && me.features.commentary) {
+    if (!commentary && me.features && me.features.commentary) {
       toast("Writing your commentary for the one-pager…");
-      await genCommentary(false);
-      await new Promise(r => setTimeout(r, 400));   // let the narrative paint before the print dialog
+      // await the IN-FLIGHT generate if one is already running, else start one; an
+      // honest fallback when the write fails (the deterministic read still prints)
+      const r = await (genRef.current || genCommentary(false));
+      if (!r) toast("Couldn't write the commentary — printing the standard read.", "error");
+      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));   // let it paint
     }
     const t = document.title;
     document.title = "lumi — " + c.title + " · one-pager";
@@ -1660,16 +1688,20 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       ${/* print-only masthead for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-head" aria-hidden="true">
         <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · ${compositionLabel(c.n, c.n_real)}${c.base ? " · of " + c.base.label : ""}${period ? " · " + period : ""}</div>
-      <button class="btn quiet no-print" onClick=${goBack}>← Back</button>
-      <div class="peerbar no-print" style=${{ marginTop: "var(--s3)" }}>
+      ${/* one slim utility row: Back (named for its destination) + the peer selector —
+            merged so the title lands sooner (David fork 2026-08-12) */ ""}
+      <div class="row spread no-print metric-utility">
+        <button class="btn quiet" style=${{ flex: "none" }} onClick=${goBack}>← ${c.subpower || "Benchmarks"}</button>
+        <div class="peerbar" style=${{ margin: 0 }}>
         <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
-        <span class=${"peerbar-pill" + (selKey !== "all" ? " narrowed" : "")}>
+        <span class=${"peerbar-pill" + (selKey !== "all" ? " narrowed" : "")}
+          title=${!profiled ? "Sector, size and bespoke comparisons unlock once your company profile is complete — add it under Settings → Company profile." : undefined}>
           <span class="peerbar-selwrap">
             <select aria-label="Peer group for this metric" class="peer-ctl" value=${selKey} onChange=${e => setCutKey(e.target.value)}>
               ${/* order kept consistent with the app-wide PeerSetBar (David 2026-08-12):
                     Company Default → All peers → your groups → sectors → size → similar orgs. */ ""}
               <option value=${defCut}>${defOptLabel}</option>
-              ${hasDefault && html`<option value="all">All peers</option>`}
+              ${hasDefault && html`<option value="all">All peers${poolN ? " · " + poolN : ""}</option>`}
               ${cuts && (cuts.groups || []).filter(g => ("group::" + g.group_id) !== defCut).length > 0 && html`
                 <optgroup label="Your groups">
                   ${cuts.groups.filter(g => ("group::" + g.group_id) !== defCut).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
@@ -1691,22 +1723,25 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
             <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
           </span>
         </span>
-        <span class="peerset-note">${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</span>
+        <span class="peerset-note">${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : ""}</span>
+        </div>
       </div>
-      ${!profiled && html`<div class="caption no-print" style=${{ margin: "var(--s1) 0 0" }}>
-        Sector, size and bespoke comparisons unlock once your company profile is complete —
-        ${" "}<a href="#/profile">two minutes, company facts only</a>.</div>`}
       <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s4)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
           <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>${c.title}</h1>
           <p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>
         </div>
         <div class="metric-head-side">
-          ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
-            ? html`<span class="pos-pill lg mid" title=${c.classification.register === "Approach"
+          ${/* the header always answers "what kind of read is this?" — verdict pill, or the
+                ruled no-verdict states (unbenchmarked / Context), never a forbidden P-claim.
+                Tips are keyboard/touch-reachable (.hastip + tabindex), not title-only. */ ""}
+          ${c.unbenchmarked && !c.practice
+            ? html`<span class="ctx-chip hastip" tabindex="0">No comparison<span class="tip">No verified market anchor yet — the distribution is shown for information; no market verdict renders until this metric is anchored.</span></span>`
+            : c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
+            ? html`<span class="ctx-chip hastip" tabindex="0">Context<span class="tip">${c.classification.register === "Approach"
                 ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
-                : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}>Context</span>`
-            : pos && html`<span class=${"pos-pill lg " + pos.kind} title=${pos.tip}>${pos.arrow} ${pos.label}</span>`}
+                : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}</span></span>`
+            : pos && html`<span class=${"pos-pill lg hastip " + pos.kind + (pos.kind === "good" ? " pill-glow" : "")} tabindex="0">${pos.arrow} ${pos.label}<span class="tip">${pos.tip}</span></span>`}
           ${aim && html`<div class="metric-aim" title="How this metric reads against the aim you declared for this area.">
             <span class="metric-aim-lbl">Your ${c.domain_aim.domain} aim: ${STANCE_VERB[c.domain_aim.stance] || c.domain_aim.stance}</span>
             <${AlignmentChip} target=${aim} compact=${true} />
@@ -1714,45 +1749,72 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
           <div class="metric-head-actions no-print">
             ${/* chart download + link moved to the compact tool row on the graph (David 2026-08-12);
                   the header keeps the two actions the graph tools don't cover — One-pager + Pin. */ ""}
-            ${!c.suppressed && html`<button class="btn small" onClick=${printMetric} title="Download a one-page PDF — the chart plus the written story (what it means for you)"><${Icon} name="file-text" size=${13} /> One-pager</button>`}
+            ${!c.suppressed && html`<button class="btn small" disabled=${busyNow} onClick=${printMetric} title="Print or save a one-page PDF — the chart plus your written commentary."><${Icon} name="file-text" size=${13} /> One-pager</button>`}
             ${onPin && pinnedIds && html`<button class=${"btn small" + (pinnedIds.has(qid) ? " primary" : "")} onClick=${() => onPin(qid)}
               title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}>
               <${Icon} name=${pinnedIds.has(qid) ? "check" : "plus"} size=${13} /> ${pinnedIds.has(qid) ? "Pinned" : "Pin"}</button>`}
           </div>
         </div>
       </div>
-      <${MetricSignalBar} qid=${qid} />
+      <${MetricSignalBar} qid=${qid} sig=${sig} />
 
-      <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
-        ${alts.length > 1 && html`
-          <div class="row" style=${{ justifyContent: "flex-end", marginBottom: "var(--s3)" }}>
-            <div class="chart-switch" role="group" aria-label="Chart type">
-              ${alts.map(t => html`
-                <button key=${t} class=${"chart-switch-btn" + (chart === t ? " on" : "")}
-                  aria-pressed=${chart === t} onClick=${() => pickChart(t)}>${CHART_LABELS[t] || t}</button>`)}
+      <div class="card metric-hero-card" aria-busy=${busyNow ? "true" : "false"} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+        ${/* THE READ, as one column (David fork 2026-08-12): plain-English lead → your
+              numbers → the chart. The lead is promoted above the chart at lead scale;
+              You + market median cluster as a labelled stat pair (CardBody's own row is
+              skipped at xl so the median never states itself twice). */ ""}
+        ${!c.suppressed && sent.lead ? html`<p class="metric-lead">${sent.lead}</p>` : null}
+        ${(() => {
+          const showStats = c.type === "numeric" && c.you && !c.suppressed;
+          const showSwitch = exportable && alts.length > 1;
+          if (!showStats && !showSwitch) return null;
+          const youInk = cfav === "good" ? "var(--favourable-ink)" : cfav === "bad" ? "var(--unfavourable-ink)" : "var(--you)";
+          return html`<div class="row spread metric-statrow">
+            <div class="metric-stats">
+              ${showStats && html`
+                <div class="metric-stat">
+                  <span class="caption">You${c.you.percentile != null ? " · " + pLabel(c.you.percentile) : ""}</span>
+                  <div class="metric-value" style=${{ color: youInk }}>${stripUnit(c.you.display, c.unit)}<span class="unit">${unitSuffix(c.unit)}</span></div>
+                </div>
+                ${c.block && c.block.p50 != null && html`<div class="metric-stat mkt">
+                  <span class="caption">Market <${Term} word="median">median<//></span>
+                  <div class="metric-value">${fmtValue(c.block.p50, c.unit)}</div>
+                </div>`}`}
             </div>
-          </div>`}
-        <div class="metric-xl" ref=${chartRef} style=${busy ? { opacity: .45 } : null}
-          role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
-          ${c.suppressed ? html`
-            <${EmptyState} icon="shield" title="Not enough organisations to show this safely"
-              body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question. Try a broader peer group."}
-              action=${html`<a class="btn small" href="#/how-lumi-works/suppression">Why figures are hidden</a>`} />` :
-          html`<${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${pos ? pos.kind : null} xl=${true} />`}
+            ${showSwitch && html`
+              <div class="chart-switch" role="group" aria-label="Chart type">
+                ${alts.map(t => html`
+                  <button key=${t} class=${"chart-switch-btn" + (chart === t ? " on" : "")}
+                    aria-pressed=${chart === t} onClick=${() => pickChart(t)}>${CHART_LABELS[t] || t}</button>`)}
+              </div>`}
+          </div>`;
+        })()}
+        <div class=${"metric-stage" + (busyNow ? " busy" : "")}>
+          <div class="metric-xl" ref=${chartRef}>
+            ${c.suppressed ? html`
+              <${EmptyState} icon="shield" title="Not enough organisations to show this safely"
+                body=${"Fewer than 5 organisations in this peer group (" + c.cut.label + ") answered this question. Try a broader peer group."}
+                action=${html`<div class="row" style=${{ gap: "var(--s3)", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+                  ${selKey !== "all" ? html`<button class="btn small primary" onClick=${() => setCutKey("all")}>Compare against all peers</button>` : null}
+                  <a class="caption" href="#/how-lumi-works/suppression">Why figures are hidden</a></div>`} />` :
+            html`<div key=${chart} class="metric-chart-swap" role="img"
+              aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + ", " + c.cut.label + "."}>
+              <${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${cfav} xl=${true} />
+            </div>`}
+          </div>
         </div>
-        ${!c.suppressed && html`
-          <div class="bench-lead" style=${{ marginTop: "var(--s3)" }}>${sent.lead || ""}</div>
-          <${ExactFigures} card=${c} />`}
-        ${/* quick tools on the graph — the compact icon set from the benchmark card
-              (info / copy / download / link), David 2026-08-12 */ ""}
-        <div class="card-tools no-print" style=${{ justifyContent: "flex-end", marginTop: "var(--s3)", paddingTop: "var(--s3)", borderTop: "1px solid var(--border)" }}>
-          ${(c.definition || c.help_text) && html`<button class=${"iconbtn" + (showInfo ? " on" : "")} title="Question & definition" aria-label="Question & definition" aria-expanded=${showInfo} onClick=${() => setShowInfo(v => !v)}><${Icon} name="info" size=${15} /></button>`}
-          ${exportable && html`<button class="iconbtn" title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
-          ${exportable && html`<button class="iconbtn" title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
-          <button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>
+        ${/* one closing band: the analyst's figures + the quick tools under a single hairline */ ""}
+        <div class="metric-foot-band">
+          ${!c.suppressed && html`<${ExactFigures} card=${c} pos=${cfav} skipYou=${c.type === "numeric" && !!c.you} />`}
+          <div class="card-tools no-print">
+            <button class=${"iconbtn" + (showInfo ? " on" : "")} title="Definition & methodology" aria-label="Definition & methodology" aria-expanded=${showInfo} aria-controls="metric-info" onClick=${() => setShowInfo(v => !v)}><${Icon} name="info" size=${15} /></button>
+            ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
+            ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
+            <button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>
+          </div>
         </div>
         ${showInfo && html`
-          <div class="metric-info-reveal" style=${{ marginTop: "var(--s3)" }}>
+          <div class="metric-info-reveal" id="metric-info" style=${{ marginTop: "var(--s3)" }}>
             ${c.definition && html`<p class="caption" style=${{ margin: "0 0 var(--s2)" }}>${c.definition}</p>`}
             ${c.help_text && html`<p class="caption" style=${{ margin: "0 0 var(--s2)" }}>${c.help_text}</p>`}
             <p class="caption" style=${{ margin: 0 }}><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer answers; medians, not averages. Figures resting on fewer than 5 organisations are ${" "}<a href="#/how-lumi-works/suppression">suppressed</a>. ${" "}<a href="#/how-lumi-works/calculations">How this is calculated</a>.</p>
@@ -1774,9 +1836,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       ${/* "About this metric" (definition / methodology / classification / suggest) removed from the
             metric page per David 2026-08-12 — the question sits under the title; methodology lives in
             How-lumi-works and the global "Suggest a metric". */ ""}
-      <div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
-        From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category.
-      </div>
+      ${c.subpower ? html`<div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
+        From the <a href=${"#" + backTo}>${c.subpower}</a> category.
+      </div>` : null}
       ${/* print-only source line for the one-pager PDF (hidden on screen) */ ""}
       <div class="metric-pdf-foot" aria-hidden="true">
         Source: lumi HR${period ? " · " + period : ""} · generated ${fmtDate()} · Percentiles use linear interpolation across all valid peer answers; peer groups under 5 organisations are suppressed.${(me.peer_pool || {}).responding_orgs ? html`
@@ -1812,20 +1874,22 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
     if (edited && !window.confirm("Regenerating replaces your edited version with a fresh AI draft. Continue?")) return;
     onGenerate(true);
   };
+  // feature off + nothing to say = say nothing: a full card announcing an interpretation
+  // ISN'T here would only dilute the chart it follows
+  if (!featureOn && !detBase && !data && !busy) return null;
   return html`
-    <div class=${"card metric-commentary" + (data ? " has-narrative" : "")} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+    <div class=${"card metric-commentary" + (data || detBase ? " has-narrative" : "")} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
       <div class="row spread" style=${{ alignItems: "flex-start" }}>
         <h2 class="section-title" style=${{ marginBottom: 0 }}><${Icon} name="sparkle" size=${14} /> What this means for you</h2>
         ${edited ? html`<span class="chip" style=${{ background: "var(--blue-tint)", color: "var(--blue-deep)" }}>Edited by your team</span>`
           : data ? html`<span class="chip warn no-print">AI draft — review &amp; edit</span>` : null}
       </div>
       ${detBase && html`<p style=${{ margin: "var(--s2) 0 0" }}>${detBase}</p>`}
+      ${/* a failed generate/regenerate is visible in EVERY state, not only pre-first-draft */ ""}
+      ${err && !busy && html`<div class="error-text no-print" style=${{ margin: "var(--s2) 0 0" }}>${err}</div>`}
       ${!data && !busy && featureOn && html`
-        <p class="caption commentary-cta" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>A structured interpretation drafted from the figures on this page — yours to review and edit.</p>
-        ${err && html`<div class="error-text no-print" style=${{ marginBottom: "var(--s2)" }}>${err}</div>`}
-        <button class="btn primary" onClick=${() => onGenerate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
-      ${!data && !busy && !featureOn && !detBase && html`
-        <p class="caption" style=${{ marginTop: "var(--s2)" }}>An interpretation appears here once your organisation's AI insights are switched on.</p>`}
+        <p class="caption commentary-cta no-print" style=${{ marginTop: detBase ? "var(--s3)" : "var(--s2)" }}>A structured interpretation drafted from the figures on this page — yours to review and edit.</p>
+        <button class="btn primary no-print" onClick=${() => onGenerate(false)}><${Icon} name="sparkle" size=${13} /> Generate commentary</button>`}
       ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
       ${data && !editing && html`
         <div style=${{ marginTop: "var(--s3)" }}>
@@ -1836,7 +1900,7 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
             </div>`)}
           <div class="caption metric-cm-foot" style=${{ borderTop: "1px solid var(--border)", paddingTop: "var(--s2)" }}>
             ${edited
-              ? html`Edited by your team${data.edited_by ? " (" + data.edited_by + ")" : ""}${data.edited_at ? " · " + fmtDate(data.edited_at + "Z") : ""} — your organisation's own words. Consider your own context and seek professional input where relevant.`
+              ? html`Your organisation's own words${data.edited_by ? " — edited by " + data.edited_by : ""}${data.edited_at ? " · " + fmtDate(data.edited_at + "Z") : ""}. Consider your own context and seek professional input where relevant.`
               : "An AI-drafted starting point — edit it into your own advice, or take it as a prompt for your own judgement. Consider your own context and seek professional input where relevant."}
           </div>
           <div class="row no-print" style=${{ marginTop: "var(--s2)", gap: "var(--s2)", flexWrap: "wrap" }}>
@@ -1850,8 +1914,8 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
           <p class="caption" style=${{ marginTop: 0 }}>Edit any section — write it in your own words, including advice and recommendations. This becomes your organisation's saved note (it replaces the AI draft) and appears on the one-pager.</p>
           ${CM_PARTS.map(([k, label]) => html`
             <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
-              <label class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)", display: "block", marginBottom: "2px" }}>${label}</label>
-              <textarea class="ctl metric-cm-edit" rows=${3} value=${draft[k] || ""}
+              <label class="caption" htmlFor=${"cm-edit-" + k} style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)", display: "block", marginBottom: "2px" }}>${label}</label>
+              <textarea class="ctl metric-cm-edit" id=${"cm-edit-" + k} rows=${3} value=${draft[k] || ""}
                 onInput=${e => setDraft(d => ({ ...d, [k]: e.target.value }))}></textarea>
             </div>`)}
           <div class="row" style=${{ gap: "var(--s2)" }}>
@@ -1862,11 +1926,13 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
     </div>`;
 }
 
-/* Exact figures: the analyst's row — your value, percentile, market quartiles, n. */
-function ExactFigures({ card: c }) {
+/* Exact figures: the analyst's row — your value, percentile, market quartiles, n.
+   pos = the marker's fav read ("good"/"bad"/…) so the You figure matches the chart
+   marker exactly; skipYou drops the You cell when the hero stat pair already shows it. */
+function ExactFigures({ card: c, pos, skipYou }) {
   const cells = [];
   if (c.type === "numeric" && c.block) {
-    if (c.you && c.you.display != null) cells.push(["You", c.you.display + (c.you.percentile != null ? " · " + pLabel(c.you.percentile) : "")]);
+    if (!skipYou && c.you && c.you.display != null) cells.push(["You", c.you.display + (c.you.percentile != null ? " · " + pLabel(c.you.percentile) : ""), "you"]);
     // full P10–P90 spread (was P25/50/75 only) — the board pack prints P10/P90, so
     // the screen a director checks it against now shows the same tails. Same n≥10
     // graduated-display rule the pack uses, so a thin sample never over-claims.
@@ -1879,15 +1945,17 @@ function ExactFigures({ card: c }) {
   } else if (c.block && c.block.options) {
     if (c.you && c.you.label) {
       const mine = c.block.options.find(o => o.label === c.you.label);
-      cells.push(["Your answer", c.you.label + (mine ? ` (${mine.pct}% of the market)` : "")]);
+      cells.push(["Your answer", c.you.label + (mine ? ` (${mine.pct}% of the market)` : ""), "you"]);
     }
     const top = [...c.block.options].sort((a, b) => b.pct - a.pct)[0];
     if (top) cells.push(["Most common", `${top.label} (${top.pct}%)`]);
   }
-  cells.push(["Organisations", compositionLabel(c.n, c.n_real)]);
+  cells.push(["Peer group", compositionLabel(c.n, c.n_real)]);
+  if (cells.length === 1) return null;   // a lone n row (matrix metrics) isn't a strip — the peerbar already shows it
+  const youInk = pos === "good" ? "var(--favourable-ink)" : pos === "bad" ? "var(--unfavourable-ink)" : "var(--you)";
   return html`
     <div class="exact-figs">
-      ${cells.map(([k, v], i) => html`<div key=${i}><span class="caption">${k}</span><b class="num">${v}</b></div>`)}
+      ${cells.map(([k, v, cls], i) => html`<div key=${i} class=${cls || ""}><span class="caption">${k}</span><b class="num" style=${cls === "you" ? { color: youInk } : null}>${v}</b></div>`)}
     </div>`;
 }
 

@@ -17227,3 +17227,65 @@ default out of its category list everywhere below (groups / sectors / size / twi
 Compare a sector → Compare a size band → Organisations like you — matching the app-wide bar's ruled order
 (2026-08-11) and label ("Company Default", the term David set earlier). jsc-clean; gates. David is
 reviewing live via screenshots (in-app session still logged out on my side). v=556.
+
+## 2026-08-12 — Metric page deep-dive: the hero pass (David "this is the hero part of the site")
+
+A 5-lens design workflow (hierarchy / chart-centrepiece / interaction+a11y / premium-delight /
+copy+seams → adversarial synthesis; 78 raw findings → 30 verified + 5 forks, 12 killed) drove ONE large
+batch over MetricPage + satellites. David's fork rulings: merge Back+peerbar into one utility row;
+FULL read-column cluster; Context/unbenchmarked as a QUIET neutral chip (amber stays exclusive to real
+on-market verdicts); the chart on a quiet sunk well; YES to a one-shot good-news glow.
+
+STRUCTURAL (app.js): (1) route keys MetricPage by qid — metric→metric nav remounts, the old metric's
+figures can never paint under a new URL (belt-and-braces: card.id!==qid renders the loading skeleton).
+(2) THE critical fix — a peer-group change no longer tears the page down to skeletons: the cardStale
+full-skeleton returns are deleted; the frame stays mounted, `.metric-stage.busy` dims the chart
+(aria-busy on the card, copy/download/One-pager disabled while stale) and the selector keeps focus.
+VERIFIED live mid-flight: h1+select mounted, 0 skeletons, busy dim engaged, settled clean. (3) The
+signal lookup lifted out of MetricSignalBar into MetricPage — one fetch feeds the strip AND the chart
+marker (fav = cardFav(c, sig) ?? pos.kind), so they can never disagree.
+
+THE READ (fork): the hero card now composes as one column — plain-English lead at `.metric-lead` scale
+→ a labelled You + Market-median stat pair (You carries the marker's verdict ink; CardBody's internal
+you/median row is skipped at xl so the median never states itself twice) → the chart on a sunk-well
+stage with a REAL 320px min-height (was dead CSS — numeric charts rendered ~114px) → ONE closing band
+(ExactFigures left — "Peer group" label, tabular-nums, You cell dropped when the stat pair shows it —
+quick tools right, single hairline). Chart-type switch lives on the stat row, gated on drawability (no
+dead toggles over suppressed states).
+
+HERO CHART PASS (charts.js): wide (>=620) canvases get the big treatment — taller geometry
+(band 96→124, box 104→132, hist 116→150), axis/label type up (9→11, P50/You 10.5→12.5), YouDot r 8→10,
+and every P mark carries its value with a COLLISION GUARD (shared baseline: the median always wins;
+a mark whose label would overprint keeps its tick, loses its text — verified live: P25·3.05% yielded to
+P10·3%). xl viewBox is responsive (780, or 420 under 700px — fixes ~4px chart text on phones).
+OptionBars/OrderedDist get a 300px label gutter + fs 12 on wide. `.you-marker` class + one-shot dot-pop
+(reduced-motion gated); chart-type swaps breathe in via riseIn keyed by chart.
+
+HEADER + STATES: verdict pill gets real presence (30px) with keyboard/touch-reachable tips (.hastip +
+tabindex + .tip, replacing title-only); Context AND unbenchmarked ("No comparison", closing the missing
+Diff-14 gate — the hero could previously show a forbidden verdict pill on an unbenchmarked metric) wear
+a quiet neutral .ctx-chip OUTSIDE the RAG vocabulary; pos-pill.good fires pill-glow once (900ms
+favourable ring, never loops, reduced-motion off). Suppressed state hands you the cure: a primary
+"Compare against all peers" button (ruled wording untouched) + demoted why-link. Back is named for its
+destination ("← Pay"); the category foot line renders only when true; document.title = metric · lumi.
+
+CRAFT SWEEP: one-pager prints the deterministic story too (has-narrative on detBase; generate-prompt
+no-print; printMetric awaits the in-flight draft via genRef + double-rAF, honest failure toast; truthful
+tooltip); commentary — err visible in EVERY state (was hidden after first draft), feature-off+nothing-
+to-say renders nothing, foot dedupes the "Edited by your team" chip, edit textareas get label/htmlFor;
+share() can't lie (await clipboard, prompt() fallback — card.js too); chart pref round-trips to saved
+prefs (spread-merge so p1090/values survive); info tool retitled "Definition & methodology", always
+rendered, aria-controls; first-load skeleton mirrors the real silhouette (max-width capped for mobile),
+error state tone="error" with in-place retry; sigbar enters with intent (max-height ease-in, backwards
+fill — no held state to clip the snooze menu); MetricTrend joins the canvas (W 930, role=img aria from
+the points, Icon note, latest dot emphasised); microcopy parity (copy toasts = card strings, base-note
+middot, "All peers · pool", lens-suffix guard, err punctuation). CSS: .metric-page centred (margin
+auto); dead .metric-about*/.metric-controls/.bench-chart.xl rules deleted; print hide-list updated
+(.metric-info-reveal, was hiding dead selectors); .display-title stale `letter-spacing: 0` override
+removed (restores the intended -0.015em, site-wide).
+
+VERIFIED live at v=557 (session recovered): centred 980, one merged utility row "← Pay · Comparing
+against", lead→stats→well→band composition, ctx-chip 30px, 320px stage real, big-pass labels with the
+collision guard proven, dot-pop firing, per-metric tab title, mid-flight frame integrity, suppressed
+cure button. 14/14 gates. Deferred (needs live AI/data to judge): none — the read-column fork shipped
+in full.
