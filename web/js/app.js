@@ -1581,6 +1581,19 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     else if (k === "twin") setSel({ dim: "twin", value: null });
     else { const [dim, value] = k.split("::"); setSel({ dim, value }); }
   };
+  // company default at the TOP of the selector, labelled "Company Default" — consistent with the
+  // app-wide PeerSetBar (David 2026-08-12). me.org.signal_peer_cut is the org's default peer group;
+  // it's lifted out of its category list below so it shows once, at the top.
+  const bandLow = s => { const m = String(s).replace(/,/g, "").match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
+  const hasDefault = !!(me.org && me.org.signal_peer_cut && me.org.signal_peer_cut !== "all");
+  const defCut = hasDefault ? me.org.signal_peer_cut : "all";
+  const defGid = defCut.indexOf("group::") === 0 ? defCut.slice(7) : null;
+  const defGroup = defGid && ((cuts && cuts.groups) || []).find(g => g.group_id === defGid);
+  const defCount = defGroup ? defGroup.match_count
+    : defCut.indexOf("industry::") === 0 ? ((cuts && cuts.industries) || {})[defCut.slice(10)]
+    : defCut.indexOf("fte_band::") === 0 ? ((cuts && cuts.fte_bands) || {})[defCut.slice(10)]
+    : defCut === "twin" ? (cuts && cuts.twin_n) : null;
+  const defOptLabel = hasDefault ? "Company Default" + (defCount != null ? " · " + defCount : "") : "All peers";
   const profiled = !!(org.industry && org.fte_band);
   const exportMeta = () => ({
     title: c.title, cutLabel: c.cut.label, n: c.n, n_real: c.n_real, window: period, card: c, org: (window.__orgName || ""),
@@ -1654,25 +1667,26 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
           <span class="peerbar-selwrap">
             <select aria-label="Peer group for this metric" class="peer-ctl" value=${selKey} onChange=${e => setCutKey(e.target.value)}>
               ${/* order kept consistent with the app-wide PeerSetBar (David 2026-08-12):
-                    default → your groups → sectors → size → similar organisations. */ ""}
-              <option value="all">All peers</option>
-              ${cuts && (cuts.groups || []).length > 0 && html`
+                    Company Default → All peers → your groups → sectors → size → similar orgs. */ ""}
+              <option value=${defCut}>${defOptLabel}</option>
+              ${hasDefault && html`<option value="all">All peers</option>`}
+              ${cuts && (cuts.groups || []).filter(g => ("group::" + g.group_id) !== defCut).length > 0 && html`
                 <optgroup label="Your groups">
-                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
+                  ${cuts.groups.filter(g => ("group::" + g.group_id) !== defCut).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
                 </optgroup>`}
               ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
                 <optgroup label="Compare a sector">
-                  ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
+                  ${org.industry && ("industry::" + org.industry) !== defCut && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
                   ${sel.dim === "industry" && sel.value && sel.value !== org.industry && !(cuts.industries || {})[sel.value] && html`<option value=${"industry::" + sel.value}>${sel.value}</option>`}
-                  ${Object.keys(cuts.industries).filter(i => i !== org.industry).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
+                  ${Object.keys(cuts.industries).filter(i => i !== org.industry && ("industry::" + i) !== defCut).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
                 </optgroup>`}
               ${cuts && Object.keys(cuts.fte_bands || {}).length > 0 && html`
                 <optgroup label="Compare a size band">
-                  ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
+                  ${org.fte_band && ("fte_band::" + org.fte_band) !== defCut && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
                   ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && !(cuts.fte_bands || {})[sel.value] && html`<option value=${"fte_band::" + sel.value}>${sel.value} FTE</option>`}
-                  ${Object.keys(cuts.fte_bands).filter(b => b !== org.fte_band).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
+                  ${Object.keys(cuts.fte_bands).filter(b => b !== org.fte_band && ("fte_band::" + b) !== defCut).sort((x, y) => bandLow(x) - bandLow(y)).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
                 </optgroup>`}
-              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
+              ${cuts && cuts.twin_available && defCut !== "twin" && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
             </select>
             <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
           </span>

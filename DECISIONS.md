@@ -17214,3 +17214,16 @@ order; it uses a single "Other peer sets" group (sectors+size+twin) rather than 
 app-wide bar to match is deferred because it's on every benchmark page and I currently can't screenshot-
 verify (the in-app session logged out, Chrome extension not connected). app.js jsc-clean; gates. David to
 confirm live. v=555.
+
+## 2026-08-12 — Metric page: company default at the top of the peer selector, labelled "Company Default" (David)
+
+David: on the metric-page "Comparing against" dropdown the company default (his "5 sectors · 10,000+,
+1,000-4,999 FTE" group) was buried inside "Your groups" — it should sit at the TOP, labelled as the
+default. Mirrored the app-wide PeerSetBar logic in MetricPage: compute defCut = me.org.signal_peer_cut
+(else "all") + a defCount for the label; render `<option value=defCut>Company Default · N</option>` as the
+FIRST option; when a default exists (defCut !== "all") add a plain "All peers" option second; and LIFT the
+default out of its category list everywhere below (groups / sectors / size / twin all filter
+`… !== defCut`) so it appears once, at the top. Final order: Company Default → All peers → Your groups →
+Compare a sector → Compare a size band → Organisations like you — matching the app-wide bar's ruled order
+(2026-08-11) and label ("Company Default", the term David set earlier). jsc-clean; gates. David is
+reviewing live via screenshots (in-app session still logged out on my side). v=556.
