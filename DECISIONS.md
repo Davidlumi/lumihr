@@ -17329,3 +17329,31 @@ row as iconbtns (file-text / pin with .on + aria-pressed — mirrors the benchma
 "No comparison" chip, 6-icon tool row (incl. One-pager + Pin); positioned metric (REW_BEN_112) →
 "▼ Below market · P15" pill + "On aim" chip side by side (the lag-on-pensions story in one glance),
 sigbar intact. 14/14 gates. v=559.
+
+## 2026-08-12 — Config: lift the 197 stale Diff-14 `unbenchmarked` flags (David "269 should provide benchmark RAG")
+
+David, on seeing the new always-present market indicator: "major issue - most of the metrics do not show a
+market position - we fixed this earlier - the vast majority should provide benchmark rag 269 of them at
+least." DIAGNOSIS: data/market_position_config.json carried `unbenchmarked: true` on 220 of 340 metrics.
+The Diff-15 REVERSAL (2026-07-24) restored 216 metrics to the market pool (direction restored, tag
+_diff14→_diff15_restored; Thornbridge positioned 48→228) and Diff-18 took the gauge/donut to 269 — but
+those diffs changed direction + tags ONLY: the per-card `unbenchmarked` flag was never lifted. The
+donut/ladder/signals never read the flag (hence 269 there), while every CARD + the metric page + the
+readout suppression (assemble_card) still did — so the grid said "No comparison" on ~200 ruled market
+metrics. The new metric-page indicator made the incoherence impossible to miss.
+
+FIX (config class, flag-only): set `unbenchmarked: false` on exactly the 197 entries that are
+(_diff15_restored ∧ class Level/Provision ∧ direction non-null) — i.e. the set the Diff-15/18 rulings
+restored. Each lifted entry carries an `_unbench_lifted` note. NOT touched (23 remain, all individually
+ruled or practice-class): the _r3sw19/21/23/24 holds (BEN_044/045, DENTAL, CICOVER), the _apxb_flag pair
+(PROP_fe1a29ec, HOL_001 — Appendix-B provenance), _fam009_retired (FAM_009, ruled 2026-07-29), TIPS_EXIST
+(_diff14+_diff18_ruled), and the 15 Practice-class entries (no verdict by class; the flag is moot there).
+Follows the established "lift stale unbenchmarked tags" pattern (f150604, Register follow-up 2). Staged
+diff verified programmatically: 197 entries changed, ONLY the unbenchmarked/_unbench_lifted fields;
+defaults/_domains byte-equal. Zero answer writes; frozen targets untouched by construction.
+
+VERIFIED live (hot-reload): config 220→23 unbenchmarked (317 benchmarked); "Salary increase budget as %
+of payroll" — "No comparison" minutes earlier — now renders "▼ Below market · P18" with the You/median
+stat pair and restored readout. Full gate suite run post-change (see below). Pre-lift config preserved at
+scratchpad/mp_config_before_lift.json for the session.
+GATES: full 14-gate suite ALL GREEN post-lift (qa_hero 59-fixture, freeze gate, engine audit incl.) — the lift is coherent with every ruled invariant. v unchanged (config-only).
