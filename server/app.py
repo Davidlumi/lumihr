@@ -488,13 +488,18 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 async def _json(request):
     """Parse the request body as JSON, returning a clean 400 instead of a raw 500 on
-    malformed input (§4.7). Behaviour is identical to request.json() on valid bodies."""
+    malformed input (§4.7). Every handler immediately calls .get() on the result, so a
+    valid-JSON-but-not-an-object body ([] or "x") must 400 here too, not AttributeError
+    into the 500 handler (pre-prod audit 2026-08-12)."""
     try:
-        return await request.json()
+        out = await request.json()
     except HTTPException:
         raise
     except Exception:
         raise HTTPException(400, "Request body must be valid JSON.")
+    if not isinstance(out, dict):
+        raise HTTPException(400, "Request body must be a JSON object.")
+    return out
 
 
 def require_user(request):
@@ -1025,6 +1030,10 @@ async def login(request: Request):
     # deactivated account gets the honest message, not the credentials one.
     conn = get_conn()
     _account_active_or_403(conn, user["user_id"])
+    # a CORRECT password releases this user's slice of the rate budget — the caps slow
+    # guessing, they must not lock a NAT-shared office out through normal sign-ins
+    auth_lib.rate_clear("login:%s|%s" % (email, ip))
+    auth_lib.rate_clear("login-ip:%s" % ip)
     # MFA step-up (Cyber Essentials A7.16/A7.17): when enforced, a correct password
     # does NOT create a session — it mints a challenge and emails a one-time code;
     # the session is created only after /api/auth/mfa/verify.
@@ -3410,12 +3419,18 @@ async def put_notify_prefs(request: Request):
     user, org = require_user(request)
     body = await _json(request)
     p = body.get("prefs") or {}
+    if not isinstance(p, dict):
+        raise HTTPException(400, "prefs must be an object.")
+    try:
+        _min_money = max(0, int(p.get("min_money_gbp") or 0))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "min_money_gbp must be a number.")
     clean = {
         "inbox_enabled": bool(p.get("inbox_enabled", True)),
         "email_frequency": p.get("email_frequency") if p.get("email_frequency") in ("off", "daily", "weekly") else "weekly",
         "lenses": [l for l in (p.get("lenses") or []) if l in notifications.ALL_LENSES] or notifications.ALL_LENSES,
         "events": [e for e in (p.get("events") or []) if e in notifications.ALL_EVENTS],
-        "min_money_gbp": max(0, int(p.get("min_money_gbp") or 0)),
+        "min_money_gbp": _min_money,
     }
     conn = get_conn()
     conn.execute("UPDATE users SET notify_prefs_json=? WHERE user_id=?", (j(clean), user["user_id"]))

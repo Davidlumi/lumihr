@@ -106,6 +106,13 @@ def rate_limited(key):
     return False
 
 
+def rate_clear(key):
+    """Forget a key's attempts after a SUCCESSFUL authentication — the cap exists to
+    slow guessing, not to lock out a NAT-shared office where 30 people signing in
+    normally within five minutes exhausted the per-IP tier (pre-prod audit 2026-08-12)."""
+    _attempts.pop(key, None)
+
+
 # -------------------------------------------------------------- sessions ---
 
 def create_session(user_id):
