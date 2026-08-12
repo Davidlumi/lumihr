@@ -2041,9 +2041,15 @@ async def single_benchmark(qid: str, request: Request):
                                            payloads(), org_answers_for(org), entitled, _bi_tb)
     _band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
                                       MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
+    # …and the practice-prevalence band (common / alternative / rare — Diff-4 ruled
+    # vocabulary), same pool as the §1 prevalence donut (labelling doctrine 2026-08-12:
+    # every metric marked market OR practice on every surface)
+    _prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org),
+                                       payloads(), org_answers_for(org), entitled, _bi_tb)
+    _prev_map = pos.pool_prevalence_bands(_prev_items, UNCOMMON_PCT)
     card = assemble_card(q, p, org, org_answers_for(org), cut,
                          {qid: tb.get(qid)} if tb else None, entitled,
-                         market_band=_band_map.get(qid))
+                         market_band=_band_map.get(qid), prevalence_band=_prev_map.get(qid))
     # opportunity panel for £-model metrics
     mm = next((m for m in pos.MONEY_METRICS if m["question_id"] == qid), None)
     if mm and not card["locked"] and q.polarity != "neutral":
@@ -2103,6 +2109,8 @@ async def benchmark_batch(request: Request):
     _bi_prac = pos.practice_position_items(org["org_id"], cut, vis, payloads(), answers, entitled, _bi_tb)
     _band_map = pos.pool_market_bands(_bi_items, _bi_prac, pos.market_position_config(),
                                       MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
+    _prev_items = pos.prevalence_items(org["org_id"], cut, vis, payloads(), answers, entitled, _bi_tb)
+    _prev_map = pos.pool_prevalence_bands(_prev_items, UNCOMMON_PCT)
     cards = {}
     for qid in ids:
         q = vis.get(qid)
@@ -2119,7 +2127,7 @@ async def benchmark_batch(request: Request):
             continue
         cards[qid] = assemble_card(q, p, org, answers, cut,
                                    {qid: tb.get(qid)} if tb else None, entitled,
-                                   market_band=_band_map.get(qid))
+                                   market_band=_band_map.get(qid), prevalence_band=_prev_map.get(qid))
     return {"cards": cards}
 
 

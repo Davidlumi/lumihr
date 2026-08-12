@@ -115,7 +115,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
               c.practice is the server-computed class flag). */ ""}
         ${/* unbenchmarked cards carry NO position pill either (Diff 14): a P-number
               against an unanchored distribution is the claim being suppressed. */ ""}
-        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp && cp.pctl != null ? html`<span class="bench-pctl" title=${cp.tip}>P${cp.pctl}</span>` : null; })()}
+        ${/* labelling doctrine (David 2026-08-12): every MARKET metric carries its RAG
+              verdict in words on the card foot — "▼ Below market · P30" — not a bare
+              P-number; practice metrics carry the prac-tag + common/alternative/rare. */ ""}
+        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp ? html`<span class=${"pos-pill " + cp.kind} title=${cp.tip}>${cp.arrow} ${cp.label}</span>` : null; })()}
         ${/* "A practice choice" tag + prevalence bucket (Diff 4, exact ruled string): the
               bucket word only where the pool served (prevalence_band present); a practice
               card with a suppressed pool reads "low peer data". Locked vocabulary; no RAG. */ ""}

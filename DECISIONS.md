@@ -17446,3 +17446,23 @@ grid cards don't carry `classification` (single endpoint only) — harmless toda
 consumer is the practice-gated P-pill) but a parity gap to close if the grid ever needs the register;
 practice metrics with practice-position ranks ARE counted by the donut while cards show practice language
 (ruled §4.8(5) — by design).
+
+## 2026-08-12 — Labelling doctrine (David): every metric marked market or practice, everywhere
+
+David: "we need to get everything clearly labelled everywhere - every metric clearly marked as market or
+practice; if market there is a RAG and strategy aligned; for practice it should be common alternative
+rare." PHASE 1 (this commit, UI + plumb): (1) prevalence_band (the Diff-4 ruled common/alternative/rare
+vocabulary, pool_prevalence_bands — same pool as the §1 prevalence donut) now passes on
+/api/benchmark/{qid} + /api/benchmark-batch (was grid-only, same gap market_band had). (2) The metric
+page's indicator chain gains a PRACTICE branch: practice metrics show "A practice choice · common /
+alternative / rare / low peer data" (exact Diff-4 strings) with an honest tip — no longer a bare
+"Context" chip; Context remains for neutral-direction non-practice metrics. (3) The benchmark grid's
+bare P-pill becomes the full RAG verdict pill for market metrics ("▼ Below market · P30", pos-pill small)
+— practice/unbenchmarked gating unchanged, so every card now reads market-with-RAG or
+practice-with-prevalence at a glance. Strategy alignment stays on the metric page (AlignmentChip beside
+the verdict) — not added per grid card (visual noise; the DomainInstrument carries the per-domain
+strategy channel on Home). DISCOVERY while scoping phase 2: the DIFF17 go-order (15 multi/matrix score
+maps, ruled 2026-07-24) is ALREADY APPLIED in the live DB (is_scored=1, ruled configs verbatim — incl.
+MH_SUPPORT equal-weight, JOBEVAL max_of_ticked, INC_133 range_max, PAYCOMMS practice reclass) — the
+"not yet rated" tail is NOT DIFF17 debt. Remaining phase 2: the 6 unscored 2026.x singles + the 7
+scored-but-unrankable answers. 14/14 gates. v=563.

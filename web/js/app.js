@@ -1744,6 +1744,15 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
               ? html`<span class="ctx-chip hastip" tabindex="0">Protected<span class="tip">Fewer than 5 organisations in this peer group answered — figures this thin are never shown, so there's no market verdict to give.</span></span>`
               : c.unbenchmarked && !c.practice
               ? html`<span class="ctx-chip hastip" tabindex="0">No comparison<span class="tip">No verified market anchor yet — the distribution is shown for information; no market verdict renders until this metric is anchored.</span></span>`
+              : c.practice
+              ? html`<span class="ctx-chip hastip" tabindex="0">A practice choice
+                  <span class="prac-band">· ${c.prevalence_band === "match" ? "common"
+                    : c.prevalence_band === "common_alt" ? "alternative"
+                    : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>
+                  <span class="tip">${c.prevalence_band === "match" ? "Your choice is the market's most common answer here."
+                    : c.prevalence_band === "common_alt" ? "Your choice is an established alternative — off the mode, but well represented among peers."
+                    : c.prevalence_band === "rarer" ? "Your choice is rare among peers — worth being deliberate about."
+                    : "A how-you-do-it choice — too few peers in this group to grade how common yours is."} A practice has no better-or-worse — lumi shows how common your choice is, never a verdict.</span></span>`
               : c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
               ? html`<span class="ctx-chip hastip" tabindex="0">Context<span class="tip">${c.classification.register === "Approach"
                   ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."

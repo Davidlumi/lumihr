@@ -3079,11 +3079,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .pos-pill.hastip, .ctx-chip { position: relative; }
 .hastip:focus .tip, .hastip:focus-within .tip { display: block; }
 .hastip:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
-/* "no verdict here" states (Context / No comparison) — a QUIET chip, deliberately outside
-   the RAG pos-pill vocabulary so amber stays exclusive to genuine on-market verdicts */
-.ctx-chip { display: inline-flex; align-items: center; height: 30px; padding: 0 var(--s3);
+/* "no verdict here" states (Context / No comparison / A practice choice) — a QUIET chip,
+   deliberately outside the RAG pos-pill vocabulary so amber stays exclusive to genuine
+   on-market verdicts */
+.ctx-chip { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 var(--s3);
   border-radius: 999px; border: 1px solid var(--border); background: var(--surface-sunk);
   color: var(--ink-soft); font-size: var(--fs-body); font-weight: 600; cursor: help; }
+.ctx-chip .prac-band { color: var(--ink); font-weight: 600; }
 /* good-news moment: ONE quiet ring on the favourable verdict as the page lands — fires
    once, never loops, and stays deadpan under prefers-reduced-motion */
 @media (prefers-reduced-motion: no-preference) {
