@@ -17289,3 +17289,22 @@ against", lead→stats→well→band composition, ctx-chip 30px, 320px stage rea
 collision guard proven, dot-pop firing, per-metric tab title, mid-flight frame integrity, suppressed
 cure button. 14/14 gates. Deferred (needs live AI/data to judge): none — the read-column fork shipped
 in full.
+
+## 2026-08-12 — Metric page: the chart lead comes from the AI narrative (David)
+
+David on the hero pass: "i do not like the top of the graph position description - this should come
+from the AI narrative." The lead above the chart had been the deterministic humanSentence
+("You answered '3%'. The peer distribution is shown for information only.") — clunky, not hero prose.
+NOW: the lead is the AI narrative's **"How you compare"** part (commentary.parts.compare), rendered at
+.metric-lead scale with a sparkle provenance cue, hydrated by the existing commentary PEEK (never
+generates on its own — the AI-spend discipline holds). The commentary card below OMITS the lifted part
+in its read view (new omitPart prop) so the narrative never states itself twice; edit mode still edits
+all four parts. No narrative yet → NO lead (the stat pair + verdict pill carry the top; the commentary
+card's Generate button below creates one). The deterministic sentence is gone from the top entirely
+(it survives only inside the chart's aria-label, where it is honest and invisible).
+CONSEQUENCE DAVID SHOULD KNOW: features.commentary is gated by LUMI_AI_INSIGHTS_ENABLED (env, default
+off — ruled as David's go-live switch, app.py ~L163). On the dev box the flag is OFF, so the top of the
+graph shows no description at all until the flag is on and a narrative is generated. VERIFIED on a
+throwaway (:8070, LUMI_DB backup-API copy, LUMI_AI_INSIGHTS_ENABLED=on, keyless deterministic, zero AI
+spend): Generate → the lead appears at the top with the sparkle, "How you compare" omitted below,
+AI-draft chip intact; throwaway killed + deleted after. Frontend-only; jsc-clean; gates. v=558.

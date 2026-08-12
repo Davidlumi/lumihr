@@ -1759,11 +1759,13 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       <${MetricSignalBar} qid=${qid} sig=${sig} />
 
       <div class="card metric-hero-card" aria-busy=${busyNow ? "true" : "false"} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
-        ${/* THE READ, as one column (David fork 2026-08-12): plain-English lead → your
-              numbers → the chart. The lead is promoted above the chart at lead scale;
-              You + market median cluster as a labelled stat pair (CardBody's own row is
-              skipped at xl so the median never states itself twice). */ ""}
-        ${!c.suppressed && sent.lead ? html`<p class="metric-lead">${sent.lead}</p>` : null}
+        ${/* THE READ, as one column (David fork 2026-08-12): the narrative lead → your
+              numbers → the chart. The lead is the AI narrative's "How you compare" part
+              (David 2026-08-12: the position description comes from the AI narrative,
+              not the deterministic sentence) — hydrated by the commentary peek, shown
+              only once it exists; the commentary card below skips the lifted part. */ ""}
+        ${!c.suppressed && commentary && commentary.parts && commentary.parts.compare
+          ? html`<p class="metric-lead"><${Icon} name="sparkle" size=${15} style=${{ flex: "none", color: "var(--blue)", marginTop: "5px" }} /><span>${commentary.parts.compare}</span></p>` : null}
         ${(() => {
           const showStats = c.type === "numeric" && c.you && !c.suppressed;
           const showSwitch = exportable && alts.length > 1;
@@ -1829,7 +1831,8 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       ${!c.suppressed ? html`
         <${MetricCommentary} commentary=${commentary} busy=${cmBusy} err=${cmErr} onGenerate=${genCommentary}
           onSave=${saveCommentary} canEdit=${!!(me.user && me.user.role !== "viewer")}
-          pos=${pos} card=${c} featureOn=${!!(me.features && me.features.commentary)} />` : null}
+          pos=${pos} card=${c} featureOn=${!!(me.features && me.features.commentary)}
+          omitPart=${!c.suppressed && commentary && commentary.parts && commentary.parts.compare ? "compare" : null} />` : null}
 
       <${MetricTrend} qid=${qid} />
 
@@ -1856,7 +1859,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
 // for directives, deliberately: the human owns their words).
 const CM_PARTS = [["measures", "What this measures"], ["compare", "How you compare"],
                   ["implications", "Implications"], ["considerations", "Recommendations"]];
-function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, pos, card, featureOn }) {
+function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, pos, card, featureOn, omitPart }) {
   const data = commentary;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -1893,7 +1896,9 @@ function MetricCommentary({ commentary, busy, err, onGenerate, onSave, canEdit, 
       ${busy && html`<div class="row" style=${{ padding: "var(--s4) 0" }}><${Spinner} /> <span class="caption">Reading the figures on this page…</span></div>`}
       ${data && !editing && html`
         <div style=${{ marginTop: "var(--s3)" }}>
-          ${CM_PARTS.map(([k, label]) => data.parts[k] && html`
+          ${/* omitPart = a part lifted to the top of the chart card (the lead) — shown
+                once there, still editable here in edit mode */ ""}
+          ${CM_PARTS.map(([k, label]) => k !== omitPart && data.parts[k] && html`
             <div key=${k} style=${{ marginBottom: "var(--s3)" }}>
               <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", fontSize: "var(--fs-micro)" }}>${label}</div>
               <p style=${{ margin: "2px 0 0", whiteSpace: "pre-wrap" }}>${data.parts[k]}</p>

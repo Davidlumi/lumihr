@@ -3061,9 +3061,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .metric-page .metric-xl { --chart-h: 250px; break-inside: avoid; }
   .metric-page h1.display-title { font-size: 20pt; line-height: 1.1; }
 }
-/* THE READ — the plain-English sentence leads the hero card at lead scale */
-.metric-lead { font-size: var(--fs-section); font-family: var(--font-head); color: var(--ink);
+/* THE READ — the AI narrative's "How you compare" leads the hero card at lead scale */
+.metric-lead { display: flex; gap: var(--s2); align-items: flex-start;
+  font-size: var(--fs-section); font-family: var(--font-head); color: var(--ink);
   max-width: 720px; margin: 0 0 var(--s4); line-height: 1.45; }
+.metric-lead svg { flex: none; }
 .pos-pill.lg { font-size: var(--fs-body); height: 30px; padding: 0 var(--s3); flex: none; }
 /* verdict tips reachable by keyboard/touch, not title-only */
 .pos-pill.hastip, .ctx-chip { position: relative; }
