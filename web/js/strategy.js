@@ -443,7 +443,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         ${ai === undefined && aiDark && canEdit ? html`
         <section class="sd-sec no-print">
           <div class="sd-secnum">${NUM.reading} — lumi's reading</div>
-          <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI Insights are enabled for the platform.</div>
+          <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI insights are enabled for the platform.</div>
         </section>` : null}
         ${ai !== undefined ? html`
         <section style=${{ "--i": 6 }} class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>

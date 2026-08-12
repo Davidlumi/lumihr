@@ -145,8 +145,12 @@ function App() {
   const [barHidden, setBarHidden] = useState(false); // user dismissed the reminder bar this view
   const [leaveTo, setLeaveTo] = useState(null);      // pending destination held by the leave-guard
   const prefsTimer = useRef(null);
+  const prefsFailed = useRef(false);   // boot prefs GET failed — merge before any whole-object write
 
-  const refreshMe = () => api("/api/me").then(setMe).catch(() => setMe(null));
+  // a transient NETWORK failure must not boot a signed-in user to the sign-in screen —
+  // only a real 401 designs them out (the lumi:unauth listener also covers that path)
+  const refreshMe = () => api("/api/me").then(setMe)
+    .catch(e => setMe(cur => (cur && e && e.status === 0) ? cur : null));
   useEffect(() => { setPoolTotal(me && me.peer_pool ? me.peer_pool.responding_orgs : null);
     window.__orgName = (me && me.org && me.org.name) || ""; }, [me]);
   useEffect(() => {
@@ -164,7 +168,8 @@ function App() {
     if (!me) return;
     api("/api/cuts").then(setCuts).catch(() => setCuts(c => c || { industries: {}, fte_bands: {}, groups: [] }));
     // a failed prefs fetch resolves to {} so the prefs gate below can never hang
-    api("/api/prefs").then(d => setPrefs(d.prefs || {})).catch(() => setPrefs({}));
+    api("/api/prefs").then(d => { prefsFailed.current = false; setPrefs(d.prefs || {}); })
+      .catch(() => { prefsFailed.current = true; setPrefs({}); });
     api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id)))).catch(() => {});
     api("/api/questions").then(setQIndex).catch(() => {});
   }, [me && me.org && me.org.name]);
@@ -284,8 +289,21 @@ function App() {
     const next = { ...prefs, [qid]: p };
     setPrefs(next);
     clearTimeout(prefsTimer.current);
-    prefsTimer.current = setTimeout(() => api("/api/prefs", { method: "PUT", body: { prefs: next } })
-      .catch(() => toast("Couldn't save your view settings — they may reset next visit.", "error")), 800);
+    prefsTimer.current = setTimeout(async () => {
+      try {
+        let body = next;
+        if (prefsFailed.current) {
+          // the prefs GET failed at boot, so local state is an empty shadow of the
+          // server's — re-fetch and MERGE before any whole-object write (a bare
+          // write here used to wipe every saved preference; pre-prod audit 2026-08-12)
+          const d = await api("/api/prefs");
+          prefsFailed.current = false;
+          body = { ...(d.prefs || {}), [qid]: p };
+          setPrefs(body);
+        }
+        await api("/api/prefs", { method: "PUT", body: { prefs: body } });
+      } catch (e) { toast("Couldn't save your view settings — they may reset next visit.", "error"); }
+    }, 800);
   };
   // the global pin-star toggles a card on the user's ACTIVE dashboard
   const onPin = async (qid) => {
@@ -415,7 +433,11 @@ function App() {
     // current session's org kept winning and the operator never learned why
     // ("keeps jumping to tester", 2026-08-04). Now an explicit interstitial.
     page = html`<${InviteWhileAuthed} me=${me} token=${route.split("/")[2]} />`;
-  else if (route === "" || route === "/" || route.startsWith("/overview") || route.startsWith("/reset/"))
+  else if (route.startsWith("/reset/"))
+    // a reset link while SIGNED IN gets an explicit interstitial (mirrors the invite
+    // rule above) — it used to fall silently into Overview and eat the token
+    page = html`<${ResetWhileAuthed} me=${me} token=${route.split("/")[2]} />`;
+  else if (route === "" || route === "/" || route.startsWith("/overview"))
     page = html`<${OverviewPage} ...${pageProps} />`;
   else page = html`<${NotFoundPage} route=${route} />`;
 
@@ -1757,7 +1779,10 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
         <div class="metric-card-head">
           <div class="metric-card-titles">
             <h1 class="metric-card-title">${c.title}</h1>
-            <p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>
+            ${/* metrics without an authored short title fall back to the question text as
+                their title — printing the question line too reads the same sentence twice */ ""}
+            ${c.question_text && c.question_text !== c.title
+              ? html`<p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>` : null}
           </div>
           <div class="metric-verdicts">
             ${c.suppressed

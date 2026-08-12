@@ -11,12 +11,12 @@ function closesIn(iso, accepting) {
   if (!iso) return accepting ? { text: "open — no close date yet", soon: false } : null;
   const d = new Date(iso.replace(" ", "T"));
   if (isNaN(d)) return null;
-  if (!accepting) return { text: "closed " + iso.slice(0, 10), soon: false };
+  if (!accepting) return { text: "closed " + fmtDate(iso), soon: false };
   const days = Math.ceil((d - new Date()) / 86400000);
   if (days <= 0) return { text: "closing now", soon: true };
   if (days === 1) return { text: "closes tomorrow", soon: true };
   if (days <= 7) return { text: "closes in " + days + " days", soon: days <= 3 };
-  return { text: "closes " + iso.slice(0, 10), soon: false };
+  return { text: "closes " + fmtDate(iso), soon: false };
 }
 function CloseChip({ p }) {
   const c = closesIn(p.closes_at, p.accepting);
@@ -91,8 +91,12 @@ window.PulsesPage = function ({ me, tab }) {
 
   // the soonest-closing OPEN pulse gets a full-width hero — the one thing you can join right now
   const heroCard = (p) => html`
-    <article class="card pulse-hero" role="button" tabindex="0" aria-label=${"Take part in " + p.name}
-      onClick=${() => goPulse(p)} onKeyDown=${e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goPulse(p); } }}>
+    <article class="card pulse-hero"
+      onClick=${e => { if (!e.target.closest("button")) goPulse(p); }}>
+      ${/* the inner CTA <button> is THE control (a real button nested inside
+            role="button" is a nested-interactive violation — screen readers
+            announce two overlapping controls); the card surface stays a
+            convenience click target for mouse users only */ ""}
       <div class="pulse-hero-body">
         <div class="pulse-hero-tag"><${Icon} name=${p.icon || "zap"} size=${13} /> Open pulse</div>
         <h2 class="pulse-hero-name">${p.name}</h2>

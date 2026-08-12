@@ -121,7 +121,18 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${/* labelling doctrine (David 2026-08-12): every MARKET metric carries its RAG
               verdict in words on the card foot — "▼ Below market · P30" — not a bare
               P-number; practice metrics carry the prac-tag + common/alternative/rare. */ ""}
-        ${(() => { if (c.practice || c.unbenchmarked) return null; const cp = cardPosition(c); return cp ? html`<span class=${"pos-pill " + cp.kind} title=${cp.tip}>${cp.arrow} ${cp.label}</span>` : null; })()}
+        ${(() => {
+          if (c.practice || c.unbenchmarked) return null;
+          const cp = cardPosition(c);
+          if (cp) return html`<span class=${"pos-pill " + cp.kind} title=${cp.tip}>${cp.arrow} ${cp.label}</span>`;
+          // labelling doctrine on the GRID too (David 2026-08-12: "clearly labelled
+          // everywhere") — an N/A answer or an unrankable answered metric still names
+          // its state instead of showing nothing
+          if (c.suppressed) return null;
+          if (c.you_na) return html`<span class="chip prac-tag" title="Your answer says this doesn't apply to your organisation — the peer picture is shown for context.">Doesn't apply to you</span>`;
+          if (c.you || (c.matrix_rows || []).some(r => r.you)) return html`<span class="chip prac-tag" title="Your answer is in — this answer type doesn't carry a market rating yet.">Not yet rated</span>`;
+          return null;
+        })()}
         ${/* "A practice choice" tag + prevalence bucket (Diff 4, exact ruled string): the
               bucket word only where the pool served (prevalence_band present); a practice
               card with a suppressed pool reads "low peer data". Locked vocabulary; no RAG. */ ""}
@@ -131,7 +142,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
             : c.prevalence_band === "common_alt" ? "alternative"
             : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
         ${c.unbenchmarked && !c.practice ? html`
-          <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">Unbenchmarked</span>` : null}
+          <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">No comparison</span>` : null}
         <span class="bench-n" title=${SHOW_COMPOSITION_IN_PRODUCT ? "The number behind this comparison. " + COMPOSITION_DESC : "The number of organisations behind this comparison"}>${compositionLabel(c.n, c.n_real)}</span>
         ${c.base ? html`
           <span class="caption base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies.">of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : null}

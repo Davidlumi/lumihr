@@ -69,6 +69,27 @@ window.InviteWhileAuthed = function ({ me, token }) {
     </div>`;
 };
 
+window.ResetWhileAuthed = function ({ me, token }) {
+  // a reset link opened while a session lives used to fall silently into Overview,
+  // eating the token — the user who forgot they were signed in never learned why
+  // "nothing happened" (pre-prod audit 2026-08-12; same class as InviteWhileAuthed)
+  const signOutToReset = async () => {
+    try { await api("/api/auth/logout", { method: "POST", body: {} }); } catch (e) { /* signed out anyway */ }
+    window.location.hash = "/reset/" + token;
+    window.location.reload();
+  };
+  return html`
+    <div class="card" style=${{ maxWidth: "560px", margin: "var(--s6) auto", padding: "var(--s5)" }}>
+      <h2 class="section-title" style=${{ marginTop: 0 }}>This is a password-reset link</h2>
+      <p>You're signed in as <b>${me.user.email}</b>, so the reset didn't run automatically.</p>
+      <p class="caption">Choosing a new password signs you out everywhere first. If you didn't request this link, you can ignore it — your password is unchanged.</p>
+      <div class="row" style=${{ gap: "var(--s2)", marginTop: "var(--s3)" }}>
+        <button class="btn primary" onClick=${() => { window.location.hash = "/overview"; }}>Stay signed in</button>
+        <button class="btn" onClick=${signOutToReset}>Sign out ${"&"} choose a new password</button>
+      </div>
+    </div>`;
+};
+
 window.AuthScreen = function ({ onAuthed, route }) {
   if (route.startsWith("/reset/")) return html`<${ResetForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
   if (route.startsWith("/invite/")) return html`<${InviteForm} token=${route.split("/")[2]} onAuthed=${onAuthed} />`;
@@ -250,7 +271,7 @@ function LoginForm({ onAuthed, initialMode }) {
           <//>`}
         ${mode === "register" && regOpen === true && html`
           <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-            lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI Insights</a> — plain-language summaries of your figures, not advice. On by default; turn off any time in Settings.
+            lumi generates <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("ai_insights"); }}>AI insights</a> — plain-language summaries of your figures, not advice. On by default; turn off any time in Settings.
           </div>`}
         ${mode === "register" && regOpen === true && html`<div class="caption" style=${{ marginBottom: "var(--s3)" }}>
           By continuing you agree to our <a href="#" onClick=${e => { e.preventDefault(); setLegalDoc("platform"); }}>Terms of Use</a>
@@ -337,7 +358,7 @@ function InviteForm({ token, onAuthed }) {
           I accept the lumi <a href="#" onClick=${e => { e.preventDefault(); setShowTerms(true); }}>Platform Terms of Use</a>.
         <//>
         <div class="caption" style=${{ marginBottom: "var(--s3)" }}>
-          lumi generates <a href="#" onClick=${e => { e.preventDefault(); setAiDoc(true); }}>AI Insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
+          lumi generates <a href="#" onClick=${e => { e.preventDefault(); setAiDoc(true); }}>AI insights</a> — plain-language summaries of your benchmark figures (a description of your data, not advice). They're on by default; you can turn them off any time in Settings.
         </div>
         ${aiDoc && html`<${LegalDocModal} docKey="ai_insights" onClose=${() => setAiDoc(false)} />`}
         ${err && html`<div class="error-text" role="alert" style=${{ marginBottom: "var(--s3)" }}>${err}</div>`}

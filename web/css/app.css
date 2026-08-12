@@ -4305,6 +4305,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-pos-pill.pos-below .pos-dot { background: var(--neutral-perf); }
 .sig-pos-pill.pos-on .pos-dot { background: var(--favourable); }
 .sig-pos-pill.pos-above .pos-dot { background: var(--unfavourable); }
+.sig-pos-pill.pos-practice .pos-dot { background: var(--ink-faint); }  /* approach tone — no RAG on practice */
 .sig-pos-pill.on { border-color: var(--navy); background: var(--navy); color: #fff; }
 .sig-pos-pill.on b { color: #fff; }
 .sig-pos-pill.pos-below.on { background: var(--neutral-perf-tint); border-color: var(--neutral-perf); color: var(--neutral-perf-ink); }

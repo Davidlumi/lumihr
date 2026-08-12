@@ -59,7 +59,12 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
             <${Icon} name="chevron-left" size=${13} /> Back to Signals</a>
           <h1 class="display-title">Full gap register</h1>
           <div class="caption" style=${{ marginTop: "var(--s1)" }}>
-            What similar organisations have in place that you don't — most common first. Peer group: ${cutLabelOf(cut, cuts)}.
+            ${/* the subtitle must describe the ACTIVE view — the gaps sentence over an
+                  "Everything" table read as a contradiction ("…that you don't" beside
+                  rows saying "and so do you") */ ""}
+            ${show === "gaps"
+              ? "What similar organisations have in place that you don't — most common first."
+              : "Every practice against the market — what peers have in place, and where you stand on each."} Peer group: ${cutLabelOf(cut, cuts)}.
           </div>
         </div>
         <div class="row">
@@ -794,7 +799,9 @@ window.SharesPage = function ({ embedded }) {
           // the gap-register table above / .matrix-heat-wrap, app.css). The audit trail —
           // the widest, tallest cell — now shows the latest event only, with earlier events
           // behind a native <details> disclosure (high-pack 2·5; audit arrives oldest-first).
-          const fmtAudit = a => `${a.action} by ${a.email || "?"} · ${new Date(a.at + "Z").toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}`;
+          // one date voice per row: the Expires column uses fmtDate ("19 Aug 2026"), so the
+          // audit trail must not answer in "12/08/2026, 19:07"
+          const fmtAudit = a => `${a.action} by ${a.email || "?"} · ${fmtDate(a.at + "Z")}, ${new Date(a.at + "Z").toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
           const revokedShares = data.shares.filter(s => s.revoked);
           const rows = showRevoked ? data.shares : data.shares.filter(s => !s.revoked);
           return html`
@@ -1059,7 +1066,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
   const setAiConsent = async (consent) => {
     if (aiBusy) return; setAiBusy(true);
     try { await api("/api/ai-consent", { method: "POST", body: { consent } }); await refreshMe(); }
-    catch (e) { toast("Couldn't update AI Insights — nothing was changed", "error"); }
+    catch (e) { toast("Couldn't update AI insights — nothing was changed", "error"); }
     setAiBusy(false);
   };
   const loadA = () => { setErr(null); api("/api/assumptions").then(d => { setA(d.assumptions); setA0(d.assumptions); setEditable(d.editable); }).catch(e => setErr(e.message)); };

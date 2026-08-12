@@ -2188,12 +2188,21 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     && (!tq || ((s.name || s.label_short || "") + " " + domainLabel(s.domain || "")).toLowerCase().includes(tq)));
   // market-position filter: counts come from the current view, then narrow the list to the picked
   // position ("all" keeps everything, incl. practice signals which carry no below/on/above position)
-  const posCounts = { below: 0, on: 0, above: 0 };
-  viewItems.forEach(s => { if (posCounts[s.position] != null) posCounts[s.position]++; });
+  const posCounts = { below: 0, on: 0, above: 0, practice: 0 };
+  // practice/differs signals carry no market position — they get their own chip so the
+  // four counts SUM to "All" (they used to cover 38 of 49 with no visible explanation)
+  viewItems.forEach(s => {
+    if (posCounts[s.position] != null) posCounts[s.position]++;
+    else if (s.position === "differs" || s.position === "practice") posCounts.practice++;
+  });
   const hasPos = (posCounts.below + posCounts.on + posCounts.above) > 0;   // any positioned (non-practice) signals here?
   const posOn = posFilter !== "all" && hasPos;                            // a stale filter is ignored on a practice-only view
-  const shownItems = posOn ? viewItems.filter(s => s.position === posFilter) : viewItems;
-  const POS_LABEL = { below: "Below market", on: "On market", above: "Above market" };
+  const shownItems = posOn
+    ? viewItems.filter(s => posFilter === "practice"
+        ? (s.position === "differs" || s.position === "practice")
+        : s.position === posFilter)
+    : viewItems;
+  const POS_LABEL = { below: "Below market", on: "On market", above: "Above market", practice: "Practice differs" };
   const triaged = dismissedItems.length + snoozedItems.length + savedItems.length + Object.keys(assign).length;   // #28: a genuine cleared queue vs a quiet org
   const emptyLine = posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
     : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
@@ -2347,7 +2356,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             <span class="sig-posfilter-lab">Position</span>
             <button type="button" class=${"sig-pos-pill" + (posFilter === "all" ? " on" : "")} aria-pressed=${posFilter === "all"}
               onClick=${() => setPosFilter("all")}>All <b class="num">${viewItems.length}</b></button>
-            ${["below", "on", "above"].map(p => html`
+            ${["below", "on", "above", "practice"].map(p => html`
               <button key=${p} type="button" class=${"sig-pos-pill pos-" + p + (posFilter === p ? " on" : "")} aria-pressed=${posFilter === p}
                 onClick=${() => setPosFilter(posFilter === p ? "all" : p)}>
                 <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
@@ -2606,10 +2615,12 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   if (cat) cards = cards.filter(c => c.category === cat);
   const sigCounts = { signal: 0, add: 0, clear: 0 };
   // every "clear*" variant (clear / clear-practice / clear-unbenchmarked) is one
-  // "No signal" bucket — else practice/unbenchmarked no-flag cards drop from the count AND filter
-  const sigBucket = st => (st && st.indexOf("clear") === 0) ? "clear" : st;
-  cards.forEach(c => { const b = sigBucket(cardSignalState(c, sigMap[c.id])); if (b) sigCounts[b]++; });
-  if (sigF) cards = cards.filter(c => sigBucket(cardSignalState(c, sigMap[c.id])) === sigF);
+  // "No signal" bucket — else practice/unbenchmarked no-flag cards drop from the count AND filter.
+  // Protected (suppressed) cards count as "No signal" too: nothing is flagged on them,
+  // and leaving them bucket-less made the three chips sum to 326 of "328 benchmarks".
+  const sigBucket = (st, c) => (st && st.indexOf("clear") === 0) ? "clear" : (st || (c && c.suppressed ? "clear" : st));
+  cards.forEach(c => { const b = sigBucket(cardSignalState(c, sigMap[c.id]), c); if (b) sigCounts[b]++; });
+  if (sigF) cards = cards.filter(c => sigBucket(cardSignalState(c, sigMap[c.id]), c) === sigF);
 
   const bySub = [];
   for (const c of cards) {
@@ -2735,7 +2746,7 @@ function DomainSummary({ name, cut, applyStrat, embedded, aiNudge }) {
           </div>` : null)}
         ${f.provenance ? html`<div class="cat-sum-prov">${f.provenance}</div>` : null}
         ${aiNudge && st.phase === "done" && st.source !== "model" ? html`
-          <div class="cat-sum-caveat">AI Insights can write this in fuller prose — <a href="#/settings">review ${"&"} enable</a>.</div>` : null}
+          <div class="cat-sum-caveat">AI insights can write this in fuller prose — <a href="#/settings">review ${"&"} enable</a>.</div>` : null}
       </div>`;
   const body = mkBody(SLOTS, true);
   if (embedded) return html`
@@ -2823,6 +2834,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   if (!ov || !bench) return html`<div>${Head("Loading…")}<${SkeletonGrid} count=${4} /></div>`;
 
   const hero = ((ov.hero && ov.hero.domains) || []).find(d => d.name === name);
+  // an unknown/legacy domain name (stale bookmark, renamed domain) must not crash the
+  // whole app on hero.drivers below — name the miss and offer the way back
+  if (!hero) return html`<div>${Head(name)}
+    <${EmptyState} icon="info" title="This category isn't in your benchmark"
+      body=${`"${name}" doesn't match any of your reward areas — it may have been renamed.`}
+      action=${html`<button class="btn small primary" onClick=${() => nav("/benchmark")}>See all benchmarks</button>`} /></div>`;
   const all = (bench.cards || []).filter(c => (c.subpower || "General") === name);
   const sigMap = {}; (ov.signals_all || []).forEach(s => { (sigMap[s.question_id] = sigMap[s.question_id] || []).push(s); });
   const sigCounts = { signal: 0, add: 0, clear: 0 };
@@ -3232,7 +3249,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
       await api(`/api/dashboards/${id}/activate`, { method: "POST" });
       const d = await api(`/api/dashboards/${id}`);
       applyActive(id, d.layout, d.cut);
-    } finally { setBusy(false); }
+    } catch (e) { toast("Couldn't switch dashboard — try again.", "error"); }
+    finally { setBusy(false); }
   };
   // Set THIS dashboard's peer sample (David 2026-08-11). PeerSetBar hands us a cut KEY;
   // parse it, apply locally (cards refetch — cardKey folds in the cut), and persist to the
@@ -3260,7 +3278,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
       const d = await api("/api/dashboards", { method: "POST", body: { name: nm } });
       await reload();
       setNameDraft(d.name); setRenaming(true);
-    } finally { setBusy(false); }
+    } catch (e) { toast("Couldn't create the dashboard — try again.", "error"); }
+    finally { setBusy(false); }
   };
   const duplicate = async () => {
     if (busy) return;
@@ -3268,7 +3287,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
     try {
       await api("/api/dashboards", { method: "POST", body: { name: activeName + " copy", clone_from: activeId } });
       await reload();
-    } finally { setBusy(false); }
+      toast("Dashboard duplicated.");
+    } catch (e) { toast("Couldn't duplicate the dashboard — try again.", "error"); }
+    finally { setBusy(false); }
   };
   const startRename = () => { setNameDraft(activeName); setRenaming(true); };
   const commitName = async () => {
@@ -3287,7 +3308,9 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
       setList(r.dashboards);
       const d = await api(`/api/dashboards/${r.active_id}`);
       applyActive(r.active_id, d.layout, d.cut);
-    } finally { setBusy(false); }
+      toast("Dashboard deleted.");
+    } catch (e) { toast("Couldn't delete the dashboard — try again.", "error"); }
+    finally { setBusy(false); }
   };
   // "Save as team default" button removed 2026-08-11 (David); the /api/myview/save-default
   // endpoint stays for any admin flow that seeds a new user's first dashboard.
