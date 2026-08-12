@@ -59,8 +59,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     suffix: c.you && c.you.percentile != null ? `You: ${c.you.display} (${pLabel(c.you.percentile)})` : null,
   });
   const doExport = async () => {
-    const res = await exportCardPNG(ref.current, exportMeta(), "download");
-    toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
+    try {
+      const res = await exportCardPNG(ref.current, exportMeta(), "download");
+      toast(res === "downloaded" ? `Chart downloaded — labelled ${c.cut.label}, ${compositionLabel(c.n, c.n_real)}` : "Nothing to export yet");
+    } catch (e) { toast("Couldn't export the chart here.", "error"); }
   };
   const doCopy = async () => {
     // clipboard mode, with a graceful download fallback if the browser blocks
@@ -71,8 +73,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       else if (res === "downloaded") toast(`Copy isn't available here — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})`);
       else toast("Nothing to export yet");
     } catch (e) {
-      const res = await exportCardPNG(ref.current, exportMeta(), "download");
-      toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})` : "Nothing to export yet");
+      try {
+        const res = await exportCardPNG(ref.current, exportMeta(), "download");
+        toast(res === "downloaded" ? `Copy failed — downloaded the chart instead (${c.cut.label}, ${compositionLabel(c.n, c.n_real)})` : "Nothing to export yet");
+      } catch (e2) { toast("Couldn't copy the chart here.", "error"); }
     }
   };
   const share = () => {

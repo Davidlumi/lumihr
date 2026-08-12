@@ -17121,3 +17121,22 @@ did NOT resolve it in-page, but LIFTING the wrapper that holds the open menu did
 on top. Covers compare (.cmp-menu carries .kebab-menu too), pin (AddToDashboard) and the kebab menu.
 VERIFIED live: pin menu now on top at top/mid/bottom sample points including the overflow region; wrapper
 z-index reads 5 when its menu is open. Frontend-only; 14/14 gates. v=550.
+
+## 2026-08-12 — Fix: benchmark card Copy / Download chart buttons did nothing (CSP blocked blob:)
+
+David: the card action-row Copy ("Copy chart to clipboard") and Download ("Download chart PNG") buttons
+did nothing, and the Copy button's purpose was unclear. ROOT CAUSE (a regression from the security-headers
+work, CE-3 / app.py:473): `exportCardPNG` (charts.js) rasterises the card's chart by serialising an SVG
+twin, loading it into an `<img>` via `URL.createObjectURL(blob)` (a blob: URL), drawing to a canvas, then
+copying/downloading the PNG. The app's CSP is `img-src 'self' data:` — which allows data: but BLOCKS
+blob:, so the img silently failed to load (img.onerror), `exportCardPNG` threw `[object Event]`, and BOTH
+buttons quietly did nothing (doExport had no catch; doCopy's catch re-ran the same failing path).
+Diagnosed live: a data: URL for the same SVG loaded fine, a blob: URL errored, and the CSP header
+confirmed `img-src 'self' data:` (no blob:). FIX (client-side, keeps the CSP tight — did NOT loosen it to
+allow blob:): load the SVG twin as a `data:image/svg+xml,` + encodeURIComponent URL instead of a blob:
+URL; verified the canvas does not taint (toDataURL + toBlob both succeed). Also hardened doExport/doCopy
+(card.js) to toast on failure instead of failing silently, so a future export break can't read as "nothing
+happens". The two OTHER createObjectURL uses (pulse CSV, commercial CSV) feed `<a download>` navigations,
+not `<img>`, and are not blocked by this CSP — left as-is. VERIFIED live: exportCardPNG('download') now
+returns "downloaded" (was throwing); clipboard path works with real-click user-activation, else falls back
+to download. Frontend-only; v=551. (Copy = copies the chart PNG to the clipboard; Download = saves it.)

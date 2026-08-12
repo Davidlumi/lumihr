@@ -582,14 +582,16 @@ window.exportCardPNG = async function (cardEl, meta, mode) {
   while (clone.firstChild) g.appendChild(clone.firstChild);
   wrap.appendChild(g);
 
-  const blob = new Blob([new XMLSerializer().serializeToString(wrap)], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  // Load the SVG twin as a data: URL, NOT a blob: URL. The app's CSP is
+  // `img-src 'self' data:`, which BLOCKS blob:, so a createObjectURL image
+  // silently fails to load (img.onerror) and Copy/Download quietly did nothing.
+  // data: is allowed and — for this pure-shape SVG — never taints the canvas.
+  const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(wrap));
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
   const canvas = document.createElement("canvas");
   canvas.width = W * 2; canvas.height = H * 2;
   canvas.getContext("2d").drawImage(img, 0, 0);
-  URL.revokeObjectURL(url);
   if (mode === "clipboard" && navigator.clipboard && window.ClipboardItem) {
     const png = await new Promise(r => canvas.toBlob(r, "image/png"));
     await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
