@@ -17561,3 +17561,48 @@ paying customers); (2) six testimonials attributed to member sectors pre-launch;
 hidden fees" vs £750/pulse launch; (4) PROP_8e0b6316 ladder direction. VERIFIED: jsc/py_compile
 clean, rig-verified live (signals page, strategy parity, dead-cut adoption, rail/pack at 760px),
 full gate suite 14/14 GREEN mid-loop, v=568.
+
+## 2026-08-12 — Pre-prod QA audit, fix loop 2: the P2 sweep (high-confidence mechanical fixes)
+
+Dedupe first: 109 high-confidence P2s → ~40 unique. DISPROVEN and closed without a change: "bare
+/#/register and /#/reset are dead routes" (marketing.html's bounce script works — the finder
+navigations, mine included, were dropping URL fragments; verified live with location.assign) and
+"marketing header lacks Sign in" (it's present; hidden behind the hamburger at ≤ mobile widths —
+the capture viewport misled five finders).
+
+STATE HONESTY: the grid now carries the FULL labelling doctrine — "Doesn't apply to you" (13/cut)
+and "Not yet rated" foot chips where no verdict pill renders (the you_na cards were the only ones
+with zero state line); the "Unbenchmarked" pill reads "No comparison" (the sanctioned vocabulary);
+grid signal-filter counts include protected cards in "No signal" (47+11+270 now = the header's 328,
+was 326 of 328); the Signals position filter gains a "Practice differs" chip so its four counts sum
+to All (was 38 of 49 with no explanation); the gap-register subtitle describes the ACTIVE view
+("…that you don't" no longer captions an Everything table full of "and so do you" rows); metric
+pages whose title IS the question no longer print it twice (136 pages).
+
+RESILIENCE: reset links opened while signed in get a ResetWhileAuthed interstitial (mirrors the
+invite rule; the token was silently eaten by Overview); a transient network failure on /api/me no
+longer boots a signed-in user to the sign-in screen (401s only); a failed boot prefs GET no longer
+lets the next pref write WIPE all saved prefs (re-fetch + merge before any whole-object write);
+dashboard switch/create/duplicate/delete gained catch+toast (all four failed silently);
+CategoryPage guards unknown/legacy domain names (crashed the whole app on hero.drivers).
+
+SERVER HARDENING: _json() 400s on valid-JSON-non-object bodies ([] crashed every POST/PUT with an
+AttributeError-500); notify-prefs validates prefs shape + min_money_gbp (500 on "abc");
+auth.rate_clear() releases the login rate budget on SUCCESSFUL sign-in (the per-IP cap counted
+successes — a 30-person NAT office could lock itself out through normal use).
+
+CRAFT: pulse cards + share-table audit trail speak the house date voice (fmtDate, no raw ISO / no
+"12/08/2026, 19:07" beside "19 Aug 2026"); "AI insights" casing unified (5 sites); fonts.css pin
+aligned v=353→568 on the 5 public pages; pulse hero card no longer nests a real button inside
+role="button" (nested-interactive); marketing "seven areas" corrected to eight (the 2026.1
+release-history "seven categories" line left UNTOUCHED — it may be historically true; David to
+confirm). VERIFIED live on the rig: counts sum, chips render, 400s where 500s were; v=569.
+
+CARRIED to loop 3 / David: qindex-failure nav recovery; stale cuts after profile completion;
+strategy-wizard leave-guard; AI endpoint rate limits; draft question-scope validation; CSS token
+consolidation (near-dup tints, ~12 off-token colours, z-ladder, popover drift); peer-selector
+component unification (metric page lacks counts/annotations/create); matrix table a11y (role=img
+flattening); share-view verdict parity; donut "269 metrics" label semantics; signal-n vs card-n
+basis disclosure; register Sector-column basis; "Confidence 7/10" methodology mention; domain
+terminology ruling (domain/area/section/category); peer-descriptor prose voice; demo-org test
+residue + internal contradictions (sales surface — David's call).
