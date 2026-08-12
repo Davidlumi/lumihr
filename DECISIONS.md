@@ -17103,3 +17103,21 @@ right: auto; transform-origin: top left; }` (+ `.cmp-menu.up { transform-origin:
 opens rightward into the card. Left the right-side .kebab-menu / AddToDashboard menus untouched. VERIFIED
 live: left-column card menu opens at left=273 (clears the 224px sidebar), right-column at left=789, both
 fully in viewport, all peer-group items readable. Frontend-only; 14/14 gates. v=549.
+
+## 2026-08-12 — Fix: benchmark card "pin / kebab" menus painted behind the next card (David)
+
+Follow-on from the compare-pill fix: David hit the pin → Add-to-dashboard menu (and by extension the
+other card action menus) rendering "cut off". ROOT CAUSE (a stacking-context trap, not anchoring): these
+menus (.kebab-menu, z-index 60) anchor at the card's BOTTOM and open downward, overflowing past the
+card's bottom edge into the next card. Each .bench-grid card sits in an anonymous wrapper div carrying the
+`riseIn` entrance animation with `animation-fill-mode: both` (app.css `.bench-grid > *`); `both` HOLDS the
+final `transform: none` keyframe as a computed identity matrix, which keeps a per-card stacking context
+alive permanently — so the FOLLOWING wrapper painted over the overflowing menu. Diagnosed live via
+elementFromPoint (the covering element was the next card's chart <svg>) + walking the stacking chain (the
+covering svg's ancestor wrapper had transform:matrix + animation:riseIn). Removing the transform globally
+did NOT resolve it in-page, but LIFTING the wrapper that holds the open menu did. FIX (app.css):
+`.bench-grid > *:has(.kebab-menu), .sp-grid > *:has(.kebab-menu) { position: relative; z-index: 5; }` —
+:has() lifts exactly the card whose menu is open above its siblings, so the menu (and its overflow) paints
+on top. Covers compare (.cmp-menu carries .kebab-menu too), pin (AddToDashboard) and the kebab menu.
+VERIFIED live: pin menu now on top at top/mid/bottom sample points including the overflow region; wrapper
+z-index reads 5 when its menu is open. Frontend-only; 14/14 gates. v=550.

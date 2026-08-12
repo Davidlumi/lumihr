@@ -3156,6 +3156,12 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .kebab-menu::-webkit-scrollbar-track { background: transparent; }
 /* flip above the button when there isn't room below (long menu / card near the fold) */
 .kebab-menu.up { top: auto; bottom: 30px; transform-origin: bottom right; }
+/* A card menu (compare / pin / kebab) anchored at the card's bottom overflows into the
+   NEXT card. Each grid card sits in a riseIn-animated wrapper whose held transform makes
+   a per-card stacking context, so the following wrapper painted over the overflowing menu
+   (it read as "cut off"). Lift the wrapper that holds an OPEN menu above its siblings so
+   the menu paints on top. Scoped by :has() to the exact card in play. */
+.bench-grid > *:has(.kebab-menu), .sp-grid > *:has(.kebab-menu) { position: relative; z-index: 5; }
 .kebab-label { color: var(--ink-faint); padding: var(--s2) var(--s3) var(--s1); }
 .kebab-item { display: flex; align-items: center; gap: var(--s2); width: 100%; text-align: left;
   background: none; border: none; cursor: pointer; padding: var(--s2) var(--s3); border-radius: var(--radius-xs);
