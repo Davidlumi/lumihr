@@ -17197,3 +17197,20 @@ exportable. To AVOID the duplication David flagged, the header's now-redundant "
 cover). Reused .card-tools/.iconbtn atoms (no new CSS). COULDN'T verify in-app (session logged out, can't
 type the password; Claude-in-Chrome extension not connected) — app.js jsc-clean, handlers reuse proven
 code, gates. David to confirm live. v=554.
+
+## 2026-08-12 — Metric page: peer-group dropdown order made consistent with the platform (David)
+
+David: the "Comparing against" dropdown must be consistent across the platform — "default then my groups
+then sectors then fte etc". The app-wide PeerSetBar already follows the ruled order (2026-08-11: Company
+Default → your groups → market cuts). The metric-page selector I'd just built put "Your groups" LAST, with
+sectors/size/twin scattered — the inconsistency. Reordered the metric selector to: All peers → **Your
+groups** → **Compare a sector** → **Compare a size band** → **Organisations like you** — matching the
+platform order. The org's own sector/size are kept as the FIRST item in their respective group ("Your
+sector: X" / "Your size: X") and filtered out of the rest of that group's list so there's no duplicate; a
+stale off-list selection still gets a safety option inside its group (avoids the native-select
+value-not-among-options → shows-first trap). NOT touched: the app-wide PeerSetBar — it already follows the
+order; it uses a single "Other peer sets" group (sectors+size+twin) rather than the metric page's split
+"Compare a sector"/"Compare a size band" groups. That label/grouping difference remains; splitting the
+app-wide bar to match is deferred because it's on every benchmark page and I currently can't screenshot-
+verify (the in-app session logged out, Chrome extension not connected). app.js jsc-clean; gates. David to
+confirm live. v=555.
