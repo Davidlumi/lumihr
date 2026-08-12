@@ -17077,3 +17077,16 @@ VERIFIED live (v=547): scoped --pulse-accent resolves #5B4BE0; tabs in own row, 
 active indicator scaleX(1) accent + accent-deep label; indicator follows navigation to Run tab; New-pulse
 + Print CTAs indigo (white label); medallion/teaser indigo; card padding 24 / grid gap 24; report chart
 stays blue (data untouched). jsc-clean, CSS braces balanced. Gates to confirm.
+
+## 2026-08-12 — Pulse: fix the Run-tab first-run empty state (David "spacing is wrong, looks tiny")
+
+After the premium pass, David flagged the Run-a-pulse first-run card: a full-width (1120px) card with its
+content — icon, heading, 3-step how-it-works (capped at 460px), CTA — marooned in the centre, so it read
+as tiny/lost in a cavernous void. FIX (frontend): the empty state now drops the redundant "Your pulses"
+heading (nothing to head yet) and constrains the card to a focused, CENTRED 640px panel (margin auto,
+padding s7/s6); the how-steps lose the 460px cap and fill the card width so the three steps read as
+substantial columns. The focal empty-icon + step numbers took the indigo accent (var(--pulse-accent-*)
+with a --lumi-tile/--blue fallback so they degrade safely if ever rendered outside .pulse-page). The
+non-empty branch (heading + New-pulse button + pulse grid + note) is unchanged, just moved into the else.
+Verified live at 1120px: card 640 centred, content fills it, no "Your pulses" heading on empty, indigo
+icon/nums. 14/14 gates. v=548.

@@ -157,21 +157,21 @@ window.PulsesPage = function ({ me, tab }) {
           <p class="caption" style=${{ margin: "var(--s1) 0 0", maxWidth: "56ch" }}>Every lumi member can now answer — the report unlocks at ${liveMoment.floor || 5}+ organisations.</p></div>
         <button class="btn small unlock-x" aria-label="Dismiss" onClick=${() => setLiveMoment(null)}><${Icon} name="close" size=${13} /></button>
       </div>`}
-      <div class="row spread" style=${{ alignItems: "center", margin: "var(--s2) 0 var(--s3)" }}>
-        <h2 class="section-title" style=${{ margin: 0 }}>Your pulses</h2>
-        ${pulses.length ? html`<button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}><${Icon} name="list-checks" size=${15} /> New pulse</button>` : null}
-      </div>
       ${!pulses.length ? html`
-        <div class="card pulse-first" style=${{ padding: "var(--s6) var(--s5)", textAlign: "center" }}>
+        <div class="card pulse-first" style=${{ maxWidth: "640px", margin: "var(--s4) auto 0", padding: "var(--s7) var(--s6)", textAlign: "center" }}>
           <div class="pulse-empty-ico"><${Icon} name="list-checks" size=${24} /></div>
           <b>Ask the community a question only lumi can answer</b>
-          <p class="caption" style=${{ margin: "var(--s1) auto var(--s4)", maxWidth: "46ch" }}>Pay equity, four-day weeks, AI in reward — your questions, answered as anonymised 5+-organisation aggregates.</p>
+          <p class="caption" style=${{ margin: "var(--s1) auto var(--s5)", maxWidth: "42ch" }}>Pay equity, four-day weeks, AI in reward — your questions, answered as anonymised 5+-organisation aggregates.</p>
           ${howSteps}
-          <button class="btn primary" style=${{ marginTop: "var(--s2)" }} onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
-        </div>` :
-        html`<div class="pulse-grid">${pulses.map(orgRow)}</div>
-          <div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} />
-            <span>Build → we review → you confirm the launch fee → it opens to the community.${!org.payments_enabled ? " A lumi admin confirms the launch." : ""}</span></div>`}`;
+          <button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${() => nav("/run-a-pulse/new")}>Create your first pulse</button>
+        </div>` : html`
+        <div class="row spread" style=${{ alignItems: "center", margin: "var(--s2) 0 var(--s3)" }}>
+          <h2 class="section-title" style=${{ margin: 0 }}>Your pulses</h2>
+          <button class="btn primary" style=${{ flex: "none" }} onClick=${() => nav("/run-a-pulse/new")}><${Icon} name="list-checks" size=${15} /> New pulse</button>
+        </div>
+        <div class="pulse-grid">${pulses.map(orgRow)}</div>
+        <div class="pulse-note" style=${{ marginTop: "var(--s4)" }}><${Icon} name="info" size=${14} />
+          <span>Build → we review → you confirm the launch fee → it opens to the community.${!org.payments_enabled ? " A lumi admin confirms the launch." : ""}</span></div>`}`;
   };
 
   const taken = !isAdmin && data ? data.pulses.filter(p => p.participated).length : 0;

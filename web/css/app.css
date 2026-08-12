@@ -2462,8 +2462,8 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-how { display: flex; gap: var(--s2); margin: var(--s4) 0 var(--s5); }
 .pulse-how-step { flex: 1; display: flex; gap: var(--s3); align-items: center; padding: var(--s3) var(--s3);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-.pulse-how-num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--lumi-tile);
-  color: var(--blue-deep); font-weight: 700; font-size: var(--fs-label); display: flex; align-items: center; justify-content: center; }
+.pulse-how-num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--pulse-accent-tint, var(--lumi-tile));
+  color: var(--pulse-accent-deep, var(--blue-deep)); font-weight: 700; font-size: var(--fs-label); display: flex; align-items: center; justify-content: center; }
 .pulse-how-step b { font-size: var(--fs-label); display: block; }
 @media (max-width: 680px) { .pulse-how { flex-direction: column; } }
 .pulse-note { display: flex; gap: var(--s2); align-items: flex-start; background: var(--lumi-tile);
@@ -2476,8 +2476,8 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-launch.live { background: linear-gradient(180deg, var(--lumi-tile), var(--surface)); border-color: var(--blue-bright); }
 .pulse-launch-emoji { font-size: var(--fs-display); line-height: 1; }
 .pulse-fee { font-size: var(--fs-display); font-weight: 700; color: var(--blue-deep); margin: var(--s2) 0; letter-spacing: -.01em; }
-.pulse-empty-ico { width: 52px; height: 52px; border-radius: 50%; background: var(--lumi-tile);
-  color: var(--blue); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s2); }
+.pulse-empty-ico { width: 52px; height: 52px; border-radius: 50%; background: var(--pulse-accent-tint, var(--lumi-tile));
+  color: var(--pulse-accent-deep, var(--blue)); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s2); }
 
 
 /* persistent setup checklist (post-terms; the multi-session journey isn't one % bar) */
@@ -2581,7 +2581,7 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
 .pulse-meter { height: 5px; border-radius: 999px; background: var(--surface-sunk); overflow: hidden; max-width: 220px; }
 .pulse-meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--pulse-accent), var(--pulse-accent-bright)); border-radius: 999px; }
 .pulse-action { display: inline-flex; align-items: center; gap: 4px; margin-top: var(--s2); font-size: var(--fs-caption); font-weight: 600; color: var(--blue-deep); }
-.pulse-first .pulse-how { text-align: left; max-width: 460px; margin: var(--s4) auto; }
+.pulse-first .pulse-how { text-align: left; max-width: none; margin: var(--s5) 0; }
 /* the New-pulse / hero / launch primary CTA takes the signature accent — scoped to .pulse-page so
    only Pulse primary buttons change; white label on #5B4BE0 = 5.95:1 (AA). No new button class. */
 .pulse-page .btn.primary { background: var(--pulse-accent); border-color: var(--pulse-accent); box-shadow: var(--pulse-glow); }
