@@ -17090,3 +17090,16 @@ with a --lumi-tile/--blue fallback so they degrade safely if ever rendered outsi
 non-empty branch (heading + New-pulse button + pulse grid + note) is unchanged, just moved into the else.
 Verified live at 1120px: card 640 centred, content fills it, no "Your pulses" heading on empty, indigo
 icon/nums. 14/14 gates. v=548.
+
+## 2026-08-12 — Fix: benchmark card compare-pill menu opened off-screen behind the sidebar (David)
+
+David hit the per-card peer/sample menu on the Benchmark page rendering as clipped fragments to the far
+left, half-hidden behind the sidebar. ROOT CAUSE (app.css): the compare-against popover (.cmp-menu) reuses
+.kebab-menu, which is `position:absolute; right:0` — correct for the card's RIGHT-side action/kebab menus
+(they open leftward and stay on screen), but the ComparePill sits at the card's bottom-LEFT, so a
+right-anchored menu extended leftward off the content area and under the sidebar. Since that pill is
+ALWAYS at the footer-left, the deterministic fix is to LEFT-anchor its menu: `.cmp-menu { left: 0;
+right: auto; transform-origin: top left; }` (+ `.cmp-menu.up { transform-origin: bottom left; }`), so it
+opens rightward into the card. Left the right-side .kebab-menu / AddToDashboard menus untouched. VERIFIED
+live: left-column card menu opens at left=273 (clears the 224px sidebar), right-column at left=789, both
+fully in viewport, all peer-group items readable. Frontend-only; 14/14 gates. v=549.

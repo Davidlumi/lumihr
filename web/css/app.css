@@ -3898,7 +3898,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .cmp-pill.on { background: var(--blue-tint); border-color: var(--blue-tint-2); color: var(--blue-deep); }
 .cmp-pill svg { flex: none; opacity: .75; }
 .cmp-pill-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cmp-menu { min-width: 224px; }
+/* the compare pill sits at the card's bottom-LEFT, so its menu must open rightward —
+   left-anchored, overriding .kebab-menu's right:0 (which is right for the right-side
+   action menus but pushed this one off-screen behind the sidebar). */
+.cmp-menu { min-width: 224px; left: 0; right: auto; transform-origin: top left; }
+.cmp-menu.up { transform-origin: bottom left; }
 
 /* card footer: compare-against pill · n on the left, action icons on the right */
 .bench-foot { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding-top: var(--s3); flex-wrap: wrap; }
