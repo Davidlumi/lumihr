@@ -17039,3 +17039,41 @@ ever grows, a cached headline column is the future fix (noted).
 
 Unit-verified in isolation (8 topic cases classify correctly; teaser handles options/numeric/suppressed/
 all-suppressed). py_compile clean, jsc-clean, CSS braces balanced. Gates + live verify to follow. v=546.
+
+## 2026-08-12 — Pulse: premium pass — indigo signature accent, underline tabs, roomier spacing (David)
+
+David: "review the spacing and make it more obvious that it is a tab system — make it more colourful and
+premium." He then chose (AskUserQuestion) "blue + ONE signature accent" over topic-colours or
+premium-still-one-blue. Drove a 3-lens design workflow (Stripe-gradient / Apple-glass / Linear-editorial
+→ adversarial synthesis). Frontend-only (app.css + pulses.js).
+
+SIGNATURE ACCENT — a SCOPED indigo ramp defined on `.pulse-page` and referenced ONLY by `.pulse-*`
+selectors, so it is structurally impossible to leak to :root / the sober benchmark pages, and it stays
+clear of the reserved coral you-marker. Ramp: --pulse-accent #5B4BE0 (white text 5.95:1 AA — used on the
+primary CTA, the tab indicator, the meter fill), --pulse-accent-deep #3A2CA0 (accent-as-text: active-tab
+label, hero eyebrow, teaser stat, medallion glyph, card verb — 10.25:1 on white / 8.75:1 on tint),
+--pulse-accent-bright #6D5EF5 (hover/gradient only, never resting text), --pulse-accent-tint #EEEBFC +
+-tint-2 #DAD3F8 (fills/borders), --pulse-glow. Blue/navy STAYS the base; indigo appears ONLY where
+something is selected / live / actionable. The pulse REPORT keeps the sober blue benchmark palette (the
+"You" bar stays blue) and its green favourable ▲ — only the report's primary Print CTA takes the accent.
+`.pulse-page` was added to the detail + builder wrappers so the accent (esp. `.pulse-page .btn.primary`)
+carries across all three Pulse surfaces; the child-combinator `.pulse-page > .section-title` keeps the
+48px chapter rhythm off nested h2s (builder card, Run-tab row).
+
+TABS — the ambiguous rounded pill (read as a one-of-two toggle) → an UNDERLINE-INDICATOR bar in its own
+full-width row beneath the header (moved out of the header's right slot in pulses.js; non-admins keep the
+"N taken" stat there). A shared hairline baseline binds Explore / Run a pulse; a 2px indigo indicator
+slides under the active tab (scaleX transform), the active label is accent-deep. State = indicator +
+colour + the existing aria-current (three channels, never colour alone). Focus ring deliberately stays
+the app-standard blue for a consistent convention.
+
+SPACING — card padding 16→24 + gap 8→12; grid gap + top 16/12→24/24; hero padding 24→32; teaser 8→12;
+header-bottom 16→12 (the tab row owns the band); sections on a 48/16 rhythm. Hero gained an indigo spine +
+radial glow; medallion became a two-stop indigo gem with a hairline ring + inner highlight; card hover
+border + shadow moved to the accent + shared --shadow-lift. Every new motion has a prefers-reduced-motion
+off-ramp.
+
+VERIFIED live (v=547): scoped --pulse-accent resolves #5B4BE0; tabs in own row, flex, hairline baseline,
+active indicator scaleX(1) accent + accent-deep label; indicator follows navigation to Run tab; New-pulse
++ Print CTAs indigo (white label); medallion/teaser indigo; card padding 24 / grid gap 24; report chart
+stays blue (data untouched). jsc-clean, CSS braces balanced. Gates to confirm.

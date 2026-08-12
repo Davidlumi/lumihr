@@ -184,11 +184,12 @@ window.PulsesPage = function ({ me, tab }) {
             ? "Design a pulse and launch it to the lumi community — answers come back as anonymised 5+-organisation aggregates."
             : "Short, timely community deep-dives on reward — take part free to unlock each report."}</p>
         </div>
-        ${isAdmin ? html`<div class="pulse-tabs" role="group" aria-label="Pulse views">
-          <a href="#/pulse" class=${"pulse-tab" + (!isRun ? " on" : "")} aria-current=${!isRun ? "page" : undefined}>Explore</a>
-          <a href="#/run-a-pulse" class=${"pulse-tab" + (isRun ? " on" : "")} aria-current=${isRun ? "page" : undefined}>Run a pulse</a>
-        </div>` : (taken ? html`<div class="pulse-head-stat"><b class="num">${taken}</b><span class="caption">pulse${taken === 1 ? "" : "s"} taken</span></div>` : null)}
+        ${!isAdmin && taken ? html`<div class="pulse-head-stat"><b class="num">${taken}</b><span class="caption">pulse${taken === 1 ? "" : "s"} taken</span></div>` : null}
       </div>
+      ${isAdmin ? html`<div class="pulse-tabs" role="group" aria-label="Pulse views">
+        <a href="#/pulse" class=${"pulse-tab" + (!isRun ? " on" : "")} aria-current=${!isRun ? "page" : undefined}>Explore</a>
+        <a href="#/run-a-pulse" class=${"pulse-tab" + (isRun ? " on" : "")} aria-current=${isRun ? "page" : undefined}>Run a pulse</a>
+      </div>` : null}
       ${isRun ? runView() : exploreView()}
     </div>`;
 };
@@ -256,7 +257,7 @@ window.PulseDetailPage = function ({ me, pid }) {
   const answeredCount = (p.question_list || []).filter(isAnswered).length;
 
   return html`
-    <div style=${{ maxWidth: "820px", margin: "0 auto" }}>
+    <div class="pulse-page" style=${{ maxWidth: "820px", margin: "0 auto" }}>
       <button class="btn quiet" onClick=${() => nav("/pulse")}>← All pulses</button>
       <div class="pulse-banner">Timely pulse — separate from your core benchmark</div>
       <h1 class="display-title" style=${{ margin: "var(--s2) 0 var(--s1)" }}>${p.name}</h1>
@@ -524,7 +525,7 @@ window.PulseBuilderPage = function ({ me, pid }) {
     catch (e) { toast(e.message, "error"); } };
 
   return html`
-    <div style=${{ maxWidth: "820px", margin: "0 auto" }}>
+    <div class="pulse-page" style=${{ maxWidth: "820px", margin: "0 auto" }}>
       <button class="btn quiet" onClick=${() => nav("/run-a-pulse")}>← Your pulses</button>
       ${!isNew && html`<${LaunchStepper} ls=${ls} />`}
       ${ls === "changes_requested" && detail.review_notes && html`
