@@ -1628,17 +1628,42 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       <div class="metric-pdf-head" aria-hidden="true">
         <span class="logo">lumi<span>.</span></span> · Metric one-pager · ${c.cut.label} · ${compositionLabel(c.n, c.n_real)}${c.base ? " · of " + c.base.label : ""}${period ? " · " + period : ""}</div>
       <button class="btn quiet no-print" onClick=${goBack}>← Back</button>
-      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s2)", gap: "var(--s4)" }}>
+      <div class="peerbar no-print" style=${{ marginTop: "var(--s3)" }}>
+        <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
+        <span class=${"peerbar-pill" + (selKey !== "all" ? " narrowed" : "")}>
+          <span class="peerbar-selwrap">
+            <select aria-label="Peer group for this metric" class="peer-ctl" value=${selKey} onChange=${e => setCutKey(e.target.value)}>
+              <option value="all">All peers</option>
+              ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
+              ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
+              ${sel.dim === "industry" && sel.value && sel.value !== org.industry && html`<option value=${"industry::" + sel.value}>Sector: ${sel.value}</option>`}
+              ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && html`<option value=${"fte_band::" + sel.value}>Size: ${sel.value} FTE</option>`}
+              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
+              ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
+                <optgroup label="Compare a sector">
+                  ${Object.keys(cuts.industries).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
+                </optgroup>`}
+              ${cuts && Object.keys(cuts.fte_bands || {}).length > 0 && html`
+                <optgroup label="Compare a size band">
+                  ${Object.keys(cuts.fte_bands).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
+                </optgroup>`}
+              ${cuts && (cuts.groups || []).length > 0 && html`
+                <optgroup label="Your groups">
+                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
+                </optgroup>`}
+            </select>
+            <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
+          </span>
+        </span>
+        <span class="peerset-note">${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</span>
+      </div>
+      ${!profiled && html`<div class="caption no-print" style=${{ margin: "var(--s1) 0 0" }}>
+        Sector, size and bespoke comparisons unlock once your company profile is complete —
+        ${" "}<a href="#/profile">two minutes, company facts only</a>.</div>`}
+      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s4)", gap: "var(--s4)" }}>
         <div style=${{ minWidth: 0 }}>
           <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>${c.title}</h1>
-          <p class="caption" style=${{ margin: "0 0 var(--s3)", maxWidth: "640px" }}>${c.question_text}</p>
-          <div class="row" style=${{ gap: "var(--s2)" }}>
-            <${Chip} kind="accent">${org.name}<//>
-            ${org.industry && html`<${Chip}>${org.industry}<//>`}
-            ${org.fte_band && html`<${Chip}>${org.fte_band} FTE<//>`}
-            ${org.hq_region && html`<${Chip}>${org.hq_region}<//>`}
-            ${period && html`<${Chip}>${period}<//>`}
-          </div>
+          <p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>
         </div>
         <div class="metric-head-side">
           ${c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
@@ -1663,40 +1688,14 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
       <${MetricSignalBar} qid=${qid} />
 
       <div class="card" style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
-        <div class="row spread metric-controls">
-          <div class="ctlgroup">
-            <select class="ctl" aria-label="Peer group for this metric" value=${selKey} onChange=${e => setCutKey(e.target.value)}>
-              <option value="all">All peers</option>
-              ${org.industry && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
-              ${org.fte_band && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
-              ${sel.dim === "industry" && sel.value && sel.value !== org.industry && html`<option value=${"industry::" + sel.value}>Sector: ${sel.value}</option>`}
-              ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && html`<option value=${"fte_band::" + sel.value}>Size: ${sel.value} FTE</option>`}
-              ${cuts && cuts.twin_available && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
-              ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
-                <optgroup label="Compare a sector">
-                  ${Object.keys(cuts.industries).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
-                </optgroup>`}
-              ${cuts && Object.keys(cuts.fte_bands || {}).length > 0 && html`
-                <optgroup label="Compare a size band">
-                  ${Object.keys(cuts.fte_bands).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
-                </optgroup>`}
-              ${cuts && (cuts.groups || []).length > 0 && html`
-                <optgroup label="Your groups">
-                  ${cuts.groups.map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
-                </optgroup>`}
-            </select>
-            <div class="hint">${c.cut.label} · ${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` (${c.base.excluded} not-applicable excluded)` : ""}</span>` : ""}</div>
-          </div>
-          ${alts.length > 1 && html`
+        ${alts.length > 1 && html`
+          <div class="row" style=${{ justifyContent: "flex-end", marginBottom: "var(--s3)" }}>
             <div class="chart-switch" role="group" aria-label="Chart type">
               ${alts.map(t => html`
                 <button key=${t} class=${"chart-switch-btn" + (chart === t ? " on" : "")}
                   aria-pressed=${chart === t} onClick=${() => pickChart(t)}>${CHART_LABELS[t] || t}</button>`)}
-            </div>`}
-        </div>
-        ${!profiled && html`<div class="caption" style=${{ marginBottom: "var(--s2)" }}>
-          Sector, size and bespoke comparisons unlock once your company profile is complete —
-          ${" "}<a href="#/profile">two minutes, company facts only</a>.</div>`}
+            </div>
+          </div>`}
         <div class="metric-xl" ref=${chartRef} style=${busy ? { opacity: .45 } : null}
           role="img" aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " organisations, " + c.cut.label + "."}>
           ${c.suppressed ? html`
@@ -1722,31 +1721,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
 
       <${MetricTrend} qid=${qid} />
 
-      ${/* methodology demoted to a collapsed "About this metric" — reference detail
-            (definition, how it's calculated, how lumi reads it), below the read, not
-            competing with it. Was a co-equal card that mostly repeated the question. */ ""}
-      <details class="card metric-about" style=${{ padding: "var(--s4) var(--s5)", marginTop: "var(--s4)" }}>
-        <summary class="metric-about-sum"><span class="section-title" style=${{ margin: 0 }}>About this metric</span></summary>
-        <div class="metric-about-body">
-          ${c.definition && html`<p>${c.definition}</p>`}
-          ${c.help_text && html`<p class="caption">${c.help_text}</p>`}
-          <p class="caption"><${Term} word="percentile">Percentiles<//> use linear interpolation across all valid peer
-          answers; medians, not averages. Figures resting on fewer than 5 organisations are
-          ${" "}<a href="#/how-lumi-works/suppression">suppressed</a>.
-          ${" "}<a href="#/how-lumi-works/calculations">How this is calculated</a>.</p>
-          ${c.classification && c.classification.cls && html`
-            <div class="mp-class-note">
-              <div class="mp-class-head">
-                <span class="mp-class-label">How lumi reads this</span>
-                <span class=${"mp-class-chip " + mpReadChip(c.classification).cls}>${mpReadChip(c.classification).text}</span>
-              </div>
-              <p class="caption">${mpReadCopy(c.classification)}</p>
-            </div>`}
-          <div class="row" style=${{ marginTop: "var(--s3)" }}>
-            <button class="btn quiet" onClick=${() => window.openMetricRequest(c.title, "metric-page")}>Suggest a related metric</button>
-          </div>
-        </div>
-      </details>
+      ${/* "About this metric" (definition / methodology / classification / suggest) removed from the
+            metric page per David 2026-08-12 — the question sits under the title; methodology lives in
+            How-lumi-works and the global "Suggest a metric". */ ""}
       <div class="caption no-print" style=${{ margin: "var(--s4) 0" }}>
         From the <a href=${"#" + backTo}>${c.subpower || "Reward"}</a> category.
       </div>

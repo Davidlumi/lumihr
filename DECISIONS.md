@@ -17160,3 +17160,20 @@ in-app browser session logged out mid-session and I can't type the password) —
 rendering the exact new header/footer SVG standalone (served via /static): title smaller, sample-criteria
 line gone, pool folded into a single tidy footer line. jsc-clean; gates. v=552. David to confirm on a
 real download.
+
+## 2026-08-12 — Metric page: sample selector to the top, drop "About this metric" + org tags (David)
+
+David reviewed the on-screen metric detail page (#/metric/{id}, the "zoom in metric" full view) and asked
+for three cleanups (app.js MetricPage): (1) MOVE the peer-group ("sample") selector out of the chart card
+to the TOP of the page — now a `.peerbar`-styled "Comparing against [select]" bar right under the Back
+button (mirrors the benchmark page's top bar), with a `.peerset-note` showing n; the chart card keeps only
+the chart-type switch (right-aligned). The `!profiled` "complete your profile to compare by sector/size"
+hint moved up with the selector. (2) REMOVE the collapsed "About this metric" `<details>` (definition /
+percentile-methodology note / "how lumi reads this" classification / "Suggest a related metric") — the
+question already sits under the title, methodology lives in How-lumi-works, and "Suggest a metric" is in
+the masthead. (3) REMOVE the org tag chips under the heading (org name "Thornbridge", industry, FTE band,
+region, period). The print one-pager keeps its own `.metric-pdf-head` cut label, so print context is
+unaffected; the new bar + moved hint are `no-print`. Reused existing peerbar atoms (no new CSS).
+COULDN'T verify in-app (the in-app browser session logged out mid-session and I can't type the password);
+app.js is jsc-clean and the edits reuse proven markup. David to confirm on his live session. jsc-clean;
+gates. v=553.
