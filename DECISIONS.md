@@ -17492,3 +17492,72 @@ na_codes (same _norm_label matching as disclosed_absent) — the metric page now
 you" (with the peer distribution shown for context) instead of the misleading "Not yet rated" for
 N/A answers. "Not yet rated" remains only for genuinely unrankable answered types. Audit mirror updated
 (practice_/doesnt_apply states). Gates + final rig audit follow.
+
+## 2026-08-12 — Pre-prod QA audit, fix loop 1: signal honesty, verdict coherence, resilience (David "huge audit, fix everything as you go")
+
+DISCOVERY: 14-finder workflow (3 personas + UX/copy/CSS/a11y/API/data-truth/5 bug hunts) over a
+rendered-page corpus (17 routes captured from a live throwaway rig) + code + live probes. 260 raw
+findings → 4 P0 / 43 P1 (heavy convergence: 12 finders independently caught the "NONE" signal
+title) / 118 P2 / 95 P3. This loop ships every code-fixable P0/P1; the P2/P3 sweep follows.
+
+SIGNAL HONESTY (signals.py):
+- ABSENCE ANSWERS ("None", "No specific provision"…): rare-choice copy inverted reality — the P0:
+  paid study leave, answer "No specific provision", card said "only 8% of the market does this —
+  you do" + Retain + early-adopter praise. Now: absence-aware name (question title, never the bare
+  option word — kills the "NONE · Wellbeing" card), honest stand ("only 8% of the market has no
+  provision here — you're one of them"), `absence` flag suppresses the risk-appetite lift.
+- N/A ANSWERS never fire gaps: mech-7 skip when the org's whole selection is NA-routed OR textual
+  N/A-class ("Not applicable…", several sit un-routed in the r3sw25 B/C queue) + a UNIVERSAL
+  worth-signal filter at assembly (REW_INC_060 bonus-measures was told to adopt bonus KPIs on an
+  N/A born of having no bonus scheme — methodology page promises N/A never counts against anyone).
+- STRATEGY PARAMETERS (positions.STRATEGY_CONFIG_IDS) universally filtered from signals: REW_PAY_005
+  carried three contradictory verdicts (register "and so do you" / grid chip "COMMON — YOU DON'T" /
+  signal "100% does this, you don't") — a stance the org SET can't be a practice it lacks.
+- brfRule (pages.js): kind=rare no longer prints "few of your peers make this choice" under
+  "92% of the market does this, you don't" — worth/absence branch the reason sentence.
+
+VERDICT COHERENCE:
+- Diff-14 disclosure layer closed: assemble_card withholds market_band on unbenchmarked cards (5
+  leaked verdict text through the meaning line/narrative; pool/donut membership UNCHANGED — ruled
+  architecture); meaningLines returns null on unbenchmarked (belt-and-braces).
+- meaningPos (card.js): kind = cfav || pos.kind — signal-less Below-market cards no longer read
+  "You're broadly in line" beside a "▼ Below market" pill.
+- Strategy page anchors its live position read to the ORG DEFAULT peer group (was hardcoded
+  all-peers): "1 of 8 areas off aim · vs your default peer group" now agrees with the Overview chip.
+- Home per-domain Signals counts now count what their deep-link opens (inbox semantics, all kinds,
+  minus dismissed/saved/still-snoozed) — 7 of 8 domains disagreed with the page they opened.
+- PROP_8e0b6316 RE-LOCKED unbenchmarked (migrate_preprod_titles_2026_08_12.py): the 197-lift exposed
+  an authored ladder (effective Annually=100…ad hoc=0, direction −1 pre-comp) that CONTRADICTS the
+  ratified ordered scale (ad hoc<Annually<Twice<Quarterly) — grid said "Below market · P1" for the
+  org reviewing pay MOST often while the ordered-outlier signal correctly said top end. Direction
+  ruling for David queued; disclosure-layer-only, same class as the 23 standing holds.
+
+RESILIENCE (the crash/stale class):
+- strategy.js P0: local [toast, setToast] state shadowed the global toast() — EVERY "Save & finish"
+  threw after the PUT succeeded (user stranded on a dead Saved button). window.toast() + comment.
+- MetricPage: reduced-org guard (grid had it, the hero page white-screened on block.p10 of a minimal
+  payload) + PercentileBand null-guard; deleted-peer-group cuts now ADOPT the server's all-peers
+  fallback with a toast (was: permanent chart dim + dead exports + mislabelled selector).
+- share(): twin cut serialised as bare "twin" (was "twin::" which parses back as all-peers — the
+  copied link silently swapped the peer set).
+- invalidate_payloads() now clears peer_twin._group_payload_cache (defined, called NOWHERE — every
+  group cut served pre-submit numbers for the life of the process after any submit).
+- Global exception handler rolls back BOTH stores (shared thread-local conns left dirty pending
+  rows a later request would commit). HTTPException-after-write residual noted, queued.
+
+CRAFT: 16 garbled display titles re-authored (machine-mangled pass: "Gender pay gap analysis at
+least annually conduct" → "Annual gender pay gap analysis"; asserts each row still carried the
+exact garble, answers book hash bb4e119dac84e56f unchanged); 6 htm whitespace-swallow typos
+(${" "}) on the methodology/settings trust pages; board-pack print @page{12mm} override REMOVED
+(strategy print block silently broke the pack's zero-margin sheet math — every page spilled onto a
+blank sheet); settings rail + sidebar sticky offsets now track the REAL brandbar height via a
+core.js file-level ResizeObserver publishing --brandbar-live (a component effect races the header
+mount — and held node references go stale across React re-renders: re-query every fire); in-app
+board pack gets overflow-x:auto below sheet width (share page scales, the app amputated 42px).
+
+FLAGGED FOR DAVID (not fixed — business decisions): (1) marketing/pricing claim "real member data,
+never scraped or modelled" vs methodology's own modelled-pool description (P0 trust exposure with
+paying customers); (2) six testimonials attributed to member sectors pre-launch; (3) pricing "no
+hidden fees" vs £750/pulse launch; (4) PROP_8e0b6316 ladder direction. VERIFIED: jsc/py_compile
+clean, rig-verified live (signals page, strategy parity, dead-cut adoption, rail/pack at 760px),
+full gate suite 14/14 GREEN mid-loop, v=568.

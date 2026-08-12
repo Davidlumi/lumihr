@@ -1017,9 +1017,10 @@
    "direction": "higher_is_better",
    "lens": "attract",
    "weight": 1,
-   "unbenchmarked": false,
+   "unbenchmarked": true,
    "_diff15_restored": "direction+polarity restored (Diff 15, 2026-07-24, David Option A) \u2014 reverses Diff 14's 2026-07-18 suppression (was _diff14: 'verdict suppressed: distribution has no ruled authority'); anchor truth-up continues via the register + member data, not by suppressing direction",
-   "_unbench_lifted": "stale Diff-14 flag lifted 2026-08-12 \u2014 Diff-15 reversal restored these to the market pool (David: benchmark RAG for the ruled pool)"
+   "_unbench_lifted": "stale Diff-14 flag lifted 2026-08-12 \u2014 Diff-15 reversal restored these to the market pool (David: benchmark RAG for the ruled pool)",
+   "_preprod_relock_2026_08_12": "authored option_scores ladder contradicts the ratified ordered scale (ad hoc<Annually<Twice<Quarterly) \u2014 verdict re-suppressed pending David's direction ruling"
   },
   "PROP_9e4ad87f": {
    "class": "Level",
