@@ -1726,39 +1726,34 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
         <span class="peerset-note">${compositionLabel(c.n, c.n_real)}${c.base ? html`<span class="base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies."> · of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : ""}</span>
         </div>
       </div>
-      <div class="row spread" style=${{ alignItems: "flex-start", marginTop: "var(--s4)", gap: "var(--s4)" }}>
-        <div style=${{ minWidth: 0 }}>
-          <h1 class="display-title" style=${{ marginBottom: "var(--s1)" }}>${c.title}</h1>
-          <p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>
-        </div>
-        <div class="metric-head-side">
-          ${/* the header always answers "what kind of read is this?" — verdict pill, or the
-                ruled no-verdict states (unbenchmarked / Context), never a forbidden P-claim.
-                Tips are keyboard/touch-reachable (.hastip + tabindex), not title-only. */ ""}
-          ${c.unbenchmarked && !c.practice
-            ? html`<span class="ctx-chip hastip" tabindex="0">No comparison<span class="tip">No verified market anchor yet — the distribution is shown for information; no market verdict renders until this metric is anchored.</span></span>`
-            : c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
-            ? html`<span class="ctx-chip hastip" tabindex="0">Context<span class="tip">${c.classification.register === "Approach"
-                ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
-                : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}</span></span>`
-            : pos && html`<span class=${"pos-pill lg hastip " + pos.kind + (pos.kind === "good" ? " pill-glow" : "")} tabindex="0">${pos.arrow} ${pos.label}<span class="tip">${pos.tip}</span></span>`}
-          ${aim && html`<div class="metric-aim" title="How this metric reads against the aim you declared for this area.">
-            <span class="metric-aim-lbl">Your ${c.domain_aim.domain} aim: ${STANCE_VERB[c.domain_aim.stance] || c.domain_aim.stance}</span>
-            <${AlignmentChip} target=${aim} compact=${true} />
-          </div>`}
-          <div class="metric-head-actions no-print">
-            ${/* chart download + link moved to the compact tool row on the graph (David 2026-08-12);
-                  the header keeps the two actions the graph tools don't cover — One-pager + Pin. */ ""}
-            ${!c.suppressed && html`<button class="btn small" disabled=${busyNow} onClick=${printMetric} title="Print or save a one-page PDF — the chart plus your written commentary."><${Icon} name="file-text" size=${13} /> One-pager</button>`}
-            ${onPin && pinnedIds && html`<button class=${"btn small" + (pinnedIds.has(qid) ? " primary" : "")} onClick=${() => onPin(qid)}
-              title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}>
-              <${Icon} name=${pinnedIds.has(qid) ? "check" : "plus"} size=${13} /> ${pinnedIds.has(qid) ? "Pinned" : "Pin"}</button>`}
-          </div>
-        </div>
-      </div>
       <${MetricSignalBar} qid=${qid} sig=${sig} />
 
       <div class="card metric-hero-card" aria-busy=${busyNow ? "true" : "false"} style=${{ padding: "var(--s5)", marginTop: "var(--s4)" }}>
+        ${/* CARD HEAD (David 2026-08-12): the chart's title lives IN the card, and every
+              metric carries a clear market indicator — below / on / above market — with
+              the strategy-alignment chip beside it. No-verdict states stay ruled and
+              honest: Protected (suppressed), No comparison (unbenchmarked), Context
+              (neutral/approach), Not yet answered. Tips are keyboard-reachable. */ ""}
+        <div class="metric-card-head">
+          <div class="metric-card-titles">
+            <h1 class="metric-card-title">${c.title}</h1>
+            <p class="caption" style=${{ margin: 0, maxWidth: "640px" }}>${c.question_text}</p>
+          </div>
+          <div class="metric-verdicts">
+            ${c.suppressed
+              ? html`<span class="ctx-chip hastip" tabindex="0">Protected<span class="tip">Fewer than 5 organisations in this peer group answered — figures this thin are never shown, so there's no market verdict to give.</span></span>`
+              : c.unbenchmarked && !c.practice
+              ? html`<span class="ctx-chip hastip" tabindex="0">No comparison<span class="tip">No verified market anchor yet — the distribution is shown for information; no market verdict renders until this metric is anchored.</span></span>`
+              : c.classification && (c.classification.direction === "neutral" || c.classification.register === "Approach")
+              ? html`<span class="ctx-chip hastip" tabindex="0">Context<span class="tip">${c.classification.register === "Approach"
+                  ? "lumi reads this as an approach — how, or how often, you do something. It has no better-or-worse, so it's shown as context, not an above/below-market verdict."
+                  : "This metric has no inherently good or bad direction — lumi shows it as context to weigh, not an above/below-market verdict."}</span></span>`
+              : pos
+              ? html`<span class=${"pos-pill lg hastip " + pos.kind + (pos.kind === "good" ? " pill-glow" : "")} tabindex="0">${pos.arrow} ${pos.label}<span class="tip">${pos.tip}</span></span>`
+              : html`<span class="ctx-chip hastip" tabindex="0">Not yet answered<span class="tip">Add your answer for this metric to see whether you're below, on or above the market.</span></span>`}
+            ${aim && html`<${AlignmentChip} target=${aim} />`}
+          </div>
+        </div>
         ${/* THE READ, as one column (David fork 2026-08-12): the narrative lead → your
               numbers → the chart. The lead is the AI narrative's "How you compare" part
               (David 2026-08-12: the position description comes from the AI narrative,
@@ -1813,6 +1808,10 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
             ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
             ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
             <button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>
+            ${!c.suppressed && html`<button class="iconbtn" disabled=${busyNow} title="Print or save a one-page PDF — the chart plus your written commentary." aria-label="One-pager PDF" onClick=${printMetric}><${Icon} name="file-text" size=${15} /></button>`}
+            ${onPin && pinnedIds && html`<button class=${"iconbtn" + (pinnedIds.has(qid) ? " on" : "")} onClick=${() => onPin(qid)}
+              title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}
+              aria-label=${pinnedIds.has(qid) ? "Unpin from dashboard" : "Pin to dashboard"} aria-pressed=${pinnedIds.has(qid)}><${Icon} name="pin" size=${15} /></button>`}
           </div>
         </div>
         ${showInfo && html`

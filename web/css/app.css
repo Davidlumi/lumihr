@@ -3059,7 +3059,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
     break-inside: avoid; page-break-inside: avoid; margin-top: 10pt; }
   .metric-page .metric-commentary { break-inside: auto; }   /* long narrative may span the page break */
   .metric-page .metric-xl { --chart-h: 250px; break-inside: avoid; }
-  .metric-page h1.display-title { font-size: 20pt; line-height: 1.1; }
+  .metric-page .metric-card-title { font-size: 20pt; line-height: 1.1; }
 }
 /* THE READ — the AI narrative's "How you compare" leads the hero card at lead scale */
 .metric-lead { display: flex; gap: var(--s2); align-items: flex-start;
@@ -3067,6 +3067,14 @@ textarea:focus-visible, [tabindex]:focus-visible {
   max-width: 720px; margin: 0 0 var(--s4); line-height: 1.45; }
 .metric-lead svg { flex: none; }
 .pos-pill.lg { font-size: var(--fs-body); height: 30px; padding: 0 var(--s3); flex: none; }
+/* card head: the chart's title lives IN the hero card; every metric carries its market
+   indicator (below/on/above, or the ruled no-verdict chip) + the strategy chip beside it */
+.metric-card-head { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s3) var(--s4); margin-bottom: var(--s3); flex-wrap: wrap; }
+.metric-card-titles { min-width: 0; flex: 1 1 320px; }
+.metric-card-title { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
+  font-weight: 650; letter-spacing: -0.01em; margin: 0 0 2px; }
+.metric-verdicts { display: flex; gap: var(--s2); align-items: center; flex: none; flex-wrap: wrap; }
 /* verdict tips reachable by keyboard/touch, not title-only */
 .pos-pill.hastip, .ctx-chip { position: relative; }
 .hastip:focus .tip, .hastip:focus-within .tip { display: block; }
@@ -3121,12 +3129,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
     to { opacity: 1; max-height: 140px; margin-top: var(--s3); padding-top: var(--s2); padding-bottom: var(--s2); }
   }
 }
-/* metric-page header side stack: position pill, the declared-aim read, and the
-   Download/Share actions (lifted from the page foot to the top, 2026-07-06). */
-.metric-head-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s2); flex: none; }
-.metric-aim { display: inline-flex; align-items: center; gap: var(--s2); }
-.metric-aim-lbl { font-size: var(--fs-caption); color: var(--ink-soft); }
-.metric-head-actions { display: flex; gap: var(--s2); flex-wrap: wrap; justify-content: flex-end; }
+/* (the old .metric-head-side header stack retired 2026-08-12 — title + indicators
+   live in .metric-card-head inside the hero card; actions in the card tool row) */
 /* "why you're here" — the signal that opened this page + its triage controls */
 .metric-sigbar { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3);
   padding: var(--s2) var(--s3); border: 1px solid var(--border); border-radius: var(--radius);
@@ -3135,7 +3139,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .metric-sigbar-txt .caption { color: var(--ink-soft); }
 .metric-sigbar .sig-actions { flex: 0 0 auto; }
 @media (max-width: 640px) {
-  .row.spread .metric-head-side { align-items: flex-start; }
   .metric-sigbar { flex-wrap: wrap; }
 }
 .cut-row { display: flex; gap: var(--s5); align-items: center; padding: var(--s3) 0;

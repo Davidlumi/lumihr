@@ -17308,3 +17308,24 @@ graph shows no description at all until the flag is on and a narrative is genera
 throwaway (:8070, LUMI_DB backup-API copy, LUMI_AI_INSIGHTS_ENABLED=on, keyless deterministic, zero AI
 spend): Generate → the lead appears at the top with the sparkle, "How you compare" omitted below,
 AI-draft chip intact; throwaway killed + deleted after. Frontend-only; jsc-clean; gates. v=558.
+
+## 2026-08-12 — Metric page: title into the card; every metric carries a market indicator + strategy chip (David)
+
+David: "i would rather the title of the chart be in the card - we should have a clear indicator for every
+metric - below, on, above market and then next to it an indicator of how that aligns to the strategy."
+RESTRUCTURE (app.js MetricPage): the page-level h1 title row (title + question + .metric-head-side stack)
+is GONE; the hero card now opens with `.metric-card-head` — the metric title (h1, fs-section weight 650)
++ question caption on the left, and `.metric-verdicts` top-right: (1) the MARKET INDICATOR, on every
+metric — the pos-pill "▼/●/▲ Below/On/Above market · P{n}" when a position exists (cardPosition already
+speaks this vocabulary), else the ruled honest no-verdict chip: "Protected" (suppressed), "No comparison"
+(unbenchmarked, Diff-14), "Context" (neutral/Approach), "Not yet answered" (no answer) — every metric
+answers "where do I stand?" in one glance; (2) NEXT TO IT the strategy chip — AlignmentChip full-label
+("On aim" / "Behind aim" / "Ahead of aim", navy, targetCopy tooltip), replacing the old stacked
+"Your X aim: …" + compact chip. One-pager + Pin moved from the deleted header stack into the card tool
+row as iconbtns (file-text / pin with .on + aria-pressed — mirrors the benchmark card's pin). CSS:
+.metric-card-head/.metric-card-titles/.metric-card-title/.metric-verdicts added; .metric-head-side/
+.metric-aim/.metric-head-actions family deleted (+ the 640px mobile rule); print h1 rule retargeted to
+.metric-card-title. VERIFIED live at v=559 on both states: unbenchmarked metric → title+question in card,
+"No comparison" chip, 6-icon tool row (incl. One-pager + Pin); positioned metric (REW_BEN_112) →
+"▼ Below market · P15" pill + "On aim" chip side by side (the lag-on-pensions story in one glance),
+sigbar intact. 14/14 gates. v=559.
