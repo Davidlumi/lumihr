@@ -1548,7 +1548,17 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     setBusy(true); setErr(null);
     const qs = "cut=" + encodeURIComponent(sel.dim) + (sel.value ? "&cut_value=" + encodeURIComponent(sel.value) : "");
     api(`/api/benchmark/${qid}?` + qs)
-      .then(d => { if (!dead) setCard(d); })
+      .then(d => {
+        if (dead) return;
+        setCard(d);
+        // the server resolves an unknown/deleted peer group to all-peers and echoes the
+        // resolved cut — adopt it, or staleCut stays true forever (permanent dim, dead
+        // exports) beside a selector naming a group that no longer exists
+        if (d && d.cut && !d.reduced && d.cut.dim === "all" && sel.dim === "group") {
+          setSel({ dim: "all", value: null });
+          toast("That peer group no longer exists — showing All peers.");
+        }
+      })
       .catch(e => { if (!dead) setErr(e.message); })
       .finally(() => { if (!dead) setBusy(false); });
     return () => { dead = true; };
@@ -1567,6 +1577,14 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     </div>`;
 
   const c = card;
+  // reduced (paused) org on a non-sample metric: the server sends a minimal payload with
+  // no block/you — the grid guards this (card.js), and without the same guard here a
+  // numeric metric dereferences block.p10 and white-screens the whole app
+  if (c.reduced) return html`
+    <div class="metric-page">
+      <button class="btn quiet small" onClick=${() => nav("/benchmark")}>← Back</button>
+      <${ReducedCard} card=${c} />
+    </div>`;
   // a cut change re-fetches into the SAME frame: dim the chart + disable exports while
   // the new figures load, but never unmount the selector the user is holding
   const staleCut = c.cut && (c.cut.dim !== sel.dim || (c.cut.value || null) !== (sel.value || null));
@@ -1640,7 +1658,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
     }
   };
   const share = async () => {
-    const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim + "::" + (sel.value || "")) : "";
+    // same serialisation as cutToURL: twin is the bare token — "twin::" parses back
+    // as {dim:'all'} and the recipient silently lands on the wrong peer set
+    const cutPart = selKey !== "all" ? "?cut=" + encodeURIComponent(sel.dim === "twin" ? "twin" : sel.dim + "::" + (sel.value || "")) : "";
     const url = window.location.href.split("#")[0] + "#/metric/" + qid + cutPart;
     // the toast must not lie: confirm the write landed, else hand the link over manually
     try { await navigator.clipboard.writeText(url); toast("Link copied — opens this metric on " + c.cut.label); }

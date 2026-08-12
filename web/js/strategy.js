@@ -318,7 +318,19 @@ function SdAxis({ intent, actual, pctl, align }) {
 
 function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const [hero, setHero] = useState(null);
-  useEffect(() => { apiCached("/api/overview").then(o => setHero(o.hero || null)).catch(() => setHero(null)); }, []);
+  // anchor the live position read to the ORG DEFAULT peer group — the same basis as the
+  // Overview chip and Signals (default-cut anchoring doctrine). A bare /api/overview here
+  // read all-peers, so this page said "5 of 8 off aim" beside an Overview saying "1 off
+  // aim" (pre-prod audit 2026-08-12).
+  const defCut = (me && me.org && me.org.signal_peer_cut) || "all";
+  useEffect(() => {
+    let qs = "";
+    if (defCut && defCut !== "all") {
+      const [dim, value] = defCut === "twin" ? ["twin", null] : defCut.split("::");
+      qs = "?cut=" + encodeURIComponent(dim) + (value ? "&cut_value=" + encodeURIComponent(value) : "");
+    }
+    apiCached("/api/overview" + qs).then(o => setHero(o.hero || null)).catch(() => setHero(null));
+  }, [defCut]);
   // lumi's reading — the grounded AI overlay. undefined = hidden (AI off / no access),
   // null = available but not generated, object = the three parts.
   const [ai, setAi] = useState(undefined);
@@ -387,7 +399,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </section>` : doms.length ? html`
         <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
-            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · vs all peers</span></div>
+            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · ${defCut && defCut !== "all" ? "vs your default peer group" : "vs all peers"}</span></div>
           <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your aim; the dot is where you actually land. Inside the band is on aim.</p>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
@@ -571,7 +583,10 @@ window.StrategyPage = function ({ me }) {
       await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
         transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // a governance act closes quietly — no confetti
-      toast("Saved — your benchmark now reads through this strategy.");
+      // window-qualified: the local [toast, setToast] state shadows the global toast()
+      // in this scope (pre-prod audit 2026-08-12: every Save & finish threw here, after
+      // the PUT had already succeeded)
+      window.toast("Saved — your benchmark now reads through this strategy.");
       apiCacheInvalidate("/api/overview");
       const wasEdit = editing;
       const settle = () => { setEditing(false); setCommitted(false); setSaving(false); setStep(0); window.scrollTo(0, 0); };

@@ -44,6 +44,7 @@ window.YouDot = YouDot;
 window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = true, showValues = true, width = CHART_W }) {
   // hero pass: wide (xl) canvases get taller geometry, bigger type, and each P mark
   // carries its value — the chart reads as the page's centrepiece, not a card sparkline
+  if (!block || block.p10 == null) return null;   // minimal payloads (reduced org) carry no block
   const W = width, big = W >= 620;
   const H = big ? 124 : 96, padL = 10, padR = 10, barY = big ? 54 : 46, barH = big ? 14 : 12;
   const fsP50 = big ? 12.5 : 9.5, fsMark = big ? 11 : 9;

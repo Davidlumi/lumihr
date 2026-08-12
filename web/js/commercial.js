@@ -1260,7 +1260,7 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
               </div>
               ${ai.consented && !ai.master ? html`<p class="caption" style=${{ marginTop: "var(--s2)" }}>
                 AI insights aren't switched on across lumi yet — your setting is saved and applies the moment they go live.</p>` : null}
-              <p class="caption" style=${{ marginTop: "var(--s2)" }}>Read the
+              <p class="caption" style=${{ marginTop: "var(--s2)" }}>Read the${" "}
                 <button type="button" class="linklike" onClick=${() => setAiDoc(true)}>AI insights terms</button>.</p>`)}
 
           <div class="settings-group">Organisation</div>

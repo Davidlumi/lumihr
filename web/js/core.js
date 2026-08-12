@@ -599,3 +599,35 @@ window.fmtDate = function (d) {
   const dt = d === undefined ? new Date() : (d instanceof Date ? d : new Date(d));
   return isNaN(dt) ? "" : dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };
+
+// ------------------------------------------------- brandbar live height ----
+// The navy brandbar grows past --brandbar-h when its right cluster wraps
+// (≤860px). Sticky offsets (sidebar, settings rail) read
+// var(--brandbar-live, var(--brandbar-h)); this file-level watcher publishes
+// the real height. Module scope, not a hook: the header mounts after auth
+// resolves, so a component effect races its existence (pre-prod audit
+// 2026-08-12 — the settings rail sat fully hidden behind a wrapped bar).
+(function () {
+  if (!window.ResizeObserver || !window.MutationObserver) return;
+  // ALWAYS re-query: React replaces the header node across auth/layout transitions,
+  // so a held reference goes stale and reports its pre-wrap height forever
+  const measure = () => {
+    const bar = document.querySelector(".brandbar");
+    if (bar) document.documentElement.style.setProperty("--brandbar-live", bar.offsetHeight + "px");
+    else document.documentElement.style.removeProperty("--brandbar-live");
+    return bar;
+  };
+  let observed = null;
+  const ro = new ResizeObserver(measure);
+  const attach = () => {
+    const bar = measure();
+    if (bar !== observed) {
+      if (observed) ro.unobserve(observed);
+      observed = bar;
+      if (bar) ro.observe(bar);
+    }
+  };
+  ro.observe(document.body);            // any layout settle (font load, wrap) re-measures
+  new MutationObserver(attach).observe(document.documentElement, { childList: true, subtree: true });
+  attach();
+})();

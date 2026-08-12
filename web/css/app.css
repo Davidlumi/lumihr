@@ -199,7 +199,7 @@ svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .shell-body { display: flex; flex: 1; min-height: 0; max-width: 1720px; width: 100%; margin: 0 auto; }
 .sidebar { width: 224px; flex: 0 0 224px; background: var(--surface);
   border-right: 1px solid var(--chrome-edge); box-shadow: 4px 0 16px rgba(33,27,38,.025);
-  padding: var(--s2) var(--s3) var(--s4); position: sticky; top: var(--brandbar-h); height: calc(100vh - var(--brandbar-h)); overflow-y: auto;
+  padding: var(--s2) var(--s3) var(--s4); position: sticky; top: var(--brandbar-live, var(--brandbar-h)); height: calc(100vh - var(--brandbar-live, var(--brandbar-h))); overflow-y: auto;
   display: flex; flex-direction: column; z-index: 30;
   transition: width var(--dur-base) cubic-bezier(.2,.7,.3,1), flex-basis var(--dur-base) cubic-bezier(.2,.7,.3,1); }
 /* overflow-x: clip contains decorative bleed (aurora) and off-screen hover tooltips
@@ -577,11 +577,23 @@ select.ctl:focus, input.ctl:focus { outline: var(--focus-outline); border-color:
 .sigpeer-match.warn { color: var(--blue-deep); font-weight: 600; }
 @media (max-width: 900px) {
   .settings-grid { grid-template-columns: 1fr; gap: var(--s3); }
-  .settings-rail { position: sticky; top: 0; z-index: 3; flex-direction: row; overflow-x: auto; gap: var(--s1);
+  /* stick BELOW the brandbar, not the viewport top — the bar is itself sticky and
+     taller than --brandbar-h once its right cluster wraps (≤860px), so top:0 left the
+     rail fully painted over while scrolled (pre-prod audit 2026-08-12). --brandbar-live
+     is published by a ResizeObserver in App; the static var is the no-JS fallback. */
+  .settings-rail { position: sticky; top: var(--brandbar-live, var(--brandbar-h)); z-index: 3; flex-direction: row; overflow-x: auto; gap: var(--s1);
     background: var(--surface); padding: var(--s2); margin: 0 calc(-1 * var(--s2)); border-bottom: 1px solid var(--border); }
   .settings-rail-group { display: none; }
   .settings-rail-item { white-space: nowrap; }
 }
+/* the 210mm board-pack sheet cannot shrink; below sheet width the in-app viewer gets a
+   horizontal scroll track instead of .main's overflow clip amputating the right edge
+   (pre-prod audit 2026-08-12 — the share page scales via .pack-fit; screen-only so the
+   A4 print box, itself narrower than 850px, keeps overflow visible) */
+@media screen and (max-width: 850px) {
+  .content:has(.pack-page) { overflow-x: auto; }
+}
+
 .caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ink-soft); }
 .label { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--ink-soft); font-weight: 570; }
 .muted { color: var(--ink-faint); }
@@ -3531,7 +3543,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* print artefact */
 .strat-pdf-head, .strat-pdf-foot { display: none; }
 @media print {
-  @page { margin: 12mm; }
+  /* NO @page here: @page rules are global and cascade by source order — a 12mm margin
+     declared for this document overrode the board pack's ruled zero-margin sheet
+     geometry and split every pack page onto a blank continuation sheet (pre-prod audit
+     2026-08-12). Non-pack print margins come from the shared
+     `body:not(:has(.pack-page)) .content { padding: 14mm }` rule instead. */
   .sd-doc > *, .qstage, .qstage > * { animation: none !important; opacity: 1 !important; transform: none !important; }
   .unsub-bar, .strat-progress, .strat-rail-live { display: none !important; }
   .sd-led-row, .sd-ex-row { break-inside: avoid; }

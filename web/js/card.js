@@ -46,7 +46,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
 
   const pos = cardPosition(c);
   const cfav = cardFav(c, signal);                    // chart colour follows the flag, not the percentile
-  const meaningPos = pos ? {...pos, kind: cfav || "mid" } : null;  // "What this means" agrees with the flag
+  // "What this means" agrees with the flag when one exists, else with the verdict pill —
+  // never a forced "mid" (pre-prod audit 2026-08-12: signal-less Below-market cards read
+  // "broadly in line" beside a "▼ Below market" pill)
+  const meaningPos = pos ? {...pos, kind: cfav || pos.kind } : null;
   const overridden = !!override && !!localCard;
   const globalKey = !globalCut || globalCut.startsWith("all") ? "all" : globalCut;
   const effectiveKey = override || globalKey;
@@ -340,6 +343,9 @@ window.WhatThisMeans = function ({ card: c, pos, defaultOpen }) {
 };
 
 function meaningLines(c, pos) {
+  // Diff-14 belt-and-braces: an unbenchmarked distribution carries no market claim in
+  // ANY sentence, not just the pill (the server also withholds market_band on these)
+  if (c.unbenchmarked && !c.practice) return null;
   const p50 = c.block && c.block.p50 != null ? fmtValue(c.block.p50, c.unit) : null;
   let base;
   if (pos.kind === "bad") {

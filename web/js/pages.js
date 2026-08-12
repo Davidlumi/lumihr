@@ -415,12 +415,16 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
   const _viewLive = _viewSigs.filter(s => s.status !== "dismissed");   // full ranked live pool — the panel
   const _viewTotal = _viewLive.length;                 // kept: qa_overview 9c binds the card's
                                                        // signals total to this live-set length
-  // Per-domain live signal counts for the instrument's scent dots — derived from the
-  // SAME filter-before-slice pool that feeds the band's "See all N", so the seven
-  // counts always total the band's number (never raw signals_all, which still holds
-  // dismissed rows).
+  // Per-domain counts for the instrument's scent dots. Each count deep-links to the
+  // Signals INBOX filtered to that domain, so it must count what that click shows:
+  // every live kind (position AND practice/differs), excluding dismissed, saved and
+  // still-snoozed rows. Counting the view-filtered band pool instead left 7 of 8
+  // domain counts disagreeing with the page they open (pre-prod audit 2026-08-12).
   const _domCounts = {};
-  _viewLive.forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
+  (data.signals_all || [])
+    .filter(s => s.status !== "dismissed" && s.status !== "saved"
+      && !(s.status === "snoozed" && (!s.snooze_until || new Date(s.snooze_until) > new Date())))
+    .forEach(s => { if (s.domain) _domCounts[s.domain] = (_domCounts[s.domain] || 0) + 1; });
   // scent-click → the Signals page FILTERED to that domain (David 2026-08-11). The home band
   // was retired, so each Position-by-domain count deep-links to /signals showing only that
   // domain's signals. The domain rides a module global (Overview→Signals is a client-side hash
@@ -1785,7 +1789,12 @@ function brfRule(s) {
   let r;
   if (s.kind === "money") r = "the gap carries a £ cost against the peer median";
   else if (s.kind === "prevalence") r = "most of your peers provide this and you don't";
-  else if (s.kind === "rare") r = "few of your peers make this choice";
+  else if (s.kind === "rare")
+    // one kind, three shapes: a common option the org LACKS (worth=true), an absence
+    // answer (org has nothing), or a genuinely distinctive choice
+    r = s.worth ? "most of your peers provide this and you don't"
+      : s.absence ? "almost all of your peers have something in place here"
+      : "few of your peers make this choice";
   else if (s.position === "below" || s.position === "above")
     r = "your value sits " + severityAdverb(s) + (s.position === "below" ? "below" : "above") + " the peer median";
   else if (s.bucket === "peer position") r = "you sit apart from most of your peers here";
@@ -3722,7 +3731,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           <b> market core</b>: the options at least half of your peer group offers. Offer the full core and
           your set reads <b>common</b>; offer part of it, an <b>alternative</b> pattern; none of it, a
           <b> rare</b> choice. Options you offer beyond the core never count against you. Where no single
-          option reaches half the market, we compare against the single most-offered option instead.
+          option reaches half the market, we compare against the single most-offered option instead.${" "}
           <span class="caption">(Methodology v2, introduced July 2026 — board packs generated before it
           are labelled v1 and read as they were built.)</span></p>
           <p><b>When "below market" isn't a bad thing.</b> A few measures are better when they're lower — your CEO-to-employee pay ratio, your gender pay gap. Below market there is good news, so we show it as <b>favourable</b> rather than a gap. Some measures have no good direction at all — workforce cost as a share of revenue could mean you're lean, or under-investing. We show these as <b>context</b>: a fact to weigh, not a verdict. The label always tells the truth about the number; the colour tells you how to read it.</p>
@@ -3789,7 +3798,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           see "not enough organisations to show this safely" instead. This floor is the single suppression rule, applied
           to <b>every</b> peer group — including bespoke groups such as Peer Twin and your own custom groups — and it is
           enforced in one place in the calculation engine, so no view can route around it.</p>
-          <p>Above the floor, every peer group carries a confidence label so you can weigh the sample: <b>20 or more</b>
+          <p>Above the floor, every peer group carries a confidence label so you can weigh the sample: <b>20 or more</b>${" "}
           organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.</p>
           <p class="caption">No peer figure is ever derived from a single organisation, and member identities are never
           shown in any group.</p>
@@ -3806,13 +3815,13 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
 
         <div class="card how-card" id="sources">
           <h3 class="section-title">Where the data comes from</h3>
-          <p>This snapshot ingested ${m.reconciliation.files} member submissions (${(m.reconciliation.answer_rows || 0).toLocaleString("en-GB")} answers).
+          <p>This snapshot ingested ${m.reconciliation.files} member submissions (${(m.reconciliation.answer_rows || 0).toLocaleString("en-GB")} answers).${" "}
           ${m.reconciliation.matched_orgs} organisations were matched to the lumi member registry by normalised company
-          name; ${m.reconciliation.file_only_orgs} submissions without a registry profile are retained as Unclassified;
+          name; ${m.reconciliation.file_only_orgs} submissions without a registry profile are retained as Unclassified;${" "}
           ${m.reconciliation.registry_only_orgs} registry members have not yet submitted and are excluded from every
           aggregate. Near-miss name matches are flagged for human review and never joined automatically.</p>
           <p><b>£ modelling assumptions.</b> Opportunity figures use FTE band midpoints, a UK all-sector median salary of
-          £${(m.assumptions.median_salary_gbp || 0).toLocaleString("en-GB")} (editable in Settings), a cost per leaver of
+          £${(m.assumptions.median_salary_gbp || 0).toLocaleString("en-GB")} (editable in Settings), a cost per leaver of${" "}
           ${m.assumptions.cost_per_leaver_pct_salary}% of salary and an agency premium of ${m.assumptions.agency_premium_pct}%.
           They are assumptions, clearly labelled, and every £ figure is indicative.</p>
         </div>
