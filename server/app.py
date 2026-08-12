@@ -730,6 +730,10 @@ def payloads():
 def invalidate_payloads():
     _payload_cache["data"] = None
     peer_twin.invalidate_twin_caches()
+    # custom-group blocks memoise per (snapshot, criteria) and were never cleared —
+    # after a submit, group cuts (including the org-default landing group) served
+    # pre-submit numbers for the life of the process (pre-prod audit 2026-08-12)
+    peer_twin.invalidate_group_caches()
 
 
 def parse_cut(request, org):
@@ -817,7 +821,11 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
         # the metric isn't a positioned market rate (Approach / neutral / lower_is_better /
         # non-competitive / unclassified). Passed in per-request so a card's band can never
         # disagree with the donut count it sums into (Pass 2a, 2026-06-27).
-        "market_band": market_band,
+        # Diff-14 disclosure layer: an unbenchmarked metric stays IN the donut pool (ruled
+        # architecture) but its CARD must carry no market claim — the band is withheld here
+        # like the readout/percentiles (pre-prod audit 2026-08-12: five unbenchmarked cards
+        # leaked verdict text through the meaning line).
+        "market_band": None if _unbench else market_band,
         # practice-prevalence band (match / common_alt / rarer) from the SAME prevalence_items
         # pool the §1 prevalence donut counts; null when not a prevalence-rated practice. Drives
         # the second (prevalence) chip dimension (prevalence-filtering Pass A, 2026-06-28).
@@ -7578,6 +7586,15 @@ async def unhandled_error(request: Request, exc):
     except Exception:
         pass
     log.error("unhandled error %s %s%s: %s", request.method, request.url.path, who, exc, exc_info=True)
+    # roll back both stores: routes share thread-local connections with implicit
+    # transactions, so a failure mid-way through a multi-statement write otherwise
+    # leaves dirty pending rows that the NEXT request's commit would persist
+    # (pre-prod audit 2026-08-12)
+    for _rb in (get_conn, identity.get_conn):
+        try:
+            _rb().rollback()
+        except Exception:
+            pass
     if request.url.path.startswith("/api/"):
         return JSONResponse({"detail": "Something went wrong. Please try again."}, status_code=500)
     return HTMLResponse(status_code=500, content="<!doctype html><meta charset=utf-8>"

@@ -39,6 +39,14 @@ def _mp_unbenchmarked(qid):
     from positions import market_position_config
     return bool((market_position_config().get("metrics", {}).get(qid) or {}).get("unbenchmarked"))
 
+def _strategy_config_ids():
+    """Ruled strategy parameters (positions.STRATEGY_CONFIG_IDS): a stance the org SET,
+    not a practice to have/lack — prevalence framing ("100% of the market does this,
+    you don't") is false on them by construction (pre-prod audit 2026-08-12:
+    REW_PAY_005 carried three contradictory verdicts across register/grid/signals)."""
+    from positions import STRATEGY_CONFIG_IDS
+    return STRATEGY_CONFIG_IDS
+
 CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data",
                         "signal_lenses.json")
 _cache = {"mtime": None, "cfg": {}}
@@ -415,6 +423,23 @@ def _acute_mult(strategy, lens):
     if not ap:
         return 1.0
     return (ACUTE_LENS_MULT.get(ap) or {}).get(lens, 1.0)
+
+# Absence answers ("None", "No specific provision"…) are the org saying it HAS NOTHING —
+# never a distinctive practice. Rare-choice copy and the early-adopter lift both invert on
+# them (pre-prod audit 2026-08-12: the "NONE · Wellbeing" card praised offering no
+# mental-health support for early-adopter appetite). Label match is a last resort by
+# doctrine, but absence labels are a closed editorial set, not data semantics.
+_ABSENCE_LABELS = {"none", "none of the above", "no", "nothing", "not offered",
+                   "no specific provision", "no policy", "no provision", "neither"}
+def _is_absence_label(lab):
+    return (lab or "").strip().lower().rstrip(".") in _ABSENCE_LABELS
+
+def _is_na_class_label(lab):
+    """N/A-class answers that may not be na_codes-routed yet (several sit in the r3sw25
+    B/C ruling queue). A 'not applicable' answer must never fire a gap or rarity signal —
+    the methodology page promises N/A is excluded, never counted against anyone."""
+    t = (lab or "").strip().lower()
+    return t.startswith("not applicable") or t.startswith("not in scope") or t in ("n/a", "na", "don't know", "dont know", "unknown")
 
 # risk_appetite — how readily the org acts on distinctive practice, keyed on the "rare" kind (a
 # choice few peers make). early → lift (lead); wait → sink (prefer proven norms); follow/unset →
@@ -797,8 +822,13 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         blk = get_block(qid) if q else None
         if q is None or not blk or blk.get("suppressed") or blk.get("n", 0) < min_n:
             continue
+        if qid in _strategy_config_ids():
+            continue                      # ruled strategy parameters are stances, not practices
         raw = org_answers.get((qid, "")) or ""
         mine = set(t.strip() for t in raw.split(";") if t.strip())
+        na_labels = {o["label"] for o in (blk.get("options") or []) if o.get("is_na")}
+        if mine and all(t in na_labels or _is_na_class_label(t) for t in mine):
+            continue                      # the org said "not applicable" — never a gap or a choice
         best = None                       # (decisiveness, kind, label, pct)
         for o in blk.get("options") or []:
             if o.get("is_na"):
@@ -813,7 +843,15 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         if best is None:
             continue
         _, knd, lab, a = best
-        if knd == "rare":
+        absence = knd == "rare" and _is_absence_label(lab)
+        if absence:
+            # "None" selected while ~nobody else goes without: the org HAS NOTHING here.
+            # The option label must not become the title, and the copy must not read as
+            # a distinctive provision.
+            detail = "you selected “%s” — only %d%% of the comparison pool go without" % (lab, round(a))
+            tag, worth = "A RARE CHOICE", False
+            stand = "only %d%% of the market has none in place — you're one of them" % round(a)
+        elif knd == "rare":
             detail = "you selected “%s” — only %d%% of the comparison pool do" % (lab, round(a))
             tag, worth = "A RARE CHOICE", False
             stand = "only %d%% of the market offers it" % round(a)
@@ -821,9 +859,11 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             detail = "%d%% of the comparison pool select “%s” — you don't" % (round(a), lab)
             tag, worth = "COMMON — YOU DON'T", True
             stand = "%d%% of the market does this, you don't" % round(a)
-        # the OPTION is the label here — never the multi-select question stem
+        # the OPTION is the label here — never the multi-select question stem — EXCEPT for
+        # absence options, where "NONE" as a title is meaningless and the question names it.
         out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
-                    "name": lab, "tag": tag, "worth": worth, "stand": stand,
+                    "name": _short(q.display_title) if absence else lab,
+                    "tag": tag, "worth": worth, "stand": stand, "absence": absence,
                     "value_display": lab, "label_short": "%s · %s" % (_short(q.display_title), lab),
                     "detail": detail, "impact": 22000 + best[0] * 100})
         seen_q.add(qid)
@@ -840,18 +880,39 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         mine = org_answers.get((qid, ""))
         if q is None or not blk or blk.get("suppressed") or blk.get("n", 0) < min_n or mine in (None, ""):
             continue
+        if qid in _strategy_config_ids():
+            continue                      # ruled strategy parameters are stances, not practices
         opts = {o["label"]: o["pct"] for o in (blk.get("options") or []) if not o.get("is_na")}
         a = opts.get(mine)
         if not opts or a is None:          # org answered NA / off-list — no rarity
             continue
         if max(opts.values()) >= 50 and a <= floor:
+            absence = _is_absence_label(mine)
+            # An absence answer is the org going WITHOUT — "you do [this]" inverts it
+            # (pre-prod audit 2026-08-12: paid study leave, answer "No specific
+            # provision", rendered "only 8% of the market does this — you do").
+            stand = ("only %d%% of the market has no provision here — you're one of them" % round(a)) if absence \
+                else ("only %d%% of the market does this — you do" % round(a))
+            detail = ("you answered “%s” — only %d%% of the comparison pool go without" % (mine, round(a))) if absence \
+                else ("you answered “%s” — only %d%% of the comparison pool do" % (mine, round(a)))
             out.append({"lens": spec.get("lens", "engage"), "kind": "rare", "question_id": qid,
                         "name": _label(qid, q), "tag": "A RARE CHOICE", "worth": False,
-                        "stand": "only %d%% of the market does this — you do" % round(a),
+                        "stand": stand, "absence": absence,
                         "value_display": mine, "label_short": "%s · %s" % (_short(q.display_title), mine),
-                        "detail": "you answered “%s” — only %d%% of the comparison pool do" % (mine, round(a)),
+                        "detail": detail,
                         "impact": 22000 + (50 - a) * 100})
             seen_q.add(qid)
+
+    # UNIVERSAL guards, every mechanism (pre-prod audit 2026-08-12):
+    # (a) ruled strategy parameters are stances the org SET — "you don't [have this]"
+    #     is false on them by construction, whichever mechanism said it;
+    # (b) an N/A-class answer never reads as a gap or a distinctive choice — the
+    #     methodology page promises N/A is excluded, never counted against anyone.
+    _scfg = _strategy_config_ids()
+    out = [s for s in out
+           if s.get("question_id") not in _scfg
+           and not (s.get("worth") and _is_na_class_label(
+               (org_answers.get((s.get("question_id"), "")) or "")))]
 
     # per-user triage state: priority | saved | dismissed | None(new). Identity is
     # sig_id — usually the question_id, but qid::row_id for per-row matrix signals
@@ -1043,7 +1104,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
             ("transparency",        strategy and strategy.get("transparency"),        _transparency_mult(strategy, s.get("question_id"), tr_set)),
             ("budget_direction",    _strategy_field(strategy, "budget_direction"),    _budget_mult(strategy, s.get("position"))),
             ("acute_pressure",      _strategy_field(strategy, "acute_pressure"),      _acute_mult(strategy, s.get("lens"))),
-            ("risk_appetite",       _strategy_field(strategy, "risk_appetite"),       _risk_appetite_mult(strategy, s.get("kind"))),
+            ("risk_appetite",       _strategy_field(strategy, "risk_appetite"),       _risk_appetite_mult(strategy, None if s.get("absence") else s.get("kind"))),
             ("benefits_lead",       (strategy or {}).get("benefits_lead"),            _benefits_mult(strategy, s.get("domain"), s.get("kind"))),
             ("reward_mix",          _strategy_field(strategy, "reward_mix"),          _mix_mult(strategy, s.get("domain"), s.get("kind"))),
         ]
