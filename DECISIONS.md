@@ -17966,3 +17966,10 @@ replaces the inbox "File to…": main [★ Save] = fileIt (folderless → Saved 
 it. Saved-view verb "File to folder…"→"Add to folder…"; folder-view "Move to…" kept. Verified on a rig:
 Save files the signal (Inbox 66→65, "Saved for later" toast), caret menu lists folders + New folder.
 Gates 14/14.
+
+## 2026-08-13 — Signals: confidence chip inline with the peer-group wording (v=595)
+
+David: "we need the confidence rating next to the wording for the default sample group." Moved the
+ConfidenceChip out of its standalone .conf-line and into the .sig-subhead, wrapped with the peer-note in
+a new .sig-subhead-l flex group: "[Confidence 7/10 · N peers]  Flagged against your default peer group ⓘ ·
+Change ....... Full gap register". One fewer top band. Gates 14/14; verified on a rig.

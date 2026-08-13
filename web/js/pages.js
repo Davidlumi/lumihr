@@ -2374,11 +2374,12 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             ConfidenceChip + a note naming it; the app-wide selector is hidden on /signals (app.js).
             (Reverses the 2026-07-10 "honour the app-wide selector" — that made alerts and the page
             disagree the moment a cut was chosen.) */ ""}
-      ${unlocked ? html`<div class="conf-line" style=${{ justifyContent: "flex-start", marginTop: 0, marginBottom: "var(--s1)" }}>
-        <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
-      </div>
+      ${unlocked ? html`
       <div class="sig-subhead" style=${{ marginBottom: "var(--s4)" }}>
-        <span class="caption sig-peer-note">Flagged against your <span class="indic-flag sig-peergrp" tabindex="0" role="note" aria-label=${"Default peer group: " + ((me.org && me.org.signal_peer_label) || "all peers")} onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}><b>default peer group</b> <${Icon} name="info" size=${11} /><span class="indic-tip">${(me.org && me.org.signal_peer_label) || "all peers"} — set in Settings; the same group your email alerts use.</span></span>${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` · <a href="#/settings">Change</a>` : ""}</span>
+        <span class="sig-subhead-l">
+          <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
+          <span class="caption sig-peer-note">Flagged against your <span class="indic-flag sig-peergrp" tabindex="0" role="note" aria-label=${"Default peer group: " + ((me.org && me.org.signal_peer_label) || "all peers")} onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}><b>default peer group</b> <${Icon} name="info" size=${11} /><span class="indic-tip">${(me.org && me.org.signal_peer_label) || "all peers"} — set in Settings; the same group your email alerts use.</span></span>${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` · <a href="#/settings">Change</a>` : ""}</span>
+        </span>
         <a href="#/priorities" class="btn small sig-reg-btn"><${Icon} name="table" size=${13} /> Full gap register</a>
       </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
