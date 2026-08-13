@@ -17834,3 +17834,25 @@ Frontend-only (pages/card/commercial/strategy .js + app.css). Gates NOT run — 
 engine change, and the suite restarts the :8060 dev server David is actively using. Verified on
 a Thornbridge rig: overview RAG glyphs render (7 green centred + 1 red-right pulsing = "1 off
 strategy"), strategy page reads "on/off strategy", zero relevant console errors.
+
+## 2026-08-13 — Strategy glyph propagated to signals, grid cards + strategy page (RAG everywhere)
+
+Follow-on to the strategy-glyph commit (David: "update the signals row and the reward strategy
+page and every metric should show the icon below on or above strategy"):
+
+- SIGNALS: server now attaches `s["alignment"]` (the domain's 3-state alignment) to every signal
+  in build_signals; the old binary "On plan" check pill (both the briefing row and the /signals
+  explore row) is replaced by the RAG StrategyGlyph. None when strategy-off → degrades byte-identical.
+- EVERY METRIC CARD: grid feed (/api/benchmarks/{superpower}) never carried `domain_aim` (the
+  in-assemble_card block populates the detail card but the grid cards came through blank — a
+  pre-existing gap). Added an explicit domain-stance attach at the endpoint, same gate (completed
+  strategy + competitive domain). Client renders StrategyGlyph via metricAim(c, pos) — 229/328 show
+  (the 99 no-market-rate metrics stay blank, correct). Metric DETAIL page already rendered it (the
+  existing AlignmentChip, now glyph-bearing) — untouched.
+- REWARD STRATEGY PAGE: the per-area band+dot (SdAxis .sd-mark) was 2-tone (on=green/off=navy);
+  now full RAG (on=green / below=amber / above=red) matching the overview glyph — a-on_target/
+  a-behind/a-ahead classes.
+- StrategyGlyph + ALIGN_LABEL exposed on window for card.js/app.js reuse.
+
+Server changed (signals.py + app.py, both additive) → gates run. Verified on a Thornbridge rig:
+signals 67 glyphs, grid 229 RAG glyphs, strategy page 7 green + 1 red dots, detail page chip.

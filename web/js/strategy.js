@@ -305,9 +305,9 @@ function SdAxis({ intent, actual, pctl, align }) {
   const SD_ZONES = SD_ZONES_F();
   const dotX = (pctl != null && ai != null) ? sdPctlX(pctl)
     : (ai != null ? ((SD_ZONES[ai][0] + SD_ZONES[ai][1]) / 2) + "%" : null);
-  // dot colour follows ALIGNMENT, not raw market position — on aim reads positive,
-  // off aim neutral (the page reads below/above market through intent, not as a fault)
-  const acls = align === "on_target" ? " a-on" : " a-off";
+  // dot colour follows ALIGNMENT (RAG since 2026-08-13, matching the overview glyph):
+  // on=green / below=amber / above=red — the page reads intent, not raw market position
+  const acls = " a-" + (align || "off");
   return html`<span class="sd-axis" aria-hidden="true">
     ${SD_ZONES.map(([l, r], i) => html`<span key=${i}
       class=${"sd-zone" + (i === ii ? " aimed" : "")}

@@ -97,6 +97,7 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     <div class=${"card bench-card stacked" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref} id=${"q-" + card.id}>
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
+        ${(() => { const a = metricAim(c, pos); return a && window.StrategyGlyph ? html`<span class="bench-strat" title=${({ on_target: "On strategy", behind: "Below strategy", ahead: "Above strategy" })[a.alignment]}><${window.StrategyGlyph} alignment=${a.alignment} w=${34} /></span>` : null; })()}
         ${cardSignalPill(c, signal, readOnly)}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}

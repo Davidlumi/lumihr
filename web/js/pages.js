@@ -708,6 +708,8 @@ function StrategyGlyph({ alignment, w = 30 }) {
     ${off ? html`<circle class=${"sg-halo sg-halo-" + alignment} cx=${cx} cy="10" r="4.5" />` : ""}
     <circle class=${"sg-dot sg-dot-" + alignment} cx=${cx} cy="10" r="4.5" /></svg>`;
 }
+window.StrategyGlyph = StrategyGlyph;   // shared with card.js (grid cards) + app.js (metric page)
+window.ALIGN_LABEL = ALIGN_LABEL;
 function AlignmentChip({ target, compact }) {
   if (!target || !ALIGN_LABEL[target.alignment]) return null;
   return html`<span class=${"align-chip align-" + target.alignment + (compact ? " align-chip-sm" : "")}
@@ -1577,7 +1579,7 @@ const sigParts = (s, pt) => [
   // never role="button" — buttons inside a button are a nested-interactive violation).
   // Keyboard lands here; the triage buttons are focusable SIBLINGS, not descendants.
   html`<button class="signal-body sig-open" key="b" onClick=${e => { e.stopPropagation(); openMetric(s.question_id); }}>
-    <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.confirm ? html` <span class="sig-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}</b>
+    <b class="sig-name">${s.new ? html`<span class="sig-new-tag">NEW</span> ` : null}${s.name || s.label_short}${s.risk_framed ? html` <span class="sig-risk"><${Icon} name="shield" size=${11} /> Risk</span>` : null}${s.alignment ? html` <span class="sig-strat" title=${ALIGN_LABEL[s.alignment]}><${StrategyGlyph} alignment=${s.alignment} w=${32} /></span>` : null}</b>
     <span class="sig-stand">${s.stand || s.detail}${s.n ? html` · ${compositionLabel(s.n, s.n_real)}` : null}</span></button>`,
   // 2026-07-09 row diet (home briefing only — the explore page keeps both):
   // · the unlabelled grey gap-dash read as noise on the calm home band — retired here;
@@ -2276,7 +2278,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
         ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the market median"}>${s.gap_pct}% ${gapDir}</span>` : null}
         ${s.lens ? html`<span class="brf-lens" title=${LENS_DESC[s.lens] || null}>${LENS_LABEL[s.lens] || s.lens}</span>` : null}
-        ${s.confirm ? html`<span class="brf-onplan"><${Icon} name="check" size=${11} /> On plan</span>` : null}
+        ${s.alignment ? html`<span class="brf-strat" title=${ALIGN_LABEL[s.alignment]}><${StrategyGlyph} alignment=${s.alignment} w=${32} /></span>` : null}
       </div>
       ${s.strategy_influence && s.strategy_influence.length ? html`
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}

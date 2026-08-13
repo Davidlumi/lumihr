@@ -3449,7 +3449,9 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* dot colour = ALIGNMENT (it agrees with the label), NOT a raw market verdict:
    on aim reads positive-green, off aim reads neutral navy — below/above market is a
    choice the page reads through, not a fault to flag in red/amber. */
-.sd-mark.actual.a-on { background: var(--favourable); }
+.sd-mark.actual.a-on_target { background: var(--favourable); }   /* RAG 2026-08-13: match the overview strategy glyph */
+.sd-mark.actual.a-behind { background: var(--amber-bright); }
+.sd-mark.actual.a-ahead { background: var(--unfavourable); }
 .sd-mark.actual.a-off { background: var(--navy); }
 .sd-axis-key .sd-mark { position: static; transform: none; }
 .sd-ex-read { font-size: var(--fs-micro); font-weight: 700; text-align: right; color: var(--ink-soft); }
@@ -3763,6 +3765,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @keyframes sg-halo { 0% { transform: scale(1); opacity: .5; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sg-dot, .sg-halo { animation: none !important; } .sg-halo { display: none; } }
 .di-smark { display: inline-flex; align-items: center; justify-content: center; }
+/* strategy glyph reused on grid cards + signal rows (2026-08-13, David: "every metric
+   should show the icon below/on/above strategy") */
+.bench-strat { flex: none; display: inline-flex; align-items: center; margin-left: auto; }
+.sig-strat { display: inline-flex; align-items: center; margin-left: var(--s2); vertical-align: middle; }
+.brf-strat { display: inline-flex; align-items: center; }
 /* reward_mix=benefits reframe — quiet note on the Pay tile */
 .cat-mixnote { display: flex; align-items: center; gap: var(--s1); margin-top: var(--s2); font-size: var(--fs-micro);
   color: var(--differs); font-weight: 600; line-height: 1.3; }
