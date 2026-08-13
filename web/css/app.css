@@ -3765,6 +3765,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @keyframes sg-halo { 0% { transform: scale(1); opacity: .5; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sg-dot, .sg-halo { animation: none !important; } .sg-halo { display: none; } }
 .di-smark { display: inline-flex; align-items: center; justify-content: center; }
+.sig-chip-strat { display: inline-flex; align-items: center; gap: 5px; }
+.sig-chip-strat .sglyph { flex: none; }
 /* strategy glyph reused on grid cards + signal rows (2026-08-13, David: "every metric
    should show the icon below/on/above strategy") */
 .bench-strat { flex: none; display: inline-flex; align-items: center; margin-left: auto; }

@@ -17856,3 +17856,26 @@ page and every metric should show the icon below on or above strategy"):
 
 Server changed (signals.py + app.py, both additive) → gates run. Verified on a Thornbridge rig:
 signals 67 glyphs, grid 229 RAG glyphs, strategy page 7 green + 1 red dots, detail page chip.
+
+## 2026-08-13 — Unified filter model: one shared FilterBar on the grid + category (v=586)
+
+David: "review of all the filters across the platform... filter by signal, market, practice, strategy
+alignment... simplify and improve the UX." A 7-agent per-surface audit (9 surfaces) found four filter
+grammars for overlapping ideas; the dimensions we'd just made prominent (market/practice/strategy) were
+filterable on ~one page each and strategy alignment NOWHERE. Full review artifact + matrix delivered;
+David chose Build Phase 1+2, KEEP LENSES SEPARATE.
+
+SHIPPED (Phase 1+2, frontend-only): a shared `FilterBar` component + `applyCardFilters` + per-card
+resolvers (fbSig/fbBand/fbPrev/fbStrat) in pages.js. fbStrat reads window.cardPosition+metricAim so a
+filter ALWAYS matches the card's glyph (polarity-correct). Model: `{type,pos[],prev[],none,sig[],strat[]}`;
+AND across dimensions, reading axis (market|practice|no-reading) mutually exclusive (metrics are
+market-XOR-practice partitioned). Chips carry live counts; strategy chips reuse the band-dot glyph.
+- CategoryPage: its inline chip bar REPLACED by <FilterBar> — gains Signal + Strategy groups it never had.
+  Old saved {type,posSel,prevSel,noneSel} migrates forward to the new shape.
+- SuperpowerPage / All-reward grid: the two lonely dropdowns (type+signal) REPLACED by the same
+  <FilterBar> — gains Market + Practice + Strategy chips (parity with its category twin at last).
+LENSES UNTOUCHED per David: the Strategy applied/off switch and Counts/Position stay as separate view
+controls (stratOn gates whether the Strategy chip group shows). Verified on a Thornbridge rig: grid
+328→58 on Flagged, Flagged+above-strategy→2 (AND), Clear→328; category shows the identical bar; zero
+console errors. NOT YET DONE (deferred to Phase 3/4): Signals page onto the same grammar; My dashboards
+card filter; Pulse topic filter; vocabulary/persistence unification pass.

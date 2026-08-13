@@ -2584,14 +2584,81 @@ window.TrajectoryTile = function ({ windowLabel }) {
 };
 
 // ----------------------------------------------------- superpower detail ---// ----------------------------------------------------- superpower detail ---
+// ═══ UNIFIED FILTER MODEL (2026-08-13, David: "filter by signal / market / practice / strategy — one bar
+// everywhere, simplify the UX"). Promotes the Category page's chip filters into ONE shared FilterBar mounted
+// on both the All-reward grid AND every Category page. Per-card resolvers read fields the server already ships
+// (market_band, prevalence_band, category, domain_aim) plus the shared cardSignalState / cardPosition / metricAim —
+// so a filter ALWAYS agrees with the glyph the card shows. AND across dimensions; the reading axis
+// (market position | practice | no-reading) stays mutually exclusive because a metric is market-XOR-practice rated.
+const _fbSigBucket = (st, c) => (st && st.indexOf("clear") === 0) ? "clear" : (st || (c && c.suppressed ? "clear" : st));
+const fbSig = (c, sigMap) => _fbSigBucket(cardSignalState(c, (sigMap || {})[c.id]), c);   // signal | add | clear | null
+const fbBand = c => { const b = c.market_band; return b === "at" ? "on" : b; };            // below | on | above | undefined
+const fbPrev = c => c.prevalence_band;                                                      // match | common_alt | rarer | undefined
+const fbStrat = c => { const p = window.cardPosition && window.cardPosition(c); const a = (p && window.metricAim) ? window.metricAim(c, p) : null; return a ? a.alignment : null; };  // on_target | behind | ahead | null
+const FB_SIG_DEF = [{ k: "signal", lab: "Flagged" }, { k: "add", lab: "Needs data" }, { k: "clear", lab: "No signal" }];
+const FB_POS_DEF = [{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }];
+const FB_PREV_DEF = [{ k: "match", lab: "common", st: "with_majority" }, { k: "common_alt", lab: "alternative", st: "established" }, { k: "rarer", lab: "rare", st: "less_common" }];
+const FB_STRAT_DEF = [{ k: "behind", lab: "below" }, { k: "on_target", lab: "on" }, { k: "ahead", lab: "above" }];
+const FB_EMPTY = () => ({ type: "", pos: [], prev: [], none: false, sig: [], strat: [] });
+// canonical shape { type, pos:[], prev:[], none, sig:[], strat:[] } — one apply for every grid surface.
+function applyCardFilters(cards, f, sigMap) {
+  let out = cards || [];
+  if (!f) return out;
+  if (f.type) out = out.filter(c => c.category === f.type);
+  if (f.pos && f.pos.length) out = out.filter(c => f.pos.includes(fbBand(c)));
+  else if (f.prev && f.prev.length) out = out.filter(c => f.prev.includes(fbPrev(c)));
+  else if (f.none) out = out.filter(c => !fbBand(c) && !fbPrev(c));
+  if (f.sig && f.sig.length) out = out.filter(c => f.sig.includes(fbSig(c, sigMap)));
+  if (f.strat && f.strat.length) out = out.filter(c => f.strat.includes(fbStrat(c)));
+  return out;
+}
+// cards = the TYPE-filtered set (counts read from it, matching the old chipN behaviour). on(patch) merges into f.
+function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
+  const T = cards || [];
+  const withN = (defs, resolver, glyph) => defs.map(d => ({ ...d, n: T.filter(c => resolver(c) === d.k).length }))
+    .filter(d => d.n).map(d => ({ ...d, glyph }));
+  const sigDefs = withN(FB_SIG_DEF, c => fbSig(c, sigMap));
+  const posDefs = withN(FB_POS_DEF, fbBand);
+  const prevDefs = withN(FB_PREV_DEF, fbPrev).map(d => ({ ...d, lab: (prevStates && prevStates[d.st]) || d.lab }));
+  const stratDefs = stratOn ? withN(FB_STRAT_DEF, fbStrat, true) : [];
+  const noneN = T.filter(c => !fbBand(c) && !fbPrev(c)).length;
+  const active = f.pos.length || f.prev.length || f.none || f.sig.length || f.strat.length || f.type;
+  const togMulti = (key, k) => on({ [key]: f[key].includes(k) ? f[key].filter(x => x !== k) : [...f[key], k] });
+  const togPos = k => on({ prev: [], none: false, pos: f.pos.includes(k) ? f.pos.filter(x => x !== k) : [...f.pos, k] });
+  const togPrev = k => on({ pos: [], none: false, prev: f.prev.includes(k) ? f.prev.filter(x => x !== k) : [...f.prev, k] });
+  const grp = (lab, defs, sel, toggle) => defs.length ? html`
+    <span class="cat-fgroup" role="group" aria-label=${"By " + lab.toLowerCase()}>
+      <span class="cat-fgroup-lab">${lab}</span>
+      ${defs.map(d => html`<button key=${d.k} type="button" class=${"sig-chip" + (sel.includes(d.k) ? " on" : "") + (d.glyph ? " sig-chip-strat" : "")}
+        aria-pressed=${sel.includes(d.k)} onClick=${() => toggle(d.k)}>
+        ${d.glyph ? html`<${StrategyGlyph} alignment=${d.k} w=${26} /> ` : null}${d.lab} <span class="n">${d.n}</span></button>`)}
+    </span>` : null;
+  return html`
+    <div class="cat-filterbar" role="group" aria-label="Filter the metrics">
+      <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
+      ${grp("Signal", sigDefs, f.sig, k => togMulti("sig", k))}
+      ${grp("Market", posDefs, f.pos, togPos)}
+      ${grp("Practice", prevDefs, f.prev, togPrev)}
+      ${grp("Strategy", stratDefs, f.strat, k => togMulti("strat", k))}
+      ${noneN ? html`<button type="button" class=${"sig-chip" + (f.none ? " on" : "")} aria-pressed=${f.none}
+        title="Metrics with no market or practice reading yet" onClick=${() => on({ pos: [], prev: [], none: !f.none })}>no reading yet <span class="n">${noneN}</span></button>` : null}
+      <span class="cat-fbar-right">
+        ${active ? html`<button type="button" class="cat-clear" onClick=${() => on(FB_EMPTY())}>Clear filters</button>` : null}
+        <select class="ctl" aria-label="Filter by question type" value=${f.type} onChange=${e => on({ type: e.target.value })}>
+          <option value="">All types</option><option value="metric">Metrics</option>
+          <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
+        </select>
+      </span>
+    </div>`;
+}
+
 window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [sigMap, setSigMap] = useState({});
   const ui = (prefs && prefs._ui_section) || {};
-  const [cat, setCatRaw] = useState(ui.cat || "");
-  const [sigF, setSigF] = useState("");
-  const setCat = v => { setCatRaw(v); onPref && onPref("_ui_section", { ...ui, cat: v }); };
+  const [f, setFRaw] = useState({ ...FB_EMPTY(), ...(ui.f || (ui.cat ? { type: ui.cat } : {})) });
+  const onF = patch => setFRaw(prev => { const next = { ...prev, ...patch }; onPref && onPref("_ui_section", { ...ui, f: next }); return next; });
 
   useEffect(() => {
     // Ship review 2026-07-09 B4 (cut-switch race, reproduced live: all 243 cards swapped
@@ -2632,15 +2699,8 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     </div>`;
   let cards = data.cards;
   if (subF) cards = cards.filter(c => (c.subpower || "General") === subF);
-  if (cat) cards = cards.filter(c => c.category === cat);
-  const sigCounts = { signal: 0, add: 0, clear: 0 };
-  // every "clear*" variant (clear / clear-practice / clear-unbenchmarked) is one
-  // "No signal" bucket — else practice/unbenchmarked no-flag cards drop from the count AND filter.
-  // Protected (suppressed) cards count as "No signal" too: nothing is flagged on them,
-  // and leaving them bucket-less made the three chips sum to 326 of "328 benchmarks".
-  const sigBucket = (st, c) => (st && st.indexOf("clear") === 0) ? "clear" : (st || (c && c.suppressed ? "clear" : st));
-  cards.forEach(c => { const b = sigBucket(cardSignalState(c, sigMap[c.id]), c); if (b) sigCounts[b]++; });
-  if (sigF) cards = cards.filter(c => sigBucket(cardSignalState(c, sigMap[c.id]), c) === sigF);
+  const _typed = f.type ? cards.filter(c => c.category === f.type) : cards;   // type-filtered set → the FilterBar chip counts
+  cards = applyCardFilters(cards, f, sigMap);
 
   const bySub = [];
   for (const c of cards) {
@@ -2682,26 +2742,11 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             <div class="caption meta">${cards.length} metrics${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
-        <div class="controls" style=${{ alignItems: "flex-start" }}>
-          <div class="ctlgroup">
-            <select class="ctl" aria-label="Filter by question type" value=${cat} onChange=${e => setCat(e.target.value)}>
-              <option value="">All types</option>
-              <option value="metric">Metrics</option><option value="practice">Practices</option>
-              <option value="policy">Policies</option><option value="benefit">Benefits</option>
-            </select>
-          </div>
-          <div class="ctlgroup">
-            <select class="ctl" aria-label="Filter by signal" value=${sigF} onChange=${e => setSigF(e.target.value)}>
-              <option value="">All signals</option>
-              <option value="signal">Flagged · ${sigCounts.signal}</option>
-              <option value="add">Needs data · ${sigCounts.add}</option>
-              <option value="clear">No signal · ${sigCounts.clear}</option>
-            </select>
-          </div>
-        </div>
       </div>
+      <${FilterBar} f=${f} on=${onF} cards=${_typed} sigMap=${sigMap}
+        stratOn=${((prefs && prefs._overview) || {}).apply_strategy !== false} />
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"
-        action=${html`<button class="btn small" onClick=${() => { setCat(""); setSigF(""); }}>Clear filters</button>`} />`}
+        action=${html`<button class="btn small" onClick=${() => onF(FB_EMPTY())}>Clear filters</button>`} />`}
       ${bySub.map(g => html`
         <div key=${g.sub} style=${{ marginBottom: "var(--s5)" }}>
           ${!subF && html`<h2 class="section-title">${g.sub}</h2>`}
@@ -2792,13 +2837,12 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // so the scroll offset App restores lands on the SAME working set, not a reset grid.
   const _fret = returnUiState("lumi-cat-ui");
   const _fl = (_fret && _fret.name === name) ? _fret : null;
-  const [type, setType] = useState(_fl ? _fl.type || "" : "");
-  const [posSel, setPosSel] = useState(_fl ? _fl.posSel || [] : []);     // market-position chip filter (multi-select; [] = all)
-  const [prevSel, setPrevSel] = useState(_fl ? _fl.prevSel || [] : []);  // practice-prevalence chip filter — MUTUALLY EXCLUSIVE with posSel
-  const [noneSel, setNoneSel] = useState(_fl ? !!_fl.noneSel : false);   // "no reading yet" chip (cards in neither lens)
+  // unified filter shape (2026-08-13) — the SAME model + FilterBar the All-reward grid uses. Migrates the
+  // old {type,posSel,prevSel,noneSel} shape forward so a saved category view still restores.
+  const [f, setF] = useState({ ...FB_EMPTY(), ...(_fl && _fl.f ? _fl.f : (_fl ? { type: _fl.type || "", pos: _fl.posSel || [], prev: _fl.prevSel || [], none: !!_fl.noneSel } : {})) });
+  const onF = patch => setF(prev => ({ ...prev, ...patch }));
   const [dl, setDl] = useState(false);   // Download-analysis menu (hook stays ABOVE the early returns)
-  useEffect(() => { saveUiState("lumi-cat-ui", { name, type, posSel, prevSel, noneSel }); },
-    [name, type, posSel, prevSel, noneSel]);
+  useEffect(() => { saveUiState("lumi-cat-ui", { name, f }); }, [name, f]);
   // PART B (2026-06-24) — honour the overview's strategy-off toggle so the attainment lens
   // stays consistent across surfaces: when the user has turned their strategy OFF on the
   // overview (persisted pref _overview.apply_strategy === false), fetch this category with
@@ -2817,7 +2861,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
     setOv(null); setBench(null); setErr(null);
     // filters still reset on a REAL name/cut change — just not on the first run,
     // which may carry the restored Back-leg working set (Pack 1 §2 above).
-    if (_fltMounted.current) { setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false); }
+    if (_fltMounted.current) { setF(FB_EMPTY()); }
     _fltMounted.current = true;
     Promise.all([
       apiCached("/api/overview?" + cutQS(cut) + (applyStrat ? "" : "&strategy=off")),
@@ -2869,40 +2913,20 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
   // counts), mapping the engine's 'at' to the chip's 'on'. count===donut===filtered-grid BY
   // CONSTRUCTION (one source, metric-level). null (Approach / neutral / non-positioned) matches
   // no chip. Strategy-invariant (market_band is strategy-free).
-  const cardBand = c => { const b = c.market_band; return b === "at" ? "on" : b; };
-  // §2 second filter DIMENSION (prevalence-filtering Pass B): c.prevalence_band (match/common_alt/
-  // rarer, the SAME prevalence_items pool the §1 donut counts; null = not a prevalence-rated
-  // practice). MUTUALLY EXCLUSIVE with position (the two are near-disjoint — cross-AND mostly
-  // empties the grid; only one group is ever non-empty, enforced in the chip handlers), so this
-  // AND-chains as a no-op when prevSel is empty. null-safe (includes(null) is false).
-  const cardPrevBand = c => c.prevalence_band;
-  // FILTER FIXES (2026-07-09, David: "the filters seem odd"): (a) chip counts recompute against
-  // the TYPE-filtered set, so a chip's number always equals what clicking it shows (they lied
-  // under the type dropdown before); (b) "no reading yet" chip — after the one-category
-  // partition, cards with neither band were invisible to every filter; now a filterable state;
-  // (c) Clear clears EVERYTHING including the type dropdown.
-  const typed = type ? all.filter(c => c.category === type) : all;
-  const chipN = k => typed.filter(c => cardBand(c) === k).length;
-  const prevChipN = k => typed.filter(c => cardPrevBand(c) === k).length;
-  const noneN = typed.filter(c => !cardBand(c) && !cardPrevBand(c)).length;
-  let cards = typed;
-  if (posSel.length) cards = cards.filter(c => posSel.includes(cardBand(c)));
-  if (prevSel.length) cards = cards.filter(c => prevSel.includes(cardPrevBand(c)));
-  if (noneSel) cards = cards.filter(c => !cardBand(c) && !cardPrevBand(c));
-  // one bar, one vocabulary: chip labels for the practice group come from the engine's own
-  // state words (prev.states) with static fallbacks for domains with no practice pool
+  // UNIFIED (2026-08-13): the shared FilterBar model + applyCardFilters (same as the All-reward grid). _typed
+  // (type-filtered) drives the FilterBar chip counts; _st gives the practice group its engine state-words.
   const _st = (hero && hero.prevalence && hero.prevalence.states) || {};
-  const _prevChipDefs = [
-    { k: "match", lab: _st.with_majority || "common", n: prevChipN("match") },
-    { k: "common_alt", lab: _st.established || "alternative", n: prevChipN("common_alt") },
-    { k: "rarer", lab: _st.less_common || "rare", n: prevChipN("rarer") },
-  ];
+  const _typed = f.type ? all.filter(c => c.category === f.type) : all;
+  let cards = applyCardFilters(all, f, sigMap);
   const _typeLab = { metric: "metrics", practice: "practices", policy: "policies", benefit: "benefits" };
+  const _prevLab = { match: _st.with_majority || "common", common_alt: _st.established || "alternative", rarer: _st.less_common || "rare" };
   const _fdesc = [
-    ...posSel.map(k => k === "on" ? "on market" : k + " market"),
-    ...prevSel.map(k => (_prevChipDefs.find(d => d.k === k) || {}).lab),
-    ...(noneSel ? ["no reading yet"] : []),
-    ...(type ? [_typeLab[type] || type] : []),
+    ...f.sig.map(k => ({ signal: "flagged", add: "needs data", clear: "no signal" }[k])),
+    ...f.pos.map(k => k === "on" ? "on market" : k + " market"),
+    ...f.prev.map(k => _prevLab[k]),
+    ...f.strat.map(k => ({ behind: "below strategy", on_target: "on strategy", ahead: "above strategy" }[k])),
+    ...(f.none ? ["no reading yet"] : []),
+    ...(f.type ? [_typeLab[f.type] || f.type] : []),
   ].filter(Boolean).join(" · ");
 
   // position read (same traffic-light language as the tile / hero gauge)
@@ -3075,41 +3099,9 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
           <span class="caption">shown${_fdesc ? html` · filtered to <b>${_fdesc}</b>` : ""}</span>
           ${sigCounts.signal ? html`<a class="cat-flag-link" href="#/signals" title="${sigCounts.signal} metric${sigCounts.signal === 1 ? "" : "s"} here ${sigCounts.signal === 1 ? "is" : "are"} flagged — open the Signals view"><${Icon} name="flag" size=${12} /> ${sigCounts.signal} flagged →</a>` : null}
         </div>
-        <div class="cat-filterbar" role="group" aria-label="Filter the metrics">
-          <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-          ${[{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }].map(p => ({ ...p, n: chipN(p.k) })).filter(p => p.n).length ? html`
-            <span class="cat-fgroup" role="group" aria-label="By market position">
-              <span class="cat-fgroup-lab">Position</span>
-              ${[{ k: "below", lab: "below" }, { k: "on", lab: "on market" }, { k: "above", lab: "above" }].map(p => ({ ...p, n: chipN(p.k) })).filter(p => p.n).map(p => html`
-                <button key=${p.k} type="button" class=${"sig-chip" + (posSel.includes(p.k) ? " on" : "")} aria-pressed=${posSel.includes(p.k)}
-                  title="Filters the grid by market position — replaces any practice filter"
-                  onClick=${() => { setPrevSel([]); setNoneSel(false); setPosSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
-                  ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </span>` : null}
-          ${_prevChipDefs.filter(p => p.n).length ? html`
-            <span class="cat-fgroup" role="group" aria-label="By practice prevalence">
-              <span class="cat-fgroup-lab">Practice</span>
-              ${_prevChipDefs.filter(p => p.n).map(p => html`
-                <button key=${p.k} type="button" class=${"sig-chip" + (prevSel.includes(p.k) ? " on" : "")} aria-pressed=${prevSel.includes(p.k)}
-                  title="Filters the grid by practice prevalence — replaces any position filter"
-                  onClick=${() => { setPosSel([]); setNoneSel(false); setPrevSel(sel => sel.includes(p.k) ? sel.filter(x => x !== p.k) : [...sel, p.k]); }}>
-                  ${p.lab} <span class="n">${p.n}</span></button>`)}
-            </span>` : null}
-          ${noneN ? html`
-            <button type="button" class=${"sig-chip" + (noneSel ? " on" : "")} aria-pressed=${noneSel}
-              title="Metrics with no market or practice reading yet — unanswered, thin data, or awaiting a rating method"
-              onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(v => !v); }}>
-              no reading yet <span class="n">${noneN}</span></button>` : null}
-          <span class="cat-fbar-right">
-            ${(posSel.length || prevSel.length || noneSel || type) ? html`<button type="button" class="cat-clear" onClick=${() => { setPosSel([]); setPrevSel([]); setNoneSel(false); setType(""); }}>Clear filters</button>` : null}
-            <select class="ctl" aria-label="Filter by question type" value=${type} onChange=${e => setType(e.target.value)}>
-              <option value="">All types</option><option value="metric">Metrics</option>
-              <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
-            </select>
-          </span>
-        </div>
+        <${FilterBar} f=${f} on=${onF} cards=${_typed} sigMap=${sigMap} prevStates=${_st} stratOn=${applyStrat} />
         ${cards.length === 0 ? html`<${EmptyState} title="No metrics match these filters"
-          action=${html`<button class="btn small" onClick=${() => { setType(""); setPosSel([]); setPrevSel([]); setNoneSel(false); }}>Clear filters</button>`} /> ` :
+          action=${html`<button class="btn small" onClick=${() => onF(FB_EMPTY())}>Clear filters</button>`} /> ` :
         html`<div class="bench-grid">
           ${cards.map(c => html`
             <div key=${c.id} id=${"q-" + c.id}>
