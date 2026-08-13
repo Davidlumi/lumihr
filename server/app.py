@@ -10,6 +10,7 @@ suppression-checked aggregates with all internal ("_"-prefixed) keys stripped.
 Run:  python3 -m uvicorn app:app --port 8060
 """
 import csv
+import functools
 import hashlib
 import io
 import json
@@ -1028,7 +1029,9 @@ def _send_mfa_code(email, code):
     # Delivered via send_notification, which console-logs until SMTP is live. NOTE:
     # enforced email-OTP in production REQUIRES a configured SMTP (LUMI_SMTP_HOST),
     # otherwise codes never reach users. The code itself is never logged elsewhere.
-    send_notification(
+    # Returns the transport result ("sent"/"failed"/"logged") — the login and resend
+    # endpoints refuse honestly on "failed" instead of stranding the user.
+    return send_notification(
         "Your lumi sign-in code",
         "Hello,\n\nYour lumi sign-in code is:\n\n    %s\n\nEnter it to finish signing in. "
         "It expires in %d minutes. If you didn't try to sign in, you can ignore this email "
@@ -1079,7 +1082,14 @@ async def login(request: Request):
     # the session is created only after /api/auth/mfa/verify.
     if _mfa_enforced():
         challenge, code = auth_lib.create_mfa_challenge(user["user_id"])
-        _send_mfa_code(email, code)
+        # off the event loop (a hung relay froze EVERY request for the socket timeout)
+        # and HONEST on failure: a 200 with a dead challenge stranded the user at the
+        # code screen with no code coming (launch rehearsal 2026-08-13). Password is
+        # already verified here, so a 503 leaks nothing.
+        sent = await to_thread.run_sync(_send_mfa_code, email, code)
+        if sent == "failed":
+            raise HTTPException(503, "We couldn't send your sign-in code just now — "
+                                     "please try again in a moment.")
         return JSONResponse({"ok": True, "mfa_required": True, "challenge": challenge})
     token = auth_lib.create_session(user["user_id"])
     resp = JSONResponse({"ok": True})
@@ -1116,7 +1126,10 @@ async def mfa_resend(request: Request):
     if not uid:
         raise HTTPException(400, "Your sign-in attempt has expired — please sign in again.")
     challenge, code = auth_lib.create_mfa_challenge(uid)   # invalidates the old code
-    _send_mfa_code(identity.user_email(uid), code)
+    sent = await to_thread.run_sync(_send_mfa_code, identity.user_email(uid), code)
+    if sent == "failed":
+        raise HTTPException(503, "We couldn't send your sign-in code just now — "
+                                 "please try again in a moment.")
     return {"ok": True, "challenge": challenge}
 
 
@@ -1213,13 +1226,20 @@ async def request_reset(request: Request):
         # STILL SENDS for a suspended org's members (sole-admin recovery is
         # exactly the case that needs it; the login gate, not the mail gate,
         # is what suspension means here). Only digest/signal mail is gated.
-        send_notification(
-            "Reset your lumi password",
-            "Hello,\n\nSomeone asked to reset the lumi password for this address. If that was "
-            "you, choose a new password here:\n\n%s/app#/reset/%s\n\nThe link expires in 2 hours. "
-            "If you didn't ask for this, you can safely ignore this email — your password is "
-            "unchanged.\n\n— lumi · UK reward benchmarking" % (base_url(minting=True), token),
-            to=email)
+        # off the event loop (a hung relay froze every request); the failure path in
+        # send_notification withholds bodies by default now, so the reset link can't
+        # land in a production log — while the dev no-SMTP console path still prints
+        # it for QA. The response stays the generic 200 either way — a transport 5xx
+        # here would be an account-existence oracle.
+        await to_thread.run_sync(
+            functools.partial(
+                send_notification,
+                "Reset your lumi password",
+                "Hello,\n\nSomeone asked to reset the lumi password for this address. If that was "
+                "you, choose a new password here:\n\n%s/app#/reset/%s\n\nThe link expires in 2 hours. "
+                "If you didn't ask for this, you can safely ignore this email — your password is "
+                "unchanged.\n\n— lumi · UK reward benchmarking" % (base_url(minting=True), token),
+                to=email))
     return {"ok": True, "message": "If that email has an account, we've sent a reset link to it. "
                                    "The link expires in 2 hours."}
 
@@ -1382,14 +1402,18 @@ async def invite(request: Request):
     link = "%s/app#/invite/%s" % (base_url(minting=True), token)
     inviter = user["display_name"] or user["email"]
     org_name = (identity.org_display(org["org_id"]) or {}).get("name")
-    send_notification(
-        "%s has invited you to lumi" % org_name,
-        "Hello,\n\n%s has invited you to join %s on lumi — the UK reward benchmarking "
-        "co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\nThe link expires in "
-        "%d days. If you weren't expecting this, you can ignore this email.\n\n"
-        "— lumi · UK reward benchmarking" % (inviter, org_name, ROLE_LABELS.get(role, role),
-                                             link, auth_lib.INVITE_TTL_DAYS),
-        to=email)
+    # off the event loop; self-recovering on failure — the link also returns in the
+    # API response, and send_notification's failure path withholds the bearer
+    await to_thread.run_sync(
+        functools.partial(
+            send_notification,
+            "%s has invited you to lumi" % org_name,
+            "Hello,\n\n%s has invited you to join %s on lumi — the UK reward benchmarking "
+            "co-operative — as a %s.\n\nAccept your invite here:\n\n%s\n\nThe link expires in "
+            "%d days. If you weren't expecting this, you can ignore this email.\n\n"
+            "— lumi · UK reward benchmarking" % (inviter, org_name, ROLE_LABELS.get(role, role),
+                                                 link, auth_lib.INVITE_TTL_DAYS),
+            to=email))
     return {"ok": True, "link": link, "expires_days": auth_lib.INVITE_TTL_DAYS}
 
 
@@ -6050,13 +6074,21 @@ def send_notification(subject, body, to=None, log_body=None):
             msg.set_content(body)
             with smtplib.SMTP(host, int(os.environ.get("LUMI_SMTP_PORT", "587")), timeout=10) as smtp:
                 if os.environ.get("LUMI_SMTP_USER"):
-                    smtp.starttls()
+                    # verified STARTTLS: Python 3.9's default context does NOT verify the
+                    # relay certificate without this — a MITM'd relay would read every
+                    # OTP and reset link (launch rehearsal 2026-08-13)
+                    import ssl
+                    smtp.starttls(context=ssl.create_default_context())
                     smtp.login(os.environ["LUMI_SMTP_USER"], os.environ.get("LUMI_SMTP_PASS", ""))
                 smtp.send_message(msg)
             return "sent"
         except Exception as e:
-            print("[lumi] EMAIL SEND FAILED (%s) — request is stored regardless:\n%s\n%s"
-                  % (e, subject, log_body if log_body is not None else body))
+            # NEVER the raw body here: a production SMTP outage was writing live reset
+            # links and MFA codes into the server log (launch rehearsal 2026-08-13 —
+            # the PH-PROV-1d defect class, now closed at the choke point). log.error so
+            # ops can alert on it; the redacted log_body still names what was lost.
+            log.error("EMAIL SEND FAILED (%s) to %s — subject: %s%s", e, recipient, subject,
+                      ("\n" + log_body) if log_body is not None else " (body withheld — carries user content)")
             return "failed"
     print("\n[lumi] EMAIL (not configured — logged only) to %s\n  Subject: %s\n%s\n"
           % (recipient, subject, log_body if log_body is not None else body))
@@ -7777,6 +7809,14 @@ def _validate_prod_config():
         if on("LUMI_MFA") and not os.environ.get("LUMI_SMTP_HOST"):
             fatal.append("LUMI_MFA is on but LUMI_SMTP_HOST is unset — sign-in codes would be console-logged, "
                          "not emailed, locking every user out. Configure SMTP (SES) before enforcing MFA.")
+        # dev/QA-only switches that must never survive into production (launch
+        # rehearsal 2026-08-13 — the validator was silent on both):
+        if on("LUMI_QA_SEAMS"):
+            fatal.append("LUMI_QA_SEAMS is on — fault-injection seams let request bodies trigger "
+                         "mid-write failures. Gate runs only; unset it.")
+        if on("LUMI_OPEN_REGISTRATION"):
+            fatal.append("LUMI_OPEN_REGISTRATION is on — membership is staff-provisioned; open "
+                         "self-registration must be a deliberate product decision, not an env leftover. Unset it.")
     if fatal:
         raise RuntimeError("Refusing to start — production config errors:\n  - " + "\n  - ".join(fatal))
     # single-instance assumptions: the in-memory rate limiter (auth.py), the signal

@@ -445,7 +445,13 @@ def run_email_digest(conn, base_url="", frequencies=("daily", "weekly")):
         body = _digest_body(org_name if org_name else "there", live,
                             base_url + "/#/settings" if base_url else "",
                             base_url + "/#/overview" if base_url else "")
-        send_notification(subj, body, to=addr)
+        result = send_notification(subj, body, to=addr)
+        if result == "failed":
+            # a failed digest must NOT stamp emailed_at — the events would be counted
+            # as delivered forever and never re-email (launch rehearsal 2026-08-13);
+            # the next sweep retries them. "logged" (no-SMTP dev) still stamps: the
+            # system delivered per its configuration.
+            continue
         ids = [e["id"] for e in live]
         conn.executemany("UPDATE notification_reads SET emailed_at=datetime('now') WHERE user_id=? AND event_id=?",
                          [(uid, i) for i in ids])
