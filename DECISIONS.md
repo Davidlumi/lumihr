@@ -17891,3 +17891,15 @@ navy + shows a count badge; one "Clear". One menu open at a time, click-outside 
 filter MODEL, applyCardFilters and both pages' wiring are UNCHANGED — only FilterBar's render + new
 .filterbar/.fb-* CSS. Verified on a rig: below→118, badge+tint, strategy menu renders glyphs, zero
 console errors. Same component still serves the All-reward grid + every Category page.
+
+## 2026-08-13 — Filter unification Phase 3: Signals page onto the facet grammar (v=588)
+
+Extracted a generic FacetMenus renderer (shared by the card FilterBar + Signals). The Signals page's
+market-position pills, the duplicate domain dropdown AND the domain banner are replaced by one facet
+bar — Market (single) · Strategy (multi) · Lens (multi) · Domain (single) — matching the grid.
+NEW dimensions it never had: Strategy alignment (s.alignment + glyph) and outcome Lens
+(attract/retain/engage/save via s.lens). New state lensFilter[]/stratFilter[], persisted; empty-state
+made honest when they hide results. Verified on a rig: Save-lens → 8 (matches count), Clear → 67,
+strategy menu renders glyphs, grid unaffected by the FacetMenus extraction, zero console errors.
+Filter arc now: shared model + apply (P1), grid + category (P2), facet-menu redesign, Signals (P3).
+Remaining P4: My-dashboards card filter, Pulse topic filter, wider vocabulary/persistence sweep.

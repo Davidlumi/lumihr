@@ -1966,6 +1966,8 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [sortMode, setSortMode] = useState(_ret.sort || "priority");   // priority | domain | gap (David 2026-08-11)
   const [kbIdx, setKbIdx] = useState(-1);   // keyboard-triage focus ring index into the shown list (-1 = none)
   const [domFilter, setDomFilter] = useState(null);   // domain filter axis — composes with position (null = all domains)
+  const [lensFilter, setLensFilter] = useState(_ret.lens || []);    // outcome-lens filter (attract/retain/engage/save), multi
+  const [stratFilter, setStratFilter] = useState(_ret.strat || []); // strategy-alignment filter (below/on/above strategy), multi
   const [textQuery, setTextQuery] = useState("");     // client-side find-by-name over the current view
   const [flashSid, setFlashSid] = useState(null);     // a restored/woken/recovered card flashes back into place
   const [stratOpen, setStratOpen] = useState(false);  // the strategy-check strip (now above the feed) starts collapsed
@@ -1989,7 +1991,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     else { try { localStorage.setItem("lumi-signals-folders", JSON.stringify(next)); } catch (e) {} setLsSig(next); }
   };
   // …stash the working set on every change, so the next openMetric→Back restores it
-  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter, sort: sortMode }); }, [view, posFilter, sortMode]);
+  useEffect(() => { saveUiState("lumi-signals-ui", { view, pos: posFilter, sort: sortMode, lens: lensFilter, strat: stratFilter }); }, [view, posFilter, sortMode, lensFilter, stratFilter]);
   // Overview per-domain scent chip → land on THIS domain's signals only (2026-08-11). The
   // domain rides a module global set by OverviewHero.goToSignals (client-side hash nav, so it
   // survives); consume + clear it once on mount, showing the domain-filtered view.
@@ -2059,7 +2061,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   }, []);
   // keep the focused card in view; reset the ring whenever the shown list changes underneath it
   useEffect(() => { if (kbIdx < 0) return; const el = document.querySelectorAll(".signals-page .brf-card")[kbIdx]; if (el) scrollIntoViewSafe(el, { block: "nearest" }); }, [kbIdx]);
-  useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode, domFilter, textQuery]);
+  useEffect(() => { setKbIdx(-1); }, [view.kind, view.name, posFilter, sortMode, domFilter, textQuery, lensFilter, stratFilter]);
   // a restored card (Undo / wake / recover) flashes back into place using the existing sig-group-flash primitive
   useEffect(() => {
     if (!flashSid) return;
@@ -2217,14 +2219,36 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   });
   const hasPos = (posCounts.below + posCounts.on + posCounts.above) > 0;   // any positioned (non-practice) signals here?
   const posOn = posFilter !== "all" && hasPos;                            // a stale filter is ignored on a practice-only view
-  const shownItems = posOn
+  // lens + strategy-alignment counts (Phase 3 — the same facet grammar as the grid), computed on the view set
+  const lensCounts = {}; LENS_ORDER.forEach(l => { lensCounts[l] = viewItems.filter(s => s.lens === l).length; });
+  const stratCounts = {}; FB_STRAT_DEF.forEach(d => { stratCounts[d.k] = viewItems.filter(s => s.alignment === d.k).length; });
+  const shownItems = (posOn
     ? viewItems.filter(s => posFilter === "practice"
         ? (s.position === "differs" || s.position === "practice")
         : s.position === posFilter)
-    : viewItems;
+    : viewItems)
+    .filter(s => !lensFilter.length || lensFilter.includes(s.lens))
+    .filter(s => !stratFilter.length || stratFilter.includes(s.alignment));
   const POS_LABEL = { below: "Below market", on: "On market", above: "Above market", practice: "Practice differs" };
+  // ── FACET BAR (Phase 3): Market (single) · Strategy (multi) · Lens (multi) · Domain (single) — one grammar
+  const _POS_DOT = { below: "amber", on: "green", above: "red" };
+  const sigFacets = [];
+  if (hasPos) sigFacets.push({ key: "pos", lab: "Market", title: "Market position", radio: true, count: posFilter !== "all" ? 1 : 0,
+    items: ["below", "on", "above", "practice"].filter(p => posCounts[p]).map(p => ({ k: p, lab: POS_LABEL[p], n: posCounts[p], dot: _POS_DOT[p],
+      sel: posFilter === p, onClick: () => setPosFilter(posFilter === p ? "all" : p) })) });
+  const _stratItems = FB_STRAT_DEF.filter(d => stratCounts[d.k]).map(d => ({ ...d, n: stratCounts[d.k], glyph: true, sel: stratFilter.includes(d.k),
+    onClick: () => setStratFilter(sel => sel.includes(d.k) ? sel.filter(x => x !== d.k) : [...sel, d.k]) }));
+  if (data.strategy_complete && _stratItems.length) sigFacets.push({ key: "strat", lab: "Strategy", title: "Strategy alignment", count: stratFilter.length, items: _stratItems });
+  const _lensItems = LENS_ORDER.filter(l => lensCounts[l]).map(l => ({ k: l, lab: LENS_LABEL[l], n: lensCounts[l], sel: lensFilter.includes(l),
+    onClick: () => setLensFilter(sel => sel.includes(l) ? sel.filter(x => x !== l) : [...sel, l]) }));
+  if (_lensItems.length) sigFacets.push({ key: "lens", lab: "Lens", title: "Outcome lens", count: lensFilter.length, items: _lensItems });
+  if (domainOpts.length > 1) sigFacets.push({ key: "dom", lab: "Domain", title: "Domain", radio: true, count: domFilter ? 1 : 0,
+    items: domainOpts.map(d => ({ k: d, lab: domainLabel(d), n: baseItems.filter(s => (s.domain || "") === d).length, sel: domFilter === d, onClick: () => setDomFilter(domFilter === d ? null : d) })) });
+  const filtersActive = posFilter !== "all" || stratFilter.length || lensFilter.length || !!domFilter;
+  const clearSigFilters = () => { setPosFilter("all"); setStratFilter([]); setLensFilter([]); setDomFilter(null); };
   const triaged = dismissedItems.length + snoozedItems.length + savedItems.length + Object.keys(assign).length;   // #28: a genuine cleared queue vs a quiet org
-  const emptyLine = posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
+  const emptyLine = (stratFilter.length || lensFilter.length) && !shownItems.length ? "No signals match these filters — clear them to see the rest."
+    : posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
     : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
     : domFilter ? "No live signals in " + domainLabel(domFilter) + " right now — clear the domain filter, or check the Snoozed and Dismissed tabs."
     : v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
@@ -2364,23 +2388,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           </span>
         </div>
 
-        ${domFilter ? html`
-          <div class="sfold-filter">
-            <span class="sfold-filter-lab">Domain: <b>${domainLabel(domFilter)}</b> · <span class="num">${viewItems.length}</span> signal${viewItems.length === 1 ? "" : "s"}</span>
-            <button type="button" class="sfold-filter-clear" onClick=${() => setDomFilter(null)}><${Icon} name="close" size=${11} /> Clear domain</button>
-          </div>` : null}
-
-        ${/* market-position filter — narrow the current view to below / on / above the market (David 2026-08-11) */ ""}
-        ${hasPos ? html`
-          <div class="sig-posfilter" role="group" aria-label="Filter by market position">
-            <span class="sig-posfilter-lab">Position</span>
-            <button type="button" class=${"sig-pos-pill" + (posFilter === "all" ? " on" : "")} aria-pressed=${posFilter === "all"}
-              onClick=${() => setPosFilter("all")}>All <b class="num">${viewItems.length}</b></button>
-            ${["below", "on", "above", "practice"].map(p => html`
-              <button key=${p} type="button" class=${"sig-pos-pill pos-" + p + (posFilter === p ? " on" : "")} aria-pressed=${posFilter === p}
-                onClick=${() => setPosFilter(posFilter === p ? "all" : p)}>
-                <span class="pos-dot"></span>${POS_LABEL[p]} <b class="num">${posCounts[p]}</b></button>`)}
-          </div>` : null}
+        ${/* Phase 3 (2026-08-13): one facet grammar with the grid — Market · Strategy · Lens · Domain.
+              Replaces the market-position pills + the duplicate domain dropdown/banner. */ ""}
+        ${sigFacets.length ? html`<${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} />` : null}
 
         ${/* strategy-check moved ABOVE the feed (David review #17) — a collapsible orienting strip */ ""}
         ${v.kind === "all" && data.strategy_complete ? html`
@@ -2396,11 +2406,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           <div class="sig-toolbar">
             <input class="sig-search" type="search" placeholder="Find a signal…" aria-label="Find a signal by name"
               value=${textQuery} onInput=${e => setTextQuery(e.target.value)} />
-            ${domainOpts.length > 1 ? html`<label class="sig-sort">Domain
-              <select value=${domFilter || ""} onChange=${e => setDomFilter(e.target.value || null)} aria-label="Filter by domain">
-                <option value="">All domains</option>
-                ${domainOpts.map(d => html`<option key=${d} value=${d}>${domainLabel(d)}</option>`)}
-              </select></label>` : null}
             ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
               <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
                 <option value="priority">Priority</option>
@@ -2619,7 +2624,10 @@ const FB_DOT = { below: "amber", on: "green", above: "red" };
 // wall behind quiet menu buttons). SAME filter model + applyCardFilters; only the presentation changes.
 // One menu open at a time; click-outside / Esc closes. Reading axis (Market/Practice/no-reading) stays
 // mutually exclusive; Signal + Strategy are independent multi-select; Type is single-select (radio).
-function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
+// Generic facet-menu row (SHARED by the card FilterBar + the Signals page). Takes facets
+// [{key,lab,title,radio,count,items:[{k,lab,n,dot,glyph,sep,sel,onClick}]}] and renders buttons + popovers;
+// one menu open at a time, click-outside / Esc closes.
+function FacetMenus({ facets, anyActive, onClear }) {
   const [open, setOpen] = useState(null);
   const ref = useRef(null);
   useEffect(() => {
@@ -2629,6 +2637,31 @@ function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
     document.addEventListener("mousedown", onDoc); document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
   }, [open]);
+  return html`
+    <div class="filterbar" ref=${ref} role="group" aria-label="Filter">
+      <span class="fb-cue"><${Icon} name="sliders" size=${12} /> Filter</span>
+      ${facets.map(fc => html`
+        <div key=${fc.key} class="fb-wrap">
+          <button type="button" class=${"fb-facet" + (fc.count ? " on" : "")} aria-expanded=${open === fc.key} aria-haspopup="menu"
+            onClick=${() => setOpen(open === fc.key ? null : fc.key)}>
+            ${fc.lab}${fc.count ? html` <span class="fb-badge">${fc.count}</span>` : null}<${Icon} name="chevron-down" size=${13} />
+          </button>
+          ${open === fc.key ? html`
+            <div class="fb-menu" role="menu">
+              <div class="fb-menu-h">${fc.title}</div>
+              ${fc.items.map(it => html`
+                <button key=${it.k} type="button" class=${"fb-row" + (it.sel ? " sel" : "") + (it.sep ? " fb-row-sep" : "")}
+                  role=${fc.radio ? "menuitemradio" : "menuitemcheckbox"} aria-checked=${it.sel} onClick=${it.onClick}>
+                  <span class=${"fb-ck" + (fc.radio ? " fb-ck-radio" : "")}></span>
+                  ${it.glyph ? html`<${StrategyGlyph} alignment=${it.k} w=${26} />` : it.dot ? html`<span class=${"fb-dot fb-dot-" + it.dot}></span>` : null}
+                  <span class="fb-row-lab">${it.lab}</span>${it.n != null ? html`<span class="fb-n">${it.n}</span>` : null}
+                </button>`)}
+            </div>` : null}
+        </div>`)}
+      ${anyActive ? html`<button type="button" class="fb-clear" onClick=${() => { onClear(); setOpen(null); }}>Clear</button>` : null}
+    </div>`;
+}
+function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
   const T = cards || [];
   const withN = (defs, resolver) => defs.map(d => ({ ...d, n: T.filter(c => resolver(c) === d.k).length })).filter(d => d.n);
   const togMulti = (key, k) => on({ [key]: f[key].includes(k) ? f[key].filter(x => x !== k) : [...f[key], k] });
@@ -2653,29 +2686,7 @@ function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
     items: FB_TYPE_DEF.map(d => ({ ...d, sel: f.type === d.k, onClick: () => on({ type: f.type === d.k ? "" : d.k }) })) });
   const anyActive = f.pos.length || f.prev.length || f.none || f.sig.length || f.strat.length || f.type;
 
-  return html`
-    <div class="filterbar" ref=${ref} role="group" aria-label="Filter the metrics">
-      <span class="fb-cue"><${Icon} name="sliders" size=${12} /> Filter</span>
-      ${facets.map(fc => html`
-        <div key=${fc.key} class="fb-wrap">
-          <button type="button" class=${"fb-facet" + (fc.count ? " on" : "")} aria-expanded=${open === fc.key} aria-haspopup="menu"
-            onClick=${() => setOpen(open === fc.key ? null : fc.key)}>
-            ${fc.lab}${fc.count ? html` <span class="fb-badge">${fc.count}</span>` : null}<${Icon} name="chevron-down" size=${13} />
-          </button>
-          ${open === fc.key ? html`
-            <div class="fb-menu" role="menu">
-              <div class="fb-menu-h">${fc.title}</div>
-              ${fc.items.map(it => html`
-                <button key=${it.k} type="button" class=${"fb-row" + (it.sel ? " sel" : "") + (it.sep ? " fb-row-sep" : "")}
-                  role=${fc.radio ? "menuitemradio" : "menuitemcheckbox"} aria-checked=${it.sel} onClick=${it.onClick}>
-                  <span class=${"fb-ck" + (fc.radio ? " fb-ck-radio" : "")}></span>
-                  ${it.glyph ? html`<${StrategyGlyph} alignment=${it.k} w=${26} />` : it.dot ? html`<span class=${"fb-dot fb-dot-" + it.dot}></span>` : null}
-                  <span class="fb-row-lab">${it.lab}</span>${it.n != null ? html`<span class="fb-n">${it.n}</span>` : null}
-                </button>`)}
-            </div>` : null}
-        </div>`)}
-      ${anyActive ? html`<button type="button" class="fb-clear" onClick=${() => { on(FB_EMPTY()); setOpen(null); }}>Clear</button>` : null}
-    </div>`;
+  return html`<${FacetMenus} facets=${facets} anyActive=${anyActive} onClear=${() => on(FB_EMPTY())} />`;
 }
 
 window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
