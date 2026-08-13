@@ -3802,7 +3802,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .fb-clear { border: 0; background: none; color: var(--blue-bright); font-size: var(--fs-label); font-weight: 500; cursor: pointer; padding: 6px; }
 .fb-clear:hover { text-decoration: underline; }
 /* All-reward grid masthead — title on top, then ONE control band (peer sample + filters), 2026-08-13 */
-.sp-masthead { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s3); }
+.sp-masthead { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s5); }
 .sp-ctl-band { display: flex; align-items: center; gap: var(--s3) var(--s4); flex-wrap: wrap; }
 .sp-ctl-band .filterbar { padding: 0; }
 .sp-ctl-band .peerbar { margin: 0; }

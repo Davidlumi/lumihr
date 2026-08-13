@@ -17937,3 +17937,11 @@ refreshMe and renders .sp-masthead (titleblock + .sp-ctl-band = PeerSetBar inlin
 filter are conceptually kept distinct (peer = global basis/data-source, filters = local view) but grouped
 in one band. Verified on a rig: one peer bar (no duplicate), peer+filter both in the band, 328→118 on
 below-market. Gates 14/14.
+
+## 2026-08-13 — Grid masthead cleanup (v=592): drop caption + floating glyph, space the first section
+
+David: "no need for the text under the heading · the top icon is just floating · the subheading domain
+looks odd." Removed the caption meta line (328 metrics · N rated · benchmark data) and the .sp-glyph award
+icon (it orphaned above the title once .page-head→.sp-masthead dropped its flex-row styling); masthead is
+now just the h1 + the control band. Bumped .sp-masthead margin-bottom s3→s5 so the first domain section
+("Pay") breathes below the controls. Gates 14/14.

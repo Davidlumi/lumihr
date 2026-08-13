@@ -2766,13 +2766,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
   return html`
     <div>
       <div class="sp-masthead">
-        <div class="titleblock">
-          <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
-          <div>
-            <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
-            <div class="caption meta">${cards.length} metrics${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
-          </div>
-        </div>
+        <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
         ${/* one control band (David 2026-08-13): the peer sample sits WITH the filters, below the title */ ""}
         <div class="sp-ctl-band">
           <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo}
