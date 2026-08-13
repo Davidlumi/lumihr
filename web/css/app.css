@@ -3768,7 +3768,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-chip-strat { display: inline-flex; align-items: center; gap: 5px; }
 .sig-chip-strat .sglyph { flex: none; }
 /* facet-menu filter bar (2026-08-13, direction A — collapse the pill wall behind quiet menu buttons) */
-.filterbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; padding: var(--s4) 0 var(--s3); }
+.filterbar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; padding: var(--s2) 0 var(--s3); }
 .fb-cue { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); margin-right: var(--s1); }
 .fb-cue svg, .fb-facet svg { color: var(--ink-faint); }
 .fb-wrap { position: relative; }
@@ -4290,13 +4290,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
    NOTHING sits above the feed except the masthead and the folder nav; NEW rides card tags.) */
 
 /* ---- FOLDER NAV — the only control row above the feed ---- */
-.sfold-nav { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin: 0 0 var(--s4); }
+/* folders read as VIEW TABS (2026-08-13, David: "folders look too similar to the filters") — borderless
+   on a hairline strip, one filled active; distinct from the bordered filter dropdown buttons below. */
+.sfold-nav { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin: 0 0 var(--s3);
+  padding-bottom: var(--s2); border-bottom: 1px solid var(--border); }
 .sfold-pillwrap { display: inline-flex; align-items: center; gap: 2px; }
-.sfold-pill { display: inline-flex; align-items: center; gap: var(--s1); background: var(--surface);
-  border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: var(--fs-caption);
+.sfold-pill { display: inline-flex; align-items: center; gap: var(--s1); background: transparent;
+  border: 1px solid transparent; border-radius: 999px; font: inherit; font-size: var(--fs-caption);
   font-weight: 600; color: var(--ink-soft); cursor: pointer; padding: var(--s1) var(--s3); min-height: 32px;
-  transition: border-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
-.sfold-pill:hover { border-color: var(--ink-faint); color: var(--ink); }
+  transition: color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
+.sfold-pill:hover { background: color-mix(in srgb, var(--navy) 7%, transparent); color: var(--ink); }
 .sfold-pill svg { color: var(--ink-faint); }
 .sfold-pill b { font-weight: 700; margin-left: 2px; }
 .sfold-pill.on { background: var(--navy); border-color: var(--navy); color: #fff; }

@@ -17945,3 +17945,13 @@ looks odd." Removed the caption meta line (328 metrics · N rated · benchmark d
 icon (it orphaned above the title once .page-head→.sp-masthead dropped its flex-row styling); masthead is
 now just the h1 + the control band. Bumped .sp-masthead margin-bottom s3→s5 so the first domain section
 ("Pay") breathes below the controls. Gates 14/14.
+
+## 2026-08-13 — Signals top: folders → view tabs, tighter spacing (v=593, CSS-only)
+
+David: "top menu looks cramped and the folders look too similar to the filters." The folder pills and
+the filter facets were both outlined rounded buttons. Reworked .sfold-pill to a TAB look — borderless
+(transparent bg + border), one filled-navy active, hover = faint navy tint — and put the whole .sfold-nav
+on a hairline strip (border-bottom + padding-bottom), so "views" sit above the line and "filters" (bordered
+dropdowns) below it: two distinct control languages. Tightened .filterbar top padding s4→s2 (grid unaffected
+— its .sp-ctl-band overrides to 0). Pure CSS; gates not run (no server/data/JS change; would bounce the live
+dev server). Verified on a rig.
