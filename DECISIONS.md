@@ -17606,3 +17606,63 @@ flattening); share-view verdict parity; donut "269 metrics" label semantics; sig
 basis disclosure; register Sector-column basis; "Confidence 7/10" methodology mention; domain
 terminology ruling (domain/area/section/category); peer-descriptor prose voice; demo-org test
 residue + internal contradictions (sales surface — David's call).
+
+## 2026-08-12 — Pre-prod QA audit, fix loop 3: the investigated tail (David "go")
+
+Six scoped investigators (small payloads per the workflow-fragility doctrine) verified the
+non-mechanical queue before a line changed; five CONFIRMED, one PARTIAL. Applied:
+
+ENGINE/DATA TRUTH:
+- SHARE-LINK VERDICT PARITY: /api/share/{token}/data assembled cards WITHOUT the band maps, so
+  anonymous links recomputed verdicts from the legacy percentile fallback (with a hardcoded
+  [35,65] — window.MARKET_BAND is never set on share.html) while the member saw the pool verdict.
+  share_data now builds pool_market_bands + pool_prevalence_bands (share cuts are never
+  twin/group, so tb=None equals the member maps by construction). Verified live: every shared
+  card agrees with the member card for the same qid+cut; practice cards read
+  common/alternative/rare instead of "low peer data".
+- DEPTH-POOL COHORT: signals._matrix_depths read bare answers rows — exited orgs (R6 day-0
+  removal) and incomplete submissions leaked into that ONE pool. Now JOINs orgs with
+  exited_at IS NULL AND submission_complete=1, mirroring aggregate.load_answers; suspension
+  deliberately NOT filtered (PH-PAY-1 §B).
+- PULSE NARRATIVE COHORT: the AI narrative was written over the default cohort while the member's
+  report used real_viewer — the narrative could cite figures the page never showed. Now the same
+  real_viewer flag on both calls.
+- DONUT UNIT HONESTY: the hero "Where you stand" pool counts READINGS (one per matrix row; 269 vs
+  235 distinct positioned metrics — reading-mass is ruled Pass-2a behaviour). Centre label + two
+  arias now say "readings"; re-uniting the donut to metric level is David's open option.
+- SIGNAL n COVERAGE: mechanisms that read blocks directly (prevalence/multi/rarity/depth) shipped
+  n:null (7 of 67) — a same-basis get_block fallback closes the "n is always shown" gap; the
+  signal-card n gains a basis tooltip (default-group pool, can be smaller than the metric page's).
+- REGISTER SECTOR BASIS: the Sector % rested on a hidden smaller sample — sector_n now rides the
+  row, renders as "(n=15)" beside the sector figure, and lands in the CSV as a "Sector n" column.
+
+RESILIENCE/SPEND: per-org AI generation cap (60/hr, env-tunable) on ALL seven paid generation
+call sites (peeks and cache hits never count; board-pack daily cap unchanged); drafts resolve
+against org_visible_questions — the full-library lookup accepted retired/sector-scoped questions
+that submit() then committed UN-VALIDATED (r3s4 bypass); submit() drops out-of-scope strays with
+a logged warning; TxnHygieneMiddleware rolls back any uncommitted transaction at end-of-request
+(closes the HTTPException-after-write residue); /api/questions boot failure retries ×3 with
+backoff (one blip used to kill Benchmark nav + search for the session); cuts refetch when the
+org's classification lands (sector/size/twin appeared only after a full reload); the strategy
+wizard persists a sessionStorage draft (any navigation silently discarded every answered dial) —
+cleared on save and Cancel.
+
+A11Y + CONSISTENCY: matrix TABLE renders swap role="img"→"group" (role=img prunes every
+descendant — screen readers lost the whole per-level table; SVG charts stay images); metric-page
+peer selector reaches PeerSetBar parity WITHOUT the component swap the investigator advised
+against (it would revert three 2026-08-12 rulings): group counts + too-small marker, sector/size
+first-item counts, "+ Create / manage peer groups…" delegating to the app-level modal.
+
+CSS TOKENS (T1-T4, from a deltaE-checked spec): --lumi-tile aliased to --blue-tint (32 uses; the
+name survives as a brand-kit alias per INTEGRATION.md); 10 off-token literals mapped (incl. the
+.admin-yes #1B7740 escapee from the 2026-06-22 --favourable ruling); gold celebration set, pw-fair,
+gradient endpoints and on-navy footer text deliberately KEPT (dE too large / different family);
+.bp-menu + .indic-tip lifted off the nav z-tier (topbar tie resolved by DOM-order luck); five
+popover menus unified on radius-sm / shadow-pop / s2 pad / blue-tint hover (bp/snooze/kebab/brf +
+dead fallbacks removed). Methodology gains the 0-10 confidence-score mapping sentence (the chip
+tooltip already carried it). Register subtitle/counts fixes from loop 2 unchanged. v=570.
+
+STILL DAVID'S: provenance/testimonials/pricing claims; PROP_8e0b6316 ladder; donut metric-level
+re-unification; domain terminology; peer-descriptor voice; demo-org residue; "2026.1 seven
+categories" history line; optional next: serve MARKET_BAND on share.html for out-of-pool fallback
+cards (only divergent if LUMI_MARKET_BAND ever ≠ 35-65).
