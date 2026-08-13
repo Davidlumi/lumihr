@@ -1723,10 +1723,15 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut
   const printMetric = async () => {
     if (!commentary && me.features && me.features.commentary) {
       toast("Writing your commentary for the one-pager…");
-      // await the IN-FLIGHT generate if one is already running, else start one; an
-      // honest fallback when the write fails (the deterministic read still prints)
-      const r = await (genRef.current || genCommentary(false));
-      if (!r) toast("Couldn't write the commentary — printing the standard read.", "error");
+      // await the IN-FLIGHT generate if one is already running, else start one — but the
+      // PRINT must never die with the write: a rejected generate (AI dark → 403, network)
+      // used to abort here silently and the button "did nothing" (David 2026-08-13)
+      try {
+        const r = await (genRef.current || genCommentary(false));
+        if (!r) toast("Couldn't write the commentary — printing the standard read.", "error");
+      } catch (e) {
+        toast("Couldn't write the commentary — printing the standard read.", "error");
+      }
       await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));   // let it paint
     }
     const t = document.title;
@@ -1882,7 +1887,9 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut
             ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Copy chart to clipboard" aria-label="Copy chart" onClick=${doCopy}><${Icon} name="copy" size=${15} /></button>`}
             ${exportable && html`<button class="iconbtn" disabled=${busyNow} title="Download chart (PNG)" aria-label="Download chart" onClick=${doExport}><${Icon} name="download" size=${15} /></button>`}
             <button class="iconbtn" title=${"Copy link · " + c.cut.label} aria-label="Copy link" onClick=${share}><${Icon} name="link" size=${15} /></button>
-            ${!c.suppressed && html`<button class="iconbtn" disabled=${busyNow} title="Print or save a one-page PDF — the chart plus your written commentary." aria-label="One-pager PDF" onClick=${printMetric}><${Icon} name="file-text" size=${15} /></button>`}
+            ${/* labelled, not a mystery glyph: this is the take-to-the-board feature and
+                  it read as MISSING as a bare icon (David 2026-08-13) */ ""}
+            ${!c.suppressed && html`<button class="btn small tool-onepager" disabled=${busyNow} title="Print or save a one-page PDF — the chart plus your written commentary." onClick=${printMetric}><${Icon} name="file-text" size=${14} /> One-pager</button>`}
             ${onPin && pinnedIds && html`<button class=${"iconbtn" + (pinnedIds.has(qid) ? " on" : "")} onClick=${() => onPin(qid)}
               title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}
               aria-label=${pinnedIds.has(qid) ? "Unpin from dashboard" : "Pin to dashboard"} aria-pressed=${pinnedIds.has(qid)}><${Icon} name="pin" size=${15} /></button>`}

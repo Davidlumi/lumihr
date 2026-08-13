@@ -380,37 +380,47 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
 
 // ---------------------------------------------------------- grouped bars ---
 window.MatrixGrouped = function ({ rows, unit, showValues = true, width = CHART_W, height, fav }) {
+  // hero pass (matches PercentileBand): the card-era 9px type + hairline bars scaled
+  // onto the 780 hero viewBox read as "hard to see" (David 2026-08-13) — big canvases
+  // get real type, thicker bars, bound estimate captions and a legible legend
+  const W = width, big = W >= 620;
   const H = height || 172;
-  const rowH = Math.max(22, Math.min(H > 300 ? 52 : 34, Math.floor((H - 18) / Math.max(rows.length, 1))));
-  const labelW = Math.min(150, width * 0.38), W = width;
-  const usedH = rows.length * rowH + 16;
+  const fsLbl = big ? 12.5 : 9.5, fsVal = big ? 11 : 9, fsCap = big ? 10 : 8, fsLeg = big ? 11 : 9;
+  // groups with an estimate caption need headroom for it — reserve a band per group
+  const capH = rows.some(r => r.unbenchmarked) ? (big ? 16 : 11) : 0;
+  const rowMax = big ? 74 : (H > 300 ? 52 : 34);
+  const rowH = Math.max(22, Math.min(rowMax, Math.floor((H - 18) / Math.max(rows.length, 1)))) + capH;
+  const labelW = Math.min(big ? 190 : 150, width * 0.38);
+  const usedH = rows.length * rowH + (big ? 26 : 16);
   const vals = rows.flatMap(r => [r.suppressed ? null : (r.block || {}).p50, r.you ? r.you.value : null]).filter(v => v != null);
   const maxV = Math.max(...vals, 1);
-  const bw = v => Math.max(2, (v / maxV) * (W - labelW - 64));
-  const bh = Math.max(6, Math.floor(rowH * 0.3));
+  const bw = v => Math.max(2, (v / maxV) * (W - labelW - (big ? 96 : 64)));
+  const bh = Math.max(big ? 13 : 6, Math.floor((rowH - capH) * 0.3));
   return html`
     <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
       ${rows.map((r, i) => {
-        const y = i * rowH + 6;
+        const y = i * rowH + 6 + capH;   // bars sit BELOW the group's own caption band
         const p50 = r.suppressed ? null : (r.block || {}).p50;
         const you = r.you ? r.you.value : null;
         return html`
         <g key=${r.row_id}>
-          <text x=${labelW - 8} y=${y + rowH / 2 - 2} text-anchor="end" font-size="9.5" fill="var(--ink-soft)">
-            ${r.label.length > 22 ? r.label.slice(0, 21) + "…" : r.label}</text>
-          ${p50 != null ? html`<rect x=${labelW} y=${y} width=${bw(p50)} height=${bh} rx="2.5" fill="var(--chart-band-mid)"/>` :
-          html`<text x=${labelW} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">not enough organisations</text>`}
-          ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 5} y=${y + bh - 1} font-size="9" fill="var(--ink-faint)">${fmtValue(p50, unit)}</text>`}
-          ${you != null && html`<rect x=${labelW} y=${y + bh + 2} width=${bw(you)} height=${bh} rx="2.5" fill=${youColour(fav)}/>`}
-          ${you != null && showValues && html`<text x=${labelW + bw(you) + 5} y=${y + bh * 2 + 1} font-size="9" font-weight="700" fill=${youColour(fav)}>${fmtValue(you, unit)} · You</text>`}
-          ${r.unbenchmarked && html`<text x=${labelW} y=${y - 2} font-size="8" fill="var(--ink-faint)">Estimate — no market comparison for this level</text>`}
+          ${/* the estimate caption binds to ITS group: same x as the bars, in the
+                group's reserved band — it used to float equidistant between groups */ ""}
+          ${r.unbenchmarked && html`<text x=${labelW} y=${y - (big ? 6 : 4)} font-size=${fsCap} font-style="italic" fill="var(--ink-faint)">Estimate — no market comparison for this level</text>`}
+          <text x=${labelW - 10} y=${y + bh + (big ? 4 : 1)} text-anchor="end" font-size=${fsLbl} font-weight="600" fill="var(--ink)">
+            ${r.label.length > 22 ? html`<title>${r.label}</title>` : null}${r.label.length > 22 ? r.label.slice(0, 21) + "…" : r.label}</text>
+          ${p50 != null ? html`<rect x=${labelW} y=${y} width=${bw(p50)} height=${bh} rx=${big ? 4 : 2.5} fill="var(--chart-band-mid)"/>` :
+          html`<text x=${labelW} y=${y + bh - 1} font-size=${fsVal} fill="var(--ink-faint)">not enough organisations</text>`}
+          ${p50 != null && showValues && html`<text x=${labelW + bw(p50) + 6} y=${y + bh - (big ? 2 : 1)} font-size=${fsVal} fill="var(--ink-soft)">${fmtValue(p50, unit)}</text>`}
+          ${you != null && html`<rect x=${labelW} y=${y + bh + (big ? 4 : 2)} width=${bw(you)} height=${bh} rx=${big ? 4 : 2.5} fill=${youColour(fav)}/>`}
+          ${you != null && showValues && html`<text x=${labelW + bw(you) + 6} y=${y + bh * 2 + (big ? 2 : 1)} font-size=${fsVal} font-weight="700" fill=${youColour(fav)}>${favGlyph(fav) ? favGlyph(fav) + " " : ""}${fmtValue(you, unit)} · You</text>`}
         </g>`;
       })}
       <g>
-        <rect x=${labelW} y=${usedH - 10} width="8" height="8" rx="2" fill="var(--chart-band-mid)"/>
-        <text x=${labelW + 12} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">Market P50</text>
-        <rect x=${labelW + 70} y=${usedH - 10} width="8" height="8" rx="2" fill=${youColour(fav)}/>
-        <text x=${labelW + 82} y=${usedH - 3} font-size="9" fill="var(--ink-soft)">You</text>
+        <rect x=${labelW} y=${usedH - (big ? 13 : 10)} width=${big ? 11 : 8} height=${big ? 11 : 8} rx="2" fill="var(--chart-band-mid)"/>
+        <text x=${labelW + (big ? 16 : 12)} y=${usedH - (big ? 4 : 3)} font-size=${fsLeg} fill="var(--ink-soft)">Market median</text>
+        <rect x=${labelW + (big ? 116 : 70)} y=${usedH - (big ? 13 : 10)} width=${big ? 11 : 8} height=${big ? 11 : 8} rx="2" fill=${youColour(fav)}/>
+        <text x=${labelW + (big ? 132 : 82)} y=${usedH - (big ? 4 : 3)} font-size=${fsLeg} fill="var(--ink-soft)">You</text>
       </g>
     </svg>`;
 };

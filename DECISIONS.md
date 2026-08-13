@@ -17694,3 +17694,20 @@ TEXT SPILL + HONESTY, every expanded chart type walked at hero width on the rig:
   on the 21-option allowances chart out-shouted the data.
 VERIFIED live on the rig at v=575: sigbar ghosts, full P-labels inside the stage, wrapped
 level labels, matching legend, full "Letter only", ghosted zeros. Gate suite follows.
+
+## 2026-08-13 — Grouped-bars hero pass + the one-pager that "did nothing" (David screenshot 2)
+
+MATRIXGROUPED had NO hero pass: card-era 9px type, hairline bars and a floating estimate
+caption scaled onto the 780 hero viewBox — "hard to see" was exactly right. Big canvases now
+get: 12.5/600 ink group labels, 13px+ bars with wider radii, ▼/▲ verdict glyphs on the You
+values (YouDot convention), an italic estimate caption RESERVED A BAND INSIDE its own group
+(it used to float equidistant between groups — ambiguous ownership), a legible legend, and
+"Market median" replacing the bare "Market P50" (explained-P doctrine). Small-card render
+unchanged.
+
+THE ONE-PAGER was present but could SILENTLY DIE: printMetric awaited the commentary
+generate un-guarded — a rejected write (AI dark → 403, network blip) aborted the function
+before window.print(), so the button did nothing. The await is try/caught (the deterministic
+read still prints, with an honest toast). And it is no longer a mystery file-text glyph: a
+labelled "One-pager" tool button (quiet chrome, blue-tint hover) sits in the foot band.
+VERIFIED on the rig at v=576 (grouped bars re-screenshotted, button labelled + enabled).

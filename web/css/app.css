@@ -3989,6 +3989,13 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* per-card tools: a compare-against pill + quiet icon buttons (replaced the ⋮ menu) */
 .card-tools { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; }
 .card-tools .iconbtn { color: var(--ink-faint); }
+/* the one-pager is a labelled tool (the take-to-the-board feature, not a glyph) —
+   quiet next to the icon row, firm on hover */
+.card-tools .tool-onepager { display: inline-flex; align-items: center; gap: 5px;
+  margin-left: var(--s1); color: var(--ink-soft); border-color: var(--chrome-edge); }
+.card-tools .tool-onepager:hover { color: var(--blue-deep); border-color: var(--blue);
+  background: var(--blue-tint); }
+.card-tools .tool-onepager svg { flex: 0 0 auto; }
 .card-tools .iconbtn:hover { color: var(--ink); background: var(--surface-sunk); }
 .pop-wrap { position: relative; display: inline-flex; }
 .cmp-pill { display: inline-flex; align-items: center; gap: var(--s1); height: 27px; padding: 0 var(--s2) 0 var(--s2);
