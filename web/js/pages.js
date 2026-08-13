@@ -758,7 +758,7 @@ function MarketSpectrum({ market, aim }) {
   return html`
     <div class="arc-stage spectrum-stage">
       <svg viewBox="0 0 280 108" class="spectrum-svg" role="img"
-        aria-label=${"Of " + pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your aim zone" : "") + "."}>
+        aria-label=${"Of " + pool + " comparable readings, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your aim zone" : "") + "."}>
         ${aimMid != null ? html`<g>
           <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--navy)">your aim</text>
           <path d=${"M " + (aimX0 + 1).toFixed(1) + " 33 L " + (aimX0 + 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 33"} fill="none" stroke="var(--navy)" stroke-width="1.5"/>
@@ -947,14 +947,14 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
             metric pool — domain-equal logged as the rejected alternative). */ ""}
       <div class="arc-duo">
         <div class="arc-stage" role="img"
-          aria-label=${"Where you stand: of " + market.pool + " comparable metrics, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
+          aria-label=${"Where you stand: of " + market.pool + " comparable readings, " + market.below + " below market, " + market.at + " on market, " + market.above + " above. Overall: " + word + ", " + leanWord + "."}>
           <${Donut}
             segments=${[
               { value: market.below, color: (v === "below" ? MKT_RICH : MKT_SOFT)[marketTone("below")] },
               { value: market.at, color: (v === "at" ? MKT_RICH : MKT_SOFT)[marketTone("at")] },
               { value: market.above, color: (v === "above" ? MKT_RICH : MKT_SOFT)[marketTone("above")] },
             ]}
-            total=${market.pool} centerNum=${market.pool} sub="metrics" centerWord=${headWord} size=${192} stroke=${20} />   ${/* stroke 26→20 (2026-08-11): the 216px breathing-room scale thickened the ring to ~29px, which cramped the small above/on-market segments — a lighter ring gives them air */""}
+            total=${market.pool} centerNum=${market.pool} sub="readings" centerWord=${headWord} size=${192} stroke=${20} />   ${/* stroke 26→20 (2026-08-11): the 216px breathing-room scale thickened the ring to ~29px, which cramped the small above/on-market segments — a lighter ring gives them air */""}
         </div>
         <div class="arc-caption num">
           <span class="arc-lean">${headLean}</span>
@@ -2253,7 +2253,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         ${v.kind === "snoozed" && s.snooze_until ? html`<span class="sfold-snz"><${Icon} name="clock" size=${10} /> ${snoozeReturn(s.snooze_until)}</span>` : null}
       </div>
       <h3 class="brf-head">${brfCap(s.stand || s.detail)}</h3>
-      <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num"> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
+      <div class="brf-why"><b>Flagged because:</b> ${brfRule(s)}${s.n != null ? html`<span class="num" title="Organisations comparable on this metric in your default peer group — can be smaller than the metric page's n."> · ${compositionLabel(s.n, s.n_real)}</span>` : null}${provMark(s)}${s.strategy_note ? html`<span class="sig-strat-note"> · ${s.strategy_note}</span>` : null}</div>
       <div class="brf-chips">
         <span class=${"brf-pos brf-pos-" + tone}>${brfChipText(s)}</span>
         ${s.gap_pct != null ? html`<span class=${"brf-gap brf-gap-" + tone} aria-label=${"About " + s.gap_pct + "% " + gapDir + " the market median"}>${s.gap_pct}% ${gapDir}</span>` : null}
@@ -3822,7 +3822,9 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
           to <b>every</b> peer group — including bespoke groups such as Peer Twin and your own custom groups — and it is
           enforced in one place in the calculation engine, so no view can route around it.</p>
           <p>Above the floor, every peer group carries a confidence label so you can weigh the sample: <b>20 or more</b>${" "}
-          organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.</p>
+          organisations reads as <b>High confidence</b>; <b>5–19</b> reads as <b>Directional</b> — a steer, not a verdict.
+          The same rule drives the <b>0–10 confidence score</b> shown in the app: 20+ peers scores 7–10, 5–19 scores 4–6,
+          and below 5 nothing is shown at all.</p>
           <p class="caption">No peer figure is ever derived from a single organisation, and member identities are never
           shown in any group.</p>
         </div>

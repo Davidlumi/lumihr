@@ -100,7 +100,11 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
         ${cardSignalPill(c, signal, readOnly)}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
-        role="img" aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (SHOW_COMPOSITION_IN_PRODUCT && c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "." + (!cardAnswered(c) && !readOnly ? " Not yet answered — add your answer to see where you stand." + (c.is_required ? " This is a key question that unlocks your insights." : "") : "")}
+        role=${/* matrix TABLE renders keep their semantics for screen readers — role="img"
+                  prunes every descendant, flattening a real <table> to its label; only the
+                  SVG chart variants stay images (pre-prod audit 2026-08-12) */
+              c.type === "matrix" && chart !== "grouped_bars" ? "group" : "img"}
+        aria-label=${c.title + " chart. " + (sentence.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + (SHOW_COMPOSITION_IN_PRODUCT && c.n_real > 0 && c.n_real < c.n ? " (" + c.n_real + " lumi members)" : "") + ", " + c.cut.label + "." + (!cardAnswered(c) && !readOnly ? " Not yet answered — add your answer to see where you stand." + (c.is_required ? " This is a key question that unlocks your insights." : "") : "")}
         onClick=${e => { if (!c.suppressed && !e.target.closest("a") && !e.target.closest("button")) openMetric(c.id); }}
         title=${c.suppressed ? "Protected — fewer than 5 organisations behind this figure, so there's no chart to open" : "Open full view"}>
         ${cutBusy ? html`<div class="skel" style=${{ height: "var(--chart-h)", borderRadius: "var(--radius-sm)" }}></div>` :

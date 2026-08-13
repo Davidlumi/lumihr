@@ -105,7 +105,9 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
                 <td class="caption">${focused ? (r.subpower || "") : r.superpower}</td>
                 <td><span class=${"chip " + c[0]}>${c[1]}</span></td>
                 <td class="num">${r.peer_adoption_pct != null ? r.peer_adoption_pct + "%" : "—"}</td>
-                <td class="num">${r.sector_adoption_pct != null ? r.sector_adoption_pct + "%" : "—"}</td>
+                <td class="num">${r.sector_adoption_pct != null
+                  ? html`${r.sector_adoption_pct}%${r.sector_n != null ? html`<span class="caption"> (n=${r.sector_n})</span>` : ""}`
+                  : "—"}</td>
                 <td class="num">${r.n}</td>
               </tr>`; })}
           </tbody>

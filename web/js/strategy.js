@@ -486,8 +486,23 @@ window.StrategyPage = function ({ me }) {
       setData(d);
       setStrat({ ...d.strategy });
       setPlaneA(d.plane_a.map(f => ({ ...f })));
+      // restore an in-flight wizard draft: any navigation away used to silently
+      // discard every answered dial (pre-prod audit 2026-08-12). The draft only
+      // overlays an UNCOMMITTED session (cleared on save + on Cancel).
+      try {
+        const raw = sessionStorage.getItem("lumi-strat-draft");
+        if (raw) {
+          const dr = JSON.parse(raw);
+          if (dr && dr.strat) { setStrat({ ...d.strategy, ...dr.strat }); if (dr.step != null) setStep(dr.step); if (d.completed_at) setEditing(true); }
+        }
+      } catch (e) { /* a corrupt draft never blocks the wizard */ }
     }).catch(e => setErr(e.message));
   }, []);
+  // persist the wizard draft per keystroke while editing; cheap and crash-proof
+  useEffect(() => {
+    if (!data || (data.completed_at && !editing)) return;
+    try { sessionStorage.setItem("lumi-strat-draft", JSON.stringify({ strat, step })); } catch (e) {}
+  }, [strat, step, editing, data]);
   if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your strategy" body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
@@ -583,6 +598,7 @@ window.StrategyPage = function ({ me }) {
       await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
         transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // a governance act closes quietly — no confetti
+      try { sessionStorage.removeItem("lumi-strat-draft"); } catch (e) {}
       // window-qualified: the local [toast, setToast] state shadows the global toast()
       // in this scope (pre-prod audit 2026-08-12: every Save & finish threw here, after
       // the PUT had already succeeded)
@@ -630,7 +646,7 @@ window.StrategyPage = function ({ me }) {
         <div class="strat-topline no-print">
           ${stage !== "facts" ? html`<button class="btn quiet strat-back" onClick=${goBack} disabled=${saving || committed}>← Back</button>` : html`<span></span>`}
           <span class="strat-count">${stage === "review" ? "Review" : stage === "facts" ? "" : (qIndex + 1) + " of " + QUESTIONS.length}</span>
-          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); }}>Cancel</button>` : html`<span></span>`}
+          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); try { sessionStorage.removeItem("lumi-strat-draft"); } catch (e) {} }}>Cancel</button>` : html`<span></span>`}
         </div>` : null}
 
       ${qIndex != null && html`

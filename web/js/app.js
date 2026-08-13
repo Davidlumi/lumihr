@@ -171,8 +171,17 @@ function App() {
     api("/api/prefs").then(d => { prefsFailed.current = false; setPrefs(d.prefs || {}); })
       .catch(() => { prefsFailed.current = true; setPrefs({}); });
     api("/api/dashboards").then(d => setLayoutIds(new Set(((d.active && d.active.layout) || []).map(s => s.question_id)))).catch(() => {});
-    api("/api/questions").then(setQIndex).catch(() => {});
-  }, [me && me.org && me.org.name]);
+    // one transient /api/questions failure used to silently remove the Benchmark nav
+    // group + search for the WHOLE SESSION — retry with backoff instead of giving up
+    let qTries = 0, qDead = false;
+    const loadQIndex = () => api("/api/questions").then(d => { if (!qDead) setQIndex(d); })
+      .catch(() => { if (!qDead && ++qTries <= 3) setTimeout(loadQIndex, qTries * 5000); });
+    loadQIndex();
+    return () => { qDead = true; };
+    // deps include the org's classification: completing the first-run profile mints the
+    // sector + size + twin cuts — without the extra keys the selector missed them until
+    // a full reload (pre-prod audit 2026-08-12)
+  }, [me && me.org && me.org.name, me && me.org && me.org.industry, me && me.org && me.org.fte_band]);
   // Landing peer group = the COMPANY DEFAULT (org.default_cut → me.org.signal_peer_cut), David
   // 2026-08-11: the admin-set company default drives signals AND is the app-wide default, so every
   // member opens on the SAME group (the per-user landing pref was dropped). An explicit cut in the
@@ -1510,7 +1519,7 @@ function MetricSignalBar({ qid, sig }) {
     </div>`;
 }
 
-function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
+function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut }) {
   const org = me.org;
   // the page's own cut — initialised from the global selector / deep link,
   // and re-synced when the global selector changes (same semantics as cards)
@@ -1638,6 +1647,7 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
   };
   const selKey = sel.dim + (sel.value ? "::" + sel.value : "");
   const setCutKey = (k) => {
+    if (k === "manage-groups") { onCut && onCut(k); return; }   // app-level PeerGroupsModal
     if (k === "all") setSel({ dim: "all", value: null });
     else if (k === "twin") setSel({ dim: "twin", value: null });
     else { const [dim, value] = k.split("::"); setSel({ dim, value }); }
@@ -1746,21 +1756,22 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
               ${hasDefault && html`<option value="all">All peers${poolN ? " · " + poolN : ""}</option>`}
               ${cuts && (cuts.groups || []).filter(g => ("group::" + g.group_id) !== defCut).length > 0 && html`
                 <optgroup label="Your groups">
-                  ${cuts.groups.filter(g => ("group::" + g.group_id) !== defCut).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}</option>`)}
+                  ${cuts.groups.filter(g => ("group::" + g.group_id) !== defCut).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>${g.name}${g.too_small ? " (too few organisations)" : ` · ${g.match_count}`}</option>`)}
                 </optgroup>`}
               ${cuts && Object.keys(cuts.industries || {}).length > 0 && html`
                 <optgroup label="Compare a sector">
-                  ${org.industry && ("industry::" + org.industry) !== defCut && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry}</option>`}
+                  ${org.industry && ("industry::" + org.industry) !== defCut && html`<option value=${"industry::" + org.industry}>Your sector: ${org.industry} · ${cuts.industries[org.industry] || "?"}</option>`}
                   ${sel.dim === "industry" && sel.value && sel.value !== org.industry && !(cuts.industries || {})[sel.value] && html`<option value=${"industry::" + sel.value}>${sel.value}</option>`}
                   ${Object.keys(cuts.industries).filter(i => i !== org.industry && ("industry::" + i) !== defCut).sort().map(i => html`<option key=${i} value=${"industry::" + i}>${i} · ${cuts.industries[i]}</option>`)}
                 </optgroup>`}
               ${cuts && Object.keys(cuts.fte_bands || {}).length > 0 && html`
                 <optgroup label="Compare a size band">
-                  ${org.fte_band && ("fte_band::" + org.fte_band) !== defCut && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE</option>`}
+                  ${org.fte_band && ("fte_band::" + org.fte_band) !== defCut && html`<option value=${"fte_band::" + org.fte_band}>Your size: ${org.fte_band} FTE · ${cuts.fte_bands[org.fte_band] || "?"}</option>`}
                   ${sel.dim === "fte_band" && sel.value && sel.value !== org.fte_band && !(cuts.fte_bands || {})[sel.value] && html`<option value=${"fte_band::" + sel.value}>${sel.value} FTE</option>`}
                   ${Object.keys(cuts.fte_bands).filter(b => b !== org.fte_band && ("fte_band::" + b) !== defCut).sort((x, y) => bandLow(x) - bandLow(y)).map(b => html`<option key=${b} value=${"fte_band::" + b}>${b} FTE · ${cuts.fte_bands[b]}</option>`)}
                 </optgroup>`}
               ${cuts && cuts.twin_available && defCut !== "twin" && html`<option value="twin">Organisations like you${typeof cuts.twin_n === "number" ? " · " + cuts.twin_n : ""}</option>`}
+              ${me.org.classified && html`<option value="manage-groups">+ Create / manage peer groups…</option>`}
             </select>
             <span class="peerbar-caret"><${Icon} name="chevron-down" size=${13} /></span>
           </span>
@@ -1854,7 +1865,10 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds }) {
                 action=${html`<div class="row" style=${{ gap: "var(--s3)", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
                   ${selKey !== "all" ? html`<button class="btn small primary" onClick=${() => setCutKey("all")}>Compare against all peers</button>` : null}
                   <a class="caption" href="#/how-lumi-works/suppression">Why figures are hidden</a></div>`} />` :
-            html`<div key=${chart} class="metric-chart-swap" role="img"
+            html`<div key=${chart} class="metric-chart-swap"
+              role=${/* matrix TABLES keep their semantics — role="img" flattens a real
+                        <table> to its label for screen readers; only SVG charts stay images */
+                    c.type === "matrix" && chart !== "grouped_bars" ? "group" : "img"}
               aria-label=${c.title + " chart. " + (sent.lead || "Peer benchmark distribution.") + " Based on " + c.n + " " + compositionNoun(c.n_real) + ", " + c.cut.label + "."}>
               <${CardBody} card=${c} chart=${chart} showP1090=${true} showValues=${true} fav=${cfav} xl=${true} />
             </div>`}
