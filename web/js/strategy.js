@@ -26,7 +26,7 @@ const SCALE = {
     stops: [
       { v: "egal", t: "Everyone similar", d: "Pay stays close across the board", se: 'Flat pay spreads read as <b>intended</b>, not a failure to reward top performers.' },
       { v: "moderate", t: "Some gap", d: "Strong performers paid a bit more", se: 'We’ll expect a <b>moderate</b> spread and read your spreads against that.' },
-      { v: "strong", t: "Big gap", d: "Top performers paid well above", se: 'Wide pay spreads read as <span class="se-pill green">on aim</span> — strong differentiation is the design.' } ] },
+      { v: "strong", t: "Big gap", d: "Top performers paid well above", se: 'Wide pay spreads read as <span class="se-pill green">on strategy</span> — strong differentiation is the design.' } ] },
   transparency: { q: "How openly do you share pay information inside the company?",
     stops: [
       { v: "closed", t: "Private", d: "Pay isn’t shared", se: 'We’ll treat open-pay practices as <b>optional</b> for you, not expected.' },
@@ -41,7 +41,7 @@ const SCALE = {
     stops: [
       { v: "statutory", t: "Legal minimum", d: "What the law requires", se: 'We’ll hold you to the <b>statutory</b> floor — extra spend reads as discretionary.' },
       { v: "market", t: "In line", d: "Around the same as peers", se: 'We’ll read you against the <b>market norm</b> for family benefits.' },
-      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on aim</span> — intended, not overspend.' } ] },
+      { v: "over", t: "Generous", d: "More than most peers offer", se: 'A generous family position reads as <span class="se-pill green">on strategy</span> — intended, not overspend.' } ] },
   budget: { q: "Which way is your pay and reward budget heading?",
     stops: [
       { v: "investing", t: "Investing", d: "More to spend" }, { v: "flat", t: "Flat", d: "Holding the line" },
@@ -354,9 +354,9 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
   const aimRead = (d) => {
     // the server's alignment (positions.py _market_target) is the single source of truth
     const al = d.target.alignment;
-    if (al === "on_target") return { t: "On aim", cls: "ok" };
-    if (al === "ahead") return { t: "Ahead of aim", cls: "ahead" };
-    if (al === "behind") return { t: "Behind aim", cls: "behind" };
+    if (al === "on_target") return { t: "On strategy", cls: "ok" };
+    if (al === "ahead") return { t: "Above strategy", cls: "ahead" };
+    if (al === "behind") return { t: "Below strategy", cls: "behind" };
     return { t: "—", cls: "" };
   };
   const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
@@ -399,10 +399,10 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
         </section>` : doms.length ? html`
         <section class="sd-sec" style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
-            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off aim" : "all " + doms.length + " areas on aim"} · live · ${defCut && defCut !== "all" ? "vs your default peer group" : "vs all peers"}</span></div>
-          <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your aim; the dot is where you actually land. Inside the band is on aim.</p>
+            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off strategy" : "all " + doms.length + " areas on strategy"} · live · ${defCut && defCut !== "all" ? "vs your default peer group" : "vs all peers"}</span></div>
+          <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your strategy; the dot is where you actually land. Inside the band is on strategy.</p>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
-            <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your aim <span class="sd-mark actual"></span> your position</span>
+            <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
             <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
             <span></span>
           </div>

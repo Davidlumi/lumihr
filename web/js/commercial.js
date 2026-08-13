@@ -206,7 +206,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
     (p.gap_register_top || []).forEach(r => lines.push(["practice gap", r.name, r.superpower, "", r.your_status,
       "", "", "", "", "", "", r.n, "peer adoption " + r.peer_adoption_pct + "%"].map(esc).join(",")));
     if (p.strategy_alignment && (p.strategy_alignment.domains || []).length) {
-      const AW = { on_target: "on aim", ahead: "ahead of aim", behind: "behind aim" };
+      const AW = { on_target: "on strategy", ahead: "above strategy", behind: "below strategy" };
       p.strategy_alignment.domains.forEach(d => lines.push(["strategy alignment", d.name, "", "", "",
         "", "", "", "", "", "", "",
         ("aim " + (d.aim || "—") + (d.aim_is_override ? " (area aim)" : "") + " · position " + (d.position || "—")
@@ -230,7 +230,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   // asymmetric scale) on the same page that says "lumi never judges the strategy
   // itself". Render the navy .align-chip (app.css:2869 — the in-app AlignmentChip's
   // carrier) for all three states so the pack matches the dashboard's own read.
-  const ALIGN_WORD = { on_target: "on aim", ahead: "ahead of aim", behind: "behind aim" };
+  const ALIGN_WORD = { on_target: "on strategy", ahead: "above strategy", behind: "below strategy" };
   const toc = [["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"]]
     .concat(hasStrat ? [["Strategy alignment", "4"]] : [])
     .concat([["What closing the gaps is worth", String(PN.money)], ["What to watch", String(PN.watch)],

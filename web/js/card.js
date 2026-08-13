@@ -379,10 +379,10 @@ function meaningLines(c, pos) {
   if (aim) {
     const verb = STANCE_VERB[aim.stance] || ("aim " + aim.stance);
     base += aim.alignment === "behind"
-      ? ` Set against your aim to ${verb} on ${aim.domain}, this sits behind your plan.`
+      ? ` Set against your aim to ${verb} on ${aim.domain}, this sits below your strategy.`
       : aim.alignment === "ahead"
-      ? ` That's ahead of your aim to ${verb} on ${aim.domain} — more than your strategy asks for.`
-      : ` That's on plan for your aim to ${verb} on ${aim.domain}.`;
+      ? ` That's above your aim to ${verb} on ${aim.domain} — more than your strategy asks for.`
+      : ` That's on strategy for your aim to ${verb} on ${aim.domain}.`;
   }
   return base;
 }

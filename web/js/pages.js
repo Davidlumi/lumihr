@@ -638,10 +638,10 @@ function proportionalNeedleRot(market) {
 // declared target — an above-market member who AIMED there is on target, not flagged.
 const STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
 function targetCopy(t) {
-  const w = STANCE_WORD[t.stance] || "your aim";
-  if (t.alignment === "on_target") return "On aim — you aim to sit " + w;
-  if (t.alignment === "ahead") return "Ahead of strategy — you aim to sit " + w;
-  return "Behind strategy — you aim to sit " + w;
+  const w = STANCE_WORD[t.stance] || "your strategy";
+  if (t.alignment === "on_target") return "On strategy — you aim to sit " + w;
+  if (t.alignment === "ahead") return "Above strategy — you aim to sit " + w;
+  return "Below strategy — you aim to sit " + w;
 }
 // ---- market-position colour code. After the RAG/strategy separation sweep (2026-06-27, see
 // DECISIONS), POSITION is one fixed colour language everywhere: marketTone maps below=amber /
@@ -687,16 +687,31 @@ const MKT_VCLS = { green: "v-at", red: "v-above", redover: "v-above-over", amber
 // behind vs ahead, which the old attainment colour could not (it lumped both as amber); the
 // full sentence (targetCopy) rides as the title. DORMANT in Phase B: defined here, wired onto
 // NO surface yet — the gauge / tiles / spectrum / category-hero revert passes adopt it.
-const ALIGN_LABEL = { on_target: "On aim", behind: "Behind aim", ahead: "Ahead of aim" };
+const ALIGN_LABEL = { on_target: "On strategy", behind: "Below strategy", ahead: "Above strategy" };
 // Compact tile chip: the state WORD alone — the full "… strategy" phrase overflows the tile's
 // own-row even at the 11px type floor (David 2026-06-27). "strategy" is implied by the navy
 // align-row context; the full phrase still rides the tooltip (targetCopy) + the gauge & hero chips.
-const ALIGN_LABEL_SHORT = { on_target: "On", behind: "Behind", ahead: "Ahead" };
+const ALIGN_LABEL_SHORT = { on_target: "On", behind: "Below", ahead: "Above" };
+// The strategy GLYPH (System A, David 2026-08-13): a mini of the strategy spectrum — a
+// track with the aim zone shaded in the middle and a navy dot placed by alignment
+// (below=left / on=centre-in-zone / above=right). Neutral by design (no up/down = good/
+// bad), reads with NO word, and scales into the narrow domain column + compact tiles.
+// This is the icon that lets us drop the word "aim" everywhere it wouldn't fit.
+const SG_DOT = { behind: 9, on_target: 23, ahead: 37 };
+function StrategyGlyph({ alignment, w = 30 }) {
+  const cx = SG_DOT[alignment];
+  if (cx == null) return null;
+  const off = alignment !== "on_target";
+  return html`<svg class=${"sglyph sglyph-" + alignment} width=${w} height=${Math.round(w * 20 / 46)} viewBox="0 0 46 20" aria-hidden="true">
+    <rect class="sg-track" x="3" y="8" width="40" height="4" rx="2" />
+    <rect class="sg-zone" x="17" y="8" width="12" height="4" rx="2" />
+    ${off ? html`<circle class=${"sg-halo sg-halo-" + alignment} cx=${cx} cy="10" r="4.5" />` : ""}
+    <circle class=${"sg-dot sg-dot-" + alignment} cx=${cx} cy="10" r="4.5" /></svg>`;
+}
 function AlignmentChip({ target, compact }) {
   if (!target || !ALIGN_LABEL[target.alignment]) return null;
-  const label = (compact ? ALIGN_LABEL_SHORT : ALIGN_LABEL)[target.alignment];
   return html`<span class=${"align-chip align-" + target.alignment + (compact ? " align-chip-sm" : "")}
-    title=${targetCopy(target)}><${Icon} name="target" size=${compact ? 11 : 12} /> ${label}</span>`;
+    title=${targetCopy(target)}><${StrategyGlyph} alignment=${target.alignment} w=${compact ? 24 : 28} />${compact ? "" : html` ${ALIGN_LABEL[target.alignment]}`}</span>`;
 }
 // The DomainInstrument's strategy channel (David 2026-07-09): the same navy AlignmentChip data,
 // collapsed to ONE glyph per row so the wide RAG bar owns the row. NAVY only (never RAG hues) and
@@ -706,12 +721,11 @@ function AlignmentChip({ target, compact }) {
 // pure RAG position with zero strategy indicators (on==off parity holds). Full read rides the row
 // aria-label + this title; the glyph is decorative.
 const STRAT_GLYPH = { on_target: { cls: "on", icon: "check" }, behind: { cls: "off", icon: "arrow-down" }, ahead: { cls: "off", icon: "arrow-up" } };
-const STRAT_CLAUSE = { on_target: "On aim — where you mean to be.", behind: "Behind aim — short of where you mean to be.", ahead: "Ahead of aim — past where you mean to be." };
+const STRAT_CLAUSE = { on_target: "On strategy — where you mean to be.", behind: "Below strategy — short of where you mean to be.", ahead: "Above strategy — past where you mean to be." };
 function StrategyMark({ target }) {
-  const g = target && STRAT_GLYPH[target.alignment];
-  if (!g) return null;
-  return html`<span class=${"di-smark di-smark-" + g.cls} title=${targetCopy(target)} aria-hidden="true">
-    <${Icon} name=${g.icon} size=${13} strokeWidth=${2.4} /></span>`;
+  if (!target || SG_DOT[target.alignment] == null) return null;
+  return html`<span class="di-smark" title=${targetCopy(target)} aria-hidden="true">
+    <${StrategyGlyph} alignment=${target.alignment} w=${52} /></span>`;
 }
 
 // Shared "market spectrum" marker chart — the proportional below/on/above blocks
@@ -758,9 +772,9 @@ function MarketSpectrum({ market, aim }) {
   return html`
     <div class="arc-stage spectrum-stage">
       <svg viewBox="0 0 280 108" class="spectrum-svg" role="img"
-        aria-label=${"Of " + pool + " comparable readings, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your aim zone" : "") + "."}>
+        aria-label=${"Of " + pool + " comparable readings, " + market.below + " below market, " + market.at + " on market, " + market.above + " above — overall " + word + (aimMid != null ? ", read against your strategy zone" : "") + "."}>
         ${aimMid != null ? html`<g>
-          <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--navy)">your aim</text>
+          <text x=${aimMid.toFixed(1)} y="19" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--navy)">your strategy</text>
           <path d=${"M " + (aimX0 + 1).toFixed(1) + " 33 L " + (aimX0 + 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 27 L " + (aimX1 - 1).toFixed(1) + " 33"} fill="none" stroke="var(--navy)" stroke-width="1.5"/>
           <line x1=${(aimX0 + 1).toFixed(1)} y1="33" x2=${(aimX0 + 1).toFixed(1)} y2=${SPY - 2} stroke="var(--navy)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
           <line x1=${(aimX1 - 1).toFixed(1)} y1="33" x2=${(aimX1 - 1).toFixed(1)} y2=${SPY - 2} stroke="var(--navy)" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
@@ -990,7 +1004,7 @@ function OverallArc({ market, approach, pending, pct, orgKey, stratOff, absentDi
       })()}
       ${!market.target && !stratOff ? html`
         <button class="arc-target arc-target-unset" onClick=${() => nav("/strategy")}
-          title="Set your market-position stance so lumi reads this against your aim, not a generic flag.">
+          title="Set your market-position stance so lumi reads this against your strategy, not a generic flag.">
           <${Icon} name="target" size=${13} /><span>Set your reward strategy</span>
         </button>` : null}
     </div>`;
@@ -1187,8 +1201,8 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
   const withTarget = practice ? [] : doms.filter(d => d.target && ALIGN_LABEL[d.target.alignment]);
   const offAim = withTarget.filter(d => d.target.alignment !== "on_target").length;
   const stratSum = (pending || !withTarget.length) ? null
-    : offAim === 0 ? "Strategy · all " + withTarget.length + " on aim"
-    : "Strategy · " + offAim + " off aim";
+    : offAim === 0 ? "All " + withTarget.length + " on strategy"
+    : offAim + " off strategy";
   return html`
     <div class="card dom-instr">
       <div class="card-spot" aria-hidden="true"></div>
@@ -1245,7 +1259,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
               no domain has a live signal; AIM hides when strategy renders no ticks (stratSum
               null, e.g. strategy off) — a header must never float over an empty column. */ ""}
         <span class="di-cell di-scentcol di-colhead">${pending || !Object.values(sigCounts || {}).some(v => v > 0) ? null : "Signals"}</span>
-        <span class="di-cell di-chipcol di-colhead">${pending || practice || !stratSum ? null : "Aim"}</span>
+        <span class="di-cell di-chipcol di-colhead">${pending || practice || !stratSum ? null : "Strategy"}</span>
         <span class="di-cell di-chev"></span>
       </div>
       <div class="di-rows di-rows-anim" key=${practice ? "practice" : barMode}>
@@ -1491,7 +1505,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
             to your aim") — same truth, one clause fewer; the founder's posture clause stays. */ ""}
       ${!locked && shown.length > 0 ? html`<div class="sig-ranknote num">${(domainFilter
         ? domainLabel(domainFilter) + " · " + shown.length + " of " + total + " · "
-        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? (objective ? "ordered for " + objective.toLowerCase() : "ranked by gap to your aim") : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
+        : (total > shown.length ? "top " + shown.length + " of " + total + " · " : "")) + (view === "practice" ? "ranked by rarity" : (stratOn ? (objective ? "ordered for " + objective.toLowerCase() : "ranked by gap to your strategy") : "ranked by market gap")) + " · we flag, you decide"}</div>` : null}
       ${locked ? html`
         <div class="insight-lock" style=${{ marginTop: "var(--s2)", flex: 1 }}>
           <div class="blurred" aria-hidden="true">
@@ -3009,7 +3023,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
               onClick=${() => onPref && onPref("_overview", { ..._ovp, apply_strategy: !applyStrat })}
               title=${applyStrat
-                ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your aim. Click for the absolute market view."
+                ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your strategy. Click for the absolute market view."
                 : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
               <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
               <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>

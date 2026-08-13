@@ -17801,3 +17801,36 @@ terminology ruling), cut-label prose voice ~200 sentences (David), Cookie Policy
 status (legal), dark mode (product), demo-org residue (David's sales surface), comparepill
 vocabulary refactor, retry/loading/confirm pattern campaigns, writes-on-GET races, pulse-list
 perf, engine floors 86/88 (rulings). DISPROVED: 3 findings (stale-ref phantom class).
+
+## 2026-08-13 — Strategy alignment: "aim" vocabulary retired → "on/below/above strategy" + RAG band-dot glyph (v=584)
+
+DAVID: "i do not like on aim etc." → picked "strategy" wording, then "add colour to the dots
+rag and maybe some animation — needs more space and more prominent even if it means reducing
+the bars".
+
+VOCABULARY: the whole "aim" status family is gone. on_target/behind/ahead now render "On
+strategy / Below strategy / Above strategy" (ALIGN_LABEL, STRAT_CLAUSE, targetCopy, the
+Position-by-domain aggregate "N off strategy", the strategy page's "N of 8 areas off strategy"
++ band legend "your strategy", card.js meaning lines, commercial.js board-pack words, the
+strategy.js se-pills, and the "your aim"→"your strategy" axis/sort/tooltip labels). The verb
+"you aim to sit …" stays (natural). The domain column header "AIM"→"STRATEGY". The signals-row
+"On plan" pills were left as-is (separate surface, David didn't flag them).
+
+GLYPH (new StrategyGlyph, System A of 4 mocked): a mini of the strategy spectrum — a track with
+the aim zone shaded, a dot placed by alignment (below=left / on=centre / above=right). Replaces
+the old check/↓/↑ in the domain column AND rides beside the word in the AlignmentChip (glyph+word
+wide, glyph-only on compact tiles). Lets us drop the word entirely where it won't fit.
+
+**DOCTRINE REVERSAL (logged honestly):** the strategy channel was deliberately NAVY-only and
+colour-free to stay separate from the market-position RAG (see [[rag-only-design-doctrine]]).
+David has now ELECTED to colour the strategy dots RAG: on=green (--favourable), below=amber
+(--amber-bright), above=red (--unfavourable). Off-strategy dots also get a pulsing halo +
+pop-in animation (reduced-motion honoured) for prominence, and the column widened 40→76px
+(the 1fr bar yields the space). This merges the two colour languages by intent — flagged to
+David, done at his direction. NOT gate-enforced (the "parity/canary" gates are DB-pairing +
+band-sum math, not chip colour), so nothing breaks; the market-position RAG is untouched.
+
+Frontend-only (pages/card/commercial/strategy .js + app.css). Gates NOT run — no server/data/
+engine change, and the suite restarts the :8060 dev server David is actively using. Verified on
+a Thornbridge rig: overview RAG glyphs render (7 green centred + 1 red-right pulsing = "1 off
+strategy"), strategy page reads "on/off strategy", zero relevant console errors.
