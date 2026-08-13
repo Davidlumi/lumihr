@@ -17915,3 +17915,13 @@ below→1 card, draggable=false while filtered. PULSE topic filter DELIBERATELY 
 list is only ever a few pulses, so a filter would be more chrome than value. Vocabulary/persistence
 sweep also deferred (the load-bearing filters now persist; residual is cosmetic). Filter arc CLOSED:
 one shared facet grammar across grid, category, Signals and dashboards.
+
+## 2026-08-13 — Filter bar tidy (v=590): drop Type facet + "No reading yet", loosen spacing
+
+David: "why does Market have a category no reading yet? what is the point of the type filter... spacing
+looks cramped." (a) Removed "No reading yet" from the Market menu — it meant neither-market-nor-practice,
+misfiled under a market-position header; the "N not yet rated" header count already surfaces it. (b) Removed
+the Type facet (Metrics/Practices/Policies/Benefits) — low-value axis and its "Practices" collided with the
+Practice facet; the grid's own domain sections are the natural grouping. Card FilterBar now: Signal · Market ·
+Practice · Strategy. (c) Spacing: .filterbar gap s2→s3 (8→12px), padding s3→s4 top, facet padding + gap up.
+applyCardFilters still handles f.type/f.none (harmless, just no UI). Gates 14/14; verified on a rig.

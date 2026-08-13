@@ -2667,24 +2667,20 @@ function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
   const togMulti = (key, k) => on({ [key]: f[key].includes(k) ? f[key].filter(x => x !== k) : [...f[key], k] });
   const togPos = k => on({ prev: [], none: false, pos: f.pos.includes(k) ? f.pos.filter(x => x !== k) : [...f.pos, k] });
   const togPrev = k => on({ pos: [], none: false, prev: f.prev.includes(k) ? f.prev.filter(x => x !== k) : [...f.prev, k] });
-  const noneN = T.filter(c => !fbBand(c) && !fbPrev(c)).length;
 
   const facets = [];
   const sigDefs = withN(FB_SIG_DEF, c => fbSig(c, sigMap));
   if (sigDefs.length) facets.push({ key: "sig", lab: "Signal", title: "Signal", count: f.sig.length,
     items: sigDefs.map(d => ({ ...d, sel: f.sig.includes(d.k), onClick: () => togMulti("sig", d.k) })) });
   const posItems = withN(FB_POS_DEF, fbBand).map(d => ({ ...d, dot: FB_DOT[d.k], sel: f.pos.includes(d.k), onClick: () => togPos(d.k) }));
-  if (noneN) posItems.push({ k: "__none", lab: "No reading yet", n: noneN, sep: true, sel: f.none, onClick: () => on({ pos: [], prev: [], none: !f.none }) });
-  if (posItems.length) facets.push({ key: "pos", lab: "Market", title: "Market position", count: f.pos.length + (f.none ? 1 : 0), items: posItems });
+  if (posItems.length) facets.push({ key: "pos", lab: "Market", title: "Market position", count: f.pos.length, items: posItems });
   const prevDefs = withN(FB_PREV_DEF, fbPrev);
   if (prevDefs.length) facets.push({ key: "prev", lab: "Practice", title: "Practice", count: f.prev.length,
     items: prevDefs.map(d => ({ ...d, lab: (prevStates && prevStates[d.st]) || d.lab, dot: "practice", sel: f.prev.includes(d.k), onClick: () => togPrev(d.k) })) });
   const stratDefs = stratOn ? withN(FB_STRAT_DEF, fbStrat) : [];
   if (stratDefs.length) facets.push({ key: "strat", lab: "Strategy", title: "Strategy alignment", count: f.strat.length,
     items: stratDefs.map(d => ({ ...d, glyph: true, sel: f.strat.includes(d.k), onClick: () => togMulti("strat", d.k) })) });
-  facets.push({ key: "type", lab: "Type", title: "Metric type", count: f.type ? 1 : 0, radio: true,
-    items: FB_TYPE_DEF.map(d => ({ ...d, sel: f.type === d.k, onClick: () => on({ type: f.type === d.k ? "" : d.k }) })) });
-  const anyActive = f.pos.length || f.prev.length || f.none || f.sig.length || f.strat.length || f.type;
+  const anyActive = f.pos.length || f.prev.length || f.sig.length || f.strat.length;
 
   return html`<${FacetMenus} facets=${facets} anyActive=${anyActive} onClear=${() => on(FB_EMPTY())} />`;
 }
