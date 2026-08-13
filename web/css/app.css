@@ -1109,7 +1109,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 /* the full-width CONTEXT TOOLBAR (spatial restructure 2026-07-12): peer context left, view
    lenses right — space-between lets the row's width breathe instead of piling everything at
    one edge. Capsule/chip keep the masthead's 36px control height here. */
-.ov-controls { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
+.ov-controls { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }   /* s5→s4 2026-08-13 (home-height trim: tighten the gap above the hero) */
 .ov-ctx { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; min-width: 0; }
 .ov-ctx .peerbar { gap: var(--s2); }
 .ov-ctx .conf-chip, .ov-ctx .peerbar-pill { height: 36px; box-sizing: border-box; }
@@ -1158,7 +1158,7 @@ table.matrix-grid tbody tr:nth-child(even) td { background: transparent; }
 .cat-tile-practice .catp-bar-fill { height: 100%; background: var(--differs); border-radius: var(--radius-2xs); transition: width var(--dur-fast) ease; }
 .cat-tile-practice .cat-differ { margin-top: var(--s2); }
 /* Hero gauge (2026-06-13 rebuild) — instrument, not segments */
-.arc-card { padding: var(--s5) var(--s5) var(--s4); display: flex; flex-direction: column;   /* 2026-07-09 polish: insets past the radius */
+.arc-card { padding: var(--s4) var(--s5) var(--s4); display: flex; flex-direction: column;   /* 2026-07-09 polish: insets past the radius; top s5→s4 2026-08-13 (home-height trim) */
   position: relative; }
 .arc-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; border-radius: var(--radius) var(--radius) 0 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); pointer-events: none; }
@@ -4036,7 +4036,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
    position indicator (soft gauge fills + counts, zero P-anything); strategy rides a SEPARATE
    navy channel (the target glyph), never recolouring position. The percentile-ruler CSS it
    replaced (dots, zones, mid-line, word axis, slide anim) is retired. */
-.dom-instr { display: flex; flex-direction: column; padding: var(--s5) var(--s5) var(--s4); }
+.dom-instr { display: flex; flex-direction: column; padding: var(--s4) var(--s5) var(--s3); }   /* top s5→s4, bottom s4→s3 2026-08-13 (home-height trim) */
 .di-standfirst { font-size: var(--fs-label); color: var(--ink-soft); line-height: 1.5;
   margin: var(--s1) 0 var(--s3); max-width: 68ch; }
 .di-standfirst-pending { color: var(--ink-soft); }
@@ -4058,7 +4058,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 /* 44px pitch (2026-07-09 polish): air between hover pills + WCAG 2.5.8 tap target. Dividers are
    inset ::before rules (not border-top) so every rule in the card shares ONE width — the old
    full-bleed row borders sat 8px wider per side than the card-head rule, the most visible slip. */
-.di-row { min-height: 56px; padding: var(--s2) var(--s2); margin: 0 calc(-1 * var(--s2));   /* 44→56 (2026-08-11): the home lost its two lower sections, so the domain rows get more vertical room */
+.di-row { min-height: 48px; padding: var(--s2) var(--s2); margin: 0 calc(-1 * var(--s2));   /* 56→48 (2026-08-13, David "home too tall/cutting off"): partial walk-back of the 44→56 space-fill; 9 domains × 8px reclaims the overflow while two-line labels still get their natural height (min-height, not fixed) */
   position: relative; cursor: pointer;
   border-radius: var(--radius-sm); transition: background var(--dur-fast) ease; }
 .di-row + .di-row::before { content: ""; position: absolute; top: 0; left: var(--s2); right: var(--s2);
