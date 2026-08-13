@@ -17903,3 +17903,15 @@ made honest when they hide results. Verified on a rig: Save-lens → 8 (matches 
 strategy menu renders glyphs, grid unaffected by the FacetMenus extraction, zero console errors.
 Filter arc now: shared model + apply (P1), grid + category (P2), facet-menu redesign, Signals (P3).
 Remaining P4: My-dashboards card filter, Pulse topic filter, wider vocabulary/persistence sweep.
+
+## 2026-08-13 — Filter unification Phase 4: My-dashboards card filter (v=589)
+
+The shared FilterBar + applyCardFilters drop straight onto My dashboards (pinned cards are the same
+BenchmarkCard objects). Bar shows only when a dashboard has ≥4 cards; filtering HIDES non-matching
+cards and turns drag-reorder OFF while active (slot-index reorder is meaningless on a filtered subset);
+an empty-state with Clear when nothing matches. Strategy facet self-hides (dashboard cards carry no
+domain_aim). Verified on a rig (padded a throwaway dashboard to 8): Market menu below1/on3/above2,
+below→1 card, draggable=false while filtered. PULSE topic filter DELIBERATELY SKIPPED — the community
+list is only ever a few pulses, so a filter would be more chrome than value. Vocabulary/persistence
+sweep also deferred (the load-bearing filters now persist; residual is cosmetic). Filter arc CLOSED:
+one shared facet grammar across grid, category, Signals and dashboards.

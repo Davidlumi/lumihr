@@ -3164,6 +3164,8 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
   // hidden on this page). Defaults to all-peers until the user picks a sample for the dashboard.
   const [activeCut, setActiveCut] = useState({ dim: "all", value: null });
   const [cards, setCards] = useState({});
+  const [dashF, setDashFRaw] = useState(FB_EMPTY());   // Phase 4 — filter the pinned cards with the shared bar
+  const onDashF = patch => setDashFRaw(prev => ({ ...prev, ...patch }));
   const [drag, setDrag] = useState(null);
   const [sigMap, setSigMap] = useState({});
   const [renaming, setRenaming] = useState(false);
@@ -3375,6 +3377,11 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
     document.title = t;
   };
   const onlyOne = list.length <= 1;
+  // Phase 4 — filter the pinned cards with the shared FilterBar/applyCardFilters. Drag-reorder uses slot
+  // indices, so we hide non-matching cards visually and turn dragging OFF while a filter is active.
+  const _layoutCards = (layout || []).map(slot => cards[cardKey(slot)]).filter(c => c && !c.error);
+  const _dashMatch = new Set(applyCardFilters(_layoutCards, dashF, sigMap).map(c => c.id));
+  const dashFilterActive = !!(dashF.pos.length || dashF.prev.length || dashF.none || dashF.sig.length || dashF.strat.length || dashF.type);
 
   return html`
     <div>
@@ -3450,12 +3457,17 @@ window.DashboardsPage = function ({ me, cut, cuts, prefs, onPref, setPinned, onC
         body="Use the pin icon on any benchmark card — it lands here."
         action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Browse the benchmark</button>`} />`}
 
+      ${_layoutCards.length >= 4 ? html`<${FilterBar} f=${dashF} on=${onDashF} cards=${_layoutCards} sigMap=${sigMap}
+        stratOn=${((prefs && prefs._overview) || {}).apply_strategy !== false} />` : null}
+      ${dashFilterActive && !_dashMatch.size ? html`<${EmptyState} title="No pinned cards match these filters"
+        action=${html`<button class="btn small" onClick=${() => setDashFRaw(FB_EMPTY())}>Clear filters</button>`} />` : null}
       <div id="dash-reorder-live" class="sr-only" aria-live="polite"></div>
       <div class=${"bench-grid" + (busy ? " is-busy" : "")}>
         ${layout.map((slot, i) => {
           const c = cards[cardKey(slot)];
+          if (dashFilterActive && c && !c.error && !_dashMatch.has(c.id)) return null;
           return html`
-          <div key=${slotKey(slot)} draggable="true" class=${drag === i ? "dragging" : ""}
+          <div key=${slotKey(slot)} draggable=${!dashFilterActive} class=${drag === i ? "dragging" : ""}
             onDragStart=${() => setDrag(i)} onDragOver=${e => e.preventDefault()} onDrop=${() => onDrop(i)}
             style=${slot.size === 2 ? { gridColumn: "span 2" } : null}>
             ${!c ? html`<${SkeletonCard} />` :
