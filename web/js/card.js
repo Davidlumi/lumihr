@@ -381,7 +381,7 @@ function meaningLines(c, pos) {
     base += aim.alignment === "behind"
       ? ` Set against your aim to ${verb} on ${aim.domain}, this sits behind your plan.`
       : aim.alignment === "ahead"
-      ? ` That's ahead of your aim to ${verb} on ${aim.domain} — more than your strategy asks for here.`
+      ? ` That's ahead of your aim to ${verb} on ${aim.domain} — more than your strategy asks for.`
       : ` That's on plan for your aim to ${verb} on ${aim.domain}.`;
   }
   return base;

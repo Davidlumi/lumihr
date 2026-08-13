@@ -2291,7 +2291,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const navyFooter = html`
     <div class="brf-navy">
       <div class="brf-navy-reg"><${Icon} name="table" size=${15} />
-        <span><b>Full gap register</b> — every metric against the market, not just those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
+        <span><b>Full gap register</b> — every metric against the market, not only those flagged. <a href="#/priorities">Open the register</a>${me.user && me.user.role === "admin" ? html` · <a href=${"/api/gap-register.csv?" + cutQS(sigCut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(sigCut, cuts) + ".")}>Download CSV</a>` : null}</span>
       </div>
       <div class="brf-life"><span class="brf-life-note">Snooze and Dismiss file signals into their folders — <b>nothing is deleted</b>.</span></div>
     </div>`;
@@ -2663,7 +2663,7 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
             <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
             ${/* "peer group: …" dropped 2026-07-07 — it duplicated the "Comparing against"
                   peer bar directly above this header (declutter). */ ""}
-            <div class="caption meta">${cards.length} benchmarks${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
+            <div class="caption meta">${cards.length} metrics${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
         <div class="controls" style=${{ alignItems: "flex-start" }}>
@@ -3498,7 +3498,8 @@ window.YourDataPage = function ({ me }) {
       <div class="skel" style=${{ height: "120px", marginBottom: "var(--s4)", borderRadius: "var(--radius)" }}></div>
       <${SkeletonGrid} count=${4} />
     </div>`;
-  if (data.error) return html`<${EmptyState} title="Couldn't load your data"
+  if (data.error) return html`<${EmptyState} tone="error" icon="info" title="Couldn't load your data"
+    body="Nothing is lost — your answers are safe. Try again in a moment."
     action=${html`<button class="btn small primary" onClick=${() => setYdRetry(k => k + 1)}>Retry</button>`} />`;
   const c = data.contribution || {};
   const canEdit = me && (me.user.role === "admin" || me.user.role === "contributor");
@@ -3555,7 +3556,10 @@ window.YourDataPage = function ({ me }) {
                 </div></div>`}
           ${fresh && canEdit && html`<button class="btn primary data-start" onClick=${() => nav(cta.to)}><${Icon} name="pencil" size=${14} /> ${cta.label}</button>`}
           ${fresh && canEdit && html`<p class="caption data-hero-reassure">Autosaved as you go · private to your organisation · resume any time.</p>`}
-          ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">Review & submit your data →</a>`}
+          ${!fresh && canEdit && !gated && html`<a class="data-review-link" href="#/your-data/review">${
+            (c.insights_unlocked && !(c.pending_changes > 0) && c.basis_answered < c.basis_total)
+              ? `Finish the remaining ${c.basis_total - c.basis_answered} question${c.basis_total - c.basis_answered === 1 ? "" : "s"} →`
+              : "Review & submit your data →"}</a>`}
           ${c.reduced && html`
             <div class="data-access warn">
               <${Icon} name="shield" size=${13} />
@@ -3752,7 +3756,7 @@ window.HowLumiWorksPage = function ({ me, anchor }) {
         <div class="card how-card" id="market-position">
           <h3 class="section-title">Where you stand — your market position</h3>
           <p>For everything we measure, we compare your figure to the same measure across your peer group and place you in one of three positions: <b>below market</b> (under where most peers sit), <b>on market</b> (in line — we allow a sensible margin so tiny differences aren't treated as gaps), or <b>above market</b>. We do this measure by measure, roll it up for each area of reward, and bring it together into a single headline.</p>
-          <p><b>Two kinds of thing we measure.</b> Some measures have a going rate — pay, pension, holiday, bonus levels — so "below, on or above market" genuinely means something. Others are choices with no right answer — which share scheme you run, how you structure a benefit, how often you review pay. There's no rate to be under or over; you're simply doing it differently. We show where your choice sits — <b>common</b> (what most peers do), an <b>alternative</b> pattern, or a <b>rare</b> choice — a difference to be aware of, not a gap to close. That's why your headline won't match the total number of things we measure: only the market-rate measures feed it.</p>
+          <p><b>Two kinds of thing we measure.</b> Some measures have a going rate — pay, pension, holiday, bonus levels — so "below, on or above market" genuinely means something. Others are choices with no right answer — which share scheme you run, how you structure a benefit, how often you review pay. There's no rate to be under or over; you're doing it differently. We show where your choice sits — <b>common</b> (what most peers do), an <b>alternative</b> pattern, or a <b>rare</b> choice — a difference to be aware of, not a gap to close. That's why your headline won't match the total number of things we measure: only the market-rate measures feed it.</p>
           <p><b>Practices with more than one part.</b> Some choices are a set rather than a single
           answer — which benefits you offer, which allowances you pay. For these we look at the
           <b> market core</b>: the options at least half of your peer group offers. Offer the full core and
@@ -4013,10 +4017,12 @@ window.MetricTrend = function ({ qid }) {
   let xi = 0;
   const segs = t.segments.map(seg => seg.map(p => {
     const v = p.p50 != null ? p.p50 : p.modal_pct;
+    // a suppressed/null period is a GAP in the line, never a fake value-0 point
+    if (v == null) { xi += 1; return null; }
     const pt = { x: PAD + xi * xStep, y: H - 28 - ((v - lo) / span) * (H - 56), v, p };
     xi += 1;
     return pt;
-  }));
+  }).filter(Boolean)).filter(seg => seg.length);
   const lastPt = segs.length ? segs[segs.length - 1][segs[segs.length - 1].length - 1] : null;
   const trendAria = "Market median by period: " + pts.map(p => p.period + " " + fmtValue(p.p50 != null ? p.p50 : p.modal_pct, null)).join(", ")
     + "." + (t.breaks.length ? " " + t.breaks.length + " comparability reset" + (t.breaks.length === 1 ? "" : "s") + "." : "");
@@ -4069,12 +4075,16 @@ window.GovernancePage = function ({ me }) {
   if (!g) return html`<${PageLoading} />`;
   const addBacklog = async () => {
     if (!title.trim()) return;
-    await api("/api/governance/backlog", { method: "POST", body: { title } });
-    setTitle(""); refresh(); toast("Queued for a future release — the live core is unchanged.");
+    try {
+      await api("/api/governance/backlog", { method: "POST", body: { title } });
+      setTitle(""); refresh(); toast("Queued for a future release — the live core is unchanged.");
+    } catch (e) { toast(e.message || "Couldn't queue that — try again.", "error"); }
   };
   const ingest = async () => {
-    const r = await api("/api/governance/ingest-requests", { method: "POST", body: {} });
-    toast(r.ingested + " member request(s) pulled into the backlog."); refresh();
+    try {
+      const r = await api("/api/governance/ingest-requests", { method: "POST", body: {} });
+      toast(r.ingested + " member request(s) pulled into the backlog."); refresh();
+    } catch (e) { toast(e.message || "Couldn't pull requests — try again.", "error"); }
   };
   return html`
     <div style=${{ maxWidth: "880px" }}>

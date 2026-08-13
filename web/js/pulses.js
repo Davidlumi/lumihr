@@ -279,7 +279,7 @@ window.PulseDetailPage = function ({ me, pid }) {
             <div class="pulse-teaser">
               <div class="eyebrow" style=${{ marginBottom: "var(--s2)" }}>What this pulse asks · ${p.question_list.length} question${p.question_list.length === 1 ? "" : "s"}</div>
               <ul>${p.question_list.slice(0, 6).map((q, i) => html`<li key=${i}>${q.text}</li>`)}</ul>
-              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Cohort answers unlock once ${5}+ organisations have taken part.</div>
+              <div class="caption" style=${{ marginTop: "var(--s2)" }}>Answers unlock once ${5}+ organisations have taken part.</div>
             </div>` : null}
           ${editor ? html`<button class="btn primary" style=${{ marginTop: "var(--s3)" }} onClick=${join}>Join this pulse</button>` :
             html`<div class="caption" style=${{ marginTop: "var(--s3)" }}>Ask an Admin or Contributor on your team to join and answer.</div>`}
@@ -376,7 +376,7 @@ function PulseReport({ report, pid, me }) {
       <div class="pulse-pdf-head" aria-hidden="true"><span class="logo">lumi<span>.</span></span> · Pulse report</div>
       <div class="card">
         <div class="qsec-head row spread">
-          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · ${report.floor}+ suppression · whole-cohort view${genDate ? " · " + genDate : ""}</span></div>
+          <div><b>Pulse report</b> <span class="caption">· ${report.participants} organisations · ${report.floor}+ suppression · all participants, one view${genDate ? " · " + genDate : ""}</span></div>
           <div class="row no-print" style=${{ gap: "var(--s2)" }}>
             <button class="btn small" onClick=${() => downloadPulseCsv(report)}><${Icon} name="download" size=${13} /> CSV</button>
             <button class="btn small primary" onClick=${() => printPulse(report)}><${Icon} name="file-text" size=${13} /> Print / save as PDF</button>
@@ -419,9 +419,9 @@ function PulseQuestionBlock({ q, pid, me }) {
     <div class="q-block">
       <div style=${{ fontWeight: 600, marginBottom: "var(--s2)" }}>${q.title}</div>
       ${blk.suppressed ? html`
-        <div class="caption">Fewer than 5 cohort answers — protected, not shown.</div>` : html`
+        <div class="caption">Fewer than 5 participating organisations — protected, not shown.</div>` : html`
         <div>
-          ${blk.p50 != null && html`<div role="img" aria-label=${q.title + " — cohort median " + (blk.p50_display || blk.p50) + (youNum != null ? ", your answer " + youNum : "") + ", " + (blk.n || 0) + " organisations."}><${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} /></div>`}
+          ${blk.p50 != null && html`<div role="img" aria-label=${q.title + " — participant median " + (blk.p50_display || blk.p50) + (youNum != null ? ", your answer " + youNum : "") + ", " + (blk.n || 0) + " organisations."}><${PercentileBand} block=${blk} you=${youNum} unit=${q.unit} favourable=${null} /></div>`}
           ${blk.options && (q.type === "multi_select"
             ? html`<${OptionBars} options=${blk.options} youLabels=${youLabels} />`
             : html`<${OrderedDist} options=${blk.options} youLabels=${youLabels} fav=${fav} />`)}
@@ -606,6 +606,17 @@ function PulseComposer({ initial, isNew, busy, onSubmit, onSubmitReview, onDisca
   const valid = () => {
     if (!name.trim()) { toast("Give your pulse a name.", "error"); return false; }
     if (!keep.length && !liveNew().length) { toast("Add at least one question.", "error"); return false; }
+    // select questions need real, distinct options — a zero-option "Pick one" saved
+    // fine and produced an unanswerable pulse (P3 sweep 2026-08-13)
+    for (const q of liveNew()) {
+      if (q.type === "single_select" || q.type === "multi_select") {
+        const opts = (q.options || []).map(o => (o || "").trim()).filter(Boolean);
+        if (opts.length < 2) { toast(`"${(q.text || "This question").slice(0, 40)}" needs at least two options.`, "error"); return false; }
+        if (new Set(opts.map(o => o.toLowerCase())).size !== opts.length) {
+          toast(`"${(q.text || "This question").slice(0, 40)}" has duplicate options.`, "error"); return false;
+        }
+      }
+    }
     return true;
   };
   const save = () => { if (valid()) onSubmit(buildBody(), false); };

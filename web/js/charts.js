@@ -263,8 +263,11 @@ window.OrderedDist = function ({ options, youLabels, showValues = true, width = 
   // with internal/edge whitespace differences).
   const normLbl = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
   const mine = new Set((youLabels || []).map(normLbl));
+  // same tall contract as OptionBars: a 12+ option scale must grow the card,
+  // not compress to microscopic rows inside the fixed chart box
+  const tall = usedH > H;
   return html`
-    <svg viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
+    <svg class=${tall ? "ob-tall" : ""} viewBox="0 0 ${W} ${usedH}" style=${{ width: "100%", display: "block" }}>
       <line x1=${railX} x2=${railX} y1=${rowH / 2} y2=${usedH - rowH / 2 - 2}
         stroke="var(--chart-axis)" stroke-width="1"/>
       ${opts.map((o, i) => {
@@ -357,7 +360,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
                 </td>
                 <td class=${"mn-num mn-youval" + (f === "good" ? " good" : f === "bad" ? " bad" : "")}>
                   ${you != null ? html`<b>${r.you.display}</b>` : html`<span class="caption">—</span>`}</td>
-                <td class="mn-num mn-pos">${r.you && r.you.percentile != null ? pLabel(r.you.percentile) : html`<span class="caption">—</span>`}</td>
+                <td class="mn-num mn-pos" title=${r.you && r.you.percentile != null ? "Your percentile at this level — P50 is the market median; lower means below more of the market." : undefined}>${r.you && r.you.percentile != null ? pLabel(r.you.percentile) : html`<span class="caption">—</span>`}</td>
               </tr>`;
           })}
         </tbody>

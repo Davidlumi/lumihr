@@ -409,7 +409,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           <div class="sd-exhibit">
             ${doms.map(d => { const r = aimRead(d); return html`
               <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
-                <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov">area aim</span>` : ""}</span>
+                <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov" title="This area has its own aim, set separately from your global stance.">refined aim</span>` : ""}</span>
                 <span class="sr-only">aim ${SD_STANCE[d.target.stance] || "not set"}, position ${d.position && d.position.verdict ? (d.position.verdict === "at" ? "on market" : d.position.verdict + " market") : "not read yet"}.</span>
                 <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} pctl=${d.position && d.position.depth_pctl} align=${d.target.alignment} />
                 <span class=${"sd-ex-read " + r.cls}>${r.t}</span>

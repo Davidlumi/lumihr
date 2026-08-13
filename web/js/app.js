@@ -853,7 +853,8 @@ window.PeerGroupsModal = function ({ onClose, onUse }) {
           <div class="field" style=${{ maxWidth: "360px" }}>
             <label>Group name</label>
             <input value=${name} autoFocus placeholder=${"e.g. UK mid-size manufacturers"}
-              onInput=${e => setName(e.target.value)} />
+              onInput=${e => setName(e.target.value)}
+              onKeyDown=${e => { if (e.key === "Enter" && !busy && name.trim() && Object.keys(criteria).length > 0) save(); }} />
           </div>
           <p class="caption" style=${{ margin: "0 0 var(--s2)" }}>Pick the facts a peer must match — several options in one row means “any of these”.</p>
           <div class="group-fields">

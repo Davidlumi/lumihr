@@ -734,7 +734,12 @@ function AdminPulseReviewsTab() {
   const decide = async (pid, decision) => {
     const a = act[pid] || {};
     const body = { decision, notes: a.notes || "" };
-    if (decision === "approve") body.fee_pence = Math.max(0, Math.round(parseFloat(a.feeGbp != null ? a.feeGbp : defGbp) * 100));
+    if (decision === "approve") {
+      const _fee = parseFloat(a.feeGbp != null ? a.feeGbp : defGbp);
+      // a cleared fee field parsed to NaN and shipped fee_pence: null (P3 sweep 2026-08-13)
+      if (!isFinite(_fee)) { toast("Enter a launch fee before approving.", "error"); return; }
+      body.fee_pence = Math.max(0, Math.round(_fee * 100));
+    }
     try { await api("/api/admin/pulses/" + pid + "/review", { method: "POST", body }); toast("Done."); clearA(pid); load(); }
     catch (e) { toast(e.message, "error"); }
   };

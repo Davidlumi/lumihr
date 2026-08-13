@@ -75,9 +75,9 @@ window.GapRegisterPage = function ({ me, cut, cuts, prefs, onPref }) {
           <select class="ctl" aria-label="Show gaps only or everything" value=${show} onChange=${e => setShow(e.target.value)}>
             <option value="gaps">Gaps only</option><option value="all">Everything</option>
           </select>
-          <a class="btn" href=${"/api/benchmark.csv?" + cutQS(cut)} download>Download data (CSV)</a>
+          <a class="btn" href=${"/api/benchmark.csv?" + cutQS(cut)} download onClick=${() => toast("Benchmark data downloading — " + cutLabelOf(cut, cuts) + ".")}>Download data (CSV)</a>
           ${me.user.role === "admin" && html`
-            <a class="btn" href=${"/api/gap-register.csv?" + cutQS(cut)} download>Download gap register (CSV)</a>`}
+            <a class="btn" href=${"/api/gap-register.csv?" + cutQS(cut)} download onClick=${() => toast("Gap register downloading — " + cutLabelOf(cut, cuts) + ".")}>Download gap register (CSV)</a>`}
         </div>
       </div>
 
@@ -1247,11 +1247,11 @@ window.SettingsPage = function ({ me, refreshMe, cuts, prefs, onPref }) {
 
         <div class="settings-stack">
           <div class="settings-group">Personal</div>
-          ${card("notifications", "Notifications", "Just you", true,
+          ${card("notifications", "Notifications", "Only you", true,
             html`When a flag appears, clears or shifts it reaches your bell and — if you opt in — an email digest.`,
             html`<${NotificationsSettings} />`)}
 
-          ${card("ai-insights", "AI insights", "Just you", true,
+          ${card("ai-insights", "AI insights", "Only you", true,
             html`AI-written interpretations of <b>your own benchmark figures</b> — a description of your data, not advice. On by default.`,
             html`
               <div class="set-row">
