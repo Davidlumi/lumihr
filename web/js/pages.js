@@ -1882,6 +1882,36 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
     </div>` : null}
   </span>`;
 }
+// Unified SAVE control (2026-08-13, David: "what's the difference between starred and saved to a folder?").
+// ONE save concept: the main button saves the signal (folderless, lands in Saved — same as the star);
+// the caret optionally files it straight into a named folder. Replaces the standalone "File to…" verb.
+function SigSaveMenu({ folders, onSave, onPick }) {
+  const [open, setOpen] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [nm, setNm] = useState("");
+  const ref = useRef(null);
+  useMenuClose(ref, open, setOpen);
+  const pick = name => { setOpen(false); setNaming(false); setNm(""); onPick(name); };
+  const commit = () => { const t = nm.trim(); if (t) pick(t); };
+  const opts = folders || [];
+  return html`<span class="brf-later-wrap brf-split" ref=${ref}>
+    <button type="button" class="brf-verb brf-split-main" onClick=${onSave} title="Save for later — lands in your Saved view"><${Icon} name="star" size=${12} /> Save</button>
+    <button type="button" class=${"brf-verb brf-split-caret" + (open ? " on" : "")} aria-haspopup="menu" aria-expanded=${open}
+      aria-label="Save into a folder" onClick=${() => { setOpen(o => !o); setNaming(false); setNm(""); }}><span class="sfold-caret" aria-hidden="true">▾</span></button>
+    ${open ? html`<div class="brf-menu" role="menu" ref=${el => { if (el && !naming && !el._f) { el._f = 1; const b = el.querySelector("button"); if (b) b.focus(); } }}>
+      <div class="brf-menu-lbl">Save into a folder…</div>
+      ${opts.map(f => html`<button key=${f} class="brf-menu-opt" role="menuitem" onClick=${() => pick(f)}>
+        <${Icon} name="folder" size=${12} /> ${f}</button>`)}
+      ${naming ? html`<div class="sfold-newrow">
+        <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${nm}
+          ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNm(e.target.value)}
+          onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
+        <button type="button" class="sfold-newgo" disabled=${!nm.trim()} onClick=${commit}>Add</button>
+      </div>` : html`<button class="brf-menu-opt" role="menuitem" onClick=${() => setNaming(true)}>
+        <${Icon} name="plus" size=${12} /> New folder…</button>`}
+    </div>` : null}
+  </span>`;
+}
 // small "…" on the ACTIVE folder pill — Rename / Delete, kept minimal (delete returns the
 // folder's signals to the plain feed; it never deletes a signal).
 function SigFolderOps({ name, onRename, onDelete }) {
@@ -2308,14 +2338,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs" onClick=${e => e.stopPropagation()}>
         ${v.kind === "all" ? html`
-          <${SigFolderMenu} label="File to…" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <${SigSaveMenu} folders=${folders} onSave=${() => fileIt(s)} onPick=${n => saveTo(s, n)} />
           <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
           <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
         : v.kind === "folder" ? html`
           <${SigFolderMenu} label="Move to…" folders=${folders} exclude=${v.name} onPick=${n => moveTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unfolder(s)}>Remove from folder</button>`
         : v.kind === "saved" ? html`
-          <${SigFolderMenu} label="File to folder…" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <${SigFolderMenu} label="Add to folder…" folders=${folders} onPick=${n => saveTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unsave(s)}>Remove from saved</button>`
         : v.kind === "snoozed" ? html`
           <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`

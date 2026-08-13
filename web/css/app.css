@@ -4492,6 +4492,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
    OVER the open menu (each card is its own stacking context via the entrance animation).
    Fix: anchor under the button's left edge + lift the OPEN card above its siblings. */
 .brf-later-wrap { position: relative; display: inline-flex; flex: none; }
+.brf-split { gap: 2px; align-items: center; }   /* unified Save control: [★ Save][▾] one tight unit */
+.brf-split-caret { padding-left: 2px; padding-right: 2px; }
+.brf-split-main svg { color: var(--ink-faint); }
+.brf-split-main:hover svg, .brf-split-caret.on svg { color: var(--navy); }
 .brf-menu { position: absolute; left: 0; right: auto; top: calc(100% + 4px); z-index: var(--z-popover); min-width: 158px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--s2); box-shadow: var(--shadow-pop); }

@@ -17955,3 +17955,14 @@ on a hairline strip (border-bottom + padding-bottom), so "views" sit above the l
 dropdowns) below it: two distinct control languages. Tightened .filterbar top padding s4→s2 (grid unaffected
 — its .sp-ctl-band overrides to 0). Pure CSS; gates not run (no server/data/JS change; would bounce the live
 dev server). Verified on a rig.
+
+## 2026-08-13 — Signals: unify "star/Saved" + "File to…" into one Save control (v=594)
+
+David: "what's the difference between starred and saved to a folder? why does it say file to?" — the two
+overlapped (both set status="saved"; a folder just adds an assign[sid] label; "File to…" was jargon and
+didn't read as a save, and the folderless quick-save was keyboard-only). New SigSaveMenu split button
+replaces the inbox "File to…": main [★ Save] = fileIt (folderless → Saved view, same as the star); the
+[▾] caret opens "Save into a folder… / New folder…" → saveTo. One mental model: save it, optionally file
+it. Saved-view verb "File to folder…"→"Add to folder…"; folder-view "Move to…" kept. Verified on a rig:
+Save files the signal (Inbox 66→65, "Saved for later" toast), caret menu lists folders + New folder.
+Gates 14/14.
