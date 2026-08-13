@@ -163,10 +163,17 @@ def _ordinal_stats(block, scale, org_label):
 
 def _matrix_depths(conn, qid, covered="Yes", snapshot=1):
     """{org_id -> depth} where depth = how many role levels are 'covered' for an
-    org. Raw per-org coverage (the per-level aggregate block can't give it)."""
+    org. Raw per-org coverage (the per-level aggregate block can't give it).
+    Cohort matches aggregate.load_answers: exited orgs out on day 0 (R6) and
+    incomplete submissions excluded — the bare-answers read let ghost peers into
+    this pool alone (pre-prod audit 2026-08-12). Suspension/deactivated_at stays
+    IN the pool by ruling (PH-PAY-1 §B) — do not add that filter."""
     orgs, yes = set(), {}
     for org, rid, val in conn.execute(
-            "SELECT org_id, matrix_row_id, value FROM answers WHERE question_id=? AND snapshot_id=?",
+            "SELECT a.org_id, a.matrix_row_id, a.value FROM answers a "
+            "JOIN orgs o ON o.org_id = a.org_id "
+            "WHERE a.question_id=? AND a.snapshot_id=? "
+            "AND o.exited_at IS NULL AND o.submission_complete=1",
             (qid, snapshot)):
         if not rid:
             continue
@@ -935,6 +942,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         s.setdefault("sig_id", s["question_id"])
         if not s.get("n"):
             s["n"] = _qid_n.get(s["question_id"])
+        if not s.get("n"):
+            # mechanisms that read blocks directly (prevalence, multi-prevalence,
+            # rarity, depth) have no position-pool item — fall back to the same
+            # sig-cut block n they gate on, so no signal ships without its sample
+            # size (pre-prod audit 2026-08-12: 7 of 67 rendered n-less)
+            s["n"] = (get_block(s["question_id"]) or {}).get("n")
         s["status"] = st.get(s["sig_id"])
         # market-position re-axis (spec §6.3): domain + position (below/on/above/
         # differs) + polarity, so the Signals page can chip-filter, group and colour

@@ -653,10 +653,15 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
                     False if status == "not_in_place" else None)
         adoption = None if is_suppressed(blk) else blk.get("adoption_pct")
         sector_adoption = None
+        sector_n = None
         if sector_cut:
             sblk, _ = presence_block_for(p, sector_cut, None)
             if not is_suppressed(sblk):
                 sector_adoption = sblk.get("adoption_pct")
+                # the register's single "n" column belongs to the MARKET figure only —
+                # the sector % rests on this (usually smaller) sample and must say so
+                # (pre-prod audit 2026-08-12)
+                sector_n = sblk.get("n")
         if own_points is not None:
             sp_scores[q.superpower].append(own_points)
         if not is_suppressed(blk) and blk.get("status_mean") is not None:
@@ -672,6 +677,7 @@ def gap_register(conn, org, questions, payloads, org_answers, cut, sector_cut=No
             "org_score": own_points,
             "peer_adoption_pct": adoption,
             "sector_adoption_pct": sector_adoption,
+            "sector_n": sector_n,
             "n": blk["n"] if blk else 0, "n_real": (blk.get("n_real", 0) if blk else 0),
             "suppressed": bool(is_suppressed(blk)),
             "gap": round(gap, 1) if gap is not None else None,

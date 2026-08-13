@@ -19,6 +19,7 @@ import re
 import urllib.parse
 import secrets
 import sys
+import time
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -152,6 +153,21 @@ AI_STRATEGY = os.environ.get("LUMI_AI_STRATEGY", "on").lower() == "on"
 # per-environment with LUMI_AI_DOMAIN_SUMMARY=on (demo / preview) until David explicitly
 # authorizes launch. (The 2026-06-28 default-on flip was unauthorized and reverted.)
 AI_DOMAIN_SUMMARY = os.environ.get("LUMI_AI_DOMAIN_SUMMARY", "off").lower() == "on"
+
+# Per-org cap on paid AI GENERATIONS (pre-prod audit 2026-08-12: most AI endpoints had
+# no rate limit — one scripted member could burn unbounded spend). Generous by design:
+# peeks/cache hits never count, only true generation calls. Complements (never replaces)
+# the per-surface kill switches and the board-pack cap.
+_ai_gen_calls = defaultdict(list)   # org_id -> [timestamps]
+AI_GEN_MAX_PER_HOUR = int(os.environ.get("LUMI_AI_GEN_MAX_PER_HOUR", "60"))
+
+def _ai_generation_or_429(org):
+    now = time.time()
+    key = org["org_id"]
+    _ai_gen_calls[key] = [t for t in _ai_gen_calls[key] if now - t < 3600]
+    if len(_ai_gen_calls[key]) >= AI_GEN_MAX_PER_HOUR:
+        raise HTTPException(429, "This hour's AI writing budget is used up — cached readings still open instantly; try again shortly.")
+    _ai_gen_calls[key].append(now)
 
 # ===================================================================== AI INSIGHTS GATE ==
 # The MASTER switch for ALL member-facing AI insight features (commentary, analyst, board
@@ -454,6 +470,30 @@ class SessionMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(SessionMiddleware)
+
+
+class TxnHygieneMiddleware(BaseHTTPMiddleware):
+    """End-of-request transaction discipline: whatever a handler wanted to keep, it
+    committed — anything still pending on the shared thread-local connections is
+    rolled back so it can never bleed into the NEXT request's commit. Closes the
+    HTTPException-after-partial-write residue the 500-handler rollback (pre-prod
+    audit loop 1) couldn't reach: FastAPI converts HTTPExceptions to responses
+    before that handler fires. No-ops (cheaply) when nothing is pending."""
+
+    async def dispatch(self, request, call_next):
+        try:
+            return await call_next(request)
+        finally:
+            for _rb in (get_conn, identity.get_conn):
+                try:
+                    c = _rb()
+                    if c.in_transaction:
+                        c.rollback()
+                except Exception:
+                    pass
+
+
+app.add_middleware(TxnHygieneMiddleware)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -1644,6 +1684,7 @@ async def pulse_commentary(pid: str, request: Request):
             m = next((o for o in blk["options"] if o["label"] == mine[0]), None)
             payload["your_answer_peer_share"] = m and m.get("pct")
             payload["you"] = "\u201c%s\u201d" % mine[0]
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     return {"parts": res["parts"], "source": res["source"], "cached": False,
             "caveats": {"illustrative": payload["illustrative_sample_data"]}}
@@ -1665,9 +1706,13 @@ async def pulse_narrative(pid: str, request: Request):
     is_owner = bool(p["owner_org_id"] and p["owner_org_id"] == org["org_id"])
     if not ((part and part["submission_complete"]) or is_owner):
         raise HTTPException(403, "Participate in this pulse to see its report.")
-    rep = strip_internal(pulses_mod.pulse_report(pid, conn))
+    # SAME cohort flag as the report the member reads (pre-prod audit 2026-08-12: the
+    # narrative was written over the default cohort while the visible report used the
+    # real_viewer cohort — the AI could cite figures the page never showed)
+    rep = strip_internal(pulses_mod.pulse_report(pid, conn, real_viewer=org["source"] not in ("seed", "staff", "demo")))
     if rep.get("below_floor"):
         raise HTTPException(400, "Report not available below the suppression floor.")
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_pulse_narrative, rep)
     return {"narrative": res["narrative"], "source": res["source"]}
 
@@ -2464,6 +2509,7 @@ async def strategy_diagnosis(request: Request):
     payload = strategy_diag.build_diagnosis_payload(
         strat, findings, (hero.get("market") or {}).get("target"), obj_label, on_plan,
         bool(get_meta("synthetic_pool", False)))
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_strategy_diagnosis, payload)
     # Signpost: attach each finding's domain so the Signals page can deep-link the
     # narrative to the matching signal group. The validator guarantees the narrated
@@ -3584,13 +3630,14 @@ async def gap_register_csv(request: Request):
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["Benchmark", "Category", "Type", "Practice / policy", "Tier",
-                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Gap", "n"])
+                "Your status", "In place", "Peer adoption %", "Sector adoption %", "Sector n", "Gap", "n"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
                     r["org_status"],
                     {"in_place": "In place", "partial": "Partially", "not_in_place": "Not in place"}.get(r.get("status"), "Not assessable"),
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
+                    r.get("sector_n") if r.get("sector_n") is not None else "",
                     r["gap"] if r["gap"] is not None else "", r["n"]])
     w.writerow([])
     w.writerow(["# Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources." % (get_meta("peer_pool", {}).get("responding_orgs") or 0)])
@@ -4123,6 +4170,7 @@ async def strategy_commentary(request: Request):
                     "generated_at": row["created_at"]}
     if body.get("peek"):
         return {"parts": None, "source": None, "cached": False}
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_strategy_commentary, payload)
     conn.execute(
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
@@ -4397,6 +4445,8 @@ async def boardpack_generate(request: Request):
     if _ai_ok and _boardpack_rate_limited(org["org_id"]):
         raise HTTPException(429, "You've generated a lot of board packs today — please try again "
                                  "tomorrow. Packs you've already produced are still available.")
+    if _ai_ok:
+        _ai_generation_or_429(org)
     payload = assemble_pack_payload(request, user, org, cut)
     result = (await to_thread.run_sync(claude_api.generate_board_pack_narrative, payload)) if _ai_ok \
         else {"ok": False, "error": "AI narrative not enabled for this member",
@@ -5404,7 +5454,11 @@ async def save_draft(request: Request):
     body = await _json(request)
     qid = body.get("question_id")
     row_id = body.get("matrix_row_id") or ""
-    q = load_questions().get(qid)
+    # resolve against the org's VISIBLE set, not the full library: the full-library
+    # lookup accepted drafts for retired / sector-scoped / out-of-module questions,
+    # which validate_all never checks (it iterates visible only) yet submit() commits —
+    # a bypass of the r3s4 sector-scope rule (pre-prod audit 2026-08-12)
+    q = org_visible_questions(org).get(qid)
     if q is None:
         raise HTTPException(404, "Unknown question")
     value = body.get("value")
@@ -5499,6 +5553,19 @@ async def submit(request: Request):
     drafts = conn.execute("SELECT * FROM drafts WHERE org_id=?", (org["org_id"],)).fetchall()
     if not drafts:
         raise HTTPException(400, "Nothing new to submit.")
+    # belt to save_draft's visible-set gate: a stale draft for a question that has since
+    # been retired or scoped away must not slip into the answers book un-validated
+    _visible = org_visible_questions(org)
+    _skipped = [d["question_id"] for d in drafts if d["question_id"] not in _visible]
+    if _skipped:
+        log.warning("submit: dropping %d out-of-scope draft(s) for org %s: %s",
+                    len(_skipped), org["org_id"], ", ".join(sorted(set(_skipped))[:8]))
+        conn.executemany("DELETE FROM drafts WHERE org_id=? AND question_id=?",
+                         [(org["org_id"], qid) for qid in set(_skipped)])
+        drafts = [d for d in drafts if d["question_id"] in _visible]
+        if not drafts:
+            conn.commit()
+            raise HTTPException(400, "Nothing new to submit.")
     now_rows = 0
     for d in drafts:
         v = (d["value"] or "").strip()
@@ -5795,6 +5862,7 @@ async def metric_commentary(request: Request):
     # stops the CTA overwriting it).
     if body.get("peek"):
         return {"parts": None, "source": None, "cached": False, "caveats": caveats}
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_metric_commentary, payload)
     conn.execute(
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
@@ -5895,6 +5963,7 @@ async def domain_summary(request: Request):
         if row:
             return {"parts": uj(row["text"], {}), "source": row["source"], "cached": True,
                     "generated_at": row["created_at"], "caveats": caveats}
+    _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_domain_summary, payload, _ai_ok)
     conn.execute(
         "INSERT OR REPLACE INTO domain_summary(org_id, domain, cut_key, payload_hash, text, source) "
@@ -7441,6 +7510,16 @@ async def share_data(token: str, request: Request):
     prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org), payloads(), answers, entitled, None)
     summary = pos.overview_summary(items, mp_config=pos.market_position_config(), practice_items=prac_items,
                                    band_low=MARKET_BAND_LOW, band_high=MARKET_BAND_HIGH)
+    # verdict-source unification reaches the ANONYMOUS link too (pre-prod audit
+    # 2026-08-12): without these maps assemble_card fell back to the legacy
+    # percentile read, so a shared card could disagree with the member's own view
+    # of the same metric. Share cuts are never twin/group (rewritten above), so
+    # tb=None makes these maps equal the member dashboard's for the same cut.
+    band_map = pos.pool_market_bands(items, prac_items, pos.market_position_config(),
+                                     MARKET_BAND_LOW, MARKET_BAND_HIGH, VERDICT_NET_LEAN)
+    prev_band_map = pos.pool_prevalence_bands(
+        pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(), answers, entitled, None),
+        UNCOMMON_PCT)
     co = pos.callouts(items, org_visible_questions(org), k=3)
     cards = []
     # prefer the dashboard's own snapshot (set at share time) so the link shows the
@@ -7465,7 +7544,8 @@ async def share_data(token: str, request: Request):
         p = payloads().get(qid)
         if q is None or p is None or not entitled(q):
             continue
-        cards.append(assemble_card(q, p, org, answers, cut, None, entitled))
+        cards.append(assemble_card(q, p, org, answers, cut, None, entitled,
+                                   market_band=band_map.get(qid), prevalence_band=prev_band_map.get(qid)))
     return {"kind": "dashboard", "org_name": org_name, "cut": cut,
             "headline": summary,
             "callouts": {"strengths": [c["text"] for c in co["strengths"]],
