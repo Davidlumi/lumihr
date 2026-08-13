@@ -1174,8 +1174,12 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         # (David): ahead = overspend-vs-intent and behind = the gap both stay actionable.
         # domain_alignment degrades to the global market_position; strategy-off → empty map
         # → nothing confirms → byte-identical. No target / Governance → not in the map.
+        # expose the domain's 3-state alignment on every signal so the row can render the
+        # strategy glyph (below/on/above strategy) — 2026-08-13. None when strategy-off /
+        # Governance / no target (glyph then renders nothing → byte-identical degrade).
+        s["alignment"] = (domain_alignment or {}).get(s.get("domain"))
         if (not s.get("risk_framed")
-                and (domain_alignment or {}).get(s.get("domain")) == "on_target"):
+                and s.get("alignment") == "on_target"):
             s["confirm"] = True
             s["impact"] = round((s.get("impact") or 0) * CONFIRM_DEMOTE_MULT)
     out = [s for s in out if not s.get("_suppress")]

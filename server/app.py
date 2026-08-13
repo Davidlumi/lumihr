@@ -2127,6 +2127,23 @@ async def benchmarks_for_superpower(superpower: str, request: Request):
         cards.append(assemble_card(q, p, org, answers, cut, {qid: tb.get(qid)} if tb else None,
                                    entitled, market_band=band_map.get(qid),
                                    prevalence_band=prev_band_map.get(qid)))
+    # strategy glyph on EVERY grid card (2026-08-13, David: "every metric should show the icon
+    # below/on/above strategy"): attach the domain stance so the client's metricAim reads the
+    # per-card alignment from the card's own market_band — same gate as assemble_card's block
+    # (completed strategy + competitive domain), so the grid matches the detail card + overview.
+    _sg_strat = strategy_for_engine(conn, org["org_id"])
+    if _sg_strat and conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                                  (org["org_id"],)).fetchone():
+        _sg_dt = _sg_strat.get("domain_targets") or {}
+        _sg_global = _sg_strat.get("market_position")
+        _sg_doms = (pos.market_position_config().get("_domains") or {})
+        for c in cards:
+            if c.get("reduced") or c.get("domain_aim"):
+                continue
+            sp = c.get("subpower")
+            stance = _sg_dt.get(sp) or _sg_global
+            if stance and _sg_doms.get(sp, {}).get("competitiveness", True):
+                c["domain_aim"] = {"domain": sp, "stance": stance}
     cards.sort(key=lambda c: (c["sub_power_order"] or 999, c["title"]))
     return {"superpower": superpower, "cut": cut, "cards": cards, "reduced": contrib["reduced"]}
 
