@@ -1500,12 +1500,20 @@ function MetricSignalBar({ qid, sig }) {
   const onSet = (sid, st, days) => {
     const prev = status;
     setStatus(st || "active");
-    signalAction(qid, st, days).catch(() => {
+    // triage by the signal's OWN identity, never the bare metric id: matrix-row
+    // signals key as qid::row, so a bare-qid write was invisible to the Signals
+    // page — the star "did nothing" on every matrix metric (David 2026-08-13)
+    signalAction(sig.sig_id || qid, st, days).catch(() => {
       setStatus(prev);                                   // revert the optimistic flip
       toast("Couldn't save that — try again", "error");
     });
+    // EVERY triage speaks (David 2026-08-13): star used to change only a faint tint
+    // while its effect lived two pages away — silent action + remote result read as
+    // "does nothing". Same toast-with-Undo pattern as the Signals feed.
     if (st === "dismissed") toast("Signal dismissed", null, { label: "Undo", fn: () => onSet(qid, null) });
     else if (st === "snoozed") toast("Snoozed", null, { label: "Undo", fn: () => onSet(qid, null) });
+    else if (st === "saved") toast("Saved — find it under Signals → Saved.", null, { label: "Undo", fn: () => onSet(qid, null) });
+    else if (!st && prev === "saved") toast("Removed from saved — back in your feed.", null, { label: "Undo", fn: () => onSet(qid, "saved") });
   };
   const word = LENS_WORD[sig.lens];
   return html`
@@ -1515,7 +1523,7 @@ function MetricSignalBar({ qid, sig }) {
         <b>Flagged in your signals</b>${word ? " — for " + word : ""}${sig.risk_framed ? " · a risk floor" : ""}
         ${sig.stand || sig.detail ? html`<span class="caption"> · ${sig.stand || sig.detail}</span>` : null}
       </div>
-      <${SignalActions} status=${status === "active" ? null : status} sid=${qid} onSet=${onSet} />
+      <${SignalActions} status=${status === "active" ? null : status} sid=${qid} onSet=${onSet} hidePriority=${true} />
     </div>`;
 }
 

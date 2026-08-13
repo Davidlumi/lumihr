@@ -17711,3 +17711,23 @@ before window.print(), so the button did nothing. The await is try/caught (the d
 read still prints, with an honest toast). And it is no longer a mystery file-text glyph: a
 labelled "One-pager" tool button (quiet chrome, blue-tint hover) sits in the foot band.
 VERIFIED on the rig at v=576 (grouped bars re-screenshotted, button labelled + enabled).
+
+## 2026-08-13 — Metric-page signal triage: star made real, priority pin retired there (David "go")
+
+RULING (David): starred functionality STAYS — it feeds the Signals Saved tab and the folders
+workflow. The metric-page priority pin GOES: the same screen carries a foot-band pin meaning
+"pin to dashboard" (two identical glyphs, unrelated outcomes) and the sort it boosts is only
+visible in the inbox. SignalActions gains hidePriority (the Signals-page surfaces keep it).
+
+TWO DEFECTS BEHIND "the star does nothing":
+(1) SILENCE — star/save gave no toast (only snooze/dismiss spoke) and its only feedback was a
+    faint tint whose CSS didn't even exist before v=575. Now: "Saved — find it under Signals →
+    Saved." with Undo, and the un-star mirror, same pattern as the feed.
+(2) THE KEY — the bar posted the BARE metric id, but matrix-row signals key as qid::row; the
+    Signals page looks statuses up by sig_id, so a star on ANY matrix metric wrote a row no
+    surface ever read. The bar now triages by sig.sig_id (bare qid stays the fallback for
+    single-metric signals, which are unchanged).
+VERIFIED end-to-end on the rig at v=578: star click → signal_actions row keyed
+"3faf1f0c…::single" → Signals Saved tab 3→4 with the PMI (Single) signal present; bar shows
+Save · Snooze · Dismiss only. NOTE for the migration: any pre-fix bare-qid triage rows for
+matrix metrics in the live DB are inert residue (harmless — no reader keys on them).

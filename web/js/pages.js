@@ -1578,7 +1578,7 @@ const sigParts = (s, pt) => [
 // Signals explore page. onSet(sid, status) persists + optimistically updates; status
 // is the final state (null = back to active/inbox). Toggle logic lives here so every
 // surface behaves identically.
-function SignalActions({ status, sid, onSet }) {
+function SignalActions({ status, sid, onSet, hidePriority }) {
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const wrapRef = useRef(null);
   useEffect(() => {
@@ -1601,7 +1601,11 @@ function SignalActions({ status, sid, onSet }) {
       <button class="sig-act" title="Restore to inbox" aria-label="Restore signal to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>`
     : status === "snoozed" ? html`
       <button class="sig-act" title="Return to inbox now" aria-label="Un-snooze signal, return to inbox" onClick=${() => onSet(sid, null)}><${Icon} name="refresh" size=${15} /></button>` : html`
-      <button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>
+      ${/* the metric page hides this: its foot band already carries a pin meaning
+            "pin to dashboard" — two identical glyphs with unrelated outcomes on one
+            screen (David 2026-08-13); the inbox keeps it, where the sort it boosts
+            is visible */ ""}
+      ${!hidePriority && html`<button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>`}
       <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
       <span class="sig-snooze-wrap" ref=${wrapRef}>
         <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — pick a return date" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
