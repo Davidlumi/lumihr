@@ -24,6 +24,7 @@ TRUST RULES (enforced here, asserted by qa_hero):
 """
 import json
 import os
+import re
 
 import practice_axis                       # single source for the prevalence words (common/alternative/rare)
 from db import get_conn
@@ -277,7 +278,12 @@ def _compare(mine, med, higher):
     mine, med = str(mine), str(med)
     if len(mine) > 16 or len(med) > 16:
         return "above the market" if higher else "below the market"
-    return "you %s, market median %s" % (mine, med)
+    # option LABELS read as broken grammar dropped raw into the template ("you None,
+    # market median 75%+") — quote anything that isn't a plain number/measure so it
+    # reads as a name, not a missing word (P3 sweep 2026-08-13)
+    _plain = lambda v: bool(re.match(r"^[£$€]?[\d.,%×x+\-–\s]+[a-z%×]*$", v, re.I))
+    q = lambda v: v if _plain(v) else "“%s”" % v
+    return "you %s, market median %s" % (q(mine), q(med))
 
 
 def _ordinal_leak(vd):
@@ -733,7 +739,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
     # scale (their global score direction is unreliable — the anchor-risk set).
     # One-ended: fires only on the BAD tail per the metric's explicit direction.
     for qid in ordr.get("behind_explicit", []):
-        if qid in seen_q:
+        if qid in seen_q or _mp_unbenchmarked(qid):   # Diff-14: no market claim without ruled authority
             continue
         q = questions.get(qid)
         spec = scales.get(qid)
@@ -861,7 +867,7 @@ def build_signals(items, opportunity, questions, get_block, org_answers, conn=No
         elif knd == "rare":
             detail = "you selected “%s” — only %d%% of the comparison pool do" % (lab, round(a))
             tag, worth = "A RARE CHOICE", False
-            stand = "only %d%% of the market offers it" % round(a)
+            stand = "only %d%% of the market offers it — you do" % round(a)
         else:
             detail = "%d%% of the comparison pool select “%s” — you don't" % (round(a), lab)
             tag, worth = "COMMON — YOU DON'T", True

@@ -801,6 +801,17 @@ def parse_cut(request, org):
         cut["value"] = org.get("industry")
     if dim == "fte_band" and not value:
         cut["value"] = org.get("fte_band")
+    # unknown vocabulary never echoes into a LABEL: cut_value=-999999 used to render
+    # "-999999 FTE" on the card (P3 sweep 2026-08-13). Same fallback the group path
+    # takes: an unrecognised value resolves to All peers.
+    if dim == "industry" and cut.get("value"):
+        known = {r[0] for r in get_conn().execute("SELECT DISTINCT industry FROM orgs WHERE industry IS NOT NULL")}
+        if cut["value"] not in known:
+            return {"dim": "all", "value": None}
+    if dim == "fte_band" and cut.get("value"):
+        known = {r[0] for r in get_conn().execute("SELECT DISTINCT fte_band FROM orgs WHERE fte_band IS NOT NULL")}
+        if cut["value"] not in known:
+            return {"dim": "all", "value": None}
     return cut
 
 
@@ -1126,7 +1137,14 @@ async def mfa_resend(request: Request):
     if not uid:
         raise HTTPException(400, "Your sign-in attempt has expired — please sign in again.")
     challenge, code = auth_lib.create_mfa_challenge(uid)   # invalidates the old code
-    sent = await to_thread.run_sync(_send_mfa_code, identity.user_email(uid), code)
+    _addr = identity.user_email(uid)
+    if not _addr:
+        # identity row missing its email = a recon anomaly; without this check the
+        # sign-in code fell through send_notification's default recipient — the OPS
+        # INBOX (P3 sweep 2026-08-13). Refuse loudly instead of misdelivering a bearer.
+        log.error("mfa_resend: no identity email for user %s — recon anomaly", uid)
+        raise HTTPException(500, "We couldn't send your code — please contact hello@lumihr.co.uk.")
+    sent = await to_thread.run_sync(_send_mfa_code, _addr, code)
     if sent == "failed":
         raise HTTPException(503, "We couldn't send your sign-in code just now — "
                                  "please try again in a moment.")
@@ -1494,9 +1512,14 @@ async def remove_member(request: Request):
 async def revoke_invite(token: str, request: Request):
     user, org = require_admin(request)
     conn = get_conn()
-    conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
-                 (token, org["org_id"]))
+    cur = conn.execute("UPDATE invites SET used_at=datetime('now') WHERE token=? AND org_id=?",
+                       (token, org["org_id"]))
     conn.commit()
+    if cur.rowcount != 1:
+        # the identity shadow marks by TOKEN ALONE — firing it when the org-scoped
+        # reward update matched nothing would let one org's admin burn another org's
+        # invite by guessing/pasting its token (P3 sweep 2026-08-13)
+        raise HTTPException(404, "That invite isn't one of yours, or it's already used.")
     identity.shadow(identity.mark_invite_used, token)
     return {"ok": True}
 
@@ -3037,7 +3060,7 @@ async def put_myview(request: Request):
     conn.execute(
         "INSERT INTO pinned_views(org_id, user_id, layout_json, updated_at) VALUES (?,?,?,datetime('now')) "
         "ON CONFLICT(org_id, user_id) DO UPDATE SET layout_json=excluded.layout_json, updated_at=datetime('now')",
-        (org["org_id"], user["user_id"], j(body.get("layout") or [])))
+        (org["org_id"], user["user_id"], j(_norm_layout(body.get("layout")))))
     conn.commit()
     return {"ok": True}
 
@@ -3050,7 +3073,7 @@ async def save_default_view(request: Request):
     conn.execute(
         "INSERT INTO pinned_views(org_id, user_id, layout_json, updated_at) VALUES (?,'',?,datetime('now')) "
         "ON CONFLICT(org_id, user_id) DO UPDATE SET layout_json=excluded.layout_json, updated_at=datetime('now')",
-        (org["org_id"], j(body.get("layout") or [])))
+        (org["org_id"], j(_norm_layout(body.get("layout")))))
     conn.commit()
     return {"ok": True}
 
@@ -3140,6 +3163,29 @@ def _dash_cut(row):
     if dim in _DASH_CUT_DIMS and c.get("value"):
         return {"dim": dim, "value": str(c.get("value"))}
     return None
+
+
+def _norm_layout(raw):
+    """Stored layouts are user-shaped JSON that later request paths TRUST (the CSV
+    exporter aggregates per slot) — validate the shape and cap the count on the way
+    in (P3 sweep 2026-08-13). Unknown keys are dropped; junk slots are skipped."""
+    out = []
+    for slot in (raw if isinstance(raw, list) else [])[:60]:
+        if not isinstance(slot, dict):
+            continue
+        qid = slot.get("question_id")
+        if not isinstance(qid, str) or not qid or len(qid) > 80:
+            continue
+        clean = {"question_id": qid}
+        rid = slot.get("row_id")
+        if isinstance(rid, str) and rid and len(rid) <= 80:
+            clean["row_id"] = rid
+        clean["size"] = 2 if slot.get("size") == 2 else 1
+        cut = _norm_dash_cut(slot.get("cut"))
+        if cut:
+            clean["cut"] = cut
+        out.append(clean)
+    return out
 
 
 def _norm_dash_cut(c):
@@ -3248,7 +3294,7 @@ async def update_dashboard(did: str, request: Request):
         name = (body.get("name") or "").strip()[:60] or row["name"]
     layout_json = row["layout_json"]
     if body.get("layout") is not None:
-        layout_json = j(body.get("layout") or [])
+        layout_json = j(_norm_layout(body.get("layout")))
     # cut is set only when the key is present, so a layout/name PUT never clobbers the
     # sample. cut:null (or "all") explicitly clears it back to all-peers.
     cut_json = row["cut_json"] if "cut_json" in row.keys() else None
@@ -3630,6 +3676,16 @@ def cut_label_of(cut):
     return str(cut.get("value") or cut.get("dim"))
 
 
+def csv_cell(v):
+    """Excel formula-injection guard for USER-AUTHORED strings that land in CSV cells
+    (peer-group names, option labels the org typed): a leading = + - @ makes Excel
+    execute the cell. Prefix with a quote — visually harmless, defuses execution.
+    Apply to user-supplied text cells only, never to numbers (P3 sweep 2026-08-13)."""
+    if isinstance(v, str) and v[:1] in ("=", "+", "-", "@"):
+        return "'" + v
+    return v
+
+
 def _csv_response(buf, org, artefact, cut_label):
     """World-class export discipline (2026-08-09): BOM for Excel £/dash safety, and a
     filename that files itself — lumi — <org> — <artefact> — <cut> — <date>.csv."""
@@ -3657,7 +3713,7 @@ async def gap_register_csv(request: Request):
                 "Your status", "In place", "Peer adoption %", "Sector adoption %", "Sector n", "Gap", "n"])
     for r in reg["rows"]:
         w.writerow([r["superpower"], r["subpower"], r["category"], r["name"], r["tier"],
-                    r["org_status"],
+                    csv_cell(r["org_status"]),
                     {"in_place": "In place", "partial": "Partially", "not_in_place": "Not in place"}.get(r.get("status"), "Not assessable"),
                     "suppressed" if r["suppressed"] else r["peer_adoption_pct"],
                     r["sector_adoption_pct"] if r["sector_adoption_pct"] is not None else "",
@@ -3700,8 +3756,10 @@ def _bench_csv_row(qid, q, card, window=""):
     _ub = q.unit_block() or {}
     _ut = _ub.get("type")
     _unit = _ub.get("symbol") or ("" if _ut in (None, "none") else _ut)   # "none" is not a unit
-    return [qid, q.display_title, q.sub_power, your_value, _unit,
-            *stats, card.get("n", 0), cut_label, window,
+    # csv_cell on the USER-AUTHORED strings (your_value carries typed option labels,
+    # cut_label carries peer-group names) — Excel formula-injection guard
+    return [qid, q.display_title, q.sub_power, csv_cell(your_value), _unit,
+            *stats, card.get("n", 0), csv_cell(cut_label), window,
             "true" if suppressed else "false"]
 
 
@@ -3778,7 +3836,18 @@ async def dashboard_csv(did: str, request: Request):
         p = payloads().get(qid)
         if q is None or p is None:
             continue
-        eff_cut = slot.get("cut") or req_cut
+        # stored layout JSON is user-shaped — normalise the per-slot cut like the
+        # dashboard-level cut; junk falls back to the request cut instead of a 500
+        _slot_cut = _norm_dash_cut(slot.get("cut"))
+        eff_cut = _slot_cut or req_cut
+        if _slot_cut and _slot_cut.get("dim") == "group":
+            _row = conn.execute("SELECT * FROM peer_groups WHERE group_id=? AND org_id=?",
+                                (_slot_cut.get("value") or "", org["org_id"])).fetchone()
+            if _row is None:
+                eff_cut = req_cut
+            else:
+                eff_cut = {"dim": "group", "value": _row["group_id"], "label": _row["name"],
+                           "criteria": uj(_row["criteria_json"], {})}
         tb = twin_blocks_if_needed(conn, org, eff_cut)
         card = assemble_card(q, p, org, answers, eff_cut, {qid: tb.get(qid)} if tb else None, entitled)
         w.writerow(_bench_csv_row(qid, q, card, _win))
@@ -4159,7 +4228,7 @@ def _strategy_commentary_payload(request, user, org):
                      "alignment": t.get("alignment"),
                      "aim_is_override": d["name"] in (strat.get("domain_targets") or {})})
     return {
-        "org_name": org.get("name"),
+        "org_name": (identity.org_display(org["org_id"]) or {}).get("name"),   # reward-side name is NULLed (Phase-1 split)
         "stance": dict(
             {k: strat.get(k) for k in ("market_position", "reward_mix", "pay_for_performance",
                                        "location_approach", "family_position", "primary_objective")},
@@ -6148,6 +6217,10 @@ async def create_suggestion(request: Request):
                                   (matters, "why it matters")) if not v]
     if missing:
         raise HTTPException(400, "Required: " + ", ".join(missing) + ".")
+    # length caps mirror create_metric_request — unbounded fields were stored AND
+    # emailed to the ops inbox verbatim (P3 sweep 2026-08-13)
+    if len(name) > 120 or len(measures) > 2000 or len(matters) > 2000 or len(category or "") > 120:
+        raise HTTPException(400, "That's a little long — a sentence or two per field is perfect.")
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO metric_suggestions(org_id, user_id, user_email, metric_name, what_it_measures,"
@@ -6237,7 +6310,7 @@ async def admin_orgs(request: Request):
     conn = get_conn()
     rows = conn.execute(
         "SELECT o.*, (SELECT COUNT(*) FROM users u WHERE u.org_id=o.org_id) AS n_users "
-        "FROM orgs o ORDER BY o.name").fetchall()
+        "FROM orgs o").fetchall()
     names = identity.org_display_batch([r["org_id"] for r in rows])
     out = []
     for r in rows:
@@ -6254,6 +6327,9 @@ async def admin_orgs(request: Request):
             "deactivated_reason": o["deactivated_reason"],
             "lifecycle": _org_lifecycle(conn, o),
         })
+    # sort by the RESOLVED identity name — orgs.name is NULLed by the Phase-1 split,
+    # so the old ORDER BY o.name was insertion order in disguise (P3 sweep 2026-08-13)
+    out.sort(key=lambda x: (x["name"] or "").lower())
     return {"orgs": out, "total": len(out)}
 
 
@@ -7128,9 +7204,13 @@ async def admin_org_detail(org_id: str, request: Request):
         "WHERE org_id=? AND used_at IS NULL "
         "ORDER BY expires_at DESC", (org_id,)).fetchall()
     iem = identity.invite_email_batch([r["token"] for r in irows][:200])
+    # a READ view must not 503 on an unset LUMI_BASE_URL (base_url(minting=True)
+    # raises by design) — the drill-down was unreadable exactly when config was
+    # broken and staff most needed it (P3 sweep 2026-08-13). link=null when unset.
+    _base = base_url()
     invites = [{"token": r["token"], "role": r["role"], "expires_at": r["expires_at"],
                 "email": iem.get(r["token"]), "expired": not r["live"],
-                "link": "%s/app#/invite/%s" % (base_url(minting=True), r["token"])} for r in irows]
+                "link": ("%s/app#/invite/%s" % (_base, r["token"])) if _base else None} for r in irows]
     counts = {
         "answers": conn.execute("SELECT COUNT(*) FROM answers WHERE org_id=?", (org_id,)).fetchone()[0],
         "drafts": conn.execute("SELECT COUNT(*) FROM drafts WHERE org_id=?", (org_id,)).fetchone()[0],
