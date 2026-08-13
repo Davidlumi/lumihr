@@ -2613,42 +2613,68 @@ function applyCardFilters(cards, f, sigMap) {
   return out;
 }
 // cards = the TYPE-filtered set (counts read from it, matching the old chipN behaviour). on(patch) merges into f.
+const FB_TYPE_DEF = [{ k: "metric", lab: "Metrics" }, { k: "practice", lab: "Practices" }, { k: "policy", lab: "Policies" }, { k: "benefit", lab: "Benefits" }];
+const FB_DOT = { below: "amber", on: "green", above: "red" };
+// FACET-MENU filter bar (2026-08-13, David chose direction A, "more professional" — collapse the 13-pill
+// wall behind quiet menu buttons). SAME filter model + applyCardFilters; only the presentation changes.
+// One menu open at a time; click-outside / Esc closes. Reading axis (Market/Practice/no-reading) stays
+// mutually exclusive; Signal + Strategy are independent multi-select; Type is single-select (radio).
 function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
+  const [open, setOpen] = useState(null);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(null); };
+    const onKey = e => { if (e.key === "Escape") setOpen(null); };
+    document.addEventListener("mousedown", onDoc); document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
   const T = cards || [];
-  const withN = (defs, resolver, glyph) => defs.map(d => ({ ...d, n: T.filter(c => resolver(c) === d.k).length }))
-    .filter(d => d.n).map(d => ({ ...d, glyph }));
-  const sigDefs = withN(FB_SIG_DEF, c => fbSig(c, sigMap));
-  const posDefs = withN(FB_POS_DEF, fbBand);
-  const prevDefs = withN(FB_PREV_DEF, fbPrev).map(d => ({ ...d, lab: (prevStates && prevStates[d.st]) || d.lab }));
-  const stratDefs = stratOn ? withN(FB_STRAT_DEF, fbStrat, true) : [];
-  const noneN = T.filter(c => !fbBand(c) && !fbPrev(c)).length;
-  const active = f.pos.length || f.prev.length || f.none || f.sig.length || f.strat.length || f.type;
+  const withN = (defs, resolver) => defs.map(d => ({ ...d, n: T.filter(c => resolver(c) === d.k).length })).filter(d => d.n);
   const togMulti = (key, k) => on({ [key]: f[key].includes(k) ? f[key].filter(x => x !== k) : [...f[key], k] });
   const togPos = k => on({ prev: [], none: false, pos: f.pos.includes(k) ? f.pos.filter(x => x !== k) : [...f.pos, k] });
   const togPrev = k => on({ pos: [], none: false, prev: f.prev.includes(k) ? f.prev.filter(x => x !== k) : [...f.prev, k] });
-  const grp = (lab, defs, sel, toggle) => defs.length ? html`
-    <span class="cat-fgroup" role="group" aria-label=${"By " + lab.toLowerCase()}>
-      <span class="cat-fgroup-lab">${lab}</span>
-      ${defs.map(d => html`<button key=${d.k} type="button" class=${"sig-chip" + (sel.includes(d.k) ? " on" : "") + (d.glyph ? " sig-chip-strat" : "")}
-        aria-pressed=${sel.includes(d.k)} onClick=${() => toggle(d.k)}>
-        ${d.glyph ? html`<${StrategyGlyph} alignment=${d.k} w=${26} /> ` : null}${d.lab} <span class="n">${d.n}</span></button>`)}
-    </span>` : null;
+  const noneN = T.filter(c => !fbBand(c) && !fbPrev(c)).length;
+
+  const facets = [];
+  const sigDefs = withN(FB_SIG_DEF, c => fbSig(c, sigMap));
+  if (sigDefs.length) facets.push({ key: "sig", lab: "Signal", title: "Signal", count: f.sig.length,
+    items: sigDefs.map(d => ({ ...d, sel: f.sig.includes(d.k), onClick: () => togMulti("sig", d.k) })) });
+  const posItems = withN(FB_POS_DEF, fbBand).map(d => ({ ...d, dot: FB_DOT[d.k], sel: f.pos.includes(d.k), onClick: () => togPos(d.k) }));
+  if (noneN) posItems.push({ k: "__none", lab: "No reading yet", n: noneN, sep: true, sel: f.none, onClick: () => on({ pos: [], prev: [], none: !f.none }) });
+  if (posItems.length) facets.push({ key: "pos", lab: "Market", title: "Market position", count: f.pos.length + (f.none ? 1 : 0), items: posItems });
+  const prevDefs = withN(FB_PREV_DEF, fbPrev);
+  if (prevDefs.length) facets.push({ key: "prev", lab: "Practice", title: "Practice", count: f.prev.length,
+    items: prevDefs.map(d => ({ ...d, lab: (prevStates && prevStates[d.st]) || d.lab, dot: "practice", sel: f.prev.includes(d.k), onClick: () => togPrev(d.k) })) });
+  const stratDefs = stratOn ? withN(FB_STRAT_DEF, fbStrat) : [];
+  if (stratDefs.length) facets.push({ key: "strat", lab: "Strategy", title: "Strategy alignment", count: f.strat.length,
+    items: stratDefs.map(d => ({ ...d, glyph: true, sel: f.strat.includes(d.k), onClick: () => togMulti("strat", d.k) })) });
+  facets.push({ key: "type", lab: "Type", title: "Metric type", count: f.type ? 1 : 0, radio: true,
+    items: FB_TYPE_DEF.map(d => ({ ...d, sel: f.type === d.k, onClick: () => on({ type: f.type === d.k ? "" : d.k }) })) });
+  const anyActive = f.pos.length || f.prev.length || f.none || f.sig.length || f.strat.length || f.type;
+
   return html`
-    <div class="cat-filterbar" role="group" aria-label="Filter the metrics">
-      <span class="cat-filter-cue"><${Icon} name="sliders" size=${11} /> Filter</span>
-      ${grp("Signal", sigDefs, f.sig, k => togMulti("sig", k))}
-      ${grp("Market", posDefs, f.pos, togPos)}
-      ${grp("Practice", prevDefs, f.prev, togPrev)}
-      ${grp("Strategy", stratDefs, f.strat, k => togMulti("strat", k))}
-      ${noneN ? html`<button type="button" class=${"sig-chip" + (f.none ? " on" : "")} aria-pressed=${f.none}
-        title="Metrics with no market or practice reading yet" onClick=${() => on({ pos: [], prev: [], none: !f.none })}>no reading yet <span class="n">${noneN}</span></button>` : null}
-      <span class="cat-fbar-right">
-        ${active ? html`<button type="button" class="cat-clear" onClick=${() => on(FB_EMPTY())}>Clear filters</button>` : null}
-        <select class="ctl" aria-label="Filter by question type" value=${f.type} onChange=${e => on({ type: e.target.value })}>
-          <option value="">All types</option><option value="metric">Metrics</option>
-          <option value="practice">Practices</option><option value="policy">Policies</option><option value="benefit">Benefits</option>
-        </select>
-      </span>
+    <div class="filterbar" ref=${ref} role="group" aria-label="Filter the metrics">
+      <span class="fb-cue"><${Icon} name="sliders" size=${12} /> Filter</span>
+      ${facets.map(fc => html`
+        <div key=${fc.key} class="fb-wrap">
+          <button type="button" class=${"fb-facet" + (fc.count ? " on" : "")} aria-expanded=${open === fc.key} aria-haspopup="menu"
+            onClick=${() => setOpen(open === fc.key ? null : fc.key)}>
+            ${fc.lab}${fc.count ? html` <span class="fb-badge">${fc.count}</span>` : null}<${Icon} name="chevron-down" size=${13} />
+          </button>
+          ${open === fc.key ? html`
+            <div class="fb-menu" role="menu">
+              <div class="fb-menu-h">${fc.title}</div>
+              ${fc.items.map(it => html`
+                <button key=${it.k} type="button" class=${"fb-row" + (it.sel ? " sel" : "") + (it.sep ? " fb-row-sep" : "")}
+                  role=${fc.radio ? "menuitemradio" : "menuitemcheckbox"} aria-checked=${it.sel} onClick=${it.onClick}>
+                  <span class=${"fb-ck" + (fc.radio ? " fb-ck-radio" : "")}></span>
+                  ${it.glyph ? html`<${StrategyGlyph} alignment=${it.k} w=${26} />` : it.dot ? html`<span class=${"fb-dot fb-dot-" + it.dot}></span>` : null}
+                  <span class="fb-row-lab">${it.lab}</span>${it.n != null ? html`<span class="fb-n">${it.n}</span>` : null}
+                </button>`)}
+            </div>` : null}
+        </div>`)}
+      ${anyActive ? html`<button type="button" class="fb-clear" onClick=${() => { on(FB_EMPTY()); setOpen(null); }}>Clear</button>` : null}
     </div>`;
 }
 

@@ -17879,3 +17879,15 @@ controls (stratOn gates whether the Strategy chip group shows). Verified on a Th
 328→58 on Flagged, Flagged+above-strategy→2 (AND), Clear→328; category shows the identical bar; zero
 console errors. NOT YET DONE (deferred to Phase 3/4): Signals page onto the same grammar; My dashboards
 card filter; Pulse topic filter; vocabulary/persistence unification pass.
+
+## 2026-08-13 — Filter bar redesign: pill wall → facet menus (v=587)
+
+David rejected the v=586 inline chip bar ("way too noisy and crowded — and very boring": ~13 grey
+pills across two rows). Mocked two directions (facet menus vs a colour-coded distribution strip);
+David chose A, "more professional". Rebuilt FilterBar as FIVE quiet menu buttons (Signal · Market ·
+Practice · Strategy · Type) — each opens a small popover of checkbox rows with RAG colour dots
+(market), practice-purple dots, the strategy band-dot glyph, and live counts; an active facet tints
+navy + shows a count badge; one "Clear". One menu open at a time, click-outside / Esc closes. The
+filter MODEL, applyCardFilters and both pages' wiring are UNCHANGED — only FilterBar's render + new
+.filterbar/.fb-* CSS. Verified on a rig: below→118, badge+tint, strategy menu renders glyphs, zero
+console errors. Same component still serves the All-reward grid + every Category page.
