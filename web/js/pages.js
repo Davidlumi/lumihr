@@ -2685,7 +2685,7 @@ function FilterBar({ f, on, cards, sigMap, prevStates, stratOn }) {
   return html`<${FacetMenus} facets=${facets} anyActive=${anyActive} onClear=${() => on(FB_EMPTY())} />`;
 }
 
-window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF }) {
+window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedIds, me, focusQ, subF, onCut, onTwinInfo, refreshMe }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [sigMap, setSigMap] = useState({});
@@ -2765,19 +2765,22 @@ window.SuperpowerPage = function ({ sp, cut, cuts, prefs, onPref, onPin, pinnedI
     title=${_ratedTip} aria-label=${_ratedTip}> · ${_rated} rated${_recorded ? ` · ${_recorded} not yet rated` : ""}</span>`;
   return html`
     <div>
-      <div class="page-head">
+      <div class="sp-masthead">
         <div class="titleblock">
           <div class="sp-glyph"><${SpIcon} sp=${sp} size=${20} /></div>
           <div>
             <h1 class="display-title">${subF || (window.SCOPE && window.SCOPE.focused ? "All reward" : sp)}</h1>
-            ${/* "peer group: …" dropped 2026-07-07 — it duplicated the "Comparing against"
-                  peer bar directly above this header (declutter). */ ""}
             <div class="caption meta">${cards.length} metrics${_ratedClause}${subF && window.SCOPE && window.SCOPE.focused ? " · part of your reward benchmark" : ""}${me && me.peer_pool && me.peer_pool.collection_window ? ` · benchmark data: ${me.peer_pool.collection_window}` : (me && me.snapshots && me.snapshots[0] ? ` · benchmark data: ${me.snapshots[0].collection_window}` : "")}</div>
           </div>
         </div>
+        ${/* one control band (David 2026-08-13): the peer sample sits WITH the filters, below the title */ ""}
+        <div class="sp-ctl-band">
+          <${PeerSetBar} me=${me} cut=${cut} cuts=${cuts} onSelect=${onCut} onTwinInfo=${onTwinInfo}
+            inline=${true} prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />
+          <${FilterBar} f=${f} on=${onF} cards=${_typed} sigMap=${sigMap}
+            stratOn=${((prefs && prefs._overview) || {}).apply_strategy !== false} />
+        </div>
       </div>
-      <${FilterBar} f=${f} on=${onF} cards=${_typed} sigMap=${sigMap}
-        stratOn=${((prefs && prefs._overview) || {}).apply_strategy !== false} />
       ${cards.length === 0 && html`<${EmptyState} title="Nothing matches these filters"
         action=${html`<button class="btn small" onClick=${() => onF(FB_EMPTY())}>Clear filters</button>`} />`}
       ${bySub.map(g => html`

@@ -468,6 +468,9 @@ function App() {
   // the metric detail page renders its OWN "Comparing against" bar under the Back button
   // (David 2026-08-12) — suppress the app-wide selector here so there aren't two peer pills.
   const isMetric = route.startsWith("/metric");
+  // the All-reward grid renders its peer selector inline in its own control band (2026-08-13, David:
+  // "filter next to the sample part") — same inline club as Overview/Category; suppress the app-wide strip.
+  const isBenchmark = route.startsWith("/benchmark") || route.startsWith("/superpower");
 
   // Combobox: the search popup is open at >1 char with an index; keep the
   // activatable-option list in a ref so the input's Enter handler can act on it.
@@ -567,7 +570,7 @@ function App() {
       </nav>
       <div class="main">
         <main class="content" id="main-content" tabindex="-1">
-          ${benchRoute && !isOverview && !isCategory && !isDashboards && !isSignals && !isMetric && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
+          ${benchRoute && !isOverview && !isCategory && !isDashboards && !isSignals && !isMetric && !isBenchmark && html`<${PeerSetBar} me=${me} cut=${cut} cuts=${cuts}
             onSelect=${setGlobalCut} onTwinInfo=${() => setTwinOpen(true)}
             prefs=${prefs} onPref=${onPref} refreshMe=${refreshMe} />`}
           ${contrib && benchRoute && html`<${ContributionBanner} contrib=${contrib} />`}

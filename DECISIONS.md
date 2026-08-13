@@ -17925,3 +17925,15 @@ the Type facet (Metrics/Practices/Policies/Benefits) — low-value axis and its 
 Practice facet; the grid's own domain sections are the natural grouping. Card FilterBar now: Signal · Market ·
 Practice · Strategy. (c) Spacing: .filterbar gap s2→s3 (8→12px), padding s3→s4 top, facet padding + gap up.
 applyCardFilters still handles f.type/f.none (harmless, just no UI). Gates 14/14; verified on a rig.
+
+## 2026-08-13 — Grid masthead: title first, one control band (peer sample + filters) (v=591)
+
+David challenged the layout — the title was sandwiched between the top "Comparing against" bar and the
+filter row. Chose the middle option: TITLE first, then ONE control band with the peer sample left and the
+filter facets right. The All-reward grid now renders its PeerSetBar INLINE (joining the Overview/Category
+inline-peerbar club) instead of the app-frame strip: app.js gains `isBenchmark` and suppresses the app-wide
+PeerSetBar for /benchmark|/superpower (priorities still keeps it); SuperpowerPage takes onCut/onTwinInfo/
+refreshMe and renders .sp-masthead (titleblock + .sp-ctl-band = PeerSetBar inline + FilterBar). Peer and
+filter are conceptually kept distinct (peer = global basis/data-source, filters = local view) but grouped
+in one band. Verified on a rig: one peer bar (no duplicate), peer+filter both in the band, 328→118 on
+below-market. Gates 14/14.

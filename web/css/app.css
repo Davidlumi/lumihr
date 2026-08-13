@@ -3801,6 +3801,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .fb-n { font-size: var(--fs-caption); color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .fb-clear { border: 0; background: none; color: var(--blue-bright); font-size: var(--fs-label); font-weight: 500; cursor: pointer; padding: 6px; }
 .fb-clear:hover { text-decoration: underline; }
+/* All-reward grid masthead — title on top, then ONE control band (peer sample + filters), 2026-08-13 */
+.sp-masthead { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s3); }
+.sp-ctl-band { display: flex; align-items: center; gap: var(--s3) var(--s4); flex-wrap: wrap; }
+.sp-ctl-band .filterbar { padding: 0; }
+.sp-ctl-band .peerbar { margin: 0; }
 /* strategy glyph reused on grid cards + signal rows (2026-08-13, David: "every metric
    should show the icon below/on/above strategy") */
 .bench-strat { flex: none; display: inline-flex; align-items: center; margin-left: auto; }
