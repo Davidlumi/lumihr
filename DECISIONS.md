@@ -17762,3 +17762,42 @@ email test; the NEVER-PERFORMED S3 restore drill (GO_LIVE_CHECKLIST Gate 1 — w
 torn-pair weakness: restore.sh resolves the two stores independently by LastModified);
 ANTHROPIC_API_KEY rotation (ruled compromised 2026-08-10); the production env file per the
 runbook with the absent-list grep proven clean.
+
+## 2026-08-13 — P3 "delight" sweep delivered: 41 findings fixed, CSS hygiene −71 lines (v=579)
+
+THE BATCH (the audit's P3 queue, triaged 95 → fixed what deserved fixing, deferred what needs
+David or a ruling, disproved 3): correctness items hiding at P3 got server fixes — the Diff-14
+guard gap on behind_explicit (unbenchmarked metrics were still making market claims in
+signals), MFA resend falling through to the OPS INBOX when a user had no email, CSV formula
+injection (csv_cell prefixes ' on =+-@ across benchmark/gap-register exports), parse_cut
+echoing hostile cut values back as labels ("-999999 FTE" → all-peers fallback), unbounded
+suggestion/layout payloads (60-slot cap, length caps), revoke_invite 404ing honestly,
+admin org list sorting by resolved identity name (o.name is NULLed reward-side since the
+split), strategy commentary resolving org_name via identity.
+
+FRONTEND: signals _compare now quotes non-numeric labels (you "None", market median "75%+" —
+bare words read as grammar errors); grid header noun "benchmarks"→"metrics"; MetricTrend
+null-period crash guard; post-unlock CTA only nudges when there are actually questions left;
+pulse cohort→participant language sweep; builder requires 2 real options on selects; CSV
+download toasts; peer-group name saves on Enter; admin fee NaN guard; EmptyState error tone on
+yourdata failure; OrderedDist tall-mode contract; matrix cell percentile tooltips; banned-tail
+trims ("here", "simply", "just").
+
+CSS HYGIENE (agent-audited, 45 proof-carried edits, net −71 lines): 18 dead-selector deletes
+(.bench-* family, .movement, gap-row family, needle-gauge arc block, tile-band-mid/band-tick,
+arc-draw keyframes — each with a proving grep); sticky offsets 76/84/96px →
+calc(var(--brandbar-live, var(--brandbar-h)) + Npx) so they track the real brandbar; six
+hand-rolled focus rings → var(--focus-outline) token; 7px end-caps → var(--radius-xs);
+font-weight 570→550 (real weight); .seg-toggle/.chart-switch converged into one segmented-
+control recipe (compact sizing stays scoped to the metric page); .suggest-done-btn → house
+btn primary; 5 audited keep-as-is (has-unsub-bar 130px, donut-word 32px, print pt/mm).
+
+VERIFIED on a backup-API rig (:8070): metrics noun live on the grid, metric page's converged
+switch renders, pulse participant copy live, quoting lambda proven on 7 label shapes, csv_cell
++ parse_cut proven via API, sticky calc computes 76px, zero console errors. Gates green.
+
+DEFERRED (with owners): benchmarks-vs-metrics FULL terminology + domain casing (David's
+terminology ruling), cut-label prose voice ~200 sentences (David), Cookie Policy "Draft"
+status (legal), dark mode (product), demo-org residue (David's sales surface), comparepill
+vocabulary refactor, retry/loading/confirm pattern campaigns, writes-on-GET races, pulse-list
+perf, engine floors 86/88 (rulings). DISPROVED: 3 findings (stale-ref phantom class).
