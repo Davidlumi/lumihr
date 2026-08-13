@@ -61,23 +61,33 @@ window.PercentileBand = function ({ block, you, unit, favourable, showP1090 = tr
   const p50Text = "P50" + (showValues ? " · " + fmtValue(block.p50, unit) : "");
   const labelText = (lbl, v) => big && showValues ? lbl + " · " + fmtValue(v, unit) : lbl;
   const half = (t, fs) => t.length * 0.52 * fs / 2 + 6;
-  const placed = [[x(block.p50) - half(p50Text, fsP50), x(block.p50) + half(p50Text, fsP50)]];
+  // edge-aware anchoring: a centre-anchored label at the canvas edge loses half its
+  // text ("P10 · 3%" read as "0 · 3%"; "P90 · 4.7%" spilled off the stage —
+  // pre-prod polish 2026-08-13). Marks near an edge anchor start/end instead, and
+  // the collision guard uses the ANCHORED extents.
+  const anchorOf = (cx, hw) => cx - hw < 0 ? "start" : cx + hw > W ? "end" : "middle";
+  const extent = (cx, hw, anchor) => anchor === "start" ? [cx - 2, cx + hw * 2]
+    : anchor === "end" ? [cx - hw * 2, cx + 2] : [cx - hw, cx + hw];
+  const p50Anchor = anchorOf(x(block.p50), half(p50Text, fsP50));
+  const placed = [extent(x(block.p50), half(p50Text, fsP50), p50Anchor)];
   const markLabelled = marks.map(([lbl, v]) => {
     const t = labelText(lbl, v), cx = x(v), hw = half(t, fsMark);
-    const clash = placed.some(([a, b]) => cx + hw > a && cx - hw < b);
-    if (!clash) placed.push([cx - hw, cx + hw]);
-    return [lbl, v, t, !clash];
+    const anchor = anchorOf(cx, hw);
+    const ex = extent(cx, hw, anchor);
+    const clash = placed.some(([a, b]) => ex[1] > a && ex[0] < b);
+    if (!clash) placed.push(ex);
+    return [lbl, v, t, !clash, anchor];
   });
   return html`
     <svg viewBox="0 0 ${W} ${H}" style=${{ width: "100%", display: "block" }}>
       ${showP1090 && html`<rect x=${x(block.p10)} y=${barY} width=${Math.max(1, x(block.p90) - x(block.p10))} height=${barH} rx="6" fill="var(--chart-band)" />`}
       <rect x=${x(block.p25)} y=${barY} width=${Math.max(1, x(block.p75) - x(block.p25))} height=${barH} rx="6" fill="var(--chart-band-mid)" />
       <rect x=${x(block.p50) - 1} y=${barY - 5} width="2.5" height=${barH + 10} rx="1.25" fill="var(--chart-median)" />
-      <text x=${x(block.p50)} y=${barY + barH + (big ? 22 : 18)} text-anchor="middle" font-size=${fsP50} fill="var(--ink-soft)" font-weight="600">${p50Text}</text>
-      ${markLabelled.map(([lbl, v, t, show]) => html`
+      <text x=${x(block.p50)} y=${barY + barH + (big ? 22 : 18)} text-anchor=${p50Anchor} font-size=${fsP50} fill="var(--ink-soft)" font-weight="600">${p50Text}</text>
+      ${markLabelled.map(([lbl, v, t, show, anchor]) => html`
         <g key=${lbl}>
           <line x1=${x(v)} x2=${x(v)} y1=${barY - 2} y2=${barY + barH + 2} stroke="var(--chart-axis)" stroke-width="1"/>
-          ${show && html`<text x=${x(v)} y=${barY + barH + (big ? 22 : 18)} text-anchor="middle" font-size=${fsMark} fill="var(--ink-faint)">${t}</text>`}
+          ${show && html`<text x=${x(v)} y=${barY + barH + (big ? 22 : 18)} text-anchor=${anchor} font-size=${fsMark} fill="var(--ink-faint)">${t}</text>`}
         </g>`)}
       ${you != null && html`<${YouDot} x=${x(you)} y=${barY + barH / 2} fav=${favourable} r=${big ? 10 : 8} fs=${big ? 12.5 : 10.5}
         label=${"You" + (showValues ? " · " + fmtValue(you, unit) : "")} labelY=${barY - (big ? 18 : 14)} bounds=${[padL, W - padR]} />`}
@@ -210,8 +220,11 @@ window.OptionBars = function ({ options, youLabels, showValues = true, width = C
         const y = i * rowH;
         const bw = (o.pct / maxP) * (W - labelW - 86);
         const maxChars = Math.floor(labelW / (fs * 0.52));
+        // zero-adoption rows the org didn't pick fade back — on a 21-option chart,
+        // six full-weight "0%" lines out-shouted the data (pre-prod polish 2026-08-13)
+        const ghost = !sel && (o.pct || 0) === 0;
         return html`
-        <g key=${o.code}>
+        <g key=${o.code} opacity=${ghost ? 0.45 : 1}>
           <text x=${labelW - 8} y=${y + rowH / 2 + fs * 0.34} text-anchor="end" font-size=${fs}
             fill=${sel ? "var(--ink)" : "var(--ink-soft)"} font-weight=${sel ? 700 : 400}>
             ${o.label.length > maxChars && html`<title>${o.label}</title>`}${o.label.length > maxChars ? o.label.slice(0, maxChars - 1) + "…" : o.label}</text>
@@ -339,7 +352,7 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
                     <div class="mn-iqr" style=${{ left: X(b.p25) + "%", width: Math.max(1.5, X(b.p75) - X(b.p25)) + "%" }}></div>
                     <div class="mn-median" style=${{ left: X(b.p50) + "%" }}></div>
                     ${you != null && html`<div class=${"mn-you" + (f === "good" ? " good" : f === "bad" ? " bad" : "")}
-                      style=${{ left: X(you) + "%" }} title=${"You · " + r.you.display}></div>`}
+                      style=${{ left: Math.min(98.5, Math.max(1.5, X(you))) + "%" }} title=${"You · " + r.you.display}></div>`}
                   </div>
                 </td>
                 <td class=${"mn-num mn-youval" + (f === "good" ? " good" : f === "bad" ? " bad" : "")}>
@@ -352,7 +365,14 @@ window.MatrixHeat = function ({ rows, unit, polarity, showValues = true }) {
       <div class="matrix-num-scale">
         <span class="mleg"><span class="mn-key-iqr"></span>middle 50% of the market</span>
         <span class="mleg"><span class="mn-key-median"></span>market median</span>
-        <span class="mleg"><span class="mn-key-you"></span>your organisation</span>
+        ${/* the key matches the diamonds when every live row agrees on position —
+              a navy key beside a column of red markers read as two different things */ ""}
+        <span class="mleg"><span class=${"mn-key-you" + (() => {
+          const fs = (rows || []).filter(r => !r.suppressed && r.block && r.you && r.you.value != null)
+            .map(r => favOf(r.you.value, r.block.p50, r.you.percentile));
+          return fs.length && fs.every(f => f === "bad") ? " bad"
+            : fs.length && fs.every(f => f === "good") ? " good" : "";
+        })()}></span>your organisation</span>
         ${live.length > 0 && html`<span class="caption mn-scale-range">scale ${fmtValue(rawLo, unit)} – ${fmtValue(rawHi, unit)}</span>`}
       </div>
     </div>`;

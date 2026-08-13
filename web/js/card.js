@@ -572,7 +572,20 @@ window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wi
   // in the side-by-side proof column. At xl the viewBox is responsive: a 780
   // viewBox scaled into a phone renders ~4px chart text, so narrow screens get
   // a 420 box (bigger effective type at the same rendered width).
-  const W = xl ? (typeof matchMedia !== "undefined" && matchMedia("(max-width: 700px)").matches ? 420 : 780) : wide ? 620 : 340;
+  // LIVE media query, not a render-time snapshot: a one-shot matchMedia read at a
+  // stale first paint left a 420 viewBox stretched across the 906px hero stage —
+  // giant type, value labels dropped (pre-prod polish 2026-08-13). Re-syncs on
+  // mount and follows resizes across the 700px line.
+  const [xlNarrow, setXlNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof matchMedia === "undefined") return;
+    const mql = matchMedia("(max-width: 700px)");
+    const f = () => setXlNarrow(mql.matches);
+    f();
+    if (mql.addEventListener) { mql.addEventListener("change", f); return () => mql.removeEventListener("change", f); }
+    mql.addListener(f); return () => mql.removeListener(f);
+  }, []);
+  const W = xl ? (xlNarrow ? 420 : 780) : wide ? 620 : 340;
   const rowH = xl ? 420 : undefined;
   if (c.suppressed) {
     return html`<div class="suppressed-box">
@@ -668,9 +681,13 @@ window.MatrixSelect = function ({ rows }) {
       + "," + Math.round(255 + (b[2] - 255) * t) + ")";
   };
   const fmtCell = d => (d > 0 ? d + "%" : "<1%");   // ints from matrixRowInts (row sums to 100)
+  // the 54px You column was sized for abbreviated numeric bands (">16wk"); select
+  // matrices carry full option labels ("Letter only") which clipped at the table
+  // edge with no ellipsis (pre-prod polish 2026-08-13)
+  const youWide = (rows || []).some(r => r.you && abbr(r.you.display || "").length > 8);
   return html`
     <div class="matrix-heat-wrap">
-      <table class="matrix-heat">
+      <table class=${"matrix-heat" + (youWide ? " you-wide" : "")}>
         <thead>
           <tr>
             <th class="mh-lvl">Level</th>
@@ -699,7 +716,7 @@ window.MatrixSelect = function ({ rows }) {
                     style=${{ background: mix(t), color: t >= 0.52 ? "#fff" : "var(--ink)" }}
                     title=${r.label + " · " + b + " · " + pct.toFixed(1) + "% of peers at this level"}>${fmtCell(disp[b] || 0)}</td>`;
                 })}
-                <td class="mh-you">${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
+                <td class="mh-you" title=${r.you ? r.you.display : undefined}>${r.you ? html`<b>${abbr(r.you.display)}</b>` : html`<span class="caption">—</span>`}</td>
               </tr>`;
           })}
         </tbody>

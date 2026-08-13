@@ -17666,3 +17666,31 @@ STILL DAVID'S: provenance/testimonials/pricing claims; PROP_8e0b6316 ladder; don
 re-unification; domain terminology; peer-descriptor voice; demo-org residue; "2026.1 seven
 categories" history line; optional next: serve MARKET_BAND on share.html for out-of-pool fallback
 cards (only divergent if LUMI_MARKET_BAND ever ≠ 35-65).
+
+## 2026-08-13 — Expanded-chart polish: the "90s signal bar" + text-spill sweep (David screenshot)
+
+THE SIGNAL BAR: the metric-page triage buttons (pin/star/clock/dismiss) fell OUTSIDE
+.signal-row's scope and rendered as RAW NATIVE BUTTONS — grey bevelled squares beside a modern
+ribbon. Scoped .metric-sigbar .sig-act ghost atoms (quiet rest at .55, blue-tint hover with a
+1px lift, focus-visible ring, .on state), and the ribbon's border warmed one step toward blue.
+
+TEXT SPILL + HONESTY, every expanded chart type walked at hero width on the rig:
+- PercentileBand: EDGE LABELS were centre-anchored and half-clipped — "P10 · 3%" rendered as
+  "0 · 3%" (a WRONG NUMBER, not just cropped) and "P90 · 4.79%" spilled off the stage. Marks
+  near an edge now anchor start/end and the collision guard uses the anchored extents.
+- The xl viewBox chose 420-vs-780 from a ONE-SHOT matchMedia read at render — a stale first
+  paint left a 420 box stretched across the 906px stage (giant type, mark values silently
+  dropped, no resize recovery). CardBody now tracks the media query LIVE (re-sync on mount +
+  change listener across the 700px line).
+- matrix-num: level labels ellipsed MID-WORD ("Frontline / Individual…") — line-clamp 3 + a
+  148px label column on the hero stage; the legend "your organisation" diamond stays navy
+  beside seven RED markers — the key now follows the markers when every live row agrees
+  (good/bad), neutral otherwise; you-diamonds clamp 1.5% inside the track so they never kiss
+  the row edge.
+- matrix-heat: the 54px You column (sized for ">16wk" numerics) clipped select-matrix labels
+  ("Letter o…") — .you-wide (112px) set by the render when any label needs it, ellipsis +
+  title tooltip as backstop.
+- OptionBars: zero-adoption rows the org didn't pick fade to .45 — six full-weight "0%" lines
+  on the 21-option allowances chart out-shouted the data.
+VERIFIED live on the rig at v=575: sigbar ghosts, full P-labels inside the stage, wrapped
+level labels, matching legend, full "Letter only", ghosted zeros. Gate suite follows.
