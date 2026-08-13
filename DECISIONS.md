@@ -17731,3 +17731,34 @@ VERIFIED end-to-end on the rig at v=578: star click → signal_actions row keyed
 "3faf1f0c…::single" → Signals Saved tab 3→4 with the PMI (Single) signal present; bar shows
 Save · Snooze · Dismiss only. NOTE for the migration: any pre-fix bare-qid triage rows for
 matrix metrics in the live DB are inert residue (harmless — no reader keys on them).
+
+## 2026-08-13 — Launch dress rehearsal: the fresh-org journey PASSED; email transport hardened
+
+THE JOURNEY (prod-like rig: LUMI_MFA=on, LUMI_BASE_URL set, both stores backup-copied): staff
+provisioning → invite page → accept (session; MFA correctly reserved for logins) → data terms
+(clock starts THEN) → MFA login round-trip (challenge → emailed code via the console fallback →
+verify) → 77 key questions drafted through the UI's own endpoints (0 validation errors, 90.9%)
+→ submit: 118 rows, full pool re-aggregate in 1.2s, benchmark_unlocked → live donut/signals/
+Confidence 10/10 · 221 peers. Full write-up: LAUNCH_REHEARSAL_2026-08-13.md. One copy nit
+queued (invite page tells the FOUNDING ADMIN "nothing is needed from you" about the data terms
+they're about to be asked for — role-aware line wanted).
+
+HARDENING SHIPPED (from the rehearsal's two static audits — email transport + env posture):
+- MFA send failures are HONEST (503 "couldn't send your code", never a 200 with a dead
+  challenge) and MFA/reset/invite sends run off the event loop (a hung relay froze every
+  request for the socket timeout); _send_mfa_code returns the transport result.
+- send_notification's FAILURE path withholds bodies (log.error, alertable) — a production SMTP
+  outage was writing live reset links and MFA codes into the server log (PH-PROV-1d class,
+  closed at the choke point). The dev no-SMTP console path still prints codes for QA; prod
+  can't reach it (boot guard).
+- STARTTLS now verifies the relay certificate (Py3.9 default doesn't); port 587 only.
+- run_email_digest stamps emailed_at ONLY when the send didn't fail (failed digests were
+  counted delivered forever); "logged" (dev) still stamps.
+- _validate_prod_config refuses LUMI_QA_SEAMS and LUMI_OPEN_REGISTRATION in prod posture
+  (negative-tested); reset keeps its generic 200 (a transport 5xx would be an account oracle).
+
+DAVID-ACTIONS (the ops gate, detailed in the rehearsal doc): SES setup + the 8-step day-one
+email test; the NEVER-PERFORMED S3 restore drill (GO_LIVE_CHECKLIST Gate 1 — watch the
+torn-pair weakness: restore.sh resolves the two stores independently by LastModified);
+ANTHROPIC_API_KEY rotation (ruled compromised 2026-08-10); the production env file per the
+runbook with the absent-list grep proven clean.

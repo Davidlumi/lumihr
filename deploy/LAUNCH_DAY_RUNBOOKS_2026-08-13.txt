@@ -1,0 +1,239 @@
+==============================================================================
+EMAIL TRANSPORT — verdict: GAPS
+==============================================================================
+
+[          ok] Real SMTP transport exists, single choke point
+    send_notification at server/app.py:6026-6063 — smtplib.SMTP with EmailMessage, List-Unsubscribe header, timeout=10. Env: LUMI_SMTP_HOST (gate), LUMI_SMTP_PORT (default 587), LUMI_SMTP_USER, LUMI_SMTP_PASS, LUMI_SMTP_FROM (default 'lumi <noreply@lumihr.co.uk>'), plus LUMI_NOTIFY_EMAIL (ops inbox, app.py:5978) and LUMI_LIST_UNSUBSCRIBE (app.py:6048). Every sender funnels through it.
+
+[          ok] Dev fallback for rehearsal OTP/link reading
+    With LUMI_SMTP_HOST unset every mail prints to server stdout at app.py:6061-6063: '[lumi] EMAIL (not configured — logged only) to <addr> / Subject: ...' followed by the full body. MFA code appears verbatim (subject 'Your lumi sign-in code'); reset and member-invite links print in full. Only the staff-provisioning invite (app.py:6909) is redacted to a sha256[:12] digest via log_body.
+
+[          ok] Boot guard: MFA without SMTP refuses to start
+    app.py:7777-7781 — prod posture (https LUMI_BASE_URL) with LUMI_MFA=on and no LUMI_SMTP_HOST raises at boot, preventing the everyone-locked-out failure. app.py:7774: prod without LUMI_MFA also fatal unless LUMI_ALLOW_NO_MFA=on. Unset LUMI_BASE_URL 503s link minting per-action (app.py:5992-6010). /healthz exposes modes.smtp_configured (app.py:7267).
+
+[         gap] Silent failure semantics on every auth send
+    send_notification catches all exceptions and returns 'failed' (app.py:6057-6060); _send_mfa_code (app.py:1031), request_reset (app.py:1216) and team invite (app.py:1385) all ignore the return — the user gets HTTP 200 while no mail left. Only signal is a print() of 'EMAIL SEND FAILED' on stdout, no log.error, no health-counter. Member invite is self-recovering (link also in API response, app.py:1393); MFA and reset are not.
+
+[         gap] Bearer leak into logs on failed sends
+    The failure print at app.py:6058-6059 emits the full body when log_body is None. request_reset (app.py:1216) and member invite (app.py:1385) pass no log_body, so a production SMTP outage writes live reset links, invite links and MFA codes into the server log — the exact PH-PROV-1d defect class that PH-PROV-1f fixed only for the staff invite (app.py:6917).
+
+[         gap] Sends block the event loop (hung SMTP stalls the whole server)
+    send_notification is synchronous smtplib inside async def endpoints (login app.py:1082, mfa resend 1119, request_reset 1216, invite 1385, and GET /api/me via maybe_send_clock_reminder app.py:1266). timeout=10 is per socket op (connect/EHLO/STARTTLS/LOGIN/DATA), so a black-holed relay can freeze all requests ~10-50s per send. No thread offload, no retry, no queue. Only the nightly scheduler thread (app.py:7866) is off the loop; POST /api/notifications/run-sweep runs the whole digest inline.
+
+[         gap] Digest marks events emailed even when the send failed
+    notifications.py:448-452 — run_email_digest calls send_notification, ignores its return, then stamps emailed_at unconditionally. A failed/console-logged digest is permanently counted as sent; events never re-email (in-app bell still shows them). Same pattern for clock reminders: reminders_json is stamped BEFORE sending (app.py:335-337), so 7d/1d reminders consumed pre-SMTP never fire by email despite the comment at app.py:317-319 claiming they will.
+
+[         gap] TLS posture: no cert verification, STARTTLS tied to USER, no port 465
+    app.py:6051-6054 — starttls()/login() only run when LUMI_SMTP_USER is set; host-only config relays PLAINTEXT unauthenticated. No ssl context passed and the box runs Python 3.9.6, whose smtplib default does NOT verify the relay certificate (MITM-able STARTTLS). Uses smtplib.SMTP only — implicit-TLS port 465 unsupported; must use 587/STARTTLS. Credentials are at least sent post-STARTTLS.
+
+[          ok] Send-rate protections
+    Auth mail is bounded by endpoint limits (auth.py:94-96: 5/5min per email+IP, 30/5min per IP; MFA 5 attempts/challenge, auth.py:225; reset TTL 2h, invite TTL 7d, MFA code TTL 10min). Digest capped 3 emails/user/week with 24h min gap (notifications.py:332-347); excess rolls forward. Scheduler is single-instance by design — WEB_CONCURRENCY>1 warns (app.py:7789-7793).
+
+[david-action] SMTP env not yet staged anywhere
+    server/.env.local exists but contains no SMTP block; server/.env.local.example covers only ANTHROPIC_API_KEY. David must add the SMTP block (below) to the production env. Code comments assume SES ('Configure SMTP (SES)', app.py:7779).
+
+[david-action] Deliverability prerequisites outside the code
+    From defaults to noreply@lumihr.co.uk: SPF/DKIM/DMARC for lumihr.co.uk must be set at the relay (SES domain identity + DKIM), SES must be OUT of sandbox (sandbox only delivers to verified addresses — classic day-one blocker for MFA), and unsubscribe@lumihr.co.uk (LUMI_LIST_UNSUBSCRIBE default) plus hello@lumihr.co.uk must be real mailboxes.
+
+
+--- RUNBOOK ---
+# A. Production SMTP env block (add to the production env / server/.env.local)
+LUMI_BASE_URL=https://<your-domain>            # required: emailed links 503 at mint time without it
+LUMI_SMTP_HOST=email-smtp.eu-west-2.amazonaws.com   # SES London; any 587/STARTTLS relay works
+LUMI_SMTP_PORT=587                             # STARTTLS only — port 465 (implicit TLS) is NOT supported by the code
+LUMI_SMTP_USER=<ses-smtp-username>             # MUST be set — STARTTLS+auth only happen when USER is present
+LUMI_SMTP_PASS=<ses-smtp-password>
+LUMI_SMTP_FROM="lumi <noreply@lumihr.co.uk>"   # domain must carry SES DKIM/SPF
+LUMI_NOTIFY_EMAIL=hello@lumihr.co.uk           # ops inbox for metric requests/suggestions (default already this)
+LUMI_LIST_UNSUBSCRIBE="<mailto:unsubscribe@lumihr.co.uk>"
+LUMI_MFA=on                                    # boot REFUSES if this is on without LUMI_SMTP_HOST (good)
+LUMI_SIGNAL_SWEEP=on                           # single instance only; else drive run-sweep from external cron
+LUMI_SWEEP_HOUR=7                              # UTC
+LUMI_WEEKLY_DAY=0                              # Monday
+
+# B. Rehearsal (no SMTP): reading OTP codes
+1. Run with LUMI_MFA=on, LUMI_BASE_URL=http://localhost:8060, SMTP vars unset (boot guard only bites on https base URL).
+2. Codes/links land on server stdout: grep -A8 'EMAIL (not configured' <server log>  — MFA subject is 'Your lumi sign-in code', code on its own indented line; reset/invite bodies carry the full link.
+
+# C. The day SMTP credentials arrive — test in this order
+1. Confirm SES is OUT of sandbox (or verify your test recipient addresses first) and the lumihr.co.uk domain identity has DKIM verified.
+2. Set env block A, restart, check: curl /healthz -> modes.smtp_configured=true, modes.base_url correct; boot log shows 'SIGNAL SCHEDULER: ON ... SMTP: configured'.
+3. Password reset: POST /api/auth/request-reset for your own account -> email arrives, link opens https://<domain>/app#/reset/<token>, completes, old sessions revoked. (Watch stdout: any 'EMAIL SEND FAILED' line = relay auth problem; NOTE that line prints the live reset link.)
+4. MFA: log in -> 6-digit code arrives within seconds; verify; then test /api/auth/mfa/resend once.
+5. Member invite from Team page to a personal address -> email arrives, invite link accepts; confirm the response 'link' matches the emailed one.
+6. Digest smoke test: as platform admin POST /api/notifications/run-sweep?digest=daily,weekly -> response digests_sent >= 0; received digest has absolute links (Overview/Settings).
+7. Ops mail: submit a metric request -> arrives at LUMI_NOTIFY_EMAIL; response field 'notification' == 'sent'.
+8. Deliverability: check all of the above against Gmail+Outlook spam folders; verify SPF/DKIM/DMARC pass headers.
+9. Latency check while sending: time a plain GET /api/me during step 4 — if it exceeds ~1s the relay is slow and the event-loop blocking gap needs fixing before launch traffic.
+
+# D. Pre-launch fixes recommended (from the gaps)
+- Pass log_body on the reset + member-invite + MFA sends so bearers/codes never hit logs on a failed send (mirror app.py:6917).
+- Move emailed_at stamping in notifications.py:450 behind status=='sent'; same for reminders_json in app.py:335.
+- Offload send_notification to a thread (asyncio.to_thread / executor) or at least wrap login-path sends, so a hung relay cannot stall every request.
+- Pass ssl.create_default_context() to starttls() for cert verification (Python 3.9 default does not verify).
+- Alert on 'EMAIL SEND FAILED' in whatever log shipping exists — it is currently the only failure signal.
+
+==============================================================================
+ENV + RESTORE — verdict: GAPS
+==============================================================================
+
+[         gap] Env inventory — core paths (LUMI_DB, LUMI_IDENTITY_DB)
+    server/db.py:29,46 and server/identity.py:47 default to the CHECKOUT (../lumi.db, ../identity.db). Prod needs /srv/lumi/data/lumi.db + /srv/lumi/data/identity.db (deploy/DEPLOY_RUNBOOK.md sec 2). The GL-A validator (app.py:7760) never asserts they are set or non-empty: unset on the prod box, init_schema() would bootstrap a brand-new EMPTY store — only systemd ProtectSystem=strict turns that into a crash instead of a silently empty platform. Also .env.example suggests /var/lib/lumi/ while the runbook/units use /srv/lumi/data — two templates disagree.
+
+[         gap] LUMI_BASE_URL is the single point of failure for the whole prod posture
+    app.py:7766 detects 'production' by LUMI_BASE_URL starting https://. If it is unset or typo'd, EVERY fatal check (SEED_DEMO, MFA, SMTP) silently skips, the session cookie loses Secure (app.py:1001), HSTS is off (app.py:517), and link minting 503s (boot only WARNS, app.py:7877). Prod value: https://app.lumihr.co.uk. Mitigation exists: runbook sec 4 boot assertion greps the boot log for the exact value — run it after every start.
+
+[          ok] MFA + SMTP enforcement
+    LUMI_MFA (app.py:1024) fatal-checked at boot when prod: off refuses boot (unless LUMI_ALLOW_NO_MFA=on), on-without-LUMI_SMTP_HOST refuses boot (app.py:7774-7779) — the lockout trap is caught. Not caught: SMTP creds that fail auth (send_notification just console-logs the failure, app.py:6057) — D2 requires one real delivered invite as proof, per DEPLOY_RUNBOOK sec 6.1.
+
+[         gap] LUMI_QA_SEAMS not refused in production
+    The fault-injection seams (app.py:6789,6793,6818,6883; member_exit.py:214) let request bodies trigger injected mid-dual-write failures. _CONFIG_INVENTORY (app.py:7286) says 'MUST NEVER be set outside gate runs' but _validate_prod_config never checks it — a leaked gate env file boots clean. One-line validator add; until then the env-file review is the only control.
+
+[         gap] LUMI_OPEN_REGISTRATION not refused in production
+    app.py:1138 — membership is staff-provisioned; registration closed by default. If someone sets it 'on' in prod the validator says nothing. Runbook sec 4's registration probe (expects 403) is the compensating check — keep it in the boot assertions.
+
+[          ok] Demo accounts (LUMI_SEED_DEMO)
+    Default off (app.py:7831); prod boot with it on is FATAL (app.py:7771). Leave unset.
+
+[         gap] AI switches: three-lock gate is sound; spend cap defaults to UNLIMITED
+    AI renders iff LUMI_AI_INSIGHTS_ENABLED=on (default off, app.py:183) AND per-surface flag AND consent; paid calls additionally need LUMI_AI_LIVE=on + key (claude_api.py:35-37) — launch stays dark with both off (R8). BUT LUMI_AI_DAILY_CALL_CAP defaults 0 = no global ceiling (claude_api.py:56) and the validator never requires caps when LUMI_AI_LIVE=on. At the future AI flip, set LUMI_AI_DAILY_CALL_CAP explicitly (per-org caps exist: LUMI_AI_GEN_MAX_PER_HOUR=60 app.py:162, LUMI_BOARDPACK_PER_DAY=20 app.py:3788, LUMI_ANALYST_RATE_PER_HOUR=40 app.py:3770).
+
+[david-action] ANTHROPIC_API_KEY rotation owed
+    A real key sits in server/.env.local on this dev box (file present, Jun 18). DECISIONS 2026-08-10: 'rotate the ANTHROPIC_API_KEY (present in server/.env.local working tree)' — treat as compromised; rotate before any key lands in /srv/lumi/env/lumi.env. Also rotate the live david@lumihr.co.uk password (same entry).
+
+[          ok] Engine tunables — defaults are the ratified values; leave unset
+    LUMI_MARKET_BAND=35-65 (app.py:106), LUMI_VERDICT_NET_LEAN=0.25 (:133), LUMI_COMPLETION_BASIS=required/THRESHOLD=0.90 (:100,:197), LUMI_DOMAIN_MIN_POLARISED=3 (:113), PACK_QUARTILE/TAIL 7/10 (:118), LUMI_ACTIVE_SUPERPOWERS=Reward (:204 — the launch scope), LUMI_PULSE_LAUNCH_FEE_GBP=750 (:126), LUMI_MS_PREVALENCE=on (positions.py:757). Config-file overrides LUMI_MP_CONFIG/LUMI_AB_CONFIG/LUMI_SB_CONFIG default to checkout data/ files — leave unset. Setting none of these in prod is correct.
+
+[          ok] Ops switches: signal sweep + email identities
+    LUMI_SIGNAL_SWEEP=on starts the in-process nightly sweep+digest thread (app.py:7864; single instance ONLY — with >1 worker use POST /api/notifications/run-sweep from cron instead, comment at app.py:2770). LUMI_SWEEP_HOUR=7 UTC, LUMI_WEEKLY_DAY=0. LUMI_NOTIFY_EMAIL default hello@lumihr.co.uk (:5978), LUMI_SMTP_FROM default noreply@lumihr.co.uk (:6044), LUMI_LIST_UNSUBSCRIBE default mailto:unsubscribe@lumihr.co.uk (:6048). Precondition: one-time signal_state rebaseline (set composition_epoch='prod-1' + one sweep) before first provisioning — DEPLOY_RUNBOOK sec 6.0, or production replays an 11,247-event dev backlog.
+
+[          ok] Single-worker requirement
+    deploy/lumi.service:17 pins '--workers 1' on 127.0.0.1 — the ruled deployment. Two workers concretely break: (1) per-process _payload_cache (app.py:765) — a submit recomputes+invalidates only in the handling worker; the other serves PRE-SUBMIT benchmark numbers indefinitely (cache keyed on constant CURRENT_SNAPSHOT=1, never expires); (2) login rate limits multiply (auth.py:93-106, in-memory); (3) duplicate signal digest emails (scheduler thread per worker); (4) AI spend caps double (claude_api.py:51, app.py:161); (5) stale lru_cache'd question library after a release change. The multi-worker freshness token was deliberately DEFERRED (DECISIONS 2026-08-10 batch C) — single worker is a hard assumption, not a preference.
+
+[         gap] Single-worker guard is warn-only and blind to uvicorn's own flag
+    app.py:7786-7793 reads WEB_CONCURRENCY (the gunicorn/heroku convention) and only PRINTS a warning. 'uvicorn --workers 2' does not set WEB_CONCURRENCY, so the guard misses the most likely way two workers actually happen. Protection is the pinned unit file alone — never hand-edit ExecStart's --workers, and treat any second uvicorn on the box as an incident.
+
+[          ok] Backup tooling is current-schema-correct (two stores)
+    deploy/offbox_backup.sh:60-84 copies BOTH lumi.db and identity.db via wal_checkpoint + SQLite backup API (never cp), integrity-checks each, and fail-closed asserts bucket posture (eu-west-2, SSE, versioned, BOTH 35d lifecycle rules, public-access-blocked). lumi-backup.timer daily 02:30 UTC, Persistent=true. restore.sh accepts either store, refuses while lumi.service is active, integrity-checks the pulled copy BEFORE swap, keeps <db>.pre_restore_<ts>, clears stale WAL/SHM. IAM is PUT-only (a compromised box cannot delete its own backups).
+
+[     blocker] Restore drill has NEVER been performed — Gate 1 blocker by the project's own ruling
+    GO_LIVE_CHECKLIST.md Gate 1: 'This item is not done until ONE restore from S3 to a scratch instance has actually been performed'; DECISIONS 2026-08-10 still lists 'perform ONE restore drill' as owed; the identity store is single-copy today (retain-1 on-box, no S3 layer exercised, presplit pin DEAD). No S3 bucket exists yet. David must create the bucket to offbox_backup.sh's asserted posture, run one backup, and restore both stores to a scratch instance BEFORE first provisioning.
+
+[         gap] Restore drill verifies too little: torn-pair risk between the two stores
+    restore.sh checks PRAGMA integrity_check only. 'latest' resolves each store INDEPENDENTLY by S3 LastModified (restore.sh:27-31) — if one night's upload half-failed, lumi.db and identity.db can restore from different days, yielding cross-store orphans (users/sessions/orgs mismatched) that nothing in the drill detects. Fix in procedure, not code: always restore both stores by the SAME explicit stamp key (db/lumi.db.<STAMP> + db/identity.db.<STAMP>), then run server/identity_recon.py against the restored pair (exit 0 = both orphan directions + drift are zero) before starting the service. identity_recon reads LUMI_DB/LUMI_IDENTITY_DB read-only and is not qa_-prefixed, so it runs without gate-refusal.
+
+[          ok] Rate caps and abuse limits (non-AI)
+    Login: 5/email + 30/IP per 300s, in-memory, cleared on success (auth.py:94-113); MFA code attempts capped at 5 (auth.py:225). Ask-lumi: 40/org-hour, 500-char questions (app.py:3770-3771). AI generations: 60/org-hour 429 (app.py:162-170). All per-process — another reason the single-worker pin is load-bearing.
+
+[          ok] Config visibility for launch-day verification
+    /healthz (app.py:7657) probes BOTH stores, unauthenticated — Caddy upstream + uptime checks. /api/admin/config (app.py:7308, platform-admin only) reports every switch in _CONFIG_INVENTORY with secrets as set/unset. Boot log prints one grep-able AI-status line (app.py:7811) + LUMI_BASE_URL value (:7884) — the runbook sec 4 assertions grep exactly these.
+
+[david-action] Staff/back-office provisioning
+    server/seed_staff_admin.py (dry-run default; --write --confirmed-by-david) creates the staff org + platform_admin account for david@lumihr.co.uk; LUMI_STAFF_PASSWORD optional (strong-random printed once if unset). LUMI_SUPER_ADMINS defaults to david@lumihr.co.uk (app.py:574) — no env needed at launch. Run once on the prod box after first boot.
+
+
+--- RUNBOOK ---
+LUMI PRODUCTION LAUNCH-DAY RUNBOOK (env + restore readiness)
+============================================================
+Machine layout per deploy/DEPLOY_RUNBOOK.md: checkout /srv/lumi/app, stores /srv/lumi/data,
+env /srv/lumi/env/lumi.env (0600 root:lumi), venv /srv/lumi/venv. Caddy fronts uvicorn :8060 loopback.
+
+STEP 0 — secrets hygiene (before anything touches the box)
+  - Rotate the ANTHROPIC_API_KEY that has lived in server/.env.local (treat as compromised).
+  - Rotate the live david@lumihr.co.uk password.
+  - Confirm server/.env.local is NOT deployed to the box (the env file below is the only source).
+
+STEP 1 — /srv/lumi/env/lumi.env (paste, fill the 3 blanks)
+  # ── core (both stores OUTSIDE the checkout — mandatory, validator does NOT catch a miss)
+  LUMI_BASE_URL=https://app.lumihr.co.uk
+  LUMI_DB=/srv/lumi/data/lumi.db
+  LUMI_IDENTITY_DB=/srv/lumi/data/identity.db
+  # ── security
+  LUMI_MFA=on
+  # ── email (SES eu-west-2; REQUIRED with MFA on — boot refuses otherwise)
+  LUMI_SMTP_HOST=email-smtp.eu-west-2.amazonaws.com
+  LUMI_SMTP_PORT=587
+  LUMI_SMTP_USER=<SES SMTP username>
+  LUMI_SMTP_PASS=<SES SMTP password>
+  LUMI_SMTP_FROM=lumi <no-reply@lumihr.co.uk>
+  # ── AI: dark at launch (R8) — both stay off; flip is a separate, David-only action
+  LUMI_AI_INSIGHTS_ENABLED=off
+  LUMI_AI_LIVE=off
+  # ── ops
+  LUMI_SIGNAL_SWEEP=on
+  LUMI_SWEEP_HOUR=7
+  # ── backups (used by offbox_backup.sh / restore.sh, not the app)
+  LUMI_BACKUP_BUCKET=<bucket, eu-west-2>
+  #
+  # MUST REMAIN ABSENT (grep the file to prove it):  LUMI_SEED_DEMO, LUMI_QA_SEAMS,
+  # LUMI_OPEN_REGISTRATION, LUMI_ALLOW_NO_MFA, LUMI_EXIT_DELETION, LUMI_ALLOW_LIVE,
+  # LUMI_IDENTITY_ALLOW_LIVE, ANTHROPIC_API_KEY (until the AI flip), WEB_CONCURRENCY.
+  # Engine tunables (LUMI_MARKET_BAND, LUMI_COMPLETION_*, LUMI_VERDICT_NET_LEAN, LUMI_ACTIVE_SUPERPOWERS,
+  # LUMI_MP_CONFIG/AB/SB, rate caps): leave unset — code defaults are the ratified values.
+  sudo grep -E 'SEED_DEMO|QA_SEAMS|OPEN_REGISTRATION|ALLOW_NO_MFA|EXIT_DELETION|ALLOW_LIVE|WEB_CONCURRENCY' /srv/lumi/env/lumi.env && echo 'FATAL: forbidden switch present' || echo 'absent-list clean'
+
+STEP 2 — services
+  sudo cp deploy/lumi.service deploy/lumi-backup.service deploy/lumi-backup.timer /etc/systemd/system/
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now lumi              # --workers 1 is PINNED in the unit; never override
+  sudo systemctl enable --now lumi-backup.timer
+  systemctl list-timers lumi-backup.timer
+
+STEP 3 — boot assertions (run after EVERY start; fail closed)
+  set -e; J="journalctl -u lumi -b --no-pager"
+  $J | grep -q "LUMI_BASE_URL = https://app.lumihr.co.uk" || { echo FATAL: base URL; exit 1; }
+  $J | grep -q "AI INSIGHTS: OFF"                          || { echo FATAL: AI not dark; exit 1; }
+  $J | grep -q "demo accounts: not provisioned"            || { echo FATAL: demo seeding ran; exit 1; }
+  curl -fsS http://127.0.0.1:8060/healthz | grep -q '"ok"' || { echo FATAL: healthz; exit 1; }
+  curl -s -X POST https://app.lumihr.co.uk/api/auth/register -H 'Content-Type: application/json' -d '{}' | grep -q "403\|hello@lumihr" || { echo FATAL: registration open; exit 1; }
+  ss -tlnp | grep ':8060' | grep -q '127.0.0.1'            || { echo FATAL: not loopback; exit 1; }
+  pgrep -fc 'uvicorn app:app' | grep -qx 1                 || { echo FATAL: more than one uvicorn; exit 1; }
+
+STEP 4 — staff account (once)
+  cd /srv/lumi/app && LUMI_DB=/srv/lumi/data/lumi.db LUMI_IDENTITY_DB=/srv/lumi/data/identity.db \
+    /srv/lumi/venv/bin/python3 server/seed_staff_admin.py --write --confirmed-by-david
+  # (LUMI_STAFF_PASSWORD optional; else the strong-random password prints ONCE — change after first login)
+
+STEP 5 — first off-box backup, then THE RESTORE DRILL (Gate 1 — never yet performed; blocker until done)
+  sudo systemctl start lumi-backup.service     # or wait for 02:30 UTC; fail-closed bucket assertions run first
+  aws s3 ls s3://$LUMI_BACKUP_BUCKET/db/       # note the shared STAMP on the pair
+  # On a SCRATCH instance (never the live box), same layout, service stopped:
+  sudo systemctl stop lumi
+  STAMP=<YYYYMMDD_HHMMSS from the listing — SAME stamp for both stores; do NOT use 'latest'>
+  LUMI_BACKUP_BUCKET=<bucket> LUMI_DATA_DIR=/srv/lumi/data ./deploy/restore.sh lumi.db     db/lumi.db.$STAMP
+  LUMI_BACKUP_BUCKET=<bucket> LUMI_DATA_DIR=/srv/lumi/data ./deploy/restore.sh identity.db db/identity.db.$STAMP
+  # pair-consistency check restore.sh itself does not do:
+  LUMI_DB=/srv/lumi/data/lumi.db LUMI_IDENTITY_DB=/srv/lumi/data/identity.db \
+    /srv/lumi/venv/bin/python3 server/identity_recon.py   # exit 0 = zero orphans both directions, zero drift
+  sudo systemctl start lumi && curl -fsS http://127.0.0.1:8060/healthz
+  # Record the drill (date, stamp, recon output) in DECISIONS — Gate 1 closes only on this record.
+  #
+  # Dev-box mechanics rehearsal available TODAY without S3 or the live stores (read-only source copies):
+  #   SP=/private/tmp/claude-501/-Applications-Lumi-Project/eab138a8-46d2-40c2-9324-b262e4a7efba/scratchpad/drill
+  #   mkdir -p $SP && cd "/Applications/Lumi Project"
+  #   python3 - <<'PY'
+  #   import sqlite3,os; sp=os.environ.get('SP') or '<same SP path>'
+  #   for db in ('lumi.db','identity.db'):
+  #       s=sqlite3.connect(db); s.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+  #       d=sqlite3.connect(os.path.join(sp,db)); s.backup(d); d.close(); s.close()
+  #       c=sqlite3.connect('file:%s?mode=ro'%os.path.join(sp,db),uri=True)
+  #       assert c.execute('PRAGMA integrity_check').fetchone()[0]=='ok'; c.close(); print(db,'ok')
+  #   PY
+  #   LUMI_DB=$SP/lumi.db LUMI_IDENTITY_DB=$SP/identity.db python3 server/identity_recon.py
+  #   LUMI_DB=$SP/lumi.db LUMI_IDENTITY_DB=$SP/identity.db LUMI_BASE_URL=http://localhost:8070 \
+  #     python3 -m uvicorn app:app --port 8070 --workers 1   # then curl :8070/healthz; delete $SP after (throwaway hygiene)
+
+STEP 6 — pre-provisioning gates (before the FIRST member org)
+  a. D2: prove one REAL invite email delivered to a test mailbox via SES (console-log is not delivery).
+  b. One-time signal_state rebaseline: set_meta("composition_epoch","prod-1") + one sweep (runbook sec 6.0).
+  c. Restore drill above recorded as done.
+
+LATER, SEPARATE ACTION — the AI flip (David only; not launch day): after DPA/attestation/dpo checks,
+set LUMI_AI_INSIGHTS_ENABLED=on, LUMI_AI_LIVE=on, ANTHROPIC_API_KEY=<fresh key>, and ALSO set
+LUMI_AI_DAILY_CALL_CAP=<number> (default 0 = UNLIMITED spend ceiling); restart; re-run qa_commentary/qa_domain_summary.
+
+VALIDATOR GAPS TO KNOW (what boot will NOT catch): unset/typo'd LUMI_BASE_URL disables ALL prod checks
+plus Secure-cookie/HSTS (warn only); LUMI_DB/LUMI_IDENTITY_DB unset (empty-store bootstrap — only
+ProtectSystem=strict makes it fail loudly); LUMI_QA_SEAMS=on; LUMI_OPEN_REGISTRATION=on; a second worker
+started via 'uvicorn --workers 2' (guard reads WEB_CONCURRENCY only, and even that is warn-not-fatal).
+The Step 1 absent-list grep + Step 3 assertions are the compensating controls for every one of these.
