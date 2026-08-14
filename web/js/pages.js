@@ -1637,7 +1637,7 @@ function SignalActions({ status, sid, onSet, hidePriority }) {
             screen (David 2026-08-13); the inbox keeps it, where the sort it boosts
             is visible */ ""}
       ${!hidePriority && html`<button class=${"sig-act" + (status === "priority" ? " on" : "")} title=${status === "priority" ? "Remove priority" : "Prioritise"} aria-label="Prioritise signal" aria-pressed=${status === "priority"} onClick=${() => onSet(sid, status === "priority" ? null : "priority")}><${Icon} name="pin" size=${15} /></button>`}
-      <button class=${"sig-act" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
+      <button class=${"sig-act sig-star" + (status === "saved" ? " on" : "")} title=${status === "saved" ? "Remove from saved" : "Save"} aria-label="Save signal" aria-pressed=${status === "saved"} onClick=${() => onSet(sid, status === "saved" ? null : "saved")}><${Icon} name="star" size=${15} /></button>
       <span class="sig-snooze-wrap" ref=${wrapRef}>
         <button class=${"sig-act" + (snoozeOpen ? " on" : "")} title="Snooze — pick a return date" aria-label="Snooze signal" aria-haspopup="true" aria-expanded=${snoozeOpen} onClick=${() => setSnoozeOpen(o => !o)}><${Icon} name="clock" size=${15} /></button>
         ${snoozeOpen ? html`<div class="sig-snooze-menu" role="group">
@@ -1897,10 +1897,10 @@ function SigFolderMenu({ label, folders, exclude, onPick }) {
     </div>` : null}
   </span>`;
 }
-// Unified SAVE control (2026-08-13, David: "what's the difference between starred and saved to a folder?").
-// ONE save concept: the main button saves the signal (folderless, lands in Saved — same as the star);
-// the caret optionally files it straight into a named folder. Replaces the standalone "File to…" verb.
-function SigSaveMenu({ folders, onSave, onPick }) {
+// SAVE control (2026-08-14, David: "the star fills gold when saved; unclick to unsave; saving must not
+// dismiss the signal"). The main button is a STAR TOGGLE — filled gold when saved, click to save/unsave,
+// and it NEVER removes the card (only Snooze/Dismiss do). The caret optionally files it into a folder.
+function SigSaveMenu({ folders, saved, onToggle, onPick }) {
   const [open, setOpen] = useState(false);
   const [naming, setNaming] = useState(false);
   const [nm, setNm] = useState("");
@@ -1910,7 +1910,8 @@ function SigSaveMenu({ folders, onSave, onPick }) {
   const commit = () => { const t = nm.trim(); if (t) pick(t); };
   const opts = folders || [];
   return html`<span class="brf-later-wrap brf-split" ref=${ref}>
-    <button type="button" class="brf-verb brf-split-main" onClick=${onSave} title="Save for later — lands in your Saved view"><${Icon} name="star" size=${12} /> Save</button>
+    <button type="button" class=${"brf-verb brf-split-main brf-star" + (saved ? " on" : "")} aria-pressed=${saved}
+      onClick=${onToggle} title=${saved ? "Saved — click to remove from Saved" : "Save for later — lands in your Saved view"}><${Icon} name="star" size=${13} /> ${saved ? "Saved" : "Save"}</button>
     <button type="button" class=${"brf-verb brf-split-caret" + (open ? " on" : "")} aria-haspopup="menu" aria-expanded=${open}
       aria-label="Save into a folder" onClick=${() => { setOpen(o => !o); setNaming(false); setNm(""); }}><span class="sfold-caret" aria-hidden="true">▾</span></button>
     ${open ? html`<div class="brf-menu" role="menu" ref=${el => { if (el && !naming && !el._f) { el._f = 1; const b = el.querySelector("button"); if (b) b.focus(); } }}>
@@ -2164,13 +2165,13 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   };
   const sigName = s => s.name || s.label_short;
 
-  const saveTo = (s, name) => { const sid = sidOf(s); leaveThen(sid, () => {
+  // file a signal into a folder WITHOUT removing it (saving never removes — folders are labels within
+  // Saved). Used from both the inbox caret and the Saved view; the card stays put and flashes.
+  const fileToFolder = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; const wasSaved = s.status === "saved";
     const fl = folders.includes(name) ? folders : [...folders, name];
-    writeSig({ folders: fl, assign: { ...assign, [sid]: name } });
-    setStatus(sid, "saved");
-    sigToast("Saved to “" + name + "” — " + sigName(s), () => {
-      const na = { ...assign }; delete na[sid]; writeSig({ folders: fl, assign: na });
-      setStatus(sid, null); }); }); };
+    writeSig({ folders: fl, assign: { ...assign, [sid]: name } }); setStatus(sid, "saved"); setFlashSid(sid);
+    sigToast("Saved to “" + name + "” — " + sigName(s),
+      () => { const na = { ...assign }; if (prev) na[sid] = prev; else delete na[sid]; writeSig({ folders: fl, assign: na }); if (!wasSaved) setStatus(sid, null); }); };
   const snoozeIt = (s, days) => { const sid = sidOf(s); leaveThen(sid, () => {
     setStatus(sid, "snoozed", days);
     sigToast("Snoozed until " + sigRetDate(days) + " — " + sigName(s), () => setStatus(sid, null)); }); };
@@ -2182,13 +2183,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     setStatus(sid, null);
     sigToast("Removed from saved — back in your feed — " + sigName(s),
       () => { if (prev) writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
-  // file a saved signal into a folder WITHOUT it leaving Saved (folders are labels within Saved) — used in the Saved view
-  const labelTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid];
-    const fl = folders.includes(name) ? folders : [...folders, name];
-    writeSig({ folders: fl, assign: { ...assign, [sid]: name } }); setFlashSid(sid);
-    sigToast("Filed in “" + name + "” — still in Saved — " + sigName(s),
-      () => { const na = { ...assign }; if (prev) na[sid] = prev; else delete na[sid]; writeSig({ folders: fl, assign: na }); }); };
-
   // ---- folder-view verbs (same pattern: exit + toast-borne Undo)
   const moveTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
     const fl = folders.includes(name) ? folders : [...folders, name];
@@ -2226,17 +2220,17 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     if (!folders.includes(t)) writeSig({ folders: [...folders, t], assign });
     setNavNaming(false); setNavNm(""); setView({ kind: "folder", name: t }); };
 
-  // ---- the sets. SAVE MODEL (David 2026-08-14): the star SAVES; folders ORGANISE within Saved.
-  // "Saved" holds EVERY saved signal; a named folder is just a label ON a saved signal, so a
-  // foldered signal STILL shows in Saved (folders are subsets of Saved, NOT a separate bucket).
-  // The feed is every live signal not saved/snoozed/dismissed. Machine order kept from the
-  // Briefing: new → risk → worth → |gap| → n, one flat list, ALL loaded (no pagination).
+  // ---- the sets. SAVE MODEL (David 2026-08-14): the star SAVES (a non-destructive toggle); folders
+  // ORGANISE within Saved. Saving NEVER removes a signal from the Inbox — only Snooze/Dismiss do —
+  // so the Inbox shows every live signal and saved ones just carry a gold star (Gmail: a starred mail
+  // stays in the inbox). "Saved" is the starred subset; a folder is a label on a saved signal, so a
+  // foldered signal shows in Saved too. Machine order from the Briefing: new → risk → worth → |gap| → n.
   const present = new Set(all.map(sidOf));
   const cntFolder = name => Object.keys(assign).filter(k => assign[k] === name && present.has(k)).length;
   // (stubFor retired 2026-07-10, David: toast instead of stub rows — an actioned card simply
   // leaves the feed; the Undo lives on the toast, so no placeholder row holds its slot.)
-  const savedItems = all.filter(s => s.status === "saved");                 // ALL saved (foldered or not)
-  const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed" && s.status !== "saved" && !assign[sidOf(s)]);
+  const savedItems = all.filter(s => s.status === "saved");                 // ALL saved (foldered or not) — the star subset
+  const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed");   // saved STAY in the inbox (star only marks them)
   const ordKey = s => [s.status === "priority" ? 0 : 1, s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
   feedItems.sort((a, b) => { const ka = ordKey(a), kb = ordKey(b);
     for (let i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; } return 0; });
@@ -2312,7 +2306,16 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     : sortMode === "domain" ? [...shownItems].sort((a, b) => domainLabel(a.domain || "~").localeCompare(domainLabel(b.domain || "~")) || ordCmp(a, b))
     : [...shownItems].sort(ordCmp);
   // f = quick-save to the star-fed "Saved" tab (folderless), the single "save" concept (File to… is folders)
-  const fileIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, "saved"); sigToast("Saved for later — " + sigName(s), () => setStatus(sid, null)); }); };
+  // the STAR: toggle Saved in place — saving NEVER removes the card (Snooze/Dismiss do that). Also keyboard "f".
+  const fileIt = (s) => { const sid = sidOf(s);
+    if (s.status === "saved") { const prev = assign[sid];
+      if (prev) { const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na }); }   // unsaving drops its folder label too
+      setStatus(sid, null);
+      sigToast("Removed from Saved — " + sigName(s), () => { if (prev) writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); });
+    } else {
+      setStatus(sid, "saved");
+      sigToast("Saved — still in your inbox — " + sigName(s), () => setStatus(sid, null));
+    } };
   // bulk actions on a NARROWED active view (a position filter, or a single domain) — one Undo reverts the batch
   const bulkable = v.kind === "all" && (posOn || !!domFilter) && sortedItems.length >= 2;   // bulk on a narrowed feed (position or domain)
   const bulkAct = (status, days) => {
@@ -2356,14 +2359,14 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="brf-strat"><${Icon} name="compass" size=${11} /> ${sigStratLine(s.strategy_influence)}</div>` : null}
       <div class="brf-verbs" onClick=${e => e.stopPropagation()}>
         ${v.kind === "all" ? html`
-          <${SigSaveMenu} folders=${folders} onSave=${() => fileIt(s)} onPick=${n => saveTo(s, n)} />
+          <${SigSaveMenu} folders=${folders} saved=${s.status === "saved"} onToggle=${() => fileIt(s)} onPick=${n => fileToFolder(s, n)} />
           <${SigSnoozeMenu} onPick=${d => snoozeIt(s, d)} />
           <button type="button" class="brf-verb" onClick=${() => dismissIt(s)}>Dismiss</button>`
         : v.kind === "folder" ? html`
           <${SigFolderMenu} label="Move to…" folders=${folders} exclude=${v.name} onPick=${n => moveTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unfolder(s)}>Remove from folder</button>`
         : v.kind === "saved" ? html`
-          <${SigFolderMenu} label=${assign[sidOf(s)] ? "In “" + assign[sidOf(s)] + "”" : "Add to folder…"} folders=${folders} exclude=${assign[sidOf(s)]} onPick=${n => labelTo(s, n)} />
+          <${SigFolderMenu} label=${assign[sidOf(s)] ? "In “" + assign[sidOf(s)] + "”" : "Add to folder…"} folders=${folders} exclude=${assign[sidOf(s)]} onPick=${n => fileToFolder(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unsave(s)}>Remove from saved</button>`
         : v.kind === "snoozed" ? html`
           <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`

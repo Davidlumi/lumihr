@@ -76,6 +76,7 @@
   --paper: #FBF9F6;
   --surface: #FFFFFF;
   --surface-sunk: #F4F1EC;
+  --gold: #E0A11B;   /* the "saved" star fill — a favourite-gold, distinct from the RAG amber verdict tint */
   --ink: #211B26;
   --ink-soft: #5B5560;
   --ink-faint: #6E6874;  /* AA-safe tertiary text: 5.1:1 on paper, 4.8:1 on sunk (was #8E8893 at 3.3:1 — knowingly failing; darkened 2026-07-03) */
@@ -4521,6 +4522,14 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .brf-split-caret { padding-left: 2px; padding-right: 2px; }
 .brf-split-main svg { color: var(--ink-faint); }
 .brf-split-main:hover svg, .brf-split-caret.on svg { color: var(--navy); }
+/* saved = a GOLD-FILLED star (David 2026-08-14). Applies to the Signals-card star (.brf-star) and the
+   metric-bar/other-surface star (.sig-act.sig-star); saving is a non-destructive toggle, so the fill
+   just reflects state. Gold is scoped to the star only — the pin/snooze "on" states stay as they were. */
+.brf-star.on { color: var(--gold); }
+.brf-star.on svg, .brf-star.on:hover svg { color: var(--gold); fill: var(--gold); }
+.signal-row .sig-act.sig-star.on, .metric-sigbar .sig-act.sig-star.on { color: var(--gold); }
+.signal-row .sig-act.sig-star.on svg, .metric-sigbar .sig-act.sig-star.on svg { color: var(--gold); fill: color-mix(in srgb, var(--gold) 34%, transparent); }
+.metric-sigbar .sig-act.sig-star.on { background: color-mix(in srgb, var(--gold) 12%, transparent); }
 .brf-menu { position: absolute; left: 0; right: auto; top: calc(100% + 4px); z-index: var(--z-popover); min-width: 158px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--s2); box-shadow: var(--shadow-pop); }

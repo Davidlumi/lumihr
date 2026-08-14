@@ -18075,3 +18075,26 @@ Verified live on a Thornbridge rig: Saved shows all 5 (2 tagged "In 'check'", 3 
 kept Saved at 5 and dropped check 2→1 WITHOUT returning to the feed (Inbox stayed 47), and the item then showed
 folderless in Saved. jsc clean, braces balanced, no JS console errors. Gates not run — no server/engine/data touched
 (the `writeSig` persistence path is unchanged; only which set an item falls into changed).
+
+## 2026-08-14 — Signals star: gold toggle + saving no longer removes the card (v=602)
+
+David: "when the star is selected fill it in gold to indicate saved — they can then unclick to unsave and the star
+is not filled — saving should not dismiss a signal, they need to do that separately." Two changes:
+
+1. **Save is now a non-destructive toggle, not a triage action.** The inbox card's `fileIt` (star + keyboard "f")
+   flips `status` saved↔null IN PLACE — no more `leaveThen`, so a saved signal STAYS in the inbox (Gmail: a starred
+   mail stays in the inbox; only Snooze/Dismiss remove). `feedItems` now = `status !== dismissed && !== snoozed`
+   (was also excluding saved/foldered) → the inbox count rose (demo 47→52 as the 5 saved re-appear). Folder filing
+   (`saveTo` → renamed `fileToFolder`, and the old `labelTo` folded into it) is also non-leaving now; the feed caret
+   and the Saved-view "Add to folder…" both use it. Snooze/Dismiss/unsave/unfolder keep their `leaveThen` (they
+   genuinely leave the current view).
+2. **The star fills gold when saved.** New `--gold: #E0A11B` (a favourite-gold, deliberately distinct from the RAG
+   amber verdict tint). `SigSaveMenu` main button is now a star TOGGLE (`.brf-star`, `aria-pressed`, label
+   "Save"/"Saved") — gold fill + gold text when `.on`. The metric-bar/other-surface star (`.sig-act`) gained a
+   `sig-star` class so the gold is scoped to the STAR only (the pin/snooze "on" states are untouched); its saved
+   fill flips blue→gold too, for one consistent "saved = gold star" across the app.
+
+Verified live on a Thornbridge rig: clicking a card's star → gold fill (`rgb(224,161,27)`), text "Saved", card
+STAYS in the inbox (52 unchanged), Saved 5→6; clicking again → unfilled, "Save", Saved 6→5, still in inbox; Dismiss
+still removes (Inbox 52→51, Dismissed 14→15). jsc clean, braces balanced, no JS console errors. Gates not run — no
+server/engine/data touched.
