@@ -1,29 +1,36 @@
 #!/usr/bin/env python3
 """Add 50 new synthetic companies to the seed pool (2026-08-14, David) — full lineage.
 
-Grows the benchmark pool 220 -> 270 so sector/size sample searches are richer.
+Grows the benchmark pool 220 -> 270 so sector/size sample searches are richer, with answers that
+are FAITHFUL to each new org's sector and size (the launch-QA requirement).
 
-Each new org's GATED closures (every coherence-closure touching a register marginal, keyed
-gradient, ruled distribution, multi-select incidence or settled-frozen metric) are filled by
-CLONING a real donor org's whole closure answer-set — the donor MIX is chosen (donor_mix, IPF at
-the contingency level) so every anchored marginal lands on its target and the joint stays coherent
-by construction. There is deliberately NO complete-tuple requirement: the naive joint-tuple
-replicator only used orgs answering EVERY metric in a closure, which biased a 12-metric health
-closure toward large fully-completing orgs and pushed the size-conditioned marginals (sick pay,
-income protection) to the large-firm rate. Keyed gradients are matched to their _default band,
-because new orgs carry no org_profiles row and the gate bands them '?' -> _default. FREE metrics
-are block-shuffled from same-cell donors with numeric jitter, so no two orgs share an answer vector.
+Every coherence-closure — free and gated alike — is cloned from a real SAME-(industry, fte_band)
+donor, a different donor per closure, so each new org is a mosaic that is sector- and size-faithful
+(a large org clones a large donor; a public-sector org clones a public-sector donor -> DB pension,
+not DC) and internally coherent (each closure is one real org's real joint answer). Proportional
+same-cell cloning also preserves the register marginals: a size-conditioned metric (sick pay 17.5%
+SME / 63% large) is reproduced because same-size donors are drawn in the new orgs' own size mix.
+Donors are ALL 220 classified seed orgs (not the registry 158) so the aggregate matches the
+full-pool targets. FREE numeric metrics get a small jitter; anchored values are cloned exactly.
+Different donors per closure -> no two orgs share an answer vector.
+
+Two targeted refinements sit on top of the same-cell base:
+  * Industry-keyed band_distributions gradients (REW_INC_103, parent of the bonus-detail family)
+    are RE-DRAWN per real industry to the band's ruled shape, because a 2-3-org industry drifts off
+    that shape by same-cell sampling variance alone. Whole-closure clone keeps the subset coherence.
+  * New orgs get an org_profiles_inferred.json row (Industry + FTE_Band) so the gate bands them by
+    their real sector — HR_Maturity is omitted so the maturity-anchored gradients keep skipping them.
 
 Adding orgs necessarily perturbs the 8 settled-frozen SHARE anchors by up to ~0.2pp (0.1pp is
 0.27 of one org at n=270 — a "don't touch" guard, not a data threshold), so this batch RE-RATIFIES
-frozen_targets.json to the 270-org store (David-approved 2026-08-14). Register marginals (5pp) and
-keyed gradients hold by construction.
+frozen_targets.json to the 270-org store (David-approved 2026-08-14).
 
 Extends the WHOLE provenance chain so all gates stay green:
   * lumi.db  — orgs rows + answers
   * data/responses/*.csv  — 50 new response files (L1 ground truth)
   * data/book_baseline.json  — re-recorded row hash
   * identity.db org_register — 50 twin rows (identity_recon)
+  * org_profiles_inferred.json — 50 profile rows (Industry + FTE_Band) so keyed bands resolve
   * frozen_targets.json      — settled anchors re-ratified at n=270 (separate, David-signed edit)
 
 Deterministic sha256. INSERT-only. After --write, re-aggregate:
@@ -36,10 +43,13 @@ import os, sys, json, csv, sqlite3, hashlib, uuid, re
 from collections import defaultdict, Counter
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+sys.path.insert(0, os.path.abspath(ROOT))
+from reseed_engine import canon_industry   # same industry->band canon the freeze gate uses
 DB = os.environ.get("LUMI_DB") or os.path.join(ROOT, "lumi.db")
 IDB = os.environ.get("LUMI_IDENTITY_DB") or os.path.join(ROOT, "identity.db")
 RESP = os.path.join(ROOT, "data", "responses")
 BOOK = os.path.join(ROOT, "data", "book_baseline.json")
+PROF = os.path.join(ROOT, "org_profiles_inferred.json")
 WRITE = "--write" in sys.argv and "--confirmed-by-david" in sys.argv
 N_NEW = 50
 
@@ -125,10 +135,14 @@ def main():
             protected |= members
     protected |= gated | coh_metrics     # keep every coherence-linked metric whole from the base too
 
-    # ---- donors: registry-matched classified 158, with full answers ----
+    # ---- donors: ALL classified seed orgs (220 = 158 registry + 62 classified), with answers.
+    #      The whole classified pool — not the registry-matched 158 — because a size/sector-
+    #      conditioned register marginal is calibrated against the FULL pool; cloning from the
+    #      registry subset alone pulls new orgs to the registry rate and drifts the aggregate.
+    #      classified=0 is only the demo fixture, correctly excluded. ----
     donors = [dict(r) for r in c.execute(
         "SELECT org_id, industry, subsector, fte_band, hq_region, similarity_vector_json "
-        "FROM orgs WHERE classified=1 AND registry_json IS NOT NULL AND registry_json!=''")]
+        "FROM orgs WHERE classified=1")]
     by_cell = defaultdict(list); by_ind = defaultdict(list); by_fte = defaultdict(list)
     for d in donors:
         by_cell[(d["industry"], d["fte_band"])].append(d["org_id"])
@@ -179,20 +193,36 @@ def main():
         new.append({"org_id": oid, "industry": ind, "subsector": sub, "fte_band": fte, "hq_region": reg,
                     "base": base, "name": gen_name(ind, i, taken_names)})
 
-    # ---- assemble answers ----
+    # ---- assemble answers: clone EVERY coherence-closure (free + gated) from a SAME-(industry,
+    #      fte_band) donor — a different donor per closure, so each new org is a mosaic that is
+    #      sector- AND size-faithful (a large org clones a large donor; a public-sector org clones
+    #      a public-sector donor -> DB pension, not DC) and internally coherent (each closure is
+    #      one real org's real joint answer). Proportional same-cell cloning also preserves the
+    #      register marginals: a size-conditioned metric (sick pay 17.5% SME / 63% large) is
+    #      reproduced because same-size donors are drawn in the new orgs' own size mix — the reason
+    #      an earlier global marginal-match was dropped (it hit the aggregate targets but sent
+    #      public-sector orgs DC pensions and mid-large orgs off their governance cohort). FREE
+    #      numeric metrics get a small jitter for novelty; anchored/gated values are cloned EXACTLY
+    #      so the ruled distributions hold. Different donors per closure -> no shared answer vector.
     NUMERIC = {"numeric", "number", "currency", "percent", "percentage"}
+    free_set = set(free_roots)
     na = {}    # oid -> {qid: [[mr,val,sub],...]}
     for o in new:
-        oid, ind, fte, base = o["org_id"], o["industry"], o["fte_band"], o["base"]
+        oid, ind, fte = o["org_id"], o["industry"], o["fte_band"]
+        pool0 = by_cell.get((ind, fte)) or by_ind.get(ind) or sorted(dset)
         rows = {}
-        # FREE metrics (not in any gated closure): clone from a same-cell donor + jitter numerics -> novelty
-        for root in free_roots:
-            pool = by_cell.get((ind, fte)) or by_ind.get(ind) or list(dset)
-            donor = pick(pool, "free", oid, root)
-            for qid in closure[root]:
+        for root in sorted(closure):
+            qs = closure[root]
+            cand = [d for d in pool0 if any(qid in ans[d] for qid in qs)] \
+                or [d for d in by_ind.get(ind, []) if any(qid in ans[d] for qid in qs)] \
+                or [d for d in sorted(dset) if any(qid in ans[d] for qid in qs)]
+            if not cand: continue
+            donor = cand[h("clone", oid, root) % len(cand)]
+            jit = root in free_set
+            for qid in qs:
                 if qid in ans[donor]:
                     cp = [list(x) for x in ans[donor][qid]]
-                    if qtype.get(qid) in NUMERIC:
+                    if jit and qtype.get(qid) in NUMERIC:
                         for row in cp:
                             m = re.match(r"^\s*([-+]?\d*\.?\d+)(.*)$", row[1] or "")
                             if m:
@@ -201,132 +231,51 @@ def main():
                                 if nv > 0: row[1] = (("%d" % nv) if float(nv).is_integer() else ("%.2f" % nv)) + m.group(2)
                     rows[qid] = cp
         na[oid] = rows
+    fixed = {r: len(closure[r]) for r in gated_roots}   # gated closures now clone same-cell like the rest
 
-    # ---- GATED CLOSURES: clone a REAL donor org's whole closure answer-set into each new org,
-    #      choosing the donor MIX (IPF over donor weights) so every register marginal, keyed
-    #      gradient, ruled distribution and settled-frozen dist lands on its target. Coherence
-    #      holds by construction — each donor is a real, internally-consistent org. There is NO
-    #      complete-tuple requirement: the old joint-tuple replicator only used orgs that had
-    #      answered EVERY metric in the closure, which biased a 12-metric health closure toward
-    #      large, fully-completing orgs and pushed size-conditioned marginals (sick pay, income
-    #      protection) up to the large-firm rate. Cloning a real org's partial set avoids that. ----
-    fixed = {}
-    org_ans = defaultdict(lambda: defaultdict(list))
-    for r in c.execute("SELECT org_id, question_id, matrix_row_id, value, submitted_at FROM answers "
-                        "WHERE snapshot_id=1 AND value!=''"):
-        org_ans[r["org_id"]][r["question_id"]].append([r["matrix_row_id"], r["value"], r["submitted_at"]])
-    org_ind = {r["org_id"]: r["industry"] for r in c.execute("SELECT org_id, industry FROM orgs")}
-    resp_by_ind = defaultdict(list)
-    for oid in org_ans: resp_by_ind[org_ind.get(oid)].append(oid)
-    all_resp = sorted(org_ans)
-    all_new = [o["org_id"] for o in sorted(new, key=lambda x: h("gid", x["org_id"]))]
+    # ---- keyed-gradient correction (per REAL industry) --------------------------------------
+    # A closure carrying an Industry-keyed band_distributions gradient (REW_INC_103, the parent
+    # of the whole bonus-detail family) is checked by qa_plausibility per industry band vs the
+    # ruled shape (special band for Charity / Public Sector, else _default). Same-cell random
+    # cloning leaves small industries (2-3 new orgs) off that shape by sampling variance alone —
+    # e.g. two new Energy orgs both landing '50-74%'. So for these closures we RE-DRAW per real
+    # industry: apportion the industry's new orgs across the keyed values to the band target
+    # (largest remainder), then clone a whole same-industry donor holding the apportioned value —
+    # coherence-safe (one real org's real joint answer), and now on-shape by construction.
+    keyed_bd = {q for q, e in gm.get("maturity_gradients", {}).items()
+                if e.get("band_distributions") and e.get("key") == "Industry"}
+    def _band_dist(qid, industry):
+        # mirror the gate: bds.get(canon_industry(industry)) or bds.get("_default"); None -> band
+        # not declared for this industry -> the gate skips it, so we skip it too.
+        bds = gm["maturity_gradients"][qid]["band_distributions"]
+        return bds.get(canon_industry(industry or "")) or bds.get("_default")
+    new_by_realind = defaultdict(list)
+    for o in new: new_by_realind[o["industry"]].append(o)
+    for kq in keyed_bd:
+        qs = closure[find(kq)]
+        for industry, group in new_by_realind.items():
+            dist = _band_dist(kq, industry)
+            if not dist: continue
+            quota = {l: dist[l] / 100.0 * len(group) for l in dist}
+            alloc = {l: int(quota[l]) for l in dist}
+            r = len(group) - sum(alloc.values())
+            for l in sorted(dist, key=lambda x: (-(quota[x] - int(quota[x])), x))[:max(0, r)]: alloc[l] += 1
+            seq = []
+            for l, n_ in alloc.items(): seq += [l] * n_
+            same_ind = by_ind.get(industry, [])
+            for o, val in zip(group, seq):
+                pool = [d for d in same_ind
+                        if any(mr == "" and v.strip() == val for (mr, v, _s) in ans[d].get(kq, []))] \
+                    or [d for d in sorted(dset)
+                        if any(mr == "" and v.strip() == val for (mr, v, _s) in ans[d].get(kq, []))]
+                if not pool: continue
+                pref = [d for d in pool if dinfo.get(d, (None, None))[1] == o["fte_band"]] or pool
+                donor = pref[h("keyed", o["org_id"], kq, val) % len(pref)]
+                for qid in qs: na[o["org_id"]].pop(qid, None)   # replace the whole closure atomically
+                for qid in qs:                                  # (a partial overwrite would mix two
+                    if qid in ans[donor]:                       #  donors and break the bonus-family
+                        na[o["org_id"]][qid] = [list(x) for x in ans[donor][qid]]   # subset coherence)
 
-    def _val(oid, qid):
-        lst = org_ans[oid].get(qid)
-        if not lst: return None
-        return next((x[1].strip() for x in lst if x[0] == ""), lst[0][1].strip())
-
-    def _marg_cell(qid, val):
-        o = (ORDS.get(qid) or {}).get("option_order"); wo = (ORDS.get(qid) or {}).get("worst_option")
-        if o:
-            pf = MARGENT[qid].get("positive_from"); cut = o.index(pf) if pf in o else 1
-            if val not in o: return "out"
-            return "lean" if val in set(o[:cut]) else "pos"
-        if wo:
-            return "lean" if str(val).strip().lower() == str(wo).strip().lower() else "pos"
-        return None
-
-    def donor_mix(qs, cands, N, band=None, tiek="_"):
-        """N donor org_ids (with repetition) from `cands`, mixed so every anchored marginal in
-        the closure lands on its target. Works at the CONTINGENCY level: donors are grouped by
-        their tuple of target cells (pos/lean/out per marginal; value per ruled/frozen dist), the
-        joint cell-distribution is IPF-fitted to every marginal target, N is apportioned across
-        cell-tuples by largest remainder (quotas are >=1 there, so LR is a true proportional split
-        — NOT the degenerate top-N it becomes over 220 single donors), and real donors are drawn
-        within each cell. Cloning a real donor keeps the whole closure internally coherent."""
-        specs = []
-        for m in qs:
-            if m in MARGENT and (MARGENT[m].get("target_share") is not None or MARGENT[m].get("target_range")):
-                if not ((ORDS.get(m) or {}).get("option_order") or (ORDS.get(m) or {}).get("worst_option")):
-                    continue
-                e = MARGENT[m]; t = e.get("target_share")
-                if t is None: r = e["target_range"]; t = (float(r[0]) + float(r[1])) / 2.0
-                specs.append((m, (lambda v, m=m: _marg_cell(m, v)), ("marg", float(t))))
-            elif m in MGRADENT and MGRADENT[m].get("band_distributions"):
-                # New orgs carry no org_profiles row, so qa_plausibility bands them '?' and falls
-                # through to the gradient's _default distribution. Match _default globally so the
-                # '?' band lands on the ruled shape. (anchors-type gradients declare no '?' band,
-                # so the gate never evaluates the new orgs against them — no spec needed.)
-                bd = MGRADENT[m]["band_distributions"].get("_default")
-                if bd: specs.append((m, (lambda v: v), ("dist", {k: p / 100.0 for k, p in bd.items()})))
-            elif m in RDISTENT:
-                specs.append((m, (lambda v: v), ("dist", {k: p / 100.0 for k, p in RDISTENT[m]["distribution"].items()})))
-            elif m in FROZDICT:
-                specs.append((m, (lambda v: v), ("dist", dict(FROZDICT[m]["dist"]))))
-
-        def lr(quota, n, keyfn):     # largest-remainder integer allocation of n over a quota dict
-            alloc = {k: int(v) for k, v in quota.items()}
-            r = n - sum(alloc.values())
-            if r > 0:
-                for k in sorted(quota, key=lambda x: (-(quota[x] - int(quota[x])), keyfn(x)))[:r]: alloc[k] += 1
-            return alloc
-
-        if not specs:                # no anchored metric -> proportional draw by hash
-            picks = sorted(cands, key=lambda x: h("mix", tiek, band or "_", x))
-            return [picks[i % len(picks)] for i in range(N)] if picks else []
-
-        dc = {m: {d: cf(_val(d, m)) for d in cands if _val(d, m) is not None} for (m, cf, _) in specs}
-        full = [d for d in cands if all(d in dc[m] for (m, _, _) in specs)]
-        if not full: full = list(cands)
-        tup = {d: tuple(dc[m].get(d) for (m, _, _) in specs) for d in full}
-        w = {ct: cnt / len(full) for ct, cnt in Counter(tup.values()).items()}
-
-        def spec_target(spec, cur):
-            if spec[0] == "marg":
-                t = spec[1]; po = cur.get("out", 0.0)
-                return {"out": po, "pos": (1 - po) * t, "lean": (1 - po) * (1 - t)}
-            if spec[0] == "marg2":
-                return {"pos": spec[1], "neg": 1 - spec[1]}
-            return dict(spec[1])
-
-        for _ in range(60):          # IPF the joint cell-distribution onto every marginal target
-            for i, (m, cf, spec) in enumerate(specs):
-                cur = defaultdict(float)
-                for ct, wv in w.items(): cur[ct[i]] += wv
-                tgt = spec_target(spec, cur)
-                for ct in list(w):
-                    cell = ct[i]
-                    if cell not in tgt: w[ct] = 0.0
-                    elif cur[cell] > 0 and tgt[cell] > 0: w[ct] *= tgt[cell] / cur[cell]
-            s = sum(w.values())
-            if s > 0:
-                for ct in w: w[ct] /= s
-
-        quota = {ct: w[ct] * N for ct in w}
-        alloc = lr(quota, N, lambda ct: h("ct", tiek, band or "_", str(ct)))
-        seq = []
-        for ct, n_ in alloc.items():
-            pool = sorted([d for d in full if tup[d] == ct], key=lambda x: h("pick", tiek, band or "_", x))
-            for j in range(n_):
-                if pool: seq.append(pool[j % len(pool)])
-        while len(seq) < N and full:  # top up any largest-remainder shortfall
-            pad = sorted(full, key=lambda x: h("pad", tiek, x))
-            seq.append(pad[len(seq) % len(pad)])
-        return seq[:N]
-
-    for root in gated_roots:
-        qs = sorted(closure[root])
-        # Draw globally over the whole responding pool. Keyed gradients are matched to their
-        # _default band inside donor_mix (new orgs have no profile row -> the gate bands them '?'
-        # -> _default), so per-industry keying would aim at the wrong target.
-        cands = [d for d in all_resp if any(qid in org_ans[d] for qid in qs)]
-        if not cands: continue
-        seq = donor_mix(qs, cands, len(all_new), band=None, tiek=root[:8])
-        for oid, src in zip(all_new, seq):
-            for qid in qs:
-                if org_ans[src].get(qid):
-                    na[oid][qid] = [list(x) for x in org_ans[src][qid]]
-        fixed["closure@%s" % root[:10]] = len(qs)
 
     total_answers = sum(len(l) for o in new for l in na[o["org_id"]].values())
     print(("APPLIED" if WRITE else "DRY RUN") + " — %d new orgs, %d answers" % (N_NEW, total_answers))
@@ -387,7 +336,23 @@ def main():
                        "VALUES(?,?,?,?,NULL)", (o["org_id"], o["name"], norm(o["name"]), o["name"]))
         ic.commit(); ic.close()
     c.close()
-    print("  WROTE: 50 orgs + answers, 50 CSVs, book_baseline (%d rows, %s), 50 org_register twins" % (len(rows), digest))
+
+    # ---- org_profiles_inferred.json: Industry + FTE_Band only ----
+    # The gate bands orgs by profile. Without a row a new org bands '?' -> _default on every keyed
+    # gradient — which mis-scores the Industry-keyed REW_INC_103 (a sector-faithful public-sector
+    # org has no bonus, but _default expects only 10% 'None'). Giving Industry+FTE_Band bands it by
+    # its REAL sector, so the sector-faithful clone matches its own band. HR_Maturity is DELIBERATELY
+    # omitted: the 3 HR_Maturity gradients are anchors-type over Basic/Developing/Advanced, and a
+    # same-cell clone (drawn on industry+size, not maturity) would not honour a maturity anchor —
+    # with no HR_Maturity the gate bands the new org None on those and skips it, as before.
+    prof = json.load(open(PROF)) if os.path.exists(PROF) else {}
+    for o in new:
+        prof[o["org_id"]] = {"org_id": o["org_id"], "Company_Name": o["name"], "inferred": True,
+                             "_add50": True, "Industry": o["industry"], "Subsector": o["subsector"],
+                             "FTE_Band": o["fte_band"], "HQ_Region": o["hq_region"]}
+    json.dump(prof, open(PROF, "w"), indent=1, ensure_ascii=False)
+    print("  WROTE: 50 orgs + answers, 50 CSVs, book_baseline (%d rows, %s), 50 org_register twins, 50 profile rows"
+          % (len(rows), digest))
 
 
 def _has_col(conn, table, col):

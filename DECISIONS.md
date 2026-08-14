@@ -2,6 +2,14 @@
 
 Date: 10 June 2026 · Methodology v1 · Snapshot 1 ("2026 H1")
 
+## 2026-08-14 — launch QA of the +50 seed: reseeded for sector/size fidelity
+
+**QA finding (David's pre-launch review).** A data-driven conformance check (let the existing 220 define each metric's sector/size fingerprint, then test whether the new orgs conform) exposed that the first +50 batch was NOT sector/size-faithful on the anchored metrics. Worst case: **REW26_BEN_PENSION_TYPE — 5 new public-sector orgs all on DC** (public sector should be DB); pension/governance metrics 30–90pp off in Public Sector, Logistics, Hospitality. Root cause: the first cut chose donors to hit the **global** marginals (`donor_mix`, IPF) ignoring each new org's own sector/size — the gates passed on aggregate but the data was implausible per-cell.
+
+**Reseed (same migration, rewritten).** Every coherence-closure — free and gated — is now cloned from a real **same-(industry, fte_band)** donor, a different donor per closure. Same-cell cloning is sector- AND size-faithful by construction (a public-sector org clones a public-sector donor → DB; a large org clones a large donor) AND preserves the register marginals (a size-conditioned rate is reproduced because same-size donors are drawn in the new orgs' own size mix). **KEY:** the donor pool is ALL 220 classified seed orgs, not the registry 158 — cloning from the registry subset alone pulled new orgs to the registry rate and drifted the full-pool targets. Two refinements: (1) Industry-keyed band_distributions gradients (REW_INC_103, parent of the bonus-detail family) are re-drawn **per real industry** to the ruled shape, because a 2–3-org industry drifts off it by sampling variance alone — whole-closure clone keeps the subset coherence; (2) new orgs get an `org_profiles_inferred.json` row (Industry + FTE_Band, **no HR_Maturity** — the maturity-anchored gradients must keep skipping them) so the gate bands them by their real sector.
+
+**Verification.** Public-sector new orgs now DB pensions + no bonus; tech DC + bonused; **joint-(sector×size)-cell conformance ≈ 95%** (only 6 of 114 adequately-sized cells diverge >25pp, all tiny cells — realistic variance); **zero duplicate answer-vectors**. `frozen_targets.json` re-recorded to the reseeded 270-store (still David's n=270 re-ratification); qa_engine_audit L1 regen pins re-recorded. Full suite **14/14 GREEN** on the real DB. Safety backup taken + removed; zero DB copies survive. Supersedes the global-marginal-match generator of the same day.
+
 ## Stack decisions
 
 1. **FastAPI + SQLite, React 18 without a build step.** Phase 1 mandated Python, so the whole

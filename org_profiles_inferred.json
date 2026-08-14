@@ -845,5 +845,505 @@
   "_r3s2_maturity_recovered": "2026-07-18: HR_Maturity copied VERBATIM from seed_personas_220.json (field-loss class, lossless)"
  },
  "_r3s1_recovery": "2026-07-18: Workforce_Frontline/Shift/Unionised_% copied VERBATIM from seed_personas_220.json (fields never carried over at Diff-9 profile build — Diff-9 field-loss class, lossless). 21 sector-implausible AUTHORED values flagged to David separately, NOT altered here.",
- "_r3s2_note": "HR_Maturity recovered 62/62 verbatim from seed_personas_220.json. org_profiles are the gating authority; any future rebuild must preserve recovered fields (clobber-class)."
+ "_r3s2_note": "HR_Maturity recovered 62/62 verbatim from seed_personas_220.json. org_profiles are the gating authority; any future rebuild must preserve recovered fields (clobber-class).",
+ "000b4af9-b420-9ad0-0000-b38569365f13": {
+  "org_id": "000b4af9-b420-9ad0-0000-b38569365f13",
+  "Company_Name": "Wrenbourne Hotels Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Travel Services",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South West"
+ },
+ "000f0315-06dd-36b0-0000-bab65d267187": {
+  "org_id": "000f0315-06dd-36b0-0000-bab65d267187",
+  "Company_Name": "Wrenworth Leisure Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Restaurants & QSR",
+  "FTE_Band": "10,000+",
+  "HQ_Region": "West Midlands"
+ },
+ "00000830-3d69-7fd0-0000-f7412b5cb6c9": {
+  "org_id": "00000830-3d69-7fd0-0000-f7412b5cb6c9",
+  "Company_Name": "Fenbourne Travel Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Leisure Clubs",
+  "FTE_Band": "250-999",
+  "HQ_Region": "South West"
+ },
+ "000967a5-7fb5-a500-0000-da1cd8bdbd63": {
+  "org_id": "000967a5-7fb5-a500-0000-da1cd8bdbd63",
+  "Company_Name": "Pencross Leisure UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Tour Operations",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "North West"
+ },
+ "000b898b-bc99-8a20-0000-8bc823e914df": {
+  "org_id": "000b898b-bc99-8a20-0000-8bc823e914df",
+  "Company_Name": "Hawford Hotels Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Leisure Clubs",
+  "FTE_Band": "250-999",
+  "HQ_Region": "South West"
+ },
+ "000e6b0b-17dc-2370-0000-c136dc09f1b6": {
+  "org_id": "000e6b0b-17dc-2370-0000-c136dc09f1b6",
+  "Company_Name": "Caldbridge Hotels Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Hospitality, Leisure & Travel",
+  "Subsector": "Travel Services",
+  "FTE_Band": "250-999",
+  "HQ_Region": "London"
+ },
+ "0003f984-14d4-ffe0-0000-5e2f30bbc36b": {
+  "org_id": "0003f984-14d4-ffe0-0000-5e2f30bbc36b",
+  "Company_Name": "Wrenworth Retail Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Fashion & Apparel",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South West"
+ },
+ "000a5f52-3227-2ad0-0000-94a921eccbb8": {
+  "org_id": "000a5f52-3227-2ad0-0000-94a921eccbb8",
+  "Company_Name": "Brackbourne Consumer Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Fashion & Apparel",
+  "FTE_Band": "250-999",
+  "HQ_Region": "Yorkshire & Humber"
+ },
+ "00018453-581e-9df0-0000-3a55d039fd2b": {
+  "org_id": "00018453-581e-9df0-0000-3a55d039fd2b",
+  "Company_Name": "Wrenbridge Stores Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Fashion & Apparel",
+  "FTE_Band": "250-999",
+  "HQ_Region": "Yorkshire & Humber"
+ },
+ "000ccc2f-302c-5d20-0000-e71333ea8279": {
+  "org_id": "000ccc2f-302c-5d20-0000-e71333ea8279",
+  "Company_Name": "Greyhaven Consumer UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Beauty & Personal Care",
+  "FTE_Band": "50-249",
+  "HQ_Region": "West Midlands"
+ },
+ "0001d246-c3b7-03d0-0000-01ab263e80b8": {
+  "org_id": "0001d246-c3b7-03d0-0000-01ab263e80b8",
+  "Company_Name": "Wrenwick Stores UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Home & Living",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "West Midlands"
+ },
+ "00086f66-f9b6-9830-0000-49419af1cd0a": {
+  "org_id": "00086f66-f9b6-9830-0000-49419af1cd0a",
+  "Company_Name": "Oakbridge Brands Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Fashion & Apparel",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "South West"
+ },
+ "000b6557-620b-3580-0000-3c6f49aa0572": {
+  "org_id": "000b6557-620b-3580-0000-3c6f49aa0572",
+  "Company_Name": "Marbridge Stores UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Retail & Consumer Goods",
+  "Subsector": "Consumer Electronics",
+  "FTE_Band": "250-999",
+  "HQ_Region": "East of England"
+ },
+ "000207ee-9a3f-1220-0000-9603faaecb85": {
+  "org_id": "000207ee-9a3f-1220-0000-9603faaecb85",
+  "Company_Name": "Hawmoor Infrastructure Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Housebuilding",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "North East"
+ },
+ "000982cb-5d23-2a60-0000-a389e6a48be5": {
+  "org_id": "000982cb-5d23-2a60-0000-a389e6a48be5",
+  "Company_Name": "Blackhaven Build & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Housebuilding",
+  "FTE_Band": "10,000+",
+  "HQ_Region": "North West"
+ },
+ "00098ea7-6e00-1520-0000-8e275c7be0b1": {
+  "org_id": "00098ea7-6e00-1520-0000-8e275c7be0b1",
+  "Company_Name": "Stanbridge Construction UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Rail & Transit Infrastructure",
+  "FTE_Band": "250-999",
+  "HQ_Region": "London"
+ },
+ "00040391-c835-03d0-0000-15a074bc3f3e": {
+  "org_id": "00040391-c835-03d0-0000-15a074bc3f3e",
+  "Company_Name": "Blackfield Build UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Rail & Transit Infrastructure",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South East"
+ },
+ "00047f9b-39c7-def0-0000-88f601595532": {
+  "org_id": "00047f9b-39c7-def0-0000-88f601595532",
+  "Company_Name": "Gildford Build Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Civil Engineering",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "East Midlands"
+ },
+ "000ef7c6-a230-e340-0000-45a70f32fadf": {
+  "org_id": "000ef7c6-a230-e340-0000-45a70f32fadf",
+  "Company_Name": "Hawmere Civils Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Construction & Infrastructure",
+  "Subsector": "Housebuilding",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "South East"
+ },
+ "000e3737-b6f6-1890-0000-65c17f612a55": {
+  "org_id": "000e3737-b6f6-1890-0000-65c17f612a55",
+  "Company_Name": "Greyford Agency Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Public Sector & Government",
+  "Subsector": "Emergency & Blue Light",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "North West"
+ },
+ "000a22fe-5661-7f70-0000-55d90c487d31": {
+  "org_id": "000a22fe-5661-7f70-0000-55d90c487d31",
+  "Company_Name": "Dunbridge Authority Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Public Sector & Government",
+  "Subsector": "Central Government Agency",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South East"
+ },
+ "000fc507-4ed7-77f0-0000-2c1b2d1b2869": {
+  "org_id": "000fc507-4ed7-77f0-0000-2c1b2d1b2869",
+  "Company_Name": "Fenhaven Trust UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Public Sector & Government",
+  "Subsector": "Local Authority",
+  "FTE_Band": "50-249",
+  "HQ_Region": "Scotland"
+ },
+ "0002415e-6871-6c10-0000-e620057d1c4e": {
+  "org_id": "0002415e-6871-6c10-0000-e620057d1c4e",
+  "Company_Name": "Ryecross Manufacturing Holdings Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Manufacturing & Engineering",
+  "Subsector": "Precision Engineering",
+  "FTE_Band": "250-999",
+  "HQ_Region": "East Midlands"
+ },
+ "000d3153-3a9d-cad0-0000-84d7ba3d434d": {
+  "org_id": "000d3153-3a9d-cad0-0000-84d7ba3d434d",
+  "Company_Name": "Kesbourne Manufacturing Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Manufacturing & Engineering",
+  "Subsector": "Precision Engineering",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "London"
+ },
+ "000f8935-26ff-a3a0-0000-32a69aec80f6": {
+  "org_id": "000f8935-26ff-a3a0-0000-32a69aec80f6",
+  "Company_Name": "Hawmoor Manufacturing & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Manufacturing & Engineering",
+  "Subsector": "Food Manufacturing",
+  "FTE_Band": "250-999",
+  "HQ_Region": "South West"
+ },
+ "00077fef-857d-2490-0000-06631da9fa42": {
+  "org_id": "00077fef-857d-2490-0000-06631da9fa42",
+  "Company_Name": "Redhaven Engineering & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Manufacturing & Engineering",
+  "Subsector": "Food Manufacturing",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "Yorkshire & Humber"
+ },
+ "0000842e-d801-09d0-0000-ceed07b7fb37": {
+  "org_id": "0000842e-d801-09d0-0000-ceed07b7fb37",
+  "Company_Name": "Brackdale Engineering Holdings Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Manufacturing & Engineering",
+  "Subsector": "Aerospace Components",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "South East"
+ },
+ "0002e117-1a02-8f80-0000-97a6cc0ac277": {
+  "org_id": "0002e117-1a02-8f80-0000-97a6cc0ac277",
+  "Company_Name": "Blackdale Technologies & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Technology, Software & Digital",
+  "Subsector": "Data & AI",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "South West"
+ },
+ "000c0db0-f5c0-5f70-0000-528714722a28": {
+  "org_id": "000c0db0-f5c0-5f70-0000-528714722a28",
+  "Company_Name": "Oakmoor Digital plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Technology, Software & Digital",
+  "Subsector": "Product Engineering",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South East"
+ },
+ "000b80f8-0f68-fbb0-0000-877d2b614853": {
+  "org_id": "000b80f8-0f68-fbb0-0000-877d2b614853",
+  "Company_Name": "Kesgate Distribution Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Parcel & Last-Mile",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "North West"
+ },
+ "000e2689-0e3e-4f20-0000-77ca9ef60e29": {
+  "org_id": "000e2689-0e3e-4f20-0000-77ca9ef60e29",
+  "Company_Name": "Ryemoor Distribution Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Parcel & Last-Mile",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "North West"
+ },
+ "000c3397-908a-b9c0-0000-2f43bd26a4cc": {
+  "org_id": "000c3397-908a-b9c0-0000-2f43bd26a4cc",
+  "Company_Name": "Valedale Transport Holdings Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Passenger Transport",
+  "FTE_Band": "250-999",
+  "HQ_Region": "South West"
+ },
+ "000b542d-f6ea-04e0-0000-c88d946b0411": {
+  "org_id": "000b542d-f6ea-04e0-0000-c88d946b0411",
+  "Company_Name": "Calddale Logistics Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Freight Forwarding",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "South West"
+ },
+ "000ea64b-002b-9340-0000-08669e1d6e6b": {
+  "org_id": "000ea64b-002b-9340-0000-08669e1d6e6b",
+  "Company_Name": "Thorbourne Transport Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Passenger Transport",
+  "FTE_Band": "50-249",
+  "HQ_Region": "London"
+ },
+ "00098b8b-f185-08d0-0000-b005bb1fadfd": {
+  "org_id": "00098b8b-f185-08d0-0000-b005bb1fadfd",
+  "Company_Name": "Quargate Distribution Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Logistics, Transport & Distribution",
+  "Subsector": "Parcel & Last-Mile",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "Scotland"
+ },
+ "00083328-76c0-0550-0000-7d28cdc6aa2b": {
+  "org_id": "00083328-76c0-0550-0000-7d28cdc6aa2b",
+  "Company_Name": "Thorcross Consulting & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Professional Services",
+  "Subsector": "Recruitment & Staffing",
+  "FTE_Band": "10,000+",
+  "HQ_Region": "London"
+ },
+ "000c970f-31ed-7ba0-0000-941b13dc933e": {
+  "org_id": "000c970f-31ed-7ba0-0000-941b13dc933e",
+  "Company_Name": "Greyhaven Services Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Professional Services",
+  "Subsector": "Management Consulting",
+  "FTE_Band": "250-999",
+  "HQ_Region": "North West"
+ },
+ "000c9120-26cb-7550-0000-c5fd3a6b0bbf": {
+  "org_id": "000c9120-26cb-7550-0000-c5fd3a6b0bbf",
+  "Company_Name": "Lynwick Education Holdings Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Education (Public & Private)",
+  "Subsector": "Independent Schools",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "London"
+ },
+ "000c9bfe-8b5f-caf0-0000-0ed30966ea64": {
+  "org_id": "000c9bfe-8b5f-caf0-0000-0ed30966ea64",
+  "Company_Name": "Marworth Learning Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Education (Public & Private)",
+  "Subsector": "Independent Schools",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "London"
+ },
+ "000a8438-7a71-94e0-0000-f8ba5af504e9": {
+  "org_id": "000a8438-7a71-94e0-0000-f8ba5af504e9",
+  "Company_Name": "Valewick Foundation Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Charity, Non-Profit & Social Enterprise",
+  "Subsector": "Social Care NGO",
+  "FTE_Band": "10,000+",
+  "HQ_Region": "Yorkshire & Humber"
+ },
+ "00029f6b-2808-2250-0000-b0950b71a2a4": {
+  "org_id": "00029f6b-2808-2250-0000-b0950b71a2a4",
+  "Company_Name": "Ashdale Foundation plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Charity, Non-Profit & Social Enterprise",
+  "Subsector": "International Development",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "Yorkshire & Humber"
+ },
+ "0003e527-3bcd-6010-0000-5c156d2c9cae": {
+  "org_id": "0003e527-3bcd-6010-0000-5c156d2c9cae",
+  "Company_Name": "Ryemoor Assurance Group",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Financial Services",
+  "Subsector": "Wealth Management",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "South East"
+ },
+ "000e24e0-0e9f-1f00-0000-d5e01fa45a3e": {
+  "org_id": "000e24e0-0e9f-1f00-0000-d5e01fa45a3e",
+  "Company_Name": "Caldmoor Capital & Co Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Financial Services",
+  "Subsector": "Insurance",
+  "FTE_Band": "50-249",
+  "HQ_Region": "South West"
+ },
+ "0006ccbd-3d14-d6a0-0000-72e41721a40b": {
+  "org_id": "0006ccbd-3d14-d6a0-0000-72e41721a40b",
+  "Company_Name": "Thorbridge Power Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Energy, Utilities & Environmental Services",
+  "Subsector": "Energy Services & O&M",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "North West"
+ },
+ "000008bd-2b1d-5070-0000-9bd43a91dd8b": {
+  "org_id": "000008bd-2b1d-5070-0000-9bd43a91dd8b",
+  "Company_Name": "Alderbourne Power Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Energy, Utilities & Environmental Services",
+  "Subsector": "Energy Services & O&M",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "South East"
+ },
+ "0003b135-92dc-c410-0000-43660ec39353": {
+  "org_id": "0003b135-92dc-c410-0000-43660ec39353",
+  "Company_Name": "Gildcross Creative Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Media, Communications & Creative Industries",
+  "Subsector": "Advertising Agency",
+  "FTE_Band": "1,000-4,999",
+  "HQ_Region": "Scotland"
+ },
+ "000f9770-04c8-6490-0000-ad82bd45a049": {
+  "org_id": "000f9770-04c8-6490-0000-ad82bd45a049",
+  "Company_Name": "Brackdale Media Group plc",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Media, Communications & Creative Industries",
+  "Subsector": "Film & TV Production",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "East Midlands"
+ },
+ "000177b5-a141-39e0-0000-cdea7e7d44bf": {
+  "org_id": "000177b5-a141-39e0-0000-cdea7e7d44bf",
+  "Company_Name": "Hawhaven Creative Holdings Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Media, Communications & Creative Industries",
+  "Subsector": "Film & TV Production",
+  "FTE_Band": "250-999",
+  "HQ_Region": "London"
+ },
+ "000da917-6004-7560-0000-e13770ae3c5a": {
+  "org_id": "000da917-6004-7560-0000-e13770ae3c5a",
+  "Company_Name": "Calddale Sciences Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Healthcare & Life Sciences",
+  "Subsector": "Pharmaceuticals",
+  "FTE_Band": "5,000-9,999",
+  "HQ_Region": "Wales"
+ },
+ "0001d6bf-ba06-7f50-0000-dbaab75ccb7f": {
+  "org_id": "0001d6bf-ba06-7f50-0000-dbaab75ccb7f",
+  "Company_Name": "Redhaven Healthcare UK Ltd",
+  "inferred": true,
+  "_add50": true,
+  "Industry": "Healthcare & Life Sciences",
+  "Subsector": "Private Healthcare",
+  "FTE_Band": "10,000+",
+  "HQ_Region": "South West"
+ }
 }
