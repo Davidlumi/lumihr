@@ -82,7 +82,8 @@ const FIELD_STATE = { transparency: "live",
   budget_direction: "live", risk_appetite: "live", acute_pressure: "live" };
 const fieldState = (f) => FIELD_STATE[f] || "live";
 const shownFields = (fields) => fields.filter(f => fieldState(f) !== "coming");   // render/review only
-const DIAL_LABEL = { market_position: "Market position", reward_mix: "Total-reward mix",
+const DIAL_LABEL = { market_position: "Market position", domain_targets: "Position by area",
+  reward_mix: "Total-reward mix",
   pay_for_performance: "Pay for performance", transparency: "Pay transparency",
   location_approach: "Location approach", benefits_lead: "Benefits lead", family_position: "Family-friendliness",
   primary_objective: "Primary objective", budget_direction: "Budget direction",
@@ -224,18 +225,20 @@ const DIAL_ICON = { market_position: "target", reward_mix: "coins", pay_for_perf
 // ScaleTrack per COMPETITIVE domain (config-derived list from /api/strategy, never hardcoded),
 // only on opt-in. An UNSET domain sends NO key → inherits the global aim (layer-1 degrade); a
 // "Clear" deletes the key. Optional — never a required gate. Writes strat.domain_targets only.
-function DomainOverrides({ domains, targets, globalValue, onSet }) {
-  const [open, setOpen] = useState(false);
+function DomainOverrides({ domains, targets, globalValue, onSet, standalone = false }) {
+  // standalone (2026-08-14, R3 promoted stage): the panel IS the stage — always open,
+  // no reveal chrome. The embedded reveal form is kept for any other call site.
+  const [open, setOpen] = useState(standalone);
   if (!domains || !domains.length) return null;
   const t = targets || {};
   const n = Object.keys(t).length;
   return html`
     <div class="dom-ov">
-      <button type="button" class=${"dom-reveal" + (open ? " open" : "")} aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
+      ${!standalone && html`<button type="button" class=${"dom-reveal" + (open ? " open" : "")} aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
         <${Icon} name="sliders" size=${13} /> Refine by area${n ? html` · <b>${n}</b> set` : ""}
-        <span class="dom-chev">${open ? "▾" : "▸"}</span></button>
+        <span class="dom-chev">${open ? "▾" : "▸"}</span></button>`}
       ${open && html`<div class="dom-panel">
-        <p class="dom-hint">Set a different aim for any area — the rest follow your overall position${globalValue ? html` (<b>${labelOf("market_position", globalValue)}</b>)` : ""}.</p>
+        ${!standalone && html`<p class="dom-hint">Set a different aim for any area — the rest follow your overall position${globalValue ? html` (<b>${labelOf("market_position", globalValue)}</b>)` : ""}.</p>`}
         ${domains.map(dom => html`<div key=${dom} class="dom-row">
           <div class="dom-row-head"><span class="dom-name">${dom}</span>
             ${t[dom] ? html`<button type="button" class="dom-clear" onClick=${() => onSet(dom, null)}>Clear · follow overall</button>`
@@ -316,7 +319,239 @@ function SdAxis({ intent, actual, pctl, align }) {
   </span>`;
 }
 
-function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
+// ---- Total Reward Strategy document sections (2026-08-14, brief v2 Artefact A) ----
+// The document-grade content: principles, comparator, constraints, governance,
+// commitments, measures, roadmap. View renders "Not yet stated" honestly (never
+// silently dropped); Admins edit inline per section — member words only, the model
+// never authors a commitment (guardrail 9). Saves ride the same PUT as the wizard.
+const CONSTRAINT_LABEL = { affordability: "Affordability", collective_bargaining: "Collective bargaining",
+  statutory_pressure: "Statutory / regulatory pressure", headcount_change: "Headcount change",
+  system_change: "Systems / payroll change", other: "Other" };
+const CADENCE_LABEL = { annual: "Annually", twice_yearly: "Twice a year", quarterly: "Quarterly", ad_hoc: "Ad hoc" };
+const HORIZON_LABEL = { this_cycle: "This cycle", next_cycle: "Next cycle", multi_cycle: "Multi-cycle" };
+
+function SdDocSec({ num, title, note, isSet, editing, canEdit, onEdit, onCancel, onSave, saving, children, editor }) {
+  return html`
+    <section class="sd-sec">
+      <div class="sd-secnum">${num} — ${title}
+        ${canEdit && !editing ? html`<button class="sd-doc-edit no-print" onClick=${onEdit}>${isSet ? "Edit" : "Add"}</button>` : null}
+      </div>
+      ${note && !editing ? html`<p class="sd-note sd-ex-cap">${note}</p>` : null}
+      ${editing ? html`<div class="sd-doc-editor no-print">${editor}
+        <div class="sd-doc-edfoot">
+          <button class="btn primary" disabled=${saving} onClick=${onSave}>${saving ? "Saving…" : "Save"}</button>
+          <button class="btn quiet" disabled=${saving} onClick=${onCancel}>Cancel</button>
+        </div></div>` : children}
+    </section>`;
+}
+
+function SdDocSections({ me, data, canEdit, onReload }) {
+  const doc = data.document || {};
+  const [editing, setEditing] = useState(null);     // section key being edited
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [groups, setGroups] = useState(null);       // saved peer groups (lazy)
+  const [choices, setChoices] = useState(null);     // industry/size vocab (lazy)
+  const [mopts, setMopts] = useState(null);         // measure options (lazy)
+  const open = (key, seed) => {
+    setEditing(key); setDraft(seed);
+    if (key === "comparator" && groups === null) {
+      api("/api/peer-groups").then(r => setGroups(r.groups || r || [])).catch(() => setGroups([]));
+      api("/api/peer-groups/options").then(r => setChoices(r)).catch(() => setChoices({}));
+    }
+    if ((key === "measures" || key === "commitments") && mopts === null)
+      api("/api/strategy/measure-options").then(r => setMopts(r)).catch(() => setMopts({ options: [] }));
+  };
+  const close = () => { setEditing(null); setDraft({}); };
+  const save = async (patch) => {
+    setSaving(true);
+    try {
+      const d = { ...doc }; delete d.comparator_label;
+      await api("/api/strategy", { method: "PUT", body: {
+        strategy: data.strategy, document: { ...d, ...patch },
+        // preserve the transparency reconfirm state — a document edit must never
+        // silently demote a live dial back to inert (engine reads live-only)
+        transparency_confirmed: (data.provenance || {}).transparency === "live" } });
+      apiCacheInvalidate("/api/overview");
+      close(); onReload && onReload();
+    } catch (e) { toast(e && e.message || "Couldn't save — try again.", "error"); }
+    setSaving(false);
+  };
+  const gov = doc.reward_governance || {};
+  const cons = doc.constraints || {};
+  const seg = doc.segments || {};
+  const cm = doc.commitments || {};
+  const wb = (cm["Wellbeing"] || {}).metric_ids || [];
+  const gvStmt = (cm["Governance & Transparency"] || {}).statement || "";
+  const notStated = html`<p class="sd-stance sd-unstated">Not yet stated.</p>`;
+  const mTitle = (qid) => { const o = ((mopts || {}).options || []).find(x => x.id === qid); return o ? o.title : qid; };
+
+  return html`
+    <${React.Fragment}>
+      <${SdDocSec} num="04" title="Our reward principles" isSet=${(doc.principles || []).length > 0}
+        canEdit=${canEdit} editing=${editing === "principles"} saving=${saving}
+        onEdit=${() => open("principles", { principles: [...(doc.principles || [])], seg: { ...seg } })}
+        onCancel=${close} onSave=${() => save({ principles: (draft.principles || []).filter(p => p.trim()),
+          segments: draft.seg && (draft.seg.differentiated || (draft.seg.segments || []).length) ? draft.seg : null })}
+        editor=${html`<div>
+          ${Array.from({ length: Math.min(6, (draft.principles || []).length + 1) }, (_, i) => html`
+            <input key=${i} class="ctl sd-doc-in" maxlength="140" placeholder=${"Principle " + (i + 1) + " — your words, ~140 characters"}
+              value=${(draft.principles || [])[i] || ""}
+              onInput=${e => setDraft(d => { const p = [...(d.principles || [])]; p[i] = e.target.value; return { ...d, principles: p }; })} />`)}
+          <label class="sd-doc-check"><input type="checkbox" checked=${!!(draft.seg || {}).differentiated}
+            onChange=${e => setDraft(d => ({ ...d, seg: { ...(d.seg || {}), differentiated: e.target.checked } }))} />
+            We deliberately pay more for scarce or critical segments</label>
+          ${(draft.seg || {}).differentiated ? html`<input class="ctl sd-doc-in" placeholder="Name the segments, comma-separated (e.g. Engineering, HGV drivers)"
+            value=${((draft.seg || {}).segments || []).join(", ")}
+            onInput=${e => setDraft(d => ({ ...d, seg: { ...(d.seg || {}), segments: e.target.value.split(",").map(s => s.trim()).filter(Boolean).slice(0, 6) } }))} />` : null}
+        </div>`}>
+        ${(doc.principles || []).length ? html`<ol class="sd-principles">
+            ${doc.principles.map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>` : notStated}
+        ${seg.differentiated ? html`<p class="sd-note">Pay is deliberately differentiated for: <b>${(seg.segments || []).join(", ") || "named segments"}</b>.</p>` : null}
+      <//>
+
+      <${SdDocSec} num="05" title="Who we compare ourselves to" isSet=${true}
+        note="The comparator in words — figures live in the benchmark, not here."
+        canEdit=${canEdit} editing=${editing === "comparator"} saving=${saving}
+        onEdit=${() => open("comparator", { comparator_cut: doc.comparator_cut || "all" })}
+        onCancel=${close} onSave=${() => save({ comparator_cut: draft.comparator_cut === "all" ? null : draft.comparator_cut })}
+        editor=${html`<div>
+          <select class="ctl" value=${draft.comparator_cut || "all"}
+            onChange=${e => setDraft(d => ({ ...d, comparator_cut: e.target.value }))}>
+            <option value="all">All peers</option>
+            ${((choices || {}).fields || []).filter(f => f.key === "industry").flatMap(f => f.choices || []).map(c =>
+              html`<option key=${"i" + c} value=${"industry::" + c}>Sector — ${c}</option>`)}
+            ${((choices || {}).fields || []).filter(f => f.key === "fte_band").flatMap(f => f.choices || []).map(c =>
+              html`<option key=${"f" + c} value=${"fte_band::" + c}>Size — ${c}</option>`)}
+            ${(groups || []).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>Saved group — ${g.name}</option>`)}
+          </select>
+          <p class="sd-note">A saved peer group can't be deleted while it is this strategy's comparator.</p>
+        </div>`}>
+        <p class="sd-stance">${orgCompareWords(me, doc)}</p>
+      <//>
+
+      <${SdDocSec} num="06" title="What constrains us" isSet=${!!((cons.selected || []).length || cons.notes)}
+        canEdit=${canEdit} editing=${editing === "constraints"} saving=${saving}
+        onEdit=${() => open("constraints", { sel: [...(cons.selected || [])], notes: cons.notes || "" })}
+        onCancel=${close} onSave=${() => save({ constraints: { selected: draft.sel || [], notes: draft.notes || "" } })}
+        editor=${html`<div>
+          ${(data.constraint_options || []).map(c => html`<label key=${c} class="sd-doc-check">
+            <input type="checkbox" checked=${(draft.sel || []).includes(c)}
+              onChange=${e => setDraft(d => ({ ...d, sel: e.target.checked ? [...(d.sel || []), c] : (d.sel || []).filter(x => x !== c) }))} />
+            ${CONSTRAINT_LABEL[c] || c}</label>`)}
+          <input class="ctl sd-doc-in" maxlength="300" placeholder="Anything else worth naming (optional)"
+            value=${draft.notes || ""} onInput=${e => setDraft(d => ({ ...d, notes: e.target.value }))} />
+        </div>`}>
+        ${(cons.selected || []).length || cons.notes ? html`
+          <p class="sd-stance">${(cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(" · ")}${cons.notes ? (((cons.selected || []).length ? " — " : "") + cons.notes) : ""}</p>` : notStated}
+      <//>
+
+      <${SdDocSec} num="07" title="How reward is governed" isSet=${!!Object.keys(gov).length}
+        canEdit=${canEdit} editing=${editing === "governance"} saving=${saving}
+        onEdit=${() => open("governance", { ...gov })}
+        onCancel=${close} onSave=${() => save({ reward_governance: draft })}
+        editor=${html`<div class="sd-doc-grid2">
+          <label>Owner<input class="ctl" maxlength="80" placeholder="e.g. Chief People Officer" value=${draft.owner || ""}
+            onInput=${e => setDraft(d => ({ ...d, owner: e.target.value }))} /></label>
+          <label>Approved by<input class="ctl" maxlength="80" placeholder="e.g. Remuneration Committee" value=${draft.approver || ""}
+            onInput=${e => setDraft(d => ({ ...d, approver: e.target.value }))} /></label>
+          <label>Review cadence<select class="ctl" value=${draft.review_cadence || ""}
+            onChange=${e => setDraft(d => ({ ...d, review_cadence: e.target.value || null }))}>
+            <option value="">—</option>
+            ${(data.cadence_options || []).map(c => html`<option key=${c} value=${c}>${CADENCE_LABEL[c] || c}</option>`)}
+          </select></label>
+          <label>Effective date<input class="ctl" type="date" value=${draft.effective_date || ""}
+            onInput=${e => setDraft(d => ({ ...d, effective_date: e.target.value }))} /></label>
+        </div>`}>
+        ${Object.keys(gov).length ? html`<div class="sd-ledger">
+          ${[["Owner", gov.owner], ["Approved by", gov.approver],
+             ["Review cadence", gov.review_cadence && (CADENCE_LABEL[gov.review_cadence] || gov.review_cadence)],
+             ["Effective date", gov.effective_date]].filter(r => r[1]).map(([k, v]) => html`
+            <div key=${k} class="sd-led-row"><span class="sd-led-name">${k}</span><span class="sd-led-val">${v}</span><span class="sd-led-why"></span></div>`)}
+        </div>` : notStated}
+      <//>
+
+      <${SdDocSec} num="08" title="What we offer and how we operate" isSet=${!!(wb.length || gvStmt)}
+        note="Wellbeing is measured by what's offered, not a market rate; governance by how you operate — stated here as commitments, never positions."
+        canEdit=${canEdit} editing=${editing === "commitments"} saving=${saving}
+        onEdit=${() => open("commitments", { wb: [...wb], stmt: gvStmt })}
+        onCancel=${close} onSave=${() => { const c = {};
+          if ((draft.wb || []).length) c["Wellbeing"] = { metric_ids: draft.wb };
+          if ((draft.stmt || "").trim()) c["Governance & Transparency"] = { statement: draft.stmt.trim() };
+          save({ commitments: c }); }}
+        editor=${html`<div>
+          <div class="sd-doc-sub">Wellbeing — what we will offer</div>
+          ${mopts === null ? html`<p class="sd-note">Loading…</p>` :
+            (mopts.options || []).filter(o => o.category === "Wellbeing").map(o => html`
+              <label key=${o.id} class="sd-doc-check"><input type="checkbox" checked=${(draft.wb || []).includes(o.id)}
+                onChange=${e => setDraft(d => { const w = new Set(d.wb || []); e.target.checked ? w.add(o.id) : w.delete(o.id);
+                  return { ...d, wb: [...w].slice(0, 6) }; })} />${o.title}</label>`)}
+          <div class="sd-doc-sub">Governance ${"&"} transparency — how we operate</div>
+          <textarea class="ctl sd-doc-in" rows="3" maxlength="240"
+            placeholder="Your words — e.g. 'Pay ranges are shared internally; equal-pay reviewed annually; every offer signed off against the framework.'"
+            value=${draft.stmt || ""} onInput=${e => setDraft(d => ({ ...d, stmt: e.target.value }))}></textarea>
+        </div>`}>
+        ${wb.length ? html`<p class="sd-stance"><b>Wellbeing — we offer:</b> ${wb.map(mTitle).join(" · ")}</p>` : null}
+        ${gvStmt ? html`<p class="sd-stance"><b>Governance —</b> ${gvStmt}</p>` : null}
+        ${!wb.length && !gvStmt ? notStated : null}
+      <//>
+
+      <${SdDocSec} num="09" title="How we'll know it's working" isSet=${(doc.measures || []).length > 0}
+        note="Measures are metrics lumi already measures — the review reports them against your comparator."
+        canEdit=${canEdit} editing=${editing === "measures"} saving=${saving}
+        onEdit=${() => open("measures", { m: [...(doc.measures || [])] })}
+        onCancel=${close} onSave=${() => save({ measures: draft.m || [] })}
+        editor=${html`<div>
+          <p class="sd-note">Choose up to 8 — aim for 5+ covering each area you commit on. Greyed metrics are below the reporting floor on your current comparator.</p>
+          <div class="sd-doc-mlist">
+          ${mopts === null ? html`<p class="sd-note">Loading…</p>` :
+            (mopts.options || []).map(o => html`
+              <label key=${o.id} class=${"sd-doc-check" + (o.suppressed ? " dim" : "")}>
+                <input type="checkbox" checked=${(draft.m || []).includes(o.id)}
+                  disabled=${!(draft.m || []).includes(o.id) && (draft.m || []).length >= 8}
+                  onChange=${e => setDraft(d => { const m = new Set(d.m || []); e.target.checked ? m.add(o.id) : m.delete(o.id);
+                    return { ...d, m: [...m].slice(0, 8) }; })} />
+                <span>${o.title} <span class="sd-doc-meta">${o.category}${o.context ? " · tracked as a level" : ""}${o.suppressed ? " · below floor here" : ""}</span></span>
+              </label>`)}
+          </div>
+        </div>`}>
+        ${(doc.measures || []).length ? html`<ol class="sd-principles">
+          ${doc.measures.map(qid => html`<li key=${qid}>${mopts ? mTitle(qid) : qid}</li>`)}</ol>` : notStated}
+      <//>
+
+      <${SdDocSec} num="10" title="What changes this year" isSet=${(doc.roadmap || []).length > 0}
+        canEdit=${canEdit} editing=${editing === "roadmap"} saving=${saving}
+        onEdit=${() => open("roadmap", { items: (doc.roadmap || []).map(r => ({ ...r })) })}
+        onCancel=${close} onSave=${() => save({ roadmap: (draft.items || []).filter(r => (r.title || "").trim()) })}
+        editor=${html`<div>
+          ${Array.from({ length: Math.min(6, (draft.items || []).length + 1) }, (_, i) => { const it = (draft.items || [])[i] || {}; return html`
+            <div key=${i} class="sd-doc-rmrow">
+              <input class="ctl" maxlength="120" placeholder=${"Change " + (i + 1)} value=${it.title || ""}
+                onInput=${e => setDraft(d => { const xs = [...(d.items || [])]; xs[i] = { ...(xs[i] || {}), title: e.target.value }; return { ...d, items: xs }; })} />
+              <select class="ctl" value=${it.horizon || ""}
+                onChange=${e => setDraft(d => { const xs = [...(d.items || [])]; xs[i] = { ...(xs[i] || {}), horizon: e.target.value || undefined }; return { ...d, items: xs }; })}>
+                <option value="">When?</option>
+                ${(data.horizon_options || []).map(h => html`<option key=${h} value=${h}>${HORIZON_LABEL[h] || h}</option>`)}
+              </select>
+            </div>`; })}
+        </div>`}>
+        ${(doc.roadmap || []).length ? html`<ol class="sd-principles">
+          ${doc.roadmap.map((r, i) => html`<li key=${i}>${r.title}${r.horizon ? html` <span class="sd-doc-meta">· ${HORIZON_LABEL[r.horizon] || r.horizon}</span>` : ""}</li>`)}</ol>` : notStated}
+      <//>
+    <//>`;
+}
+
+function orgCompareWords(me, doc) {
+  // R1: the comparator IN WORDS, never a benchmark table
+  const label = doc.comparator_label || "All peers";
+  if (label === "All peers") return "We compare ourselves to UK organisations across the lumi peer pool.";
+  const cut = doc.comparator_cut || "";
+  if (cut.startsWith("industry::")) return "We compare ourselves to UK organisations in our sector — " + label + ".";
+  if (cut.startsWith("fte_band::")) return "We compare ourselves to UK organisations of similar size (" + label + " employees).";
+  return "We compare ourselves to our saved peer group — " + label + ".";
+}
+
+function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   const [hero, setHero] = useState(null);
   // anchor the live position read to the ORG DEFAULT peer group — the same basis as the
   // Overview chip and Signals (default-cut anchoring doctrine). A bare /api/overview here
@@ -365,7 +600,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
     : (strat[f] ? labelOf(f, strat[f]) : null);
   const ctxBits = [];   // every dial is live post-2026-08-09 — the demoted strip retired
   // FIXED numbering — sections must not renumber as async fetches resolve
-  const NUM = { stance: "01", exhibit: "02", positions: "03", reading: "04" };
+  // (04-10 are the document sections rendered by SdDocSections)
+  const NUM = { stance: "01", exhibit: "02", positions: "03", reading: "11" };
   return html`
     <div class="sd-wrap">
       <div class="sd-actions no-print">
@@ -440,6 +676,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true }) {
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
+        <${SdDocSections} me=${me} data=${data} canEdit=${canEdit} onReload=${onReload} />
+
         ${ai === undefined && aiDark && canEdit ? html`
         <section class="sd-sec no-print">
           <div class="sd-secnum">${NUM.reading} — lumi's reading</div>
@@ -507,6 +745,8 @@ window.StrategyPage = function ({ me }) {
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
   const complete = !!data.completed_at;
+  // document-section saves refetch here so the view never renders stale content
+  const reload = () => api("/api/strategy").then(d => { setData(d); setStrat({ ...d.strategy }); setPlaneA(d.plane_a.map(f => ({ ...f }))); }).catch(() => {});
   if (!isAdmin) {
     // non-admins with a completed strategy still get the READ view — it explains
     // how their organisation's results are being read; only editing is admin-only.
@@ -515,7 +755,7 @@ window.StrategyPage = function ({ me }) {
       body="Your reward strategy is set by an organisation Admin — ask yours to complete it."
       action=${html`<button class="btn small primary" onClick=${() => nav("/overview")}>Explore the benchmark</button>`} />`;
   }
-  if (complete && !editing) return html`<${StrategyView} me=${me} data=${data} strat=${strat} onEdit=${() => { setEditing(true); setStep(0); }} />`;
+  if (complete && !editing) return html`<${StrategyView} me=${me} data=${data} strat=${strat} onReload=${reload} onEdit=${() => { setEditing(true); setStep(0); }} />`;
 
   const pick = (field, val) => setStrat(s => ({ ...s, [field]: val }));
   // per-domain override write: only set domains carry a key — null deletes (inherit global)
@@ -524,7 +764,9 @@ window.StrategyPage = function ({ me }) {
     if (val == null) delete dt[dom]; else dt[dom] = val;
     return { ...s, domain_targets: dt };
   });
-  const planeBfields = ["market_position", "reward_mix", "pay_for_performance", "transparency",
+  // domain_targets promoted to a first-class stage (R3 rescope, 2026-08-14): the six
+  // position categories (R3b) get their own screen straight after the global dial.
+  const planeBfields = ["market_position", "domain_targets", "reward_mix", "pay_for_performance", "transparency",
     "location_approach", "benefits_lead", "family_position"];
   const planeCfields = ["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
 
@@ -579,7 +821,8 @@ window.StrategyPage = function ({ me }) {
     advance();
   };
 
-  const answered = QUESTIONS.filter(f => f === "benefits_lead" ? (strat[f] || []).length : strat[f]).length;
+  const answered = QUESTIONS.filter(f => f === "benefits_lead" ? (strat[f] || []).length
+    : f === "domain_targets" ? Object.keys(strat[f] || {}).length : strat[f]).length;
   const progress = stage === "facts" ? 0.04 : stage === "review" ? 1 : (qIndex + 1) / (QUESTIONS.length + 1);
 
   const commit = async () => {
@@ -690,14 +933,27 @@ window.StrategyPage = function ({ me }) {
           </div>
         </section>`}
 
-      ${qIndex != null && html`
+      ${qIndex != null && curField === "domain_targets" && html`
+        <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
+          <div class="strat-eyebrow">Your philosophy <span class="strat-mode confirm">Optional</span></div>
+          <h1 class="strat-title">Any areas you aim differently on?</h1>
+          <p class="strat-sub">Most organisations lead somewhere and lag somewhere — set a different aim for any area; the rest follow your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""}.</p>
+          <${DomainOverrides} standalone domains=${data.position_domains || data.competitive_domains || []}
+            targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />
+          <div class="strat-stagefoot">
+            ${Object.keys(strat.domain_targets || {}).length
+              ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
+              : html`<button class="btn quiet" onClick=${advance}>Skip — every area follows your overall position</button>`}
+          </div>
+        </section>`}
+
+      ${qIndex != null && curField !== "domain_targets" && html`
         <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
           <div class="strat-eyebrow">${planeBfields.includes(curField) ? "Your philosophy" : "Right now"}
             ${fieldState(curField) === "context" ? html`<span class="strat-mode confirm">Context</span>` : null}</div>
           <${DialCard} field=${curField} value=${strat[curField]}
             onPick=${(f, v) => (isMulti ? pick(f, v) : pickAndGo(f, v))}
-            required=${REQUIRED.includes(curField)} context=${fieldState(curField) === "context"}
-            extra=${curField === "market_position" ? html`<${DomainOverrides} domains=${data.competitive_domains || []} targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />` : null} />
+            required=${REQUIRED.includes(curField)} context=${fieldState(curField) === "context"} />
           <div class="strat-stagefoot">
             ${isMulti || strat[curField]
               ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
@@ -740,11 +996,12 @@ function reviewRow(field, strat) {
     const sel = v || [];
     return { label: DIAL_LABEL[field], value: sel.length ? sel.map(x => BENEFITS.find(b => b.v === x).t).join(", ") : "Skipped — read neutrally", skipped: !sel.length };
   }
-  if (!v) return { label: DIAL_LABEL[field], value: "Skipped — read neutrally", skipped: true };
-  if (field === "market_position") {
-    const dt = strat.domain_targets || {}, n = Object.keys(dt).length;
-    return { label: DIAL_LABEL[field], value: labelOf(field, v) + (n ? " · " + n + " area" + (n === 1 ? "" : "s") + " refined" : "") };
+  if (field === "domain_targets") {
+    const dt = v || {}, n = Object.keys(dt).length;
+    return n ? { label: DIAL_LABEL[field], value: Object.entries(dt).map(([d, s]) => d + " — " + labelOf("market_position", s)).join(" · ") }
+             : { label: DIAL_LABEL[field], value: "Every area follows your overall position", skipped: true };
   }
+  if (!v) return { label: DIAL_LABEL[field], value: "Skipped — read neutrally", skipped: true };
   return { label: DIAL_LABEL[field], value: labelOf(field, v) };
 }
 function ReviewSection({ title, chip, chipCls, rows, onEdit, onChangeRow, locked }) {

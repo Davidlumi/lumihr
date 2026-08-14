@@ -4582,3 +4582,32 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .brf-navy { padding: var(--s4); }
   .brf-life { margin-left: 0; }
 }
+
+/* ---- Total Reward Strategy document sections (2026-08-14, Artefact A) -------- */
+.sd-doc-edit { margin-left: auto; border: 1px solid var(--border); background: none; border-radius: 8px;
+  padding: 2px 10px; font: inherit; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .04em;
+  color: var(--blue); cursor: pointer; }
+.sd-doc-edit:hover { background: var(--tile); }
+.sd-secnum .sd-doc-edit { text-transform: none; }
+.sd-unstated { color: var(--ink-faint); font-weight: 500; }
+.sd-principles { margin: 0; padding-left: 1.4em; max-width: 44em; }
+.sd-principles li { font-family: var(--font-head); font-size: var(--fs-body); line-height: 1.55;
+  font-weight: 500; color: var(--ink); margin-bottom: var(--s2); }
+.sd-doc-meta { font-size: var(--fs-micro); color: var(--ink-faint); font-weight: 500; }
+.sd-doc-editor { border: 1px solid var(--border); border-radius: 12px; padding: var(--s4);
+  background: var(--tile); display: flex; flex-direction: column; gap: var(--s3); }
+.sd-doc-editor .ctl { width: 100%; }
+.sd-doc-in { display: block; }
+.sd-doc-edfoot { display: flex; gap: var(--s3); margin-top: var(--s2); }
+.sd-doc-check { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--fs-label);
+  color: var(--ink); cursor: pointer; }
+.sd-doc-check.dim > span { color: var(--ink-faint); }
+.sd-doc-sub { font-size: var(--fs-caption); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-faint); margin-top: var(--s2); }
+.sd-doc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.sd-doc-grid2 label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--ink-soft); }
+.sd-doc-mlist { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column;
+  gap: var(--s2); padding-right: var(--s2); }
+.sd-doc-rmrow { display: grid; grid-template-columns: 1fr 140px; gap: var(--s2); }
+@media (max-width: 640px) { .sd-doc-grid2, .sd-doc-rmrow { grid-template-columns: 1fr; } }
