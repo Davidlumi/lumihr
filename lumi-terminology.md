@@ -9,7 +9,9 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 - Users filter and read by **market position** — below / on / above market, or a practice
   choice. The engine's signal **class** (Level / Provision / Practice / Design) is
   internal: it drives the tags and the headline but is **never** the user-facing filter.
-- **domain** is the default grouping; **lens** is an optional "group by" toggle.
+- **category** is the default grouping (R12 ruling, 2026-08-14 — it owns the routes,
+  nav, authoring and API copy; "domain" survives only as internal code vocabulary);
+  **lens** is an optional "group by" toggle.
 - **company** is a member of the peer group.
 - **tags** carry a direction relative to market; every specific (£, %, cadence) goes in
   the subtitle, never the tag.
@@ -26,7 +28,7 @@ If a screen, the build spec, or a prototype disagrees with this, this wins.
 | Confidence caveat | **indicative** | shown when evidence is thin; the confident state carries no label | "firm" |
 | A flagged metric | **signal** (noun) | a metric surfaced as worth a look | "flag" as a noun |
 | The act of surfacing | **flag** (verb) | "we flag, you decide" | — |
-| Default grouping | **domain** | Pay, Incentives, Benefits, Time Off, Wellbeing, Recognition, Governance | "category" |
+| Default grouping | **category** | Pay · Pensions & Savings · Health & Protection · Benefits & Lifestyle · Time Off & Family · Incentives & Recognition · Wellbeing · Governance & Transparency (the live eight, Diff 1) | "domain" in user-facing copy (internal code vocabulary only — R12, 2026-08-14) |
 | Alternative grouping | **lens** | a strategic view (e.g. how you Attract) — a "group by" toggle | — |
 | The user-facing filter | **market position** | All · below market · above market | "class" (that's internal) |
 | Comparison set | **peer group** (the **peers**) | the companies you're compared against | — |

@@ -1209,7 +1209,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
   // sentence duplicated the donut + repeated what the bars already show. Kept ONLY for the
   // pending/locked state, where there are no rows yet to explain themselves.
   const stand = pending
-    ? "Your per-domain position appears once enough of your data is comparable."
+    ? "Your per-category position appears once enough of your data is comparable."
     : null;
   const openDomain = (name) => nav("/category/" + encodeURIComponent(name));
   // strategy summary (2026-07-09): an always-on anchor so the navy channel says something even at
@@ -1225,7 +1225,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
       <div class="card-spot" aria-hidden="true"></div>
       <div class="card-head">
         <${Icon} name="layers" size=${15} />
-        <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
+        <h2 class="card-head-title">${practice ? "Practice by category" : "Position by category"}</h2>
         <span class="card-head-side">
           ${/* "N off strategy" summary removed (David 2026-08-14): the per-row strategy glyphs already
                 say it — the header count was clutter. stratSum is still computed to gate the column. */ ""}
@@ -1233,7 +1233,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                 segments vs the fixed-band percentile bar with the true-P marker. Market view
                 only (practice has no market position). Persisted per user in prefs._overview. */ ""}
           ${!practice && !pending && setBarMode ? html`
-            <span class="ov-seg ov-seg-mini" role="group" aria-label="How the domain bars read">
+            <span class="ov-seg ov-seg-mini" role="group" aria-label="How the category bars read">
               <button type="button" class=${"ov-seg-btn" + (barMode !== "position" ? " on" : "")} aria-pressed=${barMode !== "position"}
                 title="Segment widths show how many metrics sit below, on and above market"
                 onClick=${() => setBarMode("counts")}>Counts</button>
@@ -1377,7 +1377,7 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
                       <span class="di-mk-zone z-above" style=${{ width: (100 - band[1]) + "%" }}></span>
                       <span class="di-mk-centre" aria-hidden="true"></span>
                       <span class=${"di-pill num" + (d.position_basis === "indicative" ? " ind" : "")} style=${{ left: pl + "%" }}
-                        title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of this domain's per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
+                        title=${"Typical metric at the " + pctlOrdinal(Math.round(depth)) + " percentile — the median of this category's per-metric percentiles, not a rank among peers."}>P${Math.round(depth)}</span>
                     </span>`;
                   })()}`
                 : html`<span class="di-norate">no position yet</span>`}
@@ -1506,7 +1506,7 @@ function SignalsPanel({ signals, total, newCount, locked, contribution, view, st
         ${newCount > 0 ? html`<span class="sig-new-chip">${newCount} new</span>` : null}
         ${domainFilter ? html`
           <button type="button" class="sig-domchip" onClick=${onClearDomain}
-            title="Showing this domain only — click to show all signals">
+            title="Showing this category only — click to show all signals">
             ${domainLabel(domainFilter)} only <${Icon} name="close" size=${11} /></button>` : null}
       </div>
       ${/* ONE quiet meta line (2026-07-09 header collapse): scope + rank + posture, replacing
@@ -1964,12 +1964,14 @@ const STRAT_PHRASE = {
   budget_direction: { investing: "your investment budget", pressure: "your budget pressure" },
   acute_pressure: { scaling: "your scaling push", shock: "your crisis footing" },
   risk_appetite: { early: "your early-adopter appetite", wait: "your wait-and-see stance" },
+  reward_mix: { cash: "your cash-led mix", benefits: "your benefits-led mix" },
   benefits_lead: {},
 };
 const STRAT_FIELD_GENERIC = {
   primary_objective: "your reward objective", pay_for_performance: "your pay-for-performance stance",
   transparency: "your transparency stance", budget_direction: "your budget direction",
   acute_pressure: "your current pressure", risk_appetite: "your risk appetite", benefits_lead: "your wellbeing focus",
+  reward_mix: "your reward mix",
 };
 function _stratPhrase(x) {
   return (STRAT_PHRASE[x.field] || {})[x.value] || STRAT_FIELD_GENERIC[x.field] || "your strategy";
@@ -2280,7 +2282,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const _lensItems = LENS_ORDER.filter(l => lensCounts[l]).map(l => ({ k: l, lab: LENS_LABEL[l], n: lensCounts[l], sel: lensFilter.includes(l),
     onClick: () => setLensFilter(sel => sel.includes(l) ? sel.filter(x => x !== l) : [...sel, l]) }));
   if (_lensItems.length) sigFacets.push({ key: "lens", lab: "Lens", title: "Outcome lens", count: lensFilter.length, items: _lensItems });
-  if (domainOpts.length > 1) sigFacets.push({ key: "dom", lab: "Domain", title: "Domain", radio: true, count: domFilter ? 1 : 0,
+  if (domainOpts.length > 1) sigFacets.push({ key: "dom", lab: "Category", title: "Category", radio: true, count: domFilter ? 1 : 0,
     items: domainOpts.map(d => ({ k: d, lab: domainLabel(d), n: baseItems.filter(s => (s.domain || "") === d).length, sel: domFilter === d, onClick: () => setDomFilter(domFilter === d ? null : d) })) });
   const filtersActive = posFilter !== "all" || stratFilter.length || lensFilter.length || !!domFilter;
   const clearSigFilters = () => { setPosFilter("all"); setStratFilter([]); setLensFilter([]); setDomFilter(null); };
@@ -2288,7 +2290,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const emptyLine = (stratFilter.length || lensFilter.length) && !shownItems.length ? "No signals match these filters — clear them to see the rest."
     : posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
     : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
-    : domFilter ? "No live signals in " + domainLabel(domFilter) + " right now — clear the domain filter, or check the Snoozed and Dismissed tabs."
+    : domFilter ? "No live signals in " + domainLabel(domFilter) + " right now — clear the category filter, or check the Snoozed and Dismissed tabs."
     : v.kind === "saved" ? "Nothing saved — star a signal anywhere in lumi and it lands here."
     : v.kind === "folder" ? 'Nothing in "' + v.name + '" yet — File a signal from the feed to keep it here.'
     : v.kind === "snoozed" ? "Nothing snoozed — a snoozed signal waits here and returns to your feed on its date."
@@ -2464,7 +2466,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             ${sortedItems.length > 1 ? html`<label class="sig-sort">Sort
               <select value=${sortMode} onChange=${e => setSortMode(e.target.value)} aria-label="Sort signals">
                 <option value="priority">Priority</option>
-                <option value="domain">By domain</option>
+                <option value="domain">By category</option>
                 <option value="gap">Biggest gap</option>
               </select></label>` : null}
             ${bulkable ? html`<span class="sig-bulk">
@@ -3089,7 +3091,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
       ${Head(`${all.length} benchmark${all.length === 1 ? "" : "s"}`, html`
         <div class="bp-export">
           <button class="btn small" aria-expanded=${dl} aria-haspopup="menu" onClick=${() => setDl(v => !v)}
-            title="Download this analysis as a document — the briefing plus every benchmark in this domain, on the current peer group.">
+            title="Download this analysis as a document — the briefing plus every benchmark in this category, on the current peer group.">
             <${Icon} name="file-text" size=${14} /> Download analysis <${Icon} name="chevron-down" size=${12} /></button>
           ${dl && html`<div class="card bp-menu" role="menu">
             <button class="bp-menu-item" role="menuitem" onClick=${() => printPack(true)}>
@@ -3134,7 +3136,7 @@ window.CategoryPage = function ({ name, cut, cuts, prefs, onPref, onPin, pinnedI
             <button type="button" class=${"ov-strat" + (applyStrat ? " on" : "")} role="switch" aria-checked=${applyStrat}
               onClick=${() => onPref && onPref("_overview", { ..._ovp, apply_strategy: !applyStrat })}
               title=${applyStrat
-                ? "Reading against your reward strategy — the alignment chip shows how this domain tracks your strategy. Click for the absolute market view."
+                ? "Reading against your reward strategy — the alignment chip shows how this category tracks your strategy. Click for the absolute market view."
                 : "Showing the absolute market view (no stance applied). Click to read against your reward strategy."}>
               <span class="ov-strat-track"><span class="ov-strat-knob"></span></span>
               <span class="ov-strat-lbl">${applyStrat ? "Strategy applied" : "Strategy off"}</span>
