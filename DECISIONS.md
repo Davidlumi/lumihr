@@ -18211,3 +18211,30 @@ views don't render it. Now clicking the pin opens "ADD TO DASHBOARD" — a check
 plus "+ New dashboard…"; toggling adds/removes and fires `lumi:pins-changed`, which the app already listens to
 (app.js ~L232) so pin state stays in sync everywhere. Verified live on a Thornbridge rig: pin → picker opens
 upward (no clip), "My dashboard" toggled 5→6 and the card pinned. jsc clean; frontend-only (app.js), v=608 bump.
+
+## 2026-08-14 — QA review of the metrics arc (v=606–v=608 + readout change): PASS, no defects
+
+David: "we have spent a long time on the metrics and expanded metrics — do a QA review." Two-pass review of today's
+card/metric changes (declutter v=606, picker removal v=607, generic readouts, pin picker v=608).
+
+**Code sweep:** share/readOnly path safe (readOnly suppresses the Add-data CTA; no onPin → no pin picker);
+qa_phase4's card.js title assertions intact; every remaining `cut.label` reference is a ruled provenance surface
+(exports, toasts, one-pager header, suppressed-explainer, CardDetail chip, chart aria-label).
+
+**Live rig, every card state on the 328-card grid (Thornbridge):**
+- answered market: title-only head; one-line foot (verdict · glyph · n) ✓
+- signalled (47): quiet "Signal" flag, zero top badges ✓ · matrix multi-flag: "▼ Below market · P22" + "2 below market" ✓
+- practice (68): "A practice choice · common/alternative/low peer data", no verdict/glyph/flag ✓
+- unbenchmarked non-practice: "No comparison" ✓ · answered-unrankable: "Not yet rated" ✓
+- unanswered (11): "Add data" CTA is the ONLY header pill ✓ (grid + dashboards)
+- Signal facet reconciles exactly: Flagged 47 + Needs data 11 + No signal 270 = 328; the Flagged filter shows
+  exactly those 47, each carrying the flag ✓
+- dashboards: size/drag footTools intact, removal via the pin picker ✓ · metric-page pin picker toggles ✓
+- suppressed: UNREACHABLE in demo data (dense pool, 0 suppressed on every cut tried) — branch is code-guarded
+  (no flag/verdict, suppressed copy) and unchanged today.
+
+**Observations (accepted, no action):** cardSignalPill's signal/clear branches + the lens-tinted `.sig-pill` CSS
+are now dead outside the "add" state (kept — cardSignalState is still load-bearing for the Signals filter);
+MetricPage's `pinnedIds` prop is unused; ComparePill + `.cmp-*` CSS deliberately kept-defined-unused (v=607).
+The chart aria-label keeps the full peer-group name (a11y provenance, matching exports). No console errors on any
+surface; no fixes required.
