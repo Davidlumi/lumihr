@@ -18022,3 +18022,25 @@ than the full description." Two changes on top of v=598:
 Frontend-only; jsc clean, braces balanced, verified live on a Thornbridge rig (order basis→folders→filters, pill
 = "Company default" with full detail in the tip, Strategy popover paints solid over the feed, filtering works with
 badge + Clear, no JS console errors). Gates not run — no server/engine/data touched.
+
+## 2026-08-14 — "Reward strategy check" moved from Signals to Home/Overview (v=600)
+
+David: "should the 'are you delivering your strategy' part sit in Signals? feels like something for the home page."
+Agreed — the StrategyCheck is a board-level "are we delivering the strategy?" roll-up, not a triage item; the
+Signals page is a triage inbox. Moved it:
+
+- **Removed from SignalsPage:** the collapsible `.sig-strat-strip` block above the feed, plus the now-dead
+  `stratOpen` state, the `goToDomain` helper, and the `signalDomains` set (all were strip-only).
+- **Added to OverviewHero:** the same collapsible strip (reusing `.sig-strat-strip`/`.sig-strat-toggle`, + a new
+  `.ov-strat-strip` for top spacing) below the hero instruments (`.ov-top`), gated on `!locked &&
+  data.strategy_complete`. **Collapsed by default** — David flagged Home as running tall, so it opens on click
+  only. `signalDomains` now comes from `Object.keys(_domCounts)`.
+- **Deep-links preserved:** each finding's "See the {domain} signals" now calls `goToSignals` (the existing
+  Overview→Signals scent-chip path: sets `window.__sigJumpDomain`, navs to /signals; SignalsPage consumes it on
+  mount → domain filter). So orient on Home, act in Signals. StrategyCheck component moved down the file with its
+  doc comment updated; still the same component, unchanged internals.
+
+Rationale: Home now owns the whole strategy story (the Strategy-applied toggle already lived there); Signals is a
+pure inbox. Frontend-only; jsc clean, braces balanced, verified live on a Thornbridge rig (strip on Home collapsed
+by default, expands to the "Run the check" idle card — not run, avoids AI spend; gone from Signals with filters +
+folders + feed intact; no JS console errors). Gates not run — no server/engine/data touched.

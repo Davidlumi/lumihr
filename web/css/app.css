@@ -4409,6 +4409,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-strat-toggle > span:first-of-type { flex: 1; }
 .sig-strat-toggle:hover { border-color: var(--ink-faint); }
 .sig-strat-strip.open .sig-strat-toggle { border-radius: var(--radius) var(--radius) 0 0; }
+.ov-strat-strip { margin-top: var(--s4); }   /* on Home, sit clear of the hero instruments above */
 .sfold-snz { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-micro);
   font-weight: 650; color: var(--navy); border: 1px solid color-mix(in srgb, var(--navy) 25%, var(--surface));
   border-radius: 999px; padding: 0 var(--s2); }

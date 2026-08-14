@@ -431,6 +431,7 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
   // nav, so it survives); SignalsPage reads + clears it on mount. nav stays a BARE route so the
   // app's cut-reapply logic is untouched. (_domCounts above feeds the per-row count.)
   const goToSignals = (dom) => { window.__sigJumpDomain = (typeof dom === "string" && dom) ? dom : null; nav("/signals"); };
+  const [stratOpen, setStratOpen] = useState(false);   // Home "Reward strategy check" — collapsed by default so Home stays short
   // Cursor spotlight on the hero cards — a faint brand-tinted glow follows the
   // pointer (the tactile, alive feel). Direct DOM writes, no React re-render.
   // (.ov-wrap scope, 2026-07-08: the signals card moved below the hero row, so the
@@ -494,6 +495,18 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
           view=${view} pending=${locked} sigCounts=${_domCounts} onScent=${goToSignals}
           barMode=${barMode} setBarMode=${setBarMode} />
       </div>
+      ${/* Reward strategy check (moved from Signals, David 2026-08-14): a board-level "are we
+            delivering the strategy?" roll-up belongs on Home, not the triage inbox. Collapsed by
+            default so Home stays short; each finding deep-links into the Signals feed for that
+            domain via goToSignals → window.__sigJumpDomain. Gated on strategy_complete + unlocked. */ ""}
+      ${!locked && data.strategy_complete ? html`
+        <div class=${"sig-strat-strip ov-strat-strip" + (stratOpen ? " open" : "")}>
+          <button type="button" class="sig-strat-toggle" aria-expanded=${stratOpen} onClick=${() => setStratOpen(o => !o)}>
+            <${Icon} name="compass" size=${14} /> <span>Are you delivering the strategy you set?</span>
+            <span class="sfold-caret" aria-hidden="true">${stratOpen ? "▴" : "▾"}</span>
+          </button>
+          ${stratOpen ? html`<${StrategyCheck} onGoToDomain=${goToSignals} signalDomains=${new Set(Object.keys(_domCounts))} />` : null}
+        </div>` : null}
       ${/* Home signals band retired 2026-08-11 (David: "clean dashboard" — "the bottom signals
             detail"). Signals live on the dedicated Signals page; the per-domain scent counts on
             Position-by-domain deep-link there via goToSignals. SignalsPanel stays defined but is
@@ -504,7 +517,9 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
 /* Reward strategy check: AI synthesis of "are you delivering your own strategy?".
    Findings are computed server-side from your data + declared stance (the model
    only narrates them); on-demand so it doesn't spend on every load. Lives on the
-   Signals page so each finding can signpost (onGoToDomain) to its signal group. */
+   Home/Overview page (David 2026-08-14 — a board-level roll-up, not a triage item);
+   each finding signposts (onGoToDomain → goToSignals) into the Signals feed for its
+   domain via window.__sigJumpDomain. */
 function StrategyCheck({ onGoToDomain, signalDomains }) {
   const [st, setSt] = useState({ phase: "idle" });
   const cardRef = useRef(null);
@@ -2000,7 +2015,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const [stratFilter, setStratFilter] = useState(_ret.strat || []); // strategy-alignment filter (below/on/above strategy), multi
   const [textQuery, setTextQuery] = useState("");     // client-side find-by-name over the current view
   const [flashSid, setFlashSid] = useState(null);     // a restored/woken/recovered card flashes back into place
-  const [stratOpen, setStratOpen] = useState(false);  // the strategy-check strip (now above the feed) starts collapsed
   // (stubs state retired 2026-07-10, David: toast instead of stub rows — an actioned card
   // now leaves the list with a soft exit and the Undo rides the confirmation toast.)
   const [acting, setActing] = useState({});            // optimistic status overrides
@@ -2064,7 +2078,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     }
     setJumpTo(null);
   }, [jumpTo, view]);
-  const goToDomain = (dom) => { setView({ kind: "all" }); setPosFilter("all"); setDomFilter(dom); };   // strategy-check → filter to that domain (never dead-ends under a stale filter)
   // keyboard triage (David 2026-08-11): j/k move a focus ring, e/s/f act, Enter opens. Bound ONCE
   // (a stable listener above the early returns to satisfy hook order); it reads the live list +
   // handlers from kbRef, which the render refreshes each pass once data is in.
@@ -2116,7 +2129,6 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const all = (data.signals_all || []).map(s => { const sid = sidOf(s);
     return { ...s, status: acting[sid] !== undefined ? acting[sid] : (s.status || null),
              snooze_until: actingSnz[sid] !== undefined ? actingSnz[sid] : s.snooze_until }; });
-  const signalDomains = new Set(all.filter(s => s.status !== "dismissed").map(s => s.domain).filter(Boolean));
 
   const setStatus = (sid, status, days) => {
     setActing(a => ({ ...a, [sid]: status }));
@@ -2427,15 +2439,9 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         ${/* filters sit BELOW the folders (David 2026-08-14): folders pick the set, filters refine it;
               the popover opens down over the feed, not the folder row. */ ""}
         ${sigFacets.length ? html`<div class="sig-filter-row"><${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} /></div>` : null}
-        ${/* strategy-check moved ABOVE the feed (David review #17) — a collapsible orienting strip */ ""}
-        ${v.kind === "all" && data.strategy_complete ? html`
-          <div class=${"sig-strat-strip" + (stratOpen ? " open" : "")}>
-            <button type="button" class="sig-strat-toggle" aria-expanded=${stratOpen} onClick=${() => setStratOpen(o => !o)}>
-              <${Icon} name="compass" size=${14} /> <span>Are you delivering the strategy you set?</span>
-              <span class="sfold-caret" aria-hidden="true">${stratOpen ? "▴" : "▾"}</span>
-            </button>
-            ${stratOpen ? html`<${StrategyCheck} onGoToDomain=${goToDomain} signalDomains=${signalDomains} />` : null}
-          </div>` : null}
+        ${/* the "Reward strategy check" strip moved to Home/Overview (David 2026-08-14): it's a
+              board-level "are we delivering the strategy?" roll-up, not a triage item. Its findings
+              still deep-link back into this feed by domain via window.__sigJumpDomain. */ ""}
 
         ${baseItems.length > 0 ? html`
           <div class="sig-toolbar">
