@@ -26,7 +26,19 @@ api("/api/auth/login", "POST", {"email": "director@thornbridge.example", "passwo
 # use genuinely out-of-scope superpowers only
 HIDDEN = ["Processes","Growth","Capability","Inclusivity","Attract","Leadership","Purpose","Change"]
 def leak(blob):
-    t = json.dumps(blob)
+    # `strategy_objective` legitimately takes one of the reward strategy pillars — Attract / Retain /
+    # Reward — which collide by name with retired hidden superpowers. It is the org's chosen priority,
+    # not a leaked hidden-domain metric (there are zero Attract-superpower questions), so strip it
+    # before the hidden-name scan. Everything else (cards, metrics, section keys) is still checked.
+    b = json.loads(json.dumps(blob))
+    def _strip(x):
+        if isinstance(x, dict):
+            x.pop("strategy_objective", None)
+            for v in x.values(): _strip(v)
+        elif isinstance(x, list):
+            for v in x: _strip(v)
+    _strip(b)
+    t = json.dumps(b)
     return [h for h in HIDDEN if '"%s"' % h in t]
 
 st, me = api("/api/me")
