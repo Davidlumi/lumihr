@@ -18167,3 +18167,19 @@ to every BenchmarkCard — grid AND dashboards (consistent). Verified live on a 
 title-only, footers show verdict+glyph+n on one line, all 9 flagged cards show the quiet "Signal" flag (0 top badges),
 practice cards read "A practice choice · alternative", tools dim at rest. jsc clean, braces balanced, no JS console
 errors. Gates not run — no server/engine/data touched.
+
+## 2026-08-14 — Benchmark card: drop the per-card peer picker (v=607)
+
+David: "on the cards we do not need to reference the sample group — for this view keep it to the top sample only,
+not card-by-card." Removed the `<${ComparePill}>` from the `.bench-foot` on every BenchmarkCard (grid + dashboards):
+the sample is set ONCE at the top of the view (the page peer selector, or the per-dashboard sample toolbar), so a
+per-card sample control was redundant clutter. The footer now opens on the verdict pill. `ComparePill` stays defined
+but unused; the `override`/`setOverride` machinery is inert (nothing sets it now, so a card always follows the page
+cut — `c = card`, `effectiveKey = globalKey`). Verified live on a Thornbridge Pay page: no per-card peer picker on
+any of the 61 cards; footers read "verdict · glyph · n"; page-top selector unchanged. jsc clean, no console errors.
+
+OPEN (deferred, needs David's steer): the sample group is ALSO named in the small grey support sentence
+("Like 59% of 5 sectors · 10,000+, 1,000–4,999 FTE peers, you answered 'No'…") and the numeric lead
+("(P18, 5 sectors · …, n=22)"). That text is the server-generated `readout` (`pos.readout_select` / matrix readout
+in app.py ~L944/996), SHARED with the metric detail page + exports — trimming it is a deliberate copy/engine change
+(with gate + provenance-doctrine implications), not a client hack, so it's held pending confirmation.

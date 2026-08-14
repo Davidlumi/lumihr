@@ -119,8 +119,9 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
       ${c.opportunity && html`<${OpportunityPanel} opp=${c.opportunity} />`}
       <${WhatThisMeans} card=${c} pos=${meaningPos} />
       <div class="bench-foot">
-        <${ComparePill} c=${c} cuts=${cuts} effectiveKey=${effectiveKey} globalKey=${globalKey}
-          onCut=${k => setOverride(k === globalKey ? null : k)} />
+        ${/* per-card peer picker removed (David 2026-08-14): the sample is set ONCE at the top of the
+              view (page/dashboard selector) — no card-by-card sample control. The card follows that cut;
+              override state stays inert. */ ""}
         ${/* practice rows carry NO position pill (Diff 4 ruling 6 — the grid fall-through
               on classification.register let a practice card render P + below/above market;
               c.practice is the server-computed class flag). */ ""}
