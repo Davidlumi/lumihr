@@ -4368,13 +4368,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sig-subhead { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
 .sig-subhead-l { display: inline-flex; align-items: center; gap: var(--s2) var(--s3); flex-wrap: wrap; }
 /* Signals control band (2026-08-13, David: consistency with the grid) — greyed default sample · confidence · filters */
-.sig-ctl-band { margin-bottom: var(--s4); position: relative; }
-/* .signals-page > :not(.ov-aurora) pins every child to z-index:1 (over the aurora bg); the band must
-   outrank the folder nav below it (also z:1) so open facet popovers paint over the folder row.
-   Match that selector's specificity path so this wins. */
-.signals-page > .sp-ctl-band.sig-ctl-band { z-index: 20; }
-.sig-ctl-band .filterbar { padding: 0; }
+.sig-ctl-band { margin-bottom: var(--s4); }
 .sig-ctl-band .sig-reg-btn { margin-left: auto; }
+/* filters sit below the folder nav now (2026-08-14): folders pick the set, filters refine it. The
+   popover opens down over the feed. But .signals-page > :not(.ov-aurora) pins EVERY page child to
+   z-index:1 (over the aurora bg), so the filter row ties with the feed/strategy-strip below it and
+   the popover would bleed. Lift it with a specificity-matched selector so its subtree outranks the
+   later siblings. */
+.sig-filter-row { margin: 0 0 var(--s4); position: relative; }
+.signals-page > .sig-filter-row { z-index: 20; }
+.sig-filter-row .filterbar { padding: 0; }
 .sig-peer-locked { gap: var(--s2); }
 .sig-peer-pill { padding: 4px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-sunk);
   color: var(--ink-soft); font-size: var(--fs-label); cursor: default; }

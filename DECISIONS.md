@@ -18000,3 +18000,25 @@ like the All-reward grid masthead:
 Frontend-only (pages.js markup relocation + app.css); jsc clean, braces balanced, verified live on a Thornbridge
 rig (band order, greyed pill, popover paints solid over the folder row, Strategy=on filters the feed with badge +
 Clear, no console errors). Gates not run — no server/engine/data touched (CSS-skip doctrine).
+
+## 2026-08-14 — Signals: folders before filters + "Company default" sample chip (v=599)
+
+David: "folders should come first and then the filters" + "the sample box should just say company default rather
+than the full description." Two changes on top of v=598:
+
+- **IA reorder.** The top `.sig-ctl-band` is now the page BASIS only — sample + Confidence + Full-gap-register.
+  The four filters (FacetMenus) moved DOWN out of the band into a new `.sig-filter-row` that sits BELOW the folder
+  nav, in the feed branch. Final order: basis → folders (Inbox/Saved/…/Snoozed/Dismissed) → filters → feed.
+  Rationale: folders are navigation (which set), filters refine the shown set — nav-then-refine, matching the grid.
+- **Sample chip wording.** The greyed `.sig-peer-pill` now reads just **"Company default"** (was the full
+  "5 sectors · 10,000+, 1,000–4,999 FTE · N"). The full peer-group description + the "same group your alerts use"
+  line moved into the ⓘ tooltip; the "· N" count was redundant with the Confidence chip and is dropped. aria-label
+  keeps the full "Company default peer group: {label}" for screen readers.
+- **z-index followed the filters.** Dropped the band's `.signals-page > .sp-ctl-band.sig-ctl-band{z-index:20}` (the
+  band no longer opens a downward popover — its ⓘ tip opens upward). Added the same specificity-matched lift to the
+  new row: `.signals-page > .sig-filter-row{z-index:20}`, so the facet popover (now opening down over the strategy
+  strip + feed, all z:1 page children) paints solid. Same aurora-pin trap as v=598, one sibling further down.
+
+Frontend-only; jsc clean, braces balanced, verified live on a Thornbridge rig (order basis→folders→filters, pill
+= "Company default" with full detail in the tip, Strategy popover paints solid over the feed, filtering works with
+badge + Clear, no JS console errors). Gates not run — no server/engine/data touched.
