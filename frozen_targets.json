@@ -1,98 +1,106 @@
 {
  "REW26_WEL_EAP": {
   "dist": {
-   "No": 0.2727,
-   "Yes": 0.7273
+   "Yes": 0.7481,
+   "No": 0.2519
   },
-  "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "n": 270,
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures.",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_WEL_MH_SUPPORT": {
   "dist": {
-   "MH first aiders": 0.1591,
-   "None": 0.1136,
-   "Counselling": 0.0727,
-   "Counselling;MH first aiders;Digital app": 0.0682,
-   "Counselling;MH first aiders": 0.0682,
-   "Counselling;Digital app": 0.0545,
-   "Counselling;Manager training;MH first aiders;Digital app": 0.0455,
-   "MH first aiders;Digital app": 0.0409,
-   "Digital app": 0.0409,
-   "Manager training;MH first aiders": 0.0364,
-   "Manager training;Digital app": 0.0318,
-   "Counselling;Manager training": 0.0318,
-   "Manager training;MH first aiders;Digital app": 0.0273,
-   "Manager training": 0.0273,
-   "Counselling;Manager training;MH first aiders": 0.0227,
-   "MH first aiders;MH days": 0.0182,
-   "Counselling;Manager training;Digital app": 0.0182,
-   "Counselling;MH days": 0.0182,
-   "MH days": 0.0136,
-   "Digital app;MH days": 0.0136,
-   "Manager training;MH days": 0.0091,
-   "Manager training;Digital app;MH days": 0.0091,
-   "MH first aiders;Digital app;MH days": 0.0091,
-   "Counselling;Manager training;MH first aiders;MH days": 0.0091,
-   "Counselling;Manager training;MH first aiders;Digital app;MH days": 0.0091,
-   "Counselling;MH first aiders;MH days": 0.0091,
-   "Counselling;MH first aiders;Digital app;MH days": 0.0091,
-   "Manager training;MH first aiders;MH days": 0.0045,
-   "Counselling;Manager training;Digital app;MH days": 0.0045,
-   "Counselling;Digital app;MH days": 0.0045
+   "MH first aiders": 0.1593,
+   "None": 0.1148,
+   "Counselling": 0.0741,
+   "Counselling;MH first aiders": 0.0667,
+   "Counselling;MH first aiders;Digital app": 0.0667,
+   "Counselling;Digital app": 0.0556,
+   "Counselling;Manager training;MH first aiders;Digital app": 0.0444,
+   "Digital app": 0.0407,
+   "MH first aiders;Digital app": 0.0407,
+   "Manager training;MH first aiders": 0.037,
+   "Manager training;Digital app": 0.0333,
+   "Counselling;Manager training": 0.0333,
+   "Manager training": 0.0259,
+   "Manager training;MH first aiders;Digital app": 0.0259,
+   "Counselling;Manager training;MH first aiders": 0.0222,
+   "MH first aiders;MH days": 0.0185,
+   "Counselling;MH days": 0.0185,
+   "Counselling;Manager training;Digital app": 0.0185,
+   "Digital app;MH days": 0.0148,
+   "MH days": 0.0148,
+   "MH first aiders;Digital app;MH days": 0.0111,
+   "Counselling;Manager training;MH first aiders;MH days": 0.0111,
+   "Manager training;Digital app;MH days": 0.0111,
+   "Counselling;MH first aiders;Digital app;MH days": 0.0074,
+   "Counselling;MH first aiders;MH days": 0.0074,
+   "Manager training;MH days": 0.0074,
+   "Counselling;Manager training;MH first aiders;Digital app;MH days": 0.0074,
+   "Counselling;Digital app;MH days": 0.0037,
+   "Counselling;Manager training;Digital app;MH days": 0.0037,
+   "Manager training;MH first aiders;MH days": 0.0037
   },
-  "n": 220
+  "n": 270,
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_WEL_FINWELL": {
   "dist": {
-   "No": 0.3591,
-   "Yes": 0.6409
+   "Yes": 0.6407,
+   "No": 0.3593
   },
-  "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "n": 270,
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures.",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_WEL_STRATEGY": {
   "dist": {
-   ">Annual": 0.0682,
-   "Ad hoc": 0.25,
-   "Annual": 0.25,
-   "No strategy": 0.4318
+   "No strategy": 0.4074,
+   "Annual": 0.2741,
+   "Ad hoc": 0.2481,
+   ">Annual": 0.0704
   },
-  "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "n": 270,
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures.",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_BEN_PENSION_TYPE": {
   "dist": {
-   "DC": 0.8864,
-   "DB": 0.0955,
-   "Hybrid": 0.0182
+   "DC": 0.8926,
+   "DB": 0.0926,
+   "Hybrid": 0.0148
   },
-  "n": 220,
-  "_refrozen": "2026-07-18 r3sw3 ruled: PUBLIC-SECTOR CARVE-OUT (TPR grade A, DB landscape 2025) — public band DB 95/DC 5 (CARE=DB), commercial/charity byte-untouched at national 95/3/2; national aggregate moves DC .95->.8864, DB .0318->.0955 (public 15 orgs: 14 DB/1 DC). G7 baseline re-established (EAP precedent). Was {\"DC\": 0.95, \"DB\": 0.0318, \"Hybrid\": 0.0182}"
+  "n": 270,
+  "_refrozen": "2026-07-18 r3sw3 ruled: PUBLIC-SECTOR CARVE-OUT (TPR grade A, DB landscape 2025) — public band DB 95/DC 5 (CARE=DB), commercial/charity byte-untouched at national 95/3/2; national aggregate moves DC .95->.8864, DB .0318->.0955 (public 15 orgs: 14 DB/1 DC). G7 baseline re-established (EAP precedent). Was {\"DC\": 0.95, \"DB\": 0.0318, \"Hybrid\": 0.0182}",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_BEN_PENSION_MATCH": {
   "dist": {
-   ">8%": 0.0455,
-   "None": 0.4864,
-   "Up to 3%": 0.1545,
-   "Up to 5%": 0.2045,
-   "Up to 8%": 0.1091
+   "None": 0.4926,
+   "Up to 5%": 0.1926,
+   "Up to 3%": 0.1556,
+   "Up to 8%": 0.1185,
+   ">8%": 0.0407
   },
-  "n": 220,
-  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures."
+  "n": 270,
+  "_refrozen": "2026-07-16 Diff 3 — G7 baseline re-established post-correction (ruled): the prior frozen values protected the defective seed (EAP frozen 0.67 vs seeded 0.309); re-ratified against the register-generated corrected figures.",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW262_TIME_SICKDAYONE": {
   "dist": {
-   "Yes": 0.6091,
-   "No": 0.3909
+   "Yes": 0.6074,
+   "No": 0.3926
   },
-  "n": 220
+  "n": 270,
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  },
  "REW26_BEN_SALSAC": {
   "dist": {
-   "Yes": 0.5227,
-   "No": 0.4773
+   "Yes": 0.5222,
+   "No": 0.4778
   },
-  "n": 220,
-  "_batch2": "unfrozen+re-frozen 2026-07-24 (David ruling: truer target > stale freeze); was Yes 0.5955"
+  "n": 270,
+  "_batch2": "unfrozen+re-frozen 2026-07-24 (David ruling: truer target > stale freeze); was Yes 0.5955",
+  "_reratified_add50": "2026-08-14 — re-ratified at n=270 after the +50-org seed-pool growth (migrate_add50_orgs_2026_08_14, David-approved). Growing the org denominator moves a share-anchor by up to ~0.2pp of arithmetic necessity (0.1pp = 0.27 of one org at n=270), so the settled dists are re-recorded against the 270-org store; the underlying seed shape is unchanged. Prior freeze history retained below."
  }
 }
