@@ -1902,9 +1902,10 @@ function MetricPage({ qid, me, cut, cuts, prefs, onPref, onPin, pinnedIds, onCut
             ${/* labelled, not a mystery glyph: this is the take-to-the-board feature and
                   it read as MISSING as a bare icon (David 2026-08-13) */ ""}
             ${!c.suppressed && html`<button class="btn small tool-onepager" disabled=${busyNow} title="Print or save a one-page PDF — the chart plus your written commentary." onClick=${printMetric}><${Icon} name="file-text" size=${14} /> One-pager</button>`}
-            ${onPin && pinnedIds && html`<button class=${"iconbtn" + (pinnedIds.has(qid) ? " on" : "")} onClick=${() => onPin(qid)}
-              title=${pinnedIds.has(qid) ? "Remove this metric from your dashboard" : "Pin this metric to your dashboard"}
-              aria-label=${pinnedIds.has(qid) ? "Unpin from dashboard" : "Pin to dashboard"} aria-pressed=${pinnedIds.has(qid)}><${Icon} name="pin" size=${15} /></button>`}
+            ${/* pin opens the dashboard PICKER (David 2026-08-14) — the same popover as the grid cards,
+                  so you choose WHICH dashboard (or make a new one) instead of a silent single toggle.
+                  AddToDashboard is a card.js global; it only needs the metric id. */ ""}
+            ${onPin && html`<${AddToDashboard} c=${{ id: qid }} />`}
           </div>
         </div>
         ${showInfo && html`

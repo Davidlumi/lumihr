@@ -18202,3 +18202,12 @@ Gate fix along the way: `qa_overview` check 10b grepped pages.js for the string 
 sort comparator RETIRED in v=603 (Counts/Position share one canonical order). Stale assertion; removed that one term
 (the marker→`depth_pctl` bindings it really guards all still hold). **Full suite 14/14 GREEN**; :8060 reloaded with
 the new code. Server/engine class — no web asset changed (no ?v bump).
+## 2026-08-14 — Metric page: pin opens the dashboard picker (v=608)
+
+David: "pin needs to open the dashboard options." The metric detail page's pin button called `onPin(qid)` directly
+(a silent single-dashboard toggle). Swapped it for the same `<${AddToDashboard}>` popover the grid cards use (a
+card.js global; needs only the metric id, passed as `c=${{ id: qid }}`), guarded on `onPin` so read-only/share
+views don't render it. Now clicking the pin opens "ADD TO DASHBOARD" — a checkbox per dashboard (with card counts)
+plus "+ New dashboard…"; toggling adds/removes and fires `lumi:pins-changed`, which the app already listens to
+(app.js ~L232) so pin state stays in sync everywhere. Verified live on a Thornbridge rig: pin → picker opens
+upward (no clip), "My dashboard" toggled 5→6 and the card pinned. jsc clean; frontend-only (app.js), v=608 bump.
