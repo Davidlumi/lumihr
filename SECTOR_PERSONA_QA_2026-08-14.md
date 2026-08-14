@@ -43,7 +43,17 @@ by-level (fold into V2-C), `RED_PROC` (83 orgs), COL-action (Media). Original li
 - Promotion governance (`PROP_34ffb6e2`) ↔ pay-range/JE frameworks (Healthcare).
 - COL action (`REW264_WEL_COLACTION`) ↔ COL-driven benefits (`REW_BEN_058`) (Media).
 
-### V2-C — Sector pension fingerprints (DB where DB belongs)
+### V2-C — Sector pension fingerprints (DB where DB belongs) ✅ DONE
+Shipped (`migrate_seedreal_v2c_pensions_2026_08_14.py`): frozen-conserving reallocation (7 swap
+pairs) of `REW26_BEN_PENSION_TYPE` — moved DB/Hybrid out of Media/Hospitality/Retail/over-weighted
+Logistics-FS INTO Manufacturing (1 DB + 3 Hybrid), Energy (2 DB), Education (3→4 DB). Global held
+exactly (25 DB / 4 Hybrid / 241 DC). Cascade per B4: DB recipients get REW264_PEN_AEDEFAULT/
+GREENDEFAULT = "Not applicable" + REW_BEN_112 flat 23% (TPS/LGPS); Hybrid keeps DC children +
+blended 15%; de-DB'd donors drop to a DC ladder. 88 REW_BEN_112 CSV rows in lockstep. 14/14 green.
+NOTE: frozen cap (national ~9% DB) limits how far each sector can go — Manufacturing lands 14%,
+Energy 20%, Education 33% (persona ideals were higher but would require re-ratifying the frozen
+anchor UP, a separate David call). Residual: DB orgs keep their prior MATCH/SALSAC (not gate-flagged,
+frozen — a conserving swap of those could be a follow-up). Original spec:
 - **Manufacturing**: inject closed/hybrid DB legacy (currently 0/28) — target ~15-25% DB/hybrid, concentrated 5,000+ FTE. Cascade: PLSA quality-mark, life-cover DIS, employer-contribution level.
 - **Education**: DB should dominate (~75%+ via TPS/USS/LGPS) — currently 25%. Cascade: employer contributions 15-28%, PLSA mark pass, remove general bonus schemes (spine pay).
 - **Energy/Utilities**: DB/hybrid legacy present (currently 0/10). Cascade as above.
