@@ -58,7 +58,7 @@ REGEN_WHITELIST = {
     "ALLOW_03": {"No – non-pensionable": 187, "Yes – some allowances only": 51,
                  "Yes – all allowances": 27,
                  "Varies by allowance/contract": 2},
-    "REW_PAY_020": {"No": 1344, "Yes": 546},
+    "REW_PAY_020": {"No": 1701, "Yes": 189},   # v2-H: allowances aligned non-pensionable where ALLOW_03 says so
 }
 
 # Ruled retirements (Diff 14, 2026-07-18 — DECISIONS.md pay/pensions audit round 1):
