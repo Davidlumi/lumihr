@@ -106,3 +106,25 @@ DEFERRED (anchored, need OT_04-style per-sector reallocation conserving the froz
 ### V2-G — Anchored sector-strength reallocations ✅ DONE (6 of 8)
 Shipped (`migrate_seedreal_v2g_anchored_strength_2026_08_14.py`): count-conserving per-sector swaps (flip k neg->pos in the strong sector, k pos->neg in an over-represented one; frozen/register global held to the org). EAP Construction↑ (frozen 195/75 held); SALSAC PubSec-DB↓/Manufacturing-Retail↑ (frozen 139/131 held); OH Construction↑; PAYTR_01+02 Charity/PubSec↑; FAM_010 Charity volunteering↑. 14/14 green.
 STILL DEFERRED (need more than a swap): REW_BEN_SICK_001 (OSP-detail children SICK_002/004/005 are coherence-conditioned — needs a B4-style cascade); REW_PAY_001 (HR_Maturity-KEYED gradient — must reallocate within maturity bands, not sectors).
+
+---
+
+## Realism review round 2 (2026-08-14) — within-org coherence
+Measured two remaining gaps (sector layer already done): (a) ~280 cross-question contradictions on
+unanchored metrics; (b) PMI-offering orgs not bundling the cheap staples.
+
+### V2-H — remaining coherence contradictions ✅ DONE (commit 57eaaf5)
+RED_PROC criteria->process (83); promotion governance->grading (52); COL action<-COL benefit (94);
+REW_PAY_020 pensionability<-ALLOW_03 (357 rows/51 orgs; regen pin re-recorded). 14/14 green.
+
+### V2-I — generosity bundling ✅ DONE (commit 974479e)
+Every PMI-offering org now has life assurance (31 added, 2x) and EAP (43-pair frozen-conserving
+swap; lean non-PMI SMEs give it up). PMI-orgs missing EAP/life: 0/0. 14/14 green.
+
+### STILL OPEN (deliberately not rushed / not worth it)
+- REW_BEN_SICK_001 — 70 PMI+statutory-sick orgs; needs the OSP-child cascade (SICK_002/004/005;
+  SICK_004 is itself a marginal). Scoped in migrate_seedreal_v2g docstring.
+- REW_PAY_001 — HR_Maturity-keyed; needs within-band reallocation.
+- Full multi-factor generosity latent (Tier-4) — NOT recommended: high effort/risk, bundling fixes
+  already capture the visible 80%.
+- Frozen pension re-ratification UP (Manufacturing/Education > frozen cap) — David governance call.
