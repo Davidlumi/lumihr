@@ -18117,3 +18117,19 @@ Verified live on a Thornbridge rig: Counts and Position show the IDENTICAL row o
 Benefits · Time off · Incentives · Wellbeing · Governance); toggling swaps only the bar (stacked counts ↔ P-marker),
 the strategy column and every row stay put. Tradeoff: Position's P-markers are no longer monotonic (canonical order,
 not ascending) — accepted. jsc clean, no JS console errors. Gates not run — no server/engine/data touched.
+
+## 2026-08-14 — Overview Position bars: stronger neutral segment definition (v=604, CSS-only)
+
+David: "does it need more definition so the user can clearly see the market segments?" Yes — the `.di-markrow.mk-neutral`
+zones existed but were too faint to read (below/above = `--surface-sunk`, on-band only 8% ink — nearly identical —
+seams 12% ink), so the bar read as one flat strip and you couldn't tell which segment the P-marker sat in. Kept the
+NEUTRAL ruling (RAG stays exclusive to the Counts state — no amber/green/red here) and instead strengthened the
+structural definition (app.css):
+- below/above tracks → `ink 6%` (faint); on-market band → `ink 15%` (a clearly distinct central CHANNEL);
+- band-edge seams `ink 12% → 30%` (crisp); outer inset border `ink 8% → 16%`;
+- row height `14px → 16px` (scoped to `.mk-neutral` only — the overall gauge-card scale `.arc-markscale`, which
+  reuses `.di-markrow` but keeps soft-RAG per the keep-RAG ruling, is untouched).
+
+Now the three segments (below · on-market · above) read at a glance and it's obvious which one each P-marker is in.
+Verified live on a Thornbridge rig (Position view): distinct on-market channel, crisp seams, markers clearly placed;
+the bottom "Where you stand" gauge still shows its RAG strip (scope held). CSS-only — no gates.

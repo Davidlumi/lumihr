@@ -2703,11 +2703,15 @@ body.has-unsub-bar .content { padding-bottom: 88px; }
    one deeper grey step + hairline seams so the band boundaries stay legible without colour.
    SCOPED: applied only by the domain rows; the overall gauge-card marker (.arc-markscale,
    which reuses .di-markrow) and the Counts state keep soft-RAG per the keep-RAG ruling. */
-.di-markrow.mk-neutral .z-below, .di-markrow.mk-neutral .z-above { background: var(--surface-sunk); }
-.di-markrow.mk-neutral .z-on { background: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
-.di-markrow.mk-neutral .di-mk-zone + .di-mk-zone { border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+/* stronger neutral definition (David 2026-08-14, "more definition so the market segments read"):
+   faint below/above tracks + a clearly distinct on-market CHANNEL + crisp band-edge seams, so the
+   three segments are legible at a glance — still ZERO RAG (colour stays exclusive to the Counts state). */
+.di-markrow.mk-neutral { height: 16px; }
+.di-markrow.mk-neutral .z-below, .di-markrow.mk-neutral .z-above { background: color-mix(in srgb, var(--ink) 6%, var(--surface)); }
+.di-markrow.mk-neutral .z-on { background: color-mix(in srgb, var(--ink) 15%, var(--surface)); }
+.di-markrow.mk-neutral .di-mk-zone + .di-mk-zone { border-left: 1px solid color-mix(in srgb, var(--ink) 30%, transparent); }
 .di-markrow.mk-neutral::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
-  pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent); }
+  pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 16%, transparent); }
 .di-mk-centre { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 0;
   border-left: 1px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
 /* pill marker (2026-07-12, "new dot format"): the P rides INSIDE one ink pill — no separate
