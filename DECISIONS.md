@@ -18350,3 +18350,31 @@ REMAINING (RS-5/RS-6): reward_levers.json draft + Options blocks + Artefact B (r
 assemble_pack_payload; must also surface the computed-but-unrendered `drifted` flag and add
 the ruled provenance footer the pack is missing); measures reporting (movement needs a second
 snapshot); R7 content sign-off; lumi-terminology.md update per R12.
+
+## 2026-08-14 — Reward Strategy overhaul COMPLETE: RS-5/RS-6 (Artefact B + R12 rollout)
+
+- **RS-5 (85ac551).** `data/reward_levers.json` (David-owned, 12 levers, v1 tranche Pay/
+  Benefits & Lifestyle/Time Off & Family per R8 — DRAFT pending content sign-off; mandatory
+  trade_off, register_effect, file order only, no vendors). `strategy_align.options_for()`:
+  options only for behind_intent/contradicted, register-matched (position/provision→Substance,
+  practice/coherence→Approach), R6 framing verbatim, outside-tranche categories say so (no
+  silent caps). `assemble_pack_payload` gains `strategy_review` (same path, no parallel
+  assembly): version cite/draft, principles verbatim, alignment counts+commitments
+  (deterministic strings), options, measures as CURRENT LEVELS only (movement waits for
+  snapshot 2 — never rendered flat), and `pool_footer` — the ruled R-P2 provenance line the
+  pack was missing. BoardPackView: two conditional review pages, derived numbering, the
+  footer line on every page, and the server's `drifted` flag FINALLY rendered (the 2026-07-09
+  ship-review debt). qa_strategy_align 37 checks; qa_focus +6 pack assertions (defer-until-
+  go-live, like the rest of the bp block). Verified on a gate-on throwaway: 12 commitments,
+  9 options blocks, pages 5-6 render, footer at n=270. Suite 15/15.
+- **R12 rollout (348f654).** "category" is the user-facing word everywhere: terminology file
+  re-ruled (the live eight named; "domain" = internal code vocabulary only), all ten pages.js
+  user-visible strings re-worded, marketing hero mock aligned. Plus D6: reward_mix joins
+  STRAT_PHRASE (a cash-mix re-rank names itself).
+- **Guardrail 9 note:** Artefact A contains no model-assembled prose by construction — every
+  document section renders member-entered content or dial-derived phrase lexicons (dials are
+  member choices); the AI reading is a separate, labelled, non-exported section.
+- **Open by design:** R7 rule-content + R8 lever-content sign-off (both files carry DRAFT
+  notes and hot-reload); measure MOVEMENT reporting activates at snapshot 2; Governance lever
+  tranche 2; the brief's optional evidence appendix (R1) remains unbuilt — the print toggle
+  covers the ruled default.
