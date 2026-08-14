@@ -68,8 +68,11 @@ Shipped (`migrate_seedreal_v2d_frontline_2026_08_14.py`): OT_04 shift premium re
 - **Manufacturing** skills-based pay + apprenticeship frameworks → above pool.
 - **Frontline-in-office bleed**: remove shift premiums (`OT_04`), shift/hourly overtime multipliers, cancelled-shift/min-hours metrics from Tech, Professional Services, FS (salaried knowledge workers) → Not applicable.
 - **Bonus-eligibility gradient** (`REW_INC_103`): add frontline bands (Retail/Hospitality/Logistics) to `band_distributions` so they're bonus-light like Public/Charity — currently only Charity + Public are special-cased, everyone else gets bonus-heavy `_default`.
+-->
 
-### V2-E — Numeric floors + texture
+### V2-E — Numeric floors + texture ✅ DONE
+Shipped (`migrate_seedreal_v2e_floors_ai_2026_08_14.py`): 29 sub-NLW hourly floors (Under £10 / £10-11) -> £12-13; AI-skills-pay Yes 28%->7.5% concentrated in Tech/Media/FS; AI-pay-review formal 46->11; large-org (5,000+) reward teams filled in (20 'no resource' removed). 14/14 green.
+
 - **Sub-NLW hourly floors** (66 orgs): anchor lowest-rate bands to 2026 NLW (~£12.21) except youth/apprentice.
 - **AI-pay cluster** (`REW262_PAY_AISKILLSPAY`, `REW264_GOV_AIPAYREVIEW`, AITALENT/AIBENCH): deflate from 2-3x pool to low-teens; concentrate in Tech/Media/data roles.
 - **Large-org (10,000+) realism**: dedicated reward team present (`REW263_GOV_REWTEAM`), death-in-service life cover, HRIS/comp-tool (not spreadsheet) at 5,000+.
