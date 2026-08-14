@@ -151,6 +151,47 @@ check("D", "rule library loads with unique ids + one category each",
 
 print()
 print("=" * 92)
+print("SECTION E — options blocks (R6/R8): levers, framing, never ranked")
+print("=" * 92)
+LEV = sa.load_levers()
+check("E", "lever library loads with a trade_off on EVERY lever (no marketing)",
+      LEV and all((l.get("trade_off") or "").strip() for l in LEV))
+check("E", "every lever names a register_effect (Substance/Approach)",
+      all(l.get("register_effect") in ("Substance", "Approach") for l in LEV))
+check("E", "v1 tranche is Pay / Benefits & Lifestyle / Time Off & Family (R8)",
+      {l["category"] for l in LEV} == {"Pay", "Benefits & Lifestyle", "Time Off & Family"})
+_cs = [
+    {"id": "position:Pay", "category": "Pay", "kind": "position", "status": "behind_intent", "statement": "s"},
+    {"id": "rule:P4", "category": "Pay", "kind": "coherence", "status": "contradicted", "statement": "s"},
+    {"id": "position:Benefits & Lifestyle", "category": "Benefits & Lifestyle", "kind": "position", "status": "evidenced", "statement": "s"},
+    {"id": "position:Pensions & Savings", "category": "Pensions & Savings", "kind": "position", "status": "behind_intent", "statement": "s"},
+]
+OB = sa.options_for(_cs, levers=LEV)
+check("E", "options only for behind_intent/contradicted — evidenced gets none",
+      {o["commitment_id"] for o in OB} == {"position:Pay", "rule:P4", "position:Pensions & Savings"})
+_pay_pos = next(o for o in OB if o["commitment_id"] == "position:Pay")
+_pay_coh = next(o for o in OB if o["commitment_id"] == "rule:P4")
+check("E", "register matching: a position gap gets Substance levers only",
+      _pay_pos["levers"] and all(l["register_effect"] == "Substance" for l in _pay_pos["levers"]))
+check("E", "register matching: a coherence contradiction gets Approach levers only",
+      _pay_coh["levers"] and all(l["register_effect"] == "Approach" for l in _pay_coh["levers"]))
+check("E", "levers keep FILE order (never re-ranked)",
+      [l["lever_id"] for l in _pay_pos["levers"]] ==
+      [l["lever_id"] for l in LEV if l["category"] == "Pay" and l["register_effect"] == "Substance"])
+check("E", "R6 framing string verbatim on every block",
+      all(o["framing"] == sa.OPTIONS_FRAMING for o in OB))
+_pens = next(o for o in OB if o["commitment_id"] == "position:Pensions & Savings")
+check("E", "outside-tranche category says so plainly (no silent cap)",
+      not _pens["levers"] and "later tranche" in (_pens.get("coverage_note") or ""))
+check("E", "no vendor/product names in the lever library",
+      not re.search(r"\b(perkbox|benefex|zest|reward gateway|darwin)\b",
+                    __import__("json").dumps(LEV), re.I))
+_lever_text = " ".join((l.get("what_it_is", "") + " " + l.get("typical_shape", "") + " " + l.get("trade_off", "")) for l in LEV)
+check("E", "lever copy is directive- and legal-clean",
+      not ca.DIRECTIVE_RE.search(_lever_text) and not ca.LEGAL_RE.search(_lever_text))
+
+print()
+print("=" * 92)
 passed = sum(1 for _, ok in R if ok)
 print("RESULTS: %d checks, %d passed, %d failed" % (len(R), passed, len(R) - passed))
 if passed == len(R):

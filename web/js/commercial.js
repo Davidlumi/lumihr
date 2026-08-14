@@ -169,7 +169,11 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const p = pack.payload, n = pack.narrative;
   const mVerdict = p.headline.market && p.headline.market.verdict;
   const foot = `Generated ${p.generated_date} · Peer group: ${p.cut_label}, ${p.cut_n != null ? p.cut_n : p.peer_pool.total} organisations · Methodology v${p.methodology_version || 1}`;
-  const Footer = ({ page }) => html`<div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential</span><span class="pack-pageno">lumi · ${page}</span></div>`;
+  // the ruled one-line provenance footer (R-P2, 2026-08-08) — new packs carry it in the
+  // payload; stored older packs simply show no line (never fabricated client-side)
+  const Footer = ({ page }) => html`<div class="pack-footer-wrap">
+    ${p.pool_footer ? html`<div class="pack-provline">${p.pool_footer}</div>` : null}
+    <div class="pack-footer"><span>${foot}</span><span>Private ${"&"} confidential</span><span class="pack-pageno">lumi · ${page}</span></div></div>`;
   const makeShare = async () => {
     setShareBusy(true);
     try {
@@ -223,7 +227,12 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   // the Strategy-alignment page is conditional (needs a declared, completed strategy in
   // the pack — old packs and strategy-less orgs skip it), so later page numbers shift
   const hasStrat = !!(p.strategy_alignment && p.strategy_alignment.overall_aim);
-  const PN = { money: hasStrat ? 5 : 4, watch: hasStrat ? 6 : 5, evid: hasStrat ? 7 : 6, appx: hasStrat ? 8 : 7 };
+  // Reward Strategy Review (2026-08-14, Artefact B): two conditional pages after the
+  // alignment page — old packs and strategy-less orgs skip them, so numbering derives.
+  const hasReview = !!(p.strategy_review && (p.strategy_review.commitments || []).length);
+  const RP1 = 4 + (hasStrat ? 1 : 0);                 // review p.1 (said vs are)
+  const _extra = (hasStrat ? 1 : 0) + (hasReview ? 2 : 0);
+  const PN = { money: 4 + _extra, watch: 5 + _extra, evid: 6 + _extra, appx: 7 + _extra };
   const POS_WORD = { below: "below market", at: "on market", above: "above market" };
   // B6 (2026-07-09 ship review): strategy alignment is NAVY, never RAG. The §04 chip
   // previously rendered on_target green / behind red (and left 'ahead' bare — an
@@ -233,6 +242,7 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
   const ALIGN_WORD = { on_target: "on strategy", ahead: "above strategy", behind: "below strategy" };
   const toc = [["How to read this pack", "1"], ["Executive summary", "2"], ["Position by area", "3"]]
     .concat(hasStrat ? [["Strategy alignment", "4"]] : [])
+    .concat(hasReview ? [["Reward strategy review", String(RP1)], ["Options & measures", String(RP1 + 1)]] : [])
     .concat([["What closing the gaps is worth", String(PN.money)], ["What to watch", String(PN.watch)],
              ["The evidence", String(PN.evid)], ["Appendix — peer practices", String(PN.appx)]]);
   return html`
@@ -259,6 +269,12 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           This pack reads from the <b>${p.collection_window}</b> snapshot; the benchmark has moved to
           <b> ${pack.current_collection_window}</b>. Regenerate for current numbers — this writes a new
           version, so any links you've already shared still show this one; re-share the new pack to update recipients.
+        </div>`}
+      ${!shared && !stale && pack.live_headline && pack.live_headline.drifted && html`
+        <div class="card no-print bp-stale" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
+          The live benchmark has moved since this pack was written — its headline no longer matches
+          today's read on the same peer group. Regenerate for current numbers; shared links keep
+          showing this version until you re-share.
         </div>`}
       ${shareLink && html`
         <div class="card no-print" style=${{ maxWidth: "210mm", margin: "0 auto var(--s4)", padding: "var(--s3) var(--s4)" }}>
@@ -469,6 +485,71 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
           Aims are set by your Admins under Reward strategy and can be changed at any time.</p>
         <${Footer} page="4" />
       </div>` : null}
+
+      ${hasReview ? (() => { const sr = p.strategy_review;
+        const S_LABEL = { evidenced: "holding", behind_intent: "behind intent", contradicted: "contradicted", not_evidenced: "not yet evidenced" };
+        const S_ORDER = ["evidenced", "behind_intent", "contradicted", "not_evidenced"];
+        const byStatus = (s) => (sr.commitments || []).filter(c => c.status === s);
+        const CC_LABEL = { "one-off": "one-off", "recurring": "recurring", "cost-neutral": "cost-neutral", "cost-saving": "cost-saving", "mixed": "mixed" };
+        return html`
+      <div class="pack-page">
+        <${PackSecHead} num=${RP1} title="Reward strategy review" />
+        <p style=${{ fontSize: "var(--fs-label)" }}>
+          Read against ${sr.version ? html`<b>version ${sr.version.version}</b> of your reward strategy, approved ${sr.version.approved_at.slice(0, 10)} by ${sr.version.approved_by}` : html`your <b>draft</b> reward strategy (not yet approved)`}${sr.comparator_label ? html`, compared with <b>${sr.comparator_label}</b>` : null}.
+          Each commitment resolves to one of four reads — counts, never a score.
+        </p>
+        ${(sr.principles || []).length ? html`
+          <p class="caption" style=${{ marginBottom: "var(--s2)" }}>Your principles, verbatim:</p>
+          <ol style=${{ fontSize: "var(--fs-label)", margin: "0 0 var(--s4)", paddingLeft: "1.4em" }}>
+            ${sr.principles.map((pr, i) => html`<li key=${i}>${pr}</li>`)}</ol>` : null}
+        <table class="data">
+          <thead><tr><th>Area</th><th class="num">Holding</th><th class="num">Behind intent</th><th class="num">Contradicted</th><th class="num">Not yet evidenced</th></tr></thead>
+          <tbody>${Object.entries(sr.alignment_counts || {}).map(([cat, v]) => html`
+            <tr key=${cat}><td><b>${domainLabel(cat)}</b></td>
+              <td class="num">${v.evidenced || 0}</td><td class="num">${v.behind_intent || 0}</td>
+              <td class="num">${v.contradicted || 0}</td><td class="num">${v.not_evidenced || 0}</td></tr>`)}
+          </tbody>
+        </table>
+        ${S_ORDER.filter(s => byStatus(s).length && s !== "evidenced").map(s => html`
+          <div key=${s} style=${{ marginTop: "var(--s4)" }}>
+            <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>${S_LABEL[s]}</div>
+            ${byStatus(s).map(c => html`<p key=${c.id} style=${{ fontSize: "var(--fs-label)", margin: "var(--s2) 0" }}>${c.statement}</p>`)}
+          </div>`)}
+        <p class="caption">“Not yet evidenced” names the reads your unanswered metrics would unlock — honesty, not a fault.
+          A practice choice may evidence a contradiction; a difference from market is never itself a gap.</p>
+        <${Footer} page=${String(RP1)} />
+      </div>
+      <div class="pack-page">
+        <${PackSecHead} num=${RP1 + 1} title="Options & measures" />
+        <p class="caption" style=${{ marginBottom: "var(--s3)" }}><b>For decision, not recommendation.</b> ${sr.options && sr.options.length ? (sr.options[0].framing || "") : ""}</p>
+        ${(sr.options || []).length ? sr.options.map(ob => html`
+          <div key=${ob.commitment_id} style=${{ marginBottom: "var(--s4)" }}>
+            <div style=${{ fontSize: "var(--fs-label)", fontWeight: 700 }}>${domainLabel(ob.category)} — ${ob.statement}</div>
+            ${ob.levers.length ? html`
+              <table class="data" style=${{ marginTop: "var(--s2)" }}>
+                <thead><tr><th>Lever</th><th>Shape</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
+                <tbody>${ob.levers.map(l => html`
+                  <tr key=${l.lever_id}><td><b>${l.name}</b><div class="caption">${l.what_it_is}</div></td>
+                    <td class="caption">${l.typical_shape}</td>
+                    <td class="caption">${CC_LABEL[l.cost_character] || l.cost_character} · ${l.reversibility} to reverse</td>
+                    <td class="caption">${(l.speed || "").replace("_", " ")}</td>
+                    <td class="caption">${l.trade_off}</td></tr>`)}
+                </tbody>
+              </table>` : html`<p class="caption">${ob.coverage_note || "No levers in this area's tranche yet."}</p>`}
+          </div>`) : html`<p class="caption">No commitment is behind intent or contradicted — no options to table.</p>`}
+        ${(sr.measures || []).length ? html`
+          <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginTop: "var(--s4)" }}>How we'll know it's working</div>
+          <table class="data" style=${{ marginTop: "var(--s2)" }}>
+            <thead><tr><th>Measure</th><th>Area</th><th>Your current answer</th><th class="num">Peer n</th></tr></thead>
+            <tbody>${sr.measures.map(m => html`
+              <tr key=${m.id}><td><b>${m.title}</b></td><td>${domainLabel(m.category)}</td>
+                <td>${m.your_answer || "Not yet answered"}</td>
+                <td class="num">${m.suppressed ? "below floor" : (m.n != null ? m.n : "—")}</td></tr>`)}
+            </tbody>
+          </table>
+          ${sr.movement_note ? html`<p class="caption">${sr.movement_note}</p>` : null}` : null}
+        <${Footer} page=${String(RP1 + 1)} />
+      </div>`; })() : null}
 
       <div class="pack-page">
         <${PackSecHead} num=${PN.money} title="What closing the gaps is worth" />

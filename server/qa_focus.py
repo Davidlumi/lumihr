@@ -132,6 +132,27 @@ else:
           not _sub_floor, _sub_floor)
     check("board pack gap-register rows are all unsuppressed",
           all(not r.get("suppressed", False) for r in _pl.get("gap_register_top", [])))
+    # Reward Strategy Review (2026-08-14, Artefact B): present when the org has a
+    # completed strategy; every statement deterministic + directive-free; the ruled
+    # provenance footer line ships; suppressed measures never leak an n.
+    import re as _re
+    _sr = _pl.get("strategy_review")
+    check("strategy review present in the pack for a strategy-complete org",
+          bool(_sr and _sr.get("commitments")), type(_sr).__name__)
+    if _sr:
+        _stmts = " ".join(c.get("statement", "") for c in _sr.get("commitments", []))
+        _DIR = _re.compile(r"\byou (must|should|need to|are required to|have to|are obliged to)\b", _re.I)
+        check("strategy-review statements are directive-free", not _DIR.search(_stmts),
+              _DIR.search(_stmts) and _DIR.search(_stmts).group(0))
+        check("strategy-review counts reconcile to commitments per category",
+              all(sum(v.values()) == len([c for c in _sr["commitments"] if c["category"] == k])
+                  for k, v in (_sr.get("alignment_counts") or {}).items()))
+        check("suppressed measures carry no n (floor holds in the review)",
+              all(m.get("n") is None for m in _sr.get("measures", []) if m.get("suppressed")))
+        check("every options block carries the ruled framing string",
+              all("The decision is yours" in (o.get("framing") or "") for o in _sr.get("options", [])))
+    check("the ruled provenance footer line ships in the pack payload",
+          "Comparison pool:" in (_pl.get("pool_footer") or ""), _pl.get("pool_footer"))
 # cut sensitivity (2026-06-13): the single-metric endpoint must genuinely apply
 # a sector cut — a regression here is what the user hit on the metric page.
 # All-peers vs a sector must differ in n (and not silently fall back to all).

@@ -33,6 +33,13 @@ import os
 _RULES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                            "data", "strategy_coherence_rules.json")
 _CACHE = {"mtime": None, "rules": None}
+_LEVERS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                            "data", "reward_levers.json")
+_LCACHE = {"mtime": None, "levers": None}
+
+# R6 — the ruled framing sentence, verbatim, on every Options block.
+OPTIONS_FRAMING = ("Here is the gap. Here is what the market does about it. "
+                   "Here is what it would cost. The decision is yours.")
 
 STATUSES = ("evidenced", "behind_intent", "contradicted", "not_evidenced")
 _STANCE_WORD = {"lag": "below market", "match": "on market", "lead": "above market"}
@@ -52,6 +59,63 @@ def load_rules(path=None):
             _CACHE["rules"] = (json.load(f).get("rules") or [])
         _CACHE["mtime"] = mt
     return _CACHE["rules"]
+
+
+def load_levers(path=None):
+    """The David-owned lever inventory (R8). File order preserved — NEVER re-sorted,
+    ranked or filtered by 'fit' (an ordered list is an implied recommendation)."""
+    p = path or os.environ.get("LUMI_REWARD_LEVERS") or _LEVERS_PATH
+    try:
+        mt = os.path.getmtime(p)
+    except OSError:
+        return []
+    if _LCACHE["mtime"] != mt or _LCACHE["levers"] is None:
+        with open(p) as f:
+            _LCACHE["levers"] = (json.load(f).get("levers") or [])
+        _LCACHE["mtime"] = mt
+    return _LCACHE["levers"]
+
+
+# which register a commitment kind needs its levers to move (brief §7):
+# behind on POSITION/PROVISION -> Substance; a PRACTICE/coherence contradiction -> Approach.
+_KIND_REGISTER = {"position": "Substance", "provision": "Substance",
+                  "practice": "Approach", "coherence": "Approach"}
+
+
+def options_for(commitments, levers=None, visible_qids=None):
+    """Options blocks for every commitment that is behind_intent or contradicted:
+    the levers of that category whose register_effect matches what the gap needs,
+    in FILE ORDER, each with its mandatory trade_off; plus the R6 framing string.
+    Categories outside the v1 lever tranche say so plainly (no silent caps)."""
+    levers = load_levers() if levers is None else levers
+    covered = {l.get("category") for l in levers}
+    out = []
+    for c in commitments or []:
+        if c.get("status") not in ("behind_intent", "contradicted"):
+            continue
+        need = _KIND_REGISTER.get(c.get("kind"), "Substance")
+        picks = []
+        for l in levers:
+            if l.get("category") != c.get("category") or l.get("register_effect") != need:
+                continue
+            l = dict(l)
+            # entitlement (§2.5): a prevalence link the org can't see is dropped from the
+            # lever (the lever itself stays — its category is visible to every org today).
+            if visible_qids is not None and l.get("prevalence_metric_id") not in (visible_qids or set()):
+                l.pop("prevalence_metric_id", None)
+            picks.append(l)
+        block = {"commitment_id": c.get("id"), "category": c.get("category"),
+                 "status": c.get("status"), "statement": c.get("statement"),
+                 "framing": OPTIONS_FRAMING,
+                 "levers": [{k: l.get(k) for k in ("lever_id", "name", "what_it_is", "typical_shape",
+                                                   "cost_character", "speed", "reversibility",
+                                                   "prevalence_metric_id", "register_effect", "trade_off")}
+                            for l in picks]}
+        if c.get("category") not in covered:
+            block["coverage_note"] = ("The lever inventory covers Pay, Benefits & Lifestyle and "
+                                      "Time Off & Family at v1 — this area's levers are a later tranche.")
+        out.append(block)
+    return out
 
 
 def _dial(strategy, field):

@@ -4614,3 +4614,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sd-dirty { color: var(--amber, #B26A00); font-weight: 600; }
 .sd-evi-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro);
   color: var(--ink-soft); cursor: pointer; }
+/* pack footer wrap (2026-08-14): carries the ruled provenance line above the foot;
+   takes over .pack-footer's margin-top:auto push so pages still bottom-anchor */
+.pack-footer-wrap { margin-top: auto; }
+.pack-footer-wrap .pack-footer { margin-top: 0; }
+.pack-provline { font-size: var(--fs-micro); color: var(--ink-faint); padding-top: 4mm; }

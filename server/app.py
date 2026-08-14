@@ -4424,6 +4424,47 @@ def assemble_pack_payload(request, user, org, cut):
         cut_n = len(peer_twin.group_org_ids(conn, cut.get("criteria") or {}))
     else:
         cut_n = pool.get("responding_orgs", 0)
+    # ---- Reward Strategy Review (2026-08-14, Artefact B) — SAME payload path, no
+    # parallel assembly. Present only with a completed strategy; every string is
+    # deterministic (strategy_align — DIRECTIVE_RE-clean by construction); the AI
+    # narrative contract is untouched (it may read these figures, never invent them).
+    _strat_review = None
+    if _strat and _strat_done:
+        _st_state = strategy_state(conn, org)
+        _own = {k[0]: v for k, v in (org_answers_for(org) or {}).items()
+                if (k[1] or "") == "" and isinstance(v, str)}
+        _al = strategy_align.evaluate(
+            strategy_align.load_rules(), _strat, _st_state.get("document") or {}, _own,
+            _hero_s.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
+            visible_qids=set(_visq), cut_label=cut_label)
+        _meas_rows = []
+        for _qid in (_st_state.get("document") or {}).get("measures") or []:
+            _q = _visq.get(_qid)
+            _p = payloads().get(_qid)
+            if not _q or _p is None:
+                continue
+            _blk, _bl = pos.block_for(_p, cut)
+            _supp = pos.is_suppressed(_blk)
+            # current LEVEL only — movement needs a second snapshot (never render an
+            # empty trend as flat, brief §10); suppressed peer reads stay masked.
+            _meas_rows.append({"id": _qid, "title": _q.display_title, "category": _q.sub_power,
+                               "your_answer": _own.get(_qid),
+                               "n": None if _supp else (_blk or {}).get("n"),
+                               "suppressed": bool(_supp)})
+        _ver = conn.execute("SELECT version, approved_at, approved_by FROM strategy_versions "
+                            "WHERE org_id=? AND status='approved' ORDER BY version DESC LIMIT 1",
+                            (org["org_id"],)).fetchone()
+        _strat_review = {
+            "version": dict(_ver) if _ver else None,       # Artefact B always cites a version (or says draft)
+            "principles": (_st_state.get("document") or {}).get("principles") or [],
+            "comparator_label": (_st_state.get("document") or {}).get("comparator_label"),
+            "alignment_counts": _al["counts"],
+            "commitments": _al["commitments"],
+            "options": strategy_align.options_for(_al["commitments"], visible_qids=set(_visq)),
+            "measures": _meas_rows,
+            "movement_note": ("First benchmark period — measure movement appears from your next data cycle."
+                              if _snap_count <= 1 else None),
+        }
     return {
         "cut_n": cut_n,
         "cut": {"dim": cut["dim"], "value": cut.get("value")},   # for one-click regenerate
@@ -4500,6 +4541,11 @@ def assemble_pack_payload(request, user, org, cut):
         "movement": ("First benchmark period — movement appears from your next data cycle."
                      if _snap_count <= 1 else None),
         "strategy_alignment": _strat_align,
+        "strategy_review": _strat_review,
+        # the ruled one-line provenance footer (R-P2 amendment 2026-08-08) — the pack
+        # was the one durable artefact the implementing commit missed
+        "pool_footer": "Comparison pool: %d UK organisation profiles. See lumihr.co.uk methodology for sources."
+                       % (pool.get("responding_orgs") or 0),
     }
 
 
