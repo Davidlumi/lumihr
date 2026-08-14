@@ -25,8 +25,15 @@ The LTI/bonus MATRIX metrics (`REW_INC_LTI_MAX_01`, `REW_INC_LTI_VALUE_TYP_01`, 
 
 </details>
 
-### V2-B — Coherence pairs, whole seed (data repair + gate wiring)
-Repair the contradicting pairs across all 270 orgs, then wire each into `coherence_pairs` so they hold:
+### V2-B — Coherence pairs, whole seed (data repair) ✅ carer + commission DONE
+Shipped (`migrate_seedreal_v2b_coherence_2026_08_14.py`): (1) carer's leave — `CARERPAID`
+(un-anchored, CSV-locked) brought into line with the `FAM_007` provision headline (FAM_007 is a
+register marginal so it can't move); 95 orgs. (2) commission — `COMMCAP`→"Not applicable" where
+`REW_INC_135`=No; 3 orgs. Also fixed a qa_focus false positive: `leak()` flagged the legitimate
+`strategy_objective`="Attract" (a reward pillar) as a hidden-superpower leak. 14/14 green.
+NOTE: the earlier "236 orgs" carer figure was a query bug ("Statutory unpaid" contains "aid"); the
+true contradiction count was 95. Still TODO in V2-B: `ALLOW_03`↔`REW_PAY_020`, pension headline↔
+by-level (fold into V2-C), `RED_PROC` (83 orgs), COL-action (Media). Original list:
 - `REW_BEN_FAM_007` ↔ `REW263_TIME_CARERPAID` (carer's leave paid/unpaid) — 236 orgs.
 - `RED_PROC_01` ↔ `RED_PROC_02` (documented process ⊇ documented criteria) — 83 orgs.
 - `REW_INC_135` ↔ `REW265_INC_COMMCAP` (no commission ⇒ no comm cap).
