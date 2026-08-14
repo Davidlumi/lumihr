@@ -18044,3 +18044,34 @@ Rationale: Home now owns the whole strategy story (the Strategy-applied toggle a
 pure inbox. Frontend-only; jsc clean, braces balanced, verified live on a Thornbridge rig (strip on Home collapsed
 by default, expands to the "Run the check" idle card — not run, avoids AI spend; gone from Signals with filters +
 folders + feed intact; no JS console errors). Gates not run — no server/engine/data touched.
+
+## 2026-08-14 — Signals Save/folders: the LABEL model (star saves, folders organise) (v=601)
+
+David: "the star and save to folder... there is an overlap." Diagnosis: a saved signal carried `status:"saved"`
+plus an optional folder label, and `savedItems` EXCLUDED foldered items (`status==="saved" && !assign`), so filing
+a signal into a folder made it VANISH from Saved — two save destinations for one action. David chose (AskUserQuestion)
+the **label model** (bookmarks/Gmail): star = Save; folders = labels WITHIN Saved; a foldered signal STILL shows in
+Saved.
+
+Changes (all web/js/pages.js SignalsPage + a little app.css):
+- `savedItems = all.filter(s => s.status === "saved")` (was `&& !assign[sid]`) — Saved now holds EVERY saved signal;
+  folders are subsets. `feedItems` unchanged (already excludes status "saved").
+- `unfolder` (Remove from folder): drops the label but KEEPS `status:"saved"` → returns to Saved, not the feed
+  (was `setStatus null`). Toast "Removed from '{f}' — still in Saved".
+- `unsave` (Remove from saved): now ALSO clears the folder label (an unsaved item can't sit in a folder); Undo
+  restores both.
+- New `labelTo(s, name)`: files a saved signal into a folder WITHOUT leaving Saved (no `leaveThen` — the card stays,
+  flashes) — used by the Saved-view "Add to folder…". The feed's split-button caret still uses `saveTo` (leaves the
+  feed on save, as before). `deleteFolder` toast now says "still in Saved"; `triaged` drops its double-count of
+  `assign`.
+- Saved-view verb shows the current label: **"In '{folder}'"** (was always "Add to folder…"), excluding the current
+  folder from the menu, via `labelTo`.
+- **Nav re-IA:** reading order is now Inbox · **Saved** · [its folders, in a `.sfold-subgroup` with a subtle
+  left-rule] · +New folder ·······  Snoozed · Dismissed (Saved was AFTER the folders before). Saved is the parent
+  bucket; folders read as labels bracketed under it. New `newFolderCtl` const (input row / +New button) reused inside
+  the subgroup and, when nothing is saved yet, on its own.
+
+Verified live on a Thornbridge rig: Saved shows all 5 (2 tagged "In 'check'", 3 "Add to folder…"); Remove-from-folder
+kept Saved at 5 and dropped check 2→1 WITHOUT returning to the feed (Inbox stayed 47), and the item then showed
+folderless in Saved. jsc clean, braces balanced, no JS console errors. Gates not run — no server/engine/data touched
+(the `writeSig` persistence path is unchanged; only which set an item falls into changed).

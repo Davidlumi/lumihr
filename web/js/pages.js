@@ -2177,9 +2177,17 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const dismissIt = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
     setStatus(sid, "dismissed");
     sigToast("Dismissed — " + sigName(s) + " · recover any time from the Dismissed tab", () => setStatus(sid, null)); }); };
-  const unsave = (s) => { const sid = sidOf(s); leaveThen(sid, () => {
+  const unsave = (s) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
+    if (prev) { const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na }); }   // unsaving also drops its folder label
     setStatus(sid, null);
-    sigToast("Removed from saved — back in your feed — " + sigName(s), () => setStatus(sid, "saved")); }); };
+    sigToast("Removed from saved — back in your feed — " + sigName(s),
+      () => { if (prev) writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
+  // file a saved signal into a folder WITHOUT it leaving Saved (folders are labels within Saved) — used in the Saved view
+  const labelTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid];
+    const fl = folders.includes(name) ? folders : [...folders, name];
+    writeSig({ folders: fl, assign: { ...assign, [sid]: name } }); setFlashSid(sid);
+    sigToast("Filed in “" + name + "” — still in Saved — " + sigName(s),
+      () => { const na = { ...assign }; if (prev) na[sid] = prev; else delete na[sid]; writeSig({ folders: fl, assign: na }); }); };
 
   // ---- folder-view verbs (same pattern: exit + toast-borne Undo)
   const moveTo = (s, name) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
@@ -2187,10 +2195,10 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     writeSig({ folders: fl, assign: { ...assign, [sid]: name } });
     sigToast("Moved to “" + name + "” — " + sigName(s), () => writeSig({ folders: fl, assign: { ...assign, [sid]: prev } })); }); };
   const unfolder = (s) => { const sid = sidOf(s); const prev = assign[sid]; leaveThen(sid, () => {
-    const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na });
-    setStatus(sid, null); setFlashSid(sid);
-    sigToast("Back in your feed — " + sigName(s),
-      () => { writeSig({ folders, assign: { ...assign, [sid]: prev } }); setStatus(sid, "saved"); }); }); };
+    const na = { ...assign }; delete na[sid]; writeSig({ folders, assign: na });   // drop the label, but it STAYS saved (shows in Saved)
+    setFlashSid(sid);
+    sigToast("Removed from “" + prev + "” — still in Saved — " + sigName(s),
+      () => { writeSig({ folders, assign: { ...assign, [sid]: prev } }); }); }); };
   const wake = (s) => { const sid = sidOf(s);
     const iso = s.snooze_until ? (s.snooze_until.includes("T") ? s.snooze_until : s.snooze_until.replace(" ", "T") + "Z") : null;
     const days = iso ? Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)) : 14;
@@ -2199,8 +2207,8 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   const recover = (s) => { const sid = sidOf(s); leaveThen(sid, () => { setStatus(sid, null); setFlashSid(sid);
     sigToast("Recovered — back in your feed — " + sigName(s), () => setStatus(sid, "dismissed")); }); };
 
-  // ---- folder ops (rename keeps every assignment; delete returns signals to the feed —
-  // assignments clear, statuses untouched, nothing is deleted)
+  // ---- folder ops (rename keeps every assignment; delete just drops the labels —
+  // assignments clear, statuses untouched, so the signals stay in Saved; nothing is deleted)
   const renameFolder = (from, to) => {
     if (folders.includes(to)) { toast("A folder with that name already exists", "error"); return; }
     const na = {}; Object.keys(assign).forEach(k => { na[k] = assign[k] === from ? to : assign[k]; });
@@ -2212,24 +2220,22 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     const na = { ...assign }; ids.forEach(k => delete na[k]);
     writeSig({ folders: folders.filter(f => f !== name), assign: na });
     setView({ kind: "all" });
-    sigToast('Folder "' + name + '" deleted — ' + (ids.length ? "its " + ids.length + " signal" + (ids.length === 1 ? "" : "s") + " back in your feed" : "it was empty"),
+    sigToast('Folder "' + name + '" deleted — ' + (ids.length ? "its " + ids.length + " signal" + (ids.length === 1 ? "" : "s") + " still in Saved" : "it was empty"),
       () => { writeSig({ folders: prevFolders, assign: prevAssign }); setView(prevView); }); };
   const commitNavFolder = () => { const t = navNm.trim(); if (!t) return;
     if (!folders.includes(t)) writeSig({ folders: [...folders, t], assign });
     setNavNaming(false); setNavNm(""); setView({ kind: "folder", name: t }); };
 
-  // ---- the sets. The feed is every live (non-snoozed, non-dismissed) signal that isn't
-  // filed in a named folder; folders + Snoozed + Dismissed partition the rest, so the pill
-  // counts always reconcile to the total. Machine order kept from the Briefing:
-  // new → risk → worth → |gap| → n, one flat list, ALL loaded (no pagination).
+  // ---- the sets. SAVE MODEL (David 2026-08-14): the star SAVES; folders ORGANISE within Saved.
+  // "Saved" holds EVERY saved signal; a named folder is just a label ON a saved signal, so a
+  // foldered signal STILL shows in Saved (folders are subsets of Saved, NOT a separate bucket).
+  // The feed is every live signal not saved/snoozed/dismissed. Machine order kept from the
+  // Briefing: new → risk → worth → |gap| → n, one flat list, ALL loaded (no pagination).
   const present = new Set(all.map(sidOf));
   const cntFolder = name => Object.keys(assign).filter(k => assign[k] === name && present.has(k)).length;
   // (stubFor retired 2026-07-10, David: toast instead of stub rows — an actioned card simply
   // leaves the feed; the Undo lives on the toast, so no placeholder row holds its slot.)
-  // quick-saves from the home briefing / metric pages (status "saved", no folder yet)
-  // surface in a built-in Saved view — a star anywhere is never invisible here; filing
-  // it to a named folder from that view keeps the one-vocabulary promise.
-  const savedItems = all.filter(s => s.status === "saved" && !assign[sidOf(s)]);
+  const savedItems = all.filter(s => s.status === "saved");                 // ALL saved (foldered or not)
   const feedItems = all.filter(s => s.status !== "dismissed" && s.status !== "snoozed" && s.status !== "saved" && !assign[sidOf(s)]);
   const ordKey = s => [s.status === "priority" ? 0 : 1, s.new ? 0 : 1, s.risk_framed ? 0 : 1, s.worth ? 0 : 1, -(s.gap_pct || 0), -(s.n || 0)];
   feedItems.sort((a, b) => { const ka = ordKey(a), kb = ordKey(b);
@@ -2288,7 +2294,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
     items: domainOpts.map(d => ({ k: d, lab: domainLabel(d), n: baseItems.filter(s => (s.domain || "") === d).length, sel: domFilter === d, onClick: () => setDomFilter(domFilter === d ? null : d) })) });
   const filtersActive = posFilter !== "all" || stratFilter.length || lensFilter.length || !!domFilter;
   const clearSigFilters = () => { setPosFilter("all"); setStratFilter([]); setLensFilter([]); setDomFilter(null); };
-  const triaged = dismissedItems.length + snoozedItems.length + savedItems.length + Object.keys(assign).length;   // #28: a genuine cleared queue vs a quiet org
+  const triaged = dismissedItems.length + snoozedItems.length + savedItems.length;   // #28: cleared queue vs quiet org (savedItems now covers foldered)
   const emptyLine = (stratFilter.length || lensFilter.length) && !shownItems.length ? "No signals match these filters — clear them to see the rest."
     : posOn ? "No signals " + POS_LABEL[posFilter].toLowerCase() + " in this view — clear the position filter to see the rest."
     : tq ? 'No signals match "' + textQuery.trim() + '" — clear the search to see the rest.'
@@ -2357,7 +2363,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           <${SigFolderMenu} label="Move to…" folders=${folders} exclude=${v.name} onPick=${n => moveTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unfolder(s)}>Remove from folder</button>`
         : v.kind === "saved" ? html`
-          <${SigFolderMenu} label="Add to folder…" folders=${folders} onPick=${n => saveTo(s, n)} />
+          <${SigFolderMenu} label=${assign[sidOf(s)] ? "In “" + assign[sidOf(s)] + "”" : "Add to folder…"} folders=${folders} exclude=${assign[sidOf(s)]} onPick=${n => labelTo(s, n)} />
           <button type="button" class="brf-verb" onClick=${() => unsave(s)}>Remove from saved</button>`
         : v.kind === "snoozed" ? html`
           <button type="button" class="brf-verb" onClick=${() => wake(s)}>Wake now</button>`
@@ -2370,6 +2376,15 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
 
   const isFold = f => v.kind === "folder" && v.name === f;
   const unread = feedItems.filter(s => s.new).length;   // NEW badge count on the Inbox pill (no longer cleared on mount)
+  // the +New folder control (input row while naming, else a quiet button) — reused inside the
+  // Saved sub-group and, when nothing is saved yet, on its own.
+  const newFolderCtl = navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
+      <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${navNm}
+        ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNavNm(e.target.value)}
+        onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitNavFolder(); }
+          if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
+      <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
+    </span>` : html`<button type="button" class="sfold-new" onClick=${() => setNavNaming(true)}>+ New folder</button>`;
   const navyFooter = html`
     <div class="brf-navy">
       <div class="brf-navy-reg"><${Icon} name="table" size=${15} />
@@ -2413,20 +2428,20 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
         <div class="sfold-nav" role="group" aria-label="Signal folders">
           <button type="button" class=${"sfold-pill sfold-inbox" + (v.kind === "all" ? " on" : "")} aria-pressed=${v.kind === "all"}
             onClick=${() => setView({ kind: "all" })}>Inbox <b class="num">${feedN}</b>${unread > 0 ? html`<span class="sfold-unread" title=${unread + " new since your last visit"}>${unread}</span>` : null}</button>
-          ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
-            <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
-              onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
-            ${isFold(f) ? html`<${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />` : null}
-          </span>`)}
-          ${savedItems.length ? html`<button type="button" class=${"sfold-pill" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
-            onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved <b class="num">${savedItems.length}</b></button>` : null}
-          ${navNaming ? html`<span class="sfold-newrow sfold-newrow-nav">
-            <input type="text" class="sfold-newinput" placeholder="Folder name" aria-label="New folder name" maxlength="40" value=${navNm}
-              ref=${el => { if (el && !el._f) { el._f = 1; el.focus(); } }} onInput=${e => setNavNm(e.target.value)}
-              onKeyDown=${e => { if (e.key === "Enter") { e.preventDefault(); commitNavFolder(); }
-                if (e.key === "Escape") { setNavNaming(false); setNavNm(""); } }} />
-            <button type="button" class="sfold-newgo" disabled=${!navNm.trim()} onClick=${commitNavFolder}>Add</button>
-          </span>` : html`<button type="button" class="sfold-new" onClick=${() => setNavNaming(true)}>+ New folder</button>`}
+          ${/* Saved is the PARENT bucket (David 2026-08-14): the star saves here; the folders beside
+                it are labels WITHIN Saved. Reading order: Inbox · Saved · [its folders] · +New folder. */ ""}
+          ${(savedItems.length || folders.length) ? html`
+            <button type="button" class=${"sfold-pill sfold-saved" + (v.kind === "saved" ? " on" : "")} aria-pressed=${v.kind === "saved"}
+              onClick=${() => setView({ kind: "saved" })}><${Icon} name="star" size=${12} /> Saved <b class="num">${savedItems.length}</b></button>
+            <span class="sfold-subgroup">
+              ${folders.map(f => html`<span key=${"f-" + f} class="sfold-pillwrap">
+                <button type="button" class=${"sfold-pill" + (isFold(f) ? " on" : "")} aria-pressed=${isFold(f)}
+                  onClick=${() => setView({ kind: "folder", name: f })}><${Icon} name="folder" size=${12} /> ${f} <b class="num">${cntFolder(f)}</b></button>
+                ${isFold(f) ? html`<${SigFolderOps} name=${f} onRename=${to => renameFolder(f, to)} onDelete=${() => deleteFolder(f)} />` : null}
+              </span>`)}
+              ${newFolderCtl}
+            </span>`
+          : newFolderCtl}
           ${/* lifecycle bins pushed right, recessive — filing, not active triage */ ""}
           <span class="sfold-life">
             <button type="button" class=${"sfold-pill sfold-quiet" + (v.kind === "snoozed" ? " on" : "")} aria-pressed=${v.kind === "snoozed"}
