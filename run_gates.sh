@@ -200,6 +200,9 @@ start_server "$DB" srv_engine;  run_gate qa_engine_audit
 run_gate qa_overview
 run_gate qa_domain_summary
 run_gate qa_commentary
+# strategy alignment engine (2026-08-14, RS-3): pure computation — no server, no DB;
+# proves the four-status contract, counts invariant and statement cleanliness.
+run_gate qa_strategy_align
 
 # --- freeze gate (Diff 12): qa_plausibility Check C, ENFORCING. Root-dir script
 #     (not server/); honours LUMI_DB so it validates the suite's throwaway, not live.

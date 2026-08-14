@@ -70,6 +70,7 @@ import refresh_policy
 
 import claude_api
 import identity
+import strategy_align
 import strategy_diag
 import pulses as pulses_mod
 import payments as payments_mod
@@ -5198,6 +5199,46 @@ async def get_strategy_measure_options(request: Request):
     comp = r["comparator_cut"] if r else None
     return {"options": strategy_measure_options(conn, org, comp),
             "floor": SUPPRESSION_FLOOR, "max": STRATEGY_MAX_MEASURES, "min_advisory": 5}
+
+
+@app.get("/api/strategy/alignment")
+async def get_strategy_alignment(request: Request):
+    """The alignment read (2026-08-14, brief v2 §5): every commitment resolved to one
+    of four statuses, counted per category — never a score (R5). Deterministic; the
+    hero target read is the position evidence (same engine path as the overview)."""
+    user, org = require_user(request)
+    conn = get_conn()
+    strat = strategy_for_engine(conn, org["org_id"])
+    complete = conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                            (org["org_id"],)).fetchone()
+    if not strat or not complete:
+        return {"ok": False, "reason": "no_strategy"}
+    st = strategy_state(conn, org)
+    cut = parse_cut(request, org)
+    items, tb = build_items(request, org, user, cut)
+    prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(),
+                                      org_answers_for(org), make_entitled(user, org), tb)
+    sec_order = []
+    for q in org_visible_questions(org).values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+                                             payloads(), org_answers_for(org), make_entitled(user, org), tb)
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=pos.market_position_config(), strategy=strat)
+    # own-answer evidence: single-value answers only ((qid, "") keys; matrix rows are
+    # never rule evidence — the rules speak in whole-question responses)
+    answers = {k[0]: v for k, v in (org_answers_for(org) or {}).items()
+               if (k[1] or "") == "" and isinstance(v, str)}
+    out = strategy_align.evaluate(
+        strategy_align.load_rules(), strat, st.get("document") or {}, answers,
+        hero.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
+        visible_qids=set(org_visible_questions(org)),
+        cut_label=(cut.get("label") or ("All peers" if cut.get("dim") == "all" else cut.get("value") or "your peer group")))
+    out["ok"] = True
+    return out
 
 
 @app.put("/api/strategy")
