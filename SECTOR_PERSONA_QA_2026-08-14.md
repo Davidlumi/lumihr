@@ -77,7 +77,9 @@ Shipped (`migrate_seedreal_v2e_floors_ai_2026_08_14.py`): 29 sub-NLW hourly floo
 - **AI-pay cluster** (`REW262_PAY_AISKILLSPAY`, `REW264_GOV_AIPAYREVIEW`, AITALENT/AIBENCH): deflate from 2-3x pool to low-teens; concentrate in Tech/Media/data roles.
 - **Large-org (10,000+) realism**: dedicated reward team present (`REW263_GOV_REWTEAM`), death-in-service life cover, HRIS/comp-tool (not spreadsheet) at 5,000+.
 
-### V2-F — Sector-strength corrections
+### V2-F — Sector-strength corrections ✅ unanchored subset DONE
+Shipped (`migrate_seedreal_v2f_sector_strength_2026_08_14.py`): EMI gated to <250 FTE (2 impossible large-firm records -> CSOP); FS final sign-off -> Remuneration Committee (all 12); Prof-Services incentive purpose cost-control -> retention (8); Public-Sector job-eval coverage None -> All (4). 14/14 green.
+DEFERRED (anchored, need OT_04-style per-sector reallocation conserving the frozen/register global): REW26_WEL_EAP (frozen, Construction), REW26_BEN_SALSAC (frozen, PubSec-DB), REW_BEN_SICK_001 (marginal, PubSec OSP), REW263_WEL_OH (marginal, Construction), PAYTR_01/02 + REW_PAY_001 (marginal, transparency), REW_BEN_FAM_010 (marginal, Charity). Original list:
 - **Public Sector**: enhanced occupational sick pay (`REW_BEN_SICK_001/002`), pay transparency (`PAYTR_01/02`), JE coverage (`REW26_PAY_JOBEVAL_COVERAGE`), remove salary-sacrifice on DB, leave floor up. Remove phantom bonus/LTI (covered by V2-A).
 - **Construction**: EAP (`REW26_WEL_EAP`) and occupational health (`REW263_WEL_OH`) up for large firms; allowances up.
 - **FS**: RemCo sign-off (`REW263_GOV_SIGNOFF`) dominant; formal pay ranges (`REW_PAY_001`) up; employer pension level up.
