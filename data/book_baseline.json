@@ -3,8 +3,8 @@
   "store": "reward (lumi.db, project root)",
   "table": "answers",
   "recipe": "server/dbsnapshot.py table_fingerprint: sha256 over all columns, rows ordered by primary key (org_id, snapshot_id, question_id, matrix_row_id), fields joined with \\x1f, rows terminated with \\x1e, NULL as \\x00; first 16 hex chars",
-  "rows": 110373,
-  "hash16": "0d34aad3843a87ae",
+  "rows": 110358,
+  "hash16": "08c526a7b96bfd90",
   "recorded": "2026-08-10",
   "supersedes": {
     "rows": 89320,
