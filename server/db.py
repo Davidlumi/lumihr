@@ -643,6 +643,17 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     -- column → falls back to the global market_position (degrade-to-global).
     -- Stored only; NO consumer yet (engine reads it in layer 3).
     domain_targets      TEXT,
+    -- Total Reward Strategy document capture (2026-08-14, brief v2 + rulings R1-R13).
+    -- All nullable; absent = "not yet stated" in the document — never a gate on the
+    -- benchmark (the 2026-06-16 lifecycle deviation stands).
+    comparator_cut          TEXT,  -- NULL=org default/All peers | 'industry::X' | 'fte_band::Y' | 'group::<gid>'
+    segments_json           TEXT,  -- {"differentiated": bool, "segments": [str]}
+    principles_json         TEXT,  -- JSON array of member-authored statements (<=6, ~140 chars)
+    reward_governance_json  TEXT,  -- {"owner","approver","review_cadence","effective_date"}
+    constraints_json        TEXT,  -- {"selected": [enum], "notes": str}
+    measures_json           TEXT,  -- JSON array of metric ids (<=8, visible-only)
+    roadmap_json            TEXT,  -- [{"title","horizon","gap_ref"?}] (<=6)
+    commitments_json        TEXT,  -- {"Wellbeing": {"metric_ids": [...]}, "Governance & Transparency": {"statement": str}}
     completed_at        TEXT,
     updated_at          TEXT
 );
@@ -731,6 +742,17 @@ def init_schema(conn=None):
                 # per-domain market-position target (step-3 layer 1, 2026-06-24):
                 # nullable JSON {domain: lag|match|lead}; null → global fallback.
                 "ALTER TABLE org_strategy ADD COLUMN domain_targets TEXT",
+                # Total Reward Strategy document capture (2026-08-14, brief v2 +
+                # rulings R1-R13): the document-grade fields. All nullable —
+                # absent renders "not yet stated", never gates the benchmark.
+                "ALTER TABLE org_strategy ADD COLUMN comparator_cut TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN segments_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN principles_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN reward_governance_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN constraints_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN measures_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN roadmap_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN commitments_json TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
                 "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",

@@ -2670,6 +2670,12 @@ async def set_org_signal_peers(request: Request):
     cur_gid = cur.split("::", 1)[1] if cur.startswith("group::") else None
     def _drop_auto_group():
         if cur_gid:
+            # R2 guard (2026-08-14): if the reward strategy declared this auto group as its
+            # comparator, the group is no longer disposable — leave it in place (it simply
+            # stops being the org default) rather than dangling the strategy.
+            if conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND comparator_cut=?",
+                            (org["org_id"], "group::" + cur_gid)).fetchone():
+                return
             conn.execute("DELETE FROM peer_groups WHERE group_id=? AND org_id=?", (cur_gid, org["org_id"]))
     # legacy single-cut body (back-compat)
     if "criteria" not in body and body.get("cut") is not None:
@@ -4840,6 +4846,13 @@ async def peer_groups_update(gid: str, request: Request):
 async def peer_groups_delete(gid: str, request: Request):
     user, org = require_editor(request)   # org-shared config — editors only
     conn = get_conn()
+    # R2 delete guard (2026-08-14): a group that is the reward strategy's declared
+    # comparator can't be silently deleted out from under the strategy — the strategy
+    # would dangle and its review would lose its peer frame. Change the strategy first.
+    if conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND comparator_cut=?",
+                    (org["org_id"], "group::" + gid)).fetchone():
+        raise HTTPException(409, "This peer group is your reward strategy's comparator — "
+                                 "change the strategy's comparator before deleting it.")
     n = conn.execute("DELETE FROM peer_groups WHERE group_id=? AND org_id=?",
                      (gid, org["org_id"])).rowcount
     conn.commit()
@@ -4967,6 +4980,94 @@ OBJECTIVE_LABELS = {"attract": "Attract", "retain": "Retain", "cost": "Control c
 STRATEGY_PLANE_A_KEYS = {"lifecycle": "Business_Maturity", "talent": "Talent_Competition",
                          "workforce": "Workforce_Shape", "footprint": "International_Footprint"}
 
+# ---- Total Reward Strategy document capture (2026-08-14, brief v2 + Phase-0 rulings R1-R13) ----
+# R3b (David 2026-08-14): position commitments are capturable in the SIX substance-dense
+# categories only. Wellbeing carries a PROVISION commitment ("what we will offer");
+# Governance & Transparency a PRACTICE commitment ("how we operate"). This is a PRODUCT
+# ruling, not an engine constraint — post-Diff-2 the engine can verdict all eight; the
+# document stays honest by register. A ruled pin, not a derivable list.
+STRATEGY_POSITION_EXCLUDE = ("Wellbeing", "Governance & Transparency")
+STRATEGY_CONSTRAINTS = ["affordability", "collective_bargaining", "statutory_pressure",
+                        "headcount_change", "system_change", "other"]
+STRATEGY_CADENCES = ["annual", "twice_yearly", "quarterly", "ad_hoc"]
+STRATEGY_HORIZONS = ["this_cycle", "next_cycle", "multi_cycle"]
+# capture is RESUMABLE (2026-06-16 deviation stands): caps are hard 400s, minimums are
+# document-honesty concerns (the artefact renders "not yet stated"), never save blocks.
+STRATEGY_MAX_PRINCIPLES, STRATEGY_PRINCIPLE_CHARS = 6, 140
+STRATEGY_MAX_SEGMENTS, STRATEGY_SEGMENT_CHARS = 6, 60
+STRATEGY_MAX_MEASURES = 8            # R4: 5-8; the >=5 half is advisory (resumability)
+STRATEGY_MAX_ROADMAP, STRATEGY_ROADMAP_CHARS = 6, 120
+STRATEGY_GOV_CHARS = 80
+STRATEGY_STATEMENT_CHARS = 240
+
+
+def _validate_comparator(conn, org, raw):
+    """R2: the strategy binds to a declared comparator using the SAME cut grammar as
+    orgs.default_cut ('all'/None | industry::X | fte_band::Y | group::<gid>), so
+    _org_sweep_cut-style resolution is reused verbatim. 400 on anything unresolvable —
+    a strategy must never point at a comparator that can't be evidenced."""
+    if raw in (None, "", "all"):
+        return None                                   # None = the org default / All peers
+    if not isinstance(raw, str) or "::" not in raw:
+        raise HTTPException(400, "comparator must be 'all', 'industry::X', 'fte_band::Y' or 'group::<id>'.")
+    dim, val = raw.split("::", 1)
+    if dim in ("industry", "fte_band"):
+        choices = profile_choices().get(dim) or []
+        if val not in choices:
+            raise HTTPException(400, "'%s' isn't a recognised %s." % (val, dim.replace("_", " ")))
+        return raw
+    if dim == "group":
+        if not conn.execute("SELECT 1 FROM peer_groups WHERE group_id=? AND org_id=?",
+                            (val, org["org_id"])).fetchone():
+            raise HTTPException(400, "That saved peer group no longer exists.")
+        return raw
+    raise HTTPException(400, "'%s' isn't a comparator dimension." % dim)
+
+
+def _comparator_label(conn, org, raw):
+    """Human words for the declared comparator — Artefact A describes it in words, no figures (R1)."""
+    if not raw:
+        return "All peers"
+    dim, val = raw.split("::", 1)
+    if dim == "group":
+        r = conn.execute("SELECT name FROM peer_groups WHERE group_id=? AND org_id=?",
+                         (val, org["org_id"])).fetchone()
+        return r["name"] if r else "All peers"        # dangling group reads gracefully
+    return val
+
+
+def strategy_measure_options(conn, org, comparator_cut):
+    """R4/§10 eligibility, computed live for the measures picker AND re-checked at PUT:
+    a measure must be visible to the org and carry a usable read. n/suppression under the
+    declared comparator is REPORTED here (the UI greys sub-floor picks) but enforced at
+    REPORT time, not capture time — eligibility is cut-dependent and the report is the
+    honest place (a metric can clear the floor in one cut and not the next). Group
+    comparators fall back to the all-peers read for the advisory n (group blocks are
+    request-time machinery; the report resolves them properly)."""
+    mpc = pos.market_position_config()
+    metrics = mpc.get("metrics") or {}
+    cut = {"dim": "all", "value": None}
+    if comparator_cut and comparator_cut.split("::", 1)[0] in ("industry", "fte_band"):
+        d, v = comparator_cut.split("::", 1)
+        cut = {"dim": d, "value": v}
+    out = []
+    pl = payloads()
+    for qid, q in org_visible_questions(org).items():
+        p = pl.get(qid)
+        if p is None:
+            continue
+        m = metrics.get(qid) or {}
+        blk, _lbl = pos.block_for(p, cut)
+        n = (blk or {}).get("n", 0)
+        out.append({
+            "id": qid, "title": q.display_title, "category": q.sub_power,
+            "direction": m.get("direction"), "cls": m.get("class"),
+            "context": m.get("direction") == "neutral",     # tracked as a LEVEL, never progress (§10.3)
+            "n": n, "suppressed": bool(pos.is_suppressed(blk)),
+        })
+    out.sort(key=lambda o: (o["category"], o["title"]))
+    return out
+
 
 def _workforce_shape(reg):
     """Derived, not stored (spec §4): Workforce_Frontline_% banded <33 / 33-66 / >66."""
@@ -5035,6 +5136,22 @@ def strategy_state(conn, org):
     # UI list and the validation can't drift. Governance (competitiveness=False) falls out.
     _mpc = pos.market_position_config()
     comp_domains = [d for d in (_mpc.get("_domains") or {}) if pos._mp_competitive(_mpc, d)]
+    # Total Reward Strategy document fields (2026-08-14). Parsed here so the client
+    # never touches raw JSON columns; absent = "not yet stated", never fabricated.
+    doc = {
+        "comparator_cut": row.get("comparator_cut"),
+        "segments": uj(row.get("segments_json"), {}) or {},
+        "principles": uj(row.get("principles_json"), []) or [],
+        "reward_governance": uj(row.get("reward_governance_json"), {}) or {},
+        "constraints": uj(row.get("constraints_json"), {}) or {},
+        "measures": uj(row.get("measures_json"), []) or [],
+        "roadmap": uj(row.get("roadmap_json"), []) or [],
+        "commitments": uj(row.get("commitments_json"), {}) or {},
+    }
+    doc["comparator_label"] = _comparator_label(conn, org, doc["comparator_cut"])
+    # R3b: the position-dial category list = competitive MINUS the ruled exclusion;
+    # Wellbeing/Governance carry provision/practice commitments instead.
+    position_domains = [d for d in comp_domains if d not in STRATEGY_POSITION_EXCLUDE]
     return {
         "strategy": strat,
         "provenance": uj(row.get("field_provenance"), {}) or {},
@@ -5043,6 +5160,12 @@ def strategy_state(conn, org):
         "required": list(STRATEGY_REQUIRED),
         "benefits_options": STRATEGY_BENEFITS,
         "competitive_domains": comp_domains,
+        "document": doc,
+        "position_domains": position_domains,
+        "commitment_domains": list(STRATEGY_POSITION_EXCLUDE),
+        "constraint_options": STRATEGY_CONSTRAINTS,
+        "cadence_options": STRATEGY_CADENCES,
+        "horizon_options": STRATEGY_HORIZONS,
     }
 
 
@@ -5061,6 +5184,20 @@ async def get_strategy_suggestions(request: Request):
     engines confidently wrong. The 'suggested' provenance value stays reserved."""
     require_user(request)
     return {"suggestions": {}}
+
+
+@app.get("/api/strategy/measure-options")
+async def get_strategy_measure_options(request: Request):
+    """R4/§10: the eligible-measures list for the capture picker — visible metrics with
+    their class/direction and an ADVISORY n/suppression read under the declared
+    comparator. Floor enforcement is report-time (the honest place for a cut-dependent
+    fact); context (~) metrics are flagged so the UI can say 'tracked as a level'."""
+    user, org = require_user(request)
+    conn = get_conn()
+    r = conn.execute("SELECT comparator_cut FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
+    comp = r["comparator_cut"] if r else None
+    return {"options": strategy_measure_options(conn, org, comp),
+            "floor": SUPPRESSION_FLOOR, "max": STRATEGY_MAX_MEASURES, "min_advisory": 5}
 
 
 @app.put("/api/strategy")
@@ -5105,9 +5242,14 @@ async def put_strategy(request: Request):
         if stance not in STRATEGY_ENUMS["market_position"]:
             raise HTTPException(400, "'%s' isn't a valid market position for %s — use lag, match or lead." % (stance, dom))
         # reject UNKNOWN domains (absent from _domains — _mp_competitive defaults True for those)
-        # AND non-competitive ones (Governance: present but competitiveness=False) — one gate, derived.
+        # AND non-competitive ones — one gate, derived.
         if dom not in _doms or not pos._mp_competitive(_mpc, dom):
             raise HTTPException(400, "'%s' isn't a competitive reward domain that can carry a market-position target." % dom)
+        # R3b (David 2026-08-14): Wellbeing/Governance carry provision/practice commitments,
+        # never a position — blocked at capture, honestly, not silently dropped later.
+        if dom in STRATEGY_POSITION_EXCLUDE:
+            raise HTTPException(400, "%s is measured by what's offered and how you operate, not a market rate — "
+                                     "it can't carry a position target." % dom)
     vals["domain_targets"] = json.dumps(dt) if dt else None
     prov["domain_targets"] = "set" if dt else "skipped"
     # transparency RECONFIRM gate (step-3 tagging unit 2, 2026-06-25) — the field was hidden
@@ -5120,12 +5262,158 @@ async def put_strategy(request: Request):
         prov["transparency"] = "live"
 
     conn = get_conn()
+    # ---- Total Reward Strategy document fields (2026-08-14, rulings R1-R13) ----
+    # Every field optional (resumable capture); caps are hard 400s; strings are the
+    # member's words — the model never authors a commitment (guardrail 9).
+    doc_in = body.get("document") or {}
+    docvals = {}
+
+    docvals["comparator_cut"] = _validate_comparator(conn, org, doc_in.get("comparator_cut"))
+    prov["comparator"] = "set" if docvals["comparator_cut"] is not None or doc_in.get("comparator_cut") == "all" else "skipped"
+
+    seg = doc_in.get("segments") or {}
+    if seg:
+        if not isinstance(seg, dict):
+            raise HTTPException(400, "segments must be an object.")
+        names = [str(s).strip() for s in (seg.get("segments") or []) if str(s).strip()]
+        if len(names) > STRATEGY_MAX_SEGMENTS:
+            raise HTTPException(400, "At most %d named segments." % STRATEGY_MAX_SEGMENTS)
+        if any(len(s) > STRATEGY_SEGMENT_CHARS for s in names):
+            raise HTTPException(400, "Segment names are capped at %d characters." % STRATEGY_SEGMENT_CHARS)
+        seg = {"differentiated": bool(seg.get("differentiated")), "segments": names}
+    docvals["segments_json"] = json.dumps(seg) if seg else None
+    prov["segments"] = "set" if seg else "skipped"
+
+    prin = doc_in.get("principles") or []
+    if not isinstance(prin, list):
+        raise HTTPException(400, "principles must be a list of statements.")
+    prin = [str(p).strip() for p in prin if str(p).strip()]
+    if len(prin) > STRATEGY_MAX_PRINCIPLES:
+        raise HTTPException(400, "At most %d reward principles." % STRATEGY_MAX_PRINCIPLES)
+    if any(len(p) > STRATEGY_PRINCIPLE_CHARS for p in prin):
+        raise HTTPException(400, "Each principle is capped at %d characters." % STRATEGY_PRINCIPLE_CHARS)
+    docvals["principles_json"] = json.dumps(prin) if prin else None
+    prov["principles"] = "set" if prin else "skipped"
+
+    gov = doc_in.get("reward_governance") or {}
+    if gov:
+        if not isinstance(gov, dict):
+            raise HTTPException(400, "reward_governance must be an object.")
+        cad = gov.get("review_cadence")
+        if cad and cad not in STRATEGY_CADENCES:
+            raise HTTPException(400, "'%s' isn't a review cadence option." % cad)
+        eff = gov.get("effective_date")
+        if eff:
+            try:
+                datetime.strptime(str(eff), "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(400, "effective_date must be YYYY-MM-DD.")
+        gov = {k: (str(gov.get(k)).strip()[:STRATEGY_GOV_CHARS] or None) if gov.get(k) else None
+               for k in ("owner", "approver", "review_cadence", "effective_date")}
+        gov = {k: v for k, v in gov.items() if v}
+    docvals["reward_governance_json"] = json.dumps(gov) if gov else None
+    prov["reward_governance"] = "set" if gov else "skipped"
+
+    cons = doc_in.get("constraints") or {}
+    if cons:
+        if not isinstance(cons, dict):
+            raise HTTPException(400, "constraints must be an object.")
+        sel = [c for c in (cons.get("selected") or [])]
+        for c in sel:
+            if c not in STRATEGY_CONSTRAINTS:
+                raise HTTPException(400, "'%s' isn't a constraint option." % c)
+        notes = str(cons.get("notes") or "").strip()[:300]
+        cons = {"selected": sel, "notes": notes} if (sel or notes) else {}
+    docvals["constraints_json"] = json.dumps(cons) if cons else None
+    prov["constraints"] = "set" if cons else "skipped"
+
+    meas = doc_in.get("measures") or []
+    if not isinstance(meas, list):
+        raise HTTPException(400, "measures must be a list of metric ids.")
+    meas = [str(m) for m in meas if m]
+    if len(meas) > STRATEGY_MAX_MEASURES:
+        raise HTTPException(400, "At most %d measures (R4)." % STRATEGY_MAX_MEASURES)
+    if meas:
+        vis = org_visible_questions(org)
+        bad = [m for m in meas if m not in vis]
+        if bad:
+            # entitlement guardrail 6: an invisible metric can never be a measure — blocked
+            # at capture, not silently dropped later (§2.5).
+            raise HTTPException(400, "'%s' isn't a metric this organisation can see." % bad[0])
+        if len(set(meas)) != len(meas):
+            raise HTTPException(400, "Each measure can be chosen once.")
+    docvals["measures_json"] = json.dumps(meas) if meas else None
+    prov["measures"] = "set" if meas else "skipped"
+
+    rm = doc_in.get("roadmap") or []
+    if not isinstance(rm, list):
+        raise HTTPException(400, "roadmap must be a list of items.")
+    rm_out = []
+    for it in rm[:STRATEGY_MAX_ROADMAP + 1]:
+        if not isinstance(it, dict):
+            raise HTTPException(400, "Each roadmap item must be an object.")
+        title = str(it.get("title") or "").strip()
+        if not title:
+            continue
+        if len(title) > STRATEGY_ROADMAP_CHARS:
+            raise HTTPException(400, "Roadmap items are capped at %d characters." % STRATEGY_ROADMAP_CHARS)
+        hz = it.get("horizon")
+        if hz and hz not in STRATEGY_HORIZONS:
+            raise HTTPException(400, "'%s' isn't a roadmap horizon." % hz)
+        row_it = {"title": title}
+        if hz:
+            row_it["horizon"] = hz
+        if it.get("gap_ref"):
+            row_it["gap_ref"] = str(it["gap_ref"])[:80]
+        rm_out.append(row_it)
+    if len(rm_out) > STRATEGY_MAX_ROADMAP:
+        raise HTTPException(400, "At most %d roadmap items." % STRATEGY_MAX_ROADMAP)
+    docvals["roadmap_json"] = json.dumps(rm_out) if rm_out else None
+    prov["roadmap"] = "set" if rm_out else "skipped"
+
+    cm = doc_in.get("commitments") or {}
+    if cm:
+        if not isinstance(cm, dict):
+            raise HTTPException(400, "commitments must be an object.")
+        cm_out = {}
+        for dom, spec in cm.items():
+            if dom not in STRATEGY_POSITION_EXCLUDE:
+                raise HTTPException(400, "Only %s carry a non-position commitment."
+                                    % " and ".join(STRATEGY_POSITION_EXCLUDE))
+            if not isinstance(spec, dict):
+                raise HTTPException(400, "Each commitment must be an object.")
+            if dom == "Wellbeing":
+                # provision commitment: WHAT WE WILL OFFER — metric ids from the org's own
+                # visible Wellbeing set, so the alignment engine can evidence it (rule W2).
+                ids = [str(m) for m in (spec.get("metric_ids") or []) if m]
+                vis = org_visible_questions(org)
+                bad = [m for m in ids if m not in vis or vis[m].sub_power != "Wellbeing"]
+                if bad:
+                    raise HTTPException(400, "'%s' isn't a Wellbeing metric this organisation can see." % bad[0])
+                if len(ids) > 6:
+                    raise HTTPException(400, "At most 6 committed Wellbeing provisions.")
+                if ids:
+                    cm_out[dom] = {"type": "provision", "metric_ids": sorted(set(ids))}
+            else:
+                # practice commitment: HOW WE OPERATE — the member's own statement.
+                stmt = str(spec.get("statement") or "").strip()
+                if len(stmt) > STRATEGY_STATEMENT_CHARS:
+                    raise HTTPException(400, "The practice commitment is capped at %d characters." % STRATEGY_STATEMENT_CHARS)
+                if stmt:
+                    cm_out[dom] = {"type": "practice", "statement": stmt}
+        cm = cm_out
+    docvals["commitments_json"] = json.dumps(cm) if cm else None
+    prov["commitments"] = "set" if cm else "skipped"
+
     prev = conn.execute("SELECT completed_at FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
     complete = all(vals.get(f) for f in STRATEGY_REQUIRED)
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     completed_at = (prev["completed_at"] if prev and prev["completed_at"] else None) or (now if complete else None)
-    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets", "field_provenance", "updated_at", "completed_at"]
-    row_vals = [vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"], json.dumps(prov), now, completed_at]
+    DOC_COLS = ["comparator_cut", "segments_json", "principles_json", "reward_governance_json",
+                "constraints_json", "measures_json", "roadmap_json", "commitments_json"]
+    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets"] + DOC_COLS + ["field_provenance", "updated_at", "completed_at"]
+    row_vals = ([vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"]]
+                + [docvals[c] for c in DOC_COLS] + [json.dumps(prov), now, completed_at])
     setclause = ", ".join("%s=excluded.%s" % (c, c) for c in cols)
     conn.execute("INSERT INTO org_strategy (org_id, %s) VALUES (%s) ON CONFLICT(org_id) DO UPDATE SET %s"
                  % (", ".join(cols), ", ".join(["?"] * (len(cols) + 1)), setclause),

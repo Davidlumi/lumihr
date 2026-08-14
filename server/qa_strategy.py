@@ -106,6 +106,63 @@ def main():
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, benefits_lead=["bogus"])})
     check("out-of-enum benefits area rejected (400)", st == 400, st)
 
+    # ---- Total Reward Strategy document capture (2026-08-14, rulings R1-R13) ----
+    # R3b: a position target on Wellbeing / Governance is blocked at capture (brief §12).
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, domain_targets={"Wellbeing": "lead"})})
+    check("R3b — position target on Wellbeing rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, domain_targets={"Governance & Transparency": "match"})})
+    check("R3b — position target on Governance rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, domain_targets={"Pay": "lead"})})
+    check("R3b — position target on Pay still accepted (200)", st == 200, st)
+    # document caps + entitlement
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ,
+                   "document": {"principles": ["p"] * 7}})
+    check("principles cap — 7 statements rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ,
+                   "document": {"principles": ["x" * 141]}})
+    check("principle length cap — 141 chars rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ,
+                   "document": {"measures": ["NOT_A_REAL_METRIC"]}})
+    check("guardrail 6 — invisible metric as a measure rejected (400)", st == 400, st)
+    st, opts = sa.req("/api/strategy/measure-options")
+    check("measure-options lists visible metrics with floor + caps",
+          st == 200 and opts.get("floor") == 5 and opts.get("max") == 8 and len(opts.get("options") or []) > 100)
+    _mo = (opts.get("options") or [])
+    _nine = [o["id"] for o in _mo[:9]]
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"measures": _nine}})
+    check("R4 — 9 measures rejected (400, cap 8)", st == 400, st)
+    _five = [o["id"] for o in _mo[:5]]
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "measures": _five, "principles": ["We pay fairly and explain how pay works."],
+        "constraints": {"selected": ["affordability"], "notes": "CPI pressure"},
+        "reward_governance": {"owner": "CPO", "review_cadence": "annual", "effective_date": "2026-09-01"},
+        "roadmap": [{"title": "Introduce salary bands", "horizon": "this_cycle"}],
+        "segments": {"differentiated": True, "segments": ["Engineering"]}}})
+    check("document-grade fields save (200)", st == 200, st)
+    st, full2 = sa.req("/api/strategy")
+    doc = full2.get("document") or {}
+    check("document round-trips (measures + principles + governance persisted)",
+          doc.get("measures") == _five and len(doc.get("principles") or []) == 1
+          and (doc.get("reward_governance") or {}).get("review_cadence") == "annual")
+    check("document provenance recorded (set/skipped, no phantom)",
+          full2["provenance"].get("measures") == "set" and full2["provenance"].get("commitments") == "skipped")
+    check("comparator defaults to All peers in words (R1/R2)",
+          doc.get("comparator_label") == "All peers")
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "reward_governance": {"review_cadence": "monthly"}}})
+    check("out-of-enum cadence rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "comparator_cut": "group::no-such-group"}})
+    check("dangling comparator group rejected at save (400)", st == 400, st)
+    # Wellbeing provision commitment: only visible Wellbeing metrics
+    _wb = [o["id"] for o in _mo if o["category"] == "Wellbeing"][:2]
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "commitments": {"Wellbeing": {"metric_ids": _wb}}}})
+    check("Wellbeing provision commitment saves (200)", st == 200 and bool(_wb), st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "commitments": {"Pay": {"statement": "nope"}}}})
+    check("commitment on a position category rejected (400)", st == 400, st)
+
     # server-side gate + forged org_id ignored + isolation
     sb = Client()
     sb.req("/api/auth/register", "POST", {"org_name": "QA Strategy Probe " + smk + "b",
