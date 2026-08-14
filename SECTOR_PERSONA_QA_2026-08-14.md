@@ -102,3 +102,7 @@ DEFERRED (anchored, need OT_04-style per-sector reallocation conserving the froz
 - Charity: charity-shaped; 2 new orgs leak exec bonus/LTI; transparency & volunteering-leave gaps.
 - Healthcare: credible; carer's-leave & commission contradictions; AI-pay inflated; promotion over-discretionary.
 </content>
+
+### V2-G — Anchored sector-strength reallocations ✅ DONE (6 of 8)
+Shipped (`migrate_seedreal_v2g_anchored_strength_2026_08_14.py`): count-conserving per-sector swaps (flip k neg->pos in the strong sector, k pos->neg in an over-represented one; frozen/register global held to the org). EAP Construction↑ (frozen 195/75 held); SALSAC PubSec-DB↓/Manufacturing-Retail↑ (frozen 139/131 held); OH Construction↑; PAYTR_01+02 Charity/PubSec↑; FAM_010 Charity volunteering↑. 14/14 green.
+STILL DEFERRED (need more than a swap): REW_BEN_SICK_001 (OSP-detail children SICK_002/004/005 are coherence-conditioned — needs a B4-style cascade); REW_PAY_001 (HR_Maturity-KEYED gradient — must reallocate within maturity bands, not sectors).
