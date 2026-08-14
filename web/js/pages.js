@@ -1279,19 +1279,14 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <span class="di-cell di-chipcol di-colhead">${pending || practice || !stratSum ? null : "Strategy"}</span>
         <span class="di-cell di-chev"></span>
       </div>
-      <div class="di-rows di-rows-anim" key=${practice ? "practice" : barMode}>
-        ${/* FIX CLASS A (locked): the marker view sorts WORST-FIRST — lowest depth_pctl at the
-              top; rows with no position (Governance, not-yet) keep to the bottom. The counts
-              view keeps the canonical section order. */ ""}
-        ${(!practice && barMode === "position"
-          ? [...doms].sort((a, b) => {
-              const da = a.position && a.position.depth_pctl, db = b.position && b.position.depth_pctl;
-              if (da == null && db == null) return 0;
-              if (da == null) return 1;
-              if (db == null) return -1;
-              return da - db;
-            })
-          : doms).map((d, i) => {
+      ${/* key on the LENS only (not barMode) so the Counts/Position toggle swaps the bar IN PLACE —
+            no remount, no entrance-animation replay now that the rows don't reorder (David 2026-08-14). */ ""}
+      <div class="di-rows di-rows-anim" key=${practice ? "practice" : "market"}>
+        ${/* ONE domain order for BOTH bar modes (David 2026-08-14): the Counts/Position toggle now
+              swaps ONLY the bar in place — it no longer re-sorts the table. Position used to sort
+              worst-market-first, so every row (and its strategy mark) jumped on toggle, which read as
+              "the strategy column changed". Canonical section order now, identical to Counts. */ ""}
+        ${doms.map((d, i) => {
           const label = domainLabel(d.name);
           const sentence = domainRowSentence(d, view);
           const pos = d.position;

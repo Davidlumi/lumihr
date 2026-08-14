@@ -18098,3 +18098,22 @@ Verified live on a Thornbridge rig: clicking a card's star → gold fill (`rgb(2
 STAYS in the inbox (52 unchanged), Saved 5→6; clicking again → unfilled, "Save", Saved 6→5, still in inbox; Dismiss
 still removes (Inbox 52→51, Dismissed 14→15). jsc clean, braces balanced, no JS console errors. Gates not run — no
 server/engine/data touched.
+
+## 2026-08-14 — Overview "Position by domain": Counts/Position toggle swaps only the bar (v=603)
+
+David: "weird — on home we get different strategy alignment for different domains when I select position vs counts."
+Diagnosis: the strategy column (`StrategyMark target={d.target}`) is NOT tied to the bar-mode toggle — each domain's
+mark is identical in both views. But the Position view RE-SORTED the rows worst-market-first (by `depth_pctl` asc)
+while Counts kept the canonical section order, so toggling made every row — and its strategy mark — jump to a
+different position, which read as "the strategy column changed."
+
+Fix (DomainInstrument, pages.js): both bar modes now map over `doms` in the canonical order — the worst-first sort
+in the Position branch is removed (this retires the old "FIX CLASS A locked" worst-first ruling; David chose one
+consistent order over worst-first triage, which shouldn't be welded to a display-format switch). Also changed the
+`.di-rows` key from `barMode` to a constant `"market"` so the toggle diffs the bar IN PLACE instead of remounting
+the whole row list and replaying the entrance animation (pointless now that rows don't move).
+
+Verified live on a Thornbridge rig: Counts and Position show the IDENTICAL row order (Pay · Pensions · Health ·
+Benefits · Time off · Incentives · Wellbeing · Governance); toggling swaps only the bar (stacked counts ↔ P-marker),
+the strategy column and every row stay put. Tradeoff: Position's P-markers are no longer monotonic (canonical order,
+not ascending) — accepted. jsc clean, no JS console errors. Gates not run — no server/engine/data touched.
