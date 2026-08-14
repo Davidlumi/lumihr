@@ -51,13 +51,14 @@ REGEN_WHITELIST = {
     "REW_INC_072": {"Not used": 143, "Used rarely in exceptional cases": 27,
                     "Used for specific hard-to-fill roles": 38,
                     "Used strategically as part of attraction strategy": 12},
-    "EXT_REW_GAP_013": {"Monthly": 128, "Weekly": 23, "Mixed (varies by role)": 18,
-                        "Fortnightly": 8, "Don't know": 2},
-    # allowances-pensionability joint regen (2026-06-12, David-signed 72/20/8):
-    "ALLOW_03": {"No – non-pensionable": 154, "Yes – some allowances only": 42,
-                 "Yes – all allowances": 20, "Don't know": 3,
+    # counts re-recorded 2026-08-14 after +50 seed orgs (add50 batch): pin == store, growth documented
+    "EXT_REW_GAP_013": {"Monthly": 153, "Weekly": 27, "Mixed (varies by role)": 24,
+                        "Fortnightly": 12},
+    # allowances-pensionability joint regen (2026-06-12, David-signed 72/20/8; +50 re-record 2026-08-14):
+    "ALLOW_03": {"No – non-pensionable": 184, "Yes – some allowances only": 58,
+                 "Yes – all allowances": 24,
                  "Varies by allowance/contract": 1},
-    "REW_PAY_020": {"No": 1092, "Yes": 448},
+    "REW_PAY_020": {"No": 1309, "Yes": 581},
 }
 
 # Ruled retirements (Diff 14, 2026-07-18 — DECISIONS.md pay/pensions audit round 1):
