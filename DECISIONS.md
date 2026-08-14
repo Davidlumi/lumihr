@@ -18133,3 +18133,12 @@ structural definition (app.css):
 Now the three segments (below · on-market · above) read at a glance and it's obvious which one each P-marker is in.
 Verified live on a Thornbridge rig (Position view): distinct on-market channel, crisp seams, markers clearly placed;
 the bottom "Where you stand" gauge still shows its RAG strip (scope held). CSS-only — no gates.
+
+## 2026-08-14 — Overview "Position by domain": drop the "N off strategy" header summary (v=605)
+
+David: "no need for the 1-off-strategy part — the icons make it clear, this is just clutter." Removed the
+`.di-strat-sum` label from the card head (the "All N on strategy" / "N off strategy" summary). The per-row STRATEGY
+glyphs already carry it. `stratSum` is STILL computed — it gates the "STRATEGY" column header (`di-colhead`) and the
+`di-stratcol` width class — just no longer rendered as text. Deleted the now-dead `.di-strat-sum` CSS (base rule +
+its responsive wrap rule). Verified on a Thornbridge rig: header reads "Position by domain · Counts Position"; the
+STRATEGY column header, all 8 per-row glyphs, and the toggle remain. CSS/markup only — no gates.

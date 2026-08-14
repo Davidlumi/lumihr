@@ -1227,7 +1227,8 @@ function DomainInstrument({ market, prevalence, domains, view, pending, sigCount
         <${Icon} name="layers" size=${15} />
         <h2 class="card-head-title">${practice ? "Practice by domain" : "Position by domain"}</h2>
         <span class="card-head-side">
-          ${stratSum ? html`<span class="di-strat-sum">${stratSum}</span>` : null}
+          ${/* "N off strategy" summary removed (David 2026-08-14): the per-row strategy glyphs already
+                say it — the header count was clutter. stratSum is still computed to gate the column. */ ""}
           ${/* bar-mode toggle (David 2026-07-11): the user decides — count-proportional stacked
                 segments vs the fixed-band percentile bar with the true-P marker. Market view
                 only (practice has no market position). Persisted per user in prefs._overview. */ ""}
