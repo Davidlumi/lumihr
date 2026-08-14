@@ -993,8 +993,8 @@ def assemble_card(q, p, org, org_answers, cut, twin_blocks_by_q, entitled, marke
             you_rows = [r for r in vis if "you" in r and "percentile" in r["you"]]
             if you_rows:
                 avg = sum(r["you"]["percentile"] for r in you_rows) / len(you_rows)
-                base["readout"] = ("Across the %d comparable levels, your typical position is P%d (%s)."
-                                   % (len(you_rows), int(round(avg)), cut_label))
+                base["readout"] = ("Across the %d comparable levels, your typical position is P%d."
+                                   % (len(you_rows), int(round(avg))))
         if base["suppressed"]:
             base["readout"] = pos.SUPPRESSED_COPY
     return base

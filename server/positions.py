@@ -366,17 +366,18 @@ def tens_phrase(rank):
 
 
 def readout_numeric(item):
-    return "Your %s (%s) is %s (P%d, %s, n=%d)." % (
+    # peer group named at the top of the surface, not in the parenthetical (David 2026-08-14)
+    return "Your %s (%s) is %s (P%d, n=%d)." % (
         _lower_first(item["label"]), item["value_display"],
         tens_phrase(item["percentile"]), int(round(item["percentile"])),
-        item["cut_label"], item["n"])
+        item["n"])
 
 
 def readout_score(item, q):
-    return "Your approach to %s scores %s on lumi's practice scale — %s (P%d, %s, n=%d)." % (
+    return "Your approach to %s scores %s on lumi's practice scale — %s (P%d, n=%d)." % (
         _lower_first(item["label"]), item["value_display"],
         tens_phrase(item["percentile"]), int(round(item["percentile"])),
-        item["cut_label"], item["n"])
+        item["n"])
 
 
 def readout_select(q, org_label, blk, cut_label):
@@ -403,11 +404,11 @@ SUPPRESSED_COPY = "There aren't enough organisations in this peer group to show 
 
 
 def _peers(cut_label):
-    if cut_label == "All peers":
-        return "similar organisations"
+    # The exact peer group is named ONCE at the top of every surface (the peer selector); the readout
+    # prose refers to it generically so the sample group isn't repeated card-by-card (David 2026-08-14).
     if cut_label == "Organisations like you":
         return "organisations like you"
-    return "%s peers" % cut_label
+    return "similar organisations"
 
 
 def _lower_first(s):

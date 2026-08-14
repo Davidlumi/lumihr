@@ -254,8 +254,10 @@ check("10a. the home card renders the overall marker from market.depth_pctl (eng
       "the overall marker is not bound to the engine depth_pctl / D2 phrasing")
 check("10b. the domain rows' Position view is the engine-bound single-marker scale; category hero renders the ruler from pos.depth_pctl",
       # FIX CLASS A (aggregate-marker rebuild 2026-07-11): one dot per domain at depth_pctl
-      # (D1 — NEVER the lean), dashed market centre, worst-first sort, indicative = hollow
+      # (D1 — NEVER the lean), dashed market centre, indicative = hollow
       # dashed ring with the word in the aria. All bindings engine values, never literals.
+      # (worst-first sort RETIRED 2026-08-14 v=603 — Counts/Position share ONE canonical order;
+      #  the "return da - db;" comparator grep is dropped below, the marker bindings still hold.)
       # 2026-07-12 "new dot format": the marker is ONE ink pill with the P inside (di-pill;
       # dashed .ind variant = indicative); still bound to engine depth, never the lean.
       "di-markrow" in pagesjs
@@ -263,7 +265,6 @@ check("10b. the domain rows' Position view is the engine-bound single-marker sca
       and 'd.position_basis === "indicative" ? " ind"' in pagesjs
       and 'd.position_basis === "indicative" ? " (indicative)"' in pagesjs
       and ">P${Math.round(depth)}</span>" in pagesjs
-      and "return da - db;" in pagesjs
       and not re.search(r"di-markrow[^`]*\blean\b", pagesjs)
       and "PercentileRuler} pctl=${pos.depth_pctl}" in pagesjs,
       "the position marker row / category ruler is not bound to per-domain engine depth_pctl")

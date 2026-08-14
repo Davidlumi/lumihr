@@ -18178,8 +18178,27 @@ but unused; the `override`/`setOverride` machinery is inert (nothing sets it now
 cut — `c = card`, `effectiveKey = globalKey`). Verified live on a Thornbridge Pay page: no per-card peer picker on
 any of the 61 cards; footers read "verdict · glyph · n"; page-top selector unchanged. jsc clean, no console errors.
 
-OPEN (deferred, needs David's steer): the sample group is ALSO named in the small grey support sentence
-("Like 59% of 5 sectors · 10,000+, 1,000–4,999 FTE peers, you answered 'No'…") and the numeric lead
-("(P18, 5 sectors · …, n=22)"). That text is the server-generated `readout` (`pos.readout_select` / matrix readout
-in app.py ~L944/996), SHARED with the metric detail page + exports — trimming it is a deliberate copy/engine change
-(with gate + provenance-doctrine implications), not a client hack, so it's held pending confirmation.
+Follow-up DONE (David "go"): the sample group is no longer named in the readout PROSE either.
+
+## 2026-08-14 — Readouts: refer to the peer group generically, not by full label (server)
+
+David confirmed ("go") the card sentences shouldn't name the sample group verbosely — the exact peer group is
+already named once at the top of every surface (the peer selector). Changed the server-generated `readout` copy
+(server/positions.py + app.py) to say "similar organisations" instead of "5 sectors · 10,000+, 1,000–4,999 FTE
+peers":
+- `_peers(cut_label)` (the central helper for select + percentile readouts) now always returns "similar
+  organisations" (keeps the distinct "organisations like you" phrasing) — was `"%s peers" % cut_label`.
+- `readout_numeric` / `readout_score`: dropped the raw `cut_label` from the "(P18, {label}, n=22)" parenthetical →
+  "(P18, n=22)".
+- matrix readout (app.py ~L996): "Across the N comparable levels, your typical position is P37." — dropped the
+  "({label})" tail.
+- KEPT the peer-group label where it's file provenance with no UI context: CSV export column + PNG/board-pack chart
+  labels (a downloaded artefact must still name its peer group). Also LEFT the AI-narrative prompt (claude_api.py)
+  as-is — separate surface, gated off on dev.
+Applies everywhere the readout renders (cards, metric detail, exports metadata unaffected). Verified on a Thornbridge
+rig: readouts read "Like 59% of similar organisations…", "typical position is P37.", numeric "(P12, n=24)".
+
+Gate fix along the way: `qa_overview` check 10b grepped pages.js for the string `"return da - db;"` — the worst-first
+sort comparator RETIRED in v=603 (Counts/Position share one canonical order). Stale assertion; removed that one term
+(the marker→`depth_pctl` bindings it really guards all still hold). **Full suite 14/14 GREEN**; :8060 reloaded with
+the new code. Server/engine class — no web asset changed (no ?v bump).
