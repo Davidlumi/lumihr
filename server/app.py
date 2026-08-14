@@ -5150,6 +5150,15 @@ def strategy_state(conn, org):
         "commitments": uj(row.get("commitments_json"), {}) or {},
     }
     doc["comparator_label"] = _comparator_label(conn, org, doc["comparator_cut"])
+    # Artefact A versioning (2026-08-14): the live row is the working draft; the
+    # latest approved snapshot names the version the review cites. dirty = edits
+    # since approval (the view says so honestly rather than pretending currency).
+    ver = conn.execute("SELECT version, approved_by, approved_at FROM strategy_versions "
+                       "WHERE org_id=? AND status='approved' ORDER BY version DESC LIMIT 1",
+                       (org["org_id"],)).fetchone()
+    version = ({"version": ver["version"], "approved_by": ver["approved_by"], "approved_at": ver["approved_at"],
+                "dirty": bool(row.get("updated_at") and row["updated_at"] > ver["approved_at"])}
+               if ver else None)
     # R3b: the position-dial category list = competitive MINUS the ruled exclusion;
     # Wellbeing/Governance carry provision/practice commitments instead.
     position_domains = [d for d in comp_domains if d not in STRATEGY_POSITION_EXCLUDE]
@@ -5162,6 +5171,7 @@ def strategy_state(conn, org):
         "benefits_options": STRATEGY_BENEFITS,
         "competitive_domains": comp_domains,
         "document": doc,
+        "version": version,
         "position_domains": position_domains,
         "commitment_domains": list(STRATEGY_POSITION_EXCLUDE),
         "constraint_options": STRATEGY_CONSTRAINTS,
@@ -5199,6 +5209,40 @@ async def get_strategy_measure_options(request: Request):
     comp = r["comparator_cut"] if r else None
     return {"options": strategy_measure_options(conn, org, comp),
             "floor": SUPPRESSION_FLOOR, "max": STRATEGY_MAX_MEASURES, "min_advisory": 5}
+
+
+@app.post("/api/strategy/approve")
+async def approve_strategy(request: Request):
+    """Artefact A versioning: stamp the current strategy + document as version N
+    (immutable snapshot), superseding N-1. Admin-only — approval is a governance
+    act. The live row stays the working draft; the view shows dirty-since-approval
+    honestly."""
+    user, org = require_admin(request)
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                        (org["org_id"],)).fetchone():
+        raise HTTPException(400, "Complete the three required positions before approving a version.")
+    st = strategy_state(conn, org)
+    snap = json.dumps({"strategy": st["strategy"], "document": st["document"]})
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    nxt = (conn.execute("SELECT MAX(version) FROM strategy_versions WHERE org_id=?",
+                        (org["org_id"],)).fetchone()[0] or 0) + 1
+    conn.execute("UPDATE strategy_versions SET status='superseded' WHERE org_id=? AND status='approved'",
+                 (org["org_id"],))
+    conn.execute("INSERT INTO strategy_versions(org_id, version, snapshot_json, approved_by, approved_at, status) "
+                 "VALUES (?,?,?,?,?,'approved')",
+                 (org["org_id"], nxt, snap, user.get("name") or user.get("email") or "Admin", now))
+    conn.commit()
+    return {"ok": True, "version": nxt, "approved_at": now}
+
+
+@app.get("/api/strategy/versions")
+async def list_strategy_versions(request: Request):
+    user, org = require_user(request)
+    conn = get_conn()
+    return {"versions": [dict(r) for r in conn.execute(
+        "SELECT version, approved_by, approved_at, status FROM strategy_versions "
+        "WHERE org_id=? ORDER BY version DESC", (org["org_id"],))]}
 
 
 @app.get("/api/strategy/alignment")

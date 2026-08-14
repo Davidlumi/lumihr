@@ -583,6 +583,17 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   };
   const orgName = (me.org && me.org.name) || "Your organisation";
   const stance = sdStance(strat, orgName);
+  // R1 (2026-08-14): the exported document carries NO peer figures by default — the
+  // live position exhibit is an optional evidence block, off in print until opted in.
+  const [evidenceInPrint, setEvidenceInPrint] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const ver = data.version || null;
+  const approve = async () => {
+    setApproving(true);
+    try { await api("/api/strategy/approve", { method: "POST", body: {} }); onReload && onReload(); toast("Approved — this version now stands."); }
+    catch (e) { toast(e && e.message || "Couldn't approve.", "error"); }
+    setApproving(false);
+  };
   const doms = (hero && hero.domains || []).filter(d => d.target);
   const offAim = doms.filter(d => d.target.alignment && d.target.alignment !== "on_target");
   const when = data.completed_at ? fmtDate(data.completed_at) : null;
@@ -606,6 +617,11 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     <div class="sd-wrap">
       <div class="sd-actions no-print">
         <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / save as PDF</button>
+        <label class="sd-evi-toggle" title="Off by default — the exported document describes your comparator in words, with no peer figures (your ruling R1).">
+          <input type="checkbox" checked=${evidenceInPrint} onChange=${e => setEvidenceInPrint(e.target.checked)} />
+          Include live position evidence in the export</label>
+        ${canEdit ? html`<button class="btn" disabled=${approving} onClick=${approve} title="Stamp this as an approved version — the review always cites a specific version.">
+          ${approving ? "Approving…" : (ver ? "Approve v" + (ver.version + 1) : "Approve v1")}</button>` : null}
         ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
       </div>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
@@ -616,6 +632,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
             <div class="sd-org">${orgName}</div>
           </div>
           <div class="sd-mast-meta">
+            ${ver ? html`<div>Version <b>${ver.version}</b> · approved ${fmtDate(ver.approved_at)} by ${ver.approved_by}${ver.dirty ? html` · <span class="sd-dirty">edits since approval</span>` : ""}</div>`
+                  : html`<div><span class="sd-dirty">Draft — not yet approved</span></div>`}
             ${when && html`<div>Captured <b>${when}</b></div>`}
             <div>Set by your Admins · held in lumi</div>
           </div>
@@ -633,7 +651,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
           <div class="sd-note">Reading your live position…</div>
         </section>` : doms.length ? html`
-        <section class="sd-sec" style=${{ "--i": 3 }}>
+        <section class=${"sd-sec" + (evidenceInPrint ? "" : " no-print")} style=${{ "--i": 3 }}>
           <div class="sd-secnum">${NUM.exhibit} — Position against intent
             <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off strategy" : "all " + doms.length + " areas on strategy"} · live · ${defCut && defCut !== "all" ? "vs your default peer group" : "vs all peers"}</span></div>
           <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your strategy; the dot is where you actually land. Inside the band is on strategy.</p>

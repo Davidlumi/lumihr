@@ -657,6 +657,20 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     completed_at        TEXT,
     updated_at          TEXT
 );
+
+-- Total Reward Strategy versions (2026-08-14, Artefact A): an APPROVED snapshot of
+-- the whole strategy + document at a moment in time. The live org_strategy row is
+-- the working draft; approving stamps version N and supersedes N-1. Artefact B
+-- always cites a specific version. Snapshots are immutable once written.
+CREATE TABLE IF NOT EXISTS strategy_versions (
+    org_id       TEXT NOT NULL REFERENCES orgs(org_id),
+    version      INTEGER NOT NULL,
+    snapshot_json TEXT NOT NULL,      -- {strategy, document} as approved
+    approved_by  TEXT,                -- display name of the approving admin
+    approved_at  TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'approved',   -- 'approved' | 'superseded'
+    PRIMARY KEY (org_id, version)
+);
 """
 
 

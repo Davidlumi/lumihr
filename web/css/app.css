@@ -4611,3 +4611,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   gap: var(--s2); padding-right: var(--s2); }
 .sd-doc-rmrow { display: grid; grid-template-columns: 1fr 140px; gap: var(--s2); }
 @media (max-width: 640px) { .sd-doc-grid2, .sd-doc-rmrow { grid-template-columns: 1fr; } }
+.sd-dirty { color: var(--amber, #B26A00); font-weight: 600; }
+.sd-evi-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro);
+  color: var(--ink-soft); cursor: pointer; }

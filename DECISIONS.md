@@ -18319,3 +18319,34 @@ but missed: the "Seven areas of reward" product bullet (738), the hero mock's 7 
 11/50). All re-cut to the live eight with live counts (66/23/24/41/51/44/19/65 = 333); hero mock's
 decorative "View all" tile replaced by the 8th category for a clean 2×4. Verified in-browser: 8 bars
 in-bounds no-overlap, 8 tiles, 8 cards, zero stray "seven" strings.
+
+## 2026-08-14 — Total Reward Strategy overhaul: RS-1..RS-4 shipped (rulings R1-R13 adopted)
+
+David adopted the Phase-0 revised ruling sheet ("agree with all build"): R3b = position
+commitments in the six substance-dense categories (Wellbeing provision / Governance practice
+instead); R13 = print-PDF only at v1; R12 = "category"; R2 comparator binding with delete
+guards; R7 rule library drafted pending content sign-off. Shipped, each suite-green:
+
+- **RS-1** (de35bd6) capture schema + API: 8 document-grade org_strategy columns, R3b 400s,
+  measure-options endpoint, comparator delete guards, provenance extended; qa_strategy 14->30.
+- **RS-2** (8758801) capture UI: domain_targets promoted to a first-class wizard stage (six
+  R3b categories from position_domains); Artefact A sections 04-10 with admin inline editors
+  (principles/comparator/constraints/governance/commitments/measures/roadmap); "Not yet
+  stated" honesty; document saves preserve the transparency live-reconfirm.
+- **RS-3** (b1887c6) alignment engine: data/strategy_coherence_rules.json (David-owned, 9
+  rules, R7 sign-off pending), strategy_align.evaluate() — four statuses, counts never a
+  score (R5), starved-honest, entitlement-safe; GET /api/strategy/alignment;
+  qa_strategy_align (26 checks) ADDED TO THE SUITE (now 15 gates).
+- **RS-4** strategy_versions table + POST /api/strategy/approve (immutable snapshots,
+  supersede-on-approve) + masthead version/draft/dirty state + the R1 print gate: the live
+  position exhibit is no-print by default with an explicit "include evidence" opt-in.
+
+Teardown note: the suite's gate-safety-2 flagged org_strategy on live once — that was
+init_schema adding the 8 new NULL columns at the restored server's startup (verified: dials,
+domain_targets, updated_at byte-identical; only NULL columns appended). Expected migration
+shape, not a leak.
+
+REMAINING (RS-5/RS-6): reward_levers.json draft + Options blocks + Artefact B (rides
+assemble_pack_payload; must also surface the computed-but-unrendered `drifted` flag and add
+the ruled provenance footer the pack is missing); measures reporting (movement needs a second
+snapshot); R7 content sign-off; lumi-terminology.md update per R12.
