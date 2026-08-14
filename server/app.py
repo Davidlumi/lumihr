@@ -2566,8 +2566,10 @@ async def strategy_diagnosis(request: Request):
             e["top_gbp"], e["top_label"], e["direction"] = gbp, it["label"], it["direction"]
     findings = strategy_diag.compute_findings(strat, domains, opp_by_domain)
     flagged = {f["area"] for f in findings}
+    # derived, never literal (Diff 1 doctrine): competitive = the payload's own flag —
+    # the old strategy_diag._COMPETITIVE six-name filter dropped every renamed domain
     on_plan = [d["name"] for d in domains if d.get("competitive", True)
-               and d["name"] in strategy_diag._COMPETITIVE and d["verdict"] and d["name"] not in flagged]
+               and d["verdict"] and d["name"] not in flagged]
     obj_label = OBJECTIVE_LABELS.get(strat.get("primary_objective")) if (
         (strat.get("provenance") or {}).get("primary_objective") != "skipped") else None
     payload = strategy_diag.build_diagnosis_payload(
@@ -6259,9 +6261,18 @@ async def create_suggestion(request: Request):
 # it never writes answer data (answers / pulse_responses), so the integrity
 # firewall holds. New core metrics are always unscored + optional.
 
-ADMIN_SUB_POWERS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing",
-                    "Recognition", "Governance"]
-ADMIN_SUB_POWER_ORDER = {name: i + 1 for i, name in enumerate(ADMIN_SUB_POWERS)}
+def admin_sub_powers():
+    """Live category -> sub_power_order map, DERIVED from the question bank (Diff 1
+    doctrine: never a literal taxonomy). The old hardcoded seven-name list predated
+    the 7->8 remap and silently blocked authoring into six of the eight live
+    categories. Order is each category's live block rank (identical across its
+    questions), sorted for a stable display list."""
+    order = {}
+    for q in visible_questions().values():
+        if q.sub_power:
+            o = q.sub_power_order or 0
+            order[q.sub_power] = min(order.get(q.sub_power, o), o)
+    return dict(sorted(order.items(), key=lambda kv: (kv[1], kv[0])))
 SUGGESTION_STATUSES = ("new", "reviewed", "accepted", "rejected")
 ADMIN_METRIC_TYPES = ("numeric", "single_select", "yes_no", "multi_select")
 
@@ -6720,8 +6731,8 @@ def _validate_metric_def(body):
     polarity = (body.get("polarity") or "neutral").strip()
     if not text:
         raise HTTPException(400, "The metric needs a question text.")
-    if sub_power not in ADMIN_SUB_POWER_ORDER:
-        raise HTTPException(400, "Category must be one of: " + ", ".join(ADMIN_SUB_POWERS))
+    if sub_power not in admin_sub_powers():
+        raise HTTPException(400, "Category must be one of: " + ", ".join(admin_sub_powers()))
     if qtype not in ADMIN_METRIC_TYPES:
         raise HTTPException(400, "Type must be numeric, single_select, yes_no or multi_select "
                                  "(matrix is script-only in v1).")
@@ -6768,7 +6779,7 @@ def _publish_metric(conn, m):
     cols = {
         "id": qid, "text": m["text"], "short_description": m["short_description"],
         "help_text": m["help_text"], "definition": m["definition"], "superpower": "Reward",
-        "sub_power": m["sub_power"], "sub_power_order": ADMIN_SUB_POWER_ORDER[m["sub_power"]],
+        "sub_power": m["sub_power"], "sub_power_order": admin_sub_powers()[m["sub_power"]],
         "type": m["type"], "category": "practice", "options_json": opts,
         "default_chart_type": "quartile_band" if m["type"] == "numeric" else "bar",
         "data_display_type": "mean" if m["type"] == "numeric" else "percentage_distribution",

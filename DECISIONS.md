@@ -18290,3 +18290,32 @@ classified pool. Supersedes the "62 unclassified in 'all' only" prior state.
 **Frozen RE-RATIFICATION at n=270 (David-approved, AskUserQuestion).** Adding orgs mathematically cannot preserve the 8 settled-frozen SHARE anchors within their 0.1pp "immovable" tolerance — 0.1pp is 0.27 of one org at n=270, and integer counts move in steps of 1/270 ≈ 0.37pp, so most frozen values have no reachable grid point inside ±0.1pp (proved: 6/8 fail even with optimal apportionment, best 0.12–0.20pp). The 0.1pp guard was designed for *in-place* edits, not population growth. David chose "re-ratify at n=270": `frozen_targets.json` dists + `n` re-recorded against the 270-org store (moves ≤ ~0.2pp; seed shape unchanged), each carrying a `_reratified_add50` note. `settled_refreeze` key-set unchanged (SHADOW-DECLARATION holds). Register marginals (5pp) + keyed gradients hold by construction.
 
 **Result:** all 50 classified with full firmographics (surface in every sector/size search), spread across all 14 sectors + every size band, zero duplicate answer-vectors. Full suite **14/14 GREEN** on the real DB. Safety backup taken + removed after; zero DB copies survive.
+
+## 2026-08-14 — Stale seven-name taxonomy purge (Phase-0 pre-workstream batch)
+
+The reward-strategy Phase-0 diagnostic (PHASE0_STRATEGY_RECONCILIATION_2026-08-14.md) found four
+live seven-name lists that survived the Diff-1 7→8 remap. All fixed under the standing "derived,
+never literal" doctrine; full suite 14/14 + qa_strategy_diag 22/22.
+
+**1. strategy_diag `_COMPETITIVE` (LIVE BUG).** The literal six-name tuple filtered live domain
+names post-remap, so the diagnosis could only ever mark Pay and Wellbeing on-plan, dropped every
+renamed domain's findings, and — worse — ignored `domain_targets` overrides keyed on live names
+(the A′ convergence, broken since Diff 1). Fix: the competitive set now derives from the payload's
+own `competitive` flags; mix/P4P nudge targets and `_reason_for` resolve by containment ("Benefits"
+in "Benefits & Lifestyle"), so a future rename self-heals. app.py `on_plan` likewise de-literalled.
+CONSEQUENCE: the diagnosis now covers all competitive domains as flagged — post-Diff-2 that is all
+eight, incl. Pensions/Health/Governance, which previously could never surface a finding.
+qa_strategy_diag's fixture spoke the retired taxonomy (why it never went red) — re-cut to live
+names + a new A′ regression check (override on a renamed domain must be honoured).
+
+**2. `ADMIN_SUB_POWERS` console allowlist.** Legacy seven → the console 400'd authoring into six
+of the eight live categories. Now `admin_sub_powers()` derives {category: sub_power_order} from
+the live question bank. Client `METRIC_CATS` display list updated to the live eight (server remains
+the enforcement authority). ?v=608→609.
+
+**3-4. marketing.html retired taxonomy (4 sites).** The loop-2 fix corrected one "seven areas" line
+but missed: the "Seven areas of reward" product bullet (738), the hero mock's 7 category tiles, the
+"Position by domain" SVG (7 bars), and the metric-area cards (7 cards, stale counts 59/21/56/36/10/
+11/50). All re-cut to the live eight with live counts (66/23/24/41/51/44/19/65 = 333); hero mock's
+decorative "View all" tile replaced by the 8th category for a clean 2×4. Verified in-browser: 8 bars
+in-bounds no-overlap, 8 tiles, 8 cards, zero stray "seven" strings.

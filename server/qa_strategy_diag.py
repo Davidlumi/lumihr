@@ -24,18 +24,21 @@ def check(section, name, ok, detail=""):
     R.append((name, bool(ok)))
     print("  [%s] %s %-66s %s" % (section, "PASS" if ok else "FAIL", name[:66], ("| " + str(detail)[:80]) if detail and not ok else ""))
 
+# Fixture speaks the LIVE eight-name taxonomy (Diff 1, 2026-07-14). The old fixture kept
+# the retired seven names — which is exactly why the harness never caught the literal
+# six-name _COMPETITIVE filter silently dropping every renamed domain from the diagnosis.
 STRAT = {"market_position": "lag", "reward_mix": "benefits", "pay_for_performance": "strong",
          "primary_objective": "cost",
          "provenance": {k: "set" for k in ("market_position", "reward_mix", "pay_for_performance", "primary_objective")}}
 DOMS = [
     {"name": "Pay", "verdict": "below", "below": 4, "at": 5, "above": 3, "pool": 12, "competitive": True},
-    {"name": "Benefits", "verdict": "below", "below": 9, "at": 2, "above": 1, "pool": 12, "competitive": True},
-    {"name": "Incentives", "verdict": "at", "below": 2, "at": 5, "above": 1, "pool": 8, "competitive": True},
-    {"name": "Time Off", "verdict": "above", "below": 1, "at": 3, "above": 6, "pool": 10, "competitive": True},
-    {"name": "Governance", "verdict": "below", "below": 3, "at": 1, "above": 0, "pool": 4, "competitive": False},
+    {"name": "Benefits & Lifestyle", "verdict": "below", "below": 9, "at": 2, "above": 1, "pool": 12, "competitive": True},
+    {"name": "Incentives & Recognition", "verdict": "at", "below": 2, "at": 5, "above": 1, "pool": 8, "competitive": True},
+    {"name": "Time Off & Family", "verdict": "above", "below": 1, "at": 3, "above": 6, "pool": 10, "competitive": True},
+    {"name": "Governance & Transparency", "verdict": "below", "below": 3, "at": 1, "above": 0, "pool": 4, "competitive": False},
 ]
-OPP = {"Benefits": {"gbp": 74790, "direction": "investment", "top_label": "Employer pension contribution", "top_gbp": 74790},
-       "Time Off": {"gbp": 21000, "direction": "savings", "top_label": "Holiday entitlement", "top_gbp": 21000}}
+OPP = {"Benefits & Lifestyle": {"gbp": 74790, "direction": "investment", "top_label": "Employer pension contribution", "top_gbp": 74790},
+      "Time Off & Family": {"gbp": 21000, "direction": "savings", "top_label": "Holiday entitlement", "top_gbp": 21000}}
 
 print("=" * 92)
 print("SECTION A — deterministic findings engine")
@@ -43,10 +46,17 @@ print("=" * 92)
 F = sd.compute_findings(STRAT, DOMS, OPP)
 areas = [f["area"] for f in F]
 check("A", "benefits-led mix → below-market Pay is ON PLAN (not flagged)", "Pay" not in areas, areas)
-check("A", "Benefits below market while aiming to lead → flagged as a gap", any(f["area"] == "Benefits" and f["kind"] == "gap" for f in F))
-check("A", "Time Off above market while aiming to lag → flagged as overspend", any(f["area"] == "Time Off" and f["kind"] == "over" for f in F))
-check("A", "non-competitive Governance never appears", "Governance" not in areas)
-check("A", "cost objective ranks the overspend (savings) finding first", F and F[0]["area"] == "Time Off", areas)
+check("A", "renamed Benefits domain gets the mix nudge → flagged as a gap", any(f["area"] == "Benefits & Lifestyle" and f["kind"] == "gap" for f in F))
+check("A", "renamed Time Off domain above lag aim → flagged as overspend", any(f["area"] == "Time Off & Family" and f["kind"] == "over" for f in F))
+check("A", "non-competitive Governance & Transparency never appears", "Governance & Transparency" not in areas)
+check("A", "cost objective ranks the overspend (savings) finding first", F and F[0]["area"] == "Time Off & Family", areas)
+# A′ regression (broken between Diff 1 and 2026-08-14): a domain_targets override keyed on a
+# LIVE renamed domain must be honoured by the narrative aims, not dropped by a stale name filter.
+ovr_strat = dict(STRAT); ovr_strat["domain_targets"] = {"Time Off & Family": "lead"}
+F_ovr = sd.compute_findings(ovr_strat, DOMS, OPP)
+check("A", "domain_targets override on a renamed domain is honoured (A' convergence)",
+      not any(f["area"] == "Time Off & Family" and f["kind"] == "over" for f in F_ovr),
+      [f["area"] for f in F_ovr])
 check("A", "every finding carries grounded evidence with a count", all(re.search(r"\d+ of \d+", f["evidence"]) for f in F))
 check("A", "£ attached only where an opportunity exists", all((f["money_gbp"] is None) == (f["area"] not in OPP) for f in F))
 # on-plan: everything matches aim → no findings
@@ -58,7 +68,7 @@ print()
 print("=" * 92)
 print("SECTION B — deterministic narrative is itself clean & grounded")
 print("=" * 92)
-payload = sd.build_diagnosis_payload(STRAT, F, {"alignment": "ahead"}, "Control cost", ["Recognition"], True)
+payload = sd.build_diagnosis_payload(STRAT, F, {"alignment": "ahead"}, "Control cost", ["Wellbeing"], True)
 det = sd.deterministic_diagnosis(payload)
 ok_det, why_det = ca.validate_diagnosis(det, payload)
 check("B", "deterministic narrative passes its own validator", ok_det, why_det)
@@ -67,7 +77,7 @@ det_text = det["summary"] + " " + " ".join(x["headline"] + x["detail"] + x["opti
 allowed = ca._diagnosis_numbers(payload)
 extra = [t for t in re.findall(r"\d+(?:\.\d+)?", det_text.replace(",", "")) if float(t) not in allowed and round(float(t)) not in allowed]
 check("B", "deterministic narrative invents no number", not extra, extra)
-empty_payload = sd.build_diagnosis_payload(on_plan_strat, [], {"alignment": "on_target"}, "Attract", ["Pay", "Benefits"], True)
+empty_payload = sd.build_diagnosis_payload(on_plan_strat, [], {"alignment": "on_target"}, "Attract", ["Pay", "Benefits & Lifestyle"], True)
 on_plan_det = sd.deterministic_diagnosis(empty_payload)
 check("B", "on-plan affirmation renders with one reassuring finding", len(on_plan_det["findings"]) == 1 and "On plan" in on_plan_det["findings"][0]["headline"])
 

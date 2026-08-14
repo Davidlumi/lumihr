@@ -840,7 +840,10 @@ function AdminMetricsTab() {
     </div>`;
 }
 
-const METRIC_CATS = ["Pay", "Incentives", "Benefits", "Time Off", "Wellbeing", "Recognition", "Governance"];
+// Live eight-category taxonomy (Diff 1, 2026-07-14). Display list only — the server
+// derives its allowlist from the live question bank and is the enforcement authority.
+const METRIC_CATS = ["Pay", "Pensions & Savings", "Health & Protection", "Benefits & Lifestyle",
+  "Time Off & Family", "Incentives & Recognition", "Wellbeing", "Governance & Transparency"];
 const METRIC_TYPES = ["yes_no", "single_select", "multi_select", "numeric"];
 
 function AdminMetricEditor({ onDone, onCancel }) {

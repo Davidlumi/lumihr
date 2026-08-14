@@ -11,7 +11,16 @@ deterministic narrative below ships instead, so the feature works either way.
 _STANCE_AIM = {"lag": 0, "match": 1, "lead": 2}      # where the org aims on the below(0)/on(1)/above(2) axis
 _VERDICT_IDX = {"below": 0, "at": 1, "above": 2}
 _AIM_WORD = {0: "below market", 1: "on market", 2: "above market"}
-_COMPETITIVE = ("Pay", "Incentives", "Benefits", "Time Off", "Wellbeing", "Recognition")
+
+
+def _find_dom(names, needle):
+    """Resolve a semantic nudge target against WHATEVER domain names are live (Diff 1
+    renamed the taxonomy: 'Benefits' -> 'Benefits & Lifestyle', 'Incentives' ->
+    'Incentives & Recognition'). Containment survives renames; None if absent."""
+    for n in names:
+        if needle in n:
+            return n
+    return None
 
 # objectives that care about closing TALENT gaps vs trimming COST overspend — used
 # only to rank which findings surface first, never to invent them.
@@ -23,28 +32,33 @@ def _is_set(strategy, field):
     return (strategy.get("provenance") or {}).get(field) not in (None, "skipped")
 
 
-def domain_aims(strategy):
-    """Per-domain implied aim (0/1/2). Starts from the overall market-position stance
-    and is nudged by the finer intents the org actually set:
+def domain_aims(strategy, domain_names):
+    """Per-domain implied aim (0/1/2) over the LIVE competitive domain list the caller
+    supplies (derived from the payload, never a literal — the Diff 1 remap doctrine).
+    Starts from the overall market-position stance and is nudged by the finer intents
+    the org actually set:
       reward_mix=benefits → Benefits aim 'lead', Pay aim 'lag' (a deliberately cash-light
                             mix, so a below-market Pay is ON plan, not a gap);
       reward_mix=cash     → Pay aim 'lead';
       pay_for_performance strong → Incentives aim 'lead'; egal → Incentives aim 'lag'.
     """
     base = _STANCE_AIM.get(strategy.get("market_position"), 1) if _is_set(strategy, "market_position") else 1
-    aims = {d: base for d in _COMPETITIVE}
+    aims = {d: base for d in domain_names}
+    dom_ben, dom_pay, dom_inc = (_find_dom(aims, "Benefits"), _find_dom(aims, "Pay"),
+                                 _find_dom(aims, "Incentives"))
     if _is_set(strategy, "reward_mix"):
         mix = strategy.get("reward_mix")
         if mix == "benefits":
-            aims["Benefits"], aims["Pay"] = 2, 0
+            if dom_ben: aims[dom_ben] = 2
+            if dom_pay: aims[dom_pay] = 0
         elif mix == "cash":
-            aims["Pay"] = 2
+            if dom_pay: aims[dom_pay] = 2
     if _is_set(strategy, "pay_for_performance"):
         pfp = strategy.get("pay_for_performance")
         if pfp == "strong":
-            aims["Incentives"] = 2
+            if dom_inc: aims[dom_inc] = 2
         elif pfp == "egal":
-            aims["Incentives"] = 0
+            if dom_inc: aims[dom_inc] = 0
     # A′ (2026-06-25): an EXPLICIT per-domain override BEATS the inferred aim — the narrative now
     # honours domain_targets[dom] (the SAME field L3 alignment / L4 suppression / tile+hero recolour
     # respect), so it converges with _market_target where an override is set. Applied AFTER the
@@ -65,11 +79,11 @@ def _reason_for(domain, strategy):
     dt = (strategy.get("domain_targets") or {}).get(domain)
     if dt in _STANCE_AIM:
         return "your %s-the-market target for %s" % (dt, domain)
-    if domain == "Benefits" and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "benefits":
+    if "Benefits" in domain and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "benefits":
         return "your benefits-led reward mix"
-    if domain == "Pay" and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "cash":
+    if "Pay" in domain and _is_set(strategy, "reward_mix") and strategy.get("reward_mix") == "cash":
         return "your cash-led reward mix"
-    if domain == "Incentives" and _is_set(strategy, "pay_for_performance") and strategy.get("pay_for_performance") == "strong":
+    if "Incentives" in domain and _is_set(strategy, "pay_for_performance") and strategy.get("pay_for_performance") == "strong":
         return "your strong pay-for-performance stance"
     stance = strategy.get("market_position")
     return "your %s-the-market stance" % stance if _is_set(strategy, "market_position") and stance else "your stated strategy"
@@ -79,12 +93,15 @@ def compute_findings(strategy, domains, opp_by_domain):
     """domains: [{name, verdict in below/at/above, below, at, above, pool, competitive}].
     opp_by_domain: {domain: {gbp, direction in investment/savings, top_label, top_gbp}}.
     Returns a ranked list of findings (gaps + overspends), each grounded with figures."""
-    aims = domain_aims(strategy)
+    # the competitive set is DERIVED from the payload's own flags (Diff 1 doctrine:
+    # invariants over whatever domains exist — the old literal six-name tuple silently
+    # excluded every renamed domain after the 7->8 remap)
+    aims = domain_aims(strategy, [d.get("name") for d in domains if d.get("competitive", True)])
     objective = strategy.get("primary_objective") if _is_set(strategy, "primary_objective") else None
     findings = []
     for d in domains:
         name = d.get("name")
-        if name not in _COMPETITIVE or not d.get("competitive", True):
+        if name not in aims or not d.get("competitive", True):
             continue
         verdict = d.get("verdict")
         if verdict not in _VERDICT_IDX:
