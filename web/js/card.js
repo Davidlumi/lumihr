@@ -97,8 +97,11 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
     <div class=${"card bench-card stacked" + (size === 2 ? " w2" : "") + (highlight ? " drop-target" : "")} ref=${ref} id=${"q-" + card.id}>
       <div class="bench-head">
         <h3 class="bench-title" title=${c.question_text}>${c.title}</h3>
-        ${(() => { const a = metricAim(c, pos); return a && window.StrategyGlyph ? html`<span class="bench-strat" title=${({ on_target: "On strategy", behind: "Below strategy", ahead: "Above strategy" })[a.alignment]}><${window.StrategyGlyph} alignment=${a.alignment} w=${34} /></span>` : null; })()}
-        ${cardSignalPill(c, signal, readOnly)}
+        ${/* DECLUTTER (David 2026-08-14): the header is just the title now. Only the ADD-DATA CTA stays
+              up here (an unanswered card earns that prominence); the market verdict, strategy alignment
+              and the signal all consolidate into ONE quiet meta line in the footer — no more competing
+              badges top AND bottom saying the same thing. */ ""}
+        ${cardSignalState(c, signal) === "add" ? cardSignalPill(c, signal, readOnly) : null}
       </div>
       <div class=${"bench-chart-full" + (cutBusy ? " busy" : "") + (c.suppressed ? " suppressed" : "")}
         role=${/* matrix TABLE renders keep their semantics for screen readers — role="img"
@@ -148,6 +151,10 @@ window.BenchmarkCard = function ({ card, prefs, onPref, onPin, pinned, size, cut
             : c.prevalence_band === "rarer" ? "rare" : "low peer data"}</span>` : null}
         ${c.unbenchmarked && !c.practice ? html`
           <span class="chip prac-tag" title="No verified market anchor yet — the distribution is shown for information; no market verdict or peer comparison renders until this metric is anchored.">No comparison</span>` : null}
+        ${/* strategy alignment + a QUIET signal flag join the verdict here — the card's whole read on
+              one calm line, the signal a marker not a second verdict (David 2026-08-14 declutter). */ ""}
+        ${(() => { const a = metricAim(c, pos); return a && window.StrategyGlyph ? html`<span class="bench-strat" title=${({ on_target: "On strategy", behind: "Below strategy", ahead: "Above strategy" })[a.alignment]}><${window.StrategyGlyph} alignment=${a.alignment} w=${30} /></span>` : null; })()}
+        ${cardSignalFlag(c, signal)}
         <span class="bench-n" title=${SHOW_COMPOSITION_IN_PRODUCT ? "The number behind this comparison. " + COMPOSITION_DESC : "The number of organisations behind this comparison"}>${compositionLabel(c.n, c.n_real)}</span>
         ${c.base ? html`
           <span class="caption base-note" title="This metric applies to a subset of organisations — the chart and n cover only those where it applies.">of ${c.base.label}${c.base.excluded ? ` · ${c.base.excluded} not-applicable excluded` : ""}</span>` : null}
@@ -566,6 +573,24 @@ function cardSignalPill(c, sigs, readOnly) {
     <${Icon} name="sparkle" size=${11} /> No signal</span>`;
 }
 window.cardSignalPill = cardSignalPill;
+// A QUIET signal marker for the card FOOTER (David 2026-08-14 declutter): the market VERDICT now lives
+// once, in the pos-pill; this only flags "there's a live signal here" without restating it. A single
+// flag reads "Signal"; a multi-row matrix keeps its up/down split so that nuance isn't lost. Null when
+// there's nothing flagged (a calm, unmarked card IS the no-signal state — no "No signal" chip needed).
+function cardSignalFlag(c, sigs) {
+  if (c.suppressed || c.reduced) return null;
+  const list = sigList(sigs);
+  if (!list.length) return null;
+  const lens = list[0].lens;
+  const up = list.filter(s => /HIGHER/.test(s.tag || "")).length;
+  const dn = list.filter(s => /LOWER/.test(s.tag || "")).length;
+  const label = list.length > 1
+    ? (up && dn ? up + "↑ " + dn + "↓ market" : up ? up + " above market" : dn ? dn + " below market" : list.length + " flagged")
+    : "Signal";
+  const title = list.map(s => (s.name ? s.name + " — " : "") + (s.tag || s.stand || "")).join(" · ") || "Flagged in Signals";
+  return html`<span class=${"sig-flag lens-" + lens} title=${title}><${Icon} name="flag" size=${11} /> ${label}</span>`;
+}
+window.cardSignalFlag = cardSignalFlag;
 
 window.CardBody = function ({ card: c, chart, showP1090, showValues, fav, xl, wide, readOnly }) {
   // popped-out charts get a wider viewBox (more data room, same-size labels);

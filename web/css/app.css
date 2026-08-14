@@ -4018,6 +4018,19 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .bench-foot { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding-top: var(--s3); flex-wrap: wrap; }
 .bench-card .bench-foot .bench-n { margin: 0; padding: 0; }
 .bench-foot .card-tools { margin-left: auto; }
+/* DECLUTTER (David 2026-08-14): strategy glyph + signal flag now sit on the footer meta line, and the
+   signal is a QUIET marker (no chip background) — the pos-pill carries the market verdict, so nothing's
+   said twice. Tools dim at rest and come up on hover/focus, lifting the resting visual weight. */
+.bench-foot .bench-strat { margin-left: 0; }
+.sig-flag { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  font-size: var(--fs-caption); font-weight: 650; color: var(--ink-soft); }
+.sig-flag svg { color: var(--navy); flex: 0 0 auto; }
+.sig-flag.lens-save svg    { color: var(--lens-save-ink); }
+.sig-flag.lens-attract svg { color: var(--lens-attract-ink); }
+.sig-flag.lens-retain svg  { color: var(--lens-retain-ink); }
+.sig-flag.lens-engage svg  { color: var(--lens-engage-ink); }
+.bench-card .card-tools { opacity: .5; transition: opacity var(--dur-base) var(--ease-out); }
+.bench-card:hover .card-tools, .bench-card:focus-within .card-tools { opacity: 1; }
 /* Declutter (2026-07-07): the per-card action cluster (open/info/pin/copy/download/link)
    is revealed on hover or keyboard focus, not parked on every one of ~120 grid cards at
    rest — the chart already opens on click, and the informative cut · P · n stay visible.

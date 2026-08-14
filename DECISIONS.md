@@ -18142,3 +18142,28 @@ glyphs already carry it. `stratSum` is STILL computed — it gates the "STRATEGY
 `di-stratcol` width class — just no longer rendered as text. Deleted the now-dead `.di-strat-sum` CSS (base rule +
 its responsive wrap rule). Verified on a Thornbridge rig: header reads "Position by domain · Counts Position"; the
 STRATEGY column header, all 8 per-row glyphs, and the toggle remain. CSS/markup only — no gates.
+
+## 2026-08-14 — Benchmark card declutter: one meta line, one verdict (v=606)
+
+David: "the cards have a lot of info — signal, market, practice, strategy alignment — how do we show them less
+cluttered?" Diagnosis: not just density — DUPLICATION. The top signal badge (`cardSignalPill` → "LOWER THAN
+MARKET" / "COMMON — YOU DON'T") and the bottom verdict pill ("▼ Below market · P37") were two labels for the same
+market fact, in two visual languages at opposite ends of the card; the strategy glyph sat top-right too. Three moves
+(web/js/card.js + app.css):
+
+1. **Header = title only.** Removed the strategy glyph AND the signal pill from `.bench-head`. The ONLY thing that
+   still surfaces up top is the **"Add data" CTA** for unanswered cards (`cardSignalState(c,sig)==="add"`) — an empty
+   card earns that prominence; everything else moves down.
+2. **One quiet meta line in the footer.** `.bench-foot` now carries the whole read on one line: peer-picker · verdict
+   pos-pill · strategy glyph (moved from header, w=34→30) · **signal flag** · n. New `cardSignalFlag(c,sigs)`: a QUIET
+   marker (flag icon + "Signal", no chip background; a multi-row matrix keeps its "2↑ 3↓ market" split) — the verdict
+   pill carries the words, so nothing is said twice. Clear/no-signal cards render NO flag (calm absence = the
+   no-signal state; dropped the old "✨ No signal" reassurance chip).
+3. **Tools dim at rest.** `.bench-card .card-tools { opacity:.5 }` → full on `:hover`/`:focus-within`. Lifts the
+   resting weight of the 5–6 icon buttons without hiding them (drag handle stays reachable).
+
+`cardSignalPill`/`cardSignalState` unchanged (state is still read by the Signals filter `fbSig` + sigCounts). Applies
+to every BenchmarkCard — grid AND dashboards (consistent). Verified live on a Thornbridge Pay page: headers are
+title-only, footers show verdict+glyph+n on one line, all 9 flagged cards show the quiet "Signal" flag (0 top badges),
+practice cards read "A practice choice · alternative", tools dim at rest. jsc clean, braces balanced, no JS console
+errors. Gates not run — no server/engine/data touched.
