@@ -94,8 +94,20 @@ print()
 print("=" * 100)
 print("SECTION B — suppression")
 print("=" * 100)
-sup_payload = appmod.build_commentary_payload(conn, org, user, "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf", "industry", None)
-check("B", "real suppressed cut detected (car allowance, sector)", sup_payload["suppressed"], sup_payload["n"])
+# pick a metric genuinely suppressed on the demo org's OWN sector cut, DYNAMICALLY — so this stays
+# valid as the peer pool grows/shrinks (was a hardcoded qid; the 2026-08-14 classify-62 enrichment
+# lifted that cut above the suppression floor). Non-matrix single/numeric so the copy renders normally.
+_ind_orgs = [r[0] for r in conn.execute("SELECT org_id FROM orgs WHERE classified=1 AND industry=?", (org.get("industry"),))]
+_qm = ",".join("?" * len(_ind_orgs))
+_cand = [r[0] for r in conn.execute(
+    "SELECT a.question_id FROM answers a JOIN questions q ON q.id=a.question_id "
+    "WHERE a.matrix_row_id='' AND a.snapshot_id=1 AND a.value!='' AND a.org_id IN (%s) "
+    "AND q.type IN ('single_select','yes_no','numeric','number','currency') "
+    "GROUP BY a.question_id HAVING COUNT(DISTINCT a.org_id) BETWEEN 1 AND 4 "
+    "ORDER BY a.question_id" % _qm, _ind_orgs)] if _ind_orgs else []
+_sup_qid = _cand[0] if _cand else "fa0f46f6-61e3-41d1-a2d1-3e57483bb1cf"
+sup_payload = appmod.build_commentary_payload(conn, org, user, _sup_qid, "industry", None)
+check("B", "real suppressed cut detected on the org's sector (dynamic: %s)" % _sup_qid, sup_payload["suppressed"], sup_payload["n"])
 parts = gen(sup_payload)
 joined = " ".join(parts.values())
 check("B", "suppressed: no comparison, no peer figure, no P-value, only too-small note",

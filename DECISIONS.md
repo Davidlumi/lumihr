@@ -18238,3 +18238,31 @@ are now dead outside the "add" state (kept — cardSignalState is still load-bea
 MetricPage's `pinnedIds` prop is unused; ComparePill + `.cmp-*` CSS deliberately kept-defined-unused (v=607).
 The chart aria-label keeps the full peer-group name (a11y provenance, matching exports). No console errors on any
 surface; no fixes required.
+
+## 2026-08-14 — Seed pool: classify the 62 "file-only" orgs so they appear in sector/size searches
+
+David: "make sure the seeded companies all have completed profiles (sector, FTE) so they appear in the sample
+searches." Finding: of 220 seed orgs (all anonymous synthetic market data, all with ~403-answer sets +
+submission_complete=1), 158 matched a firmographics registry (→ classified) and 62 were "file-only" (registry
+non-match → industry known but no subsector/FTE/region → classified=0). `build_cuts` includes only classified
+orgs in filtered cuts, so those 62 sat in "All peers" ONLY, never in a sector or size peer group (a documented,
+verified state — DECISIONS data-quality finding #12 + Layer-4 cut verification). David chose (AskUserQuestion) to
+classify all 62.
+
+**Method — CLONE, don't invent** (server/migrate_seedreal_classify62_2026_08_14.py, deterministic sha256, dry-run
+default + `--write --confirmed-by-david`): each file-only org copies the full firmographic tuple (industry,
+subsector, fte_band, hq_region) of a REAL classified org OF THE SAME INDUSTRY, so the joint distribution is
+preserved exactly and no combination is fabricated that doesn't already exist. The 3 "Other" orgs (no classified
+peer) clone any classified org, taking its industry too. Only the four firmographic columns + `classified` flag
+change; answers/name/submission_complete untouched. Then `run_snapshot(1)` re-aggregates.
+
+**Impact:** classified-in-cuts 158 → **220**; every sector/size search now spans all 220. FTE-band totals grew
+(e.g. 5,000-9,999 36→55, 1,000-4,999 31→47); sectors grew where the 62 were (Construction 15→24, Retail 15→30…);
+"All peers" unchanged (220). **Accepted trade-off:** the 62's answers were seeded generically, not SECTOR_TILTED,
+so sector cuts carry a mild realism dilution — imperceptible for synthetic demo data, David's call.
+
+**Gate fix:** qa_commentary Section B hardcoded a car-allowance sector cut that WAS suppressed (<5); the enrichment
+lifted it to n=6, so the "suppressed cut detected" assertion failed. Rewrote it to pick a still-suppressed non-matrix
+metric on the demo org's own sector DYNAMICALLY (pool-independent) so it won't go stale on future reseeds. Full
+suite **14/14 GREEN**; safety backup taken + removed after; zero DB copies survive; :8060 reloaded with the
+classified pool. Supersedes the "62 unclassified in 'all' only" prior state.
