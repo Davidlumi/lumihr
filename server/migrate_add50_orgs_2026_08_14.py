@@ -276,6 +276,23 @@ def main():
                     if qid in ans[donor]:                       #  donors and break the bonus-family
                         na[o["org_id"]][qid] = [list(x) for x in ans[donor][qid]]   # subset coherence)
 
+    # ---- incentive coherence: the LTI / bonus-opportunity MATRICES live in different closures
+    #      from the equity/bonus HEADLINE, so the mosaic clone paired "no equity" with a full LTI
+    #      grid (and "no bonus" with a bonus grid) on ~38/50 orgs. These conditioning pairs aren't
+    #      in coherence_pairs, so the gate never caught it. Blank the detail where the headline says
+    #      the plan doesn't exist. (Public-sector/charity personas both flagged this.) ----
+    LTI_DETAIL = ["REW_INC_LTI_MAX_01"]                                    # LTI value only if equity exists
+    BONUS_OPP = ["323ffcf1-749b-43f3-bf34-1de6b8b1ca67", "REW_INC_111"]    # bonus grid only if a bonus exists
+    def _hl(oid, qid):
+        for (mr, v, _s) in na[oid].get(qid, []):
+            if mr == "": return (v or "").strip()
+        return None
+    for o in new:
+        oid = o["org_id"]
+        if _hl(oid, "REW_INC_131") == "No":
+            for q in LTI_DETAIL: na[oid].pop(q, None)
+        if _hl(oid, "REW_INC_103") == "None":
+            for q in BONUS_OPP: na[oid].pop(q, None)
 
     total_answers = sum(len(l) for o in new for l in na[o["org_id"]].values())
     print(("APPLIED" if WRITE else "DRY RUN") + " — %d new orgs, %d answers" % (N_NEW, total_answers))
