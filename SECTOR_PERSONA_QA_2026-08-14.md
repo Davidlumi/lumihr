@@ -59,7 +59,10 @@ frozen — a conserving swap of those could be a follow-up). Original spec:
 - **Energy/Utilities**: DB/hybrid legacy present (currently 0/10). Cascade as above.
 - (Public Sector pensions already correct post-reseed.)
 
-### V2-D — Signature benefits + frontline/office separation
+### V2-D — Signature benefits + frontline/office separation ✅ core DONE
+Shipped (`migrate_seedreal_v2d_frontline_2026_08_14.py`): OT_04 shift premium reset marginal-conserving (office Tech/ProfSvcs/FS/Media 42-50%->~8%, frontline up; global held 170); Hospitality staff meals 24/32 -> Free/Subsidised; Manufacturing skills pay 12/28 Yes. 14/14 green. Deferred: shift-multiplier matrices (REW_Q528801/534581) office->N/A, retail staff discount (REW_BEN_038 coherence), REW_INC_103 frontline bands.
+
+<!-- orig:
 - **Retail** staff discount `REW_BEN_038` → ~85%+ (currently level with pool).
 - **Hospitality** staff meals `REW264_WEL_MEALS` → majority Free/Subsidised (currently 94% None).
 - **Manufacturing** skills-based pay + apprenticeship frameworks → above pool.
