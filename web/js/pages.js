@@ -2374,12 +2374,17 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
             ConfidenceChip + a note naming it; the app-wide selector is hidden on /signals (app.js).
             (Reverses the 2026-07-10 "honour the app-wide selector" — that made alerts and the page
             disagree the moment a cut was chosen.) */ ""}
+      ${/* one control band, consistent with the grid (David 2026-08-13): the sample (fixed to the org
+            DEFAULT here, so shown greyed/locked — changed in Settings) · the Confidence rating · the filters. */ ""}
       ${unlocked ? html`
-      <div class="sig-subhead" style=${{ marginBottom: "var(--s4)" }}>
-        <span class="sig-subhead-l">
-          <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
-          <span class="caption sig-peer-note">Flagged against your <span class="indic-flag sig-peergrp" tabindex="0" role="note" aria-label=${"Default peer group: " + ((me.org && me.org.signal_peer_label) || "all peers")} onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}><b>default peer group</b> <${Icon} name="info" size=${11} /><span class="indic-tip">${(me.org && me.org.signal_peer_label) || "all peers"} — set in Settings; the same group your email alerts use.</span></span>${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html` · <a href="#/settings">Change</a>` : ""}</span>
+      <div class="sp-ctl-band sig-ctl-band">
+        <span class="peerbar peerbar-inline sig-peer-locked" title="Signals always flag against your default peer group — change it in Settings">
+          <span class="peerbar-lead"><${Icon} name="users" size=${13} /> Comparing against</span>
+          <span class="sig-peer-pill indic-flag" tabindex="0" role="note" aria-label=${"Default peer group: " + ((me.org && me.org.signal_peer_label) || "all peers")} onKeyDown=${e => { if (e.key === "Escape") e.currentTarget.blur(); }}><b>${(me.org && me.org.signal_peer_label) || "all peers"}</b> · ${cutSize(sigCut, cuts, me.peer_pool)} <${Icon} name="info" size=${11} /><span class="indic-tip">Your default peer group — signals always flag against it; the same group your email alerts use. Change it in Settings.</span></span>
+          ${me.user && (me.user.role === "admin" || me.user.role === "contributor") ? html`<a href="#/settings" class="sig-peer-change">Change</a>` : null}
         </span>
+        <${ConfidenceChip} n=${cutSize(sigCut, cuts, me.peer_pool)} window=${data.snapshot && data.snapshot.window} />
+        ${sigFacets.length ? html`<${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} />` : null}
         <a href="#/priorities" class="btn small sig-reg-btn"><${Icon} name="table" size=${13} /> Full gap register</a>
       </div>` : null}
       ${!unlocked ? html`<${SignalsLocked} contrib=${contrib} me=${me} />`
@@ -2419,10 +2424,7 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
           </span>
         </div>
 
-        ${/* Phase 3 (2026-08-13): one facet grammar with the grid — Market · Strategy · Lens · Domain.
-              Replaces the market-position pills + the duplicate domain dropdown/banner. */ ""}
-        ${sigFacets.length ? html`<${FacetMenus} facets=${sigFacets} anyActive=${filtersActive} onClear=${clearSigFilters} />` : null}
-
+        ${/* filters now live in the control band up top (with the sample + confidence) */ ""}
         ${/* strategy-check moved ABOVE the feed (David review #17) — a collapsible orienting strip */ ""}
         ${v.kind === "all" && data.strategy_complete ? html`
           <div class=${"sig-strat-strip" + (stratOpen ? " open" : "")}>

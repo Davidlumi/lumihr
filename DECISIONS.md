@@ -17973,3 +17973,30 @@ David: "we need the confidence rating next to the wording for the default sample
 ConfidenceChip out of its standalone .conf-line and into the .sig-subhead, wrapped with the peer-note in
 a new .sig-subhead-l flex group: "[Confidence 7/10 · N peers]  Flagged against your default peer group ⓘ ·
 Change ....... Full gap register". One fewer top band. Gates 14/14; verified on a rig.
+
+## 2026-08-14 — Signals top: one control band, consistent with the grid (v=598)
+
+David: "i think we need consistency — so show the sample with default greyed out then the confidence rating
+then the filters." Rebuilt the Signals top as a single `.sp-ctl-band .sig-ctl-band` reading left→right exactly
+like the All-reward grid masthead:
+
+  [👥 Comparing against  «5 sectors · 10,000+, 1,000–4,999 FTE · 25» ⓘ  Change]  ·  [▮▮▮ Confidence 7/10 · N]
+  ·  FILTER [Market ▾][Strategy ▾][Lens ▾][Domain ▾]  ·········  [Full gap register]
+
+- The **sample capsule** is fixed to the org DEFAULT peer group on this page (signals + email alerts must agree,
+  2026-08-11 ruling), so it is rendered greyed/locked — a sunk `.sig-peer-pill` (muted, `cursor:default`) with an
+  ⓘ tooltip naming the group, plus a "Change" link → Settings (admins/contributors only). It is NOT the live
+  peer selector; it only states the basis. This replaces the old `.sig-subhead` note.
+- The four **filters** (Market/Strategy/Lens/Domain via FacetMenus) moved UP out of the feed into this band, so
+  the order is sample → confidence → filters, matching the grid. Removed the duplicate FacetMenus render that
+  had sat above the feed.
+- **z-index fix (the real work):** `.signals-page > :not(.ov-aurora)` pins every page child to `z-index:1` (to
+  sit over the aurora bg). The band and the `.sfold-nav` folder row below it were therefore both at z:1, so an
+  open facet popover (child of the band) was overpainted by the later-in-DOM folder row — it bled through. Fixed
+  with a specificity-matched `.signals-page > .sp-ctl-band.sig-ctl-band { z-index:20 }` so the band's whole
+  subtree (incl. popovers) outranks the folder nav. A plain `.sig-ctl-band{z-index:20}` (0,1,0) lost to the
+  aurora rule (0,2,0) and computed as 1 — the win required matching that path.
+
+Frontend-only (pages.js markup relocation + app.css); jsc clean, braces balanced, verified live on a Thornbridge
+rig (band order, greyed pill, popover paints solid over the folder row, Strategy=on filters the feed with badge +
+Clear, no console errors). Gates not run — no server/engine/data touched (CSS-skip doctrine).
