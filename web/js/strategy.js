@@ -862,6 +862,17 @@ window.StrategyPage = function ({ me }) {
     }, 900);
     return () => clearTimeout(draftTimer.current);
   }, [strat, doc, planeA, step, editing, data]);
+  // every level starts at the median (2026-08-15, David: "default it all to the median
+  // and the user can then adjust") — seeded when the member actually reaches the step,
+  // never during render.
+  useEffect(() => {
+    if (!data) return;
+    const pg = PAGES[typeof step === "number" && step >= 0 && step < PAGES.length ? step : 0];
+    if (!pg || pg.id !== "populations") return;
+    setDoc(d => ((d.population_targets || []).length ? d
+      : { ...d, population_targets: (data.populations || []).map(l => ({ label: l, position: "match" })) }));
+  }, [step, data]);
+
   // the commitments step needs the live lookups — fetched once, on first entry
   useEffect(() => {
     if (!data || mopts !== null) return;                 // once, as soon as the wizard has data
@@ -1152,32 +1163,35 @@ window.StrategyPage = function ({ me }) {
       ${cur.id === "populations" && html`
         <section key="populations" class="sdw-page">
           <${OptHead} title="Do different groups sit differently?"
-            sub=${"Most organisations aim differently for their executive population than for everyone else. State it here and it appears in your document — lumi holds no executive pay data, so we never score these against the benchmark."} />
+            sub=${"Every level starts at the median. Adjust any that sit differently by design — these are the same levels your matrix questions use, so a position here reads straight against them."} />
           <div class="sdw-dials">
             <div class="dial-card">
               <div class="dial-head"><span class="dial-roundel"><${Icon} name="layers" size=${16} /></span>
-                <div><div class="dial-title">Position by employee population <span class="sdw-opt">up to 5</span></div>
-                <div class="dial-q">Your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""} covers everyone you don't name here.</div></div></div>
+                <div><div class="dial-title">Position by level <span class="sdw-opt">all seven</span></div>
+                <div class="dial-q">Your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""} is the organisation-wide aim; these say where each level sits within it.</div></div></div>
               ${(data.populations || []).map(lbl => {
-                const row = pops.find(p => p.label === lbl);
-                return html`<div key=${lbl} class="sdw-poprow">
+                const row = pops.find(p => p.label === lbl) || { label: lbl, position: "match" };
+                const setPop = (patch) => setD({ population_targets:
+                  (data.populations || []).map(l2 => {
+                    const cur2 = pops.find(p => p.label === l2) || { label: l2, position: "match" };
+                    return l2 === lbl ? { ...cur2, ...patch } : cur2;
+                  }) });
+                const off = row.position && row.position !== "match";
+                return html`<div key=${lbl} class=${"sdw-poprow" + (off ? " off" : "")}>
                   <div class="sdw-pop-head">
-                    <label class="sd-doc-check"><input type="checkbox" checked=${!!row}
-                      onChange=${e => setD({ population_targets: e.target.checked
-                        ? [...pops, { label: lbl, position: strat.market_position || "match" }].slice(0, 5)
-                        : pops.filter(p => p.label !== lbl) })} />${lbl}</label>
-                    ${row ? html`<div class="sdw-popseg">
+                    <span class="sdw-pop-name">${lbl}</span>
+                    <div class="sdw-popseg" role="radiogroup" aria-label=${lbl + " market position"}>
                       ${SCALE.market.stops.map(st2 => html`<button key=${st2.v} type="button"
                         class=${"sdw-seg-opt" + (row.position === st2.v ? " on" : "")}
-                        onClick=${() => setD({ population_targets: pops.map(p => p.label === lbl ? { ...p, position: st2.v } : p) })}>${st2.t}</button>`)}
-                    </div>` : null}
+                        role="radio" aria-checked=${row.position === st2.v}
+                        onClick=${() => setPop({ position: st2.v })}>${st2.t}</button>`)}
+                    </div>
                   </div>
-                  ${row ? html`<input class="ctl" maxlength="240" placeholder="Why — e.g. total comp at upper quartile, benchmarked against listed peers"
-                    value=${row.note || ""}
-                    onInput=${e => setD({ population_targets: pops.map(p => p.label === lbl ? { ...p, note: e.target.value } : p) })} />` : null}
+                  ${off ? html`<input class="ctl" maxlength="240" placeholder=${"Why " + lbl + " sits differently (optional)"}
+                    value=${row.note || ""} onInput=${e => setPop({ note: e.target.value })} />` : null}
                 </div>`; })}
               <div class="signal-effect"><span class="se-eye"><${Icon} name="info" size=${14} /></span>
-                <span class="se-text">These are statements in your document. Your benchmark reads the whole organisation, so lumi never marks a population position right or wrong.</span></div>
+                <span class="se-text">These are statements in your document. Your benchmark reads the whole organisation, so lumi never marks a level position right or wrong.</span></div>
             </div>
           </div>
           <${Foot} />

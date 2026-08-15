@@ -4843,3 +4843,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sdw-obj-bar i { display: block; height: 100%; background: var(--blue); border-radius: 4px; transition: width .25s; }
 .sdw-opt.done { color: var(--favourable-ink); background: var(--favourable-tint); }
 .sdw-page .sigpeer-grid { margin-top: var(--s2); }
+/* level positions: always visible, median by default, highlighted when adjusted */
+.sdw-pop-name { font-size: var(--fs-label); font-weight: 600; color: var(--ink); }
+.sdw-poprow.off .sdw-pop-name { color: var(--blue-deep); }
+.sdw-poprow .sdw-popseg .sdw-seg-opt { padding: 6px 14px; font-size: var(--fs-caption); }
