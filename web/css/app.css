@@ -5035,3 +5035,20 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-vers { max-width: 210mm; margin: 0 auto var(--s4); }
 .rr-gap-foot { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3);
   padding-top: var(--s3); border-top: 1px solid var(--border); }
+
+/* editable prose blocks in the document */
+.rr-h-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.rr-prose { position: relative; }
+.rr-prose-tools { display: flex; align-items: center; gap: var(--s2); margin: -4px 0 var(--s3); }
+.rr-edit { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: var(--fs-micro);
+  font-weight: 600; color: var(--ink-faint); background: none; border: 1px solid transparent;
+  border-radius: 999px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.rr-prose:hover .rr-edit, .rr-edit:focus-visible, .rr-h-row .rr-edit { opacity: 1; }
+.rr-h-row .rr-edit { flex: none; }
+.rr-edit:hover { color: var(--blue); border-color: var(--border); background: var(--surface); }
+.rr-edited { font-size: var(--fs-micro); font-weight: 600; color: var(--blue-deep);
+  background: var(--blue-tint); border-radius: 999px; padding: 2px 9px; }
+.rr-prose.is-edited > p { border-left: 2px solid var(--blue-tint); padding-left: var(--s3); margin-left: -1px; }
+.rr-ta { width: 100%; font: inherit; font-size: var(--fs-body); line-height: 1.55; resize: vertical; }
+.rr-prose-foot { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
+@media print { .rr-prose.is-edited > p { border-left: 0; padding-left: 0; margin-left: 0; } }

@@ -26,6 +26,13 @@ const RRD = {
     file: "Reward plan",
     lead: "Where the package sits against that intent, the gaps it opens, and the plan to close them.",
   },
+  // one page (David 2026-08-16): intent AND position in a single artefact
+  full: {
+    eyebrow: "REWARD STRATEGY & PLAN",
+    title: "Total Reward Strategy & Plan",
+    file: "Reward strategy and plan",
+    lead: "What we intend our reward to do, where it sits against that intent, and the plan to close the difference.",
+  },
 };
 
 // A model part that came back on the deterministic floor still reads as prose, so the
@@ -47,12 +54,57 @@ function RrSheet({ page, total, foot, prov, children, cover }) {
     </div>`;
 }
 
-function RrH({ n, children, sub }) {
+function RrH({ n, children, sub, edit }) {
   return html`
     <div class="rr-h">
       ${n ? html`<span class="rr-h-n">${n}</span>` : null}
-      <h2 class="rr-h-t">${children}</h2>
+      <div class="rr-h-row">
+        <h2 class="rr-h-t">${children}</h2>
+        ${edit || null}
+      </div>
       ${sub ? html`<p class="rr-h-s">${sub}</p>` : null}
+    </div>`;
+}
+
+// An editable block of generated prose. The author's wording, once saved, IS the
+// document — the generated text stays underneath and is restored by clearing.
+// Only PROSE is editable: positions, counts, gaps and £ are what the engine found,
+// and a document that let you retype those would stop being evidence.
+function RrProse({ value, generated, sectionKey, canEdit, onSave, className }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const shown = value != null && value !== "" ? value : generated;
+  const edited = value != null && value !== "";
+  if (!editing) {
+    return html`
+      <div class=${"rr-prose" + (edited ? " is-edited" : "")}>
+        <p class=${className || "rr-p"}>${rrProse(shown)}</p>
+        ${canEdit ? html`
+          <div class="rr-prose-tools no-print">
+            ${edited ? html`<span class="rr-edited">Your wording</span>` : null}
+            <button class="rr-edit" onClick=${() => { setDraft(shown || ""); setEditing(true); }}>
+              <${Icon} name="pencil" size=${11} /> Edit</button>
+          </div>` : null}
+      </div>`;
+  }
+  const save = async (text) => {
+    setSaving(true);
+    try { await onSave(sectionKey, text); setEditing(false); }
+    catch (e) { toast(e && e.message || "Couldn't save that edit.", "error"); }
+    setSaving(false);
+  };
+  return html`
+    <div class="rr-prose editing no-print">
+      <textarea class="ctl rr-ta" rows="7" value=${draft} disabled=${saving}
+        aria-label="Section wording" onInput=${e => setDraft(e.target.value)}></textarea>
+      <div class="rr-prose-foot">
+        <button class="btn small primary" disabled=${saving} onClick=${() => save(draft)}>
+          ${saving ? "Saving…" : "Save wording"}</button>
+        <button class="btn small quiet" disabled=${saving} onClick=${() => setEditing(false)}>Cancel</button>
+        ${edited ? html`<button class="btn small quiet" disabled=${saving} onClick=${() => save("")}
+          title="Drop your wording and go back to what lumi wrote">Restore lumi's wording</button>` : null}
+      </div>
     </div>`;
 }
 
@@ -64,8 +116,12 @@ const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above m
 // than link to it (David 2026-08-16: "replace this page with just a view of the PDF
 // report"). The governance controls — edit, send for approval, approve, version
 // history — ride in the same toolbar instead of on a second bar above it.
-window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, before, autoPlan }) {
+window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, before, autoPlan, onEditSection }) {
   const K = RRD[kind] || RRD.strategy;
+  const canEditDoc = me && me.user && ["admin", "contributor"].includes(me.user.role);
+  // which spine(s) this document runs — "full" is both, on one page
+  const wantsIntent = kind !== "plan";
+  const wantsPlan = kind !== "strategy";
   const [st, setSt] = useState(null);         // /api/strategy
   const [al, setAl] = useState(null);         // /api/strategy/alignment
   const [cm, setCm] = useState(null);         // AI: reading / tensions / watch
@@ -77,7 +133,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const loadNarrative = (force) => {
     const body = force ? { force: true } : {};
     const jobs = [api("/api/strategy/commentary", { method: "POST", body }).then(setCm).catch(() => setCm(false))];
-    if (kind === "plan") {
+    if (wantsPlan) {
       jobs.push(api("/api/strategy-diagnosis", { method: "POST", body }).then(r => setDg(r && r.ok === false ? false : r)).catch(() => setDg(false)));
     }
     return Promise.all(jobs);
@@ -122,6 +178,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   const doc = st.document || {};
   const strat = st.strategy || {};
+  // author overrides: the wording a reward director saved over the generated prose
+  const ovr = doc.narrative_overrides || {};
+  const saveNarrative = async (key, text) => {
+    const r = await api("/api/strategy/narrative", { method: "PUT", body: { key, text } });
+    setSt(s => ({ ...s, document: { ...(s.document || {}), narrative_overrides: r.narrative_overrides } }));
+    toast(text ? "Your wording saved." : "Restored lumi's wording.");
+  };
+  // Captured sections aren't prose — you change them by changing what you STATED,
+  // so their edit affordance jumps into the wizard at the step that captures them.
+  const EditAt = (pageId, label) => (canEditDoc && onEditSection) ? html`
+    <button class="rr-edit no-print" title=${"Change this in the strategy set-up"}
+      onClick=${() => onEditSection(pageId)}><${Icon} name="pencil" size=${11} /> ${label || "Edit"}</button>` : null;
+  const Prose = ({ k, generated, className }) => html`
+    <${RrProse} sectionKey=${k} value=${ovr[k]} generated=${generated} className=${className}
+      canEdit=${!!canEditDoc} onSave=${saveNarrative} />`;
   const ver = st.version || null;
   const commitments = al.commitments || [];
   const gaps = commitments.filter(c => c.status === "behind_intent" || c.status === "contradicted");
@@ -153,7 +224,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   const regen = async () => {
     setBusy(true);
-    setCm(null); if (kind === "plan") setDg(null);
+    setCm(null); if (wantsPlan) setDg(null);
     try { await loadNarrative(true); toast("Commentary rewritten from your current position."); }
     catch (e) { toast("Couldn't rewrite the commentary.", "error"); }
     setBusy(false);
@@ -167,7 +238,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   const foot = "Generated " + today + " · Peer group: " + cutLabel
     + (ver ? " · Version " + ver.version : " · Draft");
-  const aiWaiting = cm === null || (kind === "plan" && dg === null);
+  const aiWaiting = cm === null || (wantsPlan && dg === null);
   const sources = [];
   if (cm && cm.source) sources.push("commentary " + cm.source);
   if (dg && dg.source) sources.push("findings " + dg.source);
@@ -205,15 +276,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // §1 executive summary — the AI opening, on its own page with the contents
   P("Executive summary", "exec");
 
-  if (kind === "strategy") {
+  if (wantsIntent) {
     P("Strategic intent", "intent");
     P("How we position reward", "dials");
     if ((doc.principles || []).length || doc.comparator_cut != null
         || ((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes) P("Principles, peers and constraints", "prin");
     if ((doc.population_targets || []).length) P("Position by employee population", "pops");
     P("Tensions and what to watch", "tension");
-    P("Governance and approval", "gov");
-  } else {
+  }
+  if (wantsPlan) {
     P("Position against intent", "position");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
       Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
@@ -227,11 +298,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     else
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
   }
+  if (wantsIntent) P("Governance and approval", "gov");
   P("Method and basis", "method");
   const TOTAL = pages.length;
+  // Section numbers derive from the page list rather than being written into each body:
+  // once the two spines merge into one document, hardcoded "02"s collide and skip.
+  const SEC_NO = {};
+  let _sn = 0;
+  pages.forEach(p => { if (p.body !== "cover" && !(p.body in SEC_NO)) SEC_NO[p.body] = ("0" + (++_sn)).slice(-2); });
 
   // ------------------------------------------------------------------ bodies ----
-  const Body = ({ kindOf, items, part, parts, start }) => {
+  const Body = ({ kindOf, items, part, parts, start, num }) => {
     const first = !part;                       // only sheet 1 of a run carries the intro
     const contd = parts > 1 ? " (" + (part + 1) + " of " + parts + ")" : "";
     if (kindOf === "cover") return html`
@@ -253,11 +330,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </div>`;
 
     if (kindOf === "exec") return html`
-      <${RrH} n="01">Executive summary<//>
+      <${RrH} n=${num}>Executive summary<//>
       ${aiWaiting ? html`<p class="rr-p rr-muted">Writing the commentary…</p>`
-        : html`<p class="rr-lede">${rrProse(
-            (kind === "plan" ? (dg && dg.parts && dg.parts.summary) : null)
-            || (cm && cm.parts && cm.parts.reading) || "")}</p>`}
+        : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
+            (wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
+            || (cm && cm.parts && cm.parts.reading) || ""} />`}
       <div class="rr-stats">
         <div><b>${domains.length}</b><span>areas benchmarked</span></div>
         <div><b>${gaps.length}</b><span>${gaps.length === 1 ? "gap to close" : "gaps to close"}</span></div>
@@ -272,7 +349,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "intent") {
       const stance = sdStance(strat, orgName);
       return html`
-        <${RrH} n="02" sub="The strategy as stated by the organisation. lumi reads the benchmark through it — a position below or above market here is a choice, not a verdict.">Strategic intent<//>
+        <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")} sub="The strategy as stated by the organisation. lumi reads the benchmark through it — a position below or above market here is a choice, not a verdict.">Strategic intent<//>
         ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"rr-p" + (i === 0 ? " rr-lede" : "")}>${s}</p>`)
           : html`<p class="rr-p">No positions set — the benchmark is read neutrally.</p>`}`;
         // NB: commentary.reading is the executive summary on page 2 — repeating it here
@@ -280,7 +357,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
 
     if (kindOf === "dials") return html`
-      <${RrH} n="03" sub="Each dial below is a stated choice. The third column is what it changes in how your benchmark is read.">How we position reward<//>
+      <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")} sub="Each dial below is a stated choice. The third column is what it changes in how your benchmark is read.">How we position reward<//>
       <table class="rr-table">
         <thead><tr><th>Dimension</th><th>Our position</th><th>What it drives</th></tr></thead>
         <tbody>
@@ -302,7 +379,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "prin") {
       const cons = doc.constraints || {};
       return html`
-        <${RrH} n="04">Principles, peers and constraints<//>
+        <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")}>Principles, peers and constraints<//>
         ${(doc.principles || []).length ? html`
           <h3 class="rr-sh">Our reward principles</h3>
           <ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>` : null}
@@ -314,7 +391,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
 
     if (kindOf === "pops") return html`
-      <${RrH} n="05" sub="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark.">Position by employee population<//>
+      <${RrH} n=${num} edit=${EditAt("populations", "Edit levels")} sub="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark.">Position by employee population<//>
       <table class="rr-table">
         <thead><tr><th>Population</th><th>Stated position</th><th>Note</th></tr></thead>
         <tbody>${(doc.population_targets || []).map(p => html`
@@ -322,12 +399,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </table>`;
 
     if (kindOf === "tension") return html`
-      <${RrH} n="06" sub="Where the stated strategy pulls against itself, or against what the data shows.">Tensions and what to watch<//>
+      <${RrH} n=${num} sub="Where the stated strategy pulls against itself, or against what the data shows.">Tensions and what to watch<//>
       ${cm && cm.parts ? html`
         <h3 class="rr-sh">Tensions</h3>
-        <p class="rr-p">${rrProse(cm.parts.tensions)}</p>
+        <${Prose} k="tensions" generated=${cm.parts.tensions} />
         <h3 class="rr-sh">What to watch</h3>
-        <p class="rr-p">${rrProse(cm.parts.watch)}</p>`
+        <${Prose} k="watch" generated=${cm.parts.watch} />`
         : html`<p class="rr-p rr-muted">${aiWaiting ? "Writing the commentary…" : "Commentary is unavailable for this document."}</p>`}
       <div class="rr-callout quiet">
         <div class="rr-callout-h">Where you stand against this</div>
@@ -336,7 +413,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </div>`;
 
     if (kindOf === "gov") return html`
-      <${RrH} n="07">Governance and approval<//>
+      <${RrH} n=${num}>Governance and approval<//>
       <table class="rr-table">
         <tbody>
           <tr><td>Status</td><td><b>${ver ? "Approved" : "Draft — not yet approved"}</b>${ver && ver.dirty ? html` <span class="rr-sm">(edits since approval)</span>` : ""}</td></tr>
@@ -353,7 +430,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         at approval: ${ver.unstated.join(", ")}. The version record carries exactly what was and was not stated.</p>` : null}`;
 
     if (kindOf === "position") return html`
-      <${RrH} n="02" sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position against intent<//>
+      <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position against intent<//>
       <table class="rr-table">
         <thead><tr><th>Area</th><th>Stated aim</th><th>Live position</th><th>Read</th></tr></thead>
         <tbody>${domains.map(d => {
@@ -373,7 +450,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </div>`;
 
     if (kindOf === "findings") return html`
-      <${RrH} n="03" sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
+      <${RrH} n=${num} sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
       ${(items || []).map((f, i) => html`
         <div key=${i} class="rr-finding">
           <div class="rr-finding-h">${f.headline}</div>
@@ -384,7 +461,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-p rr-sm">Tracking with intent: ${(dg.on_plan || []).map(domainLabel).join(", ")}.</p>` : null}`;
 
     if (kindOf === "gapsp") return html`
-      <${RrH} n="04" sub=${first ? "One entry per area, with what the market commonly does about it and what each option costs you elsewhere." : null}>The gaps, by area${contd}<//>
+      <${RrH} n=${num} sub=${first ? "One entry per area, with what the market commonly does about it and what each option costs you elsewhere." : null}>The gaps, by area${contd}<//>
       ${(items || []).map(g => html`
         <div key=${g.cat} class="rr-gap">
           <div class="rr-gap-h">${domainLabel(g.cat)}</div>
@@ -410,9 +487,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>`)}`;
 
     if (kindOf === "planp") return html`
-      <${RrH} n="05" sub=${first ? "Sequenced from the gaps above. Every action is one of the options already set out; nothing here is invented." : null}>The plan${contd}<//>
+      <${RrH} n=${num} sub=${first ? "Sequenced from the gaps above. Every action is one of the options already set out; nothing here is invented." : null}>The plan${contd}<//>
       ${plan ? html`
-        ${first ? html`<p class="rr-lede">${rrProse(plan.summary)}</p>` : null}
+        ${first ? html`<${Prose} k="plan_summary" className="rr-lede" generated=${plan.summary} />` : null}
         <ol class="rr-plan" start=${start || 1}>
           ${(items || []).map((a, i) => html`
             <li key=${i}>
@@ -427,7 +504,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           : "No plan is stored yet. Use Rebuild plan above to sequence these gaps into actions with their indicative return."}</p>`}`;
 
     if (kindOf === "method") return html`
-      <${RrH} n=${kind === "plan" ? "06" : "08"}>Method and basis<//>
+      <${RrH} n=${num}>Method and basis<//>
       <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
       same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
       counts against the commitments your strategy makes — never as a score, index or grade.</p>
@@ -468,7 +545,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${pages.map((p, i) => html`
         <${RrSheet} key=${i} page=${i + 1} total=${TOTAL} foot=${foot} cover=${p.cover}
           prov=${i === TOTAL - 1 ? prov : null}>
-          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} />
+          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[p.body]} />
         <//>`)}
     </div>`;
 };

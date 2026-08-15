@@ -51,7 +51,7 @@ function App() {
       ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
-      ["/strategy", "Reward strategy"], ["/plan", "Reward plan"], ["/team", "Team"], ["/settings", "Settings"],
+      ["/strategy", "Reward strategy & plan"], ["/team", "Team"], ["/settings", "Settings"],
       ["/shares", "Manage shares"],
       ["/profile", "Company profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
@@ -436,9 +436,9 @@ function App() {
   else if (route.startsWith("/strategy")) page = html`<${StrategyPage} me=${me} />`;
   // Both /report/* URLs fold into the sections themselves — those pages ARE the
   // documents now, so a separate report route would render the same artefact twice.
-  else if (route.startsWith("/report/plan")) { nav("/plan"); page = null; }
-  else if (route.startsWith("/report/")) { nav("/strategy"); page = null; }
-  else if (route.startsWith("/plan")) page = html`<${RewardPlanPage} me=${me} />`;
+  // Strategy and plan are ONE document (2026-08-16) — /plan and both /report/* URLs
+  // all resolve to it rather than rendering their own copy.
+  else if (route.startsWith("/report/") || route.startsWith("/plan")) { nav("/strategy"); page = null; }
   else if (route.startsWith("/admin")) page = me.user.platform_admin
     ? html`<${AdminConsolePage} me=${me} route=${route} />`
     : html`<${NotFoundPage} route=${route} />`;   // invisible to non-staff
@@ -563,8 +563,7 @@ function App() {
         <div class="nav-group">
           <div class="nav-label">Your organisation</div>
           <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
-          ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />`}
-          <${RailItem} route=${route} path="/plan" icon="zap" label="Reward plan" />
+          <${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
           <${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />
         </div>
@@ -1381,8 +1380,7 @@ const NAV_INDEX = [
   { label: "Benchmark", route: "/benchmark", group: "Pages", kw: "all metrics categories compare" },
   { label: "Board packs", route: "/boardpack", group: "Pages", kw: "board report export pdf pack briefing" },
   { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
-  { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
-  { label: "Reward plan", route: "/plan", group: "Pages", kw: "gaps plan actions roi where you are improve levers" },
+  { label: "Reward strategy & plan", route: "/strategy", group: "Pages", kw: "objective market stance intent capture gaps plan actions roi levers document report pdf" },
   { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
   { label: "Settings", route: "/settings", group: "Pages", kw: "assumptions sharing notifications account" },
   { label: "Company profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },

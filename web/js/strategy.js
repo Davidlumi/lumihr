@@ -466,8 +466,9 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     </div>` : null}
   <//>`;
 
-  return html`<${RewardReportPage} kind="strategy" me=${me} hideBack=${true}
-    chips=${chips} extraActions=${actions} before=${before} />`;
+  return html`<${RewardReportPage} kind="full" me=${me} hideBack=${true} autoPlan=${canEdit}
+    chips=${chips} extraActions=${actions} before=${before}
+    onEditSection=${(pid) => onEdit && onEdit(pid)} />`;
 }
 
 window.StrategyPage = function ({ me }) {
@@ -1059,10 +1060,6 @@ function ReviewSection({ title, chip, chipCls, rows, onEdit, onChangeRow, locked
 // autoPlan is the "so it gets generated" half: the plan used to sit behind a Build
 // my plan button, so the document opened announcing it had no plan. It now writes
 // itself on first open for anyone who could have pressed that button.
-window.RewardPlanPage = function ({ me }) {
-  const canEdit = me && me.user && ["admin", "contributor"].includes(me.user.role);
-  const chips = html`<button class="sdx-chip sdx-chip-btn" onClick=${() => nav("/strategy")}>
-    <${Icon} name="compass" size=${12} /> Your reward strategy</button>`;
-  return html`<${RewardReportPage} kind="plan" me=${me} hideBack=${true}
-    chips=${chips} autoPlan=${canEdit} />`;
-};
+// (RewardPlanPage retired 2026-08-16: strategy and plan are ONE document now, so
+//  /plan redirects in the router rather than mounting a component that navigates
+//  during render.)
