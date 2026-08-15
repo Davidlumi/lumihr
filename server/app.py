@@ -2535,7 +2535,8 @@ async def strategy_diagnosis(request: Request):
     narrated by the model with the same trust gate as commentary."""
     user, org = require_user(request)
     conn = get_conn()
-    require_ai(conn, user, AI_STRATEGY)
+    # deterministic floor ships when AI is off — see the commentary route above
+    _ai_ok = ai_feature_on(ai_gate(conn, user), AI_STRATEGY)
     strat = strategy_for_engine(conn, org["org_id"])
     complete = conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
                             (org["org_id"],)).fetchone()
@@ -2609,8 +2610,11 @@ async def strategy_diagnosis(request: Request):
             return {"ok": True, "parts": _p, "source": _row["source"], "cached": True,
                     "generated_at": _row["created_at"], "on_plan": on_plan,
                     "caveats": {"illustrative": payload["illustrative_sample_data"]}}
-    _ai_generation_or_429(org)
-    res = await to_thread.run_sync(claude_api.generate_strategy_diagnosis, payload)
+    if _ai_ok:
+        _ai_generation_or_429(org)
+        res = await to_thread.run_sync(claude_api.generate_strategy_diagnosis, payload)
+    else:
+        res = {"ok": True, "parts": strategy_diag.deterministic_diagnosis(payload), "source": "deterministic"}
     # Signpost: attach each finding's domain so the Signals page can deep-link the
     # narrative to the matching signal group. The validator guarantees the narrated
     # findings match the computed `findings` 1:1 and in order, so a positional zip is
@@ -4312,7 +4316,12 @@ async def strategy_commentary(request: Request):
     the dials + the pack's aim-vs-position rows, validated post-generation, cached until
     the underlying read changes (metric_commentary table, question_id '__strategy__')."""
     user, org = require_user(request)
-    require_ai(get_conn(), user, AI_COMMENTARY)
+    # Same ruling as the board pack (§4.3, 2026-07-11): this has a complete DETERMINISTIC
+    # floor composed from the org's own figures, and composed prose is not AI content.
+    # Gating the whole route behind the AI flag meant an AI-off org got a red error box
+    # and a document with no executive summary, no tensions and no watch — the gate was
+    # deleting the artefact, not protecting anyone. The flag now scopes the CLAUDE CALL.
+    _ai_ok = ai_feature_on(ai_gate(get_conn(), user), AI_COMMENTARY)
     body = await _json(request)
     conn = get_conn()
     payload = _strategy_commentary_payload(request, user, org)
@@ -4329,8 +4338,12 @@ async def strategy_commentary(request: Request):
                     "generated_at": row["created_at"]}
     if body.get("peek"):
         return {"parts": None, "source": None, "cached": False}
-    _ai_generation_or_429(org)
-    res = await to_thread.run_sync(claude_api.generate_strategy_commentary, payload)
+    if _ai_ok:
+        _ai_generation_or_429(org)
+        res = await to_thread.run_sync(claude_api.generate_strategy_commentary, payload)
+    else:
+        res = {"ok": True, "parts": claude_api._deterministic_strategy_commentary(payload),
+               "source": "deterministic"}
     conn.execute(
         "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
         "VALUES (?,?,?,?,?,?)",
@@ -5335,7 +5348,9 @@ async def build_action_plan(request: Request):
     can never invent an action or a number (validate_plan enforces both)."""
     user, org = require_editor(request)
     conn = get_conn()
-    require_ai(conn, user, AI_STRATEGY)
+    # deterministic floor ships when AI is off — the plan's CANDIDATES are assembled by
+    # code from the gaps and David's lever inventory; the model only sequences them
+    _ai_ok = ai_feature_on(ai_gate(conn, user), AI_STRATEGY)
     strat = strategy_for_engine(conn, org["org_id"])
     if not strat or not conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
                                      (org["org_id"],)).fetchone():
@@ -5400,8 +5415,11 @@ async def build_action_plan(request: Request):
                "objective_weights": (st.get("strategy") or {}).get("objective_weights") or {},
                "cut_label": cut_label, "candidates": cands[:10],
                "counts": al["counts"]}
-    _ai_generation_or_429(org)
-    res = await to_thread.run_sync(claude_api.generate_action_plan, payload)
+    if _ai_ok:
+        _ai_generation_or_429(org)
+        res = await to_thread.run_sync(claude_api.generate_action_plan, payload)
+    else:
+        res = {"ok": True, "parts": claude_api.deterministic_plan(payload), "source": "deterministic"}
     plan = dict(res["parts"], source=res.get("source"),
                 built_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 basis="Built from the gaps between your stated strategy and your own data, on %s. "
