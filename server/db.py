@@ -660,6 +660,11 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     population_targets_json TEXT,  -- [{"label","position","note"}] keyed on the matrix levels
     objective_weights TEXT,        -- {objective: points} with a hard total budget
     action_plan_json  TEXT,        -- the AI-built plan (generated AFTER the strategy + data)
+    -- AUTHOR OVERRIDES (2026-08-16): the reward document is a board paper, and a
+    -- reward director edits the wording before it goes to a board. A key here
+    -- replaces that section's GENERATED PROSE only — never a computed figure, a
+    -- position or a count, which stay the engine's to state.
+    narrative_overrides_json TEXT, -- {section_key: text}
     -- server-side DRAFT: the in-flight capture, saved every step. Deliberately a
     -- blob APART from the live columns so a half-finished capture never reaches the
     -- engine — the live strategy only changes on an explicit save.
@@ -803,6 +808,7 @@ def init_schema(conn=None):
                 "ALTER TABLE org_strategy ADD COLUMN population_targets_json TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN objective_weights TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN action_plan_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN narrative_overrides_json TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
                 "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",

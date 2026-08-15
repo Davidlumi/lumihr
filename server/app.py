@@ -5215,6 +5215,8 @@ def strategy_state(conn, org):
         "population_targets": uj(row.get("population_targets_json"), []) or [],
         "roadmap": uj(row.get("roadmap_json"), []) or [],
         "action_plan": uj(row.get("action_plan_json"), None),
+        # author edits to the GENERATED PROSE only — see PUT /api/strategy/narrative
+        "narrative_overrides": uj(row.get("narrative_overrides_json"), {}) or {},
     }
     # ONE peer group (2026-08-15, David: "compare against contradicts the default
     # benchmark sample group — the two need to be aligned"). orgs.default_cut is the
@@ -5392,6 +5394,52 @@ async def build_action_plan(request: Request):
                  (json.dumps(plan), org["org_id"]))
     conn.commit()
     return {"ok": True, "plan": plan}
+
+
+# The document sections whose PROSE an author may replace. Deliberately a closed list:
+# everything else on the page is a computed figure, a position, a count or a stated
+# dial, and letting an author retype those would turn a benchmark into an assertion.
+# Edit those at source — the wizard for what you stated, the data for what you are.
+NARRATIVE_KEYS = ("exec_summary", "intent", "tensions", "watch", "findings_intro",
+                  "gaps_intro", "plan_summary", "method")
+NARRATIVE_MAX = 4000
+
+
+@app.put("/api/strategy/narrative")
+async def put_strategy_narrative(request: Request):
+    """Replace one section's generated prose with the author's own wording (2026-08-16,
+    David: "build in ways the user can edit and adjust any of the sections").
+
+    Scope is the point: a key here overrides WRITTEN COMMENTARY only. Positions, counts,
+    gaps and £ are never writable — they are what the engine found, and a document that
+    let you retype them would stop being evidence. Sending an empty string clears the
+    override and restores the generated text."""
+    user, org = require_editor(request)
+    body = await _json(request)
+    key = (body.get("key") or "").strip()
+    if key not in NARRATIVE_KEYS:
+        raise HTTPException(400, "Unknown section '%s' — editable sections are: %s"
+                            % (key, ", ".join(NARRATIVE_KEYS)))
+    text = body.get("text")
+    if text is not None and not isinstance(text, str):
+        raise HTTPException(400, "text must be a string")
+    text = (text or "").strip()
+    if len(text) > NARRATIVE_MAX:
+        raise HTTPException(400, "That section is longer than %d characters." % NARRATIVE_MAX)
+    conn = get_conn()
+    row = conn.execute("SELECT narrative_overrides_json FROM org_strategy WHERE org_id=?",
+                       (org["org_id"],)).fetchone()
+    if row is None:
+        raise HTTPException(404, "No strategy to edit yet.")
+    cur = uj(row["narrative_overrides_json"], {}) or {}
+    if text:
+        cur[key] = text
+    else:
+        cur.pop(key, None)
+    conn.execute("UPDATE org_strategy SET narrative_overrides_json=?, updated_at=? WHERE org_id=?",
+                 (json.dumps(cur), datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), org["org_id"]))
+    conn.commit()
+    return {"ok": True, "key": key, "edited": bool(text), "narrative_overrides": cur}
 
 
 @app.put("/api/strategy/draft")
