@@ -18411,3 +18411,36 @@ Shipped as 0d754d2 (server) + 93a3e8d (client), suite 15/15.
 
 Also fixed en route: the new `strategy_versions` FK made probe cleanup fail (IntegrityError +
 leak) — qa_strategy now clears it. qa_strategy 30 → 57 checks.
+
+## 2026-08-15 — Reward strategy: capture cut back to what lumi can evidence (d67e9a7 + c38f994)
+
+David's pass. Suite 15/15; qa_strategy 66 checks.
+
+**REMOVED — duplicate work or unevidenceable.** "Scarce or critical roles" (segments): lumi
+holds **no pay data**, so a scarce-skill premium can never be evidenced — capturing it invited a
+claim we cannot stand behind (coherence rule P5 retired with it). "What we offer / how we
+operate" (commitments) and "How we'll know it's working" (measures): every one of those
+provisions and metrics is ALREADY a metric answer — the metrics ARE the measures. "How reward is
+governed". All four are now accepted-and-ignored by the API (no destructive migration); the
+alignment engine drops its provision/practice commitment blocks.
+
+**Position by LEVEL, on the matrix axis.** `population_targets` is keyed on the SEVEN matrix row
+labels verbatim (Board / Executive → Frontline / Individual Contributor) — the axis 18 matrix
+questions already use, so a stated level position can be read directly against a by-level metric
+to determine alignment. Still document-only: no exec pay data, so never engine-scored.
+
+**Objective becomes a rated allocation.** `objective_weights` {objective: points} with a hard
+10-point budget — a member must trade off rather than tick everything. **The engine contract is
+untouched:** `primary_objective` is derived server-side as the highest-rated, so OBJECTIVE_LENS_MULT
+and every downstream read are unchanged.
+
+**One peer-group control.** The comparator step now renders the SAME sector/size facets as
+Settings and saves through `/api/org/signal-peers` — one control, one code path, one cut.
+
+**The roadmap becomes the AI action plan** (`POST /api/strategy/plan`), built AFTER the strategy
+is set and the data is in. Candidates are assembled DETERMINISTICALLY: every gap the alignment
+engine found × the David-owned levers for that area, each carrying the indicative £ the money
+model already computed. The model only SEQUENCES and EXPLAINS. `validate_plan` rejects an
+invented action, an ungrounded number, a directive or a legal adjudication, and a deterministic
+plan ships whenever it does. Where the £ model has no figure the plan says so plainly rather than
+implying one. The board pack renders the plan where measures used to be.
