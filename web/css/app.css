@@ -5040,10 +5040,13 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-h-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .rr-prose { position: relative; }
 .rr-prose-tools { display: flex; align-items: center; gap: var(--s2); margin: -4px 0 var(--s3); }
+/* Edit is ALWAYS visible (2026-08-16): the whole point of the document is that you can
+   adjust it in place rather than downloading the PDF and changing it offline, and a
+   hover-only affordance is undiscoverable — nobody hovers a paragraph to find out. */
 .rr-edit { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: var(--fs-micro);
-  font-weight: 600; color: var(--ink-faint); background: none; border: 1px solid transparent;
-  border-radius: 999px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s; }
-.rr-prose:hover .rr-edit, .rr-edit:focus-visible, .rr-h-row .rr-edit { opacity: 1; }
+  font-weight: 600; color: var(--blue); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; cursor: pointer; transition: background .15s, border-color .15s; }
+.rr-edit:hover { border-color: var(--blue); background: var(--blue-tint); }
 .rr-h-row .rr-edit { flex: none; }
 .rr-edit:hover { color: var(--blue); border-color: var(--border); background: var(--surface); }
 .rr-edited { font-size: var(--fs-micro); font-weight: 600; color: var(--blue-deep);
@@ -5089,3 +5092,26 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .pack-cite { max-width: 210mm; margin: 0 auto var(--s4); display: flex; flex-wrap: wrap; align-items: center;
   gap: var(--s3); background: var(--blue-tint); border-radius: 12px; padding: var(--s3) var(--s5);
   font-size: var(--fs-label); color: var(--blue-deep); }
+
+/* ==== per-domain report sections (2026-08-16) ============================== */
+.rr-dom-head { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin: var(--s4) 0;
+  padding: var(--s4) 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.rr-dom-stat { display: flex; flex-direction: column; gap: 2px; }
+.rr-dom-k { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-faint); }
+.rr-dom-stat b { font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 700; line-height: 1.2; }
+.rr-verdict.v-below { color: var(--neutral-perf-ink); }
+.rr-verdict.v-at { color: var(--favourable-ink); }
+.rr-verdict.v-above { color: var(--blue-deep); }
+.rr-split { display: flex; gap: 3px; margin: var(--s3) 0 var(--s4); }
+.rr-split-seg { display: flex; flex-direction: column; justify-content: center; min-width: 0;
+  padding: 7px 10px; border-radius: 8px; font-size: var(--fs-micro); color: var(--ink-soft);
+  white-space: nowrap; overflow: hidden; }
+.rr-split-seg i { font-style: normal; font-family: var(--font-head); font-size: var(--fs-label);
+  font-weight: 700; color: var(--ink); }
+.rr-split-seg.s-below { background: var(--neutral-perf-tint); }
+.rr-split-seg.s-at { background: var(--favourable-tint); }
+.rr-split-seg.s-above { background: var(--blue-tint); }
+@media (max-width: 700px) { .rr-dom-head { grid-template-columns: 1fr; } }
+.rr-toc-cols { column-count: 2; column-gap: var(--s6); }
+.rr-toc-cols .rr-toc-row { break-inside: avoid; }

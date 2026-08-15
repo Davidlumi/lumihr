@@ -39,6 +39,14 @@ const RRD = {
 // document never says which is which inline — the provenance line on the last page does.
 function rrProse(s) { return (s || "").trim(); }
 
+// a, b and c — a board paper is prose, not a comma-separated list
+function rrList(items) {
+  const a = (items || []).filter(Boolean);
+  if (!a.length) return "";
+  if (a.length === 1) return a[0];
+  return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+}
+
 function RrSheet({ page, total, foot, prov, children, cover }) {
   return html`
     <div class=${"pack-page rr-sheet" + (cover ? " rr-cover" : "")}>
@@ -294,12 +302,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   if (wantsPlan && !hasPosition) {
     P("Where you'll stand", "awaiting");
   } else if (wantsPlan) {
-    P("Position against intent", "position");
+    P("Position at a glance", "position");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
       Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
-    if (groups.length)
-      Prun("The gaps, by area", "gapsp", groups,
-           g => 1 + g.items.reduce((n, c) => n + ((optsFor(c.id) || {}).levers || []).length + 1, 0), 5);
+    // THE MAIN PART OF THE REPORT (David 2026-08-16): one dedicated section per domain
+    // — its count and market position, its signals, a commentary on how it sits against
+    // the market, and the recommendations that follow. The flat "gaps by area" run is
+    // gone: a gap belongs inside its domain's section, not in a separate list.
+    (al.domain_blocks || []).filter(b => b.competitive !== false).forEach(b => {
+      // count + position + signals + commentary on one sheet; the recommendations that
+      // follow from them on the next. Together they overran A4, and a domain section
+      // that spills makes the footer's page count disagree with the paper.
+      const hasFollow = (b.gaps || []).length > 0;
+      P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
+      if (hasFollow) P(domainLabel(b.name) + " (cont.)", "domain", { block: b, half: "follow", parts: 2, part: 1 });
+    });
     if (plan && (plan.actions || []).length)
       // budget 5, not 7: the first sheet also carries the summary lede, and three
       // actions with their why + return overran A4 by ~55px
@@ -314,10 +331,45 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // once the two spines merge into one document, hardcoded "02"s collide and skip.
   const SEC_NO = {};
   let _sn = 0;
-  pages.forEach(p => { if (p.body !== "cover" && !(p.body in SEC_NO)) SEC_NO[p.body] = ("0" + (++_sn)).slice(-2); });
+  const secKey = (p) => p.body === "domain" ? "domain:" + (p.block || {}).name : p.body;
+  pages.forEach(p => { const k = secKey(p);
+    if (p.body !== "cover" && !(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); });
 
+  // Commentary on how one domain sits against the market. Composed from that domain's
+  // OWN numbers so it is always available, always grounded, and instant — and it is the
+  // editable default: an author who wants different words replaces them in place.
+  const domProse = (b) => {
+    const p = b.position || {}, aim = b.aim || {}, cnt = b.count || {};
+    const name = domainLabel(b.name);
+    const total = (p.below || 0) + (p.at || 0) + (p.above || 0);
+    if (!p.verdict || !total) {
+      return name + " does not yet have enough comparable data for a market read. "
+        + (cnt.metrics ? cnt.metrics + " metrics are answered here; a verdict needs enough of them to be comparable against your peer group." : "Answering more of this area unlocks its position.");
+    }
+    const bits = [];
+    bits.push(name + " reads " + (RR_POS_WORD[p.verdict] || p.verdict) + " overall"
+      + (p.pctl != null ? ", around the " + Math.round(p.pctl) + "th percentile of " + cutLabel : "")
+      + ", on " + cnt.metrics + " benchmarked " + (cnt.metrics === 1 ? "metric" : "metrics") + ".");
+    const parts = [];
+    if (p.below) parts.push(p.below + " " + (p.below === 1 ? "sits" : "sit") + " below market");
+    if (p.at) parts.push(p.at + " " + (p.at === 1 ? "sits" : "sit") + " on it");
+    if (p.above) parts.push(p.above + " " + (p.above === 1 ? "sits" : "sit") + " above");
+    if (parts.length) bits.push("Of those, " + rrList(parts) + ".");
+    if (aim.stance) {
+      const w = { on_target: "which matches the position your strategy sets",
+                  behind: "which sits short of the position your strategy sets",
+                  ahead: "which sits past the position your strategy sets" }[aim.alignment];
+      bits.push("You aim " + RR_STANCE_WORD[aim.stance] + " here" + (w ? ", " + w : "") + ".");
+    } else {
+      bits.push("No aim is set for " + name + ", so lumi reads it neutrally.");
+    }
+    if ((b.gaps || []).length) {
+      bits.push("That difference is what the recommendations below respond to.");
+    }
+    return bits.join(" ");
+  };
   // ------------------------------------------------------------------ bodies ----
-  const Body = ({ kindOf, items, part, parts, start, num }) => {
+  const Body = ({ kindOf, items, part, parts, start, num, block, half }) => {
     const first = !part;                       // only sheet 1 of a run carries the intro
     const contd = parts > 1 ? " (" + (part + 1) + " of " + parts + ")" : "";
     if (kindOf === "cover") return html`
@@ -355,10 +407,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div><b>${Math.round((al.data_state || {}).core_pct || 0)}%</b><span>of your data in</span></div>
           <div><b>—</b><span>position: awaiting data</span></div>`}
       </div>
+      ${/* two columns: a per-domain report runs to ~20 sections and a single-column
+           contents list pushed this sheet past A4 (2026-08-16). Continuation pages
+           are dropped — a reader wants the section, not every sheet it spans. */ ""}
       <div class="rr-toc">
         <div class="rr-toc-h">Contents</div>
-        ${pages.filter(p => p.title).map((p, i) => html`
-          <div key=${p.title} class="rr-toc-row"><span>${p.title}</span><i>${i + 2}</i></div>`)}
+        <div class="rr-toc-cols">
+          ${pages.map((p, i) => ({ p, n: i + 1 })).filter(x => x.p.title && !/\(cont\.\)$/.test(x.p.title)).map(x => html`
+            <div key=${x.p.title} class="rr-toc-row"><span>${x.p.title}</span><i>${x.n + 1}</i></div>`)}
+        </div>
       </div>`;
 
     if (kindOf === "intent") {
@@ -444,6 +501,91 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-p rr-sm">${ver.unstated.length} section${ver.unstated.length === 1 ? " was" : "s were"} unstated
         at approval: ${ver.unstated.join(", ")}. The version record carries exactly what was and was not stated.</p>` : null}`;
 
+    // ---- ONE DOMAIN, in full: count, position, signals, commentary, what follows ----
+    if (kindOf === "domain") {
+      const b = block || {};
+      const isRead = (half || "read") === "read";
+      const pos = b.position || {};
+      const aim = b.aim || {};
+      const cnt = b.count || {};
+      const total = (pos.below || 0) + (pos.at || 0) + (pos.above || 0);
+      const pctOf = (v) => total ? Math.round((100 * (v || 0)) / total) : 0;
+      const readWord = RR_ALIGN_WORD[aim.alignment];
+      return html`
+        <${RrH} n=${num} sub=${isRead
+          ? "How " + domainLabel(b.name) + " sits against " + cutLabel + ", and what your strategy asks of it."
+          : null}>${domainLabel(b.name)}${isRead ? "" : " — what follows"}<//>
+
+        ${!isRead ? null : html`
+        ${/* count + market position, side by side — the two facts a reader wants first */ ""}
+        <div class="rr-dom-head">
+          <div class="rr-dom-stat">
+            <span class="rr-dom-k">Metrics benchmarked</span>
+            <b>${cnt.metrics || 0}</b>
+            <span class="rr-sm">${cnt.pool ? "against " + cnt.pool + " peer readings" : "on your own data"}</span>
+          </div>
+          <div class="rr-dom-stat">
+            <span class="rr-dom-k">Market position</span>
+            <b class=${"rr-verdict v-" + (pos.verdict || "none")}>${RR_POS_WORD[pos.verdict] || "no read yet"}</b>
+            <span class="rr-sm">${pos.pctl != null ? "around the " + Math.round(pos.pctl) + "th percentile" : "not enough comparable data"}</span>
+          </div>
+          <div class="rr-dom-stat">
+            <span class="rr-dom-k">Against your aim</span>
+            <b class=${"rr-align a-" + (aim.alignment || "none")}>${readWord || "No aim set"}</b>
+            <span class="rr-sm">${aim.stance ? "you aim " + RR_STANCE_WORD[aim.stance] : "read neutrally"}</span>
+          </div>
+        </div>
+
+        ${total ? html`
+          <div class="rr-split" role="img"
+            aria-label=${pos.below + " below, " + pos.at + " on, " + pos.above + " above market"}>
+            ${[["below", pos.below], ["at", pos.at], ["above", pos.above]].map(([k, v]) => v ? html`
+              <span key=${k} class=${"rr-split-seg s-" + k} style=${{ flex: v }}>
+                <i>${v}</i>${RR_POS_WORD[k]}</span>` : null)}
+          </div>` : null}`}
+
+        ${!isRead ? null : html`
+        ${/* commentary on alignment to market — the analytic heart of the section */ ""}
+        <h3 class="rr-sh">How this reads</h3>
+        <${Prose} k=${"domain:" + b.name} generated=${domProse(b)} />
+
+        ${(b.signals || []).length ? html`
+          <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > b.signals.length
+            ? html` <span class="rr-sm">(${b.signals.length} of ${b.signal_count})</span>` : ""}</h3>
+          <table class="rr-table tight">
+            <thead><tr><th>Signal</th><th>Yours</th><th>Reads</th></tr></thead>
+            <tbody>${b.signals.map(sg => html`
+              <tr key=${sg.question_id || sg.title}>
+                <td><b>${sg.title}</b>${sg.detail ? html`<br /><span class="rr-sm">${sg.detail}</span>` : ""}</td>
+                <td class="rr-sm">${sg.value || "—"}</td>
+                <td class="rr-sm">${RR_POS_WORD[sg.position] || sg.position || "—"}</td>
+              </tr>`)}</tbody>
+          </table>` : null}`}
+
+        ${isRead ? null : html`
+          <h3 class="rr-sh">What follows for ${domainLabel(b.name)}</h3>
+          ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${c.statement}</p>`)}
+          ${(b.options || []).some(o => (o.levers || []).length) ? html`
+            <table class="rr-table tight">
+              <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
+              <tbody>${b.options.flatMap(o => (o.levers || []).map(l => html`
+                <tr key=${l.lever_id}><td><b>${l.name}</b><br /><span class="rr-sm">${l.what_it_is}</span></td>
+                  <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
+                  <td class="rr-sm">${l.trade_off}</td></tr>`))}</tbody>
+            </table>`
+          : html`<p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>`}`}
+
+        ${isRead && !(b.gaps || []).length ? html`
+          <p class="rr-p rr-sm">Nothing in ${domainLabel(b.name)} currently runs against your stated aim.</p>` : null}
+
+        <div class="rr-gap-foot no-print">
+          <button class="rp-go" onClick=${() => toSignals(b.name, aim.alignment)}>
+            <${Icon} name="zap" size=${13} /> ${domainLabel(b.name)} signals</button>
+          <a class="rp-go" href=${"#/category/" + encodeURIComponent(b.name)}>
+            <${Icon} name="bar-chart" size=${13} /> The data behind it</a>
+        </div>`;
+    }
+
     if (kindOf === "awaiting") {
       const need = Math.max(0, Math.ceil(((dstate.basis_total || 0) * (dstate.target_pct || 0)) / 100) - (dstate.answered || 0));
       return html`
@@ -466,7 +608,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
 
     if (kindOf === "position") return html`
-      <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position against intent<//>
+      <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position at a glance<//>
       <table class="rr-table">
         <thead><tr><th>Area</th><th>Stated aim</th><th>Live position</th><th>Read</th></tr></thead>
         <tbody>${domains.map(d => {
@@ -523,13 +665,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>`)}`;
 
     if (kindOf === "planp") return html`
-      <${RrH} n=${num} sub=${first ? "Sequenced from the gaps above. Every action is one of the options already set out; nothing here is invented." : null}>The plan${contd}<//>
+      <${RrH} n=${num} sub=${first ? "This is the roll-up of the sections above: every action below is one of the options already set out under its own domain, sequenced across all of them." : null}>The plan${contd}<//>
       ${plan ? html`
         ${first ? html`<${Prose} k="plan_summary" className="rr-lede" generated=${plan.summary} />` : null}
         <ol class="rr-plan" start=${start || 1}>
           ${(items || []).map((a, i) => html`
             <li key=${i}>
-              <div class="rr-plan-t">${a.title}<span class="rr-sm"> · ${domainLabel(a.category || "")} · ${a.horizon}</span></div>
+              <div class="rr-plan-t">${a.title}
+                <span class="rr-sm"> · from ${domainLabel(a.category || "")}${
+                  SEC_NO["domain:" + a.category] ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""} · ${a.horizon}</span></div>
               <p class="rr-p">${rrProse(a.why)}</p>
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
@@ -581,7 +725,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${pages.map((p, i) => html`
         <${RrSheet} key=${i} page=${i + 1} total=${TOTAL} foot=${foot} cover=${p.cover}
           prov=${i === TOTAL - 1 ? prov : null}>
-          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[p.body]} />
+          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} />
         <//>`)}
     </div>`;
 };
