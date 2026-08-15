@@ -5436,6 +5436,10 @@ async def build_action_plan(request: Request):
 # Edit those at source — the wizard for what you stated, the data for what you are.
 NARRATIVE_KEYS = ("exec_summary", "intent", "tensions", "watch", "findings_intro",
                   "gaps_intro", "plan_summary", "method")
+# Per-domain commentary keys are "domain:<Category>" — the report's main sections, one
+# per category, each editable in place (2026-08-16). Validated against the live taxonomy
+# rather than a hardcoded list so a renamed category cannot orphan its wording.
+DOMAIN_KEY_PREFIX = "domain:"
 NARRATIVE_MAX = 4000
 
 
@@ -5451,8 +5455,12 @@ async def put_strategy_narrative(request: Request):
     user, org = require_editor(request)
     body = await _json(request)
     key = (body.get("key") or "").strip()
-    if key not in NARRATIVE_KEYS:
-        raise HTTPException(400, "Unknown section '%s' — editable sections are: %s"
+    _cats = {q.sub_power for q in org_visible_questions(org).values() if q.sub_power}
+    _ok = key in NARRATIVE_KEYS or (
+        key.startswith(DOMAIN_KEY_PREFIX) and key[len(DOMAIN_KEY_PREFIX):] in _cats)
+    if not _ok:
+        raise HTTPException(400, "Unknown section '%s' — editable sections are the written "
+                            "commentary: %s, plus one per category (domain:<category>)."
                             % (key, ", ".join(NARRATIVE_KEYS)))
     text = body.get("text")
     if text is not None and not isinstance(text, str):
@@ -5672,6 +5680,64 @@ async def get_strategy_alignment(request: Request):
                       for d in (hero.get("domains") or []) if d.get("target")]
     out["plan"] = (st.get("document") or {}).get("action_plan")
     out["cut_label"] = _cut_label
+    # ---- PER-DOMAIN BLOCKS (2026-08-16) ------------------------------------------
+    # "each domain have its own dedicated section — showing count and market position,
+    # then its signals and a commentary on alignment to market — this is the MAIN part
+    # of the report" (David). One block per category, assembled from reads the engine
+    # already produces: the hero domain rollup, the signal builder (which tags every
+    # signal with its domain), and the commitments/levers already computed above.
+    _sig_money = pos.money_opportunities(conn, org, org_visible_questions(org), payloads(),
+                                         org_answers_for(org), cut, tb)
+    _sig_align = {d["name"]: (d.get("target") or {}).get("alignment")
+                  for d in (hero.get("domains") or []) if d.get("target")}
+    try:
+        _all_sigs = signals_mod.build_signals(
+            items, _sig_money, org_visible_questions(org), lambda qid: tb and tb(qid),
+            org_answers_for(org), conn=conn, org_id=org["org_id"], cap=False,
+            strategy=strat, domain_alignment=_sig_align)
+    except Exception as e:                       # a signal-builder failure must not cost the document
+        log.warning("[lumi] alignment: per-domain signals unavailable: %s", e)
+        _all_sigs = []
+    _sig_by_dom = {}
+    for _s in _all_sigs:
+        _sig_by_dom.setdefault(_s.get("domain"), []).append(_s)
+    _cmt_by_cat = {}
+    for _c in out["commitments"]:
+        _cmt_by_cat.setdefault(_c["category"], []).append(_c)
+    _opt_by_id = {o["commitment_id"]: o for o in out["options"]}
+    blocks = []
+    for d in (hero.get("domains") or []):
+        _p = d.get("position") or {}
+        _t = d.get("target") or {}
+        _ev = d.get("position_evidence") or {}
+        _cs = _cmt_by_cat.get(d["name"], [])
+        _sigs = _sig_by_dom.get(d["name"], [])
+        blocks.append({
+            "name": d["name"],
+            "competitive": d.get("competitiveness", True),
+            # COUNT — how much evidence stands behind this domain's read
+            "count": {"metrics": (_ev.get("polarised") or 0) + (_ev.get("practice") or 0),
+                      "polarised": _ev.get("polarised") or 0,
+                      "practice": _ev.get("practice") or 0,
+                      "pool": _p.get("pool")},
+            # MARKET POSITION — the verdict and the split behind it
+            "position": {"verdict": _p.get("verdict"), "below": _p.get("below"),
+                         "at": _p.get("at"), "above": _p.get("above"),
+                         "pctl": _p.get("depth_pctl"), "basis": d.get("position_basis")},
+            "aim": {"stance": _t.get("stance"), "alignment": _t.get("alignment")},
+            # SIGNALS — what this domain is actually flagging, most material first
+            "signal_count": len(_sigs),
+            "signals": [{"title": x.get("name"), "detail": x.get("detail"),
+                         "position": x.get("position"), "lens": x.get("lens"),
+                         "value": x.get("value_display"), "n": x.get("n"),
+                         "question_id": x.get("question_id")}
+                        for x in _sigs[:4]],
+            # RECOMMENDATIONS — this domain's gaps and the levers against them
+            "commitments": _cs,
+            "gaps": [c for c in _cs if c["status"] in ("behind_intent", "contradicted")],
+            "options": [_opt_by_id[c["id"]] for c in _cs if c["id"] in _opt_by_id],
+        })
+    out["domain_blocks"] = blocks
     # The document renders BEFORE any data is in (a new org states its strategy first),
     # so it needs to know whether a position read is even possible. Without this the
     # page drew an empty table under "each area's live benchmark", tiles reading
