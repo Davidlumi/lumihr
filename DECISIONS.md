@@ -18542,3 +18542,25 @@ generators returning `model`. Suite 15/15. ?v=638.
 
 `web/js/report.js` must load after `strategy.js` — it reads that file's module-scope helpers,
 and classic scripts share one lexical scope.
+
+## 2026-08-16 (b) — /strategy is the document
+
+David, on the read view: *"replace this page with just a view of the PDF report on their reward
+strategy."* Done literally. The `sdx-*` card stack — hero, section cards, dial strip, hand-off
+— is gone, and opening **Reward strategy** now renders the A4 Total Reward Strategy artefact
+itself.
+
+The governance controls ride in the document's own toolbar rather than on a bar above it:
+version chips, Edit strategy, Send for approval, Approve vN, Version history, Rewrite
+commentary, Save as PDF. Approval remains a deliberate, recorded act, so its modal moved across
+whole — including the unstated-sections warning, which still mirrors `_unstated_sections()` and
+is still compared from source by `qa_strategy`.
+
+`/report/strategy` folds into `/strategy`: two routes rendering the same artefact was exactly
+the split worth removing. `/report/plan` is unchanged — the plan keeps a working screen (the
+exhibit, the grouped gaps, the signals jumps) with the report as its output, because unlike the
+strategy it is a place you *do* things, not only a statement you publish.
+
+`StrategyView` went 202 lines → 109; `SdDocSec` / `SdDocSections` (54 lines of section cards)
+retired with the page that used them. Suite 15/15, verified on the AI rig: 8 sheets, all
+exactly A4, edit → wizard → cancel → document round-trips clean. ?v=639.
