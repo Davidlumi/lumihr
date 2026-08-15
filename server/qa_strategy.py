@@ -313,6 +313,33 @@ def main():
     check("isolation — probe B's write never touched probe A's strategy",
           sa_after["strategy"]["market_position"] == "lead")
 
+    # ---- the approval modal must warn about the SAME sections the version records ----
+    # Between 2026-08-15 and 2026-08-16 the client list still counted Governance,
+    # Commitments, Measures and Roadmap — all retired from capture — so every
+    # approval warned about four sections nobody could ever state, while the stored
+    # version recorded the correct five. Two hand-maintained lists in two languages
+    # drift silently; this pins them together.
+    import re as _re
+    _js = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "js", "strategy.js")
+    try:
+        _src = open(_js).read()
+        _blk = _src[_src.index("const unstated = ["):]
+        _blk = _blk[:_blk.index("].filter(")]
+        _client = set(_re.findall(r'\["([^"]+)",', _blk))
+    except Exception as e:                                   # noqa: BLE001 — a read failure IS the finding
+        _client = set()
+        print("  (could not parse the client unstated list: %s)" % e)
+    # read the server side from SOURCE too — importing app.py here would open the live
+    # DB, which get_conn refuses under a bare qa_ run (gate-safety-1).
+    _py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
+    _psrc = open(_py).read()
+    _pblk = _psrc[_psrc.index("def _unstated_sections("):]
+    _pblk = _pblk[:_pblk.index("return [name for name")]
+    _server = set(_re.findall(r'\("([^"]+)",', _pblk))
+    check("approval modal warns about exactly the sections the version records",
+          bool(_server) and _client == _server,
+          "client=%s server=%s" % (sorted(_client), sorted(_server)))
+
     # cleanup probe orgs
     # teardown moved to the __main__ finally so it fires on the failing path too;
     # calling it here as well would run it twice.
