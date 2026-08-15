@@ -18659,3 +18659,34 @@ appendix. It also answers "which one is current", which two narrating artefacts 
 declined to tack it on — it would expose an org's stated strategy and its gaps to anyone holding
 a URL, which is a privacy decision deserving its own consideration rather than the tail end of a
 long session. Save-as-PDF already covers circulation. Suite 15/15. ?v=646.
+
+## 2026-08-16 (f) — Persona walkthrough: the red box, and prose that reads like prose
+
+David: *"do a few persona walkthroughs including a new company and one that wants to refine their
+strategy and plan — look for bugs, UX/UI and design, make sure plain English, make sure it is
+genuinely something they could take to a board. Currently I am getting a red box."*
+
+**The red box was the serious one.** `require_ai` 403'd the whole route on all three reward
+endpoints. Because each deterministic floor lives *inside* the endpoint, behind the gate that was
+refusing the request, an AI-off organisation lost its executive summary, tensions, watch,
+findings **and its plan** — and got an error toast on a board document. This was never dev-only:
+in `opt_in` mode every member who has not consented is in exactly that state.
+
+The ruling already existed — the board pack was un-gated on 2026-07-11 for the same reason
+("composed directly from the figures"). Composed prose is not AI content, so the flag scopes the
+**Claude call**, not the route. All three now return 200 with `source: "deterministic"`, and the
+document ships complete with its provenance line naming what was composed rather than written.
+
+**Then the prose had to be worth shipping.** The floor stopped being a rare fallback the moment
+it became the default for unconsented orgs, so it was read as a board reader would read it and
+rewritten: a summary with no main verb, a subject/verb disagreement, a label-colon-list, and a
+raw lowercase enum (`"your stated focus for this year is attract"`) all fixed.
+`objective_phrase()` now says the five objectives the way a person would in a board paper, and
+`_english_list()` serialises with "and".
+
+Walked two personas on the harshest configuration — **new company with no data, AI off** — and
+the established org refining. No error toasts, no empty tables, no dead CTAs, 9 sheets and 17
+sheets respectively, all A4. Suite 15/15.
+
+A rig config (`lumi-throwaway-noai`, :8072) now reproduces the AI-off member, because this class
+of bug is invisible on an AI-on rig.
