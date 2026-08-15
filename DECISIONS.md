@@ -18378,3 +18378,36 @@ snapshot); R7 content sign-off; lumi-terminology.md update per R12.
   notes and hot-reload); measure MOVEMENT reporting activates at snapshot 2; Governance lever
   tranche 2; the brief's optional evidence appendix (R1) remains unbuilt — the print toggle
   covers the ruled default.
+
+## 2026-08-15 — Reward strategy: persona review closed out (all six items)
+
+Three persona agents (reward director @8k FTE listed, HR director @120, HRBP @600) reviewed
+the capture + document. They converged on the same faults; David: "make all the changes".
+Shipped as 0d754d2 (server) + 93a3e8d (client), suite 15/15.
+
+1. **Server-side drafts.** `org_strategy.draft_json/draft_saved_at/draft_by` + PUT/GET/DELETE
+   `/api/strategy/draft`, autosaved (debounced) from the wizard. Deliberately a blob APART from
+   the live columns: a half-finished capture must never reach the engine. Cleared on save/cancel.
+   localStorage stays as crash insurance only. (All three called the tab-lifetime draft a
+   data-loss trap on a multi-sitting job.)
+2. **Role split.** PUT /api/strategy is now `require_editor` — the Contributor who does the reward
+   work no longer needs full admin (which also grants user management). Approval stays
+   `require_admin`; `can_edit`/`can_approve` exposed; POST `/submit` + `/withdraw` give the
+   drafter a real hand-off.
+3. **Approval is a governance act.** Demands `confirmed:true` and an approving BODY, validates
+   the dates, records the drafter separately from the clicking account, and stores WHICH SECTIONS
+   WERE EMPTY at approval. The masthead cites the body, not the clicker; version history is
+   visible (list + per-version snapshot endpoint). Previously: one unconfirmed click stamping
+   your own name, contradicting the "Approved by: Remuneration Committee" typed on the same page.
+4. **Population positions.** `population_targets_json` = [{label, position, note}] over a fixed
+   list (Executive → Frontline), captured as its own optional step and rendered as its own
+   document section. **DOCUMENT-ONLY BY RULING: never wired to the engine** — lumi holds no
+   executive pay data, and scoring a population against an all-employee benchmark would be
+   fabrication. The RD called this the primary axis of a listed company's strategy.
+5. **Measures carry baseline/target/owner** ("a measure without a target is a topic"). Legacy
+   bare-id lists are accepted and normalised, never rejected; board-pack measures carry them.
+6. **Export inverted.** The evidence exhibit is now IN the printed document by default and the AI
+   reading is never printed — shipping assertions with the data stripped out was backwards.
+
+Also fixed en route: the new `strategy_versions` FK made probe cleanup fail (IntegrityError +
+leak) — qa_strategy now clears it. qa_strategy 30 → 57 checks.
