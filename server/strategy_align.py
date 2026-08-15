@@ -88,6 +88,18 @@ def options_for(commitments, levers=None, visible_qids=None):
     for c in commitments or []:
         if c.get("status") not in ("behind_intent", "contradicted"):
             continue
+        # An OVERSPEND gap (the live read sits past a deliberately lower aim) is not
+        # closed by adding substance — every lever in the inventory adds package, so
+        # offering them here would recommend spending more to fix spending more. The
+        # honest read is that the stated position, not the practice, is the open question.
+        if c.get("direction") == "past":
+            out.append({"commitment_id": c.get("id"), "category": c.get("category"),
+                        "status": c.get("status"), "statement": c.get("statement"),
+                        "framing": OPTIONS_FRAMING, "levers": [],
+                        "coverage_note": ("Your practice already sits above this aim, so the levers here "
+                                          "would add to a package that is ahead of the stated position — "
+                                          "the open question is whether the aim itself still reads right.")})
+            continue
         need = _KIND_REGISTER.get(c.get("kind"), "Substance")
         picks = []
         for l in levers:
@@ -109,6 +121,14 @@ def options_for(commitments, levers=None, visible_qids=None):
         if c.get("category") not in covered:
             block["coverage_note"] = ("The lever inventory covers Pay, Benefits & Lifestyle and "
                                       "Time Off & Family at v1 — this area's levers are a later tranche.")
+        elif not picks:
+            # covered category, but nothing in it moves the register this gap needs —
+            # say so rather than render an empty block (no silent caps).
+            block["coverage_note"] = ("This gap is one of approach rather than what's on offer, and the "
+                                      "inventory holds no %s lever for %s yet."
+                                      % (need.lower(), c.get("category"))) if need == "Approach" else (
+                                     "The inventory holds no %s lever for %s yet."
+                                     % (need.lower(), c.get("category")))
         out.append(block)
     return out
 
@@ -199,17 +219,18 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
         tgt = d.get("target") or {}
         align = tgt.get("alignment")
         if align == "on_target":
-            status, note = "evidenced", "the live read matches it"
+            status, note, direction = "evidenced", "the live read matches it", None
         elif align == "behind":
-            status, note = "behind_intent", "the live read sits short of it"
+            status, note, direction = "behind_intent", "the live read sits short of it", "short"
         elif align == "ahead":
-            status, note = "behind_intent", "the live read sits past it — spend beyond the stated position"
+            status, note, direction = ("behind_intent",
+                                       "the live read sits past it — spend beyond the stated position", "past")
         else:
-            status, note = "not_evidenced", "no market read is available yet on " + cut_label
+            status, note, direction = "not_evidenced", "no market read is available yet on " + cut_label, None
         commitments.append({
             "id": "position:" + name, "category": name, "kind": "position",
             "intent_label": "aim " + (_STANCE_WORD.get(stance, stance)) + (" (set for this area)" if name in dt else ""),
-            "status": status,
+            "status": status, "direction": direction,
             "statement": "You aim %s on %s; %s." % (_STANCE_WORD.get(stance, stance), name, note),
             "evidence": {"source": "category market read", "cut": cut_label},
         })

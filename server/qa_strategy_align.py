@@ -56,6 +56,9 @@ check("A", "behind -> behind_intent", pos_c["Pay"]["status"] == "behind_intent")
 check("A", "on_target -> evidenced", pos_c["Benefits & Lifestyle"]["status"] == "evidenced")
 check("A", "ahead of a lag aim -> behind_intent (P2 overspend read)",
       pos_c["Time Off & Family"]["status"] == "behind_intent")
+check("A", "the two behind_intent directions are distinguishable (short vs past)",
+      pos_c["Pay"]["direction"] == "short" and pos_c["Time Off & Family"]["direction"] == "past",
+      {k: v.get("direction") for k, v in pos_c.items()})
 check("A", "no verdict -> not_evidenced (never fabricated)",
       pos_c["Pensions & Savings"]["status"] == "not_evidenced")
 # domain_targets override drives the stance word
@@ -169,6 +172,23 @@ check("E", "levers keep FILE order (never re-ranked)",
       [l["lever_id"] for l in LEV if l["category"] == "Pay" and l["register_effect"] == "Substance"])
 check("E", "R6 framing string verbatim on every block",
       all(o["framing"] == sa.OPTIONS_FRAMING for o in OB))
+_over = [{"id": "position:Pay", "category": "Pay", "kind": "position", "status": "behind_intent",
+          "direction": "past", "statement": "s"}]
+_ov = sa.options_for(_over, levers=LEV)[0]
+check("E", "an OVERSPEND gap is never offered cost-adding levers (2026-08-15)",
+      _ov["levers"] == [], [l["name"] for l in _ov["levers"]])
+check("E", "the overspend block says why it is empty (no silent cap)",
+      "above this aim" in (_ov.get("coverage_note") or ""), _ov.get("coverage_note"))
+check("E", "overspend note is directive- and legal-clean",
+      not ca.DIRECTIVE_RE.search(_ov["coverage_note"]) and not ca.LEGAL_RE.search(_ov["coverage_note"]))
+check("E", "a SHORT position gap still gets its levers (the fix is narrow)",
+      len(_pay_pos["levers"]) > 0 and _pay_pos is not None)
+_bare = sa.options_for([{"id": "rule:B2", "category": "Benefits & Lifestyle", "kind": "coherence",
+                         "status": "behind_intent", "statement": "s"}], levers=LEV)[0]
+check("E", "covered category with no lever in the needed register is NEVER silently empty",
+      not _bare["levers"] and (_bare.get("coverage_note") or "").strip(), _bare.get("coverage_note"))
+check("E", "no options block anywhere is both lever-less and note-less",
+      all(o["levers"] or (o.get("coverage_note") or "").strip() for o in (OB + [_ov, _bare])))
 _pens = next(o for o in OB if o["commitment_id"] == "position:Pensions & Savings")
 check("E", "outside-tranche category says so plainly (no silent cap)",
       not _pens["levers"] and "later tranche" in (_pens.get("coverage_note") or ""))
