@@ -18690,3 +18690,39 @@ sheets respectively, all A4. Suite 15/15.
 
 A rig config (`lumi-throwaway-noai`, :8072) now reproduces the AI-off member, because this class
 of bug is invisible on an AI-on rig.
+
+## 2026-08-16 (g) — The report's centre of gravity moves to the domains
+
+David: *"the report needs to be far higher quality — each domain have its own dedicated section,
+showing count and market position, then its signals and a commentary on alignment to market.
+This is the main part of the report. The plan and recommendations is a combination of the
+recommendations of each domain so it rolls up. The user must be able to edit the document
+somehow — I do not want them to have to download the PDF and change it offline."*
+
+**Eight domain sections are now the body of the report.** Each carries its count (metrics
+benchmarked, and the peer readings behind them), its market position (verdict and percentile)
+and the below/on/above split, how that reads against the stated aim, a commentary composed from
+that domain's own numbers, the signals it is flagging with your value and how each reads, and
+the recommendations that follow — gaps, options, cost, speed, trade-off.
+
+The flat "gaps by area" run is **gone**: a gap belongs inside its domain's section, not in a
+separate list. "Position against intent" becomes **"Position at a glance"** — the summary table
+you read *before* the sections rather than instead of them.
+
+**The plan rolls up.** It is no longer a parallel top-down list; every action names the domain
+section it came from (§10, §12) so a reader can trace it back to the evidence.
+
+**Editing is in the document, and findable.** Every domain's commentary is editable in place,
+keyed `domain:<Category>` and validated against the *live* taxonomy so a renamed category cannot
+orphan its wording. The Edit affordance stops being `opacity: 0` until hover — the point of the
+document is that you adjust it here rather than downloading the PDF and changing it offline, and
+nobody hovers a paragraph to discover that.
+
+**Pagination.** A domain runs to two sheets when it has recommendations (the read, then what
+follows) because together they overran A4; the contents list is two-column and drops continuation
+rows. 28 sheets on the demo org, none over A4, verified live with all three generators on
+`model`. Suite 15/15. ?v=649.
+
+Still open, and now the most visible weakness: the **R8 lever tranche** covers only Pay,
+Benefits & Lifestyle and Time Off & Family, so five domain sections end on "a later tranche"
+where the reader is expecting recommendations.
