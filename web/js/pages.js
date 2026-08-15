@@ -2041,6 +2041,18 @@ window.SignalsPage = function ({ me, prefs, onPref, cut, cuts }) {
   useEffect(() => {
     const d = window.__sigJumpDomain;
     if (d) { window.__sigJumpDomain = null; setView({ kind: "all" }); setDomFilter(d); }   // domain is a filter axis now
+    // Reward plan → this feed, carrying BOTH axes (2026-08-16, David: "the reward plan
+    // must link to signals — so the user can jump into any domain and see what they
+    // need to do for alignment"). Same consume-once contract as __sigJumpDomain.
+    const j = window.__sigJump;
+    if (j) {
+      window.__sigJump = null;
+      setView({ kind: "all" });
+      if (j.domain) setDomFilter(j.domain);
+      setStratFilter(Array.isArray(j.strat) ? j.strat.filter(Boolean) : []);
+      setPosFilter("all");
+      setLensFilter([]);
+    }
   }, []);
   // Signals are ANCHORED TO THE ORG DEFAULT PEER GROUP (David 2026-08-11: "signals should only be
   // tied to the company default — otherwise alerts will be all over the place"). The server computes
