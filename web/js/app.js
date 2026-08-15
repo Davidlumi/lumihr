@@ -561,8 +561,12 @@ function App() {
           <${BenchmarkNav} route=${route} qIndex=${qIndex} prefs=${prefs} onPref=${onPref} collapsed=${railCollapsed} />
         </div>
         <div class="nav-group">
-          <div class="nav-label">Your organisation</div>
-          <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
+          ${/* these four ARE the loop the Overview strip narrates — labelled so the
+               rail says so rather than reading as a settings drawer (2026-08-16) */ ""}
+          <div class="nav-label">Your reward</div>
+          <${RailItem} route=${route} path="/your-data" icon="table" label="Your data"
+            count=${me.contribution && !me.contribution.insights_unlocked && me.contribution.core_pct != null
+              ? Math.round(me.contribution.core_pct) + "%" : null} />
           <${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
           <${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />

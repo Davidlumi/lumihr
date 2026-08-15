@@ -8,25 +8,85 @@ window.SUPERPOWERS = SUPERPOWERS;
 window.SpIcon = ({ sp, size = 15 }) => html`<${Icon} name=${SP_ICON[sp] || "target"} size=${size} />`;
 
 // ------------------------------------------------------------ overview -----
-// Dashboard nudge — Admins who haven't set their reward strategy. Quietly
-// dismissible per-session; reappears next visit until the stance is captured
-// (the strategy_complete flag, not a permanent dismiss).
-function StrategyNudge() {
-  const KEY = "lumi-strat-nudge";
-  const [hidden, setHidden] = useState(() => { try { return sessionStorage.getItem(KEY) === "1"; } catch (e) { return false; } });
-  if (hidden) return null;
+// THE LOOP STRIP (2026-08-16, David: "make sure everything comes together as a
+// coherent UX journey ... and on it goes, circular").
+//
+// The rail is a flat list of surfaces with no sequence and no state, so a first-time
+// user saw seven doors and no path. This is the cue layer: one strip, always in the
+// same place, showing the four states the reward cycle moves through and the ONE next
+// action. It is deliberately the same component on day 1 and in month 9 — early it
+// reads as onboarding, later as "your data is ageing" — because a separate onboarding
+// widget that disappears is a thing users learn and then lose.
+//
+// It replaces StrategyNudge, which competed with the data-submission CTA on the same
+// locked Overview: two different "do this first" messages, in the wrong order.
+const LOOP_STEPS = [
+  { k: "company", label: "Company", icon: "home", to: "/strategy",
+    hint: "Who you are, and who you're compared against." },
+  { k: "strategy", label: "Strategy", icon: "compass", to: "/strategy",
+    hint: "Where you aim to sit — so lumi can tell below market from below market on purpose." },
+  { k: "data", label: "Your data", icon: "table", to: "/your-data",
+    hint: "Your own answers. Everything downstream is read from these." },
+  { k: "plan", label: "Plan", icon: "zap", to: "/strategy",
+    hint: "The gaps your data opens against your strategy, and what to do about them." },
+];
+
+function LoopStrip({ data, me }) {
+  const loop = data.loop || {};
+  const c = data.contribution || {};
+  const canEdit = me && me.user && ["admin", "contributor"].includes(me.user.role);
+  const dataDone = !!c.insights_unlocked;
+  const state = {
+    company: loop.company_set ? "done" : "todo",
+    strategy: loop.strategy_set ? "done" : "todo",
+    data: dataDone ? (loop.to_refresh ? "stale" : "done") : "todo",
+    plan: loop.plan_built ? (loop.to_refresh ? "stale" : "done") : "todo",
+  };
+  // ONE next action, in loop order — never two competing calls to act
+  let next = null;
+  if (!loop.company_set || !loop.strategy_set) {
+    next = { label: "Set your reward strategy", to: "/strategy",
+             why: "Five minutes, and it changes how every number below is read." };
+  } else if (!dataDone) {
+    const need = Math.max(0, (c.basis_total || 0) - (c.basis_answered || 0));
+    next = { label: "Add your data", to: "/your-data",
+             why: need ? need + " key " + (need === 1 ? "answer" : "answers") + " to unlock your position." : "Finish your submission to unlock your position." };
+  } else if (!loop.plan_built) {
+    next = { label: "Open your reward plan", to: "/strategy",
+             why: "Your position is in — lumi can now write the plan against it." };
+  } else if (loop.to_refresh) {
+    next = { label: "Refresh " + loop.to_refresh + " " + (loop.to_refresh === 1 ? "metric" : "metrics"), to: "/your-data",
+             why: "Your plan is only as current as the data under it." };
+  }
   return html`
-    <div class="strat-nudge">
-      <span class="strat-nudge-icon"><${Icon} name="compass" size=${20} /></span>
-      <div class="strat-nudge-body">
-        <b>Set your reward strategy</b>
-        <span>Set where you aim to sit, so lumi can tell “below market” from “below market, on purpose”.</span>
+    <div class="loop-strip no-print">
+      <div class="loop-steps">
+        ${LOOP_STEPS.map((s, i) => html`
+          <${React.Fragment} key=${s.k}>
+            ${i ? html`<span class="loop-link" aria-hidden="true"></span>` : null}
+            <button class=${"loop-step is-" + state[s.k]} title=${s.hint}
+              onClick=${() => nav(s.to)}>
+              <span class="loop-dot">
+                ${state[s.k] === "done" ? html`<${Icon} name="check" size=${12} />`
+                  : state[s.k] === "stale" ? html`<${Icon} name="refresh" size=${12} />`
+                  : html`<${Icon} name=${s.icon} size=${12} />`}
+              </span>
+              <span class="loop-lab">${s.label}</span>
+            </button>
+          <//>`)}
+        <span class="loop-link loop-return" aria-hidden="true" title="and round again"></span>
       </div>
-      <button class="btn primary strat-nudge-cta" onClick=${() => nav("/strategy")}>Set it up</button>
-      <button class="strat-nudge-x" aria-label="Dismiss for now"
-        onClick=${() => { try { sessionStorage.setItem(KEY, "1"); } catch (e) {} setHidden(true); }}><${Icon} name="close" size=${15} /></button>
+      ${next && canEdit ? html`
+        <div class="loop-next">
+          <div class="loop-next-why"><b>${next.label}</b><span>${next.why}</span></div>
+          <button class="btn primary small" onClick=${() => nav(next.to)}>${next.label}</button>
+        </div>`
+      : !next ? html`<div class="loop-next loop-done">
+          <${Icon} name="check" size=${14} /> <span>Your strategy, data and plan are all current.</span>
+        </div>` : null}
     </div>`;
 }
+
 // Company-default-peer-group setup prompt (David 2026-08-11: "on company set up the user admin must
 // create a default peer group"). A guided prompt (not a hard gate) shown to editors once the org is
 // classified but no default is set — NON-dismissible, so it persists until they choose one. The
@@ -451,7 +511,8 @@ function OverviewHero({ data, cut, cuts, orgKey, view, applyStrat, setApplyStrat
   return html`
     <div class="ov-wrap">
       <div class="ov-aurora" aria-hidden="true"></div>
-      ${!locked && data.strategy_can_edit && !data.strategy_complete && html`<${StrategyNudge} />`}
+      ${/* the strip shows LOCKED too — a brand-new org is exactly who needs the path */ ""}
+      ${data.loop ? html`<${LoopStrip} data=${data} me=${me} />` : null}
       ${/* company-default-peer-group setup prompt (David 2026-08-11): editors, org classified, no
             default set yet — persists until they choose one (signals/alerts/landing all use it). */ ""}
       ${!locked && me && me.user && (me.user.role === "admin" || me.user.role === "contributor")
