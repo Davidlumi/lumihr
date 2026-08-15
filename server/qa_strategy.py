@@ -2,7 +2,7 @@
 """Reward strategy capture — live quality bar (the runnable replacement for the
 deprecated verify.py block; same assertions, against the running server).
 
-Covers spec §6: tenancy (viewer/contributor 403, admin 200, org from session,
+Covers spec §6: tenancy (viewer 403, contributor/admin save, approval admin-only,
 forged org_id ignored), server-side enum validation, the server-side required
 gate, provenance integrity (set/skipped, no phantom 'suggested'), no demographic
 suggestions, and tenant isolation. Plus the engine degrade contract (§5.5).
@@ -80,8 +80,12 @@ def main():
     # tenancy
     st, _ = login("ceo@thornbridge.example", "lumi-view-2026").req("/api/strategy", "PUT", {"strategy": REQ})
     check("viewer PUT blocked (403)", st == 403, st)
-    st, _ = login("analyst@thornbridge.example", "lumi-data-2026").req("/api/strategy", "PUT", {"strategy": REQ})
-    check("contributor PUT blocked (403)", st == 403, st)
+    # 2026-08-15: the Contributor DOES the reward work, so they may save the strategy;
+    # only an Admin may approve it (asserted in the approval block below).
+    _cb = login("analyst@thornbridge.example", "lumi-data-2026")
+    _st0, _cur = _cb.req("/api/strategy")
+    st, _ = _cb.req("/api/strategy", "PUT", {"strategy": _cur["strategy"]})   # same values back
+    check("contributor PUT allowed (200) — approval is the admin-only act", st == 200, st)
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, transparency="open")})
     check("admin PUT succeeds (200)", st == 200, st)
 
@@ -142,7 +146,7 @@ def main():
     st, full2 = sa.req("/api/strategy")
     doc = full2.get("document") or {}
     check("document round-trips (measures + principles + governance persisted)",
-          doc.get("measures") == _five and len(doc.get("principles") or []) == 1
+          [m["id"] for m in (doc.get("measures") or [])] == _five and len(doc.get("principles") or []) == 1
           and (doc.get("reward_governance") or {}).get("review_cadence") == "annual")
     check("document provenance recorded (set/skipped, no phantom)",
           full2["provenance"].get("measures") == "set" and full2["provenance"].get("commitments") == "skipped")
@@ -162,6 +166,89 @@ def main():
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
         "commitments": {"Pay": {"statement": "nope"}}}})
     check("commitment on a position category rejected (400)", st == 400, st)
+
+    # ---- 2026-08-15: server drafts · role split · approval as a governance act ----
+    # measures carry baseline/target/owner; legacy bare-id lists still accepted
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "measures": [{"id": _five[0], "baseline": "62%", "target": "70% by Apr", "owner": "CPO"}]}})
+    check("measures accept baseline/target/owner (200)", st == 200, st)
+    st, full3 = sa.req("/api/strategy")
+    _m0 = ((full3.get("document") or {}).get("measures") or [{}])[0]
+    check("measure detail round-trips", _m0.get("target") == "70% by Apr" and _m0.get("owner") == "CPO", _m0)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"measures": [_five[1]]}})
+    st, full4 = sa.req("/api/strategy")
+    check("legacy bare-id measures normalise to objects",
+          ((full4.get("document") or {}).get("measures") or [{}])[0].get("id") == _five[1])
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "measures": [{"id": _five[0], "target": "x" * 81}]}})
+    check("measure field length capped (400)", st == 400, st)
+
+    # population positions — document statements, enum-guarded
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "population_targets": [{"label": "Executive", "position": "lead", "note": "total comp at UQ"}]}})
+    check("population position saves (200)", st == 200, st)
+    st, full5 = sa.req("/api/strategy")
+    check("population position round-trips",
+          ((full5.get("document") or {}).get("population_targets") or [{}])[0].get("position") == "lead")
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "population_targets": [{"label": "Board of aliens", "position": "lead"}]}})
+    check("unknown population rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "population_targets": [{"label": "Executive", "position": "sideways"}]}})
+    check("invalid population stance rejected (400)", st == 400, st)
+
+    # server-side draft: stored apart from the live strategy, never engine-visible
+    st, _ = sa.req("/api/strategy/draft", "PUT", {"draft": {"strat": {"market_position": "lag"}, "step": 3}})
+    check("draft saves server-side (200)", st == 200, st)
+    st, dr = sa.req("/api/strategy/draft")
+    check("draft round-trips with step + who", (dr.get("draft") or {}).get("step") == 3 and bool(dr.get("saved_at")), dr)
+    st, live = sa.req("/api/strategy")
+    check("a draft NEVER changes the live strategy", live["strategy"]["market_position"] == "lead",
+          live["strategy"]["market_position"])
+    check("draft state surfaces on /api/strategy", (live.get("draft") or {}).get("step") == 3, live.get("draft"))
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ})
+    st, live2 = sa.req("/api/strategy")
+    check("saving clears the draft", live2.get("draft") is None, live2.get("draft"))
+
+    # role split, proven on the demo org WITHOUT changing its stored strategy
+    cc = login("analyst@thornbridge.example", "lumi-data-2026")
+    st, _ = cc.req("/api/strategy/draft", "PUT", {"draft": {"step": 1}})
+    check("Contributor CAN save a draft (200)", st == 200, st)
+    st, _ = cc.req("/api/strategy/approve", "POST", {"confirmed": True, "approver_body": "CEO"})
+    check("Contributor CANNOT approve (403)", st == 403, st)
+    cc.req("/api/strategy/draft", "DELETE")                      # leave the demo org as found
+    st, _ = login("ceo@thornbridge.example", "lumi-view-2026").req("/api/strategy/draft", "PUT", {"draft": {}})
+    check("Viewer still blocked from drafting (403)", st == 403, st)
+
+    # submit -> approve, as two acts INSIDE one org (the probe)
+    st, sub = sa.req("/api/strategy/submit", "POST", {})
+    check("send-for-approval records who and when (200)", st == 200 and bool(sub.get("submitted_at")), st)
+    st, full6 = sa.req("/api/strategy")
+    check("submission is visible to the approver", bool((full6.get("submitted") or {}).get("by")), full6.get("submitted"))
+    check("can_edit/can_approve split exposed", full6.get("can_edit") is True and full6.get("can_approve") is True)
+
+    # approval is a recorded act, not a click
+    st, _ = sa.req("/api/strategy/approve", "POST", {"approver_body": "Remuneration Committee"})
+    check("approval without confirmation rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy/approve", "POST", {"confirmed": True})
+    check("approval without an approving body rejected (400)", st == 400, st)
+    st, _ = sa.req("/api/strategy/approve", "POST", {"confirmed": True, "approver_body": "RemCo",
+                                                    "approval_date": "12-03-2026"})
+    check("malformed approval date rejected (400)", st == 400, st)
+    st, ap = sa.req("/api/strategy/approve", "POST", {"confirmed": True, "approver_body": "Remuneration Committee",
+                                                     "approval_date": "2026-03-12", "effective_date": "2026-04-01",
+                                                     "next_review": "2027-03-01"})
+    check("approval records the governing body (200)", st == 200 and ap.get("version") == 1, ap)
+    check("approval records what was unstated", isinstance(ap.get("unstated"), list) and len(ap["unstated"]) > 0, ap.get("unstated"))
+    st, vs = sa.req("/api/strategy/versions")
+    _v1 = (vs.get("versions") or [{}])[0]
+    check("version carries body, dates and the drafter",
+          _v1.get("approver_body") == "Remuneration Committee" and _v1.get("effective_date") == "2026-04-01"
+          and bool(_v1.get("submitted_by")), _v1)
+    st, v1 = sa.req("/api/strategy/versions/1")
+    check("a version snapshot is retrievable", st == 200 and bool((v1.get("snapshot") or {}).get("strategy")), st)
+    st, full7 = sa.req("/api/strategy")
+    check("approval consumes the submission", full7.get("submitted") is None, full7.get("submitted"))
 
     # server-side gate + forged org_id ignored + isolation
     sb = Client()
@@ -204,6 +291,7 @@ def _cleanup(probe_ids):
     import identity
     conn = get_conn()
     for oid in probe_ids:
+        conn.execute("DELETE FROM strategy_versions WHERE org_id=?", (oid,))
         conn.execute("DELETE FROM org_strategy WHERE org_id=?", (oid,))
         conn.execute("DELETE FROM sessions WHERE user_id IN (SELECT user_id FROM users WHERE org_id=?)", (oid,))
         conn.execute("DELETE FROM users WHERE org_id=?", (oid,))

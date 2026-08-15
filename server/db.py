@@ -654,6 +654,19 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     measures_json           TEXT,  -- JSON array of metric ids (<=8, visible-only)
     roadmap_json            TEXT,  -- [{"title","horizon","gap_ref"?}] (<=6)
     commitments_json        TEXT,  -- {"Wellbeing": {"metric_ids": [...]}, "Governance & Transparency": {"statement": str}}
+    -- population positions (2026-08-15): a listed company's strategy is keyed on
+    -- executive vs all-employee, which the benchmark CANNOT evidence (no exec pay
+    -- data). Captured as DOCUMENT statements only; never wired to the engine.
+    population_targets_json TEXT,  -- [{"label","position","note"}]
+    -- server-side DRAFT: the in-flight capture, saved every step. Deliberately a
+    -- blob APART from the live columns so a half-finished capture never reaches the
+    -- engine — the live strategy only changes on an explicit save.
+    draft_json          TEXT,
+    draft_saved_at      TEXT,
+    draft_by            TEXT,
+    -- sign-off chain: a drafter submits, an Admin approves (they may differ)
+    submitted_at        TEXT,
+    submitted_by        TEXT,
     completed_at        TEXT,
     updated_at          TEXT
 );
@@ -666,9 +679,16 @@ CREATE TABLE IF NOT EXISTS strategy_versions (
     org_id       TEXT NOT NULL REFERENCES orgs(org_id),
     version      INTEGER NOT NULL,
     snapshot_json TEXT NOT NULL,      -- {strategy, document} as approved
-    approved_by  TEXT,                -- display name of the approving admin
+    approved_by  TEXT,                -- the ACCOUNT that pressed approve
     approved_at  TEXT NOT NULL,
     status       TEXT NOT NULL DEFAULT 'approved',   -- 'approved' | 'superseded'
+    -- the approval as a governance act, not a button press (2026-08-15):
+    approver_body TEXT,               -- the body that approved it (RemCo, CEO, ...)
+    approval_date TEXT,               -- when THEY approved it (may precede the click)
+    effective_date TEXT,
+    next_review   TEXT,
+    submitted_by  TEXT,               -- who drafted/submitted it, when that differs
+    unstated_json TEXT,               -- sections empty at approval — recorded, not hidden
     PRIMARY KEY (org_id, version)
 );
 """
@@ -767,6 +787,18 @@ def init_schema(conn=None):
                 "ALTER TABLE org_strategy ADD COLUMN measures_json TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN roadmap_json TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN commitments_json TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN unstated_json TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN submitted_by TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN next_review TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN effective_date TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN approval_date TEXT",
+                "ALTER TABLE strategy_versions ADD COLUMN approver_body TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN submitted_by TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN submitted_at TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN draft_by TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN draft_saved_at TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN draft_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN population_targets_json TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
                 "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",

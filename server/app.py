@@ -2483,7 +2483,7 @@ async def overview(request: Request):
         # whether the stance lens is APPLIED on this request (the "Apply my strategy"
         # toggle) — distinct from strategy_complete (does one EXIST). False = absolute view.
         "strategy_applied": bool(_strategy),
-        "strategy_can_edit": user["role"] == "admin",
+        "strategy_can_edit": user["role"] in ("admin", "contributor"),
         # the objective the Signals order is read through (None when unset/skipped) —
         # drives the modest "ordered for your strategy" indicator on the Signals page
         "strategy_objective": OBJECTIVE_LABELS.get(
@@ -4438,7 +4438,9 @@ def assemble_pack_payload(request, user, org, cut):
             _hero_s.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
             visible_qids=set(_visq), cut_label=cut_label)
         _meas_rows = []
-        for _qid in (_st_state.get("document") or {}).get("measures") or []:
+        for _m in (_st_state.get("document") or {}).get("measures") or []:
+            _m = _m if isinstance(_m, dict) else {"id": _m}
+            _qid = _m.get("id")
             _q = _visq.get(_qid)
             _p = payloads().get(_qid)
             if not _q or _p is None:
@@ -4447,16 +4449,21 @@ def assemble_pack_payload(request, user, org, cut):
             _supp = pos.is_suppressed(_blk)
             # current LEVEL only — movement needs a second snapshot (never render an
             # empty trend as flat, brief §10); suppressed peer reads stay masked.
+            # baseline/target/owner are the member's own words, carried verbatim.
             _meas_rows.append({"id": _qid, "title": _q.display_title, "category": _q.sub_power,
                                "your_answer": _own.get(_qid),
+                               "baseline": _m.get("baseline"), "target": _m.get("target"),
+                               "owner": _m.get("owner"),
                                "n": None if _supp else (_blk or {}).get("n"),
                                "suppressed": bool(_supp)})
-        _ver = conn.execute("SELECT version, approved_at, approved_by FROM strategy_versions "
+        _ver = conn.execute("SELECT version, approved_at, approved_by, approver_body, approval_date, "
+                            "effective_date, next_review FROM strategy_versions "
                             "WHERE org_id=? AND status='approved' ORDER BY version DESC LIMIT 1",
                             (org["org_id"],)).fetchone()
         _strat_review = {
             "version": dict(_ver) if _ver else None,       # Artefact B always cites a version (or says draft)
             "principles": (_st_state.get("document") or {}).get("principles") or [],
+            "population_targets": (_st_state.get("document") or {}).get("population_targets") or [],
             "comparator_label": (_st_state.get("document") or {}).get("comparator_label"),
             "alignment_counts": _al["counts"],
             "commitments": _al["commitments"],
@@ -5046,6 +5053,13 @@ STRATEGY_MAX_MEASURES = 8            # R4: 5-8; the >=5 half is advisory (resuma
 STRATEGY_MAX_ROADMAP, STRATEGY_ROADMAP_CHARS = 6, 120
 STRATEGY_GOV_CHARS = 80
 STRATEGY_STATEMENT_CHARS = 240
+# population positions (2026-08-15, reward-director review): exec vs all-employee is
+# the primary axis of a listed company's reward strategy — but lumi holds NO executive
+# pay data, so these are DOCUMENT statements only and are never fed to the engine.
+STRATEGY_POPULATIONS = ["Executive", "Senior leadership", "Professional / management",
+                        "All employees", "Frontline / operational"]
+STRATEGY_MAX_POPULATIONS = 5
+STRATEGY_MEASURE_TEXT = 80
 
 
 def _validate_comparator(conn, org, raw):
@@ -5191,7 +5205,9 @@ def strategy_state(conn, org):
         "principles": uj(row.get("principles_json"), []) or [],
         "reward_governance": uj(row.get("reward_governance_json"), {}) or {},
         "constraints": uj(row.get("constraints_json"), {}) or {},
-        "measures": uj(row.get("measures_json"), []) or [],
+        "measures": [(m if isinstance(m, dict) else {"id": m})
+                     for m in (uj(row.get("measures_json"), []) or [])],
+        "population_targets": uj(row.get("population_targets_json"), []) or [],
         "roadmap": uj(row.get("roadmap_json"), []) or [],
         "commitments": uj(row.get("commitments_json"), {}) or {},
     }
@@ -5199,19 +5215,28 @@ def strategy_state(conn, org):
     # Artefact A versioning (2026-08-14): the live row is the working draft; the
     # latest approved snapshot names the version the review cites. dirty = edits
     # since approval (the view says so honestly rather than pretending currency).
-    ver = conn.execute("SELECT version, approved_by, approved_at FROM strategy_versions "
-                       "WHERE org_id=? AND status='approved' ORDER BY version DESC LIMIT 1",
-                       (org["org_id"],)).fetchone()
-    version = ({"version": ver["version"], "approved_by": ver["approved_by"], "approved_at": ver["approved_at"],
-                "dirty": bool(row.get("updated_at") and row["updated_at"] > ver["approved_at"])}
+    ver = conn.execute("SELECT * FROM strategy_versions WHERE org_id=? AND status='approved' "
+                       "ORDER BY version DESC LIMIT 1", (org["org_id"],)).fetchone()
+    version = (dict(dict(ver), **{"dirty": bool(row.get("updated_at") and row["updated_at"] > ver["approved_at"]),
+                                  "unstated": uj(ver["unstated_json"], []) or []})
                if ver else None)
+    if version:
+        version.pop("snapshot_json", None)
     # R3b: the position-dial category list = competitive MINUS the ruled exclusion;
     # Wellbeing/Governance carry provision/practice commitments instead.
     position_domains = [d for d in comp_domains if d not in STRATEGY_POSITION_EXCLUDE]
+    _dr = uj(row.get("draft_json"), None)
+    draft = ({"saved_at": row.get("draft_saved_at"), "by": row.get("draft_by"),
+              "step": (_dr or {}).get("step")} if _dr else None)
+    submitted = ({"at": row.get("submitted_at"), "by": row.get("submitted_by")}
+                 if row.get("submitted_at") else None)
     return {
         "strategy": strat,
         "provenance": uj(row.get("field_provenance"), {}) or {},
         "completed_at": row.get("completed_at"),
+        "draft": draft,
+        "submitted": submitted,
+        "populations": STRATEGY_POPULATIONS,
         "plane_a": _strategy_plane_a(org),
         "required": list(STRATEGY_REQUIRED),
         "benefits_options": STRATEGY_BENEFITS,
@@ -5230,7 +5255,8 @@ def strategy_state(conn, org):
 async def get_strategy(request: Request):
     user, org = require_user(request)
     out = strategy_state(get_conn(), org)
-    out["can_edit"] = user["role"] == "admin"
+    out["can_edit"] = user["role"] in ("admin", "contributor")
+    out["can_approve"] = user["role"] == "admin"
     return out
 
 
@@ -5257,37 +5283,169 @@ async def get_strategy_measure_options(request: Request):
             "floor": SUPPRESSION_FLOOR, "max": STRATEGY_MAX_MEASURES, "min_advisory": 5}
 
 
+def _unstated_sections(st):
+    """Which document sections are empty right now — recorded on approval so a
+    version can never quietly imply more than it contains."""
+    d = st.get("document") or {}
+    cm = d.get("commitments") or {}
+    checks = [
+        ("Principles", bool([p for p in (d.get("principles") or []) if str(p).strip()])),
+        ("Comparator", d.get("comparator_cut") is not None),
+        ("Constraints", bool((d.get("constraints") or {}).get("selected") or (d.get("constraints") or {}).get("notes"))),
+        ("Governance", bool(d.get("reward_governance"))),
+        ("Commitments", bool((cm.get("Wellbeing") or {}).get("metric_ids") or (cm.get("Governance & Transparency") or {}).get("statement"))),
+        ("Measures", bool(d.get("measures"))),
+        ("Roadmap", bool([r for r in (d.get("roadmap") or []) if (r or {}).get("title")])),
+        ("Population positions", bool(d.get("population_targets"))),
+    ]
+    return [name for name, ok in checks if not ok]
+
+
+@app.put("/api/strategy/draft")
+async def put_strategy_draft(request: Request):
+    """Server-side draft (2026-08-15): the in-flight capture, saved on every step.
+    Stored as a blob APART from the live columns, so a half-finished capture never
+    reaches the engine — nothing changes for anyone else until an explicit save.
+    Editor-level: the person doing the work is usually the Contributor."""
+    user, org = require_editor(request)
+    body = await _json(request)
+    payload = body.get("draft")
+    if not isinstance(payload, dict):
+        raise HTTPException(400, "draft must be an object.")
+    blob = json.dumps(payload)
+    if len(blob) > 200000:
+        raise HTTPException(400, "That draft is too large to store.")
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_conn()
+    who = user.get("name") or user.get("email") or "A colleague"
+    conn.execute("INSERT INTO org_strategy (org_id, draft_json, draft_saved_at, draft_by) VALUES (?,?,?,?) "
+                 "ON CONFLICT(org_id) DO UPDATE SET draft_json=excluded.draft_json, "
+                 "draft_saved_at=excluded.draft_saved_at, draft_by=excluded.draft_by",
+                 (org["org_id"], blob, now, who))
+    conn.commit()
+    return {"ok": True, "saved_at": now, "by": who}
+
+
+@app.get("/api/strategy/draft")
+async def get_strategy_draft(request: Request):
+    user, org = require_user(request)
+    r = get_conn().execute("SELECT draft_json, draft_saved_at, draft_by FROM org_strategy WHERE org_id=?",
+                           (org["org_id"],)).fetchone()
+    if not r or not r["draft_json"]:
+        return {"ok": True, "draft": None}
+    return {"ok": True, "draft": uj(r["draft_json"], None),
+            "saved_at": r["draft_saved_at"], "by": r["draft_by"]}
+
+
+@app.delete("/api/strategy/draft")
+async def delete_strategy_draft(request: Request):
+    user, org = require_editor(request)
+    conn = get_conn()
+    conn.execute("UPDATE org_strategy SET draft_json=NULL, draft_saved_at=NULL, draft_by=NULL WHERE org_id=?",
+                 (org["org_id"],))
+    conn.commit()
+    return {"ok": True}
+
+
+@app.post("/api/strategy/submit")
+async def submit_strategy(request: Request):
+    """Hand the strategy to an Admin for sign-off. Editor-level, because the drafter
+    is often not the approver — that separation is the point."""
+    user, org = require_editor(request)
+    conn = get_conn()
+    if not conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                        (org["org_id"],)).fetchone():
+        raise HTTPException(400, "Save the strategy before sending it for approval.")
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    who = user.get("name") or user.get("email") or "A colleague"
+    conn.execute("UPDATE org_strategy SET submitted_at=?, submitted_by=? WHERE org_id=?",
+                 (now, who, org["org_id"]))
+    conn.commit()
+    return {"ok": True, "submitted_at": now, "submitted_by": who}
+
+
+@app.post("/api/strategy/withdraw")
+async def withdraw_strategy_submission(request: Request):
+    user, org = require_editor(request)
+    conn = get_conn()
+    conn.execute("UPDATE org_strategy SET submitted_at=NULL, submitted_by=NULL WHERE org_id=?", (org["org_id"],))
+    conn.commit()
+    return {"ok": True}
+
+
+@app.get("/api/strategy/versions/{version}")
+async def get_strategy_version(version: int, request: Request):
+    """A single approved snapshot, for "what did we approve last year?"."""
+    user, org = require_user(request)
+    r = get_conn().execute("SELECT * FROM strategy_versions WHERE org_id=? AND version=?",
+                           (org["org_id"], version)).fetchone()
+    if not r:
+        raise HTTPException(404, "No such version.")
+    out = dict(r)
+    out["snapshot"] = uj(out.pop("snapshot_json", None), {}) or {}
+    out["unstated"] = uj(out.get("unstated_json"), []) or []
+    out.pop("unstated_json", None)
+    return out
+
+
 @app.post("/api/strategy/approve")
 async def approve_strategy(request: Request):
-    """Artefact A versioning: stamp the current strategy + document as version N
-    (immutable snapshot), superseding N-1. Admin-only — approval is a governance
-    act. The live row stays the working draft; the view shows dirty-since-approval
-    honestly."""
+    """Approval as a governance ACT, not a button press (2026-08-15, all three
+    persona reviews): Admin-only, explicitly confirmed, and recorded with WHO
+    approved it (the body, which is usually not the account clicking), WHEN they
+    approved it, what it is effective from, when it is next reviewed, and which
+    sections were empty at the time. Immutable once written; the next approval
+    supersedes it."""
     user, org = require_admin(request)
+    body = await _json(request)
     conn = get_conn()
     if not conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
                         (org["org_id"],)).fetchone():
         raise HTTPException(400, "Complete the three required positions before approving a version.")
+    if not body.get("confirmed"):
+        # the client shows what is unstated and asks; the server will not stamp a
+        # governance record on an unconfirmed click
+        raise HTTPException(400, "Approval must be confirmed.")
     st = strategy_state(conn, org)
-    snap = json.dumps({"strategy": st["strategy"], "document": st["document"]})
+    approver_body = str(body.get("approver_body") or "").strip()[:STRATEGY_GOV_CHARS]
+    if not approver_body:
+        raise HTTPException(400, "Name the person or body approving this version.")
+    for k in ("approval_date", "effective_date", "next_review"):
+        v = body.get(k)
+        if v:
+            try:
+                datetime.strptime(str(v), "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(400, "%s must be YYYY-MM-DD." % k.replace("_", " "))
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    row = conn.execute("SELECT submitted_by FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
     nxt = (conn.execute("SELECT MAX(version) FROM strategy_versions WHERE org_id=?",
                         (org["org_id"],)).fetchone()[0] or 0) + 1
     conn.execute("UPDATE strategy_versions SET status='superseded' WHERE org_id=? AND status='approved'",
                  (org["org_id"],))
-    conn.execute("INSERT INTO strategy_versions(org_id, version, snapshot_json, approved_by, approved_at, status) "
-                 "VALUES (?,?,?,?,?,'approved')",
-                 (org["org_id"], nxt, snap, user.get("name") or user.get("email") or "Admin", now))
+    conn.execute("INSERT INTO strategy_versions(org_id, version, snapshot_json, approved_by, approved_at, "
+                 "status, approver_body, approval_date, effective_date, next_review, submitted_by, unstated_json) "
+                 "VALUES (?,?,?,?,?,'approved',?,?,?,?,?,?)",
+                 (org["org_id"], nxt,
+                  json.dumps({"strategy": st["strategy"], "document": st["document"]}),
+                  user.get("name") or user.get("email") or "Admin", now,
+                  approver_body, body.get("approval_date") or None, body.get("effective_date") or None,
+                  body.get("next_review") or None, (row["submitted_by"] if row else None),
+                  json.dumps(_unstated_sections(st))))
+    # the submission is consumed by the approval
+    conn.execute("UPDATE org_strategy SET submitted_at=NULL, submitted_by=NULL WHERE org_id=?", (org["org_id"],))
     conn.commit()
-    return {"ok": True, "version": nxt, "approved_at": now}
+    return {"ok": True, "version": nxt, "approved_at": now,
+            "unstated": _unstated_sections(st)}
 
 
 @app.get("/api/strategy/versions")
 async def list_strategy_versions(request: Request):
     user, org = require_user(request)
     conn = get_conn()
-    return {"versions": [dict(r) for r in conn.execute(
-        "SELECT version, approved_by, approved_at, status FROM strategy_versions "
+    return {"versions": [dict(dict(r), unstated=uj(r["unstated_json"], []) or []) for r in conn.execute(
+        "SELECT version, approved_by, approved_at, status, approver_body, approval_date, "
+        "effective_date, next_review, submitted_by, unstated_json FROM strategy_versions "
         "WHERE org_id=? ORDER BY version DESC", (org["org_id"],))]}
 
 
@@ -5333,10 +5491,11 @@ async def get_strategy_alignment(request: Request):
 
 @app.put("/api/strategy")
 async def put_strategy(request: Request):
-    """Admin-only upsert. Every field validated against its enum (400 on unknown,
-    never silent coerce). completed_at is set server-side only when all three
-    required dials are non-null — the gate is not UI-only."""
-    user, org = require_admin(request)
+    """Editor-level upsert (Admin or Contributor — 2026-08-15: the person who does
+    this work is usually the Contributor; APPROVAL stays Admin-only). Every field is
+    validated against its enum (400 on unknown, never silent coerce). completed_at is
+    set server-side only when all three required dials are non-null."""
+    user, org = require_editor(request)
     body = await _json(request)
     incoming = body.get("strategy") or {}
     vals, prov = {}, {}
@@ -5458,20 +5617,36 @@ async def put_strategy(request: Request):
     docvals["constraints_json"] = json.dumps(cons) if cons else None
     prov["constraints"] = "set" if cons else "skipped"
 
-    meas = doc_in.get("measures") or []
-    if not isinstance(meas, list):
-        raise HTTPException(400, "measures must be a list of metric ids.")
-    meas = [str(m) for m in meas if m]
+    # measures carry their own baseline/target/owner (2026-08-15, reward-director:
+    # "a measure without a target value is a topic, not a measure"). Legacy rows are
+    # a bare id list — accepted and normalised, never rejected.
+    meas_in = doc_in.get("measures") or []
+    if not isinstance(meas_in, list):
+        raise HTTPException(400, "measures must be a list.")
+    meas = []
+    for m in meas_in:
+        row = {"id": str(m)} if not isinstance(m, dict) else dict(m)
+        qid = str(row.get("id") or "").strip()
+        if not qid:
+            continue
+        out_row = {"id": qid}
+        for k in ("baseline", "target", "owner"):
+            v = str(row.get(k) or "").strip()
+            if v:
+                if len(v) > STRATEGY_MEASURE_TEXT:
+                    raise HTTPException(400, "Measure %s is capped at %d characters." % (k, STRATEGY_MEASURE_TEXT))
+                out_row[k] = v
+        meas.append(out_row)
     if len(meas) > STRATEGY_MAX_MEASURES:
         raise HTTPException(400, "At most %d measures (R4)." % STRATEGY_MAX_MEASURES)
     if meas:
         vis = org_visible_questions(org)
-        bad = [m for m in meas if m not in vis]
+        bad = [m["id"] for m in meas if m["id"] not in vis]
         if bad:
             # entitlement guardrail 6: an invisible metric can never be a measure — blocked
             # at capture, not silently dropped later (§2.5).
             raise HTTPException(400, "'%s' isn't a metric this organisation can see." % bad[0])
-        if len(set(meas)) != len(meas):
+        if len({m["id"] for m in meas}) != len(meas):
             raise HTTPException(400, "Each measure can be chosen once.")
     docvals["measures_json"] = json.dumps(meas) if meas else None
     prov["measures"] = "set" if meas else "skipped"
@@ -5501,6 +5676,35 @@ async def put_strategy(request: Request):
         raise HTTPException(400, "At most %d roadmap items." % STRATEGY_MAX_ROADMAP)
     docvals["roadmap_json"] = json.dumps(rm_out) if rm_out else None
     prov["roadmap"] = "set" if rm_out else "skipped"
+
+    pops_in = doc_in.get("population_targets") or []
+    if not isinstance(pops_in, list):
+        raise HTTPException(400, "population_targets must be a list.")
+    pops = []
+    for p in pops_in[:STRATEGY_MAX_POPULATIONS + 1]:
+        if not isinstance(p, dict):
+            raise HTTPException(400, "Each population position must be an object.")
+        label = str(p.get("label") or "").strip()
+        if not label:
+            continue
+        if label not in STRATEGY_POPULATIONS:
+            raise HTTPException(400, "'%s' isn't a recognised employee population." % label)
+        stance = p.get("position")
+        if stance and stance not in STRATEGY_ENUMS["market_position"]:
+            raise HTTPException(400, "'%s' isn't a valid position — use lag, match or lead." % stance)
+        row = {"label": label}
+        if stance:
+            row["position"] = stance
+        note = str(p.get("note") or "").strip()
+        if note:
+            row["note"] = note[:STRATEGY_STATEMENT_CHARS]
+        pops.append(row)
+    if len(pops) > STRATEGY_MAX_POPULATIONS:
+        raise HTTPException(400, "At most %d employee populations." % STRATEGY_MAX_POPULATIONS)
+    if len({p["label"] for p in pops}) != len(pops):
+        raise HTTPException(400, "Each population can appear once.")
+    docvals["population_targets_json"] = json.dumps(pops) if pops else None
+    prov["population_targets"] = "set" if pops else "skipped"
 
     cm = doc_in.get("commitments") or {}
     if cm:
@@ -5541,7 +5745,8 @@ async def put_strategy(request: Request):
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     completed_at = (prev["completed_at"] if prev and prev["completed_at"] else None) or (now if complete else None)
     DOC_COLS = ["comparator_cut", "segments_json", "principles_json", "reward_governance_json",
-                "constraints_json", "measures_json", "roadmap_json", "commitments_json"]
+                "constraints_json", "measures_json", "roadmap_json", "commitments_json",
+                "population_targets_json"]
     cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets"] + DOC_COLS + ["field_provenance", "updated_at", "completed_at"]
     row_vals = ([vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"]]
                 + [docvals[c] for c in DOC_COLS] + [json.dumps(prov), now, completed_at])
@@ -5561,6 +5766,10 @@ async def put_strategy(request: Request):
         if changed:
             conn.execute("UPDATE orgs SET registry_json=? WHERE org_id=?",
                          (json.dumps(reg), org["org_id"]))
+    conn.commit()
+    # the saved strategy supersedes any in-flight draft
+    conn.execute("UPDATE org_strategy SET draft_json=NULL, draft_saved_at=NULL, draft_by=NULL WHERE org_id=?",
+                 (org["org_id"],))
     conn.commit()
     # notification coherence (step-3, ruling C — storm bound): a strategy change is the user's OWN
     # deliberate act, so it re-sorts what's worth flagging — that must QUIETLY re-baseline the bell,
