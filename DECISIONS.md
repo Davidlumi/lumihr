@@ -18504,3 +18504,41 @@ Overview scent chips.
 
 The wizard keeps its shape (David signed it off in the 2026-08-15 pass); a density pass takes
 the dial page from 2742px to 2542px. Suite 15/15. ?v=632.
+
+## 2026-08-16 — The reward sections end in a document
+
+David: *"using AI we need to create a Willis Towers Watson grade experience for their reward
+strategy and reward plan — the output should be a downloadable report or strategy document,
+with commentary. The final screens at the moment for both are really poor — let's move it to
+downloadable content so we can make it more professional."* Format ruled: **print-to-PDF done
+properly** (the board pack's convention — no new dependency, and the HTML is reusable if a
+server-side renderer is ever added). AI depth ruled: **full consultant narrative**.
+
+Two A4 artefacts, `/report/strategy` and `/report/plan`, laid out on the board pack's own
+sheet chrome so all three documents read as one family. The strategy document carries the
+stated intent, the dials and what each drives, principles/peers/constraints, populations,
+tensions and what to watch, and the governance record. The plan report carries position
+against intent by area, the narrated findings, the gaps with each option's cost, speed and
+trade-off, and the sequenced plan with what each action returns.
+
+**Composed, not rebuilt.** Nothing in the documents computes: substance comes from
+`/api/strategy` and `/api/strategy/alignment`, prose from three generators that already exist
+and already validate — commentary, diagnosis, action plan. Each keeps its deterministic floor,
+so a model outage costs polish and never a page, and the last page names which of the three
+came from the model. The only server change was caching the diagnosis (see below).
+
+**Diagnosis caching.** `/api/strategy-diagnosis` regenerated on every call — affordable when
+its only caller was a collapsible on the Overview, not when a document reads it on every open.
+Now cached on the payload hash in `metric_commentary` under `__diagnosis__`, storing the
+NARRATED parts so a cache hit is byte-identical to a fresh generation: a reader must never see
+the document change under them on reload.
+
+**Pagination by weight.** Sheets chunk on estimated block weight, not item count — a gap area
+with a four-lever options table is three times the height of one with a coverage note, and a
+fixed items-per-sheet overran. This matters because a section that flows onto a continuation
+sheet makes the "N of M" in the footer disagree with the paper in the reader's hand. Every
+sheet in both documents measures exactly A4; verified live on the AI rig with all three
+generators returning `model`. Suite 15/15. ?v=638.
+
+`web/js/report.js` must load after `strategy.js` — it reads that file's module-scope helpers,
+and classic scripts share one lexical scope.
