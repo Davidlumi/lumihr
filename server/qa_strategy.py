@@ -328,6 +328,13 @@ def main():
     for bad in ("position", "gaps", "counts", "roi", "domains", "commitments"):
         stb, _ = sa.req("/api/strategy/narrative", "PUT", {"key": bad, "text": "made up"})
         check("computed section '%s' is NOT author-writable" % bad, stb == 400, stb)
+    # per-domain commentary keys — the report's main sections (2026-08-16)
+    st_d, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "domain:Pay", "text": "Board wording for Pay."})
+    check("a domain's commentary is author-writable", st_d == 200, st_d)
+    st_bad, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "domain:Not A Category", "text": "x"})
+    check("an unknown category is refused, not stored", st_bad == 400, st_bad)
+    sa.req("/api/strategy/narrative", "PUT", {"key": "domain:Pay", "text": ""})
+
     st_long, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "watch", "text": "x" * 5000})
     check("an over-long section is refused, not truncated", st_long == 400, st_long)
 
