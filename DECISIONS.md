@@ -18473,3 +18473,34 @@ five of the demo org's nine gaps say "a later tranche" — honest, but visible o
 R7 (8 coherence rules) and R8 (12 levers) both still carry DRAFT `_readme` notes. And ROI quantifies
 in £ only where the money model has a figure for that category; engagement and retention returns
 would need assumptions in the register before the plan could put a number on them.
+
+## 2026-08-16 — Both reward sections simplified; the plan links into Signals
+
+David: *"do a deep ui ux and design review of both reward sections — they need to be
+simplified, they need to be beautiful, a pleasure to work with — the reward plan must link to
+signals so the user can jump into any domain and see what they need to do for alignment."*
+
+**Strategy.** Four progress systems sat on a six-section document: a completeness meter, a
+jump-nav of state dots, "Part 1 / Part 2" dividers, and a per-card Stated / Not yet stated
+badge. The badge alone carries it — the other three are gone, along with a spine that still
+announced a third part deleted when commitments/measures/roadmap went. The stance prose and
+the eleven-row dial ledger also said the same thing twice, the ledger adding a "why it
+matters" column identical for every org; the dials are now a chip strip under the prose they
+explain, in a single card called "What we say".
+
+**The bug that fell out of the review.** The approval modal's unstated-sections list still
+counted Governance, Commitments, Measures and Roadmap — all retired from capture — so every
+approval warned about four sections nobody could ever state, while `_unstated_sections` on the
+server recorded the correct five. Two hand-maintained lists in two languages drift silently,
+so `qa_strategy` now parses both from source and compares them (reading `app.py` as text
+rather than importing it — a bare `qa_` run must not open the live DB).
+
+**Plan.** Nine flat gaps made the reader assemble "everything about Pay" in their own head.
+They group one card per domain now, and every card ends in the two ways out: that area's
+signals — filtered to how it sits against strategy — and the data behind them. The exhibit
+rows are the same door. `window.__sigJump = {domain, strat[]}` carries both axes into the feed
+on the same consume-once contract as the existing `__sigJumpDomain`, which still serves the
+Overview scent chips.
+
+The wizard keeps its shape (David signed it off in the 2026-08-15 pass); a density pass takes
+the dial page from 2742px to 2542px. Suite 15/15. ?v=632.
