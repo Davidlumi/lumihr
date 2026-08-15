@@ -335,31 +335,8 @@ function sdStance(strat, orgName) {
   return parts;
 }
 
-// aim (a ZONE, shaded navy) vs position (one dot at the true percentile).
-// The three zone extents follow the real market band (P35-65) on an 8-92% track;
-// on aim = the dot sits inside the shaded stretch. One band, one dot, one chip.
-// zone extents DERIVED from the live market band through the same mapper as the
-// dot — zone, dot and alignment chip cannot disagree (2026-08-09 persona review:
-// a hardcoded 58.4 drew the aim zone to P60 while alignment read to P65)
-const sdPX = (p) => 8 + Math.max(0, Math.min(100, p)) * 0.84;
-const sdBand = () => (typeof window !== "undefined" && window.MARKET_BAND) || [35, 65];
-const SD_ZONES_F = () => { const [lo, hi] = sdBand(); return [[8, sdPX(lo)], [sdPX(lo), sdPX(hi)], [sdPX(hi), 92]]; };
-const sdPctlX = (p) => sdPX(p) + "%";
-function SdAxis({ intent, actual, pctl, align }) {
-  const ii = SD_IDX[intent], ai = SD_IDX[actual];
-  const SD_ZONES = SD_ZONES_F();
-  const dotX = (pctl != null && ai != null) ? sdPctlX(pctl)
-    : (ai != null ? ((SD_ZONES[ai][0] + SD_ZONES[ai][1]) / 2) + "%" : null);
-  // dot colour follows ALIGNMENT (RAG since 2026-08-13, matching the overview glyph):
-  // on=green / below=amber / above=red — the page reads intent, not raw market position
-  const acls = " a-" + (align || "off");
-  return html`<span class="sd-axis" aria-hidden="true">
-    ${SD_ZONES.map(([l, r], i) => html`<span key=${i}
-      class=${"sd-zone" + (i === ii ? " aimed" : "")}
-      style=${{ left: l + "%", width: (r - l) + "%" }}></span>`)}
-    ${dotX && html`<span class=${"sd-mark actual" + acls} style=${{ left: dotX }} title="Your position"></span>`}
-  </span>`;
-}
+// (SdAxis + its zone helpers retired 2026-08-16 with the /plan working screen —
+//  the report states position in a table, not a painted axis.)
 
 // ---- Total Reward Strategy document sections (2026-08-15: READ-ONLY) ---------
 // The document PRESENTS; the survey CAPTURES. Every field is captured step-by-step
@@ -1072,196 +1049,20 @@ function ReviewSection({ title, chip, chipCls, rows, onEdit, onChangeRow, locked
     </div>`;
 }
 
-// ============================ REWARD PLAN =====================================
-// The strategy section says what you INTEND. This says where you actually are, the
-// gaps between the two, and what to do about them (2026-08-15, David: "a whole new
-// section which shows where you are now, the gaps and the plan to improve with roi").
-// Everything here is engine-computed: positions from the benchmark, gaps from the
-// alignment rules, levers from David's inventory, £ from the money model.
-const RP_STATUS = { evidenced: { t: "Holding", cls: "ok" }, behind_intent: { t: "Behind intent", cls: "warn" },
-  contradicted: { t: "Contradicted", cls: "bad" }, not_evidenced: { t: "Not yet evidenced", cls: "" } };
-
+// ---- /plan IS the report (2026-08-16) ---------------------------------------
+// Same move as /strategy: the working screen — hero, exhibit, tally tiles, grouped
+// gap cards, plan section, hand-off — is replaced by the A4 Reward Position & Plan
+// artefact itself. The two ways into an area (its signals, its data) survive as
+// screen-only buttons on each gap page in the document, so nothing that made the
+// old screen useful was lost; they simply don't print.
+//
+// autoPlan is the "so it gets generated" half: the plan used to sit behind a Build
+// my plan button, so the document opened announcing it had no plan. It now writes
+// itself on first open for anyone who could have pressed that button.
 window.RewardPlanPage = function ({ me }) {
-  const [d, setD] = useState(null);
-  const [err, setErr] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState(null);            // which gap's options are expanded
   const canEdit = me && me.user && ["admin", "contributor"].includes(me.user.role);
-  const load = () => api("/api/strategy/alignment").then(setD).catch(e => setErr(e.message));
-  useEffect(() => { load(); }, []);
-  if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your reward plan"
-    body=${err + " — nothing is lost."}
-    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
-  if (!d) return html`<${PageLoading} />`;
-  if (d.ok === false) return html`<${EmptyState} icon="compass" title="Set your reward strategy first"
-    body="Your plan is built from the gap between what you said you'd do and what your data shows — so it starts with your strategy."
-    action=${html`<button class="btn small primary" onClick=${() => nav("/strategy")}>Go to Reward strategy</button>`} />`;
-
-  const commitments = d.commitments || [];
-  const gaps = commitments.filter(c => c.status === "behind_intent" || c.status === "contradicted");
-  const holding = commitments.filter(c => c.status === "evidenced");
-  const unevidenced = commitments.filter(c => c.status === "not_evidenced");
-  const plan = d.plan;
-  const optsFor = (id) => (d.options || []).find(o => o.commitment_id === id);
-  // ---- gaps grouped BY DOMAIN (2026-08-16) ----------------------------------
-  // A flat list of nine gaps made you assemble "everything about Pay" in your own
-  // head. They group by category now, so each domain is one card you can act on —
-  // and each card carries the two ways out of it: its signals, and its data.
-  const domAlign = {};
-  (d.domains || []).forEach(x => { domAlign[x.name] = (x.target || {}).alignment; });
-  const groups = [];
-  gaps.forEach(c => {
-    let g = groups.find(x => x.cat === c.category);
-    if (!g) { g = { cat: c.category, items: [], align: domAlign[c.category] }; groups.push(g); }
-    g.items.push(c);
-  });
-  // David 2026-08-16: "the reward plan must link to signals — so the user can jump
-  // into any domain and see what they need to do for alignment". The feed already
-  // filters on domain and on strategy alignment; this hands it both at once.
-  const toSignals = (cat, align) => {
-    window.__sigJump = { domain: cat, strat: align ? [align] : [] };
-    nav("/signals");
-  };
-  const build = async () => {
-    setBusy(true);
-    try { const r = await api("/api/strategy/plan", { method: "POST", body: {} });
-      if (r && r.ok === false) toast(r.reason === "locked" ? "Your insights unlock once your data is in." : "Set your strategy first.", "error");
-      else { await load(); toast("Plan rebuilt from your current gaps."); }
-    } catch (e) { toast(e && e.message || "Couldn't build the plan.", "error"); }
-    setBusy(false);
-  };
-
-  return html`
-    <div class="rp-wrap">
-      <div class="rp-hero">
-        <div>
-          <div class="sd-eyebrow sdx-eyebrow">Reward plan</div>
-          <h1 class="sdx-org">Where you are, and what to do about it</h1>
-          <p class="strat-sub">Your stated strategy against your own data on <b>${d.cut_label}</b>${d.objective ? html`, read through your <b>${d.objective}</b> objective` : ""}.</p>
-        </div>
-        <div class="rp-hero-side">
-          <div class="rp-tally">
-            <div class="rp-tally-n">${gaps.length}</div>
-            <div class="rp-tally-l">${gaps.length === 1 ? "gap to close" : "gaps to close"}</div>
-          </div>
-          <button class="btn quiet" onClick=${() => nav("/strategy")}>View your strategy</button>
-        </div>
-      </div>
-
-      ${/* ---- 1. where you are now ---- */ ""}
-      <section class="card rp-sec">
-        <h2 class="rp-h">Where you are now</h2>
-        <p class="sd-note sd-ex-cap">The shaded band is your strategy; the dot is where you land. Pick any area to open its signals.</p>
-        <div class="sd-ex-row sd-ex-head" aria-hidden="true">
-          <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
-          <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
-          <span></span>
-        </div>
-        <div class="sd-exhibit">
-          ${(d.domains || []).map(dom => {
-            const al = (dom.target || {}).alignment;
-            const read = al === "on_target" ? { t: "On strategy", cls: "ok" } : al === "ahead" ? { t: "Above strategy", cls: "ahead" }
-              : al === "behind" ? { t: "Below strategy", cls: "behind" } : { t: "—", cls: "" };
-            return html`<button key=${dom.name} class="sd-ex-row rp-ex-row" onClick=${() => toSignals(dom.name, al)}
-              title=${"See " + domainLabel(dom.name) + " signals for this alignment"}>
-              <span class="sd-ex-name">${dom.name}</span>
-              <${SdAxis} intent=${(dom.target || {}).stance} actual=${dom.position && dom.position.verdict}
-                pctl=${dom.position && dom.position.depth_pctl} align=${al} />
-              <span class=${"sd-ex-read " + read.cls}>${read.t}</span>
-            </button>`; })}
-        </div>
-        <div class="rp-tiles">
-          ${[["off strategy", gaps.length, "warn"], ["holding", holding.length, "ok"],
-             ["not yet evidenced", unevidenced.length, ""]].map(([l, n, cls]) => html`
-            <div key=${l} class=${"rp-tile " + cls}>
-              <div class="rp-tile-n">${n}</div>
-              <div class="rp-tile-l">${l}</div>
-            </div>`)}
-        </div>
-      </section>
-
-      ${/* ---- 2. the gaps, one card per domain ---- */ ""}
-      <section class="card rp-sec" id="rp-gaps">
-        <h2 class="rp-h">The gaps <span class="rp-h-n">${gaps.length}</span></h2>
-        <p class="sd-note sd-ex-cap">One card per area. Every card ends with the two ways in: the live signals for that area, and the data behind them.</p>
-        ${groups.length ? html`<div class="rp-groups">
-          ${groups.map(g => html`
-            <div key=${g.cat} class="rp-group">
-              <div class="rp-group-head">
-                <h3 class="rp-group-t">${domainLabel(g.cat)}</h3>
-                <span class=${"rp-chip " + (g.items.some(c => c.status === "contradicted") ? "bad"
-                  : g.items.every(c => c.direction === "past") ? "warn" : "warn")}>${
-                  g.items.some(c => c.status === "contradicted") ? "Contradicted"
-                    : g.items.every(c => c.direction === "past") ? "Past intent" : "Behind intent"}</span>
-              </div>
-              ${g.items.map(c => { const ob = optsFor(c.id); return html`
-                <div key=${c.id} class="rp-gap">
-                  <p class="rp-gap-say">${c.statement}</p>
-                  ${ob && ob.levers && ob.levers.length ? html`
-                    <button class="rp-more" onClick=${() => setOpen(open === c.id ? null : c.id)}>
-                      ${open === c.id ? "Hide" : "What the market does about it"} · ${ob.levers.length}</button>
-                    ${open === c.id ? html`
-                      <div class="rp-levers">
-                        <p class="caption">${ob.framing}</p>
-                        ${ob.levers.map(l => html`<div key=${l.lever_id} class="rp-lever">
-                          <div class="rp-lever-t"><b>${l.name}</b> <span class="sd-doc-meta">${l.cost_character} · ${l.speed} · ${l.reversibility} to reverse</span></div>
-                          <div class="caption">${l.what_it_is}</div>
-                          <div class="caption rp-trade"><${Icon} name="info" size=${12} /> ${l.trade_off}</div>
-                        </div>`)}
-                      </div>` : null}`
-                  : ob && ob.coverage_note ? html`<p class="sd-note rp-note">${ob.coverage_note}</p>` : null}
-                </div>`; })}
-              <div class="rp-group-foot">
-                <button class="rp-go" onClick=${() => toSignals(g.cat, g.align)}>
-                  <${Icon} name="zap" size=${13} /> ${domainLabel(g.cat)} signals</button>
-                <a class="rp-go" href=${"#/category/" + encodeURIComponent(g.cat)}>
-                  <${Icon} name="bar-chart" size=${13} /> The data behind it</a>
-              </div>
-            </div>`)}
-        </div>`
-        : html`<${EmptyState} icon="check" title="Nothing is off strategy"
-            body="Every commitment your data can speak to matches what you said. Come back after your next data refresh." />`}
-        ${unevidenced.length ? html`<p class="sd-note">${unevidenced.length} commitment${unevidenced.length === 1 ? "" : "s"} can't be assessed yet — the metrics behind ${unevidenced.length === 1 ? "it" : "them"} are unanswered.</p>` : null}
-      </section>
-
-      ${/* ---- 3. the plan ---- */ ""}
-      <section class="card rp-sec">
-        <div class="rp-h-row">
-          <h2 class="rp-h">The plan</h2>
-          ${canEdit ? html`<button class="btn ${plan ? "" : "primary"}" disabled=${busy} onClick=${build}>
-            ${busy ? "Building…" : plan ? "Rebuild" : "Build my plan"}</button>` : null}
-        </div>
-        ${plan ? html`
-          <p class="sd-stance lead">${plan.summary}</p>
-          <div class="rp-actions">
-            ${(plan.actions || []).map((a, i) => html`
-              <div key=${i} class="rp-action">
-                <div class="rp-action-n">${i + 1}</div>
-                <div class="rp-action-b">
-                  <div class="rp-action-t">${a.title} <span class="sd-doc-meta">${domainLabel(a.category || "")} · ${a.horizon}</span></div>
-                  <div class="caption">${a.why}</div>
-                  <div class="rp-roi"><${Icon} name="coins" size=${13} /> ${a.roi}</div>
-                </div>
-              </div>`)}
-          </div>
-          <p class="sd-note">${plan.basis} Built ${plan.built_at ? fmtDate(plan.built_at) : ""}.</p>`
-        : html`<${EmptyState} icon="zap" title="No plan built yet"
-            body="lumi will turn the gaps above into a sequenced plan — each action with what it typically returns, using the indicative £ from your own benchmark."
-            action=${canEdit ? html`<button class="btn small primary" disabled=${busy} onClick=${build}>${busy ? "Building…" : "Build my plan"}</button>` : null} />`}
-      </section>
-
-      ${/* ---- 4. take it away ---- */ ""}
-      <section class="card rp-sec rp-handoff">
-        <div class="rp-h-row">
-          <div>
-            <h2 class="rp-h">Take this away</h2>
-            <p class="sd-note sd-ex-cap">Everything above as a laid-out <b>Reward Position ${"&"} Plan</b> report —
-              executive summary, findings, the gaps with their options and trade-offs, and the plan with what
-              each action returns. Ready to save as a PDF.</p>
-          </div>
-          <button class="btn primary" onClick=${() => nav("/report/plan")}>
-            <${Icon} name="download" size=${13} /> Open the report</button>
-        </div>
-      </section>
-    </div>`;
+  const chips = html`<button class="sdx-chip sdx-chip-btn" onClick=${() => nav("/strategy")}>
+    <${Icon} name="compass" size=${12} /> Your reward strategy</button>`;
+  return html`<${RewardReportPage} kind="plan" me=${me} hideBack=${true}
+    chips=${chips} autoPlan=${canEdit} />`;
 };

@@ -64,7 +64,7 @@ const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above m
 // than link to it (David 2026-08-16: "replace this page with just a view of the PDF
 // report"). The governance controls — edit, send for approval, approve, version
 // history — ride in the same toolbar instead of on a second bar above it.
-window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, before }) {
+window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, before, autoPlan }) {
   const K = RRD[kind] || RRD.strategy;
   const [st, setSt] = useState(null);         // /api/strategy
   const [al, setAl] = useState(null);         // /api/strategy/alignment
@@ -82,9 +82,32 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
     return Promise.all(jobs);
   };
+  const [planBusy, setPlanBusy] = useState(false);
+  const buildPlan = async (a) => {
+    setPlanBusy(true);
+    try {
+      const r = await api("/api/strategy/plan", { method: "POST", body: {} });
+      if (r && r.ok === false) {
+        if (r.reason === "locked") toast("Your insights unlock once your data is in.", "error");
+      } else {
+        const fresh = await api("/api/strategy/alignment");
+        setAl(fresh);
+        if (a) toast("Plan rebuilt from your current gaps.");
+      }
+    } catch (e) { if (a) toast(e && e.message || "Couldn't build the plan.", "error"); }
+    setPlanBusy(false);
+  };
   useEffect(() => {
     Promise.all([api("/api/strategy"), api("/api/strategy/alignment")])
-      .then(([s, a]) => { setSt(s); setAl(a); })
+      .then(([s, a]) => {
+        setSt(s); setAl(a);
+        // "do the same for the reward plan SO IT GETS GENERATED" (David 2026-08-16):
+        // the plan used to sit behind a Build my plan button, so the document opened
+        // saying it had no plan. It writes itself on first open instead — once only,
+        // for someone who could have pressed the button anyway, and never when one is
+        // already stored (the endpoint persists it, so this costs one call per org).
+        if (autoPlan && a && a.ok !== false && !a.plan) buildPlan(false);
+      })
       .catch(e => setErr(e.message));
     loadNarrative(false);
   }, [kind]);
@@ -110,13 +133,23 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const today = fmtDate();
   const cutLabel = al.cut_label || "your peer group";
 
-  // gaps grouped by area, exactly as the working screen groups them
+  // gaps grouped by area
+  const domAlign = {};
+  domains.forEach(x => { domAlign[x.name] = (x.target || {}).alignment; });
   const groups = [];
   gaps.forEach(c => {
     let g = groups.find(x => x.cat === c.category);
-    if (!g) { g = { cat: c.category, items: [] }; groups.push(g); }
+    if (!g) { g = { cat: c.category, items: [], align: domAlign[c.category] }; groups.push(g); }
     g.items.push(c);
   });
+  // The document is also the working surface now, so each area keeps the two ways out
+  // it had on the old screen (David 2026-08-16: "the reward plan must link to signals").
+  // Screen-only: a printed page can't be clicked, and a PDF full of dead buttons reads
+  // like a broken web page rather than a report.
+  const toSignals = (cat, align) => {
+    window.__sigJump = { domain: cat, strat: align ? [align] : [] };
+    nav("/signals");
+  };
 
   const regen = async () => {
     setBusy(true);
@@ -188,7 +221,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       Prun("The gaps, by area", "gapsp", groups,
            g => 1 + g.items.reduce((n, c) => n + ((optsFor(c.id) || {}).levers || []).length + 1, 0), 5);
     if (plan && (plan.actions || []).length)
-      Prun("The plan", "planp", plan.actions, () => 2, 7);
+      // budget 5, not 7: the first sheet also carries the summary lede, and three
+      // actions with their why + return overran A4 by ~55px
+      Prun("The plan", "planp", plan.actions, () => 2, 5);
     else
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
   }
@@ -366,6 +401,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                 </table>`
               : ob && ob.coverage_note ? html`<p class="rr-p rr-sm rr-muted">${ob.coverage_note}</p>` : null}
             </div>`; })}
+          <div class="rr-gap-foot no-print">
+            <button class="rp-go" onClick=${() => toSignals(g.cat, g.align)}>
+              <${Icon} name="zap" size=${13} /> ${domainLabel(g.cat)} signals</button>
+            <a class="rp-go" href=${"#/category/" + encodeURIComponent(g.cat)}>
+              <${Icon} name="bar-chart" size=${13} /> The data behind it</a>
+          </div>
         </div>`)}`;
 
     if (kindOf === "planp") return html`
@@ -381,8 +422,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             </li>`)}
         </ol>
         ${part === parts - 1 ? html`<p class="rr-p rr-sm">${plan.basis}${plan.built_at ? " Built " + fmtDate(plan.built_at) + "." : ""}</p>` : null}`
-      : html`<p class="rr-p rr-muted">No plan has been built yet. Open <b>Reward plan</b> and choose
-        “Build my plan” to sequence these gaps into actions with their indicative return.</p>`}`;
+      : html`<p class="rr-p rr-muted">${planBusy
+          ? "Sequencing your gaps into a plan…"
+          : "No plan is stored yet. Use Rebuild plan above to sequence these gaps into actions with their indicative return."}</p>`}`;
 
     if (kindOf === "method") return html`
       <${RrH} n=${kind === "plan" ? "06" : "08"}>Method and basis<//>
@@ -414,7 +456,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>
         <div class="row">
           ${aiWaiting ? html`<${Chip} kind="accent">Writing commentary…<//>` : null}
+          ${planBusy ? html`<${Chip} kind="accent">Writing the plan…<//>` : null}
           ${extraActions || null}
+          ${autoPlan ? html`<button class="btn" disabled=${planBusy} onClick=${() => buildPlan(true)}
+            title="Re-sequence the plan from your current gaps">${planBusy ? "Writing…" : "Rebuild plan"}</button>` : null}
           <button class="btn" disabled=${busy || aiWaiting} onClick=${regen}
             title="Rewrite the commentary from your current position">${busy ? "Rewriting…" : "Rewrite commentary"}</button>
           <button class="btn primary" onClick=${doPrint}><${Icon} name="download" size=${14} /> Save as PDF</button>

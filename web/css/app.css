@@ -5033,3 +5033,5 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-bar-l { flex-wrap: wrap; gap: var(--s2); align-items: center; }
 .rr-bar { flex-wrap: wrap; gap: var(--s3); align-items: flex-start; }
 .rr-vers { max-width: 210mm; margin: 0 auto var(--s4); }
+.rr-gap-foot { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3);
+  padding-top: var(--s3); border-top: 1px solid var(--border); }
