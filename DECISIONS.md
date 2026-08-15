@@ -18726,3 +18726,39 @@ rows. 28 sheets on the demo org, none over A4, verified live with all three gene
 Still open, and now the most visible weakness: the **R8 lever tranche** covers only Pay,
 Benefits & Lifestyle and Time Off & Family, so five domain sections end on "a later tranche"
 where the reader is expecting recommendations.
+
+## 2026-08-16 (h) — Lever inventory tranche 2: every domain is complete
+
+David: *"complete it, make sure all domains are on there."*
+
+The v1 tranche (R8) covered three categories, so five of the eight domain sections ended on
+*"this area's levers are a later tranche"* — at exactly the point a reader arrives expecting the
+recommendations the section has been building toward. **12 levers → 36.**
+
+Added: Incentives & Recognition, Pensions & Savings, Health & Protection, Wellbeing, Governance
+& Transparency — plus the **Approach** half for Benefits & Lifestyle and Time Off & Family,
+which carried Substance levers only. The gate caught that omission, which is what it is for.
+
+**Every category now carries both registers.** A position gap needs Substance; a coherence
+contradiction needs Approach. Until now a category could satisfy one and silently fail the
+other, and the report would render a section whose recommendations simply were not there.
+
+Written to the same contract as the original twelve: a named UK mechanism, its typical shape,
+cost character, speed, reversibility, and a **mandatory trade-off** stating what it costs you
+elsewhere. No vendor names, no directive verbs, no legal claims — all gate-enforced.
+
+**The gate no longer pins the tranche.** It asserted `{Pay, Benefits & Lifestyle, Time Off &
+Family}` literally, so it would have gone green on a report with five hollow sections. It now
+derives coverage from the live taxonomy and additionally asserts both registers per category, so
+adding a category fails loudly rather than shipping an empty section. The no-silent-caps
+contract moved to synthetic fixtures (a lever set stripped of Approach; a category outside the
+taxonomy) since no real category can exercise it any more.
+
+Verified on the rig: **zero occurrences of "later tranche" in the whole document**. The only
+zero-lever blocks left are the two principled ones — an overspend gap (which must not be offered
+cost-adding levers, and says so) and a domain with no gaps at all. Zero silent blocks. The plan
+now rolls up **8 actions across 3 domains** where it previously produced 4 from one. 28 sheets,
+none over A4. Suite 15/15.
+
+**These 24 new levers are Claude-drafted and need David's review**, exactly as the first twelve
+do — the `_readme` records it.
