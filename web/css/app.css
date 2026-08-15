@@ -3570,11 +3570,11 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 /* dial card */
 .dial-card { background: var(--surface); border: 1px solid var(--chrome-edge);
-  padding: var(--s4) var(--s5); margin-bottom: var(--s3); box-shadow: var(--shadow-soft); }
+  padding: var(--s3) var(--s5) var(--s2); margin-bottom: var(--s3); box-shadow: var(--shadow-soft); }
 /* required-but-unset dial: the ATTENTION channel (coral), not RAG amber — amber is a market
    verdict, this is "needs your input" (mirrors .sig-fchip-risk.on / .signal-row.is-risk). */
 .dial-card.flagged { border-color: var(--lumi-coral); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); }
-.dial-head { display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s4); }
+.dial-head { display: flex; gap: var(--s3); align-items: flex-start; margin-bottom: var(--s2); }
 .dial-roundel { width: 34px; height: 34px; border-radius: var(--radius-xs); background: var(--blue-tint); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .dial-roundel.flagged { background: color-mix(in srgb, var(--lumi-coral) 16%, var(--surface)); color: var(--lumi-coral-deep); }
@@ -3591,7 +3591,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   transition: left var(--dur-slow) cubic-bezier(.22,.61,.36,1); z-index: 2; }
 @media (prefers-reduced-motion: reduce) { .scale-fill, .scale-thumb { transition: none; } }
 .scale-stops { display: flex; position: relative; z-index: 1; }
-.scale-stop { flex: 1; background: none; border: none; cursor: pointer; font-family: inherit; padding: var(--s5) var(--s2) 0;
+.scale-stop { flex: 1; background: none; border: none; cursor: pointer; font-family: inherit; padding: var(--s4) var(--s2) 0;
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; }
 .scale-stop .ot { font-size: var(--fs-label); font-weight: 650; color: var(--ink-faint); transition: color var(--dur-fast); }
 .scale-stop .od { font-size: var(--fs-micro); color: var(--ink-faint); opacity: 0; max-width: 18ch; transition: opacity var(--dur-base); line-height: 1.3; }
@@ -4651,26 +4651,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sdx-chip.warn { background: var(--neutral-perf-tint); color: var(--neutral-perf-ink); }
 .sdx-hero-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s3); }
 .sdx-actions { display: flex; gap: var(--s2); flex-wrap: wrap; justify-content: flex-end; }
-.sdx-meter { min-width: 240px; width: 100%; max-width: 300px; }
-.sdx-meter-line { font-size: var(--fs-caption); color: var(--ink-soft); margin-bottom: 5px; text-align: right; }
-.sdx-meter-line b { color: var(--ink); }
-.sdx-meter-bar { height: 6px; border-radius: 4px; background: var(--tile); overflow: hidden; }
-.sdx-meter-bar i { display: block; height: 100%; border-radius: 4px; background: var(--blue);
-  transition: width .5s cubic-bezier(.2,.8,.2,1); }
 .sdx-hero .sd-evi-toggle { color: var(--ink-faint); }
-/* section jump-nav */
-.sdx-nav { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s4); }
-.sdx-nav-chip { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: var(--fs-caption);
-  font-weight: 600; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border);
-  border-radius: 999px; padding: 5px 12px; cursor: pointer; }
-.sdx-nav-chip:hover { border-color: var(--blue); color: var(--blue); }
+/* the wizard sub-step dot (the document's jump-nav + completeness meter retired 2026-08-16) */
 .sdx-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.6px solid var(--ink-faint); background: transparent; }
 .sdx-dot.on { background: var(--favourable-ink); border-color: var(--favourable-ink); }
-/* part headers */
-.sdx-part { display: flex; align-items: baseline; gap: var(--s3); margin: var(--s3) var(--s2) calc(-1 * var(--s2));
-  font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 700; color: var(--ink); }
-.sdx-part span { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--blue); background: var(--tile); border-radius: 6px; padding: 2px 8px; }
 /* section heads */
 .sdx-sechead { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); }
 .sdx-ico { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
@@ -4905,3 +4889,38 @@ textarea:focus-visible, [tabindex]:focus-visible {
   font-weight: 600; color: var(--favourable-ink); background: var(--favourable-tint);
   border-radius: 8px; padding: 4px 10px; }
 .rp-note { margin-top: var(--s2); }
+
+/* ==== Strategy + plan simplification (2026-08-16) =========================== */
+/* the dial strip: what used to be an 11-row ledger with a boilerplate why-column */
+.sdx-lead .sd-stance.lead { font-size: var(--fs-section); line-height: var(--lh-section); }
+.sdx-dials { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s5);
+  padding-top: var(--s4); border-top: 1px solid var(--border); }
+.sdx-dchip { display: inline-flex; align-items: baseline; gap: 7px; padding: 6px 12px; border-radius: 10px;
+  background: var(--surface-sunk); font-size: var(--fs-label); font-weight: 600; color: var(--ink); }
+.sdx-dchip i { font-style: normal; font-size: var(--fs-micro); font-weight: 600; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: .06em; }
+.sdx-dchip u { text-decoration: none; font-size: var(--fs-micro); font-weight: 700; color: var(--blue);
+  background: var(--blue-tint); border-radius: 5px; padding: 1px 5px; }
+.sdx-dchip.off { background: transparent; border: 1px dashed var(--border); color: var(--ink-faint); font-weight: 500; }
+
+/* gaps grouped one card per domain, each ending in the two ways out */
+.rp-groups { display: flex; flex-direction: column; gap: var(--s4); margin-top: var(--s4); }
+.rp-group { border: 1px solid var(--border); border-radius: 14px; padding: var(--s4) var(--s5) var(--s3);
+  background: var(--surface); }
+.rp-group-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+.rp-group-t { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; margin: 0;
+  color: var(--ink); letter-spacing: .01em; }
+.rp-group .rp-gap { border-top: 1px solid var(--border); padding: var(--s3) 0; }
+.rp-group .rp-gap:first-of-type { border-top: 0; padding-top: 0; }
+.rp-group-foot { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2);
+  padding-top: var(--s3); border-top: 1px solid var(--border); }
+.rp-go { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--blue); text-decoration: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.rp-go:hover { border-color: var(--blue); background: var(--blue-tint); }
+/* exhibit rows are the other door into a domain's signals */
+button.rp-ex-row { width: 100%; font: inherit; text-align: left; background: none; border: 0;
+  border-bottom: 1px solid var(--border); cursor: pointer; }
+button.rp-ex-row:hover { background: var(--surface-sunk); }
+button.rp-ex-row:hover .sd-ex-name { color: var(--blue); }
+button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; border-radius: 8px; }

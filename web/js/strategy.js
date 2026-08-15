@@ -456,17 +456,17 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   const sub = data.submitted || null;
   const canApprove = data.can_approve;
   const doc0 = data.document || {};
-  const cm0 = doc0.commitments || {};
-  // what is empty right now — shown BEFORE approving, never discovered after
+  // What is empty right now — shown BEFORE approving, never discovered after.
+  // MUST mirror _unstated_sections() in app.py, which is what the version record
+  // stores: this list used to count Governance / Commitments / Measures / Roadmap,
+  // all retired from capture 2026-08-15, so every approval warned about four
+  // sections nobody could ever state.
   const unstated = [
     ["Principles", (doc0.principles || []).length],
-    ["Comparator", doc0.comparator_cut != null ? 1 : 0],
+    ["Peer group", doc0.comparator_cut != null ? 1 : 0],
     ["Constraints", ((doc0.constraints || {}).selected || []).length || ((doc0.constraints || {}).notes ? 1 : 0)],
-    ["Governance", Object.keys(doc0.reward_governance || {}).length],
-    ["Commitments", (((cm0["Wellbeing"] || {}).metric_ids) || []).length || ((cm0["Governance & Transparency"] || {}).statement ? 1 : 0)],
-    ["Measures", (doc0.measures || []).length],
-    ["Roadmap", (doc0.roadmap || []).length],
-    ["Population positions", (doc0.population_targets || []).length],
+    ["Position by level", (doc0.population_targets || []).length],
+    ["Action plan", doc0.action_plan ? 1 : 0],
   ].filter(r => !r[1]).map(r => r[0]);
   const loadVersions = () => { setShowVers(v => !v);
     if (versions === null) api("/api/strategy/versions").then(r => setVersions(r.versions || [])).catch(() => setVersions([])); };
@@ -496,27 +496,22 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     setApproving(false);
   };
   const when = data.completed_at ? fmtDate(data.completed_at) : null;
-  const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
   const valOf = (f) => f === "benefits_lead"
     ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
     : (strat[f] ? labelOf(f, strat[f]) : null);
   const ctxBits = [];   // every dial is live post-2026-08-09 — the demoted strip retired
-  // ---- 2026-08-15 redesign: defined sections + progress ----
-  // The document's section map drives BOTH the jump-nav (state dots) and the
-  // completeness meter. `live` sections read the benchmark and never count as
-  // "to write"; the meter counts the eight authored sections only.
-  const _doc = data.document || {};
-  const SECTIONS = [
-    { id: "sdx-stance", icon: "flag", label: "The stance", set: !!data.completed_at, part: 1 },
-    { id: "sdx-principles", icon: "star", label: "Principles", set: (_doc.principles || []).length > 0, part: 1 },
-    { id: "sdx-comparator", icon: "users", label: "Comparator", set: _doc.comparator_cut != null, part: 1 },
-    { id: "sdx-constraints", icon: "anchor", label: "Constraints", set: !!(((_doc.constraints || {}).selected || []).length || (_doc.constraints || {}).notes), part: 1 },
-    { id: "sdx-positions", icon: "sliders", label: "The positions", set: !!data.completed_at, part: 2, live: true },
-    { id: "sdx-populations", icon: "layers", label: "Populations", set: (_doc.population_targets || []).length > 0, part: 2 },
-  ];
-  const METER = SECTIONS.filter(s => !s.live);
-  const statedN = METER.filter(s => s.set).length;
-  const jump = (id) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  // ---- 2026-08-16 simplification ----
+  // Four progress systems used to sit on a six-section document: a completeness
+  // meter, a jump-nav of state dots, "Part 1 / Part 2" dividers and a per-card
+  // Stated / Not yet stated badge. The badge alone carries it; the rest were
+  // ceremony on a page you can read in one scroll. All three are gone.
+  //
+  // The stance prose and the eleven-row dial ledger also said the same thing
+  // twice — the ledger adding a boilerplate "why it matters" column identical
+  // for every org. The dials are now a chip strip under the prose they explain.
+  const DIALS = ["market_position", "reward_mix", "pay_for_performance", "transparency",
+                 "location_approach", "benefits_lead", "family_position",
+                 "primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
   const SecHead = ({ icon, title, on = true, chip = null }) => html`
     <div class="sdx-sechead">
       <span class=${"sdx-ico" + (on ? " on" : "")}><${Icon} name=${icon} size=${15} /></span>
@@ -592,17 +587,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
               ${ver ? "Approve v" + (ver.version + 1) : "Approve v1"}</button>` : null}
             <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / PDF</button>
           </div>
-          <div class="sdx-meter" role="img" aria-label=${"Document " + statedN + " of " + METER.length + " sections stated"}>
-            <div class="sdx-meter-line"><b>${statedN} of ${METER.length}</b> sections stated</div>
-            <div class="sdx-meter-bar"><i style=${{ width: (100 * statedN / METER.length) + "%" }}></i></div>
-          </div>
         </div>
       </div>
-      ${/* ---- section jump-nav with state dots (screen only) ---- */ ""}
-      <nav class="sdx-nav no-print" aria-label="Document sections">
-        ${SECTIONS.map(s => html`<button key=${s.id} class="sdx-nav-chip" onClick=${() => jump(s.id)}>
-          <span class=${"sdx-dot" + (s.set ? " on" : "")}></span>${s.label}</button>`)}
-      </nav>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
       <article class="sd-doc sdx-doc">
         <header class="sd-mast sdx-printmast">
@@ -619,37 +605,21 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           </div>
         </header>
 
-        <div class="sdx-part"><span>Part 1</span> Intent — what we say</div>
-
-        <section class="sd-sec sdx-card" id="sdx-stance">
-          <${SecHead} icon="flag" title="The stance" chip=${html`<span class="sdx-state live">From your dials</span>`} />
+        <section class="sd-sec sdx-card sdx-lead" id="sdx-stance">
+          <${SecHead} icon="flag" title="What we say" chip=${html`<span class="sdx-state live">From your dials</span>`} />
           ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
             : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
+          <div class="sdx-dials">
+            ${DIALS.map(f => { const v = valOf(f) || (strat[f] ? labelOf(f, strat[f]) : null);
+              const extra = f === "market_position" && Object.keys(strat.domain_targets || {}).length;
+              return html`<span key=${f} class=${"sdx-dchip" + (v ? "" : " off")} title=${SD_DRIVES[f] || ""}>
+                <i>${DIAL_LABEL[f]}</i>${v || "Not set"}${extra ? html` <u>+${extra}</u>` : ""}</span>`; })}
+          </div>
           <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
         </section>
 
         <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
           which=${["principles", "comparator", "constraints"]} />
-
-        <div class="sdx-part"><span>Part 2</span> Position — how it applies</div>
-
-        <section class="sd-sec sdx-card" id="sdx-positions">
-          <${SecHead} icon="sliders" title="The positions" chip=${html`<span class="sdx-state live">From your dials</span>`} />
-          <div class="sd-ledger">
-            ${philosophy.map(f => { const v = valOf(f); return html`
-              <div key=${f} class=${"sd-led-row" + (v ? "" : " unset")}>
-                <span class="sd-led-name">${DIAL_LABEL[f]}</span>
-                <span class="sd-led-val">${v || "Not set"}${f === "market_position" && Object.keys(strat.domain_targets || {}).length ? html` <span class="sd-led-sub">· ${Object.keys(strat.domain_targets || {}).length} area${Object.keys(strat.domain_targets || {}).length === 1 ? "" : "s"} refined</span>` : ""}</span>
-                <span class="sd-led-why">${v ? SD_DRIVES[f] : "Read neutrally."}</span>
-              </div>`; })}
-            ${["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"].map(f => html`
-            <div key=${f} class=${"sd-led-row" + (strat[f] ? "" : " unset")}>
-              <span class="sd-led-name">${DIAL_LABEL[f]}</span>
-              <span class="sd-led-val">${strat[f] ? labelOf(f, strat[f]) : "Not set"}</span>
-              <span class="sd-led-why">${strat[f] ? SD_DRIVES[f] : "Read neutrally."}</span>
-            </div>`)}
-          </div>
-        </section>
 
         <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${() => nav("/plan")}
           which=${["populations"]} />
@@ -1277,6 +1247,25 @@ window.RewardPlanPage = function ({ me }) {
   const unevidenced = commitments.filter(c => c.status === "not_evidenced");
   const plan = d.plan;
   const optsFor = (id) => (d.options || []).find(o => o.commitment_id === id);
+  // ---- gaps grouped BY DOMAIN (2026-08-16) ----------------------------------
+  // A flat list of nine gaps made you assemble "everything about Pay" in your own
+  // head. They group by category now, so each domain is one card you can act on —
+  // and each card carries the two ways out of it: its signals, and its data.
+  const domAlign = {};
+  (d.domains || []).forEach(x => { domAlign[x.name] = (x.target || {}).alignment; });
+  const groups = [];
+  gaps.forEach(c => {
+    let g = groups.find(x => x.cat === c.category);
+    if (!g) { g = { cat: c.category, items: [], align: domAlign[c.category] }; groups.push(g); }
+    g.items.push(c);
+  });
+  // David 2026-08-16: "the reward plan must link to signals — so the user can jump
+  // into any domain and see what they need to do for alignment". The feed already
+  // filters on domain and on strategy alignment; this hands it both at once.
+  const toSignals = (cat, align) => {
+    window.__sigJump = { domain: cat, strat: align ? [align] : [] };
+    nav("/signals");
+  };
   const build = async () => {
     setBusy(true);
     try { const r = await api("/api/strategy/plan", { method: "POST", body: {} });
@@ -1306,7 +1295,7 @@ window.RewardPlanPage = function ({ me }) {
       ${/* ---- 1. where you are now ---- */ ""}
       <section class="card rp-sec">
         <h2 class="rp-h">Where you are now</h2>
-        <p class="sd-note sd-ex-cap">Each row is your live benchmark against where you said you'd sit. The shaded band is your strategy; the dot is where you land.</p>
+        <p class="sd-note sd-ex-cap">The shaded band is your strategy; the dot is where you land. Pick any area to open its signals.</p>
         <div class="sd-ex-row sd-ex-head" aria-hidden="true">
           <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
           <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
@@ -1317,12 +1306,13 @@ window.RewardPlanPage = function ({ me }) {
             const al = (dom.target || {}).alignment;
             const read = al === "on_target" ? { t: "On strategy", cls: "ok" } : al === "ahead" ? { t: "Above strategy", cls: "ahead" }
               : al === "behind" ? { t: "Below strategy", cls: "behind" } : { t: "—", cls: "" };
-            return html`<a key=${dom.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(dom.name)}>
+            return html`<button key=${dom.name} class="sd-ex-row rp-ex-row" onClick=${() => toSignals(dom.name, al)}
+              title=${"See " + domainLabel(dom.name) + " signals for this alignment"}>
               <span class="sd-ex-name">${dom.name}</span>
               <${SdAxis} intent=${(dom.target || {}).stance} actual=${dom.position && dom.position.verdict}
                 pctl=${dom.position && dom.position.depth_pctl} align=${al} />
               <span class=${"sd-ex-read " + read.cls}>${read.t}</span>
-            </a>`; })}
+            </button>`; })}
         </div>
         <div class="rp-tiles">
           ${[["off strategy", gaps.length, "warn"], ["holding", holding.length, "ok"],
@@ -1334,31 +1324,45 @@ window.RewardPlanPage = function ({ me }) {
         </div>
       </section>
 
-      ${/* ---- 2. the gaps ---- */ ""}
-      <section class="card rp-sec">
+      ${/* ---- 2. the gaps, one card per domain ---- */ ""}
+      <section class="card rp-sec" id="rp-gaps">
         <h2 class="rp-h">The gaps <span class="rp-h-n">${gaps.length}</span></h2>
-        ${gaps.length ? gaps.map(c => { const ob = optsFor(c.id); return html`
-          <div key=${c.id} class="rp-gap">
-            <div class="rp-gap-head">
-              <span class=${"rp-chip " + RP_STATUS[c.status].cls}>${
-                c.direction === "past" ? "Past intent" : RP_STATUS[c.status].t}</span>
-              <span class="rp-gap-cat">${domainLabel(c.category)}</span>
-            </div>
-            <p class="rp-gap-say">${c.statement}</p>
-            ${ob && ob.levers && ob.levers.length ? html`
-              <button class="rp-more" onClick=${() => setOpen(open === c.id ? null : c.id)}>
-                ${open === c.id ? "Hide" : "What the market does about it"} · ${ob.levers.length}</button>
-              ${open === c.id ? html`
-                <div class="rp-levers">
-                  <p class="caption">${ob.framing}</p>
-                  ${ob.levers.map(l => html`<div key=${l.lever_id} class="rp-lever">
-                    <div class="rp-lever-t"><b>${l.name}</b> <span class="sd-doc-meta">${l.cost_character} · ${l.speed} · ${l.reversibility} to reverse</span></div>
-                    <div class="caption">${l.what_it_is}</div>
-                    <div class="caption rp-trade"><${Icon} name="info" size=${12} /> ${l.trade_off}</div>
-                  </div>`)}
-                </div>` : null}`
-            : ob && ob.coverage_note ? html`<p class="sd-note rp-note">${ob.coverage_note}</p>` : null}
-          </div>`; })
+        <p class="sd-note sd-ex-cap">One card per area. Every card ends with the two ways in: the live signals for that area, and the data behind them.</p>
+        ${groups.length ? html`<div class="rp-groups">
+          ${groups.map(g => html`
+            <div key=${g.cat} class="rp-group">
+              <div class="rp-group-head">
+                <h3 class="rp-group-t">${domainLabel(g.cat)}</h3>
+                <span class=${"rp-chip " + (g.items.some(c => c.status === "contradicted") ? "bad"
+                  : g.items.every(c => c.direction === "past") ? "warn" : "warn")}>${
+                  g.items.some(c => c.status === "contradicted") ? "Contradicted"
+                    : g.items.every(c => c.direction === "past") ? "Past intent" : "Behind intent"}</span>
+              </div>
+              ${g.items.map(c => { const ob = optsFor(c.id); return html`
+                <div key=${c.id} class="rp-gap">
+                  <p class="rp-gap-say">${c.statement}</p>
+                  ${ob && ob.levers && ob.levers.length ? html`
+                    <button class="rp-more" onClick=${() => setOpen(open === c.id ? null : c.id)}>
+                      ${open === c.id ? "Hide" : "What the market does about it"} · ${ob.levers.length}</button>
+                    ${open === c.id ? html`
+                      <div class="rp-levers">
+                        <p class="caption">${ob.framing}</p>
+                        ${ob.levers.map(l => html`<div key=${l.lever_id} class="rp-lever">
+                          <div class="rp-lever-t"><b>${l.name}</b> <span class="sd-doc-meta">${l.cost_character} · ${l.speed} · ${l.reversibility} to reverse</span></div>
+                          <div class="caption">${l.what_it_is}</div>
+                          <div class="caption rp-trade"><${Icon} name="info" size=${12} /> ${l.trade_off}</div>
+                        </div>`)}
+                      </div>` : null}`
+                  : ob && ob.coverage_note ? html`<p class="sd-note rp-note">${ob.coverage_note}</p>` : null}
+                </div>`; })}
+              <div class="rp-group-foot">
+                <button class="rp-go" onClick=${() => toSignals(g.cat, g.align)}>
+                  <${Icon} name="zap" size=${13} /> ${domainLabel(g.cat)} signals</button>
+                <a class="rp-go" href=${"#/category/" + encodeURIComponent(g.cat)}>
+                  <${Icon} name="bar-chart" size=${13} /> The data behind it</a>
+              </div>
+            </div>`)}
+        </div>`
         : html`<${EmptyState} icon="check" title="Nothing is off strategy"
             body="Every commitment your data can speak to matches what you said. Come back after your next data refresh." />`}
         ${unevidenced.length ? html`<p class="sd-note">${unevidenced.length} commitment${unevidenced.length === 1 ? "" : "s"} can't be assessed yet — the metrics behind ${unevidenced.length === 1 ? "it" : "them"} are unanswered.</p>` : null}
