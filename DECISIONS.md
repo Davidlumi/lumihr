@@ -18444,3 +18444,32 @@ model already computed. The model only SEQUENCES and EXPLAINS. `validate_plan` r
 invented action, an ungrounded number, a directive or a legal adjudication, and a deterministic
 plan ships whenever it does. Where the £ model has no figure the plan says so plainly rather than
 implying one. The board pack renders the plan where measures used to be.
+
+## 2026-08-15 — Reward plan: the intent/position split, and the overspend read
+
+David: *"split out the reward strategy - so the input part and then a whole new section on the
+platform which shows where you are now, the gaps and the plan to improve with roi."* The strategy
+section is now purely the **input**: the wizard and the intent document, ending on a hand-off card.
+Everything computed moved to **/plan** — the live benchmark exhibit against the stated stance, the
+gaps, the levers behind each, and the sequenced plan. `/api/strategy/alignment` grew to carry the
+whole page in one call (options, domains with position, the stored plan, cut label, objective,
+stance) rather than the page fanning out across four endpoints.
+
+**The overspend read.** Verifying on the demo org surfaced a defect the fixtures had been hiding:
+a position gap reading *ahead* of a deliberately lower aim carried the same `behind_intent` status
+as one falling *short*, so `options_for` handed it that category's Substance levers — every one of
+which adds package. The page was recommending more spend to fix over-spend. Position commitments
+now carry a `direction` (`short` | `past`); a `past` gap gets no levers and states why — the
+practice already sits above the aim, so the open question is whether the aim still reads right, not
+what to add. The chip reads "Past intent" rather than "Behind intent" to match.
+
+The same pass closed a silent cap beside it: a category inside the v1 lever tranche whose gap needs
+a register the inventory has nothing in (a Benefits & Lifestyle coherence contradiction wanting
+Approach levers) rendered an empty block with no explanation. Every options block is now either
+lever-bearing or note-bearing — `qa_strategy_align` asserts both, 34 → 41 checks. Full suite 15/15.
+
+**Still open for David.** The v1 lever tranche (Pay, Benefits & Lifestyle, Time Off & Family) means
+five of the demo org's nine gaps say "a later tranche" — honest, but visible on a launch page.
+R7 (8 coherence rules) and R8 (12 levers) both still carry DRAFT `_readme` notes. And ROI quantifies
+in £ only where the money model has a figure for that category; engagement and retention returns
+would need assumptions in the register before the plan could put a number on them.
