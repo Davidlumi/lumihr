@@ -313,6 +313,24 @@ def main():
     check("isolation — probe B's write never touched probe A's strategy",
           sa_after["strategy"]["market_position"] == "lead")
 
+    # ---- narrative overrides: prose only, never a computed figure -------------
+    st_n, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "exec_summary", "text": "Board-approved wording."})
+    check("an author can replace a section's generated prose", st_n == 200, st_n)
+    st_n2, got = sa.req("/api/strategy")
+    check("the override comes back on the document",
+          (got.get("document") or {}).get("narrative_overrides", {}).get("exec_summary") == "Board-approved wording.",
+          (got.get("document") or {}).get("narrative_overrides"))
+    st_n3, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "exec_summary", "text": ""})
+    st_n4, got2 = sa.req("/api/strategy")
+    check("clearing an override restores lumi's wording",
+          st_n3 == 200 and "exec_summary" not in ((got2.get("document") or {}).get("narrative_overrides") or {}))
+    # the closed list is the safety property: a computed figure must never be writable
+    for bad in ("position", "gaps", "counts", "roi", "domains", "commitments"):
+        stb, _ = sa.req("/api/strategy/narrative", "PUT", {"key": bad, "text": "made up"})
+        check("computed section '%s' is NOT author-writable" % bad, stb == 400, stb)
+    st_long, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "watch", "text": "x" * 5000})
+    check("an over-long section is refused, not truncated", st_long == 400, st_long)
+
     # ---- the approval modal must warn about the SAME sections the version records ----
     # Between 2026-08-15 and 2026-08-16 the client list still counted Governance,
     # Commitments, Measures and Roadmap — all retired from capture — so every
