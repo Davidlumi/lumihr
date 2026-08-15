@@ -369,65 +369,9 @@ function SdAxis({ intent, actual, pctl, align }) {
 const CONSTRAINT_LABEL = { affordability: "Affordability", collective_bargaining: "Collective bargaining",
   statutory_pressure: "Statutory / regulatory pressure", headcount_change: "Headcount change",
   system_change: "Systems / payroll change", other: "Other" };
-const CADENCE_LABEL = { annual: "Annually", twice_yearly: "Twice a year", quarterly: "Quarterly", ad_hoc: "Ad hoc" };
-const HORIZON_LABEL = { this_cycle: "This cycle", next_cycle: "Next cycle", multi_cycle: "Multi-cycle" };
 
-function SdDocSec({ id, icon, title, note, isSet, canEdit, onAdd, children }) {
-  return html`
-    <section class="sd-sec sdx-card" id=${id}>
-      <div class="sdx-sechead">
-        <span class=${"sdx-ico" + (isSet ? " on" : "")}><${Icon} name=${icon} size=${15} /></span>
-        <h3 class="sdx-title">${title}</h3>
-        <span class=${"sdx-state " + (isSet ? "set" : "empty")}>${isSet ? "Stated" : "Not yet stated"}</span>
-      </div>
-      ${note ? html`<p class="sd-note sd-ex-cap">${note}</p>` : null}
-      ${isSet ? children : html`
-        <p class="sd-stance sd-unstated">Not yet stated${canEdit ? " — optional, and the document is honest about it" : ""}.</p>
-        ${canEdit && onAdd ? html`<button class="sdx-addlink no-print" onClick=${onAdd}>
-          <${Icon} name="pencil" size=${12} /> Add this in the strategy set-up</button>` : null}`}
-    </section>`;
-}
-
-function SdDocSections({ data, canEdit, onEdit, onPlan, which }) {
-  // `which` renders only the named sections, so the document groups them under the
-  // brief's three-part spine (Intent / Position / Delivery). onEdit(pageId) jumps
-  // the wizard straight to the step that captures that section.
-  const show = (k) => !which || which.includes(k);
-  const doc = data.document || {};
-  const cons = doc.constraints || {};
-
-  return html`
-    <${React.Fragment}>
-      ${show("principles") && html`<${SdDocSec} id="sdx-principles" icon="star" title="Our reward principles"
-        isSet=${(doc.principles || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("principles")}>
-        <ol class="sd-principles">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>
-      <//>`}
-
-      ${show("comparator") && html`<${SdDocSec} id="sdx-comparator" icon="users" title="Who we compare ourselves to"
-        note="The comparator in words — figures live in the benchmark, not here."
-        isSet=${true} canEdit=${canEdit} onAdd=${() => onEdit("compare")}>
-        <p class="sd-stance">${orgCompareWords(null, doc)}</p>
-      <//>`}
-
-      ${show("constraints") && html`<${SdDocSec} id="sdx-constraints" icon="anchor" title="What constrains us"
-        isSet=${!!((cons.selected || []).length || cons.notes)} canEdit=${canEdit} onAdd=${() => onEdit("compare")}>
-        <p class="sd-stance">${(cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(" · ")}${cons.notes ? (((cons.selected || []).length ? " — " : "") + cons.notes) : ""}</p>
-      <//>`}
-
-      ${show("populations") && html`<${SdDocSec} id="sdx-populations" icon="layers" title="Position by employee population"
-        note="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark."
-        isSet=${(doc.population_targets || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("populations")}>
-        <div class="sd-ledger">
-          ${(doc.population_targets || []).map(p => html`
-            <div key=${p.label} class="sd-led-row"><span class="sd-led-name">${p.label}</span>
-              <span class="sd-led-val">${SD_STANCE[p.position] || "—"}</span>
-              <span class="sd-led-why">${p.note || ""}</span></div>`)}
-        </div>
-      <//>`}
-
-    <//>`;
-}
-
+// (SdDocSec / SdDocSections retired 2026-08-16: the document sections they rendered
+//  as cards are now pages in the A4 artefact, composed in report.js.)
 function orgCompareWords(me, doc) {
   // R1: the comparator IN WORDS, never a benchmark table. House vocabulary: the peer
   // member is a "company" (lumi-terminology), and the label already carries its unit.
@@ -439,14 +383,15 @@ function orgCompareWords(me, doc) {
   return "We compare ourselves to our peer group, " + label + ".";
 }
 
+// ---- the read view IS the document (2026-08-16) -----------------------------
+// David: "replace this page with just a view of the PDF report on their reward
+// strategy". The old sdx-* card stack — hero, section cards, dial strip, hand-off —
+// is gone; /strategy now renders the A4 Total Reward Strategy artefact itself, with
+// the governance controls (edit, send for approval, approve, version history) riding
+// in the document's own toolbar. Approval stays a deliberate, recorded act, so its
+// modal moved here whole rather than being dropped.
 function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   const orgName = (me.org && me.org.name) || "Your organisation";
-  const stance = sdStance(strat, orgName);
-  // R1 (2026-08-14): the exported document carries NO peer figures by default — the
-  // live position exhibit is an optional evidence block, off in print until opted in.
-  // R1 inverted (2026-08-15, reward-director review): the EVIDENCE belongs in the
-  // approved document; the AI reading never prints. A board paper of assertions with
-  // the data removed was exactly backwards.
   const [approving, setApproving] = useState(false);
   const [apOpen, setApOpen] = useState(false);
   const [apForm, setApForm] = useState({});
@@ -456,11 +401,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   const sub = data.submitted || null;
   const canApprove = data.can_approve;
   const doc0 = data.document || {};
-  // What is empty right now — shown BEFORE approving, never discovered after.
-  // MUST mirror _unstated_sections() in app.py, which is what the version record
-  // stores: this list used to count Governance / Commitments / Measures / Roadmap,
-  // all retired from capture 2026-08-15, so every approval warned about four
-  // sections nobody could ever state.
+  // MUST mirror _unstated_sections() in app.py — qa_strategy compares the two lists
   const unstated = [
     ["Principles", (doc0.principles || []).length],
     ["Peer group", doc0.comparator_cut != null ? 1 : 0],
@@ -470,17 +411,6 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   ].filter(r => !r[1]).map(r => r[0]);
   const loadVersions = () => { setShowVers(v => !v);
     if (versions === null) api("/api/strategy/versions").then(r => setVersions(r.versions || [])).catch(() => setVersions([])); };
-  const [planBusy, setPlanBusy] = useState(false);
-  const buildPlan = async () => {
-    if (planBusy) return;
-    setPlanBusy(true);
-    try {
-      const r = await api("/api/strategy/plan", { method: "POST", body: {} });
-      if (r && r.ok === false) toast(r.reason === "locked" ? "Your insights unlock once your data is in." : "Set your strategy first.", "error");
-      else { onReload && onReload(); toast("Plan built from your gaps."); }
-    } catch (e) { toast(e && e.message || "Couldn't build the plan.", "error"); }
-    setPlanBusy(false);
-  };
   const sendForApproval = async () => {
     try { await api("/api/strategy/submit", { method: "POST", body: {} }); onReload && onReload();
       toast("Sent for approval — an Admin can now sign it off."); }
@@ -495,151 +425,72 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     } catch (e) { toast(e && e.message || "Couldn't approve.", "error"); }
     setApproving(false);
   };
-  const when = data.completed_at ? fmtDate(data.completed_at) : null;
-  const valOf = (f) => f === "benefits_lead"
-    ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
-    : (strat[f] ? labelOf(f, strat[f]) : null);
-  const ctxBits = [];   // every dial is live post-2026-08-09 — the demoted strip retired
-  // ---- 2026-08-16 simplification ----
-  // Four progress systems used to sit on a six-section document: a completeness
-  // meter, a jump-nav of state dots, "Part 1 / Part 2" dividers and a per-card
-  // Stated / Not yet stated badge. The badge alone carries it; the rest were
-  // ceremony on a page you can read in one scroll. All three are gone.
-  //
-  // The stance prose and the eleven-row dial ledger also said the same thing
-  // twice — the ledger adding a boilerplate "why it matters" column identical
-  // for every org. The dials are now a chip strip under the prose they explain.
-  const DIALS = ["market_position", "reward_mix", "pay_for_performance", "transparency",
-                 "location_approach", "benefits_lead", "family_position",
-                 "primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
-  const SecHead = ({ icon, title, on = true, chip = null }) => html`
-    <div class="sdx-sechead">
-      <span class=${"sdx-ico" + (on ? " on" : "")}><${Icon} name=${icon} size=${15} /></span>
-      <h3 class="sdx-title">${title}</h3>
-      ${chip}
-    </div>`;
-  return html`
-    <div class="sd-wrap sdx">
-      ${apOpen ? html`
-        <div class="sdx-modal no-print" role="dialog" aria-modal="true" aria-label="Record the approval">
-          <div class="sdx-modal-card">
-            <h3 class="sdx-title">Record the approval</h3>
-            <p class="sd-note">This becomes the governance record on the document — and the version your reward review cites. It is permanent; a later approval supersedes it.</p>
-            ${unstated.length ? html`
-              <div class="sdw-missing" style=${{ marginBottom: "var(--s3)" }}>
-                <${Icon} name="info" size=${15} />
-                <div><b>${unstated.length} section${unstated.length === 1 ? " is" : "s are"} unstated</b> — ${unstated.join(", ")}.
-                  You can still approve; the version records exactly what was and wasn't stated.</div>
-              </div>` : null}
-            <div class="sd-doc-grid2">
-              <label>Approved by<input class="ctl" maxlength="80" placeholder="e.g. Remuneration Committee, or the CEO"
-                value=${apForm.approver_body || ""} onInput=${e => setApForm(f => ({ ...f, approver_body: e.target.value }))} /></label>
-              <label>Date they approved it<input class="ctl" type="date" value=${apForm.approval_date || ""}
-                onInput=${e => setApForm(f => ({ ...f, approval_date: e.target.value }))} /></label>
-              <label>Effective from<input class="ctl" type="date" value=${apForm.effective_date || ""}
-                onInput=${e => setApForm(f => ({ ...f, effective_date: e.target.value }))} /></label>
-              <label>Next review<input class="ctl" type="date" value=${apForm.next_review || ""}
-                onInput=${e => setApForm(f => ({ ...f, next_review: e.target.value }))} /></label>
-            </div>
-            ${sub ? html`<p class="sd-note">Drafted by <b>${sub.by}</b> — recorded on the version alongside your approval.</p>` : null}
-            <div class="sd-doc-edfoot">
-              <button class="btn primary" disabled=${approving || !(apForm.approver_body || "").trim()} onClick=${approve}>
-                ${approving ? "Recording…" : "Confirm approval"}</button>
-              <button class="btn quiet" disabled=${approving} onClick=${() => setApOpen(false)}>Cancel</button>
-            </div>
+
+  const chips = html`<${React.Fragment}>
+    ${ver ? html`<span class="sdx-chip ok"><${Icon} name="check" size=${12} /> Version ${ver.version} · approved ${fmtDate(ver.approved_at)}</span>`
+          : html`<span class="sdx-chip draft">Draft — not yet approved</span>`}
+    ${ver && ver.dirty ? html`<span class="sdx-chip warn">edits since approval</span>` : null}
+    ${sub ? html`<span class="sdx-chip warn">Awaiting approval · sent by ${sub.by}</span>` : null}
+    ${ver ? html`<button class="sdx-chip sdx-chip-btn" onClick=${loadVersions}>
+      ${showVers ? "Hide history" : "Version history"}</button>` : null}
+  <//>`;
+
+  const actions = html`<${React.Fragment}>
+    ${canEdit ? html`<button class="btn" onClick=${() => onEdit()}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
+    ${canEdit && !canApprove && !sub ? html`<button class="btn" onClick=${sendForApproval}
+      title="Hand this to an Admin to sign off.">Send for approval</button>` : null}
+    ${canApprove ? html`<button class="btn" disabled=${approving} onClick=${() => setApOpen(true)}
+      title="Record the approval — who approved it, when, and from when it applies.">
+      ${ver ? "Approve v" + (ver.version + 1) : "Approve v1"}</button>` : null}
+  <//>`;
+
+  const before = html`<${React.Fragment}>
+    ${apOpen ? html`
+      <div class="sdx-modal no-print" role="dialog" aria-modal="true" aria-label="Record the approval">
+        <div class="sdx-modal-card">
+          <h3 class="sdx-title">Record the approval</h3>
+          <p class="sd-note">This becomes the governance record on the document — and the version your reward review cites. It is permanent; a later approval supersedes it.</p>
+          ${unstated.length ? html`
+            <div class="sdw-missing" style=${{ marginBottom: "var(--s3)" }}>
+              <${Icon} name="info" size=${15} />
+              <div><b>${unstated.length} section${unstated.length === 1 ? " is" : "s are"} unstated</b> — ${unstated.join(", ")}.
+                You can still approve; the version records exactly what was and wasn't stated.</div>
+            </div>` : null}
+          <div class="sd-doc-grid2">
+            <label>Approved by<input class="ctl" maxlength="80" placeholder="e.g. Remuneration Committee, or the CEO"
+              value=${apForm.approver_body || ""} onInput=${e => setApForm(f => ({ ...f, approver_body: e.target.value }))} /></label>
+            <label>Date they approved it<input class="ctl" type="date" value=${apForm.approval_date || ""}
+              onInput=${e => setApForm(f => ({ ...f, approval_date: e.target.value }))} /></label>
+            <label>Effective from<input class="ctl" type="date" value=${apForm.effective_date || ""}
+              onInput=${e => setApForm(f => ({ ...f, effective_date: e.target.value }))} /></label>
+            <label>Next review<input class="ctl" type="date" value=${apForm.next_review || ""}
+              onInput=${e => setApForm(f => ({ ...f, next_review: e.target.value }))} /></label>
           </div>
-        </div>` : null}
-      ${/* ---- hero: identity + status + progress + actions (screen only) ---- */ ""}
-      <div class="sdx-hero no-print">
-        <div class="sdx-hero-main">
-          <div class="sd-eyebrow sdx-eyebrow">Reward strategy</div>
-          <h1 class="sdx-org">${orgName}</h1>
-          <div class="sdx-chips">
-            ${ver ? html`<span class="sdx-chip ok"><${Icon} name="check" size=${12} /> Version ${ver.version} · approved ${fmtDate(ver.approved_at)}</span>`
-                  : html`<span class="sdx-chip draft">Draft — not yet approved</span>`}
-            ${ver && ver.dirty ? html`<span class="sdx-chip warn">edits since approval</span>` : null}
-            ${when ? html`<span class="sdx-chip">Captured ${when}</span>` : null}
-            ${sub ? html`<span class="sdx-chip warn">Awaiting approval · sent by ${sub.by}</span>` : null}
-            ${ver ? html`<button class="sdx-chip sdx-chip-btn no-print" onClick=${loadVersions}>
-              ${showVers ? "Hide" : "Version history"}</button>` : null}
-          </div>
-          ${showVers ? html`<div class="sdx-vers no-print">
-            ${versions === null ? html`<p class="sd-note">Loading…</p>`
-              : versions.length ? versions.map(v => html`
-                <div key=${v.version} class=${"sdx-ver" + (v.status === "approved" ? " on" : "")}>
-                  <b>v${v.version}</b> ${v.status === "approved" ? "current" : "superseded"}
-                  · approved by <b>${v.approver_body || v.approved_by}</b>${v.approval_date ? " on " + v.approval_date : ""}
-                  ${v.effective_date ? html` · effective ${v.effective_date}` : ""}
-                  ${v.next_review ? html` · next review ${v.next_review}` : ""}
-                  ${v.submitted_by ? html` · drafted by ${v.submitted_by}` : ""}
-                  ${(v.unstated || []).length ? html`<span class="sdx-ver-un">${v.unstated.length} section${v.unstated.length === 1 ? "" : "s"} unstated at approval</span>` : null}
-                </div>`)
-              : html`<p class="sd-note">No approved versions yet.</p>`}
-          </div>` : null}
-        </div>
-        <div class="sdx-hero-side">
-          <div class="sdx-actions">
-            ${canEdit ? html`<button class="btn primary" onClick=${() => onEdit()}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
-            ${canEdit && !canApprove && !sub ? html`<button class="btn" onClick=${sendForApproval}
-              title="Hand this to an Admin to sign off.">Send for approval</button>` : null}
-            ${canApprove ? html`<button class="btn" disabled=${approving} onClick=${() => setApOpen(true)}
-              title="Record the approval — who approved it, when, and from when it applies.">
-              ${ver ? "Approve v" + (ver.version + 1) : "Approve v1"}</button>` : null}
-            <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / PDF</button>
+          ${sub ? html`<p class="sd-note">Drafted by <b>${sub.by}</b> — recorded on the version alongside your approval.</p>` : null}
+          <div class="sd-doc-edfoot">
+            <button class="btn primary" disabled=${approving || !(apForm.approver_body || "").trim()} onClick=${approve}>
+              ${approving ? "Recording…" : "Confirm approval"}</button>
+            <button class="btn quiet" disabled=${approving} onClick=${() => setApOpen(false)}>Cancel</button>
           </div>
         </div>
-      </div>
-      <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
-      <article class="sd-doc sdx-doc">
-        <header class="sd-mast sdx-printmast">
-          <div>
-            <div class="sd-eyebrow">Reward strategy</div>
-            <div class="sd-org">${orgName}</div>
-          </div>
-          <div class="sd-mast-meta">
-            ${ver ? html`<div>Version <b>${ver.version}</b> · approved by <b>${ver.approver_body || ver.approved_by}</b>${ver.approval_date ? " on " + ver.approval_date : " " + fmtDate(ver.approved_at)}${ver.dirty ? html` · <span class="sd-dirty">edits since approval</span>` : ""}</div>
-                          ${ver.effective_date ? html`<div>Effective ${ver.effective_date}${ver.next_review ? " · next review " + ver.next_review : ""}</div>` : null}`
-                  : html`<div><span class="sd-dirty">Draft — not yet approved</span></div>`}
-            ${when && html`<div>Captured <b>${when}</b></div>`}
-            <div>Set by your Admins · held in lumi</div>
-          </div>
-        </header>
+      </div>` : null}
+    ${showVers ? html`<div class="sdx-vers no-print rr-vers">
+      ${versions === null ? html`<p class="sd-note">Loading…</p>`
+        : versions.length ? versions.map(v => html`
+          <div key=${v.version} class=${"sdx-ver" + (v.status === "approved" ? " on" : "")}>
+            <b>v${v.version}</b> ${v.status === "approved" ? "current" : "superseded"}
+            · approved by <b>${v.approver_body || v.approved_by}</b>${v.approval_date ? " on " + v.approval_date : ""}
+            ${v.effective_date ? html` · effective ${v.effective_date}` : ""}
+            ${v.next_review ? html` · next review ${v.next_review}` : ""}
+            ${v.submitted_by ? html` · drafted by ${v.submitted_by}` : ""}
+            ${(v.unstated || []).length ? html`<span class="sdx-ver-un">${v.unstated.length} section${v.unstated.length === 1 ? "" : "s"} unstated at approval</span>` : null}
+          </div>`)
+        : html`<p class="sd-note">No approved versions yet.</p>`}
+    </div>` : null}
+  <//>`;
 
-        <section class="sd-sec sdx-card sdx-lead" id="sdx-stance">
-          <${SecHead} icon="flag" title="What we say" chip=${html`<span class="sdx-state live">From your dials</span>`} />
-          ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
-            : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
-          <div class="sdx-dials">
-            ${DIALS.map(f => { const v = valOf(f) || (strat[f] ? labelOf(f, strat[f]) : null);
-              const extra = f === "market_position" && Object.keys(strat.domain_targets || {}).length;
-              return html`<span key=${f} class=${"sdx-dchip" + (v ? "" : " off")} title=${SD_DRIVES[f] || ""}>
-                <i>${DIAL_LABEL[f]}</i>${v || "Not set"}${extra ? html` <u>+${extra}</u>` : ""}</span>`; })}
-          </div>
-          <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
-        </section>
-
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
-          which=${["principles", "comparator", "constraints"]} />
-
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${() => nav("/plan")}
-          which=${["populations"]} />
-
-        <section class="sd-sec sdx-card no-print sdx-handoff">
-          <${SecHead} icon="download" title="Take this away" chip=${html`<span class="sdx-state live">Document</span>`} />
-          <p class="sd-note sd-ex-cap">Your <b>Total Reward Strategy</b> as a laid-out document — cover, stated
-            intent, principles, lumi's written reading of it, and the approval record — ready to save as a PDF
-            and put in front of a board.</p>
-          <div class="row" style=${{ gap: "var(--s2)", flexWrap: "wrap" }}>
-            <button class="btn primary" onClick=${() => nav("/report/strategy")}><${Icon} name="download" size=${13} /> Open the strategy document</button>
-            <button class="btn" onClick=${() => nav("/plan")}><${Icon} name="zap" size=${13} /> Where you stand against it</button>
-          </div>
-        </section>
-
-        <footer class="sd-docfoot" style=${{ "--i": 6 }}>Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
-      </article>
-
-      <div class="strat-pdf-foot" aria-hidden="true">Private ${"&"} confidential · Prepared in lumi · lumihr.co.uk</div>
-    </div>`;
+  return html`<${RewardReportPage} kind="strategy" me=${me} hideBack=${true}
+    chips=${chips} extraActions=${actions} before=${before} />`;
 }
 
 window.StrategyPage = function ({ me }) {

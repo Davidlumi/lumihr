@@ -60,7 +60,11 @@ const RR_ALIGN_WORD = { on_target: "On strategy", ahead: "Above strategy", behin
 const RR_POS_WORD = { below: "below market", at: "on market", above: "above market" };
 const RR_STANCE_WORD = { lag: "below market", match: "on market", lead: "above market" };
 
-window.RewardReportPage = function ({ kind, me }) {
+// `chips` / `extraActions` / `hideBack` exist so /strategy can BE this document rather
+// than link to it (David 2026-08-16: "replace this page with just a view of the PDF
+// report"). The governance controls — edit, send for approval, approve, version
+// history — ride in the same toolbar instead of on a second bar above it.
+window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, before }) {
   const K = RRD[kind] || RRD.strategy;
   const [st, setSt] = useState(null);         // /api/strategy
   const [al, setAl] = useState(null);         // /api/strategy/alignment
@@ -402,10 +406,15 @@ window.RewardReportPage = function ({ kind, me }) {
 
   return html`
     <div class="rr-wrap">
+      ${before || null}
       <div class="row spread no-print rr-bar">
-        <button class="btn quiet" onClick=${() => nav(kind === "plan" ? "/plan" : "/strategy")}>← Back</button>
+        <div class="row rr-bar-l">
+          ${hideBack ? null : html`<button class="btn quiet" onClick=${() => nav(kind === "plan" ? "/plan" : "/strategy")}>← Back</button>`}
+          ${chips || null}
+        </div>
         <div class="row">
           ${aiWaiting ? html`<${Chip} kind="accent">Writing commentary…<//>` : null}
+          ${extraActions || null}
           <button class="btn" disabled=${busy || aiWaiting} onClick=${regen}
             title="Rewrite the commentary from your current position">${busy ? "Rewriting…" : "Rewrite commentary"}</button>
           <button class="btn primary" onClick=${doPrint}><${Icon} name="download" size=${14} /> Save as PDF</button>

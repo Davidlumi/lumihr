@@ -5028,3 +5028,8 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   .rr-table tr, .rr-finding, .rr-gap, .rr-plan li, .rr-callout { break-inside: avoid; }
   .rr-h { break-after: avoid; }
 }
+
+/* /strategy IS the document now — the governance controls ride in its toolbar */
+.rr-bar-l { flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.rr-bar { flex-wrap: wrap; gap: var(--s3); align-items: flex-start; }
+.rr-vers { max-width: 210mm; margin: 0 auto var(--s4); }
