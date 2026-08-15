@@ -425,21 +425,6 @@ function SdDocSections({ data, canEdit, onEdit, onPlan, which }) {
         </div>
       <//>`}
 
-      ${show("plan") && html`<${SdDocSec} id="sdx-plan" icon="zap" title="Your action plan"
-        note="Built from the gaps between what you said and what your data shows — with the indicative £ lumi already computed. Sequencing and wording are AI; every action and figure comes from the engine."
-        isSet=${!!(doc.action_plan && (doc.action_plan.actions || []).length)} canEdit=${canEdit} onAdd=${onPlan}>
-        <p class="sd-stance lead">${(doc.action_plan || {}).summary}</p>
-        <div class="sd-ledger">
-          ${((doc.action_plan || {}).actions || []).map((a2, i) => html`
-            <div key=${i} class="sd-led-row">
-              <span class="sd-led-name">${a2.title}<span class="sd-led-sub"> · ${a2.category}</span></span>
-              <span class="sd-led-val">${a2.roi}</span>
-              <span class="sd-led-why">${a2.why}</span>
-            </div>`)}
-        </div>
-        <div class="sd-note">${(doc.action_plan || {}).basis || ""}
-          ${canEdit ? html`<button class="sd-ai-refresh no-print" onClick=${onPlan}>Rebuild</button>` : null}</div>
-      <//>`}
     <//>`;
 }
 
@@ -455,35 +440,6 @@ function orgCompareWords(me, doc) {
 }
 
 function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
-  const [hero, setHero] = useState(null);
-  // anchor the live position read to the ORG DEFAULT peer group — the same basis as the
-  // Overview chip and Signals (default-cut anchoring doctrine). A bare /api/overview here
-  // read all-peers, so this page said "5 of 8 off aim" beside an Overview saying "1 off
-  // aim" (pre-prod audit 2026-08-12).
-  const defCut = (me && me.org && me.org.signal_peer_cut) || "all";
-  useEffect(() => {
-    let qs = "";
-    if (defCut && defCut !== "all") {
-      const [dim, value] = defCut === "twin" ? ["twin", null] : defCut.split("::");
-      qs = "?cut=" + encodeURIComponent(dim) + (value ? "&cut_value=" + encodeURIComponent(value) : "");
-    }
-    apiCached("/api/overview" + qs).then(o => setHero(o.hero || null)).catch(() => setHero(null));
-  }, [defCut]);
-  // lumi's reading — the grounded AI overlay. undefined = hidden (AI off / no access),
-  // null = available but not generated, object = the three parts.
-  const [ai, setAi] = useState(undefined);
-  const [aiBusy, setAiBusy] = useState(false);
-  const [aiDark, setAiDark] = useState(false);   // 403 = switched off for the platform
-  useEffect(() => {
-    api("/api/strategy/commentary", { method: "POST", body: { peek: true } })
-      .then(r => setAi(r.parts || null)).catch(e => { setAi(undefined); if (e && e.status === 403) setAiDark(true); });
-  }, []);
-  const genAi = async (force) => {
-    setAiBusy(true);
-    try { const r = await api("/api/strategy/commentary", { method: "POST", body: force ? { force: true } : {} }); setAi(r.parts); }
-    catch (e) { toast(e.message, "error"); }
-    setAiBusy(false);
-  };
   const orgName = (me.org && me.org.name) || "Your organisation";
   const stance = sdStance(strat, orgName);
   // R1 (2026-08-14): the exported document carries NO peer figures by default — the
@@ -491,7 +447,6 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   // R1 inverted (2026-08-15, reward-director review): the EVIDENCE belongs in the
   // approved document; the AI reading never prints. A board paper of assertions with
   // the data removed was exactly backwards.
-  const [evidenceInPrint, setEvidenceInPrint] = useState(true);
   const [approving, setApproving] = useState(false);
   const [apOpen, setApOpen] = useState(false);
   const [apForm, setApForm] = useState({});
@@ -540,17 +495,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     } catch (e) { toast(e && e.message || "Couldn't approve.", "error"); }
     setApproving(false);
   };
-  const doms = (hero && hero.domains || []).filter(d => d.target);
-  const offAim = doms.filter(d => d.target.alignment && d.target.alignment !== "on_target");
   const when = data.completed_at ? fmtDate(data.completed_at) : null;
-  const aimRead = (d) => {
-    // the server's alignment (positions.py _market_target) is the single source of truth
-    const al = d.target.alignment;
-    if (al === "on_target") return { t: "On strategy", cls: "ok" };
-    if (al === "ahead") return { t: "Above strategy", cls: "ahead" };
-    if (al === "behind") return { t: "Below strategy", cls: "behind" };
-    return { t: "—", cls: "" };
-  };
   const philosophy = ["market_position", "reward_mix", "pay_for_performance", "transparency", "location_approach", "benefits_lead", "family_position"];
   const valOf = (f) => f === "benefits_lead"
     ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
@@ -566,10 +511,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     { id: "sdx-principles", icon: "star", label: "Principles", set: (_doc.principles || []).length > 0, part: 1 },
     { id: "sdx-comparator", icon: "users", label: "Comparator", set: _doc.comparator_cut != null, part: 1 },
     { id: "sdx-constraints", icon: "anchor", label: "Constraints", set: !!(((_doc.constraints || {}).selected || []).length || (_doc.constraints || {}).notes), part: 1 },
-    { id: "sdx-exhibit", icon: "target", label: "Position vs intent", set: doms.length > 0, part: 2, live: true },
     { id: "sdx-positions", icon: "sliders", label: "The positions", set: !!data.completed_at, part: 2, live: true },
     { id: "sdx-populations", icon: "layers", label: "Populations", set: (_doc.population_targets || []).length > 0, part: 2 },
-    { id: "sdx-plan", icon: "zap", label: "Action plan", set: !!((_doc.action_plan || {}).actions || []).length, part: 3 },
   ];
   const METER = SECTIONS.filter(s => !s.live);
   const statedN = METER.filter(s => s.set).length;
@@ -653,9 +596,6 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
             <div class="sdx-meter-line"><b>${statedN} of ${METER.length}</b> sections stated</div>
             <div class="sdx-meter-bar"><i style=${{ width: (100 * statedN / METER.length) + "%" }}></i></div>
           </div>
-          <label class="sd-evi-toggle" title="Your position against intent, with its peer group named. Untick for a words-only document.">
-            <input type="checkbox" checked=${evidenceInPrint} onChange=${e => setEvidenceInPrint(e.target.checked)} />
-            Include the evidence exhibit in the export</label>
         </div>
       </div>
       ${/* ---- section jump-nav with state dots (screen only) ---- */ ""}
@@ -691,36 +631,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
         <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
           which=${["principles", "comparator", "constraints"]} />
 
-        <div class="sdx-part"><span>Part 2</span> Position — what the data shows</div>
-
-        ${hero === null ? html`
-        <section class="sd-sec sdx-card" id="sdx-exhibit">
-          <${SecHead} icon="target" title="Position against intent" />
-          <div class="sd-note">Reading your live position…</div>
-        </section>` : doms.length ? html`
-        <section class=${"sd-sec sdx-card" + (evidenceInPrint ? "" : " no-print")} id="sdx-exhibit">
-          <${SecHead} icon="target" title="Position against intent"
-            chip=${html`<span class="sdx-state live">${offAim.length ? offAim.length + " of " + doms.length + " off strategy" : "all on strategy"} · live</span>`} />
-          <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your strategy; the dot is where you actually land. Inside the band is on strategy.</p>
-          <div class="sd-ex-row sd-ex-head" aria-hidden="true">
-            <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
-            <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
-            <span></span>
-          </div>
-          <div class="sd-exhibit">
-            ${doms.map(d => { const r = aimRead(d); return html`
-              <a key=${d.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(d.name)}>
-                <span class="sd-ex-name">${d.name}${Object.keys(strat.domain_targets || {}).some(k => d.name === k || d.name.startsWith(k)) ? html` <span class="sd-ex-ov" title="This area has its own aim, set separately from your global stance.">refined aim</span>` : ""}</span>
-                <span class="sr-only">aim ${SD_STANCE[d.target.stance] || "not set"}, position ${d.position && d.position.verdict ? (d.position.verdict === "at" ? "on market" : d.position.verdict + " market") : "not read yet"}.</span>
-                <${SdAxis} intent=${d.target.stance} actual=${d.position && d.position.verdict} pctl=${d.position && d.position.depth_pctl} align=${d.target.alignment} />
-                <span class=${"sd-ex-read " + r.cls}>${r.t}</span>
-              </a>`; })}
-          </div>
-        </section>` : html`
-        <section class="sd-sec sdx-card" id="sdx-exhibit">
-          <${SecHead} icon="target" title="Position against intent" on=${false} />
-          <div class="sd-note">Aim-vs-position appears once your benchmark unlocks.</div>
-        </section>`}
+        <div class="sdx-part"><span>Part 2</span> Position — how it applies</div>
 
         <section class="sd-sec sdx-card" id="sdx-positions">
           <${SecHead} icon="sliders" title="The positions" chip=${html`<span class="sdx-state live">From your dials</span>`} />
@@ -738,38 +649,17 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
               <span class="sd-led-why">${strat[f] ? SD_DRIVES[f] : "Read neutrally."}</span>
             </div>`)}
           </div>
-          ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
+        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${() => nav("/plan")}
           which=${["populations"]} />
 
-        <div class="sdx-part"><span>Part 3</span> Delivery — how we'll run it</div>
+        <section class="sd-sec sdx-card no-print">
+          <${SecHead} icon="zap" title="Where you stand against this" chip=${html`<span class="sdx-state live">Live</span>`} />
+          <p class="sd-note sd-ex-cap">Your position against this strategy, the gaps it opens and the plan to close them live in <b>Reward plan</b> — so this document stays a statement of intent.</p>
+          <button class="btn primary" onClick=${() => nav("/plan")}><${Icon} name="zap" size=${13} /> Open your reward plan</button>
+        </section>
 
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
-          which=${["plan"]} />
-
-        ${ai === undefined && aiDark && canEdit ? html`
-        <section class="sd-sec sdx-card no-print" id="sdx-reading">
-          <${SecHead} icon="sparkle" title="lumi's reading" on=${false} />
-          <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI insights are enabled for the platform.</div>
-        </section>` : null}
-        ${ai !== undefined ? html`
-        <section id="sdx-reading" class="sd-sec sdx-card sd-ai no-print">
-          <${SecHead} icon="sparkle" title="lumi's reading"
-            chip=${html`<span class="sdx-state live">AI · grounded only in the figures on this page</span>`} />
-          ${ai ? html`
-            <div role="status" class="sr-only">Reading generated.</div>
-            <p class="sd-ai-p"><b>Where you stand.</b> ${ai.reading}</p>
-            <p class="sd-ai-p"><b>Tensions.</b> ${ai.tensions}</p>
-            <p class="sd-ai-p"><b>To watch.</b> ${ai.watch}</p>
-            <div class="sd-note">A description of your strategy against your data, not advice.
-              <button class="sd-ai-refresh no-print" disabled=${aiBusy} onClick=${() => genAi(true)}>Regenerate</button></div>`
-          : html`
-            <p class="sd-note" style=${{ marginBottom: "var(--s3)" }}>A short reading of this strategy against your live position — generated from the figures above, nothing else.</p>
-            ${aiBusy ? html`<div class="sd-ai-skel" aria-hidden="true"><i></i><i></i><i></i></div>` : null}
-            <button class="btn no-print" disabled=${aiBusy} aria-label=${aiBusy ? "Generating the reading" : "Generate the reading"} onClick=${() => genAi(false)}>${aiBusy ? html`<${Spinner} />` : "Generate the reading"}</button>`}
-        </section>` : null}
         <footer class="sd-docfoot" style=${{ "--i": 6 }}>Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
       </article>
 
@@ -1355,3 +1245,149 @@ function ReviewSection({ title, chip, chipCls, rows, onEdit, onChangeRow, locked
       </div>
     </div>`;
 }
+
+// ============================ REWARD PLAN =====================================
+// The strategy section says what you INTEND. This says where you actually are, the
+// gaps between the two, and what to do about them (2026-08-15, David: "a whole new
+// section which shows where you are now, the gaps and the plan to improve with roi").
+// Everything here is engine-computed: positions from the benchmark, gaps from the
+// alignment rules, levers from David's inventory, £ from the money model.
+const RP_STATUS = { evidenced: { t: "Holding", cls: "ok" }, behind_intent: { t: "Behind intent", cls: "warn" },
+  contradicted: { t: "Contradicted", cls: "bad" }, not_evidenced: { t: "Not yet evidenced", cls: "" } };
+
+window.RewardPlanPage = function ({ me }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(null);            // which gap's options are expanded
+  const canEdit = me && me.user && ["admin", "contributor"].includes(me.user.role);
+  const load = () => api("/api/strategy/alignment").then(setD).catch(e => setErr(e.message));
+  useEffect(() => { load(); }, []);
+  if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your reward plan"
+    body=${err + " — nothing is lost."}
+    action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
+  if (!d) return html`<${PageLoading} />`;
+  if (d.ok === false) return html`<${EmptyState} icon="compass" title="Set your reward strategy first"
+    body="Your plan is built from the gap between what you said you'd do and what your data shows — so it starts with your strategy."
+    action=${html`<button class="btn small primary" onClick=${() => nav("/strategy")}>Go to Reward strategy</button>`} />`;
+
+  const commitments = d.commitments || [];
+  const gaps = commitments.filter(c => c.status === "behind_intent" || c.status === "contradicted");
+  const holding = commitments.filter(c => c.status === "evidenced");
+  const unevidenced = commitments.filter(c => c.status === "not_evidenced");
+  const plan = d.plan;
+  const optsFor = (id) => (d.options || []).find(o => o.commitment_id === id);
+  const build = async () => {
+    setBusy(true);
+    try { const r = await api("/api/strategy/plan", { method: "POST", body: {} });
+      if (r && r.ok === false) toast(r.reason === "locked" ? "Your insights unlock once your data is in." : "Set your strategy first.", "error");
+      else { await load(); toast("Plan rebuilt from your current gaps."); }
+    } catch (e) { toast(e && e.message || "Couldn't build the plan.", "error"); }
+    setBusy(false);
+  };
+
+  return html`
+    <div class="rp-wrap">
+      <div class="rp-hero">
+        <div>
+          <div class="sd-eyebrow sdx-eyebrow">Reward plan</div>
+          <h1 class="sdx-org">Where you are, and what to do about it</h1>
+          <p class="strat-sub">Your stated strategy against your own data on <b>${d.cut_label}</b>${d.objective ? html`, read through your <b>${d.objective}</b> objective` : ""}.</p>
+        </div>
+        <div class="rp-hero-side">
+          <div class="rp-tally">
+            <div class="rp-tally-n">${gaps.length}</div>
+            <div class="rp-tally-l">${gaps.length === 1 ? "gap to close" : "gaps to close"}</div>
+          </div>
+          <button class="btn quiet" onClick=${() => nav("/strategy")}>View your strategy</button>
+        </div>
+      </div>
+
+      ${/* ---- 1. where you are now ---- */ ""}
+      <section class="card rp-sec">
+        <h2 class="rp-h">Where you are now</h2>
+        <p class="sd-note sd-ex-cap">Each row is your live benchmark against where you said you'd sit. The shaded band is your strategy; the dot is where you land.</p>
+        <div class="sd-ex-row sd-ex-head" aria-hidden="true">
+          <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
+          <span class="sd-axis sd-axis-labels">${SD_ZONES_F().map(([l, r], i) => html`<i key=${i} style=${{ left: ((l + r) / 2) + "%" }}>${["below", "on market", "above"][i]}</i>`)}</span>
+          <span></span>
+        </div>
+        <div class="sd-exhibit">
+          ${(d.domains || []).map(dom => {
+            const al = (dom.target || {}).alignment;
+            const read = al === "on_target" ? { t: "On strategy", cls: "ok" } : al === "ahead" ? { t: "Above strategy", cls: "ahead" }
+              : al === "behind" ? { t: "Below strategy", cls: "behind" } : { t: "—", cls: "" };
+            return html`<a key=${dom.name} class="sd-ex-row" href=${"#/category/" + encodeURIComponent(dom.name)}>
+              <span class="sd-ex-name">${dom.name}</span>
+              <${SdAxis} intent=${(dom.target || {}).stance} actual=${dom.position && dom.position.verdict}
+                pctl=${dom.position && dom.position.depth_pctl} align=${al} />
+              <span class=${"sd-ex-read " + read.cls}>${read.t}</span>
+            </a>`; })}
+        </div>
+        <div class="rp-tiles">
+          ${[["off strategy", gaps.length, "warn"], ["holding", holding.length, "ok"],
+             ["not yet evidenced", unevidenced.length, ""]].map(([l, n, cls]) => html`
+            <div key=${l} class=${"rp-tile " + cls}>
+              <div class="rp-tile-n">${n}</div>
+              <div class="rp-tile-l">${l}</div>
+            </div>`)}
+        </div>
+      </section>
+
+      ${/* ---- 2. the gaps ---- */ ""}
+      <section class="card rp-sec">
+        <h2 class="rp-h">The gaps <span class="rp-h-n">${gaps.length}</span></h2>
+        ${gaps.length ? gaps.map(c => { const ob = optsFor(c.id); return html`
+          <div key=${c.id} class="rp-gap">
+            <div class="rp-gap-head">
+              <span class=${"rp-chip " + RP_STATUS[c.status].cls}>${
+                c.direction === "past" ? "Past intent" : RP_STATUS[c.status].t}</span>
+              <span class="rp-gap-cat">${domainLabel(c.category)}</span>
+            </div>
+            <p class="rp-gap-say">${c.statement}</p>
+            ${ob && ob.levers && ob.levers.length ? html`
+              <button class="rp-more" onClick=${() => setOpen(open === c.id ? null : c.id)}>
+                ${open === c.id ? "Hide" : "What the market does about it"} · ${ob.levers.length}</button>
+              ${open === c.id ? html`
+                <div class="rp-levers">
+                  <p class="caption">${ob.framing}</p>
+                  ${ob.levers.map(l => html`<div key=${l.lever_id} class="rp-lever">
+                    <div class="rp-lever-t"><b>${l.name}</b> <span class="sd-doc-meta">${l.cost_character} · ${l.speed} · ${l.reversibility} to reverse</span></div>
+                    <div class="caption">${l.what_it_is}</div>
+                    <div class="caption rp-trade"><${Icon} name="info" size=${12} /> ${l.trade_off}</div>
+                  </div>`)}
+                </div>` : null}`
+            : ob && ob.coverage_note ? html`<p class="sd-note rp-note">${ob.coverage_note}</p>` : null}
+          </div>`; })
+        : html`<${EmptyState} icon="check" title="Nothing is off strategy"
+            body="Every commitment your data can speak to matches what you said. Come back after your next data refresh." />`}
+        ${unevidenced.length ? html`<p class="sd-note">${unevidenced.length} commitment${unevidenced.length === 1 ? "" : "s"} can't be assessed yet — the metrics behind ${unevidenced.length === 1 ? "it" : "them"} are unanswered.</p>` : null}
+      </section>
+
+      ${/* ---- 3. the plan ---- */ ""}
+      <section class="card rp-sec">
+        <div class="rp-h-row">
+          <h2 class="rp-h">The plan</h2>
+          ${canEdit ? html`<button class="btn ${plan ? "" : "primary"}" disabled=${busy} onClick=${build}>
+            ${busy ? "Building…" : plan ? "Rebuild" : "Build my plan"}</button>` : null}
+        </div>
+        ${plan ? html`
+          <p class="sd-stance lead">${plan.summary}</p>
+          <div class="rp-actions">
+            ${(plan.actions || []).map((a, i) => html`
+              <div key=${i} class="rp-action">
+                <div class="rp-action-n">${i + 1}</div>
+                <div class="rp-action-b">
+                  <div class="rp-action-t">${a.title} <span class="sd-doc-meta">${domainLabel(a.category || "")} · ${a.horizon}</span></div>
+                  <div class="caption">${a.why}</div>
+                  <div class="rp-roi"><${Icon} name="coins" size=${13} /> ${a.roi}</div>
+                </div>
+              </div>`)}
+          </div>
+          <p class="sd-note">${plan.basis} Built ${plan.built_at ? fmtDate(plan.built_at) : ""}.</p>`
+        : html`<${EmptyState} icon="zap" title="No plan built yet"
+            body="lumi will turn the gaps above into a sequenced plan — each action with what it typically returns, using the indicative £ from your own benchmark."
+            action=${canEdit ? html`<button class="btn small primary" disabled=${busy} onClick=${build}>${busy ? "Building…" : "Build my plan"}</button>` : null} />`}
+      </section>
+    </div>`;
+};

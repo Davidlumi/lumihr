@@ -51,7 +51,7 @@ function App() {
       ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
-      ["/strategy", "Reward strategy"], ["/team", "Team"], ["/settings", "Settings"],
+      ["/strategy", "Reward strategy"], ["/plan", "Reward plan"], ["/team", "Team"], ["/settings", "Settings"],
       ["/shares", "Manage shares"],
       ["/profile", "Company profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
       ["/governance", "Governance"]];
@@ -434,6 +434,7 @@ function App() {
   }
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route.startsWith("/strategy")) page = html`<${StrategyPage} me=${me} />`;
+  else if (route.startsWith("/plan")) page = html`<${RewardPlanPage} me=${me} />`;
   else if (route.startsWith("/admin")) page = me.user.platform_admin
     ? html`<${AdminConsolePage} me=${me} route=${route} />`
     : html`<${NotFoundPage} route=${route} />`;   // invisible to non-staff
@@ -559,6 +560,7 @@ function App() {
           <div class="nav-label">Your organisation</div>
           <${RailItem} route=${route} path="/your-data" icon="table" label="Your data" />
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/strategy" icon="compass" label="Reward strategy" />`}
+          <${RailItem} route=${route} path="/plan" icon="zap" label="Reward plan" />
           ${me.user.role === "admin" && html`<${RailItem} route=${route} path="/team" icon="users" label="Team" />`}
           <${RailItem} route=${route} path="/settings" icon="sliders-v" label="Settings" />
         </div>
@@ -1376,6 +1378,7 @@ const NAV_INDEX = [
   { label: "Board packs", route: "/boardpack", group: "Pages", kw: "board report export pdf pack briefing" },
   { label: "Your data", route: "/your-data", group: "Pages", kw: "submit answers questionnaire enter" },
   { label: "Reward strategy", route: "/strategy", group: "Pages", role: "admin", kw: "objective market stance intent capture" },
+  { label: "Reward plan", route: "/plan", group: "Pages", kw: "gaps plan actions roi where you are improve levers" },
   { label: "Team", route: "/team", group: "Pages", role: "admin", kw: "members invite roles colleagues" },
   { label: "Settings", route: "/settings", group: "Pages", kw: "assumptions sharing notifications account" },
   { label: "Company profile", route: "/profile", group: "Pages", kw: "company facts sector size region" },
