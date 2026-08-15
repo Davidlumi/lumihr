@@ -39,6 +39,26 @@ const RRD = {
 // document never says which is which inline — the provenance line on the last page does.
 function rrProse(s) { return (s || "").trim(); }
 
+// 1st / 2nd / 3rd / 11th — a hardcoded "th" printed "the 32th percentile" on a board
+// page. Every number ending 1, 2 or 3 outside the teens was wrong.
+// Engine statements carry raw category names ("Incentives & Recognition"); the
+// headings beside them use the house sentence case ("Incentives & recognition").
+// Both on one sheet read as sloppy, so prose is normalised to the house form.
+function rrCase(text) {
+  let out = text || "";
+  ["Incentives & Recognition", "Benefits & Lifestyle", "Time Off & Family",
+   "Pensions & Savings", "Health & Protection", "Governance & Transparency"].forEach(c => {
+    out = out.split(c).join(domainLabel(c));
+  });
+  return out;
+}
+
+function rrOrdinal(n) {
+  const v = Math.round(n), t = v % 100;
+  if (t >= 11 && t <= 13) return v + "th";
+  return v + ({ 1: "st", 2: "nd", 3: "rd" }[v % 10] || "th");
+}
+
 // a, b and c — a board paper is prose, not a comma-separated list
 function rrList(items) {
   const a = (items || []).filter(Boolean);
@@ -313,7 +333,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // count + position + signals + commentary on one sheet; the recommendations that
       // follow from them on the next. Together they overran A4, and a domain section
       // that spills makes the footer's page count disagree with the paper.
-      const hasFollow = (b.gaps || []).length > 0;
+      // Split only when there is a real options table to show. An OVERSPEND domain's
+      // "what follows" is a statement and a two-line explanation — printing that on its
+      // own A4 sheet used 17% of the page and read as padding in a board document.
+      const hasFollow = (b.gaps || []).length > 0
+        && (b.options || []).some(o => (o.levers || []).length);
       P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
       if (hasFollow) P(domainLabel(b.name) + " (cont.)", "domain", { block: b, half: "follow", parts: 2, part: 1 });
     });
@@ -348,7 +372,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
     const bits = [];
     bits.push(name + " reads " + (RR_POS_WORD[p.verdict] || p.verdict) + " overall"
-      + (p.pctl != null ? ", around the " + Math.round(p.pctl) + "th percentile of " + cutLabel : "")
+      + (p.pctl != null ? ", around the " + rrOrdinal(p.pctl) + " percentile of " + cutLabel : "")
       + ", on " + cnt.metrics + " benchmarked " + (cnt.metrics === 1 ? "metric" : "metrics") + ".");
     const parts = [];
     if (p.below) parts.push(p.below + " " + (p.below === 1 ? "sits" : "sit") + " below market");
@@ -364,7 +388,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       bits.push("No aim is set for " + name + ", so lumi reads it neutrally.");
     }
     if ((b.gaps || []).length) {
-      bits.push("That difference is what the recommendations below respond to.");
+      // "below" was wrong twice over: the recommendations sit on the FOLLOWING sheet,
+      // and on an overspend domain there are none — the section explains why instead.
+      const past = (b.gaps || []).every(g => g.direction === "past");
+      bits.push(past
+        ? "Sitting past your own aim is not closed by adding to the package, so the section that follows sets out why rather than what to add."
+        : "What follows sets out the options against that difference.");
     }
     return bits.join(" ");
   };
@@ -394,8 +423,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrH} n=${num}>Executive summary<//>
       ${aiWaiting ? html`<p class="rr-p rr-muted">Writing the commentary…</p>`
         : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
-            (wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
-            || (cm && cm.parts && cm.parts.reading) || ""} />`}
+            rrCase((wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
+            || (cm && cm.parts && cm.parts.reading) || "")} />`}
       <div class="rr-stats">
         ${hasPosition ? html`
           <div><b>${domains.length}</b><span>areas benchmarked</span></div>
@@ -474,9 +503,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrH} n=${num} sub="Where the stated strategy pulls against itself, or against what the data shows.">Tensions and what to watch<//>
       ${cm && cm.parts ? html`
         <h3 class="rr-sh">Tensions</h3>
-        <${Prose} k="tensions" generated=${cm.parts.tensions} />
+        <${Prose} k="tensions" generated=${rrCase(cm.parts.tensions)} />
         <h3 class="rr-sh">What to watch</h3>
-        <${Prose} k="watch" generated=${cm.parts.watch} />`
+        <${Prose} k="watch" generated=${rrCase(cm.parts.watch)} />`
         : html`<p class="rr-p rr-muted">${aiWaiting ? "Writing the commentary…" : "Commentary is unavailable for this document."}</p>`}
       <div class="rr-callout quiet">
         <div class="rr-callout-h">Where you stand against this</div>
@@ -505,6 +534,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "domain") {
       const b = block || {};
       const isRead = (half || "read") === "read";
+      const inlineFollow = isRead && (b.gaps || []).length && (parts || 1) === 1;
+      const sigShown = (b.signals || []).slice(0, inlineFollow ? 2 : 4);
       const pos = b.position || {};
       const aim = b.aim || {};
       const cnt = b.count || {};
@@ -527,7 +558,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div class="rr-dom-stat">
             <span class="rr-dom-k">Market position</span>
             <b class=${"rr-verdict v-" + (pos.verdict || "none")}>${RR_POS_WORD[pos.verdict] || "no read yet"}</b>
-            <span class="rr-sm">${pos.pctl != null ? "around the " + Math.round(pos.pctl) + "th percentile" : "not enough comparable data"}</span>
+            <span class="rr-sm">${pos.pctl != null ? "around the " + rrOrdinal(pos.pctl) + " percentile" : "not enough comparable data"}</span>
           </div>
           <div class="rr-dom-stat">
             <span class="rr-dom-k">Against your aim</span>
@@ -549,12 +580,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <h3 class="rr-sh">How this reads</h3>
         <${Prose} k=${"domain:" + b.name} generated=${domProse(b)} />
 
-        ${(b.signals || []).length ? html`
-          <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > b.signals.length
-            ? html` <span class="rr-sm">(${b.signals.length} of ${b.signal_count})</span>` : ""}</h3>
+        ${/* a sheet that ALSO carries the follow content has room for fewer signals —
+             sized so the combined sheet still lands inside A4 */ ""}
+        ${(sigShown || []).length ? html`
+          <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > sigShown.length
+            ? html` <span class="rr-sm">(${sigShown.length} of ${b.signal_count})</span>` : ""}</h3>
           <table class="rr-table tight">
             <thead><tr><th>Signal</th><th>Yours</th><th>Reads</th></tr></thead>
-            <tbody>${b.signals.map(sg => html`
+            <tbody>${sigShown.map(sg => html`
               <tr key=${sg.question_id || sg.title}>
                 <td><b>${sg.title}</b>${sg.detail ? html`<br /><span class="rr-sm">${sg.detail}</span>` : ""}</td>
                 <td class="rr-sm">${sg.value || "—"}</td>
@@ -563,8 +596,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           </table>` : null}`}
 
         ${isRead ? null : html`
-          <h3 class="rr-sh">What follows for ${domainLabel(b.name)}</h3>
-          ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${c.statement}</p>`)}
+          ${/* the sheet heading already reads "<domain> — what follows"; repeating it
+               as an h3 directly underneath said the same thing twice */ ""}
+          ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
           ${(b.options || []).some(o => (o.levers || []).length) ? html`
             <table class="rr-table tight">
               <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
@@ -577,6 +611,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
         ${isRead && !(b.gaps || []).length ? html`
           <p class="rr-p rr-sm">Nothing in ${domainLabel(b.name)} currently runs against your stated aim.</p>` : null}
+        ${/* not split (no options table): the short explanation rides on the read sheet */ ""}
+        ${isRead && (b.gaps || []).length && (parts || 1) === 1 ? html`
+          <h3 class="rr-sh">What follows for ${domainLabel(b.name)}</h3>
+          ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
+          <p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>` : null}
 
         <div class="rr-gap-foot no-print">
           <button class="rp-go" onClick=${() => toSignals(b.name, aim.alignment)}>
@@ -631,9 +670,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${RrH} n=${num} sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
       ${(items || []).map((f, i) => html`
         <div key=${i} class="rr-finding">
-          <div class="rr-finding-h">${f.headline}</div>
-          <p class="rr-p">${rrProse(f.detail)}</p>
-          ${f.option ? html`<p class="rr-p rr-opt"><span>Options</span>${rrProse(f.option)}</p>` : null}
+          <div class="rr-finding-h">${rrCase(f.headline)}</div>
+          <p class="rr-p">${rrCase(rrProse(f.detail))}</p>
+          ${f.option ? html`<p class="rr-p rr-opt"><span>Options</span>${rrCase(rrProse(f.option))}</p>` : null}
         </div>`)}
       ${part === parts - 1 && (dg.on_plan || []).length ? html`
         <p class="rr-p rr-sm">Tracking with intent: ${(dg.on_plan || []).map(domainLabel).join(", ")}.</p>` : null}`;
@@ -667,14 +706,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "planp") return html`
       <${RrH} n=${num} sub=${first ? "This is the roll-up of the sections above: every action below is one of the options already set out under its own domain, sequenced across all of them." : null}>The plan${contd}<//>
       ${plan ? html`
-        ${first ? html`<${Prose} k="plan_summary" className="rr-lede" generated=${plan.summary} />` : null}
+        ${first ? html`<${Prose} k="plan_summary" className="rr-lede" generated=${rrCase(plan.summary)} />` : null}
         <ol class="rr-plan" start=${start || 1}>
           ${(items || []).map((a, i) => html`
             <li key=${i}>
               <div class="rr-plan-t">${a.title}
                 <span class="rr-sm"> · from ${domainLabel(a.category || "")}${
                   SEC_NO["domain:" + a.category] ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""} · ${a.horizon}</span></div>
-              <p class="rr-p">${rrProse(a.why)}</p>
+              <p class="rr-p">${rrCase(rrProse(a.why))}</p>
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
         </ol>
