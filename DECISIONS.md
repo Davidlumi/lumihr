@@ -18622,3 +18622,40 @@ here, and the rail carries one entry instead of two.
 computed section names are refused, and an over-long body 400s rather than silently truncating.
 Verified end-to-end on the AI rig: edit → save → reload → persisted → restore → generated text
 back; the *Change the dials* link lands on the right wizard step. Suite 15/15. ?v=643.
+
+## 2026-08-16 (e) — The journey made coherent
+
+David: *"make sure everything comes together as a coherent UX journey — new user enters company
+details, then strategy, then metrics, then builds and edits strategy and plan, changes update
+metrics, and on it goes, circular. Is the board report now redundant?"*
+
+**The loop existed; nothing narrated it.** Company details are already step 1 of the strategy
+wizard, data unlocks insights, the document generates, Signals carry you to action. What was
+missing was any sense of sequence — a flat rail of seven surfaces — and a **return leg**: after
+editing the plan nothing said the data underneath it was ageing.
+
+One strip on Overview now carries **Company · Strategy · Your data · Plan** with exactly one next
+action, in loop order, so two competing calls to act can never appear together. Same component on
+day 1 and month 9: early it reads as onboarding, later as staleness. `to_refresh` on the overview
+payload comes from the refresh-cadence policy Your data already uses — that is the return leg,
+and it marks both Data and Plan stale. It replaces `StrategyNudge`, which competed with the
+data-submission CTA on the same locked Overview.
+
+**The defect the review surfaced, confirmed on a rig.** With the demo org's answers emptied, the
+document rendered an empty table under "each area's live benchmark", tiles reading *0 off
+strategy · 0 holding* (true, and reads as "all is well"), and a plan page telling you to press a
+button the lock would refuse. Strategy-before-data is the right order — the strategy sets the
+peer group — but step 2 had no payoff and lied by omission. `/api/strategy/alignment` now returns
+`data_state`, and with no position read the position half collapses to one honest page,
+*Where you'll stand*, carrying what is needed and the action that gets there.
+
+**Is the board pack redundant? Its front half was.** Six sections were duplicated by the reward
+document, and duplicated better there. The pack sheds the three strategy-narrative pages and
+opens by citing the document it is evidence for. The split is now clean: **the document decides,
+the pack evidences** — the market, the £, the metric table with P10–P90 and n, the peer-practice
+appendix. It also answers "which one is current", which two narrating artefacts could not.
+
+**Deliberately not built:** an anonymous share link for the reward document. I proposed it, then
+declined to tack it on — it would expose an org's stated strategy and its gaps to anyone holding
+a URL, which is a privacy decision deserving its own consideration rather than the tail end of a
+long session. Save-as-PDF already covers circulation. Suite 15/15. ?v=646.
