@@ -158,6 +158,33 @@ def main():
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
         "comparator_cut": "group::no-such-group"}})
     check("dangling comparator group rejected at save (400)", st == 400, st)
+
+    # ---- ONE peer group: the strategy comparator IS the org default cut ----
+    # (2026-08-15 — the strategy must never name a different market from the one the
+    # benchmark, Signals and alerts read from.)
+    _opts = (opts.get("options") or [])
+    st, me0 = sa.req("/api/me")
+    _band = (me0.get("org") or {}).get("fte_band") or "50-249"
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"comparator_cut": "fte_band::" + _band}})
+    check("comparator accepts a size cut (200)", st == 200, st)
+    st, me1 = sa.req("/api/me")
+    check("choosing a comparator MOVES the org default peer group",
+          (me1.get("org") or {}).get("signal_peer_cut") == "fte_band::" + _band,
+          (me1.get("org") or {}).get("signal_peer_cut"))
+    st, s1 = sa.req("/api/strategy")
+    check("the strategy reads the comparator back from the org default",
+          (s1.get("document") or {}).get("comparator_cut") == "fte_band::" + _band,
+          (s1.get("document") or {}).get("comparator_cut"))
+    check("comparator label matches the benchmark's own wording for that cut",
+          (s1.get("document") or {}).get("comparator_label") == _band + " FTE",
+          (s1.get("document") or {}).get("comparator_label"))
+    # move the DEFAULT from the other side — the strategy must follow, not contradict
+    st, _ = sa.req("/api/org/signal-peers", "PUT", {"cut": "all"})
+    st, s2 = sa.req("/api/strategy")
+    check("changing the peer group elsewhere updates the stated comparator",
+          (s2.get("document") or {}).get("comparator_cut") is None
+          and (s2.get("document") or {}).get("comparator_label") == "All peers",
+          (s2.get("document") or {}).get("comparator_label"))
     # Wellbeing provision commitment: only visible Wellbeing metrics
     _wb = [o["id"] for o in _mo if o["category"] == "Wellbeing"][:2]
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {

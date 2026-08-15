@@ -482,13 +482,14 @@ function SdDocSections({ data, canEdit, onEdit, which }) {
 }
 
 function orgCompareWords(me, doc) {
-  // R1: the comparator IN WORDS, never a benchmark table
+  // R1: the comparator IN WORDS, never a benchmark table. House vocabulary: the peer
+  // member is a "company" (lumi-terminology), and the label already carries its unit.
   const label = doc.comparator_label || "All peers";
-  if (label === "All peers") return "We compare ourselves to UK organisations across the lumi peer pool.";
   const cut = doc.comparator_cut || "";
-  if (cut.startsWith("industry::")) return "We compare ourselves to UK organisations in our sector — " + label + ".";
-  if (cut.startsWith("fte_band::")) return "We compare ourselves to UK organisations of similar size (" + label + " employees).";
-  return "We compare ourselves to our saved peer group — " + label + ".";
+  if (!cut || label === "All peers") return "We compare ourselves to UK companies across our whole peer group.";
+  if (cut.startsWith("industry::")) return "We compare ourselves to UK companies in our sector — " + label + ".";
+  if (cut.startsWith("fte_band::")) return "We compare ourselves to UK companies of similar size — " + label + ".";
+  return "We compare ourselves to our peer group, " + label + ".";
 }
 
 function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
@@ -1119,16 +1120,16 @@ window.StrategyPage = function ({ me }) {
         <section key="compare" class="sdw-page">
           <header class="sdw-head">
             <h1 class="strat-title">Who do you compare yourselves to?</h1>
-            <p class="strat-sub">Name the market first — "above market" only means something once you've said which market. This is the peer group your whole strategy is written against.</p>
+            <p class="strat-sub">Name the market first — "above market" only means something once you've said which market. This is <b>your organisation's peer group</b>: the one your benchmark, your signals and this document all read from.</p>
           </header>
           <div class="sdw-dials">
             <div class="dial-card">
               <div class="dial-head"><span class="dial-roundel"><${Icon} name="users" size=${16} /></span>
-                <div><div class="dial-title">Your comparator</div>
-                <div class="dial-q">Your document describes this in words; the figures stay in the benchmark.</div></div></div>
+                <div><div class="dial-title">Your peer group</div>
+                <div class="dial-q">Change it here and every benchmark read changes with it — there is only ever one market in play. Your document describes it in words; the figures stay in the benchmark.</div></div></div>
               <select class="ctl" value=${doc.comparator_cut || "all"}
                 onChange=${e => setD({ comparator_cut: e.target.value === "all" ? null : e.target.value })}>
-                <option value="all">All peers — every company in the lumi pool</option>
+                <option value="all">All peers — every company in your benchmark</option>
                 ${((choices || {}).fields || []).filter(f => f.key === "industry").flatMap(f => f.choices || []).map(c =>
                   html`<option key=${"i" + c} value=${"industry::" + c}>Sector — ${c}</option>`)}
                 ${((choices || {}).fields || []).filter(f => f.key === "fte_band").flatMap(f => f.choices || []).map(c =>
@@ -1136,7 +1137,9 @@ window.StrategyPage = function ({ me }) {
                 ${(groups || []).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>Saved peer group — ${g.name}</option>`)}
               </select>
               <div class="signal-effect"><span class="se-eye"><${Icon} name="sparkle" size=${14} /></span>
-                <span class="se-text">${orgCompareWords(null, { ...doc, comparator_label: comparatorLabel(doc, groups) })}</span></div>
+                <span class="se-text">${orgCompareWords(null, { ...doc, comparator_label: comparatorLabel(doc, groups) })}
+                  ${data.document && data.document.comparator_cut !== doc.comparator_cut
+                    ? html` <b>Saving moves your whole benchmark to this group.</b>` : ""}</span></div>
             </div>
             <div class="dial-card">
               <div class="dial-head"><span class="dial-roundel"><${Icon} name="magnet" size=${16} /></span>
@@ -1456,13 +1459,15 @@ window.StrategyPage = function ({ me }) {
 
 // the comparator in the member's own vocabulary (never the raw enum tail)
 function comparatorLabel(doc, groups) {
+  // the SAME wording the benchmark and Signals use for the peer group (server
+  // _default_cut_info): sector name, "<band> FTE", or the saved group's name.
   const cut = (doc || {}).comparator_cut;
   if (!cut) return "All peers";
   const [dim, val] = cut.split("::");
-  if (dim === "industry") return "Sector — " + val;
-  if (dim === "fte_band") return "Size — " + val + " employees";
+  if (dim === "industry") return val;
+  if (dim === "fte_band") return val + " FTE";
   const g = (groups || []).find(x => x.group_id === val);
-  return "Saved peer group" + (g ? " — " + g.name : "");
+  return g ? g.name : "All peers";
 }
 
 function reviewRow(field, strat) {

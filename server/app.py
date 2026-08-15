@@ -5086,15 +5086,13 @@ def _validate_comparator(conn, org, raw):
 
 
 def _comparator_label(conn, org, raw):
-    """Human words for the declared comparator — Artefact A describes it in words, no figures (R1)."""
+    """Human words for the comparator. Deliberately the SAME helper the benchmark,
+    Signals and Settings name the peer group with — the strategy must never describe
+    a different market from the one the numbers come from."""
     if not raw:
         return "All peers"
-    dim, val = raw.split("::", 1)
-    if dim == "group":
-        r = conn.execute("SELECT name FROM peer_groups WHERE group_id=? AND org_id=?",
-                         (val, org["org_id"])).fetchone()
-        return r["name"] if r else "All peers"        # dangling group reads gracefully
-    return val
+    _raw, label, _crit = _default_cut_info(conn, dict(org, default_cut=raw))
+    return label
 
 
 def strategy_measure_options(conn, org, comparator_cut):
@@ -5211,7 +5209,13 @@ def strategy_state(conn, org):
         "roadmap": uj(row.get("roadmap_json"), []) or [],
         "commitments": uj(row.get("commitments_json"), {}) or {},
     }
+    # ONE peer group (2026-08-15, David: "compare against contradicts the default
+    # benchmark sample group — the two need to be aligned"). orgs.default_cut is the
+    # single source of truth: it already anchors the benchmark, Signals and alerts,
+    # so the strategy states THAT market, never a second one.
+    doc["comparator_cut"] = (org.get("default_cut") or None)
     doc["comparator_label"] = _comparator_label(conn, org, doc["comparator_cut"])
+    doc["comparator_is_default"] = True
     # Artefact A versioning (2026-08-14): the live row is the working draft; the
     # latest approved snapshot names the version the review cites. dirty = edits
     # since approval (the view says so honestly rather than pretending currency).
@@ -5558,8 +5562,15 @@ async def put_strategy(request: Request):
     doc_in = body.get("document") or {}
     docvals = {}
 
-    docvals["comparator_cut"] = _validate_comparator(conn, org, doc_in.get("comparator_cut"))
-    prov["comparator"] = "set" if docvals["comparator_cut"] is not None or doc_in.get("comparator_cut") == "all" else "skipped"
+    # the comparator IS the org default peer group — setting it here moves the whole
+    # benchmark, so there is only ever one market in play (see strategy_state).
+    _comp_in = doc_in.get("comparator_cut")
+    docvals["comparator_cut"] = _validate_comparator(conn, org, _comp_in)
+    if "comparator_cut" in doc_in and docvals["comparator_cut"] != (org.get("default_cut") or None):
+        conn.execute("UPDATE orgs SET default_cut=? WHERE org_id=?",
+                     (docvals["comparator_cut"], org["org_id"]))
+        invalidate_payloads()
+    prov["comparator"] = "set" if docvals["comparator_cut"] is not None else "skipped"
 
     seg = doc_in.get("segments") or {}
     if seg:
