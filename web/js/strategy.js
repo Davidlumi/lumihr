@@ -104,6 +104,7 @@ const PAGES = [
   { id: "facts",      phase: 0, label: "Your business" },
   { id: "compare",    phase: 0, label: "Who you compare to" },
   { id: "phil",       phase: 1, label: "How you reward" },
+  { id: "populations", phase: 1, label: "By population", opt: true },
   { id: "post",       phase: 1, label: "This year" },
   { id: "principles", phase: 2, label: "Principles", opt: true },
   { id: "commit",     phase: 2, label: "Commitments", opt: true },
@@ -449,10 +450,28 @@ function SdDocSections({ data, canEdit, onEdit, which }) {
         ${gvStmt ? html`<p class="sd-stance"><b>Governance —</b> ${gvStmt}</p>` : null}
       <//>`}
 
+      ${show("populations") && html`<${SdDocSec} id="sdx-populations" icon="layers" title="Position by employee population"
+        note="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark."
+        isSet=${(doc.population_targets || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("populations")}>
+        <div class="sd-ledger">
+          ${(doc.population_targets || []).map(p => html`
+            <div key=${p.label} class="sd-led-row"><span class="sd-led-name">${p.label}</span>
+              <span class="sd-led-val">${SD_STANCE[p.position] || "—"}</span>
+              <span class="sd-led-why">${p.note || ""}</span></div>`)}
+        </div>
+      <//>`}
+
       ${show("measures") && html`<${SdDocSec} id="sdx-measures" icon="table" title="How we'll know it's working"
         note="Measures are metrics lumi already measures — the review reports them against your comparator."
         isSet=${(doc.measures || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("measures")}>
-        <ol class="sd-principles">${(doc.measures || []).map(qid => html`<li key=${qid}>${mTitle(qid)}</li>`)}</ol>
+        <div class="sd-ledger">
+          ${(doc.measures || []).map(m => { const o = m && m.id ? m : { id: m }; return html`
+            <div key=${o.id} class="sd-led-row">
+              <span class="sd-led-name">${mTitle(o.id)}</span>
+              <span class="sd-led-val">${o.target ? "→ " + o.target : "No target set"}${o.baseline ? html` <span class="sd-led-sub">· from ${o.baseline}</span>` : ""}</span>
+              <span class="sd-led-why">${o.owner ? "Owner: " + o.owner : ""}</span>
+            </div>`; })}
+        </div>
       <//>`}
 
       ${show("roadmap") && html`<${SdDocSec} id="sdx-roadmap" icon="clock" title="What changes this year"
@@ -506,13 +525,45 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   const stance = sdStance(strat, orgName);
   // R1 (2026-08-14): the exported document carries NO peer figures by default — the
   // live position exhibit is an optional evidence block, off in print until opted in.
-  const [evidenceInPrint, setEvidenceInPrint] = useState(false);
+  // R1 inverted (2026-08-15, reward-director review): the EVIDENCE belongs in the
+  // approved document; the AI reading never prints. A board paper of assertions with
+  // the data removed was exactly backwards.
+  const [evidenceInPrint, setEvidenceInPrint] = useState(true);
   const [approving, setApproving] = useState(false);
+  const [apOpen, setApOpen] = useState(false);
+  const [apForm, setApForm] = useState({});
+  const [versions, setVersions] = useState(null);
+  const [showVers, setShowVers] = useState(false);
   const ver = data.version || null;
+  const sub = data.submitted || null;
+  const canApprove = data.can_approve;
+  const doc0 = data.document || {};
+  const cm0 = doc0.commitments || {};
+  // what is empty right now — shown BEFORE approving, never discovered after
+  const unstated = [
+    ["Principles", (doc0.principles || []).length],
+    ["Comparator", doc0.comparator_cut != null ? 1 : 0],
+    ["Constraints", ((doc0.constraints || {}).selected || []).length || ((doc0.constraints || {}).notes ? 1 : 0)],
+    ["Governance", Object.keys(doc0.reward_governance || {}).length],
+    ["Commitments", (((cm0["Wellbeing"] || {}).metric_ids) || []).length || ((cm0["Governance & Transparency"] || {}).statement ? 1 : 0)],
+    ["Measures", (doc0.measures || []).length],
+    ["Roadmap", (doc0.roadmap || []).length],
+    ["Population positions", (doc0.population_targets || []).length],
+  ].filter(r => !r[1]).map(r => r[0]);
+  const loadVersions = () => { setShowVers(v => !v);
+    if (versions === null) api("/api/strategy/versions").then(r => setVersions(r.versions || [])).catch(() => setVersions([])); };
+  const sendForApproval = async () => {
+    try { await api("/api/strategy/submit", { method: "POST", body: {} }); onReload && onReload();
+      toast("Sent for approval — an Admin can now sign it off."); }
+    catch (e) { toast(e && e.message || "Couldn't send.", "error"); }
+  };
   const approve = async () => {
     setApproving(true);
-    try { await api("/api/strategy/approve", { method: "POST", body: {} }); onReload && onReload(); toast("Approved — this version now stands."); }
-    catch (e) { toast(e && e.message || "Couldn't approve.", "error"); }
+    try {
+      await api("/api/strategy/approve", { method: "POST", body: { ...apForm, confirmed: true } });
+      setApOpen(false); setApForm({}); setVersions(null); onReload && onReload();
+      toast("Approved — this version now stands.");
+    } catch (e) { toast(e && e.message || "Couldn't approve.", "error"); }
     setApproving(false);
   };
   const doms = (hero && hero.domains || []).filter(d => d.target);
@@ -545,6 +596,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     { id: "sdx-governance", icon: "shield", label: "Governance", set: !!Object.keys(_doc.reward_governance || {}).length, part: 1 },
     { id: "sdx-exhibit", icon: "target", label: "Position vs intent", set: doms.length > 0, part: 2, live: true },
     { id: "sdx-positions", icon: "sliders", label: "The positions", set: !!data.completed_at, part: 2, live: true },
+    { id: "sdx-populations", icon: "layers", label: "Populations", set: (_doc.population_targets || []).length > 0, part: 2 },
     { id: "sdx-commitments", icon: "heart", label: "Commitments", set: !!((((_cm["Wellbeing"] || {}).metric_ids) || []).length || (_cm["Governance & Transparency"] || {}).statement), part: 2 },
     { id: "sdx-measures", icon: "table", label: "Measures", set: (_doc.measures || []).length > 0, part: 3 },
     { id: "sdx-roadmap", icon: "clock", label: "Roadmap", set: (_doc.roadmap || []).length > 0, part: 3 },
@@ -560,6 +612,35 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     </div>`;
   return html`
     <div class="sd-wrap sdx">
+      ${apOpen ? html`
+        <div class="sdx-modal no-print" role="dialog" aria-modal="true" aria-label="Record the approval">
+          <div class="sdx-modal-card">
+            <h3 class="sdx-title">Record the approval</h3>
+            <p class="sd-note">This becomes the governance record on the document — and the version your reward review cites. It is permanent; a later approval supersedes it.</p>
+            ${unstated.length ? html`
+              <div class="sdw-missing" style=${{ marginBottom: "var(--s3)" }}>
+                <${Icon} name="info" size=${15} />
+                <div><b>${unstated.length} section${unstated.length === 1 ? " is" : "s are"} unstated</b> — ${unstated.join(", ")}.
+                  You can still approve; the version records exactly what was and wasn't stated.</div>
+              </div>` : null}
+            <div class="sd-doc-grid2">
+              <label>Approved by<input class="ctl" maxlength="80" placeholder="e.g. Remuneration Committee, or the CEO"
+                value=${apForm.approver_body || ""} onInput=${e => setApForm(f => ({ ...f, approver_body: e.target.value }))} /></label>
+              <label>Date they approved it<input class="ctl" type="date" value=${apForm.approval_date || ""}
+                onInput=${e => setApForm(f => ({ ...f, approval_date: e.target.value }))} /></label>
+              <label>Effective from<input class="ctl" type="date" value=${apForm.effective_date || ""}
+                onInput=${e => setApForm(f => ({ ...f, effective_date: e.target.value }))} /></label>
+              <label>Next review<input class="ctl" type="date" value=${apForm.next_review || ""}
+                onInput=${e => setApForm(f => ({ ...f, next_review: e.target.value }))} /></label>
+            </div>
+            ${sub ? html`<p class="sd-note">Drafted by <b>${sub.by}</b> — recorded on the version alongside your approval.</p>` : null}
+            <div class="sd-doc-edfoot">
+              <button class="btn primary" disabled=${approving || !(apForm.approver_body || "").trim()} onClick=${approve}>
+                ${approving ? "Recording…" : "Confirm approval"}</button>
+              <button class="btn quiet" disabled=${approving} onClick=${() => setApOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>` : null}
       ${/* ---- hero: identity + status + progress + actions (screen only) ---- */ ""}
       <div class="sdx-hero no-print">
         <div class="sdx-hero-main">
@@ -570,22 +651,41 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
                   : html`<span class="sdx-chip draft">Draft — not yet approved</span>`}
             ${ver && ver.dirty ? html`<span class="sdx-chip warn">edits since approval</span>` : null}
             ${when ? html`<span class="sdx-chip">Captured ${when}</span>` : null}
+            ${sub ? html`<span class="sdx-chip warn">Awaiting approval · sent by ${sub.by}</span>` : null}
+            ${ver ? html`<button class="sdx-chip sdx-chip-btn no-print" onClick=${loadVersions}>
+              ${showVers ? "Hide" : "Version history"}</button>` : null}
           </div>
+          ${showVers ? html`<div class="sdx-vers no-print">
+            ${versions === null ? html`<p class="sd-note">Loading…</p>`
+              : versions.length ? versions.map(v => html`
+                <div key=${v.version} class=${"sdx-ver" + (v.status === "approved" ? " on" : "")}>
+                  <b>v${v.version}</b> ${v.status === "approved" ? "current" : "superseded"}
+                  · approved by <b>${v.approver_body || v.approved_by}</b>${v.approval_date ? " on " + v.approval_date : ""}
+                  ${v.effective_date ? html` · effective ${v.effective_date}` : ""}
+                  ${v.next_review ? html` · next review ${v.next_review}` : ""}
+                  ${v.submitted_by ? html` · drafted by ${v.submitted_by}` : ""}
+                  ${(v.unstated || []).length ? html`<span class="sdx-ver-un">${v.unstated.length} section${v.unstated.length === 1 ? "" : "s"} unstated at approval</span>` : null}
+                </div>`)
+              : html`<p class="sd-note">No approved versions yet.</p>`}
+          </div>` : null}
         </div>
         <div class="sdx-hero-side">
           <div class="sdx-actions">
             ${canEdit ? html`<button class="btn primary" onClick=${() => onEdit()}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
-            ${canEdit ? html`<button class="btn" disabled=${approving} onClick=${approve} title="Stamp this as an approved version — the review always cites a specific version.">
-              ${approving ? "Approving…" : (ver ? "Approve v" + (ver.version + 1) : "Approve v1")}</button>` : null}
+            ${canEdit && !canApprove && !sub ? html`<button class="btn" onClick=${sendForApproval}
+              title="Hand this to an Admin to sign off.">Send for approval</button>` : null}
+            ${canApprove ? html`<button class="btn" disabled=${approving} onClick=${() => setApOpen(true)}
+              title="Record the approval — who approved it, when, and from when it applies.">
+              ${ver ? "Approve v" + (ver.version + 1) : "Approve v1"}</button>` : null}
             <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / PDF</button>
           </div>
           <div class="sdx-meter" role="img" aria-label=${"Document " + statedN + " of " + METER.length + " sections stated"}>
             <div class="sdx-meter-line"><b>${statedN} of ${METER.length}</b> sections stated</div>
             <div class="sdx-meter-bar"><i style=${{ width: (100 * statedN / METER.length) + "%" }}></i></div>
           </div>
-          <label class="sd-evi-toggle" title="Off by default — the exported document describes your comparator in words, with no peer figures (your ruling R1).">
+          <label class="sd-evi-toggle" title="Your position against intent, with its peer group named. Untick for a words-only document.">
             <input type="checkbox" checked=${evidenceInPrint} onChange=${e => setEvidenceInPrint(e.target.checked)} />
-            Include live position evidence in the export</label>
+            Include the evidence exhibit in the export</label>
         </div>
       </div>
       ${/* ---- section jump-nav with state dots (screen only) ---- */ ""}
@@ -601,7 +701,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
             <div class="sd-org">${orgName}</div>
           </div>
           <div class="sd-mast-meta">
-            ${ver ? html`<div>Version <b>${ver.version}</b> · approved ${fmtDate(ver.approved_at)} by ${ver.approved_by}${ver.dirty ? html` · <span class="sd-dirty">edits since approval</span>` : ""}</div>`
+            ${ver ? html`<div>Version <b>${ver.version}</b> · approved by <b>${ver.approver_body || ver.approved_by}</b>${ver.approval_date ? " on " + ver.approval_date : " " + fmtDate(ver.approved_at)}${ver.dirty ? html` · <span class="sd-dirty">edits since approval</span>` : ""}</div>
+                          ${ver.effective_date ? html`<div>Effective ${ver.effective_date}${ver.next_review ? " · next review " + ver.next_review : ""}</div>` : null}`
                   : html`<div><span class="sd-dirty">Draft — not yet approved</span></div>`}
             ${when && html`<div>Captured <b>${when}</b></div>`}
             <div>Set by your Admins · held in lumi</div>
@@ -671,7 +772,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
         </section>
 
         <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit}
-          which=${["commitments"]} />
+          which=${["populations", "commitments"]} />
 
         <div class="sdx-part"><span>Part 3</span> Delivery — how we'll run it</div>
 
@@ -684,7 +785,7 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI insights are enabled for the platform.</div>
         </section>` : null}
         ${ai !== undefined ? html`
-        <section id="sdx-reading" class=${"sd-sec sdx-card sd-ai" + (ai ? "" : " no-print")}>
+        <section id="sdx-reading" class="sd-sec sdx-card sd-ai no-print">
           <${SecHead} icon="sparkle" title="lumi's reading"
             chip=${html`<span class="sdx-state live">AI · grounded only in the figures on this page</span>`} />
           ${ai ? html`
@@ -724,6 +825,8 @@ window.StrategyPage = function ({ me }) {
   // so a survey save can never null a field edited elsewhere.
   const [doc, setDoc] = useState({});
   const [mopts, setMopts] = useState(null);            // measure options (lazy, step 4)
+  const [srvDraft, setSrvDraft] = useState(null);       // a saved draft waiting to be resumed
+  const [approving, setApprovingState] = useState(false);
   const [mq, setMq] = useState("");                    // measures search (the library is ~200 long)
   const [showAllM, setShowAllM] = useState(false);     // measures: suggested set vs the whole library
   const [groups, setGroups] = useState(null);          // saved peer groups (lazy, step 4)
@@ -743,7 +846,7 @@ window.StrategyPage = function ({ me }) {
         const raw = localStorage.getItem("lumi-strat-draft-v2");
         if (raw) {
           const dr = JSON.parse(raw);
-          if (dr && dr.strat && !d.completed_at) {
+          if (dr && dr.strat && !d.completed_at) {   // local crash copy for an unfinished capture
             // an UNFINISHED first capture resumes exactly where it stopped (the draft
             // now survives closing the tab — it is the multi-sitting case)
             setStrat({ ...d.strategy, ...dr.strat });
@@ -756,13 +859,36 @@ window.StrategyPage = function ({ me }) {
           }
         }
       } catch (e) { /* a corrupt draft never blocks the wizard */ }
+      // the server draft wins over the local copy — it is the shared, durable one
+      api("/api/strategy/draft").then(r => {
+        const dd = r && r.draft;
+        if (!dd) return;
+        if (!d.completed_at) {
+          if (dd.strat) setStrat(s2 => ({ ...s2, ...dd.strat }));
+          if (dd.doc) setDoc(dd.doc);
+          if (dd.planeA) setPlaneA(dd.planeA);
+          if (dd.step != null) setStep(dd.step);
+        }
+        setSrvDraft({ at: r.saved_at, by: r.by, payload: dd });
+      }).catch(() => {});
     }).catch(e => setErr(e.message));
   }, []);
-  // persist the wizard draft per keystroke while editing; cheap and crash-proof
+  // the draft is saved TO THE SERVER as you go (2026-08-15, all three personas: a
+  // multi-sitting job cannot live in one browser tab). localStorage stays as crash
+  // insurance only; the server copy is what a colleague or another device sees.
+  const [draftAt, setDraftAt] = useState(null);
+  const draftTimer = useRef(null);
   useEffect(() => {
     if (!data || (data.completed_at && !editing)) return;
     try { localStorage.setItem("lumi-strat-draft-v2", JSON.stringify({ strat, doc, step, at: new Date().toISOString() })); } catch (e) {}
-  }, [strat, doc, step, editing, data]);
+    if (!(data.can_edit !== false)) return;
+    clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      api("/api/strategy/draft", { method: "PUT", body: { draft: { strat, doc, planeA, step } } })
+        .then(r => setDraftAt(r.saved_at || new Date().toISOString())).catch(() => {});
+    }, 900);
+    return () => clearTimeout(draftTimer.current);
+  }, [strat, doc, planeA, step, editing, data]);
   // the commitments step needs the live lookups — fetched once, on first entry
   useEffect(() => {
     if (!data || mopts !== null) return;                 // once, as soon as the wizard has data
@@ -820,6 +946,7 @@ window.StrategyPage = function ({ me }) {
   const wbIds = (cm["Wellbeing"] || {}).metric_ids || [];
   const gvStmt = (cm["Governance & Transparency"] || {}).statement || "";
   const principles = doc.principles || [];
+  const pops = doc.population_targets || [];
   const roadmap = doc.roadmap || [];
   const measures = doc.measures || [];
   const isSet = (p) => ({
@@ -828,6 +955,7 @@ window.StrategyPage = function ({ me }) {
     // must never be scored as a decision (both persona reviews caught this)
     compare: doc.comparator_cut != null || !!seg.differentiated,
     phil: !!(strat.market_position && strat.reward_mix),
+    populations: (doc.population_targets || []).length > 0,
     post: !!strat.primary_objective,
     principles: principles.filter(p2 => (p2 || "").trim()).length > 0,
     commit: !!(wbIds.length || gvStmt),
@@ -872,6 +1000,7 @@ window.StrategyPage = function ({ me }) {
         transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // a governance act closes quietly — no confetti
       try { localStorage.removeItem("lumi-strat-draft-v2"); } catch (e) {}
+      api("/api/strategy/draft", { method: "DELETE" }).catch(() => {});
       window.toast("Saved — your benchmark now reads through this strategy.");
       apiCacheInvalidate("/api/overview");
       // land on the DOCUMENT, first run included — the artefact is the payoff and the
@@ -946,8 +1075,9 @@ window.StrategyPage = function ({ me }) {
     <div class="strat-flow sdw">
       <div class="sdw-top no-print">
         <div class="sdw-topline">
-          <span class="sdw-crumb">Reward strategy${editing ? " · editing" : ""}</span>
-          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setDoc(seedDoc(data)); setStep(0); try { localStorage.removeItem("lumi-strat-draft-v2"); } catch (e) {} }}>Cancel</button>` : null}
+          <span class="sdw-crumb">Reward strategy${editing ? " · editing" : ""}
+            ${draftAt ? html`<span class="sdw-saved"><${Icon} name="check" size=${11} /> Draft saved</span>` : null}</span>
+          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setDoc(seedDoc(data)); setStep(0); try { localStorage.removeItem("lumi-strat-draft-v2"); } catch (e) {} api("/api/strategy/draft", { method: "DELETE" }).catch(() => {}); }}>Cancel</button>` : null}
         </div>
         <${Stepper} />
       </div>
@@ -1031,6 +1161,40 @@ window.StrategyPage = function ({ me }) {
             <p class="strat-sub">The positions lumi reads your benchmark through. Two are required; skip anything else and we simply won't judge it either way.</p>
           </header>
           <div class="sdw-dials">${dialsOf(PHIL)}</div>
+          <${Foot} />
+        </section>`}
+
+      ${cur.id === "populations" && html`
+        <section key="populations" class="sdw-page">
+          <${OptHead} title="Do different groups sit differently?"
+            sub=${"Most organisations aim differently for their executive population than for everyone else. State it here and it appears in your document — lumi holds no executive pay data, so we never score these against the benchmark."} />
+          <div class="sdw-dials">
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="layers" size=${16} /></span>
+                <div><div class="dial-title">Position by employee population <span class="sdw-opt">up to 5</span></div>
+                <div class="dial-q">Your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""} covers everyone you don't name here.</div></div></div>
+              ${(data.populations || []).map(lbl => {
+                const row = pops.find(p => p.label === lbl);
+                return html`<div key=${lbl} class="sdw-poprow">
+                  <div class="sdw-pop-head">
+                    <label class="sd-doc-check"><input type="checkbox" checked=${!!row}
+                      onChange=${e => setD({ population_targets: e.target.checked
+                        ? [...pops, { label: lbl, position: strat.market_position || "match" }].slice(0, 5)
+                        : pops.filter(p => p.label !== lbl) })} />${lbl}</label>
+                    ${row ? html`<div class="sdw-popseg">
+                      ${SCALE.market.stops.map(st2 => html`<button key=${st2.v} type="button"
+                        class=${"sdw-seg-opt" + (row.position === st2.v ? " on" : "")}
+                        onClick=${() => setD({ population_targets: pops.map(p => p.label === lbl ? { ...p, position: st2.v } : p) })}>${st2.t}</button>`)}
+                    </div>` : null}
+                  </div>
+                  ${row ? html`<input class="ctl" maxlength="240" placeholder="Why — e.g. total comp at upper quartile, benchmarked against listed peers"
+                    value=${row.note || ""}
+                    onInput=${e => setD({ population_targets: pops.map(p => p.label === lbl ? { ...p, note: e.target.value } : p) })} />` : null}
+                </div>`; })}
+              <div class="signal-effect"><span class="se-eye"><${Icon} name="info" size=${14} /></span>
+                <span class="se-text">These are statements in your document. Your benchmark reads the whole organisation, so lumi never marks a population position right or wrong.</span></div>
+            </div>
+          </div>
           <${Foot} />
         </section>`}
 
@@ -1153,15 +1317,33 @@ window.StrategyPage = function ({ me }) {
                   : q ? list.length + " matching"
                   : showAllM ? "Every metric you can see" : "Suggested from the areas you set a position on"}</p>
               <div class="sd-doc-mlist">
-                ${list.slice(0, 60).map(o => { const on = measures.includes(o.id); return html`
+                ${list.slice(0, 60).map(o => { const on = measures.some(m => m.id === o.id); return html`
                   <label key=${o.id} class=${"sd-doc-check" + (o.suppressed ? " dim" : "")}>
                     <input type="checkbox" checked=${on} disabled=${!on && measures.length >= 8}
-                      onChange=${e => setD({ measures: e.target.checked ? [...measures, o.id].slice(0, 8) : measures.filter(x => x !== o.id) })} />
+                      onChange=${e => setD({ measures: e.target.checked ? [...measures, { id: o.id }].slice(0, 8) : measures.filter(x => x.id !== o.id) })} />
                     <span>${o.title} <span class="sd-doc-meta">${o.category}${o.context ? " · tracked as a level" : ""}${o.suppressed ? " · below floor" : ""}</span></span>
                   </label>`; })}
                 ${list.length > 60 ? html`<p class="sd-note">${list.length - 60} more — search to narrow.</p>` : null}
               </div>
             </div>
+            ${measures.length ? html`
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="target" size=${16} /></span>
+                <div><div class="dial-title">Where each one needs to get to <span class="sdw-opt">Optional</span></div>
+                <div class="dial-q">A measure without a target is a topic. Say where you are, where you want to be, and who owns it — your words, printed as given.</div></div></div>
+              ${measures.map((m, i) => { const o = all.find(x => x.id === m.id) || {}; return html`
+                <div key=${m.id} class="sdw-mrow">
+                  <div class="sdw-mrow-title">${o.title || m.id}</div>
+                  <div class="sdw-mrow-fields">
+                    <input class="ctl" maxlength="80" placeholder="Baseline today" value=${m.baseline || ""}
+                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, baseline: e.target.value } : x) })} />
+                    <input class="ctl" maxlength="80" placeholder="Target" value=${m.target || ""}
+                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, target: e.target.value } : x) })} />
+                    <input class="ctl" maxlength="80" placeholder="Owner" value=${m.owner || ""}
+                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, owner: e.target.value } : x) })} />
+                  </div>
+                </div>`; })}
+            </div>` : null}
           </div>
           <${Foot} />
         </section>`; })()}
