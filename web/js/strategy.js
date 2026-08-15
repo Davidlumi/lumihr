@@ -98,6 +98,31 @@ function labelOf(field, val) {
 
 const useLayoutEffect = React.useLayoutEffect;   // not re-exported globally like the others
 
+// ---- starter libraries (2026-08-15, David: "stock answers they can select then
+// modify, as well as free text"). Selecting a starter ADDS IT AS EDITABLE TEXT —
+// the saved words are always the member's own (guardrail 9); these are prompts,
+// not content the model authors. R9: David refines this list in his own words.
+const PRINCIPLE_STARTERS = [
+  "We pay for the role and the market, and we can explain every pay decision.",
+  "Total reward is more than pay — we invest in benefits people actually use.",
+  "We reward performance visibly, without leaving anyone behind.",
+  "Fairness first: same work, same reward, checked every year.",
+  "We aim to be competitive where it matters most for our people.",
+  "Simple beats clever — everyone should understand how their pay works.",
+  "We look after health and wellbeing before perks.",
+  "Reward supports long careers here, not just this year's hire.",
+];
+const GOV_STMT_STARTERS = [
+  "Pay ranges are shared internally; equal pay is reviewed annually.",
+  "Every offer and pay change is signed off against the framework.",
+  "Reward decisions are documented, benchmarked and reviewed by the board each year.",
+];
+const ROADMAP_STARTERS = [
+  "Introduce formal salary bands", "Review family leave against the market",
+  "Launch a financial-wellbeing programme", "Move the pay review to a merit matrix",
+  "Publish pay ranges on job adverts", "Rebroker the benefits package",
+];
+
 // ---- ScaleTrack — connected track + thumb anchored to the MEASURED stop centre
 function ScaleTrack({ skey, value, onPick, ariaLabel }) {
   const cfg = SCALE[skey];
@@ -810,12 +835,22 @@ window.StrategyPage = function ({ me }) {
   const [leaving, setLeaving] = useState(false);       // stage exit animation in flight
   const [returnTo, setReturnTo] = useState(null);      // "review" → change round-trip lands back on review
   const [editing, setEditing] = useState(false);       // a completed strategy shows the VIEW until Edit
+  // document-grade fields captured IN the survey (2026-08-15, David): principles,
+  // comparator, segments, constraints, governance, commitments, measures, roadmap.
+  // Seeded from the stored document; the wizard PUT always sends the WHOLE object
+  // so a survey save can never null a field edited elsewhere.
+  const [doc, setDoc] = useState({});
+  const [mopts, setMopts] = useState(null);            // measure options (lazy, step 4)
+  const [groups, setGroups] = useState(null);          // saved peer groups (lazy, step 4)
+  const [choices, setChoices] = useState(null);        // industry/size vocab (lazy, step 4)
   const isAdmin = me && me.user && me.user.role === "admin";
+  const seedDoc = (d) => { const x = { ...(d.document || {}) }; delete x.comparator_label; return x; };
   useEffect(() => {
     api("/api/strategy").then(d => {
       setData(d);
       setStrat({ ...d.strategy });
       setPlaneA(d.plane_a.map(f => ({ ...f })));
+      setDoc(seedDoc(d));
       // restore an in-flight wizard draft: any navigation away used to silently
       // discard every answered dial (pre-prod audit 2026-08-12). The draft only
       // overlays an UNCOMMITTED session (cleared on save + on Cancel).
@@ -823,7 +858,7 @@ window.StrategyPage = function ({ me }) {
         const raw = sessionStorage.getItem("lumi-strat-draft");
         if (raw) {
           const dr = JSON.parse(raw);
-          if (dr && dr.strat) { setStrat({ ...d.strategy, ...dr.strat }); if (dr.step != null) setStep(dr.step); if (d.completed_at) setEditing(true); }
+          if (dr && dr.strat) { setStrat({ ...d.strategy, ...dr.strat }); if (dr.doc) setDoc({ ...seedDoc(d), ...dr.doc }); if (dr.step != null) setStep(dr.step); if (d.completed_at) setEditing(true); }
         }
       } catch (e) { /* a corrupt draft never blocks the wizard */ }
     }).catch(e => setErr(e.message));
@@ -831,8 +866,15 @@ window.StrategyPage = function ({ me }) {
   // persist the wizard draft per keystroke while editing; cheap and crash-proof
   useEffect(() => {
     if (!data || (data.completed_at && !editing)) return;
-    try { sessionStorage.setItem("lumi-strat-draft", JSON.stringify({ strat, step })); } catch (e) {}
-  }, [strat, step, editing, data]);
+    try { sessionStorage.setItem("lumi-strat-draft", JSON.stringify({ strat, doc, step })); } catch (e) {}
+  }, [strat, doc, step, editing, data]);
+  // the commitments step needs the live lookups — fetched once, on first entry
+  useEffect(() => {
+    if (step !== 3 || mopts !== null) return;
+    api("/api/strategy/measure-options").then(r => setMopts(r)).catch(() => setMopts({ options: [] }));
+    api("/api/peer-groups").then(r => setGroups(r.groups || r || [])).catch(() => setGroups([]));
+    api("/api/peer-groups/options").then(r => setChoices(r)).catch(() => setChoices({}));
+  }, [step, data]);
   if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your strategy" body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
   if (!data) return html`<${PageLoading} />`;
@@ -871,7 +913,8 @@ window.StrategyPage = function ({ me }) {
   const secOf = (st) => {
     if (st === 1) return 1;
     if (st === 2) return 2;
-    if (st === 3) return 3;
+    if (st === 3) return 3;                              // principles & commitments
+    if (st === 4) return 4;                              // review
     if (typeof st === "number" && st >= 10) return (st - 10) < PHIL.length ? 1 : 2;   // legacy draft
     return 0;
   };
@@ -880,10 +923,23 @@ window.StrategyPage = function ({ me }) {
   const countOf = (fields) => fields.filter(f => f === "benefits_lead" ? (strat[f] || []).length
     : f === "domain_targets" ? Object.keys(strat[f] || {}).length : strat[f]).length;
   const missingReq = REQUIRED.filter(f => !strat[f]);
+  // the 8 document sub-sections and whether each is stated (drives the step count)
+  const _cm = doc.commitments || {};
+  const DOC_STATED = [
+    (doc.principles || []).length > 0,
+    true,                                                                    // comparator always stated (All peers default)
+    !!(((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes),
+    !!Object.keys(doc.reward_governance || {}).length,
+    !!((((_cm["Wellbeing"] || {}).metric_ids) || []).length || (_cm["Governance & Transparency"] || {}).statement),
+    (doc.measures || []).length > 0,
+    (doc.roadmap || []).length > 0,
+    !!((doc.segments || {}).differentiated || ((doc.segments || {}).segments || []).length),
+  ];
   const STEPS = [
     { t: "Your business", n: planeA.filter(f => f.value).length, of: planeA.length },
     { t: "Your philosophy", n: countOf(PHIL), of: PHIL.length },
     { t: "This year", n: countOf(POST), of: POST.length },
+    { t: "Principles & plans", n: DOC_STATED.filter(Boolean).length, of: DOC_STATED.length },
     { t: "Review & save", n: null, of: null },
   ];
   const goSec = (i) => { setStep(i); window.scrollTo(0, 0); };
@@ -900,7 +956,8 @@ window.StrategyPage = function ({ me }) {
     }
     goSec(i + 1);
   };
-  const changeFrom = (field) => goSec(PHIL.includes(field) ? 1 : 2);
+  const changeFrom = (field) => goSec(PHIL.includes(field) ? 1 : POST.includes(field) ? 2 : 3);
+  const setD = (patch) => setDoc(d => ({ ...d, ...patch }));
   const answered = countOf([...PHIL, ...POST]);
 
   const commit = async () => {
@@ -916,7 +973,10 @@ window.StrategyPage = function ({ me }) {
       // transparency reconfirm marker (step-3 tagging unit 2): saving through the now-live field
       // means the user has SEEN the transparency dial — confirm it so the engine reads the value
       // (a pre-wiring stored value stays inert until this). True only while the field is live.
-      await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa,
+      // the survey now carries the document fields too (2026-08-15) — always the WHOLE
+      // object, so a survey save can never null a field edited on the document view
+      const docOut = { ...doc }; delete docOut.comparator_label;
+      await api("/api/strategy", { method: "PUT", body: { strategy: strat, plane_a: pa, document: docOut,
         transparency_confirmed: fieldState("transparency") === "live" } });
       setCommitted(true);                                  // a governance act closes quietly — no confetti
       try { sessionStorage.removeItem("lumi-strat-draft"); } catch (e) {}
@@ -1039,10 +1099,167 @@ window.StrategyPage = function ({ me }) {
             <p class="strat-sub">Your posture right now — it sharpens which signals surface first, and changes with the year.</p>
           </header>
           <div class="sdw-dials">${dialsOf(POST)}</div>
-          <${Foot} backTo=${1} nextLabel="Review & save →" onNext=${() => nextFrom(2)} />
+          <${Foot} backTo=${1} nextLabel="Continue — principles & plans →" onNext=${() => nextFrom(2)} />
         </section>`}
 
       ${sec === 3 && html`
+        <section key="docstep" class="sdw-page">
+          <header class="sdw-head">
+            <h1 class="strat-title">Principles ${"&"} plans</h1>
+            <p class="strat-sub">The words of your strategy document — pick a starter and make it yours, or write your own. Everything here is optional and appears verbatim in your document.</p>
+          </header>
+          <div class="sdw-dials">
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="star" size=${16} /></span>
+                <div><div class="dial-title">Our reward principles <span class="sdw-opt">up to 6</span></div>
+                <div class="dial-q">The yardstick your document opens with — tap a starter to add it, then edit it into your own words.</div></div></div>
+              <div class="sdw-starters">
+                ${PRINCIPLE_STARTERS.filter(s => !(doc.principles || []).includes(s)).map(s => html`
+                  <button key=${s} type="button" class="sdw-starter" disabled=${(doc.principles || []).length >= 6}
+                    onClick=${() => setD({ principles: [...(doc.principles || []), s].slice(0, 6) })}>
+                    <${Icon} name="plus" size=${11} /> ${s}</button>`)}
+              </div>
+              ${(doc.principles || []).map((p, i) => html`
+                <div key=${i} class="sdw-lirow">
+                  <input class="ctl" maxlength="140" value=${p}
+                    onInput=${e => setD({ principles: (doc.principles || []).map((x, j) => j === i ? e.target.value : x) })} />
+                  <button type="button" class="sdw-li-x" aria-label="Remove principle" onClick=${() => setD({ principles: (doc.principles || []).filter((x, j) => j !== i) })}>✕</button>
+                </div>`)}
+              ${(doc.principles || []).length < 6 ? html`
+                <button type="button" class="sdx-addtile" onClick=${() => setD({ principles: [...(doc.principles || []), ""] })}>
+                  <${Icon} name="plus" size=${13} /> Write your own</button>` : null}
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="users" size=${16} /></span>
+                <div><div class="dial-title">Who we compare ourselves to</div>
+                <div class="dial-q">The peer frame your strategy is written against — described in words in the document, no figures.</div></div></div>
+              <select class="ctl" value=${doc.comparator_cut || "all"}
+                onChange=${e => setD({ comparator_cut: e.target.value === "all" ? null : e.target.value })}>
+                <option value="all">All peers</option>
+                ${((choices || {}).fields || []).filter(f => f.key === "industry").flatMap(f => f.choices || []).map(c =>
+                  html`<option key=${"i" + c} value=${"industry::" + c}>Sector — ${c}</option>`)}
+                ${((choices || {}).fields || []).filter(f => f.key === "fte_band").flatMap(f => f.choices || []).map(c =>
+                  html`<option key=${"f" + c} value=${"fte_band::" + c}>Size — ${c}</option>`)}
+                ${(groups || []).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>Saved group — ${g.name}</option>`)}
+              </select>
+              <label class="sd-doc-check" style=${{ marginTop: "var(--s3)" }}>
+                <input type="checkbox" checked=${!!(doc.segments || {}).differentiated}
+                  onChange=${e => setD({ segments: { ...(doc.segments || {}), differentiated: e.target.checked } })} />
+                We deliberately pay more for scarce or critical segments</label>
+              ${(doc.segments || {}).differentiated ? html`<input class="ctl" style=${{ marginTop: "var(--s2)" }}
+                placeholder="Name the segments, comma-separated (e.g. Engineering, HGV drivers)"
+                value=${((doc.segments || {}).segments || []).join(", ")}
+                onInput=${e => setD({ segments: { ...(doc.segments || {}), segments: e.target.value.split(",").map(s => s.trim()).filter(Boolean).slice(0, 6) } })} />` : null}
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="anchor" size=${16} /></span>
+                <div><div class="dial-title">What constrains us</div>
+                <div class="dial-q">Pick what genuinely limits reward decisions this year — add anything else in your own words.</div></div></div>
+              <div class="chip-row">
+                ${(data.constraint_options || []).map(c => { const sel = ((doc.constraints || {}).selected || []).includes(c); return html`
+                  <button key=${c} type="button" class=${"strat-chip" + (sel ? " on" : "")} aria-pressed=${sel}
+                    onClick=${() => { const cur = (doc.constraints || {}).selected || [];
+                      setD({ constraints: { ...(doc.constraints || {}), selected: sel ? cur.filter(x => x !== c) : [...cur, c] } }); }}>
+                    <${Icon} name="check" size=${12} /> ${CONSTRAINT_LABEL[c] || c}</button>`; })}
+              </div>
+              <input class="ctl" style=${{ marginTop: "var(--s3)" }} maxlength="300" placeholder="Anything else worth naming (optional)"
+                value=${(doc.constraints || {}).notes || ""}
+                onInput=${e => setD({ constraints: { ...(doc.constraints || {}), notes: e.target.value } })} />
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="shield" size=${16} /></span>
+                <div><div class="dial-title">How reward is governed</div>
+                <div class="dial-q">Board credibility — who owns it, who approves it, and how often it's reviewed.</div></div></div>
+              <div class="sd-doc-grid2">
+                <label>Owner<input class="ctl" maxlength="80" placeholder="e.g. Chief People Officer" value=${(doc.reward_governance || {}).owner || ""}
+                  onInput=${e => setD({ reward_governance: { ...(doc.reward_governance || {}), owner: e.target.value } })} /></label>
+                <label>Approved by<input class="ctl" maxlength="80" placeholder="e.g. Remuneration Committee" value=${(doc.reward_governance || {}).approver || ""}
+                  onInput=${e => setD({ reward_governance: { ...(doc.reward_governance || {}), approver: e.target.value } })} /></label>
+                <label>Review cadence<select class="ctl" value=${(doc.reward_governance || {}).review_cadence || ""}
+                  onChange=${e => setD({ reward_governance: { ...(doc.reward_governance || {}), review_cadence: e.target.value || null } })}>
+                  <option value="">—</option>
+                  ${(data.cadence_options || []).map(c => html`<option key=${c} value=${c}>${CADENCE_LABEL[c] || c}</option>`)}
+                </select></label>
+                <label>Effective date<input class="ctl" type="date" value=${(doc.reward_governance || {}).effective_date || ""}
+                  onInput=${e => setD({ reward_governance: { ...(doc.reward_governance || {}), effective_date: e.target.value } })} /></label>
+              </div>
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="heart" size=${16} /></span>
+                <div><div class="dial-title">What we offer ${"&"} how we operate <span class="sdw-opt">Optional</span></div>
+                <div class="dial-q">Wellbeing is a commitment to what you offer; governance to how you operate — never a market position.</div></div></div>
+              <div class="sd-doc-sub">Wellbeing — we will offer</div>
+              ${mopts === null ? html`<p class="sd-note">Loading your metric list…</p>` :
+                (mopts.options || []).filter(o => o.category === "Wellbeing").map(o => { const w = ((doc.commitments || {})["Wellbeing"] || {}).metric_ids || []; const on = w.includes(o.id); return html`
+                <label key=${o.id} class="sd-doc-check"><input type="checkbox" checked=${on}
+                  onChange=${e => { const nw = e.target.checked ? [...w, o.id].slice(0, 6) : w.filter(x => x !== o.id);
+                    const cm2 = { ...(doc.commitments || {}) };
+                    if (nw.length) cm2["Wellbeing"] = { metric_ids: nw }; else delete cm2["Wellbeing"];
+                    setD({ commitments: cm2 }); }} />${o.title}</label>`; })}
+              <div class="sd-doc-sub">Governance ${"&"} transparency — how we operate</div>
+              <div class="sdw-starters">
+                ${GOV_STMT_STARTERS.map(s => html`<button key=${s} type="button" class="sdw-starter"
+                  onClick=${() => setD({ commitments: { ...(doc.commitments || {}), "Governance & Transparency": { statement: s } } })}>
+                  <${Icon} name="plus" size=${11} /> ${s}</button>`)}
+              </div>
+              <textarea class="ctl" rows="2" maxlength="240" placeholder="Your words — how pay is governed and shared"
+                value=${((doc.commitments || {})["Governance & Transparency"] || {}).statement || ""}
+                onInput=${e => { const cm2 = { ...(doc.commitments || {}) };
+                  if (e.target.value.trim()) cm2["Governance & Transparency"] = { statement: e.target.value }; else delete cm2["Governance & Transparency"];
+                  setD({ commitments: cm2 }); }}></textarea>
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="table" size=${16} /></span>
+                <div><div class="dial-title">How we'll know it's working <span class="sdw-opt">up to 8</span></div>
+                <div class="dial-q">Measures lumi already tracks — the review reports them against your comparator each cycle.</div></div></div>
+              ${mopts === null ? html`<p class="sd-note">Loading your metric list…</p>` : html`
+                <div class="sd-doc-mlist">
+                  ${(mopts.options || []).map(o => { const m = doc.measures || []; const on = m.includes(o.id); return html`
+                    <label key=${o.id} class=${"sd-doc-check" + (o.suppressed ? " dim" : "")}>
+                      <input type="checkbox" checked=${on} disabled=${!on && m.length >= 8}
+                        onChange=${e => setD({ measures: e.target.checked ? [...m, o.id].slice(0, 8) : m.filter(x => x !== o.id) })} />
+                      <span>${o.title} <span class="sd-doc-meta">${o.category}${o.context ? " · tracked as a level" : ""}${o.suppressed ? " · below floor here" : ""}</span></span>
+                    </label>`; })}
+                </div>`}
+            </div>
+
+            <div class="dial-card">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="clock" size=${16} /></span>
+                <div><div class="dial-title">What changes this year <span class="sdw-opt">up to 6</span></div>
+                <div class="dial-q">The roadmap — tap a common change to add it, then make it yours, or write your own.</div></div></div>
+              <div class="sdw-starters">
+                ${ROADMAP_STARTERS.filter(s => !(doc.roadmap || []).some(r => r.title === s)).map(s => html`
+                  <button key=${s} type="button" class="sdw-starter" disabled=${(doc.roadmap || []).length >= 6}
+                    onClick=${() => setD({ roadmap: [...(doc.roadmap || []), { title: s }].slice(0, 6) })}>
+                    <${Icon} name="plus" size=${11} /> ${s}</button>`)}
+              </div>
+              ${(doc.roadmap || []).map((r, i) => html`
+                <div key=${i} class="sdw-lirow">
+                  <input class="ctl" maxlength="120" value=${r.title || ""}
+                    onInput=${e => setD({ roadmap: (doc.roadmap || []).map((x, j) => j === i ? { ...x, title: e.target.value } : x) })} />
+                  <select class="ctl sdw-li-sel" value=${r.horizon || ""}
+                    onChange=${e => setD({ roadmap: (doc.roadmap || []).map((x, j) => j === i ? { ...x, horizon: e.target.value || undefined } : x) })}>
+                    <option value="">When?</option>
+                    ${(data.horizon_options || []).map(h => html`<option key=${h} value=${h}>${HORIZON_LABEL[h] || h}</option>`)}
+                  </select>
+                  <button type="button" class="sdw-li-x" aria-label="Remove roadmap item" onClick=${() => setD({ roadmap: (doc.roadmap || []).filter((x, j) => j !== i) })}>✕</button>
+                </div>`)}
+              ${(doc.roadmap || []).length < 6 ? html`
+                <button type="button" class="sdx-addtile" onClick=${() => setD({ roadmap: [...(doc.roadmap || []), { title: "" }] })}>
+                  <${Icon} name="plus" size=${13} /> Write your own</button>` : null}
+            </div>
+
+          </div>
+          <${Foot} backTo=${2} nextLabel="Review & save →" onNext=${() => goSec(4)} />
+        </section>`}
+
+      ${sec === 4 && html`
         <section key="review" class="sdw-page">
           <div class=${"strat-done" + (committed ? " celebrating" : "")}><span class="strat-check"><${Icon} name="check" size=${22} /></span>
             <h1 class="strat-title" style=${{ textAlign: "center" }}>That's your strategy captured</h1>
@@ -1062,9 +1279,20 @@ window.StrategyPage = function ({ me }) {
           <${ReviewSection} title="This year" chip="right now" chipCls="choices"
             rows=${POST.map(f => ({ ...reviewRow(f, strat), field: f }))}
             onEdit=${() => goSec(2)} onChangeRow=${changeFrom} locked=${committed || saving} />
+          <${ReviewSection} title="Principles & plans" chip="your document" chipCls="choices"
+            rows=${[
+              { label: "Reward principles", value: (doc.principles || []).filter(p => p.trim()).length ? (doc.principles || []).filter(p => p.trim()).length + " stated" : "Not yet stated", skipped: !(doc.principles || []).filter(p => p.trim()).length },
+              { label: "Comparator", value: doc.comparator_cut ? doc.comparator_cut.split("::")[1] || doc.comparator_cut : "All peers" },
+              { label: "Constraints", value: ((doc.constraints || {}).selected || []).length ? ((doc.constraints || {}).selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(", ") : "Not yet stated", skipped: !((doc.constraints || {}).selected || []).length },
+              { label: "Governance of reward", value: (doc.reward_governance || {}).owner || (doc.reward_governance || {}).approver ? [((doc.reward_governance || {}).owner), ((doc.reward_governance || {}).approver)].filter(Boolean).join(" · ") : "Not yet stated", skipped: !((doc.reward_governance || {}).owner || (doc.reward_governance || {}).approver) },
+              { label: "Commitments", value: (((doc.commitments || {})["Wellbeing"] || {}).metric_ids || []).length || ((doc.commitments || {})["Governance & Transparency"] || {}).statement ? "Stated" : "Not yet stated", skipped: !((((doc.commitments || {})["Wellbeing"] || {}).metric_ids || []).length || ((doc.commitments || {})["Governance & Transparency"] || {}).statement) },
+              { label: "Measures", value: (doc.measures || []).length ? (doc.measures || []).length + " chosen" : "Not yet stated", skipped: !(doc.measures || []).length },
+              { label: "Roadmap", value: (doc.roadmap || []).filter(r => (r.title || "").trim()).length ? (doc.roadmap || []).filter(r => (r.title || "").trim()).length + " changes" : "Not yet stated", skipped: !(doc.roadmap || []).filter(r => (r.title || "").trim()).length },
+            ]}
+            onEdit=${() => goSec(3)} locked=${committed || saving} />
           <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
           <div class="sdw-foot">
-            <button class="btn quiet" disabled=${saving || committed} onClick=${() => goSec(2)}>← This year</button>
+            <button class="btn quiet" disabled=${saving || committed} onClick=${() => goSec(3)}>← Principles ${"&"} plans</button>
             <button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
               committed ? html`<${Icon} name="check" size=${15} /> Saved` : saving ? "Saving…" : "Save & finish"}</button>
           </div>

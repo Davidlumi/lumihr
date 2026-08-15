@@ -4762,3 +4762,17 @@ textarea:focus-visible, [tabindex]:focus-visible {
   padding: var(--s3) var(--s4); font-size: var(--fs-label); color: var(--ink); }
 .sdw-missing-go { border: 0; background: none; font: inherit; font-weight: 700; color: var(--blue);
   cursor: pointer; padding: 0; margin-left: 6px; }
+/* step 4 — starters (stock answers -> editable text) + list rows */
+.sdw-starters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--s3); }
+.sdw-starter { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: var(--fs-caption);
+  color: var(--blue-deep); background: var(--blue-tint); border: 1px solid transparent; border-radius: 999px;
+  padding: 5px 11px; cursor: pointer; text-align: left; }
+.sdw-starter:hover { border-color: var(--blue); }
+.sdw-starter:disabled { opacity: .45; cursor: default; }
+.sdw-lirow { display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s2); }
+.sdw-lirow .ctl { flex: 1; }
+.sdw-li-sel { flex: 0 0 130px; }
+.sdw-li-x { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; width: 30px; height: 30px;
+  font: inherit; color: var(--ink-faint); cursor: pointer; flex: none; }
+.sdw-li-x:hover { color: var(--unfavourable-ink, #A33); border-color: currentColor; }
+.sdw-page .sdx-addtile { padding: var(--s3); }
