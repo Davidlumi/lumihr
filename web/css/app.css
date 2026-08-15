@@ -4826,3 +4826,20 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sdw-mrow-title { font-size: var(--fs-label); font-weight: 600; color: var(--ink); margin-bottom: 6px; }
 .sdw-mrow-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 @media (max-width: 640px) { .sdw-mrow-fields { grid-template-columns: 1fr; } }
+/* objective allocation (2026-08-15): points, not a single pick */
+.sdw-objrow { display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  border-top: 1px solid var(--border); padding: var(--s3) 0; }
+.sdw-objrow:first-of-type { border-top: 0; }
+.sdw-obj-l { display: flex; flex-direction: column; min-width: 0; }
+.sdw-obj-l b { font-size: var(--fs-label); color: var(--ink); }
+.sdw-obj-l span { font-size: var(--fs-caption); color: var(--ink-faint); }
+.sdw-obj-r { display: flex; align-items: center; gap: var(--s2); }
+.sdw-obj-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); font: inherit; font-size: var(--fs-body); color: var(--ink); cursor: pointer; }
+.sdw-obj-btn:disabled { opacity: .35; cursor: default; }
+.sdw-obj-btn:not(:disabled):hover { border-color: var(--blue); color: var(--blue); }
+.sdw-obj-n { min-width: 20px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sdw-obj-bar { width: 90px; height: 6px; border-radius: 4px; background: var(--tile); overflow: hidden; }
+.sdw-obj-bar i { display: block; height: 100%; background: var(--blue); border-radius: 4px; transition: width .25s; }
+.sdw-opt.done { color: var(--favourable-ink); background: var(--favourable-tint); }
+.sdw-page .sigpeer-grid { margin-top: var(--s2); }

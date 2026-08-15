@@ -104,18 +104,14 @@ const PAGES = [
   { id: "facts",      phase: 0, label: "Your business" },
   { id: "compare",    phase: 0, label: "Who you compare to" },
   { id: "phil",       phase: 1, label: "How you reward" },
-  { id: "populations", phase: 1, label: "By population", opt: true },
+  { id: "populations", phase: 1, label: "By level", opt: true },
   { id: "post",       phase: 1, label: "This year" },
   { id: "principles", phase: 2, label: "Principles", opt: true },
-  { id: "commit",     phase: 2, label: "Commitments", opt: true },
-  { id: "measures",   phase: 2, label: "Measures", opt: true },
-  { id: "roadmap",    phase: 2, label: "Roadmap", opt: true },
-  { id: "governance", phase: 2, label: "Governance", opt: true },
   { id: "review",     phase: 3, label: "Review & save" },
 ];
 const PHASES = [
   { t: "Your business" }, { t: "How you reward" },
-  { t: "Your document", note: "all optional" }, { t: "Review & save" },
+  { t: "Your principles", note: "optional" }, { t: "Review & save" },
 ];
 const PAGE_IX = {}; PAGES.forEach((p, i) => { PAGE_IX[p.id] = i; });
 
@@ -392,34 +388,19 @@ function SdDocSec({ id, icon, title, note, isSet, canEdit, onAdd, children }) {
     </section>`;
 }
 
-function SdDocSections({ data, canEdit, onEdit, which }) {
+function SdDocSections({ data, canEdit, onEdit, onPlan, which }) {
   // `which` renders only the named sections, so the document groups them under the
   // brief's three-part spine (Intent / Position / Delivery). onEdit(pageId) jumps
   // the wizard straight to the step that captures that section.
   const show = (k) => !which || which.includes(k);
   const doc = data.document || {};
-  const gov = doc.reward_governance || {};
   const cons = doc.constraints || {};
-  const seg = doc.segments || {};
-  const cm = doc.commitments || {};
-  const wb = (cm["Wellbeing"] || {}).metric_ids || [];
-  const gvStmt = (cm["Governance & Transparency"] || {}).statement || "";
-  // metric titles for committed provisions + measures (lazy; ids alone read as noise)
-  const [titles, setTitles] = useState(null);
-  useEffect(() => {
-    if (titles !== null || (!wb.length && !(doc.measures || []).length)) return;
-    api("/api/strategy/measure-options")
-      .then(r => { const m = {}; (r.options || []).forEach(o => { m[o.id] = o.title; }); setTitles(m); })
-      .catch(() => setTitles({}));
-  }, [wb.length, (doc.measures || []).length]);
-  const mTitle = (qid) => (titles && titles[qid]) || qid;
 
   return html`
     <${React.Fragment}>
       ${show("principles") && html`<${SdDocSec} id="sdx-principles" icon="star" title="Our reward principles"
         isSet=${(doc.principles || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("principles")}>
         <ol class="sd-principles">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>
-        ${seg.differentiated ? html`<p class="sd-note">Pay is deliberately differentiated for: <b>${(seg.segments || []).join(", ") || "named segments"}</b>.</p>` : null}
       <//>`}
 
       ${show("comparator") && html`<${SdDocSec} id="sdx-comparator" icon="users" title="Who we compare ourselves to"
@@ -433,23 +414,6 @@ function SdDocSections({ data, canEdit, onEdit, which }) {
         <p class="sd-stance">${(cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(" · ")}${cons.notes ? (((cons.selected || []).length ? " — " : "") + cons.notes) : ""}</p>
       <//>`}
 
-      ${show("governance") && html`<${SdDocSec} id="sdx-governance" icon="shield" title="How reward is governed"
-        isSet=${!!Object.keys(gov).length} canEdit=${canEdit} onAdd=${() => onEdit("governance")}>
-        <div class="sd-ledger">
-          ${[["Owner", gov.owner], ["Approved by", gov.approver],
-             ["Review cadence", gov.review_cadence && (CADENCE_LABEL[gov.review_cadence] || gov.review_cadence)],
-             ["Effective date", gov.effective_date]].filter(r => r[1]).map(([k, v]) => html`
-            <div key=${k} class="sd-led-row"><span class="sd-led-name">${k}</span><span class="sd-led-val">${v}</span><span class="sd-led-why"></span></div>`)}
-        </div>
-      <//>`}
-
-      ${show("commitments") && html`<${SdDocSec} id="sdx-commitments" icon="heart" title="What we offer and how we operate"
-        note="Wellbeing is measured by what's offered, not a market rate; governance by how you operate — stated here as commitments, never positions."
-        isSet=${!!(wb.length || gvStmt)} canEdit=${canEdit} onAdd=${() => onEdit("commit")}>
-        ${wb.length ? html`<p class="sd-stance"><b>Wellbeing — we offer:</b> ${wb.map(mTitle).join(" · ")}</p>` : null}
-        ${gvStmt ? html`<p class="sd-stance"><b>Governance —</b> ${gvStmt}</p>` : null}
-      <//>`}
-
       ${show("populations") && html`<${SdDocSec} id="sdx-populations" icon="layers" title="Position by employee population"
         note="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark."
         isSet=${(doc.population_targets || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("populations")}>
@@ -461,22 +425,20 @@ function SdDocSections({ data, canEdit, onEdit, which }) {
         </div>
       <//>`}
 
-      ${show("measures") && html`<${SdDocSec} id="sdx-measures" icon="table" title="How we'll know it's working"
-        note="Measures are metrics lumi already measures — the review reports them against your comparator."
-        isSet=${(doc.measures || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("measures")}>
+      ${show("plan") && html`<${SdDocSec} id="sdx-plan" icon="zap" title="Your action plan"
+        note="Built from the gaps between what you said and what your data shows — with the indicative £ lumi already computed. Sequencing and wording are AI; every action and figure comes from the engine."
+        isSet=${!!(doc.action_plan && (doc.action_plan.actions || []).length)} canEdit=${canEdit} onAdd=${onPlan}>
+        <p class="sd-stance lead">${(doc.action_plan || {}).summary}</p>
         <div class="sd-ledger">
-          ${(doc.measures || []).map(m => { const o = m && m.id ? m : { id: m }; return html`
-            <div key=${o.id} class="sd-led-row">
-              <span class="sd-led-name">${mTitle(o.id)}</span>
-              <span class="sd-led-val">${o.target ? "→ " + o.target : "No target set"}${o.baseline ? html` <span class="sd-led-sub">· from ${o.baseline}</span>` : ""}</span>
-              <span class="sd-led-why">${o.owner ? "Owner: " + o.owner : ""}</span>
-            </div>`; })}
+          ${((doc.action_plan || {}).actions || []).map((a2, i) => html`
+            <div key=${i} class="sd-led-row">
+              <span class="sd-led-name">${a2.title}<span class="sd-led-sub"> · ${a2.category}</span></span>
+              <span class="sd-led-val">${a2.roi}</span>
+              <span class="sd-led-why">${a2.why}</span>
+            </div>`)}
         </div>
-      <//>`}
-
-      ${show("roadmap") && html`<${SdDocSec} id="sdx-roadmap" icon="clock" title="What changes this year"
-        isSet=${(doc.roadmap || []).length > 0} canEdit=${canEdit} onAdd=${() => onEdit("roadmap")}>
-        <ol class="sd-principles">${(doc.roadmap || []).map((r, i) => html`<li key=${i}>${r.title}${r.horizon ? html` <span class="sd-doc-meta">· ${HORIZON_LABEL[r.horizon] || r.horizon}</span>` : ""}</li>`)}</ol>
+        <div class="sd-note">${(doc.action_plan || {}).basis || ""}
+          ${canEdit ? html`<button class="sd-ai-refresh no-print" onClick=${onPlan}>Rebuild</button>` : null}</div>
       <//>`}
     <//>`;
 }
@@ -553,6 +515,17 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   ].filter(r => !r[1]).map(r => r[0]);
   const loadVersions = () => { setShowVers(v => !v);
     if (versions === null) api("/api/strategy/versions").then(r => setVersions(r.versions || [])).catch(() => setVersions([])); };
+  const [planBusy, setPlanBusy] = useState(false);
+  const buildPlan = async () => {
+    if (planBusy) return;
+    setPlanBusy(true);
+    try {
+      const r = await api("/api/strategy/plan", { method: "POST", body: {} });
+      if (r && r.ok === false) toast(r.reason === "locked" ? "Your insights unlock once your data is in." : "Set your strategy first.", "error");
+      else { onReload && onReload(); toast("Plan built from your gaps."); }
+    } catch (e) { toast(e && e.message || "Couldn't build the plan.", "error"); }
+    setPlanBusy(false);
+  };
   const sendForApproval = async () => {
     try { await api("/api/strategy/submit", { method: "POST", body: {} }); onReload && onReload();
       toast("Sent for approval — an Admin can now sign it off."); }
@@ -588,19 +561,15 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
   // completeness meter. `live` sections read the benchmark and never count as
   // "to write"; the meter counts the eight authored sections only.
   const _doc = data.document || {};
-  const _cm = _doc.commitments || {};
   const SECTIONS = [
     { id: "sdx-stance", icon: "flag", label: "The stance", set: !!data.completed_at, part: 1 },
     { id: "sdx-principles", icon: "star", label: "Principles", set: (_doc.principles || []).length > 0, part: 1 },
     { id: "sdx-comparator", icon: "users", label: "Comparator", set: _doc.comparator_cut != null, part: 1 },
     { id: "sdx-constraints", icon: "anchor", label: "Constraints", set: !!(((_doc.constraints || {}).selected || []).length || (_doc.constraints || {}).notes), part: 1 },
-    { id: "sdx-governance", icon: "shield", label: "Governance", set: !!Object.keys(_doc.reward_governance || {}).length, part: 1 },
     { id: "sdx-exhibit", icon: "target", label: "Position vs intent", set: doms.length > 0, part: 2, live: true },
     { id: "sdx-positions", icon: "sliders", label: "The positions", set: !!data.completed_at, part: 2, live: true },
     { id: "sdx-populations", icon: "layers", label: "Populations", set: (_doc.population_targets || []).length > 0, part: 2 },
-    { id: "sdx-commitments", icon: "heart", label: "Commitments", set: !!((((_cm["Wellbeing"] || {}).metric_ids) || []).length || (_cm["Governance & Transparency"] || {}).statement), part: 2 },
-    { id: "sdx-measures", icon: "table", label: "Measures", set: (_doc.measures || []).length > 0, part: 3 },
-    { id: "sdx-roadmap", icon: "clock", label: "Roadmap", set: (_doc.roadmap || []).length > 0, part: 3 },
+    { id: "sdx-plan", icon: "zap", label: "Action plan", set: !!((_doc.action_plan || {}).actions || []).length, part: 3 },
   ];
   const METER = SECTIONS.filter(s => !s.live);
   const statedN = METER.filter(s => s.set).length;
@@ -719,8 +688,8 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
         </section>
 
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit}
-          which=${["principles", "comparator", "constraints", "governance"]} />
+        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
+          which=${["principles", "comparator", "constraints"]} />
 
         <div class="sdx-part"><span>Part 2</span> Position — what the data shows</div>
 
@@ -772,13 +741,13 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit}
-          which=${["populations", "commitments"]} />
+        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
+          which=${["populations"]} />
 
         <div class="sdx-part"><span>Part 3</span> Delivery — how we'll run it</div>
 
-        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit}
-          which=${["measures", "roadmap"]} />
+        <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${buildPlan}
+          which=${["plan"]} />
 
         ${ai === undefined && aiDark && canEdit ? html`
         <section class="sd-sec sdx-card no-print" id="sdx-reading">
@@ -828,6 +797,9 @@ window.StrategyPage = function ({ me }) {
   const [mopts, setMopts] = useState(null);            // measure options (lazy, step 4)
   const [srvDraft, setSrvDraft] = useState(null);       // a saved draft waiting to be resumed
   const [approving, setApprovingState] = useState(false);
+  const [cuts, setCuts] = useState(null);
+  const [cmpSectors, setCmpSectors] = useState([]);
+  const [cmpSizes, setCmpSizes] = useState([]);
   const [mq, setMq] = useState("");                    // measures search (the library is ~200 long)
   const [showAllM, setShowAllM] = useState(false);     // measures: suggested set vs the whole library
   const [groups, setGroups] = useState(null);          // saved peer groups (lazy, step 4)
@@ -896,6 +868,12 @@ window.StrategyPage = function ({ me }) {
     api("/api/strategy/measure-options").then(r => setMopts(r)).catch(() => setMopts({ options: [] }));
     api("/api/peer-groups").then(r => setGroups(r.groups || r || [])).catch(() => setGroups([]));
     api("/api/peer-groups/options").then(r => setChoices(r)).catch(() => setChoices({}));
+    api("/api/cuts").then(r => setCuts(r)).catch(() => setCuts({}));
+    // seed the picker from the org's CURRENT peer group — one control, one truth
+    api("/api/me").then(r => {
+      const c = ((r.org || {}).signal_peer_criteria) || {};
+      setCmpSectors(c.industry || []); setCmpSizes(c.fte_band || []);
+    }).catch(() => {});
   }, [data]);
   if (err) return html`<${EmptyState} tone="error" icon="compass" title="Couldn't load your strategy" body=${err + " — nothing is lost."}
     action=${html`<button class="btn small primary" onClick=${() => window.location.reload()}>Retry</button>`} />`;
@@ -940,29 +918,28 @@ window.StrategyPage = function ({ me }) {
   const subPages = PAGES.filter(p => p.phase === curPhase);
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
   const setD = (patch) => setDoc(d => ({ ...d, ...patch }));
-  const gov = doc.reward_governance || {};
+  const OBJ_BUDGET = 10;
+  const objW = strat.objective_weights || {};
+  const objLeft = OBJ_BUDGET - Object.values(objW).reduce((a, b) => a + (b || 0), 0);
+  const setObj = (k, v) => setStrat(st2 => {
+    const w = { ...(st2.objective_weights || {}) };
+    if (v <= 0) delete w[k]; else w[k] = v;
+    const top = Object.entries(w).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+    return { ...st2, objective_weights: w, primary_objective: top ? top[0] : st2.primary_objective };
+  });
+  const bandLow = (x) => { const m = String(x).replace(/,/g, "").match(/\d+/); return m ? parseInt(m[0], 10) : 0; };
   const cons = doc.constraints || {};
-  const seg = doc.segments || {};
-  const cm = doc.commitments || {};
-  const wbIds = (cm["Wellbeing"] || {}).metric_ids || [];
-  const gvStmt = (cm["Governance & Transparency"] || {}).statement || "";
   const principles = doc.principles || [];
   const pops = doc.population_targets || [];
-  const roadmap = doc.roadmap || [];
-  const measures = doc.measures || [];
   const isSet = (p) => ({
     facts: planeA.every(f => f.value),
     // the comparator only counts as SET when the member actually chose one — a default
     // must never be scored as a decision (both persona reviews caught this)
-    compare: doc.comparator_cut != null || !!seg.differentiated,
+    compare: doc.comparator_cut != null,
     phil: !!(strat.market_position && strat.reward_mix),
     populations: (doc.population_targets || []).length > 0,
     post: !!strat.primary_objective,
     principles: principles.filter(p2 => (p2 || "").trim()).length > 0,
-    commit: !!(wbIds.length || gvStmt),
-    measures: measures.length > 0,
-    roadmap: roadmap.filter(r => (r.title || "").trim()).length > 0,
-    governance: !!Object.keys(gov).length,
     review: false,
   })[p.id];
   const go = (i) => { setStep(i); window.scrollTo(0, 0); };
@@ -974,7 +951,7 @@ window.StrategyPage = function ({ me }) {
       const el = document.querySelector(".dial-card.flagged"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (cur.id === "post" && !strat.primary_objective) { flash("Choose what reward is mainly for right now to continue."); return; }
+    if (cur.id === "post" && !strat.primary_objective) { flash("Give at least one objective some points to continue."); return; }
     go(Math.min(ix + 1, PAGES.length - 1));
   };
   const changeFrom = (field) => goId(PHIL.includes(field) ? "phil" : "post");
@@ -991,8 +968,15 @@ window.StrategyPage = function ({ me }) {
       });
       // the survey carries the document fields too — always the WHOLE object, so a
       // save can never null a field. Blank rows are dropped, never stored.
+      // the peer group is saved through the SAME route Settings uses, so there is one
+      // code path and one resulting cut (criteria -> single cut / group, server-side)
+      if (cmpSectors.length || cmpSizes.length) {
+        await api("/api/org/signal-peers", { method: "PUT",
+          body: { criteria: { industry: cmpSectors, fte_band: cmpSizes } } });
+      }
       const docOut = { ...doc };
       delete docOut.comparator_label;
+      delete docOut.comparator_cut;              // derived from the peer group above
       docOut.principles = principles.map(p2 => (p2 || "").trim()).filter(Boolean);
       docOut.roadmap = roadmap.filter(r => (r.title || "").trim());
       // transparency reconfirm marker: saving through the now-live field means the user
@@ -1126,32 +1110,30 @@ window.StrategyPage = function ({ me }) {
             <div class="dial-card">
               <div class="dial-head"><span class="dial-roundel"><${Icon} name="users" size=${16} /></span>
                 <div><div class="dial-title">Your peer group</div>
-                <div class="dial-q">Change it here and every benchmark read changes with it — there is only ever one market in play. Your document describes it in words; the figures stay in the benchmark.</div></div></div>
-              <select class="ctl" value=${doc.comparator_cut || "all"}
-                onChange=${e => setD({ comparator_cut: e.target.value === "all" ? null : e.target.value })}>
-                <option value="all">All peers — every company in your benchmark</option>
-                ${((choices || {}).fields || []).filter(f => f.key === "industry").flatMap(f => f.choices || []).map(c =>
-                  html`<option key=${"i" + c} value=${"industry::" + c}>Sector — ${c}</option>`)}
-                ${((choices || {}).fields || []).filter(f => f.key === "fte_band").flatMap(f => f.choices || []).map(c =>
-                  html`<option key=${"f" + c} value=${"fte_band::" + c}>Size — ${c} employees</option>`)}
-                ${(groups || []).map(g => html`<option key=${g.group_id} value=${"group::" + g.group_id}>Saved peer group — ${g.name}</option>`)}
-              </select>
+                <div class="dial-q">Pick the sectors and sizes you compare against — the SAME control as Settings, because it is the same peer group. Change it here and every benchmark read changes with it.</div></div></div>
+              ${!cuts ? html`<p class="sd-note">Loading your peer options…</p>` : html`
+                <div class="sigpeer-grid">
+                  ${["industry", "fte_band"].map(dim => {
+                    const opts = dim === "industry" ? Object.entries(cuts.industries || {})
+                      : Object.entries(cuts.fte_bands || {}).sort((x, y) => bandLow(x[0]) - bandLow(y[0]));
+                    const sel = dim === "industry" ? cmpSectors : cmpSizes;
+                    const setSel = dim === "industry" ? setCmpSectors : setCmpSizes;
+                    const suffix = dim === "industry" ? "" : " FTE";
+                    return html`<div key=${dim} class="sigpeer-col">
+                      <div class="sigpeer-lbl">${dim === "industry" ? "Sectors" : "Sizes"}</div>
+                      <div class="sigpeer-opts">
+                        ${opts.map(([v, n]) => html`<label key=${v} class=${"sigpeer-chk" + (sel.includes(v) ? " on" : "")}>
+                          <input type="checkbox" checked=${sel.includes(v)}
+                            onChange=${() => setSel(sel.includes(v) ? sel.filter(x => x !== v) : [...sel, v])} />
+                          <span class="sigpeer-name">${v}${suffix}</span><span class="sigpeer-n">${n}</span></label>`)}
+                      </div>
+                    </div>`; })}
+                </div>`}
               <div class="signal-effect"><span class="se-eye"><${Icon} name="sparkle" size=${14} /></span>
-                <span class="se-text">${orgCompareWords(null, { ...doc, comparator_label: comparatorLabel(doc, groups) })}
-                  ${data.document && data.document.comparator_cut !== doc.comparator_cut
-                    ? html` <b>Saving moves your whole benchmark to this group.</b>` : ""}</span></div>
-            </div>
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="magnet" size=${16} /></span>
-                <div><div class="dial-title">Scarce or critical roles <span class="sdw-opt">Optional</span></div>
-                <div class="dial-q">Do you deliberately pay some groups above the rest, whatever your overall position?</div></div></div>
-              <label class="sd-doc-check"><input type="checkbox" checked=${!!seg.differentiated}
-                onChange=${e => setD({ segments: { ...seg, differentiated: e.target.checked } })} />
-                Yes — some roles are paid differently by design</label>
-              ${seg.differentiated ? html`<input class="ctl" style=${{ marginTop: "var(--s2)" }}
-                placeholder="Name them, comma-separated (e.g. Engineering, HGV drivers)"
-                value=${(seg.segments || []).join(", ")}
-                onInput=${e => setD({ segments: { ...seg, segments: e.target.value.split(",").map(s2 => s2.trim()).filter(Boolean).slice(0, 6) } })} />` : null}
+                <span class="se-text">${(cmpSectors.length + cmpSizes.length)
+                  ? "We compare ourselves to UK companies matching " + [cmpSectors.join(", "), cmpSizes.map(z => z + " FTE").join(", ")].filter(Boolean).join(" · ") + "."
+                  : "We compare ourselves to UK companies across our whole peer group."}
+                  <b> Saving moves your whole benchmark to this group.</b></span></div>
             </div>
           </div>
           <${Foot} />
@@ -1208,7 +1190,27 @@ window.StrategyPage = function ({ me }) {
             <p class="strat-sub">Your posture right now, and what limits it — this sharpens which signals surface first, and changes with the year.</p>
           </header>
           <div class="sdw-dials">
-            ${dialsOf(POST)}
+            <div class="dial-card" id="dial-primary_objective">
+              <div class="dial-head"><span class="dial-roundel"><${Icon} name="target" size=${16} /></span>
+                <div><div class="dial-title">What reward is for, right now
+                  <span class=${"sdw-opt" + (objLeft === 0 ? " done" : "")}>${objLeft} of ${OBJ_BUDGET} points left</span></div>
+                <div class="dial-q">Spread ${OBJ_BUDGET} points across these. You cannot give everything to everything — where the points go is the priority we surface first.</div></div></div>
+              ${OBJECTIVES.map(o => { const v = (strat.objective_weights || {})[o.v] || 0; return html`
+                <div key=${o.v} class="sdw-objrow">
+                  <div class="sdw-obj-l"><b>${o.t}</b><span>${o.d}</span></div>
+                  <div class="sdw-obj-r">
+                    <button type="button" class="sdw-obj-btn" disabled=${v <= 0} aria-label=${"Less " + o.t}
+                      onClick=${() => setObj(o.v, v - 1)}>−</button>
+                    <span class="sdw-obj-n">${v}</span>
+                    <button type="button" class="sdw-obj-btn" disabled=${objLeft <= 0} aria-label=${"More " + o.t}
+                      onClick=${() => setObj(o.v, v + 1)}>+</button>
+                    <span class="sdw-obj-bar" aria-hidden="true"><i style=${{ width: (100 * v / OBJ_BUDGET) + "%" }}></i></span>
+                  </div>
+                </div>`; })}
+              ${strat.primary_objective ? html`<div class="signal-effect"><span class="se-eye"><${Icon} name="sparkle" size=${14} /></span>
+                <span class="se-text">Your highest-rated objective — <b>${labelOf("primary_objective", strat.primary_objective)}</b> — is the lens your signals surface first.</span></div>` : null}
+            </div>
+            ${dialsOf(POST.filter(f => f !== "primary_objective"))}
             <div class="dial-card">
               <div class="dial-head"><span class="dial-roundel"><${Icon} name="anchor" size=${16} /></span>
                 <div><div class="dial-title">What constrains us <span class="sdw-opt">Optional</span></div>
@@ -1256,162 +1258,6 @@ window.StrategyPage = function ({ me }) {
           <${Foot} />
         </section>`}
 
-      ${cur.id === "commit" && html`
-        <section key="commit" class="sdw-page">
-          <${OptHead} title="What you offer, and how you operate"
-            sub=${"Wellbeing and governance can't carry a market position — they're measured by what you offer and how you work. State them as commitments instead."} />
-          <div class="sdw-dials">
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="heart" size=${16} /></span>
-                <div><div class="dial-title">Wellbeing — what we will offer</div>
-                <div class="dial-q">Tick what you commit to providing. Your review checks these against your own answers each cycle.</div></div></div>
-              ${mopts === null ? html`<p class="sd-note">Loading your metric list…</p>` :
-                (mopts.options || []).filter(o => o.category === "Wellbeing").map(o => { const on = wbIds.includes(o.id); return html`
-                <label key=${o.id} class="sd-doc-check"><input type="checkbox" checked=${on}
-                  onChange=${e => { const nw = e.target.checked ? [...wbIds, o.id].slice(0, 6) : wbIds.filter(x => x !== o.id);
-                    const cm2 = { ...cm };
-                    if (nw.length) cm2["Wellbeing"] = { metric_ids: nw }; else delete cm2["Wellbeing"];
-                    setD({ commitments: cm2 }); }} />${o.title}</label>`; })}
-            </div>
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="shield" size=${16} /></span>
-                <div><div class="dial-title">Governance — how we operate</div>
-                <div class="dial-q">One or two lines on how pay is governed and shared. A starter APPENDS to what you've written — nothing is overwritten.</div></div></div>
-              <div class="sdw-starters">
-                ${GOV_STMT_STARTERS.map(s2 => html`<button key=${s2} type="button" class="sdw-starter"
-                  onClick=${() => { const t0 = gvStmt.trim();
-                    const merged = (t0 ? t0.replace(/\.$/, "") + ". " + s2 : s2).slice(0, 240);
-                    setD({ commitments: { ...cm, "Governance & Transparency": { statement: merged } } }); }}>
-                  <${Icon} name="plus" size=${11} /> ${s2}</button>`)}
-              </div>
-              <textarea class="ctl" rows="3" maxlength="240" placeholder="Your words — only claim what you actually do"
-                value=${gvStmt}
-                onInput=${e => { const cm2 = { ...cm };
-                  if (e.target.value.trim()) cm2["Governance & Transparency"] = { statement: e.target.value }; else delete cm2["Governance & Transparency"];
-                  setD({ commitments: cm2 }); }}></textarea>
-            </div>
-          </div>
-          <${Foot} />
-        </section>`}
-
-      ${cur.id === "measures" && (() => {
-        const all = (mopts || {}).options || [];
-        const posCats = new Set(Object.keys(strat.domain_targets || {}));
-        const suggested = all.filter(o => !o.suppressed && (posCats.size ? posCats.has(o.category) : true));
-        const q = mq.trim().toLowerCase();
-        const list = q ? all.filter(o => o.title.toLowerCase().includes(q) || (o.category || "").toLowerCase().includes(q))
-                       : (showAllM ? all : suggested);
-        return html`
-        <section key="measures" class="sdw-page">
-          <${OptHead} title="How you'll know it's working"
-            sub=${"Pick a handful of metrics lumi already tracks. Your review reports them against your comparator each cycle — most organisations choose five to eight."} />
-          <div class="sdw-dials">
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="table" size=${16} /></span>
-                <div><div class="dial-title">Your measures <span class="sdw-opt">${measures.length} of 8 chosen</span></div>
-                <div class="dial-q">Greyed rows are below the reporting floor on your comparator right now — you can still choose them; they'll report once enough peers answer.</div></div></div>
-              <div class="sdw-msearch">
-                <input class="ctl" placeholder="Search your metrics…" value=${mq} onInput=${e => setMq(e.target.value)} />
-                ${!q ? html`<button type="button" class="sdw-mtoggle" onClick=${() => setShowAllM(v => !v)}>
-                  ${showAllM ? "Show suggested only" : "Show all " + all.length}</button>` : null}
-              </div>
-              <p class="sd-note" style=${{ margin: "0 0 var(--s2)" }}>
-                ${mopts === null ? "Loading your metric list…"
-                  : q ? list.length + " matching"
-                  : showAllM ? "Every metric you can see" : "Suggested from the areas you set a position on"}</p>
-              <div class="sd-doc-mlist">
-                ${list.slice(0, 60).map(o => { const on = measures.some(m => m.id === o.id); return html`
-                  <label key=${o.id} class=${"sd-doc-check" + (o.suppressed ? " dim" : "")}>
-                    <input type="checkbox" checked=${on} disabled=${!on && measures.length >= 8}
-                      onChange=${e => setD({ measures: e.target.checked ? [...measures, { id: o.id }].slice(0, 8) : measures.filter(x => x.id !== o.id) })} />
-                    <span>${o.title} <span class="sd-doc-meta">${o.category}${o.context ? " · tracked as a level" : ""}${o.suppressed ? " · below floor" : ""}</span></span>
-                  </label>`; })}
-                ${list.length > 60 ? html`<p class="sd-note">${list.length - 60} more — search to narrow.</p>` : null}
-              </div>
-            </div>
-            ${measures.length ? html`
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="target" size=${16} /></span>
-                <div><div class="dial-title">Where each one needs to get to <span class="sdw-opt">Optional</span></div>
-                <div class="dial-q">A measure without a target is a topic. Say where you are, where you want to be, and who owns it — your words, printed as given.</div></div></div>
-              ${measures.map((m, i) => { const o = all.find(x => x.id === m.id) || {}; return html`
-                <div key=${m.id} class="sdw-mrow">
-                  <div class="sdw-mrow-title">${o.title || m.id}</div>
-                  <div class="sdw-mrow-fields">
-                    <input class="ctl" maxlength="80" placeholder="Baseline today" value=${m.baseline || ""}
-                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, baseline: e.target.value } : x) })} />
-                    <input class="ctl" maxlength="80" placeholder="Target" value=${m.target || ""}
-                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, target: e.target.value } : x) })} />
-                    <input class="ctl" maxlength="80" placeholder="Owner" value=${m.owner || ""}
-                      onInput=${e => setD({ measures: measures.map((x, j) => j === i ? { ...x, owner: e.target.value } : x) })} />
-                  </div>
-                </div>`; })}
-            </div>` : null}
-          </div>
-          <${Foot} />
-        </section>`; })()}
-
-      ${cur.id === "roadmap" && html`
-        <section key="roadmap" class="sdw-page">
-          <${OptHead} title="What changes this year"
-            sub=${"The short list of things you intend to do about reward this cycle. Tap a common change to add it, then make it yours."} />
-          <div class="sdw-dials">
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="clock" size=${16} /></span>
-                <div><div class="dial-title">Your roadmap <span class="sdw-opt">up to 6</span></div>
-                <div class="dial-q">Only what you've actually decided — this is a plan, not a wish list.</div></div></div>
-              <div class="sdw-starters">
-                ${ROADMAP_STARTERS.filter(s2 => !roadmap.some(r => r.title === s2)).map(s2 => html`
-                  <button key=${s2} type="button" class="sdw-starter" disabled=${roadmap.length >= 6}
-                    onClick=${() => setD({ roadmap: [...roadmap, { title: s2 }].slice(0, 6) })}>
-                    <${Icon} name="plus" size=${11} /> ${s2}</button>`)}
-              </div>
-              ${roadmap.map((r, i) => html`
-                <div key=${i} class="sdw-lirow">
-                  <input class="ctl" maxlength="120" value=${r.title || ""} placeholder="What you're changing"
-                    onInput=${e => setD({ roadmap: roadmap.map((x, j) => j === i ? { ...x, title: e.target.value } : x) })} />
-                  <select class="ctl sdw-li-sel" value=${r.horizon || ""}
-                    onChange=${e => setD({ roadmap: roadmap.map((x, j) => j === i ? { ...x, horizon: e.target.value || undefined } : x) })}>
-                    <option value="">When?</option>
-                    ${(data.horizon_options || []).map(h => html`<option key=${h} value=${h}>${HORIZON_LABEL[h] || h}</option>`)}
-                  </select>
-                  <button type="button" class="sdw-li-x" aria-label="Remove roadmap item" onClick=${() => setD({ roadmap: roadmap.filter((x, j) => j !== i) })}>✕</button>
-                </div>`)}
-              ${roadmap.length < 6 ? html`
-                <button type="button" class="sdx-addtile" onClick=${() => setD({ roadmap: [...roadmap, { title: "" }] })}>
-                  <${Icon} name="plus" size=${13} /> Write your own</button>` : null}
-            </div>
-          </div>
-          <${Foot} />
-        </section>`}
-
-      ${cur.id === "governance" && html`
-        <section key="governance" class="sdw-page">
-          <${OptHead} title="How reward is governed"
-            sub=${"Who owns reward, who signs it off, and how often it's reviewed. If that's you and the CEO, say so — small is a legitimate answer."} />
-          <div class="sdw-dials">
-            <div class="dial-card">
-              <div class="dial-head"><span class="dial-roundel"><${Icon} name="shield" size=${16} /></span>
-                <div><div class="dial-title">Ownership ${"&"} review</div>
-                <div class="dial-q">This prints as the governance block of your document.</div></div></div>
-              <div class="sd-doc-grid2">
-                <label>Owner<input class="ctl" maxlength="80" placeholder="e.g. HR Director" value=${gov.owner || ""}
-                  onInput=${e => setD({ reward_governance: { ...gov, owner: e.target.value } })} /></label>
-                <label>Signed off by<input class="ctl" maxlength="80" placeholder="e.g. CEO, or Remuneration Committee" value=${gov.approver || ""}
-                  onInput=${e => setD({ reward_governance: { ...gov, approver: e.target.value } })} /></label>
-                <label>Review cadence<select class="ctl" value=${gov.review_cadence || ""}
-                  onChange=${e => setD({ reward_governance: { ...gov, review_cadence: e.target.value || null } })}>
-                  <option value="">—</option>
-                  ${(data.cadence_options || []).map(c => html`<option key=${c} value=${c}>${CADENCE_LABEL[c] || c}</option>`)}
-                </select></label>
-                <label>Effective from<input class="ctl" type="date" value=${gov.effective_date || ""}
-                  onInput=${e => setD({ reward_governance: { ...gov, effective_date: e.target.value } })} /></label>
-              </div>
-            </div>
-          </div>
-          <${Foot} label="Review & save →" />
-        </section>`}
-
       ${cur.id === "review" && html`
         <section key="review" class="sdw-page">
           <div class=${"strat-done" + (committed ? " celebrating" : "")}><span class="strat-check"><${Icon} name="check" size=${22} /></span>
@@ -1435,13 +1281,10 @@ window.StrategyPage = function ({ me }) {
             rows=${POST.map(f => ({ ...reviewRow(f, strat), field: f }))
               .concat([{ label: "Constraints", value: (cons.selected || []).length ? (cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(", ") : "Not included", skipped: !(cons.selected || []).length }])}
             onEdit=${() => goId("post")} onChangeRow=${changeFrom} locked=${committed || saving} />
-          <${ReviewSection} title="Your document" chip="optional" chipCls="choices"
+          <${ReviewSection} title="Your principles" chip="optional" chipCls="choices"
             rows=${[
-              { label: "Principles", value: principles.filter(p2 => (p2 || "").trim()).length ? principles.filter(p2 => (p2 || "").trim()).length + " stated" : "Not included", skipped: !principles.filter(p2 => (p2 || "").trim()).length, field: "principles" },
-              { label: "Commitments", value: (wbIds.length || gvStmt) ? "Stated" : "Not included", skipped: !(wbIds.length || gvStmt), field: "commit" },
-              { label: "Measures", value: measures.length ? measures.length + " chosen" : "Not included", skipped: !measures.length, field: "measures" },
-              { label: "Roadmap", value: roadmap.filter(r => (r.title || "").trim()).length ? roadmap.filter(r => (r.title || "").trim()).length + " changes" : "Not included", skipped: !roadmap.filter(r => (r.title || "").trim()).length, field: "roadmap" },
-              { label: "Governance", value: Object.keys(gov).length ? [gov.owner, gov.approver].filter(Boolean).join(" · ") || "Stated" : "Not included", skipped: !Object.keys(gov).length, field: "governance" },
+              { label: "Reward principles", value: principles.filter(p2 => (p2 || "").trim()).length ? principles.filter(p2 => (p2 || "").trim()).length + " stated" : "Not included", skipped: !principles.filter(p2 => (p2 || "").trim()).length, field: "principles" },
+              { label: "Position by level", value: pops.length ? pops.map(p => p.label).join(", ") : "Not included", skipped: !pops.length, field: "populations" },
             ]}
             onEdit=${() => goId("principles")} onChangeRow=${(pg) => goId(pg)} locked=${committed || saving} />
           <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
