@@ -125,40 +125,65 @@ def main():
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ,
                    "document": {"principles": ["x" * 141]}})
     check("principle length cap — 141 chars rejected (400)", st == 400, st)
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ,
-                   "document": {"measures": ["NOT_A_REAL_METRIC"]}})
-    check("guardrail 6 — invisible metric as a measure rejected (400)", st == 400, st)
     st, opts = sa.req("/api/strategy/measure-options")
     check("measure-options lists visible metrics with floor + caps",
           st == 200 and opts.get("floor") == 5 and opts.get("max") == 8 and len(opts.get("options") or []) > 100)
     _mo = (opts.get("options") or [])
-    _nine = [o["id"] for o in _mo[:9]]
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"measures": _nine}})
-    check("R4 — 9 measures rejected (400, cap 8)", st == 400, st)
-    _five = [o["id"] for o in _mo[:5]]
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "measures": _five, "principles": ["We pay fairly and explain how pay works."],
-        "constraints": {"selected": ["affordability"], "notes": "CPI pressure"},
-        "reward_governance": {"owner": "CPO", "review_cadence": "annual", "effective_date": "2026-09-01"},
-        "roadmap": [{"title": "Introduce salary bands", "horizon": "this_cycle"}],
-        "segments": {"differentiated": True, "segments": ["Engineering"]}}})
+        "principles": ["We pay fairly and explain how pay works."],
+        "constraints": {"selected": ["affordability"], "notes": "CPI pressure"}}})
     check("document-grade fields save (200)", st == 200, st)
     st, full2 = sa.req("/api/strategy")
     doc = full2.get("document") or {}
-    check("document round-trips (measures + principles + governance persisted)",
-          [m["id"] for m in (doc.get("measures") or [])] == _five and len(doc.get("principles") or []) == 1
-          and (doc.get("reward_governance") or {}).get("review_cadence") == "annual")
+    check("document round-trips (principles + constraints persisted)",
+          len(doc.get("principles") or []) == 1
+          and (doc.get("constraints") or {}).get("selected") == ["affordability"])
+    # 2026-08-15 removals: measures / commitments / governance / segments are captured in
+    # the metrics (or unevidenceable) — the API must simply ignore them, never store them.
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
+        "measures": [{"id": "x"}], "commitments": {"Wellbeing": {"metric_ids": ["y"]}},
+        "reward_governance": {"owner": "CPO"}, "segments": {"differentiated": True}}})
+    check("removed sections are accepted and ignored (200)", st == 200, st)
+    st, full2b = sa.req("/api/strategy")
+    _d2 = full2b.get("document") or {}
+    check("removed sections are not stored or served",
+          not _d2.get("measures") and not _d2.get("commitments")
+          and not _d2.get("reward_governance") and not _d2.get("segments"), list(_d2))
     check("document provenance recorded (set/skipped, no phantom)",
-          full2["provenance"].get("measures") == "set" and full2["provenance"].get("commitments") == "skipped")
+          full2["provenance"].get("principles") == "set" and full2["provenance"].get("measures") == "skipped"
+          and "suggested" not in set(full2["provenance"].values()))
     check("comparator defaults to All peers in words (R1/R2)",
           doc.get("comparator_label") == "All peers")
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "reward_governance": {"review_cadence": "monthly"}}})
-    check("out-of-enum cadence rejected (400)", st == 400, st)
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
         "comparator_cut": "group::no-such-group"}})
     check("dangling comparator group rejected at save (400)", st == 400, st)
 
+    # ---- ONE peer group: the strategy comparator IS the org default cut ----
+    # (2026-08-15 — the strategy must never name a different market from the one the
+    # benchmark, Signals and alerts read from.)
+    _opts = (opts.get("options") or [])
+    st, me0 = sa.req("/api/me")
+    _band = (me0.get("org") or {}).get("fte_band") or "50-249"
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"comparator_cut": "fte_band::" + _band}})
+    check("comparator accepts a size cut (200)", st == 200, st)
+    st, me1 = sa.req("/api/me")
+    check("choosing a comparator MOVES the org default peer group",
+          (me1.get("org") or {}).get("signal_peer_cut") == "fte_band::" + _band,
+          (me1.get("org") or {}).get("signal_peer_cut"))
+    st, s1 = sa.req("/api/strategy")
+    check("the strategy reads the comparator back from the org default",
+          (s1.get("document") or {}).get("comparator_cut") == "fte_band::" + _band,
+          (s1.get("document") or {}).get("comparator_cut"))
+    check("comparator label matches the benchmark's own wording for that cut",
+          (s1.get("document") or {}).get("comparator_label") == _band + " FTE",
+          (s1.get("document") or {}).get("comparator_label"))
+    # move the DEFAULT from the other side — the strategy must follow, not contradict
+    st, _ = sa.req("/api/org/signal-peers", "PUT", {"cut": "all"})
+    st, s2 = sa.req("/api/strategy")
+    check("changing the peer group elsewhere updates the stated comparator",
+          (s2.get("document") or {}).get("comparator_cut") is None
+          and (s2.get("document") or {}).get("comparator_label") == "All peers",
+          (s2.get("document") or {}).get("comparator_label"))
     # ---- ONE peer group: the strategy comparator IS the org default cut ----
     # (2026-08-15 — the strategy must never name a different market from the one the
     # benchmark, Signals and alerts read from.)
@@ -190,29 +215,11 @@ def main():
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
         "commitments": {"Wellbeing": {"metric_ids": _wb}}}})
     check("Wellbeing provision commitment saves (200)", st == 200 and bool(_wb), st)
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "commitments": {"Pay": {"statement": "nope"}}}})
-    check("commitment on a position category rejected (400)", st == 400, st)
 
     # ---- 2026-08-15: server drafts · role split · approval as a governance act ----
-    # measures carry baseline/target/owner; legacy bare-id lists still accepted
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "measures": [{"id": _five[0], "baseline": "62%", "target": "70% by Apr", "owner": "CPO"}]}})
-    check("measures accept baseline/target/owner (200)", st == 200, st)
-    st, full3 = sa.req("/api/strategy")
-    _m0 = ((full3.get("document") or {}).get("measures") or [{}])[0]
-    check("measure detail round-trips", _m0.get("target") == "70% by Apr" and _m0.get("owner") == "CPO", _m0)
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {"measures": [_five[1]]}})
-    st, full4 = sa.req("/api/strategy")
-    check("legacy bare-id measures normalise to objects",
-          ((full4.get("document") or {}).get("measures") or [{}])[0].get("id") == _five[1])
-    st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "measures": [{"id": _five[0], "target": "x" * 81}]}})
-    check("measure field length capped (400)", st == 400, st)
-
     # population positions — document statements, enum-guarded
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "population_targets": [{"label": "Executive", "position": "lead", "note": "total comp at UQ"}]}})
+        "population_targets": [{"label": "Board / Executive", "position": "lead", "note": "total comp at UQ"}]}})
     check("population position saves (200)", st == 200, st)
     st, full5 = sa.req("/api/strategy")
     check("population position round-trips",
@@ -221,8 +228,20 @@ def main():
         "population_targets": [{"label": "Board of aliens", "position": "lead"}]}})
     check("unknown population rejected (400)", st == 400, st)
     st, _ = sa.req("/api/strategy", "PUT", {"strategy": REQ, "document": {
-        "population_targets": [{"label": "Executive", "position": "sideways"}]}})
+        "population_targets": [{"label": "Board / Executive", "position": "sideways"}]}})
     check("invalid population stance rejected (400)", st == 400, st)
+
+    # objective RATINGS with a hard budget — and the engine still gets one primary
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, objective_weights={"attract": 6, "retain": 3})})
+    check("objective ratings save (200)", st == 200, st)
+    st, fw = sa.req("/api/strategy")
+    check("ratings round-trip", (fw["strategy"].get("objective_weights") or {}).get("attract") == 6)
+    check("primary_objective derived from the highest rating",
+          fw["strategy"]["primary_objective"] == "attract", fw["strategy"]["primary_objective"])
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, objective_weights={"attract": 7, "retain": 7})})
+    check("over-budget allocation rejected (400) — the cap forces a choice", st == 400, st)
+    st, _ = sa.req("/api/strategy", "PUT", {"strategy": dict(REQ, objective_weights={"nonsense": 3})})
+    check("unknown objective rejected (400)", st == 400, st)
 
     # server-side draft: stored apart from the live strategy, never engine-visible
     st, _ = sa.req("/api/strategy/draft", "PUT", {"draft": {"strat": {"market_position": "lag"}, "step": 3}})

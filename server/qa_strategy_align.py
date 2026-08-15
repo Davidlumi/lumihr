@@ -93,34 +93,23 @@ S = strat(pay_for_performance="strong")
 out = sa.evaluate(RULES, S, {}, {"REW_INC_103": "None", "REW_PAY_097": "Yes – strongly differentiated"}, [], EXCLUDE)
 i1 = next((c for c in out["commitments"] if c["id"] == "rule:I1"), None)
 check("B", "I1 any-of: no-bonus population fires the contradiction", i1 and i1["status"] == "contradicted")
-# document-intent rule: P5 segments declared, no mechanic anywhere
-DOC = {"segments": {"differentiated": True, "segments": ["Engineering"]}}
-out = sa.evaluate(RULES, {}, DOC, {"PROP_168a6213": "Not at all", "REW26_PAY_SKILLS_PAY": "No"}, [], EXCLUDE)
-p5 = next((c for c in out["commitments"] if c["id"] == "rule:P5"), None)
-check("B", "P5 document intent: declared segments with no mechanic -> not_evidenced",
-      p5 and p5["status"] == "not_evidenced")
+# P5 + the scarce-role segments it tested were retired 2026-08-15 (no pay data)
+out = sa.evaluate(RULES, {}, {"segments": {"differentiated": True}}, {}, [], EXCLUDE)
+check("B", "retired P5 can no longer fire (segments removed with the pay-data claim)",
+      not any(c["id"] == "rule:P5" for c in out["commitments"]))
 
 print()
 print("=" * 92)
-print("SECTION C — provision/practice commitments + the counts contract")
+print("SECTION C — the counts contract")
 print("=" * 92)
-DOC = {"commitments": {"Wellbeing": {"metric_ids": ["REW26_WEL_EAP", "REW26_WEL_FINWELL"]},
-                       "Governance & Transparency": {"statement": "Ranges shared; equal pay reviewed annually."}}}
-out = sa.evaluate(RULES, strat(transparency="ranges"), DOC,
-                  {"REW26_WEL_EAP": "Yes", "REW26_WEL_FINWELL": "No", "PAYTR_02_131bd412": "Yes"},
-                  [], EXCLUDE, visible_qids={"REW26_WEL_EAP", "REW26_WEL_FINWELL", "PAYTR_02_131bd412"})
-wb = next(c for c in out["commitments"] if c["kind"] == "provision")
-check("C", "W2 — a committed provision answered absent -> contradicted", wb["status"] == "contradicted")
-gv = next(c for c in out["commitments"] if c["kind"] == "practice")
-check("C", "practice commitment quotes the member verbatim", "Ranges shared" in gv["statement"])
-check("C", "practice evidenced when transparency stands uncontradicted", gv["status"] == "evidenced")
-DOC2 = {"commitments": {"Wellbeing": {"metric_ids": ["REW26_WEL_EAP"]}}}
-out2 = sa.evaluate(RULES, {}, DOC2, {"REW26_WEL_EAP": "Yes"}, [], EXCLUDE, visible_qids=set())
-wb2 = next(c for c in out2["commitments"] if c["kind"] == "provision")
-check("C", "entitlement — an invisible committed metric reads not_evidenced", wb2["status"] == "not_evidenced")
+out = sa.evaluate(RULES, strat(transparency="ranges"), {},
+                  {"PAYTR_02_131bd412": "Yes"}, [], EXCLUDE,
+                  visible_qids={"PAYTR_02_131bd412"})
+check("C", "commitment sections retired 2026-08-15 — no provision/practice commitments emitted",
+      not [c for c in out["commitments"] if c["kind"] in ("provision", "practice")])
 # counts contract (brief §12): sum of statuses == commitments per category, all categories
 S = strat(market_position="lead", transparency="open", pay_for_performance="strong")
-big = sa.evaluate(RULES, S, DOC, {"REW26_WEL_EAP": "Yes", "REW26_WEL_FINWELL": "No"}, DOMS, EXCLUDE)
+big = sa.evaluate(RULES, S, {}, {"REW26_WEL_EAP": "Yes", "REW26_WEL_FINWELL": "No"}, DOMS, EXCLUDE)
 ok_sum = all(sum(v.values()) == len([c for c in big["commitments"] if c["category"] == cat])
              for cat, v in big["counts"].items())
 check("C", "counts reconcile: statuses sum to commitments, every category", ok_sum, big["counts"])

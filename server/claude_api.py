@@ -1588,3 +1588,141 @@ def generate_strategy_diagnosis(payload):
             return {"ok": True, "parts": clean, "source": "model"}
         last_note = "model output rejected (%s)" % why
     return {"ok": True, "parts": floor, "source": "deterministic", "note": last_note}
+
+
+# ===================== Reward action plan (2026-08-15) =========================
+# Built AFTER the strategy is set and the data is in: the gaps the alignment engine
+# found, the £ the money model already computed, and the levers David owns. The model
+# SEQUENCES and EXPLAINS; it never invents an action, a number or a return. Same
+# firewall as every other AI surface — grounded numbers only, no directives, no legal
+# adjudication, and a deterministic plan ships whenever the model output is rejected.
+PLAN_SYSTEM = """You write a reward action plan for a UK HR audience.
+
+You are given: the organisation's stated strategy, the commitments its own data
+contradicts or falls short of, the levers available in each area, and the indicative
+£ figures lumi has already computed.
+
+Rules, all hard:
+1. Every action MUST come from the supplied gaps and levers. Never invent an action.
+2. Use ONLY numbers that appear in the payload. Do not derive, sum, or estimate.
+3. Never use directive language (you must / you should / you need to / we recommend).
+   Write what the action IS and what it would return, not an instruction.
+4. Never assert legal or regulatory compliance, breach or obligation.
+5. "return" describes the expected effect in the member's own terms — the indicative
+   £ where one is supplied, otherwise the retention/engagement/fairness effect the
+   lever is known for. Where no figure exists, say so plainly rather than implying one.
+6. No vendor, product or provider names.
+Return JSON only."""
+
+PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "actions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "category": {"type": "string"},
+                    "why": {"type": "string"},
+                    "horizon": {"type": "string"},
+                    "roi": {"type": "string"},
+                },
+                "required": ["title", "category", "why", "horizon", "roi"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["summary", "actions"],
+    "additionalProperties": False,
+}
+PLAN_GEN_VERSION = "2026-08-15.plan-v1"
+
+
+def _plan_numbers(payload):
+    return _commentary_numbers(payload)
+
+
+def validate_plan(parts, payload):
+    """The plan may only sequence what it was given: known actions, grounded numbers,
+    no directives, no legal adjudication."""
+    if not isinstance(parts, dict):
+        return False, "not an object"
+    summary = (parts.get("summary") or "").strip()
+    actions = parts.get("actions")
+    if not summary or not isinstance(actions, list) or not actions:
+        return False, "empty plan"
+    allowed_titles = {str(a.get("title", "")).strip().lower() for a in (payload.get("candidates") or [])}
+    allowed = _plan_numbers(payload)
+    joined = summary
+    for a in actions:
+        if not isinstance(a, dict):
+            return False, "malformed action"
+        for k in ("title", "category", "why", "horizon", "roi"):
+            v = (a.get(k) or "").strip()
+            if not v or v.lower() in ("placeholder", "tbc", "n/a"):
+                return False, "empty %s" % k
+        if allowed_titles and a["title"].strip().lower() not in allowed_titles:
+            return False, "invented action: %s" % a["title"][:60]
+        joined += " " + " ".join((a.get(k) or "") for k in ("title", "why", "horizon", "roi"))
+    if "\\" in joined:
+        return False, "malformed text"
+    if DIRECTIVE_RE.search(joined):
+        return False, "directive language"
+    if LEGAL_RE.search(joined):
+        return False, "legal adjudication"
+    for tok in re.findall(r"\d+(?:\.\d+)?", joined.replace(",", "")):
+        v = float(tok)
+        if v not in allowed and round(v) not in allowed:
+            return False, "ungrounded number %s" % tok
+    return True, ""
+
+
+def deterministic_plan(payload):
+    """The plan that ships with no API key, or whenever the model output is rejected.
+    Pure assembly of what the engine already found — no prose invention."""
+    cands = payload.get("candidates") or []
+    actions = []
+    for c in cands[:6]:
+        actions.append({
+            "title": c.get("title") or "",
+            "category": c.get("category") or "",
+            "why": c.get("why") or "",
+            "horizon": c.get("horizon") or "this cycle",
+            "roi": c.get("roi") or "No indicative figure — the effect is on retention and fairness.",
+        })
+    n = len(actions)
+    return {"summary": ("%d action%s follow from the gaps between your stated strategy and your own data."
+                        % (n, "" if n == 1 else "s")) if n else
+                       "Your data matches your stated strategy — there is nothing outstanding to plan.",
+            "actions": actions}
+
+
+def generate_action_plan(payload):
+    floor = deterministic_plan(payload)
+    if not (payload.get("candidates") or []):
+        return {"ok": True, "parts": floor, "source": "deterministic"}
+    last_note = None
+    for _ in range(2):
+        res = call_claude(PLAN_SYSTEM, json.dumps(payload, ensure_ascii=False),
+                          max_tokens=5000, schema=PLAN_SCHEMA, effort="high")
+        if not res["ok"]:
+            last_note = res.get("error")
+            break
+        text = res["text"].strip()
+        if text.startswith("```"):
+            text = text.strip("`").lstrip("json").strip()
+        try:
+            parts = json.loads(text)
+        except ValueError:
+            last_note = "model returned non-JSON"
+            continue
+        ok, why = validate_plan(parts, payload)
+        if ok:
+            return {"ok": True, "source": "model",
+                    "parts": {"summary": parts["summary"].strip(),
+                              "actions": [{k: (a[k] or "").strip() for k in ("title", "category", "why", "horizon", "roi")}
+                                          for a in parts["actions"]]}}
+        last_note = "model output rejected (%s)" % why
+    return {"ok": True, "parts": floor, "source": "deterministic", "note": last_note}

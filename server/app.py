@@ -4437,25 +4437,6 @@ def assemble_pack_payload(request, user, org, cut):
             strategy_align.load_rules(), _strat, _st_state.get("document") or {}, _own,
             _hero_s.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
             visible_qids=set(_visq), cut_label=cut_label)
-        _meas_rows = []
-        for _m in (_st_state.get("document") or {}).get("measures") or []:
-            _m = _m if isinstance(_m, dict) else {"id": _m}
-            _qid = _m.get("id")
-            _q = _visq.get(_qid)
-            _p = payloads().get(_qid)
-            if not _q or _p is None:
-                continue
-            _blk, _bl = pos.block_for(_p, cut)
-            _supp = pos.is_suppressed(_blk)
-            # current LEVEL only — movement needs a second snapshot (never render an
-            # empty trend as flat, brief §10); suppressed peer reads stay masked.
-            # baseline/target/owner are the member's own words, carried verbatim.
-            _meas_rows.append({"id": _qid, "title": _q.display_title, "category": _q.sub_power,
-                               "your_answer": _own.get(_qid),
-                               "baseline": _m.get("baseline"), "target": _m.get("target"),
-                               "owner": _m.get("owner"),
-                               "n": None if _supp else (_blk or {}).get("n"),
-                               "suppressed": bool(_supp)})
         _ver = conn.execute("SELECT version, approved_at, approved_by, approver_body, approval_date, "
                             "effective_date, next_review FROM strategy_versions "
                             "WHERE org_id=? AND status='approved' ORDER BY version DESC LIMIT 1",
@@ -4468,9 +4449,7 @@ def assemble_pack_payload(request, user, org, cut):
             "alignment_counts": _al["counts"],
             "commitments": _al["commitments"],
             "options": strategy_align.options_for(_al["commitments"], visible_qids=set(_visq)),
-            "measures": _meas_rows,
-            "movement_note": ("First benchmark period — measure movement appears from your next data cycle."
-                              if _snap_count <= 1 else None),
+            "action_plan": (_st_state.get("document") or {}).get("action_plan"),
         }
     return {
         "cut_n": cut_n,
@@ -5056,9 +5035,15 @@ STRATEGY_STATEMENT_CHARS = 240
 # population positions (2026-08-15, reward-director review): exec vs all-employee is
 # the primary axis of a listed company's reward strategy — but lumi holds NO executive
 # pay data, so these are DOCUMENT statements only and are never fed to the engine.
-STRATEGY_POPULATIONS = ["Executive", "Senior leadership", "Professional / management",
-                        "All employees", "Frontline / operational"]
-STRATEGY_MAX_POPULATIONS = 5
+# the SEVEN matrix row labels, verbatim (18 matrix questions share them) — a position
+# set here can be read directly against any by-level matrix metric.
+STRATEGY_POPULATIONS = ["Board / Executive", "Director", "Head of", "Senior Manager",
+                        "Manager", "Supervisor / Team Leader", "Frontline / Individual Contributor"]
+STRATEGY_MAX_POPULATIONS = 7
+# primary objective is now a RATED allocation with a hard budget, so a member must
+# trade off rather than tick everything. The engine still reads one primary_objective:
+# it is derived server-side as the highest-rated (ties -> the existing stored value).
+STRATEGY_OBJECTIVE_BUDGET = 10
 STRATEGY_MEASURE_TEXT = 80
 
 
@@ -5190,6 +5175,7 @@ def strategy_state(conn, org):
     _dt = _canon_domain_targets(uj(row.get("domain_targets"), {}) or {})
     _known = set(pos.market_position_config().get("_domains", {}))
     strat["domain_targets"] = {k: v for k, v in _dt.items() if k in _known}
+    strat["objective_weights"] = uj(row.get("objective_weights"), {}) or {}
     # competitive domains for the per-domain override UI (step-3 layer 2) — derived from the
     # SAME config source the save-route validation uses (_domains where competitive), so the
     # UI list and the validation can't drift. Governance (competitiveness=False) falls out.
@@ -5199,15 +5185,12 @@ def strategy_state(conn, org):
     # never touches raw JSON columns; absent = "not yet stated", never fabricated.
     doc = {
         "comparator_cut": row.get("comparator_cut"),
-        "segments": uj(row.get("segments_json"), {}) or {},
         "principles": uj(row.get("principles_json"), []) or [],
-        "reward_governance": uj(row.get("reward_governance_json"), {}) or {},
         "constraints": uj(row.get("constraints_json"), {}) or {},
-        "measures": [(m if isinstance(m, dict) else {"id": m})
-                     for m in (uj(row.get("measures_json"), []) or [])],
+
         "population_targets": uj(row.get("population_targets_json"), []) or [],
         "roadmap": uj(row.get("roadmap_json"), []) or [],
-        "commitments": uj(row.get("commitments_json"), {}) or {},
+        "action_plan": uj(row.get("action_plan_json"), None),
     }
     # ONE peer group (2026-08-15, David: "compare against contradicts the default
     # benchmark sample group — the two need to be aligned"). orgs.default_cut is the
@@ -5288,21 +5271,103 @@ async def get_strategy_measure_options(request: Request):
 
 
 def _unstated_sections(st):
-    """Which document sections are empty right now — recorded on approval so a
+    """Which parts of the document are empty right now — recorded on approval so a
     version can never quietly imply more than it contains."""
     d = st.get("document") or {}
-    cm = d.get("commitments") or {}
     checks = [
         ("Principles", bool([p for p in (d.get("principles") or []) if str(p).strip()])),
-        ("Comparator", d.get("comparator_cut") is not None),
+        ("Peer group", d.get("comparator_cut") is not None),
         ("Constraints", bool((d.get("constraints") or {}).get("selected") or (d.get("constraints") or {}).get("notes"))),
-        ("Governance", bool(d.get("reward_governance"))),
-        ("Commitments", bool((cm.get("Wellbeing") or {}).get("metric_ids") or (cm.get("Governance & Transparency") or {}).get("statement"))),
-        ("Measures", bool(d.get("measures"))),
-        ("Roadmap", bool([r for r in (d.get("roadmap") or []) if (r or {}).get("title")])),
-        ("Population positions", bool(d.get("population_targets"))),
+        ("Position by level", bool(d.get("population_targets"))),
+        ("Action plan", bool(d.get("action_plan"))),
     ]
     return [name for name, ok in checks if not ok]
+
+
+@app.post("/api/strategy/plan")
+async def build_action_plan(request: Request):
+    """The reward action plan (2026-08-15, David): built AFTER the strategy is stated
+    and the data is in. The CANDIDATES are assembled deterministically — every gap the
+    alignment engine found, matched to the levers David owns, carrying the indicative £
+    the money model already computed. The model only sequences and explains them; it
+    can never invent an action or a number (validate_plan enforces both)."""
+    user, org = require_editor(request)
+    conn = get_conn()
+    require_ai(conn, user, AI_STRATEGY)
+    strat = strategy_for_engine(conn, org["org_id"])
+    if not strat or not conn.execute("SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                                     (org["org_id"],)).fetchone():
+        return {"ok": False, "reason": "no_strategy"}
+    contrib = contribution_state(conn, org)
+    if not contrib["insights_unlocked"]:
+        return {"ok": False, "reason": "locked", "days_left": contrib["days_left"]}
+    st = strategy_state(conn, org)
+    cut = parse_cut(request, org)
+    items, tb = build_items(request, org, user, cut)
+    _vis = org_visible_questions(org)
+    prev_items = pos.prevalence_items(org["org_id"], cut, _vis, payloads(), org_answers_for(org),
+                                      make_entitled(user, org), tb)
+    prac_items = pos.practice_position_items(org["org_id"], cut, _vis, payloads(), org_answers_for(org),
+                                             make_entitled(user, org), tb)
+    sec_order = []
+    for q in _vis.values():
+        if q.sub_power and q.sub_power not in sec_order:
+            sec_order.append(q.sub_power)
+    hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
+                            DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
+                            practice_items=prac_items, tile_min=TILE_MIN_POSITIONED,
+                            mp_config=pos.market_position_config(), strategy=strat)
+    own = {k[0]: v for k, v in (org_answers_for(org) or {}).items()
+           if (k[1] or "") == "" and isinstance(v, str)}
+    cut_label = "All peers" if cut["dim"] == "all" else (cut.get("label") or cut.get("value") or "your peer group")
+    al = strategy_align.evaluate(strategy_align.load_rules(), strat, st.get("document") or {}, own,
+                                 hero.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
+                                 visible_qids=set(_vis), cut_label=cut_label)
+    opts = strategy_align.options_for(al["commitments"], visible_qids=set(_vis))
+    money = pos.money_opportunities(conn, org, _vis, payloads(), org_answers_for(org), cut, tb)
+    # £ by category, so a lever in that area can carry the figure the engine computed
+    gbp_by_cat = {}
+    for it in money.get("items", []):
+        q = _vis.get(it["question_id"])
+        if q and q.sub_power and (it.get("to_p50_gbp") or 0):
+            e = gbp_by_cat.setdefault(q.sub_power, {"gbp": 0, "direction": it["direction"], "label": it["label"]})
+            e["gbp"] += it["to_p50_gbp"]
+    # the candidate set: one per lever offered against a real gap, deduped, £-carrying
+    cands, seen = [], set()
+    for ob in opts:
+        cat = ob.get("category")
+        for lev in ob.get("levers", []):
+            key = (cat, lev.get("lever_id"))
+            if key in seen:
+                continue
+            seen.add(key)
+            m = gbp_by_cat.get(cat)
+            roi = (("Indicative £%s a year to reach the peer median on %s, on lumi's stated assumptions."
+                    % ("{:,}".format(int(m["gbp"])), m["label"]))
+                   if m and m.get("gbp") else
+                   ("Cost-saving where it lands." if lev.get("cost_character") == "cost-saving"
+                    else "No indicative figure — the effect is on retention, fairness and how the package reads."))
+            cands.append({
+                "title": lev.get("name"), "category": cat, "lever_id": lev.get("lever_id"),
+                "why": (ob.get("statement") or "") + " " + (lev.get("what_it_is") or ""),
+                "horizon": lev.get("speed") or "this cycle",
+                "cost_character": lev.get("cost_character"), "trade_off": lev.get("trade_off"),
+                "roi": roi,
+            })
+    payload = {"objective": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
+               "objective_weights": (st.get("strategy") or {}).get("objective_weights") or {},
+               "cut_label": cut_label, "candidates": cands[:10],
+               "counts": al["counts"]}
+    _ai_generation_or_429(org)
+    res = await to_thread.run_sync(claude_api.generate_action_plan, payload)
+    plan = dict(res["parts"], source=res.get("source"),
+                built_at=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                basis="Built from the gaps between your stated strategy and your own data, on %s. "
+                      "Indicative figures come from lumi's £ model with its published assumptions." % cut_label)
+    conn.execute("UPDATE org_strategy SET action_plan_json=? WHERE org_id=?",
+                 (json.dumps(plan), org["org_id"]))
+    conn.commit()
+    return {"ok": True, "plan": plan}
 
 
 @app.put("/api/strategy/draft")
@@ -5513,6 +5578,36 @@ async def put_strategy(request: Request):
             raise HTTPException(400, "'%s' isn't a valid option for %s." % (v, f.replace("_", " ")))
         vals[f] = v
         prov[f] = "set"
+    ow = incoming.get("objective_weights")
+    if ow is not None:
+        if not isinstance(ow, dict):
+            raise HTTPException(400, "objective_weights must be an object of {objective: points}.")
+        clean = {}
+        for k, v in ow.items():
+            if k not in STRATEGY_ENUMS["primary_objective"]:
+                raise HTTPException(400, "'%s' isn't a reward objective." % k)
+            try:
+                iv = int(v)
+            except (TypeError, ValueError):
+                raise HTTPException(400, "Objective ratings must be whole numbers.")
+            if iv < 0 or iv > STRATEGY_OBJECTIVE_BUDGET:
+                raise HTTPException(400, "Each objective is rated 0-%d." % STRATEGY_OBJECTIVE_BUDGET)
+            if iv:
+                clean[k] = iv
+        if sum(clean.values()) > STRATEGY_OBJECTIVE_BUDGET:
+            raise HTTPException(400, "You have %d points to spread across the objectives — that totals %d."
+                                % (STRATEGY_OBJECTIVE_BUDGET, sum(clean.values())))
+        vals["objective_weights"] = json.dumps(clean) if clean else None
+        prov["objective_weights"] = "set" if clean else "skipped"
+        # the engine contract is untouched: it still reads ONE primary_objective, which
+        # is simply the objective the member rated highest.
+        if clean:
+            top = sorted(clean.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+            vals["primary_objective"] = top
+            prov["primary_objective"] = "set"
+    else:
+        vals["objective_weights"] = None
+
     bl = incoming.get("benefits_lead") or []
     if not isinstance(bl, list):
         raise HTTPException(400, "benefits_lead must be a list of areas.")
@@ -5572,18 +5667,11 @@ async def put_strategy(request: Request):
         invalidate_payloads()
     prov["comparator"] = "set" if docvals["comparator_cut"] is not None else "skipped"
 
-    seg = doc_in.get("segments") or {}
-    if seg:
-        if not isinstance(seg, dict):
-            raise HTTPException(400, "segments must be an object.")
-        names = [str(s).strip() for s in (seg.get("segments") or []) if str(s).strip()]
-        if len(names) > STRATEGY_MAX_SEGMENTS:
-            raise HTTPException(400, "At most %d named segments." % STRATEGY_MAX_SEGMENTS)
-        if any(len(s) > STRATEGY_SEGMENT_CHARS for s in names):
-            raise HTTPException(400, "Segment names are capped at %d characters." % STRATEGY_SEGMENT_CHARS)
-        seg = {"differentiated": bool(seg.get("differentiated")), "segments": names}
-    docvals["segments_json"] = json.dumps(seg) if seg else None
-    prov["segments"] = "set" if seg else "skipped"
+    # segments / "scarce roles" REMOVED 2026-08-15 (David): lumi holds no pay data, so a
+    # premium for scarce roles can never be evidenced — capturing it invited a claim we
+    # cannot stand behind. Column retained; no longer written.
+    docvals["segments_json"] = None
+    prov["segments"] = "skipped"
 
     prin = doc_in.get("principles") or []
     if not isinstance(prin, list):
@@ -5596,24 +5684,9 @@ async def put_strategy(request: Request):
     docvals["principles_json"] = json.dumps(prin) if prin else None
     prov["principles"] = "set" if prin else "skipped"
 
-    gov = doc_in.get("reward_governance") or {}
-    if gov:
-        if not isinstance(gov, dict):
-            raise HTTPException(400, "reward_governance must be an object.")
-        cad = gov.get("review_cadence")
-        if cad and cad not in STRATEGY_CADENCES:
-            raise HTTPException(400, "'%s' isn't a review cadence option." % cad)
-        eff = gov.get("effective_date")
-        if eff:
-            try:
-                datetime.strptime(str(eff), "%Y-%m-%d")
-            except ValueError:
-                raise HTTPException(400, "effective_date must be YYYY-MM-DD.")
-        gov = {k: (str(gov.get(k)).strip()[:STRATEGY_GOV_CHARS] or None) if gov.get(k) else None
-               for k in ("owner", "approver", "review_cadence", "effective_date")}
-        gov = {k: v for k, v in gov.items() if v}
-    docvals["reward_governance_json"] = json.dumps(gov) if gov else None
-    prov["reward_governance"] = "set" if gov else "skipped"
+    # "How reward is governed" REMOVED 2026-08-15 (David).
+    docvals["reward_governance_json"] = None
+    prov["reward_governance"] = "skipped"
 
     cons = doc_in.get("constraints") or {}
     if cons:
@@ -5628,65 +5701,14 @@ async def put_strategy(request: Request):
     docvals["constraints_json"] = json.dumps(cons) if cons else None
     prov["constraints"] = "set" if cons else "skipped"
 
-    # measures carry their own baseline/target/owner (2026-08-15, reward-director:
-    # "a measure without a target value is a topic, not a measure"). Legacy rows are
-    # a bare id list — accepted and normalised, never rejected.
-    meas_in = doc_in.get("measures") or []
-    if not isinstance(meas_in, list):
-        raise HTTPException(400, "measures must be a list.")
-    meas = []
-    for m in meas_in:
-        row = {"id": str(m)} if not isinstance(m, dict) else dict(m)
-        qid = str(row.get("id") or "").strip()
-        if not qid:
-            continue
-        out_row = {"id": qid}
-        for k in ("baseline", "target", "owner"):
-            v = str(row.get(k) or "").strip()
-            if v:
-                if len(v) > STRATEGY_MEASURE_TEXT:
-                    raise HTTPException(400, "Measure %s is capped at %d characters." % (k, STRATEGY_MEASURE_TEXT))
-                out_row[k] = v
-        meas.append(out_row)
-    if len(meas) > STRATEGY_MAX_MEASURES:
-        raise HTTPException(400, "At most %d measures (R4)." % STRATEGY_MAX_MEASURES)
-    if meas:
-        vis = org_visible_questions(org)
-        bad = [m["id"] for m in meas if m["id"] not in vis]
-        if bad:
-            # entitlement guardrail 6: an invisible metric can never be a measure — blocked
-            # at capture, not silently dropped later (§2.5).
-            raise HTTPException(400, "'%s' isn't a metric this organisation can see." % bad[0])
-        if len({m["id"] for m in meas}) != len(meas):
-            raise HTTPException(400, "Each measure can be chosen once.")
-    docvals["measures_json"] = json.dumps(meas) if meas else None
-    prov["measures"] = "set" if meas else "skipped"
-
-    rm = doc_in.get("roadmap") or []
-    if not isinstance(rm, list):
-        raise HTTPException(400, "roadmap must be a list of items.")
-    rm_out = []
-    for it in rm[:STRATEGY_MAX_ROADMAP + 1]:
-        if not isinstance(it, dict):
-            raise HTTPException(400, "Each roadmap item must be an object.")
-        title = str(it.get("title") or "").strip()
-        if not title:
-            continue
-        if len(title) > STRATEGY_ROADMAP_CHARS:
-            raise HTTPException(400, "Roadmap items are capped at %d characters." % STRATEGY_ROADMAP_CHARS)
-        hz = it.get("horizon")
-        if hz and hz not in STRATEGY_HORIZONS:
-            raise HTTPException(400, "'%s' isn't a roadmap horizon." % hz)
-        row_it = {"title": title}
-        if hz:
-            row_it["horizon"] = hz
-        if it.get("gap_ref"):
-            row_it["gap_ref"] = str(it["gap_ref"])[:80]
-        rm_out.append(row_it)
-    if len(rm_out) > STRATEGY_MAX_ROADMAP:
-        raise HTTPException(400, "At most %d roadmap items." % STRATEGY_MAX_ROADMAP)
-    docvals["roadmap_json"] = json.dumps(rm_out) if rm_out else None
-    prov["roadmap"] = "set" if rm_out else "skipped"
+    # "How we'll know it's working" (measures) REMOVED 2026-08-15 (David) — the metrics
+    # already ARE the measures; asking a member to re-pick them was duplicate work.
+    docvals["measures_json"] = None
+    prov["measures"] = "skipped"
+    # the roadmap is no longer typed by hand either: it becomes the AI-built action
+    # plan, generated from the gaps once the strategy is set and the data is in.
+    docvals["roadmap_json"] = None
+    prov["roadmap"] = "skipped"
 
     pops_in = doc_in.get("population_targets") or []
     if not isinstance(pops_in, list):
@@ -5717,39 +5739,10 @@ async def put_strategy(request: Request):
     docvals["population_targets_json"] = json.dumps(pops) if pops else None
     prov["population_targets"] = "set" if pops else "skipped"
 
-    cm = doc_in.get("commitments") or {}
-    if cm:
-        if not isinstance(cm, dict):
-            raise HTTPException(400, "commitments must be an object.")
-        cm_out = {}
-        for dom, spec in cm.items():
-            if dom not in STRATEGY_POSITION_EXCLUDE:
-                raise HTTPException(400, "Only %s carry a non-position commitment."
-                                    % " and ".join(STRATEGY_POSITION_EXCLUDE))
-            if not isinstance(spec, dict):
-                raise HTTPException(400, "Each commitment must be an object.")
-            if dom == "Wellbeing":
-                # provision commitment: WHAT WE WILL OFFER — metric ids from the org's own
-                # visible Wellbeing set, so the alignment engine can evidence it (rule W2).
-                ids = [str(m) for m in (spec.get("metric_ids") or []) if m]
-                vis = org_visible_questions(org)
-                bad = [m for m in ids if m not in vis or vis[m].sub_power != "Wellbeing"]
-                if bad:
-                    raise HTTPException(400, "'%s' isn't a Wellbeing metric this organisation can see." % bad[0])
-                if len(ids) > 6:
-                    raise HTTPException(400, "At most 6 committed Wellbeing provisions.")
-                if ids:
-                    cm_out[dom] = {"type": "provision", "metric_ids": sorted(set(ids))}
-            else:
-                # practice commitment: HOW WE OPERATE — the member's own statement.
-                stmt = str(spec.get("statement") or "").strip()
-                if len(stmt) > STRATEGY_STATEMENT_CHARS:
-                    raise HTTPException(400, "The practice commitment is capped at %d characters." % STRATEGY_STATEMENT_CHARS)
-                if stmt:
-                    cm_out[dom] = {"type": "practice", "statement": stmt}
-        cm = cm_out
-    docvals["commitments_json"] = json.dumps(cm) if cm else None
-    prov["commitments"] = "set" if cm else "skipped"
+    # "What we offer / how we operate" (commitments) REMOVED 2026-08-15 (David): every
+    # one of those provisions is already captured as a metric answer.
+    docvals["commitments_json"] = None
+    prov["commitments"] = "skipped"
 
     prev = conn.execute("SELECT completed_at FROM org_strategy WHERE org_id=?", (org["org_id"],)).fetchone()
     complete = all(vals.get(f) for f in STRATEGY_REQUIRED)
@@ -5758,8 +5751,8 @@ async def put_strategy(request: Request):
     DOC_COLS = ["comparator_cut", "segments_json", "principles_json", "reward_governance_json",
                 "constraints_json", "measures_json", "roadmap_json", "commitments_json",
                 "population_targets_json"]
-    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets"] + DOC_COLS + ["field_provenance", "updated_at", "completed_at"]
-    row_vals = ([vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"]]
+    cols = list(STRATEGY_ENUMS) + ["benefits_lead", "domain_targets", "objective_weights"] + DOC_COLS + ["field_provenance", "updated_at", "completed_at"]
+    row_vals = ([vals[f] for f in STRATEGY_ENUMS] + [vals["benefits_lead"], vals["domain_targets"], vals.get("objective_weights")]
                 + [docvals[c] for c in DOC_COLS] + [json.dumps(prov), now, completed_at])
     setclause = ", ".join("%s=excluded.%s" % (c, c) for c in cols)
     conn.execute("INSERT INTO org_strategy (org_id, %s) VALUES (%s) ON CONFLICT(org_id) DO UPDATE SET %s"

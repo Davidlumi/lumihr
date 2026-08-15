@@ -657,7 +657,9 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     -- population positions (2026-08-15): a listed company's strategy is keyed on
     -- executive vs all-employee, which the benchmark CANNOT evidence (no exec pay
     -- data). Captured as DOCUMENT statements only; never wired to the engine.
-    population_targets_json TEXT,  -- [{"label","position","note"}]
+    population_targets_json TEXT,  -- [{"label","position","note"}] keyed on the matrix levels
+    objective_weights TEXT,        -- {objective: points} with a hard total budget
+    action_plan_json  TEXT,        -- the AI-built plan (generated AFTER the strategy + data)
     -- server-side DRAFT: the in-flight capture, saved every step. Deliberately a
     -- blob APART from the live columns so a half-finished capture never reaches the
     -- engine — the live strategy only changes on an explicit save.
@@ -799,6 +801,8 @@ def init_schema(conn=None):
                 "ALTER TABLE org_strategy ADD COLUMN draft_saved_at TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN draft_json TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN population_targets_json TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN objective_weights TEXT",
+                "ALTER TABLE org_strategy ADD COLUMN action_plan_json TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
                 "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",

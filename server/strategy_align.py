@@ -14,9 +14,6 @@ Commitment set per category (the denominator the counts must sum to, brief §12)
   - a POSITION commitment for each position category with a stated stance
     (domain_targets override or the global dial) — status from the engine's own
     target read (`_market_target` alignment), never recomputed here;
-  - the Wellbeing PROVISION commitment (document.commitments) — status from the
-    org's OWN answers to the committed metrics;
-  - the Governance PRACTICE commitment — status from the Governance rules;
   - one commitment per coherence rule whose intent HOLDS (a stated intent is a
     commitment to test). Rules live in data/strategy_coherence_rules.json —
     DAVID OWNS THE CONTENT (R7); this module is only the mechanism.
@@ -44,8 +41,6 @@ OPTIONS_FRAMING = ("Here is the gap. Here is what the market does about it. "
 STATUSES = ("evidenced", "behind_intent", "contradicted", "not_evidenced")
 _STANCE_WORD = {"lag": "below market", "match": "on market", "lead": "above market"}
 _VERDICT_WORD = {"below": "below market", "at": "on market", "above": "above market"}
-# answers that read as "the provision is absent" for a committed provision metric
-_NEGATIVE = ("no", "none", "not offered", "not applicable", "neither")
 
 
 def load_rules(path=None):
@@ -134,8 +129,7 @@ def _intent_holds(rule, strategy, document):
     it = rule.get("intent") or {}
     f = it.get("field") or ""
     if f == "document.segments":
-        seg = (document or {}).get("segments") or {}
-        return bool(seg.get("differentiated"))
+        return False        # scarce-role segments retired 2026-08-15 (no pay data to evidence them)
     if it.get("contains") is not None:
         vals = strategy.get(f) or []
         prov = (strategy.get("provenance") or {}).get(f)
@@ -220,42 +214,11 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
             "evidence": {"source": "category market read", "cut": cut_label},
         })
 
-    # ---- 2. Wellbeing provision commitment (own answers) ----
-    cm = (document.get("commitments") or {})
-    wb = (cm.get("Wellbeing") or {}).get("metric_ids") or []
-    if wb:
-        per, missing, absent = [], [], []
-        for qid in wb:
-            if visible_qids is not None and qid not in visible_qids:
-                missing.append(qid)
-                continue
-            a = (answers.get(qid) or "").strip()
-            if not a:
-                missing.append(qid)
-            elif a.lower().startswith(_NEGATIVE) or a.lower() in _NEGATIVE:
-                absent.append(qid)
-            else:
-                per.append(qid)
-        if absent:
-            status = "contradicted"
-            note = "%d committed provision(s) read absent in your own responses" % len(absent)
-        elif missing:
-            status = "not_evidenced"
-            note = "%d committed provision(s) unanswered — answer them to evidence this" % len(missing)
-        else:
-            status = "evidenced"
-            note = "every committed provision shows in your responses"
-        commitments.append({
-            "id": "provision:Wellbeing", "category": "Wellbeing", "kind": "provision",
-            "intent_label": "offer %d named wellbeing provisions" % len(wb),
-            "status": status,
-            "statement": "You commit to offering %d wellbeing provisions; %s." % (len(wb), note),
-            "evidence": {"source": "your own responses", "metric_ids": wb,
-                         "present": per, "absent": absent, "unanswered": missing},
-        })
+    # (the Wellbeing "what we offer" and Governance "how we operate" commitments were
+    # removed 2026-08-15 — every one of those provisions is already a metric answer, so
+    # the coherence rules below read them directly rather than asking twice.)
 
     # ---- 3. coherence rules (one commitment per HELD intent) ----
-    fired_gov_contradiction = False
     for rule in rules or []:
         if not _intent_holds(rule, strategy, document):
             continue
@@ -267,8 +230,6 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
             status = rule.get("status") or "contradicted"
             statement = (rule.get("statement") or "").replace("{answer}", matched or "") \
                                                      .replace("{answer_detail}", matched or "your response")
-            if rule.get("category") == "Governance & Transparency" and status == "contradicted":
-                fired_gov_contradiction = True
         else:
             status = "evidenced"
             statement = "Stated: %s — your responses are consistent with it." % rule.get("commitment")
@@ -278,23 +239,6 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
             "evidence": {"source": "your own responses", "metric_ids": _rule_metrics(rule.get("evidence") or {}),
                          "answer": matched},
             "rationale": rule.get("rationale"),
-        })
-
-    # ---- 4. Governance practice commitment (member statement, rule-evidenced) ----
-    gv = (cm.get("Governance & Transparency") or {}).get("statement")
-    if gv:
-        if fired_gov_contradiction:
-            status, note = "contradicted", "a stated transparency intent runs against your own responses (see the coherence reads)"
-        elif _dial(strategy, "transparency"):
-            status, note = "evidenced", "your stated transparency position stands beside it without contradiction"
-        else:
-            status, note = "not_evidenced", "no transparency position is stated yet to read it against"
-        commitments.append({
-            "id": "practice:Governance & Transparency", "category": "Governance & Transparency",
-            "kind": "practice", "intent_label": "how we operate (stated)",
-            "status": status,
-            "statement": "Your stated practice: “%s” — %s." % (gv, note),
-            "evidence": {"source": "coherence rules + the stated transparency dial"},
         })
 
     # ---- counts per category — the R5 contract: counts, never a score ----

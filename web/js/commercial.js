@@ -537,17 +537,17 @@ window.BoardPackView = function ({ packId, me, shared, sharedData }) {
                 </tbody>
               </table>` : html`<p class="caption">${ob.coverage_note || "No levers in this area's tranche yet."}</p>`}
           </div>`) : html`<p class="caption">No commitment is behind intent or contradicted — no options to table.</p>`}
-        ${(sr.measures || []).length ? html`
-          <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginTop: "var(--s4)" }}>How we'll know it's working</div>
+        ${sr.action_plan && (sr.action_plan.actions || []).length ? html`
+          <div class="caption" style=${{ fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginTop: "var(--s4)" }}>The plan</div>
           <table class="data" style=${{ marginTop: "var(--s2)" }}>
-            <thead><tr><th>Measure</th><th>Area</th><th>Your current answer</th><th class="num">Peer n</th></tr></thead>
-            <tbody>${sr.measures.map(m => html`
-              <tr key=${m.id}><td><b>${m.title}</b></td><td>${domainLabel(m.category)}</td>
-                <td>${m.your_answer || "Not yet answered"}</td>
-                <td class="num">${m.suppressed ? "below floor" : (m.n != null ? m.n : "—")}</td></tr>`)}
+            <thead><tr><th>Action</th><th>Area</th><th>Horizon</th><th>Expected return</th></tr></thead>
+            <tbody>${sr.action_plan.actions.map((a, i) => html`
+              <tr key=${i}><td><b>${a.title}</b><div class="caption">${a.why}</div></td>
+                <td>${domainLabel(a.category || "")}</td><td class="caption">${a.horizon || ""}</td>
+                <td class="caption">${a.roi || ""}</td></tr>`)}
             </tbody>
           </table>
-          ${sr.movement_note ? html`<p class="caption">${sr.movement_note}</p>` : null}` : null}
+          <p class="caption">${sr.action_plan.basis || ""}</p>` : null}
         <${Footer} page=${String(RP1 + 1)} />
       </div>`; })() : null}
 
