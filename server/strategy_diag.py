@@ -183,12 +183,20 @@ def deterministic_diagnosis(payload):
             "option": "Revisit if your strategy or the market moves. A starting point, not advice."}]}
     gaps = sum(1 for f in findings if f["kind"] == "gap")
     overs = len(findings) - gaps
+    # Board-facing by DEFAULT for any organisation without AI consent (2026-08-16), so
+    # this is written as a sentence rather than assembled from fragments — the persona
+    # walkthrough read "Against the strategy you set (objective: Attract), 4 areas
+    # falling short of your aim.", which has no main verb and a parenthetical label.
     bits = []
     if gaps:
-        bits.append("%d area%s falling short of your aim" % (gaps, "" if gaps == 1 else "s"))
+        bits.append("%d %s short of the position you set" % (gaps, "area falls" if gaps == 1 else "areas fall"))
     if overs:
-        bits.append("%d sitting more generously than you intend" % overs)
-    summary = "Against the strategy you set" + (" (objective: %s)" % obj if obj else "") + ", " + " and ".join(bits) + "."
+        bits.append("%d %s more generously than you intend" % (overs, "sits" if overs == 1 else "sit"))
+    import claude_api
+    lead = ("Read against a strategy focused on %s, " % claude_api.objective_phrase(obj)) if obj \
+        else "Against the strategy you set, "
+    summary = lead + " and ".join(bits) + "."
+    summary = summary[0].upper() + summary[1:]
     out = []
     for f in findings:
         if f["kind"] == "gap":

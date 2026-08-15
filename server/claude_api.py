@@ -851,21 +851,61 @@ STRATEGY_SCHEMA = {"type": "object", "required": ["reading", "tensions", "watch"
                    "properties": {"reading": {"type": "string"}, "tensions": {"type": "string"},
                                   "watch": {"type": "string"}}}
 
+# Objective labels are UI chips ("Attract", "Control cost"); dropped into a sentence
+# they read as raw enum values — "your stated focus for this year is attract". These are
+# the same objectives said as a person would say them in a board paper.
+OBJECTIVE_PHRASE = {
+    "attract": "attracting the people you need",
+    "retain": "keeping the people you have",
+    "control cost": "controlling reward cost",
+    "get it right": "getting the fundamentals right",
+    "hold steady": "holding steady",
+}
+
+
+def objective_phrase(label):
+    return OBJECTIVE_PHRASE.get((label or "").strip().lower(), (label or "").strip().lower())
+
+
+def _english_list(items):
+    """a, b and c — an Oxford-free serial list, because a board paper is prose."""
+    items = [str(i) for i in items if str(i).strip()]
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def _deterministic_strategy_commentary(p):
     """The floor: composed purely from the payload, ships whenever the model can't."""
     stance = {"lag": "below market", "match": "on market", "lead": "above market"}.get(
         (p.get("stance") or {}).get("market_position"))
     areas = p.get("areas") or []
     off = p.get("off_aim") or []
+    # This copy is board-facing by DEFAULT for any organisation without AI consent
+    # (2026-08-16: the route no longer 403s, it ships this), so it reads as written
+    # English rather than as assembled fragments. Persona walkthrough found "4 areas
+    # falling short" (no verb), "1 ... read on aim" (subject/verb), a label-colon-list
+    # for tensions, and a raw lowercase enum for the objective.
+    _on = len(areas) - len(off)
     if areas:
-        reading = "Your declared aim is to sit %s, and %s of your %d benchmarked areas currently read on aim." % (
-            stance or "where you choose", "all" if not off else str(len(areas) - len(off)), len(areas))
+        reading = ("Your stated aim is to sit %s. Of the %d areas lumi benchmarks, %s currently %s that aim."
+                   % (stance or "where you choose", len(areas),
+                      "all" if not off else str(_on),
+                      "match" if (_on != 1 or not off) else "matches"))
     else:
-        reading = "Your strategy is set; the position read appears once your benchmark unlocks."
-    tensions = ("Running off aim: %s — where your live position and your declared intent disagree."
-                % ", ".join(off)) if off else "No area currently runs against your declared intent."
-    watch = ("The focus you declared for this year is %s — your signals are ordered accordingly."
-             % p["objective_label"].lower()) if p.get("objective_label") else         "Set a primary objective to order your signals around this year's focus."
+        reading = "Your strategy is set. Your position against it appears once your benchmark unlocks."
+    if not off:
+        tensions = "No area currently runs against your stated intent."
+    elif len(off) == 1:
+        tensions = "One area sits away from your stated intent: %s." % off[0]
+    else:
+        tensions = ("%d areas sit away from your stated intent — %s. In each, where you are and where you "
+                    "said you would be do not yet agree." % (len(off), _english_list(off)))
+    watch = ("Your stated focus this year is %s, and lumi orders what it shows you around that."
+             % objective_phrase(p["objective_label"])) if p.get("objective_label") else \
+            "No primary objective is set, so lumi orders what it shows you neutrally."
     return {"reading": reading, "tensions": tensions, "watch": watch}
 
 def validate_strategy_commentary(parts, payload):
