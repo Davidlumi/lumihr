@@ -330,22 +330,35 @@ const CONSTRAINT_LABEL = { affordability: "Affordability", collective_bargaining
 const CADENCE_LABEL = { annual: "Annually", twice_yearly: "Twice a year", quarterly: "Quarterly", ad_hoc: "Ad hoc" };
 const HORIZON_LABEL = { this_cycle: "This cycle", next_cycle: "Next cycle", multi_cycle: "Multi-cycle" };
 
-function SdDocSec({ num, title, note, isSet, editing, canEdit, onEdit, onCancel, onSave, saving, children, editor }) {
+function SdDocSec({ id, icon, title, note, isSet, editing, canEdit, onEdit, onCancel, onSave, saving, children, editor }) {
+  // 2026-08-15 redesign: every section is a DEFINED card — icon chip, title, an honest
+  // status chip, a real Edit button; an empty section renders an add-tile (a genuine
+  // affordance), never just grey text. The "01 —" numbered eyebrows are retired.
   return html`
-    <section class="sd-sec">
-      <div class="sd-secnum">${num} — ${title}
-        ${canEdit && !editing ? html`<button class="sd-doc-edit no-print" onClick=${onEdit}>${isSet ? "Edit" : "Add"}</button>` : null}
+    <section class="sd-sec sdx-card" id=${id}>
+      <div class="sdx-sechead">
+        <span class=${"sdx-ico" + (isSet ? " on" : "")}><${Icon} name=${icon} size=${15} /></span>
+        <h3 class="sdx-title">${title}</h3>
+        <span class=${"sdx-state " + (isSet ? "set" : "empty")}>${isSet ? "Stated" : "Not yet stated"}</span>
+        ${canEdit && !editing && isSet ? html`<button class="sd-doc-edit no-print" onClick=${onEdit}>Edit</button>` : null}
       </div>
       ${note && !editing ? html`<p class="sd-note sd-ex-cap">${note}</p>` : null}
       ${editing ? html`<div class="sd-doc-editor no-print">${editor}
         <div class="sd-doc-edfoot">
           <button class="btn primary" disabled=${saving} onClick=${onSave}>${saving ? "Saving…" : "Save"}</button>
           <button class="btn quiet" disabled=${saving} onClick=${onCancel}>Cancel</button>
-        </div></div>` : children}
+        </div></div>`
+      : isSet ? children
+      : canEdit ? html`<button class="sdx-addtile no-print" onClick=${onEdit}><${Icon} name="plus" size=${14} /> Add ${title.toLowerCase()}</button>
+                  <p class="sd-stance sd-unstated print-only-line">Not yet stated.</p>`
+      : html`<p class="sd-stance sd-unstated">Not yet stated.</p>`}
     </section>`;
 }
 
-function SdDocSections({ me, data, canEdit, onReload }) {
+function SdDocSections({ me, data, canEdit, onReload, which }) {
+  // `which` (2026-08-15 redesign): render only the named sections, so the document can
+  // group them under the brief's three-part spine (Intent / Position / Delivery).
+  const show = (k) => !which || which.includes(k);
   const doc = data.document || {};
   const [editing, setEditing] = useState(null);     // section key being edited
   const [draft, setDraft] = useState({});
@@ -388,7 +401,7 @@ function SdDocSections({ me, data, canEdit, onReload }) {
 
   return html`
     <${React.Fragment}>
-      <${SdDocSec} num="04" title="Our reward principles" isSet=${(doc.principles || []).length > 0}
+      ${show("principles") && html`<${SdDocSec} id="sdx-principles" icon="star" title="Our reward principles" isSet=${(doc.principles || []).length > 0}
         canEdit=${canEdit} editing=${editing === "principles"} saving=${saving}
         onEdit=${() => open("principles", { principles: [...(doc.principles || [])], seg: { ...seg } })}
         onCancel=${close} onSave=${() => save({ principles: (draft.principles || []).filter(p => p.trim()),
@@ -408,9 +421,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
         ${(doc.principles || []).length ? html`<ol class="sd-principles">
             ${doc.principles.map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>` : notStated}
         ${seg.differentiated ? html`<p class="sd-note">Pay is deliberately differentiated for: <b>${(seg.segments || []).join(", ") || "named segments"}</b>.</p>` : null}
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="05" title="Who we compare ourselves to" isSet=${true}
+      ${show("comparator") && html`<${SdDocSec} id="sdx-comparator" icon="users" title="Who we compare ourselves to" isSet=${true}
         note="The comparator in words — figures live in the benchmark, not here."
         canEdit=${canEdit} editing=${editing === "comparator"} saving=${saving}
         onEdit=${() => open("comparator", { comparator_cut: doc.comparator_cut || "all" })}
@@ -428,9 +441,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
           <p class="sd-note">A saved peer group can't be deleted while it is this strategy's comparator.</p>
         </div>`}>
         <p class="sd-stance">${orgCompareWords(me, doc)}</p>
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="06" title="What constrains us" isSet=${!!((cons.selected || []).length || cons.notes)}
+      ${show("constraints") && html`<${SdDocSec} id="sdx-constraints" icon="anchor" title="What constrains us" isSet=${!!((cons.selected || []).length || cons.notes)}
         canEdit=${canEdit} editing=${editing === "constraints"} saving=${saving}
         onEdit=${() => open("constraints", { sel: [...(cons.selected || [])], notes: cons.notes || "" })}
         onCancel=${close} onSave=${() => save({ constraints: { selected: draft.sel || [], notes: draft.notes || "" } })}
@@ -444,9 +457,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
         </div>`}>
         ${(cons.selected || []).length || cons.notes ? html`
           <p class="sd-stance">${(cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(" · ")}${cons.notes ? (((cons.selected || []).length ? " — " : "") + cons.notes) : ""}</p>` : notStated}
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="07" title="How reward is governed" isSet=${!!Object.keys(gov).length}
+      ${show("governance") && html`<${SdDocSec} id="sdx-governance" icon="shield" title="How reward is governed" isSet=${!!Object.keys(gov).length}
         canEdit=${canEdit} editing=${editing === "governance"} saving=${saving}
         onEdit=${() => open("governance", { ...gov })}
         onCancel=${close} onSave=${() => save({ reward_governance: draft })}
@@ -469,9 +482,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
              ["Effective date", gov.effective_date]].filter(r => r[1]).map(([k, v]) => html`
             <div key=${k} class="sd-led-row"><span class="sd-led-name">${k}</span><span class="sd-led-val">${v}</span><span class="sd-led-why"></span></div>`)}
         </div>` : notStated}
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="08" title="What we offer and how we operate" isSet=${!!(wb.length || gvStmt)}
+      ${show("commitments") && html`<${SdDocSec} id="sdx-commitments" icon="heart" title="What we offer and how we operate" isSet=${!!(wb.length || gvStmt)}
         note="Wellbeing is measured by what's offered, not a market rate; governance by how you operate — stated here as commitments, never positions."
         canEdit=${canEdit} editing=${editing === "commitments"} saving=${saving}
         onEdit=${() => open("commitments", { wb: [...wb], stmt: gvStmt })}
@@ -494,9 +507,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
         ${wb.length ? html`<p class="sd-stance"><b>Wellbeing — we offer:</b> ${wb.map(mTitle).join(" · ")}</p>` : null}
         ${gvStmt ? html`<p class="sd-stance"><b>Governance —</b> ${gvStmt}</p>` : null}
         ${!wb.length && !gvStmt ? notStated : null}
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="09" title="How we'll know it's working" isSet=${(doc.measures || []).length > 0}
+      ${show("measures") && html`<${SdDocSec} id="sdx-measures" icon="table" title="How we'll know it's working" isSet=${(doc.measures || []).length > 0}
         note="Measures are metrics lumi already measures — the review reports them against your comparator."
         canEdit=${canEdit} editing=${editing === "measures"} saving=${saving}
         onEdit=${() => open("measures", { m: [...(doc.measures || [])] })}
@@ -517,9 +530,9 @@ function SdDocSections({ me, data, canEdit, onReload }) {
         </div>`}>
         ${(doc.measures || []).length ? html`<ol class="sd-principles">
           ${doc.measures.map(qid => html`<li key=${qid}>${mopts ? mTitle(qid) : qid}</li>`)}</ol>` : notStated}
-      <//>
+      <//>`}
 
-      <${SdDocSec} num="10" title="What changes this year" isSet=${(doc.roadmap || []).length > 0}
+      ${show("roadmap") && html`<${SdDocSec} id="sdx-roadmap" icon="clock" title="What changes this year" isSet=${(doc.roadmap || []).length > 0}
         canEdit=${canEdit} editing=${editing === "roadmap"} saving=${saving}
         onEdit=${() => open("roadmap", { items: (doc.roadmap || []).map(r => ({ ...r })) })}
         onCancel=${close} onSave=${() => save({ roadmap: (draft.items || []).filter(r => (r.title || "").trim()) })}
@@ -537,7 +550,7 @@ function SdDocSections({ me, data, canEdit, onReload }) {
         </div>`}>
         ${(doc.roadmap || []).length ? html`<ol class="sd-principles">
           ${doc.roadmap.map((r, i) => html`<li key=${i}>${r.title}${r.horizon ? html` <span class="sd-doc-meta">· ${HORIZON_LABEL[r.horizon] || r.horizon}</span>` : ""}</li>`)}</ol>` : notStated}
-      <//>
+      <//>`}
     <//>`;
 }
 
@@ -610,23 +623,71 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
     ? ((strat.benefits_lead || []).length ? "Leads on " + (strat.benefits_lead || []).map(x => (BENEFITS.find(b => b.v === x) || {}).t.toLowerCase()).join(", ") : null)
     : (strat[f] ? labelOf(f, strat[f]) : null);
   const ctxBits = [];   // every dial is live post-2026-08-09 — the demoted strip retired
-  // FIXED numbering — sections must not renumber as async fetches resolve
-  // (04-10 are the document sections rendered by SdDocSections)
-  const NUM = { stance: "01", exhibit: "02", positions: "03", reading: "11" };
+  // ---- 2026-08-15 redesign: defined sections + progress ----
+  // The document's section map drives BOTH the jump-nav (state dots) and the
+  // completeness meter. `live` sections read the benchmark and never count as
+  // "to write"; the meter counts the eight authored sections only.
+  const _doc = data.document || {};
+  const _cm = _doc.commitments || {};
+  const SECTIONS = [
+    { id: "sdx-stance", icon: "flag", label: "The stance", set: !!data.completed_at, part: 1 },
+    { id: "sdx-principles", icon: "star", label: "Principles", set: (_doc.principles || []).length > 0, part: 1 },
+    { id: "sdx-comparator", icon: "users", label: "Comparator", set: true, part: 1 },
+    { id: "sdx-constraints", icon: "anchor", label: "Constraints", set: !!(((_doc.constraints || {}).selected || []).length || (_doc.constraints || {}).notes), part: 1 },
+    { id: "sdx-governance", icon: "shield", label: "Governance", set: !!Object.keys(_doc.reward_governance || {}).length, part: 1 },
+    { id: "sdx-exhibit", icon: "target", label: "Position vs intent", set: doms.length > 0, part: 2, live: true },
+    { id: "sdx-positions", icon: "sliders", label: "The positions", set: !!data.completed_at, part: 2, live: true },
+    { id: "sdx-commitments", icon: "heart", label: "Commitments", set: !!((((_cm["Wellbeing"] || {}).metric_ids) || []).length || (_cm["Governance & Transparency"] || {}).statement), part: 2 },
+    { id: "sdx-measures", icon: "table", label: "Measures", set: (_doc.measures || []).length > 0, part: 3 },
+    { id: "sdx-roadmap", icon: "clock", label: "Roadmap", set: (_doc.roadmap || []).length > 0, part: 3 },
+  ];
+  const METER = SECTIONS.filter(s => !s.live);
+  const statedN = METER.filter(s => s.set).length;
+  const jump = (id) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const SecHead = ({ icon, title, on = true, chip = null }) => html`
+    <div class="sdx-sechead">
+      <span class=${"sdx-ico" + (on ? " on" : "")}><${Icon} name=${icon} size=${15} /></span>
+      <h3 class="sdx-title">${title}</h3>
+      ${chip}
+    </div>`;
   return html`
-    <div class="sd-wrap">
-      <div class="sd-actions no-print">
-        <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / save as PDF</button>
-        <label class="sd-evi-toggle" title="Off by default — the exported document describes your comparator in words, with no peer figures (your ruling R1).">
-          <input type="checkbox" checked=${evidenceInPrint} onChange=${e => setEvidenceInPrint(e.target.checked)} />
-          Include live position evidence in the export</label>
-        ${canEdit ? html`<button class="btn" disabled=${approving} onClick=${approve} title="Stamp this as an approved version — the review always cites a specific version.">
-          ${approving ? "Approving…" : (ver ? "Approve v" + (ver.version + 1) : "Approve v1")}</button>` : null}
-        ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
+    <div class="sd-wrap sdx">
+      ${/* ---- hero: identity + status + progress + actions (screen only) ---- */ ""}
+      <div class="sdx-hero no-print">
+        <div class="sdx-hero-main">
+          <div class="sd-eyebrow sdx-eyebrow">Reward strategy</div>
+          <h1 class="sdx-org">${orgName}</h1>
+          <div class="sdx-chips">
+            ${ver ? html`<span class="sdx-chip ok"><${Icon} name="check" size=${12} /> Version ${ver.version} · approved ${fmtDate(ver.approved_at)}</span>`
+                  : html`<span class="sdx-chip draft">Draft — not yet approved</span>`}
+            ${ver && ver.dirty ? html`<span class="sdx-chip warn">edits since approval</span>` : null}
+            ${when ? html`<span class="sdx-chip">Captured ${when}</span>` : null}
+          </div>
+        </div>
+        <div class="sdx-hero-side">
+          <div class="sdx-actions">
+            ${canEdit ? html`<button class="btn primary" onClick=${onEdit}><${Icon} name="pencil" size=${13} /> Edit strategy</button>` : null}
+            ${canEdit ? html`<button class="btn" disabled=${approving} onClick=${approve} title="Stamp this as an approved version — the review always cites a specific version.">
+              ${approving ? "Approving…" : (ver ? "Approve v" + (ver.version + 1) : "Approve v1")}</button>` : null}
+            <button class="btn" onClick=${() => { const t = document.title; document.title = "lumi — " + orgName + " — Reward strategy — " + fmtDate(); window.print(); document.title = t; }}><${Icon} name="download" size=${14} /> Print / PDF</button>
+          </div>
+          <div class="sdx-meter" role="img" aria-label=${"Document " + statedN + " of " + METER.length + " sections stated"}>
+            <div class="sdx-meter-line"><b>${statedN} of ${METER.length}</b> sections stated</div>
+            <div class="sdx-meter-bar"><i style=${{ width: (100 * statedN / METER.length) + "%" }}></i></div>
+          </div>
+          <label class="sd-evi-toggle" title="Off by default — the exported document describes your comparator in words, with no peer figures (your ruling R1).">
+            <input type="checkbox" checked=${evidenceInPrint} onChange=${e => setEvidenceInPrint(e.target.checked)} />
+            Include live position evidence in the export</label>
+        </div>
       </div>
+      ${/* ---- section jump-nav with state dots (screen only) ---- */ ""}
+      <nav class="sdx-nav no-print" aria-label="Document sections">
+        ${SECTIONS.map(s => html`<button key=${s.id} class="sdx-nav-chip" onClick=${() => jump(s.id)}>
+          <span class=${"sdx-dot" + (s.set ? " on" : "")}></span>${s.label}</button>`)}
+      </nav>
       <div class="strat-pdf-head" aria-hidden="true"><b>lumi</b> · Reward strategy · ${orgName}${when ? " · captured " + when : ""} · generated ${fmtDate()}</div>
-      <article class="sd-doc">
-        <header class="sd-mast" style=${{ "--i": 0 }}>
+      <article class="sd-doc sdx-doc">
+        <header class="sd-mast sdx-printmast">
           <div>
             <div class="sd-eyebrow">Reward strategy</div>
             <div class="sd-org">${orgName}</div>
@@ -639,21 +700,28 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           </div>
         </header>
 
-        <section class="sd-sec" style=${{ "--i": 1 }}>
-          <div class="sd-secnum">${NUM.stance} — The stance</div>
+        <div class="sdx-part"><span>Part 1</span> Intent — what we say</div>
+
+        <section class="sd-sec sdx-card" id="sdx-stance">
+          <${SecHead} icon="flag" title="The stance" chip=${html`<span class="sdx-state live">From your dials</span>`} />
           ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"sd-stance" + (i === 0 ? " lead" : "")}>${s}</p>`)
             : html`<p class="sd-stance">No positions set yet — your benchmark is read neutrally.</p>`}
           <div class="sd-note">Below or above market here is a choice, not a verdict — lumi reads your numbers through it.</div>
         </section>
 
+        <${SdDocSections} me=${me} data=${data} canEdit=${canEdit} onReload=${onReload}
+          which=${["principles", "comparator", "constraints", "governance"]} />
+
+        <div class="sdx-part"><span>Part 2</span> Position — what the data shows</div>
+
         ${hero === null ? html`
-        <section class="sd-sec" style=${{ "--i": 2 }}>
-          <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
+        <section class="sd-sec sdx-card" id="sdx-exhibit">
+          <${SecHead} icon="target" title="Position against intent" />
           <div class="sd-note">Reading your live position…</div>
         </section>` : doms.length ? html`
-        <section class=${"sd-sec" + (evidenceInPrint ? "" : " no-print")} style=${{ "--i": 3 }}>
-          <div class="sd-secnum">${NUM.exhibit} — Position against intent
-            <span class="sd-secnote">${offAim.length ? offAim.length + " of " + doms.length + " areas off strategy" : "all " + doms.length + " areas on strategy"} · live · ${defCut && defCut !== "all" ? "vs your default peer group" : "vs all peers"}</span></div>
+        <section class=${"sd-sec sdx-card" + (evidenceInPrint ? "" : " no-print")} id="sdx-exhibit">
+          <${SecHead} icon="target" title="Position against intent"
+            chip=${html`<span class="sdx-state live">${offAim.length ? offAim.length + " of " + doms.length + " off strategy" : "all on strategy"} · live</span>`} />
           <p class="sd-note sd-ex-cap">Each row places your live benchmark against where you aim to sit. The shaded band is your strategy; the dot is where you actually land. Inside the band is on strategy.</p>
           <div class="sd-ex-row sd-ex-head" aria-hidden="true">
             <span class="sd-axis-key"><span class="sd-zone-swatch"></span> your strategy <span class="sd-mark actual"></span> your position</span>
@@ -670,13 +738,13 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
               </a>`; })}
           </div>
         </section>` : html`
-        <section class="sd-sec" style=${{ "--i": 4 }}>
-          <div class="sd-secnum">${NUM.exhibit} — Position against intent</div>
+        <section class="sd-sec sdx-card" id="sdx-exhibit">
+          <${SecHead} icon="target" title="Position against intent" on=${false} />
           <div class="sd-note">Aim-vs-position appears once your benchmark unlocks.</div>
         </section>`}
 
-        <section class="sd-sec" style=${{ "--i": 5 }}>
-          <div class="sd-secnum">${NUM.positions} — The positions</div>
+        <section class="sd-sec sdx-card" id="sdx-positions">
+          <${SecHead} icon="sliders" title="The positions" chip=${html`<span class="sdx-state live">From your dials</span>`} />
           <div class="sd-ledger">
             ${philosophy.map(f => { const v = valOf(f); return html`
               <div key=${f} class=${"sd-led-row" + (v ? "" : " unset")}>
@@ -694,17 +762,23 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
           ${ctxBits.length ? html`<div class="sd-ctx">Noted for context — ${ctxBits.join(" · ")}</div>` : null}
         </section>
 
-        <${SdDocSections} me=${me} data=${data} canEdit=${canEdit} onReload=${onReload} />
+        <${SdDocSections} me=${me} data=${data} canEdit=${canEdit} onReload=${onReload}
+          which=${["commitments"]} />
+
+        <div class="sdx-part"><span>Part 3</span> Delivery — how we'll run it</div>
+
+        <${SdDocSections} me=${me} data=${data} canEdit=${canEdit} onReload=${onReload}
+          which=${["measures", "roadmap"]} />
 
         ${ai === undefined && aiDark && canEdit ? html`
-        <section class="sd-sec no-print">
-          <div class="sd-secnum">${NUM.reading} — lumi's reading</div>
+        <section class="sd-sec sdx-card no-print" id="sdx-reading">
+          <${SecHead} icon="sparkle" title="lumi's reading" on=${false} />
           <div class="sd-note">A short AI reading of this strategy against your live position appears here once AI insights are enabled for the platform.</div>
         </section>` : null}
         ${ai !== undefined ? html`
-        <section style=${{ "--i": 6 }} class=${"sd-sec sd-ai" + (ai ? "" : " no-print")}>
-          <div class="sd-secnum">${NUM.reading} — lumi's reading
-            <span class="sd-secnote">AI · grounded only in the figures on this page</span></div>
+        <section id="sdx-reading" class=${"sd-sec sdx-card sd-ai" + (ai ? "" : " no-print")}>
+          <${SecHead} icon="sparkle" title="lumi's reading"
+            chip=${html`<span class="sdx-state live">AI · grounded only in the figures on this page</span>`} />
           ${ai ? html`
             <div role="status" class="sr-only">Reading generated.</div>
             <p class="sd-ai-p"><b>Where you stand.</b> ${ai.reading}</p>

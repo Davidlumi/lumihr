@@ -4619,3 +4619,89 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .pack-footer-wrap { margin-top: auto; }
 .pack-footer-wrap .pack-footer { margin-top: 0; }
 .pack-provline { font-size: var(--fs-micro); color: var(--ink-faint); padding-top: 4mm; }
+
+/* ==== Reward strategy redesign (2026-08-15): defined sections + progress ==== */
+/* the stagger trap: rise-in on a 2900px column left later sections on stale
+   composited layers (the riseIn fill-mode family) — killed outright */
+.sdx-doc > * { animation: none !important; opacity: 1 !important; transform: none !important; }
+.sdx.sd-wrap { max-width: 980px; }
+/* the doc shell becomes a spaced column of cards, not one flat sheet */
+.sdx .sd-doc { background: transparent; border: 0; box-shadow: none; overflow: visible;
+  display: flex; flex-direction: column; gap: var(--s4); }
+.sdx-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: var(--s5) var(--s6) !important; }
+.sdx .sd-sec { border-bottom: 0; }
+.sdx .sd-docfoot { border: 0; border-radius: 12px; }
+/* hero */
+.sdx-hero { display: flex; justify-content: space-between; gap: var(--s6); flex-wrap: wrap;
+  background: linear-gradient(135deg, var(--navy) 0%, #2A3F78 62%, #33499B 100%); color: #fff;
+  border-radius: 18px; padding: var(--s6); margin-bottom: var(--s4); box-shadow: var(--shadow-card); }
+.sdx-hero-main { min-width: 0; }
+.sdx-eyebrow { opacity: .78; }
+.sdx-org { font-family: var(--font-head); font-size: var(--fs-display); line-height: var(--lh-display);
+  font-weight: 700; margin: 0 0 var(--s3); overflow-wrap: anywhere; }
+.sdx-chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.sdx-chip { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-micro); font-weight: 600;
+  padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.2); }
+.sdx-chip.ok { background: rgba(59,160,110,.28); border-color: rgba(120,220,170,.45); }
+.sdx-chip.draft { background: rgba(255,255,255,.18); }
+.sdx-chip.warn { background: rgba(224,116,79,.3); border-color: rgba(255,180,140,.5); }
+.sdx-hero-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s3); }
+.sdx-actions { display: flex; gap: var(--s2); flex-wrap: wrap; justify-content: flex-end; }
+.sdx-hero .btn { border-color: rgba(255,255,255,.32); background: rgba(255,255,255,.1); color: #fff; }
+.sdx-hero .btn:hover { background: rgba(255,255,255,.18); }
+.sdx-hero .btn.primary { background: #fff; color: var(--navy); border-color: #fff; }
+.sdx-hero .btn.primary:hover { background: #EDF1FF; }
+.sdx-meter { min-width: 240px; width: 100%; max-width: 300px; }
+.sdx-meter-line { font-size: var(--fs-caption); opacity: .92; margin-bottom: 5px; text-align: right; }
+.sdx-meter-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,.18); overflow: hidden; }
+.sdx-meter-bar i { display: block; height: 100%; border-radius: 4px; background: #fff;
+  transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.sdx-hero .sd-evi-toggle { color: rgba(255,255,255,.75); }
+/* section jump-nav */
+.sdx-nav { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s4); }
+.sdx-nav-chip { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.sdx-nav-chip:hover { border-color: var(--blue); color: var(--blue); }
+.sdx-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.6px solid var(--ink-faint); background: transparent; }
+.sdx-dot.on { background: var(--green, #3BA06E); border-color: var(--green, #3BA06E); }
+/* part headers */
+.sdx-part { display: flex; align-items: baseline; gap: var(--s3); margin: var(--s3) var(--s2) calc(-1 * var(--s2));
+  font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 700; color: var(--ink); }
+.sdx-part span { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--blue); background: var(--tile); border-radius: 6px; padding: 2px 8px; }
+/* section heads */
+.sdx-sechead { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); }
+.sdx-ico { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border-radius: 9px; background: var(--tile); color: var(--ink-faint); flex: none; }
+.sdx-ico.on { background: var(--navy); color: #fff; }
+.sdx-title { font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 700; margin: 0; color: var(--ink); }
+.sdx-state { font-size: var(--fs-micro); font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.sdx-state.set { color: #2E7D54; background: #E7F4EC; }
+.sdx-state.empty { color: var(--ink-faint); background: var(--tile); }
+.sdx-state.live { color: var(--blue); background: var(--tile); margin-left: auto; }
+.sdx-sechead .sd-doc-edit { margin-left: auto; }
+.sdx-sechead .sdx-state.set + .sd-doc-edit, .sdx-sechead .sdx-state.empty + .sd-doc-edit { margin-left: auto; }
+.sdx-sechead .sdx-state.set, .sdx-sechead .sdx-state.empty { margin-left: auto; }
+.sdx-sechead .sdx-state.set ~ .sd-doc-edit, .sdx-sechead .sdx-state.empty ~ .sd-doc-edit { margin-left: var(--s2); }
+/* empty-section add tile */
+.sdx-addtile { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: var(--s4); font: inherit; font-size: var(--fs-label); font-weight: 600; color: var(--blue);
+  background: transparent; border: 1.6px dashed var(--border); border-radius: 12px; cursor: pointer; }
+.sdx-addtile:hover { border-color: var(--blue); background: var(--tile); }
+.print-only-line { display: none; }
+/* the masthead is print-only now — the hero owns the screen */
+.sdx-printmast { display: none; }
+@media print {
+  .sdx-printmast { display: flex; }
+  .print-only-line { display: block; }
+  .sdx .sd-doc { display: block; background: var(--surface); }
+  .sdx-card { border: 0; border-radius: 0; box-shadow: none; border-bottom: 1px solid var(--border); }
+  .sdx-part { margin: var(--s4) var(--s6) 0; }
+}
+@media (max-width: 760px) {
+  .sdx-hero-side { align-items: stretch; width: 100%; }
+  .sdx-meter { max-width: none; }
+  .sdx-meter-line { text-align: left; }
+}
