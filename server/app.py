@@ -5549,11 +5549,25 @@ async def get_strategy_alignment(request: Request):
     # never rule evidence — the rules speak in whole-question responses)
     answers = {k[0]: v for k, v in (org_answers_for(org) or {}).items()
                if (k[1] or "") == "" and isinstance(v, str)}
+    _cut_label = (cut.get("label") or ("All peers" if cut.get("dim") == "all" else cut.get("value") or "your peer group"))
     out = strategy_align.evaluate(
         strategy_align.load_rules(), strat, st.get("document") or {}, answers,
         hero.get("domains") or [], STRATEGY_POSITION_EXCLUDE,
         visible_qids=set(org_visible_questions(org)),
-        cut_label=(cut.get("label") or ("All peers" if cut.get("dim") == "all" else cut.get("value") or "your peer group")))
+        cut_label=_cut_label)
+    # everything the Reward plan page needs, in one call: where you are (the per-category
+    # target read), the gaps (commitments), what the market does about them (levers), and
+    # the plan itself.
+    out["options"] = strategy_align.options_for(out["commitments"], visible_qids=set(org_visible_questions(org)))
+    out["domains"] = [{"name": d["name"],
+                       "target": d.get("target"),
+                       "position": {"verdict": (d.get("position") or {}).get("verdict"),
+                                    "depth_pctl": (d.get("position") or {}).get("depth_pctl")} if d.get("position") else None}
+                      for d in (hero.get("domains") or []) if d.get("target")]
+    out["plan"] = (st.get("document") or {}).get("action_plan")
+    out["cut_label"] = _cut_label
+    out["objective"] = OBJECTIVE_LABELS.get(strat.get("primary_objective"))
+    out["stance"] = strat.get("market_position")
     out["ok"] = True
     return out
 
