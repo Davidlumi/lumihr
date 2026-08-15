@@ -829,6 +829,9 @@ COMMENTARY_SCHEMA = {
 # hash, which can't see a change to _measures_text / _deterministic_commentary.
 COMMENTARY_GEN_VERSION = "2026-06-18.sdk-opus48-v4-malformguard"
 STRATEGY_COMMENTARY_VERSION = "2026-08-08.strategy-v1"
+# bump when DIAGNOSIS_SYSTEM/SCHEMA changes — it keys the diagnosis cache, so a
+# prompt change must invalidate every stored narrative rather than serve the old one
+DIAGNOSIS_VERSION = "2026-08-16.diagnosis-v1"
 
 # ---- strategy reading: the declared strategy against the live position ----------
 STRATEGY_SYSTEM = (

@@ -2576,6 +2576,23 @@ async def strategy_diagnosis(request: Request):
     payload = strategy_diag.build_diagnosis_payload(
         strat, findings, (hero.get("market") or {}).get("target"), obj_label, on_plan,
         bool(get_meta("synthetic_pool", False)))
+    # Cached on the payload hash, same store and contract as the strategy commentary
+    # (2026-08-16). This used to regenerate on EVERY call, which was affordable when
+    # only the Overview's collapsible opened it — the Reward Plan report reads it on
+    # every open, and a document people re-read must not bill a model call each time.
+    # `force` re-generates; the hash means a changed position invalidates by itself.
+    _dhash = hashlib.sha256(
+        (j(payload) + "|" + claude_api.DIAGNOSIS_VERSION).encode()).hexdigest()[:16]
+    _body = await _json(request)
+    if not _body.get("force"):
+        _row = conn.execute(
+            "SELECT * FROM metric_commentary WHERE org_id=? AND question_id=? AND cut_key=? AND payload_hash=?",
+            (org["org_id"], "__diagnosis__", "strategy", _dhash)).fetchone()
+        if _row:
+            _p = uj(_row["text"], {})
+            return {"ok": True, "parts": _p, "source": _row["source"], "cached": True,
+                    "generated_at": _row["created_at"], "on_plan": on_plan,
+                    "caveats": {"illustrative": payload["illustrative_sample_data"]}}
     _ai_generation_or_429(org)
     res = await to_thread.run_sync(claude_api.generate_strategy_diagnosis, payload)
     # Signpost: attach each finding's domain so the Signals page can deep-link the
@@ -2587,7 +2604,14 @@ async def strategy_diagnosis(request: Request):
     if len(nf) == len(findings):
         for narrated, computed in zip(nf, findings):
             narrated["area"] = computed.get("area")
-    return {"ok": True, "parts": parts, "source": res["source"],
+    # store the NARRATED parts (areas already attached) so a cache hit is byte-identical
+    # to a fresh generation — a reader must never see the document change on reload
+    conn.execute(
+        "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
+        "VALUES (?,?,?,?,?,?)",
+        (org["org_id"], "__diagnosis__", "strategy", _dhash, j(parts), res["source"]))
+    conn.commit()
+    return {"ok": True, "parts": parts, "source": res["source"], "cached": False,
             # on_plan = competitive domains tracking with intent (engine-derived, not
             # model output) — the frontend renders them as a quiet "on plan" line that
             # can still signpost to each domain's signals.
