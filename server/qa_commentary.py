@@ -302,6 +302,37 @@ check("V", "validator rejects: fabricated 'you' on an unanswered metric", not ok
 okv, why = ca.validate_commentary(gen(behind), behind)
 check("V", "validator accepts a faithful commentary (no false positives)", okv, why)
 
+# ---- every structured-output schema must be API-shaped ------------------------
+# The structured-output API rejects an object node without an explicit
+# additionalProperties (400), and the caller's deterministic floor makes that
+# rejection look like a normal fallback. STRATEGY_SCHEMA shipped without it and so
+# strategy commentary never produced model output at all — silently, for its whole
+# life. A schema-shape check is the only thing that catches this without a live key.
+def _obj_nodes(node, path="$"):
+    out = []
+    if isinstance(node, dict):
+        if node.get("type") == "object":
+            out.append((path, node))
+        for k, v in node.items():
+            out += _obj_nodes(v, path + "." + str(k))
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            out += _obj_nodes(v, "%s[%d]" % (path, i))
+    return out
+
+_bad = []
+_seen = 0
+for _nm in [n for n in dir(ca) if n.endswith("_SCHEMA")]:
+    _sch = getattr(ca, _nm)
+    if not isinstance(_sch, dict):
+        continue
+    for _path, _node in _obj_nodes(_sch, _nm):
+        _seen += 1
+        if _node.get("additionalProperties") is not False:
+            _bad.append(_path)
+check("V", "every object node in every *_SCHEMA sets additionalProperties: false",
+      _seen > 0 and not _bad, "checked %d nodes; missing on %s" % (_seen, _bad))
+
 print()
 print("=" * 100)
 fails = [(s, n, d) for s, n, ok, d in RESULTS if not ok]
