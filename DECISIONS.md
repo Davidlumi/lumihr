@@ -18590,3 +18590,35 @@ Plan sheet budget 7 → 5 (the first sheet also carries the summary lede; three 
 their why and return overran A4 by ~55px). 12 sheets, none over A4, all three generators
 returning `model`. `RewardPlanPage` 184 lines → 17; `SdAxis` and its zone helpers retired with
 the painted exhibit the report states as a table. Suite 15/15. ?v=641.
+
+## 2026-08-16 (d) — One document, and you can edit it
+
+David: *"I think we should have the strategy and plan on one page — but build in ways the user
+can edit and adjust any of the sections. So you have the PDF delivered and then have an edit
+functionality."*
+
+**One page.** A `full` document kind runs both spines in a single artefact: what we intend
+(intent, dials, principles, populations, tensions), then where we stand and what we will do
+(position, findings, gaps by area, the plan), closing on governance and method. 17 sheets on
+the demo org, every one exactly A4. Section numbers now derive from the page list — once two
+spines merge, hardcoded numbers collide and skip. `/plan` and both `/report/*` URLs resolve
+here, and the rail carries one entry instead of two.
+
+**Editing, split by what the content actually is.** This is the ruling that matters:
+
+- **Generated prose** — inline editor. Hover a section, Edit, retype; your wording IS the
+  document, marked *Your wording*, with *Restore lumi's wording* to drop back to the generated
+  text. Stored in `org_strategy.narrative_overrides_json` via `PUT /api/strategy/narrative`.
+- **Captured statements** — no textarea. Their affordance deep-links into the wizard at the
+  step that captures them (*Change the dials*, *Edit principles*, *Edit levels*), because you
+  change these by changing what you stated, not by retyping a rendering of it.
+- **Computed figures** — no editor at all, by construction. `NARRATIVE_KEYS` is a closed list;
+  positions, counts, gaps, ROI, domains and commitments all 400. A document that let you retype
+  what the engine found on your own data would stop being evidence and start being an assertion
+  with a lumi logo on it. Edit those at source: the wizard for what you stated, your data for
+  what you are.
+
+`qa_strategy` asserts both halves — prose saves and round-trips, clearing restores, six
+computed section names are refused, and an over-long body 400s rather than silently truncating.
+Verified end-to-end on the AI rig: edit → save → reload → persisted → restore → generated text
+back; the *Change the dials* link lands on the right wizard step. Suite 15/15. ?v=643.
