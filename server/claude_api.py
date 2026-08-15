@@ -7,10 +7,13 @@ API is unreachable — callers receive ok=False and fall back to the determinist
 clearly-labelled narrative, so no fabricated numbers ship either way.
 """
 import json
+import logging
 import os
 import re
 
 import anthropic
+
+log = logging.getLogger("lumi")
 
 import practice_axis
 
@@ -836,7 +839,12 @@ STRATEGY_SYSTEM = (
     "precise, no advice — a description of their strategy against their data. Return JSON only: "
     '{"reading": "…", "tensions": "…", "watch": "…"} — each one to two sentences.')
 
+# additionalProperties MUST be explicit on every object node — the structured-output
+# API rejects the request outright without it (400), and this schema was the one that
+# lacked it, so strategy commentary fell to its deterministic floor on every single
+# call and had never once shipped model output.
 STRATEGY_SCHEMA = {"type": "object", "required": ["reading", "tensions", "watch"],
+                   "additionalProperties": False,
                    "properties": {"reading": {"type": "string"}, "tensions": {"type": "string"},
                                   "watch": {"type": "string"}}}
 
@@ -875,8 +883,14 @@ def generate_strategy_commentary(payload):
     """Three grounded parts on the whole strategy. Model output passes the validator
     or the deterministic floor ships — never an unvalidated sentence."""
     fb = _deterministic_strategy_commentary(payload)
+    # 3000, not 1500: adaptive thinking counts toward max_tokens, and every other
+    # thinking generator here sits at 3000-8000 (the only other 1500 turns thinking off).
     res = call_claude(STRATEGY_SYSTEM, json.dumps(payload, ensure_ascii=False),
-                      max_tokens=1500, schema=STRATEGY_SCHEMA)
+                      max_tokens=3000, schema=STRATEGY_SCHEMA)
+    if not res.get("ok"):
+        # this generator used to drop the reason on the floor, so a call that the API
+        # rejected outright was indistinguishable from one that simply chose the floor
+        log.warning("[lumi] strategy commentary fell back: %s", res.get("error"))
     if res.get("ok"):
         try:
             text = res["text"].strip()
