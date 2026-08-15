@@ -51,6 +51,7 @@ function App() {
       ["/priorities", "Priorities"], ["/pulse", "Pulse"], ["/run-a-pulse", "Run a pulse"],
       ["/benchmark", "Benchmark"], ["/metric/", "Metric"], ["/your-data", "Your data"],
       ["/boardpack", "Board packs"],
+      ["/report/strategy", "Reward strategy document"], ["/report/plan", "Reward plan report"],
       ["/strategy", "Reward strategy"], ["/plan", "Reward plan"], ["/team", "Team"], ["/settings", "Settings"],
       ["/shares", "Manage shares"],
       ["/profile", "Company profile"], ["/how-lumi-works", "How lumi works"], ["/admin", "Console"],
@@ -434,6 +435,7 @@ function App() {
   }
   else if (route.startsWith("/profile")) page = html`<${ProfilePage} me=${me} refreshMe=${refreshMe} />`;
   else if (route.startsWith("/strategy")) page = html`<${StrategyPage} me=${me} />`;
+  else if (route.startsWith("/report/")) page = html`<${RewardReportPage} kind=${route.indexOf("/report/plan") === 0 ? "plan" : "strategy"} me=${me} />`;
   else if (route.startsWith("/plan")) page = html`<${RewardPlanPage} me=${me} />`;
   else if (route.startsWith("/admin")) page = me.user.platform_admin
     ? html`<${AdminConsolePage} me=${me} route=${route} />`

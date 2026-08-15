@@ -4924,3 +4924,107 @@ button.rp-ex-row { width: 100%; font: inherit; text-align: left; background: non
 button.rp-ex-row:hover { background: var(--surface-sunk); }
 button.rp-ex-row:hover .sd-ex-name { color: var(--blue); }
 button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; border-radius: 8px; }
+
+/* ==== Reward documents — A4 artefacts (2026-08-16) ========================== */
+/* Laid out on the board pack's .pack-page chrome so all three documents read as one
+   family; only the interior typography is new. */
+.rr-wrap { padding-bottom: var(--s6); }
+.rr-bar { max-width: 210mm; margin: 0 auto var(--s4); }
+.rr-sheet { font-size: var(--fs-body); line-height: 1.55; color: var(--ink); }
+.rr-body { flex: 1 1 auto; min-height: 0; }
+.rr-h { margin-bottom: var(--s5); }
+.rr-h-n { display: inline-block; font-family: var(--font-head); font-size: var(--fs-caption); font-weight: 700;
+  letter-spacing: .12em; color: var(--blue); margin-bottom: var(--s2); }
+.rr-h-t { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
+  font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.rr-h-s { font-size: var(--fs-label); color: var(--ink-soft); margin: var(--s2) 0 0; max-width: 52em; }
+.rr-sh { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; color: var(--ink);
+  margin: var(--s5) 0 var(--s2); }
+.rr-p { margin: 0 0 var(--s3); max-width: 60em; }
+.rr-lede { font-family: var(--font-head); font-size: var(--fs-subhead); line-height: 1.5; font-weight: 500;
+  color: var(--ink); margin: 0 0 var(--s4); max-width: 56em; }
+.rr-sm { font-size: var(--fs-caption); color: var(--ink-soft); }
+.rr-muted { color: var(--ink-faint); }
+.rr-ol { margin: 0; padding-left: 1.3em; }
+.rr-ol li { margin-bottom: var(--s2); }
+
+/* cover */
+.rr-cover .rr-body { display: flex; align-items: center; }
+.rr-cover-in { width: 100%; }
+.rr-wordmark { font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--blue-deep); letter-spacing: -.02em; }
+.rr-eyebrow { font-size: var(--fs-caption); font-weight: 700; letter-spacing: .16em; color: var(--blue-deep);
+  margin-top: var(--s5); }
+.rr-accent { width: 64px; height: 4px; border-radius: 2px; background: var(--blue); margin: var(--s4) 0 var(--s5); }
+.rr-title { font-family: var(--font-head); font-size: 40px; line-height: 1.1; font-weight: 700;
+  letter-spacing: -0.025em; margin: 0 0 var(--s2); }
+.rr-subtitle { font-family: var(--font-head); font-size: var(--fs-section); color: var(--ink-soft); font-weight: 600; }
+.rr-lead { font-size: var(--fs-body); color: var(--ink-soft); margin: var(--s4) 0 0; max-width: 42em; }
+.rr-cover-meta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3) var(--s5); margin-top: 22mm;
+  padding-top: var(--s4); border-top: 1px solid var(--border); }
+.rr-cover-meta div { font-size: var(--fs-label); font-weight: 600; }
+.rr-cover-meta span { display: block; font-size: var(--fs-micro); font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 2px; }
+
+/* contents + stat band */
+.rr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin: var(--s5) 0;
+  padding: var(--s4) 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.rr-stats b { display: block; font-family: var(--font-head); font-size: var(--fs-metric); line-height: 1.1;
+  font-weight: 700; color: var(--blue); }
+.rr-stats span { font-size: var(--fs-caption); color: var(--ink-soft); }
+.rr-toc { margin-top: var(--s5); }
+.rr-toc-h { font-family: var(--font-head); font-size: var(--fs-caption); font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: var(--s3); }
+.rr-toc-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
+  padding: 5px 0; border-bottom: 1px dotted var(--border); font-size: var(--fs-label); }
+.rr-toc-row i { font-style: normal; color: var(--ink-faint); }
+
+/* tables */
+.rr-table { width: 100%; border-collapse: collapse; margin: var(--s3) 0 var(--s4); font-size: var(--fs-label); }
+.rr-table th { text-align: left; font-size: var(--fs-micro); font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-faint); padding: 0 var(--s3) 6px 0;
+  border-bottom: 1.5px solid var(--ink); }
+.rr-table td { padding: 9px var(--s3) 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.rr-table td:last-child, .rr-table th:last-child { padding-right: 0; }
+.rr-table.tight td { padding: 6px var(--s3) 6px 0; }
+.rr-table tr.rr-unset td { color: var(--ink-faint); }
+.rr-align.a-on_target { color: var(--favourable-ink); }
+.rr-align.a-behind, .rr-align.a-ahead { color: var(--neutral-perf-ink); }
+
+/* callouts, findings, gaps, plan */
+.rr-callout { margin-top: var(--s5); padding: var(--s4) var(--s5); background: var(--surface-sunk);
+  border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0; }
+.rr-callout.quiet { border-left-color: var(--border); }
+.rr-callout-h { font-family: var(--font-head); font-size: var(--fs-caption); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--blue-deep); margin-bottom: var(--s2); }
+.rr-callout.quiet .rr-callout-h { color: var(--ink-faint); }
+.rr-callout .rr-p:last-child { margin-bottom: 0; }
+.rr-finding { padding: var(--s4) 0; border-top: 1px solid var(--border); }
+.rr-finding:first-of-type { border-top: 0; padding-top: 0; }
+.rr-finding-h { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; margin-bottom: var(--s2); }
+.rr-opt { color: var(--ink-soft); }
+.rr-opt span { display: block; font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 2px; }
+.rr-gap { padding: var(--s4) 0; border-top: 1px solid var(--border); }
+.rr-gap:first-of-type { border-top: 0; padding-top: 0; }
+.rr-gap-h { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; color: var(--blue-deep);
+  margin-bottom: var(--s2); }
+.rr-plan { margin: 0; padding-left: 1.3em; }
+.rr-plan li { margin-bottom: var(--s4); }
+.rr-plan-t { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700; margin-bottom: 4px; }
+.rr-roi { display: inline-block; font-size: var(--fs-caption); font-weight: 600; color: var(--favourable-ink);
+  background: var(--favourable-tint); border-radius: 8px; padding: 5px 11px; }
+.rr-roi span { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-right: 6px;
+  font-size: var(--fs-micro); }
+
+/* the on-screen hand-offs that replaced the old final cards */
+.sdx-handoff .row, .rp-handoff .rp-h-row { align-items: center; }
+.rp-handoff .rp-h-row { gap: var(--s5); }
+.rp-handoff .sd-ex-cap { margin-bottom: 0; }
+
+@media print {
+  /* the artefact IS the page: drop the toolbar, keep colour, never clip a sheet */
+  .rr-wrap .no-print { display: none !important; }
+  .rr-sheet { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rr-table tr, .rr-finding, .rr-gap, .rr-plan li, .rr-callout { break-inside: avoid; }
+  .rr-h { break-after: avoid; }
+}

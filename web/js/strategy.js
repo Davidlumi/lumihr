@@ -624,10 +624,15 @@ function StrategyView({ me, data, strat, onEdit, canEdit = true, onReload }) {
         <${SdDocSections} data=${data} canEdit=${canEdit} onEdit=${onEdit} onPlan=${() => nav("/plan")}
           which=${["populations"]} />
 
-        <section class="sd-sec sdx-card no-print">
-          <${SecHead} icon="zap" title="Where you stand against this" chip=${html`<span class="sdx-state live">Live</span>`} />
-          <p class="sd-note sd-ex-cap">Your position against this strategy, the gaps it opens and the plan to close them live in <b>Reward plan</b> — so this document stays a statement of intent.</p>
-          <button class="btn primary" onClick=${() => nav("/plan")}><${Icon} name="zap" size=${13} /> Open your reward plan</button>
+        <section class="sd-sec sdx-card no-print sdx-handoff">
+          <${SecHead} icon="download" title="Take this away" chip=${html`<span class="sdx-state live">Document</span>`} />
+          <p class="sd-note sd-ex-cap">Your <b>Total Reward Strategy</b> as a laid-out document — cover, stated
+            intent, principles, lumi's written reading of it, and the approval record — ready to save as a PDF
+            and put in front of a board.</p>
+          <div class="row" style=${{ gap: "var(--s2)", flexWrap: "wrap" }}>
+            <button class="btn primary" onClick=${() => nav("/report/strategy")}><${Icon} name="download" size=${13} /> Open the strategy document</button>
+            <button class="btn" onClick=${() => nav("/plan")}><${Icon} name="zap" size=${13} /> Where you stand against it</button>
+          </div>
         </section>
 
         <footer class="sd-docfoot" style=${{ "--i": 6 }}>Company facts and choices, not employee data — organisation-level, set by an Admin, shaping how your results are read, never what your people see.</footer>
@@ -1392,6 +1397,20 @@ window.RewardPlanPage = function ({ me }) {
         : html`<${EmptyState} icon="zap" title="No plan built yet"
             body="lumi will turn the gaps above into a sequenced plan — each action with what it typically returns, using the indicative £ from your own benchmark."
             action=${canEdit ? html`<button class="btn small primary" disabled=${busy} onClick=${build}>${busy ? "Building…" : "Build my plan"}</button>` : null} />`}
+      </section>
+
+      ${/* ---- 4. take it away ---- */ ""}
+      <section class="card rp-sec rp-handoff">
+        <div class="rp-h-row">
+          <div>
+            <h2 class="rp-h">Take this away</h2>
+            <p class="sd-note sd-ex-cap">Everything above as a laid-out <b>Reward Position ${"&"} Plan</b> report —
+              executive summary, findings, the gaps with their options and trade-offs, and the plan with what
+              each action returns. Ready to save as a PDF.</p>
+          </div>
+          <button class="btn primary" onClick=${() => nav("/report/plan")}>
+            <${Icon} name="download" size=${13} /> Open the report</button>
+        </div>
       </section>
     </div>`;
 };
