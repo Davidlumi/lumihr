@@ -18762,3 +18762,32 @@ none over A4. Suite 15/15.
 
 **These 24 new levers are Claude-drafted and need David's review**, exactly as the first twelve
 do — the `_readme` records it.
+
+## 2026-08-16 (i) — QA pass on the domain report
+
+Read the rendered output of three domain sheets rather than asserting the structure was right.
+Six defects, all visible on a page meant for a board:
+
+1. **"around the 32th percentile"** — a hardcoded `"th"`. Every percentile ending 1, 2 or 3
+   outside the teens printed wrong. `rrOrdinal()` now handles it.
+2. **"the recommendations below"** — wrong twice over: they sit on the *following* sheet, and on
+   an overspend domain there are none, because the section explains why not. Now direction-aware.
+3. **The follow sheet said its own title twice** — once as the sheet heading, once as an h3
+   immediately beneath.
+4. **Raw category names beside house sentence case** on the same sheet ("Incentives & Recognition"
+   in an engine statement, "Incentives & recognition" in the heading above it). `rrCase()`
+   normalises all generated prose — engine statements, findings, commentary, plan summary.
+5. **Eight of thirty sheets were under 45% full.** The worst were the "what follows" sheets for
+   overspend domains: a whole A4 page for a statement and a two-line explanation, 17% used. A
+   domain now splits only when there is a real options table; otherwise the explanation rides on
+   the read sheet.
+6. That inlining pushed two read sheets past A4, so the signals table shows two rows rather than
+   four on a sheet carrying both halves.
+
+30 sheets → **28**, none over A4, zero raw-case leaks, zero bad ordinals. Print pass confirmed:
+all 15 Edit buttons, all 30 signal/data links, the toolbar and the CTA sit inside `no-print`, so
+the PDF carries no dead controls. Suite 15/15. ?v=653.
+
+Remaining sparse sheets are content-driven, not layout defects: Principles/constraints (15%) and
+Governance (27%) are thin because the demo org has not stated principles, constraints or approval
+detail — a real org fills them.
