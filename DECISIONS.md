@@ -18564,3 +18564,29 @@ strategy it is a place you *do* things, not only a statement you publish.
 `StrategyView` went 202 lines → 109; `SdDocSec` / `SdDocSections` (54 lines of section cards)
 retired with the page that used them. Suite 15/15, verified on the AI rig: 8 sheets, all
 exactly A4, edit → wizard → cancel → document round-trips clean. ?v=639.
+
+## 2026-08-16 (c) — /plan is the report, and the plan generates itself
+
+David: *"do the same for the reward plan so it gets generated."* Two halves, both done.
+
+**The page is the document.** The working screen — hero, axis exhibit, tally tiles, grouped
+gap cards, plan section, hand-off — is replaced by the A4 **Reward Position & Plan** artefact,
+matching what `/strategy` became. `/report/plan` folds into `/plan`; both `/report/*` URLs now
+redirect rather than render a second copy of the same artefact.
+
+**The plan writes itself.** It used to sit behind a *Build my plan* button, so the document
+opened announcing it had no plan — the single worst thing a generated report can say. It now
+builds on first open, gated three ways: only for someone with editor rights (who could have
+pressed the button anyway), only when no plan is stored, and only once (the endpoint persists
+it, so this is one model call per org, not one per view). *Rebuild plan* stays in the toolbar.
+
+**What survived the move.** Each gap area in the document keeps the two exits the screen had —
+that area's signals filtered to its alignment, and the data behind it — as screen-only
+controls. They are `no-print`: a PDF full of dead buttons reads like a broken web page rather
+than a report. Verified end-to-end: *Pay signals* still lands the feed on 8 Pay cards with
+Category and Strategy both filtered.
+
+Plan sheet budget 7 → 5 (the first sheet also carries the summary lede; three actions with
+their why and return overran A4 by ~55px). 12 sheets, none over A4, all three generators
+returning `model`. `RewardPlanPage` 184 lines → 17; `SdAxis` and its zone helpers retired with
+the painted exhibit the report states as a table. Suite 15/15. ?v=641.
