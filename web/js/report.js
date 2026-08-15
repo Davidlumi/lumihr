@@ -162,7 +162,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         // saying it had no plan. It writes itself on first open instead — once only,
         // for someone who could have pressed the button anyway, and never when one is
         // already stored (the endpoint persists it, so this costs one call per org).
-        if (autoPlan && a && a.ok !== false && !a.plan) buildPlan(false);
+        // never auto-build against a locked org: the endpoint would refuse, and a
+        // silent failed call on every open is worse than no call
+        if (autoPlan && a && a.ok !== false && !a.plan && (a.data_state || {}).unlocked !== false) buildPlan(false);
       })
       .catch(e => setErr(e.message));
     loadNarrative(false);
@@ -284,7 +286,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if ((doc.population_targets || []).length) P("Position by employee population", "pops");
     P("Tensions and what to watch", "tension");
   }
-  if (wantsPlan) {
+  // No position read yet (a new org states its strategy BEFORE its data): the whole
+  // position half collapses to one honest page rather than drawing an empty table,
+  // tiles that say "0 off strategy", and a plan CTA the lock would refuse.
+  const dstate = al.data_state || {};
+  const hasPosition = (dstate.positioned || domains.length) > 0 && dstate.unlocked !== false;
+  if (wantsPlan && !hasPosition) {
+    P("Where you'll stand", "awaiting");
+  } else if (wantsPlan) {
     P("Position against intent", "position");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
       Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
@@ -336,9 +345,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             (wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
             || (cm && cm.parts && cm.parts.reading) || ""} />`}
       <div class="rr-stats">
-        <div><b>${domains.length}</b><span>areas benchmarked</span></div>
-        <div><b>${gaps.length}</b><span>${gaps.length === 1 ? "gap to close" : "gaps to close"}</span></div>
-        <div><b>${holding.length}</b><span>${holding.length === 1 ? "commitment holding" : "commitments holding"}</span></div>
+        ${hasPosition ? html`
+          <div><b>${domains.length}</b><span>areas benchmarked</span></div>
+          <div><b>${gaps.length}</b><span>${gaps.length === 1 ? "gap to close" : "gaps to close"}</span></div>
+          <div><b>${holding.length}</b><span>${holding.length === 1 ? "commitment holding" : "commitments holding"}</span></div>`
+        : html`
+          ${/* a 0/0 gap tally before any data reads as "all is well" — it means "we cannot tell yet" */ ""}
+          <div><b>${commitments.length}</b><span>commitments stated</span></div>
+          <div><b>${Math.round((al.data_state || {}).core_pct || 0)}%</b><span>of your data in</span></div>
+          <div><b>—</b><span>position: awaiting data</span></div>`}
       </div>
       <div class="rr-toc">
         <div class="rr-toc-h">Contents</div>
@@ -428,6 +443,27 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${(ver && (ver.unstated || []).length) ? html`
         <p class="rr-p rr-sm">${ver.unstated.length} section${ver.unstated.length === 1 ? " was" : "s were"} unstated
         at approval: ${ver.unstated.join(", ")}. The version record carries exactly what was and was not stated.</p>` : null}`;
+
+    if (kindOf === "awaiting") {
+      const need = Math.max(0, Math.ceil(((dstate.basis_total || 0) * (dstate.target_pct || 0)) / 100) - (dstate.answered || 0));
+      return html`
+        <${RrH} n=${num} sub="This half of the document is written from your own submitted data, read against your peer group. It fills in as your data arrives — nothing here is estimated in the meantime.">Where you'll stand<//>
+        <p class="rr-lede">Your strategy above is stated and in force: lumi is already reading every
+        benchmark through it. What it cannot yet do is tell you where you actually sit against it.</p>
+        <div class="rr-stats">
+          <div><b>${Math.round(dstate.core_pct || 0)}%</b><span>of your key metrics answered</span></div>
+          <div><b>${need}</b><span>${need === 1 ? "answer to unlock" : "answers to unlock"}</span></div>
+          <div><b>${commitments.length}</b><span>commitments waiting on evidence</span></div>
+        </div>
+        <p class="rr-p">Once your data is in, these pages complete the document: your position against
+        each stated aim, the gaps that opens, what the market does about each one, and a sequenced plan
+        with what each action returns.</p>
+        ${canEditDoc ? html`
+          <div class="rr-cta no-print">
+            <button class="btn primary" onClick=${() => nav("/your-data")}>Add your data</button>
+            <span class="rr-sm">Roughly ${need > 40 ? "an hour" : need > 15 ? "half an hour" : "a few minutes"} of work, and it only has to be done once.</span>
+          </div>` : null}`;
+    }
 
     if (kindOf === "position") return html`
       <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position against intent<//>

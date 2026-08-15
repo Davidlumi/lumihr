@@ -2484,6 +2484,22 @@ async def overview(request: Request):
         # toggle) — distinct from strategy_complete (does one EXIST). False = absolute view.
         "strategy_applied": bool(_strategy),
         "strategy_can_edit": user["role"] in ("admin", "contributor"),
+        # THE LOOP (2026-08-16): the four states the reward cycle moves through, so the
+        # Overview can show one "you are here" strip instead of leaving a first-time user
+        # to infer a sequence from a flat rail. `to_refresh` is the RETURN LEG — without
+        # it the journey is an arc that stops at Signals rather than a circle.
+        "loop": {
+            "company_set": bool(org.get("industry") or org.get("fte_band")),
+            "strategy_set": bool(conn.execute(
+                "SELECT 1 FROM org_strategy WHERE org_id=? AND completed_at IS NOT NULL",
+                (org["org_id"],)).fetchone()),
+            "plan_built": bool(conn.execute(
+                "SELECT 1 FROM org_strategy WHERE org_id=? AND action_plan_json IS NOT NULL",
+                (org["org_id"],)).fetchone()),
+            "to_refresh": sum(1 for v in refresh_policy.refresh_state(
+                conn, org["org_id"], CURRENT_SNAPSHOT, org_visible_questions(org)).values()
+                if v.get("due")),
+        },
         # the objective the Signals order is read through (None when unset/skipped) —
         # drives the modest "ordered for your strategy" indicator on the Signals page
         "strategy_objective": OBJECTIVE_LABELS.get(
@@ -5638,6 +5654,22 @@ async def get_strategy_alignment(request: Request):
                       for d in (hero.get("domains") or []) if d.get("target")]
     out["plan"] = (st.get("document") or {}).get("action_plan")
     out["cut_label"] = _cut_label
+    # The document renders BEFORE any data is in (a new org states its strategy first),
+    # so it needs to know whether a position read is even possible. Without this the
+    # page drew an empty table under "each area's live benchmark", tiles reading
+    # "0 off strategy" — true, and read as "all fine" — and a plan page telling you to
+    # press a button that the lock would refuse. Honest emptiness needs the numbers.
+    _contrib = contribution_state(conn, org)
+    out["data_state"] = {
+        "unlocked": _contrib["insights_unlocked"],
+        "core_pct": _contrib["core_pct"],
+        "answered": _contrib["basis_answered"],
+        "basis_total": _contrib["basis_total"],
+        "target_pct": _contrib["target_pct"],
+        "days_left": _contrib.get("days_left"),
+        # positioned = areas the engine could actually place against the market
+        "positioned": len([d for d in (hero.get("domains") or []) if (d.get("position") or {}).get("verdict")]),
+    }
     out["objective"] = OBJECTIVE_LABELS.get(strat.get("primary_objective"))
     out["stance"] = strat.get("market_position")
     out["ok"] = True
