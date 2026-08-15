@@ -150,8 +150,21 @@ check("E", "lever library loads with a trade_off on EVERY lever (no marketing)",
       LEV and all((l.get("trade_off") or "").strip() for l in LEV))
 check("E", "every lever names a register_effect (Substance/Approach)",
       all(l.get("register_effect") in ("Substance", "Approach") for l in LEV))
-check("E", "v1 tranche is Pay / Benefits & Lifestyle / Time Off & Family (R8)",
-      {l["category"] for l in LEV} == {"Pay", "Benefits & Lifestyle", "Time Off & Family"})
+# Tranche 2 (2026-08-16): every live category carries levers, so no domain section in the
+# report ends on "a later tranche" where the reader expects recommendations. The check is
+# now DERIVED from the taxonomy rather than a hardcoded three, so adding a category fails
+# here — loudly — instead of quietly shipping a section with nothing under it.
+_LIVE_CATS = {"Pay", "Benefits & Lifestyle", "Time Off & Family", "Incentives & Recognition",
+              "Pensions & Savings", "Health & Protection", "Wellbeing", "Governance & Transparency"}
+_cov = {l["category"] for l in LEV}
+check("E", "every live category carries levers — no domain is a 'later tranche'",
+      _cov == _LIVE_CATS, "missing: %s | unexpected: %s" % (sorted(_LIVE_CATS - _cov), sorted(_cov - _LIVE_CATS)))
+_by_reg = {}
+for _l in LEV:
+    _by_reg.setdefault(_l["category"], set()).add(_l["register_effect"])
+check("E", "every category carries BOTH registers, so no gap lands without options",
+      all(v == {"Substance", "Approach"} for v in _by_reg.values()),
+      {k: sorted(v) for k, v in _by_reg.items() if v != {"Substance", "Approach"}})
 _cs = [
     {"id": "position:Pay", "category": "Pay", "kind": "position", "status": "behind_intent", "statement": "s"},
     {"id": "rule:P4", "category": "Pay", "kind": "coherence", "status": "contradicted", "statement": "s"},
@@ -183,15 +196,25 @@ check("E", "overspend note is directive- and legal-clean",
       not ca.DIRECTIVE_RE.search(_ov["coverage_note"]) and not ca.LEGAL_RE.search(_ov["coverage_note"]))
 check("E", "a SHORT position gap still gets its levers (the fix is narrow)",
       len(_pay_pos["levers"]) > 0 and _pay_pos is not None)
+# Every live category now carries BOTH registers, so this contract needs a synthetic
+# fixture: a lever set stripped of Approach, against a gap that needs one. The rule it
+# guards is unchanged — a covered category must never render an empty options block.
+_subs_only = [l for l in LEV if l["register_effect"] == "Substance"]
 _bare = sa.options_for([{"id": "rule:B2", "category": "Benefits & Lifestyle", "kind": "coherence",
-                         "status": "behind_intent", "statement": "s"}], levers=LEV)[0]
+                         "status": "behind_intent", "statement": "s"}], levers=_subs_only)[0]
 check("E", "covered category with no lever in the needed register is NEVER silently empty",
       not _bare["levers"] and (_bare.get("coverage_note") or "").strip(), _bare.get("coverage_note"))
 check("E", "no options block anywhere is both lever-less and note-less",
       all(o["levers"] or (o.get("coverage_note") or "").strip() for o in (OB + [_ov, _bare])))
 _pens = next(o for o in OB if o["commitment_id"] == "position:Pensions & Savings")
-check("E", "outside-tranche category says so plainly (no silent cap)",
-      not _pens["levers"] and "later tranche" in (_pens.get("coverage_note") or ""))
+check("E", "a formerly-uncovered category now carries real options (tranche 2)",
+      len(_pens["levers"]) > 0 and not _pens.get("coverage_note"),
+      (_pens.get("coverage_note"), len(_pens["levers"])))
+# the no-silent-cap contract still has to hold for a category outside the taxonomy
+_off = sa.options_for([{"id": "position:Made Up Area", "category": "Made Up Area", "kind": "position",
+                        "status": "behind_intent", "statement": "s"}], levers=LEV)[0]
+check("E", "an uncovered category still says so plainly (no silent cap)",
+      not _off["levers"] and "later tranche" in (_off.get("coverage_note") or ""), _off.get("coverage_note"))
 check("E", "no vendor/product names in the lever library",
       not re.search(r"\b(perkbox|benefex|zest|reward gateway|darwin)\b",
                     __import__("json").dumps(LEV), re.I))
