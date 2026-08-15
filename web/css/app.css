@@ -4711,29 +4711,53 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .sdw-top { margin-bottom: var(--s5); }
 .sdw-topline { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s3); }
 .sdw-crumb { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
-/* the stepper — dedicated, labelled sections with real progress */
-.sdw-steps { display: flex; align-items: flex-start; list-style: none; margin: 0; padding: var(--s4) var(--s4);
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-card); }
-.sdw-step { display: flex; align-items: center; flex: 1; min-width: 0; }
-.sdw-step-btn { display: flex; align-items: center; gap: 10px; background: none; border: 0; font: inherit;
+/* the stepper — two tiers: phases across the top, the current phase's steps beneath
+   (2026-08-15 persona review: sections must be visible AND the steps short) */
+.sdw-steps { padding: var(--s4); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow-card); }
+.sdw-phases { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; }
+.sdw-ph { display: flex; align-items: center; flex: 1; min-width: 0; }
+.sdw-ph-btn { display: flex; align-items: center; gap: 9px; background: none; border: 0; font: inherit;
   cursor: pointer; padding: 4px 6px; border-radius: 10px; min-width: 0; text-align: left; }
-.sdw-step-btn:hover { background: var(--tile); }
-.sdw-step-node { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+.sdw-ph-btn:hover { background: var(--tile); }
+.sdw-ph-node { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
   border-radius: 50%; border: 2px solid var(--border); font-size: var(--fs-caption); font-weight: 700;
   color: var(--ink-faint); background: var(--surface); flex: none; }
-.sdw-step.current .sdw-step-node { border-color: var(--blue); background: var(--blue); color: #fff; }
-.sdw-step.done .sdw-step-node { border-color: var(--favourable-ink); background: var(--favourable-ink); color: #fff; }
-.sdw-step-txt { display: flex; flex-direction: column; min-width: 0; }
-.sdw-step-txt b { font-size: var(--fs-caption); font-weight: 700; color: var(--ink); white-space: nowrap; }
-.sdw-step.todo .sdw-step-txt b { color: var(--ink-faint); }
-.sdw-step-txt em { font-style: normal; font-size: var(--fs-micro); color: var(--ink-faint); white-space: nowrap; }
-.sdw-step.current .sdw-step-txt em { color: var(--blue); font-weight: 600; }
-.sdw-step-line { flex: 1; height: 2px; background: var(--border); margin: 0 var(--s3); min-width: 14px; }
-.sdw-step.done .sdw-step-line { background: var(--favourable-ink); }
-@media (max-width: 720px) {
-  .sdw-step-txt em { display: none; }
-  .sdw-step-line { margin: 0 var(--s2); }
+.sdw-ph.current .sdw-ph-node { border-color: var(--blue); background: var(--blue); color: #fff; }
+.sdw-ph.done .sdw-ph-node { border-color: var(--favourable-ink); background: var(--favourable-ink); color: #fff; }
+.sdw-ph-txt { display: flex; flex-direction: column; min-width: 0; }
+.sdw-ph-txt b { font-size: var(--fs-caption); font-weight: 700; color: var(--ink); white-space: nowrap; }
+.sdw-ph.todo .sdw-ph-txt b { color: var(--ink-faint); }
+.sdw-ph-txt em { font-style: normal; font-size: var(--fs-micro); color: var(--ink-faint); white-space: nowrap; }
+.sdw-ph-line { flex: 1; height: 2px; background: var(--border); margin: 0 var(--s3); min-width: 12px; }
+.sdw-ph.done .sdw-ph-line { background: var(--favourable-ink); }
+.sdw-substeps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s3);
+  padding-top: var(--s3); border-top: 1px solid var(--border); }
+.sdw-sub { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.sdw-sub:hover { border-color: var(--blue); color: var(--blue); }
+.sdw-sub.on { background: var(--blue-tint); border-color: var(--blue); color: var(--blue-deep); }
+@media (max-width: 760px) {
+  .sdw-ph-txt em { display: none; }
+  .sdw-ph.todo .sdw-ph-txt, .sdw-ph.done .sdw-ph-txt { display: none; }
+  .sdw-ph-line { margin: 0 var(--s2); }
 }
+/* optional-step banner — one consistent marker, never a score */
+.sdw-optflag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-caption);
+  font-weight: 600; color: var(--blue-deep); background: var(--blue-tint); border-radius: 999px;
+  padding: 4px 12px; margin-bottom: var(--s3); }
+.sdw-foot-r { display: flex; gap: var(--s2); align-items: center; }
+/* measures: search + suggested/all toggle (the library is ~200 long) */
+.sdw-msearch { display: flex; gap: var(--s2); margin-bottom: var(--s2); }
+.sdw-msearch .ctl { flex: 1; }
+.sdw-mtoggle { border: 1px solid var(--border); background: var(--surface); border-radius: 10px;
+  font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--blue); padding: 0 12px; cursor: pointer; white-space: nowrap; }
+/* document view: the read-only "add this in the set-up" link */
+.sdx-addlink { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s2);
+  border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 6px 12px;
+  font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--blue); cursor: pointer; }
+.sdx-addlink:hover { border-color: var(--blue); background: var(--blue-tint); }
 /* section pages */
 .sdw-page { display: flex; flex-direction: column; gap: var(--s4); }
 .sdw-head .strat-title { margin-bottom: var(--s2); }
