@@ -862,60 +862,46 @@ window.StrategyPage = function ({ me }) {
     "location_approach", "benefits_lead", "family_position"];
   const planeCfields = ["primary_objective", "budget_direction", "acute_pressure", "risk_appetite"];
 
-  // ---- the flow: one question per stage (GDS one-thing-per-page) --------------
-  // stage: "facts" | question index | "review". step kept only as a legacy alias.
-  const QUESTIONS = [...shownFields(planeBfields), ...shownFields(planeCfields)];
-  const qIndex = typeof step === "number" && step >= 10 ? step - 10 : null;   // stages 10.. = questions
-  const stage = step === 0 ? "facts" : step === 3 ? "review" : qIndex;
+  // ---- the flow (2026-08-15 redesign): SECTION PAGES with a labelled stepper.
+  // David: "dedicated sections at the top, proper progress, all the questions for
+  // each section on ONE page". Four steps: business facts · philosophy · this year ·
+  // review. Legacy one-question drafts (10+i) map onto their owning section.
+  const PHIL = shownFields(planeBfields);
+  const POST = shownFields(planeCfields);
+  const secOf = (st) => {
+    if (st === 1) return 1;
+    if (st === 2) return 2;
+    if (st === 3) return 3;
+    if (typeof st === "number" && st >= 10) return (st - 10) < PHIL.length ? 1 : 2;   // legacy draft
+    return 0;
+  };
+  const sec = secOf(step);
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
-  const REDUCED = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  // exit-fast / enter-slow swap (motion research: 120ms out ease-in, 200ms in ease-out;
-  // reduced motion falls back to a quick opacity crossfade)
-  const goTo = (nextStage) => {
-    setLeaving(true);
-    setTimeout(() => {
-      setLeaving(false);
-      setStep(nextStage === "facts" ? 0 : nextStage === "review" ? 3 : 10 + nextStage);
-      window.scrollTo(0, 0);
-      requestAnimationFrame(() => {
-        const h = document.querySelector(".qstage .strat-title, .strat-step .strat-title");
-        if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
-      });
-    }, REDUCED() ? 120 : 150);
-  };
-  const advance = () => {
-    if (returnTo === "review") { setReturnTo(null); goTo("review"); return; }
-    if (qIndex == null) { goTo(0); return; }
-    if (qIndex >= QUESTIONS.length - 1) goTo("review"); else goTo(qIndex + 1);
-  };
-  const goBack = () => {
-    if (returnTo === "review") { setReturnTo(null); goTo("review"); return; }
-    if (stage === "review") { goTo(QUESTIONS.length - 1); return; }
-    if (qIndex === 0) { goTo("facts"); return; }
-    if (qIndex != null) goTo(qIndex - 1);
-  };
-  // single-select pick = the submit (Typeform split-advance): a short beat so the
-  // choice and its effect line register, then move. Multi-select waits for Enter.
-  const pickAndGo = (field, val) => {
-    pick(field, val);
-    setTimeout(advance, REDUCED() ? 300 : 650);
-  };
-  const changeFrom = (field) => {           // GOV.UK check-answers Change round-trip
-    setReturnTo("review");
-    goTo(QUESTIONS.indexOf(field));
-  };
-  const tryContinue = (field) => {          // Enter / Continue on a question stage
-    if (REQUIRED.includes(field) && !strat[field]) {
-      flash("This one changes how we read your results — choose a position to continue.");
+  const countOf = (fields) => fields.filter(f => f === "benefits_lead" ? (strat[f] || []).length
+    : f === "domain_targets" ? Object.keys(strat[f] || {}).length : strat[f]).length;
+  const missingReq = REQUIRED.filter(f => !strat[f]);
+  const STEPS = [
+    { t: "Your business", n: planeA.filter(f => f.value).length, of: planeA.length },
+    { t: "Your philosophy", n: countOf(PHIL), of: PHIL.length },
+    { t: "This year", n: countOf(POST), of: POST.length },
+    { t: "Review & save", n: null, of: null },
+  ];
+  const goSec = (i) => { setStep(i); window.scrollTo(0, 0); };
+  const nextFrom = (i) => {
+    // required dials gate THEIR OWN section's Continue (server still holds the real gate)
+    if (i === 1 && (!strat.market_position || !strat.reward_mix)) {
+      flash("Market position and total-reward mix change how we read your results — set both to continue.");
+      const el = document.querySelector(".dial-card.flagged"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    advance();
+    if (i === 2 && !strat.primary_objective) {
+      flash("Choose what reward is mainly for right now to continue.");
+      return;
+    }
+    goSec(i + 1);
   };
-
-  const answered = QUESTIONS.filter(f => f === "benefits_lead" ? (strat[f] || []).length
-    : f === "domain_targets" ? Object.keys(strat[f] || {}).length : strat[f]).length;
-  const progress = stage === "facts" ? 0.04 : stage === "review" ? 1 : (qIndex + 1) / (QUESTIONS.length + 1);
+  const changeFrom = (field) => goSec(PHIL.includes(field) ? 1 : 2);
+  const answered = countOf([...PHIL, ...POST]);
 
   const commit = async () => {
     setSaving(true);
@@ -953,125 +939,132 @@ window.StrategyPage = function ({ me }) {
     } catch (e) { flash(e && e.message && e.status !== 0 ? e.message : "Couldn't save — try again."); setSaving(false); }
   };
 
-  const curField = qIndex != null ? QUESTIONS[qIndex] : null;
-  const isMulti = curField === "benefits_lead";
   const orgName = (me.org && me.org.name) || "Your organisation";
+  const dialsOf = (fields) => fields.map(f => f === "domain_targets"
+    ? html`<div key="dt" class="dial-card" id="dial-domain_targets">
+        <div class="dial-head">
+          <span class="dial-roundel"><${Icon} name="sliders" size=${16} /></span>
+          <div>
+            <div class="dial-title">Position by area <span class="sdw-opt">Optional</span></div>
+            <div class="dial-q">Aim differently anywhere? The rest follow your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""}.</div>
+          </div>
+        </div>
+        <${DomainOverrides} domains=${data.position_domains || data.competitive_domains || []}
+          targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />
+      </div>`
+    : html`<${DialCard} key=${f} field=${f} value=${strat[f]} onPick=${pick}
+        required=${REQUIRED.includes(f)} context=${fieldState(f) === "context"} />`);
 
-  // digit keys select scale stops / objective options (Typeform key badges)
-  const onStageKeys = (e) => {
-    if (stage !== qIndex || curField == null) return;
-    if (e.key === "Enter" && (isMulti || strat[curField] || !REQUIRED.includes(curField))) { e.preventDefault(); tryContinue(curField); return; }
-    const n = parseInt(e.key, 10);
-    if (!n) return;
-    const sk = SCALE_FIELD[curField];
-    if (sk && SCALE[sk].stops[n - 1]) { e.preventDefault(); pickAndGo(curField, SCALE[sk].stops[n - 1].v); }
-    else if (curField === "primary_objective" && OBJECTIVES[n - 1]) { e.preventDefault(); pickAndGo(curField, OBJECTIVES[n - 1].v); }
-  };
+  const Stepper = () => html`
+    <ol class="sdw-steps no-print" aria-label="Strategy set-up progress">
+      ${STEPS.map((s, i) => {
+        const done = s.of != null && s.n >= s.of && i < sec;
+        const state = i === sec ? "current" : i < sec || done ? "done" : "todo";
+        return html`<li key=${i} class=${"sdw-step " + state}>
+          <button type="button" class="sdw-step-btn" aria-current=${i === sec ? "step" : undefined}
+            onClick=${() => { if (!saving && !committed) goSec(i); }}>
+            <span class="sdw-step-node">${state === "done" ? html`<${Icon} name="check" size=${13} />` : i + 1}</span>
+            <span class="sdw-step-txt"><b>${s.t}</b>
+              <em>${s.of != null ? s.n + " of " + s.of + " set" : (missingReq.length ? "almost there" : "ready")}</em></span>
+          </button>
+          ${i < STEPS.length - 1 ? html`<span class="sdw-step-line" aria-hidden="true"></span>` : null}
+        </li>`; })}
+    </ol>`;
+
+  const Foot = ({ backTo, nextLabel, onNext, primary = true }) => html`
+    <div class="sdw-foot">
+      ${backTo != null ? html`<button class="btn quiet" disabled=${saving || committed} onClick=${() => goSec(backTo)}>← ${STEPS[backTo].t}</button>` : html`<span></span>`}
+      <button class=${"btn " + (primary ? "primary" : "")} disabled=${saving || committed} onClick=${onNext}>${nextLabel}</button>
+    </div>`;
 
   return html`
-    <div class=${"strat-flow" + (qIndex != null ? " has-rail" : "")} onKeyDown=${onStageKeys}>
-      ${/* one thin continuous progress bar (research: segments fill, linear map, no counters) */ ""}
-      <div class="strat-progress" role="progressbar" aria-valuemin="0" aria-valuemax=${QUESTIONS.length + 2}
-        aria-valuenow=${stage === "facts" ? 1 : stage === "review" ? QUESTIONS.length + 2 : qIndex + 2}
-        aria-label="Strategy progress">
-        <i style=${{ transform: "scaleX(" + progress + ")" }}></i>
+    <div class="strat-flow sdw">
+      <div class="sdw-top no-print">
+        <div class="sdw-topline">
+          <span class="sdw-crumb">Reward strategy${editing ? " · editing" : ""}</span>
+          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); try { sessionStorage.removeItem("lumi-strat-draft"); } catch (e) {} }}>Cancel</button>` : null}
+        </div>
+        <${Stepper} />
       </div>
 
-      ${stage !== "facts" || editing ? html`
-        <div class="strat-topline no-print">
-          ${stage !== "facts" ? html`<button class="btn quiet strat-back" onClick=${goBack} disabled=${saving || committed}>← Back</button>` : html`<span></span>`}
-          <span class="strat-count">${stage === "review" ? "Review" : stage === "facts" ? "" : (qIndex + 1) + " of " + QUESTIONS.length}</span>
-          ${editing && !committed ? html`<button class="btn quiet" disabled=${saving} onClick=${() => { setEditing(false); setStrat({ ...data.strategy }); setPlaneA(data.plane_a.map(f => ({ ...f }))); setStep(0); try { sessionStorage.removeItem("lumi-strat-draft"); } catch (e) {} }}>Cancel</button>` : html`<span></span>`}
-        </div>` : null}
-
-      ${qIndex != null && html`
-        <aside class="strat-rail-live no-print" aria-label="Your strategy so far">
-          <div class="srl-head">Your strategy so far</div>
-          ${sdStance(strat, orgName).map((s, i) => html`<p key=${i} class="srl-line">${s}</p>`)}
-          ${!sdStance(strat, "x").length ? html`<p class="srl-line muted">It builds here as you set positions.</p>` : null}
-        </aside>`}
-
-      ${stage === "facts" && html`
-        <section key="facts" class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
-          <div class="strat-eyebrow">Your business <span class="strat-mode confirm">Pre-filled · confirm</span></div>
-          <h1 class="strat-title">Does this still describe you?</h1>
-          <p class="strat-sub">These shape who you're compared against — correct anything that's changed.</p>
-          <div class="confirm-grid">
+      ${sec === 0 && html`
+        <section key="facts" class="sdw-page">
+          <header class="sdw-head">
+            <h1 class="strat-title">Does this still describe you?</h1>
+            <p class="strat-sub">Pre-filled from your company profile. These shape who you're compared against — correct anything that's changed, then continue.</p>
+          </header>
+          <div class="sdw-factgrid">
             ${planeA.map((f, i) => html`
-              <div key=${f.key} class="confirm-row">
-                <div><div class="cr-label">${f.label}</div><div class="cr-why">${f.why}</div></div>
-                <div class="cr-seg" role="radiogroup" aria-label=${f.label}
+              <div key=${f.key} class="sdw-fact">
+                <div class="sdw-fact-label">${f.label}${f.derived ? html` <span class="sdw-opt">estimated</span>` : ""}</div>
+                <div class="sdw-fact-why">${f.why}</div>
+                <div class="sdw-seg" role="radiogroup" aria-label=${f.label}
                   onKeyDown=${e => {
                     if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) return;
                     e.preventDefault();
-                    const wrap = e.currentTarget;                     // hoisted — nulled after the handler in React 18
+                    const wrap = e.currentTarget;
                     const opts = (f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []);
                     const cur = Math.max(0, opts.indexOf(f.value));
                     const nxt = ("ArrowRight" === e.key || "ArrowDown" === e.key) ? Math.min(opts.length - 1, cur + 1) : Math.max(0, cur - 1);
                     setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: opts[nxt] } : x));
-                    requestAnimationFrame(() => { const el = wrap && wrap.querySelectorAll(".cr-opt")[nxt]; if (el) el.focus(); });
+                    requestAnimationFrame(() => { const el = wrap && wrap.querySelectorAll(".sdw-seg-opt")[nxt]; if (el) el.focus(); });
                   }}>
                   ${(f.options || []).concat(f.value && !(f.options || []).includes(f.value) ? [f.value] : []).map(o => html`
-                    <button key=${o} type="button" class=${"cr-opt" + (o === f.value ? " on" : "")} role="radio" aria-checked=${o === f.value}
+                    <button key=${o} type="button" class=${"sdw-seg-opt" + (o === f.value ? " on" : "")} role="radio" aria-checked=${o === f.value}
                       tabindex=${o === f.value || (!f.value && o === (f.options || [])[0]) ? 0 : -1}
-                      onClick=${() => setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: o } : x))}>${o}</button>`)}
+                      onClick=${() => setPlaneA(p => p.map((x, j) => j === i ? { ...x, value: o } : x))}>
+                      ${o === f.value ? html`<${Icon} name="check" size=${12} />` : null} ${o}</button>`)}
                 </div>
               </div>`)}
-            <div class="derived-note"><${Icon} name="info" size=${15} />
-              <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — it estimates how heavily each reward £ lands on your P&L, from your sector and size.</div></div>
           </div>
-          <div class="strat-stagefoot">
-            <button class="btn primary strat-next" onClick=${advance}>Looks right <span class="kbd-hint">press Enter ↵</span></button>
-          </div>
+          <div class="derived-note"><${Icon} name="info" size=${15} />
+            <div title="From your sector and size we estimate how heavily each reward £ lands on your P&L."><b>Labour intensity is worked out for you</b> — it estimates how heavily each reward £ lands on your P&L, from your sector and size.</div></div>
+          <${Foot} nextLabel="Looks right — your philosophy →" onNext=${() => goSec(1)} />
         </section>`}
 
-      ${qIndex != null && curField === "domain_targets" && html`
-        <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
-          <div class="strat-eyebrow">Your philosophy <span class="strat-mode confirm">Optional</span></div>
-          <h1 class="strat-title">Any areas you aim differently on?</h1>
-          <p class="strat-sub">Most organisations lead somewhere and lag somewhere — set a different aim for any area; the rest follow your overall position${strat.market_position ? html` (<b>${labelOf("market_position", strat.market_position)}</b>)` : ""}.</p>
-          <${DomainOverrides} standalone domains=${data.position_domains || data.competitive_domains || []}
-            targets=${strat.domain_targets} globalValue=${strat.market_position} onSet=${setDomainTarget} />
-          <div class="strat-stagefoot">
-            ${Object.keys(strat.domain_targets || {}).length
-              ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
-              : html`<button class="btn quiet" onClick=${advance}>Skip — every area follows your overall position</button>`}
-          </div>
+      ${sec === 1 && html`
+        <section key="phil" class="sdw-page">
+          <header class="sdw-head">
+            <h1 class="strat-title">How you reward</h1>
+            <p class="strat-sub">Your philosophy — the positions lumi reads your benchmark through. Two are required; skip anything else and it reads neutrally.</p>
+          </header>
+          <div class="sdw-dials">${dialsOf(PHIL)}</div>
+          <${Foot} backTo=${0} nextLabel="Continue — this year →" onNext=${() => nextFrom(1)} />
         </section>`}
 
-      ${qIndex != null && curField !== "domain_targets" && html`
-        <section key=${"q" + qIndex} class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
-          <div class="strat-eyebrow">${planeBfields.includes(curField) ? "Your philosophy" : "Right now"}
-            ${fieldState(curField) === "context" ? html`<span class="strat-mode confirm">Context</span>` : null}</div>
-          <${DialCard} field=${curField} value=${strat[curField]}
-            onPick=${(f, v) => (isMulti ? pick(f, v) : pickAndGo(f, v))}
-            required=${REQUIRED.includes(curField)} context=${fieldState(curField) === "context"} />
-          <div class="strat-stagefoot">
-            ${isMulti || strat[curField]
-              ? html`<button class="btn primary strat-next" onClick=${() => tryContinue(curField)}>Continue <span class="kbd-hint">press Enter ↵</span></button>`
-              : REQUIRED.includes(curField)
-                ? html`<span class="caption">Choose one to continue</span>`
-                : html`<button class="btn quiet" onClick=${advance}>Skip — read neutrally</button>`}
-          </div>
+      ${sec === 2 && html`
+        <section key="posture" class="sdw-page">
+          <header class="sdw-head">
+            <h1 class="strat-title">This year</h1>
+            <p class="strat-sub">Your posture right now — it sharpens which signals surface first, and changes with the year.</p>
+          </header>
+          <div class="sdw-dials">${dialsOf(POST)}</div>
+          <${Foot} backTo=${1} nextLabel="Review & save →" onNext=${() => nextFrom(2)} />
         </section>`}
 
-      ${stage === "review" && html`
-        <section key="review" class=${"strat-step qstage" + (leaving ? " leaving" : "")}>
+      ${sec === 3 && html`
+        <section key="review" class="sdw-page">
           <div class=${"strat-done" + (committed ? " celebrating" : "")}><span class="strat-check"><${Icon} name="check" size=${22} /></span>
             <h1 class="strat-title" style=${{ textAlign: "center" }}>That's your strategy captured</h1>
             <p class="strat-sub" style=${{ margin: "var(--s2) auto 0", textAlign: "center" }}>Change anything before it goes live — each change returns you straight here.</p></div>
+          ${missingReq.length ? html`
+            <div class="sdw-missing" role="alert">
+              <${Icon} name="info" size=${15} />
+              <div><b>${missingReq.length === 1 ? "One required position is" : missingReq.length + " required positions are"} not set</b>
+                (${missingReq.map(f => DIAL_LABEL[f]).join(", ")}) — you can save, but your strategy stays incomplete and the benchmark reads neutrally until they're set.
+                <button class="sdw-missing-go" onClick=${() => changeFrom(missingReq[0])}>Set now</button></div>
+            </div>` : null}
           <${ReviewSection} title="Your business" chip="confirmed" chipCls="confirmed"
-            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => { setReturnTo("review"); goTo("facts"); }} locked=${committed || saving} />
+            rows=${planeA.map(f => ({ label: f.label, value: f.value || "—" }))} onEdit=${() => goSec(0)} locked=${committed || saving} />
           <${ReviewSection} title="Your philosophy" chip="your choices" chipCls="choices"
-            rows=${shownFields(planeBfields).map(f => ({ ...reviewRow(f, strat), field: f }))}
-            onEdit=${() => { setReturnTo("review"); goTo(QUESTIONS.indexOf(shownFields(planeBfields)[0])); }}
-            onChangeRow=${changeFrom} locked=${committed || saving} />
-          <${ReviewSection} title="Right now" chip="this year" chipCls="choices"
-            rows=${shownFields(planeCfields).map(f => ({ ...reviewRow(f, strat), field: f }))}
-            onEdit=${() => { setReturnTo("review"); goTo(QUESTIONS.indexOf(shownFields(planeCfields)[0])); }}
-            onChangeRow=${changeFrom} locked=${committed || saving} />
+            rows=${PHIL.map(f => ({ ...reviewRow(f, strat), field: f }))}
+            onEdit=${() => goSec(1)} onChangeRow=${changeFrom} locked=${committed || saving} />
+          <${ReviewSection} title="This year" chip="right now" chipCls="choices"
+            rows=${POST.map(f => ({ ...reviewRow(f, strat), field: f }))}
+            onEdit=${() => goSec(2)} onChangeRow=${changeFrom} locked=${committed || saving} />
           <p class="strat-trust"><b>Company facts and choices, not employee data.</b> Organisation-level, set by an Admin — they shape how your results are read, never what your people see.</p>
-          <div class="strat-stagefoot">
+          <div class="sdw-foot">
+            <button class="btn quiet" disabled=${saving || committed} onClick=${() => goSec(2)}>← This year</button>
             <button class=${"btn primary" + (committed ? " strat-saved" : "")} disabled=${saving || committed} onClick=${commit}>${
               committed ? html`<${Icon} name="check" size=${15} /> Saved` : saving ? "Saving…" : "Save & finish"}</button>
           </div>

@@ -4705,3 +4705,60 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .sdx-meter { max-width: none; }
   .sdx-meter-line { text-align: left; }
 }
+
+/* ==== Strategy capture redesign (2026-08-15): section pages + labelled stepper ==== */
+.sdw { max-width: 860px; margin: 0 auto; }
+.sdw-top { margin-bottom: var(--s5); }
+.sdw-topline { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s3); }
+.sdw-crumb { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+/* the stepper — dedicated, labelled sections with real progress */
+.sdw-steps { display: flex; align-items: flex-start; list-style: none; margin: 0; padding: var(--s4) var(--s4);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-card); }
+.sdw-step { display: flex; align-items: center; flex: 1; min-width: 0; }
+.sdw-step-btn { display: flex; align-items: center; gap: 10px; background: none; border: 0; font: inherit;
+  cursor: pointer; padding: 4px 6px; border-radius: 10px; min-width: 0; text-align: left; }
+.sdw-step-btn:hover { background: var(--tile); }
+.sdw-step-node { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  border-radius: 50%; border: 2px solid var(--border); font-size: var(--fs-caption); font-weight: 700;
+  color: var(--ink-faint); background: var(--surface); flex: none; }
+.sdw-step.current .sdw-step-node { border-color: var(--blue); background: var(--blue); color: #fff; }
+.sdw-step.done .sdw-step-node { border-color: var(--green, #3BA06E); background: var(--green, #3BA06E); color: #fff; }
+.sdw-step-txt { display: flex; flex-direction: column; min-width: 0; }
+.sdw-step-txt b { font-size: var(--fs-caption); font-weight: 700; color: var(--ink); white-space: nowrap; }
+.sdw-step.todo .sdw-step-txt b { color: var(--ink-faint); }
+.sdw-step-txt em { font-style: normal; font-size: var(--fs-micro); color: var(--ink-faint); white-space: nowrap; }
+.sdw-step.current .sdw-step-txt em { color: var(--blue); font-weight: 600; }
+.sdw-step-line { flex: 1; height: 2px; background: var(--border); margin: 0 var(--s3); min-width: 14px; }
+.sdw-step.done .sdw-step-line { background: var(--green, #3BA06E); }
+@media (max-width: 720px) {
+  .sdw-step-txt em { display: none; }
+  .sdw-step-line { margin: 0 var(--s2); }
+}
+/* section pages */
+.sdw-page { display: flex; flex-direction: column; gap: var(--s4); }
+.sdw-head .strat-title { margin-bottom: var(--s2); }
+.sdw-dials { display: flex; flex-direction: column; gap: var(--s4); }
+.sdw-opt { font-size: var(--fs-micro); font-weight: 600; color: var(--ink-faint); background: var(--tile);
+  border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.sdw-foot { display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
+  padding: var(--s4) 0 var(--s7); }
+/* facts page — card grid, options as a full-width even segment row (no ragged wrap) */
+.sdw-factgrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+.sdw-fact { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: var(--s4); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: var(--s2); }
+.sdw-fact-label { font-family: var(--font-head); font-weight: 700; font-size: var(--fs-body); color: var(--ink); }
+.sdw-fact-why { font-size: var(--fs-caption); color: var(--ink-faint); line-height: var(--lh-caption); flex: 1; }
+.sdw-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--s2); }
+.sdw-seg-opt { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--ink-soft);
+  background: var(--tile); border: 1.4px solid transparent; border-radius: 10px; padding: 9px 10px;
+  cursor: pointer; white-space: nowrap; }
+.sdw-seg-opt:hover { border-color: var(--border); }
+.sdw-seg-opt.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+@media (max-width: 860px) { .sdw-factgrid { grid-template-columns: 1fr; } }
+/* review: missing-required notice */
+.sdw-missing { display: flex; gap: var(--s3); align-items: flex-start; background: #FDF3EC;
+  border: 1px solid #F0CDB4; border-radius: 12px; padding: var(--s3) var(--s4);
+  font-size: var(--fs-label); color: var(--ink); }
+.sdw-missing-go { border: 0; background: none; font: inherit; font-weight: 700; color: var(--blue);
+  cursor: pointer; padding: 0; margin-left: 6px; }
