@@ -53,6 +53,14 @@ function rrCase(text) {
   return out;
 }
 
+// The decision line is a sentence fragment ("approve the action scheduled for this
+// cycle") composed server-side so it can also be read aloud mid-paragraph. On its own
+// line under DECISION SOUGHT it needs a capital, and only there.
+function rrCap(text) {
+  const t = (text || "").trim();
+  return t ? t[0].toUpperCase() + t.slice(1) : t;
+}
+
 function rrOrdinal(n) {
   const v = Math.round(n), t = v % 100;
   if (t >= 11 && t <= 13) return v + "th";
@@ -133,6 +141,46 @@ function RrProse({ value, generated, sectionKey, canEdit, onSave, className }) {
         ${edited ? html`<button class="btn small quiet" disabled=${saving} onClick=${() => save("")}
           title="Drop your wording and go back to what lumi wrote">Restore lumi's wording</button>` : null}
       </div>
+    </div>`;
+}
+
+// The decision control on one option (2026-08-16, David's #3: record what you decided
+// NOT to do). Module scope, not an inline closure inside the page: a component redefined
+// on every render is a NEW type to React, so the panel would unmount mid-typing and lose
+// the reason field. Prints as a plain badge — every control here is screen-only.
+function RrDecCell({ cur, states, canEdit, onSave }) {
+  const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState("");
+  const [saving, setSaving] = useState(false);
+  if (!canEdit && !cur) return null;
+  const set = async (state) => {
+    setSaving(true);
+    try { await onSave(state, why); setOpen(false); }
+    catch (e) { /* onSave surfaces its own toast */ }
+    setSaving(false);
+  };
+  return html`
+    <div class="rr-dec-wrap">
+      ${cur ? html`
+        <span class=${"rr-dec d-" + cur.state}>${states[cur.state] || cur.state}</span>
+        ${cur.reason ? html`<span class="rr-sm rr-dec-why">${cur.reason}</span>` : null}` : null}
+      ${canEdit ? html`
+        <button class="rr-dec-btn no-print" onClick=${() => { setWhy((cur && cur.reason) || ""); setOpen(!open); }}>
+          <${Icon} name="pencil" size=${10} /> ${cur ? "Change decision" : "Record a decision"}</button>` : null}
+      ${canEdit && open ? html`
+        <div class="rr-dec-panel no-print">
+          <input class="ctl rr-dec-in" placeholder="Why — one line, for the record" value=${why}
+            maxLength=${400} disabled=${saving} aria-label="Reason for this decision"
+            onInput=${e => setWhy(e.target.value)} />
+          <div class="rr-dec-acts">
+            ${Object.keys(states).map(s => html`
+              <button key=${s} disabled=${saving}
+                class=${"rr-dec-set" + (cur && cur.state === s ? " on" : "")}
+                onClick=${() => set(s)}>${states[s]}</button>`)}
+            ${cur ? html`<button class="rr-dec-clear" disabled=${saving}
+              onClick=${() => set("")}>Clear</button>` : null}
+          </div>
+        </div>` : null}
     </div>`;
 }
 
@@ -256,6 +304,43 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const today = fmtDate();
   const cutLabel = al.cut_label || "your peer group";
 
+  // ---- BOARD-PAPER READS (2026-08-16) ---------------------------------------
+  // Six things a reward director found missing: the document never ASKED for a
+  // decision, carried no aggregate cost, recorded no rejected option, listed the
+  // plan instead of scheduling it, named no risks, and showed no movement.
+  const money = al.money || {};
+  const theAsk = al.the_ask || {};
+  const risks = al.risks || [];
+  const trend = al.trend || {};
+  const schedule = al.schedule || [];
+  const decisions = al.option_decisions || {};
+  const DEC_STATES = al.option_decision_states || {};
+  const gbp = (n) => "£" + Math.round(n || 0).toLocaleString("en-GB");
+  const decKey = (cat, lever) => (cat || "") + "|" + (lever || "");
+  const saveDecision = async (cat, lever, state, reason) => {
+    try {
+      const r = await api("/api/strategy/option-decision",
+        { method: "PUT", body: { category: cat, lever_id: lever, state: state, reason: reason || "" } });
+      setAl(a => ({ ...a, option_decisions: r.option_decisions }));
+      toast(state ? "Decision recorded." : "Decision cleared.");
+    } catch (e) { toast(e && e.message || "Couldn't record that decision.", "error"); }
+  };
+  // Every option that has been decided on, in document order — the not-taken record.
+  // Deduped: one lever can be offered against TWO commitments in the same area (a
+  // position gap and a coherence rule both reaching for it), and the record listed it
+  // twice under an identical React key.
+  const decidedRows = [];
+  const decSeen = {};
+  (al.domain_blocks || []).forEach(b => {
+    (b.options || []).forEach(o => (o.levers || []).forEach(l => {
+      const k = decKey(b.name, l.lever_id);
+      const d = decisions[k];
+      if (d && d.state && !decSeen[k]) { decSeen[k] = 1; decidedRows.push({ k, cat: b.name, lever: l, dec: d }); }
+    }));
+  });
+  const nPriced = money.priced || 0;
+  const nGaps = money.gaps_total || 0;
+
   // gaps grouped by area
   const domAlign = {};
   domains.forEach(x => { domAlign[x.name] = (x.target || {}).alignment; });
@@ -328,6 +413,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // §1 executive summary — the AI opening, on its own page with the contents
   P("Executive summary", "exec");
 
+  // §2 THE ASK. A board paper requests a decision; this document only ever described
+  // one (2026-08-16). It sits directly behind the executive summary because that is
+  // where a reader who reads two pages and nothing else will look for it.
+  if (wantsPlan) P("What we're asking the board to approve", "ask");
+
   if (wantsIntent) {
     // The narrative of the strategy — the thing a Mercer or WTW paper opens with, and
     // what "just broken sentences" was standing in for. Two sheets so each section has
@@ -349,6 +439,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     P("Where you'll stand", "awaiting");
   } else if (wantsPlan) {
     P("Position at a glance", "position");
+    // Movement belongs with the position read, not at the back. It cannot be built
+    // today — there is one aggregated collection window — and the page says so rather
+    // than the absence being discovered by whoever asks "are we improving?".
+    P("Movement since the last review", "trend");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
       Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
     // THE MAIN PART OF THE REPORT (David 2026-08-16): one dedicated section per domain
@@ -367,20 +461,42 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // A coherence shortfall now draws BOTH registers, so an options table can run to ten
       // rows and overflow its sheet. Chunk at five — the same weight discipline the rest of
       // the document uses, rather than letting one area silently spill.
-      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 5)) : 0;
+      // 4, not 5 (2026-08-16): each lever row now carries its decision badge and the
+      // author's reason, which added ~200px to a five-row sheet and pushed it past A4
+      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 4)) : 0;
       P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
       for (let k = 0; k < followSheets; k++) {
         P(domainLabel(b.name) + (k ? " (cont.)" : " (cont.)"), "domain",
-          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 5, k * 5 + 5],
+          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 4, k * 4 + 4],
             levPart: k, levParts: followSheets });
       }
     });
-    if (plan && (plan.actions || []).length)
+    // THE SCHEDULE before the plan: the shape across cycles, then the detail. The plan
+    // carried a horizon per action all along and printed them as a flat numbered run,
+    // which reads as a to-do list rather than a programme (2026-08-16).
+    // weight = the group heading plus a row per action, so a ten-action programme
+    // splits at a sheet boundary instead of running past A4
+    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 7);
+    if (plan && (plan.actions || []).length) {
       // budget 5, not 7: the first sheet also carries the summary lede, and three
       // actions with their why + return overran A4 by ~55px
-      Prun("The plan", "planp", plan.actions, () => 2, 5);
-    else
+      // ordered by horizon so the detail runs in the same sequence the schedule shows
+      const ordered = schedule.length
+        ? schedule.reduce((a, s) => a.concat(s.actions), [])
+        : plan.actions;
+      Prun("The plan", "planp", ordered, () => 2, 5);
+    } else {
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
+    }
+    // What it costs, what could go wrong, and what was turned down — the three
+    // sections a board paper is expected to carry and this one did not.
+    P("What it costs", "cost");
+    // seven derivable risks at ~4 lines each overrun a sheet; four to a page, and the
+    // first also carries the lede
+    Prun("Risks and exposures", "risks", risks, () => 2, 6);
+    // the not-taken record grows with every decision an author makes — unbounded by
+    // nature, so it chunks like every other run in this document
+    if (decidedRows.length) Prun("Decisions taken and not taken", "decided", decidedRows, () => 1, 5);
   }
   if (wantsIntent) P("Governance and approval", "gov");
   P("Method and basis", "method");
@@ -392,6 +508,98 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const secKey = (p) => p.body === "domain" ? "domain:" + (p.block || {}).name : p.body;
   pages.forEach(p => { const k = secKey(p);
     if (p.body !== "cover" && !(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); });
+
+  // ---- deterministic defaults for the board-paper sections ------------------
+  // Composed from the document's own figures, so they are instant, always grounded
+  // and never wrong when AI is off — and every one of them is the EDITABLE default:
+  // a director who wants different words replaces them in place.
+  const askProse = () => {
+    const n = theAsk.actions_this_cycle || 0;
+    const areas = (theAsk.areas || []).map(domainLabel);
+    if (!hasPosition) {
+      return "The board is asked to approve the reward strategy set out in this document as the "
+        + "organisation's stated position on pay, benefits and the wider package. It commits lumi to "
+        + "reading every benchmark through it. No spending decision is being sought here: the position "
+        + "against the market is not yet measured, and the plan that follows from it comes back to the "
+        + "board once it is.";
+    }
+    if (!n) {
+      return nGaps
+        ? ("The board is asked to agree how the " + nGaps + " outstanding gap" + (nGaps === 1 ? "" : "s")
+           + " in this review " + (nGaps === 1 ? "is" : "are") + " to be addressed. No action has yet "
+           + "been scheduled for the current cycle, so this paper seeks a direction rather than an "
+           + "approval: which of the options set out under each area are to be taken forward, and when.")
+        : ("The board is asked to note this review and reaffirm the reward strategy as stated. The "
+           + "organisation's own data currently sits in line with the position it has set, so no "
+           + "corrective action is being sought.");
+    }
+    const cost = money.investment_to_p50_gbp
+      ? ("Where lumi can price a change, the indicative cost of moving to the peer median is "
+         + gbp(money.investment_to_p50_gbp) + " a year on the assumptions published in this document"
+         + (nPriced < nGaps ? "; that figure covers " + nPriced + " of the " + nGaps + " gaps, and the "
+            + "rest are changes lumi does not put a number against." : "."))
+      : ("None of the actions below carries an indicative cost from lumi's model: their effect is on "
+         + "retention, fairness and how the package reads rather than on a figure this document can state.");
+    return "The board is asked to approve " + n + " action" + (n === 1 ? "" : "s")
+      + " scheduled for this cycle" + (areas.length ? ", covering " + rrList(areas) : "")
+      + ". " + (nGaps ? ("They are the first cycle of a response to " + nGaps + " gap"
+        + (nGaps === 1 ? "" : "s") + " this review found between the strategy as stated and the "
+        + "organisation's own benchmarked position. ") : "") + cost;
+  };
+  const costProse = () => {
+    if (!nPriced) {
+      return "lumi puts an indicative figure against a change only where its cost model has one for the "
+        + "metric in question — employer pension contribution, attrition and agency spend. None of the "
+        + (nGaps ? nGaps + " gaps in this review falls" : "gaps in this review fall") + " into that set, "
+        + "so no aggregate cost is stated here. That is not the same as saying they are free: it means "
+        + "their cost has to come from your own modelling rather than from a benchmark.";
+    }
+    const parts = [];
+    parts.push("Closing the gaps lumi can price to the peer median is an indicative "
+      + gbp(money.investment_to_p50_gbp) + " a year"
+      + (money.savings_to_p50_gbp ? ", against " + gbp(money.savings_to_p50_gbp)
+         + " a year of indicative saving where you currently sit above the median" : "") + ".");
+    parts.push("That envelope covers " + nPriced + " of the " + nGaps + " gap"
+      + (nGaps === 1 ? "" : "s") + " in this review"
+      + (nPriced < nGaps ? ": the remainder are changes lumi does not price, and their cost has to be "
+         + "modelled by you rather than read off a benchmark." : "."));
+    parts.push(money.fte_known
+      ? "Figures use the midpoint of your stated FTE band and lumi's published salary and level-mix "
+        + "assumptions. They are an order of magnitude for a board discussion, not a budget."
+      : "Your FTE band is not recorded, so these figures rest on lumi's default headcount assumption. "
+        + "Setting the band in your company details will sharpen them materially.");
+    return parts.join(" ");
+  };
+  const risksProse = () => (risks.length
+    ? "The exposures below are restatements of what this review found, not forecasts. Each names a "
+      + "condition that is true of the organisation today and says what it bears on; none of them is a "
+      + "recommendation, and how binding each one is stays a judgement for the board."
+    : "This review found no condition in your data or your stated strategy that reads as a live exposure. "
+      + "That is a statement about what lumi can see — affordability, delivery capacity and anything "
+      + "outside the benchmark are not in its view.");
+  const schedProse = () => {
+    if (!schedule.length) return "No actions are scheduled yet.";
+    const n = schedule.reduce((a, s) => a + s.actions.length, 0);
+    const now = (schedule.find(s => s.horizon === "this cycle") || {}).actions || [];
+    return n + " action" + (n === 1 ? "" : "s") + " across " + schedule.length + " horizon"
+      + (schedule.length === 1 ? "" : "s") + ", sequenced by how quickly each one can realistically land. "
+      + (now.length ? now.length + " " + (now.length === 1 ? "sits" : "sit") + " in the current cycle; "
+         + "the rest are held deliberately, not deferred by omission."
+         : "Nothing sits in the current cycle — every action here needs a longer runway than the "
+           + "current review allows.");
+  };
+  const decProse = () => (decidedRows.length
+    ? "Every option lumi offered against a gap is set out under its own area. The ones below carry a "
+      + "recorded decision, so a reader a year from now can tell an option that was weighed and turned "
+      + "down from one that was never considered."
+    : "No decision has been recorded against any of the options in this document yet. Recording what was "
+      + "turned down, and why, is what lets a future reader tell a considered rejection from an oversight.");
+  const trendProse = () => (trend.available
+    ? "Movement is measured against the previous collection window. A change in position can come from "
+      + "your own package moving, from the peer group moving, or from both — the areas below say which."
+    : "This is lumi's first aggregated collection window, so every figure in this document is a baseline "
+      + "rather than a direction of travel. Whether a position is improving or slipping cannot be "
+      + "evidenced until a second window closes, and nothing here should be read as a trend.");
 
   // Commentary on how one domain sits against the market. Composed from that domain's
   // OWN numbers so it is always available, always grounded, and instant — and it is the
@@ -702,7 +910,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <table class="rr-table tight">
               <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
               <tbody>${levShown.map(l => html`
-                <tr key=${l.lever_id}><td><b>${l.name}</b><br /><span class="rr-sm">${l.what_it_is}</span></td>
+                <tr key=${l.lever_id}><td><b>${l.name}</b><br /><span class="rr-sm">${l.what_it_is}</span>
+                  ${/* the decision against this option, recorded in place — the table was a
+                       menu with no record of what was chosen or turned down (2026-08-16) */ ""}
+                  <${RrDecCell} cur=${decisions[decKey(b.name, l.lever_id)]} states=${DEC_STATES}
+                    canEdit=${!!canEditDoc} onSave=${(s, w) => saveDecision(b.name, l.lever_id, s, w)} /></td>
                   <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
                   <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
             </table>`
@@ -827,6 +1039,159 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       : html`<p class="rr-p rr-muted">${planBusy
           ? "Sequencing your gaps into a plan…"
           : "No plan is stored yet. Use Rebuild plan above to sequence these gaps into actions with their indicative return."}</p>`}`;
+
+    // ---- THE ASK ---------------------------------------------------------------
+    // The structural difference between a report and a board paper: this one describes
+    // a position, names a cost and requests a decision. Everything on it is derived
+    // from the plan and the envelope; only the wording is the author's.
+    if (kindOf === "ask") {
+      const nowTitles = theAsk.titles || [];
+      const rest = Math.max(0, (theAsk.gaps_total || 0) - nowTitles.length);
+      return html`
+        <${RrH} n=${num} sub="The decision this paper seeks, what it would cost, and what it deliberately leaves open.">What we're asking the board to approve<//>
+        <div class="rr-ask">
+          <div class="rr-ask-k">Decision sought</div>
+          <div class="rr-ask-v">${rrCap(rrCase(theAsk.decision || "note this review"))}</div>
+        </div>
+        <${Prose} k="the_ask" className="rr-lede" generated=${askProse()} />
+        ${hasPosition ? html`
+          <div class="rr-stats">
+            <div><b>${theAsk.actions_this_cycle || 0}</b><span>${(theAsk.actions_this_cycle === 1) ? "action this cycle" : "actions this cycle"}</span></div>
+            <div><b>${money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—"}</b><span>${money.investment_to_p50_gbp ? "indicative, a year" : "no priced cost"}</span></div>
+            <div><b>${theAsk.gaps_total || 0}</b><span>${(theAsk.gaps_total === 1) ? "gap in scope" : "gaps in scope"}</span></div>
+          </div>` : null}
+        ${nowTitles.length ? html`
+          <h3 class="rr-sh">What approval covers</h3>
+          <ul class="rr-ul">${nowTitles.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>` : null}
+        ${rest ? html`
+          <h3 class="rr-sh">What it does not cover</h3>
+          <p class="rr-p">${"The remaining " + rest + " gap" + (rest === 1 ? "" : "s")
+            + " in this review " + (rest === 1 ? "is" : "are") + " set out under "
+            + (rest === 1 ? "its own area" : "their own areas") + " with the options against "
+            + (rest === 1 ? "it" : "them") + ", and " + (rest === 1 ? "is" : "are")
+            + " not part of this approval. They are held deliberately, not overlooked — the "
+            + "schedule says when each one is expected to come back."}</p>` : null}`;
+    }
+
+    // ---- MOVEMENT ---------------------------------------------------------------
+    // Not buildable until a second collection window closes. The section exists so the
+    // document is honest about that now, and fills itself the moment one lands, rather
+    // than the gap being discovered by whoever asks whether things are improving.
+    if (kindOf === "trend") return html`
+      <${RrH} n=${num} sub=${trend.available
+        ? "How each area has moved since the previous collection window."
+        : "Whether these positions are improving or slipping, and why that cannot yet be answered."}>Movement since the last review<//>
+      ${/* its OWN key: "watch" belongs to the Tensions section, and sharing it meant
+           editing one section silently rewrote the other */ ""}
+      <${Prose} k="movement" className="rr-lede" generated=${trendProse()} />
+      ${trend.available ? html`
+        <table class="rr-table">
+          <thead><tr><th>Area</th><th>Then</th><th>Now</th><th>Movement</th></tr></thead>
+          <tbody>${domains.map(d => html`
+            <tr key=${d.name}><td>${domainLabel(d.name)}</td>
+              <td>—</td><td>${RR_POS_WORD[(d.position || {}).verdict] || "no read"}</td>
+              <td class="rr-sm">first comparable window</td></tr>`)}</tbody>
+        </table>`
+      : html`
+        <div class="rr-empty-note">
+          <h3 class="rr-sh">What will appear here</h3>
+          <p class="rr-p">${"Once a second collection window is aggregated, this page carries each area's "
+            + "position then and now, and separates the two reasons a position can change: your own "
+            + "package moving, or the peer group moving around you. Both matter to a board and they "
+            + "are routinely confused."}</p>
+          ${al.snapshot ? html`<p class="rr-p rr-sm">${"The current window is "
+            + (al.snapshot.window || "the latest collection")
+            + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
+            + ". Everything in this document is measured against it."}</p>` : null}
+        </div>`}`;
+
+    // ---- THE SCHEDULE ----------------------------------------------------------
+    if (kindOf === "sched") return html`
+      <${RrH} n=${num} sub=${first ? "The same actions as the section that follows, grouped by when each one can realistically land." : null}>The schedule${contd}<//>
+      ${first ? html`<${Prose} k="schedule" className="rr-lede" generated=${schedProse()} />` : null}
+      ${(items || []).map(s => html`
+        <div key=${s.horizon} class="rr-sched">
+          <div class="rr-sched-h"><span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}</span>
+            <i>${s.actions.length} ${s.actions.length === 1 ? "action" : "actions"}</i></div>
+          <table class="rr-table tight">
+            <thead><tr><th>Action</th><th>Area</th><th>Return</th></tr></thead>
+            <tbody>${s.actions.map((a, i) => html`
+              <tr key=${i}><td><b>${a.title}</b></td>
+                <td class="rr-sm">${domainLabel(a.category || "")}${SEC_NO["domain:" + a.category]
+                  ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""}</td>
+                <td class="rr-sm">${a.roi}</td></tr>`)}</tbody>
+          </table>
+        </div>`)}
+      ${(items || []).find(s => s.horizon === "unscheduled") ? html`
+        <p class="rr-p rr-sm rr-muted">${"Actions shown as unscheduled carry a timing lumi could not "
+          + "place against a cycle. They are listed rather than dropped — an action missing from a "
+          + "schedule is worse than one the schedule admits it cannot place."}</p>` : null}`;
+
+    // ---- WHAT IT COSTS ---------------------------------------------------------
+    // The aggregate has existed in the engine since the board pack was built and never
+    // appeared on the document that goes to a board — so the first question a finance
+    // director asks of it had no answer on the page (2026-08-16).
+    if (kindOf === "cost") return html`
+      <${RrH} n=${num} sub=${"What closing these gaps costs, as far as lumi can price it on " + cutLabel + "."}>What it costs<//>
+      <div class="rr-stats">
+        <div><b>${money.investment_to_p50_gbp ? gbp(money.investment_to_p50_gbp) : "—"}</b><span>indicative investment, a year</span></div>
+        <div><b>${money.savings_to_p50_gbp ? gbp(money.savings_to_p50_gbp) : "—"}</b><span>indicative saving, a year</span></div>
+        <div><b>${nPriced} of ${nGaps}</b><span>${nGaps === 1 ? "gap priced" : "gaps priced"}</span></div>
+      </div>
+      <${Prose} k="cost" generated=${costProse()} />
+      ${(money.items || []).length ? html`
+        <h3 class="rr-sh">Where the figure comes from</h3>
+        <table class="rr-table tight">
+          <thead><tr><th>Metric</th><th>Area</th><th>To median</th><th>To upper quartile</th></tr></thead>
+          <tbody>${(money.items || []).map(it => html`
+            <tr key=${it.label}><td><b>${it.label}</b><br /><span class="rr-sm">${it.formula}</span></td>
+              <td class="rr-sm">${domainLabel(it.category || "")}</td>
+              <td>${gbp(it.to_p50_gbp)}${it.direction === "saving" ? html` <span class="rr-sm">saving</span>` : ""}</td>
+              <td class="rr-sm">${gbp(it.to_p75_gbp)}</td></tr>`)}</tbody>
+        </table>` : null}
+      ${(money.assumptions && Object.keys(money.assumptions).length) ? html`
+        <h3 class="rr-sh">The assumptions behind it</h3>
+        <p class="rr-p rr-sm">${"Median salary " + gbp((money.assumptions || {}).median_salary_gbp)
+          + " · cost per leaver " + ((money.assumptions || {}).cost_per_leaver_pct_salary || 0)
+          + "% of salary · agency premium " + ((money.assumptions || {}).agency_premium_pct || 0)
+          + "% · headcount from your stated FTE band. Change any of these in your company details and "
+          + "every figure above moves with it."}</p>` : null}`;
+
+    // ---- RISKS -----------------------------------------------------------------
+    // Exposures restated from what the engine found, never predictions and never advice
+    // — a risk section is the easiest place in a non-directive document to start giving
+    // instructions by accident.
+    if (kindOf === "risks") return html`
+      <${RrH} n=${num} sub=${first ? "What this review found that bears on delivery, affordability or the strength of the evidence." : null}>Risks and exposures${contd}<//>
+      ${first ? html`<${Prose} k="risks" className="rr-lede" generated=${risksProse()} />` : null}
+      ${(items || []).map(r => html`
+        <div key=${r.id} class="rr-risk">
+          ${/* engine strings carry raw category names ("Incentives & Recognition");
+               every other line on the sheet uses the house sentence case */ ""}
+          <div class="rr-risk-h"><span class="rr-risk-c">${r.class}</span>${rrCase(r.title)}</div>
+          <p class="rr-p">${rrCase(r.detail)}</p>
+        </div>`)}
+      ${/* the caveat belongs once, on the last sheet of the run — not under every chunk */ ""}
+      ${part !== parts - 1 ? null : html`
+        <p class="rr-p rr-sm rr-muted">${"lumi can only name exposures its own data shows. Anything outside "
+          + "the benchmark — delivery capacity, employee relations, what a competitor is about to do — is "
+          + "not in view here and its absence is not evidence of its absence."}</p>`}`;
+
+    // ---- DECISIONS NOT TAKEN ---------------------------------------------------
+    if (kindOf === "decided") return html`
+      <${RrH} n=${num} sub=${first ? "The record of what was weighed and what was turned down, so a later reader can tell a considered rejection from an oversight." : null}>Decisions taken and not taken${contd}<//>
+      ${first ? html`<${Prose} k="decisions" className="rr-lede" generated=${decProse()} />` : null}
+      <table class="rr-table">
+        <thead><tr><th>Option</th><th>Area</th><th>Decision</th><th>Reason given</th></tr></thead>
+        <tbody>${(items || []).map(r => html`
+          <tr key=${r.k}>
+            <td><b>${r.lever.name}</b></td>
+            <td class="rr-sm">${domainLabel(r.cat)}</td>
+            <td><span class=${"rr-dec d-" + r.dec.state}>${DEC_STATES[r.dec.state] || r.dec.state}</span>
+              <br /><span class="rr-sm">${r.dec.at || ""}${r.dec.by ? " · " + r.dec.by : ""}</span></td>
+            <td class="rr-sm">${r.dec.reason || "No reason recorded."}</td>
+          </tr>`)}</tbody>
+      </table>`;
 
     if (kindOf === "method") return html`
       <${RrH} n=${num}>Method and basis<//>

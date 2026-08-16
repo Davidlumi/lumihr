@@ -5059,3 +5059,59 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-indic { font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 600;
   color: var(--neutral-perf-ink); background: var(--neutral-perf-tint);
   border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+
+/* ---- board-paper sections (2026-08-16): the ask, the schedule, cost, risk, the
+   not-taken record. All of it prints; only the decision controls are screen-only. */
+.rr-ask { border-left: 3px solid var(--blue-deep); background: var(--blue-tint);
+  border-radius: 0 10px 10px 0; padding: var(--s4) var(--s5); margin: 0 0 var(--s5); }
+.rr-ask-k { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--blue-deep); margin-bottom: 3px; }
+.rr-ask-v { font-family: var(--font-head); font-size: var(--fs-subhead); font-weight: 700;
+  line-height: 1.3; color: var(--ink); }
+.rr-ul { margin: 0 0 var(--s4); padding-left: 1.2em; }
+.rr-ul li { margin-bottom: var(--s2); }
+
+.rr-sched { margin-bottom: var(--s5); break-inside: avoid; }
+.rr-sched:last-child { margin-bottom: 0; }
+.rr-sched-h { display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s3); margin-bottom: var(--s2); }
+.rr-sched-h i { font-style: normal; font-size: var(--fs-caption); color: var(--ink-soft); }
+.rr-hz { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
+  color: var(--ink); border-bottom: 2px solid var(--blue-deep); padding-bottom: 2px; }
+.rr-hz.h-nextcycle { border-bottom-color: var(--blue); opacity: .92; }
+.rr-hz.h-multicycle, .rr-hz.h-unscheduled { border-bottom-color: var(--border); opacity: .84; }
+
+.rr-risk { break-inside: avoid; }
+.rr-risk + .rr-risk { border-top: 1px solid var(--border); padding-top: var(--s3); margin-top: var(--s3); }
+.rr-risk-h { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
+  line-height: 1.35; margin-bottom: 2px; }
+.rr-risk-c { display: inline-block; font-family: var(--font-body); font-size: var(--fs-micro);
+  font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft);
+  background: var(--paper); border-radius: 5px;
+  padding: 1px 6px; margin-right: 8px; vertical-align: 2px; }
+.rr-empty-note { border: 1px dashed var(--border); border-radius: 10px;
+  padding: var(--s4) var(--s5); background: var(--paper); }
+.rr-empty-note .rr-sh { margin-top: 0; }
+
+/* the decision on one option — badge prints, controls never do */
+.rr-dec-wrap { margin-top: 3px; }
+.rr-dec { display: inline-block; font-size: var(--fs-micro); font-weight: 700;
+  border-radius: 5px; padding: 1px 6px; }
+.rr-dec.d-considered { color: var(--ink-soft); background: var(--paper); }
+.rr-dec.d-not_now { color: var(--neutral-perf-ink); background: var(--neutral-perf-tint); }
+.rr-dec.d-rejected { color: var(--ink); background: var(--border); }
+.rr-dec-why { color: var(--ink-soft); font-style: italic; margin-left: 6px; }
+.rr-dec-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font-size: var(--fs-micro); font-weight: 600; color: var(--blue-deep); }
+.rr-dec-btn:hover { text-decoration: underline; }
+.rr-dec-panel { margin-top: 6px; padding: 8px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); }
+.rr-dec-in { width: 100%; font-size: var(--fs-caption); margin-bottom: 6px; }
+.rr-dec-acts { display: flex; flex-wrap: wrap; gap: 5px; }
+.rr-dec-set, .rr-dec-clear { border: 1px solid var(--border); background: var(--surface);
+  border-radius: 6px; padding: 3px 8px; cursor: pointer;
+  font-size: var(--fs-micro); font-weight: 600; color: var(--ink); }
+.rr-dec-set:hover, .rr-dec-clear:hover { border-color: var(--blue-deep); color: var(--blue-deep); }
+.rr-dec-set.on { background: var(--blue-deep); border-color: var(--blue-deep); color: #fff; }
+.rr-dec-clear { color: var(--ink-soft); }
