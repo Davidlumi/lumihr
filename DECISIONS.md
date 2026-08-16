@@ -18826,3 +18826,47 @@ Verified stable from 1400px down to 420px.
 Cleanup: 54 dead `rp-*` rules from the working screen the document replaced three iterations ago;
 only `.rp-go` survives, still used by the signals/data links. 27 sheets, none over A4 at any
 window width. Suite 15/15. ?v=655.
+
+## 2026-08-16 (k) — Persona review: WTW consultant / Mercer reward director
+
+Read all 28 pages as the two people who would have to put their name on it. **Six defects fixed,
+five judgement calls left for David.**
+
+**Fixed — would have blocked sign-off:**
+
+1. **A priced figure on an action it does not price.** `gbp_by_cat` holds one £ per *category*
+   and every lever inherited it, so the plan read *"Financial wellbeing support — Indicative
+   £27,000 a year to reach the peer median on Employer pension contribution."* That action does
+   not close the contribution gap. A number pasted onto the wrong recommendation is precisely
+   what a consultancy carries liability for. Only a lever whose own cost character is recurring
+   spend against that gap may carry the figure now.
+2. **The contents pointed one page late on every line**, and its last entry ("Method and basis
+   29") pointed past the end of a 28-page document.
+3. **Two peer groups, unreconciled.** The cover said *All peers*; the narrative said the
+   organisation compares itself to a named sector-and-size group. Both true, different things.
+   The cover now distinguishes **Benchmarked against** from **Stated comparator**.
+4. **A companion document that no longer exists** — the strategy half still referred the reader
+   to "the companion Reward Position & Plan document", which this document became.
+5. **Product vocabulary in a board paper** — "What your signals surface first", "Sharpens which
+   signal lenses surface first this year".
+6. **"Approved by director@thornbridge.example"** — a login account presented as an approver.
+
+**Left for David — judgement, not defect:**
+
+- **The tally and the table on "Position at a glance" do not reconcile.** The table shows 8
+  domains (7 off strategy); the tally beneath reads "9 off strategy · 3 holding". They count
+  commitments and domains respectively. Both are right; on one page they look wrong.
+- **The plan summary says "Incentives & recognition aims above market yet nothing is evidenced
+  there"** while that domain's own section reports 17 benchmarked metrics. The model means the
+  *commitment* is unevidenced; the reader will read it as contradicting page 11.
+- **Wellbeing reads below market, and the single signal shown reads above market** (P77, £150 vs
+  £103). Materiality ordering is correct; on a board page it looks like the evidence contradicts
+  the verdict.
+- **The Wellbeing recommendation does not answer its own finding** — the gap stated is "no
+  Employee Assistance Programme shows in your responses", and the options offered are a framework
+  and manager capability, because a coherence contradiction draws Approach levers and an EAP is
+  Substance.
+- **"Principles, peers and constraints"** delivers only the peer sentence when the other two are
+  unstated, rather than saying so.
+
+Suite 15/15. 30 sheets, contents verified pointing true on every line, none over A4. ?v=656.
