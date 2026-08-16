@@ -19459,3 +19459,69 @@ the throwaway DB was gone. Found by reading the output lines rather than trustin
 is now twice this failure mode has been caught that way. Pure checks live outside every guard.
 
 Suite **15/15** (qa_strategy_align 73 checks, all executing). 42 pages verified. ?v=682.
+
+## 2026-08-16 — Ship gate: five personas, five do-not-ships, both right twice
+
+Final panel before shipping (CPO, proofreader, QA reconciler, Big-4 partner, first-day
+customer) read both rendered variants cold: five do-not-ship verdicts, converging on two
+release-holders. Both were real.
+
+**The fresh document asserted measurements it does not have** (all five reviewers). The exec
+lede, §06 Tensions and the Method completeness card all carried full-org content on a document
+whose own cards say "awaiting your data" — 96% completeness against its own 12%, named
+below-market verdicts on zero benchmarked answers. Pre-data, those three surfaces are now
+deterministic and intent-only: the lede states the aim and the unlock, Tensions derives only
+from the stated dials (overall dial vs area aims), and the Completeness card single-sources
+from `data_state` — the same counters page 9 prints — so the two pages *cannot* disagree
+again. The pre-data ask now reads the approval record before asking (approved → note;
+amended → re-approve; neither → approve), the board commits *the organisation* (not lumi),
+and the contents shows Part C greyed — "unlocks with your data" — instead of a lettering gap
+that read as a bug.
+
+**The board ask was un-minutable** (three reviewers): "approve the 4 actions" listed both
+members of a pair the schedule declares either/or. The truth in the data was stronger than
+anyone stated: all 10 plan actions are options against just 3 gaps (3/4/3). The ask now counts
+DECISION UNITS — options against one commitment grouped server-side onto the payload
+(`decision_units`, `gaps_covered`) — so the decision reads "approve the 3 actions — one of
+them an explicit choice between alternatives", the covers card prints the pair as one
+either/or item, recurring spend counts per unit (1 of 3, not 2 of 4), and the gap remainder
+is 7, not 6. The schedule's "7 are alternatives — one of each pair" (arithmetically
+impossible against its 3 flags) died with the split computation that produced it: count and
+flags now derive from ONE cross-horizon grouping, membership is stated once under the table
+("Incentives carries 3, Benefits 4, Pensions 3 — a later option returns to the board in its
+own cycle"), and same-cycle rows keep the either/or flag.
+
+**Basis honesty, priced at one sentence each**: the cover's "All peers" vs "Stated peer
+group" contradiction is reconciled where a reader looks (Method, §05, and a cover pointer);
+the £ model names its band at last ("50–249 FTE, midpoint 150") plus the sample-size caveat;
+and an amended-pending-re-approval paper now says which strategy its gaps are measured
+against, on the ask and in Governance.
+
+**Copy class**: the six-page template clause that hung "sits short" on the aim instead of the
+read ("You aim on market here, which sits short of…") is two clauses with two subjects now;
+"market median" is gone from every signal caption (peer median, one name for one statistic);
+"Alignment is a count"; truncated signal exhibits say where the rest live (the Time-off
+sentence, everywhere); coverage notes pass through the house-case filter; and the plan
+generator gained rule 7 + a `below_market` count so it writes "below overall — 18 of its 37
+benchmarked metrics sit below market", never "below on 37" (which reads as all 37 failing).
+
+**The verifier had gone half-blind.** "0 contents entries checked" was printing as a *note* —
+PyMuPDF had started splitting contents rows across lines and the parser matched nothing, so
+the one check this file exists for was silently vacuous. Fourth instance of the silent-skip
+class; same fix as always: finding nothing is now a FAILURE, and headings are searched across
+the whole page because two sections legitimately share a sheet. The schedule also stopped
+trusting row counts as heights — horizon groups pre-split at four actions, because RETURN
+cells are model prose whose length moves between plan rebuilds (a rebuild made a five-action
+group spill its sheet mid-gate).
+
+**Held for David, not coded**: the Big-4 reviewer's strongest structural point — area verdicts
+rest on below-market metrics the document never lists (Wellbeing: "7 of 18 below" with no
+supporting row printed) — wants an evidence exhibit per area, which is a content-model
+addition, not a ship-gate patch. Related doctrine call: two reviewers split on whether a board
+paper may defer evidence to the app at all. And the deeper comparator question: the document
+*runs* on All peers while the strategy binds the default cut (the stated group) — whether the
+reads should move to the stated group is an engine/suppression decision. On the agenda with
+R7/R8 sign-off, the population split, and the share-link privacy ruling.
+
+Suite **15/15**. Both variants verified as print artefacts: FULL 42 pages, FRESH 12 pages,
+footers/contents/A4 all clean, contents check demonstrably executing (23 + 9 rows). ?v=683.
