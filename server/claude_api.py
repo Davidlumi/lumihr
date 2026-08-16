@@ -1747,6 +1747,14 @@ Hard rules — breaking any makes the output unusable:
    constraints come first.
 6. Plain single-line prose in every field: no line breaks, no backslashes, no escape sequences, no markdown.
    This is a starting point for the leader's own judgement, not advice.
+7. COUNTS MUST NAME WHAT THEY COUNT. If you state how many areas are in some condition, the words must
+   describe the same set the number came from. The findings you are given are areas short of their aim
+   AND below market; there are other areas short of their aim that read on market. So never write
+   "N areas fall short of the position you set" — write "N areas sit below market against the position
+   you set", or state the count without characterising the set. A count whose wording describes a wider
+   set than the count is the single defect this rule exists to prevent.
+8. NEVER call anything "the largest" unless the payload gives you two or more of that thing to compare.
+   Where exactly one gap carries a price, it is "the one gap lumi can price", never "the largest gap".
 
 Return STRICT JSON, no markdown fences, with keys:
   "summary": string,
@@ -1776,7 +1784,7 @@ DIAGNOSIS_SCHEMA = {
 }
 
 # Bump when the diagnosis generator/validator changes (cache self-invalidation).
-DIAGNOSIS_GEN_VERSION = "2026-06-18.diag-v1"
+DIAGNOSIS_GEN_VERSION = "2026-08-16.diag-v2"   # v2: rules 7-8 (count wording, "largest")
 
 
 def _diagnosis_numbers(payload):
@@ -1821,6 +1829,23 @@ def validate_diagnosis(parts, payload):
         return False, "directive phrasing: %s" % DIRECTIVE_RE.search(text_all).group(0)
     if LEGAL_RE.search(text_all):
         return False, "legal adjudication: %s" % LEGAL_RE.search(text_all).group(0)
+    # D071 (v3.2) — A COUNT MUST NAME THE SET IT COUNTS. The findings given here are
+    # areas short of their aim AND below market; other areas are short of aim while
+    # reading on market. "4 areas fall short of the position you set" therefore
+    # describes five areas with a count of four. Prompt rule 7 did not hold, so the
+    # validator enforces it: the wider phrasing is rejected and the deterministic
+    # narrative ships. Instructions are guidance; validators are the contract.
+    _wide = re.search(r"\b\d+\s+areas?\s+(?:fall|falls|sit|sits|are|is)\s+short\s+of\s+"
+                      r"(?:the\s+)?position", text_all, re.I)
+    if _wide:
+        return False, "count wording describes a wider set than the count: %s" % _wide.group(0)
+    # D055 (v3.2) — no superlative without a comparison. Where one gap carries a price,
+    # "the largest gap" implies a ranking that was never made.
+    _priced = len([f for f in (payload.get("findings") or [])
+                   if isinstance(f, dict) and any(k for k in f
+                                                  if "gbp" in str(k).lower() and f.get(k))])
+    if _priced <= 1 and re.search(r"\bthe largest\b", text_all, re.I):
+        return False, "superlative with nothing to compare (%d priced finding)" % _priced
     return True, None
 
 

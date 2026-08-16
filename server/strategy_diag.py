@@ -130,7 +130,12 @@ def compute_findings(strategy, domains, opp_by_domain):
         else:
             ev = "%s sits on market overall (%d of %d metrics), with %d above and %d below" % (name, n_at, pool, n_above, n_below)
         if money and kind == "gap" and opp.get("direction") == "investment":
-            ev += "; about £%s would move the largest gap (%s) to the peer median" % ("{:,}".format(int(opp["top_gbp"] or money)), opp.get("top_label", "the biggest item"))
+            # D055 (v3.2): "the largest gap" implies a ranking that was never made — in
+            # this area lumi prices exactly one metric, so the superlative compares it
+            # with nothing. Name the metric instead; it is the fact the reader wants.
+            ev += "; about £%s would move %s to the peer median" % (
+                "{:,}".format(int(opp["top_gbp"] or money)),
+                (opp.get("top_label") or "the priced metric here").lower())
         elif money and kind == "over" and opp.get("direction") == "savings":
             ev += "; about £%s of headroom to the peer median sits here" % "{:,}".format(int(money))
         findings.append({
@@ -189,7 +194,13 @@ def deterministic_diagnosis(payload):
     # falling short of your aim.", which has no main verb and a parenthetical label.
     bits = []
     if gaps:
-        bits.append("%d %s short of the position you set" % (gaps, "area falls" if gaps == 1 else "areas fall"))
+        # D071 (v3.2): "N areas fall short of the position you set" described a WIDER set
+        # than the count — these findings are areas short of their aim AND below market,
+        # while others are short of aim while reading on market, so the words said five
+        # and the number said four. The wording now names the set the count came from.
+        # (validate_diagnosis rejects the wide form in model output too.)
+        bits.append("%d %s below market against the position you set"
+                    % (gaps, "area sits" if gaps == 1 else "areas sit"))
     if overs:
         bits.append("%d %s more generously than you intend" % (overs, "sits" if overs == 1 else "sit"))
     import claude_api
