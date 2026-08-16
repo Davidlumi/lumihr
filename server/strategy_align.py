@@ -345,7 +345,7 @@ def option_decision_key(category, lever_id):
 
 
 def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single,
-                 budget_labels=None, constraint_labels=None, domain_min=3):
+                 budget_labels=None, constraint_labels=None, domain_min=3, sector=None):
     """What could go wrong — restated from what the engine already established.
 
     Deliberately EXPOSURES, not predictions and never instructions: each one names a
@@ -441,6 +441,27 @@ def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single,
                        "baseline. Whether a position is improving or slipping cannot be evidenced "
                        "until a second window closes, and no reading in this document should be taken "
                        "as a direction of travel."),
+        })
+
+    # 6b. THE WAGE FLOOR — for a sector paid at or near it, the statutory floor is the
+    # binding annual driver, and a retail reward plan that never says so would not
+    # survive an ExCo (2026-08-16 practitioner panel). Fires only where the sector
+    # makes it live AND the pay stance or read makes it bite. An exposure, not advice:
+    # lumi cannot see rate headroom, and says so.
+    _floor_sectors = ("retail", "hospitality", "leisure", "consumer")
+    _pay = next((b for b in (blocks or []) if b.get("name") == "Pay"), None)
+    _pay_low = (strat.get("market_position") == "lag"
+                or (strat.get("domain_targets") or {}).get("Pay") == "lag"
+                or (_pay and (_pay.get("position") or {}).get("verdict") == "below"))
+    if sector and any(k in sector.lower() for k in _floor_sectors) and _pay_low:
+        out.append({
+            "id": "wage_floor", "class": "Statutory",
+            "title": "The statutory wage floor moves every April, and this pay position sits close to it",
+            "detail": ("In this sector the National Living Wage is the binding floor under a large part "
+                       "of the workforce. Each uplift compresses differentials above it and narrows the "
+                       "room a below-market pay position has to exist at all. lumi cannot see your rate "
+                       "headroom over the floor — how much of the annual uplift lands as unavoidable "
+                       "spend is a judgement only you can make."),
         })
 
     # 7. THE ORGANISATION'S OWN CONSTRAINTS — stated in the wizard, never carried forward.

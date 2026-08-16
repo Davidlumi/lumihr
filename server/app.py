@@ -5429,7 +5429,11 @@ async def build_action_plan(request: Request):
             e = gbp_by_cat.setdefault(q.sub_power, {"gbp": 0, "direction": it["direction"], "label": it["label"]})
             e["gbp"] += it["to_p50_gbp"]
     # the candidate set: one per lever offered against a real gap, deduped, £-carrying
-    cands, seen, _stated = [], set(), set()
+    cands, seen, _stated, _scale_done = [], set(), set(), False
+    def _set_scale_done():
+        nonlocal _scale_done
+        _scale_done = True
+        return None
     for ob in opts:
         cat = ob.get("category")
         for lev in ob.get("levers", []):
@@ -5453,6 +5457,10 @@ async def build_action_plan(request: Request):
             # board do the arithmetic. Multiplier from lumi, judgement from them.
             _ur = (money.get("unit_rates") or {}).get("points") or []
             _att = next((p for p in _ur if p["key"] == "attrition"), None)
+            # the scale sentence rides the FIRST unpriced candidate only — printed on
+            # every action it read as a template tic (2026-08-16 practitioner panel)
+            if _att and _scale_done:
+                _att = None
             # "to reach the peer median on X" priced the GAP, but the line printed
             # against every recurring lever in that category — so two pension options
             # each showed £27,000 and a reader could add them to £54,000, while the
@@ -5463,11 +5471,12 @@ async def build_action_plan(request: Request):
                     % ("{:,}".format(int(m["gbp"])), m["label"].lower()))
                    if _prices else
                    ("Cost-saving where it lands." if lev.get("cost_character") == "cost-saving"
-                    else ("No direct price — the effect is on retention, fairness and how the "
+                    else (_set_scale_done() or
+                          "No direct price — the effect is on retention, fairness and how the "
                           "package reads. For scale: one percentage point of regretted attrition "
                           "is worth £%s a year on your headcount."
                           % "{:,}".format(int(_att["gbp"]))) if _att else
-                         "No indicative figure — the effect is on retention, fairness and how the package reads."))
+                         "No direct price — the effect is on retention, fairness and how the package reads."))
             # The gap statement used to prefix EVERY lever's why — four options against
             # one commitment printed the same sentence four times on the plan page
             # ("You aim on market on Benefits & lifestyle; the live read sits short of
@@ -5477,6 +5486,7 @@ async def build_action_plan(request: Request):
             _stated.add(ob.get("commitment_id"))
             cands.append({
                 "title": lev.get("name"), "category": cat, "lever_id": lev.get("lever_id"),
+                "alt_group": ob.get("commitment_id"),
                 "why": (((ob.get("statement") or "") + " ") if _first_of_commitment else "")
                        + (lev.get("what_it_is") or ""),
                 "horizon": lev.get("speed") or "this cycle",
@@ -5847,14 +5857,14 @@ horizon_bucket = strategy_align.horizon_bucket
 option_decision_key = strategy_align.option_decision_key
 
 
-def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single):
+def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single, sector=None):
     """App-side binding: the label vocabularies and the evidence floor live here, so
     they are passed in rather than duplicated in the engine."""
     return strategy_align.derive_risks(
         al, money, blocks, strat, doc, data_state, snapshot_single,
         budget_labels=STRATEGY_LABELS["budget_direction"],
         constraint_labels=STRATEGY_CONSTRAINT_LABELS,
-        domain_min=DOMAIN_MIN_POLARISED)
+        domain_min=DOMAIN_MIN_POLARISED, sector=sector)
 
 
 @app.get("/api/strategy/alignment")
@@ -6046,6 +6056,7 @@ async def get_strategy_alignment(request: Request):
                    "to_p50_gbp": i["to_p50_gbp"], "to_p75_gbp": i["to_p75_gbp"],
                    "category": getattr(org_visible_questions(org).get(i["question_id"]),
                                        "sub_power", None),
+                   "levels_covered": i.get("levels_covered"), "levels_total": i.get("levels_total"),
                    "formula": i["formula"]}
                   for i in _mi],
         "assumptions": {k: v for k, v in (_sig_money.get("assumptions") or {}).items()
@@ -6086,7 +6097,8 @@ async def get_strategy_alignment(request: Request):
                     "prior": _prior[-1] if _prior else None}
     # 5. RISK. Exposures restated from what the engine found — never predictions.
     out["risks"] = derive_risks(out, _sig_money, blocks, strat, st.get("document") or {},
-                                out["data_state"], snapshot_single=not _prior)
+                                out["data_state"], snapshot_single=not _prior,
+                                sector=org.get("industry"))
     # 6. THE ASK. A board paper REQUESTS a decision; this one only ever described a
     # position. Assembled from the plan's own first cycle and the envelope above — the
     # figures are the engine's, the wording around them is the author's to replace.

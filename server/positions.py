@@ -531,7 +531,7 @@ MONEY_METRICS = [
         "question_id": "REW_BEN_PENS_EMP_MAX_01", "kind": "pension",
         "label": "Employer pension contribution",
         "direction": "investment",
-        "formula": "(peer percentile % − your %) × median salary × FTE at level (level mix assumption)",
+        "formula": "summed level by level: the gap to the peer rate × median salary × the FTE in that level",
     },
     {
         "question_id": "ATT_OBO_REGRET_ATTR_01", "kind": "attrition",
@@ -653,6 +653,10 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
             "question_id": q.id, "label": mm["label"], "kind": mm["kind"],
             "direction": mm["direction"], "formula": mm["formula"],
             "to_p50_gbp": round(tot50), "to_p75_gbp": round(tot75),
+            # the panel could not tell how many levels stood behind the figure — a
+            # Board-only gap must never carry an org-wide £ silently (2026-08-16)
+            "levels_covered": len(rows_out),
+            "levels_total": len([r for r in p.get("matrix_rows", []) if r["row_id"] not in _ubr2]),
             "rows": rows_out, "fte_known": fte is not None,
             "cut_label": (block_for(p, cut, (twin_blocks_by_q or {}).get(q.id)))[1],
         })
