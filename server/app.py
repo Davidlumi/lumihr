@@ -2584,10 +2584,15 @@ async def strategy_diagnosis(request: Request):
             e["top_gbp"], e["top_label"], e["direction"] = gbp, it["label"], it["direction"]
     findings = strategy_diag.compute_findings(strat, domains, opp_by_domain)
     flagged = {f["area"] for f in findings}
-    # derived, never literal (Diff 1 doctrine): competitive = the payload's own flag —
-    # the old strategy_diag._COMPETITIVE six-name filter dropped every renamed domain
+    # ON PLAN means the ALIGNMENT read says on_target — nothing else (2026-08-16 panel).
+    # The old rule was "not flagged by the diagnosis findings", which filed Governance
+    # as on-plan while the reward document's own section read it Below strategy: two
+    # engines lending one phrase two meanings, caught by the WTW reviewer. Where a
+    # stated aim exists, its alignment decides; a domain with no stated aim cannot be
+    # "on plan" and is simply not listed.
+    _aim_by_dom = {d["name"]: (d.get("target") or {}).get("alignment") for d in hero["domains"]}
     on_plan = [d["name"] for d in domains if d.get("competitive", True)
-               and d["verdict"] and d["name"] not in flagged]
+               and d["verdict"] and _aim_by_dom.get(d["name"]) == "on_target"]
     obj_label = OBJECTIVE_LABELS.get(strat.get("primary_objective")) if (
         (strat.get("provenance") or {}).get("primary_objective") != "skipped") else None
     payload = strategy_diag.build_diagnosis_payload(
@@ -5424,7 +5429,7 @@ async def build_action_plan(request: Request):
             e = gbp_by_cat.setdefault(q.sub_power, {"gbp": 0, "direction": it["direction"], "label": it["label"]})
             e["gbp"] += it["to_p50_gbp"]
     # the candidate set: one per lever offered against a real gap, deduped, £-carrying
-    cands, seen = [], set()
+    cands, seen, _stated = [], set(), set()
     for ob in opts:
         cat = ob.get("category")
         for lev in ob.get("levers", []):
@@ -5463,9 +5468,17 @@ async def build_action_plan(request: Request):
                           "is worth £%s a year on your headcount."
                           % "{:,}".format(int(_att["gbp"]))) if _att else
                          "No indicative figure — the effect is on retention, fairness and how the package reads."))
+            # The gap statement used to prefix EVERY lever's why — four options against
+            # one commitment printed the same sentence four times on the plan page
+            # ("You aim on market on Benefits & lifestyle; the live read sits short of
+            # it." ×4). The statement rides on the FIRST lever of each commitment only;
+            # the rest carry what the action is, which is what differs between them.
+            _first_of_commitment = ob.get("commitment_id") not in _stated
+            _stated.add(ob.get("commitment_id"))
             cands.append({
                 "title": lev.get("name"), "category": cat, "lever_id": lev.get("lever_id"),
-                "why": (ob.get("statement") or "") + " " + (lev.get("what_it_is") or ""),
+                "why": (((ob.get("statement") or "") + " ") if _first_of_commitment else "")
+                       + (lev.get("what_it_is") or ""),
                 "horizon": lev.get("speed") or "this cycle",
                 "cost_character": lev.get("cost_character"), "trade_off": lev.get("trade_off"),
                 "roi": roi,

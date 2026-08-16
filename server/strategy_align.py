@@ -113,9 +113,12 @@ def options_for(commitments, levers=None, visible_qids=None):
             out.append({"commitment_id": c.get("id"), "category": c.get("category"),
                         "status": c.get("status"), "statement": c.get("statement"),
                         "framing": OPTIONS_FRAMING, "levers": [],
-                        "coverage_note": ("Your practice already sits above this aim, so the levers here "
-                                          "would add to a package that is ahead of the stated position — "
-                                          "the open question is whether the aim itself still reads right.")})
+                        # the category is named so two overspend domains do not print
+                        # the same sentence word for word (2026-08-16 panel)
+                        "coverage_note": ("%s already sits above this aim, so every lever in the "
+                                          "inventory would add to a package that is ahead of the stated "
+                                          "position — the open question is whether the aim itself still "
+                                          "reads right." % c.get("category"))})
             continue
         needs = _registers_for(c)
         need = needs[0]                            # the primary register, for the coverage note
