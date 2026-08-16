@@ -407,12 +407,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     const bits = [];
     bits.push(name + " reads " + (RR_POS_WORD[p.verdict] || p.verdict) + " overall"
       + (p.pctl != null ? ", around the " + rrOrdinal(p.pctl) + " percentile of " + cutLabel : "")
-      + ", on " + cnt.metrics + " benchmarked " + (cnt.metrics === 1 ? "metric" : "metrics") + ".");
+      + ", on " + cnt.metrics + " benchmarked " + (cnt.metrics === 1 ? "metric" : "metrics")
+      + (cnt.peer_n ? " with a median of " + cnt.peer_n.median + " peers behind each" : "") + ".");
     const parts = [];
     if (p.below) parts.push(p.below + " " + (p.below === 1 ? "sits" : "sit") + " below market");
     if (p.at) parts.push(p.at + " " + (p.at === 1 ? "sits" : "sit") + " on it");
     if (p.above) parts.push(p.above + " " + (p.above === 1 ? "sits" : "sit") + " above");
     if (parts.length) bits.push("Of those, " + rrList(parts) + ".");
+    if (cnt.strict === false) {
+      bits.push("That read is indicative rather than methodology-grade: it rests on "
+        + cnt.metrics + " comparable " + (cnt.metrics === 1 ? "metric" : "metrics")
+        + ", below the " + (cnt.domain_min || 3) + " this engine requires before it will call a domain verdict firm. "
+        + "Treat the direction as a pointer and the position as provisional.");
+    }
     if (aim.stance) {
       const w = { on_target: "which matches the position your strategy sets",
                   behind: "which sits short of the position your strategy sets",
@@ -447,6 +454,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <p class="rr-lead">${K.lead}</p>
         <div class="rr-cover-meta">
           <div><span>Prepared</span>${today}</div>
+          ${al.snapshot && al.snapshot.window
+            ? html`<div><span>Data</span>${al.snapshot.window}</div>` : null}
           <div><span>Benchmarked against</span>${cutLabel}</div>
           ${doc.comparator_label && doc.comparator_label !== cutLabel
             ? html`<div><span>Stated comparator</span>${doc.comparator_label}</div>` : null}
@@ -600,6 +609,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const b = block || {};
       const isRead = (half || "read") === "read";
       const inlineFollow = isRead && (b.gaps || []).length && (parts || 1) === 1;
+      const cntStrictFalse = (b.count || {}).strict === false;
       // computed OUTSIDE the template: htm's tokenizer cannot parse a spread inside ${}
       const _allLev = (b.options || []).reduce((a, o) => a.concat(o.levers || []), []);
       const levShown = levSlice ? _allLev.slice(levSlice[0], levSlice[1]) : _allLev;
@@ -608,7 +618,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ? " (" + ((levPart || 0) + 1) + " of " + levParts + ")" : "";
       // a sheet carrying the read AND the follow explanation has room for one signal:
       // measured at two it ran 41px past A4 on Time off & family
-      const sigShown = (b.signals || []).slice(0, inlineFollow ? 1 : 4);
+      // an indicative domain also carries the thin-evidence caveat, which is prose and
+      // cannot be trimmed — the signals table is what yields on a crowded sheet
+      // three, not four: a signal row with wrapped detail runs ~80px, and a read sheet
+      // also carries the stats, the split, the commentary and sometimes a caveat
+      const _room = (inlineFollow ? 1 : 3) - (cntStrictFalse ? 1 : 0);
+      const sigShown = (b.signals || []).slice(0, Math.max(1, _room));
       const pos = b.position || {};
       const aim = b.aim || {};
       const cnt = b.count || {};
@@ -626,11 +641,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <div class="rr-dom-stat">
             <span class="rr-dom-k">Metrics benchmarked</span>
             <b>${cnt.metrics || 0}</b>
-            <span class="rr-sm">${cnt.pool ? "against " + cnt.pool + " peer readings" : "on your own data"}</span>
+            ${/* the peer SAMPLE, not the org's own metric count — see the server note */ ""}
+            <span class="rr-sm">${cnt.peer_n
+              ? "typically " + cnt.peer_n.median + " peers per metric (" + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
+              : "on your own data"}</span>
           </div>
           <div class="rr-dom-stat">
             <span class="rr-dom-k">Market position</span>
-            <b class=${"rr-verdict v-" + (pos.verdict || "none")}>${RR_POS_WORD[pos.verdict] || "no read yet"}</b>
+            <b class=${"rr-verdict v-" + (pos.verdict || "none")}>${RR_POS_WORD[pos.verdict] || "no read yet"}${
+              cnt.strict === false ? html`<span class="rr-indic"> indicative</span>` : ""}</b>
             <span class="rr-sm">${pos.pctl != null ? "around the " + rrOrdinal(pos.pctl) + " percentile" : "not enough comparable data"}</span>
           </div>
           <div class="rr-dom-stat">
@@ -670,10 +689,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           ${/* a below-market area whose only flagged signal reads above market looks, on a
                board page, like the evidence refuting the verdict. Say why it doesn't. */ ""}
           ${pos.verdict && sigShown.length && !sigShown.some(x => x.position === pos.verdict) ? html`
-            <p class="rr-p rr-sm rr-muted">The signals above are the most material in
-            ${domainLabel(b.name)}, which is not the same as the most representative: none of them
-            happens to read ${RR_POS_WORD[pos.verdict]}, while the area overall does. The split at the
-            top of this page is the fuller picture.</p>` : null}` : null}`}
+            <p class="rr-p rr-sm rr-muted">${"The signals above are the most material in "
+              + domainLabel(b.name) + ", which is not the same as the most representative: none of "
+              + "them happens to read " + RR_POS_WORD[pos.verdict] + ", while the area overall does. "
+              + "The split at the top of this page is the fuller picture."}</p>` : null}` : null}`}
 
         ${isRead ? null : html`
           ${/* the sheet heading already names the domain and says "what follows";
@@ -811,6 +830,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "method") return html`
       <${RrH} n=${num}>Method and basis<//>
+      ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
+           before an expression and printed "rests on55 of the 77 questions" */ ""}
+      ${al.completeness ? html`<p class="rr-p"><b>How complete this is.</b>
+      ${"This document rests on " + al.completeness.answered + " of the " + al.completeness.of
+        + " questions lumi treats as the core set (" + al.completeness.pct + "%). Areas answered thinly "
+        + "carry an indicative read, marked as such in their own section; unanswered ones say so "
+        + "rather than being estimated."}</p>` : null}
+      ${al.snapshot ? html`<p class="rr-p"><b>Data vintage.</b>
+      ${"Peer figures are the " + (al.snapshot.window || "current") + " collection"
+        + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
+        + ". Your own answers are as you last saved them; where any are due a refresh, Your data says so."}</p>` : null}
       <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
       same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
       counts against the commitments your strategy makes — never as a score, index or grade.</p>

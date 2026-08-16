@@ -4923,7 +4923,7 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   border-bottom: 1.5px solid var(--ink); }
 .rr-table td { padding: 9px var(--s3) 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
 .rr-table td:last-child, .rr-table th:last-child { padding-right: 0; }
-.rr-table.tight td { padding: 6px var(--s3) 6px 0; }
+.rr-table.tight td { padding: 5px var(--s3) 5px 0; }   /* 1px/row buys a crowded domain sheet its last 9px */
 .rr-table tr.rr-unset td { color: var(--ink-faint); }
 .rr-align.a-on_target { color: var(--favourable-ink); }
 .rr-align.a-behind, .rr-align.a-ahead { color: var(--neutral-perf-ink); }
@@ -5056,3 +5056,6 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-story { margin-bottom: var(--s5); }
 .rr-story:last-child { margin-bottom: 0; }
 .rr-story .rr-sh { margin-top: 0; }
+.rr-indic { font-family: var(--font-body); font-size: var(--fs-micro); font-weight: 600;
+  color: var(--neutral-perf-ink); background: var(--neutral-perf-tint);
+  border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
