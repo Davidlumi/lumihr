@@ -994,7 +994,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
          + (nPriced < nGaps ? " — that envelope covers " + nPriced + " of the " + nGaps
             + " gaps and is not the cost of this approval." : "."))
       : "None of the gaps in this review carries a price from lumi's model.";
-    return "The board is asked to approve " + n + " action" + (n === 1 ? "" : "s")
+    return "The board — or the remuneration committee, where reward is delegated to it — "
+      + "is asked to approve " + n + " action" + (n === 1 ? "" : "s")
       + " scheduled for this cycle" + (areas.length ? ", covering " + rrList(areas) : "")
       + ". " + ownCost
       + (nGaps ? ((n === 1 ? "It is the first step of a response to " : "They are the first cycle of a response to ")
