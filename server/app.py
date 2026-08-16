@@ -5895,11 +5895,15 @@ async def get_strategy_alignment(request: Request):
     items, tb = build_items(request, org, user, cut)
     prev_items = pos.prevalence_items(org["org_id"], cut, org_visible_questions(org), payloads(),
                                       org_answers_for(org), make_entitled(user, org), tb)
-    sec_order = []
-    for q in org_visible_questions(org).values():
-        if q.sub_power and q.sub_power not in sec_order:
-            sec_order.append(q.sub_power)
-    prac_items = pos.practice_position_items(org["org_id"], cut, org_visible_questions(org),
+    # D042 (v3.1): this built section order by FIRST APPEARANCE in question_order,
+    # unlike the four other hero_signals call sites which sort by sub_power_order — so
+    # the document's area sequence matched neither the taxonomy nor any other surface,
+    # and the reviewer counted four different orderings in one paper. The stored
+    # taxonomy order is the canonical one.
+    _q_all = org_visible_questions(org)
+    sec_order = [s for _, s in sorted({(q.sub_power_order, q.sub_power)
+                                       for q in _q_all.values() if q.sub_power})]
+    prac_items = pos.practice_position_items(org["org_id"], cut, _q_all,
                                              payloads(), org_answers_for(org), make_entitled(user, org), tb)
     hero = pos.hero_signals(items, prev_items, sec_order, MARKET_BAND_LOW, MARKET_BAND_HIGH,
                             DOMAIN_MIN_POLARISED, VERDICT_NET_LEAN, UNCOMMON_PCT,
@@ -6189,6 +6193,11 @@ async def get_strategy_alignment(request: Request):
     # the method page names the suppression rule; the reviewer noted it never states
     # the number — the one section claiming methodological rigour
     out["suppression_floor"] = SUPPRESSION_FLOOR
+    # Q5 (v3.1): every read in the document depends on who the organisation IS, and a
+    # reader met that on page 35. The peer block and the entity block have to be
+    # comparable where they are asserted — that is the whole of the size-mismatch
+    # finding (D052), and it is illegible without this.
+    out["entity"] = {"fte_band": org.get("fte_band"), "sector": org.get("industry")}
     out["ok"] = True
     return out
 
