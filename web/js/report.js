@@ -154,6 +154,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const [al, setAl] = useState(null);         // /api/strategy/alignment
   const [cm, setCm] = useState(null);         // AI: reading / tensions / watch
   const [dg, setDg] = useState(null);         // AI: summary / findings   (plan only)
+  const [stm, setStm] = useState(null);       // AI: the six narrative sections (intent)
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const orgName = (me.org && me.org.name) || "Your organisation";
@@ -161,6 +162,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const loadNarrative = (force) => {
     const body = force ? { force: true } : {};
     const jobs = [api("/api/strategy/commentary", { method: "POST", body }).then(setCm).catch(() => setCm(false))];
+    if (wantsIntent) {
+      jobs.push(api("/api/strategy/statement", { method: "POST", body })
+        .then(r => setStm(r && r.ok === false ? false : r)).catch(() => setStm(false)));
+    }
     if (wantsPlan) {
       jobs.push(api("/api/strategy-diagnosis", { method: "POST", body }).then(r => setDg(r && r.ok === false ? false : r)).catch(() => setDg(false)));
     }
@@ -254,7 +259,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   const regen = async () => {
     setBusy(true);
-    setCm(null); if (wantsPlan) setDg(null);
+    setCm(null); if (wantsPlan) setDg(null); if (wantsIntent) setStm(null);
     try { await loadNarrative(true); toast("Commentary rewritten from your current position."); }
     catch (e) { toast("Couldn't rewrite the commentary.", "error"); }
     setBusy(false);
@@ -268,7 +273,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   const foot = "Generated " + today + " · Peer group: " + cutLabel
     + (ver ? " · Version " + ver.version : " · Draft");
-  const aiWaiting = cm === null || (wantsPlan && dg === null);
+  const aiWaiting = cm === null || (wantsPlan && dg === null) || (wantsIntent && stm === null);
   const sources = [];
   if (cm && cm.source) sources.push("commentary " + cm.source);
   if (dg && dg.source) sources.push("findings " + dg.source);
@@ -307,7 +312,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   P("Executive summary", "exec");
 
   if (wantsIntent) {
-    P("Strategic intent", "intent");
+    // The narrative of the strategy — the thing a Mercer or WTW paper opens with, and
+    // what "just broken sentences" was standing in for. Two sheets so each section has
+    // room to be prose rather than a caption.
+    P("The strategy", "story1");
+    P("The strategy (cont.)", "story2");
     P("How we position reward", "dials");
     if ((doc.principles || []).length || doc.comparator_cut != null
         || ((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes) P("Principles, peers and constraints", "prin");
@@ -447,14 +456,32 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>
       </div>`;
 
-    if (kindOf === "intent") {
-      const stance = sdStance(strat, orgName);
+    // ---- THE STRATEGY, as narrative --------------------------------------------
+    // Six sections across two sheets, each individually editable. This replaced four
+    // template stubs ("The focus this year is winning talent.") that David rightly
+    // called broken sentences — a strategy paper opens with purpose and philosophy,
+    // not with captions.
+    if (kindOf === "story1" || kindOf === "story2") {
+      const P6 = (stm && stm.parts) || {};
+      const S = [
+        { k: "context", t: "Purpose and context" },
+        { k: "philosophy", t: "Our reward philosophy" },
+        { k: "positioning", t: "How we position against the market" },
+        { k: "mix", t: "The shape of the package" },
+        { k: "performance", t: "Performance and differentiation" },
+        { k: "governance", t: "Transparency and governance" },
+      ].slice(kindOf === "story1" ? 0 : 3, kindOf === "story1" ? 3 : 6);
       return html`
-        <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")} sub="The strategy as stated by the organisation. lumi reads the benchmark through it — a position below or above market here is a choice, not a verdict.">Strategic intent<//>
-        ${stance.length ? stance.map((s, i) => html`<p key=${i} class=${"rr-p" + (i === 0 ? " rr-lede" : "")}>${s}</p>`)
-          : html`<p class="rr-p">No positions set — the benchmark is read neutrally.</p>`}`;
-        // NB: commentary.reading is the executive summary on page 2 — repeating it here
-        // as a "lumi's reading" callout put the same paragraph twice in one document.
+        <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")}
+          sub=${kindOf === "story1"
+            ? "The strategy as the organisation states it. Every position here is a choice; nothing on these two pages is a measurement."
+            : null}>The strategy${kindOf === "story2" ? " (cont.)" : ""}<//>
+        ${stm === null ? html`<p class="rr-p rr-muted">Writing the strategy narrative…</p>`
+          : S.map(sec => html`
+            <div key=${sec.k} class="rr-story">
+              <h3 class="rr-sh">${sec.t}</h3>
+              <${Prose} k=${sec.k} generated=${rrCase(P6[sec.k] || "")} />
+            </div>`)}`;
     }
 
     if (kindOf === "dials") return html`
