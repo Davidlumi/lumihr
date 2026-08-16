@@ -200,11 +200,13 @@ def deterministic_diagnosis(payload):
     out = []
     for f in findings:
         if f["kind"] == "gap":
-            head = "%s is %s — short of %s" % (f["area"], f["actual"], f["reason"])
+            # "Incentives & recognition is below market — short of your lead-the-market
+            # target for Incentives & recognition" repeated the area in one headline
+            head = "%s is %s — short of the position you set for it" % (f["area"], f["actual"])
             opt = ("Organisations in this position often size up what closing part of the gap would take and cost, "
                    "against budget and the roles it affects. A starting point, not advice.")
         else:
-            head = "%s is %s — further than %s intends" % (f["area"], f["actual"], f["reason"])
+            head = "%s is %s — further than the position you set for it" % (f["area"], f["actual"])
             opt = ("Organisations here often check the spend is deliberate and well-known to staff, or redirect some "
                    "toward areas that are short. Your own priorities come first — a starting point, not advice.")
         out.append({"headline": head, "detail": f["evidence"] + ".", "option": opt})

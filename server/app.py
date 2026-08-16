@@ -5432,10 +5432,18 @@ async def build_action_plan(request: Request):
             if key in seen:
                 continue
             seen.add(key)
+            # The £ is computed for a CATEGORY, not for a lever. Attaching it to every
+            # lever in that category put "Indicative £27,000 a year to reach the peer
+            # median on Employer pension contribution" against "Financial wellbeing
+            # support" — a figure that has nothing to do with that action. A consultancy
+            # document cannot carry a number onto a recommendation it does not price.
+            # Only a lever whose own cost character is a recurring spend against the
+            # same gap may carry it; everything else states the effect honestly.
             m = gbp_by_cat.get(cat)
+            _prices = bool(m and m.get("gbp")) and lev.get("cost_character") == "recurring"
             roi = (("Indicative £%s a year to reach the peer median on %s, on lumi's stated assumptions."
                     % ("{:,}".format(int(m["gbp"])), m["label"]))
-                   if m and m.get("gbp") else
+                   if _prices else
                    ("Cost-saving where it lands." if lev.get("cost_character") == "cost-saving"
                     else "No indicative figure — the effect is on retention, fairness and how the package reads."))
             cands.append({
