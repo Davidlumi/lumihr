@@ -472,11 +472,15 @@ def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single,
         out.append({
             "id": "wage_floor", "class": "Statutory",
             "title": "The statutory wage floor moves every April, and this pay position sits close to it",
-            "detail": ("In this sector the National Living Wage is the binding floor under a large part "
-                       "of the workforce. Each uplift compresses differentials above it and narrows the "
-                       "room a below-market pay position has to exist at all. lumi cannot see your rate "
-                       "headroom over the floor — how much of the annual uplift lands as unavoidable "
-                       "spend is a judgement only you can make."),
+            # "is the binding floor under a large part of the workforce" asserted a fact
+            # about THIS org that lumi cannot see (external review 2026-08-16) — the
+            # sector-level pattern is stateable; the org-level incidence is not
+            "detail": ("In this sector the National Living Wage commonly sets the floor for a large "
+                       "share of roles. Each April uplift compresses differentials above it and narrows "
+                       "the room a below-market pay position has to exist at all. lumi cannot see your "
+                       "rate headroom over the floor, or how much of your workforce sits near it — how "
+                       "much of the annual uplift lands as unavoidable spend is a judgement only you "
+                       "can make."),
         })
 
     # 7. THE ORGANISATION'S OWN CONSTRAINTS — stated in the wizard, never carried forward.

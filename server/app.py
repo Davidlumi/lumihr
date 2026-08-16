@@ -5299,6 +5299,12 @@ def strategy_state(conn, org):
     ver = conn.execute("SELECT * FROM strategy_versions WHERE org_id=? AND status='approved' "
                        "ORDER BY version DESC LIMIT 1", (org["org_id"],)).fetchone()
     version = (dict(dict(ver), **{"dirty": bool(row.get("updated_at") and row["updated_at"] > ver["approved_at"]),
+                                  # WHEN it was amended — "amended; re-approval pending"
+                                  # with no date left a board paper unable to say how
+                                  # stale its own approval was (external review 2026-08-16)
+                                  "amended_at": (row.get("updated_at")
+                                                 if row.get("updated_at") and row["updated_at"] > ver["approved_at"]
+                                                 else None),
                                   "unstated": uj(ver["unstated_json"], []) or []})
                if ver else None)
     if version:
@@ -6133,15 +6139,26 @@ async def get_strategy_alignment(request: Request):
     # the board for a decision the same document says was already taken
     _ver_state = st.get("version") or None
     if _now:
-        if _choices:
-            _decision = ("approve the %d action%s scheduled for this cycle — %s"
-                         % (len(_units), "" if len(_units) == 1 else "s",
+        if _choices and len(_units) == 1:
+            # the whole cycle is ONE choice — "the 1 action … one of them" is not a
+            # sentence a minute can carry (caught live when a plan rebuild landed here)
+            _decision = ("approve the one action scheduled for this cycle — a choice "
+                         "between %d alternatives" % len(_units[0]["titles"]))
+        elif _choices:
+            _decision = ("approve the %d actions scheduled for this cycle — %s"
+                         % (len(_units),
                             ("one of them an explicit choice between alternatives"
                              if _choices == 1 else
                              "%d of them explicit choices between alternatives" % _choices)))
         else:
             _decision = ("approve the action scheduled for this cycle" if len(_now) == 1
                          else "approve the %d actions scheduled for this cycle" % len(_now))
+        # the governance loop must run forwards: actions are measured against the
+        # amended strategy, so a dirty version makes RE-APPROVAL the first ask —
+        # approving actions against an unapproved strategy inverts the loop
+        # (external review, 2026-08-16)
+        if _ver_state and _ver_state.get("dirty"):
+            _decision = "re-approve the strategy as amended, then " + _decision
     elif out["money"]["gaps_total"]:
         _decision = "agree how the outstanding gaps are to be addressed"
     elif _ver_state and _ver_state.get("dirty"):
@@ -6162,6 +6179,16 @@ async def get_strategy_alignment(request: Request):
         # what the board is being asked to settle, in the document's own vocabulary
         "decision": _decision,
     }
+    # the ruled one-line provenance footer (R-P2 amendment 2026-08-08, §2 durable
+    # artefacts). This document post-dates the §2 enumeration and was the one
+    # sibling missing it — the board pack, both CSVs and the share views all carry
+    # exactly this sentence (external review, 2026-08-16).
+    out["pool_footer"] = ("Comparison pool: %d UK organisation profiles. See lumihr.co.uk "
+                          "methodology for sources."
+                          % (get_meta("peer_pool", {}).get("responding_orgs") or 0))
+    # the method page names the suppression rule; the reviewer noted it never states
+    # the number — the one section claiming methodological rigour
+    out["suppression_floor"] = SUPPRESSION_FLOOR
     out["ok"] = True
     return out
 

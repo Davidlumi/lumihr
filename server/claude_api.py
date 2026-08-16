@@ -828,7 +828,7 @@ COMMENTARY_SCHEMA = {
 # metric_commentary cache self-invalidates — the cache key is keyed on the payload
 # hash, which can't see a change to _measures_text / _deterministic_commentary.
 COMMENTARY_GEN_VERSION = "2026-06-18.sdk-opus48-v4-malformguard"
-STRATEGY_COMMENTARY_VERSION = "2026-08-08.strategy-v1"
+STRATEGY_COMMENTARY_VERSION = "2026-08-16.strategy-v2"   # v2: deterministic watch no longer narrates lumi
 
 # ===================== THE REWARD STRATEGY STATEMENT (2026-08-16) ==============
 # David: "the reward strategy PDF must include full details of the reward strategy as a
@@ -1109,9 +1109,13 @@ def _deterministic_strategy_commentary(p):
     else:
         tensions = ("%d areas sit away from your stated intent — %s. In each, where you are and where you "
                     "said you would be do not yet agree." % (len(off), _english_list(off)))
-    watch = ("Your stated focus this year is %s, and lumi orders what it shows you around that."
+    # the member's own strategy document is not the place for lumi to narrate its own
+    # behaviour ("lumi orders what it shows you") — the external review caught the
+    # vendor's voice inside Part A (2026-08-16). State the watch item, not the product.
+    watch = ("Your stated focus this year is %s — the first thing to watch is whether "
+             "the areas that serve it hold their stated position."
              % objective_phrase(p["objective_label"])) if p.get("objective_label") else \
-            "No primary objective is set, so lumi orders what it shows you neutrally."
+            "No primary objective is set, so every area reads with equal weight until one is."
     return {"reading": reading, "tensions": tensions, "watch": watch}
 
 def validate_strategy_commentary(parts, payload):
