@@ -77,6 +77,23 @@ _KIND_REGISTER = {"position": "Substance", "provision": "Substance",
                   "practice": "Approach", "coherence": "Approach"}
 
 
+def _registers_for(c):
+    """Which lever registers can answer this commitment.
+
+    A coherence rule covers two different failures and they are NOT closed the same way
+    (2026-08-16 consultancy review). CONTRADICTED means practice runs against the stated
+    intent — an Approach problem. BEHIND_INTENT on a coherence rule almost always means a
+    provision is ABSENT ("the package is stated to lead on mental wellbeing, and no
+    Employee Assistance Programme shows in your responses"), and an absence is closed by
+    ADDING the thing. Mapping both to Approach meant the document stated a gap and then
+    offered options that could not close it — the reviewer's exact complaint.
+    """
+    kind = c.get("kind")
+    if kind == "coherence" and c.get("status") == "behind_intent":
+        return ["Substance", "Approach"]          # add the missing provision, or change the approach
+    return [_KIND_REGISTER.get(kind, "Substance")]
+
+
 def options_for(commitments, levers=None, visible_qids=None):
     """Options blocks for every commitment that is behind_intent or contradicted:
     the levers of that category whose register_effect matches what the gap needs,
@@ -100,10 +117,11 @@ def options_for(commitments, levers=None, visible_qids=None):
                                           "would add to a package that is ahead of the stated position — "
                                           "the open question is whether the aim itself still reads right.")})
             continue
-        need = _KIND_REGISTER.get(c.get("kind"), "Substance")
+        needs = _registers_for(c)
+        need = needs[0]                            # the primary register, for the coverage note
         picks = []
         for l in levers:
-            if l.get("category") != c.get("category") or l.get("register_effect") != need:
+            if l.get("category") != c.get("category") or l.get("register_effect") not in needs:
                 continue
             l = dict(l)
             # entitlement (§2.5): a prevalence link the org can't see is dropped from the

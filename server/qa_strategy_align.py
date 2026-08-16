@@ -199,11 +199,25 @@ check("E", "a SHORT position gap still gets its levers (the fix is narrow)",
 # Every live category now carries BOTH registers, so this contract needs a synthetic
 # fixture: a lever set stripped of Approach, against a gap that needs one. The rule it
 # guards is unchanged — a covered category must never render an empty options block.
+# A coherence SHORTFALL now draws Substance too (an absent provision is closed by adding
+# it), so the fixture uses a CONTRADICTION — practice running against intent — which stays
+# Approach-only, against a lever set stripped of Approach.
 _subs_only = [l for l in LEV if l["register_effect"] == "Substance"]
 _bare = sa.options_for([{"id": "rule:B2", "category": "Benefits & Lifestyle", "kind": "coherence",
-                         "status": "behind_intent", "statement": "s"}], levers=_subs_only)[0]
+                         "status": "contradicted", "statement": "s"}], levers=_subs_only)[0]
 check("E", "covered category with no lever in the needed register is NEVER silently empty",
       not _bare["levers"] and (_bare.get("coverage_note") or "").strip(), _bare.get("coverage_note"))
+# a stated provision that is ABSENT must be answerable by adding it (2026-08-16 review)
+_absent = sa.options_for([{"id": "rule:W1", "category": "Wellbeing", "kind": "coherence",
+                           "status": "behind_intent", "statement": "no EAP shows"}], levers=LEV)[0]
+check("E", "a coherence SHORTFALL can be answered by adding the missing provision",
+      any(l["register_effect"] == "Substance" for l in _absent["levers"]),
+      [l["name"] for l in _absent["levers"]])
+_contra = sa.options_for([{"id": "rule:G1", "category": "Governance & Transparency", "kind": "coherence",
+                           "status": "contradicted", "statement": "s"}], levers=LEV)[0]
+check("E", "a coherence CONTRADICTION still draws Approach only",
+      _contra["levers"] and all(l["register_effect"] == "Approach" for l in _contra["levers"]),
+      [l["register_effect"] for l in _contra["levers"]])
 check("E", "no options block anywhere is both lever-less and note-less",
       all(o["levers"] or (o.get("coverage_note") or "").strip() for o in (OB + [_ov, _bare])))
 _pens = next(o for o in OB if o["commitment_id"] == "position:Pensions & Savings")
