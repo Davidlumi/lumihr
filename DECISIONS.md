@@ -19057,3 +19057,48 @@ marked `no-print`, since marking any of them screen-only would strip the PDF of 
 and nobody would find out until someone printed it.
 
 Suite **15/15**. ?v=673.
+
+## 2026-08-16 — Typeset, not laid out
+
+*"QA polish and delight."*
+
+**Craft.** The document is set in typographic punctuation now — but the decision that matters is
+*where*. Applying it string by string is a discipline that lapses the moment someone adds a
+section, and the failure is invisible until a reader sees typewriter quotes beside typeset ones on
+the same sheet. So it is applied at the four places document copy reaches the page — headings,
+decks, prose, exhibit captions — plus `rrCase`, which every engine string already runs through.
+**Zero straight apostrophes survive anywhere in the rendered document**, and a gate pins the
+mechanism rather than the strings.
+
+Also: headings and decks balance their line breaks, money columns are right-aligned on tabular
+figures, and an exhibit caption can no longer be stranded at the foot of a page with its table
+overleaf.
+
+**Delight.** Forty-one sheets, and the only way to find a section was to scroll past everything
+before it — the one thing the printed version did better than the screen. The contents and every
+part divider list are buttons that jump; the toolbar says which sheet you are on out of how many;
+a dropdown goes anywhere. **Jumping is smooth when the target is close and instant when it is
+thirty sheets away** — a 38,000px smooth scroll is a long ride past content the reader
+deliberately skipped — and the sheet you land on says so with a brief cue. All screen-only, print
+untouched, reduced-motion honoured.
+
+**Three findings, in order of how much they mattered.**
+
+1. **Holding reading position in the page re-rendered all forty-one sheets on every scroll tick.**
+   The readout ran a whole probe behind, which was the visible symptom of a real cost. The
+   navigator is its own component now; nothing else re-renders while you scroll.
+2. **A scroll listener plus a trailing timeout still went stale.** A long jump fires one event,
+   sometimes before the browser has committed the offset, and once you are stationary nothing
+   arrives to correct it. `IntersectionObserver` is *told* when visibility changes.
+3. **Remembering each observer entry's height looked tidier and was wrong.** A departing sheet
+   does not always report its exit, so its stale height kept winning — the readout sat on "Cover"
+   while you were on sheet 12. The observer is the trigger; the measurement is taken fresh.
+
+**And one about testing.** After all three fixes the readout still failed on every other probe in
+my in-page test loop — a perfect alternation that looked like a bug and was not: React had not
+flushed the render inside the same JS task chain the test ran in. Driving it the way a user
+does — scroll, then read in a separate step — it was correct every time. The three fixes above
+were all real improvements found along the way, but the last "failure" was the harness, and it
+would have been easy to keep changing working code chasing it.
+
+Suite **15/15**, with seven new source checks pinning what this pass learned. ?v=674.
