@@ -665,6 +665,12 @@ CREATE TABLE IF NOT EXISTS org_strategy (
     -- replaces that section's GENERATED PROSE only — never a computed figure, a
     -- position or a count, which stay the engine's to state.
     narrative_overrides_json TEXT, -- {section_key: text}
+    -- OPTION DECISIONS (2026-08-16): a consultancy document earns its credibility by
+    -- recording what was considered and NOT done. The options table listed every lever
+    -- and captured no decision against any of them, so a year later nobody could tell a
+    -- rejected option from one nobody read. Keyed by lever, per category (the same lever
+    -- can be offered against two categories and decided differently in each).
+    option_decisions_json TEXT,    -- {"<category>|<lever_id>": {"state","reason","at","by"}}
     -- server-side DRAFT: the in-flight capture, saved every step. Deliberately a
     -- blob APART from the live columns so a half-finished capture never reaches the
     -- engine — the live strategy only changes on an explicit save.
@@ -809,6 +815,9 @@ def init_schema(conn=None):
                 "ALTER TABLE org_strategy ADD COLUMN objective_weights TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN action_plan_json TEXT",
                 "ALTER TABLE org_strategy ADD COLUMN narrative_overrides_json TEXT",
+                # per-lever decision record (2026-08-16): considered / not this cycle /
+                # rejected, with the author's reason. What was turned down is evidence too.
+                "ALTER TABLE org_strategy ADD COLUMN option_decisions_json TEXT",
                 # Signals snooze (2026-07): "real, but not this cycle" — a snoozed
                 # signal leaves the inbox until snooze_until passes, then auto-returns.
                 "ALTER TABLE signal_actions ADD COLUMN snooze_until TEXT",

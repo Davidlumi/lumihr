@@ -286,3 +286,169 @@ def evaluate(rules, strategy, document, answers, domains, position_exclude,
         cat = counts.setdefault(c["category"], {s: 0 for s in STATUSES})
         cat[c["status"]] += 1
     return {"commitments": commitments, "counts": counts}
+
+
+
+def _english_list(items):
+    """a, b and c — an Oxford-free serial list, because a board paper is prose."""
+    items = [str(i) for i in items if str(i).strip()]
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+# ------------------------------------------------------- board-paper reads (2026-08-16)
+# Six gaps a reward director named against the document: it never ASKS for anything,
+# it carries no aggregate cost, it records no rejected option, its plan is a list not a
+# schedule, it has no risk section, and it cannot show movement. Everything below is
+# DERIVED from what the engine already found — no read here is a new assertion, and the
+# prose around each one stays author-editable.
+
+# The lever inventory speaks in three horizons, but a plan action's horizon is free text
+# (the model may paraphrase), so actions are BUCKETED rather than string-matched.
+# Anything unrecognised lands in "unscheduled" and is shown as such — an action silently
+# dropped off a schedule is far worse than one the schedule admits it cannot place.
+HORIZON_BUCKETS = (
+    ("this cycle",  ("this cycle", "immediate", "current cycle", "this year", "now")),
+    ("next cycle",  ("next cycle", "next year", "following cycle", "next review")),
+    ("multi-cycle", ("multi-cycle", "multi cycle", "multiple cycles", "longer term",
+                     "long term", "over time", "beyond")),
+)
+HORIZON_ORDER = ("this cycle", "next cycle", "multi-cycle", "unscheduled")
+
+
+def horizon_bucket(text):
+    t = (text or "").strip().lower()
+    for name, needles in HORIZON_BUCKETS:
+        if any(nd in t for nd in needles):
+            return name
+    return "unscheduled"
+
+
+# A decision AGAINST an option is evidence too. Three states only: a longer vocabulary
+# invites a status field nobody maintains.
+OPTION_DECISION_STATES = {"considered": "Considered",
+                          "not_now": "Not this cycle",
+                          "rejected": "Rejected"}
+OPTION_DECISION_MAX = 400
+
+
+def option_decision_key(category, lever_id):
+    """One lever can be offered against two categories and decided differently in each,
+    so the category is part of the key."""
+    return "%s|%s" % (category or "", lever_id or "")
+
+
+def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single,
+                 budget_labels=None, constraint_labels=None, domain_min=3):
+    """What could go wrong — restated from what the engine already established.
+
+    Deliberately EXPOSURES, not predictions and never instructions: each one names a
+    condition that is true of this organisation today and says what it bears on. The
+    document is scrupulously non-directive everywhere else and a risk section is the
+    easiest place to start giving advice by accident, so nothing here tells the reader
+    to act. Where lumi cannot see the answer, the risk says so rather than guessing."""
+    budget_labels = budget_labels or {}
+    constraint_labels = constraint_labels or {}
+    out = []
+    invest = (money or {}).get("total_investment_to_p50_gbp") or 0
+    budget = strat.get("budget_direction")
+    gaps = [c for c in (al.get("commitments") or [])
+            if c.get("status") in ("behind_intent", "contradicted")]
+
+    # 1. AFFORDABILITY — the plan asks for money the stated budget direction does not have.
+    if invest and budget in ("flat", "pressure"):
+        out.append({
+            "id": "affordability", "class": "Affordability",
+            "title": "The priced gaps need money the stated budget direction does not carry",
+            "detail": ("You described the budget as %s. Closing the gaps lumi can price to the peer "
+                       "median is an indicative £%s a year on the published assumptions. The two "
+                       "readings have to be reconciled before the plan is committed to — either the "
+                       "figure, the pace or the budget description moves."
+                       % (budget_labels.get(budget, budget),
+                          "{:,}".format(int(invest)))),
+        })
+
+    # 2. EVIDENCE — a decision resting on an indicative read carries the read's uncertainty.
+    thin = [b["name"] for b in (blocks or [])
+            if b.get("gaps") and not (b.get("count") or {}).get("strict")]
+    if thin:
+        out.append({
+            "id": "evidence", "class": "Evidence",
+            "title": "%s %s carrying a recommendation on an indicative read"
+                     % (len(thin), "area is" if len(thin) == 1 else "areas are"),
+            "detail": ("%s %s fewer than %d benchmarked metrics behind %s market read, so %s position "
+                       "is indicative rather than methodology-grade. Any recommendation made there "
+                       "rests on the same evidence as the verdict above it."
+                       % (_english_list(thin), "has" if len(thin) == 1 else "have",
+                          domain_min,
+                          "its" if len(thin) == 1 else "their",
+                          "its" if len(thin) == 1 else "their")),
+        })
+
+    # 3. EXPOSURE — where you sit below market having said you would not.
+    exposed = [b["name"] for b in (blocks or [])
+               if (b.get("position") or {}).get("verdict") == "below"
+               and (b.get("aim") or {}).get("stance") in ("match", "lead")]
+    if exposed:
+        out.append({
+            "id": "exposure", "class": "Exposure",
+            "title": "%s below the market on a stated aim to match or lead" % _english_list(exposed),
+            "detail": ("%s below the peer group on lumi's read while the strategy aims at or above it. "
+                       "That is a live gap between what candidates and employees encounter and what the "
+                       "organisation says it offers, for as long as it stands."
+                       % ("That area sits" if len(exposed) == 1 else "Each of these sits")),
+        })
+
+    # 4. CONCENTRATION — a plan that is really one area's plan.
+    if len(gaps) >= 3:
+        by_cat = {}
+        for c in gaps:
+            by_cat[c["category"]] = by_cat.get(c["category"], 0) + 1
+        top, n = max(by_cat.items(), key=lambda kv: kv[1])
+        if n / float(len(gaps)) >= 0.6:
+            out.append({
+                "id": "concentration", "class": "Delivery",
+                "title": "%d of %d gaps sit in %s" % (n, len(gaps), top),
+                "detail": ("The plan is concentrated in one area, so its delivery depends on one set of "
+                           "owners, one budget line and one change window. A slip there is a slip in "
+                           "most of the plan rather than part of it."),
+            })
+
+    # 5. COVERAGE — how much of your own data the whole document rests on.
+    pct = round((data_state or {}).get("core_pct") or 0)
+    if pct < 80:
+        out.append({
+            "id": "coverage", "class": "Evidence",
+            "title": "The document rests on %d%% of your benchmark data" % pct,
+            "detail": ("%d of %d core metrics are answered. Areas you have not answered cannot be "
+                       "positioned at all, so they appear nowhere in the findings — an absence here "
+                       "is an unknown, not a clean bill of health."
+                       % ((data_state or {}).get("answered") or 0, (data_state or {}).get("basis_total") or 0)),
+        })
+
+    # 6. NO PRIOR PERIOD — the document cannot yet show whether things are improving.
+    if snapshot_single:
+        out.append({
+            "id": "no_trend", "class": "Evidence",
+            "title": "There is no prior period to measure movement against",
+            "detail": ("This is lumi's first aggregated collection window, so every figure here is a "
+                       "baseline. Whether a position is improving or slipping cannot be evidenced "
+                       "until a second window closes, and no reading in this document should be taken "
+                       "as a direction of travel."),
+        })
+
+    # 7. THE ORGANISATION'S OWN CONSTRAINTS — stated in the wizard, never carried forward.
+    cons = [constraint_labels.get(c, c)
+            for c in (((doc or {}).get("constraints") or {}).get("selected") or [])]
+    if cons:
+        out.append({
+            "id": "constraints", "class": "Stated constraint",
+            "title": "Constraints you stated: %s" % _english_list(cons),
+            "detail": ("These were recorded when the strategy was set and bear on anything in the plan "
+                       "that needs money, negotiation or a system change. lumi cannot see how binding "
+                       "they are — that judgement stays with you."),
+        })
+    return out

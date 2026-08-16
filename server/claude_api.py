@@ -1894,7 +1894,11 @@ PLAN_SCHEMA = {
                     "title": {"type": "string"},
                     "category": {"type": "string"},
                     "why": {"type": "string"},
-                    "horizon": {"type": "string"},
+                    # constrained to the lever inventory's own three horizons (2026-08-16):
+                    # the plan is grouped into a SCHEDULE now, and a paraphrase like "over
+                    # the next 18 months" bucketed as unscheduled — honest, but avoidable
+                    "horizon": {"type": "string",
+                                "enum": ["this cycle", "next cycle", "multi-cycle"]},
                     "roi": {"type": "string"},
                 },
                 "required": ["title", "category", "why", "horizon", "roi"],
