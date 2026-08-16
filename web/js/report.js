@@ -603,10 +603,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // one commitment's levers are ALTERNATIVES — the panel caught both pension options
   // scheduled and counted as two actions. Map lever name -> commitment so the render
   // can say so wherever the plan lists them.
-  const altOf = {}, costOf = {};
+  const altOf = {}, costOf = {}, descOf = {};
   (al.options || []).forEach(o => (o.levers || []).forEach(l => {
     if (l.name && !(l.name in altOf)) altOf[l.name] = o.commitment_id;
     if (l.name && !(l.name in costOf)) costOf[l.name] = l.cost_character;
+    // D032 (v3.1): the LIVE description, so the plan can never render reward content
+    // the library has since corrected. A stored plan built before the 2026-08-16
+    // salary-sacrifice repair still carried the pre-OpRA wording — "pension, cars,
+    // technology" — three pages after the section that says those lost the advantage.
+    // Stored prose about reward facts is the defect class; this closes it.
+    if (l.name && !(l.name in descOf)) descOf[l.name] = l.what_it_is;
   }));
   // Alternative SETS, computed ONCE over the whole schedule (2026-08-16 ship gate):
   // the intro counted set-mates across horizons while the table flagged only within
@@ -802,10 +808,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       if (_hasPrin) P("Principles, peers and constraints", "prin");
       P("Position by employee population", "pops");
       P("Tensions and what to watch", "tension");
-    } else if (_hasPrin) {
-      // measured at 40% and 34% full on their own sheets — together they make one page
+    } else if (_hasPrin && !commitments.some(c => c.status === "contradicted")) {
+      // measured at 40% and 34% full on their own sheets — together they make one page.
+      // NOT when §06 carries contradiction rows (D048, v3.1): routing the register's
+      // contradictions into Tensions is what finally gives that section a tension, and
+      // it is more content than the shared sheet holds. The pairing is an emptiness
+      // optimisation, so it yields the moment either section has something to say.
       P2("Principles, peers and constraints", "prin", "Tensions and what to watch", "tension");
     } else {
+      if (_hasPrin) P("Principles, peers and constraints", "prin");
       P("Tensions and what to watch", "tension");
     }
   }
@@ -964,7 +975,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       case "dials": exReg("dials", "Stated reward positions, and what each one changes in how the benchmark is read"); break;
       case "pops": exReg("pops", "Stated positions by employee population"); break;
       case "position":
-        exReg("portfolio", "Market position of every area on one percentile scale, with the position the strategy sets for each");
+        exReg("portfolio", "Market position of every area on one percentile scale, ranked by depth percentile, with the position the strategy sets for each");
         break;
       case "trend": if (trend.available) exReg("trend", "Movement by area since the previous collection window"); break;
       case "register": exReg("register:" + p.part, "Every commitment, its status and its evidence" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
@@ -1077,8 +1088,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       : "";
     const ownCost = !nU ? ""
       : (recCertain === 0 && recMaybe === 0)
-        ? (nU === 1 ? "The action itself is cost-neutral or self-funding — no new recurring spend is being approved. "
-                    : "The actions themselves are cost-neutral or self-funding — no new recurring spend is being approved. ")
+        // D066 (v3.1): "cost-neutral or self-funding" claimed a tag the lever library
+        // does not carry — a hedge that adds a claim the data cannot support. Render
+        // the stored cost character, nothing wider.
+        ? (nU === 1 ? "The action itself carries no new recurring spend. "
+                    : "The actions themselves carry no new recurring spend. ")
         : (nU === 1 && recCertain
             ? "The action carries recurring spend"
             : recCertain ? recCertain + " of the " + nU + (recCertain === 1 ? " carries" : " carry") + " recurring spend"
@@ -1131,7 +1145,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       + (nPriced < nGaps ? ": the remainder are changes lumi does not price, and their cost has to be "
          + "modelled by you rather than read off a benchmark." : "."));
     parts.push(money.fte_known
-      ? "Figures use the midpoint of your stated FTE band ("
+      // Q10 (v3.1): the rounding convention was applied and never stated, and the hedge
+      // ("about £27,000" once, unhedged five times) was inconsistent. It belongs where
+      // the £ are, not on the method page.
+      ? "Aggregate £ figures round to the nearest thousand and per-person figures to the "
+        + "pound; every £ here is indicative on these assumptions, whether or not the word "
+        + "sits beside it. Figures use the midpoint of your stated FTE band ("
         + (money.fte_band ? money.fte_band.replace(/-/g, "–") + " FTE, midpoint " : "")
         + ((money.unit_rates || {}).fte || "—") + ") and lumi's published salary and level-mix "
         + "assumptions. Peer rates are medians of " + cutLabel + ", which spans organisations of "
@@ -1176,9 +1195,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     schedule.forEach(s2 => s2.actions.forEach(a2 => { if (altInfo[a2.title]) gapsInSets.add(altOf[a2.title]); }));
     return n + " action" + (n === 1 ? "" : "s") + " across " + schedule.length + " horizon"
       + (schedule.length === 1 ? "" : "s") + ", sequenced by how quickly each one can realistically land. "
-      + (inSets ? ((inSets === n ? "They are not " + n + " separate commitments: every one is an option against one of "
-                    : inSets + " of them are options against ")
-         + gapsInSets.size + " gap" + (gapsInSets.size === 1 ? "" : "s")
+      // D033 (v3.1): "an option against one of 1 gap" — the plural template ran at one
+      // and produced a grammar leak on a board page. (Plain JS comment: this is a
+      // return expression, not an htm template.)
+      + (inSets ? ((gapsInSets.size === 1
+                    ? (inSets === n ? "They are not " + n + " separate commitments: every one is an option against a single gap"
+                       : inSets + " of them are options against a single gap")
+                    : (inSets === n ? "They are not " + n + " separate commitments: every one is an option against one of "
+                       : inSets + " of them are options against ") + gapsInSets.size + " gaps")
          + " — one option per gap in any one cycle; where two sit in the same cycle they are "
          + "alternatives, one of them, not both. ") : "")
       + (now.length ? now.length + " " + (now.length === 1 ? "sits" : "sit") + " in the current cycle; "
@@ -1325,7 +1349,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                is written to, from the approval record where one is named (QA v2,
                D024). A named human AUTHOR needs a captured field that does not
                exist — held for David rather than guessed from the login. */ ""}
-          ${wantsPlan ? html`<div><span>Prepared for</span>${(ver && ver.approver_body) || "The Board"}</div>` : null}
+          ${/* D037 (v3.1): the "The Board" fallback asserted on page 1 what the approval
+               record on page 39 says is unknown — "no board or committee was named at
+               approval". The v2 fix for cover dead space created a cross-surface
+               contradiction 36 sheets away, which is the argument for the gate rather
+               than for careful reading. The row renders ONLY from a captured body. */ ""}
+          ${wantsPlan && ver && ver.approver_body
+            ? html`<div><span>Prepared for</span>${ver.approver_body}</div>` : null}
+          ${/* Q5 (v3.1): the entity block, beside the peer block, so the two can be
+               compared where they are asserted rather than 34 pages apart. */ ""}
+          ${(al.entity || {}).fte_band || (al.entity || {}).sector ? html`
+            <div><span>Organisation</span>${[(al.entity.sector || ""),
+              al.entity.fte_band ? al.entity.fte_band.replace(/-/g, "–") + " FTE" : ""]
+              .filter(Boolean).join(" · ")}</div>` : null}
           <div><span>Date of issue</span>${today}</div>
           <div><span>Document status</span>${ver
             ? (ver.dirty ? "Version " + ver.version + " — amended" + (ver.amended_at ? " " + fmtDate(ver.amended_at) : "") + "; re-approval pending"
@@ -1344,8 +1380,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             (al.snapshot || {}).date ? " · " + al.snapshot.date : ""}</div>
           ${/* the two labels sit adjacent, so the cover itself points at the page
                that reconciles them (2026-08-16 ship gate) */ ""}
+          ${/* D052 (v3.1): the cover asserted both labels side by side and left the
+               reader to discover on p40 that NO read uses the stated group. The
+               divergence is stated where it is asserted. */ ""}
           ${doc.comparator_label && doc.comparator_label !== cutLabel
-            ? html`<div><span>Stated peer group</span>${doc.comparator_label + " — see Method and basis"}</div>` : null}
+            ? html`<div><span>Stated peer group</span>${doc.comparator_label
+                + " — not the basis for the reads in this document; see Method and basis"}</div>` : null}
           ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
           <div><span>Classification</span>Private ${"&"} confidential</div>
         </div>
@@ -1425,8 +1465,6 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             const pastN = commitments.filter(c => c.direction === "past").length;
             const contraN = commitments.filter(c => c.status === "contradicted").length;
             const otherN = Math.max(0, gaps.length - shortN - pastN - contraN);
-            const belowMkt = posC.filter(c => c.direction === "short"
-              && ((domains.find(d => d.name === c.category) || {}).position || {}).verdict === "below").length;
             // the FRAME and the TOTALS here; the split by status is the register's
             // job one page-turn away, and carrying it twice cost the exec sheet its
             // last two lines. The reconciliation the reviewer wanted is the frame:
@@ -1435,8 +1473,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               + " benchmarked areas and makes " + cohC.length + " coherence commitment"
               + (cohC.length === 1 ? "" : "s") + " besides — " + commitments.length
               + " in all, listed with their status in The commitments in full. "
+              // D058 (v3.1): "3 of them also below market" was reachable only through an
+              // unstated sub-rule (off-strategy POSITION rows whose area reads below),
+              // and the same sentence carried a second, different 3. The register's
+              // status column carries the split; the exec states the totals.
               + gaps.length + (gaps.length === 1 ? " is" : " are") + " off strategy"
-              + (belowMkt ? ", " + belowMkt + " of them also below market" : "")
               + "; " + holding.length + " hold"
               + (unevid.length ? " and " + unevid.length + " await evidence" : "") + ". ";
           })()
@@ -1550,7 +1591,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             const n = Object.keys(strat.domain_targets || {}).length;
             return html`<tr key=${f} class=${v ? "" : "rr-unset"}>
               <td>${DIAL_LABEL[f]}</td>
-              <td><b>${v || "Not stated"}</b>${f === "market_position" && n ? html`<br /><span class="rr-sm">${n} area${n === 1 ? "" : "s"} set differently</span>` : ""}</td>
+              ${/* D059 (v3.1): "6 areas set differently" read as "6 differ from the
+                   overall stance" (five do) when it meant "6 carry their own aim".
+                   The two readings are not equivalent, which is the defect. */ ""}
+              <td><b>${v || "Not stated"}</b>${f === "market_position" && n ? html`<br /><span class="rr-sm">${n} area${n === 1 ? "" : "s"} carr${n === 1 ? "ies" : "y"} their own aim</span>` : ""}</td>
               <td class="rr-sm">${v ? (RR_DRIVES[f] || SD_DRIVES[f] || "") : "Read neutrally."}</td>
             </tr>`; })}
         </tbody>
@@ -1560,28 +1604,36 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const cons = doc.constraints || {};
       return html`
         <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")} sub="The statements this organisation holds itself to, the market it measures itself against, and the limits it has recorded on what it can change.">Principles, peers and constraints<//>
+        ${/* D047 (v3.1): with principles AND constraints both empty this page said
+             nothing twice — two "nothing recorded" boxes plus a restatement of the
+             sentence §03 already carries. The empty boxes are suppressed; the
+             comparator card, which carries real content, stays. */ ""}
+        ${(doc.principles || []).length ? html`
         <${RrCard} head="Our reward principles">
-          ${(doc.principles || []).length
-            ? html`<ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`
-            : html`<p class="rr-p rr-muted">No separate set of reward principles has been written down.
-                The positions stated in this document carry the philosophy in their place.</p>`}
-        <//>
-        <div class="rr-grid2">
+          <ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>
+        <//>` : null}
+        <div class=${(cons.selected || []).length || cons.notes ? "rr-grid2" : ""}>
           <${RrCard} head="Who we compare ourselves to">
             <p class="rr-p">${orgCompareWords(null, doc)}</p>
             ${/* the reconciliation lives here too — this card is the only comparator
                  statement with any detail, and the first place a reader asks which
                  basis actually governs the figures (2026-08-16 ship gate) */ ""}
             ${doc.comparator_label && doc.comparator_label !== cutLabel ? html`
-              <p class="rr-p rr-sm rr-muted">${"The reads in this document run on " + cutLabel
-                + "; Method and basis explains how that relates to this stated group."}</p>` : null}
+              <p class="rr-p rr-sm rr-muted">${"No read in this document uses that group — the reads run on "
+                + cutLabel + ", and Method and basis explains why."}</p>` : null}
           <//>
-          <${RrCard} tone="cream" head="What constrains us">
-            ${(cons.selected || []).length || cons.notes
-              ? html`<p class="rr-p">${rrList((cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c))}${cons.notes ? (((cons.selected || []).length ? ". " : "") + cons.notes) : ""}</p>`
-              : html`<p class="rr-p rr-muted">No constraints have been recorded against this strategy.</p>`}
-          <//>
-        </div>`;
+          ${(cons.selected || []).length || cons.notes ? html`
+            <${RrCard} tone="cream" head="What constrains us">
+              <p class="rr-p">${rrList((cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c))}${cons.notes ? (((cons.selected || []).length ? ". " : "") + cons.notes) : ""}</p>
+            <//>` : null}
+        </div>
+        ${/* the absences are stated once, in a line, rather than as two empty cards */ ""}
+        ${!((doc.principles || []).length) || !((cons.selected || []).length || cons.notes) ? html`
+          <p class="rr-src">${rrList([].concat(
+              (doc.principles || []).length ? [] : ["no separate set of reward principles"],
+              ((cons.selected || []).length || cons.notes) ? [] : ["no recorded constraints"]))
+            + " has been written down against this strategy; the positions stated in Part A carry "
+            + "the philosophy in their place."}</p>` : null}`;
     }
 
     if (kindOf === "pops") return html`
@@ -1611,6 +1663,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <//>
         </div>`
       : cm && cm.parts ? html`
+        ${/* D048 (v3.1): the section built for tensions contained none — the document's
+             actual contradictions (a stated intent its own answers run against) sat in
+             register rows on p12 and in area sections, and never here. They are routed
+             to the section named after them, verbatim from the register. */ ""}
+        ${(() => {
+          const contra = commitments.filter(c => c.status === "contradicted");
+          if (!contra.length) return null;
+          return html`
+            <${RrCard} tone="navy" label=${contra.length === 1 ? "The contradiction on the register"
+              : "The contradictions on the register"}>
+              ${contra.map(c => html`<p key=${c.id} class="rr-p rr-sm">${rrCase(c.statement)}</p>`)}
+              <p class="rr-p rr-sm rr-muted">${"Each is a stated intent your own answers run against — "
+                + "not a shortfall in delivery — and is carried with its evidence in The commitments in full."}</p>
+            <//>`;
+        })()}
         <div class="rr-grid2">
           <${RrCard} label="Tensions">
             <${Prose} k="tensions" generated=${rrCase(cm.parts.tensions)} />
@@ -1629,7 +1696,13 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>`}`;
 
     if (kindOf === "gov") return html`
-      <${RrH} n=${num} sub="Who approved this strategy, when it takes effect, when it is next reviewed — and what was left unstated at the point of approval.">Governance and approval<//>
+      ${/* D035 (v3.1): the subtitle promised "when it takes effect, when it is next
+           reviewed" and the exhibit carried neither — both are optional fields and are
+           unset here. A subtitle names only what the record actually holds. */ ""}
+      <${RrH} n=${num} sub=${"Who approved this strategy"
+        + (ver && ver.effective_date ? ", when it takes effect" : "")
+        + (ver && ver.next_review ? ", when it is next reviewed" : "")
+        + " — and what was left unstated at the point of approval."}>Governance and approval<//>
       <${RrCard} label="Approval record">
       <${RrEx} ex=${EXH["gov"]} />
       <table class="rr-table">
@@ -1720,7 +1793,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ${/* count + market position, side by side — the two facts a reader wants first */ ""}
         <${RrStats} items=${[
           { v: cnt.metrics || 0, k: "metrics benchmarked",
-            note: cnt.peer_n ? "typically " + cnt.peer_n.median + " peers each (" + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
+            // D061 (v3.1): one count-noun wherever a number is doing work. The body
+            // said "peers" here and "comparable organisations" elsewhere for the same
+            // object; "peer" survives only as the comparison vocabulary (peer median,
+            // peer group), never as the thing being counted.
+            note: cnt.peer_n ? "typically " + cnt.peer_n.median + " comparable organisations each ("
+                               + cnt.peer_n.min + "–" + cnt.peer_n.max + ")"
                              : "on your own data" },
           { v: (RR_POS_WORD[pos.verdict] || "no read yet") + (cnt.strict === false ? " *" : ""),
             k: "market position", tone: pos.verdict ? "v-" + pos.verdict : null,
@@ -1754,10 +1832,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
         ${/* a sheet that ALSO carries the follow content has room for fewer signals —
              sized so the combined sheet still lands inside A4 */ ""}
+        ${/* D027 (v3.1): the tail promised "the options against them follow below" on a
+             section whose follow branch correctly DECLINES to offer levers (an area past
+             its own aim). The clause now reads the same branch the options block does. */ ""}
         ${(!sigShown.length && b.signal_count) ? html`
           <p class="rr-p rr-sm">${domainLabel(b.name) + " is flagging " + b.signal_count + " signal"
             + (b.signal_count === 1 ? "" : "s") + "; they are set out in full under "
-            + domainLabel(b.name) + " in the app, and the options against them follow below."}</p>` : null}
+            + domainLabel(b.name) + " in the app"
+            + (_allLev.length ? ", and the options against them follow below." : ".")}</p>` : null}
         ${(sigShown || []).length ? html`
           <${RrCard} head=${"What " + domainLabel(b.name) + " is flagging"
             + (b.signal_count > sigShown.length ? " (" + sigShown.length + " of " + b.signal_count + ")" : "")}>
@@ -1865,15 +1947,30 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
              confirmed. A reader who watches a claim get tested and stand trusts the
              rest of the document more — and no vendor volunteers this. (QA v2
              delight 3; category (b), work done for them.) */ ""}
-        ${part === (parts || 1) - 1 && holding.length ? html`
-          <${RrCard} tone="sky" label="What we tested and it held">
-            <p class="rr-p rr-sm">${holding.length + " of your " + commitments.length
-              + " commitments were tested against your own answers and stand: "
-              + rrList(holding.map(c => rrCase(c.intent_label || c.category || "")).filter(Boolean))
-              + ". Nothing here needs a decision — they are recorded because a commitment "
-              + "that was checked and held is evidence too, and only the register can show "
-              + "you the difference between that and one nobody has looked at."}</p>
-          <//>` : null}
+        ${/* D031 (v3.1): this claimed three commitments "tested against your own
+             answers" when one of the three is a MARKET read, and it printed a template
+             fallback with no antecedent — "aim on market (set for this area)" — on a
+             circulated page. It now counts only answer-sourced rows and names the area
+             for a position row, so the card and the register agree. */ ""}
+        ${(() => {
+          if (part !== (parts || 1) - 1) return null;
+          const tested = holding.filter(c => c.kind === "coherence");
+          if (!tested.length) return null;
+          const named = tested.map(c => rrCase(c.intent_label || "")).filter(Boolean);
+          const alsoRead = holding.length - tested.length;
+          return html`
+            <${RrCard} tone="sky" label="What we tested and it held">
+              <p class="rr-p rr-sm">${tested.length + " of your " + commitments.length
+                + " commitments were tested against your own answers and stand"
+                + (named.length ? ": " + rrList(named) : "") + ". "
+                + (alsoRead ? "A further " + alsoRead + " hold" + (alsoRead === 1 ? "s" : "")
+                   + " on the market read rather than on your answers, and " + (alsoRead === 1 ? "is" : "are")
+                   + " marked as such in the register. " : "")
+                + "Nothing here needs a decision — a commitment that was checked and held is "
+                + "evidence too, and only the register shows the difference between that and "
+                + "one nobody has looked at."}</p>
+            <//>`;
+        })()}
         ${part === (parts || 1) - 1 ? html`
           <p class="rr-src">${"“Off strategy” counts the short, the contradicted and the past-aim rows together; "
             + "the status column is the split. A commitment is one stated position or one coherence "
@@ -1929,13 +2026,16 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            had no view that showed them together (2026-08-16) */ ""}
       <${RrCard}>
       <${RrEx} ex=${EXH["portfolio"]} />
+      ${/* D041 (v3.1): the chart's only job is rank, and it was rendering areas in
+           payload order — neither percentile, verdict, metric count nor alphabetical.
+           Sorted highest-first; the sort is stated in the exhibit line. */ ""}
       <${RrPortfolioChart} band=${mband} rows=${domains.map(d => ({
         name: d.name,
         label: domainLabel(d.name),
         pctl: (d.position || {}).depth_pctl,
         verdict: (d.position || {}).verdict,
         aim: RR_AIM_PCT[(d.target || {}).stance],
-      }))} />
+      })).sort((a, b) => (b.pctl == null ? -1 : b.pctl) - (a.pctl == null ? -1 : a.pctl))} />
       ${/* the key must show the colours the chart actually uses — a single blue dot
            labelled "where you sit" appeared nowhere on the chart, whose dots are
            coloured by verdict (2026-08-16) */ ""}
@@ -2011,14 +2111,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               ${ups.length ? html`<ul class="rr-ul">${ups.map((s, i) => html`
                 <li key=${i} class="rr-sm">${rrCase(s.title) + " — " + rrSignalValue(s.value)
                   + (s.detail ? " (" + rrCase(s.detail) + ")" : "")
-                  + (s.n ? ", on " + s.n + " comparable organisations" : "")}</li>`)}</ul>` : null}
+                  + (s.n ? ", on the " + s.n + " organisations that answered it" : "")}</li>`)}</ul>` : null}
               <p class="rr-p rr-sm rr-muted">${"These are reads, not recommendations: an area above "
                 + "market may be exactly where the strategy wants it, or may be spend the strategy "
                 + "never asked for. Where it is past your own stated aim, its section says so."}</p>
             <//>`;
         })()}
-        <p class="rr-src">Options above are what organisations in this position commonly weigh — a starting
-        point sized against budget and the roles affected, never a recommendation.</p>` : null}`;
+        ${/* D026 (v3.1): dangling boilerplate — the caption described options the
+             section had not rendered. It reads the WHOLE findings run (not this chunk),
+             because the caption sits on the last sheet of a split run. */ ""}
+        ${(((dg || {}).parts || {}).findings || []).some(f =>
+            rrProse(f.option || "").replace(RR_FRAMING_RE, "").trim())
+          ? html`<p class="rr-src">Options above are what organisations in this position commonly weigh — a starting
+          point sized against budget and the roles affected, never a recommendation.</p>` : null}` : null}`;
 
     if (kindOf === "gapsp") return html`
       <${RrH} n=${num} sub=${first ? "One entry per area, with what the market commonly does about it and what each option costs you elsewhere." : null}>The gaps, by area${contd}<//>
@@ -2061,7 +2166,23 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               <div class="rr-plan-t">${a.title}${altNote(a.title) ? html` <span class="rr-sm rr-muted">· ${altNote(a.title)}</span>` : altInfo[a.title] ? html` <span class="rr-sm rr-muted">· ${"one of " + altInfo[a.title].size + " options against this gap"}</span>` : ""}
                 <span class="rr-sm"> · from ${domainLabel(a.category || "")}${
                   SEC_NO["domain:" + a.category] ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""} · ${a.horizon}</span></div>
-              <p class="rr-p">${rrCase(rrProse(a.why))}</p>
+              ${/* D032 (v3.1): what a lever IS comes from the LIVE library, never from
+                   the stored plan — a plan built before a library repair carried the
+                   superseded reward content into a board paper and contradicted the
+                   section three pages earlier. The stored why supplies the reasoning
+                   only where it adds something the description does not. */ ""}
+              ${descOf[a.title] ? html`<p class="rr-p">${rrCase(descOf[a.title])}</p>` : null}
+              ${(() => {
+                const why = rrProse(a.why || "");
+                if (!why) return null;
+                const desc = (descOf[a.title] || "").trim();
+                // drop a stored restatement of the description, however it was worded:
+                // if the why is mostly that sentence, the live one above has said it
+                const stripped = desc ? why.split(desc).join(" ").trim() : why;
+                const rest = stripped.replace(/\s{2,}/g, " ").trim();
+                return (!descOf[a.title] || (rest && rest.length > 40))
+                  ? html`<p class="rr-p">${rrCase(rest || why)}</p>` : null;
+              })()}
               <div class="rr-roi"><span>Return</span>${a.roi}</div>
             </li>`)}
         </ol>
@@ -2114,8 +2235,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           <//>` : null}
         ${rest ? html`
           <${RrCard} tone="cream" head="What it does not cover">
-            <p class="rr-p rr-sm">${"The remaining " + rest + " gap" + (rest === 1 ? "" : "s")
-            + " in this review " + (rest === 1 ? "is" : "are") + " set out under "
+            ${/* D057 (v3.1): "the remaining N gaps" implied the ones acted on were
+                 closed. Approving one option against a gap does not close it — the
+                 body was careful ("acted on"), the box was not. */ ""}
+            <p class="rr-p rr-sm">${"The " + rest + " gap" + (rest === 1 ? "" : "s")
+            + " no action is proposed against "
+            + (rest === 1 ? "is" : "are") + " set out under "
             + (rest === 1 ? "its own area" : "their own areas") + " with the options against "
             + (rest === 1 ? "it" : "them") + ", and " + (rest === 1 ? "is" : "are")
             + " not part of this approval. Where an option is already planned it appears in "
@@ -2359,8 +2484,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         return "This document rests on " + answered + " of the " + of
           + " core-set questions (" + pct + "%). "
           + (hasPosition
-             ? "Thinly answered areas carry an indicative read, marked in their own section; "
-               + "unanswered ones say so rather than being estimated."
+             // D038 (v3.1): this promised a mark for "thinly answered" areas, which
+             // reads as a sample-size threshold that does not exist. The mechanism that
+             // DOES exist marks an area with fewer benchmarked metrics than the engine
+             // requires — so the sentence now describes that, and points at where the
+             // per-signal sample is actually shown.
+             ? "An area with too few benchmarked metrics for a firm verdict carries an "
+               + "indicative read, marked in its own section; unanswered areas say so rather "
+               + "than being estimated."
              : "Until that set reaches " + Math.round(ds.target_pct || 60) + "%, the position "
                + "pages state what is missing rather than estimating anything.");
       })()}</p><//>` : null}
@@ -2374,13 +2505,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // (external review 2026-08-16). Lives on this card to balance the method
       // grid: the positions card had grown past its column partner.
       + (doc.comparator_label && doc.comparator_label !== cutLabel
-         ? " The strategy names " + doc.comparator_label + " as its stated peer group; reads here "
-           + "run on " + cutLabel + " — the stated group's read appears in the app where its "
-           + "sample clears the floor, and the two can differ."
+         ? " The strategy names " + doc.comparator_label + " as its stated peer group; no read here "
+           + "uses it — they run on " + cutLabel
            + (money.fte_band && /FTE/i.test(doc.comparator_label)
               && doc.comparator_label.indexOf(money.fte_band) === -1
-              ? " Its size bands are also not your own (" + money.fte_band.replace(/-/g, "–") + " FTE)."
-              : "")
+              ? ", and its size bands are not your own (" + money.fte_band.replace(/-/g, "–") + " FTE)."
+              : ".")
          : "")}</p><//>` : null}
       <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">${"Positions come from your own "
       + "submitted data against " + cutLabel + ", on the engine and suppression rules that govern every "
@@ -2396,10 +2526,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ? (unevid.length + " commitment" + (unevid.length === 1 ? " sits" : "s sit") + " unevidenced today.")
         : (commitments.length + " commitment" + (commitments.length === 1 ? " awaits" : "s await")
            + " evidence until your data is in.")}
-      Indicative figures come from lumi’s cost model on its published assumptions, only where it has one
-      for the area. Written commentary is generated from the figures here and validated before it is
-      shown: it cannot introduce a number that is not on the page, direct you to act, or make a legal
-      determination. Where validation fails, lumi’s plain standard wording is used.</p><//>
+      ${/* D039 (v3.1): this described generation-then-validation while the provenance
+           foot on the SAME PAGE said all commentary uses standard wording — read
+           together, either every generation failed validation or none ran. Both now
+           hang off the one flag the foot uses. Keep the ${} on the SAME LINE as the
+           words before it: htm collapses the newline and printed "the area.Written". */ ""}
+      Indicative figures come from lumi’s cost model on its published assumptions, only where it has
+      one for the area. ${_modeled === 0
+        ? "Every written passage here is lumi’s standard wording, composed from the figures on the "
+          + "page — no model output was used."
+        : "Written commentary is generated from those figures and validated before it is shown: it "
+          + "cannot introduce a number that is not on the page, direct you to act, or make a legal "
+          + "determination; where validation fails, lumi’s standard wording is used."}</p><//>
       </div>
       ${/* the last beat belonged to a caveat about lumi's wording, under a leftover
            settings caption. A member's own strategy should end by returning to them
