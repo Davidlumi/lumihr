@@ -469,18 +469,30 @@ def derive_risks(al, money, blocks, strat, doc, data_state, snapshot_single,
                 or (strat.get("domain_targets") or {}).get("Pay") == "lag"
                 or (_pay and (_pay.get("position") or {}).get("verdict") == "below"))
     if sector and any(k in sector.lower() for k in _floor_sectors) and _pay_low:
+        # D064 (v3.1): the exposure said "this pay position sits close to it" without
+        # saying WHICH position — the stated aim or the live read. It can fire on the
+        # aim alone (a below-market intent) while the read sits on market, and a board
+        # cannot act on an ambiguous subject. Name the trigger.
+        _by_aim = (strat.get("market_position") == "lag"
+                   or (strat.get("domain_targets") or {}).get("Pay") == "lag")
+        _by_read = bool(_pay and (_pay.get("position") or {}).get("verdict") == "below")
+        _subject = ("your stated pay aim sits in the lower half of the market"
+                    if _by_aim and not _by_read
+                    else "your live pay read sits in the lower half of the market"
+                    if _by_read and not _by_aim
+                    else "your stated pay aim and your live read both sit in the lower half")
         out.append({
             "id": "wage_floor", "class": "Statutory",
-            "title": "The statutory wage floor moves every April, and this pay position sits close to it",
+            "title": "The statutory wage floor moves every April, and %s" % _subject,
             # "is the binding floor under a large part of the workforce" asserted a fact
             # about THIS org that lumi cannot see (external review 2026-08-16) — the
             # sector-level pattern is stateable; the org-level incidence is not
             "detail": ("In this sector the National Living Wage commonly sets the floor for a large "
                        "share of roles. Each April uplift compresses differentials above it and narrows "
-                       "the room a below-market pay position has to exist at all. lumi cannot see your "
-                       "rate headroom over the floor, or how much of your workforce sits near it — how "
-                       "much of the annual uplift lands as unavoidable spend is a judgement only you "
-                       "can make."),
+                       "the room a lower-half pay position has to exist at all. No read in this document "
+                       "uses a sector cut, and lumi cannot see your rate headroom over the floor or how "
+                       "much of your workforce sits near it — how much of the annual uplift lands as "
+                       "unavoidable spend is a judgement only you can make."),
         })
 
     # 7. THE ORGANISATION'S OWN CONSTRAINTS — stated in the wizard, never carried forward.

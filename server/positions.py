@@ -317,7 +317,13 @@ def _item(q, row, value, rank, blk, cut_label, kind):
         "distance": (rank - 50.0) * (1 if pol == "higher_is_better" else -1 if pol == "lower_is_better" else 0),
         "n": blk["n"], "n_real": blk.get("n_real", 0),
         "p50": blk.get("p50"),
-        "p50_display": fmt_value(blk.get("p50"), q.unit_block()) if kind == "value" else None,
+        # D028 (v3.1): score-kind items hard-nulled the median, so the signal template
+        # ("%s vs %s peer median") degraded to the ARTICLE — "25/100 vs the peer median",
+        # grammatical, comparator-shaped and numberless. A board could not tell whether
+        # the median was 30 or 99. The median exists in the block; format it the same
+        # way the org's own side is formatted and print both sides, always.
+        "p50_display": (fmt_value(blk.get("p50"), q.unit_block()) if kind == "value"
+                        else ("{:.0f}/100".format(blk["p50"]) if blk.get("p50") is not None else None)),
         # additive display fields (board pack quartile columns, 2026-07-02; tails Sprint 2) —
         # no other consumer reads these; scoring/routing/gauge behaviour unchanged by
         # construction. The pack layer applies the graduated display thresholds.
