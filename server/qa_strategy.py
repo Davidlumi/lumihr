@@ -338,6 +338,38 @@ def main():
     st_long, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "watch", "text": "x" * 5000})
     check("an over-long section is refused, not truncated", st_long == 400, st_long)
 
+    # ---- document structure (2026-08-16, David: "proper titles, subtitles, sections
+    # — as if they spent £10k with Mercer") ---------------------------------------
+    # A source-level check, because the document is client-side and the property is a
+    # DRAFTING discipline: every section heading carries a deck. It is the first thing
+    # to lapse when a section is added in a hurry, and nothing else would catch it.
+    import re as _re                      # also imported later, in the approval-modal block
+    _rjs = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "js", "report.js")
+    try:
+        _rsrc = open(_rjs).read()
+    except Exception as e:                                   # noqa: BLE001 — a read failure IS the finding
+        _rsrc = ""
+        print("  (could not read report.js: %s)" % e)
+    if _rsrc:
+        _heads = [_rsrc[m.start():_rsrc.index("<//>", m.start())]
+                  for m in _re.finditer(r"<\$\{RrH\}", _rsrc)]
+        _nosub = [h for h in _heads if "sub=" not in h]
+        check("every document section heading carries a subtitle",
+              not _nosub, [h[:70] for h in _nosub])
+        check("the document declares four parts, each with a title and a lead",
+              len(_re.findall(r'\{\s*id:\s*"[A-D]"', _rsrc)) == 4
+              and _rsrc.count("lead:") >= 4)
+        # exhibit numbers are DERIVED from the page walk — a hand-written one is wrong
+        # the first time a section is inserted above it
+        check("no exhibit number is hand-written into the document",
+              not _re.search(r'Exhibit\s+\d', _rsrc), "a literal 'Exhibit <n>' is in report.js")
+        # the running head, the part dividers and the exhibit captions must PRINT:
+        # marking any of them no-print would leave the PDF without its navigation
+        for _cls in ("rr-run", "rr-div-in", "rr-ex"):
+            _m = _re.search(r'class="[^"]*' + _cls + r'[^"]*"', _rsrc)
+            check("'%s' is not marked no-print (it belongs in the PDF)" % _cls,
+                  bool(_m) and "no-print" not in _m.group(0), _m.group(0) if _m else "not found")
+
     # ---- board-paper sections (2026-08-16) -------------------------------------
     # The ask, the cost envelope, the schedule, the risk read and the not-taken
     # record. All five are prose over computed figures, so all five are editable and
