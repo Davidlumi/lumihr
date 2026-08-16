@@ -19433,3 +19433,29 @@ question; RemCo routing language; the Incentives lever gap the interim consultan
 (uplifting existing award values as the direct lever). On the ruling-sheet agenda.
 
 Suite **15/15**. Substance sweep on the rendered PDF: 7/7. ?v=681.
+
+## 2026-08-16 — "Go": the four held items, actioned
+
+**P6 — the Attract-vs-lag-pay rule.** Needed an engine extension: the rule grammar could only
+test intent against metric answers, and this contradiction lives between two *dials*. One new
+condition shape (`strategy_stance`: the effective stance for a domain, override-then-global, same
+trust rules as intent). Fires on the demo — Thornbridge states Attract with a Pay lag override,
+and the tension is now a named commitment rather than a line of model prose. DRAFT, R7 sign-off
+owed.
+
+**INC-AWARD-UPLIFT.** The interim consultant's missing lever — the flagged Incentives signals
+were about award *values* below peer, and nothing in the inventory touched them. Drafted with the
+ratchet stated honestly (easy to lift, painful to lower). DRAFT, R8 sign-off owed.
+
+**RemCo routing** named once, where the decision is sought.
+
+**Population split** got a spec, not code: three options costed, with a recommendation (the
+frontline lens on existing level data — it also feeds the wage-floor risk its missing number).
+`POPULATION_SPLIT_SPEC_2026-08-16.md` awaits David's A/B/C.
+
+**And one more silent-skip caught.** The first run of the P6 gate checks passed 67/67 — with six
+of them never executing, because I had put pure-fixture checks inside the question-bank guard and
+the throwaway DB was gone. Found by reading the output lines rather than trusting the total, which
+is now twice this failure mode has been caught that way. Pure checks live outside every guard.
+
+Suite **15/15** (qa_strategy_align 73 checks, all executing). 42 pages verified. ?v=682.
