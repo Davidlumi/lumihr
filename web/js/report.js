@@ -1220,10 +1220,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             : "Continued: how the package is shaped, how performance is differentiated, and how reward is governed and communicated."}>The strategy${kindOf === "story2" ? " (cont.)" : ""}<//>
         ${stm === null ? html`<p class="rr-p rr-muted">Writing the strategy narrative…</p>`
           : S.map(sec => html`
-            <div key=${sec.k} class="rr-story">
-              <h3 class="rr-sh">${sec.t}</h3>
+            <${RrCard} key=${sec.k} head=${sec.t}>
               <${Prose} k=${sec.k} generated=${rrCase(P6[sec.k] || "")} />
-            </div>`)}`;
+            <//>`)}`;
     }
 
     if (kindOf === "dials") return html`
@@ -1251,17 +1250,22 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const cons = doc.constraints || {};
       return html`
         <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")} sub="The statements this organisation holds itself to, the market it measures itself against, and the limits it has recorded on what it can change.">Principles, peers and constraints<//>
-        <h3 class="rr-sh">Our reward principles</h3>
-        ${(doc.principles || []).length
-          ? html`<ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`
-          : html`<p class="rr-p rr-muted">No separate set of reward principles has been written down.
-              The positions stated in this document carry the philosophy in their place.</p>`}
-        <h3 class="rr-sh">Who we compare ourselves to</h3>
-        <p class="rr-p">${orgCompareWords(null, doc)}</p>
-        <h3 class="rr-sh">What constrains us</h3>
-        ${(cons.selected || []).length || cons.notes
-          ? html`<p class="rr-p">${rrList((cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c))}${cons.notes ? (((cons.selected || []).length ? ". " : "") + cons.notes) : ""}</p>`
-          : html`<p class="rr-p rr-muted">No constraints have been recorded against this strategy.</p>`}`;
+        <${RrCard} head="Our reward principles">
+          ${(doc.principles || []).length
+            ? html`<ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`
+            : html`<p class="rr-p rr-muted">No separate set of reward principles has been written down.
+                The positions stated in this document carry the philosophy in their place.</p>`}
+        <//>
+        <div class="rr-grid2">
+          <${RrCard} head="Who we compare ourselves to">
+            <p class="rr-p">${orgCompareWords(null, doc)}</p>
+          <//>
+          <${RrCard} tone="cream" head="What constrains us">
+            ${(cons.selected || []).length || cons.notes
+              ? html`<p class="rr-p">${rrList((cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c))}${cons.notes ? (((cons.selected || []).length ? ". " : "") + cons.notes) : ""}</p>`
+              : html`<p class="rr-p rr-muted">No constraints have been recorded against this strategy.</p>`}
+          <//>
+        </div>`;
     }
 
     if (kindOf === "pops") return html`
@@ -1276,10 +1280,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "tension") return html`
       <${RrH} n=${num} sub="Where the stated strategy pulls against itself, or against what the data shows.">Tensions and what to watch<//>
       ${cm && cm.parts ? html`
-        <h3 class="rr-sh">Tensions</h3>
-        <${Prose} k="tensions" generated=${rrCase(cm.parts.tensions)} />
-        <h3 class="rr-sh">What to watch</h3>
-        <${Prose} k="watch" generated=${rrCase(cm.parts.watch)} />`
+        <div class="rr-grid2">
+          <${RrCard} label="Tensions">
+            <${Prose} k="tensions" generated=${rrCase(cm.parts.tensions)} />
+          <//>
+          <${RrCard} tone="cream" label="What to watch">
+            <${Prose} k="watch" generated=${rrCase(cm.parts.watch)} />
+          <//>
+        </div>`
         : html`<p class="rr-p rr-muted">${aiWaiting ? "Writing the commentary…" : "Commentary is unavailable for this document."}</p>`}
       ${/* pointed at a "companion document" that this document became (2026-08-16) */ ""}
       ${wantsPlan ? null : html`
@@ -1291,6 +1299,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "gov") return html`
       <${RrH} n=${num} sub="Who approved this strategy, when it takes effect, when it is next reviewed — and what was left unstated at the point of approval.">Governance and approval<//>
+      <${RrCard} label="Approval record">
       <${RrEx} ex=${EXH["gov"]} />
       <table class="rr-table">
         <tbody>
@@ -1306,9 +1315,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           ${st.completed_at ? html`<tr><td>Strategy captured</td><td>${fmtDate(st.completed_at)}</td></tr>` : null}
         </tbody>
       </table>
+      <//>
       ${(ver && (ver.unstated || []).length) ? html`
-        <p class="rr-p rr-sm">${ver.unstated.length} section${ver.unstated.length === 1 ? " was" : "s were"} unstated
-        at approval: ${ver.unstated.join(", ")}. The version record carries exactly what was and was not stated.</p>` : null}`;
+        <${RrCard} tone="cream" head="What was unstated at approval">
+          <p class="rr-p rr-sm">${ver.unstated.length + " section" + (ver.unstated.length === 1 ? " was" : "s were")
+            + " unstated when this was approved: " + ver.unstated.join(", ")
+            + ". The version record carries exactly what was and was not stated, so a later reader can tell "
+            + "a deliberate silence from an omission."}</p>
+        <//>` : null}`;
 
     // ---- ONE DOMAIN, in full: count, position, signals, commentary, what follows ----
     if (kindOf === "domain") {
@@ -1590,17 +1604,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             k: (theAsk.gaps_total === 1) ? "gap in scope" : "gaps in scope",
             note: "strategy vs your own data" },
         ]} />` : null}
+        <div class="rr-grid2">
         ${nowTitles.length ? html`
-          <h3 class="rr-sh">What approval covers</h3>
-          <ul class="rr-ul">${nowTitles.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>` : null}
+          <${RrCard} head="What approval covers">
+            <ul class="rr-ul">${nowTitles.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>
+          <//>` : null}
         ${rest ? html`
-          <h3 class="rr-sh">What it does not cover</h3>
-          <p class="rr-p">${"The remaining " + rest + " gap" + (rest === 1 ? "" : "s")
+          <${RrCard} tone="cream" head="What it does not cover">
+            <p class="rr-p rr-sm">${"The remaining " + rest + " gap" + (rest === 1 ? "" : "s")
             + " in this review " + (rest === 1 ? "is" : "are") + " set out under "
             + (rest === 1 ? "its own area" : "their own areas") + " with the options against "
             + (rest === 1 ? "it" : "them") + ", and " + (rest === 1 ? "is" : "are")
             + " not part of this approval. They are held deliberately, not overlooked — the "
-            + "schedule says when each one is expected to come back."}</p>` : null}`;
+            + "schedule says when each one is expected to come back."}</p>
+          <//>` : null}
+        </div>`;
     }
 
     // ---- MOVEMENT ---------------------------------------------------------------
@@ -1643,6 +1661,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${/* ONE table with horizon row-groups, not one table per horizon: three stacked
            tables with three headers repeated the column names three times and read as
            three exhibits rather than one schedule (2026-08-16 polish pass). */ ""}
+      <${RrCard}>
       <${RrEx} ex=${EXH["sched:" + part]} />
       <table class="rr-table tight rr-sched-tbl">
         <thead><tr><th>Action</th><th>Area</th><th>Return</th></tr></thead>
@@ -1657,7 +1676,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                   ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""}</td>
                 <td class="rr-sm">${a.roi}</td></tr>`)}
           </tbody>`)}
-      </table>
+      </table><//>
       ${(items || []).find(s => s.horizon === "unscheduled") ? html`
         <p class="rr-p rr-sm rr-muted">${"Actions shown as unscheduled carry a timing lumi could not "
           + "place against a cycle. They are listed rather than dropped — an action missing from a "
@@ -1704,6 +1723,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "worth") return html`
       <${RrH} n=${num} sub="What a single percentage point of movement is worth on your headcount — the multiplier for the actions lumi cannot price.">What a point is worth<//>
       <${Prose} k="worth" className="rr-lede" generated=${worthProse()} />
+      <${RrCard}>
       <${RrEx} ex=${EXH["worth"]} />
       <table class="rr-table tight">
         <thead><tr><th>Move</th><th class="num">Worth, a year</th><th>How it is worked out</th></tr></thead>
@@ -1712,7 +1732,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <td class="num">${gbp(pt.gbp)}</td>
             <td class="rr-sm">${pt.formula}</td></tr>`)}</tbody>
       </table>
-      ${(money.unit_rates || {}).basis ? html`<p class="rr-p rr-sm rr-muted">${"These rates are "
+      <//>
+      ${(money.unit_rates || {}).basis ? html`<p class="rr-src">${"These rates are "
         + money.unit_rates.basis + "."}</p>` : null}
       <p class="rr-p rr-sm">${"lumi does not say how many points any action buys — that would be a "
         + "prediction about your organisation it has no basis for. It states the arithmetic of one "
@@ -1742,6 +1763,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "decided") return html`
       <${RrH} n=${num} sub=${first ? "The record of what was weighed and what was turned down, so a later reader can tell a considered rejection from an oversight." : null}>Decisions taken and not taken${contd}<//>
       ${first ? html`<${Prose} k="decisions" className="rr-lede" generated=${decProse()} />` : null}
+      <${RrCard} label="The record">
       <${RrEx} ex=${EXH["decided:" + part]} />
       <table class="rr-table">
         <thead><tr><th>Option</th><th>Area</th><th>Decision</th><th>Reason given</th></tr></thead>
@@ -1753,32 +1775,34 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               <br /><span class="rr-sm">${r.dec.at || ""}${r.dec.by ? " · " + r.dec.by : ""}</span></td>
             <td class="rr-sm">${r.dec.reason || "No reason recorded."}</td>
           </tr>`)}</tbody>
-      </table>`;
+      </table><//>`;
 
     if (kindOf === "method") return html`
       <${RrH} n=${num} sub="How every figure in this document was produced, what it rests on, and what it deliberately does not claim.">Method and basis<//>
       ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
            before an expression and printed "rests on55 of the 77 questions" */ ""}
-      ${al.completeness ? html`<p class="rr-p"><b>How complete this is.</b>
+      <div class="rr-grid2">
+      ${al.completeness ? html`<${RrCard} label="Completeness"><p class="rr-p rr-sm">
       ${"This document rests on " + al.completeness.answered + " of the " + al.completeness.of
         + " questions lumi treats as the core set (" + al.completeness.pct + "%). Areas answered thinly "
         + "carry an indicative read, marked as such in their own section; unanswered ones say so "
-        + "rather than being estimated."}</p>` : null}
-      ${al.snapshot ? html`<p class="rr-p"><b>Data vintage.</b>
+        + "rather than being estimated."}</p><//>` : null}
+      ${al.snapshot ? html`<${RrCard} label="Data vintage"><p class="rr-p rr-sm">
       ${"Peer figures are the " + (al.snapshot.window || "current") + " collection"
         + (al.snapshot.date ? ", dated " + al.snapshot.date : "")
-        + ". Your own answers are as you last saved them; where any are due a refresh, Your data says so."}</p>` : null}
-      <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
-      same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
-      counts against the commitments your strategy makes — never as a score, index or grade.</p>
-      <p class="rr-p">Where a commitment’s evidence is unanswered, this document says so rather than
+        + ". Your own answers are as you last saved them; where any are due a refresh, Your data says so."}</p><//>` : null}
+      <${RrCard} label="How positions are computed"><p class="rr-p rr-sm">Positions come from your own
+      submitted data against <b>${cutLabel}</b>, on the same engine and suppression rules that govern every
+      figure in lumi. Alignment is reported as counts against the commitments your strategy makes — never as
+      a score, index or grade.</p><//>
+      <${RrCard} tone="cream" label="What it will not do"><p class="rr-p rr-sm">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
       Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
-      model has a figure for the area in question.</p>
-      <p class="rr-p">Written commentary is generated from the figures in this document and validated before
-      it is shown: it cannot introduce a number that is not here, direct you to act, or make a legal
-      determination. Where validation fails, a plainer standard wording is used instead.</p>
-      <p class="rr-p rr-sm">Company facts and choices, not employee data — organisation-level, set by an
+      model has a figure for the area in question. Written commentary is generated from the figures here and
+      validated before it is shown: it cannot introduce a number that is not on the page, direct you to act,
+      or make a legal determination. Where validation fails, a plainer standard wording is used.</p><//>
+      </div>
+      <p class="rr-src">Company facts and choices, not employee data — organisation-level, set by an
       Admin, shaping how your results are read, never what your people see.</p>`;
 
     return null;
