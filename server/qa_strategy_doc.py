@@ -319,8 +319,19 @@ for l in levers:
         if inter and inter / float(min(len(s), len(osig))) >= 0.6:
             _collide.append((other, l["lever_id"]))
     _sigs[l["lever_id"]] = s
-check("G61 no two library entries share an action signature",
-      not _collide, "overlapping pairs: %s" % _collide[:3], owner="D083", advisory=True)
+# v3.3-A §4: DOWNGRADED FROM CHECK TO CANDIDATE-SURFACER. It cannot distinguish
+# "shares vocabulary" from "is the same lever", so it must neither block nor clear —
+# whether two entries name one action is David's judgement. It emits a ranked list
+# for his review and returns no verdict. NCHECK is not incremented; nothing here can
+# pass or fail. (It earned its place: it found WEL-FRAMEWORK / BEN-BENEFITS-FRAMEWORK,
+# a real duplicate the review had not named, and it does NOT find PAY-BANDS /
+# GOV-RANGES-INTERNAL, which the review did — precisely the limitation above.)
+if _collide:
+    print("\n  -- G61 candidate-surfacer (no verdict): near-duplicate library pairs --")
+    for a, b in sorted(_collide, key=lambda p: (p[0], p[1])):
+        _ov = len(_sigs[a] & _sigs[b]) / float(min(len(_sigs[a]), len(_sigs[b])))
+        print("     %.0f%% shared vocabulary  %s  <->  %s" % (_ov * 100, a, b))
+    print("     Judgement, not a finding — for the D083 pack. David rules the merge.")
 
 # --- A4.4 no vendor, product or provider names ------------------------------
 VENDORS = ("aviva", "legal & general", "bupa", "vitality", "unum", "peppy", "headspace",
@@ -516,10 +527,21 @@ if "--pdf" in sys.argv:
              "Governance & transparency"]
     aim_read, reg_row = set(), set()
     for a in AREAS:
-        # the read renderer's sentence sits inside that area's own section
+        # the read renderer's sentence sits inside that area's own section.
+        #
+        # v3.3-A §3: the first implementation matched only DIVERGENT reads ("sits short
+        # of / past that aim") and therefore flagged Health & protection — which renders
+        # "the live read matches that aim" and holds a register row, i.e. satisfies the
+        # spec predicate. That was a check firing on correct behaviour: the mirror image
+        # of a check passing over a defect, and more corrosive, because the false
+        # positive gets "fixed" by breaking something that works. As written it would
+        # have fired on every Holding area in every organisation, forever.
+        #
+        # The spec predicate is: an area RENDERS AN AIM READ <=> it holds a position
+        # commitment row. "matches that aim" is an aim read.
         sec = next((p for p in pages if re.search(r"\d+ " + re.escape(a) + r"\b", p)
                     and "How this reads" in p), "")
-        if re.search(r"the live read sits (short of|past) that aim", sec):
+        if re.search(r"the live read (sits (short of|past)|matches) that aim", sec):
             aim_read.add(a)
         if re.search(r"You aim [a-z ]+ on " + re.escape(a) + r";", text):
             reg_row.add(a)
