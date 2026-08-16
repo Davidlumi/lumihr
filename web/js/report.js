@@ -362,10 +362,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // Split only when there is a real options table to show. An OVERSPEND domain's
       // "what follows" is a statement and a two-line explanation — printing that on its
       // own A4 sheet used 17% of the page and read as padding in a board document.
-      const hasFollow = (b.gaps || []).length > 0
-        && (b.options || []).some(o => (o.levers || []).length);
+      const allLev = (b.options || []).flatMap(o => (o.levers || []));
+      const hasFollow = (b.gaps || []).length > 0 && allLev.length > 0;
+      // A coherence shortfall now draws BOTH registers, so an options table can run to ten
+      // rows and overflow its sheet. Chunk at five — the same weight discipline the rest of
+      // the document uses, rather than letting one area silently spill.
+      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 5)) : 0;
       P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
-      if (hasFollow) P(domainLabel(b.name) + " (cont.)", "domain", { block: b, half: "follow", parts: 2, part: 1 });
+      for (let k = 0; k < followSheets; k++) {
+        P(domainLabel(b.name) + (k ? " (cont.)" : " (cont.)"), "domain",
+          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 5, k * 5 + 5],
+            levPart: k, levParts: followSheets });
+      }
     });
     if (plan && (plan.actions || []).length)
       // budget 5, not 7: the first sheet also carries the summary lede, and three
@@ -424,7 +432,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     return bits.join(" ");
   };
   // ------------------------------------------------------------------ bodies ----
-  const Body = ({ kindOf, items, part, parts, start, num, block, half }) => {
+  const Body = ({ kindOf, items, part, parts, start, num, block, half, levSlice, levPart, levParts }) => {
     const first = !part;                       // only sheet 1 of a run carries the intro
     const contd = parts > 1 ? " (" + (part + 1) + " of " + parts + ")" : "";
     if (kindOf === "cover") return html`
@@ -530,14 +538,17 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const cons = doc.constraints || {};
       return html`
         <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")}>Principles, peers and constraints<//>
-        ${(doc.principles || []).length ? html`
-          <h3 class="rr-sh">Our reward principles</h3>
-          <ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>` : null}
+        <h3 class="rr-sh">Our reward principles</h3>
+        ${(doc.principles || []).length
+          ? html`<ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`
+          : html`<p class="rr-p rr-muted">No separate set of reward principles has been written down.
+              The positions stated in this document carry the philosophy in their place.</p>`}
         <h3 class="rr-sh">Who we compare ourselves to</h3>
         <p class="rr-p">${orgCompareWords(null, doc)}</p>
-        ${(cons.selected || []).length || cons.notes ? html`
-          <h3 class="rr-sh">What constrains us</h3>
-          <p class="rr-p">${(cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c).join(" · ")}${cons.notes ? (((cons.selected || []).length ? " — " : "") + cons.notes) : ""}</p>` : null}`;
+        <h3 class="rr-sh">What constrains us</h3>
+        ${(cons.selected || []).length || cons.notes
+          ? html`<p class="rr-p">${rrList((cons.selected || []).map(c => CONSTRAINT_LABEL[c] || c))}${cons.notes ? (((cons.selected || []).length ? ". " : "") + cons.notes) : ""}</p>`
+          : html`<p class="rr-p rr-muted">No constraints have been recorded against this strategy.</p>`}`;
     }
 
     if (kindOf === "pops") return html`
@@ -589,7 +600,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const b = block || {};
       const isRead = (half || "read") === "read";
       const inlineFollow = isRead && (b.gaps || []).length && (parts || 1) === 1;
-      const sigShown = (b.signals || []).slice(0, inlineFollow ? 2 : 4);
+      // computed OUTSIDE the template: htm's tokenizer cannot parse a spread inside ${}
+      const _allLev = (b.options || []).reduce((a, o) => a.concat(o.levers || []), []);
+      const levShown = levSlice ? _allLev.slice(levSlice[0], levSlice[1]) : _allLev;
+      // a bare ">" inside ${} makes htm think the tag closed — compare outside the template
+      const followSuffix = (!isRead && (levParts || 1) > 1)
+        ? " (" + ((levPart || 0) + 1) + " of " + levParts + ")" : "";
+      // a sheet carrying the read AND the follow explanation has room for one signal:
+      // measured at two it ran 41px past A4 on Time off & family
+      const sigShown = (b.signals || []).slice(0, inlineFollow ? 1 : 4);
       const pos = b.position || {};
       const aim = b.aim || {};
       const cnt = b.count || {};
@@ -599,7 +618,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       return html`
         <${RrH} n=${num} sub=${isRead
           ? "How " + domainLabel(b.name) + " sits against " + cutLabel + ", and what your strategy asks of it."
-          : null}>${domainLabel(b.name)}${isRead ? "" : " — what follows"}<//>
+          : null}>${domainLabel(b.name)}${isRead ? "" : " — what follows"}${followSuffix}<//>
 
         ${!isRead ? null : html`
         ${/* count + market position, side by side — the two facts a reader wants first */ ""}
@@ -647,19 +666,26 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                 <td class="rr-sm">${sg.value || "—"}</td>
                 <td class="rr-sm">${RR_POS_WORD[sg.position] || sg.position || "—"}</td>
               </tr>`)}</tbody>
-          </table>` : null}`}
+          </table>
+          ${/* a below-market area whose only flagged signal reads above market looks, on a
+               board page, like the evidence refuting the verdict. Say why it doesn't. */ ""}
+          ${pos.verdict && sigShown.length && !sigShown.some(x => x.position === pos.verdict) ? html`
+            <p class="rr-p rr-sm rr-muted">The signals above are the most material in
+            ${domainLabel(b.name)}, which is not the same as the most representative: none of them
+            happens to read ${RR_POS_WORD[pos.verdict]}, while the area overall does. The split at the
+            top of this page is the fuller picture.</p>` : null}` : null}`}
 
         ${isRead ? null : html`
-          ${/* the sheet heading already reads "<domain> — what follows"; repeating it
-               as an h3 directly underneath said the same thing twice */ ""}
+          ${/* the sheet heading already names the domain and says "what follows";
+               repeating it as an h3 underneath said the same thing twice */ ""}
           ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
-          ${(b.options || []).some(o => (o.levers || []).length) ? html`
+          ${levShown.length ? html`
             <table class="rr-table tight">
               <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
-              <tbody>${b.options.flatMap(o => (o.levers || []).map(l => html`
+              <tbody>${levShown.map(l => html`
                 <tr key=${l.lever_id}><td><b>${l.name}</b><br /><span class="rr-sm">${l.what_it_is}</span></td>
                   <td class="rr-sm">${l.cost_character}</td><td class="rr-sm">${l.speed}</td>
-                  <td class="rr-sm">${l.trade_off}</td></tr>`))}</tbody>
+                  <td class="rr-sm">${l.trade_off}</td></tr>`)}</tbody>
             </table>`
           : html`<p class="rr-p rr-sm rr-muted">${(b.options.find(o => o.coverage_note) || {}).coverage_note || ""}</p>`}`}
 
@@ -714,11 +740,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             <td><b class=${"rr-align a-" + (t.alignment || "none")}>${RR_ALIGN_WORD[t.alignment] || "—"}</b></td>
           </tr>`; })}</tbody>
       </table>
+      ${/* the table above counts AREAS; this counts COMMITMENTS, and one area can carry
+           several (its position plus any coherence rule that applies to it). Unlabelled,
+           the two looked like the same arithmetic disagreeing with itself. */ ""}
       <div class="rr-stats">
-        <div><b>${gaps.length}</b><span>off strategy</span></div>
-        <div><b>${holding.length}</b><span>holding</span></div>
+        <div><b>${gaps.length}</b><span>commitments off strategy</span></div>
+        <div><b>${holding.length}</b><span>commitments holding</span></div>
         <div><b>${unevid.length}</b><span>not yet evidenced</span></div>
-      </div>`;
+      </div>
+      <p class="rr-p rr-sm">The table counts the ${domains.length} areas lumi benchmarks. The figures
+      beneath count commitments: an area carries one for the position your strategy sets, plus one for
+      each coherence check that applies to it, so the two totals are different measures of the same
+      picture.</p>`;
 
     if (kindOf === "findings") return html`
       <${RrH} n=${num} sub=${first ? "Where the declared strategy and the live position diverge, and what organisations in this position commonly consider." : null}>Findings${contd}<//>
@@ -818,7 +851,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${pages.map((p, i) => html`
         <${RrSheet} key=${i} page=${i + 1} total=${TOTAL} foot=${foot} cover=${p.cover}
           prov=${i === TOTAL - 1 ? prov : null}>
-          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} />
+          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} levSlice=${p.levSlice} levPart=${p.levPart} levParts=${p.levParts} />
         <//>`)}
     </div>`;
 };
