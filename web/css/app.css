@@ -5094,6 +5094,10 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-div-list { border-top: 1px solid var(--border); padding-top: var(--s4); max-width: 46em; }
 .rr-div-list .rr-toc-row { padding: 5px 0; }
 
+/* the join on a paired sheet — a rule with air, so the second section reads as a new
+   section rather than a continuation of the one above it */
+.rr-pairsplit { border-top: 1px solid var(--border); margin: var(--s6) 0 var(--s5); }
+
 .rr-ex { font-size: var(--fs-micro); color: var(--ink-soft); margin: 0 0 5px; }
 .rr-ex-n { font-family: var(--font-head); font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--blue-deep); margin-right: 8px; }

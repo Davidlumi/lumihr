@@ -637,6 +637,14 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // next PART call. Dividers for a part that turns out to hold one section are dropped
   // again below — a divider page announcing a single page is padding, not structure.
   const PART = (id) => { curPt = id; pages.push({ title: null, body: "divider", pt: id, divider: true }); };
+  // TWO short sections on one sheet. Only ever called for a named, adjacent pair in the
+  // SAME part — so the running head is unambiguous — and never for a continuation. Both
+  // keep their own number and their own contents line, both pointing at this sheet.
+  // This is the one place the one-section-per-sheet model bends, and it bends by hand:
+  // an automatic packer would have to guess print heights, which is how the page count
+  // came to lie in the first place.
+  const P2 = (t1, b1, t2, b2) => pages.push({
+    title: t1, body: b1, title2: t2, body2: b2, pt: curPt, paired: true });
   // A section longer than one sheet would flow onto a continuation page at print time,
   // and then the "N of M" in the footer disagrees with the paper in your hand. Long runs
   // are chunked to a sheet's worth instead, so the count is derived from real sheets.
@@ -679,10 +687,18 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     P("The strategy", "story1");
     P("The strategy (cont.)", "story2");
     P("How we position reward", "dials");
-    if ((doc.principles || []).length || doc.comparator_cut != null
-        || ((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes) P("Principles, peers and constraints", "prin");
-    if ((doc.population_targets || []).length) P("Position by employee population", "pops");
-    P("Tensions and what to watch", "tension");
+    const _hasPrin = (doc.principles || []).length || doc.comparator_cut != null
+      || ((doc.constraints || {}).selected || []).length || (doc.constraints || {}).notes;
+    if ((doc.population_targets || []).length) {
+      if (_hasPrin) P("Principles, peers and constraints", "prin");
+      P("Position by employee population", "pops");
+      P("Tensions and what to watch", "tension");
+    } else if (_hasPrin) {
+      // measured at 40% and 34% full on their own sheets — together they make one page
+      P2("Principles, peers and constraints", "prin", "Tensions and what to watch", "tension");
+    } else {
+      P("Tensions and what to watch", "tension");
+    }
   }
   // No position read yet (a new org states its strategy BEFORE its data): the whole
   // position half collapses to one honest page rather than drawing an empty table,
@@ -700,7 +716,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // than the absence being discovered by whoever asks "are we improving?".
     P("Movement since the last review", "trend");
     if (dg && (dg.parts || {}).findings && dg.parts.findings.length)
-      Prun("Findings", "findings", dg.parts.findings, () => 2, 6);
+      Prun("Findings", "findings", dg.parts.findings, () => 2, 8);
     // THE MAIN PART OF THE REPORT (David 2026-08-16): one dedicated section per domain
     // — its count and market position, its signals, a commentary on how it sits against
     // the market, and the recommendations that follow. The flat "gaps by area" run is
@@ -719,11 +735,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       // the document uses, rather than letting one area silently spill.
       // 4, not 5 (2026-08-16): each lever row now carries its decision badge and the
       // author's reason, which added ~200px to a five-row sheet and pushed it past A4
-      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 4)) : 0;
+      const followSheets = hasFollow ? Math.max(1, Math.ceil(allLev.length / 5)) : 0;
       P(domainLabel(b.name), "domain", { block: b, half: "read", parts: hasFollow ? 2 : 1, part: 0 });
       for (let k = 0; k < followSheets; k++) {
         P(domainLabel(b.name) + (k ? " (cont.)" : " (cont.)"), "domain",
-          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 4, k * 4 + 4],
+          { block: b, half: "follow", parts: 2, part: 1, levSlice: [k * 5, k * 5 + 5],
             levPart: k, levParts: followSheets });
       }
     });
@@ -733,7 +749,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // which reads as a to-do list rather than a programme (2026-08-16).
     // weight = the group heading plus a row per action, so a ten-action programme
     // splits at a sheet boundary instead of running past A4
-    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 7);
+    if (schedule.length) Prun("The schedule", "sched", schedule, (s) => 1 + s.actions.length, 10);
     if (plan && (plan.actions || []).length) {
       // budget 5, not 7: the first sheet also carries the summary lede, and three
       // actions with their why + return overran A4 by ~55px
@@ -741,7 +757,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const ordered = schedule.length
         ? schedule.reduce((a, s) => a.concat(s.actions), [])
         : plan.actions;
-      Prun("The plan", "planp", ordered, () => 2, 5);
+      Prun("The plan", "planp", ordered, () => 2, 8);
     } else {
       P("The plan", "planp", { items: [], part: 0, parts: 1 });
     }
@@ -753,18 +769,24 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (((money.unit_rates || {}).points || []).length) P("What a point is worth", "worth");
     // seven derivable risks at ~4 lines each overrun a sheet; four to a page, and the
     // first also carries the lede
-    Prun("Risks and exposures", "risks", risks, () => 2, 6);
+    Prun("Risks and exposures", "risks", risks, () => 2, 8);
     // the not-taken record grows with every decision an author makes — unbounded by
     // nature, so it chunks like every other run in this document
-    if (decidedRows.length) Prun("Decisions taken and not taken", "decided", decidedRows, () => 1, 5);
+    if (decidedRows.length) Prun("Decisions taken and not taken", "decided", decidedRows, () => 1, 8);
   }
   PART("D");
+
+  // ONE sheet again. It was split in two while chasing the last-page spill, on the
+  // theory that the provenance line made it too tall — but the actual cause was
+  // .rr-wrap's padding printing after the final sheet. With that fixed the split was a
+  // workaround for a bug that no longer exists, and it was costing two half-empty
+  // pages at the back of the document (2026-08-16).
+  // NOT paired. Governance (36% full) and Method (38%) look like an obvious pair and
+  // are not: Method is the last sheet, so it also carries the provenance line, and the
+  // three together run past A4. The verifier caught it on the first render — which is
+  // the whole point of measuring the PDF instead of guessing (2026-08-16).
   if (wantsIntent) P("Governance and approval", "gov");
-  // The last sheet also carries the provenance line, which is why it — and only it —
-  // spilled in David's export. Two sheets: how the figures were produced, then the
-  // limits and the provenance. Measured in PRINT, not on screen (2026-08-16).
-  P("Method and basis", "method", { part: 0, parts: 2 });
-  P("Method and basis (cont.)", "method", { part: 1, parts: 2 });
+  P("Method and basis", "method");
 
   // A divider announcing a single section is padding, not structure — so a part that
   // came out one section long loses its divider and keeps its sections. This happens
@@ -790,8 +812,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   // printed a list running 03, 05, 06 with no 04 anywhere in the document.
   const secKey = (p) => p.body === "domain" ? "domain:" + (p.block || {}).name
     : (p.body === "story2" ? "story1" : p.body);
-  pages.forEach(p => { const k = secKey(p);
-    if (p.body !== "cover" && p.body !== "divider" && !(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); });
+  const _num = (k) => { if (!(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); };
+  pages.forEach(p => {
+    if (p.body === "cover" || p.body === "divider") return;
+    _num(secKey(p));
+    if (p.body2) _num(p.body2);          // a paired sheet numbers BOTH its sections
+  });
 
   // ---- EXHIBITS -------------------------------------------------------------------
   // Numbered by a walk of the FINISHED page list, in the order the sheets render, so a
@@ -801,9 +827,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const EXH = {};
   let _exn = 0;
   const exReg = (k, cap) => { if (!(k in EXH)) EXH[k] = { n: ++_exn, cap: cap }; };
-  pages.forEach(p => {
+  const exWalk = (p, body) => {
     const b = p.block || {};
-    switch (p.body) {
+    switch (body) {
       case "dials": exReg("dials", "Stated reward positions, and what each one changes in how the benchmark is read"); break;
       case "pops": exReg("pops", "Stated positions by employee population"); break;
       case "position":
@@ -828,16 +854,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                 + ((p.levParts || 1) > 1 ? " (" + ((p.levPart || 0) + 1) + " of " + p.levParts + ")" : ""));
         break;
     }
-  });
+  };
+  pages.forEach(p => { exWalk(p, p.body); if (p.body2) exWalk(p, p.body2); });
 
   // a flat, cheap description of the spine for the navigator — it must not need
   // SEC_NO, secKey or the page objects themselves
-  const navItems = pages.map((p, i) => ({
+  const navItems = [];
+  pages.forEach((p, i) => { navItems.push(_navItem(p, i));
+    if (p.body2) navItems.push({ i: i, cover: false, divider: false, pt: p.pt,
+      partTitle: (RR_PART[p.pt] || {}).title, title: p.title2, no: SEC_NO[p.body2], cont: false }); });
+  function _navItem(p, i) { return ({
     i: i, cover: !!p.cover, divider: !!p.divider, pt: p.pt,
     partTitle: (RR_PART[p.pt] || {}).title,
     title: p.title, no: SEC_NO[secKey(p)],
     cont: !!(p.title && /\(cont\.\)$/.test(p.title)),
-  }));
+  }); }
   const goSheet = (i) => {
     const el = document.getElementById("rr-sheet-" + (i + 1));
     if (!el) return;
@@ -1119,6 +1150,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
               if (p.divider) return;
               if (!p.title || /\(cont\.\)$/.test(p.title)) return;
               rows.push({ kind: "sec", no: SEC_NO[secKey(p)], title: p.title, n: i + 1, inPart: !!p.pt });
+              if (p.body2) rows.push({ kind: "sec", no: SEC_NO[p.body2], title: p.title2,
+                                       n: i + 1, inPart: !!p.pt });
             });
             // buttons, not divs: a 41-sheet contents you cannot click is a tease on
             // screen. Styled as plain rows so the printed page is unchanged. (A plain
@@ -1685,8 +1718,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </table>`;
 
     if (kindOf === "method") return html`
-      <${RrH} n=${num} sub=${first ? "How every figure in this document was produced, what it rests on, and what it deliberately does not claim." : "Continued: what the engine will not do, and where the words in this document came from."}>Method and basis${contd}<//>
-      ${!first ? null : html`
+      <${RrH} n=${num} sub="How every figure in this document was produced, what it rests on, and what it deliberately does not claim.">Method and basis<//>
       ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
            before an expression and printed "rests on55 of the 77 questions" */ ""}
       ${al.completeness ? html`<p class="rr-p"><b>How complete this is.</b>
@@ -1701,8 +1733,6 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <p class="rr-p">Positions are computed from your own submitted data against <b>${cutLabel}</b>, on the
       same engine and the same suppression rules that govern every figure in lumi. Alignment is reported as
       counts against the commitments your strategy makes — never as a score, index or grade.</p>
-      `}
-      ${first ? null : html`
       <p class="rr-p">Where a commitment’s evidence is unanswered, this document says so rather than
       estimating: ${unevid.length} commitment${unevid.length === 1 ? " sits" : "s sit"} unevidenced today.
       Indicative figures come from lumi’s cost model on its published assumptions, and appear only where that
@@ -1711,7 +1741,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       it is shown: it cannot introduce a number that is not here, direct you to act, or make a legal
       determination. Where validation fails, a plainer standard wording is used instead.</p>
       <p class="rr-p rr-sm">Company facts and choices, not employee data — organisation-level, set by an
-      Admin, shaping how your results are read, never what your people see.</p>`}`;
+      Admin, shaping how your results are read, never what your people see.</p>`;
 
     return null;
   };
@@ -1748,6 +1778,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             right: p.pt ? "Part " + p.pt + " · " + (RR_PART[p.pt] || {}).title : rrType(p.title || "") }}
           prov=${i === TOTAL - 1 ? prov : null}>
           <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} levSlice=${p.levSlice} levPart=${p.levPart} levParts=${p.levParts} ptId=${p.pt} />
+          ${/* a paired sheet: the second section under a rule, so the join reads as a
+               section break and not as more of the section above it */ ""}
+          ${p.body2 ? html`
+            <div class="rr-pairsplit"></div>
+            <${Body} kindOf=${p.body2} num=${SEC_NO[p.body2]} ptId=${p.pt} part=${0} parts=${1} />` : null}
         <//>`)}
     </div>`;
 };
