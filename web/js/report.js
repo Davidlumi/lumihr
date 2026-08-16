@@ -621,6 +621,9 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // What it costs, what could go wrong, and what was turned down — the three
     // sections a board paper is expected to carry and this one did not.
     P("What it costs", "cost");
+    // only when lumi has an FTE band to compute against — no band, no unit rates, no
+    // section, rather than a page of dashes
+    if (((money.unit_rates || {}).points || []).length) P("What a point is worth", "worth");
     // seven derivable risks at ~4 lines each overrun a sheet; four to a page, and the
     // first also carries the lede
     Prun("Risks and exposures", "risks", risks, () => 2, 6);
@@ -676,6 +679,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       case "trend": if (trend.available) exReg("trend", "Movement by area since the previous collection window"); break;
       case "sched": exReg("sched:" + p.part, "Planned actions by horizon" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
       case "cost": if ((money.items || []).length) exReg("cost", "Metrics lumi can price, and the cost of moving each to the peer median"); break;
+      case "worth": exReg("worth", "What one percentage point of movement is worth, and the arithmetic behind each"); break;
       case "decided": exReg("decided:" + p.part, "Each option, the area it belongs to, the decision recorded and the reason given" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
       case "gov": exReg("gov", "Approval record for this strategy"); break;
       case "domain":
@@ -756,7 +760,11 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         + "metric in question — employer pension contribution, attrition and agency spend. None of the "
         + (nGaps ? nGaps + " gaps in this review falls" : "gaps in this review fall") + " into that set, "
         + "so no aggregate cost is stated here. That is not the same as saying they are free: it means "
-        + "their cost has to come from your own modelling rather than from a benchmark.";
+        + "their cost has to come from your own modelling rather than from a benchmark. "
+        + ((money.unit_rates && (money.unit_rates.points || []).length)
+           ? "The table below gives what a single percentage point of movement is worth on your "
+             + "headcount, which is the multiplier that modelling needs."
+           : "");
     }
     const parts = [];
     parts.push("Closing the gaps lumi can price to the peer median is an indicative "
@@ -773,6 +781,21 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       : "Your FTE band is not recorded, so these figures rest on lumi's default headcount assumption. "
         + "Setting the band in your company details will sharpen them materially.");
     return parts.join(" ");
+  };
+  const worthProse = () => {
+    const pts = (money.unit_rates || {}).points || [];
+    const n = nGaps - nPriced;
+    return (n > 0
+      ? n + " of the " + nGaps + " gap" + (nGaps === 1 ? "" : "s") + " in this review "
+        + (n === 1 ? "carries" : "carry") + " no price lumi can model — their effect is on "
+        + "retention, fairness and how the package reads. "
+      : "Where an action carries no price lumi can model, its effect is on retention, "
+        + "fairness and how the package reads. ")
+      + "That is true and, on its own, useless to a board weighing one against another. "
+      + "lumi cannot say how much of that effect an action buys. It can say what a single "
+      + "percentage point is worth on your own headcount" + (pts.length === 2 ? ", in the two "
+      + "currencies those actions trade in" : "") + " — so the board weighs a change against a "
+      + "number it already recognises.";
   };
   const risksProse = () => (risks.length
     ? "The exposures below are restatements of what this review found, not forecasts. Each names a "
@@ -1445,6 +1468,27 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
           + "% of salary · agency premium " + ((money.assumptions || {}).agency_premium_pct || 0)
           + "% · headcount from your stated FTE band. Change any of these in your company details and "
           + "every figure above moves with it."}</p>` : null}`;
+
+    // ---- WHAT A POINT IS WORTH -------------------------------------------------
+    // Its own section, not a block under "What it costs": it is a different idea
+    // (sensitivity, not cost), it earns a contents entry, and together the two ran
+    // 41px past A4 on one sheet.
+    if (kindOf === "worth") return html`
+      <${RrH} n=${num} sub="What a single percentage point of movement is worth on your headcount — the multiplier for the actions lumi cannot price.">What a point is worth<//>
+      <${Prose} k="worth" className="rr-lede" generated=${worthProse()} />
+      <${RrEx} ex=${EXH["worth"]} />
+      <table class="rr-table tight">
+        <thead><tr><th>Move</th><th class="num">Worth, a year</th><th>How it is worked out</th></tr></thead>
+        <tbody>${((money.unit_rates || {}).points || []).map(pt => html`
+          <tr key=${pt.key}><td><b>${pt.label}</b></td>
+            <td class="num">${gbp(pt.gbp)}</td>
+            <td class="rr-sm">${pt.formula}</td></tr>`)}</tbody>
+      </table>
+      ${(money.unit_rates || {}).basis ? html`<p class="rr-p rr-sm rr-muted">${"These rates are "
+        + money.unit_rates.basis + "."}</p>` : null}
+      <p class="rr-p rr-sm">${"lumi does not say how many points any action buys — that would be a "
+        + "prediction about your organisation it has no basis for. It states the arithmetic of one "
+        + "point; the judgement about how many an action is worth stays with the board."}</p>`;
 
     // ---- RISKS -----------------------------------------------------------------
     // Exposures restated from what the engine found, never predictions and never advice
