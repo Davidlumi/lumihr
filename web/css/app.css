@@ -4871,8 +4871,10 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-sheet { font-size: var(--fs-body); line-height: 1.55; color: var(--ink); }
 .rr-body { flex: 1 1 auto; min-height: 0; }
 .rr-h { margin-bottom: var(--s5); }
+/* .12em tracking on a two-digit number rendered "01" as "0 1" — tabular figures and
+   tighter tracking keep it reading as one number (2026-08-16 polish pass). */
 .rr-h-n { display: inline-block; font-family: var(--font-head); font-size: var(--fs-caption); font-weight: 700;
-  letter-spacing: .12em; color: var(--blue); margin-bottom: var(--s2); }
+  letter-spacing: .03em; font-variant-numeric: tabular-nums; color: var(--blue); margin-bottom: var(--s2); }
 .rr-h-t { font-family: var(--font-head); font-size: var(--fs-section); line-height: var(--lh-section);
   font-weight: 700; margin: 0; letter-spacing: -0.01em; }
 .rr-h-s { font-size: var(--fs-label); color: var(--ink-soft); margin: var(--s2) 0 0; max-width: 52em; }
@@ -5039,7 +5041,10 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-verdict.v-at { color: var(--favourable-ink); }
 .rr-verdict.v-above { color: var(--blue-deep); }
 .rr-split { display: flex; gap: 3px; margin: var(--s3) 0 var(--s4); }
-.rr-split-seg { display: flex; flex-direction: column; justify-content: center; min-width: 0;
+/* min-width, not 0: a small segment (2 of 37) got flex:2 and clipped its own label to
+   "2 above m" — a proportional bar is worth less than a legible one, and the distortion
+   at the small end is the cheaper error (2026-08-16 polish pass). */
+.rr-split-seg { display: flex; flex-direction: column; justify-content: center; min-width: 8.5em;
   padding: 7px 10px; border-radius: 8px; font-size: var(--fs-micro); color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; }
 .rr-split-seg i { font-style: normal; font-family: var(--font-head); font-size: var(--fs-label);
@@ -5060,6 +5065,50 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   color: var(--neutral-perf-ink); background: var(--neutral-perf-tint);
   border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
 
+/* ---- document structure (2026-08-16 polish pass): running head, part dividers,
+   exhibit captions, contents by part. What separates a 45-sheet printout from a
+   45-page report is that a reader always knows where they are in it. */
+/* pulled up into the sheet's 18mm top padding (leaving ~12mm above it) and tightened
+   below: the exhibit captions added ~20px to every table sheet, which put one domain
+   read 11px past A4. The running head is the cheapest 3mm in the document to give back. */
+.rr-run { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4);
+  margin: -6mm 0 6mm; padding-bottom: 2.5mm; border-bottom: 1px solid var(--border);
+  font-size: var(--fs-micro); color: var(--ink-faint); }
+.rr-run-l { font-weight: 600; }
+.rr-run-r { font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--blue-deep); white-space: nowrap; }
+
+.rr-div-sheet .rr-body { display: flex; align-items: center; }
+.rr-div-in { width: 100%; }
+.rr-div-k { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--blue-deep); }
+.rr-div-t { font-family: var(--font-head); font-size: 34px; line-height: 1.12; font-weight: 700;
+  letter-spacing: -0.022em; margin: var(--s2) 0 0; }
+.rr-div-lead { font-size: var(--fs-subhead); line-height: 1.55; color: var(--ink-soft);
+  margin: 0 0 var(--s6); max-width: 40em; }
+.rr-div-list { border-top: 1px solid var(--border); padding-top: var(--s4); max-width: 46em; }
+.rr-div-list .rr-toc-row { padding: 5px 0; }
+
+.rr-ex { font-size: var(--fs-micro); color: var(--ink-soft); margin: 0 0 5px; }
+.rr-ex-n { font-family: var(--font-head); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--blue-deep); margin-right: 8px; }
+
+.rr-toc-part { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
+  break-inside: avoid; margin: var(--s4) 0 3px; padding-bottom: 3px;
+  border-bottom: 1px solid var(--border); font-family: var(--font-head);
+  font-size: var(--fs-caption); font-weight: 700; color: var(--blue-deep); }
+.rr-toc-part:first-child { margin-top: 0; }
+.rr-toc-row.is-in { padding-left: var(--s3); }
+.rr-toc-row i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--ink-faint);
+  margin-right: 7px; }
+
+/* the schedule: one table, horizon as a row-group header */
+.rr-sched-tbl .rr-hz-row th { background: none; border: 0; padding: var(--s4) 0 3px;
+  text-align: left; text-transform: none; letter-spacing: 0; }
+.rr-sched-tbl tbody:first-of-type .rr-hz-row th { padding-top: var(--s2); }
+.rr-hz-row i { font-style: normal; font-size: var(--fs-micro); font-weight: 500;
+  color: var(--ink-soft); margin-left: 10px; }
+
 /* ---- board-paper sections (2026-08-16): the ask, the schedule, cost, risk, the
    not-taken record. All of it prints; only the decision controls are screen-only. */
 .rr-ask { border-left: 3px solid var(--blue-deep); background: var(--blue-tint);
@@ -5071,11 +5120,6 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
 .rr-ul { margin: 0 0 var(--s4); padding-left: 1.2em; }
 .rr-ul li { margin-bottom: var(--s2); }
 
-.rr-sched { margin-bottom: var(--s5); break-inside: avoid; }
-.rr-sched:last-child { margin-bottom: 0; }
-.rr-sched-h { display: flex; align-items: baseline; justify-content: space-between;
-  gap: var(--s3); margin-bottom: var(--s2); }
-.rr-sched-h i { font-style: normal; font-size: var(--fs-caption); color: var(--ink-soft); }
 .rr-hz { font-family: var(--font-head); font-size: var(--fs-label); font-weight: 700;
   color: var(--ink); border-bottom: 2px solid var(--blue-deep); padding-bottom: 2px; }
 .rr-hz.h-nextcycle { border-bottom-color: var(--blue); opacity: .92; }

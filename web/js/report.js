@@ -35,6 +35,31 @@ const RRD = {
   },
 };
 
+// THE SPINE (2026-08-16, David: "proper titles, subtitles, sections — as if they spent
+// £10k with Mercer"). Forty-five sheets without parts is a stack of pages; with them it
+// is a document you can find your way around. Front matter — cover, executive summary,
+// the ask — deliberately sits OUTSIDE the parts: it is what a reader who reads three
+// pages reads, and burying it inside Part A would bury the ask with it.
+const RR_PARTS = [
+  { id: "A", title: "The reward strategy",
+    lead: "What this organisation intends its reward to do, the positions it has chosen, "
+        + "and the principles and constraints those choices sit inside. Nothing in this part "
+        + "is a measurement — every position here is a stated intention." },
+  { id: "B", title: "Where the package stands",
+    lead: "The live benchmark for each area of reward, read against the position the strategy "
+        + "sets for it. One section per area: the evidence behind the read, the market position "
+        + "it produces, what the area is flagging, and how the two compare." },
+  { id: "C", title: "What follows",
+    lead: "The actions the gaps in Part B lead to, sequenced across cycles — with what they "
+        + "cost, what they expose the organisation to, and a record of the options that were "
+        + "weighed and not taken." },
+  { id: "D", title: "Governance and method",
+    lead: "How this document was approved and by whom, and how every figure in it was "
+        + "produced — the peer basis, the suppression rules and the limits of each read." },
+];
+const RR_PART = {};
+RR_PARTS.forEach(p => { RR_PART[p.id] = p; });
+
 // A model part that came back on the deterministic floor still reads as prose, so the
 // document never says which is which inline — the provenance line on the last page does.
 function rrProse(s) { return (s || "").trim(); }
@@ -75,9 +100,17 @@ function rrList(items) {
   return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
 }
 
-function RrSheet({ page, total, foot, prov, children, cover }) {
+function RrSheet({ page, total, foot, prov, children, cover, divider, head }) {
   return html`
-    <div class=${"pack-page rr-sheet" + (cover ? " rr-cover" : "")}>
+    <div class=${"pack-page rr-sheet" + (cover ? " rr-cover" : "") + (divider ? " rr-div-sheet" : "")}>
+      ${/* the running head — a reader holding sheet 31 of a printed document has no
+           other way to know where they are. Cover and part dividers carry their own
+           identity and would only be repeating themselves. */ ""}
+      ${head ? html`
+        <div class="rr-run">
+          <span class="rr-run-l">${head.left}</span>
+          <span class="rr-run-r">${head.right}</span>
+        </div>` : null}
       <div class="rr-body">${children}</div>
       <div class="pack-footer-wrap">
         ${prov ? html`<div class="pack-provline">${prov}</div>` : null}
@@ -88,6 +121,16 @@ function RrSheet({ page, total, foot, prov, children, cover }) {
         </div>
       </div>
     </div>`;
+}
+
+// Exhibit caption. Every table in a consultancy document is numbered and named, so it
+// can be referred to in a meeting ("look at exhibit 12") and so a reader can tell a
+// figure that was produced from one that was asserted. Numbers are DERIVED from a walk
+// of the finished page list — hand-written ones drift the moment a section is added.
+function RrEx({ ex }) {
+  if (!ex) return null;
+  return html`
+    <div class="rr-ex"><span class="rr-ex-n">Exhibit ${ex.n}</span>${ex.cap}</div>`;
 }
 
 function RrH({ n, children, sub, edit }) {
@@ -383,7 +426,15 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
   // ---- the page list, built per kind so numbering is derived, never hand-counted ----
   const pages = [];
-  const P = (title, body, opts) => pages.push({ title, body, ...(opts || {}) });
+  // `pt` is the DOCUMENT part (A/B/C/D) — deliberately not `part`, which Prun already
+  // uses for the chunk index of a split section. Two different "part"s on one page
+  // object would be a bug waiting to happen.
+  let curPt = null;
+  const P = (title, body, opts) => pages.push({ title, body, pt: curPt, ...(opts || {}) });
+  // Open a part: a divider sheet, then everything that follows belongs to it until the
+  // next PART call. Dividers for a part that turns out to hold one section are dropped
+  // again below — a divider page announcing a single page is padding, not structure.
+  const PART = (id) => { curPt = id; pages.push({ title: null, body: "divider", pt: id, divider: true }); };
   // A section longer than one sheet would flow onto a continuation page at print time,
   // and then the "N of M" in the footer disagrees with the paper in your hand. Long runs
   // are chunked to a sheet's worth instead, so the count is derived from real sheets.
@@ -419,6 +470,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   if (wantsPlan) P("What we're asking the board to approve", "ask");
 
   if (wantsIntent) {
+    PART("A");
     // The narrative of the strategy — the thing a Mercer or WTW paper opens with, and
     // what "just broken sentences" was standing in for. Two sheets so each section has
     // room to be prose rather than a caption.
@@ -436,8 +488,10 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
   const dstate = al.data_state || {};
   const hasPosition = (dstate.positioned || domains.length) > 0 && dstate.unlocked !== false;
   if (wantsPlan && !hasPosition) {
+    PART("B");
     P("Where you'll stand", "awaiting");
   } else if (wantsPlan) {
+    PART("B");
     P("Position at a glance", "position");
     // Movement belongs with the position read, not at the back. It cannot be built
     // today — there is one aggregated collection window — and the page says so rather
@@ -471,6 +525,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
             levPart: k, levParts: followSheets });
       }
     });
+    PART("C");
     // THE SCHEDULE before the plan: the shape across cycles, then the detail. The plan
     // carried a horizon per action all along and printed them as a flat numbered run,
     // which reads as a to-do list rather than a programme (2026-08-16).
@@ -498,16 +553,64 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     // nature, so it chunks like every other run in this document
     if (decidedRows.length) Prun("Decisions taken and not taken", "decided", decidedRows, () => 1, 5);
   }
+  PART("D");
   if (wantsIntent) P("Governance and approval", "gov");
   P("Method and basis", "method");
+
+  // A divider announcing a single section is padding, not structure — so a part that
+  // came out one section long loses its divider and keeps its sections. This happens
+  // for real: a fresh org's Part B is the one honest "Where you'll stand" page.
+  const _ptCount = {};
+  pages.forEach(p => { if (!p.divider && p.pt) _ptCount[p.pt] = (_ptCount[p.pt] || 0) + 1; });
+  const spine = pages.filter(p => !(p.divider && (_ptCount[p.pt] || 0) < 2));
+  pages.length = 0;
+  spine.forEach(p => pages.push(p));
+  // the parts that survived, in document order — the contents groups by these
+  const LIVE_PARTS = [];
+  pages.forEach(p => { if (p.divider && LIVE_PARTS.indexOf(p.pt) < 0) LIVE_PARTS.push(p.pt); });
+
   const TOTAL = pages.length;
   // Section numbers derive from the page list rather than being written into each body:
   // once the two spines merge into one document, hardcoded "02"s collide and skip.
   const SEC_NO = {};
   let _sn = 0;
-  const secKey = (p) => p.body === "domain" ? "domain:" + (p.block || {}).name : p.body;
+  // A section that spans two sheets is still ONE section. story2 shares story1's key,
+  // or it burns a section number on a continuation sheet the contents hides — which
+  // printed a list running 03, 05, 06 with no 04 anywhere in the document.
+  const secKey = (p) => p.body === "domain" ? "domain:" + (p.block || {}).name
+    : (p.body === "story2" ? "story1" : p.body);
   pages.forEach(p => { const k = secKey(p);
-    if (p.body !== "cover" && !(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); });
+    if (p.body !== "cover" && p.body !== "divider" && !(k in SEC_NO)) SEC_NO[k] = ("0" + (++_sn)).slice(-2); });
+
+  // ---- EXHIBITS -------------------------------------------------------------------
+  // Numbered by a walk of the FINISHED page list, in the order the sheets render, so a
+  // section added anywhere renumbers everything after it automatically. A number
+  // written into a caption by hand is wrong the first time someone inserts a
+  // section above it. (No literal exhibit number appears in this file — gated.)
+  const EXH = {};
+  let _exn = 0;
+  const exReg = (k, cap) => { if (!(k in EXH)) EXH[k] = { n: ++_exn, cap: cap }; };
+  pages.forEach(p => {
+    const b = p.block || {};
+    switch (p.body) {
+      case "dials": exReg("dials", "Stated reward positions, and what each one changes in how the benchmark is read"); break;
+      case "pops": exReg("pops", "Stated positions by employee population"); break;
+      case "position": exReg("position", "Market position by area, against the position the strategy sets"); break;
+      case "trend": if (trend.available) exReg("trend", "Movement by area since the previous collection window"); break;
+      case "sched": exReg("sched:" + p.part, "Planned actions by horizon" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
+      case "cost": if ((money.items || []).length) exReg("cost", "Metrics lumi can price, and the cost of moving each to the peer median"); break;
+      case "decided": exReg("decided:" + p.part, "Each option, the area it belongs to, the decision recorded and the reason given" + (p.parts > 1 ? " (" + (p.part + 1) + " of " + p.parts + ")" : "")); break;
+      case "gov": exReg("gov", "Approval record for this strategy"); break;
+      case "domain":
+        if (p.half === "read" && (b.signals || []).length)
+          exReg("dom-sig:" + b.name, "Signals in " + domainLabel(b.name) + ", with your value and how each one reads against " + cutLabel);
+        if (p.half === "follow")
+          exReg("dom-opt:" + b.name + ":" + p.levPart,
+                "Options against the " + domainLabel(b.name) + " gaps, and the decision on each"
+                + ((p.levParts || 1) > 1 ? " (" + ((p.levPart || 0) + 1) + " of " + p.levParts + ")" : ""));
+        break;
+    }
+  });
 
   // ---- deterministic defaults for the board-paper sections ------------------
   // Composed from the document's own figures, so they are instant, always grounded
@@ -647,7 +750,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     return bits.join(" ");
   };
   // ------------------------------------------------------------------ bodies ----
-  const Body = ({ kindOf, items, part, parts, start, num, block, half, levSlice, levPart, levParts }) => {
+  const Body = ({ kindOf, items, part, parts, start, num, block, half, levSlice, levPart, levParts, ptId }) => {
     const first = !part;                       // only sheet 1 of a run carries the intro
     const contd = parts > 1 ? " (" + (part + 1) + " of " + parts + ")" : "";
     if (kindOf === "cover") return html`
@@ -660,20 +763,52 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <h1 class="rr-title">${orgName}</h1>
         <div class="rr-subtitle">${K.title}</div>
         <p class="rr-lead">${K.lead}</p>
+        ${/* the metadata block a consultancy cover carries: who produced it, when, on
+             what basis, and what may be done with it. No "Prepared for" row — the
+             organisation's name is the hero line directly above, and naming it twice
+             on one sheet reads as a mail-merge rather than a deliverable. */ ""}
         <div class="rr-cover-meta">
-          <div><span>Prepared</span>${today}</div>
-          ${al.snapshot && al.snapshot.window
-            ? html`<div><span>Data</span>${al.snapshot.window}</div>` : null}
-          <div><span>Benchmarked against</span>${cutLabel}</div>
+          <div><span>Prepared by</span>lumi${" "}·${" "}reward benchmarking</div>
+          <div><span>Date of issue</span>${today}</div>
+          <div><span>Document status</span>${ver
+            ? "Version " + ver.version + ", approved" + (ver.approval_date ? " " + ver.approval_date : "")
+            : "Draft — not yet approved"}</div>
+          <div><span>Benchmark basis</span>${cutLabel}</div>
+          <div><span>Data collection</span>${(al.snapshot || {}).window || "Current window"}${
+            (al.snapshot || {}).date ? " · " + al.snapshot.date : ""}</div>
           ${doc.comparator_label && doc.comparator_label !== cutLabel
             ? html`<div><span>Stated comparator</span>${doc.comparator_label}</div>` : null}
-          ${al.objective ? html`<div><span>Objective</span>${al.objective}</div>` : null}
-          <div><span>Status</span>${ver ? "Version " + ver.version + ", approved" + (ver.approval_date ? " " + ver.approval_date : "") : "Draft — not yet approved"}</div>
+          ${al.objective ? html`<div><span>Primary objective</span>${al.objective}</div>` : null}
+          <div><span>Classification</span>Private ${"&"} confidential</div>
         </div>
       </div>`;
 
+    // ---- PART DIVIDER -----------------------------------------------------------
+    // Announces the part, says what it is for, and lists the sections inside it with
+    // their page numbers — so a reader landing here knows what they are about to read
+    // and can skip to the one section they came for.
+    if (kindOf === "divider") {
+      const P_ = RR_PART[ptId] || {};
+      const inside = pages.map((p, i) => ({ p: p, n: i + 1 }))
+        .filter(x => x.p.pt === ptId && !x.p.divider && x.p.title && !/\(cont\.\)$/.test(x.p.title));
+      return html`
+        <div class="rr-div-in">
+          <div class="rr-div-k">Part ${ptId}</div>
+          <h2 class="rr-div-t">${P_.title}</h2>
+          <div class="rr-accent"></div>
+          <p class="rr-div-lead">${P_.lead}</p>
+          <div class="rr-div-list">
+            ${inside.map(x => html`
+              <div key=${x.n} class="rr-toc-row">
+                <span><i>${SEC_NO[secKey(x.p)]}</i>${x.p.title}</span><b>${x.n}</b>
+              </div>`)}
+          </div>
+        </div>`;
+    }
+
     if (kindOf === "exec") return html`
-      <${RrH} n=${num}>Executive summary<//>
+      <${RrH} n=${num} sub=${"The position, the ask and the basis, in one page. Everything asserted here is "
+        + "set out in full and evidenced in the parts that follow."}>Executive summary<//>
       ${aiWaiting ? html`<p class="rr-p rr-muted">Writing the commentary…</p>`
         : html`<${Prose} k="exec_summary" className="rr-lede" generated=${
             rrCase((wantsPlan ? (dg && dg.parts && dg.parts.summary) : null)
@@ -692,14 +827,36 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       ${/* two columns: a per-domain report runs to ~20 sections and a single-column
            contents list pushed this sheet past A4 (2026-08-16). Continuation pages
            are dropped — a reader wants the section, not every sheet it spans. */ ""}
+      ${/* two columns: a per-domain report runs to ~25 sections and a single-column
+           contents pushed this sheet past A4 (2026-08-16). Continuation sheets are
+           dropped — a reader wants the section, not every sheet it spans. Grouped by
+           part, because an ungrouped run of 25 lines is a list, not a map. */ ""}
       <div class="rr-toc">
         <div class="rr-toc-h">Contents</div>
         <div class="rr-toc-cols">
-          ${/* the page number IS the sheet index (cover is sheet 1) — the extra +1 here
-               made every contents line point one page late, and the last entry point past
-               the end of the document. */ ""}
-          ${pages.map((p, i) => ({ p, n: i + 1 })).filter(x => x.p.title && !/\(cont\.\)$/.test(x.p.title)).map(x => html`
-            <div key=${x.p.title} class="rr-toc-row"><span>${x.p.title}</span><i>${x.n}</i></div>`)}
+          ${/* the page number IS the sheet index (cover is sheet 1) — an extra +1 here
+               once made every contents line point one page late, and the last entry
+               point past the end of the document. */ ""}
+          ${(() => {
+            const rows = [];
+            let curPt = null;
+            pages.forEach((p, i) => {
+              // Group on the PART BOUNDARY, not on the divider page. A part whose divider
+              // was suppressed (one section long) still needs its heading here, or its
+              // section renders nested under the previous part and reads as belonging to it.
+              if (p.pt && p.pt !== curPt) {
+                curPt = p.pt;
+                rows.push({ kind: "part", id: p.pt, title: (RR_PART[p.pt] || {}).title, n: i + 1 });
+              }
+              if (p.divider) return;
+              if (!p.title || /\(cont\.\)$/.test(p.title)) return;
+              rows.push({ kind: "sec", no: SEC_NO[secKey(p)], title: p.title, n: i + 1, inPart: !!p.pt });
+            });
+            return rows.map((r, i) => r.kind === "part"
+              ? html`<div key=${i} class="rr-toc-part"><span>Part ${r.id} — ${r.title}</span><b>${r.n}</b></div>`
+              : html`<div key=${i} class=${"rr-toc-row" + (r.inPart ? " is-in" : "")}>
+                  <span><i>${r.no}</i>${r.title}</span><b>${r.n}</b></div>`);
+          })()}
         </div>
       </div>`;
 
@@ -722,7 +879,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")}
           sub=${kindOf === "story1"
             ? "The strategy as the organisation states it. Every position here is a choice; nothing on these two pages is a measurement."
-            : null}>The strategy${kindOf === "story2" ? " (cont.)" : ""}<//>
+            : "Continued: how the package is shaped, how performance is differentiated, and how reward is governed and communicated."}>The strategy${kindOf === "story2" ? " (cont.)" : ""}<//>
         ${stm === null ? html`<p class="rr-p rr-muted">Writing the strategy narrative…</p>`
           : S.map(sec => html`
             <div key=${sec.k} class="rr-story">
@@ -732,7 +889,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     }
 
     if (kindOf === "dials") return html`
-      <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")} sub="Each dial below is a stated choice. The third column is what it changes in how your benchmark is read.">How we position reward<//>
+      <${RrH} n=${num} edit=${EditAt("phil", "Change the dials")} sub="Each dial below is a stated choice, not a measurement. The third column is what that choice changes in how every benchmark in this document is read.">How we position reward<//>
+      <${RrEx} ex=${EXH["dials"]} />
       <table class="rr-table">
         <thead><tr><th>Dimension</th><th>Our position</th><th>What it drives</th></tr></thead>
         <tbody>
@@ -754,7 +912,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "prin") {
       const cons = doc.constraints || {};
       return html`
-        <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")}>Principles, peers and constraints<//>
+        <${RrH} n=${num} edit=${EditAt("principles", "Edit principles")} sub="The statements this organisation holds itself to, the market it measures itself against, and the limits it has recorded on what it can change.">Principles, peers and constraints<//>
         <h3 class="rr-sh">Our reward principles</h3>
         ${(doc.principles || []).length
           ? html`<ol class="rr-ol">${(doc.principles || []).map((p, i) => html`<li key=${i}>${p}</li>`)}</ol>`
@@ -770,6 +928,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "pops") return html`
       <${RrH} n=${num} edit=${EditAt("populations", "Edit levels")} sub="Stated positions for named groups. lumi holds no executive pay data, so these are never scored against the benchmark.">Position by employee population<//>
+      <${RrEx} ex=${EXH["pops"]} />
       <table class="rr-table">
         <thead><tr><th>Population</th><th>Stated position</th><th>Note</th></tr></thead>
         <tbody>${(doc.population_targets || []).map(p => html`
@@ -793,7 +952,8 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         </div>`}`;
 
     if (kindOf === "gov") return html`
-      <${RrH} n=${num}>Governance and approval<//>
+      <${RrH} n=${num} sub="Who approved this strategy, when it takes effect, when it is next reviewed — and what was left unstated at the point of approval.">Governance and approval<//>
+      <${RrEx} ex=${EXH["gov"]} />
       <table class="rr-table">
         <tbody>
           <tr><td>Status</td><td><b>${ver ? "Approved" : "Draft — not yet approved"}</b>${ver && ver.dirty ? html` <span class="rr-sm">(edits since approval)</span>` : ""}</td></tr>
@@ -839,9 +999,19 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       const pctOf = (v) => total ? Math.round((100 * (v || 0)) / total) : 0;
       const readWord = RR_ALIGN_WORD[aim.alignment];
       return html`
+        ${/* every other content sheet in the document carries a deck; the eight
+             "what follows" sheets carried none, which made them read as an overflow of
+             the previous page rather than a section (2026-08-16 polish pass). Only the
+             first sheet of a split run gets it, like every other run here. */ ""}
         <${RrH} n=${num} sub=${isRead
           ? "How " + domainLabel(b.name) + " sits against " + cutLabel + ", and what your strategy asks of it."
-          : null}>${domainLabel(b.name)}${isRead ? "" : " — what follows"}${followSuffix}<//>
+          : ((levPart || 0) > 0 ? null
+             : (levShown.length
+                ? "The gaps " + domainLabel(b.name) + " opens against your stated position, and the "
+                  + "options the market commonly uses to close them — each with what it costs you elsewhere."
+                : "The gaps " + domainLabel(b.name) + " opens against your stated position, and why lumi "
+                  + "is not putting options against them here."))
+          }>${domainLabel(b.name)}${isRead ? "" : " — what follows"}${followSuffix}<//>
 
         ${!isRead ? null : html`
         ${/* count + market position, side by side — the two facts a reader wants first */ ""}
@@ -885,6 +1055,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
         ${(sigShown || []).length ? html`
           <h3 class="rr-sh">What ${domainLabel(b.name)} is flagging${b.signal_count > sigShown.length
             ? html` <span class="rr-sm">(${sigShown.length} of ${b.signal_count})</span>` : ""}</h3>
+          <${RrEx} ex=${EXH["dom-sig:" + b.name]} />
           <table class="rr-table tight">
             <thead><tr><th>Signal</th><th>Yours</th><th>Reads</th></tr></thead>
             <tbody>${sigShown.map(sg => html`
@@ -907,6 +1078,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
                repeating it as an h3 underneath said the same thing twice */ ""}
           ${b.gaps.map(c => html`<p key=${c.id} class="rr-p">${rrCase(c.statement)}</p>`)}
           ${levShown.length ? html`
+            <${RrEx} ex=${EXH["dom-opt:" + b.name + ":" + (levPart || 0)]} />
             <table class="rr-table tight">
               <thead><tr><th>Option</th><th>Cost</th><th>Speed</th><th>Trade-off</th></tr></thead>
               <tbody>${levShown.map(l => html`
@@ -959,6 +1131,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
 
     if (kindOf === "position") return html`
       <${RrH} n=${num} sub=${"Each area's live benchmark on " + cutLabel + ", read against the position the strategy states for it."}>Position at a glance<//>
+      <${RrEx} ex=${EXH["position"]} />
       <table class="rr-table">
         <thead><tr><th>Area</th><th>Stated aim</th><th>Live position</th><th>Read</th></tr></thead>
         <tbody>${domains.map(d => {
@@ -1085,6 +1258,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
            editing one section silently rewrote the other */ ""}
       <${Prose} k="movement" className="rr-lede" generated=${trendProse()} />
       ${trend.available ? html`
+        <${RrEx} ex=${EXH["trend"]} />
         <table class="rr-table">
           <thead><tr><th>Area</th><th>Then</th><th>Now</th><th>Movement</th></tr></thead>
           <tbody>${domains.map(d => html`
@@ -1109,19 +1283,24 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "sched") return html`
       <${RrH} n=${num} sub=${first ? "The same actions as the section that follows, grouped by when each one can realistically land." : null}>The schedule${contd}<//>
       ${first ? html`<${Prose} k="schedule" className="rr-lede" generated=${schedProse()} />` : null}
-      ${(items || []).map(s => html`
-        <div key=${s.horizon} class="rr-sched">
-          <div class="rr-sched-h"><span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}</span>
-            <i>${s.actions.length} ${s.actions.length === 1 ? "action" : "actions"}</i></div>
-          <table class="rr-table tight">
-            <thead><tr><th>Action</th><th>Area</th><th>Return</th></tr></thead>
-            <tbody>${s.actions.map((a, i) => html`
+      ${/* ONE table with horizon row-groups, not one table per horizon: three stacked
+           tables with three headers repeated the column names three times and read as
+           three exhibits rather than one schedule (2026-08-16 polish pass). */ ""}
+      <${RrEx} ex=${EXH["sched:" + part]} />
+      <table class="rr-table tight rr-sched-tbl">
+        <thead><tr><th>Action</th><th>Area</th><th>Return</th></tr></thead>
+        ${(items || []).map(s => html`
+          <tbody key=${s.horizon}>
+            <tr class="rr-hz-row"><th colSpan="3">
+              <span class=${"rr-hz h-" + s.horizon.replace(/[^a-z]/g, "")}>${rrCap(s.horizon)}</span>
+              <i>${s.actions.length} ${s.actions.length === 1 ? "action" : "actions"}</i></th></tr>
+            ${s.actions.map((a, i) => html`
               <tr key=${i}><td><b>${a.title}</b></td>
                 <td class="rr-sm">${domainLabel(a.category || "")}${SEC_NO["domain:" + a.category]
                   ? " (§" + SEC_NO["domain:" + a.category] + ")" : ""}</td>
-                <td class="rr-sm">${a.roi}</td></tr>`)}</tbody>
-          </table>
-        </div>`)}
+                <td class="rr-sm">${a.roi}</td></tr>`)}
+          </tbody>`)}
+      </table>
       ${(items || []).find(s => s.horizon === "unscheduled") ? html`
         <p class="rr-p rr-sm rr-muted">${"Actions shown as unscheduled carry a timing lumi could not "
           + "place against a cycle. They are listed rather than dropped — an action missing from a "
@@ -1141,6 +1320,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       <${Prose} k="cost" generated=${costProse()} />
       ${(money.items || []).length ? html`
         <h3 class="rr-sh">Where the figure comes from</h3>
+        <${RrEx} ex=${EXH["cost"]} />
         <table class="rr-table tight">
           <thead><tr><th>Metric</th><th>Area</th><th>To median</th><th>To upper quartile</th></tr></thead>
           <tbody>${(money.items || []).map(it => html`
@@ -1181,6 +1361,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
     if (kindOf === "decided") return html`
       <${RrH} n=${num} sub=${first ? "The record of what was weighed and what was turned down, so a later reader can tell a considered rejection from an oversight." : null}>Decisions taken and not taken${contd}<//>
       ${first ? html`<${Prose} k="decisions" className="rr-lede" generated=${decProse()} />` : null}
+      <${RrEx} ex=${EXH["decided:" + part]} />
       <table class="rr-table">
         <thead><tr><th>Option</th><th>Area</th><th>Decision</th><th>Reason given</th></tr></thead>
         <tbody>${(items || []).map(r => html`
@@ -1194,7 +1375,7 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </table>`;
 
     if (kindOf === "method") return html`
-      <${RrH} n=${num}>Method and basis<//>
+      <${RrH} n=${num} sub="How every figure in this document was produced, what it rests on, and what it deliberately does not claim.">Method and basis<//>
       ${/* keep the ${} on the SAME line as the words before it — htm collapses a newline
            before an expression and printed "rests on55 of the 77 questions" */ ""}
       ${al.completeness ? html`<p class="rr-p"><b>How complete this is.</b>
@@ -1245,8 +1426,12 @@ window.RewardReportPage = function ({ kind, me, chips, extraActions, hideBack, b
       </div>
       ${pages.map((p, i) => html`
         <${RrSheet} key=${i} page=${i + 1} total=${TOTAL} foot=${foot} cover=${p.cover}
+          divider=${p.divider}
+          head=${p.cover || p.divider ? null : {
+            left: K.title + " · " + orgName,
+            right: p.pt ? "Part " + p.pt + " · " + (RR_PART[p.pt] || {}).title : (p.title || "") }}
           prov=${i === TOTAL - 1 ? prov : null}>
-          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} levSlice=${p.levSlice} levPart=${p.levPart} levParts=${p.levParts} />
+          <${Body} kindOf=${p.body} items=${p.items} part=${p.part} parts=${p.parts} start=${p.start} num=${SEC_NO[secKey(p)]} block=${p.block} half=${p.half} levSlice=${p.levSlice} levPart=${p.levPart} levParts=${p.levParts} ptId=${p.pt} />
         <//>`)}
     </div>`;
 };
