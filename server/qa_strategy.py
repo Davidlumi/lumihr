@@ -370,6 +370,33 @@ def main():
             check("'%s' is not marked no-print (it belongs in the PDF)" % _cls,
                   bool(_m) and "no-print" not in _m.group(0), _m.group(0) if _m else "not found")
 
+        # ---- craft + on-screen navigation (2026-08-16 delight pass) --------------
+        # The typographic pass is a MECHANISM, not a per-string discipline: it has to be
+        # applied at the four places document copy reaches the page, or a section added
+        # later silently prints typewriter quotes next to typeset ones.
+        check("headings run through the typographic pass",
+              "rrTypeAny(children)" in _rsrc and "rrTypeAny(sub)" in _rsrc)
+        check("prose and exhibit captions run through the typographic pass",
+              "rrType(rrProse(shown))" in _rsrc and "rrType(ex.cap)" in _rsrc)
+        check("engine strings inherit it via rrCase",
+              _re.search(r"function rrCase\([^)]*\)\s*\{\s*let out = rrType\(", _rsrc))
+        # the reader's position and the jump control are screen furniture: printing them
+        # would put a dropdown in the PDF
+        _bar = _rsrc[_rsrc.index('class="row spread no-print rr-bar"'):] if 'rr-bar"' in _rsrc else ""
+        check("the section navigator sits inside the no-print toolbar",
+              bool(_bar) and _bar.index("<${RrNav}") < _bar.index("${pages.map("),
+              "RrNav is outside the toolbar")
+        # a jump target has to exist for every sheet, or the contents points at nothing
+        check("every sheet carries a jump anchor",
+              '"rr-sheet-" + page' in _rsrc and 'getElementById("rr-sheet-"' in _rsrc)
+        # scrolling must not re-render the document — that is why the navigator is its
+        # own component, and the reason the readout used to run a whole probe behind
+        check("reading position is held in the navigator, not the page",
+              "function RrNav(" in _rsrc
+              and _rsrc.index("const [here, setHere]") > _rsrc.index("function RrNav("))
+        check("the navigator observes visibility rather than polling scroll",
+              "new IntersectionObserver(measure" in _rsrc)
+
     # ---- board-paper sections (2026-08-16) -------------------------------------
     # The ask, the cost envelope, the schedule, the risk read and the not-taken
     # record. All five are prose over computed figures, so all five are editable and
