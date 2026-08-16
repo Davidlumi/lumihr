@@ -18909,3 +18909,36 @@ reports all four as *"Missing } in template expression"*, which points nowhere n
 
 32 sheets, none over A4, contents verified pointing true. `qa_strategy_align` 45/45 with both
 register behaviours asserted. Suite 15/15. ?v=664.
+
+## 2026-08-16 (m) — Reward-team review: analyst, manager, director
+
+Three practitioner personas at three company sizes, tested at two data depths (the demo org's
+409 answers, and a thinned 184 that stands in for a mid-size customer). **Five findings, all
+fixed.**
+
+**The analyst, at a large listed retailer.** Their job is defending every figure, and the first
+one they checked did not survive: *"46 metrics benchmarked, against 46 peer readings."* Those are
+**the same number** — `position.pool` counts the organisation's own comparable metrics, not
+peers. Every domain did it (17/17, 32/32, 54/54): one fact stated twice, the second dressed as
+corroboration. The real peer sample was computed all along and never surfaced; domains now carry
+the median and range of the n behind their metrics.
+
+They also asked **"as at when?"** — the document carried no data vintage anywhere. Cover and
+method page now state the collection window and snapshot date. And it never said **how much of
+the organisation's own data** the read rested on; at 55 of 77 core questions that matters.
+
+**The manager and director, at a ~600-FTE and a ~150-FTE company.** Their reality is thin data,
+and it exposed the real defect: Health & Protection had **one** comparable metric and its section
+declared *"on market · 32nd percentile · On strategy"* in the same type and weight Pay used for
+thirty-two. The engine already distinguishes a methodology-grade verdict from an indicative one
+(`DOMAIN_MIN_POLARISED`); the document ignored the flag. A thin domain now carries an
+**indicative** mark and a sentence saying the read rests on fewer metrics than the engine
+requires before it calls a verdict firm.
+
+**Found while reading the rendered page:** htm collapses a newline before a `${}` expression, so
+the new prose printed *"rests on55 of the 77 questions"* and *"are the2026 H1 collection"*. Two
+sites, both rebuilt as concatenation, pattern commented and swept to zero.
+
+Pagination followed the content: three signal rows on a read sheet rather than four, one fewer
+where the thin-evidence caveat also prints, and a 1px trim on tight table rows. **32 sheets, none
+over A4, at both data depths.** Suite 15/15. ?v=671.
