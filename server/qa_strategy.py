@@ -401,7 +401,7 @@ def main():
     # The ask, the cost envelope, the schedule, the risk read and the not-taken
     # record. All five are prose over computed figures, so all five are editable and
     # none of the figures underneath them is.
-    for k in ("the_ask", "cost", "risks", "schedule", "decisions", "movement"):
+    for k in ("the_ask", "cost", "risks", "schedule", "decisions", "movement", "worth"):
         stk, _ = sa.req("/api/strategy/narrative", "PUT", {"key": k, "text": "Board wording."})
         check("board-paper section '%s' is author-writable" % k, stk == 200, stk)
         sa.req("/api/strategy/narrative", "PUT", {"key": k, "text": ""})
@@ -426,6 +426,43 @@ def main():
           (alp.get("the_ask") or {}).get("investment_to_p50_gbp")
           == (alp.get("money") or {}).get("investment_to_p50_gbp"))
     check("the payload carries a risk list", isinstance(alp.get("risks"), list))
+    # ---- unit rates: what a point is worth (2026-08-16) ------------------------
+    _ur = (alp.get("money") or {}).get("unit_rates")
+    if not _ur:
+        # no silent cap: this probe org has no FTE band, so there is nothing to check
+        # here. The arithmetic itself is gated in qa_strategy_align section G, which
+        # runs on a synthetic input and cannot skip.
+        print("  (this probe org has no FTE band — unit-rate PAYLOAD checks skipped; "
+              "the arithmetic is covered in qa_strategy_align G)")
+    if _ur:
+        check("unit rates state a per-point value with the arithmetic attached",
+              all(p.get("label") and isinstance(p.get("gbp"), int) and p.get("formula")
+                  for p in (_ur.get("points") or [])), _ur.get("points"))
+        # employer pension contribution is the one metric priced exactly; a unit rate
+        # beside it invites dividing the stated gap by it to infer a gap SIZE, which
+        # only holds if the gap is uniform across levels — and the gap model is not
+        check("no unit rate is published for a metric the model already prices exactly",
+              "pension" not in [p.get("key") for p in (_ur.get("points") or [])],
+              [p.get("key") for p in (_ur.get("points") or [])])
+        check("the unit-rate basis is stated, not left to be inferred",
+              (_ur.get("basis") or "").strip())
+        # the arithmetic has to survive a reader checking it
+        _fte, _sal = _ur.get("fte"), (alp["money"].get("assumptions") or {}).get("median_salary_gbp")
+        _cpl = (alp["money"].get("assumptions") or {}).get("cost_per_leaver_pct_salary")
+        _att = next((p for p in (_ur.get("points") or []) if p["key"] == "attrition"), None)
+        if _att and _fte and _sal and _cpl:
+            check("the attrition unit rate reconciles with its own stated formula",
+                  abs(_att["gbp"] - (_fte * 0.01 * (_cpl / 100.0) * _sal)) < 1,
+                  (_att["gbp"], _fte, _sal, _cpl))
+    _plan = alp.get("plan") or {}
+    _priced = [a for a in (_plan.get("actions") or []) if "Indicative £" in (a.get("roi") or "")]
+    if len(_priced) > 1:
+        # two options against ONE gap each printed the gap's cost, and a reader could
+        # add them — the envelope counts the gap once, so the lines must say whose
+        # cost they are (2026-08-16)
+        check("a priced action says the figure is the gap's, not the action's",
+              all("alternatives, not" in a["roi"] or "gap" in a["roi"] for a in _priced),
+              [a["roi"][:70] for a in _priced][:2])
     check("trend states whether it is computable rather than implying movement",
           isinstance(alp.get("trend"), dict) and "available" in alp["trend"]
           and isinstance(alp["trend"].get("windows"), int), alp.get("trend"))

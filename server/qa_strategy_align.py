@@ -8,7 +8,7 @@ fixture honesty (unanswered -> not_evidenced, never fabricated), entitlement
 (invisible metric -> not_evidenced), R5 (no score anywhere), and directive/
 legal cleanliness of every statement the library can emit.
 
-    python3 server/qa_strategy_align.py     # no server, no DB
+    python3 server/qa_strategy_align.py     # no server; section G reads the question bank
 """
 import os
 import re
@@ -235,6 +235,60 @@ check("E", "no vendor/product names in the lever library",
 _lever_text = " ".join((l.get("what_it_is", "") + " " + l.get("typical_shape", "") + " " + l.get("trade_off", "")) for l in LEV)
 check("E", "lever copy is directive- and legal-clean",
       not ca.DIRECTIVE_RE.search(_lever_text) and not ca.LEGAL_RE.search(_lever_text))
+
+# ---------------------------------------------------------------------------- G
+# REFERENTIAL INTEGRITY of the two files David owns (R7/R8). Every one of these
+# fails SILENTLY in production — a lever whose prevalence metric does not exist
+# renders with no peer take-up and says nothing about it; a rule whose evidence
+# metric does not exist simply never fires, so a commitment goes untested and the
+# document reports no problem. PEN-CONTRIBUTION shipped with a dangling link and
+# nothing caught it until the sign-off sheet was generated (2026-08-16).
+print("\nG. R7/R8 referential integrity — the failures that are silent")
+_gen = __import__("gen_r7_r8_ruling_sheet")
+_RULES_RAW = __import__("json").load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                      "..", "data", "strategy_coherence_rules.json")))["rules"]
+try:
+    _Q = _gen.load_questions()
+except Exception as _e:                                  # noqa: BLE001 — a read failure IS the finding
+    _Q = None
+    print("  (question bank unavailable: %s)" % _e)
+if _Q:
+    _defects = _gen.validate(LEV, _RULES_RAW, _Q)
+    check("G", "every lever/rule metric reference resolves, is active and is the right type",
+          not _defects, _defects[:3])
+    check("G", "every lever states a trade-off (one without a downside is marketing)",
+          all((l.get("trade_off") or "").strip() for l in LEV))
+    # both registers in every category, or a gap lands with no options against it
+    _cats = sorted({l["category"] for l in LEV})
+    _missing = [c for c in _cats
+                if not any(l["category"] == c and l["register_effect"] == "Substance" for l in LEV)
+                or not any(l["category"] == c and l["register_effect"] == "Approach" for l in LEV)]
+    check("G", "every covered category carries BOTH registers", not _missing, _missing)
+    # a rule that can never fire is worse than no rule: it reads as a clean bill of health
+    _reachable = all(c.get("metric") in _Q
+                     for r in _RULES_RAW for c in _gen.rule_clauses(r["evidence"]))
+    check("G", "every coherence rule can actually fire", _reachable)
+
+# ---- unit rates: what a point is worth (2026-08-16) -------------------------
+# Checked here, on a synthetic input, because the HTTP gate's probe org has no FTE
+# band — so the payload-shape checks there SKIPPED silently and covered nothing.
+import positions as _pos
+_A = {"median_salary_gbp": 36000, "cost_per_leaver_pct_salary": 35, "agency_premium_pct": 30}
+_UR = _pos.compute_unit_rates(150, _A)
+check("G", "no FTE band -> no unit rates (a page of dashes helps nobody)",
+      _pos.compute_unit_rates(None, _A) is None)
+check("G", "the attrition rate is 1%% of headcount × cost per leaver",
+      _UR["points"][0]["gbp"] == round(150 * 0.01 * 0.35 * 36000), _UR["points"][0]["gbp"])
+check("G", "the agency rate is 1%% of headcount × salary × premium",
+      _UR["points"][1]["gbp"] == round(150 * 0.01 * 36000 * 0.30), _UR["points"][1]["gbp"])
+check("G", "every unit rate carries the arithmetic that produced it",
+      all(p.get("formula") and p.get("label") for p in _UR["points"]))
+check("G", "NO unit rate for a metric the model already prices exactly",
+      "pension" not in [p["key"] for p in _UR["points"]], [p["key"] for p in _UR["points"]])
+check("G", "the basis is stated rather than left to be inferred", (_UR.get("basis") or "").strip())
+_ur_text = " ".join(p["label"] + " " + p["formula"] for p in _UR["points"]) + " " + _UR["basis"]
+check("G", "unit-rate copy is directive-clean (a multiplier, never a recommendation)",
+      not ca.DIRECTIVE_RE.search(_ur_text))
 
 # ---------------------------------------------------------------------------- F
 # BOARD-PAPER READS (2026-08-16): the schedule buckets, the decision key, and the
