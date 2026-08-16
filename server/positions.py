@@ -557,6 +557,50 @@ def get_assumptions(conn, org_id):
     return base
 
 
+def compute_unit_rates(fte, a):
+    """What ONE POINT is worth — pure, so the gate can check the arithmetic without a
+    database (it was silently skipped when the probe org had no FTE band).
+
+    Most reward changes have no price lumi can put on them: the effect is on retention,
+    fairness and how the package reads, and the document said exactly that and stopped.
+    But "we cannot price the action" is not "we can tell you nothing". lumi cannot know
+    how many points of attrition a lever buys — claiming it would be a prediction, and
+    in a board paper, advice — yet the arithmetic of ONE point is fully determined by
+    the org's own headcount and the assumptions this document already publishes.
+
+    lumi supplies the multiplier; the board supplies the judgement about how many points
+    an action is worth. NO row for employer pension contribution: it is the one metric
+    the model prices exactly, so a unit rate beside it invites dividing the stated gap by
+    it to infer a gap SIZE — which only holds when the gap is uniform across levels, and
+    the gap model weights by level.
+    """
+    if not fte:
+        return None
+    salary = a["median_salary_gbp"]
+    per_leaver = a["cost_per_leaver_pct_salary"] / 100.0 * salary
+    return {
+        "fte": fte,
+        "cost_per_leaver_gbp": round(per_leaver),
+        "points": [
+            {"key": "attrition",
+             "label": "One percentage point of regretted attrition",
+             "gbp": round(fte * 0.01 * per_leaver),
+             "formula": "1%% of %s FTE × cost per leaver (%s%% of £%s median salary)"
+                        % ("{:,}".format(int(fte)), a["cost_per_leaver_pct_salary"],
+                           "{:,}".format(int(salary)))},
+            {"key": "agency",
+             "label": "One percentage point of agency usage",
+             "gbp": round(fte * 0.01 * salary * (a["agency_premium_pct"] / 100.0)),
+             "formula": "1%% of %s FTE × £%s median salary × %s%% agency premium"
+                        % ("{:,}".format(int(fte)), "{:,}".format(int(salary)),
+                           a["agency_premium_pct"])},
+        ],
+        "basis": "on total headcount, not weighted by level — the gap figures under "
+                 "What it costs are level-weighted, so these are a scale check rather "
+                 "than a way to work backwards to a gap",
+    }
+
+
 def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_blocks_by_q=None):
     """Rule-based £ modelling. Only non-neutral, non-suppressed metrics; every
     output labelled indicative with the formula attached."""
@@ -614,12 +658,26 @@ def money_opportunities(conn, org, questions, payloads, org_answers, cut, twin_b
         })
     total_savings = sum(r["to_p50_gbp"] for r in results if r["direction"] == "saving")
     total_invest = sum(r["to_p50_gbp"] for r in results if r["direction"] == "investment")
+    # ---- UNIT RATES: what ONE POINT is worth (2026-08-16) -----------------------
+    # Most reward changes have no price lumi can put on them — the effect is on
+    # retention, fairness and how the package reads, and the document said exactly
+    # that and stopped. But "we cannot price the action" is not the same as "we can
+    # tell you nothing": lumi cannot know how many points of attrition a lever buys
+    # (claiming it would be a prediction, and in a board paper, advice), yet the
+    # arithmetic of ONE point is fully determined by the org's own headcount and the
+    # assumptions this document already publishes.
+    #
+    # So: lumi supplies the multiplier, the board supplies the judgement about how
+    # many points an action is worth. That is the sensitivity a finance director asks
+    # for, and it is a statement of arithmetic rather than an assertion about effect.
+    unit_rates = compute_unit_rates(fte, a)
     return {
         "items": results,
         "total_savings_to_p50_gbp": round(total_savings),
         "total_investment_to_p50_gbp": round(total_invest),
         "assumptions": a,
         "fte_known": fte is not None,
+        "unit_rates": unit_rates,
         "indicative": True,
     }
 

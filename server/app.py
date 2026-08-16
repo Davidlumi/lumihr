@@ -5441,11 +5441,28 @@ async def build_action_plan(request: Request):
             # same gap may carry it; everything else states the effect honestly.
             m = gbp_by_cat.get(cat)
             _prices = bool(m and m.get("gbp")) and lev.get("cost_character") == "recurring"
-            roi = (("Indicative £%s a year to reach the peer median on %s, on lumi's stated assumptions."
-                    % ("{:,}".format(int(m["gbp"])), m["label"]))
+            # An unpriced lever used to say only "the effect is on retention, fairness
+            # and how the package reads" — true, and useless to a board weighing it.
+            # lumi still cannot say how many points this lever buys, but it can state
+            # what one point is worth on this organisation's own headcount, and let the
+            # board do the arithmetic. Multiplier from lumi, judgement from them.
+            _ur = (money.get("unit_rates") or {}).get("points") or []
+            _att = next((p for p in _ur if p["key"] == "attrition"), None)
+            # "to reach the peer median on X" priced the GAP, but the line printed
+            # against every recurring lever in that category — so two pension options
+            # each showed £27,000 and a reader could add them to £54,000, while the
+            # envelope (correctly) counts the gap once. Say whose cost it is.
+            roi = (("Indicative £%s a year to close the %s gap to the peer median, on lumi's "
+                    "stated assumptions. Options against the same gap are alternatives, not "
+                    "additions — the figure is the gap's, not this action's."
+                    % ("{:,}".format(int(m["gbp"])), m["label"].lower()))
                    if _prices else
                    ("Cost-saving where it lands." if lev.get("cost_character") == "cost-saving"
-                    else "No indicative figure — the effect is on retention, fairness and how the package reads."))
+                    else ("No direct price — the effect is on retention, fairness and how the "
+                          "package reads. For scale: one percentage point of regretted attrition "
+                          "is worth £%s a year on your headcount."
+                          % "{:,}".format(int(_att["gbp"]))) if _att else
+                         "No indicative figure — the effect is on retention, fairness and how the package reads."))
             cands.append({
                 "title": lev.get("name"), "category": cat, "lever_id": lev.get("lever_id"),
                 "why": (ob.get("statement") or "") + " " + (lev.get("what_it_is") or ""),
@@ -5468,7 +5485,11 @@ async def build_action_plan(request: Request):
     payload = {"objective": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
                "objective_weights": (st.get("strategy") or {}).get("objective_weights") or {},
                "cut_label": cut_label, "candidates": cands[:10],
-               "counts": al["counts"], "evidence_by_area": _evidence}
+               "counts": al["counts"], "evidence_by_area": _evidence,
+               # validate_plan grounds every number against this payload — without the
+               # unit rates here, a model faithfully echoing a candidate's return line
+               # would be rejected as ungrounded and the whole plan drop to the floor
+               "unit_rates": money.get("unit_rates")}
     if _ai_ok:
         _ai_generation_or_429(org)
         res = await to_thread.run_sync(claude_api.generate_action_plan, payload)
@@ -5495,7 +5516,7 @@ NARRATIVE_KEYS = ("exec_summary", "intent", "tensions", "watch", "findings_intro
                   # 2026-08-16 board-paper pass: the ask (a board paper REQUESTS a
                   # decision — this document only ever described one), the cost envelope,
                   # the risk read, the schedule preamble and the not-taken record.
-                  "the_ask", "cost", "risks", "schedule", "decisions", "movement")
+                  "the_ask", "cost", "risks", "schedule", "decisions", "movement", "worth")
 # Per-domain commentary keys are "domain:<Category>" — the report's main sections, one
 # per category, each editable in place (2026-08-16). Validated against the live taxonomy
 # rather than a hardcoded list so a renamed category cannot orphan its wording.
@@ -6013,6 +6034,9 @@ async def get_strategy_alignment(request: Request):
         "assumptions": {k: v for k, v in (_sig_money.get("assumptions") or {}).items()
                         if k in ("median_salary_gbp", "cost_per_leaver_pct_salary",
                                  "agency_premium_pct")},
+        # what ONE POINT is worth — the sensitivity a board needs where lumi cannot
+        # price the action itself (2026-08-16)
+        "unit_rates": _sig_money.get("unit_rates"),
     }
     # 2. THE SCHEDULE. The plan already carried a horizon per action and printed them as
     # a flat numbered run, which reads as a to-do list rather than a programme. Same
