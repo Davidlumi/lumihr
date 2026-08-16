@@ -19525,3 +19525,67 @@ R7/R8 sign-off, the population split, and the share-link privacy ruling.
 
 Suite **15/15**. Both variants verified as print artefacts: FULL 42 pages, FRESH 12 pages,
 footers/contents/A4 all clean, contents check demonstrably executing (23 + 9 rows). ?v=683.
+
+## 2026-08-16 — The external review: verified first, then built
+
+An external reward review (38-page read, five blockers, eight highs, a craft list) landed
+after the ship gate. Every factual claim was VERIFIED against code, the live DB and the
+ruling history before anything was coded — and the verification changed the response.
+
+**Where the reviewer was wrong, on the record**: "270 peers vs a pool of 220" is not a bug —
+the pool grew to 270 answering orgs on 2026-08-14 (seedreal-1 +50); the 220s in marketing
+and older docs are the stale side. "£27,000 is Board/Executive-only" — recomputed live: five
+of seven levels, Manager 52%, Board 2%. "Eight areas clustered 29th–39th is a distribution
+artefact — check the computation" — checked: all eight medians recomputed independently,
+8/8 match; the location is a real profile, the tightness is median-of-pool compression
+(a presentation question, not an engine defect). "not_evidenced may be unreachable" — it
+fires on suppressed cuts and unstated dials; pinned at 0 only on the demo org's own cut.
+
+**Blocker 1 (provenance) — the ruling already existed.** The operative regime is the
+amended R-P2 (2026-08-08): product clean, durable artefacts carry exactly one line
+("Comparison pool: N UK organisation profiles. See lumihr.co.uk methodology for sources."),
+truth on the methodology page. The board pack, both CSVs and the share views all carry it;
+the Strategy & Plan document post-dates the enumeration and was the one sibling missing it.
+Now carried twice: a Comparison pool row on the cover and the ruled sentence verbatim in
+the provenance foot. Per-figure disclosure was NOT added — the amendment forbids it.
+The sale-side contradiction (public methodology still says "never modelled") remains
+David's open P0 from 2026-08-11, sharper now that a durable PDF cites that page.
+
+**Blocker 2 (vendor-authored cover) — de-vendored.** No lumi logo, no "Prepared by lumi"
+row; the member's name is the cover's identity. The footer page mark is neutral
+("Page N of M" — FOOT_RE updated in lockstep), and lumi lives where the reviewer said it
+belongs: Method and basis, and the provenance line ("Produced with lumi · reward
+benchmarking" + the pool sentence).
+
+**Built from the highs**: THE COMMITMENTS REGISTER — a new Part B section, one row per
+commitment (area · statement · status · read-from), with "Past the stated aim" named as
+its own state; the cover's off-strategy count now declares its mix ("8 short or
+contradicted · 2 past a deliberately lower aim") and the £27k envelope came OFF the cover
+(a number needing two disclaimers is not a cover number — the actions count took its
+place). The governance loop runs forwards: a dirty version makes the decision itself
+"re-approve the strategy as amended, then approve the 3 actions…", and the amendment is
+dated on the cover and the approval record. Method states the suppression floor's number
+(5), the questions-vs-readings reconciliation lives on the register's closing note, and
+the stated peer group's size-band mismatch is said plainly (its bands are not the org's
+own 50–249 FTE).
+
+**Voice**: "lumi orders what it shows you" is out of the member's own Part A (deterministic
+watch rewritten + STRATEGY_COMMENTARY_VERSION bumped so caches regenerate); the NLW risk
+no longer asserts an org-level fact lumi cannot see; "treat the envelope" stopped being an
+instruction; the baseline caveat runs twice, not three times.
+
+**Layout lesson worth keeping**: the method sheet sat at print capacity and SIX successive
+text trims changed nothing — the binding constraint was the rr-grid2 pairing (half-width
+cards double every sentence's line count; row height = the taller card). Single-column
+full-width cards recovered ~40mm at a stroke. When trims stop moving a spill, stop
+trimming and question the layout.
+
+**Held for David** — REVIEW_RULING_SHEET_2026-08-16.md: the three stated contradictions
+(real, in org_strategy — P7/P8/P9 rule drafts vs capture-time warning), the Exhibit-2 aim
+bracket, the dot-colour/split presentation, the past-aim counting doctrine, the per-area
+below-market evidence exhibit, the plan's speed-vs-value ordering + a live plan rebuild
+(the stored live plan still carries pre-OpRA lever text), the marketing provenance P0, and
+the R8 residues (typical_shape tech-salsac, the undated NIC clause).
+
+Suite **15/15**. FULL 44pp / FRESH 12pp verified as print artefacts; 24/24 content
+assertions. ?v=684.
