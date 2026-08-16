@@ -18791,3 +18791,38 @@ the PDF carries no dead controls. Suite 15/15. ?v=653.
 Remaining sparse sheets are content-driven, not layout defects: Principles/constraints (15%) and
 Governance (27%) are thin because the demo org has not stated principles, constraints or approval
 detail — a real org fills them.
+
+## 2026-08-16 (j) — The strategy as narrative
+
+David: *"the reward strategy PDF must include full details of the reward strategy as a narrative
+— at the moment it is just broken sentences. What would Mercer or Towers Watson do here?"*
+
+He was right, and `sdStance()` was the culprit: four template slots with a dial value dropped
+into each. *"The focus this year is winning talent."* is a caption, not a strategy.
+
+**What a Mercer/WTW total reward strategy actually opens with**, and what the document now
+carries as six sections across two sheets: **purpose and context**, **our reward philosophy**,
+**how we position against the market**, **the shape of the package**, **performance and
+differentiation**, **transparency and governance**.
+
+`generate_strategy_statement` writes them. It is the **intent half**, so the payload carries the
+organisation's stated choices and *no benchmark data at all* — it must read identically before a
+single metric is submitted, which is what makes the document worth opening at step two of the
+journey. `validate_statement` enforces it: no invented figures, and **no market-verdict words at
+all**, because a verdict is a measurement and this document measures nothing.
+
+The deterministic floor writes the same six sections in full prose, since every AI-off
+organisation ships on it. Reading its own output found four defects, all fixed: second-person
+objective phrasing inside a third-person document, a duplicated clause ("Pay is treated as the
+same wherever people are based wherever people are based"), an ungrounded count its own validator
+rejected, and a tautology. Each of the six sections is individually editable.
+
+**The defect found while checking it.** The A4 sheet is a fixed 210mm whatever the browser window
+is, but a viewport media query was restyling its interior. At a narrow window the three domain
+stats stacked, the domain sheets grew ~90px, and four ran past A4 — and a print taken from that
+window would have carried the same. **Nothing inside `.rr-sheet` may be sized to the viewport.**
+Verified stable from 1400px down to 420px.
+
+Cleanup: 54 dead `rp-*` rules from the working screen the document replaced three iterations ago;
+only `.rp-go` survives, still used by the signals/data links. 27 sheets, none over A4 at any
+window width. Suite 15/15. ?v=655.
