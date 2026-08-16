@@ -1,183 +1,203 @@
 {
-  "_readme": "STRATEGY COHERENCE RULES \u2014 DAVID OWNS THIS FILE (same doctrine as signal_lenses.json). Each rule tests a STATED intent (a strategy dial the member actually set \u2014 provenance 'set'/'live' only, via _strategy_field) against the org's OWN answers. Hot-reloaded, no redeploy. Statuses: contradicted (practice runs against the stated intent) | behind_intent (short of it, direction known) | not_evidenced (the enabling evidence is unanswered). Statements are DESCRIPTIVE \u2014 both sides quoted, no directive verbs (DIRECTIVE_RE-clean by construction). An Approach metric may EVIDENCE a contradiction; it is never reported as a gap in its own right (brief v2 \u00a72.2). Evidence here is the org's own response \u2014 no peer figure, so no n/suppression exposure. Rules are additive and independent; each is filed in exactly one category. intent.field 'document.segments' reads the strategy document, not a dial. STATUS: candidate set drafted 2026-08-14 from the Phase-0 evidence map (P4 Design label dropped \u2014 no live Design-class metric; N1 composed; G3/G4/G5 deferred to engine-native reads; P5 retired 2026-08-15 with the scarce-role segments it tested) \u2014 R7 sign-off pending David; refine or reject freely.",
-  "rules": [
-    {
-      "rule_id": "P3",
-      "category": "Pay",
-      "commitment": "cash-led reward mix",
-      "intent": {
-        "field": "reward_mix",
-        "in": [
-          "cash"
-        ]
-      },
-      "evidence": {
-        "metric": "PROP_8e0b6316",
-        "answer_in": [
-          "No regular cycle (ad hoc)",
-          "Not applicable (no pay review)"
-        ]
-      },
-      "status": "contradicted",
-      "statement": "The stated mix leads on cash, and the main pay review runs with no regular cycle ({answer}, your response) \u2014 pay does the work of the package without a structured mechanism behind it.",
-      "rationale": "A cash-led package with no pay-review cadence has no lever to deliver the mix it claims."
-    },
-    {
-      "rule_id": "P4",
-      "category": "Pay",
-      "commitment": "location-agnostic pay",
-      "intent": {
-        "field": "location_approach",
-        "in": [
-          "agnostic"
-        ]
-      },
-      "evidence": {
-        "metric": "REW265_PAY_GEOPAY",
-        "answer_not_in": [
-          "National single structure"
-        ]
-      },
-      "status": "contradicted",
-      "statement": "Pay is stated as the same wherever people work, and geographic pay differentiation is in use ({answer}, your response).",
-      "rationale": "A location-agnostic stance and an in-use geographic pay structure cannot both hold."
-    },
-    {
-      "rule_id": "I1",
-      "category": "Incentives & Recognition",
-      "commitment": "strong pay-for-performance",
-      "intent": {
-        "field": "pay_for_performance",
-        "in": [
-          "strong"
-        ]
-      },
-      "evidence": {
-        "any": [
-          {
-            "metric": "REW_INC_103",
-            "answer_in": [
-              "None"
-            ]
-          },
-          {
-            "metric": "REW_PAY_097",
-            "answer_in": [
-              "No \u2013 flat or near-flat"
-            ]
-          }
-        ]
-      },
-      "status": "contradicted",
-      "statement": "Pay is stated as strongly performance-driven, and your responses show {answer_detail} \u2014 the stated differentiation has no mechanism carrying it.",
-      "rationale": "Strong P4P needs either a bonus population or performance-differentiated increases; with neither, the claim has no delivery path."
-    },
-    {
-      "rule_id": "I2",
-      "category": "Incentives & Recognition",
-      "commitment": "egalitarian pay",
-      "intent": {
-        "field": "pay_for_performance",
-        "in": [
-          "egal"
-        ]
-      },
-      "evidence": {
-        "metric": "REW_PAY_097",
-        "answer_in": [
-          "Yes \u2013 strongly differentiated"
-        ]
-      },
-      "status": "contradicted",
-      "statement": "Pay is stated as held close across the board, and pay increases are strongly differentiated by performance rating ({answer}, your response).",
-      "rationale": "An egalitarian stance and strongly differentiated increases pull in opposite directions."
-    },
-    {
-      "rule_id": "B2",
-      "category": "Benefits & Lifestyle",
-      "commitment": "financial-wellbeing lead",
-      "intent": {
-        "field": "benefits_lead",
-        "contains": "financial"
-      },
-      "evidence": {
-        "all": [
-          {
-            "metric": "REW26_WEL_FINWELL",
-            "answer_in": [
-              "No"
-            ]
-          },
-          {
-            "metric": "REW26_BEN_SALSAC",
-            "answer_in": [
-              "No"
-            ]
-          }
-        ]
-      },
-      "status": "behind_intent",
-      "statement": "The package is stated to lead on financial wellbeing, and neither a financial-wellbeing programme nor default salary-sacrifice pension shows in your responses.",
-      "rationale": "A financial lead should be visible in at least one financial-wellbeing provision."
-    },
-    {
-      "rule_id": "W1",
-      "category": "Wellbeing",
-      "commitment": "mental-wellbeing lead",
-      "intent": {
-        "field": "benefits_lead",
-        "contains": "mental"
-      },
-      "evidence": {
-        "metric": "REW26_WEL_EAP",
-        "answer_in": [
-          "No"
-        ]
-      },
-      "status": "behind_intent",
-      "statement": "The package is stated to lead on mental wellbeing, and no Employee Assistance Programme shows in your responses.",
-      "rationale": "An EAP is the baseline mental-wellbeing provision; leading without one is hard to sustain."
-    },
-    {
-      "rule_id": "G1",
-      "category": "Governance & Transparency",
-      "commitment": "open pay transparency",
-      "intent": {
-        "field": "transparency",
-        "in": [
-          "open"
-        ]
-      },
-      "evidence": {
-        "metric": "REW262_GOV_PAYINADVERTS",
-        "answer_in": [
-          "Never"
-        ]
-      },
-      "status": "contradicted",
-      "statement": "Pay is described as fully open, and pay is never included in job adverts ({answer}, your response).",
-      "rationale": "Full openness that stops at the job advert is not the stance as stated."
-    },
-    {
-      "rule_id": "G2",
-      "category": "Governance & Transparency",
-      "commitment": "internal pay-range visibility",
-      "intent": {
-        "field": "transparency",
-        "in": [
-          "ranges",
-          "open"
-        ]
-      },
-      "evidence": {
-        "metric": "PAYTR_02_131bd412",
-        "answer_in": [
-          "No"
-        ]
-      },
-      "status": "contradicted",
-      "statement": "Pay information is stated as shared internally, and pay bands are not visible to employees ({answer}, your response).",
-      "rationale": "Sharing ranges is the minimum the stated transparency position implies."
-    }
-  ]
+ "_readme": "STRATEGY COHERENCE RULES — DAVID OWNS THIS FILE (same doctrine as signal_lenses.json). Each rule tests a STATED intent (a strategy dial the member actually set — provenance 'set'/'live' only, via _strategy_field) against the org's OWN answers. Hot-reloaded, no redeploy. Statuses: contradicted (practice runs against the stated intent) | behind_intent (short of it, direction known) | not_evidenced (the enabling evidence is unanswered). Statements are DESCRIPTIVE — both sides quoted, no directive verbs (DIRECTIVE_RE-clean by construction). An Approach metric may EVIDENCE a contradiction; it is never reported as a gap in its own right (brief v2 §2.2). Evidence here is the org's own response — no peer figure, so no n/suppression exposure. Rules are additive and independent; each is filed in exactly one category. intent.field 'document.segments' reads the strategy document, not a dial. STATUS: candidate set drafted 2026-08-14 from the Phase-0 evidence map (P4 Design label dropped — no live Design-class metric; N1 composed; G3/G4/G5 deferred to engine-native reads; P5 retired 2026-08-15 with the scarce-role segments it tested) — R7 sign-off pending David; refine or reject freely. EXTENSION 2026-08-16 (practitioner panel): the evidence grammar gains ONE intent-vs-intent shape — {\"strategy_stance\": <domain>, \"in\": [...]} reads the effective stance for a domain (domain_targets override, else the global dial) instead of a metric answer, because a strategy can pull against itself and no answer can evidence that. P6 (attract-led objective vs a below-market pay aim) is the first such rule, DRAFTED by Claude from the Head-of-Reward finding and pending David's R7 sign-off like the rest.",
+ "rules": [
+  {
+   "rule_id": "P3",
+   "category": "Pay",
+   "commitment": "cash-led reward mix",
+   "intent": {
+    "field": "reward_mix",
+    "in": [
+     "cash"
+    ]
+   },
+   "evidence": {
+    "metric": "PROP_8e0b6316",
+    "answer_in": [
+     "No regular cycle (ad hoc)",
+     "Not applicable (no pay review)"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "The stated mix leads on cash, and the main pay review runs with no regular cycle ({answer}, your response) — pay does the work of the package without a structured mechanism behind it.",
+   "rationale": "A cash-led package with no pay-review cadence has no lever to deliver the mix it claims."
+  },
+  {
+   "rule_id": "P4",
+   "category": "Pay",
+   "commitment": "location-agnostic pay",
+   "intent": {
+    "field": "location_approach",
+    "in": [
+     "agnostic"
+    ]
+   },
+   "evidence": {
+    "metric": "REW265_PAY_GEOPAY",
+    "answer_not_in": [
+     "National single structure"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "Pay is stated as the same wherever people work, and geographic pay differentiation is in use ({answer}, your response).",
+   "rationale": "A location-agnostic stance and an in-use geographic pay structure cannot both hold."
+  },
+  {
+   "rule_id": "I1",
+   "category": "Incentives & Recognition",
+   "commitment": "strong pay-for-performance",
+   "intent": {
+    "field": "pay_for_performance",
+    "in": [
+     "strong"
+    ]
+   },
+   "evidence": {
+    "any": [
+     {
+      "metric": "REW_INC_103",
+      "answer_in": [
+       "None"
+      ]
+     },
+     {
+      "metric": "REW_PAY_097",
+      "answer_in": [
+       "No – flat or near-flat"
+      ]
+     }
+    ]
+   },
+   "status": "contradicted",
+   "statement": "Pay is stated as strongly performance-driven, and your responses show {answer_detail} — the stated differentiation has no mechanism carrying it.",
+   "rationale": "Strong P4P needs either a bonus population or performance-differentiated increases; with neither, the claim has no delivery path."
+  },
+  {
+   "rule_id": "I2",
+   "category": "Incentives & Recognition",
+   "commitment": "egalitarian pay",
+   "intent": {
+    "field": "pay_for_performance",
+    "in": [
+     "egal"
+    ]
+   },
+   "evidence": {
+    "metric": "REW_PAY_097",
+    "answer_in": [
+     "Yes – strongly differentiated"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "Pay is stated as held close across the board, and pay increases are strongly differentiated by performance rating ({answer}, your response).",
+   "rationale": "An egalitarian stance and strongly differentiated increases pull in opposite directions."
+  },
+  {
+   "rule_id": "B2",
+   "category": "Benefits & Lifestyle",
+   "commitment": "financial-wellbeing lead",
+   "intent": {
+    "field": "benefits_lead",
+    "contains": "financial"
+   },
+   "evidence": {
+    "all": [
+     {
+      "metric": "REW26_WEL_FINWELL",
+      "answer_in": [
+       "No"
+      ]
+     },
+     {
+      "metric": "REW26_BEN_SALSAC",
+      "answer_in": [
+       "No"
+      ]
+     }
+    ]
+   },
+   "status": "behind_intent",
+   "statement": "The package is stated to lead on financial wellbeing, and neither a financial-wellbeing programme nor default salary-sacrifice pension shows in your responses.",
+   "rationale": "A financial lead should be visible in at least one financial-wellbeing provision."
+  },
+  {
+   "rule_id": "W1",
+   "category": "Wellbeing",
+   "commitment": "mental-wellbeing lead",
+   "intent": {
+    "field": "benefits_lead",
+    "contains": "mental"
+   },
+   "evidence": {
+    "metric": "REW26_WEL_EAP",
+    "answer_in": [
+     "No"
+    ]
+   },
+   "status": "behind_intent",
+   "statement": "The package is stated to lead on mental wellbeing, and no Employee Assistance Programme shows in your responses.",
+   "rationale": "An EAP is the baseline mental-wellbeing provision; leading without one is hard to sustain."
+  },
+  {
+   "rule_id": "G1",
+   "category": "Governance & Transparency",
+   "commitment": "open pay transparency",
+   "intent": {
+    "field": "transparency",
+    "in": [
+     "open"
+    ]
+   },
+   "evidence": {
+    "metric": "REW262_GOV_PAYINADVERTS",
+    "answer_in": [
+     "Never"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "Pay is described as fully open, and pay is never included in job adverts ({answer}, your response).",
+   "rationale": "Full openness that stops at the job advert is not the stance as stated."
+  },
+  {
+   "rule_id": "G2",
+   "category": "Governance & Transparency",
+   "commitment": "internal pay-range visibility",
+   "intent": {
+    "field": "transparency",
+    "in": [
+     "ranges",
+     "open"
+    ]
+   },
+   "evidence": {
+    "metric": "PAYTR_02_131bd412",
+    "answer_in": [
+     "No"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "Pay information is stated as shared internally, and pay bands are not visible to employees ({answer}, your response).",
+   "rationale": "Sharing ranges is the minimum the stated transparency position implies."
+  },
+  {
+   "rule_id": "P6",
+   "category": "Pay",
+   "commitment": "an attract-led objective",
+   "intent": {
+    "field": "primary_objective",
+    "in": [
+     "attract"
+    ]
+   },
+   "evidence": {
+    "strategy_stance": "Pay",
+    "in": [
+     "lag"
+    ]
+   },
+   "status": "contradicted",
+   "statement": "The stated objective is attracting the people you need, and pay — the part of the package a candidate weighs first — is aimed {answer}. The two intents pull in opposite directions, and the employer brand is left doing the work pay is declining to do.",
+   "rationale": "An attract-led strategy priced below market at its most visible component depends on everything except pay to win the candidate, which the rest of this document has to evidence."
+  }
+ ]
 }

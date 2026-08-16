@@ -10,9 +10,9 @@
 
 None — every referenced metric exists, is active, is the right question type, and every rule's expected answers appear on its question.
 
-## 1. R8 — the reward lever inventory (36 levers)
+## 1. R8 — the reward lever inventory (37 levers)
 
-16 carry a prevalence link, so peer take-up renders live beside them. The other 20 are **asserted on domain knowledge alone** and are marked ⚠ — those are the ones worth the most of your attention, because nothing in the product checks them.
+16 carry a prevalence link, so peer take-up renders live beside them. The other 21 are **asserted on domain knowledge alone** and are marked ⚠ — those are the ones worth the most of your attention, because nothing in the product checks them.
 
 `Substance` moves what you offer or how much; `Approach` moves how you operate. A member behind on POSITION is offered Substance levers; one CONTRADICTED on practice is offered Approach. Both registers must exist in every category or a gap can land with no options against it.
 
@@ -66,7 +66,7 @@ None — every referenced metric exists, is active, is the right question type, 
 | Peer take-up read from | — |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
-### Incentives & Recognition — 4 levers
+### Incentives & Recognition — 5 levers
 
 **A defined annual bonus plan** · `INC-BONUS-PLAN`
 
@@ -113,6 +113,18 @@ None — every referenced metric exists, is active, is the right question type, 
 | Typical shape | A short plan document approved once a year, with the discretion points named rather than implied. |
 | Cost / speed / reversibility | cost-neutral · this cycle · easy |
 | **Trade-off** (printed in the document) | Writing the discretion down removes the room to make exceptions quietly, which is sometimes the point and sometimes the loss. |
+| Peer take-up read from | — |
+| **Your ruling** | KEEP / EDIT / CUT — |
+
+**Uplifting existing award values** · `INC-AWARD-UPLIFT` ⚠
+
+| | |
+|---|---|
+| Register | Substance |
+| What it is | Raising the value of awards the organisation already makes — long-service, recognition, milestone — to the level peers pay, without adding any new scheme. |
+| Typical shape | A revaluation of the award schedule against the peer read, applied at the next award round; the mechanism, eligibility and administration stay exactly as they are. |
+| Cost / speed / reversibility | recurring · this cycle · hard |
+| **Trade-off** (printed in the document) | Raising a visible award value is a public benchmark for every later award — values are easy to lift and painful to lower, and the spend recurs with every qualifying employee. |
 | Peer take-up read from | — |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
@@ -465,7 +477,7 @@ None — every referenced metric exists, is active, is the right question type, 
 | **Your ruling** | KEEP / EDIT / CUT — |
 
 
-## 2. R7 — the coherence rules (8 rules)
+## 2. R7 — the coherence rules (9 rules)
 
 A rule fires only when the stated intent HOLDS — a rule is a commitment you made, tested against your own answer. `contradicted` means practice runs against the intent; `behind_intent` means the intent is stated and the provision is absent. The statement is printed verbatim in the document, with `{answer}` replaced by the member's own response.
 
@@ -559,12 +571,23 @@ A rule fires only when the stated intent HOLDS — a rule is a commitment you ma
 | Rationale | Sharing ranges is the minimum the stated transparency position implies. |
 | **Your ruling** | KEEP / EDIT / CUT — |
 
+### P6 · Pay · **contradicted**
+
+| | |
+|---|---|
+| Commitment tested | an attract-led objective |
+| Fires when intent | `primary_objective` is attract |
+| …and evidence | the STRATEGY itself — the effective stance for Pay is in lag (intent-vs-intent; no metric answer involved) |
+| **Statement printed** | The stated objective is attracting the people you need, and pay — the part of the package a candidate weighs first — is aimed {answer}. The two intents pull in opposite directions, and the employer brand is left doing the work pay is declining to do. |
+| Rationale | An attract-led strategy priced below market at its most visible component depends on everything except pay to win the candidate, which the rest of this document has to evidence. |
+| **Your ruling** | KEEP / EDIT / CUT — |
+
 ## 3. Coverage — where a gap would land with no options
 
 | Category | Substance levers | Approach levers | Coherence rules |
 |---|---|---|---|
-| Pay | 2 | 2 | 2 |
-| Incentives & Recognition | 2 | 2 | 2 |
+| Pay | 2 | 2 | 3 |
+| Incentives & Recognition | 3 | 2 | 2 |
 | Benefits & Lifestyle | 4 | 2 | 1 |
 | Time Off & Family | 4 | 2 | 0 |
 | Health & Protection | 3 | 1 | 0 |
