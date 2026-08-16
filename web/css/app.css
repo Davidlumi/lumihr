@@ -5135,6 +5135,11 @@ button.rp-ex-row:focus-visible { outline: 2px solid var(--blue); outline-offset:
   border-bottom: 1px solid var(--border); font-family: var(--font-head);
   font-size: var(--fs-caption); font-weight: 700; color: var(--blue-deep); }
 .rr-toc-part:first-child { margin-top: 0; }
+/* the closing line: the document's last beat, returned to the member. A navy rule
+   above it so it reads as a close rather than another caveat. */
+.rr-close { margin: var(--s3) 0 0; padding-top: var(--s3); border-top: 2px solid var(--rr-navy);
+  font-family: var(--font-head); font-size: var(--fs-caption); line-height: 1.5; color: var(--ink); }
+
 /* the pre-data contents: Part C exists but is locked — greyed, inert, and honest
    about what unlocks it, so the A→B→D lettering gap stops reading as a bug */
 .rr-toc-locked { opacity: .55; cursor: default; }
