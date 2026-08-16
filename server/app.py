@@ -5060,6 +5060,40 @@ STRATEGY_ENUMS = {
     "risk_appetite":       ["early", "follow", "wait"],
 }
 STRATEGY_BENEFITS = ["physical", "mental", "financial", "worklife"]   # multi-select
+# Human phrasing for each stated choice, server-side, because the strategy STATEMENT is
+# composed on the server (2026-08-16). Written as sentence fragments that slot into prose,
+# not as UI chips — "is led by base pay", never "Cash".
+STRATEGY_LABELS = {
+    "market_position":     {"lag": "below market", "match": "in line with the market",
+                            "lead": "above market"},
+    "reward_mix":          {"cash": "is led by base pay, with benefits playing a supporting role",
+                            "balanced": "balances base pay against wider benefits",
+                            "benefits": "leads on benefits rather than headline pay"},
+    "pay_for_performance": {"egal": "pay is held close across the board, with little spread between individuals",
+                            "moderate": "stronger performance earns a measured premium",
+                            "strong": "the strongest performers are paid well above the rest"},
+    "transparency":        {"closed": "held privately", "ranges": "shared with employees as ranges",
+                            "open": "fully open"},
+    "location_approach":   {"local": "set by local market", "national": "set on one national structure",
+                            "agnostic": "the same wherever people are based"},
+    "family_position":     {"statutory": "set at the statutory floor",
+                            "market": "set in line with the market",
+                            "over": "deliberately more generous than the market"},
+    "budget_direction":    {"investing": "one of investment", "flat": "broadly flat",
+                            "pressure": "under pressure"},
+    "acute_pressure":      {"bau": "business as usual", "scaling": "a period of scaling",
+                            "shock": "an acute pressure on the business"},
+    "risk_appetite":       {"early": "willing to move early", "follow": "content to follow the market",
+                            "wait": "inclined to wait and see"},
+    "benefits_lead":       {"physical": "physical health", "mental": "mental wellbeing",
+                            "financial": "financial wellbeing", "worklife": "work-life balance"},
+}
+STRATEGY_CONSTRAINT_LABELS = {
+    "affordability": "affordability", "collective_bargaining": "collective bargaining",
+    "statutory_pressure": "statutory and regulatory pressure", "headcount_change": "headcount change",
+    "system_change": "systems and payroll change", "other": "other stated constraints",
+}
+
 STRATEGY_REQUIRED = ("market_position", "reward_mix", "primary_objective")
 OBJECTIVE_LABELS = {"attract": "Attract", "retain": "Retain", "cost": "Control cost",
                     "compliance": "Get it right", "hold": "Hold steady"}
@@ -5435,12 +5469,79 @@ async def build_action_plan(request: Request):
 # dial, and letting an author retype those would turn a benchmark into an assertion.
 # Edit those at source — the wizard for what you stated, the data for what you are.
 NARRATIVE_KEYS = ("exec_summary", "intent", "tensions", "watch", "findings_intro",
-                  "gaps_intro", "plan_summary", "method")
+                  "gaps_intro", "plan_summary", "method",
+                  # the six narrative sections of the strategy statement
+                  "context", "philosophy", "positioning", "mix", "performance", "governance")
 # Per-domain commentary keys are "domain:<Category>" — the report's main sections, one
 # per category, each editable in place (2026-08-16). Validated against the live taxonomy
 # rather than a hardcoded list so a renamed category cannot orphan its wording.
 DOMAIN_KEY_PREFIX = "domain:"
 NARRATIVE_MAX = 4000
+
+
+@app.post("/api/strategy/statement")
+async def strategy_statement(request: Request):
+    """The narrative of the Total Reward Strategy — six sections of connected prose
+    (2026-08-16, David: "it must include full details of the reward strategy as a
+    narrative; at the moment it is just broken sentences").
+
+    INTENT ONLY. The payload carries the organisation's stated choices and no benchmark
+    data at all, so this reads identically before any metric is submitted and after —
+    which is what makes the document worth opening at step two of the journey.
+
+    Cached on the payload hash like the commentary; the deterministic floor ships when
+    AI is off, and it is full prose rather than a stub."""
+    user, org = require_user(request)
+    conn = get_conn()
+    st = strategy_state(conn, org)
+    if not st.get("completed_at"):
+        return {"ok": False, "reason": "no_strategy"}
+    strat = st.get("strategy") or {}
+    doc = st.get("document") or {}
+    prov = st.get("provenance") or {}
+    _set = lambda f: prov.get(f) not in (None, "skipped")
+    _lab = lambda f: STRATEGY_LABELS.get(f, {}).get(strat.get(f)) if _set(f) else None
+    payload = {
+        "org_name": (identity.org_display(org["org_id"]) or {}).get("name") or "The organisation",
+        "objective_phrase": claude_api.objective_phrase(
+            OBJECTIVE_LABELS.get(strat.get("primary_objective")), third_person=True)
+            if _set("primary_objective") else None,
+        "comparator_label": doc.get("comparator_label"),
+        "principles": [p for p in (doc.get("principles") or []) if str(p).strip()],
+        "constraints": [STRATEGY_CONSTRAINT_LABELS.get(c, c)
+                        for c in ((doc.get("constraints") or {}).get("selected") or [])],
+        "constraint_notes": (doc.get("constraints") or {}).get("notes") or None,
+        "domain_overrides": {k: STRATEGY_LABELS.get("market_position", {}).get(v, v)
+                             for k, v in (strat.get("domain_targets") or {}).items()},
+        "populations": doc.get("population_targets") or [],
+        "dials": {f: _lab(f) for f in ("market_position", "reward_mix", "pay_for_performance",
+                                       "transparency", "location_approach", "family_position",
+                                       "budget_direction", "acute_pressure", "risk_appetite")
+                  if _lab(f)},
+    }
+    if _set("benefits_lead") and (strat.get("benefits_lead") or []):
+        payload["dials"]["benefits_lead"] = claude_api._english_list(
+            [STRATEGY_LABELS.get("benefits_lead", {}).get(b, b) for b in strat["benefits_lead"]])
+    body = await _json(request)
+    phash = hashlib.sha256((j(payload) + "|" + claude_api.STATEMENT_VERSION).encode()).hexdigest()[:16]
+    if not body.get("force"):
+        row = conn.execute(
+            "SELECT * FROM metric_commentary WHERE org_id=? AND question_id=? AND cut_key=? AND payload_hash=?",
+            (org["org_id"], "__statement__", "strategy", phash)).fetchone()
+        if row:
+            return {"ok": True, "parts": uj(row["text"], {}), "source": row["source"], "cached": True}
+    _ai_ok = ai_feature_on(ai_gate(conn, user), AI_STRATEGY)
+    if _ai_ok:
+        _ai_generation_or_429(org)
+        res = await to_thread.run_sync(claude_api.generate_strategy_statement, payload)
+    else:
+        res = {"ok": True, "parts": claude_api._statement_floor(payload), "source": "deterministic"}
+    conn.execute(
+        "INSERT OR REPLACE INTO metric_commentary(org_id, question_id, cut_key, payload_hash, text, source) "
+        "VALUES (?,?,?,?,?,?)",
+        (org["org_id"], "__statement__", "strategy", phash, j(res["parts"]), res["source"]))
+    conn.commit()
+    return {"ok": True, "parts": res["parts"], "source": res["source"], "cached": False}
 
 
 @app.put("/api/strategy/narrative")

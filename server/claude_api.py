@@ -829,6 +829,201 @@ COMMENTARY_SCHEMA = {
 # hash, which can't see a change to _measures_text / _deterministic_commentary.
 COMMENTARY_GEN_VERSION = "2026-06-18.sdk-opus48-v4-malformguard"
 STRATEGY_COMMENTARY_VERSION = "2026-08-08.strategy-v1"
+
+# ===================== THE REWARD STRATEGY STATEMENT (2026-08-16) ==============
+# David: "the reward strategy PDF must include full details of the reward strategy as a
+# narrative — at the moment it is just broken sentences. What would Mercer or Towers
+# Watson do here?"
+#
+# They would not print four template stubs. A total reward strategy document opens with
+# purpose and context, states a philosophy, explains the market position and WHY, sets
+# out the shape of the package, says how performance translates into reward, and closes
+# on transparency and governance — each in paragraphs, each traceable to a stated choice.
+#
+# This generator writes exactly that from the dials the organisation set. It is the
+# INTENT half of the document, so it is deliberately blind to benchmark data: it must
+# read the same before any metrics are in as it does after.
+STATEMENT_SECTIONS = ("context", "philosophy", "positioning", "mix", "performance", "governance")
+STATEMENT_VERSION = "2026-08-16.statement-v1"
+
+STATEMENT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": list(STATEMENT_SECTIONS),
+    "properties": {k: {"type": "string"} for k in STATEMENT_SECTIONS},
+}
+
+STATEMENT_SYSTEM = """You are drafting the narrative of a UK organisation's Total Reward
+Strategy — the document that goes to a remuneration committee or a board. Write in the
+register of a Mercer or WTW strategy paper: measured, specific, plain English (UK),
+full sentences, active voice, no hype and no consultant filler.
+
+You are given ONLY the organisation's own stated choices. There is no benchmark data in
+this payload and you must not imply any: this is the statement of intent, and it has to
+read identically before the organisation has submitted a single metric.
+
+Write these six sections, each 2 to 4 sentences of connected prose:
+
+  context      Why this reward strategy exists and the business situation it serves.
+               Ground it in the organisation's stated objective and any constraints.
+  philosophy   The beliefs underneath the choices — what this organisation is trying to
+               be as an employer, expressed as a position rather than a slogan.
+  positioning  Where the organisation aims to sit against the market and why, including
+               any areas deliberately set differently from the overall stance.
+  mix          The shape of the package — how it weighs pay against wider benefits, and
+               what that composition is meant to achieve.
+  performance  How performance translates into reward, and what that implies for the
+               spread between individuals.
+  governance   What the organisation shares about pay and how reward decisions are made.
+
+HARD RULES — breaking any of these makes the output unusable:
+1. Use ONLY the stated choices in the payload. Invent no figures, no percentages, no
+   peer comparisons, no market claims, no dates.
+2. Never say the organisation is ahead of, behind, above or below the market — that is
+   a measured verdict and this document does not measure anything.
+3. No directive instructions to the reader ("you must", "you should", "you need to").
+4. No legal or compliance determinations.
+5. Do not name external providers, vendors or consultancies.
+6. Where a choice has not been stated, say so plainly in one clause or leave it out.
+   Never fill a gap with a plausible-sounding assumption.
+7. Refer to the organisation by name, or as "the organisation" — never "you"."""
+
+
+def _statement_floor(p):
+    """Full prose without a model — the same six sections, composed from the stated
+    choices. This ships to every AI-off organisation, so it has to read as written
+    English rather than as slots: complete sentences, joined, with the reasoning in."""
+    org = p.get("org_name") or "The organisation"
+    d = p.get("dials") or {}
+    obj = p.get("objective_phrase")
+    cons = p.get("constraints") or []
+    prin = p.get("principles") or []
+    overrides = p.get("domain_overrides") or {}
+    peer = p.get("comparator_label")
+
+    def para(bits):
+        return " ".join(b for b in bits if b)
+
+    context = para([
+        "%s sets out its approach to reward in this document so that pay and benefit "
+        "decisions are made against a stated position rather than case by case." % org,
+        ("The focus this year is %s, and the choices below are made in service of that."
+         % obj) if obj else
+        "No single objective has been set for the year, so the choices below are held in balance.",
+        ("The organisation compares itself to %s." % peer) if peer else None,
+        ("Reward decisions are taken in the context of %s." % _english_list([c.lower() for c in cons]))
+        if cons else None,
+    ])
+
+    if prin:
+        philosophy = para([
+            "The organisation works to a set of stated reward principles:",
+            _english_list(['"%s"' % s.rstrip(".") for s in prin]) + ".",
+            "Those principles are the test the choices below are meant to meet.",
+        ])
+    else:
+        philosophy = para([
+            "The organisation has not written down a separate set of reward principles.",
+            "The positions stated below carry the philosophy in their place: each one is a "
+            "deliberate choice about the kind of employer %s intends to be." % org,
+        ])
+
+    _stance = d.get("market_position")
+    positioning = para([
+        ("%s aims to sit %s on reward overall." % (org, _stance)) if _stance else
+        "%s has not set an overall market position, so its results are read neutrally." % org,
+        ("This is a position the organisation has chosen, not a description of where it "
+         "currently sits.") if _stance else None,
+        ("Within that stance, some areas are set differently: %s."
+         % _english_list(["%s is aimed %s" % (k, v) for k, v in overrides.items()]))
+        if overrides else
+        ("The same position applies across every area of the package." if _stance else None),
+    ])
+
+    mix = para([
+        ("The package %s." % d.get("reward_mix")) if d.get("reward_mix") else
+        "The balance between pay and wider benefits has not been stated.",
+        ("Family provision is %s." % d.get("family_position")) if d.get("family_position") else None,
+        ("On benefits, the organisation intends to lead on %s." % d.get("benefits_lead"))
+        if d.get("benefits_lead") else None,
+        ("Pay is %s." % d.get("location_approach"))
+        if d.get("location_approach") else None,
+    ])
+
+    performance = para([
+        ("On performance, %s." % d.get("pay_for_performance")) if d.get("pay_for_performance") else
+        "How performance translates into reward has not been stated.",
+        ("The organisation's position on timing is that it is %s."
+         % d.get("risk_appetite")) if d.get("risk_appetite") else None,
+        ("Budget direction for the coming cycle is %s." % d.get("budget_direction"))
+        if d.get("budget_direction") else None,
+    ])
+
+    governance = para([
+        ("Pay information is %s." % d.get("transparency")) if d.get("transparency") else
+        "The organisation has not stated how much it shares about pay.",
+        "Reward positions are set by the organisation's Admins in lumi and reviewed when the "
+        "strategy is revisited; the approval record for this document is set out at the end of it.",
+    ])
+    return {"context": context, "philosophy": philosophy, "positioning": positioning,
+            "mix": mix, "performance": performance, "governance": governance}
+
+
+def validate_statement(parts, payload):
+    """The intent half states CHOICES, so the gate is tighter than the commentary one:
+    no market verdicts at all, no invented figures, and none of the usual directive or
+    legal constructions."""
+    if not isinstance(parts, dict):
+        return False, "not an object"
+    for k in STATEMENT_SECTIONS:
+        v = parts.get(k)
+        if not isinstance(v, str) or not v.strip():
+            return False, "missing section " + k
+    txt = " ".join(parts[k] for k in STATEMENT_SECTIONS)
+    if DIRECTIVE_RE.search(txt):
+        return False, "directive: " + DIRECTIVE_RE.search(txt).group(0)
+    if LEGAL_RE.search(txt):
+        return False, "legal: " + LEGAL_RE.search(txt).group(0)
+    if ATTRIBUTION_RE.search(txt):
+        return False, "member attribution: " + ATTRIBUTION_RE.search(txt).group(0)
+    # a measured verdict has no place in the statement of intent
+    for pat in (AHEAD_WORDS, BEHIND_WORDS):
+        m = pat.search(txt)
+        if m:
+            return False, "market verdict in the intent half: " + m.group(0)
+    if re.search(r"industry standard|best practice", txt, re.I):
+        return False, "invented authority"
+    # every number must be one the payload actually contains
+    allowed = set(re.findall(r"\d+", json.dumps(payload, ensure_ascii=False)))
+    for num in re.findall(r"\b\d+\b", txt):
+        if num not in allowed:
+            return False, "ungrounded number " + num
+    return True, ""
+
+
+def generate_strategy_statement(payload):
+    """Six narrative sections for the Total Reward Strategy document. Model output passes
+    validate_statement or the composed floor ships — never an unvalidated sentence."""
+    floor = _statement_floor(payload)
+    res = call_claude(STATEMENT_SYSTEM, json.dumps(payload, ensure_ascii=False),
+                      max_tokens=4000, schema=STATEMENT_SCHEMA, effort="high")
+    if not res.get("ok"):
+        log.warning("[lumi] strategy statement fell back: %s", res.get("error"))
+        return {"ok": True, "parts": floor, "source": "deterministic"}
+    text = res["text"].strip()
+    if text.startswith("```"):
+        text = text.strip("`").lstrip("json").strip()
+    try:
+        parts = json.loads(text)
+    except ValueError:
+        return {"ok": True, "parts": floor, "source": "deterministic"}
+    ok, why = validate_statement(parts, payload)
+    if not ok:
+        log.warning("[lumi] strategy statement rejected: %s", why)
+        return {"ok": True, "parts": floor, "source": "deterministic"}
+    return {"ok": True, "parts": {k: parts[k].strip() for k in STATEMENT_SECTIONS},
+            "source": "model"}
+
 # bump when DIAGNOSIS_SYSTEM/SCHEMA changes — it keys the diagnosis cache, so a
 # prompt change must invalidate every stored narrative rather than serve the old one
 DIAGNOSIS_VERSION = "2026-08-16.diagnosis-v1"
@@ -861,10 +1056,21 @@ OBJECTIVE_PHRASE = {
     "get it right": "getting the fundamentals right",
     "hold steady": "holding steady",
 }
+# The strategy STATEMENT is third-person about the organisation, so the second-person
+# phrasing above reads wrong in it — "the objective of attracting the people you need"
+# in a document that never otherwise says "you".
+OBJECTIVE_PHRASE_3P = {
+    "attract": "attracting the people it needs",
+    "retain": "keeping the people it has",
+    "control cost": "controlling reward cost",
+    "get it right": "getting the fundamentals right",
+    "hold steady": "holding steady",
+}
 
 
-def objective_phrase(label):
-    return OBJECTIVE_PHRASE.get((label or "").strip().lower(), (label or "").strip().lower())
+def objective_phrase(label, third_person=False):
+    key = (label or "").strip().lower()
+    return (OBJECTIVE_PHRASE_3P if third_person else OBJECTIVE_PHRASE).get(key, key)
 
 
 def _english_list(items):
