@@ -338,6 +338,87 @@ def main():
     st_long, _ = sa.req("/api/strategy/narrative", "PUT", {"key": "watch", "text": "x" * 5000})
     check("an over-long section is refused, not truncated", st_long == 400, st_long)
 
+    # ---- board-paper sections (2026-08-16) -------------------------------------
+    # The ask, the cost envelope, the schedule, the risk read and the not-taken
+    # record. All five are prose over computed figures, so all five are editable and
+    # none of the figures underneath them is.
+    for k in ("the_ask", "cost", "risks", "schedule", "decisions", "movement"):
+        stk, _ = sa.req("/api/strategy/narrative", "PUT", {"key": k, "text": "Board wording."})
+        check("board-paper section '%s' is author-writable" % k, stk == 200, stk)
+        sa.req("/api/strategy/narrative", "PUT", {"key": k, "text": ""})
+
+    st_al, alp = sa.req("/api/strategy/alignment")
+    if alp.get("ok") is False:
+        print("  (this probe org has no completed strategy — board-paper payload checks skipped)")
+        alp = {}
+    check("the alignment payload carries the cost envelope",
+          isinstance(alp.get("money"), dict)
+          and "investment_to_p50_gbp" in alp["money"] and "gaps_total" in alp["money"],
+          sorted((alp.get("money") or {}).keys()))
+    # the envelope is only as wide as what lumi can price, and it has to admit that
+    check("the envelope reports how many gaps it actually prices",
+          isinstance((alp.get("money") or {}).get("priced"), int)
+          and (alp["money"]["priced"] <= alp["money"]["gaps_total"]),
+          (alp.get("money") or {}).get("priced"))
+    check("the payload carries the ask, with a decision named",
+          isinstance(alp.get("the_ask"), dict) and (alp["the_ask"].get("decision") or "").strip(),
+          alp.get("the_ask"))
+    check("the ask's £ is the same figure as the envelope's (one number, one source)",
+          (alp.get("the_ask") or {}).get("investment_to_p50_gbp")
+          == (alp.get("money") or {}).get("investment_to_p50_gbp"))
+    check("the payload carries a risk list", isinstance(alp.get("risks"), list))
+    check("trend states whether it is computable rather than implying movement",
+          isinstance(alp.get("trend"), dict) and "available" in alp["trend"]
+          and isinstance(alp["trend"].get("windows"), int), alp.get("trend"))
+    check("the schedule buckets every planned action, dropping none",
+          sum(len(s["actions"]) for s in (alp.get("schedule") or []))
+          == len(((alp.get("plan") or {}) or {}).get("actions") or []),
+          [(s["horizon"], len(s["actions"])) for s in (alp.get("schedule") or [])])
+    check("every scheduled horizon is one of the known buckets",
+          all(s["horizon"] in ("this cycle", "next cycle", "multi-cycle", "unscheduled")
+              for s in (alp.get("schedule") or [])),
+          [s["horizon"] for s in (alp.get("schedule") or [])])
+
+    # ---- option decisions: the record of what was turned down -------------------
+    _cat, _lev = None, None
+    for b in (alp.get("domain_blocks") or []):
+        for o in (b.get("options") or []):
+            for l in (o.get("levers") or []):
+                if _lev is None:
+                    _cat, _lev = b["name"], l["lever_id"]
+    if _lev is None:
+        # a probe org with no submitted data is offered no levers. The decision RECORD is
+        # what these checks are for, and it does not require the lever to exist — the
+        # inventory hot-reloads, so the endpoint deliberately does not validate against it.
+        _cat, _lev = "Pay", "QA-SYNTHETIC-LEVER"
+    if _lev:
+        st_od, od = sa.req("/api/strategy/option-decision", "PUT",
+                           {"category": _cat, "lever_id": _lev, "state": "rejected",
+                            "reason": "Already covered by an existing scheme."})
+        check("an option decision can be recorded", st_od == 200, st_od)
+        _k = "%s|%s" % (_cat, _lev)
+        check("the decision is keyed by category AND lever",
+              _k in (od.get("option_decisions") or {}), sorted((od.get("option_decisions") or {})))
+        check("the decision stores who and when, not just what",
+              (od["option_decisions"][_k].get("at") or "") and (od["option_decisions"][_k].get("by") or ""),
+              od["option_decisions"][_k])
+        _st2, al2 = sa.req("/api/strategy/alignment")
+        check("the decision comes back on the document payload",
+              _k in (al2.get("option_decisions") or {}))
+        st_bs, _ = sa.req("/api/strategy/option-decision", "PUT",
+                          {"category": _cat, "lever_id": _lev, "state": "maybe"})
+        check("an unknown decision state is refused, not coerced", st_bs == 400, st_bs)
+        st_ni, _ = sa.req("/api/strategy/option-decision", "PUT", {"state": "rejected"})
+        check("a decision without a category or lever is refused", st_ni == 400, st_ni)
+        st_lr, _ = sa.req("/api/strategy/option-decision", "PUT",
+                          {"category": _cat, "lever_id": _lev, "state": "rejected", "reason": "z" * 500})
+        check("an over-long reason is refused, not truncated", st_lr == 400, st_lr)
+        st_cl, cl = sa.req("/api/strategy/option-decision", "PUT",
+                           {"category": _cat, "lever_id": _lev, "state": ""})
+        check("clearing a decision removes the record entirely (no hollow row)",
+              st_cl == 200 and _k not in (cl.get("option_decisions") or {}),
+              cl.get("option_decisions"))
+
     # ---- the approval modal must warn about the SAME sections the version records ----
     # Between 2026-08-15 and 2026-08-16 the client list still counted Governance,
     # Commitments, Measures and Roadmap — all retired from capture — so every

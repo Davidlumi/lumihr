@@ -236,6 +236,82 @@ _lever_text = " ".join((l.get("what_it_is", "") + " " + l.get("typical_shape", "
 check("E", "lever copy is directive- and legal-clean",
       not ca.DIRECTIVE_RE.search(_lever_text) and not ca.LEGAL_RE.search(_lever_text))
 
+# ---------------------------------------------------------------------------- F
+# BOARD-PAPER READS (2026-08-16): the schedule buckets, the decision key, and the
+# risk section. A risk section is the easiest place in a deliberately non-directive
+# document to start giving advice by accident, so every string it can emit is held
+# to the same directive/legal bar as the rest of the library.
+print("\nF. board-paper reads — schedule, decisions, risk")
+check("F", "every lever horizon in the inventory buckets cleanly (no 'unscheduled')",
+      all(sa.horizon_bucket(l.get("speed")) != "unscheduled" for l in LEV),
+      sorted({l.get("speed") for l in LEV if sa.horizon_bucket(l.get("speed")) == "unscheduled"}))
+check("F", "the plan schema's horizon enum matches the bucket vocabulary",
+      set(ca.PLAN_SCHEMA["properties"]["actions"]["items"]["properties"]["horizon"]["enum"])
+      <= set(sa.HORIZON_ORDER),
+      ca.PLAN_SCHEMA["properties"]["actions"]["items"]["properties"]["horizon"]["enum"])
+check("F", "an unrecognised horizon is carried as 'unscheduled', never dropped",
+      sa.horizon_bucket("whenever") == "unscheduled" and "unscheduled" in sa.HORIZON_ORDER)
+check("F", "the decision key is category-scoped (one lever, two areas, two decisions)",
+      sa.option_decision_key("Pay", "L1") != sa.option_decision_key("Wellbeing", "L1"))
+check("F", "decision states are a closed set of three",
+      sorted(sa.OPTION_DECISION_STATES) == ["considered", "not_now", "rejected"],
+      sorted(sa.OPTION_DECISION_STATES))
+
+_al_r = {"commitments": [{"id": "a", "category": "Pay", "status": "behind_intent"},
+                         {"id": "b", "category": "Pay", "status": "contradicted"},
+                         {"id": "c", "category": "Pay", "status": "behind_intent"},
+                         {"id": "d", "category": "Wellbeing", "status": "behind_intent"}]}
+_bl_r = [{"name": "Pay", "gaps": [1], "count": {"strict": False},
+          "position": {"verdict": "below"}, "aim": {"stance": "lead"}}]
+_RISKS = sa.derive_risks(_al_r, {"total_investment_to_p50_gbp": 27000}, _bl_r,
+                         {"budget_direction": "pressure"},
+                         {"constraints": {"selected": ["affordability"]}},
+                         {"core_pct": 44.0, "answered": 41, "basis_total": 93},
+                         snapshot_single=True,
+                         budget_labels={"pressure": "under pressure"},
+                         constraint_labels={"affordability": "affordability"}, domain_min=3)
+_ids = [r["id"] for r in _RISKS]
+check("F", "every derivable risk fires on a fixture that meets all seven conditions",
+      sorted(_ids) == sorted(["affordability", "evidence", "exposure", "concentration",
+                              "coverage", "no_trend", "constraints"]), _ids)
+_rtext = " ".join(r["title"] + " " + r["detail"] for r in _RISKS)
+check("F", "every risk string is directive-clean (a risk is an exposure, not advice)",
+      not ca.DIRECTIVE_RE.search(_rtext),
+      (ca.DIRECTIVE_RE.search(_rtext) or [""])[0] if ca.DIRECTIVE_RE.search(_rtext) else "")
+check("F", "every risk string is legal-adjudication-clean",
+      not ca.LEGAL_RE.search(_rtext),
+      (ca.LEGAL_RE.search(_rtext) or [""])[0] if ca.LEGAL_RE.search(_rtext) else "")
+# R5 bans a SCORE — a number or letter standing in for a judgement. "methodology-grade"
+# is the compound adjective the document already uses for a read that clears
+# DOMAIN_MIN_POLARISED, and it grades nothing; the exclusion is deliberate and narrow.
+check("F", "no risk carries a score, index or grade (R5)",
+      not re.search(r"\b(score|index|rating|out of 10|/100)\b", _rtext, re.I)
+      and not re.search(r"(?<!methodology-)\bgrade\b", _rtext, re.I))
+check("F", "each risk names a class and a title and says something",
+      all(r.get("id") and r.get("class") and r.get("title") and len(r.get("detail") or "") > 60
+          for r in _RISKS))
+# the affordability risk only makes sense when there is BOTH a price and a tight budget
+check("F", "affordability is silent when there is no priced investment",
+      "affordability" not in [r["id"] for r in sa.derive_risks(
+          _al_r, {"total_investment_to_p50_gbp": 0}, _bl_r, {"budget_direction": "pressure"},
+          {}, {"core_pct": 90.0}, snapshot_single=False, budget_labels={"pressure": "under pressure"})])
+check("F", "affordability is silent when the budget is stated as investing",
+      "affordability" not in [r["id"] for r in sa.derive_risks(
+          _al_r, {"total_investment_to_p50_gbp": 27000}, _bl_r, {"budget_direction": "investing"},
+          {}, {"core_pct": 90.0}, snapshot_single=False)])
+check("F", "the no-prior-period risk disappears once a second window exists",
+      "no_trend" not in [r["id"] for r in sa.derive_risks(
+          _al_r, {}, _bl_r, {}, {}, {"core_pct": 90.0}, snapshot_single=False)])
+check("F", "a clean org gets no invented risks",
+      sa.derive_risks({"commitments": []}, {}, [], {}, {}, {"core_pct": 96.0},
+                      snapshot_single=False) == [])
+# singular/plural: the one-area fixture must not read "Each of these sits"
+_one = sa.derive_risks({"commitments": [{"id": "a", "category": "Pay", "status": "behind_intent"}]},
+                       {}, _bl_r, {}, {}, {"core_pct": 96.0}, snapshot_single=False, domain_min=3)
+_onetext = " ".join(r["detail"] for r in _one)
+check("F", "one-area risks read in the singular",
+      "Each of these" not in _onetext and " areas rest" not in _onetext, _onetext[:120])
+
 print()
 print("=" * 92)
 passed = sum(1 for _, ok in R if ok)
