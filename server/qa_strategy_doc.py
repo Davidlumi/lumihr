@@ -205,11 +205,18 @@ check("A8.4 verifier FOOT_RE matches the document's own page mark",
 # Each owns a defect the v3.1 review found in the shipped build. Where a check
 # would encode a ruling David has not made, it is advisory and says which ruling.
 
-# --- A1.5 the plan renders the LIBRARY's description, never stored prose (D032)
+# --- A1.5 the plan renders the LIBRARY's description, never stored prose (D032/D068)
+# The v3.1 form of this check was VACUOUS: it asserted the library description was
+# rendered, which stayed true while the stored prose rendered beside it. A check that
+# can pass while the printed page contradicts itself proves nothing. It now asserts the
+# stored `why` is not rendered at all for a library-matched action — composition is the
+# only path, not the first of two — and the PDF half (below) asserts absence in the text.
 check("A1.5 the plan renders lever descriptions from the live library",
-      "descOf[a.title]" in SRC,
-      "the plan still prints the stored action prose as the lever's description — a plan "
-      "built before a library repair then carries superseded reward content", owner="D032")
+      "descOf[a.title]" in SRC, owner="D032")
+check("A1.5 the stored plan prose is not rendered beside the library description",
+      "if (!inLib) return html" in SRC and "planFirstOfGap" in SRC,
+      "the renderer still emits the stored why for a library-matched action, so a stale "
+      "plan prints both descriptions three lines apart", owner="D068")
 
 # --- A4.7 the htm newline trap, which is a typography defect in disguise ----
 # `${` on its own line after a word collapses to "the area.Written commentary".
@@ -403,9 +410,45 @@ if "--pdf" in sys.argv:
     # D066 no tag the library does not carry
     check("D066 no unevidenced 'self-funding' claim",
           "self-funding" not in text, owner="D066")
-    # D029 a signal's own name is not repeated inside its detail
-    dupes = re.findall(r"([A-Z][a-z]+(?: [a-z]+){1,4}) — \(\1", text)
+    # D029 a signal's own name is not repeated inside its detail. The v3.1 regex
+    # required "LABEL — (LABEL" adjacently and the live form is
+    # "LABEL — 93rd percentile (LABEL — 100/100 …)" — so the check reported green over
+    # the defect on p15. Match the label, then its own repeat anywhere in the same
+    # parenthetical, which is what a reader actually sees.
+    dupes = [m.group(1) for m in re.finditer(r"([A-Z][a-z]+(?: [a-z]+){1,5}) — [^()]{0,80}\(\1\b", text)]
     check("D029 no signal name repeated inside its own detail", not dupes, dupes[:2], owner="D029")
+
+    # D068 — the assertion that owns the regression, on the RENDERED TEXT. A field-level
+    # equality cannot see a render-level duplication: the corpus is every superseded
+    # description this library has carried, asserted absent anywhere in the document.
+    SUPERSEDED = [
+        # pre-OpRA salary sacrifice, repaired 2026-08-16; carried into a board paper by a
+        # stored plan built before the repair (v3.2 D068)
+        "pension, cars, technology",
+    ]
+    ghosts = [g for g in SUPERSEDED if g.lower() in text.lower()]
+    check("D068 no superseded lever description survives anywhere in the artefact",
+          not ghosts, ghosts, owner="D068")
+
+    # D069 — every rendered sentence starts uppercase (the check the v3.1 fix needed)
+    lowers = [s[:60] for p in pages for s in re.split(r"(?<=[.!?]) +", p)
+              if re.match(r"^(no|the|a|an|and|but|it|they|this|that|every|each) [a-z]", s)
+              and len(s) > 45]
+    check("D069 no rendered sentence opens lowercase", not lowers, lowers[:2], owner="D069")
+
+    # D072 — plural set-cardinality copy against a single-row exhibit
+    check("D072 no plural signal note over a single signal",
+          not re.search(r"The signals above are the most material[^.]*none of them", text)
+          or "The signal above is the most material" in text,
+          owner="D072", advisory=False)
+
+    # D075 — one noun for the per-metric base wherever a base is counted
+    base_nouns = set()
+    if re.search(r"\d+ peers each", text): base_nouns.add("peers")
+    if re.search(r"\d+ comparable organisations", text): base_nouns.add("comparable organisations")
+    if re.search(r"\d+ organisations that answered", text): base_nouns.add("organisations that answered")
+    check("D075 one noun for the per-metric base", len(base_nouns) <= 1,
+          sorted(base_nouns), owner="D075")
     # D028 every peer-median comparison carries both sides
     bare = re.findall(r"vs the peer median", text)
     check("D028 no comparator-less peer-median comparison", not bare,
