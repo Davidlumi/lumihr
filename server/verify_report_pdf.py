@@ -36,7 +36,9 @@ CHROME = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
           "/Applications/Chromium.app/Contents/MacOS/Chromium",
           "/usr/bin/chromium", "/usr/bin/google-chrome")
 
-FOOT_RE = re.compile(r"lumi\s*·\s*(\d+)\s*of\s*(\d+)")
+# must match report.js's pack-pageno exactly — "Page N of M" since the cover was
+# de-vendored (2026-08-16); the old "lumi · N of M" form would silently match nothing
+FOOT_RE = re.compile(r"Page\s+(\d+)\s+of\s+(\d+)")
 
 
 def find_chrome():
