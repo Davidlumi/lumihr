@@ -19340,3 +19340,49 @@ silence from an omission.
 Six pages remain under 55% and all six are now structural: two continuation tails, the Movement
 page that is honestly empty until a second collection window exists, and the risk/approval pages
 whose content is simply short. Filling those would be padding.
+
+## 2026-08-16 — The seven-persona panel
+
+*"Fan out some agents from Mercer, design agencies etc and lets finally get this done."*
+
+Seven reviewers, each a distinct lens — a Mercer senior partner, a brand-agency creative
+director, a WTW benchmarking analyst, a RemCo chair, a print production manager, a copy editor,
+and a forensic parity auditor working page-by-page against the flagship reference. All seven read
+the **rendered PDF pages**, not the code. **79 findings**, triaged by consensus.
+
+**What the panel caught that three solo passes had not:**
+
+- **Duplicate table rows** (6 of 7 reviewers). One lever offered against two commitments in the
+  same domain printed twice in one exhibit. The integrity sweep now asserts no option repeats.
+- **The £27,000 conflation** (4 reviewers). The ask page's money card read as the price of the
+  approval; it prices a gap that — until this pass — the plan never even addressed.
+- **`on_plan` meant two things.** The diagnosis derived it from "not flagged by findings"; the
+  document printed it as "tracking with intent"; the alignment engine read Governance as behind.
+  One phrase, two engines. It now means alignment `on_target`, full stop.
+- **The plan said one sentence four times**, drew every action from one domain, and left the only
+  priced gap silent. Root-caused to the statement prefixing every lever's rationale; rebuilt, the
+  plan spans three domains, ten distinct rationales, pension included.
+- **A regression of my own**: the risks two-column grid had been in a batch that aborted after a
+  later assertion — the in-memory edit was never written, and the page shipped bare while every
+  neighbour was carded. Same fragment-dropping failure mode as the pre-prod audit lesson.
+
+**Panel-driven upgrades:** cover hero stat wall (the reference's own device, white cards on the
+navy field); exec page rebuilt as conclusions (navy "What this paper concludes" card) instead of a
+stat readout; a chevron flow band on the ask page showing what approval sets in motion; the
+Movement placeholder page demoted to one honest card until a second collection window exists;
+findings de-boilerplated with the caveat stated once; decision-banner contrast fixed (near-black
+on navy — both print reviewers); the portfolio legend now lists only verdicts present and explains
+colour=verdict vs position=percentile.
+
+**Process note.** The panel cost ~700k subagent tokens and found in one pass what three of my solo
+passes had missed — the duplicate rows above all. The findings were graded and specific because
+each persona had one job and the rendered artefact, not the source. Worth repeating for any
+client-facing surface.
+
+**41 pages, 41 claimed; exhibits 1..19 sequential; 22/22 contents entries land on the right
+sheet; zero duplicate rows.** Suite 15/15. ?v=680.
+
+**Known remainders, all judged acceptable:** 8 pages under 55% (continuation tails and genuinely
+short sections); the schedule names horizons but not owners/dates (lumi does not know the org's
+review calendar — the honest line stays); the strategy narrative prose is regenerable but its
+wording remains model-authored until David edits it in place.
