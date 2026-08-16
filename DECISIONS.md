@@ -19309,3 +19309,34 @@ form.
 
 **Still short of the reference:** it uses genuine two-column card layouts on most pages; this is
 still largely single column with cards stacked. That is the next piece.
+
+## 2026-08-16 — Cards everywhere, and two columns where content pairs
+
+*"About 50% there — continue to improve."*
+
+The previous pass carded the pages that carried **figures** and left the prose pages as running
+text on the tinted ground. That read as half-converted, and it left the thinnest pages in the
+document exactly as they were. Every content page is now built from cards — verified by counting
+white card rects in the rendered PDF: **zero content pages carry no card.**
+
+**Two columns where the content genuinely pairs**, not for the sake of it:
+
+- **The ask** — what approval covers | what it does not
+- **Tensions** — the tensions | what to watch, the second in cream
+- **Principles** — principles full width, then peers | constraints
+- **Method** — four paragraphs became a 2×2 grid, the reference's own "design rule" pattern, which
+  turns the thinnest page in the document into a full one
+
+The strategy narrative's six sections became six cards. Governance, the schedule, the not-taken
+record and the unit rates each moved into cards, so the grammar is the same on every page rather
+than only where there happened to be a table.
+
+**Governance gained a real disclosure in the process.** "What was unstated at approval" had been a
+footnote; as its own cream card it does what it should — lets a later reader tell a deliberate
+silence from an omission.
+
+**36 pages, zero spills, exhibits 1..18 sequential, contents intact.** Suite 15/15. ?v=679.
+
+Six pages remain under 55% and all six are now structural: two continuation tails, the Movement
+page that is honestly empty until a second collection window exists, and the risk/approval pages
+whose content is simply short. Filling those would be padding.
