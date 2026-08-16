@@ -5453,10 +5453,22 @@ async def build_action_plan(request: Request):
                 "cost_character": lev.get("cost_character"), "trade_off": lev.get("trade_off"),
                 "roi": roi,
             })
+    # Per-area evidence, so the plan cannot claim an area is unevidenced when it is not.
+    # The review caught "Incentives & recognition aims above market yet NOTHING IS
+    # EVIDENCED there" printed three pages after that area's own section reported 17
+    # benchmarked metrics. The model meant the COMMITMENT was unevidenced; a reader
+    # reads it as contradicting the section. Give it the counts and forbid the claim.
+    _evidence = {}
+    for d in (hero.get("domains") or []):
+        _ev = d.get("position_evidence") or {}
+        _n = (_ev.get("polarised") or 0) + (_ev.get("practice") or 0)
+        if _n:
+            _evidence[d["name"]] = {"metrics_benchmarked": _n,
+                                    "verdict": (d.get("position") or {}).get("verdict")}
     payload = {"objective": OBJECTIVE_LABELS.get(strat.get("primary_objective")),
                "objective_weights": (st.get("strategy") or {}).get("objective_weights") or {},
                "cut_label": cut_label, "candidates": cands[:10],
-               "counts": al["counts"]}
+               "counts": al["counts"], "evidence_by_area": _evidence}
     if _ai_ok:
         _ai_generation_or_429(org)
         res = await to_thread.run_sync(claude_api.generate_action_plan, payload)
@@ -5810,6 +5822,17 @@ async def get_strategy_alignment(request: Request):
     _sig_by_dom = {}
     for _s in _all_sigs:
         _sig_by_dom.setdefault(_s.get("domain"), []).append(_s)
+    # Order each domain's signals so the ones that AGREE with its verdict lead
+    # (2026-08-16 consultancy review). Wellbeing read below market and the single
+    # signal printed beneath it read ABOVE market — materiality ordering is correct
+    # for a triage feed, but on a board page it looks like the evidence refutes the
+    # verdict. Materiality still orders within each group; nothing is dropped.
+    _dom_verdict = {d["name"]: (d.get("position") or {}).get("verdict")
+                    for d in (hero.get("domains") or [])}
+    for _dom, _lst in _sig_by_dom.items():
+        _v = _dom_verdict.get(_dom)
+        if _v:
+            _lst.sort(key=lambda x: 0 if x.get("position") == _v else 1)
     _cmt_by_cat = {}
     for _c in out["commitments"]:
         _cmt_by_cat.setdefault(_c["category"], []).append(_c)

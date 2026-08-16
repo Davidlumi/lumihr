@@ -1875,7 +1875,12 @@ Rules, all hard:
    £ where one is supplied, otherwise the retention/engagement/fairness effect the
    lever is known for. Where no figure exists, say so plainly rather than implying one.
 6. No vendor, product or provider names.
-Return JSON only."""
+Return JSON only.
+`evidence_by_area` tells you how many metrics are benchmarked in each area and how each
+one reads. NEVER say an area has nothing evidenced, no data, or is unmeasured when it
+appears there — a commitment being unevidenced is not the same as an area being
+unmeasured, and the reader has that area's metric count in front of them.
+"""
 
 PLAN_SCHEMA = {
     "type": "object",
