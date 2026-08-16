@@ -19386,3 +19386,50 @@ sheet; zero duplicate rows.** Suite 15/15. ?v=680.
 short sections); the schedule names horizons but not owners/dates (lumi does not know the org's
 review calendar — the honest line stays); the strategy narrative prose is regenerable but its
 wording remains model-authored until David edits it in place.
+
+## 2026-08-16 — The practitioner panel
+
+*"Now do a reward professional persona check QA and polish."*
+
+Five practitioners this time — Head of Reward (retail plc), senior C&B analyst, interim
+consultant, workplace pensions specialist, and the HRD-without-a-specialist who is lumi's actual
+buyer. All five read the rendered pages for **substance**, design out of scope. 49 findings.
+
+**The worst class: factual errors in my own R8 lever drafting.**
+
+- **BEN-SALSAC described pre-2017 law** — NI savings on "pension, cars, technology", the saving
+  "shared". The OpRA rules killed the advantage for most benefits in April 2017. Five of five
+  reviewers caught it; *"professionally embarrassing"* was the kindest phrasing. Corrected to
+  pension/cycle-to-work/ULEV, AE compliance and the wage floor named, employer *chooses* to share.
+- **INC-RECOGNITION costed "one-off"** — voucher spend is an annual budget and taxable outside the
+  trivial-benefits exemption, and it sat inside a "no new recurring spend" board approval.
+- **BEN-GRISK claimed claims-experience re-rating** — wrong at 150 lives, where schemes are
+  unit-rated. **PEN-CONTRIBUTION** mis-anchored to the AE minimum and overstated lock-in.
+
+All recorded in the readme and regenerated ruling sheet — these are exactly what R8 sign-off
+exists to catch, found by the panel first.
+
+**The structurally unfalsifiable claim.** "Cost-neutral or self-funding — no new recurring spend"
+could never be false: plan actions don't carry `cost_character`, so the recurring filter always
+found zero. The lever inventory is now the authority, and the ask says *"1 of the 4 carries
+recurring spend… the budget is yours to set before approval."*
+
+**The £27,000 made defensible** (four reviewers, incl. the specialist calling it "the weakest
+thing in the document"): formula rewritten as a sentence; levels-covered carried so a Board-only
+gap can never silently print an org-wide £; earnings basis stated (full salary — upper indication
+where contributions are on qualifying earnings).
+
+**Mutually exclusive options were counted as two actions** — both pension routes scheduled. The
+schedule and plan now mark "alternative to X — one of the two, not both" and the count says so.
+
+**The wage floor.** A retail reward plan that never says "National Living Wage" would not survive
+an ExCo — the Head of Reward's exact words. A sector-conditional exposure now fires for
+retail/hospitality orgs whose pay stance or read sits low: honest that lumi cannot see rate
+headroom. **Reversibility** was in the data and never printed — one-way doors now say so.
+
+**Noted for David rather than coded** (authorship, not defects): the Attract-objective vs
+lag-pay-aim tension as a candidate R7 rule; store vs head-office pay splits as a data-model
+question; RemCo routing language; the Incentives lever gap the interim consultant named
+(uplifting existing award values as the direct lever). On the ruling-sheet agenda.
+
+Suite **15/15**. Substance sweep on the rendered PDF: 7/7. ?v=681.
