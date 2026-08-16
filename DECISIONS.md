@@ -19589,3 +19589,69 @@ the R8 residues (typical_shape tech-salsac, the undated NIC clause).
 
 Suite **15/15**. FULL 44pp / FRESH 12pp verified as print artefacts; 24/24 content
 assertions. ?v=684.
+
+## 2026-08-16 — QA spec v2: the gate that owns the defects
+
+The reviewer's QA spec arrived with a regression register, and six of its entries were
+live in the build shipped hours earlier. All six verified true against the rendered PDF
+before any code moved. **Three were mine** — introduced by the fix for the previous
+review. That is the spec's thesis proved on its own author, and the reason the answer
+to it is a gate rather than another hand-fix.
+
+**The six.** The register held six position rows for eight areas while the executive
+summary counted eight (D001) — because the strategy states a position for six areas and
+the other two carry coherence commitments by ruling R3b, so "5 sit below" could not be
+reconciled against the rows a board was reading. The exec now counts the REGISTER'S OWN
+OBJECTS: "a position for 6 of the 8 benchmarked areas and 7 coherence commitments
+besides — 13 in all, listed with their status in The commitments in full." The ask spoke
+with three voices (D014): the banner sought re-approval-then-approval, the body sought
+one thing, and both stat cards counted four option ROWS against the banner's three
+decisions. One `askActs`/`askTwoPart` shape now drives banner, cards, lede and flow
+strip. "Domain" leaked twice into a document that says area (D020). The cover carried
+"…profiles. — lumihr.co.uk", a sentence terminal left standing by a naive replace
+(D025) — mine, from yesterday. The cover had dead space and no addressee (D024): it now
+says who it is prepared for, from the approval record's own body.
+
+**GATE A IS BUILT** — `server/qa_strategy_doc.py`, 34 checks, in `run_gates.sh` (suite
+is 16). Every check cites the defect it owns. It asserts on source, on the content
+libraries and on the rendered artefact: reconciliation (the register IS the
+reconciliation), the single-sourced ask, provenance placement, the grouping word, the
+typographic shapes a proofreader catches, DIRECTIVE_RE/LEGAL_RE over the whole lever
+library rather than only model output, and the verifier's FOOT_RE against the footer it
+verifies — the lockstep that silently blinded pagination once already.
+
+**It caught four of its own false positives on first run**, and that mattered: a quoted
+regex body read as prose, a comment ABOUT a defect tripping the check FOR it, "sap"
+inside "disappoints", and an unbounded section slice that would have scanned the whole
+file and proved nothing. A gate that cries wolf gets muted, which is the failure mode
+the file exists to prevent. It then caught two real leaks I had missed, and later caught
+my own reworded sentence — working exactly as intended.
+
+**Three advisory checks, each for a stated reason**: the aim-bracket (encodes David's
+open ruling R-B — it fails by design, holding the door open), forecast language
+(warn-level by nature), and approver-as-a-person (cannot pass without a captured field).
+The rest block.
+
+**Delight, three shipped, all pure-data**: what we tested and it held (the register's
+holding rows, named as claims that were checked and stood); what sits above market (the
+document was entirely deficit-framed, and the above-market reads appeared only as
+confusing contrast); and a closing line that returns the document to the member instead
+of ending on lumi's own wording caveat.
+
+**Both ask shapes verified.** The throwaway carried the LIVE stored plan (one decision
+unit, singular ask) — which exposed that yesterday's delivered PDFs reflected a plan
+rebuild that only ever existed on a torn-down throwaway. Verified the singular path,
+then rebuilt and verified the multi-unit either/or path: 40pp and 44pp, both clean,
+Gate A green on both. That is the spec's fixture matrix at n=2, and R-F now says
+plainly that the live plan needs one rebuild.
+
+**The layout lesson repeated and was believed the second time.** Two sheets spilled on
+the richer plan; four rounds of word-trimming moved nothing. The exec sheet was carrying
+the status split twice — once in its own sentence and once in the register a page-turn
+away — so the detail moved to the register and the frame stayed on the exec. Content
+that belongs somewhere else is not a length problem.
+
+Suite **16/16**. ?v=685. Rulings for David in REVIEW_RULING_SHEET_2026-08-16.md (now
+R-A..R-M): Gate A's blocking/advisory split, Gate B's fixture harness, Gate C's persona
+protocol, A2.2's controlled vocabulary, and the four delight items that need payload,
+capture or a ruling.

@@ -1,5 +1,14 @@
 # External review — what was built, what was verified, what is yours to rule
 
+> **v2 addendum (same day).** The reviewer's QA spec v2 arrived after this sheet was
+> written. Its regression register named six defects live in the *shipped* build —
+> all six verified true, three of them introduced by the previous hand-fix — and all
+> six are now fixed with an owning assertion. **Gate A is built**
+> (`server/qa_strategy_doc.py`, 34 checks, in `run_gates.sh`). What the spec leaves
+> open for you is at the end: **R-I** (Gate A blocking/advisory split), **R-J**
+> (Gate B fixtures), **R-K** (Gate C personas + sign-off), **R-L** (A2.2 controlled
+> vocabulary), **R-M** (the delight items that need data or capture).
+
 **Status: the buildable findings are FIXED and verified (see DECISIONS 2026-08-16, review
 response). This sheet holds the items the reviewer himself marked "rule first", with the
 verification results that bear on each. Nothing below is built.**
@@ -127,3 +136,110 @@ urgent, not less.
   methodology's "2026.1 restructured … into seven categories" release-history line was
   deliberately left (DECISIONS 2026-08-16) — confirm or amend. The reviewer's own v2
   brief needs its update either way.
+
+---
+
+# QA spec v2 — the rulings it leaves open
+
+## What v2 found in the shipped build, and what happened to it
+
+All six verified against the rendered PDF before any code moved. Three were mine,
+introduced by the fix for the previous review — which is the spec's own thesis
+demonstrated, and the reason Gate A now exists.
+
+| ID | Verified? | Disposition |
+|---|---|---|
+| D001 register held 6 position rows for 8 areas while the summary counted 8 | **True** | Exec now counts the register's own objects: "a position for 6 of the 8 benchmarked areas and 7 coherence commitments besides — 13 in all". Owner: gate A1.1 + PDF A1.2/A1.3. |
+| D014 banner stated two asks; body and cards stated one, and cards counted 4 option rows against the banner's 3 | **True** | One `askActs`/`askTwoPart` shape drives banner, both stat cards, lede and flow strip. Owner: A1.5 (source + PDF). |
+| D020 "domain" leaking into a document that says "area" | **True** ×2 (plan intro + indicative caveat) | Both fixed. Owner: A4.5, asserted on source *and* on the artefact. |
+| D024 cover dead space, no named author | **True** | "Prepared for — The Board" (from the approval record's body where one is named). A named *human* author needs a captured field: **R-M** below. |
+| D025 stray full stop before an em-dash on the cover | **True** | Fixed at the source of the replace. Owner: A4.7. |
+| D003 disclosure "defeated by 50× peers" | **Partly** | 175 "peer" hits are almost all the cut label in the running footer. The structural remedy is **R-L**. |
+
+## R-I. Gate A: the blocking / advisory split (spec's sign-off line)
+
+Built as 34 checks. **31 block. 3 are advisory**, and each advisory is advisory for a
+stated reason, not for convenience:
+
+| Check | Why advisory |
+|---|---|
+| A5.3 ordinal aim as a bracket | Encodes **R-B**, which is your ruling. It fails today by design — it is the gate holding the door open for the fix. |
+| A4.3 forecast language | Warn-level by nature. Currently flags 2 lever trade-offs (BEN-SALSAC's NIC clause — see R-H — and GOV-PAY-REVIEW-CYCLE). |
+| A6.5 approver as a person | Cannot pass without **R-M**'s captured field. |
+
+**Your ruling:** accept this split, or promote any advisory to blocking (which blocks
+the next release until its underlying ruling lands).
+
+## R-J. Gate B — the fixture matrix
+
+Not built. The spec's eight fixtures need a fixture harness that can synthesise org
+states (3-dials-only, ~40% core, evidence suppressed, no-gaps, above-market-vs-low-aim,
+principles populated). Two of those states now render *incidentally* and were both
+verified today — the singular ask (live stored plan, 1 decision unit) and the
+multi-unit either/or ask (rebuilt plan) — which is the fixture matrix's value
+demonstrated at n=2.
+
+**Your ruling:** build the harness (a session's work: a fixture builder writing org
+states into a throwaway, plus golden text-layer captures), or keep the two live
+states plus the fresh variant as the standing matrix. Note fixture 8
+(principles + constraints populated) is the one the spec calls most valuable and the
+one nobody has ever seen — Part A's weakest page is weak *because* it is empty.
+
+## R-K. Gate C — personas and disposition
+
+Cannot be built; it is a human protocol. The spec's disposition table is good and I
+would adopt it as written. What it needs from you: the three mandatory personas per
+release (spec suggests CFO, RemCo chair, reward director), and whether Q1 ("what is
+this document asking me to do?") failing for any persona blocks a ship.
+
+## R-L. A2.2 — controlled vocabulary for peer-describing copy
+
+The spec's structural remedy for D003: peer-describing sentences render only from a
+fixed field set, so free prose *cannot* describe the pool. Correct in principle and a
+real change: every deterministic sentence that mentions the pool, the cut, n or
+"peers" would move behind a small vocabulary layer. It also interacts with the
+amended R-P2 ruling (in-product stays clean; the durable artefact carries one line).
+
+**Your ruling:** worth a session, or is the current state — one ruled line on the
+artefact, the truth on the methodology page, and the marketing contradiction closed
+(**R-G**) — sufficient?
+
+## R-M. Delight — three shipped, four need you
+
+**Shipped today** (all pure-data, all traceable to the payload):
+- *What we tested and it held* — the register's holding rows, named as claims that
+  were checked and stood (category (b)).
+- *What sits above market* — the areas and signals reading above, with the sample
+  behind each, at the close of Findings. The document was entirely deficit-framed.
+- *A closing line that isn't a disclaimer* — the last beat returns the document to
+  the member instead of ending on lumi's wording caveat (category (c)).
+
+**Held:**
+1. **The rare thing** ("you are one of the N% who do X"). The single most quotable
+   line available — needs peer-adoption prevalence on the report payload. Cheap-ish,
+   real work.
+2. **What happens if you do nothing.** The statutory half is available now (the
+   wage-floor risk already says it); peer drift needs a second collection window.
+   Ruling: state the statutory half alone now, or wait for both?
+3. **The one-page pull-out.** Strategy on a page, ready to circulate. This is polish
+   17's question in another form — see below.
+4. **Named, dated, theirs.** Needs a captured "prepared by" (person + role) on the
+   strategy record, and identity display names reaching the payload for the approver.
+   Schema + identity-boundary work, so it is yours to schedule, not mine to guess.
+
+## Polish register — what moved, what is yours
+
+Shipped: 5 (cover space), 7-part (amendment date), 8 (the three ask surfaces agree),
+12 (one word for the grouping), 14 partly (NIC clause now flagged by the gate), 16
+n/a (running head already carries the section).
+
+**Yours:** 1 (Exhibit 2 encoding = **R-B**), 2 (§06 receives intent-vs-intent =
+**R-A**), 3 (comparator promoted to §05 *and* made a coherence check — the promotion
+half is done, the check half is R-A's work), 4 (signal selection = **R-C**), 6 + 7
+(named author, amendment log = **R-M**/**R-H**), 9 (no-gap areas compress — contradicts
+the one-section-per-area ruling, your call), 10 (null-state family), 13 (salary
+sacrifice from one source — the live stored plan still carries the pre-repair text
+until it is rebuilt, **R-F**), 15 (Part A "in lumi"), 17 (**can Part A export
+alone?** — the original standalone-strategy requirement. Worth answering directly:
+the strategy variant already renders alone at `/strategy`, but it is not offered as
+its own export from the plan document).
